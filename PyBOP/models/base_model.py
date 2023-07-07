@@ -15,6 +15,9 @@ class BaseModel(PyBaMMBaseModel):
 
         """
 
+        self.name = "Base Model"
+        
+
     def update(self, k):
         """
         Updater

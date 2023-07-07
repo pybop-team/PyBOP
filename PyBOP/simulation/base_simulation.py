@@ -11,10 +11,12 @@ class BaseSimulation(pybamm_simulation):
 
     """
 
-    def __init__():
+    def __init__(self):
        """
-       Init.
+       Initialise and name class
        """ 
+
+       self.name = "Base Simulation"
 
     def Simulation(self, simulation, optimise, cost, data):
         """

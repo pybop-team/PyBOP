@@ -9,12 +9,16 @@ class BaseOptimisation():
     
     """
 
-    def __init__():
+    def __init__(self):
 
         """
-        Init.
+
+        Initialise and name class.
         
         """
+        self.name = "Base Optimisation"
+
+
 
     def NelderMead(self, fun, x0, options):
         """
