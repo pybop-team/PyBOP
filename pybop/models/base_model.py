@@ -1,7 +1,6 @@
-from pybamm.models.base_model import PyBaMMBaseModel
-import numpy as np
+from pybamm.models.base_model import BaseModel
 
-class BaseModel(PyBaMMBaseModel):
+class BaseModel(BaseModel):
     """ 
 
     This is a wrapper class for the PyBaMM Model class.
@@ -15,7 +14,7 @@ class BaseModel(PyBaMMBaseModel):
 
         """
 
-        self.name = "Base Model"
+        self.name = "BaseModel"
         
 
     def update(self, k):
