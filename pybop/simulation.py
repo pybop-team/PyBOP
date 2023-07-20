@@ -1,9 +1,9 @@
 import pybamm
 
-class BaseSimulation(pybamm.simulation.Simulation):
+class Simulation(pybamm.simulation.Simulation):
     """
     
-    This class constructs the PyBOP simulation class
+    This class constructs the PyBOP Simulation class
 
     Parameters:
     ================
@@ -11,11 +11,9 @@ class BaseSimulation(pybamm.simulation.Simulation):
 
     """
 
-    def __init__(self):
-       """
-       Initialise and name class
-       """ 
-       super()__init__()
+    def __init__(self, *args):
+       super(Simulation, self).__init__(*args)
+
 
     def optimize(self):
         """

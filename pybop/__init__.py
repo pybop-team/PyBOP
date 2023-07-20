@@ -31,6 +31,11 @@ script_path = os.path.abspath(__file__)
 from .models.base_model import BaseModel
 from .models.spm import BaseSPM
 
+# 
+# Simulation class
+#
+from .simulation import Simulation
+
 #
 # Remove any imported modules, so we don't expose them as part of pybop
 #
