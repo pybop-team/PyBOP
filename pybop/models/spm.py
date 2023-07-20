@@ -1,21 +1,12 @@
-import pybop
 import pybamm
 from .base_model import BaseModel
 
-class BaseSPM():
+class BaseSPM(pybamm.models.full_battery_models.lithium_ion.BasicSPM):
     """
 
-    Implements base SPM from PyBaMM
+    Inherites from the BasicSPM class in PyBaMM
 
     """
 
     def __init__(self):
-        """
-
-        Insert initialisation code as needed.
-
-        """
-
-        self.name = "Base SPM"
-        self.model = pybamm.lithium_ion.SPM()
-        
+        super().__init__()
