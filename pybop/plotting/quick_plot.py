@@ -2,10 +2,10 @@ import os
 import numpy
 import matplotlib
 
-class QuickPlot(item):
+class QuickPlot():
     """
     
-    Class to generate the quick plots associated with PRISM. 
+    Class to generate plots with standard variables and formatting. 
 
     Plots
     --------------

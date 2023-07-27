@@ -1,15 +1,13 @@
-import botorch
-import scipy
-import numpy 
+import pybop
 
-class BaseOptimisation():
+class BaseOptimisation:
     """
     
     Base class for the optimisation methods.
     
     """
 
-    def __init__(self):
+    def __init__(self, Simulation):
 
         """
 
@@ -17,12 +15,13 @@ class BaseOptimisation():
         
         """
         self.name = "Base Optimisation"
+        self.Simulation = Simulation.copy()
 
 
 
-    def NelderMead(self, fun, x0, options):
-        """
-        PRISM optimiser using Nelder-Mead.
-        """
-        res = scipy.optimize(fun, x0, method='nelder-mead', 
-        options={'xatol': 1e-8, 'disp': True})
+    # def NelderMead(self, fun, x0, options):
+    #     """
+    #     PyBOP optimiser using Nelder-Mead.
+    #     """
+    #     res = scipy.optimize(fun, x0, method='nelder-mead', 
+    #     options={'xatol': 1e-8, 'disp': True})
