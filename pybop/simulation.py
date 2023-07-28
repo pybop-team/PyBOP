@@ -37,7 +37,7 @@ class Simulation:
     def __init__(
         self,
         model,
-        measured_expirement=None,
+        measured_experiment=None,
         geometry=None,
         initial_parameter_values=None,
         submesh_types=None,
@@ -47,7 +47,7 @@ class Simulation:
         output_variables=None,
         C_rate=None,
     ):
-        self.initial_parameters = initial_parameter_values or model.default_parameter_values
+        self.parameter_values = initial_parameter_values or model.default_parameter_values
         
         # Check to see that current is provided as a drive_cycle
         current = self._parameter_values.get("Current function [A]")
@@ -349,6 +349,27 @@ class Simulation:
         with open(filename, "wb") as f:
             pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
 
+    def _get_esoh_solver(self, calc_esoh):
+        if (
+            calc_esoh is False
+            or isinstance(self.model, pybamm.lead_acid.BaseModel)
+            or isinstance(self.model, pybamm.equivalent_circuit.Thevenin)
+            or self.model.options["working electrode"] != "both"
+        ):
+            return None
+
+        return pybamm.lithium_ion.ElectrodeSOHSolver(
+            self.parameter_values, self.model.param
+        )
+
     def load_sim(filename):
         """Load a saved simulation"""
         return pybamm.load(filename)
+    
+    @property
+    def parameter_values(self):
+        return self._parameter_values
+
+    @parameter_values.setter
+    def parameter_values(self, parameter_values):
+        self._parameter_values = parameter_values.copy()
