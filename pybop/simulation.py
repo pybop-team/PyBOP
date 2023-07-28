@@ -1,5 +1,6 @@
 import pybamm
 import numpy as np
+import copy
 import pickle
 import sys
 from functools import lru_cache
@@ -26,7 +27,7 @@ def is_notebook():
 class Simulation:
     """
     
-    This class constructs the PyBOP simulation class. It was built off the PyBaMM simulation class.
+    This class constructs the PyBOP simulation class. It was initially built from the PyBaMM simulation class.
 
     Parameters:
     ================
@@ -320,6 +321,19 @@ class Simulation:
         self._solution = solver.solve(self.built_model, t_eval, **kwargs)
 
         return self.solution
+
+    def _get_esoh_solver(self, calc_esoh):
+        if (
+            calc_esoh is False
+            or isinstance(self.model, pybamm.lead_acid.BaseModel)
+            or isinstance(self.model, pybamm.equivalent_circuit.Thevenin)
+            or self.model.options["working electrode"] != "both"
+        ):
+            return None
+
+        return pybamm.lithium_ion.ElectrodeSOHSolver(
+            self.parameter_values, self.model.param
+        )
     
     def save(self, filename):
         """Save simulation using pickle"""
@@ -349,23 +363,34 @@ class Simulation:
         with open(filename, "wb") as f:
             pickle.dump(self, f, pickle.HIGHEST_PROTOCOL)
 
-    def _get_esoh_solver(self, calc_esoh):
-        if (
-            calc_esoh is False
-            or isinstance(self.model, pybamm.lead_acid.BaseModel)
-            or isinstance(self.model, pybamm.equivalent_circuit.Thevenin)
-            or self.model.options["working electrode"] != "both"
-        ):
-            return None
-
-        return pybamm.lithium_ion.ElectrodeSOHSolver(
-            self.parameter_values, self.model.param
-        )
-
     def load_sim(filename):
         """Load a saved simulation"""
         return pybamm.load(filename)
     
+    @property
+    def model(self):
+        return self._model
+
+    @model.setter
+    def model(self, model):
+        self._model = copy.copy(model)
+
+    @property
+    def model_with_set_params(self):
+        return self._model_with_set_params
+    
+    @property
+    def built_model(self):
+        return self._built_model
+    
+    @property
+    def geometry(self):
+        return self._geometry
+
+    @geometry.setter
+    def geometry(self, geometry):
+        self._geometry = geometry.copy()
+
     @property
     def parameter_values(self):
         return self._parameter_values
@@ -373,3 +398,51 @@ class Simulation:
     @parameter_values.setter
     def parameter_values(self, parameter_values):
         self._parameter_values = parameter_values.copy()
+
+    @property
+    def submesh_types(self):
+        return self._submesh_types
+
+    @submesh_types.setter
+    def submesh_types(self, submesh_types):
+        self._submesh_types = submesh_types.copy()
+
+    @property
+    def mesh(self):
+        return self._mesh
+
+    @property
+    def var_pts(self):
+        return self._var_pts
+
+    @var_pts.setter
+    def var_pts(self, var_pts):
+        self._var_pts = var_pts.copy()
+
+    @property
+    def spatial_methods(self):
+        return self._spatial_methods
+
+    @spatial_methods.setter
+    def spatial_methods(self, spatial_methods):
+        self._spatial_methods = spatial_methods.copy()
+
+    @property
+    def solver(self):
+        return self._solver
+
+    @solver.setter
+    def solver(self, solver):
+        self._solver = solver.copy()
+
+    @property
+    def output_variables(self):
+        return self._output_variables
+
+    @output_variables.setter
+    def output_variables(self, output_variables):
+        self._output_variables = copy.copy(output_variables)
+
+    @property
+    def solution(self):
+        return self._solution
