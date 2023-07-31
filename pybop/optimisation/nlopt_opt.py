@@ -16,7 +16,7 @@ class nlopt_opt(pybop.BaseOptimisation):
         self.options = options
         self.name = "NLOpt Optimisation"
 
-    def _runoptimise(cost_function, method, x0, bounds, options):
+    def _runoptimise(self):
         """
         Run the NLOpt opt method.
 
@@ -28,19 +28,18 @@ class nlopt_opt(pybop.BaseOptimisation):
         options: options dictionary
         bounds: bounds array
         """
-        if options.xtol != None:
-            opt.set_xtol_rel(options.xtol)
+        if self.options.xtol is not None:
+            opt.set_xtol_rel(self.options.xtol)
 
-        if method != None:
-            opt = nlopt.opt(method, len(x0))
+        if self.method is not None:
+            opt = nlopt.opt(self.method, len(self.x0))
         else:
-            opt = nlopt.opt(nlopt.LN_BOBYQA, len(x0))
+            opt = nlopt.opt(nlopt.LN_BOBYQA, len(self.x0))
 
-        opt.set_min_objective(cost_function)
-
-        opt.set_lower_bounds(bounds.lower)
-        opt.set_upper_bounds(bounds.upper)
-        results = opt.optimize(cost_function)
+        opt.set_min_objective(self.cost_function)
+        opt.set_lower_bounds(self.bounds.lower)
+        opt.set_upper_bounds(self.bounds.upper)
+        results = opt.optimize(self.cost_function)
         num_evals = opt.get_numevals()
 
         return results, opt.last_optimum_value(), num_evals

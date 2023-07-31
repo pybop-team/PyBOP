@@ -4,7 +4,7 @@ import numpy as np
 
 # Form list of applied current
 measured_expirement = [np.arange(0,3,0.1),np.ones([30])]
-current_interpolant = pybamm.Interpolant(measured_expirement[0], measured_expirement[1], pybamm.t)
+current_interpolant = pybamm.Interpolant(measured_expirement[0], measured_expirement[1], variable="time")
 
 # Create model & add applied current
 model = pybop.BaseSPM()
