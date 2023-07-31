@@ -36,6 +36,7 @@ setup(
         "scipy>=1.3",
         "pandas>=0.24",
         "casadi>=3.6.0",
+        "nlopt>=2.6",
 	],
 	# https://pypi.org/classifiers/ 
 	classifiers=[],

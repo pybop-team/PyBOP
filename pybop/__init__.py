@@ -31,7 +31,7 @@ script_path = os.path.abspath(__file__)
 from .models.base_model import BaseModel
 from .models.spm import BaseSPM
 
-# 
+#
 # Simulation class
 #
 from .simulation import Simulation

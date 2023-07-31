@@ -23,15 +23,16 @@ def is_notebook():
             return False  # Other type (?)
     except NameError:
         return False  # Probably standard Python interpreter
-    
+
+
 class Simulation:
     """
-    
+
     This class constructs the PyBOP simulation class. It was initially built from the PyBaMM simulation class.
 
     Parameters:
     ================
-   
+
 
     """
 
@@ -48,8 +49,10 @@ class Simulation:
         output_variables=None,
         C_rate=None,
     ):
-        self.parameter_values = initial_parameter_values or model.default_parameter_values
-        
+        self.parameter_values = (
+            initial_parameter_values or model.default_parameter_values
+        )
+
         # Check to see that current is provided as a drive_cycle
         current = self._parameter_values.get("Current function [A]")
         if isinstance(current, pybamm.Interpolant):
@@ -70,7 +73,7 @@ class Simulation:
                 "measured_experiment must be drive_cycle or C_rate with"
                 "matching sampling frequency between t_eval and measured data"
             )
-        
+
         self._unprocessed_model = model
         self.model = model
         self.geometry = geometry or self.model.default_geometry
@@ -98,10 +101,10 @@ class Simulation:
             warnings.filterwarnings("ignore")
 
         self.get_esoh_solver = lru_cache()(self._get_esoh_solver)
-        
+
     def set_parameters(self):
         """
-        Setter for parameter values 
+        Setter for parameter values
 
         Inputs:
         ============
@@ -115,7 +118,6 @@ class Simulation:
         )
         self._parameter_values.process_geometry(self.geometry)
         self.model = self._model_with_set_params
-
 
     def build(self, check_model=True, initial_soc=None):
         """
@@ -186,7 +188,7 @@ class Simulation:
         )
 
         return self.quick_plot
-    
+
     def create_gif(self, number_of_images=80, duration=0.1, output_filename="plot.gif"):
         """
         Create a gif of the parameterisation steps created by :meth:`pybamm.Simulation.plot`.
@@ -204,13 +206,13 @@ class Simulation:
         if self.quick_plot is None:
             self.quick_plot = pybamm.QuickPlot(self._solution)
 
-        #create_git needs to be updated
+        # create_git needs to be updated
         self.quick_plot.create_gif(
             number_of_images=number_of_images,
             duration=duration,
             output_filename=output_filename,
         )
-    
+
     def solve(
         self,
         t_eval=None,
@@ -334,7 +336,7 @@ class Simulation:
         return pybamm.lithium_ion.ElectrodeSOHSolver(
             self.parameter_values, self.model.param
         )
-    
+
     def save(self, filename):
         """Save simulation using pickle"""
         if self.model.convert_to_format == "python":
@@ -366,7 +368,7 @@ class Simulation:
     def load_sim(filename):
         """Load a saved simulation"""
         return pybamm.load(filename)
-    
+
     @property
     def model(self):
         return self._model
@@ -378,11 +380,11 @@ class Simulation:
     @property
     def model_with_set_params(self):
         return self._model_with_set_params
-    
+
     @property
     def built_model(self):
         return self._built_model
-    
+
     @property
     def geometry(self):
         return self._geometry
