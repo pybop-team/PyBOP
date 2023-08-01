@@ -1,3 +1,4 @@
+from typing import Any
 import pybop
 import pybamm
 
@@ -7,9 +8,10 @@ class Parameter:
     Class for creating parameters in pybop.
     """
 
-    def __init__(self, param, prior=None, bounds=None):
+    def __init__(self, param, value=None, prior=None, bounds=None):
         self.name = param
         self.prior = prior
+        self.value = value
         self.bounds = bounds
 
         # To Do:

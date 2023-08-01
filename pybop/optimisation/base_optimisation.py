@@ -11,17 +11,17 @@ class BaseOptimisation(object):
     def __init__(self):
         self.name = "Base Optimisation"
 
-    def optimise(self, cost_function, method=None, x0=None, bounds=None, options=None):
+    def optimise(self, cost_function, x0, method=None, bounds=None, options=None):
         """
         Optimise method to be overloaded by child classes.
 
         """
         # Set up optimisation
         self.cost_function = cost_function
-        self.x0 = x0 or cost_function.x0
+        self.x0 = x0
         self.options = options
-        self.method = method or cost_function.default_method
-        self.bounds = bounds or cost_function.bounds
+        self.method = method
+        self.bounds = bounds
 
         # Run optimisation
         result = self._runoptimise(

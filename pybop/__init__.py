@@ -48,15 +48,17 @@ from .observations import Observed
 from .priors import Gaussian, Uniform, Exponential
 
 #
+# Simulation class
+#
+from .simulation import Simulation
+
+
+#
 # Optimisation class
 #
 from .optimisation.base_optimisation import BaseOptimisation
 from .optimisation.nlopt_opt import nlopt_opt
-
-#
-# Utility classes and methods
-#
-from .utils import Interpolant
+from .optimisation.scipy_opt import scipy_opt
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop

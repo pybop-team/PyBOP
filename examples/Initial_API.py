@@ -8,27 +8,26 @@ observation = [
     pybop.Observed(["Voltage [V]"], np.ones([30]) * 4.0)
 ]
 
-# Create model & initial parameter set
+# Create model
 model = pybop.models.lithium_ion.SPM()
-param = model.pybamm_model.default_parameter_values # or pybop.ParameterValues("Chen2020")
 
 # Fitting parameters
-param = (
-    pybop.Parameter("Electrode height [m]", prior = pybop.Gaussian(0,1)),
-    pybop.Parameter("Negative particle radius [m]", prior = pybop.Uniform(0,1)),
-    pybop.Parameter("Postive particle radius", prior = pybop.Uniform(0,1))
+params = (
+    pybop.Parameter("Electrode height [m]", prior = pybop.Gaussian(0,1), bounds = (0,1)),
+    pybop.Parameter("Negative particle radius [m]", prior = pybop.Uniform(0,1), bounds = (0,1)),
+    pybop.Parameter("Positive particle radius [m]", prior = pybop.Uniform(0,1), bounds = (0,1))
 )
 
-parameterisation = pybop.Parameterisation(model, observation=observation, parameters=param)
+parameterisation = pybop.Parameterisation(model, observations=observation, fit_parameters=params)
 
 # get RMSE estimate
 parameterisation.rmse()
 
 # get MAP estimate, starting at a random initial point in parameter space
-parameterisation.map(x0=[p.sample() for p in parameters]) 
+parameterisation.map(x0=[p.sample() for p in params]) 
 
 # or sample from posterior
-paramterisation.sample(1000, n_chains=4, ....)
+parameterisation.sample(1000, n_chains=4, ....)
 
 # or SOBER
 parameterisation.sober()

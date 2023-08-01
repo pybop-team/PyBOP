@@ -8,24 +8,26 @@ class Parameterisation:
     Parameterisation class for pybop.
     """
 
-    def __init__(self, model, observations, parameters, x0=None, options=None):
+    def __init__(self, model, observations, fit_parameters, x0=None, options=None):
         self.model = model
-        self.parameters = parameters
+        self.fit_parameters = fit_parameters
         self.observations = observations
         self.options = options
-        self.default_parameters = (
-            parameters.default_parameters
-            or self.model.pybamm_model.default_parameter_values
-        )
+
         # To Do:
         # Split observations into forward model inputs/outputs
         # checks on observations and parameters
 
-        if x0 is None:
-            self.x0 = np.zeros(len(self.parameters))
+        if options is not None:
+            self.parameter_set = options.parameter_set
+        else:
+            self.parameter_set = self.model.pybamm_model.default_parameter_values
 
-        self.sim = pybop.Simulation(
-            self.model.pybamm_model, parameter_values=self.default_parameters
+        if x0 is None:
+            self.x0 = np.ones(len(self.fit_parameters)) * 0.1
+
+        self.sim = pybamm.Simulation(
+            self.model.pybamm_model, parameter_values=self.parameter_set
         )
 
     def map(self, x0):
@@ -46,17 +48,25 @@ class Parameterisation:
         """
 
         def step(x):
-            self.parameters.update(lambda x: {p: x[i] for i, p in self.parameters})
+            for i in range(len(self.fit_parameters)):
+                self.sim.parameter_set.update(
+                    {
+                        self.fit_parameters[i]
+                        .name: self.fit_parameters[i]
+                        .prior.rvs(1)[0]
+                    }
+                )
+
             y_hat = self.sim.solve()["Terminal voltage [V]"].data
             return np.sqrt(np.mean((self.observations["Voltage [V]"] - y_hat) ** 2))
 
         if method == "nlopt":
-            results = pybop.opt.nlopt(
-                step, self.x0, self.parameters.bounds, self.options
+            results = pybop.nlopt_opt(
+                step, self.x0, [p.bounds for p in self.fit_parameters], self.options
             )
         else:
-            results = pybop.opt.scipy(
-                step, self.x0, self.parameters.bounds, self.options
+            results = pybop.scipy_opt.optimise(
+                step, self.x0, [p.bounds for p in self.fit_parameters], self.options
             )
         return results
 
@@ -65,3 +75,5 @@ class Parameterisation:
         Maximum likelihood estimation.
         """
         pass
+
+        [p for p in self.fit_parameters]
