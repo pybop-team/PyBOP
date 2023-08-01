@@ -8,21 +8,21 @@ class Parameterisation:
     Parameterisation class for pybop.
     """
 
-    def __init__(self, model, observations, parameters, x0=None):
+    def __init__(self, model, observations, parameters, x0=None, options=None):
         self.model = model
         self.parameters = parameters
         self.observations = observations
+        self.options = options
         self.default_parameters = (
             parameters.default_parameters
             or self.model.pybamm_model.default_parameter_values
         )
-
-        if x0 is None:
-            self.x0 = np.zeros(len(self.parameters))
-
         # To Do:
         # Split observations into forward model inputs/outputs
         # checks on observations and parameters
+        
+        if x0 is None:
+            self.x0 = np.zeros(len(self.parameters))
 
         self.sim = pybop.Simulation(
             self.model.pybamm_model, parameter_values=self.default_parameters

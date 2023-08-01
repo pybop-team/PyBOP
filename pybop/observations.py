@@ -11,7 +11,7 @@ class Observed:
     def __init__(self, name, data):
         self.name = name
         self.data = data
-    
+
     def Interpolant(self):
         if self.variable == "time":
             self.Interpolant = pybamm.Interpolant(self.x, self.y, pybamm.t)

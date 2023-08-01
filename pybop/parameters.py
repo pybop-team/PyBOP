@@ -17,3 +17,6 @@ class Parameter:
         # parameter check
         # bounds checks and set defaults
         # implement methods to assign and retrieve parameters
+
+    def __repr__(self):
+        return f"Parameter: {self.name} \n Prior: {self.prior} \n Bounds: {self.bounds}"

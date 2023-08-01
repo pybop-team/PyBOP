@@ -43,6 +43,11 @@ from .parameters import Parameter
 from .observations import Observed
 
 #
+# Priors class
+#
+from .priors import Gaussian, Uniform, Exponential
+
+#
 # Optimisation class
 #
 from .optimisation.base_optimisation import BaseOptimisation
