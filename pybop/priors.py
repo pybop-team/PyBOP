@@ -24,9 +24,10 @@ class Gaussian:
             raise ValueError("size must be positive")
         else:
             return stats.norm.rvs(loc=self.mean, scale=self.sigma, size=size)
-    
+
     def __repr__(self):
         return f"{self.name}, mean: {self.mean}, sigma: {self.sigma}"
+
 
 class Uniform:
     """
@@ -48,9 +49,13 @@ class Uniform:
         if size < 0:
             raise ValueError("size must be positive")
         else:
-            return stats.uniform.rvs(loc=self.lower, scale=self.upper - self.lower, size=size)
+            return stats.uniform.rvs(
+                loc=self.lower, scale=self.upper - self.lower, size=size
+            )
+
     def __repr__(self):
         return f"{self.name}, lower: {self.lower}, upper: {self.upper}"
+
 
 class Exponential:
     """
@@ -72,5 +77,6 @@ class Exponential:
             raise ValueError("size must be positive")
         else:
             return stats.expon.rvs(scale=self.scale, size=size)
+
     def __repr__(self):
         return f"{self.name}, scale: {self.scale}"

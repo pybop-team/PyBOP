@@ -14,8 +14,8 @@ param = model.pybamm_model.default_parameter_values # or pybop.ParameterValues("
 
 # Fitting parameters
 param = (
-    pybop.Parameter("Electrode height [m]", prior = pybop.Normal(0,1))
-    pybop.Parameter("Negative particle radius [m]", prior = pybop.Uniform(0,1))
+    pybop.Parameter("Electrode height [m]", prior = pybop.Gaussian(0,1)),
+    pybop.Parameter("Negative particle radius [m]", prior = pybop.Uniform(0,1)),
     pybop.Parameter("Postive particle radius", prior = pybop.Uniform(0,1))
 )
 
@@ -35,5 +35,3 @@ parameterisation.sober()
 
 
 #Optimisation = pybop.optimisation(model, cost=cost, parameters=parameters, observation=observation)
-
-

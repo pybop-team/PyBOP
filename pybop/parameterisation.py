@@ -20,7 +20,7 @@ class Parameterisation:
         # To Do:
         # Split observations into forward model inputs/outputs
         # checks on observations and parameters
-        
+
         if x0 is None:
             self.x0 = np.zeros(len(self.parameters))
 

@@ -28,12 +28,14 @@ class scipy_opt(pybop.BaseOptimisation):
         options: options dictionary
         bounds: bounds array
         """
-  
+
         if self.method is not None and self.bounds is not None:
-            opt = minimize(self.cost_function, self.x0, method = self.method, bounds = self.bounds)
-        elif self.method is not None: 
-            opt = minimize(self.cost_function, self.x0, method = self.method)
+            opt = minimize(
+                self.cost_function, self.x0, method=self.method, bounds=self.bounds
+            )
+        elif self.method is not None:
+            opt = minimize(self.cost_function, self.x0, method=self.method)
         else:
-            opt = minimize(self.cost_function, self.x0, method = 'BFGS')
+            opt = minimize(self.cost_function, self.x0, method="BFGS")
 
         return opt
