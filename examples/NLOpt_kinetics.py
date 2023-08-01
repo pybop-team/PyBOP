@@ -19,7 +19,7 @@ param = (
     pybop.Parameter("Postive particle radius", prior = pybop.Uniform(0,1))
 )
 
-parameterisation =  pybop.Parameterisation(model, observation=observation, parameters=param)
+parameterisation = pybop.Parameterisation(model, observation=observation, parameters=param)
 
 # get RMSE estimate
 parameterisation.rmse()
