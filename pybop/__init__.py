@@ -52,13 +52,12 @@ from .priors import Gaussian, Uniform, Exponential
 #
 from .simulation import Simulation
 
-
 #
 # Optimisation class
 #
 from .optimisation.base_optimisation import BaseOptimisation
-from .optimisation.nlopt_opt import nlopt_opt
-from .optimisation.scipy_opt import scipy_opt
+from .optimisation.nlopt_opt import NLoptOptimize
+from .optimisation.scipy_opt import ScipyMinimize
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop

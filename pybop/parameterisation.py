@@ -3,6 +3,12 @@ import pybamm
 import numpy as np
 
 
+# To Do:
+# checks on observations and parameters
+# implement method to update parameterisation without reconstructing the simulation
+# Geometric parameters might always require reconstruction (i.e. electrode height)
+
+
 class Parameterisation:
     """
     Parameterisation class for pybop.
@@ -13,21 +19,32 @@ class Parameterisation:
         self.fit_parameters = fit_parameters
         self.observations = observations
         self.options = options
-
-        # To Do:
-        # Split observations into forward model inputs/outputs
-        # checks on observations and parameters
+        self.bounds = dict(
+            lower=[p.bounds[0] for p in fit_parameters],
+            upper=[p.bounds[1] for p in fit_parameters],
+        )
 
         if options is not None:
             self.parameter_set = options.parameter_set
         else:
             self.parameter_set = self.model.pybamm_model.default_parameter_values
 
-        if x0 is None:
-            self.x0 = np.ones(len(self.fit_parameters)) * 0.1
+        try:
+            self.parameter_set["Current function [A]"] = pybamm.Interpolant(
+                self.observations["Time"].data,
+                self.observations["Current"].data,
+                pybamm.t,
+            )
+        except:
+            raise ValueError("Current function not supplied")
 
-        self.sim = pybamm.Simulation(
-            self.model.pybamm_model, parameter_values=self.parameter_set
+        if x0 is None:
+            self.x0 = np.mean([self.bounds["lower"], self.bounds["upper"]], axis=0)
+
+        self.sim = pybop.Simulation(
+            self.model.pybamm_model,
+            parameter_values=self.parameter_set,
+            solver=pybamm.CasadiSolver(),
         )
 
     def map(self, x0):
@@ -47,27 +64,33 @@ class Parameterisation:
         Calculate the root mean squared error.
         """
 
-        def step(x):
+        def step(x, grad):
             for i in range(len(self.fit_parameters)):
-                self.sim.parameter_set.update(
-                    {
-                        self.fit_parameters[i]
-                        .name: self.fit_parameters[i]
-                        .prior.rvs(1)[0]
-                    }
-                )
+                self.parameter_set.update({self.fit_parameters[i].name: x[i]})
 
+            self.sim = pybamm.Simulation(
+                self.model.pybamm_model,
+                parameter_values=self.parameter_set,
+                solver=pybamm.CasadiSolver(),
+            )
             y_hat = self.sim.solve()["Terminal voltage [V]"].data
-            return np.sqrt(np.mean((self.observations["Voltage [V]"] - y_hat) ** 2))
+
+            try:
+                res = np.sqrt(
+                    np.mean((self.observations["Voltage"].data[1] - y_hat) ** 2)
+                )
+            except:
+                raise ValueError(
+                    "Measurement and modelled data length mismatch, potentially due to voltage cut-offs"
+                )
+            return res
 
         if method == "nlopt":
-            results = pybop.nlopt_opt(
-                step, self.x0, [p.bounds for p in self.fit_parameters], self.options
-            )
+            optim = pybop.NLoptOptimize(x0=self.x0)
+            results = optim.optimise(step, self.x0, self.bounds)
         else:
-            results = pybop.scipy_opt.optimise(
-                step, self.x0, [p.bounds for p in self.fit_parameters], self.options
-            )
+            optim = pybop.NLoptOptimize(method)
+            results = optim.optimise(step, self.x0, self.bounds)
         return results
 
     def mle(self, method):
@@ -75,5 +98,3 @@ class Parameterisation:
         Maximum likelihood estimation.
         """
         pass
-
-        [p for p in self.fit_parameters]

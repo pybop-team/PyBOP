@@ -41,7 +41,7 @@ class Simulation:
         model,
         measured_experiment=None,
         geometry=None,
-        initial_parameter_values=None,
+        parameter_values=None,
         submesh_types=None,
         var_pts=None,
         spatial_methods=None,
@@ -49,9 +49,7 @@ class Simulation:
         output_variables=None,
         C_rate=None,
     ):
-        self.parameter_values = (
-            initial_parameter_values or model.default_parameter_values
-        )
+        self.parameter_values = parameter_values or model.default_parameter_values
 
         # Check to see that current is provided as a drive_cycle
         current = self._parameter_values.get("Current function [A]")

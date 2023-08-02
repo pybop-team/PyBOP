@@ -2,7 +2,7 @@ import pybop
 from scipy.optimize import minimize
 
 
-class scipy_opt(pybop.BaseOptimisation):
+class ScipyMinimize(pybop.BaseOptimisation):
     """
     Wrapper class for the Scipy optimisation class. Extends the BaseOptimisation class.
     """
