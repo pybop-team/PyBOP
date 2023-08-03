@@ -1,28 +1,35 @@
-import botorch
-import scipy
-import numpy 
+import pybop
 
-class BaseOptimisation():
+
+class BaseOptimisation(object):
     """
-    
+
     Base class for the optimisation methods.
-    
+
     """
 
     def __init__(self):
-
-        """
-
-        Initialise and name class.
-        
-        """
         self.name = "Base Optimisation"
 
-
-
-    def NelderMead(self, fun, x0, options):
+    def optimise(self, cost_function, x0, bounds, method=None):
         """
-        PRISM optimiser using Nelder-Mead.
+        Optimise method to be overloaded by child classes.
+
         """
-        res = scipy.optimize(fun, x0, method='nelder-mead', 
-        options={'xatol': 1e-8, 'disp': True})
+        # Set up optimisation
+        self.cost_function = cost_function
+        self.x0 = x0
+        self.method = method
+        self.bounds = bounds
+
+        # Run optimisation
+        result = self._runoptimise(self.cost_function, self.x0, self.bounds)
+
+        return result
+
+    def _runoptimise(self, cost_function, x0, bounds):
+        """
+        Run optimisation method, to be overloaded by child classes.
+
+        """
+        pass

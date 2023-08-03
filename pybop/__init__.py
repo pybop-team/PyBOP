@@ -2,8 +2,8 @@
 # Root of the pybop module.
 # Provides access to all shared functionality (models, solvers, etc.).
 #
-# The code in this file is adapted from pybamm
-# (see https://github.com/pybamm-team/pybamm)
+# The code in this file is adapted from Pints
+# (see https://github.com/pints-team/pints)
 #
 
 import sys
@@ -28,8 +28,36 @@ script_path = os.path.abspath(__file__)
 #
 # Model Classes
 #
-from .models.base_model import BaseModel
-from .models.spm import BaseSPM
+from .models import lithium_ion
+
+#
+# Parameterisation class
+#
+
+from .parameterisation import Parameterisation
+from .parameters import Parameter
+
+#
+# Observation class
+#
+from .observations import Observed
+
+#
+# Priors class
+#
+from .priors import Gaussian, Uniform, Exponential
+
+#
+# Simulation class
+#
+from .simulation import Simulation
+
+#
+# Optimisation class
+#
+from .optimisation.base_optimisation import BaseOptimisation
+from .optimisation.nlopt_opt import NLoptOptimize
+from .optimisation.scipy_opt import ScipyMinimize
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop
