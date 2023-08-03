@@ -59,6 +59,12 @@ class Parameterisation:
         """
         pass
 
+    def pem(self, method=None):
+        """
+        Predictive error minimisation.
+        """
+        pass
+
     def rmse(self, method=None):
         """
         Calculate the root mean squared error.
@@ -93,8 +99,9 @@ class Parameterisation:
             results = optim.optimise(step, self.x0, self.bounds)
         return results
 
-    def mle(self, method):
+    def mle(self, method=None):
         """
         Maximum likelihood estimation.
         """
         pass
+
