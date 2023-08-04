@@ -4,21 +4,23 @@ import numpy as np
 
 # Form observations
 Measurements = pd.read_csv("examples/Chen_example.csv", comment='#').to_numpy() 
-observations = dict(
-    Time = pybop.Observed(["Time [s]"], Measurements[:,0]), 
-    Current = pybop.Observed(["Current function [A]"], Measurements[:,1]),
-    Voltage = pybop.Observed(["Voltage [V]"], Measurements[:,2])
-)
+observations = {
+    "Time [s]": pybop.Observed(["Time [s]"], Measurements[:,0]), 
+    "Current function [A]": pybop.Observed(["Current function [A]"], Measurements[:,1]),
+    "Voltage [V]": pybop.Observed(["Voltage [V]"], Measurements[:,2])
+}
  
 # Define model
 model = pybop.models.lithium_ion.SPM()
+model.parameter_values = pybop.ParameterSet("Chen2020") #To implement
 
 # Fitting parameters
-params = (
-    pybop.Parameter("Electrode height [m]", prior = pybop.Gaussian(0,1), bounds = (0.03,0.1)), 
-    pybop.Parameter("Negative particle radius [m]", prior = pybop.Uniform(0,1), bounds = (0.1e-6,0.8e-6)),
-    pybop.Parameter("Positive particle radius [m]", prior = pybop.Uniform(0,1), bounds = (0.1e-5,0.8e-5))
-)
+params = {
+    "Upper voltage cut-off [V]": pybop.Parameter("Upper voltage cut-off [V]", prior = pybop.Gaussian(4.0,0.01), bounds = [3.8,4.1])
+    # "Electrode height [m]": pybop.Parameter("Electrode height [m]", prior = pybop.Gaussian(0,1), bounds = [0.03,0.1]), 
+    # "Negative particle radius [m]": pybop.Parameter("Negative particle radius [m]", prior = pybop.Gaussian(0,1), bounds = [0.1e-6,0.8e-6]),
+    # "Positive particle radius [m]": pybop.Parameter("Positive particle radius [m]", prior = pybop.Gaussian(0,1), bounds = [0.1e-5,0.8e-5])
+}
 
 parameterisation = pybop.Parameterisation(model, observations=observations, fit_parameters=params)
 
