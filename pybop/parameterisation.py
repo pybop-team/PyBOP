@@ -25,8 +25,8 @@ class Parameterisation:
         )
 
         if model.pybamm_model is not None:
-            if options is not None:
-                self.parameter_set = options.parameter_set
+            if model.parameter_set is not None:
+                self.parameter_set = model.parameter_set
             else:
                 self.parameter_set = self.model.pybamm_model.default_parameter_values
 

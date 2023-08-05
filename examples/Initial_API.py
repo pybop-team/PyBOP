@@ -12,7 +12,7 @@ observations = {
  
 # Define model
 model = pybop.models.lithium_ion.SPM()
-model.parameter_values = pybop.ParameterSet("Chen2020") #To implement
+model.parameter_set = pybop.ParameterSet("pybamm", "Chen2020") #To implement
 
 # Fitting parameters
 params = {
