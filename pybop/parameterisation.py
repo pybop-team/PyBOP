@@ -72,7 +72,24 @@ class Parameterisation:
             self.solver = pybamm.CasadiSolver()
         else:
             raise ValueError("No pybamm model supplied")
-
+        
+    def build_model(self):
+        """
+        Build the model.
+        """
+        
+        if self.model.pybamm_model.built_model:
+            return
+        elif self.model.pybamm_model.is_discretised:
+            self.model.pybamm_model._model_with_set_params = self.model.pybamm_model
+            self.model.pybamm_model._built_model = self.pybamm_model
+        else:
+            # Set parameters
+            # Mesh
+            # Discretise
+            # Built model
+            pass
+        
 
     def map(self, x0):
         """
