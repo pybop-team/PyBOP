@@ -5,7 +5,6 @@ import numpy as np
 
 # To Do:
 # checks on observations and parameters
-# implement method to update parameterisation without reconstructing the simulation
 # Geometric parameters might always require reconstruction (i.e. electrode height)
 
 
@@ -44,6 +43,9 @@ class Parameterisation:
         self._spatial_methods = spatial_methods or self.model.default_spatial_methods
         self.solver = solver or self.model.default_solver
 
+        # Set solver
+        self.solver = pybamm.CasadiSolver()
+
         if model.parameter_set is not None:
             self.parameter_set = model.parameter_set
         else:
@@ -75,9 +77,6 @@ class Parameterisation:
 
         self.build_model(check_model=check_model, init_soc=init_soc)
 
-        # Set solver
-        self.solver = pybamm.CasadiSolver()
-
     def build_model(self, check_model=True, init_soc=None):
         """
         Build the model (if not built already).
@@ -88,8 +87,8 @@ class Parameterisation:
         if self._built_model:
             return
         elif self.model.is_discretised:
-            self.model._model_with_set_params = self.model.pybamm_model
-            self.model._built_model = self.pybamm_model
+            self.model._model_with_set_params = self.model
+            self.model._built_model = self.model
         else:
             self.set_params()
             self._mesh = pybamm.Mesh(self._geometry, self._submesh_types, self._var_pts)
@@ -180,6 +179,7 @@ class Parameterisation:
         if method == "nlopt":
             optim = pybop.NLoptOptimize(x0=self.x0)
             results = optim.optimise(step, self.x0, self.bounds)
+
         else:
             optim = pybop.NLoptOptimize(method)
             results = optim.optimise(step, self.x0, self.bounds)

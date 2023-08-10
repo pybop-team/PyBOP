@@ -12,15 +12,12 @@ observations = {
  
 # Define model
 model = pybop.models.lithium_ion.SPM()
-model.parameter_set = pybop.ParameterSet("pybamm", "Chen2020") #To implement
+model.parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
 
 # Fitting parameters
 params = {
-    # "Upper voltage cut-off [V]": pybop.Parameter("Upper voltage cut-off [V]", prior = pybop.Gaussian(4.0,0.01), bounds = [3.8,4.1])
-    # "Electrode height [m]": pybop.Parameter("Electrode height [m]", prior = pybop.Gaussian(0,1), bounds = [0.03,0.1]), 
-     "Negative electrode Bruggeman coefficient (electrolyte)": pybop.Parameter("Negative electrode Bruggeman coefficient (electrolyte)", prior = pybop.Gaussian(1.5,0.1), bounds = [0.8,1.7]), 
-    # "Negative particle radius [m]": pybop.Parameter("Negative particle radius [m]", prior = pybop.Gaussian(0,1), bounds = [0.1e-6,0.8e-6]),
-    # "Positive particle radius [m]": pybop.Parameter("Positive particle radius [m]", prior = pybop.Gaussian(0,1), bounds = [0.1e-5,0.8e-5])
+    "Negative electrode active material volume fraction": pybop.Parameter("Negative electrode active material volume fraction", prior = pybop.Gaussian(0.6,0.1), bounds = [0.1,0.9]), 
+    "Positive electrode active material volume fraction": pybop.Parameter("Positive electrode active material volume fraction", prior = pybop.Gaussian(0.6,0.1), bounds = [0.1,0.9]), 
 }
 
 parameterisation = pybop.Parameterisation(model, observations=observations, fit_parameters=params)

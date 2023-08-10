@@ -53,11 +53,6 @@ from .observations import Observed
 from .priors import Gaussian, Uniform, Exponential
 
 #
-# Simulation class
-#
-from .simulation import Simulation
-
-#
 # Optimisation class
 #
 from .optimisation.base_optimisation import BaseOptimisation
