@@ -33,8 +33,8 @@ setup(
 	install_requires=[
         "pybamm>=23.1",
         "numpy>=1.16",
-        "scipy>=1.11",
-        "pandas>=2.0",
+        "scipy>=1.3",
+        "pandas>=1.0",
         "casadi>=3.6",
         "nlopt>=2.6",
 	],
