@@ -1,4 +1,4 @@
-name: Python package
+name: PyBOP
 
 on: [push]
 
@@ -21,6 +21,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install --upgrade pip nox
           pip install -e .
-      - name: Test with pytest
+      - name: Test with nox
         run: |
-          pytest
+          nox
