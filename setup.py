@@ -32,7 +32,7 @@ setup(
 	# List of packages to install with this one 
 	install_requires=[
         "pybamm>=23.1",
-        "numpy>=1.25",
+        "numpy>=1.16",
         "scipy>=1.11",
         "pandas>=2.0",
         "casadi>=3.6",
