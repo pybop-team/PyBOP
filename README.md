@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Build Status](https://github.com/pybop-team/PyBOP/actions/workflows/CI/badge.svg)](https://github.com/pybop-team/PyBOP/actions)
+[![Build Status](https://github.com/pybop-team/PyBOP/actions/workflows/test_on_push.yaml/badge.svg?branch=develop)](https://github.com/pybop-team/PyBOP/actions/workflows/test_on_push.yaml)
 
 </div>
 
