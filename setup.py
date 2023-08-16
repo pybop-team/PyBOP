@@ -31,11 +31,11 @@ setup(
 	url='https://github.com/pybop-team/PyBOP',
 	# List of packages to install with this one 
 	install_requires=[
-        "pybamm>=23.1"
-        "numpy>=1.16",
-        "scipy>=1.3",
-        "pandas>=0.24",
-        "casadi>=3.6.0",
+        "pybamm>=23.1",
+        "numpy>=1.25",
+        "scipy>=1.11",
+        "pandas>=2.0",
+        "casadi>=3.6",
         "nlopt>=2.6",
 	],
 	# https://pypi.org/classifiers/ 

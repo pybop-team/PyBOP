@@ -133,9 +133,28 @@ class Parameterisation:
         self.parameter_set.process_geometry(self._geometry)
         self.model = self._model_with_set_params
 
+    def step(self, signal, x, grad):
+        for i, p in enumerate(self.fit_dict):
+            self.fit_dict[p] = x[i]
+        print(self.fit_dict)
+
+        y_hat = self.solver.solve(
+            self._built_model, self.time_data, inputs=self.fit_dict
+        )[signal].data
+
+        try:
+            res = np.sqrt(
+                np.mean((self.observations["Voltage [V]"].data[1] - y_hat) ** 2)
+            )
+        except:
+            raise ValueError(
+                "Measurement and modelled data length mismatch, potentially due to reaching a voltage cut-off"
+            )
+        return res
+
     def map(self, x0):
         """
-        Max a posteriori estimation.
+        Maximum a posteriori estimation.
         """
         pass
 
@@ -151,38 +170,20 @@ class Parameterisation:
         """
         pass
 
-    def rmse(self, method=None):
+    def rmse(self, signal, method=None):
         """
         Calculate the root mean squared error.
         """
 
-        def step(x, grad):
-            for i, p in enumerate(self.fit_dict):
-                self.fit_dict[p] = x[i]
-            print(self.fit_dict)
-
-            y_hat = self.solver.solve(
-                self._built_model, self.time_data, inputs=self.fit_dict
-            )["Terminal voltage [V]"].data
-
-            try:
-                res = np.sqrt(
-                    np.mean((self.observations["Voltage [V]"].data[1] - y_hat) ** 2)
-                )
-            except:
-                raise ValueError(
-                    "Measurement and modelled data length mismatch, potentially due to voltage cut-offs"
-                )
-            print(res)
-            return res
-
         if method == "nlopt":
             optim = pybop.NLoptOptimize(x0=self.x0)
-            results = optim.optimise(step, self.x0, self.bounds)
+            results = optim.optimise(
+                lambda x, grad: self.step(signal, x, grad), self.x0, self.bounds
+            )
 
         else:
             optim = pybop.NLoptOptimize(method)
-            results = optim.optimise(step, self.x0, self.bounds)
+            results = optim.optimise(self.step, self.x0, self.bounds)
         return results
 
     def mle(self, method=None):

@@ -16,14 +16,14 @@ model.parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
 
 # Fitting parameters
 params = {
-    "Negative electrode active material volume fraction": pybop.Parameter("Negative electrode active material volume fraction", prior = pybop.Gaussian(0.6,0.1), bounds = [0.1,0.9]), 
-    "Positive electrode active material volume fraction": pybop.Parameter("Positive electrode active material volume fraction", prior = pybop.Gaussian(0.6,0.1), bounds = [0.1,0.9]), 
+    "Negative electrode active material volume fraction": pybop.Parameter("Negative electrode active material volume fraction", prior = pybop.Gaussian(0.6,0.1), bounds = [0.05,0.95]), 
+    "Positive electrode active material volume fraction": pybop.Parameter("Positive electrode active material volume fraction", prior = pybop.Gaussian(0.6,0.1), bounds = [0.05,0.95]), 
 }
 
 parameterisation = pybop.Parameterisation(model, observations=observations, fit_parameters=params)
 
-# get RMSE estimate
-results, last_optim, num_evals = parameterisation.rmse(method="nlopt")
+# get RMSE estimate using NLOpt
+results, last_optim, num_evals = parameterisation.rmse(signal="Voltage [V]", method="nlopt")
 
 # get MAP estimate, starting at a random initial point in parameter space
 # parameterisation.map(x0=[p.sample() for p in params]) 
