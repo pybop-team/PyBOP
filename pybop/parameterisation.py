@@ -30,7 +30,12 @@ class Parameterisation:
         self.model = model.pybamm_model
         self._unprocessed_model = model.pybamm_model
         self.fit_parameters = fit_parameters
-        self.observations = observations
+
+        self.observations = {o.name: o for o in observations} # needs to be fixed
+        for name in ["Time [s]", "Current function [A]"]:
+            if name not in self.observations:
+                raise ValueError(f"expected {name} in list of observations")
+
         self.bounds = dict(
             lower=[self.fit_parameters[p].bounds[0] for p in self.fit_parameters],
             upper=[self.fit_parameters[p].bounds[1] for p in self.fit_parameters],
@@ -61,7 +66,10 @@ class Parameterisation:
             raise ValueError("Current function not supplied")
 
         if x0 is None:
-            self.x0 = np.mean([self.bounds["lower"], self.bounds["upper"]], axis=0)
+            self.x0 = np.zeros(len(self.fit_parameters))
+
+            for i, j in enumerate(self.fit_parameters):
+                self.x0[i] = self.fit_parameters[j].prior.rvs(1)
 
         # set input parameters in parameter set from fitting parameters
         for i in self.fit_parameters:
