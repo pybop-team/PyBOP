@@ -29,9 +29,10 @@ class Parameterisation:
     ):
         self.model = model.pybamm_model
         self._unprocessed_model = model.pybamm_model
-        self.fit_parameters = fit_parameters
+        self.fit_parameters = {o.name: o for o in fit_parameters}
+        self.observations = {o.name: o for o in observations}
 
-        self.observations = {o.name: o for o in observations} # needs to be fixed
+        # Check that the observations contain time and current
         for name in ["Time [s]", "Current function [A]"]:
             if name not in self.observations:
                 raise ValueError(f"expected {name} in list of observations")
@@ -67,7 +68,6 @@ class Parameterisation:
 
         if x0 is None:
             self.x0 = np.zeros(len(self.fit_parameters))
-
             for i, j in enumerate(self.fit_parameters):
                 self.x0[i] = self.fit_parameters[j].prior.rvs(1)
 
