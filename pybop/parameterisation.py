@@ -69,7 +69,7 @@ class Parameterisation:
         if x0 is None:
             self.x0 = np.zeros(len(self.fit_parameters))
             for i, j in enumerate(self.fit_parameters):
-                self.x0[i] = self.fit_parameters[j].prior.rvs(1)
+                self.x0[i] = self.fit_parameters[j].prior.rvs(1)[0]
 
         # set input parameters in parameter set from fitting parameters
         for i in self.fit_parameters:
