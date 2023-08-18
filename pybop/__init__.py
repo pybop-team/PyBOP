@@ -28,6 +28,7 @@ script_path = os.path.abspath(__file__)
 #
 # Model Classes
 #
+from .models import BaseModel
 from .models import lithium_ion
 
 #
