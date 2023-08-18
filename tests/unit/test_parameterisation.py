@@ -1,17 +1,43 @@
 import pybop
 import pytest
+import pybamm
 import numpy as np
 import pandas as pd
 
 
 class TestParameterisation:
+    def getdata(self, x1, x2):
+        model = pybamm.lithium_ion.SPM()
+        params = pybamm.ParameterValues("Chen2020")
+
+        params.update(
+            {
+                "Negative electrode active material volume fraction": x1,
+                "Positive electrode active material volume fraction": x2,
+            }
+        )
+        experiment = pybamm.Experiment(
+            [
+                (
+                    "Discharge at 0.5C for 5 minutes (1 second period)",
+                    "Rest for 2 minutes (1 second period)",
+                    "Charge at 0.5C for 2.5 minutes (1 second period)",
+                    "Rest for 2 minutes (1 second period)",
+                ),
+            ]
+            * 2
+        )
+        sim = pybamm.Simulation(model, experiment=experiment, parameter_values=params)
+        return sim.solve(initial_soc=0.5)
+
     def test_rmse(self):
         # Form observations
-        Measurements = pd.read_csv("examples/Chen_example.csv", comment="#").to_numpy()
+        solution = self.getdata(0.6, 0.6)
+
         observations = [
-            pybop.Observed("Time [s]", Measurements[:, 0]),
-            pybop.Observed("Current function [A]", Measurements[:, 1]),
-            pybop.Observed("Voltage [V]", Measurements[:, 2]),
+            pybop.Observed("Time [s]", solution["Time [s]"].data),
+            pybop.Observed("Current function [A]", solution["Current [A]"].data),
+            pybop.Observed("Voltage [V]", solution["Terminal voltage [V]"].data),
         ]
 
         # Define model

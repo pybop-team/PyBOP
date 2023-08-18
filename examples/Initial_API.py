@@ -11,20 +11,20 @@ observations = [
 ]
 
 # Define model
-model = pybop.models.lithium_ion.SPM()
-model.parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
+parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
+model = pybop.models.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
 params = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.6, 0.1),
-        bounds=[0.05, 0.95],
+        prior=pybop.Gaussian(0.75, 0.05),
+        bounds=[0.65, 0.85],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.6, 0.1),
-        bounds=[0.05, 0.95],
+        prior=pybop.Gaussian(0.65, 0.05),
+        bounds=[0.55, 0.75],
     ),
 ]
 

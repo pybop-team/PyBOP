@@ -1,5 +1,4 @@
 import pybop
-import pybamm
 import numpy as np
 
 
@@ -19,6 +18,7 @@ class Parameterisation:
         verbose=False,
     ):
         self.model = model
+        self.verbose = verbose
         self.fit_dict = {}
         self.fit_parameters = {o.name: o for o in fit_parameters}
         self.observations = {o.name: o for o in observations}
@@ -46,28 +46,42 @@ class Parameterisation:
         for i, j in enumerate(self.fit_parameters):
             self.fit_dict[j] = {j: self.x0[i]}
 
-        # Build parameter set and model
-        self.model.build_parameter_set(self.observations, self.fit_parameters)
-        self.model.build_model(check_model=check_model, init_soc=init_soc)
+        # Build model with observations and fitting_parameters
+        self.model.build_model(
+            self.observations,
+            self.fit_parameters,
+            check_model=check_model,
+            init_soc=init_soc,
+        )
 
-    def step(self, signal, x, grad, verbose):
+    def step(self, signal, x, grad):
         for i, p in enumerate(self.fit_dict):
             self.fit_dict[p] = x[i]
 
         y_hat = self.model.solver.solve(
-            self.model._built_model, self.model.time_data, inputs=self.fit_dict
+            self.model.built_model, self.model.time_data, inputs=self.fit_dict
         )[signal].data
 
-        try:
-            res = np.sqrt(
-                np.mean((self.observations["Voltage [V]"].data[1] - y_hat) ** 2)
+        print(
+            "Last Voltage Values:", y_hat[-1], self.observations["Voltage [V]"].data[-1]
+        )
+
+        if len(y_hat) != len(self.observations["Voltage [V]"].data):
+            print(
+                "len of vectors:",
+                len(y_hat),
+                len(self.observations["Voltage [V]"].data),
             )
-        except:
             raise ValueError(
-                "Measurement and modelled data length mismatch, potentially due to reaching a voltage cut-off"
+                "Measurement and simulated data length mismatch, potentially due to reaching a voltage cut-off"
             )
 
-        if verbose:
+        try:
+            res = np.sqrt(np.mean((self.observations["Voltage [V]"].data - y_hat) ** 2))
+        except:
+            print("Error in RMSE calculation")
+
+        if self.verbose:
             print(self.fit_dict)
 
         return res
