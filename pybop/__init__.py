@@ -28,7 +28,13 @@ script_path = os.path.abspath(__file__)
 #
 # Model Classes
 #
+from .models import BaseModel
 from .models import lithium_ion
+
+#
+# Parameterisation class
+#
+from .parameter_sets import ParameterSet
 
 #
 # Parameterisation class
@@ -46,11 +52,6 @@ from .observations import Observed
 # Priors class
 #
 from .priors import Gaussian, Uniform, Exponential
-
-#
-# Simulation class
-#
-from .simulation import Simulation
 
 #
 # Optimisation class

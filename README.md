@@ -1,5 +1,11 @@
 # PyBOP - A *Py*thon package for *B*attery *O*ptimisation and *P*arameterisation
 
+<div align="center">
+
+[![Build Status](https://github.com/pybop-team/PyBOP/actions/workflows/test_on_push.yaml/badge.svg?branch=develop)](https://github.com/pybop-team/PyBOP/actions/workflows/test_on_push.yaml)
+
+</div>
+
 PyBOP aims to be a modular library for the parameterisation and optimisation of battery models, with a particular focus on classes built around [PyBaMM](https://github.com/pybamm-team/PyBaMM) models. The figure below gives the current conceptual idea of PyBOP's structure. This will likely evolve as development progresses.
 
 <p align="center">
