@@ -1,38 +1,38 @@
 import pybop
-import pytest
 import pybamm
+import pytest
 import numpy as np
-import pandas as pd
 
 
 class TestParameterisation:
-    def getdata(self, x1, x2):
+    def getdata(self, x0):
         model = pybamm.lithium_ion.SPM()
-        params = pybamm.ParameterValues("Chen2020")
+        params = model.default_parameter_values
 
         params.update(
             {
-                "Negative electrode active material volume fraction": x1,
-                "Positive electrode active material volume fraction": x2,
+                "Negative electrode active material volume fraction": x0[0],
+                "Positive electrode active material volume fraction": x0[1],
             }
         )
         experiment = pybamm.Experiment(
             [
                 (
-                    "Discharge at 0.5C for 5 minutes (1 second period)",
+                    "Discharge at 2C for 5 minutes (1 second period)",
                     "Rest for 2 minutes (1 second period)",
-                    "Charge at 0.5C for 2.5 minutes (1 second period)",
+                    "Charge at 1C for 5 minutes (1 second period)",
                     "Rest for 2 minutes (1 second period)",
                 ),
             ]
             * 2
         )
         sim = pybamm.Simulation(model, experiment=experiment, parameter_values=params)
-        return sim.solve(initial_soc=0.5)
+        return sim.solve()
 
     def test_rmse(self):
         # Form observations
-        solution = self.getdata(0.6, 0.6)
+        x0 = np.array([0.55, 0.63])
+        solution = self.getdata(x0)
 
         observations = [
             pybop.Observed("Time [s]", solution["Time [s]"].data),
@@ -42,19 +42,19 @@ class TestParameterisation:
 
         # Define model
         model = pybop.models.lithium_ion.SPM()
-        model.parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
+        model.parameter_set = model.pybamm_model.default_parameter_values
 
         # Fitting parameters
         params = [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.6, 0.1),
-                bounds=[0.05, 0.95],
+                prior=pybop.Gaussian(0.5, 0.05),
+                bounds=[0.35, 0.75],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.6, 0.1),
-                bounds=[0.05, 0.95],
+                prior=pybop.Gaussian(0.65, 0.05),
+                bounds=[0.45, 0.85],
             ),
         ]
 
@@ -67,4 +67,5 @@ class TestParameterisation:
             signal="Voltage [V]", method="nlopt"
         )
         # Assertions
-        np.testing.assert_allclose(last_optim, 1e-1, atol=5e-2)
+        np.testing.assert_allclose(last_optim, 1e-3, atol=1e-2)
+        np.testing.assert_almost_equal(results, x0, decimal=1)
