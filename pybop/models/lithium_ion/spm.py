@@ -16,12 +16,13 @@ class SPM(BaseModel):
         var_pts=None,
         spatial_methods=None,
         solver=None,
+        parameter_set=None,
     ):
         super().__init__()
         self.pybamm_model = pybamm.lithium_ion.SPM()
         self._unprocessed_model = self.pybamm_model
         self.name = name
-        self.parameter_set = self.pybamm_model.default_parameter_values
+        self.parameter_set = parameter_set or self.pybamm_model.default_parameter_values
         self._model_with_set_params = None
         self._built_model = None
         self._geometry = geometry or self.pybamm_model.default_geometry
@@ -77,7 +78,7 @@ class SPM(BaseModel):
                 init_soc, param=param, inplace=False
             )
         )
-        # Save solved initial SOC in case we need to re-build the model
+        # Save solved initial SOC in case we need to rebuild the model
         self._built_initial_soc = init_soc
 
     def set_params(self):
@@ -92,6 +93,29 @@ class SPM(BaseModel):
         )
         self.parameter_set.process_geometry(self._geometry)
         self.pybamm_model = self._model_with_set_params
+
+    def build_parameter_set(self, observations, fit_parameters):
+        """
+        Build the parameter set.
+        """
+
+        try:
+            self.parameter_set["Current function [A]"] = pybamm.Interpolant(
+                observations["Time [s]"].data,
+                observations["Current function [A]"].data,
+                pybamm.t,
+            )
+        except:
+            raise ValueError("Current function not supplied")
+
+        # set input parameters in parameter set from fitting parameters
+        for i in fit_parameters:
+            self.parameter_set[i] = "[input]"
+
+        self._unprocessed_parameter_set = self.parameter_set
+
+        # Set t_eval
+        self.time_data = self.parameter_set["Current function [A]"].x[0]
 
     def sim(self):
         """

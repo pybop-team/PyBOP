@@ -16,8 +16,10 @@ class Parameterisation:
         x0=None,
         check_model=True,
         init_soc=None,
+        verbose=False,
     ):
         self.model = model
+        self.fit_dict = {}
         self.fit_parameters = {o.name: o for o in fit_parameters}
         self.observations = {o.name: o for o in observations}
 
@@ -26,51 +28,34 @@ class Parameterisation:
             if name not in self.observations:
                 raise ValueError(f"expected {name} in list of observations")
 
+        # Set bounds
         self.bounds = dict(
             lower=[self.fit_parameters[p].bounds[0] for p in self.fit_parameters],
             upper=[self.fit_parameters[p].bounds[1] for p in self.fit_parameters],
         )
 
-        if self.model.parameter_set is not None:
-            self.parameter_set = self.model.parameter_set
-        else:
-            self.parameter_set = self.model.pybamm_model.default_parameter_values
-
-        try:
-            self.parameter_set["Current function [A]"] = pybamm.Interpolant(
-                self.observations["Time [s]"].data,
-                self.observations["Current function [A]"].data,
-                pybamm.t,
-            )
-        except:
-            raise ValueError("Current function not supplied")
-
+        # Sample from prior for x0
         if x0 is None:
             self.x0 = np.zeros(len(self.fit_parameters))
             for i, j in enumerate(self.fit_parameters):
-                self.x0[i] = self.fit_parameters[j].prior.rvs(1)[0]
+                self.x0[i] = self.fit_parameters[j].prior.rvs(1)[
+                    0
+                ]  # Updt to capture dimensions per parameter
 
-        # set input parameters in parameter set from fitting parameters
-        for i in self.fit_parameters:
-            self.parameter_set[i] = "[input]"
+        # Align initial guess with sample from prior
+        for i, j in enumerate(self.fit_parameters):
+            self.fit_dict[j] = {j: self.x0[i]}
 
-        self._unprocessed_parameter_set = self.parameter_set
-        self.fit_dict = {
-            p: self.fit_parameters[p].prior.mean for p in self.fit_parameters
-        }
-
-        # Set t_eval
-        self.time_data = self.parameter_set["Current function [A]"].x[0]
-
+        # Build parameter set and model
+        self.model.build_parameter_set(self.observations, self.fit_parameters)
         self.model.build_model(check_model=check_model, init_soc=init_soc)
 
-    def step(self, signal, x, grad):
+    def step(self, signal, x, grad, verbose):
         for i, p in enumerate(self.fit_dict):
             self.fit_dict[p] = x[i]
-        print(self.fit_dict)
 
         y_hat = self.model.solver.solve(
-            self.model._built_model, self.time_data, inputs=self.fit_dict
+            self.model._built_model, self.model.time_data, inputs=self.fit_dict
         )[signal].data
 
         try:
@@ -81,6 +66,10 @@ class Parameterisation:
             raise ValueError(
                 "Measurement and modelled data length mismatch, potentially due to reaching a voltage cut-off"
             )
+
+        if verbose:
+            print(self.fit_dict)
+
         return res
 
     def map(self, x0):
