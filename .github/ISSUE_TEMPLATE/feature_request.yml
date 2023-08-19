@@ -2,30 +2,29 @@ name: Feature request
 description: Suggest a feature
 labels: ["enhancement"]
 body:
-  -type: markdown
+  - type: markdown
     attributes:
       value: |
         Thanks for filling out this report to help us improve!
-  -type: textarea
+  - type: textarea
     id: feature
     attributes:
       label: Feature description
       description: Describe the feature you'd like.
     validations:
         required: true
-  -type: textarea
+  - type: textarea
     id: motivation
     attributes:
       label: Motivation
       description: Please enter the motivation for this feature i.e (problem, performance, etc).
-  -type: textarea
+  - type: textarea
     id: possible-implementation
     attributes:
       label: Possible implementation
       description: Please enter any possible implementation for this feature.
-  -type: textarea
+  - type: textarea
     id: context
     attributes:
       label: Additional context
       description: Add any additional context about the feature request.
-

@@ -4,9 +4,9 @@ title: "[Bug]: "
 labels: ["bug"]
 body:
   - type: markdown
-      attributes:
-        value: |
-          Thanks for filling out this report to help us improve!
+    attributes:
+      value: |
+        Thanks for filling out this report to help us improve!
   - type: input
     id: python-version
     attributes:
