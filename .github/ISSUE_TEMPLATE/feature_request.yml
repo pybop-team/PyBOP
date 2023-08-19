@@ -3,15 +3,15 @@ description: Suggest a feature
 labels: ["enhancement"]
 body:
   -type: markdown
-   attributes:
-     value: |
-       Thanks for filling out this report to help us improve!
+    attributes:
+      value: |
+        Thanks for filling out this report to help us improve!
   -type: textarea
     id: feature
     attributes:
       label: Feature description
       description: Describe the feature you'd like.
-      validations:
+    validations:
         required: true
   -type: textarea
     id: motivation
