@@ -15,6 +15,12 @@ from jax import pure_callback
 import pybamm
 import numpy as np
 
+jax_required = "0.4.8"
+jax_version = jax.__version__
+if jax_version != jax_required:
+    raise ValueError(f"Required jax version {jax_required}, but {jax_version} was found.")
+
+
 
 def solution(t_eval, y, model, inputs):
     termination = "final time"
