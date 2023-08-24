@@ -12,7 +12,7 @@
     <img src="https://img.shields.io/github/contributors/pybop-team/PyBOP" alt="contributors" />
   </a>
   <a href="">
-    <img src="https://img.shields.io/github/last-commit/pybop-team/PyBOP" alt="last update" />
+    <img src="https://img.shields.io/github/last-commit/pybop-team/PyBOP/develop" alt="last update" />
   </a>
   <a href="https://github.com/pybop-team/PyBOPe/network/members">
     <img src="https://img.shields.io/github/forks/pybop-team/PyBOP" alt="forks" />
