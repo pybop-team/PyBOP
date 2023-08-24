@@ -134,7 +134,7 @@ results, last_optim, num_evals = parameterisation.rmse(
 ```
 
 <!-- Code of Conduct -->
-### Code of Conduct
+## Code of Conduct
 
 PyBOP aims to foster a broad consortium of developers and users, building on and
 learning from the success of the PyBaMM community. Our values are:
