@@ -162,21 +162,3 @@ Thanks to all of our contributing members! [[emoji key](https://allcontributors.
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 Contributions are always welcome! See `contributing.md` for ways to get started.
-
-
-
-
-**Community and values**
-
-PyBOP aims to foster a broad consortium of developers and users, building on and
-learning from the success of the PyBaMM community. Our values are:
-
--   Open-source (code and ideas should be shared)
-
--   Inclusivity and fairness (those who want to contribute may do so,
-    and their input is appropriately recognised)
-
--   Inter-operability (aiming for modularity to enable maximum impact
-    and inclusivity)
-
--   User-friendliness (putting user requirements first, thinking about user- assistance & workflows)
