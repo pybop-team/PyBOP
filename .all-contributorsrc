@@ -1,0 +1,29 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "commitType": "docs",
+  "commitConvention": "angular",
+  "contributors": [
+    {
+      "login": "BradyPlanden",
+      "name": "Brady Planden",
+      "avatar_url": "https://avatars.githubusercontent.com/u/55357039?v=4",
+      "profile": "http://bradyplanden.github.io",
+      "contributions": [
+        "infra",
+        "test",
+        "code",
+        "example"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "skipCi": true,
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "projectName": "PyBOP",
+  "projectOwner": "pybop-team"
+}
