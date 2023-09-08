@@ -66,7 +66,7 @@ Install PyBOP:
 
 <!-- Installation -->
 ### Usage
-The example below shows a simple fitting routine that starts by generating synthetic data from a single particle model with modified parameter values. An RMSE cost function using the terminal voltage as the optimised signal is completed to determine the unknown parameter values.
+The example below shows a simple fitting routine that starts by generating synthetic data from a single particle model with modified parameter values. An RMSE cost function using the terminal voltage as the optimised signal is completed to determine the unknown parameter values. First, the synthetic data is generated:
 
 ```python
 import pybop
@@ -102,7 +102,9 @@ def getdata(x0):
 # Form observations
 x0 = np.array([0.55, 0.63])
 solution = getdata(x0)
-
+```
+Next, the observed variables are defined, with the model construction and parameter definitions following. Finally, the parameterisation class is constructed and parameter fitting is completed. 
+```python
 observations = [
     pybop.Observed("Time [s]", solution["Time [s]"].data),
     pybop.Observed("Current function [A]", solution["Current [A]"].data),
@@ -185,4 +187,4 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- prettier-ignore-end -->
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
-This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specifications. Contributions of any kind are welcome!
