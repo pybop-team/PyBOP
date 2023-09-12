@@ -27,6 +27,16 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "davidhowey",
+      "name": "David Howey",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2247552?v=4",
+      "profile": "http://howey.eng.ox.ac.uk",
+      "contributions": [
+        "ideas",
+        "mentoring"
+      ]
     }
   ],
   "contributorsPerLine": 7,
