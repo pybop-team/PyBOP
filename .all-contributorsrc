@@ -18,6 +18,15 @@
         "code",
         "example"
       ]
+    },
+    {
+      "login": "NicolaCourtier",
+      "name": "NicolaCourtier",
+      "avatar_url": "https://avatars.githubusercontent.com/u/45851982?v=4",
+      "profile": "https://github.com/NicolaCourtier",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
