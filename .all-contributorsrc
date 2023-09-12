@@ -37,6 +37,16 @@
         "ideas",
         "mentoring"
       ]
+    },
+    {
+      "login": "martinjrobins",
+      "name": "Martin Robinson",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1148404?v=4",
+      "profile": "http://www.rse.ox.ac.uk",
+      "contributions": [
+        "ideas",
+        "mentoring"
+      ]
     }
   ],
   "contributorsPerLine": 7,
