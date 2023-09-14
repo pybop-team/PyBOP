@@ -36,7 +36,7 @@
 
 <!-- Software Specification -->
 ## PyBOP
-PyBOP provides a comprehensive suite of tools for parameterisation and optimisation of battery models. It aims to implement Bayesian and frequentist techniques with example workflows to guide the user. PyBOP can be applied to parameterise a wide range of battery models, including the electrochemical and equivalent circuit models available in PyBAMM. A major emphasis in PyBOP is understandable and actionable diagnostics for the user, while still providing extensibility for advanced probabilistic methods. By building on the state-of-the-art battery models and leveraging Python's accessibility, PyBOP enables agile and robust parameterisation and optimisation.
+PyBOP provides a comprehensive suite of tools for parameterisation and optimisation of battery models. It aims to implement Bayesian and frequentist techniques with example workflows to guide the user. PyBOP can be applied to parameterise a wide range of battery models, including the electrochemical and equivalent circuit models available in [PyBaMM](https://pybamm.org/). A major emphasis in PyBOP is understandable and actionable diagnostics for the user, while still providing extensibility for advanced probabilistic methods. By building on the state-of-the-art battery models and leveraging Python's accessibility, PyBOP enables agile and robust parameterisation and optimisation.
 
 The figure below gives PyBOP's current conceptual structure. The living software specification of PyBOP can be found [here](https://github.com/pybop-team/software-spec). This package is under active development, expect API evolution with releases.
 
@@ -143,7 +143,7 @@ results, last_optim, num_evals = parameterisation.rmse(
 ## Code of Conduct
 
 PyBOP aims to foster a broad consortium of developers and users, building on and
-learning from the success of the PyBaMM community. Our values are:
+learning from the success of the [PyBaMM](https://pybamm.org/) community. Our values are:
 
 -   Open-source (code and ideas should be shared)
 
