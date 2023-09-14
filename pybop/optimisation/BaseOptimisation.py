@@ -1,7 +1,7 @@
 import pybop
 
 
-class BaseOptimisation(object):
+class BaseOptimisation:
     """
 
     Base class for the optimisation methods.

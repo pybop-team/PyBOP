@@ -1,8 +1,9 @@
 import pybop
 from scipy.optimize import minimize
+from .BaseOptimisation import BaseOptimisation
 
 
-class ScipyMinimize(pybop.BaseOptimisation):
+class SciPyMinimize(BaseOptimisation):
     """
     Wrapper class for the Scipy optimisation class. Extends the BaseOptimisation class.
     """
