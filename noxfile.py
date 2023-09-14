@@ -14,3 +14,9 @@ def tests(session):
     session.run_always('pip', 'install', '-e', '.')
     session.install('pytest')
     session.run('pytest')
+
+@nox.session
+def coverage(session):
+    session.run_always('pip', 'install', '-e', '.')
+    session.install('pytest-cov')
+    session.run('pytest', '--cov')
