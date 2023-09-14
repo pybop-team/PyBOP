@@ -49,23 +49,73 @@ The figure below gives PyBOP's current conceptual structure. The living software
 ## Getting Started
 
 <!-- Installation -->
+### Prerequisites
+To use and/or contribute to PyBOP, you must first install Python 3 (specifically, 3.8-3.11). For example, on a Debian-based distribution (Debian, Ubuntu - including via WSL, Linux Mint), open a terminal and enter:
+
+```bash
+sudo apt update
+sudo apt install python3 python3-virtualenv
+```
+
+For further information, please refer to the similar [installation instructions for PyBaMM](https://docs.pybamm.org/en/latest/source/user_guide/installation/GNU-linux.html).
+
 ### Installation
 
-Create a virtual environment, i.e with [pyenv](https://github.com/pyenv/pyenv#installation) and [pyenv-virtualenv](https://github.com/pyenv/pyenv-virtualenv#installation):
+Create a virtual environment called `pybop-env` within your current directory using:
+
+```bash
+virtualenv pybop-env
+```
+
+Activate the environment with:
+
+```bash
+source pybop-env/bin/activate
+```
+
+You can check which version of python is installed within the virtual environment by typing:
+
+```bash
+python --version
+```
+
+Later, you can deactivate the environment and go back to your original system using:
+
+```bash
+deactivate
+```
+
+Note that there are alternative packages which can be used to create and manage [virtual environments](https://realpython.com/python-virtual-environments-a-primer/), for example [pyenv](https://github.com/pyenv/pyenv#installation) and [pyenv-virtualenv](https://github.com/pyenv/pyenv-virtualenv#installation). In this case, follow the instructions to install these packages and then to create, activate and deactivate a virtual environment, use:
 
 ```bash
 pyenv virtualenv pybop-env
 pyenv activate pybop-env
+pyenv deactivate
 ```
 
-Install PyBOP:
+Within your virtual environment, install the `develop` branch of PyBOP:
 
 ```bash
- pip install git+https://github.com/pybop-team/PyBOP
+pip install git+https://github.com/pybop-team/PyBOP.git@develop
 ```
 
-<!-- Installation -->
+To alternatively install PyBOP from a local directory, use the following template, substituting in the relevant path:
+
+```bash
+pip install -e "PATH_TO_PYBOP"
+```
+
+Now, with PyBOP installed in your virtual environment, you can run Python scripts which import and use the functionality of this package.
+
+<!-- Example Usage -->
 ### Usage
+PyBOP has two classes of intended use case:
+1. parameter estimation from battery test data
+2. design optimisation subject to battery manufacturing/usage constraints
+
+These classes encompass a wide variety of optimisation problems, which depend on the choice of battery model, the available data and/or the choice of design parameters.
+
+### Parameter estimation
 The example below shows a simple fitting routine that starts by generating synthetic data from a single particle model with modified parameter values. An RMSE cost function using the terminal voltage as the optimised signal is completed to determine the unknown parameter values. First, the synthetic data is generated:
 
 ```python
