@@ -1,8 +1,9 @@
 import pybop
 import nlopt
+from .BaseOptimisation import BaseOptimisation
 
 
-class NLoptOptimize(pybop.BaseOptimisation):
+class NLoptOptimize(BaseOptimisation):
     """
     Wrapper class for the NLOpt optimisation class. Extends the BaseOptimisation class.
     """
