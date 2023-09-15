@@ -21,9 +21,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install --upgrade pip nox
           pip install -e .
-      - name: Test with nox
+      - name: Unit tests with nox
         run: |
-          nox
+          nox -s unit_test
 
   # Runs only on Ubuntu with Python 3.11
   check_coverage:
