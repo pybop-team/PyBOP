@@ -2,7 +2,14 @@ name: PyBOP
 
 on: [push, pull_request]
 
-
+concurrency:
+  # github.workflow: name of the workflow, so that we don't cancel other workflows
+  # github.event.pull_request.number || github.ref: pull request number or branch name if not a pull request
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # Cancel in-progress runs when a new workflow with the same group name is triggered
+  # This avoids workflow runs on both pushes and PRs
+  cancel-in-progress: true
+  
 jobs:
   build:
     runs-on: ubuntu-latest
