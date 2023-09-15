@@ -21,10 +21,10 @@
     <img src="https://img.shields.io/github/stars/pybop-team/PyBOP" alt="stars" />
   </a>
   <a href="https://codecov.io/gh/pybop-team/PyBOP">
-    <img src="https://img.shields.io/github/stars/pybop-team/PyBOP" alt="codecov" />
+    <img src="https://codecov.io/gh/pybop-team/PyBOP/branch/develop/graph/badge.svg" alt="codecov" />
   </a>
   <a href="https://github.com/pybop-team/PyBOP/issues/">
-    <img src="https://codecov.io/gh/pybamm-team/PyBaMM/branch/main/graph/badge.svg" alt="open issues" />
+    <img src="https://img.shields.io/github/issues/pybop-team/PyBOP" alt="open issues" />
   </a>
   <a href="https://github.com/pybop-team/PyBOP/blob/develop/LICENSE">
     <img src="https://img.shields.io/github/license/pybop-team/PyBOP" alt="license" />
