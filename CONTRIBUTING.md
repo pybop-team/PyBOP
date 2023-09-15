@@ -6,7 +6,7 @@ If you'd like to contribute to PyBOP, please have a look at the [pre-commit](#pr
 
 Before you commit any code, please perform the following checks:
 
-- [All tests pass](#testing): `$ nox`
+- [All tests pass](#testing): `$ nox -s unit_test`
 
 
 ## Workflow
@@ -104,7 +104,7 @@ All code requires testing. We use the [pytest](https://docs.pytest.org/en/) pack
 If you have nox installed, to run unit tests, type
 
 ```bash
-nox
+nox -s unit_test
 ```
 
 else, type
@@ -261,17 +261,12 @@ Similarly, the benchmark suite is automatically run for the most recently pushed
 
 In all cases, more details can be obtained by clicking on a specific run.
 
-Configuration files for various GitHub actions workflow can be found in `.github/worklfows`.
+Configuration files for various GitHub actions workflow can be found in `.github/workflows`.
 
 ### Codecov
 
-Code coverage (how much of our code is seen by the (linux) unit tests) is tested using [Codecov](https://docs.codecov.io/), a report is visible on https://codecov.io/gh/pybop-team/PyBOP.
+Code coverage (how much of our code is seen by the (Linux) unit tests) is tested using [Codecov](https://docs.codecov.io/), a report is visible on https://codecov.io/gh/pybop-team/PyBOP.
 
-Configuration files:
-
-```
-.coveragerc
-```
 
 ### GitHub
 
@@ -284,4 +279,4 @@ GitHub does some magic with particular filenames. In particular:
 ## Acknowledgements
 
 This CONTRIBUTING.md file, along with large sections of the code infrastructure,
-was copied from the excellent [Pints GitHub repo](https://github.com/pints-team/pints), and [PyBaMM repo](https://github.com/pybamm-team/PyBaMM)
+was copied from the excellent [Pints repo](https://github.com/pints-team/pints), and [PyBaMM repo](https://github.com/pybamm-team/PyBaMM)
