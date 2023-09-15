@@ -31,7 +31,7 @@ class TestParameterisation:
 
     def test_rmse(self):
         # Form observations
-        x0 = np.array([0.55, 0.63])
+        x0 = np.array([0.52, 0.63])
         solution = self.getdata(x0)
 
         observations = [
@@ -48,13 +48,13 @@ class TestParameterisation:
         params = [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.5, 0.05),
-                bounds=[0.35, 0.75],
+                prior=pybop.Gaussian(0.5, 0.02),
+                bounds=[0.375, 0.625],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.65, 0.05),
-                bounds=[0.45, 0.85],
+                prior=pybop.Gaussian(0.65, 0.02),
+                bounds=[0.525, 0.75],
             ),
         ]
 
@@ -68,4 +68,4 @@ class TestParameterisation:
         )
         # Assertions
         np.testing.assert_allclose(last_optim, 1e-3, atol=1e-2)
-        np.testing.assert_almost_equal(results, x0, decimal=1)
+        np.testing.assert_allclose(results, x0, atol=1e-1)

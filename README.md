@@ -20,6 +20,9 @@
   <a href="https://github.com/pybop-team/PyBOP/stargazers">
     <img src="https://img.shields.io/github/stars/pybop-team/PyBOP" alt="stars" />
   </a>
+  <a href="https://codecov.io/gh/pybop-team/PyBOP">
+    <img src="https://codecov.io/gh/pybop-team/PyBOP/branch/develop/graph/badge.svg" alt="codecov" />
+  </a>
   <a href="https://github.com/pybop-team/PyBOP/issues/">
     <img src="https://img.shields.io/github/issues/pybop-team/PyBOP" alt="open issues" />
   </a>
@@ -27,10 +30,6 @@
     <img src="https://img.shields.io/github/license/pybop-team/PyBOP" alt="license" />
   </a>
 </p>
-
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 </div>
 
