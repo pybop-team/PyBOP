@@ -19,4 +19,4 @@ def tests(session):
 def coverage(session):
     session.run_always('pip', 'install', '-e', '.')
     session.install('pytest-cov')
-    session.run('pytest', '--cov')
+    session.run('pytest', '--cov', '--cov-report=xml')
