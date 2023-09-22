@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="assets/Temp_Logo.png" alt="logo" width="400" height="auto" />
+  <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/Temp_Logo.png" alt="logo" width="400" height="auto" />
   <h1>Python Battery Optimisation and Parameterisation</h1>
 
 
