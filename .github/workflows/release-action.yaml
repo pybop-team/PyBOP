@@ -92,7 +92,7 @@ jobs:
 
     environment:
       name: testpypi
-      url: https://test.pypi.org/p/<package-name>
+      url: https://test.pypi.org/project/pybop/
 
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
