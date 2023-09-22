@@ -86,7 +86,7 @@ jobs:
 
   publish-to-testpypi:
     name: Publish Python 🐍 distribution 📦 to TestPyPI
-    if: tags contains 'rc'  # only publish to TestPyPI on release candidate tags
+    if: contains(github.ref, 'rc')  # only publish to TestPyPI for rc tags
     needs:
     - build
     runs-on: ubuntu-latest
