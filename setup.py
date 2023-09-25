@@ -9,11 +9,16 @@ try:
         long_description = f.read()
 except Exception:
     long_description = ""
+    
+# Defines __version__
+root = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(root, "pybop", "version.py")) as f:
+    exec(f.read())
 
 setup(
     name="pybop",
     packages=find_packages("."),
-    version="0.0.1",
+    version=__version__,
     license="BSD-3-Clause",
     description="Python Battery Optimisation and Parameterisation",
     long_description=long_description,
