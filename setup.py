@@ -33,5 +33,5 @@ setup(
     ],
     # https://pypi.org/classifiers/
     classifiers=[],
-    python_requires=">=3.8,<=3.11",
+    python_requires=">=3.8,<=3.12",
 )
