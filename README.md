@@ -41,7 +41,7 @@ The figure below gives PyBOP's current conceptual structure. The living software
 
 
 <p align="center">
-    <img src="assets/PyBOP_Architecture.png" alt="Data flows from battery cycling machines to Galv Harvesters, then to the     Galv server and REST API. Metadata can be updated and data read using the web client, and data can be downloaded by the Python client." width="600" />
+    <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/PyBOP_Architecture.png" alt="Data flows from battery cycling machines to Galv Harvesters, then to the     Galv server and REST API. Metadata can be updated and data read using the web client, and data can be downloaded by the Python client." width="600" />
 </p>
 
 <!-- Getting Started -->
@@ -84,7 +84,7 @@ Later, you can deactivate the environment and go back to your original system us
 deactivate
 ```
 
-Note that there are alternative packages which can be used to create and manage [virtual environments](https://realpython.com/python-virtual-environments-a-primer/), for example [pyenv](https://github.com/pyenv/pyenv#installation) and [pyenv-virtualenv](https://github.com/pyenv/pyenv-virtualenv#installation). In this case, follow the instructions to install these packages and then to create, activate and deactivate a virtual environment, use:
+Note that there are alternative packages that can be used to create and manage [virtual environments](https://realpython.com/python-virtual-environments-a-primer/), for example [pyenv](https://github.com/pyenv/pyenv#installation) and [pyenv-virtualenv](https://github.com/pyenv/pyenv-virtualenv#installation). In this case, follow the instructions to install these packages and then to create, activate and deactivate a virtual environment, use:
 
 ```bash
 pyenv virtualenv pybop-env
@@ -104,11 +104,11 @@ To alternatively install PyBOP from a local directory, use the following templat
 pip install -e "PATH_TO_PYBOP"
 ```
 
-Now, with PyBOP installed in your virtual environment, you can run Python scripts which import and use the functionality of this package.
+Now, with PyBOP installed in your virtual environment, you can run Python scripts that import and use the functionality of this package.
 
 <!-- Example Usage -->
 ### Usage
-PyBOP has two classes of intended use case:
+PyBOP has two classes of intended use cases:
 1. parameter estimation from battery test data
 2. design optimisation subject to battery manufacturing/usage constraints
 
@@ -204,8 +204,9 @@ learning from the success of the [PyBaMM](https://pybamm.org/) community. Our va
 
 
 <!-- Contributing -->
-## Contributing
-Thanks to all of our contributing members! [[emoji key](https://allcontributors.org/docs/en/emoji-key)]
+## Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
@@ -226,17 +227,4 @@ Thanks to all of our contributing members! [[emoji key](https://allcontributors.
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
-Contributions are always welcome! See `contributing.md` for ways to get started.
-
-## Contributors ✨
-
-Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
-
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
-<!-- ALL-CONTRIBUTORS-LIST:END -->
-
-This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specifications. Contributions of any kind are welcome!
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specifications. Contributions of any kind are welcome! See `contributing.md` for ways to get started.
