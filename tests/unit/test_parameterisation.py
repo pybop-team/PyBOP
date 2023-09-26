@@ -1,15 +1,13 @@
 import pybop
 import pybamm
-import pytest
 import numpy as np
 
 
 class TestParameterisation:
-    def getdata(self, x0):
-        model = pybamm.lithium_ion.SPM()
-        params = model.default_parameter_values
+    def getdata(self, model, x0):
+        model.parameter_set = model.pybamm_model.default_parameter_values
 
-        params.update(
+        model.parameter_set.update(
             {
                 "Negative electrode active material volume fraction": x0[0],
                 "Positive electrode active material volume fraction": x0[1],
@@ -26,13 +24,18 @@ class TestParameterisation:
             ]
             * 2
         )
-        sim = pybamm.Simulation(model, experiment=experiment, parameter_values=params)
+        sim = model.sim(experiment=experiment)
         return sim.solve()
 
-    def test_rmse(self):
+    def test_spm(self):
+
+        # Define model
+        model = pybop.lithium_ion.SPM()
+        model.parameter_set = model.pybamm_model.default_parameter_values
+
         # Form observations
         x0 = np.array([0.52, 0.63])
-        solution = self.getdata(x0)
+        solution = self.getdata(model, x0)
 
         observations = [
             pybop.Observed("Time [s]", solution["Time [s]"].data),
@@ -40,9 +43,47 @@ class TestParameterisation:
             pybop.Observed("Voltage [V]", solution["Terminal voltage [V]"].data),
         ]
 
+        # Fitting parameters
+        params = [
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.5, 0.02),
+                bounds=[0.375, 0.625],
+            ),
+            pybop.Parameter(
+                "Positive electrode active material volume fraction",
+                prior=pybop.Gaussian(0.65, 0.02),
+                bounds=[0.525, 0.75],
+            ),
+        ]
+
+        parameterisation = pybop.Parameterisation(
+            model, observations=observations, fit_parameters=params
+        )
+
+        # get RMSE estimate using NLOpt
+        results, last_optim, num_evals = parameterisation.rmse(
+            signal="Voltage [V]", method="nlopt"
+        )
+        # Assertions
+        np.testing.assert_allclose(last_optim, 1e-3, atol=1e-2)
+        np.testing.assert_allclose(results, x0, atol=1e-1)
+
+    def test_spme(self):
+
         # Define model
-        model = pybop.models.lithium_ion.SPM()
+        model = pybop.lithium_ion.SPMe()
         model.parameter_set = model.pybamm_model.default_parameter_values
+
+        # Form observations
+        x0 = np.array([0.52, 0.63])
+        solution = self.getdata(model, x0)
+
+        observations = [
+            pybop.Observed("Time [s]", solution["Time [s]"].data),
+            pybop.Observed("Current function [A]", solution["Current [A]"].data),
+            pybop.Observed("Voltage [V]", solution["Terminal voltage [V]"].data),
+        ]
 
         # Fitting parameters
         params = [

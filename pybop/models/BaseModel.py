@@ -94,12 +94,15 @@ class BaseModel:
         """
         Simulate the model
         """
-        self.parameter_set = parameter_set or self.parameter_set
-        return pybamm.Simulation(
-            self._built_model,
-            experiment=experiment,
-            parameter_values=self.parameter_set,
-        )
+        if self.pybamm_model is not None:
+            self.parameter_set = parameter_set or self.parameter_set
+            return pybamm.Simulation(
+                self.pybamm_model,
+                experiment=experiment,
+                parameter_values=self.parameter_set,
+            )
+        else:
+            raise ValueError("Sim currently only supports PyBaMM models")
 
     @property
     def built_model(self):
