@@ -102,7 +102,7 @@ class BaseModel:
                 parameter_values=self.parameter_set,
             )
         else:
-            raise ValueError("Sim currently only supports PyBaMM models")
+            raise ValueError("This sim method currently only supports PyBaMM models")
 
     @property
     def built_model(self):
