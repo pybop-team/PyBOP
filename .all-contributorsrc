@@ -1,0 +1,58 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "commitType": "docs",
+  "commitConvention": "angular",
+  "contributors": [
+    {
+      "login": "BradyPlanden",
+      "name": "Brady Planden",
+      "avatar_url": "https://avatars.githubusercontent.com/u/55357039?v=4",
+      "profile": "http://bradyplanden.github.io",
+      "contributions": [
+        "infra",
+        "test",
+        "code",
+        "example"
+      ]
+    },
+    {
+      "login": "NicolaCourtier",
+      "name": "NicolaCourtier",
+      "avatar_url": "https://avatars.githubusercontent.com/u/45851982?v=4",
+      "profile": "https://github.com/NicolaCourtier",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "davidhowey",
+      "name": "David Howey",
+      "avatar_url": "https://avatars.githubusercontent.com/u/2247552?v=4",
+      "profile": "http://howey.eng.ox.ac.uk",
+      "contributions": [
+        "ideas",
+        "mentoring"
+      ]
+    },
+    {
+      "login": "martinjrobins",
+      "name": "Martin Robinson",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1148404?v=4",
+      "profile": "http://www.rse.ox.ac.uk",
+      "contributions": [
+        "ideas",
+        "mentoring"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "skipCi": true,
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "projectName": "PyBOP",
+  "projectOwner": "pybop-team"
+}

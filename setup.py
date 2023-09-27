@@ -5,40 +5,33 @@ from setuptools import find_packages
 # User-friendly description from README.md
 current_directory = os.path.dirname(os.path.abspath(__file__))
 try:
-    with open(os.path.join(current_directory, 'README.md'), encoding='utf-8') as f:
+    with open(os.path.join(current_directory, "README.md"), encoding="utf-8") as f:
         long_description = f.read()
 except Exception:
-    long_description = ''
+    long_description = ""
+    
+# Defines __version__
+root = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(root, "pybop", "version.py")) as f:
+    exec(f.read())
 
 setup(
-	# Name of the package 
-	name='PyBOP',
-	# Packages to include into the distribution 
-	packages=find_packages('.'),
-	# Start with a small number and increase it with 
-	# every change you make https://semver.org 
-	version='0.0.1',
-	# Chose a license from here: https: // 
-	# help.github.com / articles / licensing - a - 
-	# repository. For example: MIT 
-	license='MIT',
-	# Short description of your library 
-	description='Python Battery Optimisation and Parameterisation',
-	# Long description of your library 
-	long_description=long_description,
-	long_description_content_type='text/markdown',
-	# Either the link to your github or to your website 
-	url='https://github.com/pybop-team/PyBOP',
-	# List of packages to install with this one 
-	install_requires=[
+    name="pybop",
+    packages=find_packages("."),
+    version=__version__,
+    license="BSD-3-Clause",
+    description="Python Battery Optimisation and Parameterisation",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="https://github.com/pybop-team/PyBOP",
+    install_requires=[
         "pybamm>=23.1",
         "numpy>=1.16",
         "scipy>=1.3",
         "pandas>=1.0",
-        "casadi>=3.6",
         "nlopt>=2.6",
-	],
-	# https://pypi.org/classifiers/ 
-	classifiers=[],
-    python_requires=">=3.8,<3.12",
+    ],
+    # https://pypi.org/classifiers/
+    classifiers=[],
+    python_requires=">=3.8,<=3.12",
 )

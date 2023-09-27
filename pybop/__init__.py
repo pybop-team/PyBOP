@@ -56,9 +56,9 @@ from .priors import Gaussian, Uniform, Exponential
 #
 # Optimisation class
 #
-from .optimisation.base_optimisation import BaseOptimisation
-from .optimisation.nlopt_opt import NLoptOptimize
-from .optimisation.scipy_opt import ScipyMinimize
+from .optimisation import BaseOptimisation
+from .optimisation.NLoptOptimize import NLoptOptimize
+from .optimisation.SciPyMinimize import SciPyMinimize
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop
