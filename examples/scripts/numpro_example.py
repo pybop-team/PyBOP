@@ -10,15 +10,14 @@ numpyro.enable_x64()
 import jax
 import jax.numpy as jnp
 from jax.random import PRNGKey
-from jax import pure_callback
 
 import pybamm
 import numpy as np
 
-jax_required = "0.4.8"
-jax_version = jax.__version__
-if jax_version != jax_required:
-    raise ValueError(f"Required jax version {jax_required}, but {jax_version} was found.")
+# jax_required = "0.4.8"
+# jax_version = jax.__version__
+# if jax_version != jax_required:
+#     raise ValueError(f"Required jax version {jax_required}, but {jax_version} was found.")
 
 
 
@@ -35,11 +34,13 @@ def solution(t_eval, y, model, inputs):
 
 def model(f, t_eval, m):
     theta0 = numpyro.sample(
-        "theta0", dist.TruncatedNormal(loc=0.5, scale=0.1, low=0.4, high=0.6)
+        "theta0", dist.Normal(0.5,0.1)
     )
     theta1 = numpyro.sample(
-        "theta1", dist.TruncatedNormal(loc=0.5, scale=0.1, low=0.4, high=0.6)
+        "theta1", dist.Normal(0.5,0.1)
     )
+    print(type(theta0))
+    print(type(0.2))
 
     inputs = {
         "Negative electrode active material volume fraction": theta0,
@@ -52,9 +53,9 @@ def model(f, t_eval, m):
     V = solution(t_eval, yhat, m, inputs)
 
     # Attempt 2
-    V = pure_callback(
-        solution, jnp.zeros(100), t_eval=t_eval, y=yhat, model=m, inputs=inputs
-    )
+    # V = pure_callback(
+    #     solution, jnp.zeros(100), t_eval=t_eval, y=yhat, model=m, inputs=inputs
+    # )
 
 
 def main(args):
@@ -91,7 +92,7 @@ def main(args):
         m,
         t_eval,
         inputs={
-            "Negative electrode active material volume fraction": 0.5,
+            "Negative electrode active material volume fraction": 0.3,
             "Positive electrode active material volume fraction": 0.5,
         },
     )
@@ -113,8 +114,8 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="PyBaMM Model")
-    parser.add_argument("--num-samples", nargs="?", default=10, type=int)
-    parser.add_argument("--num-warmup", nargs="?", default=2, type=int)
+    parser.add_argument("--num-samples", nargs="?", default=100, type=int)
+    parser.add_argument("--num-warmup", nargs="?", default=20, type=int)
     parser.add_argument("--num-chains", nargs="?", default=1, type=int)
     parser.add_argument("--device", default="cpu", type=str)
     args = parser.parse_args()
