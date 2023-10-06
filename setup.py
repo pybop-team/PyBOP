@@ -9,7 +9,7 @@ try:
         long_description = f.read()
 except Exception:
     long_description = ""
-    
+
 # Defines __version__
 root = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(root, "pybop", "version.py")) as f:

@@ -2,19 +2,17 @@
 # Root of the pybop module.
 # Provides access to all shared functionality (models, solvers, etc.).
 #
-# The code in this file is adapted from Pints
+# This file is adapted from Pints
 # (see https://github.com/pints-team/pints)
 #
 
 import sys
 import os
 
-
 #
 # Version info
 #
 from pybop.version import __version__
-
 
 #
 # Constants
@@ -28,19 +26,13 @@ script_path = os.path.abspath(__file__)
 #
 # Model Classes
 #
-from .models import BaseModel
-from .models import lithium_ion
+from .models import BaseModel, lithium_ion
 
 #
 # Parameterisation class
 #
-from .parameter_sets import ParameterSet
-
-#
-# Parameterisation class
-#
-
 from .parameterisation import Parameterisation
+from .parameter_sets import ParameterSet
 from .parameters import Parameter
 
 #

@@ -47,7 +47,7 @@ class Parameterisation:
             self.fit_dict[j] = {j: self.x0[i]}
 
         # Build model with observations and fitting_parameters
-        self.model.build_model(
+        self.model.build(
             self.observations,
             self.fit_parameters,
             check_model=check_model,
