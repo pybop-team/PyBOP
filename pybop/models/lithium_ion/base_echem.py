@@ -5,7 +5,7 @@ from ..BaseModel import BaseModel
 
 class SPM(BaseModel):
     """
-    Composition of the SPM class in PyBaMM.
+    Composition of the PyBaMM SPM class.
     """
 
     def __init__(
@@ -23,6 +23,7 @@ class SPM(BaseModel):
         self._unprocessed_model = self.pybamm_model
         self.name = name
 
+        self.default_parameter_values = self.pybamm_model.default_parameter_values
         self.parameter_set = parameter_set or self.pybamm_model.default_parameter_values
         self._unprocessed_parameter_set = self.parameter_set
 
@@ -43,7 +44,7 @@ class SPM(BaseModel):
 
 class SPMe(BaseModel):
     """
-    Composition of the SPMe class in PyBaMM.
+    Composition of the PyBaMM SPMe class.
     """
 
     def __init__(
@@ -61,6 +62,7 @@ class SPMe(BaseModel):
         self._unprocessed_model = self.pybamm_model
         self.name = name
 
+        self.default_parameter_values = self.pybamm_model.default_parameter_values
         self.parameter_set = parameter_set or self.pybamm_model.default_parameter_values
         self._unprocessed_parameter_set = self.parameter_set
 
