@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 # Form observations
-Measurements = pd.read_csv("examples/Chen_example.csv", comment="#").to_numpy()
+Measurements = pd.read_csv("examples/scripts/Chen_example.csv", comment="#").to_numpy()
 observations = [
     pybop.Observed("Time [s]", Measurements[:, 0]),
     pybop.Observed("Current function [A]", Measurements[:, 1]),
@@ -11,8 +11,8 @@ observations = [
 ]
 
 # Define model
-parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
-model = pybop.models.lithium_ion.SPM(parameter_set=parameter_set)
+# parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
+model = pybop.models.lithium_ion.SPM()
 
 # Fitting parameters
 params = [
