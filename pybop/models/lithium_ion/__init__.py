@@ -2,4 +2,4 @@
 # Import lithium ion based models
 #
 
-from .pybamm import SPM, SPMe
+from .base_echem import SPM, SPMe
