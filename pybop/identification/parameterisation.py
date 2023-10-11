@@ -54,7 +54,6 @@ class Parameterisation:
             check_model=check_model,
             init_soc=init_soc,
         )
-        
 
     def step(self, signal, x, grad):
         for i, p in enumerate(self.fit_dict):

@@ -24,7 +24,6 @@ class SPM(BaseModel):
         self._unprocessed_model = self.pybamm_model
         self.name = name
 
-
         self.default_parameter_values = self.pybamm_model.default_parameter_values
         self.parameter_set = parameter_set or self.pybamm_model.default_parameter_values
         self._unprocessed_parameter_set = self.parameter_set

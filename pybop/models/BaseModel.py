@@ -42,7 +42,6 @@ class BaseModel:
             self._built_model = self._disc.process_model(
                 self._model_with_set_params, inplace=False, check_model=check_model
             )
-            
 
             # Clear solver
             self._solver._model_set_up = {}
@@ -96,7 +95,7 @@ class BaseModel:
 
     def simulate(self, inputs=None, t_eval=None, parameter_set=None, experiment=None):
         """
-        Run the forward model and return the result in Numpy array format 
+        Run the forward model and return the result in Numpy array format
         aligning with Pints' ForwardModel simulate method.
         """
         parameter_set = parameter_set or self.parameter_set
@@ -104,9 +103,8 @@ class BaseModel:
             return self._simulate(parameter_set, experiment).solve(t_eval=t_eval)
         else:
             if self._built_model is None:
-                self.build(fit_parameters=inputs.keys())            
-                return self.solver.solve(self.built_model,inputs=inputs, t_eval=t_eval)
-    
+                self.build(fit_parameters=inputs.keys())
+                return self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
 
     def _simulate(self, parameter_set=None, experiment=None):
         """
@@ -126,13 +124,12 @@ class BaseModel:
         Returns the dimension of the parameter space.
         """
         return len(self.fit_parameters)
-    
+
     def n_outputs(self):
         """
         Returns the number of outputs this model has. The default is 1.
         """
         return 1
-
 
     @property
     def built_model(self):
