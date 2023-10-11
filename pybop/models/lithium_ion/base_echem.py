@@ -6,6 +6,7 @@ from ..BaseModel import BaseModel
 class SPM(BaseModel):
     """
     Composition of the PyBaMM Single Particle Model class.
+
     """
 
     def __init__(
@@ -22,6 +23,7 @@ class SPM(BaseModel):
         self.pybamm_model = pybamm.lithium_ion.SPM()
         self._unprocessed_model = self.pybamm_model
         self.name = name
+
 
         self.default_parameter_values = self.pybamm_model.default_parameter_values
         self.parameter_set = parameter_set or self.pybamm_model.default_parameter_values
@@ -45,6 +47,7 @@ class SPM(BaseModel):
 class SPMe(BaseModel):
     """
     Composition of the PyBaMM Single Particle Model with Electrolyte class.
+
     """
 
     def __init__(
