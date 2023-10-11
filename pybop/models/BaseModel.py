@@ -10,6 +10,8 @@ class BaseModel:
     def __init__(self, name="Base Model"):
         self.name = name
         self.pybamm_model = None
+        self.fit_parameters = None
+        self.observations = None
 
     def build(
         self,
@@ -21,6 +23,9 @@ class BaseModel:
         """
         Build the model (if not built already).
         """
+        self.fit_parameters = fit_parameters
+        self.observations = observations
+
         if init_soc is not None:
             self.set_init_soc(init_soc)
 
@@ -31,7 +36,7 @@ class BaseModel:
             self._model_with_set_params = self.pybamm_model
             self._built_model = self.pybamm_model
         else:
-            self.set_params(observations, fit_parameters)
+            self.set_params()
             self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
             self._disc = pybamm.Discretisation(self.mesh, self.spatial_methods)
             self._built_model = self._disc.process_model(
@@ -62,22 +67,22 @@ class BaseModel:
         # Save solved initial SOC in case we need to rebuild the model
         self._built_initial_soc = init_soc
 
-    def set_params(self, observations, fit_parameters):
+    def set_params(self):
         """
         Set the parameters in the model.
         """
         if self.model_with_set_params:
             return
 
-        if fit_parameters is not None:
+        if self.fit_parameters is not None:
             # set input parameters in parameter set from fitting parameters
-            for i in fit_parameters:
+            for i in self.fit_parameters:
                 self.parameter_set[i] = "[input]"
 
-        if observations is not None and fit_parameters is not None:
+        if self.observations is not None and self.fit_parameters is not None:
             self.parameter_set["Current function [A]"] = pybamm.Interpolant(
-                observations["Time [s]"].data,
-                observations["Current function [A]"].data,
+                self.observations["Time [s]"].data,
+                self.observations["Current function [A]"].data,
                 pybamm.t,
             )
             # Set t_eval
@@ -98,7 +103,9 @@ class BaseModel:
         if inputs is None:
             return self._simulate(parameter_set, experiment).solve(t_eval=t_eval)
         else:
-            return self.solver.solve(inputs=inputs, t_eval=t_eval)
+            if self._built_model is None:
+                self.build(fit_parameters=inputs.keys())            
+                return self.solver.solve(self.built_model,inputs=inputs, t_eval=t_eval)
     
 
     def _simulate(self, parameter_set=None, experiment=None):
@@ -118,13 +125,13 @@ class BaseModel:
         """
         Returns the dimension of the parameter space.
         """
-        raise NotImplementedError
+        return len(self.fit_parameters)
     
     def n_outputs(self):
         """
         Returns the number of outputs this model has. The default is 1.
         """
-        raise NotImplementedError
+        return 1
 
 
     @property

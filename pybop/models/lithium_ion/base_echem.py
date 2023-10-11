@@ -5,7 +5,7 @@ from ..BaseModel import BaseModel
 
 class SPM(BaseModel):
     """
-    Composition of the PyBaMM SPM class.
+    Composition of the PyBaMM Single Particle Model class.
     """
 
     def __init__(
@@ -44,7 +44,7 @@ class SPM(BaseModel):
 
 class SPMe(BaseModel):
     """
-    Composition of the PyBaMM SPMe class.
+    Composition of the PyBaMM Single Particle Model with Electrolyte class.
     """
 
     def __init__(
