@@ -21,7 +21,9 @@ class BaseModel:
         init_soc=None,
     ):
         """
-        Build the model (if not built already).
+        Build the PyBOP model (if not built already).
+        For PyBaMM forward models, this method follwos a 
+        similar process to pybamm.Simulation.build().
         """
         self.fit_parameters = fit_parameters
         self.observations = observations
@@ -105,14 +107,13 @@ class BaseModel:
                 inputs_dict = {
                     key: inputs[i] for i, key in enumerate(self.fit_parameters)
                 }
-                print(inputs_dict)
             return self.solver.solve(
                 self.built_model, inputs=inputs_dict, t_eval=t_eval
             )["Terminal voltage [V]"].data
 
     def predict(self, inputs=None, t_eval=None, parameter_set=None, experiment=None):
         """
-        Create a PyBaMM simulation object and return it.
+        Create a PyBaMM simulation object, solve it, and return a solution object.
         """
         parameter_set = parameter_set or self.parameter_set
         if inputs is not None:

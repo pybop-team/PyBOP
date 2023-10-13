@@ -1,32 +1,11 @@
 import pybop
 import pybamm
 import numpy as np
+import pytest
 
 
 class TestParameterisation:
-    def getdata(self, model, x0):
-        model.parameter_set = model.pybamm_model.default_parameter_values
-
-        model.parameter_set.update(
-            {
-                "Negative electrode active material volume fraction": x0[0],
-                "Positive electrode active material volume fraction": x0[1],
-            }
-        )
-        experiment = pybamm.Experiment(
-            [
-                (
-                    "Discharge at 2C for 5 minutes (1 second period)",
-                    "Rest for 2 minutes (1 second period)",
-                    "Charge at 1C for 5 minutes (1 second period)",
-                    "Rest for 2 minutes (1 second period)",
-                ),
-            ]
-            * 2
-        )
-        sim = model.predict(experiment=experiment)
-        return sim
-
+    @pytest.mark.unit
     def test_spm(self):
         # Define model
         model = pybop.lithium_ion.SPM()
@@ -67,7 +46,8 @@ class TestParameterisation:
         # Assertions
         np.testing.assert_allclose(last_optim, 1e-3, atol=1e-2)
         np.testing.assert_allclose(results, x0, atol=1e-1)
-
+        
+    @pytest.mark.unit
     def test_spme(self):
         # Define model
         model = pybop.lithium_ion.SPMe()
@@ -108,3 +88,28 @@ class TestParameterisation:
         # Assertions
         np.testing.assert_allclose(last_optim, 1e-3, atol=1e-2)
         np.testing.assert_allclose(results, x0, atol=1e-1)
+
+    def getdata(self, model, x0):
+        model.parameter_set = model.pybamm_model.default_parameter_values
+
+        model.parameter_set.update(
+            {
+                "Negative electrode active material volume fraction": x0[0],
+                "Positive electrode active material volume fraction": x0[1],
+            }
+        )
+        experiment = pybamm.Experiment(
+            [
+                (
+                    "Discharge at 2C for 5 minutes (1 second period)",
+                    "Rest for 2 minutes (1 second period)",
+                    "Charge at 1C for 5 minutes (1 second period)",
+                    "Rest for 2 minutes (1 second period)",
+                ),
+            ]
+            * 2
+        )
+        sim = model.predict(experiment=experiment)
+        return sim
+    
+

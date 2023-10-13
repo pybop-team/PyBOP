@@ -13,7 +13,7 @@ nox.options.reuse_existing_virtualenvs = True
 def unit(session):
     session.run_always("pip", "install", "-e", ".")
     session.install("pytest")
-    session.run("pytest")
+    session.run("pytest", "--unit")
 
 
 @nox.session
