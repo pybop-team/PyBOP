@@ -22,6 +22,7 @@ class Parameterisation:
         self.fit_dict = {}
         self.fit_parameters = {o.name: o for o in fit_parameters}
         self.observations = {o.name: o for o in observations}
+        self.model.n_parameters = len(self.fit_dict)
 
         # Check that the observations contain time and current
         for name in ["Time [s]", "Current function [A]"]:

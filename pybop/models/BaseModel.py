@@ -8,20 +8,24 @@ class BaseModel:
     """
 
     def __init__(self, name="Base Model"):
-        self.pybamm_model = None
         self.name = name
-        # self.parameter_set = None
+        self.pybamm_model = None
+        self.fit_parameters = None
+        self.observations = None
 
     def build(
         self,
-        observations,
-        fit_parameters,
+        observations=None,
+        fit_parameters=None,
         check_model=True,
         init_soc=None,
     ):
         """
         Build the model (if not built already).
         """
+        self.fit_parameters = fit_parameters
+        self.observations = observations
+
         if init_soc is not None:
             self.set_init_soc(init_soc)
 
@@ -32,14 +36,12 @@ class BaseModel:
             self._model_with_set_params = self.pybamm_model
             self._built_model = self.pybamm_model
         else:
-            self.set_params(observations, fit_parameters)
+            self.set_params()
             self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
             self._disc = pybamm.Discretisation(self.mesh, self.spatial_methods)
             self._built_model = self._disc.process_model(
                 self._model_with_set_params, inplace=False, check_model=check_model
             )
-            # Set t_eval
-            self.time_data = self._parameter_set["Current function [A]"].x[0]
 
             # Clear solver
             self._solver._model_set_up = {}
@@ -64,25 +66,26 @@ class BaseModel:
         # Save solved initial SOC in case we need to rebuild the model
         self._built_initial_soc = init_soc
 
-    def set_params(self, observations, fit_parameters):
+    def set_params(self):
         """
         Set the parameters in the model.
         """
         if self.model_with_set_params:
             return
 
-        try:
+        if self.fit_parameters is not None:
+            # set input parameters in parameter set from fitting parameters
+            for i in self.fit_parameters:
+                self.parameter_set[i] = "[input]"
+
+        if self.observations is not None and self.fit_parameters is not None:
             self.parameter_set["Current function [A]"] = pybamm.Interpolant(
-                observations["Time [s]"].data,
-                observations["Current function [A]"].data,
+                self.observations["Time [s]"].data,
+                self.observations["Current function [A]"].data,
                 pybamm.t,
             )
-        except:
-            raise ValueError("Current function not supplied")
-
-        # set input parameters in parameter set from fitting parameters
-        for i in fit_parameters:
-            self.parameter_set[i] = "[input]"
+            # Set t_eval
+            self.time_data = self._parameter_set["Current function [A]"].x[0]
 
         self._model_with_set_params = self._parameter_set.process_model(
             self._unprocessed_model, inplace=False
@@ -90,19 +93,43 @@ class BaseModel:
         self._parameter_set.process_geometry(self.geometry)
         self.pybamm_model = self._model_with_set_params
 
-    def sim(self, experiment=None, parameter_set=None):
+    def simulate(self, inputs=None, t_eval=None, parameter_set=None, experiment=None):
         """
-        Simulate the model
+        Run the forward model and return the result in Numpy array format
+        aligning with Pints' ForwardModel simulate method.
+        """
+        parameter_set = parameter_set or self.parameter_set
+        if inputs is None:
+            return self._simulate(parameter_set, experiment).solve(t_eval=t_eval)
+        else:
+            if self._built_model is None:
+                self.build(fit_parameters=inputs.keys())
+                return self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
+
+    def _simulate(self, parameter_set=None, experiment=None):
+        """
+        Create a PyBaMM simulation object and return it.
         """
         if self.pybamm_model is not None:
-            self.parameter_set = parameter_set or self.parameter_set
             return pybamm.Simulation(
                 self.pybamm_model,
                 experiment=experiment,
-                parameter_values=self.parameter_set,
+                parameter_values=parameter_set,
             )
         else:
             raise ValueError("This sim method currently only supports PyBaMM models")
+
+    def n_parameters(self):
+        """
+        Returns the dimension of the parameter space.
+        """
+        return len(self.fit_parameters)
+
+    def n_outputs(self):
+        """
+        Returns the number of outputs this model has. The default is 1.
+        """
+        return 1
 
     @property
     def built_model(self):

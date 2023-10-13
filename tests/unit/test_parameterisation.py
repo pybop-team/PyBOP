@@ -24,11 +24,10 @@ class TestParameterisation:
             ]
             * 2
         )
-        sim = model.sim(experiment=experiment)
-        return sim.solve()
+        sim = model.simulate(experiment=experiment)
+        return sim
 
     def test_spm(self):
-
         # Define model
         model = pybop.lithium_ion.SPM()
         model.parameter_set = model.pybamm_model.default_parameter_values
@@ -70,7 +69,6 @@ class TestParameterisation:
         np.testing.assert_allclose(results, x0, atol=1e-1)
 
     def test_spme(self):
-
         # Define model
         model = pybop.lithium_ion.SPMe()
         model.parameter_set = model.pybamm_model.default_parameter_values

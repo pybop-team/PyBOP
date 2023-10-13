@@ -10,7 +10,7 @@ nox.options.reuse_existing_virtualenvs = True
 
 
 @nox.session
-def unit_test(session):
+def unit(session):
     session.run_always("pip", "install", "-e", ".")
     session.install("pytest")
     session.run("pytest")

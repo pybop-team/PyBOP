@@ -31,14 +31,7 @@ from .models import BaseModel, lithium_ion
 #
 # Parameterisation class
 #
-from .parameterisation import Parameterisation
-from .parameter_sets import ParameterSet
-from .parameters import Parameter
-
-#
-# Observation class
-#
-from .observations import Observed
+from .identification import Parameterisation, ParameterSet, Parameter, Observed
 
 #
 # Priors class

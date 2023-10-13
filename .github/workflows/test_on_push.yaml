@@ -34,7 +34,7 @@ jobs:
           pip install -e .
       - name: Unit tests with nox
         run: |
-          nox -s unit_test
+          nox -s unit
 
   # Runs only on Ubuntu with Python 3.11
   check_coverage:
@@ -60,7 +60,7 @@ jobs:
           pip install --upgrade pip nox
           pip install -e .
 
-      - name: Run unit tests for Ubuntu with Python 3.11 and generate coverage report
+      - name: Run coverage tests for Ubuntu with Python 3.11 and generate report
         run: nox -s coverage
 
       - name: Upload coverage report
