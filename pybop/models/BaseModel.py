@@ -1,4 +1,3 @@
-import pybop
 import pybamm
 
 
@@ -22,7 +21,7 @@ class BaseModel:
     ):
         """
         Build the PyBOP model (if not built already).
-        For PyBaMM forward models, this method follwos a 
+        For PyBaMM forward models, this method follows a
         similar process to pybamm.Simulation.build().
         """
         self.fit_parameters = fit_parameters
@@ -103,7 +102,7 @@ class BaseModel:
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
         else:
-            if type(inputs) is not dict:
+            if inputs is isinstance(dict):
                 inputs_dict = {
                     key: inputs[i] for i, key in enumerate(self.fit_parameters)
                 }

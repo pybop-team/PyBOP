@@ -1,5 +1,4 @@
 import pybamm
-import pybop
 
 
 class ParameterSet:

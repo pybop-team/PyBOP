@@ -1,4 +1,3 @@
-import pybop
 from scipy.optimize import minimize
 from .BaseOptimisation import BaseOptimisation
 
