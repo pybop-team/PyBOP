@@ -1,6 +1,5 @@
 import pybamm
 
-
 class ParameterSet:
     """
     Class for creating parameter sets in pybop.

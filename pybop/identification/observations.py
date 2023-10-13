@@ -1,6 +1,5 @@
 import pybamm
 
-
 class Observed:
     """
     Class for experimental Observations.
