@@ -95,13 +95,13 @@ class BaseModel:
         self._parameter_set.process_geometry(self.geometry)
         self.pybamm_model = self._model_with_set_params
 
-    def simulate(self, inputs=None, t_eval=None):
+    def simulate(self, inputs, t_eval):
         """
         Run the forward model and return the result in Numpy array format
         aligning with Pints' ForwardModel simulate method.
         """
         if self._built_model is None:
-            ValueError("Model must be built before calling simulate")
+            raise ValueError("Model must be built before calling simulate")
         else:
             if type(inputs) is not dict:
                 inputs_dict = {

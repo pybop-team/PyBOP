@@ -112,4 +112,14 @@ class TestParameterisation:
         sim = model.predict(experiment=experiment)
         return sim
     
+    @pytest.mark.unit
+    def test_simulate_without_build_model(self):
+        # Define model
+        model = pybop.lithium_ion.SPM()
+
+        with pytest.raises(ValueError, match="Model must be built before calling simulate"):
+            model.simulate(None, None)
+
+
+    
 
