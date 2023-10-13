@@ -24,7 +24,7 @@ class TestParameterisation:
             ]
             * 2
         )
-        sim = model.simulate(experiment=experiment)
+        sim = model.predict(experiment=experiment)
         return sim
 
     def test_spm(self):

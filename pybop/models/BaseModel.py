@@ -102,9 +102,13 @@ class BaseModel:
             ValueError("Model must be built before calling simulate")
         else:
             if type(inputs) is not dict:
-                inputs_dict = {key: inputs[i] for i, key in enumerate(self.fit_parameters)}
+                inputs_dict = {
+                    key: inputs[i] for i, key in enumerate(self.fit_parameters)
+                }
                 print(inputs_dict)
-            return self.solver.solve(self.built_model, inputs=inputs_dict, t_eval=t_eval)["Terminal voltage [V]"].data
+            return self.solver.solve(
+                self.built_model, inputs=inputs_dict, t_eval=t_eval
+            )["Terminal voltage [V]"].data
 
     def predict(self, inputs=None, t_eval=None, parameter_set=None, experiment=None):
         """
