@@ -75,7 +75,7 @@ class BaseModel:
 
         if self.fit_parameters is not None:
             # set input parameters in parameter set from fitting parameters
-            for i in self.fit_parameters:
+            for i in self.fit_parameters.keys():
                 self.parameter_set[i] = "[input]"
 
         if self.observations is not None and self.fit_parameters is not None:
@@ -93,29 +93,38 @@ class BaseModel:
         self._parameter_set.process_geometry(self.geometry)
         self.pybamm_model = self._model_with_set_params
 
-    def simulate(self, inputs=None, t_eval=None, parameter_set=None, experiment=None):
+    def simulate(self, inputs=None, t_eval=None):
         """
         Run the forward model and return the result in Numpy array format
         aligning with Pints' ForwardModel simulate method.
         """
-        parameter_set = parameter_set or self.parameter_set
-        if inputs is None:
-            return self._simulate(parameter_set, experiment).solve(t_eval=t_eval)
+        if self._built_model is None:
+            ValueError("Model must be built before calling simulate")
         else:
-            if self._built_model is None:
-                self.build(fit_parameters=inputs.keys())
-                return self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
+            if type(inputs) is not dict:
+                inputs_dict = {key: inputs[i] for i, key in enumerate(self.fit_parameters)}
+                print(inputs_dict)
+            return self.solver.solve(self.built_model, inputs=inputs_dict, t_eval=t_eval)["Terminal voltage [V]"].data
 
-    def _simulate(self, parameter_set=None, experiment=None):
+    def predict(self, inputs=None, t_eval=None, parameter_set=None, experiment=None):
         """
         Create a PyBaMM simulation object and return it.
         """
-        if self.pybamm_model is not None:
-            return pybamm.Simulation(
-                self.pybamm_model,
-                experiment=experiment,
-                parameter_values=parameter_set,
-            )
+        parameter_set = parameter_set or self.parameter_set
+        if inputs is not None:
+            parameter_set.update(inputs)
+        if self._unprocessed_model is not None:
+            if experiment is None:
+                return pybamm.Simulation(
+                    self._unprocessed_model,
+                    parameter_values=parameter_set,
+                ).solve(t_eval=t_eval)
+            else:
+                return pybamm.Simulation(
+                    self._unprocessed_model,
+                    experiment=experiment,
+                    parameter_values=parameter_set,
+                ).solve()
         else:
             raise ValueError("This sim method currently only supports PyBaMM models")
 
