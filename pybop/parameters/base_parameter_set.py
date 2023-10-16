@@ -14,4 +14,4 @@ class ParameterSet:
             except:
                 raise ValueError("Parameter set not found")
         else:
-            raise ValueError("Only PybaMM parameter sets are currently implemented")
+            raise ValueError("Only PyBaMM parameter sets are currently implemented")
