@@ -5,14 +5,19 @@ import numpy as np
 
 class TestParameterisation:
     def getdata(self, model, x0):
+
+        # Define default parameter set
         model.parameter_set = model.pybamm_model.default_parameter_values
 
+        # Update fitting parameters
         model.parameter_set.update(
             {
                 "Negative electrode active material volume fraction": x0[0],
                 "Positive electrode active material volume fraction": x0[1],
             }
         )
+
+        # Define experimental protocol
         experiment = pybamm.Experiment(
             [
                 (
@@ -24,6 +29,8 @@ class TestParameterisation:
             ]
             * 2
         )
+
+        # Simulate model to generate test dataset
         sim = model.simulate(experiment=experiment)
         return sim
 
@@ -35,14 +42,13 @@ class TestParameterisation:
         # Form observations
         x0 = np.array([0.52, 0.63])
         solution = self.getdata(model, x0)
-
         observations = [
-            pybop.Observed("Time [s]", solution["Time [s]"].data),
-            pybop.Observed("Current function [A]", solution["Current [A]"].data),
-            pybop.Observed("Voltage [V]", solution["Terminal voltage [V]"].data),
+            pybop.Dataset("Time [s]", solution["Time [s]"].data),
+            pybop.Dataset("Current function [A]", solution["Current [A]"].data),
+            pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
         ]
 
-        # Fitting parameters
+        # Define fitting parameters
         params = [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
@@ -56,15 +62,17 @@ class TestParameterisation:
             ),
         ]
 
-        parameterisation = pybop.Parameterisation(
+        # Define optimisation problem
+        parameterisation = pybop.Optimisation(
             model, observations=observations, fit_parameters=params
         )
 
-        # get RMSE estimate using NLOpt
+        # Optimise RMSE using NLOpt
         results, last_optim, num_evals = parameterisation.rmse(
             signal="Voltage [V]", method="nlopt"
         )
-        # Assertions
+
+        # Check assertions
         np.testing.assert_allclose(last_optim, 1e-3, atol=1e-2)
         np.testing.assert_allclose(results, x0, atol=1e-1)
 
@@ -76,14 +84,13 @@ class TestParameterisation:
         # Form observations
         x0 = np.array([0.52, 0.63])
         solution = self.getdata(model, x0)
-
         observations = [
-            pybop.Observed("Time [s]", solution["Time [s]"].data),
-            pybop.Observed("Current function [A]", solution["Current [A]"].data),
-            pybop.Observed("Voltage [V]", solution["Terminal voltage [V]"].data),
+            pybop.Dataset("Time [s]", solution["Time [s]"].data),
+            pybop.Dataset("Current function [A]", solution["Current [A]"].data),
+            pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
         ]
 
-        # Fitting parameters
+        # Define fitting parameters
         params = [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
@@ -97,14 +104,16 @@ class TestParameterisation:
             ),
         ]
 
-        parameterisation = pybop.Parameterisation(
+        # Define optimisation problem
+        parameterisation = pybop.Optimisation(
             model, observations=observations, fit_parameters=params
         )
 
-        # get RMSE estimate using NLOpt
+        # Optimise RMSE using NLOpt
         results, last_optim, num_evals = parameterisation.rmse(
             signal="Voltage [V]", method="nlopt"
         )
-        # Assertions
+
+        # Check assertions
         np.testing.assert_allclose(last_optim, 1e-3, atol=1e-2)
         np.testing.assert_allclose(results, x0, atol=1e-1)
