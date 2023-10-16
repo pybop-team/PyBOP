@@ -4,7 +4,7 @@ import pybamm
 
 class BaseModel:
     """
-    Base class for PyBOP models
+    Base class for PyBOP models.
     """
 
     def __init__(self, name="Base Model"):

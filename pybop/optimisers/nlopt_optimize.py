@@ -1,16 +1,16 @@
 import pybop
 import nlopt
-from .BaseOptimisation import BaseOptimisation
+from pybop.optimisers.base_optimiser import BaseOptimiser
 
 
-class NLoptOptimize(BaseOptimisation):
+class NLoptOptimize(BaseOptimiser):
     """
-    Wrapper class for the NLOpt optimisation class. Extends the BaseOptimisation class.
+    Wrapper class for the NLOpt optimiser class. Extends the BaseOptimiser class.
     """
 
     def __init__(self, method=None, x0=None, xtol=None):
         super().__init__()
-        self.name = "NLOpt Optimisation"
+        self.name = "NLOpt Optimiser"
 
         if method is not None:
             self.opt = nlopt.opt(method, len(x0))
@@ -24,13 +24,13 @@ class NLoptOptimize(BaseOptimisation):
 
     def _runoptimise(self, cost_function, x0, bounds):
         """
-        Run the NLOpt opt method.
+        Run the NLOpt optimisation method.
 
         Parameters
         ----------
         cost_function: function for optimising
-        method: optimisation method
-        x0: Initialisation array
+        method: optimisation algorithm
+        x0: initialisation array
         bounds: bounds array
         """
 

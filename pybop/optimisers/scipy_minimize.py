@@ -1,11 +1,11 @@
 import pybop
 from scipy.optimize import minimize
-from .BaseOptimisation import BaseOptimisation
+from pybop.optimisers.base_optimiser import BaseOptimiser
 
 
-class SciPyMinimize(BaseOptimisation):
+class SciPyMinimize(BaseOptimiser):
     """
-    Wrapper class for the Scipy optimisation class. Extends the BaseOptimisation class.
+    Wrapper class for the SciPy optimisation class. Extends the BaseOptimiser class.
     """
 
     def __init__(self, cost_function, x0, bounds=None, options=None):
@@ -19,13 +19,13 @@ class SciPyMinimize(BaseOptimisation):
 
     def _runoptimise(self):
         """
-        Run the Scipy opt method.
+        Run the SciPy optimisation method.
 
         Parameters
         ----------
         cost_function: function for optimising
-        method: optimisation method
-        x0: Initialisation array
+        method: optimisation algorithm
+        x0: initialisation array
         options: options dictionary
         bounds: bounds array
         """

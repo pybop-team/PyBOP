@@ -3,9 +3,9 @@ import pybamm
 import numpy as np
 
 
-class Observed:
+class Dataset:
     """
-    Class for experimental Observations.
+    Class for experimental observations.
     """
 
     def __init__(self, name, data):

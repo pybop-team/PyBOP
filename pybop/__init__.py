@@ -1,5 +1,5 @@
 #
-# Root of the pybop module.
+# Root of the PyBOP module.
 # Provides access to all shared functionality (models, solvers, etc.).
 #
 # This file is adapted from Pints
@@ -7,7 +7,7 @@
 #
 
 import sys
-import os
+from os import path
 
 #
 # Version info
@@ -21,31 +21,49 @@ from pybop.version import __version__
 # loss of information
 FLOAT_FORMAT = "{: .17e}"
 # Absolute path to the PyBOP repo
-script_path = os.path.abspath(__file__)
+script_path = path.dirname(__file__)
 
 #
-# Model Classes
+# Cost function class
 #
-from .models import BaseModel, lithium_ion
+# from .costs.base_cost import BaseCost
 
 #
-# Parameterisation class
+# Dataset class
 #
-from .identification import Parameterisation, ParameterSet, Parameter, Observed
+from .datasets.base_dataset import Dataset
 
 #
-# Priors class
+# Model classes
 #
-from .priors import Gaussian, Uniform, Exponential
+from .models.base_model import BaseModel
+from .models import lithium_ion
 
 #
-# Optimisation class
+# Main optimisation class
 #
-from .optimisation import BaseOptimisation
-from .optimisation.NLoptOptimize import NLoptOptimize
-from .optimisation.SciPyMinimize import SciPyMinimize
+from .optimisation import Optimisation
 
 #
-# Remove any imported modules, so we don't expose them as part of pybop
+# Optimiser class
+#
+from .optimisers.base_optimiser import BaseOptimiser
+from .optimisers.nlopt_optimize import NLoptOptimize
+from .optimisers.scipy_minimize import SciPyMinimize
+
+#
+# Parameter classes
+#
+from .parameters.base_parameter import Parameter
+from .parameters.base_parameter_set import ParameterSet
+from .parameters.priors import Gaussian, Uniform, Exponential
+
+#
+# Plotting class
+#
+from .plotting.quick_plot import QuickPlot
+
+#
+# Remove any imported modules, so we don't expose them as part of PyBOP
 #
 del sys

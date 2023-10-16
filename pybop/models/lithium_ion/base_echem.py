@@ -1,6 +1,6 @@
 import pybop
 import pybamm
-from ..BaseModel import BaseModel
+from ..base_model import BaseModel
 
 
 class SPM(BaseModel):

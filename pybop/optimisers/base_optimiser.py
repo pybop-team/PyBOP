@@ -1,7 +1,7 @@
 import pybop
 
 
-class BaseOptimisation:
+class BaseOptimiser:
     """
 
     Base class for the optimisation methods.
@@ -9,7 +9,7 @@ class BaseOptimisation:
     """
 
     def __init__(self):
-        self.name = "Base Optimisation"
+        self.name = "Base Optimiser"
 
     def optimise(self, cost_function, x0, bounds, method=None):
         """

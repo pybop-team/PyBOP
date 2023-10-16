@@ -1,20 +1,22 @@
 import pybop
 import pandas as pd
 import numpy as np
+from os import path
 
-# Form observations
-Measurements = pd.read_csv("examples/scripts/Chen_example.csv", comment="#").to_numpy()
+# Load dataset
+data_path = path.join(pybop.script_path,'..','examples/scripts/Chen_example.csv')
+measurements = pd.read_csv(data_path, comment="#").to_numpy()
 observations = [
-    pybop.Observed("Time [s]", Measurements[:, 0]),
-    pybop.Observed("Current function [A]", Measurements[:, 1]),
-    pybop.Observed("Voltage [V]", Measurements[:, 2]),
+    pybop.Dataset("Time [s]", measurements[:, 0]),
+    pybop.Dataset("Current function [A]", measurements[:, 1]),
+    pybop.Dataset("Voltage [V]", measurements[:, 2]),
 ]
 
 # Define model
 # parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
 model = pybop.models.lithium_ion.SPM()
 
-# Fitting parameters
+# Define fitting parameters
 params = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
@@ -28,23 +30,24 @@ params = [
     ),
 ]
 
-parameterisation = pybop.Parameterisation(
+# Define optimisation problem
+parameterisation = pybop.Optimisation(
     model, observations=observations, fit_parameters=params
 )
 
-# get RMSE estimate using NLOpt
+# Optimise RMSE using NLOpt
 results, last_optim, num_evals = parameterisation.rmse(
     signal="Voltage [V]", method="nlopt"
 )
 
 # get MAP estimate, starting at a random initial point in parameter space
-# parameterisation.map(x0=[p.sample() for p in params])
+# optimisation.map(x0=[p.sample() for p in params])
 
 # or sample from posterior
-# parameterisation.sample(1000, n_chains=4, ....)
+# optimisation.sample(1000, n_chains=4, ....)
 
 # or SOBER
-# parameterisation.sober()
+# optimisation.sober()
 
 
 # Optimisation = pybop.optimisation(model, cost=cost, parameters=parameters, observation=observation)

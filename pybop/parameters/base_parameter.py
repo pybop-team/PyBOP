@@ -5,7 +5,7 @@ import pybamm
 
 class Parameter:
     """ ""
-    Class for creating parameters in pybop.
+    Class for creating parameters in PyBOP.
     """
 
     def __init__(self, param, value=None, prior=None, bounds=None):

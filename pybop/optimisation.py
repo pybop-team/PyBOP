@@ -2,9 +2,9 @@ import pybop
 import numpy as np
 
 
-class Parameterisation:
+class Optimisation:
     """
-    Parameterisation class for pybop.
+    Optimisation class for PyBOP.
     """
 
     def __init__(
