@@ -8,36 +8,43 @@ class NLoptOptimize(BaseOptimiser):
     Wrapper class for the NLOpt optimiser class. Extends the BaseOptimiser class.
     """
 
-    def __init__(self, method=None, x0=None, xtol=None):
+    def __init__(self, x0, xtol=None, method=None):
         super().__init__()
         self.name = "NLOpt Optimiser"
 
         if method is not None:
-            self.opt = nlopt.opt(method, len(x0))
+            self.optim = nlopt.opt(method, len(x0))
         else:
-            self.opt = nlopt.opt(nlopt.LN_BOBYQA, len(x0))
+            self.optim = nlopt.opt(nlopt.LN_BOBYQA, len(x0))
 
         if xtol is not None:
-            self.opt.set_xtol_rel(xtol)
+            self.optim.set_xtol_rel(xtol)
         else:
-            self.opt.set_xtol_rel(1e-5)
+            self.optim.set_xtol_rel(1e-5)
 
     def _runoptimise(self, cost_function, x0, bounds):
         """
         Run the NLOpt optimisation method.
 
-        Parameters
+        Inputs
         ----------
         cost_function: function for optimising
         method: optimisation algorithm
         x0: initialisation array
         bounds: bounds array
         """
+        
+        # Pass settings to the optimiser
+        self.optim.set_min_objective(cost_function)
+        self.optim.set_lower_bounds(bounds["lower"])
+        self.optim.set_upper_bounds(bounds["upper"])
 
-        self.opt.set_min_objective(cost_function)
-        self.opt.set_lower_bounds(bounds["lower"])
-        self.opt.set_upper_bounds(bounds["upper"])
-        results = self.opt.optimize(x0)
-        num_evals = self.opt.get_numevals()
+        # Run the optimser
+        x = self.optim.optimize(x0)
 
-        return results, self.opt.last_optimum_value(), num_evals
+        # Get performance statistics
+        output = self.optim
+        final_cost = self.optim.last_optimum_value()
+        num_evals = self.optim.get_numevals()
+
+        return x, output, final_cost, num_evals

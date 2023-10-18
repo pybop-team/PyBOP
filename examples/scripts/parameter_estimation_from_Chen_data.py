@@ -30,15 +30,25 @@ params = [
     ),
 ]
 
-# Define optimisation problem
+# Define the cost to optimise
+cost = pybop.RMSE()
+signal = "Voltage [V]"
+
+# Select optimiser
+optimiser = pybop.NLoptOptimize(x0=params)
+
+# Build the optimisation problem
 parameterisation = pybop.Optimisation(
-    model, observations=observations, fit_parameters=params
+    cost=cost, dataset=observations, signal=signal,
+    model=model, optimiser=optimiser, fit_parameters=params
 )
 
-# Optimise RMSE using NLOpt
-results, last_optim, num_evals = parameterisation.rmse(
-    signal="Voltage [V]", method="nlopt"
-)
+# Run the optimisation problem
+x, output, final_cost, num_evals = parameterisation.run()
+
+print("Estimated parameters:", x)
+print("Final cost:", final_cost)
+
 
 # get MAP estimate, starting at a random initial point in parameter space
 # optimisation.map(x0=[p.sample() for p in params])
@@ -48,6 +58,3 @@ results, last_optim, num_evals = parameterisation.rmse(
 
 # or SOBER
 # optimisation.sober()
-
-
-# Optimisation = pybop.optimisation(model, cost=cost, parameters=parameters, observation=observation)
