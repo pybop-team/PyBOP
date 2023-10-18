@@ -30,6 +30,7 @@ setup(
         "scipy>=1.3",
         "pandas>=1.0",
         "nlopt>=2.6",
+        "pints>=0.5",
     ],
     # https://pypi.org/classifiers/
     classifiers=[],
