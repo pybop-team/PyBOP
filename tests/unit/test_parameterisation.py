@@ -1,9 +1,14 @@
+import unittest
 import pybop
 import pybamm
 import numpy as np
 
 
-class TestParameterisation:
+class TestParameterisation(unittest.TestCase):
+    """
+    Tests the parameterisation functionality of PyBOP.
+    """
+
     def getdata(self, model, x0):
 
         # Define default parameter set
@@ -129,3 +134,7 @@ class TestParameterisation:
         # Check assertions
         np.testing.assert_allclose(final_cost, 1e-3, atol=1e-2)
         np.testing.assert_allclose(x, x0, atol=1e-1)
+
+
+if __name__ == '__main__':
+    unittest.main()
