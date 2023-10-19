@@ -60,7 +60,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Run unit tests for PyBOP.',
         epilog='To run individual unit tests, use e.g.'
-               ' $ tests/unit/test_parameterisation.py',
+               ' $ python tests/unit/test_parameterisation.py',
     )
     # Unit tests
     parser.add_argument(

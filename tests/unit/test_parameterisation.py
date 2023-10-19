@@ -39,7 +39,7 @@ class TestParameterisation(unittest.TestCase):
         sim = model.simulate(experiment=experiment)
         return sim
 
-    def test_spm(self):
+    def test_spm_nlopt(self):
         # Define model
         model = pybop.lithium_ion.SPM()
         model.parameter_set = model.pybamm_model.default_parameter_values
@@ -87,7 +87,7 @@ class TestParameterisation(unittest.TestCase):
         np.testing.assert_allclose(final_cost, 1e-3, atol=1e-2)
         np.testing.assert_allclose(x, x0, atol=1e-1)
 
-    def test_spme(self):
+    def test_spme_scipy(self):
         # Define model
         model = pybop.lithium_ion.SPMe()
         model.parameter_set = model.pybamm_model.default_parameter_values
@@ -120,7 +120,7 @@ class TestParameterisation(unittest.TestCase):
         signal = "Voltage [V]"
 
         # Select optimiser
-        optimiser = pybop.NLoptOptimize(x0=params)
+        optimiser = pybop.SciPyMinimize(x0=params)
 
         # Build the optimisation problem
         parameterisation = pybop.Optimisation(
