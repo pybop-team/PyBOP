@@ -1,4 +1,4 @@
-name: PyBOP
+name: test_on_push
 
 on:
   push:
@@ -29,9 +29,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install --upgrade pip nox
-          pip install -e .
+          python -m pip install --upgrade pip nox
       - name: Unit tests with nox
         run: |
           nox -s unit
@@ -56,10 +54,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install --upgrade pip nox
-          pip install -e .
-
+          python -m pip install --upgrade pip nox
       - name: Run coverage tests for Ubuntu with Python 3.11 and generate report
         run: nox -s coverage
 
