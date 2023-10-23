@@ -11,9 +11,6 @@ class TestParameterisation(unittest.TestCase):
 
     def getdata(self, model, x0):
 
-        # Define default parameter set
-        model.parameter_set = model.pybamm_model.default_parameter_values
-
         # Update fitting parameters
         model.parameter_set.update(
             {
@@ -36,32 +33,32 @@ class TestParameterisation(unittest.TestCase):
         )
 
         # Simulate model to generate test dataset
-        sim = model.simulate(experiment=experiment)
-        return sim
+        prediction = model.simulate(experiment=experiment)
+        return prediction
 
     def test_spm_nlopt(self):
         # Define model
         model = pybop.lithium_ion.SPM()
         model.parameter_set = model.pybamm_model.default_parameter_values
 
-        # Form observations
+        # Form dataset
         x0 = np.array([0.52, 0.63])
         solution = self.getdata(model, x0)
-        observations = [
+        dataset = [
             pybop.Dataset("Time [s]", solution["Time [s]"].data),
             pybop.Dataset("Current function [A]", solution["Current [A]"].data),
             pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
         ]
 
         # Define fitting parameters
-        params = [
+        parameters = [
             pybop.Parameter(
-                "Negative electrode active material volume fraction",
+                name="Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.02),
                 bounds=[0.375, 0.625],
             ),
             pybop.Parameter(
-                "Positive electrode active material volume fraction",
+                name="Positive electrode active material volume fraction",
                 prior=pybop.Gaussian(0.65, 0.02),
                 bounds=[0.525, 0.75],
             ),
@@ -72,12 +69,12 @@ class TestParameterisation(unittest.TestCase):
         signal = "Voltage [V]"
 
         # Select optimiser
-        optimiser = pybop.NLoptOptimize(x0=params)
+        optimiser = pybop.NLoptOptimize(x0=x0)
 
         # Build the optimisation problem
         parameterisation = pybop.Optimisation(
-            cost=cost, dataset=observations, signal=signal,
-            model=model, optimiser=optimiser, fit_parameters=params
+            cost=cost, model=model,optimiser=optimiser,
+            parameters=parameters, dataset=dataset, signal=signal,
         )
 
         # Run the optimisation problem
@@ -92,24 +89,24 @@ class TestParameterisation(unittest.TestCase):
         model = pybop.lithium_ion.SPMe()
         model.parameter_set = model.pybamm_model.default_parameter_values
 
-        # Form observations
+        # Form dataset
         x0 = np.array([0.52, 0.63])
-        solution = self.getdata(model, x0)
-        observations = [
+        solution = self.getdata(model,x0)
+        dataset = [
             pybop.Dataset("Time [s]", solution["Time [s]"].data),
             pybop.Dataset("Current function [A]", solution["Current [A]"].data),
             pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
         ]
 
         # Define fitting parameters
-        params = [
+        parameters = [
             pybop.Parameter(
-                "Negative electrode active material volume fraction",
+                name="Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.02),
                 bounds=[0.375, 0.625],
             ),
             pybop.Parameter(
-                "Positive electrode active material volume fraction",
+                name="Positive electrode active material volume fraction",
                 prior=pybop.Gaussian(0.65, 0.02),
                 bounds=[0.525, 0.75],
             ),
@@ -120,12 +117,60 @@ class TestParameterisation(unittest.TestCase):
         signal = "Voltage [V]"
 
         # Select optimiser
-        optimiser = pybop.SciPyMinimize(x0=params)
+        optimiser = pybop.SciPyMinimize(x0=x0)
 
         # Build the optimisation problem
         parameterisation = pybop.Optimisation(
-            cost=cost, dataset=observations, signal=signal,
-            model=model, optimiser=optimiser, fit_parameters=params
+            cost=cost, model=model, optimiser=optimiser,
+            parameters=parameters, dataset=dataset, signal=signal,
+        )
+
+        # Run the optimisation problem
+        x, output, final_cost, num_evals = parameterisation.run()
+
+        # Check assertions
+        np.testing.assert_allclose(final_cost, 1e-3, atol=1e-2)
+        np.testing.assert_allclose(x, x0, atol=1e-1)
+
+    def test_spm_pints(self):
+        # Define model
+        model = pybop.lithium_ion.SPMe()
+        model.parameter_set = model.pybamm_model.default_parameter_values
+
+        # Form dataset
+        x0 = np.array([0.52, 0.63])
+        solution = self.getdata(model,x0)
+        dataset = [
+            pybop.Dataset("Time [s]", solution["Time [s]"].data),
+            pybop.Dataset("Current function [A]", solution["Current [A]"].data),
+            pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
+        ]
+
+        # Define fitting parameters
+        parameters = [
+            pybop.Parameter(
+                name="Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.5, 0.02),
+                bounds=[0.375, 0.625],
+            ),
+            pybop.Parameter(
+                name="Positive electrode active material volume fraction",
+                prior=pybop.Gaussian(0.65, 0.02),
+                bounds=[0.525, 0.75],
+            ),
+        ]
+
+        # Define the cost to optimise
+        cost = pybop.RMSE()
+        signal = "Voltage [V]"
+
+        # Select optimiser
+        optimiser = pybop.PintsOptimiser(x0=x0)
+
+        # Build the optimisation problem
+        parameterisation = pybop.Optimisation(
+            cost=cost, model=model, optimiser=optimiser,
+            parameters=parameters, dataset=dataset, signal=signal,
         )
 
         # Run the optimisation problem

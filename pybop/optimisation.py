@@ -10,24 +10,24 @@ class Optimisation:
     def __init__(
         self,
         cost,
-        dataset,
-        signal,
         model,
         optimiser,
-        fit_parameters,
+        parameters,
         x0=None,
+        dataset=None,
+        signal=None,
         check_model=True,
         init_soc=None,
         verbose=False,
     ):
         self.cost = cost
-        self.dataset = {o.name: o for o in dataset}
-        self.signal = signal
         self.model = model
         self.optimiser = optimiser
-        self.fit_parameters = {o.name: o for o in fit_parameters}
-        self.fit_dict = {}
-        self.model.n_parameters = len(self.fit_dict)
+        self.parameters = parameters
+        self.x0 = x0
+        self.dataset = {o.name: o for o in dataset}
+        self.signal = signal
+        self.n_parameters = len(self.parameters)
         self.verbose = verbose
 
         # Check that the dataset contains time and current
@@ -37,26 +37,25 @@ class Optimisation:
 
         # Set bounds
         self.bounds = dict(
-            lower=[self.fit_parameters[p].bounds[0] for p in self.fit_parameters],
-            upper=[self.fit_parameters[p].bounds[1] for p in self.fit_parameters],
+            lower=[Param.bounds[0] for Param in self.parameters],
+            upper=[Param.bounds[1] for Param in self.parameters],
         )
 
         # Sample from prior for x0
         if x0 is None:
-            self.x0 = np.zeros(len(self.fit_parameters))
-            for i, j in enumerate(self.fit_parameters):
-                self.x0[i] = self.fit_parameters[j].prior.rvs(1)[
-                    0
-                ]  # Update to capture dimensions per parameter
+            self.x0 = np.zeros(self.n_parameters)
+            for i, Param in enumerate(self.parameters):
+                self.x0[i] = Param.prior.rvs(1)[0]
+                                # Update to capture dimensions per parameter
 
-        # Align initial guess with sample from prior
-        for i, j in enumerate(self.fit_parameters):
-            self.fit_dict[j] = {j: self.x0[i]}
+        # Add the initial values to the parameter definitions
+        for i, Param in enumerate(self.parameters):
+            Param.update(value=self.x0[i])
 
-        # Build model with dataset and fitting_parameters
+        # Build model with dataset and fitting parameters
         self.model.build(
-            self.dataset,
-            self.fit_parameters,
+            dataset=self.dataset,
+            parameters=self.parameters,
             check_model=check_model,
             init_soc=init_soc,
         )
@@ -80,14 +79,12 @@ class Optimisation:
         # Unpack the target dataset
         target = self.dataset[self.signal].data
 
-        # Assign parameter estimates
-        for i, p in enumerate(self.fit_dict):
-            self.fit_dict[p] = x[i]
+        # Update the parameter dictionary
+        for i, Param in enumerate(self.parameters):
+            Param.update(value=self.x0[i])
 
         # Make prediction
-        prediction = self.model.solver.solve(
-            self.model.built_model, self.model.time_data, inputs=self.fit_dict
-        )[self.signal].data
+        prediction = self.model.simulate(parameters=self.parameters)[self.signal].data
 
         # Add simulation error handling here
 
@@ -95,6 +92,6 @@ class Optimisation:
         res = self.cost.compute(prediction, target)
 
         if self.verbose:
-            print(self.fit_dict)
+            print('Parameter estimates: ', self.parameters.value, '\n')
 
         return res

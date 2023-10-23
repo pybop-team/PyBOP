@@ -13,7 +13,7 @@ class Dataset:
         self.data = data
 
     def __repr__(self):
-        return f"Observation: {self.name} \n Data: {self.data}"
+        return f"Dataset: {self.name} \n Data: {self.data}"
 
     def Interpolant(self):
         if self.variable == "time":

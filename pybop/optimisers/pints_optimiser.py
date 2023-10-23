@@ -36,10 +36,13 @@ class PintsOptimiser(BaseOptimiser):
         # Wrap error measure
         error = pybop.PintsError(cost_function, x0)
 
+        # Set up optimisation controller
+        controller = pints.OptimisationController(error, x0,
+                        boundaries=boundaries, method=self.method)
+        controller.set_max_unchanged_iterations(20) # default 200
+
         # Run the optimser
-        x, final_cost = pints.optimise(
-            error, x0, boundaries=boundaries, method=self.method,
-        )
+        x, final_cost = controller.run()
 
         # Get performance statistics
         # output = *pass all output*
