@@ -55,7 +55,7 @@ jobs:
         run: |
           eval "$(pyenv init -)"
           pyenv activate pybop-${{ matrix.python-version }}
-          python -m pip install --upgrade pip nox wheel
+          python -m pip install --upgrade pip wheel setuptools nox
           python -m nox -s unit
 
       - name: Uninstall pyenv-virtualenv & python
