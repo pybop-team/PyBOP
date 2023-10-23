@@ -32,7 +32,8 @@ class BaseModel:
 
     def set_params(self):
         """
-        Set the parameters in the model.
+        Set each parameter in the model either equal to its value
+        or mark it as an input.
         """
         raise ValueError("Not yet implemented")
 

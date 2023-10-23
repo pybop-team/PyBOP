@@ -73,7 +73,8 @@ class PybammModel(BaseModel):
 
     def set_params(self):
         """
-        Set the parameters in the model.
+        Set each parameter in the model either equal to its value
+        or mark it as an input.
         """
         if self.model_with_set_params:
             return
@@ -145,7 +146,7 @@ class PybammModel(BaseModel):
             
             # Pass the input parameters
             if parameters is not None:
-                inputs = {};
+                inputs = {}
                 for i, Param in enumerate(parameters):
                     inputs[Param.name] = Param.value                
 
