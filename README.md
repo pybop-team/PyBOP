@@ -3,10 +3,9 @@
   <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/Temp_Logo.png" alt="logo" width="400" height="auto" />
   <h1>Python Battery Optimisation and Parameterisation</h1>
 
-
 <p>
-  <a href="https://github.com/pybop-team/PyBOP/actions/workflows/test_on_push.yaml">
-    <img src="https://img.shields.io/github/actions/workflow/status/pybop-team/PyBOP/test_on_push.yaml?label=Build%20Status" alt="build" />
+  <a href="https://github.com/pybop-team/PyBOP/actions/workflows/scheduled_tests.yaml">
+    <img src="https://github.com/pybop-team/PyBOP/actions/workflows/scheduled_tests.yaml/badge.svg" alt="Scheduled" />
   </a>
   <a href="https://github.com/pybop-team/PyBOP/graphs/contributors">
     <img src="https://img.shields.io/github/contributors/pybop-team/PyBOP" alt="contributors" />
