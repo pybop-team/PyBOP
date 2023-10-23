@@ -50,12 +50,12 @@ jobs:
           pyenv install ${{ matrix.python-version }} -s
           pyenv virtualenv ${{ matrix.python-version }} pybop-${{ matrix.python-version }}
 
-      - name: Install dependencies & run unit tests for Windows and MacOS
+      - name: Install dependencies & run unit tests
         shell: bash
         run: |
           eval "$(pyenv init -)"
           pyenv activate pybop-${{ matrix.python-version }}
-          python -m pip install --upgrade pip nox
+          python -m pip install --upgrade pip nox wheel
           python -m nox -s unit
 
       - name: Uninstall pyenv-virtualenv & python
