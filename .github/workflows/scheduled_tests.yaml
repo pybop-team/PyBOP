@@ -3,8 +3,8 @@ name: Scheduled
 on:
   workflow_dispatch:
   pull_request:
-    branches:
-      - main
+    # branches:
+    #   - main
 
   # runs every day at 09:00 UTC
   schedule:
