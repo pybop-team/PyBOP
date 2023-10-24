@@ -18,7 +18,7 @@ with open(os.path.join(root, "pybop", "version.py")) as f:
 setup(
     name="pybop",
     packages=find_packages("."),
-    version=__version__,
+    version=__version__,  # noqa F821
     license="BSD-3-Clause",
     description="Python Battery Optimisation and Parameterisation",
     long_description=long_description,

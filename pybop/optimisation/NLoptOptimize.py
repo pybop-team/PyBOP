@@ -1,4 +1,3 @@
-import pybop
 import nlopt
 from .BaseOptimisation import BaseOptimisation
 

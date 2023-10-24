@@ -1,8 +1,3 @@
-from typing import Any
-import pybop
-import pybamm
-
-
 class Parameter:
     """ ""
     Class for creating parameters in pybop.

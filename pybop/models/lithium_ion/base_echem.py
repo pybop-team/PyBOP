@@ -1,4 +1,3 @@
-import pybop
 import pybamm
 from ..BaseModel import BaseModel
 
