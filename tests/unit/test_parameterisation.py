@@ -10,7 +10,6 @@ class TestParameterisation(unittest.TestCase):
     """
 
     def getdata(self, model, x0):
-
         # Update fitting parameters
         model.parameter_set.update(
             {
@@ -73,8 +72,12 @@ class TestParameterisation(unittest.TestCase):
 
         # Build the optimisation problem
         parameterisation = pybop.Optimisation(
-            cost=cost, model=model,optimiser=optimiser,
-            parameters=parameters, dataset=dataset, signal=signal,
+            cost=cost,
+            model=model,
+            optimiser=optimiser,
+            parameters=parameters,
+            dataset=dataset,
+            signal=signal,
         )
 
         # Run the optimisation problem
@@ -91,7 +94,7 @@ class TestParameterisation(unittest.TestCase):
 
         # Form dataset
         x0 = np.array([0.52, 0.63])
-        solution = self.getdata(model,x0)
+        solution = self.getdata(model, x0)
         dataset = [
             pybop.Dataset("Time [s]", solution["Time [s]"].data),
             pybop.Dataset("Current function [A]", solution["Current [A]"].data),
@@ -121,8 +124,12 @@ class TestParameterisation(unittest.TestCase):
 
         # Build the optimisation problem
         parameterisation = pybop.Optimisation(
-            cost=cost, model=model, optimiser=optimiser,
-            parameters=parameters, dataset=dataset, signal=signal,
+            cost=cost,
+            model=model,
+            optimiser=optimiser,
+            parameters=parameters,
+            dataset=dataset,
+            signal=signal,
         )
 
         # Run the optimisation problem
@@ -139,7 +146,7 @@ class TestParameterisation(unittest.TestCase):
 
         # Form dataset
         x0 = np.array([0.52, 0.63])
-        solution = self.getdata(model,x0)
+        solution = self.getdata(model, x0)
         dataset = [
             pybop.Dataset("Time [s]", solution["Time [s]"].data),
             pybop.Dataset("Current function [A]", solution["Current [A]"].data),
@@ -169,8 +176,12 @@ class TestParameterisation(unittest.TestCase):
 
         # Build the optimisation problem
         parameterisation = pybop.Optimisation(
-            cost=cost, model=model, optimiser=optimiser,
-            parameters=parameters, dataset=dataset, signal=signal,
+            cost=cost,
+            model=model,
+            optimiser=optimiser,
+            parameters=parameters,
+            dataset=dataset,
+            signal=signal,
         )
 
         # Run the optimisation problem
@@ -181,5 +192,5 @@ class TestParameterisation(unittest.TestCase):
         np.testing.assert_allclose(x, x0, atol=1e-1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
