@@ -33,7 +33,7 @@ class NLoptOptimize(BaseOptimiser):
         x0: initialisation array
         bounds: bounds array
         """
-        
+
         # Pass settings to the optimiser
         self.optim.set_min_objective(cost_function)
         self.optim.set_lower_bounds(bounds["lower"])

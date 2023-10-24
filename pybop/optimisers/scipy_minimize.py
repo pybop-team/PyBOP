@@ -37,10 +37,14 @@ class SciPyMinimize(BaseOptimiser):
         """
 
         # Reformat bounds
-        bounds = ((lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"]))
+        bounds = (
+            (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
+        )
 
         # Run the optimser
-        output = minimize(cost_function, x0, method=self.method, bounds=bounds, tol=self.xtol)
+        output = minimize(
+            cost_function, x0, method=self.method, bounds=bounds, tol=self.xtol
+        )
 
         # Get performance statistics
         x = output.x

@@ -4,7 +4,7 @@ import numpy as np
 from os import path
 
 # Load dataset
-data_path = path.join(pybop.script_path,'..','examples/scripts/Chen_example.csv')
+data_path = path.join(pybop.script_path, "..", "examples/scripts/Chen_example.csv")
 measurements = pd.read_csv(data_path, comment="#").to_numpy()
 observations = [
     pybop.Dataset("Time [s]", measurements[:, 0]),
@@ -39,8 +39,12 @@ optimiser = pybop.NLoptOptimize(x0=params)
 
 # Build the optimisation problem
 parameterisation = pybop.Optimisation(
-    cost=cost, dataset=observations, signal=signal,
-    model=model, optimiser=optimiser, fit_parameters=params
+    cost=cost,
+    dataset=observations,
+    signal=signal,
+    model=model,
+    optimiser=optimiser,
+    fit_parameters=params,
 )
 
 # Run the optimisation problem

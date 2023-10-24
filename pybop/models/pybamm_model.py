@@ -23,7 +23,7 @@ class PybammModel(BaseModel):
     ):
         """
         Build the model (if not built already).
-        
+
         Specifiy either a dataset or an experiment.
         """
         self.dataset = dataset
@@ -39,7 +39,7 @@ class PybammModel(BaseModel):
         elif self.pybamm_model.is_discretised:
             self._model_with_set_params = self.pybamm_model
             self._built_model = self.pybamm_model
-        
+
         else:
             self.set_params()
             self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
@@ -126,10 +126,10 @@ class PybammModel(BaseModel):
             provided in the data.
         experiment : of the PyBaMM Experiment class (for PyBaMM models only)
         """
-        
+
         # Run the simulation
         prediction = self._simulate(parameters, times, experiment)
-        
+
         return prediction
 
     def _simulate(self, parameters, times, experiment):
@@ -138,17 +138,17 @@ class PybammModel(BaseModel):
         """
         if self.pybamm_model is None:
             raise ValueError("This sim method currently only supports PyBaMM models")
-        
+
         else:
             # Build the model if necessary
             if self._built_model is None:
                 self.build()
-            
+
             # Pass the input parameters
             if parameters is not None:
                 inputs = {}
                 for i, Param in enumerate(parameters):
-                    inputs[Param.name] = Param.value                
+                    inputs[Param.name] = Param.value
 
             # Define the simulation
             if experiment is None:
@@ -156,18 +156,16 @@ class PybammModel(BaseModel):
                 self.times = self.dataset["Time [s]"].data
                 t_eval = times or self.times
             else:
-                sim = pybamm.Simulation(self.pybamm_model,
-                                        experiment=experiment)
+                sim = pybamm.Simulation(self.pybamm_model, experiment=experiment)
                 t_eval = None
-            
+
             # Run the simulation
             if parameters is None:
                 prediction = sim.solve(t_eval=t_eval)
             else:
-                prediction = sim.solve(t_eval=t_eval,inputs=inputs)
+                prediction = sim.solve(t_eval=t_eval, inputs=inputs)
 
             return prediction
-            
 
     def n_parameters(self):
         """

@@ -46,7 +46,7 @@ class Optimisation:
             self.x0 = np.zeros(self.n_parameters)
             for i, Param in enumerate(self.parameters):
                 self.x0[i] = Param.prior.rvs(1)[0]
-                                # Update to capture dimensions per parameter
+                # Update to capture dimensions per parameter
 
         # Add the initial values to the parameter definitions
         for i, Param in enumerate(self.parameters):
@@ -66,8 +66,10 @@ class Optimisation:
         """
 
         results = self.optimiser.optimise(
-            self.cost_function, #lambda x, grad: self.cost_function(x, grad),
-            self.x0, self.bounds)
+            self.cost_function,  # lambda x, grad: self.cost_function(x, grad),
+            self.x0,
+            self.bounds,
+        )
 
         return results
 
@@ -92,6 +94,6 @@ class Optimisation:
         res = self.cost.compute(prediction, target)
 
         if self.verbose:
-            print('Parameter estimates: ', self.parameters.value, '\n')
+            print("Parameter estimates: ", self.parameters.value, "\n")
 
         return res

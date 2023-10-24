@@ -3,6 +3,7 @@ import pybamm
 import pandas as pd
 import numpy as np
 
+
 def getdata(x0):
     # Define the "ground truth" model with the default parameter set
     model = pybamm.lithium_ion.SPM()
@@ -15,7 +16,7 @@ def getdata(x0):
             "Positive electrode active material volume fraction": x0[1],
         }
     )
-    
+
     # Define the experimental protocol
     experiment = pybamm.Experiment(
         [
@@ -74,8 +75,12 @@ optimiser = pybop.NLoptOptimize(x0=params)
 
 # Build the optimisation problem
 parameterisation = pybop.Optimisation(
-    cost=cost, dataset=observations, signal=signal,
-    model=model, optimiser=optimiser, fit_parameters=params
+    cost=cost,
+    dataset=observations,
+    signal=signal,
+    model=model,
+    optimiser=optimiser,
+    fit_parameters=params,
 )
 
 # Run the optimisation problem

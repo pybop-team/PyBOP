@@ -29,7 +29,7 @@ class PintsOptimiser(BaseOptimiser):
         x0: initialisation array
         bounds: bounds array
         """
-        
+
         # Wrap bounds
         boundaries = pybop.PintsBoundaries(bounds, x0)
 
@@ -37,9 +37,10 @@ class PintsOptimiser(BaseOptimiser):
         error = pybop.PintsError(cost_function, x0)
 
         # Set up optimisation controller
-        controller = pints.OptimisationController(error, x0,
-                        boundaries=boundaries, method=self.method)
-        controller.set_max_unchanged_iterations(20) # default 200
+        controller = pints.OptimisationController(
+            error, x0, boundaries=boundaries, method=self.method
+        )
+        controller.set_max_unchanged_iterations(20)  # default 200
 
         # Run the optimser
         x, final_cost = controller.run()
@@ -67,12 +68,12 @@ class PintsError(ErrorMeasure):
     :class:`ErrorMeasure` class you can calculate the error by calling ``e(p)``
     where ``p`` is a point in parameter space.
     """
+
     def __init__(self, cost_function, x0):
         self.cost_function = cost_function
         self.x0 = x0
-    
-    def __call__(self, x):
 
+    def __call__(self, x):
         cost = self.cost_function(x)
 
         return cost
@@ -104,10 +105,11 @@ class PintsBoundaries(object):
     From PINTS:
     Abstract class representing boundaries on a parameter space.
     """
+
     def __init__(self, bounds, x0):
         self.bounds = bounds
         self.x0 = x0
-        
+
     def check(self, parameters):
         """
         Returns ``True`` if and only if the given point in parameter space is
@@ -119,7 +121,12 @@ class PintsBoundaries(object):
             A point in parameter space
         """
         result = False
-        if parameters[0]>=self.bounds["lower"][0] and parameters[1]>=self.bounds["lower"][1] and parameters[0]<=self.bounds["upper"][0] and parameters[1]<=self.bounds["upper"][1]:
+        if (
+            parameters[0] >= self.bounds["lower"][0]
+            and parameters[1] >= self.bounds["lower"][1]
+            and parameters[0] <= self.bounds["upper"][0]
+            and parameters[1] <= self.bounds["upper"][1]
+        ):
             result = True
 
         return result

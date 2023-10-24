@@ -11,7 +11,6 @@ class RMSE:
         self.name = "RMSE"
 
     def compute(self, prediction, target):
-
         # Check compatibility
         if len(prediction) != len(target):
             print(
@@ -22,11 +21,9 @@ class RMSE:
             raise ValueError(
                 "Measurement and simulated data length mismatch, potentially due to reaching a voltage cut-off"
             )
-        
-        print(
-            "Last Values:", prediction[-1], target[-1]
-        )
-        
+
+        print("Last Values:", prediction[-1], target[-1])
+
         # Compute the cost
         try:
             cost = np.sqrt(np.mean((prediction - target) ** 2))
@@ -45,15 +42,13 @@ class MLE:
         self.name = "MLE"
 
     def compute(self, prediction, target):
-
         # Compute the cost
         try:
-            cost = 0 # update with MLE residual
+            cost = 0  # update with MLE residual
         except:
             print("Error in MLE calculation")
 
         return cost
-    
 
 
 class PEM:
@@ -65,15 +60,13 @@ class PEM:
         self.name = "PEM"
 
     def compute(self, prediction, target):
-
         # Compute the cost
         try:
-            cost = 0 # update with MLE residual
+            cost = 0  # update with MLE residual
         except:
             print("Error in PEM calculation")
 
         return cost
-    
 
 
 class MAP:
@@ -85,10 +78,9 @@ class MAP:
         self.name = "MAP"
 
     def compute(self, prediction, target):
-
         # Compute the cost
         try:
-            cost = 0 # update with MLE residual
+            cost = 0  # update with MLE residual
         except:
             print("Error in MAP calculation")
 
