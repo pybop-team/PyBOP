@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/pybop 
+      url: https://pypi.org/p/pybop
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
 

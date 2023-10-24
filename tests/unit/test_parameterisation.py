@@ -143,4 +143,3 @@ class TestParameterisation:
         np.testing.assert_allclose(
             parameter_test["Negative electrode active material volume fraction"], 0.75
         )
-
