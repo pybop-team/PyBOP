@@ -20,13 +20,14 @@ from pybop.version import __version__
 # Float format: a float can be converted to a 17 digit decimal and back without
 # loss of information
 FLOAT_FORMAT = "{: .17e}"
-# Absolute path to the PyBOP repo
-script_path = os.path.abspath(__file__)
+# Absolute path to the pybop module
+script_path = os.path.dirname(__file__)
 
 #
 # Model Classes
 #
-from .models import BaseModel, lithium_ion
+from .models import lithium_ion
+from .models.BaseModel import BaseModel
 
 #
 # Parameterisation class

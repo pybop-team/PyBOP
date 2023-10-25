@@ -41,7 +41,6 @@ x1, f1 = op.run()
 print("Estimated parameters:")
 print(x1)
 
-
 # Show the generated data
 simulated_values = problem.evaluate(x1[:2])
 
