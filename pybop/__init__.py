@@ -35,7 +35,6 @@ from .models.BaseModel import BaseModel
 from .parameters.parameter_set import ParameterSet
 from .parameters.parameter import Parameter
 from .datasets.observations import Observed
-from .parameterisation import Parameterisation
 
 #
 # Priors class
@@ -45,7 +44,8 @@ from .parameters.priors import Gaussian, Uniform, Exponential
 #
 # Optimisation class
 #
-from .optimisers import BaseOptimisation
+from .optimisation import Optimisation
+from .optimisers import BaseOptimiser
 from .optimisers.NLoptOptimize import NLoptOptimize
 from .optimisers.SciPyMinimize import SciPyMinimize
 

@@ -28,7 +28,7 @@ params = [
     ),
 ]
 
-parameterisation = pybop.Parameterisation(
+parameterisation = pybop.Optimisation(
     model, observations=observations, fit_parameters=params
 )
 

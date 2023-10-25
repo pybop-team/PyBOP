@@ -1,10 +1,10 @@
 from scipy.optimize import minimize
-from .BaseOptimisation import BaseOptimisation
+from .BaseOptimiser import BaseOptimiser
 
 
-class SciPyMinimize(BaseOptimisation):
+class SciPyMinimize(BaseOptimiser):
     """
-    Wrapper class for the Scipy optimisation class. Extends the BaseOptimisation class.
+    Wrapper class for the Scipy optimisation class. Extends the BaseOptimiser class.
     """
 
     def __init__(self, cost_function, x0, bounds=None, options=None):
@@ -14,7 +14,7 @@ class SciPyMinimize(BaseOptimisation):
         self.x0 = x0 or cost_function.x0
         self.bounds = bounds
         self.options = options
-        self.name = "Scipy Optimisation"
+        self.name = "Scipy Optimiser"
 
     def _runoptimise(self):
         """

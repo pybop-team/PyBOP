@@ -39,7 +39,7 @@ class TestModelParameterisation:
             ),
         ]
 
-        parameterisation = pybop.Parameterisation(
+        parameterisation = pybop.Optimisation(
             model, observations=observations, fit_parameters=params
         )
 
@@ -82,7 +82,7 @@ class TestModelParameterisation:
             ),
         ]
 
-        parameterisation = pybop.Parameterisation(
+        parameterisation = pybop.Optimisation(
             model, observations=observations, fit_parameters=params
         )
 
