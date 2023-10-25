@@ -102,7 +102,7 @@ class BaseModel:
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
         else:
-            if inputs is isinstance(dict):
+            if not isinstance(inputs, dict):
                 inputs_dict = {
                     key: inputs[i] for i, key in enumerate(self.fit_parameters)
                 }
