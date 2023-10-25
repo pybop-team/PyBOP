@@ -32,19 +32,22 @@ from .models.BaseModel import BaseModel
 #
 # Parameterisation class
 #
-from .identification import Parameterisation, ParameterSet, Parameter, Observed
+from .parameters.parameter_set import ParameterSet
+from .parameters.parameter import Parameter
+from .datasets.observations import Observed
+from .parameterisation import Parameterisation
 
 #
 # Priors class
 #
-from .priors import Gaussian, Uniform, Exponential
+from .parameters.priors import Gaussian, Uniform, Exponential
 
 #
 # Optimisation class
 #
-from .optimisation import BaseOptimisation
-from .optimisation.NLoptOptimize import NLoptOptimize
-from .optimisation.SciPyMinimize import SciPyMinimize
+from .optimisers import BaseOptimisation
+from .optimisers.NLoptOptimize import NLoptOptimize
+from .optimisers.SciPyMinimize import SciPyMinimize
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop
