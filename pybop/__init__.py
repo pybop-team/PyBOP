@@ -26,7 +26,8 @@ script_path = os.path.dirname(__file__)
 #
 # Model Classes
 #
-from .models import BaseModel, lithium_ion
+from .models import lithium_ion
+from .models.BaseModel import BaseModel
 
 #
 # Parameterisation class

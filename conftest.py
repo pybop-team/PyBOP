@@ -1,4 +1,7 @@
 import pytest
+import matplotlib
+
+matplotlib.use("Template")
 
 
 def pytest_addoption(parser):

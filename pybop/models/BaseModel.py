@@ -1,7 +1,7 @@
 import pybamm
 
 
-class BaseModel:
+class BaseModel():
     """
     Base class for PyBOP models
     """
