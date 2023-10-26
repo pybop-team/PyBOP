@@ -1,15 +1,15 @@
 import nlopt
-from .BaseOptimisation import BaseOptimisation
+from .BaseOptimiser import BaseOptimiser
 
 
-class NLoptOptimize(BaseOptimisation):
+class NLoptOptimize(BaseOptimiser):
     """
-    Wrapper class for the NLOpt optimisation class. Extends the BaseOptimisation class.
+    Wrapper class for the NLOpt optimisation class. Extends the BaseOptimiser class.
     """
 
     def __init__(self, method=None, x0=None, xtol=None):
         super().__init__()
-        self.name = "NLOpt Optimisation"
+        self.name = "NLOpt Optimiser"
 
         if method is not None:
             self.opt = nlopt.opt(method, len(x0))
