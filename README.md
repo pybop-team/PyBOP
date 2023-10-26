@@ -151,7 +151,7 @@ def getdata(x0):
 x0 = np.array([0.55, 0.63])
 solution = getdata(x0)
 ```
-Next, the observed variables are defined, with the model construction and parameter definitions following. Finally, the parameterisation class is constructed and parameter fitting is completed. 
+Next, the observed variables are defined, with the model construction and parameter definitions following. Finally, the parameterisation class is constructed and parameter fitting is completed.
 ```python
 observations = [
     pybop.Observed("Time [s]", solution["Time [s]"].data),
@@ -197,7 +197,7 @@ learning from the success of the [PyBaMM](https://pybamm.org/) community. Our va
 
 -   Inclusivity and fairness (those who want to contribute may do so, and their input is appropriately recognised)
 
--   Inter-operability (aiming for modularity to enable maximum impact and inclusivity)
+-   Interoperability (aiming for modularity to enable maximum impact and inclusivity)
 
 -   User-friendliness (putting user requirements first, thinking about user-assistance & workflows)
 
