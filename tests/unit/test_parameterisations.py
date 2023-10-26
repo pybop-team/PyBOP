@@ -117,5 +117,3 @@ class TestModelParameterisation:
         )
         sim = model.predict(experiment=experiment)
         return sim
-
-
