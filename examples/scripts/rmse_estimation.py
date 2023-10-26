@@ -1,5 +1,6 @@
 import pybop
 import pandas as pd
+import numpy as np
 
 # Form observations
 Measurements = pd.read_csv("examples/scripts/Chen_example.csv", comment="#").to_numpy()
@@ -27,7 +28,7 @@ params = [
     ),
 ]
 
-parameterisation = pybop.Parameterisation(
+parameterisation = pybop.Optimisation(
     model, observations=observations, fit_parameters=params
 )
 

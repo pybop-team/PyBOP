@@ -20,30 +20,34 @@ from pybop.version import __version__
 # Float format: a float can be converted to a 17 digit decimal and back without
 # loss of information
 FLOAT_FORMAT = "{: .17e}"
-# Absolute path to the PyBOP repo
-script_path = os.path.abspath(__file__)
+# Absolute path to the pybop module
+script_path = os.path.dirname(__file__)
 
 #
 # Model Classes
 #
-from .models import BaseModel, lithium_ion
+from .models import lithium_ion
+from .models.BaseModel import BaseModel
 
 #
 # Parameterisation class
 #
-from .identification import Parameterisation, ParameterSet, Parameter, Observed
+from .parameters.parameter_set import ParameterSet
+from .parameters.parameter import Parameter
+from .datasets.observations import Observed
 
 #
 # Priors class
 #
-from .priors import Gaussian, Uniform, Exponential
+from .parameters.priors import Gaussian, Uniform, Exponential
 
 #
 # Optimisation class
 #
-from .optimisation import BaseOptimisation
-from .optimisation.NLoptOptimize import NLoptOptimize
-from .optimisation.SciPyMinimize import SciPyMinimize
+from .optimisation import Optimisation
+from .optimisers import BaseOptimiser
+from .optimisers.NLoptOptimize import NLoptOptimize
+from .optimisers.SciPyMinimize import SciPyMinimize
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop

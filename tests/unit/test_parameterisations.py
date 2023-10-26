@@ -1,10 +1,14 @@
 import pybop
 import pybamm
-import numpy as np
 import pytest
+import numpy as np
 
 
-class TestParameterisation:
+class TestModelParameterisation:
+    """
+    A class to test the model parameterisation methods.
+    """
+
     @pytest.mark.unit
     def test_spm(self):
         # Define model
@@ -35,7 +39,7 @@ class TestParameterisation:
             ),
         ]
 
-        parameterisation = pybop.Parameterisation(
+        parameterisation = pybop.Optimisation(
             model, observations=observations, fit_parameters=params
         )
 
@@ -43,8 +47,9 @@ class TestParameterisation:
         results, last_optim, num_evals = parameterisation.rmse(
             signal="Voltage [V]", method="nlopt"
         )
-        # Assertions
-        np.testing.assert_allclose(last_optim, 1e-3, atol=1e-2)
+
+        # Assertions (for testing purposes only)
+        np.testing.assert_allclose(last_optim, 0, atol=1e-2)
         np.testing.assert_allclose(results, x0, atol=1e-1)
 
     @pytest.mark.unit
@@ -77,7 +82,7 @@ class TestParameterisation:
             ),
         ]
 
-        parameterisation = pybop.Parameterisation(
+        parameterisation = pybop.Optimisation(
             model, observations=observations, fit_parameters=params
         )
 
@@ -85,9 +90,10 @@ class TestParameterisation:
         results, last_optim, num_evals = parameterisation.rmse(
             signal="Voltage [V]", method="nlopt"
         )
-        # Assertions
-        np.testing.assert_allclose(last_optim, 1e-3, atol=1e-2)
-        np.testing.assert_allclose(results, x0, atol=1e-1)
+
+        # Assertions (for testing purposes only)
+        np.testing.assert_allclose(last_optim, 0, atol=1e-2)
+        np.testing.assert_allclose(results, x0, rtol=1e-1)
 
     def getdata(self, model, x0):
         model.parameter_set = model.pybamm_model.default_parameter_values
