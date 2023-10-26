@@ -12,7 +12,7 @@ observations = [
 
 # Define model
 # parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
-model = pybop.models.lithium_ion.SPM()
+model = pybop.models.lithium_ion.SPM(options = {"thermal": "lumped"})
 
 # Fitting parameters
 params = [
