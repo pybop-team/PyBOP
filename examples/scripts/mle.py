@@ -37,6 +37,7 @@ x0 = np.array([0.52, 0.47, 1e-3])
 op = pints.OptimisationController(
     log_likelihood, x0, boundaries=boundaries, method=pints.CMAES
 )
+op.set_max_unchanged_iterations(20)  # default 200
 x1, f1 = op.run()
 print("Estimated parameters:")
 print(x1)

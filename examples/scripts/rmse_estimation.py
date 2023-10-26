@@ -11,25 +11,25 @@ observations = [
 ]
 
 # Define model
-# parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
-model = pybop.models.lithium_ion.SPM()
+parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
+model = pybop.models.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
 params = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         prior=pybop.Gaussian(0.75, 0.05),
-        bounds=[0.65, 0.85],
+        bounds=[0.6, 0.9],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
         prior=pybop.Gaussian(0.65, 0.05),
-        bounds=[0.55, 0.75],
+        bounds=[0.5, 0.8],
     ),
 ]
 
 parameterisation = pybop.Optimisation(
-    model, observations=observations, fit_parameters=params
+    model, init_soc=0.97, observations=observations, fit_parameters=params
 )
 
 # get RMSE estimate using NLOpt
