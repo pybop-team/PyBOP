@@ -39,9 +39,13 @@ class Optimisation:
         if x0 is None:
             self.x0 = np.zeros(len(self.fit_parameters))
             for i, j in enumerate(self.fit_parameters):
-                self.x0[i] = self.fit_parameters[j].prior.rvs(1)[
-                    0
-                ]  # Updt to capture dimensions per parameter
+                sample = self.fit_parameters[j].prior.rvs(1)[0]
+                if sample < self.fit_parameters[j].bounds[0]:
+                    self.x0[i] = self.fit_parameters[j].bounds[0]
+                elif sample > self.fit_parameters[j].bounds[1]:
+                    self.x0[i] = self.fit_parameters[j].bounds[1]
+                else:
+                    self.x0[i] = sample  # Updt to capture dimensions per parameter
 
         # Align initial guess with sample from prior
         for i, j in enumerate(self.fit_parameters):

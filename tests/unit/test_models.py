@@ -31,4 +31,3 @@ class TestModels:
         model = pybop.BaseModel()
         n = model.n_outputs()
         assert isinstance(n, int)
-

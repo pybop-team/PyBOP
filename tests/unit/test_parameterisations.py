@@ -48,7 +48,7 @@ class TestModelParameterisation:
             signal="Voltage [V]", method="nlopt"
         )
 
-        # Assertions (for testing purposes only)
+        # Assertions
         np.testing.assert_allclose(last_optim, 0, atol=1e-2)
         np.testing.assert_allclose(results, x0, atol=1e-1)
 
@@ -91,9 +91,9 @@ class TestModelParameterisation:
             signal="Voltage [V]", method="nlopt"
         )
 
-        # Assertions (for testing purposes only)
+        # Assertions
         np.testing.assert_allclose(last_optim, 0, atol=1e-2)
-        np.testing.assert_allclose(results, x0, rtol=1e-1)
+        np.testing.assert_allclose(results, x0, atol=1e-1)
 
     def getdata(self, model, x0):
         model.parameter_set = model.pybamm_model.default_parameter_values
@@ -117,5 +117,3 @@ class TestModelParameterisation:
         )
         sim = model.predict(experiment=experiment)
         return sim
-
-
