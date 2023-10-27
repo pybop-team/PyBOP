@@ -7,8 +7,8 @@ model = pybop.lithium_ion.SPMe()
 model.parameter_set["Current function [A]"] = 2
 
 inputs = {
-    "Negative electrode active material volume fraction": 0.587,
-    "Positive electrode active material volume fraction": 0.44,
+    "Negative electrode active material volume fraction": 0.5,
+    "Positive electrode active material volume fraction": 0.6,
 }
 t_eval = np.arange(0, 900, 2)
 model.build(fit_parameters=inputs)
