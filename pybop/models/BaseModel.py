@@ -27,7 +27,8 @@ class BaseModel:
         """
         self.fit_parameters = fit_parameters
         self.observations = observations
-        self.fit_keys = list(self.fit_parameters.keys())
+        if self.fit_parameters is not None:
+            self.fit_keys = list(self.fit_parameters.keys())
 
         if init_soc is not None:
             self.set_init_soc(init_soc)

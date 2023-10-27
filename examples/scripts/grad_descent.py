@@ -38,8 +38,8 @@ x0 = np.array([0.5, 0.5])
 opt = pints.OptimisationController(score, x0, method=pints.GradientDescent)
 
 opt.optimiser().set_learning_rate(0.025)
-opt.set_max_unchanged_iterations(250)
-opt.set_max_iterations(500)
+opt.set_max_unchanged_iterations(50)
+opt.set_max_iterations(100)
 
 
 x1, f1 = opt.run()
