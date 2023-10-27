@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 model = pybop.lithium_ion.SPMe()
-model.parameter_set["Current function [A]"] = 2
+model.parameter_set["Current function [A]"] = 1
 
 inputs = {
     "Negative electrode active material volume fraction": 0.587,
@@ -17,7 +17,7 @@ values = model.predict(inputs=inputs, t_eval=t_eval)
 voltage = values["Terminal voltage [V]"].data
 time = values["Time [s]"].data
 
-sigma = 0.01
+sigma = 0.0
 CorruptValues = voltage + np.random.normal(0, sigma, len(voltage))
 
 # Show the generated data
@@ -30,14 +30,19 @@ plt.show()
 
 
 problem = pints.SingleOutputProblem(model, time, CorruptValues)
-log_likelihood = pints.GaussianLogLikelihood(problem)
-boundaries = pints.RectangularBoundaries([0.4, 0.4, 1e-5], [0.6, 0.6, 1e-1])
 
-x0 = np.array([0.52, 0.47, 1e-3])
-op = pints.OptimisationController(
-    log_likelihood, x0, boundaries=boundaries, method=pints.CMAES
-)
-x1, f1 = op.run()
+# Select a score function
+score = pints.SumOfSquaresError(problem)
+
+x0 = np.array([0.5, 0.5])
+opt = pints.OptimisationController(score, x0, method=pints.GradientDescent)
+
+opt.optimiser().set_learning_rate(0.025)
+opt.set_max_unchanged_iterations(250)
+opt.set_max_iterations(500)
+
+
+x1, f1 = opt.run()
 print("Estimated parameters:")
 print(x1)
 

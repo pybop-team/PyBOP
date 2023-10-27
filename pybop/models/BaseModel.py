@@ -1,7 +1,8 @@
 import pybamm
+import numpy as np
 
 
-class BaseModel():
+class BaseModel:
     """
     Base class for PyBOP models
     """
@@ -26,6 +27,7 @@ class BaseModel():
         """
         self.fit_parameters = fit_parameters
         self.observations = observations
+        self.fit_keys = list(self.fit_parameters.keys())
 
         if init_soc is not None:
             self.set_init_soc(init_soc)
@@ -109,6 +111,41 @@ class BaseModel():
             return self.solver.solve(
                 self.built_model, inputs=inputs_dict, t_eval=t_eval
             )["Terminal voltage [V]"].data
+
+    def simulateS1(self, inputs, t_eval):
+        """
+        Run the forward model and return the function evaulation and it's gradient
+        aligning with Pints' ForwardModel simulateS1 method.
+        """
+        if self._built_model is None:
+            raise ValueError("Model must be built before calling simulate")
+        else:
+            if not isinstance(inputs, dict):
+                inputs_dict = {
+                    key: inputs[i] for i, key in enumerate(self.fit_parameters)
+                }
+            sol = self.solver.solve(
+                self.built_model,
+                inputs=inputs_dict,
+                t_eval=t_eval,
+                calculate_sensitivities=True,
+            )
+
+            # print(inputs_dict)
+            out = np.array(
+                [
+                    sol["Terminal voltage [V]"]
+                    .sensitivities[self.fit_keys[0]]
+                    .toarray(),
+                    sol["Terminal voltage [V]"]
+                    .sensitivities[self.fit_keys[0]]
+                    .toarray(),
+                ]
+            )
+
+            return sol["Terminal voltage [V]"].data, out.reshape(
+                (out.shape[1], out.shape[0])
+            )
 
     def predict(self, inputs=None, t_eval=None, parameter_set=None, experiment=None):
         """
