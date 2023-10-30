@@ -125,27 +125,28 @@ class BaseModel:
                 inputs_dict = {
                     key: inputs[i] for i, key in enumerate(self.fit_parameters)
                 }
-            sol = self.solver.solve(
-                self.built_model,
-                inputs=inputs_dict,
-                t_eval=t_eval,
-                calculate_sensitivities=True,
-            )
+                sol = self.solver.solve(
+                    self.built_model,
+                    inputs=inputs_dict,
+                    t_eval=t_eval,
+                    calculate_sensitivities=True,
+                )
+            else:
+                sol = self.solver.solve(
+                    self.built_model,
+                    inputs=inputs,
+                    t_eval=t_eval,
+                    calculate_sensitivities=True,
+                )
 
-            # print(inputs_dict)
-            out = np.array(
-                [
-                    sol["Terminal voltage [V]"]
-                    .sensitivities[self.fit_keys[0]]
-                    .toarray(),
-                    sol["Terminal voltage [V]"]
-                    .sensitivities[self.fit_keys[0]]
-                    .toarray(),
-                ]
-            )
-
-            return sol["Terminal voltage [V]"].data, out.reshape(
-                (out.shape[1], out.shape[0])
+            return (
+                sol["Terminal voltage [V]"].data,
+                np.array(
+                    [
+                        sol["Terminal voltage [V]"].sensitivities[key].toarray()
+                        for key in self.fit_keys
+                    ]
+                ).T,
             )
 
     def predict(self, inputs=None, t_eval=None, parameter_set=None, experiment=None):
