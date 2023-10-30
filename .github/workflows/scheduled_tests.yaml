@@ -30,7 +30,7 @@ jobs:
       - name: Unit tests with nox
         run: |
           python -m nox -s unit
-  
+
     #M-series Mac Mini
   build-apple-mseries:
     runs-on: [self-hosted, macOS, ARM64]

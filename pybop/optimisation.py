@@ -77,15 +77,16 @@ class Optimisation:
                 "Measurement and simulated data length mismatch, potentially due to reaching a voltage cut-off"
             )
 
-        try:
-            res = np.sqrt(np.mean((self.observations["Voltage [V]"].data - y_hat) ** 2))
-        except:
-            print("Error in RMSE calculation")
-
         if self.verbose:
             print(self.fit_dict)
 
-        return res
+        try:
+            return np.sqrt(
+                np.mean((self.observations["Voltage [V]"].data - y_hat) ** 2)
+            )
+        except Exception as e:
+            print(f"Error in RMSE calculation: {e}")
+            return None
 
     def map(self, x0):
         """
