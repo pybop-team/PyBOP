@@ -1,4 +1,3 @@
-import pybop
 import numpy as np
 
 
@@ -9,121 +8,96 @@ class Optimisation:
 
     def __init__(
         self,
+        cost,
         model,
-        observations,
-        fit_parameters,
+        optimiser,
+        parameters,
         x0=None,
+        dataset=None,
+        signal=None,
         check_model=True,
         init_soc=None,
         verbose=False,
     ):
+        self.cost = cost
         self.model = model
+        self.optimiser = optimiser
+        self.parameters = parameters
+        self.x0 = x0
+        self.dataset = {o.name: o for o in dataset}
+        self.fit_parameters = {o.name: o for o in parameters}
+        self.signal = signal
+        self.n_parameters = len(self.parameters)
         self.verbose = verbose
-        self.fit_dict = {}
-        self.fit_parameters = {o.name: o for o in fit_parameters}
-        self.observations = {o.name: o for o in observations}
-        self.model.n_parameters = len(self.fit_dict)
 
-        # Check that the observations contain time and current
+        # Check that the dataset contains time and current
         for name in ["Time [s]", "Current function [A]"]:
-            if name not in self.observations:
-                raise ValueError(f"expected {name} in list of observations")
+            if name not in self.dataset:
+                raise ValueError(f"expected {name} in list of dataset")
 
         # Set bounds
         self.bounds = dict(
-            lower=[self.fit_parameters[p].bounds[0] for p in self.fit_parameters],
-            upper=[self.fit_parameters[p].bounds[1] for p in self.fit_parameters],
+            lower=[Param.bounds[0] for Param in self.parameters],
+            upper=[Param.bounds[1] for Param in self.parameters],
         )
 
         # Sample from prior for x0
         if x0 is None:
-            self.x0 = np.zeros(len(self.fit_parameters))
-            for i, j in enumerate(self.fit_parameters):
-                self.x0[i] = self.fit_parameters[j].prior.rvs(1)[
-                    0
-                ]  # Updt to capture dimensions per parameter
+            self.x0 = np.zeros(self.n_parameters)
+            for i, Param in enumerate(self.parameters):
+                self.x0[i] = Param.prior.rvs(1)[0]
+                # Update to capture dimensions per parameter
 
-        # Align initial guess with sample from prior
-        for i, j in enumerate(self.fit_parameters):
-            self.fit_dict[j] = {j: self.x0[i]}
+        # Add the initial values to the parameter definitions
+        for i, Param in enumerate(self.parameters):
+            Param.update(value=self.x0[i])
 
-        # Build model with observations and fitting_parameters
+        # Build model with dataset and fitting parameters
         self.model.build(
-            self.observations,
-            self.fit_parameters,
+            dataset=self.dataset,
+            fit_parameters=self.fit_parameters,
             check_model=check_model,
             init_soc=init_soc,
         )
 
-    def step(self, signal, x, grad):
-        for i, p in enumerate(self.fit_dict):
-            self.fit_dict[p] = x[i]
+    def run(self):
+        """
+        Run the optimisation algorithm.
+        """
 
-        y_hat = self.model.solver.solve(
-            self.model.built_model, self.model.time_data, inputs=self.fit_dict
-        )[signal].data
-
-        print(
-            "Last Voltage Values:", y_hat[-1], self.observations["Voltage [V]"].data[-1]
+        results = self.optimiser.optimise(
+            cost_function=self.cost_function,  # lambda x, grad: self.cost_function(x, grad),
+            x0=self.x0,
+            bounds=self.bounds,
         )
 
-        if len(y_hat) != len(self.observations["Voltage [V]"].data):
-            print(
-                "len of vectors:",
-                len(y_hat),
-                len(self.observations["Voltage [V]"].data),
-            )
-            raise ValueError(
-                "Measurement and simulated data length mismatch, potentially due to reaching a voltage cut-off"
-            )
-
-        if self.verbose:
-            print(self.fit_dict)
-
-        try:
-            return np.sqrt(
-                np.mean((self.observations["Voltage [V]"].data - y_hat) ** 2)
-            )
-        except Exception as e:
-            print(f"Error in RMSE calculation: {e}")
-            return None
-
-    def map(self, x0):
-        """
-        Maximum a posteriori estimation.
-        """
-        pass
-
-    def sample(self, n_chains):
-        """
-        Sample from the posterior distribution.
-        """
-        pass
-
-    def pem(self, method=None):
-        """
-        Predictive error minimisation.
-        """
-        pass
-
-    def rmse(self, signal, method=None):
-        """
-        Calculate the root mean squared error.
-        """
-
-        if method == "nlopt":
-            optim = pybop.NLoptOptimize(x0=self.x0)
-            results = optim.optimise(
-                lambda x, grad: self.step(signal, x, grad), self.x0, self.bounds
-            )
-
-        else:
-            optim = pybop.NLoptOptimize(method)
-            results = optim.optimise(self.step, self.x0, self.bounds)
         return results
 
-    def mle(self, method=None):
+    def cost_function(self, x, grad=None):
         """
-        Maximum likelihood estimation.
+        Compute a model prediction and associated value of the cost.
         """
-        pass
+
+        # Unpack the target dataset
+        target = self.dataset[self.signal].data
+
+        # Update the parameter dictionary
+        inputs_dict = {key: x[i] for i, key in enumerate(self.fit_parameters)}
+
+        # for i, Param in enumerate(self.parameters):
+        #     Param.update(value=x[i])
+
+        # Make prediction
+        prediction = self.model.simulate(
+            inputs=inputs_dict, t_eval=self.model.time_data
+        )[self.signal].data
+
+        # Add simulation error handling here
+
+        # Compute cost
+        res = self.cost.compute(prediction, target)
+
+        if self.verbose:
+            print("Parameter estimates: ", self.parameters.value, "\n")
+
+        return res

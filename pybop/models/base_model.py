@@ -11,11 +11,11 @@ class BaseModel:
         self.name = name
         self.pybamm_model = None
         self.fit_parameters = None
-        self.observations = None
+        self.dataset = None
 
     def build(
         self,
-        observations=None,
+        dataset=None,
         fit_parameters=None,
         check_model=True,
         init_soc=None,
@@ -26,7 +26,7 @@ class BaseModel:
         similar process to pybamm.Simulation.build().
         """
         self.fit_parameters = fit_parameters
-        self.observations = observations
+        self.dataset = dataset
         if self.fit_parameters is not None:
             self.fit_keys = list(self.fit_parameters.keys())
 
@@ -82,10 +82,10 @@ class BaseModel:
             for i in self.fit_parameters.keys():
                 self.parameter_set[i] = "[input]"
 
-        if self.observations is not None and self.fit_parameters is not None:
+        if self.dataset is not None and self.fit_parameters is not None:
             self.parameter_set["Current function [A]"] = pybamm.Interpolant(
-                self.observations["Time [s]"].data,
-                self.observations["Current function [A]"].data,
+                self.dataset["Time [s]"].data,
+                self.dataset["Current function [A]"].data,
                 pybamm.t,
             )
             # Set t_eval
@@ -109,9 +109,11 @@ class BaseModel:
                 inputs_dict = {
                     key: inputs[i] for i, key in enumerate(self.fit_parameters)
                 }
-            return self.solver.solve(
-                self.built_model, inputs=inputs_dict, t_eval=t_eval
-            )["Terminal voltage [V]"].data
+                return self.solver.solve(
+                    self.built_model, inputs=inputs_dict, t_eval=t_eval
+                )["Terminal voltage [V]"].data
+            else:
+                return self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
 
     def simulateS1(self, inputs, t_eval):
         """
@@ -125,6 +127,7 @@ class BaseModel:
                 inputs_dict = {
                     key: inputs[i] for i, key in enumerate(self.fit_parameters)
                 }
+
                 sol = self.solver.solve(
                     self.built_model,
                     inputs=inputs_dict,
