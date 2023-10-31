@@ -11,7 +11,4 @@ authors:
     family-names: Courtier
   - given-names: David
     family-names: Howey
-identifiers:
-  - type: doi
-    value: 10.3452/zenodo.4321
 repository-code: 'https://www.github.com/pybop-team/pybop'
