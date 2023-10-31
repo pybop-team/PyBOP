@@ -1,8 +1,5 @@
 import pybop
-import numpy as np
 import pytest
-import runpy
-import os
 
 
 class TestModels:
@@ -31,4 +28,3 @@ class TestModels:
         model = pybop.BaseModel()
         n = model.n_outputs()
         assert isinstance(n, int)
-

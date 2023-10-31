@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+title: PyBOP
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Brady
+    family-names: Planden
+  - given-names: Nicola
+    family-names: Courtier
+  - given-names: David
+    family-names: Howey
+repository-code: 'https://www.github.com/pybop-team/pybop'
