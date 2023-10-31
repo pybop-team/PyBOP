@@ -38,12 +38,18 @@ class Optimisation:
         # Sample from prior for x0
         if x0 is None:
             self.x0 = np.zeros(len(self.fit_parameters))
-            for i, j in enumerate(self.fit_parameters):
-                sample = self.fit_parameters[j].prior.rvs(1)[0]
-                if sample < self.fit_parameters[j].bounds[0]:
-                    self.x0[i] = self.fit_parameters[j].bounds[0]
-                elif sample > self.fit_parameters[j].bounds[1]:
-                    self.x0[i] = self.fit_parameters[j].bounds[1]
+
+            for i, param in enumerate(self.fit_parameters):
+                parameter = self.fit_parameters[param]
+                sample = parameter.prior.rvs(1)[0]
+
+                lower_bound = parameter.bounds[0]
+                upper_bound = parameter.bounds[1]
+
+                if sample < lower_bound:
+                    self.x0[i] = lower_bound
+                elif sample > upper_bound:
+                    self.x0[i] = upper_bound
                 else:
                     self.x0[i] = sample  # Updt to capture dimensions per parameter
 
