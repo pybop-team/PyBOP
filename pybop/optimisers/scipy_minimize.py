@@ -4,7 +4,7 @@ from .base_optimiser import BaseOptimiser
 
 class SciPyMinimize(BaseOptimiser):
     """
-    Wrapper class for the Scipy optimisation class. Extends the BaseOptimiser class.
+    Wrapper class for the Scipy optimiser class. Extends the BaseOptimiser class.
     """
 
     def __init__(self, cost_function, x0, bounds=None, options=None):

@@ -57,7 +57,7 @@ class Uniform:
 
 class Exponential:
     """
-    exponential prior class.
+    Exponential prior class.
     """
 
     def __init__(self, scale):

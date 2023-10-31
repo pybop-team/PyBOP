@@ -4,7 +4,7 @@ from .base_optimiser import BaseOptimiser
 
 class NLoptOptimize(BaseOptimiser):
     """
-    Wrapper class for the NLOpt optimisation class. Extends the BaseOptimiser class.
+    Wrapper class for the NLOpt optimiser class. Extends the BaseOptimiser class.
     """
 
     def __init__(self, method=None, x0=None, xtol=None):
