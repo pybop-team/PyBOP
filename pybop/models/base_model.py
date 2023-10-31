@@ -4,7 +4,7 @@ import numpy as np
 
 class BaseModel:
     """
-    Base class for PyBOP models
+    Base class for pybop models.
     """
 
     def __init__(self, name="Base Model"):

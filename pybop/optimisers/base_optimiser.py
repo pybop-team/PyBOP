@@ -10,10 +10,9 @@ class BaseOptimiser:
 
     def optimise(self, cost_function, x0, bounds, method=None):
         """
-        Optimise method to be overloaded by child classes.
+        Optimisiation method to be overloaded by child classes.
 
         """
-        # Set up optimisation
         self.cost_function = cost_function
         self.x0 = x0
         self.method = method

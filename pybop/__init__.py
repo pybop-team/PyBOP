@@ -24,30 +24,44 @@ FLOAT_FORMAT = "{: .17e}"
 script_path = os.path.dirname(__file__)
 
 #
-# Model Classes
+# Cost function class
 #
+from .costs.error_costs import RMSE
+
+#
+# Dataset class
+#
+from .datasets.base_dataset import Dataset
+
+#
+# Model classes
+#
+from .models.base_model import BaseModel
 from .models import lithium_ion
-from .models.BaseModel import BaseModel
 
 #
-# Parameterisation class
+# Main optimisation class
 #
-from .parameters.parameter_set import ParameterSet
-from .parameters.parameter import Parameter
-from .datasets.observations import Observed
+from .optimisation import Optimisation
 
 #
-# Priors class
+# Optimiser class
 #
+from .optimisers.base_optimiser import BaseOptimiser
+from .optimisers.nlopt_optimize import NLoptOptimize
+from .optimisers.scipy_minimize import SciPyMinimize
+
+#
+# Parameter classes
+#
+from .parameters.base_parameter import Parameter
+from .parameters.base_parameter_set import ParameterSet
 from .parameters.priors import Gaussian, Uniform, Exponential
 
 #
-# Optimisation class
+# Plotting class
 #
-from .optimisation import Optimisation
-from .optimisers import BaseOptimiser
-from .optimisers.NLoptOptimize import NLoptOptimize
-from .optimisers.SciPyMinimize import SciPyMinimize
+from .plotting.quick_plot import QuickPlot
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop

@@ -4,9 +4,9 @@ import pandas as pd
 # Form observations
 Measurements = pd.read_csv("examples/scripts/Chen_example.csv", comment="#").to_numpy()
 observations = [
-    pybop.Observed("Time [s]", Measurements[:, 0]),
-    pybop.Observed("Current function [A]", Measurements[:, 1]),
-    pybop.Observed("Voltage [V]", Measurements[:, 2]),
+    pybop.Dataset("Time [s]", Measurements[:, 0]),
+    pybop.Dataset("Current function [A]", Measurements[:, 1]),
+    pybop.Dataset("Voltage [V]", Measurements[:, 2]),
 ]
 
 # Define model
