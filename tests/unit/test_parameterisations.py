@@ -2,9 +2,10 @@ import pybop
 import pybamm
 import pytest
 import numpy as np
+import unittest
 
 
-class TestModelParameterisation:
+class TestModelParameterisation(unittest.TestCase):
     """
     A class to test the model parameterisation methods.
     """
@@ -20,9 +21,9 @@ class TestModelParameterisation:
         solution = self.getdata(model, x0)
 
         observations = [
-            pybop.Observed("Time [s]", solution["Time [s]"].data),
-            pybop.Observed("Current function [A]", solution["Current [A]"].data),
-            pybop.Observed("Voltage [V]", solution["Terminal voltage [V]"].data),
+            pybop.Dataset("Time [s]", solution["Time [s]"].data),
+            pybop.Dataset("Current function [A]", solution["Current [A]"].data),
+            pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
         ]
 
         # Fitting parameters
@@ -63,9 +64,9 @@ class TestModelParameterisation:
         solution = self.getdata(model, x0)
 
         observations = [
-            pybop.Observed("Time [s]", solution["Time [s]"].data),
-            pybop.Observed("Current function [A]", solution["Current [A]"].data),
-            pybop.Observed("Voltage [V]", solution["Terminal voltage [V]"].data),
+            pybop.Dataset("Time [s]", solution["Time [s]"].data),
+            pybop.Dataset("Current function [A]", solution["Current [A]"].data),
+            pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
         ]
 
         # Fitting parameters
@@ -149,3 +150,6 @@ class TestModelParameterisation:
         np.testing.assert_allclose(
             parameter_test["Negative electrode active material volume fraction"], 0.75
         )
+
+if __name__ == "__main__":
+    unittest.main()

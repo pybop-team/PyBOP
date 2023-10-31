@@ -1,7 +1,7 @@
 import pybamm
 
 
-class Observed:
+class Dataset:
     """
     Class for experimental Observations.
     """

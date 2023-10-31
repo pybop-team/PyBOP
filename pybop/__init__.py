@@ -27,14 +27,14 @@ script_path = os.path.dirname(__file__)
 # Model Classes
 #
 from .models import lithium_ion
-from .models.BaseModel import BaseModel
+from .models.base_model import BaseModel
 
 #
 # Parameterisation class
 #
-from .parameters.parameter_set import ParameterSet
-from .parameters.parameter import Parameter
-from .datasets.observations import Observed
+from .parameters.base_parameter_set import ParameterSet
+from .parameters.base_parameter import Parameter
+from .datasets.base_dataset import Dataset
 
 #
 # Priors class
@@ -45,9 +45,9 @@ from .parameters.priors import Gaussian, Uniform, Exponential
 # Optimisation class
 #
 from .optimisation import Optimisation
-from .optimisers import BaseOptimiser
-from .optimisers.NLoptOptimize import NLoptOptimize
-from .optimisers.SciPyMinimize import SciPyMinimize
+from .optimisers import base_optimiser
+from .optimisers.nlopt_optimize import NLoptOptimize
+from .optimisers.scipy_minimize import SciPyMinimize
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop

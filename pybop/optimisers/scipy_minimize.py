@@ -1,5 +1,5 @@
 from scipy.optimize import minimize
-from .BaseOptimiser import BaseOptimiser
+from .base_optimiser import BaseOptimiser
 
 
 class SciPyMinimize(BaseOptimiser):
