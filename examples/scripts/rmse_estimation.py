@@ -15,7 +15,7 @@ dataset = [
 model = pybop.models.lithium_ion.SPM()
 
 # Fitting parameters
-params = [
+parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         prior=pybop.Gaussian(0.75, 0.05),
@@ -33,14 +33,14 @@ cost = pybop.RMSE()
 signal = "Voltage [V]"
 
 # Select optimiser
-optimiser = pybop.NLoptOptimize(x0=params)
+optimiser = pybop.NLoptOptimize(x0=parameters)
 
 # Construct the optimisation problem
 parameterisation = pybop.Optimisation(
     cost=cost,
     model=model,
     optimiser=optimiser,
-    fit_parameters=params,
+    parameters=parameters,
     dataset=dataset,
     signal=signal,
 )
@@ -49,7 +49,7 @@ parameterisation = pybop.Optimisation(
 x, output, final_cost, num_evals = parameterisation.run()
 
 # get MAP estimate, starting at a random initial point in parameter space
-# parameterisation.map(x0=[p.sample() for p in params])
+# parameterisation.map(x0=[p.sample() for p in parameters])
 
 # or sample from posterior
 # parameterisation.sample(1000, n_chains=4, ....)

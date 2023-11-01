@@ -27,7 +27,7 @@ class TestModelParameterisation(unittest.TestCase):
         ]
 
         # Fitting parameters
-        params = [
+        parameters = [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.02),
@@ -52,7 +52,7 @@ class TestModelParameterisation(unittest.TestCase):
             cost=cost,
             model=model,
             optimiser=optimiser,
-            fit_parameters=params,
+            parameters=parameters,
             dataset=dataset,
             signal=signal,
         )
@@ -81,7 +81,7 @@ class TestModelParameterisation(unittest.TestCase):
         ]
 
         # Fitting parameters
-        params = [
+        parameters = [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.02),
@@ -106,7 +106,7 @@ class TestModelParameterisation(unittest.TestCase):
             cost=cost,
             model=model,
             optimiser=optimiser,
-            fit_parameters=params,
+            parameters=parameters,
             dataset=dataset,
             signal=signal,
         )

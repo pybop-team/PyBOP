@@ -11,7 +11,7 @@ inputs = {
     "Positive electrode active material volume fraction": 0.6,
 }
 t_eval = np.arange(0, 900, 2)
-model.build(fit_parameters=inputs)
+model.build(parameters=inputs)
 
 values = model.predict(inputs=inputs, t_eval=t_eval)
 voltage = values["Terminal voltage [V]"].data

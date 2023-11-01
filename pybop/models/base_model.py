@@ -9,13 +9,13 @@ class BaseModel:
     def __init__(self, name="Base Model"):
         self.name = name
         self.pybamm_model = None
-        self.fit_parameters = None
+        self.parameters = None
         self.dataset = None
 
     def build(
         self,
         dataset=None,
-        fit_parameters=None,
+        parameters=None,
         check_model=True,
         init_soc=None,
     ):
@@ -24,7 +24,7 @@ class BaseModel:
         For PyBaMM forward models, this method follows a
         similar process to pybamm.Simulation.build().
         """
-        self.fit_parameters = fit_parameters
+        self.parameters = parameters
         self.dataset = dataset
 
         if init_soc is not None:
@@ -74,12 +74,12 @@ class BaseModel:
         if self.model_with_set_params:
             return
 
-        if self.fit_parameters is not None:
+        if self.parameters is not None:
             # set input parameters in parameter set from fitting parameters
-            for i in self.fit_parameters.keys():
+            for i in self.parameters.keys():
                 self.parameter_set[i] = "[input]"
 
-        if self.dataset is not None and self.fit_parameters is not None:
+        if self.dataset is not None and self.parameters is not None:
             self.parameter_set["Current function [A]"] = pybamm.Interpolant(
                 self.dataset["Time [s]"].data,
                 self.dataset["Current function [A]"].data,
@@ -104,7 +104,7 @@ class BaseModel:
         else:
             if not isinstance(inputs, dict):
                 inputs_dict = {
-                    key: inputs[i] for i, key in enumerate(self.fit_parameters)
+                    key: inputs[i] for i, key in enumerate(self.parameters)
                 }
             return self.solver.solve(
                 self.built_model, inputs=inputs_dict, t_eval=t_eval
@@ -136,7 +136,7 @@ class BaseModel:
         """
         Returns the dimension of the parameter space.
         """
-        return len(self.fit_parameters)
+        return len(self.parameters)
 
     def n_outputs(self):
         """

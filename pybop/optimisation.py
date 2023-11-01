@@ -12,7 +12,7 @@ class Optimisation:
         cost,
         model,
         optimiser,
-        fit_parameters,
+        parameters,
         x0=None,
         dataset=None,
         signal=None,
@@ -28,7 +28,7 @@ class Optimisation:
         self.signal = signal
         self.verbose = verbose
         self.fit_dict = {}
-        self.fit_parameters = {o.name: o for o in fit_parameters}
+        self.parameters = {o.name: o for o in parameters}
         self.model.n_parameters = len(self.fit_dict)
 
         # Check that the dataset contains time and current
@@ -38,26 +38,26 @@ class Optimisation:
 
         # Set bounds
         self.bounds = dict(
-            lower=[self.fit_parameters[param].bounds[0] for param in self.fit_parameters],
-            upper=[self.fit_parameters[param].bounds[1] for param in self.fit_parameters],
+            lower=[self.parameters[param].bounds[0] for param in self.parameters],
+            upper=[self.parameters[param].bounds[1] for param in self.parameters],
         )
 
         # Sample from prior for x0
         if x0 is None:
-            self.x0 = np.zeros(len(self.fit_parameters))
-            for i, j in enumerate(self.fit_parameters):
-                self.x0[i] = self.fit_parameters[j].prior.rvs(1)[
+            self.x0 = np.zeros(len(self.parameters))
+            for i, j in enumerate(self.parameters):
+                self.x0[i] = self.parameters[j].prior.rvs(1)[
                     0
                 ]  # Updt to capture dimensions per parameter
 
         # Add the initial values to the parameter definitions
-        for i, param in enumerate(self.fit_parameters):
+        for i, param in enumerate(self.parameters):
             self.fit_dict[param] = {param: self.x0[i]}
 
         # Build model with dataset and fitting parameters
         self.model.build(
             dataset=self.dataset,
-            fit_parameters=self.fit_parameters,
+            parameters=self.parameters,
             check_model=check_model,
             init_soc=init_soc,
         )
