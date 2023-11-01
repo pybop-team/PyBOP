@@ -10,11 +10,11 @@ class BaseModel:
         self.name = name
         self.pybamm_model = None
         self.fit_parameters = None
-        self.observations = None
+        self.dataset = None
 
     def build(
         self,
-        observations=None,
+        dataset=None,
         fit_parameters=None,
         check_model=True,
         init_soc=None,
@@ -25,7 +25,7 @@ class BaseModel:
         similar process to pybamm.Simulation.build().
         """
         self.fit_parameters = fit_parameters
-        self.observations = observations
+        self.dataset = dataset
 
         if init_soc is not None:
             self.set_init_soc(init_soc)
@@ -79,10 +79,10 @@ class BaseModel:
             for i in self.fit_parameters.keys():
                 self.parameter_set[i] = "[input]"
 
-        if self.observations is not None and self.fit_parameters is not None:
+        if self.dataset is not None and self.fit_parameters is not None:
             self.parameter_set["Current function [A]"] = pybamm.Interpolant(
-                self.observations["Time [s]"].data,
-                self.observations["Current function [A]"].data,
+                self.dataset["Time [s]"].data,
+                self.dataset["Current function [A]"].data,
                 pybamm.t,
             )
             # Set t_eval

@@ -1,3 +1,4 @@
+import pybop
 import nlopt
 from .base_optimiser import BaseOptimiser
 
@@ -23,20 +24,26 @@ class NLoptOptimize(BaseOptimiser):
 
     def _runoptimise(self, cost_function, x0, bounds):
         """
-        Run the NLOpt opt method.
+        Run the NLOpt optimisation method.
 
-        Parameters
+        Inputs
         ----------
         cost_function: function for optimising
-        method: optimisation method
-        x0: Initialisation array
+        method: optimisation algorithm
+        x0: initialisation array
         bounds: bounds array
         """
 
         self.opt.set_min_objective(cost_function)
         self.opt.set_lower_bounds(bounds["lower"])
         self.opt.set_upper_bounds(bounds["upper"])
-        results = self.opt.optimize(x0)
+
+        # Run the optimser
+        x = self.opt.optimize(x0)
+
+        # Get performance statistics
+        output = self.opt
+        final_cost = self.opt.last_optimum_value()
         num_evals = self.opt.get_numevals()
 
-        return results, self.opt.last_optimum_value(), num_evals
+        return x, output, final_cost, num_evals

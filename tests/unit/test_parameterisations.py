@@ -16,11 +16,11 @@ class TestModelParameterisation(unittest.TestCase):
         model = pybop.lithium_ion.SPM()
         model.parameter_set = model.pybamm_model.default_parameter_values
 
-        # Form observations
+        # Form dataset
         x0 = np.array([0.52, 0.63])
         solution = self.getdata(model, x0)
 
-        observations = [
+        dataset = [
             pybop.Dataset("Time [s]", solution["Time [s]"].data),
             pybop.Dataset("Current function [A]", solution["Current [A]"].data),
             pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
@@ -40,18 +40,29 @@ class TestModelParameterisation(unittest.TestCase):
             ),
         ]
 
+        # Define the cost to optimise
+        cost = pybop.RMSE()
+        signal = "Voltage [V]"
+
+        # Select optimiser
+        optimiser = pybop.NLoptOptimize(x0=x0)
+
+        # Build the optimisation problem
         parameterisation = pybop.Optimisation(
-            model, observations=observations, fit_parameters=params
+            cost=cost,
+            model=model,
+            optimiser=optimiser,
+            fit_parameters=params,
+            dataset=dataset,
+            signal=signal,
         )
 
-        # get RMSE estimate using NLOpt
-        results, last_optim, num_evals = parameterisation.rmse(
-            signal="Voltage [V]", method="nlopt"
-        )
+        # Run the optimisation problem
+        x, output, final_cost, num_evals = parameterisation.run()
 
         # Assertions (for testing purposes only)
-        np.testing.assert_allclose(last_optim, 0, atol=1e-2)
-        np.testing.assert_allclose(results, x0, atol=1e-1)
+        np.testing.assert_allclose(final_cost, 0, atol=1e-2)
+        np.testing.assert_allclose(x, x0, atol=1e-1)
 
     @pytest.mark.unit
     def test_spme(self):
@@ -59,11 +70,11 @@ class TestModelParameterisation(unittest.TestCase):
         model = pybop.lithium_ion.SPMe()
         model.parameter_set = model.pybamm_model.default_parameter_values
 
-        # Form observations
+        # Form dataset
         x0 = np.array([0.52, 0.63])
         solution = self.getdata(model, x0)
 
-        observations = [
+        dataset = [
             pybop.Dataset("Time [s]", solution["Time [s]"].data),
             pybop.Dataset("Current function [A]", solution["Current [A]"].data),
             pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
@@ -83,18 +94,29 @@ class TestModelParameterisation(unittest.TestCase):
             ),
         ]
 
+        # Define the cost to optimise
+        cost = pybop.RMSE()
+        signal = "Voltage [V]"
+
+        # Select optimiser
+        optimiser = pybop.NLoptOptimize(x0=x0)
+
+        # Build the optimisation problem
         parameterisation = pybop.Optimisation(
-            model, observations=observations, fit_parameters=params
+            cost=cost,
+            model=model,
+            optimiser=optimiser,
+            fit_parameters=params,
+            dataset=dataset,
+            signal=signal,
         )
 
-        # get RMSE estimate using NLOpt
-        results, last_optim, num_evals = parameterisation.rmse(
-            signal="Voltage [V]", method="nlopt"
-        )
+        # Run the optimisation problem
+        x, output, final_cost, num_evals = parameterisation.run()
 
         # Assertions (for testing purposes only)
-        np.testing.assert_allclose(last_optim, 0, atol=1e-2)
-        np.testing.assert_allclose(results, x0, rtol=1e-1)
+        np.testing.assert_allclose(final_cost, 0, atol=1e-2)
+        np.testing.assert_allclose(x, x0, rtol=1e-1)
 
     def getdata(self, model, x0):
         model.parameter_set = model.pybamm_model.default_parameter_values
