@@ -3,7 +3,7 @@ import pybop
 
 class BaseModel:
     """
-    Base class for PyBOP models.
+    Base class for pybop models.
     """
 
     def __init__(self, name="Base Model"):
@@ -17,7 +17,7 @@ class BaseModel:
         init_soc=None,
     ):
         """
-        Build the model (if not built already).
+        Build the pybop model (if not built already).
         """
         self.dataset = dataset
         self.parameters = parameters
@@ -37,16 +37,10 @@ class BaseModel:
         """
         raise ValueError("Not yet implemented")
 
-    def simulate(self, inputs=None, t_eval=None, parameter_set=None, experiment=None):
+    def simulate(self, inputs, t_eval):
         """
         Run the forward model and return the result in Numpy array format
         aligning with Pints' ForwardModel simulate method.
-        """
-        raise ValueError("Not yet implemented")
-
-    def _simulate(self, parameter_set=None, experiment=None):
-        """
-        Return the results of a simulation.
         """
         raise ValueError("Not yet implemented")
 

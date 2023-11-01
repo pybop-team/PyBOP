@@ -33,7 +33,7 @@ class TestParameterisation(unittest.TestCase):
         )
 
         # Simulate model to generate test dataset
-        prediction = model.simulate(experiment=experiment)
+        prediction = model.predict(experiment=experiment)
         return prediction
 
     @pytest.mark.unit

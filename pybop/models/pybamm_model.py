@@ -22,9 +22,9 @@ class PybammModel(BaseModel):
         init_soc=None,
     ):
         """
-        Build the model (if not built already).
-
-        Specifiy either a dataset or an experiment.
+        Build the pybop model (if not built already).
+        For PyBaMM forward models, this method follows a
+        similar process to pybamm.Simulation.build().
         """
         self.dataset = dataset
         self.experiment = experiment
@@ -81,10 +81,10 @@ class PybammModel(BaseModel):
 
         if self.parameters is not None:
             # Set input parameters in parameter set from fitting parameters
-            for i, Param in enumerate(self.parameters):
-                self.parameter_set[Param.name] = "[input]"
+            for param in self.parameters:
+                self.parameter_set[param.name] = "[input]"
 
-        if self.dataset is not None:
+        if self.dataset is not None and self.parameters is not None:
             self.parameter_set["Current function [A]"] = pybamm.Interpolant(
                 self.dataset["Time [s]"].data,
                 self.dataset["Current function [A]"].data,
@@ -99,73 +99,45 @@ class PybammModel(BaseModel):
         self._parameter_set.process_geometry(self.geometry)
         self.pybamm_model = self._model_with_set_params
 
-    def simulate(self, parameters=None, times=None, experiment=None):
+    def simulate(self, inputs, t_eval):
         """
         Run the forward model and return the result in Numpy array format
         aligning with Pints' ForwardModel simulate method.
-
-        Inputs
-        ----------
-        parameters : A collection of fitting parameters to pass to the model when
-            solving
-        times : numeric type, optional
-            The times (in seconds) at which to compute the solution. Can be
-            provided as an array of times at which to return the solution, or as a
-            list `[t0, tf]` where `t0` is the initial time and `tf` is the final time.
-            If provided as a list the solution is returned at 100 points within the
-            interval `[t0, tf]`.
-
-            If not using an experiment or running a drive cycle simulation (current
-            provided as data) `times` *must* be provided.
-
-            If running an experiment the values in `times` are ignored, and the
-            solution times are specified by the experiment.
-
-            If None and the parameter "Current function [A]" is read from data
-            (i.e. drive cycle simulation) the model will be solved at the times
-            provided in the data.
-        experiment : of the PyBaMM Experiment class (for PyBaMM models only)
         """
-
-        # Run the simulation
-        prediction = self._simulate(parameters, times, experiment)
-
-        return prediction
-
-    def _simulate(self, parameters, times, experiment):
-        """
-        Create a PyBaMM simulation object and run it.
-        """
-        if self.pybamm_model is None:
-            raise ValueError("This sim method currently only supports PyBaMM models")
-
+        if self._built_model is None:
+            raise ValueError("Model must be built before calling simulate")
         else:
-            # Build the model if necessary
-            if self._built_model is None:
-                self.build()
-
-            # Pass the input parameters
-            if parameters is not None:
-                inputs = {}
-                for i, Param in enumerate(parameters):
-                    inputs[Param.name] = Param.value
-
-            # Define the simulation
-            if experiment is None:
-                sim = pybamm.Simulation(self.pybamm_model)
-                self.times = self.dataset["Time [s]"].data
-                t_eval = times or self.times
-            else:
-                sim = pybamm.Simulation(self.pybamm_model, experiment=experiment)
-                t_eval = None
-
-            # Run the simulation
-            if parameters is None:
-                prediction = sim.solve(t_eval=t_eval)
-            else:
-                prediction = sim.solve(t_eval=t_eval, inputs=inputs)
-
+            if not isinstance(inputs, dict):
+                inputs_dict = {
+                    key: inputs[i] for i, key in enumerate(self.parameters)
+                }
+            prediction = self.solver.solve(
+                self.built_model, inputs=inputs_dict, t_eval=t_eval
+            )["Terminal voltage [V]"].data
             return prediction
+
+    def predict(self, inputs=None, t_eval=None, parameter_set=None, experiment=None):
+        """
+        Create a PyBaMM simulation object, solve it, and return a solution object.
+        """
+        parameter_set = parameter_set or self.parameter_set
+        if inputs is not None:
+            parameter_set.update(inputs)
+        if self._unprocessed_model is not None:
+            if experiment is None:
+                prediction = pybamm.Simulation(
+                    self._unprocessed_model,
+                    parameter_values=parameter_set,
+                ).solve(t_eval=t_eval)
+            else:
+                prediction = pybamm.Simulation(
+                    self._unprocessed_model,
+                    experiment=experiment,
+                    parameter_values=parameter_set,
+                ).solve()
+            return prediction
+        else:
+            raise ValueError("This sim method currently only supports PyBaMM models")
 
     def n_parameters(self):
         """
