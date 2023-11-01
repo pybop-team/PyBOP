@@ -8,7 +8,7 @@ class BaseOptimiser:
     def __init__(self):
         self.name = "Base Optimiser"
 
-    def optimise(self, cost_function, x0, bounds):
+    def optimise(self, cost_function, x0=None, bounds=None):
         """
         Optimisiation method to be overloaded by child classes.
 
@@ -22,7 +22,7 @@ class BaseOptimiser:
 
         return result
 
-    def _runoptimise(self, cost_function, x0, bounds):
+    def _runoptimise(self, cost_function, x0=None, bounds=None):
         """
         Run optimisation method, to be overloaded by child classes.
 

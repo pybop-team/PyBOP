@@ -6,19 +6,19 @@ from pints import ErrorMeasure
 
 class PintsOptimiser(BaseOptimiser):
     """
-    Wrapper class for the PINTS optimisation class. Extends the BaseOptimiser class.
+    Class for the PINTS optimisation. Extends the BaseOptimiser class.
     """
 
-    def __init__(self, x0, xtol=None, method=None):
+    def __init__(self, x0=None, xtol=None, method=None):
         super().__init__()
         self.name = "PINTS Optimiser"
 
         if method is not None:
             self.method = method
         else:
-            self.method = pints.PSO
+            self.method = pints.CMAES
 
-    def _runoptimise(self, cost_function, x0, bounds):
+    def _runoptimise(self, cost_function, x0, bounds=None):
         """
         Run the PINTS optimisation method.
 
@@ -40,6 +40,7 @@ class PintsOptimiser(BaseOptimiser):
         controller = pints.OptimisationController(
             error, x0, boundaries=boundaries, method=self.method
         )
+
         controller.set_max_unchanged_iterations(20)  # default 200
 
         # Run the optimser

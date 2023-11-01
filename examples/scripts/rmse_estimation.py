@@ -1,6 +1,5 @@
 import pybop
 import pandas as pd
-import numpy as np
 
 # Form observations
 Measurements = pd.read_csv("examples/scripts/Chen_example.csv", comment="#").to_numpy()
@@ -28,7 +27,6 @@ parameters = [
     ),
 ]
 
-x0 = np.array([0.52, 0.63])
 # Define the cost to optimise
 cost = pybop.RMSE()
 signal = "Voltage [V]"
@@ -38,7 +36,7 @@ signal = "Voltage [V]"
 parameterisation = pybop.Optimisation(
     cost=cost,
     model=model,
-    optimiser=pybop.NLoptOptimize(x0=x0),
+    optimiser=pybop.NLoptOptimize(n_param=len(parameters)),
     parameters=parameters,
     dataset=dataset,
     signal=signal,

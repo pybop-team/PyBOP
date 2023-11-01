@@ -7,14 +7,14 @@ class NLoptOptimize(BaseOptimiser):
     Wrapper class for the NLOpt optimiser class. Extends the BaseOptimiser class.
     """
 
-    def __init__(self, x0, xtol=None, method=None):
+    def __init__(self, n_param, xtol=None, method=None):
         super().__init__()
         self.name = "NLOpt Optimiser"
 
         if method is not None:
-            self.optim = nlopt.opt(method, len(x0))
+            self.optim = nlopt.opt(method, n_param)
         else:
-            self.optim = nlopt.opt(nlopt.LN_BOBYQA, len(x0))
+            self.optim = nlopt.opt(nlopt.LN_BOBYQA, n_param)
 
         if xtol is not None:
             self.optim.set_xtol_rel(xtol)

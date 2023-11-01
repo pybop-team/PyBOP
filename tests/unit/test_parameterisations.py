@@ -45,7 +45,7 @@ class TestModelParameterisation(unittest.TestCase):
         signal = "Voltage [V]"
 
         # Select optimiser
-        optimiser = pybop.NLoptOptimize(x0=x0)
+        optimiser = pybop.NLoptOptimize(n_param=len(parameters))
 
         # Build the optimisation problem
         parameterisation = pybop.Optimisation(
@@ -99,7 +99,7 @@ class TestModelParameterisation(unittest.TestCase):
         signal = "Voltage [V]"
 
         # Select optimiser
-        optimiser = pybop.NLoptOptimize(x0=x0)
+        optimiser = pybop.NLoptOptimize(n_param=len(parameters))
 
         # Build the optimisation problem
         parameterisation = pybop.Optimisation(
