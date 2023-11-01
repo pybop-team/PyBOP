@@ -1,12 +1,13 @@
 import unittest
 import pybop
 import pybamm
+import pytest
 import numpy as np
 
 
 class TestParameterisation(unittest.TestCase):
     """
-    Tests the parameterisation functionality of PyBOP.
+    A class to test the model parameterisation methods.
     """
 
     def getdata(self, model, x0):
@@ -35,6 +36,7 @@ class TestParameterisation(unittest.TestCase):
         prediction = model.simulate(experiment=experiment)
         return prediction
 
+    @pytest.mark.unit
     def test_spm_nlopt(self):
         # Define model
         model = pybop.lithium_ion.SPM()
@@ -87,6 +89,7 @@ class TestParameterisation(unittest.TestCase):
         np.testing.assert_allclose(final_cost, 1e-3, atol=1e-2)
         np.testing.assert_allclose(x, x0, atol=1e-1)
 
+    @pytest.mark.unit
     def test_spme_scipy(self):
         # Define model
         model = pybop.lithium_ion.SPMe()
@@ -139,6 +142,7 @@ class TestParameterisation(unittest.TestCase):
         np.testing.assert_allclose(final_cost, 1e-3, atol=1e-2)
         np.testing.assert_allclose(x, x0, atol=1e-1)
 
+    @pytest.mark.unit
     def test_spm_pints(self):
         # Define model
         model = pybop.lithium_ion.SPMe()

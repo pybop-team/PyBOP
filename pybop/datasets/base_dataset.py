@@ -1,6 +1,4 @@
-import pybop
 import pybamm
-import numpy as np
 
 
 class Dataset:

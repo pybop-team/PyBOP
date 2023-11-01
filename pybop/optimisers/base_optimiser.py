@@ -1,6 +1,3 @@
-import pybop
-
-
 class BaseOptimiser:
     """
 

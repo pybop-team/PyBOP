@@ -8,6 +8,22 @@ Before you commit any code, please perform the following checks:
 
 - [All tests pass](#testing): `$ nox -s unit_test`
 
+### Installing and using pre-commit
+
+`PyBOP` uses a set of `pre-commit` hooks and the `pre-commit` bot to format and prettify the codebase. The hooks can be installed locally using -
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+This would run the checks every time a commit is created locally. The checks will only run on the files modified by that commit, but the checks can be triggered for all the files using -
+
+```bash
+pre-commit run --all-files
+```
+
+If you would like to skip the failing checks and push the code for further discussion, use the `--no-verify` option with `git commit`.
 
 ## Workflow
 

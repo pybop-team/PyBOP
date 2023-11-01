@@ -1,10 +1,9 @@
 import pybamm
-import pybop
 
 
 class ParameterSet:
     """
-    Class for creating parameter sets in PyBOP.
+    Class for creating parameter sets in pybop.
     """
 
     def __new__(cls, method, name):
