@@ -45,7 +45,7 @@ parameterisation = pybop.Optimisation(
 )
 
 # Run the optimisation problem
-results, last_optim, num_evals = parameterisation.run()
+x, output, final_cost, num_evals = parameterisation.run()
 
 
 # get MAP estimate, starting at a random initial point in parameter space

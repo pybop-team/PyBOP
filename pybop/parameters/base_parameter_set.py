@@ -3,7 +3,7 @@ import pybamm
 
 class ParameterSet:
     """
-    Class for creating parameter sets in pybop.
+    Class for creating parameter sets in PyBOP.
     """
 
     def __new__(cls, method, name):

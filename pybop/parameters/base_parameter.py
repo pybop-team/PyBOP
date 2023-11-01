@@ -1,6 +1,6 @@
 class Parameter:
     """ ""
-    Class for creating parameters in pybop.
+    Class for creating parameters in PyBOP.
     """
 
     def __init__(self, name, value=None, prior=None, bounds=None):
