@@ -144,7 +144,7 @@ class BaseModel:
 
             return (
                 sol["Terminal voltage [V]"].data,
-                np.array(
+                np.asarray(
                     [
                         sol["Terminal voltage [V]"].sensitivities[key].toarray()
                         for key in self.fit_keys

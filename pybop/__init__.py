@@ -60,6 +60,11 @@ from .parameters.base_parameter_set import ParameterSet
 from .parameters.priors import Gaussian, Uniform, Exponential
 
 #
+# Problem class
+#
+from ._problem import SingleOutputProblem
+
+#
 # Plotting class
 #
 from .plotting.quick_plot import QuickPlot
