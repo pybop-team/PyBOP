@@ -8,16 +8,17 @@ class SciPyMinimize(BaseOptimiser):
     Wrapper class for the SciPy optimisation class. Extends the BaseOptimiser class.
     """
 
-    def __init__(self, cost_function, x0, bounds=None, options=None):
+    def __init__(self, x0, method=None, bounds=None):
         super().__init__()
-        self.cost_function = cost_function
-        self.method = options.optmethod
-        self.x0 = x0 or cost_function.x0
+        self.method = method
+        self.x0 = x0
         self.bounds = bounds
-        self.options = options
-        self.name = "Scipy Optimiser"
+        self.name = "SciPy Optimiser"
 
-    def _runoptimise(self):
+        if self.method is None:
+            self.method = "BFGS"
+
+    def _runoptimise(self, cost_function, x0, bounds):
         """
         Run the SciPy optimisation method.
 
@@ -29,23 +30,18 @@ class SciPyMinimize(BaseOptimiser):
         bounds: bounds array
         """
 
-        if self.method is not None:
-            method=self.method
-        else:
-            opt = minimize(self.cost_function, self.x0, method="BFGS")
-
-        # Reformat bounds
-        bounds = (
-            (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
-        )
-
-        # Run the optimser
-        if self.bounds is not None:
+        if bounds is not None:
+            # Reformat bounds and run the optimser
+            bounds = (
+                (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
+            )
             output = minimize(
-                self.cost_function, self.x0, method=method, bounds=self.bounds, tol=self.xtol
+                cost_function, x0, method=self.method, bounds=bounds
             )
         else:
-            output = minimize(self.cost_function, self.x0, method=method, tol=self.xtol)
+            output = minimize(
+                cost_function, x0, method=self.method
+            )
 
         # Get performance statistics
         x = output.x

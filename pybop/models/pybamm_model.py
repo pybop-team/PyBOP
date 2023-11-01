@@ -16,17 +16,19 @@ class PybammModel(BaseModel):
     def build(
         self,
         dataset=None,
+        experiment=None,
         parameters=None,
         check_model=True,
         init_soc=None,
     ):
         """
-        Build the PyBOP model (if not built already).
+        Build the pybop model (if not built already).
         For PyBaMM forward models, this method follows a
         similar process to pybamm.Simulation.build().
         """
-        self.parameters = parameters
         self.dataset = dataset
+        self.experiment = experiment
+        self.parameters = parameters
 
         if init_soc is not None:
             self.set_init_soc(init_soc)
@@ -37,6 +39,7 @@ class PybammModel(BaseModel):
         elif self.pybamm_model.is_discretised:
             self._model_with_set_params = self.pybamm_model
             self._built_model = self.pybamm_model
+
         else:
             self.set_params()
             self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
@@ -70,15 +73,16 @@ class PybammModel(BaseModel):
 
     def set_params(self):
         """
-        Set the parameters in the model.
+        Set each parameter in the model either equal to its value
+        or mark it as an input.
         """
         if self.model_with_set_params:
             return
 
         if self.parameters is not None:
-            # set input parameters in parameter set from fitting parameters
-            for i in self.parameters.keys():
-                self.parameter_set[i] = "[input]"
+            # Set input parameters in parameter set from fitting parameters
+            for param in self.parameters:
+                self.parameter_set[param.name] = "[input]"
 
         if self.dataset is not None and self.parameters is not None:
             self.parameter_set["Current function [A]"] = pybamm.Interpolant(
@@ -86,8 +90,8 @@ class PybammModel(BaseModel):
                 self.dataset["Current function [A]"].data,
                 pybamm.t,
             )
-            # Set t_eval
-            self.time_data = self._parameter_set["Current function [A]"].x[0]
+            # Set times
+            self.times = self._parameter_set["Current function [A]"].x[0]
 
         self._model_with_set_params = self._parameter_set.process_model(
             self._unprocessed_model, inplace=False
@@ -107,9 +111,10 @@ class PybammModel(BaseModel):
                 inputs_dict = {
                     key: inputs[i] for i, key in enumerate(self.parameters)
                 }
-            return self.solver.solve(
+            prediction = self.solver.solve(
                 self.built_model, inputs=inputs_dict, t_eval=t_eval
             )["Terminal voltage [V]"].data
+            return prediction
 
     def predict(self, inputs=None, t_eval=None, parameter_set=None, experiment=None):
         """
@@ -120,16 +125,17 @@ class PybammModel(BaseModel):
             parameter_set.update(inputs)
         if self._unprocessed_model is not None:
             if experiment is None:
-                return pybamm.Simulation(
+                prediction = pybamm.Simulation(
                     self._unprocessed_model,
                     parameter_values=parameter_set,
                 ).solve(t_eval=t_eval)
             else:
-                return pybamm.Simulation(
+                prediction = pybamm.Simulation(
                     self._unprocessed_model,
                     experiment=experiment,
                     parameter_values=parameter_set,
                 ).solve()
+            return prediction
         else:
             raise ValueError("This sim method currently only supports PyBaMM models")
 

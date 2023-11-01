@@ -8,8 +8,10 @@ class NLoptOptimize(BaseOptimiser):
     Wrapper class for the NLOpt optimiser class. Extends the BaseOptimiser class.
     """
 
-    def __init__(self, method=None, x0=None, xtol=None):
+    def __init__(self, x0, method=None, xtol=None):
         super().__init__()
+        self.method = method
+        self.x0 = x0
         self.name = "NLOpt Optimiser"
 
         if method is not None:

@@ -8,8 +8,6 @@ class BaseModel:
 
     def __init__(self, name="Base Model"):
         self.name = name
-        self.parameters = None
-        self.dataset = None
 
     def build(
         self,
@@ -21,8 +19,8 @@ class BaseModel:
         """
         Build the pybop model (if not built already).
         """
-        self.parameters = parameters
         self.dataset = dataset
+        self.parameters = parameters
 
         raise ValueError("Not yet implemented")
 
