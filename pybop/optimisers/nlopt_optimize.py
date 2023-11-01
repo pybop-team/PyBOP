@@ -13,14 +13,14 @@ class NLoptOptimize(BaseOptimiser):
         self.name = "NLOpt Optimiser"
 
         if method is not None:
-            self.opt = nlopt.opt(method, len(x0))
+            self.optim = nlopt.opt(method, len(x0))
         else:
-            self.opt = nlopt.opt(nlopt.LN_BOBYQA, len(x0))
+            self.optim = nlopt.opt(nlopt.LN_BOBYQA, len(x0))
 
         if xtol is not None:
-            self.opt.set_xtol_rel(xtol)
+            self.optim.set_xtol_rel(xtol)
         else:
-            self.opt.set_xtol_rel(1e-5)
+            self.optim.set_xtol_rel(1e-5)
 
     def _runoptimise(self, cost_function, x0, bounds):
         """
@@ -34,16 +34,16 @@ class NLoptOptimize(BaseOptimiser):
         bounds: bounds array
         """
 
-        self.opt.set_min_objective(cost_function)
-        self.opt.set_lower_bounds(bounds["lower"])
-        self.opt.set_upper_bounds(bounds["upper"])
+        self.optim.set_min_objective(cost_function)
+        self.optim.set_lower_bounds(bounds["lower"])
+        self.optim.set_upper_bounds(bounds["upper"])
 
         # Run the optimser
-        x = self.opt.optimize(x0)
+        x = self.optim.optimize(x0)
 
         # Get performance statistics
-        output = self.opt
-        final_cost = self.opt.last_optimum_value()
-        num_evals = self.opt.get_numevals()
+        output = self.optim
+        final_cost = self.optim.last_optimum_value()
+        num_evals = self.optim.get_numevals()
 
         return x, output, final_cost, num_evals
