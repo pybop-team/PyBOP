@@ -1,9 +1,8 @@
-import pybop
 import pybamm
-from ..pybamm_model import PybammModel
+from ..base_model import BaseModel
 
 
-class SPM(PybammModel):
+class SPM(BaseModel):
     """
     Composition of the PyBaMM Single Particle Model class.
 
@@ -43,7 +42,7 @@ class SPM(PybammModel):
         self._disc = None
 
 
-class SPMe(PybammModel):
+class SPMe(BaseModel):
     """
     Composition of the PyBaMM Single Particle Model with Electrolyte class.
 
