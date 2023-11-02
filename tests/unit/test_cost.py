@@ -2,6 +2,7 @@ import pytest
 import pybop
 import numpy as np
 
+
 class TestCosts:
     """
     Class for tests cost functions
@@ -23,9 +24,7 @@ class TestCosts:
         vector2 = np.array([2, 3, 4, 5])
 
         cost = pybop.RMSE()
-        with pytest.raises(
-                ValueError
-        ):
+        with pytest.raises(ValueError):
             cost.compute(vector1, vector2)
 
     @pytest.mark.unit
@@ -35,9 +34,7 @@ class TestCosts:
         vector2 = "string"
 
         cost = pybop.RMSE()
-        with pytest.raises(
-            ValueError
-        ):
+        with pytest.raises(ValueError):
             cost.compute(vector1, vector2)
 
     @pytest.mark.unit

@@ -101,12 +101,11 @@ class TestModelParameterisation(unittest.TestCase):
         # Select optimisers
         optimisers = [
             pybop.NLoptOptimize(n_param=len(parameters)),
-            pybop.SciPyMinimize()
+            pybop.SciPyMinimize(),
         ]
 
         # Test each optimiser
         for optimiser in optimisers:
-
             parameterisation = pybop.Optimisation(
                 cost=cost,
                 model=model,
