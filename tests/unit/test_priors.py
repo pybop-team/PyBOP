@@ -8,12 +8,20 @@ class TestPriors:
     A class to test the priors.
     """
 
+    @pytest.fixture
+    def Gaussian(self):
+        return pybop.Gaussian(mean=0.5, sigma=1)
+
+    @pytest.fixture
+    def Uniform(self):
+        return pybop.Uniform(lower=0, upper=1)
+
+    @pytest.fixture
+    def Exponential(self):
+        return pybop.Exponential(scale=1)
+
     @pytest.mark.unit
-    def test_priors(self):
-        # Tests priors
-        Gaussian = pybop.Gaussian(0.5, 1)
-        Uniform = pybop.Uniform(0, 1)
-        Exponential = pybop.Exponential(1)
+    def test_priors(self, Gaussian, Uniform, Exponential):
 
         # Test pdf
         np.testing.assert_allclose(Gaussian.pdf(0.5), 0.3989422804014327, atol=1e-4)
@@ -25,7 +33,28 @@ class TestPriors:
         np.testing.assert_allclose(Uniform.logpdf(0.5), 0, atol=1e-4)
         np.testing.assert_allclose(Exponential.logpdf(1), -1, atol=1e-4)
 
-        # Test rvs
-        np.testing.assert_allclose(Gaussian.rvs(1), 0.5, atol=3)
-        np.testing.assert_allclose(Uniform.rvs(1), 0.5, atol=0.5)
-        np.testing.assert_allclose(Exponential.rvs(1), 1, atol=3)
+    @pytest.mark.unit
+    def test_gaussian_rvs(self,Gaussian):
+        samples = Gaussian.rvs(size=500)
+        mean = np.mean(samples)
+        std = np.std(samples)
+        assert abs(mean - 0.5) < 0.1
+        assert abs(std - 1) < 0.1
+
+    @pytest.mark.unit
+    def test_uniform_rvs(self, Uniform):
+        samples = Uniform.rvs(size=500)
+        assert (samples >= 0).all() and (samples <= 1).all()
+
+    @pytest.mark.unit
+    def test_exponential_rvs(self, Exponential):
+        samples = Exponential.rvs(size=500)
+        assert (samples >= 0).all()
+        mean = np.mean(samples)
+        assert abs(mean - 1) < 0.1
+
+    @pytest.mark.unit
+    def test_repr(self, Gaussian, Uniform, Exponential):
+        assert repr(Gaussian) == "Gaussian, mean: 0.5, sigma: 1"
+        assert repr(Uniform) == "Uniform, lower: 0, upper: 1"
+        assert repr(Exponential) == "Exponential, scale: 1"

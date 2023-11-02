@@ -133,7 +133,7 @@ class TestModelParameterisation(unittest.TestCase):
         experiment = pybamm.Experiment(
             [
                 (
-                    "Discharge at 2C for 5 minutes (1 second period)",
+                    "Discharge at 1C for 5 minutes (1 second period)",
                     "Rest for 2 minutes (1 second period)",
                     "Charge at 1C for 5 minutes (1 second period)",
                     "Rest for 2 minutes (1 second period)",
