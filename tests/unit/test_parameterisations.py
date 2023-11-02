@@ -65,7 +65,7 @@ class TestModelParameterisation(unittest.TestCase):
         np.testing.assert_allclose(x, x0, atol=1e-1)
 
     @pytest.mark.unit
-    def test_spme(self):
+    def test_spme_multiple_optimisers(self):
         # Define model
         model = pybop.lithium_ion.SPMe()
         model.parameter_set = model.pybamm_model.default_parameter_values
@@ -98,24 +98,29 @@ class TestModelParameterisation(unittest.TestCase):
         cost = pybop.RMSE()
         signal = "Voltage [V]"
 
-        # Select optimiser
-        optimiser = pybop.NLoptOptimize(n_param=len(parameters))
+        # Select optimisers
+        optimisers = [
+            pybop.NLoptOptimize(n_param=len(parameters)),
+            pybop.SciPyMinimize()
+        ]
 
-        # Build the optimisation problem
-        parameterisation = pybop.Optimisation(
-            cost=cost,
-            model=model,
-            optimiser=optimiser,
-            parameters=parameters,
-            dataset=dataset,
-            signal=signal,
-        )
+        # Test each optimiser
+        for optimiser in optimisers:
 
-        # Run the optimisation problem
-        x, _, final_cost, _ = parameterisation.run()
-        # Assertions (for testing purposes only)
-        np.testing.assert_allclose(final_cost, 0, atol=1e-2)
-        np.testing.assert_allclose(x, x0, rtol=1e-1)
+            parameterisation = pybop.Optimisation(
+                cost=cost,
+                model=model,
+                optimiser=optimiser,
+                parameters=parameters,
+                dataset=dataset,
+                signal=signal,
+            )
+
+            # Run the optimisation problem
+            x, _, final_cost, _ = parameterisation.run()
+            # Assertions (for testing purposes only)
+            np.testing.assert_allclose(final_cost, 0, atol=1e-2)
+            np.testing.assert_allclose(x, x0, rtol=1e-1)
 
     def getdata(self, model, x0):
         model.parameter_set = model.pybamm_model.default_parameter_values

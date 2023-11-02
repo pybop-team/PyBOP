@@ -8,20 +8,20 @@ class SingleOutputProblem:
 
     def __init__(self, model, parameters, signal, dataset):
         self._model = model
-        self.parameters = parameters
+        self.parameters = {o.name: o for o in parameters}
         self.signal = signal
         self._dataset = dataset
 
         if self._model._built_model is None:
             self._model.build(fit_parameters=self.parameters)
 
-        for item in self._dataset:
+        for i, item in enumerate(self._dataset):
             if item.name == "Time [s]":
                 self._time_data_available = True
-                self._time_data = self._dataset[item]
+                self._time_data = self._dataset[i].data
 
             if item.name == signal:
-                self._ground_truth = self._dataset[item]
+                self._ground_truth = self._dataset[i].data
 
         if self._time_data_available is False:
             raise ValueError("Dataset must contain time data")
@@ -30,8 +30,6 @@ class SingleOutputProblem:
             raise ValueError("Times can not be negative.")
         if np.any(self._time_data[:-1] >= self._time_data[1:]):
             raise ValueError("Times must be increasing.")
-
-        self._ground_truth = self._dataset[self.signal]
 
         if len(self._ground_truth) != len(self._time_data):
             raise ValueError("Time data and signal data must be the same length.")

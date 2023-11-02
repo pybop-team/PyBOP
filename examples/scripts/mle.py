@@ -10,7 +10,7 @@ inputs = {
     "Positive electrode active material volume fraction": 0.44,
     "Current function [A]": 1,
 }
-t_eval = np.arange(0, 1200, 2)
+t_eval = np.arange(0, 900, 2)
 model.build(fit_parameters=inputs)
 
 values = model.predict(inputs=inputs, t_eval=t_eval)

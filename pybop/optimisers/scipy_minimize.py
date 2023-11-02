@@ -7,10 +7,9 @@ class SciPyMinimize(BaseOptimiser):
     Wrapper class for the SciPy optimisation class. Extends the BaseOptimiser class.
     """
 
-    def __init__(self, x0, method=None, bounds=None):
+    def __init__(self, method=None, bounds=None):
         super().__init__()
         self.method = method
-        self.x0 = x0
         self.bounds = bounds
         self.name = "SciPy Optimiser"
 
