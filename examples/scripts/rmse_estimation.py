@@ -1,7 +1,7 @@
 import pybop
 import pandas as pd
 
-# Form observations
+# Form dataset
 Measurements = pd.read_csv("examples/scripts/Chen_example.csv", comment="#").to_numpy()
 dataset = [
     pybop.Dataset("Time [s]", Measurements[:, 0]),
@@ -31,7 +31,6 @@ parameters = [
 cost = pybop.RMSE()
 signal = "Voltage [V]"
 
-
 # Build the optimisation problem
 parameterisation = pybop.Optimisation(
     cost=cost,
@@ -45,9 +44,8 @@ parameterisation = pybop.Optimisation(
 # Run the optimisation problem
 x, output, final_cost, num_evals = parameterisation.run()
 
-
 # get MAP estimate, starting at a random initial point in parameter space
-# parameterisation.map(x0=[p.sample() for p in params])
+# parameterisation.map(x0=[p.sample() for p in parameters])
 
 # or sample from posterior
 # parameterisation.sample(1000, n_chains=4, ....)

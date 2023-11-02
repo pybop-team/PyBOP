@@ -44,13 +44,13 @@ class Optimisation:
         # Sample from prior for x0
         if x0 is None:
             self.x0 = np.zeros(self.n_parameters)
-            for i, Param in enumerate(self.parameters):
-                self.x0[i] = Param.prior.rvs(1)[0]
+            for i, param in enumerate(self.parameters):
+                self.x0[i] = param.prior.rvs(1)[0]
                 # Update to capture dimensions per parameter
 
         # Add the initial values to the parameter definitions
-        for i, Param in enumerate(self.parameters):
-            Param.update(value=self.x0[i])
+        for i, param in enumerate(self.parameters):
+            param.update(value=self.x0[i])
 
         # Build model with dataset and fitting parameters
         self.model.build(

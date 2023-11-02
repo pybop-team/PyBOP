@@ -16,7 +16,7 @@ class TestModelParameterisation(unittest.TestCase):
         model = pybop.lithium_ion.SPM()
         model.parameter_set = model.pybamm_model.default_parameter_values
 
-        # Form observations
+        # Form dataset
         x0 = np.array([0.52, 0.63])
         solution = self.getdata(model, x0)
 
@@ -70,7 +70,7 @@ class TestModelParameterisation(unittest.TestCase):
         model = pybop.lithium_ion.SPMe()
         model.parameter_set = model.pybamm_model.default_parameter_values
 
-        # Form observations
+        # Form dataset
         x0 = np.array([0.52, 0.63])
         solution = self.getdata(model, x0)
 

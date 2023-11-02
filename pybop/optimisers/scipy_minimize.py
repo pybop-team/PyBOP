@@ -7,21 +7,15 @@ class SciPyMinimize(BaseOptimiser):
     Wrapper class for the SciPy optimisation class. Extends the BaseOptimiser class.
     """
 
-    def __init__(self, x0, xtol=None, method=None, options=None):
+    def __init__(self, x0, method=None, bounds=None):
         super().__init__()
-        self.name = "Scipy Optimiser"
+        self.method = method
+        self.x0 = x0
+        self.bounds = bounds
+        self.name = "SciPy Optimiser"
 
-        if method is None:
-            self.method = method
-        else:
+        if self.method is None:
             self.method = "BFGS"
-
-        if xtol is not None:
-            self.xtol = xtol
-        else:
-            self.xtol = 1e-5
-
-        self.options = options
 
     def _runoptimise(self, cost_function, x0, bounds):
         """
@@ -35,15 +29,14 @@ class SciPyMinimize(BaseOptimiser):
         bounds: bounds array
         """
 
-        # Reformat bounds
-        bounds = (
-            (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
-        )
-
-        # Run the optimser
-        output = minimize(
-            cost_function, x0, method=self.method, bounds=bounds, tol=self.xtol
-        )
+        if bounds is not None:
+            # Reformat bounds and run the optimser
+            bounds = (
+                (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
+            )
+            output = minimize(cost_function, x0, method=self.method, bounds=bounds)
+        else:
+            output = minimize(cost_function, x0, method=self.method)
 
         # Get performance statistics
         x = output.x

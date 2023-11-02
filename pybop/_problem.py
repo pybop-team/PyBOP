@@ -41,9 +41,11 @@ class SingleOutputProblem:
         Evaluate the model with the given parameters and return the signal.
         """
 
-        y = np.asarray(self._model.simulate(inputs=parameters, t_eval=self.model.time_data)[
-            self.signal
-        ].data)
+        y = np.asarray(
+            self._model.simulate(inputs=parameters, t_eval=self.model.time_data)[
+                self.signal
+            ].data
+        )
 
         return y
 
@@ -57,7 +59,4 @@ class SingleOutputProblem:
             inputs=parameters, t_eval=self.model.time_data, calculate_sensitivities=True
         )[self.signal]
 
-        return (
-            np.asarray(y),
-            np.asarray(dy_dp)
-        )
+        return (np.asarray(y), np.asarray(dy_dp))
