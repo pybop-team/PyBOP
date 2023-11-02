@@ -17,6 +17,30 @@ class TestCosts:
         cost.compute(vector1, vector2)
 
     @pytest.mark.unit
+    def test_RMSE_mismatch_dims(self):
+        # Tests cost function
+        vector1 = np.array([1, 2, 3])
+        vector2 = np.array([2, 3, 4, 5])
+
+        cost = pybop.RMSE()
+        with pytest.raises(
+                ValueError
+        ):
+            cost.compute(vector1, vector2)
+
+    @pytest.mark.unit
+    def test_RMSE_incorrect_type(self):
+        # Tests cost function
+        vector1 = np.array([1, 2, 3])
+        vector2 = "string"
+
+        cost = pybop.RMSE()
+        with pytest.raises(
+            ValueError
+        ):
+            cost.compute(vector1, vector2)
+
+    @pytest.mark.unit
     def test_MLE(self):
         # Tests cost function
         vector1 = np.array([1, 2, 3])
