@@ -22,7 +22,6 @@ class TestPriors:
 
     @pytest.mark.unit
     def test_priors(self, Gaussian, Uniform, Exponential):
-
         # Test pdf
         np.testing.assert_allclose(Gaussian.pdf(0.5), 0.3989422804014327, atol=1e-4)
         np.testing.assert_allclose(Uniform.pdf(0.5), 1, atol=1e-4)
@@ -34,7 +33,7 @@ class TestPriors:
         np.testing.assert_allclose(Exponential.logpdf(1), -1, atol=1e-4)
 
     @pytest.mark.unit
-    def test_gaussian_rvs(self,Gaussian):
+    def test_gaussian_rvs(self, Gaussian):
         samples = Gaussian.rvs(size=500)
         mean = np.mean(samples)
         std = np.std(samples)

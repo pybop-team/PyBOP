@@ -28,8 +28,7 @@ class RMSE:
             return np.sqrt(np.mean((prediction - target) ** 2))
 
         except Exception as e:
-            print(f"Error in RMSE calculation: {e}")
-            return None
+            raise ValueError(f"Error in RMSE calculation: {e}")
 
 
 class MLE:
@@ -42,12 +41,7 @@ class MLE:
 
     def compute(self, prediction, target):
         # Compute the cost
-        try:
-            return 0  # update with MLE residual
-
-        except Exception as e:
-            print(f"Error in RMSE calculation: {e}")
-            return None
+        return 0  # update with MLE residual
 
 
 class PEM:
@@ -60,12 +54,7 @@ class PEM:
 
     def compute(self, prediction, target):
         # Compute the cost
-        try:
-            return 0  # update with MLE residual
-
-        except Exception as e:
-            print(f"Error in RMSE calculation: {e}")
-            return None
+        return 0  # update with MLE residual
 
 
 class MAP:
@@ -78,12 +67,7 @@ class MAP:
 
     def compute(self, prediction, target):
         # Compute the cost
-        try:
-            return 0  # update with MLE residual
-
-        except Exception as e:
-            print(f"Error in RMSE calculation: {e}")
-            return None
+        return 0  # update with MLE residual
 
     def sample(self, n_chains):
         """
