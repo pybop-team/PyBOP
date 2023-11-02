@@ -119,7 +119,7 @@ class TestModelParameterisation(unittest.TestCase):
             x, _, final_cost, _ = parameterisation.run()
             # Assertions (for testing purposes only)
             np.testing.assert_allclose(final_cost, 0, atol=1e-2)
-            np.testing.assert_allclose(x, x0, rtol=1e-1)
+            np.testing.assert_allclose(x, x0, atol=1e-1)
 
     def getdata(self, model, x0):
         model.parameter_set = model.pybamm_model.default_parameter_values
