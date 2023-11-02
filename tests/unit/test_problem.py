@@ -1,12 +1,15 @@
 import pybop
 import numpy as np
 import pybamm
+import pytest
 
 
 class TestProblem:
     """
     A class to test the problem class.
     """
+
+    @pytest.mark.unit
     def test_problem(self):
         # Define model
         model = pybop.lithium_ion.SPM()

@@ -26,7 +26,7 @@ script_path = path.dirname(__file__)
 #
 # Cost function class
 #
-from .costs.error_costs import RMSE
+from .costs.error_costs import RMSE, MLE, PEM, MAP
 
 #
 # Dataset class
