@@ -14,7 +14,7 @@ class SciPyMinimize(BaseOptimiser):
         self.name = "SciPy Optimiser"
 
         if self.method is None:
-            self.method = "BFGS"
+            self.method = "L-BFGS-B"
 
     def _runoptimise(self, cost_function, x0, bounds):
         """

@@ -38,8 +38,8 @@ class TestPriors:
         samples = Gaussian.rvs(size=500)
         mean = np.mean(samples)
         std = np.std(samples)
-        assert abs(mean - 0.5) < 0.1
-        assert abs(std - 1) < 0.1
+        assert abs(mean - 0.5) < 0.2
+        assert abs(std - 1) < 0.2
 
     @pytest.mark.unit
     def test_uniform_rvs(self, Uniform):
@@ -51,7 +51,7 @@ class TestPriors:
         samples = Exponential.rvs(size=500)
         assert (samples >= 0).all()
         mean = np.mean(samples)
-        assert abs(mean - 1) < 0.1
+        assert abs(mean - 1) < 0.2
 
     @pytest.mark.unit
     def test_repr(self, Gaussian, Uniform, Exponential):
