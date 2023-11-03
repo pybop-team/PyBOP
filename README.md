@@ -3,10 +3,9 @@
   <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/Temp_Logo.png" alt="logo" width="400" height="auto" />
   <h1>Python Battery Optimisation and Parameterisation</h1>
 
-
 <p>
-  <a href="https://github.com/pybop-team/PyBOP/actions/workflows/test_on_push.yaml">
-    <img src="https://img.shields.io/github/actions/workflow/status/pybop-team/PyBOP/test_on_push.yaml?label=Build%20Status" alt="build" />
+  <a href="https://github.com/pybop-team/PyBOP/actions/workflows/scheduled_tests.yaml">
+    <img src="https://github.com/pybop-team/PyBOP/actions/workflows/scheduled_tests.yaml/badge.svg" alt="Scheduled" />
   </a>
   <a href="https://github.com/pybop-team/PyBOP/graphs/contributors">
     <img src="https://img.shields.io/github/contributors/pybop-team/PyBOP" alt="contributors" />
@@ -152,7 +151,7 @@ def getdata(x0):
 x0 = np.array([0.55, 0.63])
 solution = getdata(x0)
 ```
-Next, the observed variables are defined, with the model construction and parameter definitions following. Finally, the parameterisation class is constructed and parameter fitting is completed. 
+Next, the observed variables are defined, with the model construction and parameter definitions following. Finally, the parameterisation class is constructed and parameter fitting is completed.
 ```python
 observations = [
     pybop.Observed("Time [s]", solution["Time [s]"].data),
@@ -198,7 +197,7 @@ learning from the success of the [PyBaMM](https://pybamm.org/) community. Our va
 
 -   Inclusivity and fairness (those who want to contribute may do so, and their input is appropriately recognised)
 
--   Inter-operability (aiming for modularity to enable maximum impact and inclusivity)
+-   Interoperability (aiming for modularity to enable maximum impact and inclusivity)
 
 -   User-friendliness (putting user requirements first, thinking about user-assistance & workflows)
 

@@ -13,10 +13,10 @@ class TestOptimisation:
         # Tests prior sampling
         model = pybop.lithium_ion.SPM()
 
-        observations = [
-            pybop.Observed("Time [s]", np.linspace(0, 3600, 100)),
-            pybop.Observed("Current function [A]", np.zeros(100)),
-            pybop.Observed("Terminal voltage [V]", np.ones(100)),
+        Dataset = [
+            pybop.Dataset("Time [s]", np.linspace(0, 3600, 100)),
+            pybop.Dataset("Current function [A]", np.zeros(100)),
+            pybop.Dataset("Terminal voltage [V]", np.ones(100)),
         ]
 
         param = [
@@ -27,8 +27,16 @@ class TestOptimisation:
             )
         ]
 
+        signal = "Terminal voltage [V]"
+        cost = pybop.RMSE()
+
         for i in range(10):
             opt = pybop.Optimisation(
-                model, observations=observations, fit_parameters=param
+                cost,
+                model,
+                optimiser=pybop.NLoptOptimize(n_param=len(param)),
+                parameters=param,
+                dataset=Dataset,
+                signal=signal,
             )
             assert opt.x0 <= 0.77 and opt.x0 >= 0.73

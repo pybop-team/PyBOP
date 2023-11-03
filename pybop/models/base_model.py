@@ -1,20 +1,21 @@
 import pybamm
+import numpy as np
 
 
 class BaseModel:
     """
-    Base class for PyBOP models
+    Base class for pybop models.
     """
 
     def __init__(self, name="Base Model"):
         self.name = name
         self.pybamm_model = None
         self.fit_parameters = None
-        self.observations = None
+        self.dataset = None
 
     def build(
         self,
-        observations=None,
+        dataset=None,
         fit_parameters=None,
         check_model=True,
         init_soc=None,
@@ -25,7 +26,9 @@ class BaseModel:
         similar process to pybamm.Simulation.build().
         """
         self.fit_parameters = fit_parameters
-        self.observations = observations
+        self.dataset = dataset
+        if self.fit_parameters is not None:
+            self.fit_keys = list(self.fit_parameters.keys())
 
         if init_soc is not None:
             self.set_init_soc(init_soc)
@@ -79,10 +82,10 @@ class BaseModel:
             for i in self.fit_parameters.keys():
                 self.parameter_set[i] = "[input]"
 
-        if self.observations is not None and self.fit_parameters is not None:
+        if self.dataset is not None and self.fit_parameters is not None:
             self.parameter_set["Current function [A]"] = pybamm.Interpolant(
-                self.observations["Time [s]"].data,
-                self.observations["Current function [A]"].data,
+                self.dataset["Time [s]"].data,
+                self.dataset["Current function [A]"].data,
                 pybamm.t,
             )
             # Set t_eval
@@ -106,9 +109,48 @@ class BaseModel:
                 inputs_dict = {
                     key: inputs[i] for i, key in enumerate(self.fit_parameters)
                 }
-            return self.solver.solve(
-                self.built_model, inputs=inputs_dict, t_eval=t_eval
-            )["Terminal voltage [V]"].data
+                return self.solver.solve(
+                    self.built_model, inputs=inputs_dict, t_eval=t_eval
+                )["Terminal voltage [V]"].data
+            else:
+                return self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
+
+    def simulateS1(self, inputs, t_eval):
+        """
+        Run the forward model and return the function evaulation and it's gradient
+        aligning with Pints' ForwardModel simulateS1 method.
+        """
+        if self._built_model is None:
+            raise ValueError("Model must be built before calling simulate")
+        else:
+            if not isinstance(inputs, dict):
+                inputs_dict = {
+                    key: inputs[i] for i, key in enumerate(self.fit_parameters)
+                }
+
+                sol = self.solver.solve(
+                    self.built_model,
+                    inputs=inputs_dict,
+                    t_eval=t_eval,
+                    calculate_sensitivities=True,
+                )
+            else:
+                sol = self.solver.solve(
+                    self.built_model,
+                    inputs=inputs,
+                    t_eval=t_eval,
+                    calculate_sensitivities=True,
+                )
+
+            return (
+                sol["Terminal voltage [V]"].data,
+                np.asarray(
+                    [
+                        sol["Terminal voltage [V]"].sensitivities[key].toarray()
+                        for key in self.fit_keys
+                    ]
+                ).T,
+            )
 
     def predict(self, inputs=None, t_eval=None, parameter_set=None, experiment=None):
         """
