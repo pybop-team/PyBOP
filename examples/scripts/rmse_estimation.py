@@ -18,7 +18,7 @@ parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         prior=pybop.Gaussian(0.75, 0.05),
-        bounds=[0.73, 0.77],
+        bounds=[0.65, 0.85],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
