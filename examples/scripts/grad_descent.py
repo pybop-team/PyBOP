@@ -30,13 +30,14 @@ plt.show()
 
 
 problem = pints.SingleOutputProblem(model, time, CorruptValues)
-log_likelihood = pints.GaussianLogLikelihood(problem)
-boundaries = pints.RectangularBoundaries([0.4, 0.4, 0.7, 1e-5], [0.6, 0.6, 2.1, 1e-1])
 
-x0 = np.array([0.48, 0.55, 1.4, 1e-3])
-opt = pints.OptimisationController(
-    log_likelihood, x0, boundaries=boundaries, method=pints.CMAES
-)
+# Select a score function
+score = pints.SumOfSquaresError(problem)
+
+x0 = np.array([0.48, 0.55, 1.4])
+opt = pints.OptimisationController(score, x0, method=pints.GradientDescent)
+
+opt.optimiser().set_learning_rate(0.025)
 opt.set_max_unchanged_iterations(50)
 opt.set_max_iterations(200)
 

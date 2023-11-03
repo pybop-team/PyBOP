@@ -1,9 +1,9 @@
 import pybamm
 
 
-class Observed:
+class Dataset:
     """
-    Class for experimental Observations.
+    Class for experimental observations.
     """
 
     def __init__(self, name, data):
@@ -11,7 +11,7 @@ class Observed:
         self.data = data
 
     def __repr__(self):
-        return f"Observation: {self.name} \n Data: {self.data}"
+        return f"Dataset: {self.name} \n Data: {self.data}"
 
     def Interpolant(self):
         if self.variable == "time":
