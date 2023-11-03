@@ -1,5 +1,5 @@
 import pybamm
-from ..BaseModel import BaseModel
+from ..base_model import BaseModel
 
 
 class SPM(BaseModel):
@@ -17,9 +17,10 @@ class SPM(BaseModel):
         var_pts=None,
         spatial_methods=None,
         solver=None,
+        options=None,
     ):
         super().__init__()
-        self.pybamm_model = pybamm.lithium_ion.SPM()
+        self.pybamm_model = pybamm.lithium_ion.SPM(options=options)
         self._unprocessed_model = self.pybamm_model
         self.name = name
 
@@ -59,9 +60,10 @@ class SPMe(BaseModel):
         var_pts=None,
         spatial_methods=None,
         solver=None,
+        options=None,
     ):
         super().__init__()
-        self.pybamm_model = pybamm.lithium_ion.SPMe()
+        self.pybamm_model = pybamm.lithium_ion.SPMe(options=options)
         self._unprocessed_model = self.pybamm_model
         self.name = name
 

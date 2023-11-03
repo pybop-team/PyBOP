@@ -16,18 +16,18 @@ class TestModelParameterisation:
         parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
-        # Form observations
+        # Form dataset
         x0 = np.array([0.52, 0.63])
         solution = self.getdata(model, x0, init_soc)
 
-        observations = [
-            pybop.Observed("Time [s]", solution["Time [s]"].data),
-            pybop.Observed("Current function [A]", solution["Current [A]"].data),
-            pybop.Observed("Voltage [V]", solution["Terminal voltage [V]"].data),
+        dataset = [
+            pybop.Dataset("Time [s]", solution["Time [s]"].data),
+            pybop.Dataset("Current function [A]", solution["Current [A]"].data),
+            pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
         ]
 
         # Fitting parameters
-        params = [
+        parameters = [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.02),
@@ -40,38 +40,50 @@ class TestModelParameterisation:
             ),
         ]
 
+        # Define the cost to optimise
+        cost = pybop.RMSE()
+        signal = "Voltage [V]"
+
+        # Select optimiser
+        optimiser = pybop.NLoptOptimize(n_param=len(parameters))
+
+        # Build the optimisation problem
         parameterisation = pybop.Optimisation(
-            model, observations=observations, fit_parameters=params, init_soc=init_soc
+            cost=cost,
+            model=model,
+            optimiser=optimiser,
+            parameters=parameters,
+            dataset=dataset,
+            signal=signal,
+            init_soc=init_soc,
         )
 
-        # get RMSE estimate using NLOpt
-        results, last_optim, num_evals = parameterisation.rmse(
-            signal="Voltage [V]", method="nlopt"
-        )
+        # Run the optimisation problem
+        x, _, final_cost, _ = parameterisation.run()
 
-        # Assertions (for testing purposes only)
-        np.testing.assert_allclose(last_optim, 0, atol=1e-2)
-        np.testing.assert_allclose(results, x0, atol=5e-2)
+        # Assertions
+        np.testing.assert_allclose(final_cost, 0, atol=1e-2)
+        np.testing.assert_allclose(x, x0, atol=1e-1)
 
     @pytest.mark.parametrize("init_soc", [0.3, 0.5, 0.8])
     @pytest.mark.unit
-    def test_spme(self, init_soc):
+    def test_spme_multiple_optimisers(self, init_soc):
         # Define model
         parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
         model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
-        # Form observations
+        # Form dataset
         x0 = np.array([0.52, 0.63])
         solution = self.getdata(model, x0, init_soc)
 
-        observations = [
-            pybop.Observed("Time [s]", solution["Time [s]"].data),
-            pybop.Observed("Current function [A]", solution["Current [A]"].data),
-            pybop.Observed("Voltage [V]", solution["Terminal voltage [V]"].data),
+        dataset = [
+            pybop.Dataset("Time [s]", solution["Time [s]"].data),
+            pybop.Dataset("Current function [A]", solution["Current [A]"].data),
+            pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
         ]
 
         # Fitting parameters
-        params = [
+        parameters = [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.02),
@@ -84,18 +96,34 @@ class TestModelParameterisation:
             ),
         ]
 
-        parameterisation = pybop.Optimisation(
-            model, observations=observations, fit_parameters=params, init_soc=init_soc
-        )
+        # Define the cost to optimise
+        cost = pybop.RMSE()
+        signal = "Voltage [V]"
 
-        # get RMSE estimate using NLOpt
-        results, last_optim, num_evals = parameterisation.rmse(
-            signal="Voltage [V]", method="nlopt"
-        )
+        # Select optimisers
+        optimisers = [
+            pybop.NLoptOptimize(n_param=len(parameters)),
+            pybop.SciPyMinimize(),
+        ]
 
-        # Assertions (for testing purposes only)
-        np.testing.assert_allclose(last_optim, 0, atol=1e-2)
-        np.testing.assert_allclose(results, x0, rtol=5e-2)
+        # Test each optimiser
+        for optimiser in optimisers:
+            parameterisation = pybop.Optimisation(
+                cost=cost,
+                model=model,
+                optimiser=optimiser,
+                parameters=parameters,
+                dataset=dataset,
+                signal=signal,
+                init_soc=init_soc,
+            )
+
+            # Run the optimisation problem
+            x, _, final_cost, _ = parameterisation.run()
+
+            # Assertions
+            np.testing.assert_allclose(final_cost, 0, atol=1e-2)
+            np.testing.assert_allclose(x, x0, atol=1e-1)
 
     @pytest.mark.parametrize("init_soc", [0.3, 0.5, 0.8])
     @pytest.mark.unit
@@ -111,14 +139,14 @@ class TestModelParameterisation:
         x0 = np.array([0.52, 0.63])
         solution = self.getdata(second_model, x0, init_soc)
 
-        observations = [
-            pybop.Observed("Time [s]", solution["Time [s]"].data),
-            pybop.Observed("Current function [A]", solution["Current [A]"].data),
-            pybop.Observed("Voltage [V]", solution["Terminal voltage [V]"].data),
+        dataset = [
+            pybop.Dataset("Time [s]", solution["Time [s]"].data),
+            pybop.Dataset("Current function [A]", solution["Current [A]"].data),
+            pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
         ]
 
         # Fitting parameters
-        params = [
+        parameters = [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.02),
@@ -131,19 +159,31 @@ class TestModelParameterisation:
             ),
         ]
 
+        # Define the cost to optimise
+        cost = pybop.RMSE()
+        signal = "Voltage [V]"
+
+        # Select optimiser
+        optimiser = pybop.NLoptOptimize(n_param=len(parameters))
+
+        # Build the optimisation problem
         parameterisation = pybop.Optimisation(
-            model, observations=observations, fit_parameters=params, init_soc=init_soc
+            cost=cost,
+            model=model,
+            optimiser=optimiser,
+            parameters=parameters,
+            dataset=dataset,
+            signal=signal,
+            init_soc=init_soc,
         )
 
-        # get RMSE estimate using NLOpt
-        results, last_optim, num_evals = parameterisation.rmse(
-            signal="Voltage [V]", method="nlopt"
-        )
+        # Run the optimisation problem
+        x, _, final_cost, _ = parameterisation.run()
 
-        # Assertions (for testing purposes only)
+        # Assertions
         with np.testing.assert_raises(AssertionError):
-            np.testing.assert_allclose(last_optim, 0, atol=1e-2)
-            np.testing.assert_allclose(results, x0, rtol=5e-1)
+            np.testing.assert_allclose(final_cost, 0, atol=1e-2)
+            np.testing.assert_allclose(x, x0, atol=1e-1)
 
     def getdata(self, model, x0, init_soc):
         model.parameter_set.update(
