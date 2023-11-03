@@ -21,11 +21,11 @@ class RMSE:
                 "Measurement and simulated data length mismatch, potentially due to reaching a voltage cut-off"
             )
 
-        print("Last Values:", prediction[-1], target[-1])
-
         # Compute the cost
         try:
-            return np.sqrt(np.mean((prediction - target) ** 2))
+            res = np.sqrt(np.mean((prediction - target) ** 2))
+            print("Cost:", res)
+            return res
 
         except Exception as e:
             raise ValueError(f"Error in RMSE calculation: {e}")

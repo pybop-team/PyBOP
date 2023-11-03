@@ -25,7 +25,6 @@ class Optimisation:
         self.parameters = parameters
         self.x0 = x0
         self.dataset = {o.name: o for o in dataset}
-        self.fit_parameters = {o.name: o for o in parameters}
         self.signal = signal
         self.n_parameters = len(self.parameters)
         self.verbose = verbose
@@ -37,8 +36,8 @@ class Optimisation:
 
         # Set bounds
         self.bounds = dict(
-            lower=[Param.bounds[0] for Param in self.parameters],
-            upper=[Param.bounds[1] for Param in self.parameters],
+            lower=[param.bounds[0] for param in self.parameters],
+            upper=[param.bounds[1] for param in self.parameters],
         )
 
         # Sample from prior for x0
@@ -52,6 +51,7 @@ class Optimisation:
         for i, param in enumerate(self.parameters):
             param.update(value=self.x0[i])
 
+        self.fit_parameters = {o.name: o for o in parameters}
         # Build model with dataset and fitting parameters
         self.model.build(
             dataset=self.dataset,
@@ -66,7 +66,7 @@ class Optimisation:
         """
 
         results = self.optimiser.optimise(
-            cost_function=self.cost_function,  # lambda x, grad: self.cost_function(x, grad),
+            cost_function=self.cost_function,
             x0=self.x0,
             bounds=self.bounds,
         )
@@ -82,17 +82,13 @@ class Optimisation:
         target = self.dataset[self.signal].data
 
         # Update the parameter dictionary
-        inputs_dict = {key: x[i] for i, key in enumerate(self.fit_parameters)}
-
-        # for i, Param in enumerate(self.parameters):
-        #     Param.update(value=x[i])
+        for i, key in enumerate(self.fit_parameters):
+            self.fit_parameters[key] = x[i]
 
         # Make prediction
         prediction = self.model.simulate(
-            inputs=inputs_dict, t_eval=self.model.time_data
+            inputs=self.fit_parameters, t_eval=self.model.time_data
         )[self.signal].data
-
-        # Add simulation error handling here
 
         # Compute cost
         res = self.cost.compute(prediction, target)
