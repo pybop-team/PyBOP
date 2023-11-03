@@ -62,7 +62,7 @@ class BaseModel:
             self.op_conds_to_built_solvers = None
 
         param = self.pybamm_model.param
-        self.parameter_set = (
+        self._parameter_set = (
             self._unprocessed_parameter_set.set_initial_stoichiometries(
                 init_soc, param=param, inplace=False
             )
@@ -80,7 +80,7 @@ class BaseModel:
         if self.fit_parameters is not None:
             # set input parameters in parameter set from fitting parameters
             for i in self.fit_parameters.keys():
-                self.parameter_set[i] = "[input]"
+                self._parameter_set[i] = "[input]"
 
         if self.dataset is not None and self.fit_parameters is not None:
             self.parameter_set["Current function [A]"] = pybamm.Interpolant(
@@ -152,11 +152,18 @@ class BaseModel:
                 ).T,
             )
 
-    def predict(self, inputs=None, t_eval=None, parameter_set=None, experiment=None):
+    def predict(
+        self,
+        inputs=None,
+        t_eval=None,
+        parameter_set=None,
+        experiment=None,
+        init_soc=None,
+    ):
         """
         Create a PyBaMM simulation object, solve it, and return a solution object.
         """
-        parameter_set = parameter_set or self.parameter_set
+        parameter_set = parameter_set or self._parameter_set
         if inputs is not None:
             parameter_set.update(inputs)
         if self._unprocessed_model is not None:
@@ -164,13 +171,13 @@ class BaseModel:
                 return pybamm.Simulation(
                     self._unprocessed_model,
                     parameter_values=parameter_set,
-                ).solve(t_eval=t_eval)
+                ).solve(t_eval=t_eval, initial_soc=init_soc)
             else:
                 return pybamm.Simulation(
                     self._unprocessed_model,
                     experiment=experiment,
                     parameter_values=parameter_set,
-                ).solve()
+                ).solve(initial_soc=init_soc)
         else:
             raise ValueError("This sim method currently only supports PyBaMM models")
 

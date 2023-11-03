@@ -25,8 +25,10 @@ class SPM(BaseModel):
         self.name = name
 
         self.default_parameter_values = self.pybamm_model.default_parameter_values
-        self.parameter_set = parameter_set or self.pybamm_model.default_parameter_values
-        self._unprocessed_parameter_set = self.parameter_set
+        self._parameter_set = (
+            parameter_set or self.pybamm_model.default_parameter_values
+        )
+        self._unprocessed_parameter_set = self._parameter_set
 
         self.geometry = geometry or self.pybamm_model.default_geometry
         self.submesh_types = submesh_types or self.pybamm_model.default_submesh_types
@@ -66,8 +68,10 @@ class SPMe(BaseModel):
         self.name = name
 
         self.default_parameter_values = self.pybamm_model.default_parameter_values
-        self.parameter_set = parameter_set or self.pybamm_model.default_parameter_values
-        self._unprocessed_parameter_set = self.parameter_set
+        self._parameter_set = (
+            parameter_set or self.pybamm_model.default_parameter_values
+        )
+        self._unprocessed_parameter_set = self._parameter_set
 
         self.geometry = geometry or self.pybamm_model.default_geometry
         self.submesh_types = submesh_types or self.pybamm_model.default_submesh_types
