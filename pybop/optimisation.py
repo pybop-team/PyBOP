@@ -44,8 +44,7 @@ class Optimisation:
         if x0 is None:
             self.x0 = np.zeros(self.n_parameters)
             for i, param in enumerate(self.parameters):
-                self.x0[i] = param.prior.rvs(1)[0]
-                # Update to capture dimensions per parameter
+                self.x0[i] = param.rvs(1)
 
         # Add the initial values to the parameter definitions
         for i, param in enumerate(self.parameters):

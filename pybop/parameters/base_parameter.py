@@ -8,12 +8,21 @@ class Parameter:
         self.prior = prior
         self.value = value
         self.bounds = bounds
+        self.lower_bound = self.bounds[0]
+        self.upper_bound = self.bounds[1]
 
-        # To Do:
-        # priors implementation
-        # parameter check
-        # bounds checks and set defaults
-        # implement methods to assign and retrieve parameters
+        if self.lower_bound > self.upper_bound:
+            raise ValueError("Lower bound must be less than upper bound")
+
+    def rvs(self, n_samples):
+        sample = self.prior.rvs(n_samples)
+
+        if sample < self.lower_bound:
+            return self.lower_bound
+        elif sample > self.upper_bound:
+            return self.upper_bound
+        else:
+            return sample
 
     def update(self, value):
         self.value = value
