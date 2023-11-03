@@ -22,7 +22,7 @@ class TestOptimisation:
         param = [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.75, 0.05),
+                prior=pybop.Gaussian(0.75, 0.2),
                 bounds=[0.73, 0.77],
             )
         ]
@@ -30,7 +30,7 @@ class TestOptimisation:
         signal = "Terminal voltage [V]"
         cost = pybop.RMSE()
 
-        for i in range(10):
+        for i in range(50):
             opt = pybop.Optimisation(
                 cost,
                 model,
