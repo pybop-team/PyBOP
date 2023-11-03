@@ -8,9 +8,6 @@ class ParameterSet:
 
     def __new__(cls, method, name):
         if method.casefold() == "pybamm":
-            try:
-                return pybamm.ParameterValues(name).copy()
-            except:
-                raise ValueError("Parameter set not found")
+            return pybamm.ParameterValues(name).copy()
         else:
             raise ValueError("Only PyBaMM parameter sets are currently implemented")
