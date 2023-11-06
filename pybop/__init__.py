@@ -26,7 +26,7 @@ script_path = path.dirname(__file__)
 #
 # Cost function class
 #
-from .costs.error_costs import RMSE, MLE, PEM, MAP
+from .costs.error_costs import RootMeanSquaredError
 
 #
 # Dataset class
@@ -62,7 +62,7 @@ from .parameters.priors import Gaussian, Uniform, Exponential
 #
 # Problem class
 #
-from ._problem import SingleOutputProblem
+from ._problem import Problem
 
 #
 # Plotting class

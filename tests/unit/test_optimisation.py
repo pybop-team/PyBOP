@@ -13,7 +13,7 @@ class TestOptimisation:
         # Tests prior sampling
         model = pybop.lithium_ion.SPM()
 
-        Dataset = [
+        dataset = [
             pybop.Dataset("Time [s]", np.linspace(0, 3600, 100)),
             pybop.Dataset("Current function [A]", np.zeros(100)),
             pybop.Dataset("Terminal voltage [V]", np.ones(100)),
@@ -28,15 +28,12 @@ class TestOptimisation:
         ]
 
         signal = "Terminal voltage [V]"
-        cost = pybop.RMSE()
+        problem = pybop.Problem(model, param, signal, dataset)
+        cost = pybop.RootMeanSquaredError(problem)
 
         for i in range(50):
             opt = pybop.Optimisation(
-                cost,
-                model,
-                optimiser=pybop.NLoptOptimize(n_param=len(param)),
-                parameters=param,
-                dataset=Dataset,
-                signal=signal,
+                cost=cost, optimiser=pybop.NLoptOptimize(n_param=len(param))
             )
+
             assert opt.x0 <= 0.77 and opt.x0 >= 0.73

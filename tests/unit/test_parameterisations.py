@@ -23,40 +23,35 @@ class TestModelParameterisation:
         dataset = [
             pybop.Dataset("Time [s]", solution["Time [s]"].data),
             pybop.Dataset("Current function [A]", solution["Current [A]"].data),
-            pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
+            pybop.Dataset(
+                "Terminal voltage [V]", solution["Terminal voltage [V]"].data
+            ),
         ]
 
         # Fitting parameters
         parameters = [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.5, 0.02),
+                prior=pybop.Gaussian(0.5, 0.05),
                 bounds=[0.375, 0.625],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.65, 0.02),
+                prior=pybop.Gaussian(0.65, 0.05),
                 bounds=[0.525, 0.75],
             ),
         ]
 
         # Define the cost to optimise
-        cost = pybop.RMSE()
-        signal = "Voltage [V]"
+        signal = "Terminal voltage [V]"
+        problem = pybop.Problem(model, parameters, signal, dataset, init_soc=init_soc)
+        cost = pybop.RootMeanSquaredError(problem)
 
         # Select optimiser
         optimiser = pybop.NLoptOptimize(n_param=len(parameters))
 
         # Build the optimisation problem
-        parameterisation = pybop.Optimisation(
-            cost=cost,
-            model=model,
-            optimiser=optimiser,
-            parameters=parameters,
-            dataset=dataset,
-            signal=signal,
-            init_soc=init_soc,
-        )
+        parameterisation = pybop.Optimisation(cost=cost, optimiser=optimiser)
 
         # Run the optimisation problem
         x, _, final_cost, _ = parameterisation.run()
@@ -79,26 +74,29 @@ class TestModelParameterisation:
         dataset = [
             pybop.Dataset("Time [s]", solution["Time [s]"].data),
             pybop.Dataset("Current function [A]", solution["Current [A]"].data),
-            pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
+            pybop.Dataset(
+                "Terminal voltage [V]", solution["Terminal voltage [V]"].data
+            ),
         ]
 
         # Fitting parameters
         parameters = [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.5, 0.02),
+                prior=pybop.Gaussian(0.5, 0.05),
                 bounds=[0.375, 0.625],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.65, 0.02),
+                prior=pybop.Gaussian(0.65, 0.05),
                 bounds=[0.525, 0.75],
             ),
         ]
 
         # Define the cost to optimise
-        cost = pybop.RMSE()
-        signal = "Voltage [V]"
+        signal = "Terminal voltage [V]"
+        problem = pybop.Problem(model, parameters, signal, dataset, init_soc=init_soc)
+        cost = pybop.RootMeanSquaredError(problem)
 
         # Select optimisers
         optimisers = [
@@ -108,15 +106,7 @@ class TestModelParameterisation:
 
         # Test each optimiser
         for optimiser in optimisers:
-            parameterisation = pybop.Optimisation(
-                cost=cost,
-                model=model,
-                optimiser=optimiser,
-                parameters=parameters,
-                dataset=dataset,
-                signal=signal,
-                init_soc=init_soc,
-            )
+            parameterisation = pybop.Optimisation(cost=cost, optimiser=optimiser)
 
             # Run the optimisation problem
             x, _, final_cost, _ = parameterisation.run()
@@ -142,40 +132,35 @@ class TestModelParameterisation:
         dataset = [
             pybop.Dataset("Time [s]", solution["Time [s]"].data),
             pybop.Dataset("Current function [A]", solution["Current [A]"].data),
-            pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
+            pybop.Dataset(
+                "Terminal voltage [V]", solution["Terminal voltage [V]"].data
+            ),
         ]
 
         # Fitting parameters
         parameters = [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.5, 0.02),
+                prior=pybop.Gaussian(0.5, 0.05),
                 bounds=[0.375, 0.625],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.65, 0.02),
+                prior=pybop.Gaussian(0.65, 0.05),
                 bounds=[0.525, 0.75],
             ),
         ]
 
         # Define the cost to optimise
-        cost = pybop.RMSE()
-        signal = "Voltage [V]"
+        signal = "Terminal voltage [V]"
+        problem = pybop.Problem(model, parameters, signal, dataset, init_soc=init_soc)
+        cost = pybop.RootMeanSquaredError(problem)
 
         # Select optimiser
         optimiser = pybop.NLoptOptimize(n_param=len(parameters))
 
         # Build the optimisation problem
-        parameterisation = pybop.Optimisation(
-            cost=cost,
-            model=model,
-            optimiser=optimiser,
-            parameters=parameters,
-            dataset=dataset,
-            signal=signal,
-            init_soc=init_soc,
-        )
+        parameterisation = pybop.Optimisation(cost=cost, optimiser=optimiser)
 
         # Run the optimisation problem
         x, _, final_cost, _ = parameterisation.run()

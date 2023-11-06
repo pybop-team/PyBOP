@@ -37,10 +37,10 @@ class TestProblem:
             pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
         ]
 
-        problem = pybop.SingleOutputProblem(model, parameters, signal, dataset)
+        problem = pybop.Problem(model, parameters, signal, dataset)
 
         assert problem._model == model
-        assert problem._dataset == dataset
+        assert problem._model._built_model is not None
 
     def getdata(self, model, x0):
         model.parameter_set = model.pybamm_model.default_parameter_values

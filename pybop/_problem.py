@@ -1,49 +1,78 @@
 import numpy as np
 
 
-class SingleOutputProblem:
+class Problem:
     """
     Defines a PyBOP single output problem, follows the PINTS interface.
     """
 
-    def __init__(self, model, parameters, signal, dataset):
+    def __init__(
+        self,
+        model,
+        parameters,
+        signal,
+        dataset,
+        check_model=True,
+        init_soc=None,
+        x0=None,
+    ):
         self._model = model
-        self.parameters = {o.name: o for o in parameters}
+        self.parameters = parameters
         self.signal = signal
-        self._dataset = dataset
+        self._model.signal = self.signal
+        self._dataset = {o.name: o for o in dataset}
+        self.check_model = check_model
+        self.init_soc = init_soc
+        self.x0 = x0
+        self.n_parameters = len(self.parameters)
 
-        if self._model._built_model is None:
-            self._model.build(fit_parameters=self.parameters)
+        # Check that the dataset contains time and current
+        for name in ["Time [s]", "Current function [A]", signal]:
+            if name not in self._dataset:
+                raise ValueError(f"expected {name} in list of dataset")
 
-        for i, item in enumerate(self._dataset):
-            if item.name == "Time [s]":
-                self._time_data_available = True
-                self._time_data = self._dataset[i].data
-
-            if item.name == signal:
-                self._ground_truth = self._dataset[i].data
-
-        if self._time_data_available is False:
-            raise ValueError("Dataset must contain time data")
+        self._time_data = self._dataset["Time [s]"].data
+        self._target = self._dataset[signal].data
 
         if np.any(self._time_data < 0):
             raise ValueError("Times can not be negative.")
         if np.any(self._time_data[:-1] >= self._time_data[1:]):
             raise ValueError("Times must be increasing.")
 
-        if len(self._ground_truth) != len(self._time_data):
+        if len(self._target) != len(self._time_data):
             raise ValueError("Time data and signal data must be the same length.")
+
+        # Set bounds
+        self.bounds = dict(
+            lower=[param.bounds[0] for param in self.parameters],
+            upper=[param.bounds[1] for param in self.parameters],
+        )
+
+        # Sample from prior for x0
+        if x0 is None:
+            self.x0 = np.zeros(self.n_parameters)
+            for i, param in enumerate(self.parameters):
+                self.x0[i] = param.rvs(1)
+
+        # Add the initial values to the parameter definitions
+        for i, param in enumerate(self.parameters):
+            param.update(value=self.x0[i])
+
+        self.fit_parameters = {o.name: o for o in parameters}
+        # if self._model._built_model is None:
+        self._model.build(
+            dataset=self._dataset,
+            fit_parameters=self.fit_parameters,
+            check_model=self.check_model,
+            init_soc=self.init_soc,
+        )
 
     def evaluate(self, parameters):
         """
         Evaluate the model with the given parameters and return the signal.
         """
 
-        y = np.asarray(
-            self._model.simulate(inputs=parameters, t_eval=self.model.time_data)[
-                self.signal
-            ].data
-        )
+        y = np.asarray(self._model.simulate(inputs=parameters, t_eval=self._time_data))
 
         return y
 
@@ -54,7 +83,9 @@ class SingleOutputProblem:
         """
 
         y, dy_dp = self._model.simulateS1(
-            inputs=parameters, t_eval=self.model.time_data, calculate_sensitivities=True
+            inputs=parameters,
+            t_eval=self._model.time_data,
+            calculate_sensitivities=True,
         )[self.signal]
 
         return (np.asarray(y), np.asarray(dy_dp))

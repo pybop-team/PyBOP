@@ -12,6 +12,7 @@ class BaseModel:
         self.pybamm_model = None
         self.fit_parameters = None
         self.dataset = None
+        self.signal = None
 
     def build(
         self,
@@ -102,6 +103,7 @@ class BaseModel:
         Run the forward model and return the result in Numpy array format
         aligning with Pints' ForwardModel simulate method.
         """
+
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
         else:
@@ -111,9 +113,11 @@ class BaseModel:
                 }
                 return self.solver.solve(
                     self.built_model, inputs=inputs_dict, t_eval=t_eval
-                )["Terminal voltage [V]"].data
+                )[self.signal].data
             else:
-                return self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
+                return self.solver.solve(
+                    self.built_model, inputs=inputs, t_eval=t_eval
+                )[self.signal].data
 
     def simulateS1(self, inputs, t_eval):
         """
@@ -143,10 +147,10 @@ class BaseModel:
                 )
 
             return (
-                sol["Terminal voltage [V]"].data,
+                sol[self.signal].data,
                 np.asarray(
                     [
-                        sol["Terminal voltage [V]"].sensitivities[key].toarray()
+                        sol[self.signal].sensitivities[key].toarray()
                         for key in self.fit_keys
                     ]
                 ).T,

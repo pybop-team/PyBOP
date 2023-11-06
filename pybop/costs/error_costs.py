@@ -1,76 +1,62 @@
 import numpy as np
+import pybop
 
 
-class RMSE:
+class BaseCost:
+    """
+    Base class for defining cost functions.
+    This class computes a corresponding goodness-of-fit for a corresponding model prediction and dataset.
+    Lower cost values indicate a better fit.
+    """
+
+    def __call__(self, x):
+        raise NotImplementedError
+
+    def compute(self, x):
+        """
+        Calls the forward models and computes the cost.
+        """
+        raise NotImplementedError
+
+    def n_parameters(self):
+        """
+        Returns the size of the parameter space.
+        """
+        raise NotImplementedError
+
+
+class ProblemCost(BaseCost):
+    """
+    Extends the base cost function class for a single output problem.
+    """
+
+    def __init__(self, problem):
+        super(ProblemCost, self).__init__()
+        self._problem = problem
+        self._target = problem._target
+
+    def n_parameters(self):
+        """
+        Returns the dimension of the parameter space.
+        """
+        return self._problem.n_parameters()
+
+
+class RootMeanSquaredError(ProblemCost):
     """
     Defines the root mean square error cost function.
     """
 
-    def __init__(self):
-        self.name = "RMSE"
+    def __init__(self, problem):
+        super(RootMeanSquaredError, self).__init__(problem)
 
-    def compute(self, prediction, target):
-        # Check compatibility
-        if len(prediction) != len(target):
-            print(
-                "Length of vectors:",
-                len(prediction),
-                len(target),
-            )
-            raise ValueError(
-                "Measurement and simulated data length mismatch, potentially due to reaching a voltage cut-off"
-            )
+        if not isinstance(problem, pybop.Problem):
+            raise ValueError("This cost function only supports pybop problems")
 
+    def compute(self, x):
         # Compute the cost
         try:
-            res = np.sqrt(np.mean((prediction - target) ** 2))
-            print("Cost:", res)
-            return res
+            return np.sqrt(np.mean((self._problem.evaluate(x) - self._target) ** 2))
 
         except Exception as e:
             raise ValueError(f"Error in RMSE calculation: {e}")
-
-
-class MLE:
-    """
-    Defines the cost function for maximum likelihood estimation.
-    """
-
-    def __init__(self):
-        self.name = "MLE"
-
-    def compute(self, prediction, target):
-        # Compute the cost
-        return 0  # update with MLE residual
-
-
-class PEM:
-    """
-    Defines the cost function for prediction error minimisation.
-    """
-
-    def __init__(self):
-        self.name = "PEM"
-
-    def compute(self, prediction, target):
-        # Compute the cost
-        return 0  # update with MLE residual
-
-
-class MAP:
-    """
-    Defines the cost function for maximum a posteriori estimation.
-    """
-
-    def __init__(self):
-        self.name = "MAP"
-
-    def compute(self, prediction, target):
-        # Compute the cost
-        return 0  # update with MLE residual
-
-    def sample(self, n_chains):
-        """
-        Sample from the posterior distribution.
-        """
-        pass

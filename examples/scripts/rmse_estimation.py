@@ -30,18 +30,13 @@ parameters = [
 ]
 
 # Define the cost to optimise
-cost = pybop.RMSE()
 signal = "Voltage [V]"
+problem = pybop.Problem(model, parameters, signal, dataset, init_soc=0.97)
+cost = pybop.RootMeanSquaredError(problem)
 
 # Build the optimisation problem
 parameterisation = pybop.Optimisation(
-    cost=cost,
-    model=model,
-    optimiser=pybop.NLoptOptimize(n_param=len(parameters)),
-    parameters=parameters,
-    dataset=dataset,
-    signal=signal,
-    init_soc=0.97,
+    cost=cost, optimiser=pybop.NLoptOptimize(n_param=len(parameters))
 )
 
 # Run the optimisation problem

@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 model = pybop.lithium_ion.SPMe()
+model.signal = "Terminal voltage [V]"
 
 inputs = {
     "Negative electrode active material volume fraction": 0.58,
