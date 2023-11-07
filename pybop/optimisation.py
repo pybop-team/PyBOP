@@ -22,7 +22,7 @@ class Optimisation:
         """
 
         results = self.optimiser.optimise(
-            cost_function=self.cost_function,
+            cost_function=self.cost,
             x0=self.x0,
             bounds=self.bounds,
         )

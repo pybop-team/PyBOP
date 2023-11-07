@@ -32,12 +32,12 @@ class TestModelParameterisation:
         parameters = [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.5, 0.05),
+                prior=pybop.Gaussian(0.5, 0.02),
                 bounds=[0.375, 0.625],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.65, 0.05),
+                prior=pybop.Gaussian(0.65, 0.02),
                 bounds=[0.525, 0.75],
             ),
         ]
@@ -83,12 +83,12 @@ class TestModelParameterisation:
         parameters = [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.5, 0.05),
+                prior=pybop.Gaussian(0.5, 0.02),
                 bounds=[0.375, 0.625],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.65, 0.05),
+                prior=pybop.Gaussian(0.65, 0.02),
                 bounds=[0.525, 0.75],
             ),
         ]
@@ -141,12 +141,12 @@ class TestModelParameterisation:
         parameters = [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.5, 0.05),
+                prior=pybop.Gaussian(0.5, 0.02),
                 bounds=[0.375, 0.625],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.65, 0.05),
+                prior=pybop.Gaussian(0.65, 0.02),
                 bounds=[0.525, 0.75],
             ),
         ]

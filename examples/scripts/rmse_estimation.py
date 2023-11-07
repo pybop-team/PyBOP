@@ -6,7 +6,7 @@ Measurements = pd.read_csv("examples/scripts/Chen_example.csv", comment="#").to_
 dataset = [
     pybop.Dataset("Time [s]", Measurements[:, 0]),
     pybop.Dataset("Current function [A]", Measurements[:, 1]),
-    pybop.Dataset("Voltage [V]", Measurements[:, 2]),
+    pybop.Dataset("Terminal voltage [V]", Measurements[:, 2]),
 ]
 
 # Define model
@@ -30,7 +30,7 @@ parameters = [
 ]
 
 # Define the cost to optimise
-signal = "Voltage [V]"
+signal = "Terminal voltage [V]"
 problem = pybop.Problem(model, parameters, signal, dataset, init_soc=0.97)
 cost = pybop.RootMeanSquaredError(problem)
 

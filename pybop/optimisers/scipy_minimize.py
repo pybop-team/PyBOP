@@ -33,9 +33,9 @@ class SciPyMinimize(BaseOptimiser):
             bounds = (
                 (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
             )
-            output = minimize(cost_function, x0, method=self.method, bounds=bounds)
+            output = minimize(cost_function.compute, x0, method=self.method, bounds=bounds)
         else:
-            output = minimize(cost_function, x0, method=self.method)
+            output = minimize(cost_function.compute, x0, method=self.method)
 
         # Get performance statistics
         x = output.x

@@ -1,24 +1,25 @@
-import pybop
 import pints
-from pybop.optimisers.base_optimiser import BaseOptimiser
-from pints import ErrorMeasure
+from .base_optimiser import BaseOptimiser
 
 
-class PintsOptimiser(BaseOptimiser):
+class GradientDescent(BaseOptimiser):
     """
     Class for the PINTS optimisation. Extends the BaseOptimiser class.
     """
 
     def __init__(self, x0=None, xtol=None, method=None):
         super().__init__()
-        self.name = "PINTS Optimiser"
+        self.name = "Gradient Descent Optimiser"
+        self.set_learning_rate = 0.025
+        self.max_iterations = 100
+        self.set_max_unchanged_iterations = 10
 
-        if method is not None:
-            self.method = method
-        else:
-            self.method = pints.CMAES
+        # if method is not None:
+        #     self.method = method
+        # else:
+        #     self.method = pints.GradientDescent
 
-    def _runoptimise(self, cost_function, x0, bounds=None):
+    def _runoptimise(self, cost_function, x0, bounds):
         """
         Run the PINTS optimisation method.
 
@@ -30,18 +31,23 @@ class PintsOptimiser(BaseOptimiser):
         bounds: bounds array
         """
 
-        # Wrap bounds
-        boundaries = pybop.PintsBoundaries(bounds, x0)
-
-        # Wrap error measure
-        error = pybop.PintsError(cost_function, x0)
+        # Using the ask-and-tell interface
+        # self.method = pints.GradientDescent
+        # e = pints.SequentialEvaluator(cost_function.computeS1)
+        # error = pybop.PintsError(cost_function, x0)
+        # for i in range(50):
+        #     xs = self.method.ask()
+        #     fs = e.evaluate(xs)
+        #     self.method.tell(fs)
 
         # Set up optimisation controller
         controller = pints.OptimisationController(
-            error, x0, boundaries=boundaries, method=self.method
+            cost_function, x0, method=self.method
         )
 
-        controller.set_max_unchanged_iterations(20)  # default 200
+        controller.set_max_unchanged_iterations(self.set_max_unchanged_iterations)
+        controller.set_max_iterations(self.max_iterations)
+        controller.optimiser().set_learning_rate(self.set_learning_rate)
 
         # Run the optimser
         x, final_cost = controller.run()
@@ -56,104 +62,104 @@ class PintsOptimiser(BaseOptimiser):
         return x, output, final_cost, num_evals
 
 
-class PintsError(ErrorMeasure):
-    """
-    An interface class for PyBOP that extends the PINTS ErrorMeasure class.
+# class PintsError(ErrorMeasure):
+#     """
+#     An interface class for PyBOP that extends the PINTS ErrorMeasure class.
 
-    From PINTS:
-    Abstract base class for objects that calculate some scalar measure of
-    goodness-of-fit (for a model and a data set), such that a smaller value
-    means a better fit.
+#     From PINTS:
+#     Abstract base class for objects that calculate some scalar measure of
+#     goodness-of-fit (for a model and a data set), such that a smaller value
+#     means a better fit.
 
-    ErrorMeasures are callable objects: If ``e`` is an instance of an
-    :class:`ErrorMeasure` class you can calculate the error by calling ``e(p)``
-    where ``p`` is a point in parameter space.
-    """
+#     ErrorMeasures are callable objects: If ``e`` is an instance of an
+#     :class:`ErrorMeasure` class you can calculate the error by calling ``e(p)``
+#     where ``p`` is a point in parameter space.
+#     """
 
-    def __init__(self, cost_function, x0):
-        self.cost_function = cost_function
-        self.x0 = x0
+#     def __init__(self, cost_function, x0):
+#         self.cost_function = cost_function
+#         self.x0 = x0
 
-    def __call__(self, x):
-        cost = self.cost_function(x)
+#     def __call__(self, x):
+#         cost = self.cost_function(x)
 
-        return cost
+#         return cost
 
-    def evaluateS1(self, x):
-        """
-        Evaluates this error measure, and returns the result plus the partial
-        derivatives of the result with respect to the parameters.
+#     def evaluateS1(self, x):
+#         """
+#         Evaluates this error measure, and returns the result plus the partial
+#         derivatives of the result with respect to the parameters.
 
-        The returned data has the shape ``(e, e')`` where ``e`` is a scalar
-        value and ``e'`` is a sequence of length ``n_parameters``.
+#         The returned data has the shape ``(e, e')`` where ``e`` is a scalar
+#         value and ``e'`` is a sequence of length ``n_parameters``.
 
-        *This is an optional method that is not always implemented.*
-        """
-        raise NotImplementedError
+#         *This is an optional method that is not always implemented.*
+#         """
+#         raise NotImplementedError
 
-    def n_parameters(self):
-        """
-        Returns the dimension of the parameter space this measure is defined
-        over.
-        """
-        return len(self.x0)
+#     def n_parameters(self):
+#         """
+#         Returns the dimension of the parameter space this measure is defined
+#         over.
+#         """
+#         return len(self.x0)
 
 
-class PintsBoundaries(object):
-    """
-    An interface class for PyBOP that extends the PINTS ErrorMeasure class.
+# class PintsBoundaries(object):
+#     """
+#     An interface class for PyBOP that extends the PINTS ErrorMeasure class.
 
-    From PINTS:
-    Abstract class representing boundaries on a parameter space.
-    """
+#     From PINTS:
+#     Abstract class representing boundaries on a parameter space.
+#     """
 
-    def __init__(self, bounds, x0):
-        self.bounds = bounds
-        self.x0 = x0
+#     def __init__(self, bounds, x0):
+#         self.bounds = bounds
+#         self.x0 = x0
 
-    def check(self, parameters):
-        """
-        Returns ``True`` if and only if the given point in parameter space is
-        within the boundaries.
+#     def check(self, parameters):
+#         """
+#         Returns ``True`` if and only if the given point in parameter space is
+#         within the boundaries.
 
-        Parameters
-        ----------
-        parameters
-            A point in parameter space
-        """
-        result = False
-        if (
-            parameters[0] >= self.bounds["lower"][0]
-            and parameters[1] >= self.bounds["lower"][1]
-            and parameters[0] <= self.bounds["upper"][0]
-            and parameters[1] <= self.bounds["upper"][1]
-        ):
-            result = True
+#         Parameters
+#         ----------
+#         parameters
+#             A point in parameter space
+#         """
+#         result = False
+#         if (
+#             parameters[0] >= self.bounds["lower"][0]
+#             and parameters[1] >= self.bounds["lower"][1]
+#             and parameters[0] <= self.bounds["upper"][0]
+#             and parameters[1] <= self.bounds["upper"][1]
+#         ):
+#             result = True
 
-        return result
+#         return result
 
-    def n_parameters(self):
-        """
-        Returns the dimension of the parameter space these boundaries are
-        defined on.
-        """
-        return len(self.x0)
+#     def n_parameters(self):
+#         """
+#         Returns the dimension of the parameter space these boundaries are
+#         defined on.
+#         """
+#         return len(self.x0)
 
-    def sample(self, n=1):
-        """
-        Returns ``n`` random samples from within the boundaries, for example to
-        use as starting points for an optimisation.
+#     def sample(self, n=1):
+#         """
+#         Returns ``n`` random samples from within the boundaries, for example to
+#         use as starting points for an optimisation.
 
-        The returned value is a NumPy array with shape ``(n, d)`` where ``n``
-        is the requested number of samples, and ``d`` is the dimension of the
-        parameter space these boundaries are defined on.
+#         The returned value is a NumPy array with shape ``(n, d)`` where ``n``
+#         is the requested number of samples, and ``d`` is the dimension of the
+#         parameter space these boundaries are defined on.
 
-        *Note that implementing :meth:`sample()` is optional, so some boundary
-        types may not support it.*
+#         *Note that implementing :meth:`sample()` is optional, so some boundary
+#         types may not support it.*
 
-        Parameters
-        ----------
-        n : int
-            The number of points to sample
-        """
-        raise NotImplementedError
+#         Parameters
+#         ----------
+#         n : int
+#             The number of points to sample
+#         """
+#         raise NotImplementedError

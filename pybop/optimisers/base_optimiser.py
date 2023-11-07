@@ -18,7 +18,7 @@ class BaseOptimiser:
         self.bounds = bounds
 
         # Run optimisation
-        result = self._runoptimise(self.cost_function, self.x0, self.bounds)
+        result = self._runoptimise(self.cost_function, x0=self.x0, bounds=self.bounds)
 
         return result
 

@@ -58,7 +58,7 @@ class Problem:
         for i, param in enumerate(self.parameters):
             param.update(value=self.x0[i])
 
-        self.fit_parameters = {o.name: o for o in parameters}
+        self.fit_parameters = {o.name: o.value for o in parameters}
         # if self._model._built_model is None:
         self._model.build(
             dataset=self._dataset,
@@ -81,11 +81,12 @@ class Problem:
         Evaluate the model with the given parameters and return the signal and
         its derivatives.
         """
+        for i, key in enumerate(self.fit_parameters):
+            self.fit_parameters[key] = parameters[i]
 
-        y, dy_dp = self._model.simulateS1(
-            inputs=parameters,
-            t_eval=self._model.time_data,
-            calculate_sensitivities=True,
-        )[self.signal]
+        y, dy = self._model.simulateS1(
+            inputs=self.fit_parameters,
+            t_eval=self._time_data,
+        )
 
-        return (np.asarray(y), np.asarray(dy_dp))
+        return (np.asarray(y), np.asarray(dy))

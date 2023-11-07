@@ -34,7 +34,7 @@ class NLoptOptimize(BaseOptimiser):
         """
 
         # Pass settings to the optimiser
-        self.optim.set_min_objective(cost_function)
+        self.optim.set_min_objective(cost_function.compute)
         self.optim.set_lower_bounds(bounds["lower"])
         self.optim.set_upper_bounds(bounds["upper"])
 

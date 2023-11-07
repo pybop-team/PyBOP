@@ -39,7 +39,7 @@ class ProblemCost(BaseCost):
         """
         Returns the dimension of the parameter space.
         """
-        return self._problem.n_parameters()
+        return self._problem.n_parameters
 
 
 class RootMeanSquaredError(ProblemCost):
@@ -53,10 +53,19 @@ class RootMeanSquaredError(ProblemCost):
         if not isinstance(problem, pybop.Problem):
             raise ValueError("This cost function only supports pybop problems")
 
-    def compute(self, x):
+    def compute(self, x, grad=None):
         # Compute the cost
         try:
             return np.sqrt(np.mean((self._problem.evaluate(x) - self._target) ** 2))
 
         except Exception as e:
             raise ValueError(f"Error in RMSE calculation: {e}")
+
+    def evaluateS1(self, x):
+        # Compute the cost
+        y, dy = self._problem.evaluateS1(x)
+        dy = dy.reshape((450, 1, 2))
+        r = y - self._target
+        e = np.sum(np.sum(r**2, axis=0), axis=0)
+        de = 2 * np.sum(np.sum((r.T * dy.T), axis=2), axis=1)
+        return e, de
