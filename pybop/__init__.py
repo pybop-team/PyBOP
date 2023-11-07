@@ -26,7 +26,7 @@ script_path = path.dirname(__file__)
 #
 # Cost function class
 #
-from .costs.error_costs import RootMeanSquaredError
+from .costs.error_costs import RootMeanSquaredError, SumSquaredError
 
 #
 # Dataset class

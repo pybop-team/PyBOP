@@ -31,6 +31,7 @@ class BaseModel:
         if self.fit_parameters is not None:
             self.fit_keys = list(self.fit_parameters.keys())
 
+
         if init_soc is not None:
             self.set_init_soc(init_soc)
 
@@ -83,14 +84,16 @@ class BaseModel:
             for i in self.fit_parameters.keys():
                 self._parameter_set[i] = "[input]"
 
+
         if self.dataset is not None and self.fit_parameters is not None:
-            self.parameter_set["Current function [A]"] = pybamm.Interpolant(
-                self.dataset["Time [s]"].data,
-                self.dataset["Current function [A]"].data,
-                pybamm.t,
-            )
-            # Set t_eval
-            self.time_data = self._parameter_set["Current function [A]"].x[0]
+            if "Current function [A]" not in self.fit_keys:
+                self.parameter_set["Current function [A]"] = pybamm.Interpolant(
+                    self.dataset["Time [s]"].data,
+                    self.dataset["Current function [A]"].data,
+                    pybamm.t,
+                )
+                # Set t_eval
+                self.time_data = self._parameter_set["Current function [A]"].x[0]
 
         self._model_with_set_params = self._parameter_set.process_model(
             self._unprocessed_model, inplace=False
@@ -124,6 +127,7 @@ class BaseModel:
         Run the forward model and return the function evaulation and it's gradient
         aligning with Pints' ForwardModel simulateS1 method.
         """
+
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
         else:

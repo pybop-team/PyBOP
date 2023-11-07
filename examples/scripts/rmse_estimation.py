@@ -1,5 +1,6 @@
 import pybop
 import pandas as pd
+import matplotlib.pyplot as plt
 
 # Form dataset
 Measurements = pd.read_csv("examples/scripts/Chen_example.csv", comment="#").to_numpy()
@@ -31,7 +32,7 @@ parameters = [
 
 # Define the cost to optimise
 signal = "Terminal voltage [V]"
-problem = pybop.Problem(model, parameters, signal, dataset, init_soc=0.97)
+problem = pybop.Problem(model, parameters, signal, dataset, init_soc=0.98)
 cost = pybop.RootMeanSquaredError(problem)
 
 # Build the optimisation problem
@@ -41,6 +42,20 @@ parameterisation = pybop.Optimisation(
 
 # Run the optimisation problem
 x, output, final_cost, num_evals = parameterisation.run()
+
+# Show the generated data
+simulated_values = problem.evaluate(x)
+
+plt.figure()
+plt.xlabel("Time")
+plt.ylabel("Values")
+plt.plot(dataset[0].data, dataset[2].data, label="Measured")
+plt.plot(dataset[0].data, simulated_values, label="Simulated")
+plt.legend(
+    bbox_to_anchor=(1.05, 1), loc="upper left", borderaxespad=0.0, frameon=False
+)
+plt.show()
+
 
 # get MAP estimate, starting at a random initial point in parameter space
 # parameterisation.map(x0=[p.sample() for p in parameters])

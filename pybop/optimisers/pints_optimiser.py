@@ -10,14 +10,14 @@ class GradientDescent(BaseOptimiser):
     def __init__(self, x0=None, xtol=None, method=None):
         super().__init__()
         self.name = "Gradient Descent Optimiser"
-        self.set_learning_rate = 0.025
-        self.max_iterations = 100
-        self.set_max_unchanged_iterations = 10
+        self.learning_rate = 0.025
+        self.max_iterations = 200
+        self.max_unchanged_iterations = 10
 
-        # if method is not None:
-        #     self.method = method
-        # else:
-        #     self.method = pints.GradientDescent
+        if method is not None:
+            self.method = method
+        else:
+            self.method = pints.GradientDescent
 
     def _runoptimise(self, cost_function, x0, bounds):
         """
@@ -31,23 +31,14 @@ class GradientDescent(BaseOptimiser):
         bounds: bounds array
         """
 
-        # Using the ask-and-tell interface
-        # self.method = pints.GradientDescent
-        # e = pints.SequentialEvaluator(cost_function.computeS1)
-        # error = pybop.PintsError(cost_function, x0)
-        # for i in range(50):
-        #     xs = self.method.ask()
-        #     fs = e.evaluate(xs)
-        #     self.method.tell(fs)
-
         # Set up optimisation controller
         controller = pints.OptimisationController(
             cost_function, x0, method=self.method
         )
 
-        controller.set_max_unchanged_iterations(self.set_max_unchanged_iterations)
+        controller.set_max_unchanged_iterations(self.max_unchanged_iterations)
         controller.set_max_iterations(self.max_iterations)
-        controller.optimiser().set_learning_rate(self.set_learning_rate)
+        controller.optimiser().set_learning_rate(self.learning_rate)
 
         # Run the optimser
         x, final_cost = controller.run()

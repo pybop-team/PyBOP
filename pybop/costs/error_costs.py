@@ -61,10 +61,28 @@ class RootMeanSquaredError(ProblemCost):
         except Exception as e:
             raise ValueError(f"Error in RMSE calculation: {e}")
 
+
+class SumSquaredError(ProblemCost):
+    """
+    Defines the sum squared error cost function.
+    """
+
+    def __init__(self, problem):
+        super(SumSquaredError, self).__init__(problem)
+
+        if not isinstance(problem, pybop.Problem):
+            raise ValueError("This cost function only supports pybop problems")
+
+    def compute(self, x, grad=None):
+        # Compute the cost
+
+        return np.sum((np.sum(((self._problem.evaluate(x) - self._target)**2),
+                              axis=0)), axis=0)
+
     def evaluateS1(self, x):
         # Compute the cost
         y, dy = self._problem.evaluateS1(x)
-        dy = dy.reshape((450, 1, 2))
+        dy = dy.reshape((450, 1, self._problem.n_parameters))
         r = y - self._target
         e = np.sum(np.sum(r**2, axis=0), axis=0)
         de = 2 * np.sum(np.sum((r.T * dy.T), axis=2), axis=1)
