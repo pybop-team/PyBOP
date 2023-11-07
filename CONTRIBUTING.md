@@ -6,7 +6,7 @@ If you'd like to contribute to PyBOP, please have a look at the [pre-commit](#pr
 
 Before you commit any code, please perform the following checks:
 
-- [All tests pass](#testing): `$ nox -s unit_test`
+- [All tests pass](#testing): `$ nox -s unit`
 
 ### Installing and using pre-commit
 
@@ -35,7 +35,7 @@ We use [GIT](https://en.wikipedia.org/wiki/Git) and [GitHub](https://en.wikipedi
 2. Create a [branch](https://help.github.com/articles/creating-and-deleting-branches-within-your-repository/) of this repo (ideally on your own [fork](https://help.github.com/articles/fork-a-repo/)), where all changes will be made
 3. Download the source code onto your local system, by [cloning](https://help.github.com/articles/cloning-a-repository/) the repository (or your fork of the repository).
 4. [Install](Developer-Install) PyBOP with the developer options.
-5. [Test](#testing) if your installation worked, using the test script: `$ python run-tests.py --unit`.
+5. [Test](#testing) if your installation worked: `$ pytest --unit -v`.
 
 You now have everything you need to start making changes!
 
@@ -120,13 +120,13 @@ All code requires testing. We use the [pytest](https://docs.pytest.org/en/) pack
 If you have nox installed, to run unit tests, type
 
 ```bash
-nox -s unit_test
+nox -s unit
 ```
 
 else, type
 
 ```bash
-python run-tests.py
+pytest --unit -v
 ```
 
 ### Writing tests
@@ -146,24 +146,15 @@ This also means that, if you can't fix the bug yourself, it will be much easier 
 1. Run individual test scripts instead of the whole test suite:
 
    ```bash
-   python tests/unit/path/to/test
+   pytest tests/unit/path/to/test
    ```
 
    You can also run an individual test from a particular script, e.g.
 
    ```bash
-   python tests/unit/test_quick_plot.py TestQuickPlot.test_failure
+   pytest tests/unit/test_quick_plot.py TestQuickPlot.test_failure
    ```
 
-   If you want to run several, but not all, the tests from a script, you can restrict which tests are run from a particular script by using the skipping decorator:
-
-   ```python
-   @unittest.skip("")
-   def test_bit_of_code(self):
-       ...
-   ```
-
-   or by just commenting out all the tests you don't want to run.
 2. Set break-points, either in your IDE or using the Python debugging module. To use the latter, add the following line where you want to set the break point
 
    ```python

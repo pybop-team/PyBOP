@@ -34,13 +34,12 @@
 
 <!-- Software Specification -->
 ## PyBOP
-PyBOP provides a comprehensive suite of tools for parameterisation and optimisation of battery models. It aims to implement Bayesian and frequentist techniques with example workflows to guide the user. PyBOP can be applied to parameterise a wide range of battery models, including the electrochemical and equivalent circuit models available in [PyBaMM](https://pybamm.org/). A major emphasis in PyBOP is understandable and actionable diagnostics for the user, while still providing extensibility for advanced probabilistic methods. By building on the state-of-the-art battery models and leveraging Python's accessibility, PyBOP enables agile and robust parameterisation and optimisation.
+PyBOP offers a full range of tools for the parameterisation and optimisation of battery models, utilising both Bayesian and frequentist approaches with example workflows to assist the user. PyBOP can be used to parameterise various battery models, which include electrochemical and equivalent circuit models that are present in [PyBaMM](https://pybamm.org/). PyBOP prioritises clear and informative diagnostics for users, while also allowing for advanced probabilistic methods.
 
-The figure below gives PyBOP's current conceptual structure. The living software specification of PyBOP can be found [here](https://github.com/pybop-team/software-spec). This package is under active development, expect API (Application Programming Interface) evolution with releases.
-
+The diagram below presents PyBOP's conceptual framework. The PyBOP software specification is available at [this link](https://github.com/pybop-team/software-spec). This product is currently undergoing development, and users can expect the API to evolve with future releases.
 
 <p align="center">
-    <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/PyBOP_Architecture.png" alt="Data flows from battery cycling machines to Galv Harvesters, then to the     Galv server and REST API. Metadata can be updated and data read using the web client, and data can be downloaded by the Python client." width="600" />
+    <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/PyBOP_Architecture.png" alt="Data flows from battery cycling machines to Galv Harvesters, then to the     Galv server and REST API. Metadata can be updated and data read using the web client, and data can be downloaded by the Python client." width="400" />
 </p>
 
 <!-- Getting Started -->
@@ -48,7 +47,7 @@ The figure below gives PyBOP's current conceptual structure. The living software
 
 <!-- Installation -->
 ### Prerequisites
-To use and/or contribute to PyBOP, you must first install Python 3 (specifically, 3.8-3.11). For example, on a Debian-based distribution (Debian, Ubuntu - including via WSL, Linux Mint), open a terminal and enter:
+To use and/or contribute to PyBOP, first install Python (3.8-3.11). On a Debian-based distribution, this looks like:
 
 ```bash
 sudo apt update
@@ -59,36 +58,22 @@ For further information, please refer to the similar [installation instructions 
 
 ### Installation
 
-Create a virtual environment called `pybop-env` within your current directory using:
+Create a virtual environment called `pybop-env` within your current directory:
 
 ```bash
 virtualenv pybop-env
 ```
 
-Activate the environment with:
+Activate the environment:
 
 ```bash
 source pybop-env/bin/activate
 ```
 
-You can check which version of python is installed within the virtual environment by typing:
-
-```bash
-python --version
-```
-
-Later, you can deactivate the environment and go back to your original system using:
+Later, you can deactivate the environment:
 
 ```bash
 deactivate
-```
-
-Note that there are alternative packages that can be used to create and manage [virtual environments](https://realpython.com/python-virtual-environments-a-primer/), for example [pyenv](https://github.com/pyenv/pyenv#installation) and [pyenv-virtualenv](https://github.com/pyenv/pyenv-virtualenv#installation). In this case, follow the instructions to install these packages and then to create, activate and deactivate a virtual environment, use:
-
-```bash
-pyenv virtualenv pybop-env
-pyenv activate pybop-env
-pyenv deactivate
 ```
 
 Within your virtual environment, install the `develop` branch of PyBOP:
@@ -103,18 +88,8 @@ To alternatively install PyBOP from a local directory, use the following templat
 pip install -e "PATH_TO_PYBOP"
 ```
 
-Now, with PyBOP installed in your virtual environment, you can run Python scripts that import and use the functionality of this package.
-
-<!-- Example Usage -->
-### Usage
-PyBOP has two classes of intended use cases:
-1. parameter estimation from battery test data
-2. design optimisation subject to battery manufacturing/usage constraints
-
-These classes encompass a wide variety of optimisation problems, which depend on the choice of battery model, the available data and/or the choice of design parameters.
-
-### Parameter estimation
-The example below shows a simple fitting routine that starts by generating synthetic data from a single particle model with modified parameter values. An RMSE cost function using the terminal voltage as the optimised signal is completed to determine the unknown parameter values. First, the synthetic data is generated:
+### Example
+The example below illustrates a straightforward process that begins by creating artificial data from a solo particle blueprint. The unknown parameter values are discovered by implementing an RMSE cost function using the terminal voltage as the observed signal. Initially, the simulated data is generated.
 
 ```python
 import pybop
@@ -122,46 +97,42 @@ import pybamm
 import pandas as pd
 import numpy as np
 
-def getdata(x0):
-        model = pybamm.lithium_ion.SPM()
-        params = model.default_parameter_values
+def getdata(self, model, x0):
+    model.parameter_set.update(
+        {
+            "Negative electrode active material volume fraction": x0[0],
+            "Positive electrode active material volume fraction": x0[1],
+        }
+    )
+    experiment = pybamm.Experiment(
+        [
+            (
+                "Discharge at 1C for 3 minutes (1 second period)",
+                "Rest for 2 minutes (1 second period)",
+                "Charge at 1C for 3 minutes (1 second period)",
+                "Rest for 2 minutes (1 second period)",
+            ),
+        ]
+        * 2
+    )
+    sim = model.predict(init_soc=init_soc, experiment=experiment)
+    return sim
+```
+Next, we construct the model, define the dataset, and form the parameters. Lastly, we build the parameterisation class and complete the parameter fitting.
+```python
+# Define model
+parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
-        params.update(
-            {
-                "Negative electrode active material volume fraction": x0[0],
-                "Positive electrode active material volume fraction": x0[1],
-            }
-        )
-        experiment = pybamm.Experiment(
-            [
-                (
-                    "Discharge at 2C for 5 minutes (1 second period)",
-                    "Rest for 2 minutes (1 second period)",
-                    "Charge at 1C for 5 minutes (1 second period)",
-                    "Rest for 2 minutes (1 second period)",
-                ),
-            ]
-            * 2
-        )
-        sim = pybamm.Simulation(model, experiment=experiment, parameter_values=params)
-        return sim.solve()
-
-
-# Form observations
+# Form dataset
 x0 = np.array([0.55, 0.63])
 solution = getdata(x0)
-```
-Next, the observed variables are defined, with the model construction and parameter definitions following. Finally, the parameterisation class is constructed and parameter fitting is completed.
-```python
-observations = [
-    pybop.Observed("Time [s]", solution["Time [s]"].data),
-    pybop.Observed("Current function [A]", solution["Current [A]"].data),
-    pybop.Observed("Voltage [V]", solution["Terminal voltage [V]"].data),
-]
 
-# Define model
-model = pybop.models.lithium_ion.SPM()
-model.parameter_set = model.pybamm_model.default_parameter_values
+dataset = [
+    pybop.Dataset("Time [s]", solution["Time [s]"].data),
+    pybop.Dataset("Current function [A]", solution["Current [A]"].data),
+    pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
+]
 
 # Fitting parameters
 params = [
@@ -177,29 +148,37 @@ params = [
     ),
 ]
 
-parameterisation = pybop.Parameterisation(
-    model, observations=observations, fit_parameters=params
+# Define the cost to optimise
+cost = pybop.RMSE()
+signal = "Voltage [V]"
+
+# Select optimiser
+optimiser = pybop.NLoptOptimize(n_param=len(parameters))
+
+# Build the optimisation problem
+parameterisation = pybop.Optimisation(
+    cost=cost,
+    model=model,
+    optimiser=optimiser,
+    parameters=parameters,
+    dataset=dataset,
+    signal=signal,
 )
 
-# get RMSE estimate using NLOpt
-results, last_optim, num_evals = parameterisation.rmse(
-    signal="Voltage [V]", method="nlopt" # results = [0.54452026, 0.63064801]
-)
+# run the parameterisation
+results, last_optim, num_evals = parameterisation.run()
 ```
 
 <!-- Code of Conduct -->
 ## Code of Conduct
 
-PyBOP aims to foster a broad consortium of developers and users, building on and
-learning from the success of the [PyBaMM](https://pybamm.org/) community. Our values are:
-
--   Open-source (code and ideas should be shared)
+PyBOP aims to foster a broad consortium of developers and users, building on and learning from the success of the [PyBaMM](https://pybamm.org/) community. Our values are:
 
 -   Inclusivity and fairness (those who want to contribute may do so, and their input is appropriately recognised)
 
--   Interoperability (aiming for modularity to enable maximum impact and inclusivity)
+-   Interoperability (Modularity to enable maximum impact and inclusivity)
 
--   User-friendliness (putting user requirements first, thinking about user-assistance & workflows)
+-   User-friendliness (putting user requirements first via suser-assistance & workflows)
 
 
 <!-- Contributing -->
