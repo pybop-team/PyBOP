@@ -39,7 +39,7 @@ PyBOP offers a full range of tools for the parameterisation and optimisation of 
 The diagram below presents PyBOP's conceptual framework. The PyBOP software specification is available at [this link](https://github.com/pybop-team/software-spec). This product is currently undergoing development, and users can expect the API to evolve with future releases.
 
 <p align="center">
-    <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/PyBOP_Architecture.png" alt="Data flows from battery cycling machines to Galv Harvesters, then to the     Galv server and REST API. Metadata can be updated and data read using the web client, and data can be downloaded by the Python client." width="400" />
+    <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/PyBOP_Architecture.png" alt="Data flows from battery cycling machines to Galv Harvesters, then to the     Galv server and REST API. Metadata can be updated and data read using the web client, and data can be downloaded by the Python client." width="600" />
 </p>
 
 <!-- Getting Started -->
@@ -89,84 +89,54 @@ pip install -e "PATH_TO_PYBOP"
 ```
 
 ### Example
-The example below illustrates a straightforward process that begins by creating artificial data from a solo particle blueprint. The unknown parameter values are discovered by implementing an RMSE cost function using the terminal voltage as the observed signal. Initially, the simulated data is generated.
+The example below illustrates a straightforward process that begins by creating artificial data from a solo particle blueprint. The unknown parameter values are discovered by implementing an RMSE cost function using the terminal voltage as the observed signal.
 
 ```python
 import pybop
-import pybamm
-import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
-def getdata(self, model, x0):
-    model.parameter_set.update(
-        {
-            "Negative electrode active material volume fraction": x0[0],
-            "Positive electrode active material volume fraction": x0[1],
-        }
-    )
-    experiment = pybamm.Experiment(
-        [
-            (
-                "Discharge at 1C for 3 minutes (1 second period)",
-                "Rest for 2 minutes (1 second period)",
-                "Charge at 1C for 3 minutes (1 second period)",
-                "Rest for 2 minutes (1 second period)",
-            ),
-        ]
-        * 2
-    )
-    sim = model.predict(init_soc=init_soc, experiment=experiment)
-    return sim
-```
-Next, we construct the model, define the dataset, and form the parameters. Lastly, we build the parameterisation class and complete the parameter fitting.
-```python
-# Define model
+# Parameter set and model definition
 parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
-
-# Form dataset
-x0 = np.array([0.55, 0.63])
-solution = getdata(x0)
-
-dataset = [
-    pybop.Dataset("Time [s]", solution["Time [s]"].data),
-    pybop.Dataset("Current function [A]", solution["Current [A]"].data),
-    pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
-]
+model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
 # Fitting parameters
-params = [
+parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.5, 0.05),
-        bounds=[0.35, 0.75],
+        prior=pybop.Gaussian(0.7, 0.05),
+        bounds=[0.6, 0.9],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.65, 0.05),
-        bounds=[0.45, 0.85],
-    ),
+        prior=pybop.Gaussian(0.58, 0.05),
+        bounds=[0.5, 0.8],
+    )
 ]
 
-# Define the cost to optimise
-cost = pybop.RMSE()
-signal = "Voltage [V]"
+# Generate data
+sigma = 0.005
+t_eval = np.arange(0, 900, 2)
+values = model.predict(t_eval=t_eval)
+CorruptValues = values["Terminal voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
 
-# Select optimiser
-optimiser = pybop.NLoptOptimize(n_param=len(parameters))
+# Dataset definition
+dataset = [
+    pybop.Dataset("Time [s]", t_eval),
+    pybop.Dataset("Current function [A]", values["Current [A]"].data),
+    pybop.Dataset("Terminal voltage [V]", CorruptValues),
+]
 
-# Build the optimisation problem
-parameterisation = pybop.Optimisation(
-    cost=cost,
-    model=model,
-    optimiser=optimiser,
-    parameters=parameters,
-    dataset=dataset,
-    signal=signal,
-)
+# Generate problem, cost function, and optimisation class
+problem = pybop.Problem(model, parameters, dataset)
+cost = pybop.SumSquaredError(problem)
+opt = pybop.Optimisation(cost, optimiser=pybop.GradientDescent())
+opt.optimiser.learning_rate = 0.025
+opt.optimiser.max_iterations = 100
 
-# run the parameterisation
-results, last_optim, num_evals = parameterisation.run()
+# Run optimisation
+x, output, final_cost, num_evals = opt.run()
+print("Estimated parameters:", x)
 ```
 
 <!-- Code of Conduct -->
