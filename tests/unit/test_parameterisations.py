@@ -44,11 +44,13 @@ class TestModelParameterisation:
 
         # Define the cost to optimise
         signal = "Terminal voltage [V]"
-        problem = pybop.Problem(model, parameters, dataset, signal=signal, init_soc=init_soc)
+        problem = pybop.Problem(
+            model, parameters, dataset, signal=signal, init_soc=init_soc
+        )
         cost = pybop.RootMeanSquaredError(problem)
 
         # Select optimiser
-        optimiser = pybop.NLoptOptimize(n_param=len(parameters))
+        optimiser = pybop.NLoptOptimize
 
         # Build the optimisation problem
         parameterisation = pybop.Optimisation(cost=cost, optimiser=optimiser)
@@ -95,13 +97,15 @@ class TestModelParameterisation:
 
         # Define the cost to optimise
         signal = "Terminal voltage [V]"
-        problem = pybop.Problem(model, parameters, dataset, signal=signal, init_soc=init_soc)
+        problem = pybop.Problem(
+            model, parameters, dataset, signal=signal, init_soc=init_soc
+        )
         cost = pybop.RootMeanSquaredError(problem)
 
         # Select optimisers
         optimisers = [
-            pybop.NLoptOptimize(n_param=len(parameters)),
-            pybop.SciPyMinimize(),
+            pybop.NLoptOptimize,
+            pybop.SciPyMinimize,
         ]
 
         # Test each optimiser
@@ -153,11 +157,13 @@ class TestModelParameterisation:
 
         # Define the cost to optimise
         signal = "Terminal voltage [V]"
-        problem = pybop.Problem(model, parameters, dataset, signal=signal, init_soc=init_soc)
+        problem = pybop.Problem(
+            model, parameters, dataset, signal=signal, init_soc=init_soc
+        )
         cost = pybop.RootMeanSquaredError(problem)
 
         # Select optimiser
-        optimiser = pybop.NLoptOptimize(n_param=len(parameters))
+        optimiser = pybop.NLoptOptimize
 
         # Build the optimisation problem
         parameterisation = pybop.Optimisation(cost=cost, optimiser=optimiser)

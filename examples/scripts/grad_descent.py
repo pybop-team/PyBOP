@@ -16,13 +16,15 @@ parameters = [
         "Positive electrode active material volume fraction",
         prior=pybop.Gaussian(0.58, 0.05),
         bounds=[0.5, 0.8],
-    )
+    ),
 ]
 
 sigma = 0.001
 t_eval = np.arange(0, 900, 2)
 values = model.predict(t_eval=t_eval)
-CorruptValues = values["Terminal voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
+CorruptValues = values["Terminal voltage [V]"].data + np.random.normal(
+    0, sigma, len(t_eval)
+)
 
 dataset = [
     pybop.Dataset("Time [s]", t_eval),
@@ -33,12 +35,12 @@ dataset = [
 # Generate problem, cost function, and optimisation class
 problem = pybop.Problem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
-opt = pybop.Optimisation(cost, optimiser=pybop.GradientDescent())
+opt = pybop.Optimisation(cost, optimiser=pybop.GradientDescent)
 
-opt.optimiser.learning_rate = 0.025
-opt.optimiser.max_iterations=100
+opt.learning_rate = 0.025
+opt.max_iterations = 100
 
-x, output, final_cost, num_evals = opt.run()
+x = opt.run()
 print("Estimated parameters:", x)
 
 # Show the generated data
@@ -50,8 +52,6 @@ plt.ylabel("Values", fontsize=12)
 plt.plot(t_eval, CorruptValues, label="Measured")
 plt.fill_between(t_eval, simulated_values - sigma, simulated_values + sigma, alpha=0.2)
 plt.plot(t_eval, simulated_values, label="Simulated")
-plt.legend(
-    bbox_to_anchor=(0.6, 1), loc="upper left", fontsize=12
-)
-plt.tick_params(axis='both', labelsize=12)
+plt.legend(bbox_to_anchor=(0.6, 1), loc="upper left", fontsize=12)
+plt.tick_params(axis="both", labelsize=12)
 plt.show()

@@ -9,9 +9,9 @@ class SciPyMinimize(BaseOptimiser):
 
     def __init__(self, method=None, bounds=None):
         super().__init__()
+        self.name = "SciPyMinimize"
         self.method = method
         self.bounds = bounds
-        self.name = "SciPy Optimiser"
 
         if self.method is None:
             self.method = "L-BFGS-B"
@@ -33,7 +33,9 @@ class SciPyMinimize(BaseOptimiser):
             bounds = (
                 (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
             )
-            output = minimize(cost_function.compute, x0, method=self.method, bounds=bounds)
+            output = minimize(
+                cost_function.compute, x0, method=self.method, bounds=bounds
+            )
         else:
             output = minimize(cost_function.compute, x0, method=self.method)
 

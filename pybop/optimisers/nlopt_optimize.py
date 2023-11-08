@@ -9,7 +9,7 @@ class NLoptOptimize(BaseOptimiser):
 
     def __init__(self, n_param, xtol=None, method=None):
         super().__init__()
-        self.name = "NLOpt Optimiser"
+        self.name = "NLoptOptimize"
 
         if method is not None:
             self.optim = nlopt.opt(method, n_param)

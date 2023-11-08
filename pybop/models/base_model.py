@@ -31,7 +31,6 @@ class BaseModel:
         if self.fit_parameters is not None:
             self.fit_keys = list(self.fit_parameters.keys())
 
-
         if init_soc is not None:
             self.set_init_soc(init_soc)
 
@@ -83,7 +82,6 @@ class BaseModel:
             # set input parameters in parameter set from fitting parameters
             for i in self.fit_parameters.keys():
                 self._parameter_set[i] = "[input]"
-
 
         if self.dataset is not None and self.fit_parameters is not None:
             if "Current function [A]" not in self.fit_keys:

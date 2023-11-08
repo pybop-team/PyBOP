@@ -32,8 +32,6 @@ class TestOptimisation:
         cost = pybop.RootMeanSquaredError(problem)
 
         for i in range(50):
-            opt = pybop.Optimisation(
-                cost=cost, optimiser=pybop.NLoptOptimize(n_param=len(param))
-            )
+            opt = pybop.Optimisation(cost=cost, optimiser=pybop.NLoptOptimize)
 
             assert opt.x0 <= 0.77 and opt.x0 >= 0.73

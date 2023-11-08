@@ -37,7 +37,7 @@ cost = pybop.RootMeanSquaredError(problem)
 
 # Build the optimisation problem
 parameterisation = pybop.Optimisation(
-    cost=cost, optimiser=pybop.NLoptOptimize(n_param=len(parameters))
+    cost=cost, optimiser=pybop.NLoptOptimize
 )
 
 # Run the optimisation problem
@@ -51,20 +51,5 @@ plt.xlabel("Time")
 plt.ylabel("Values")
 plt.plot(dataset[0].data, dataset[2].data, label="Measured")
 plt.plot(dataset[0].data, simulated_values, label="Simulated")
-plt.legend(
-    bbox_to_anchor=(1.05, 1), loc="upper left", borderaxespad=0.0, frameon=False
-)
+plt.legend(bbox_to_anchor=(0.6, 1), loc="upper left", fontsize=12)
 plt.show()
-
-
-# get MAP estimate, starting at a random initial point in parameter space
-# parameterisation.map(x0=[p.sample() for p in parameters])
-
-# or sample from posterior
-# parameterisation.sample(1000, n_chains=4, ....)
-
-# or SOBER
-# parameterisation.sober()
-
-
-# Optimisation = pybop.optimisation(model, cost=cost, parameters=parameters, observation=observation)

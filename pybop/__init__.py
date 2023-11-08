@@ -50,7 +50,7 @@ from .optimisation import Optimisation
 from .optimisers.base_optimiser import BaseOptimiser
 from .optimisers.nlopt_optimize import NLoptOptimize
 from .optimisers.scipy_minimize import SciPyMinimize
-from .optimisers.pints_optimiser import GradientDescent
+from .optimisers.pints_optimisers import GradientDescent
 
 #
 # Parameter classes

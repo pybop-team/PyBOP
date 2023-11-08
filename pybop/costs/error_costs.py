@@ -32,14 +32,14 @@ class ProblemCost(BaseCost):
 
     def __init__(self, problem):
         super(ProblemCost, self).__init__()
-        self._problem = problem
+        self.problem = problem
         self._target = problem._target
 
     def n_parameters(self):
         """
         Returns the dimension of the parameter space.
         """
-        return self._problem.n_parameters
+        return self.problem.n_parameters
 
 
 class RootMeanSquaredError(ProblemCost):
@@ -56,7 +56,7 @@ class RootMeanSquaredError(ProblemCost):
     def compute(self, x, grad=None):
         # Compute the cost
         try:
-            return np.sqrt(np.mean((self._problem.evaluate(x) - self._target) ** 2))
+            return np.sqrt(np.mean((self.problem.evaluate(x) - self._target) ** 2))
 
         except Exception as e:
             raise ValueError(f"Error in RMSE calculation: {e}")
@@ -76,13 +76,14 @@ class SumSquaredError(ProblemCost):
     def compute(self, x, grad=None):
         # Compute the cost
 
-        return np.sum((np.sum(((self._problem.evaluate(x) - self._target)**2),
-                              axis=0)), axis=0)
+        return np.sum(
+            (np.sum(((self.problem.evaluate(x) - self._target) ** 2), axis=0)), axis=0
+        )
 
     def evaluateS1(self, x):
         # Compute the cost
-        y, dy = self._problem.evaluateS1(x)
-        dy = dy.reshape((450, 1, self._problem.n_parameters))
+        y, dy = self.problem.evaluateS1(x)
+        dy = dy.reshape((450, 1, self.problem.n_parameters))
         r = y - self._target
         e = np.sum(np.sum(r**2, axis=0), axis=0)
         de = 2 * np.sum(np.sum((r.T * dy.T), axis=2), axis=1)
