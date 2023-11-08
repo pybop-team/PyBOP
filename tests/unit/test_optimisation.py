@@ -28,7 +28,7 @@ class TestOptimisation:
         ]
 
         signal = "Terminal voltage [V]"
-        problem = pybop.Problem(model, param, signal, dataset)
+        problem = pybop.Problem(model, param, dataset, signal=signal)
         cost = pybop.RootMeanSquaredError(problem)
 
         for i in range(50):

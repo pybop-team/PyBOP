@@ -32,7 +32,7 @@ parameters = [
 
 # Define the cost to optimise
 signal = "Terminal voltage [V]"
-problem = pybop.Problem(model, parameters, signal, dataset, init_soc=0.98)
+problem = pybop.Problem(model, parameters, dataset, signal=signal, init_soc=0.98)
 cost = pybop.RootMeanSquaredError(problem)
 
 # Build the optimisation problem

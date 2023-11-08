@@ -37,7 +37,7 @@ class TestProblem:
             pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
         ]
 
-        problem = pybop.Problem(model, parameters, signal, dataset)
+        problem = pybop.Problem(model, parameters, dataset, signal=signal)
 
         assert problem._model == model
         assert problem._model._built_model is not None

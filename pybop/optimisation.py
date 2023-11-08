@@ -28,20 +28,3 @@ class Optimisation:
         )
 
         return results
-
-    def cost_function(self, x, grad=None):
-        """
-        Compute a model prediction and associated value of the cost.
-        """
-
-        # Update the parameter dictionary
-        for i, key in enumerate(self.cost._problem.fit_parameters):
-            self.fit_parameters[key] = x[i]
-
-        # Compute cost
-        res = self.cost.compute(self.fit_parameters)
-
-        if self.verbose:
-            print("Parameter estimates: ", self.cost._problem.parameters, "\n")
-
-        return res

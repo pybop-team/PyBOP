@@ -31,7 +31,7 @@ class TestCosts:
         ]
 
         signal = "Voltage [V]"
-        problem = pybop.Problem(model, parameters, signal, dataset)
+        problem = pybop.Problem(model, parameters, dataset, signal=signal)
         cost = pybop.RootMeanSquaredError(problem)
         cost.compute([0.5])
 
