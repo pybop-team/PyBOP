@@ -45,3 +45,9 @@ class SciPyMinimize(BaseOptimiser):
         num_evals = output.nfev
 
         return x, output, final_cost, num_evals
+
+    def needs_sensitivities(self):
+        """
+        Returns True if the optimiser needs sensitivities.
+        """
+        return False

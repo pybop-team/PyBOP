@@ -47,3 +47,9 @@ class NLoptOptimize(BaseOptimiser):
         num_evals = self.optim.get_numevals()
 
         return x, output, final_cost, num_evals
+
+    def needs_sensitivities(self):
+        """
+        Returns True if the optimiser needs sensitivities.
+        """
+        return False

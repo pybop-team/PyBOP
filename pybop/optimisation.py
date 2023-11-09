@@ -26,6 +26,7 @@ class Optimisation:
         self.max_unchanged_iterations = 10
         self.max_evaluations = None
         self.threshold = None
+        self.sigma0 = 0.1
 
         # Check if minimising or maximising
         self._minimising = not isinstance(cost, pints.LogPDF)
@@ -35,6 +36,25 @@ class Optimisation:
         else:
             self._function = pints.ProbabilityBasedError(cost)
         del cost
+
+        # Create optimiser
+        if self.optimiser is None or issubclass(self.optimiser, pints.Optimiser):
+            self.pints = True
+            self.optimiser = self.optimiser or pints.CMAES
+            self.optimiser = optimiser(self.x0, self.sigma0, self.bounds)
+
+        elif issubclass(self.optimiser, pybop.NLoptOptimize):
+            self.pints = False
+            self.optimiser = self.optimiser(self.problem.n_parameters)
+
+        elif issubclass(self.optimiser, pybop.SciPyMinimize):
+            self.pints = False
+            self.optimiser = self.optimiser()
+        else:
+            raise ValueError("Optimiser selected is not supported.")
+
+        # Check if sensitivities are required
+        self._needs_sensitivities = self.optimiser.needs_sensitivities()
 
     def run(self):
         """
@@ -47,14 +67,9 @@ class Optimisation:
             num_evals: number of evaluations
         """
 
-        if issubclass(self.optimiser, pints.Optimiser):
+        if self.pints:
             x, output, final_cost, num_evals = self._run_pints()
-        else:
-            if issubclass(self.optimiser, pybop.NLoptOptimize):
-                self.optimiser = self.optimiser(self.problem.n_parameters)
-            elif issubclass(self.optimiser, pybop.SciPyMinimize):
-                self.optimiser = self.optimiser()
-
+        elif not self.pints:
             x, output, final_cost, num_evals = self._run_pybop()
 
         return x, output, final_cost, num_evals
@@ -115,17 +130,17 @@ class Optimisation:
         try:
             while running:
                 # Ask optimiser for new points
-                xs = self._optimiser.ask()
+                xs = self.optimiser.ask()
 
                 # Evaluate points
                 fs = evaluator.evaluate(xs)
 
                 # Tell optimiser about function values
-                self._optimiser.tell(fs)
+                self.optimiser.tell(fs)
 
                 # Update the scores
-                fb = self._optimiser.f_best()
-                fg = self._optimiser.f_guess()
+                fb = self.optimiser.f_best()
+                fg = self.optimiser.f_guess()
                 fb_user, fg_user = (fb, fg) if self._minimising else (-fb, -fg)
 
                 # Check for significant changes
@@ -152,9 +167,7 @@ class Optimisation:
                     and iteration >= self._max_iterations
                 ):
                     running = False
-                    (
-                        "Maximum number of iterations (" + str(iteration) + ") reached."
-                    )
+                    ("Maximum number of iterations (" + str(iteration) + ") reached.")
 
                 # Maximum number of iterations without significant change
                 halt = (
@@ -192,13 +205,13 @@ class Optimisation:
                     )
 
                 # Error in optimiser
-                error = self._optimiser.stop()
+                error = self.optimiser.stop()
                 if error:  # pragma: no cover
                     running = False
                     str(error)
 
                 elif self._callback is not None:
-                    self._callback(iteration - 1, self._optimiser)
+                    self._callback(iteration - 1, self.optimiser)
 
         except (Exception, SystemExit, KeyboardInterrupt):  # pragma: no cover
             # Unexpected end!
@@ -209,7 +222,7 @@ class Optimisation:
             print("Current position:")
 
             # Show current parameters
-            x_user = self._optimiser.x_guessed()
+            x_user = self.optimiser.x_guessed()
             if self._transformation is not None:
                 x_user = self._transformation.to_model(x_user)
             for p in x_user:
@@ -223,11 +236,11 @@ class Optimisation:
 
         # Get best parameters
         if self._use_f_guessed:
-            x = self._optimiser.x_guessed()
-            f = self._optimiser.f_guessed()
+            x = self.optimiser.x_guessed()
+            f = self.optimiser.f_guessed()
         else:
-            x = self._optimiser.x_best()
-            f = self._optimiser.f_best()
+            x = self.optimiser.x_best()
+            f = self.optimiser.f_best()
 
         # Inverse transform search parameters
         if self._transformation is not None:
