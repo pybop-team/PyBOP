@@ -60,22 +60,3 @@ class PintsBoundaries(object):
         defined on.
         """
         return len(self.x0)
-
-    # def sample(self, n=1):
-    #     """
-    #     Returns ``n`` random samples from within the boundaries, for example to
-    #     use as starting points for an optimisation.
-
-    #     The returned value is a NumPy array with shape ``(n, d)`` where ``n``
-    #     is the requested number of samples, and ``d`` is the dimension of the
-    #     parameter space these boundaries are defined on.
-
-    #     *Note that implementing :meth:`sample()` is optional, so some boundary
-    #     types may not support it.*
-
-    #     Parameters
-    #     ----------
-    #     n : int
-    #         The number of points to sample
-    #     """
-    #     raise NotImplementedError

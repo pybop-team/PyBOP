@@ -33,10 +33,10 @@ class TestCosts:
         signal = "Voltage [V]"
         problem = pybop.Problem(model, parameters, dataset, signal=signal)
         cost = pybop.RootMeanSquaredError(problem)
-        cost.compute([0.5])
+        cost([0.5])
 
-        assert type(cost.compute([0.5])) == np.float64
-        assert cost.compute([0.5]) >= 0
+        assert type(cost([0.5])) == np.float64
+        assert cost([0.5]) >= 0
 
     def getdata(self, model, x0):
         model.parameter_set = model.pybamm_model.default_parameter_values

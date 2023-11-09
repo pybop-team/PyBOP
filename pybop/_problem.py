@@ -25,6 +25,7 @@ class Problem:
         self.init_soc = init_soc
         self.x0 = x0
         self.n_parameters = len(self.parameters)
+        self.n_outputs = len([self.signal])
 
         # Check that the dataset contains time and current
         for name in ["Time [s]", "Current function [A]", signal]:
@@ -32,6 +33,7 @@ class Problem:
                 raise ValueError(f"expected {name} in list of dataset")
 
         self._time_data = self._dataset["Time [s]"].data
+        self.n_time_data = len(self._time_data)
         self._target = self._dataset[signal].data
 
         if np.any(self._time_data < 0):
@@ -58,14 +60,15 @@ class Problem:
         for i, param in enumerate(self.parameters):
             param.update(value=self.x0[i])
 
+        # Set the fitting parameters and build the model
         self.fit_parameters = {o.name: o.value for o in parameters}
-        # if self._model._built_model is None:
-        self._model.build(
-            dataset=self._dataset,
-            fit_parameters=self.fit_parameters,
-            check_model=self.check_model,
-            init_soc=self.init_soc,
-        )
+        if self._model._built_model is None:
+            self._model.build(
+                dataset=self._dataset,
+                fit_parameters=self.fit_parameters,
+                check_model=self.check_model,
+                init_soc=self.init_soc,
+            )
 
     def evaluate(self, parameters):
         """

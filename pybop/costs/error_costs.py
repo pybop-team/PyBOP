@@ -53,7 +53,7 @@ class RootMeanSquaredError(ProblemCost):
         if not isinstance(problem, pybop.Problem):
             raise ValueError("This cost function only supports pybop problems")
 
-    def compute(self, x, grad=None):
+    def __call__(self, x, grad=None):
         # Compute the cost
         try:
             return np.sqrt(np.mean((self.problem.evaluate(x) - self._target) ** 2))
@@ -82,7 +82,13 @@ class SumSquaredError(ProblemCost):
     def evaluateS1(self, x):
         # Compute the cost
         y, dy = self.problem.evaluateS1(x)
-        dy = dy.reshape((450, 1, self.problem.n_parameters))
+        dy = dy.reshape(
+            (
+                self.problem.n_time_data,
+                self.problem.n_outputs,
+                self.problem.n_parameters,
+            )
+        )
         r = y - self._target
         e = np.sum(np.sum(r**2, axis=0), axis=0)
         de = 2 * np.sum(np.sum((r.T * dy.T), axis=2), axis=1)
