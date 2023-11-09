@@ -32,7 +32,7 @@ plt.ylabel("Voltage (V)")
 plt.plot(time, corrupt_values, label="corrupted signal")
 plt.plot(time, voltage, label="synthetic data")
 plt.legend(loc="upper right")
-plt.show()
+plt.draw() # use draw instead of show so that computation continues
 
 # Generate problem, cost function, and optimisation class
 problem = pints.SingleOutputProblem(model, time, corrupt_values)
