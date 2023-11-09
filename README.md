@@ -88,55 +88,31 @@ To alternatively install PyBOP from a local directory, use the following templat
 pip install -e "PATH_TO_PYBOP"
 ```
 
-### Example
-The example below illustrates a straightforward process that begins by creating artificial data from a solo particle blueprint. The unknown parameter values are discovered by implementing an RMSE cost function using the terminal voltage as the observed signal.
+To check whether PyBOP has been installed correctly, run one of the examples in the following section or the full set of unit tests:
 
-```python
-import pybop
-import numpy as np
-import matplotlib.pyplot as plt
+```bash
+pytest --unit -v
+```
 
-# Parameter set and model definition
-parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
-model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
+### Using PyBOP
+PyBOP has two general types of intended use case:
+1. parameter estimation from battery test data
+2. design optimisation subject to battery manufacturing/usage constraints
 
-# Fitting parameters
-parameters = [
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.7, 0.05),
-        bounds=[0.6, 0.9],
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.58, 0.05),
-        bounds=[0.5, 0.8],
-    )
-]
+These general cases encompass a wide variety of optimisation problems, which require careful consideration based on the choice of battery model, the available data and/or the choice of design parameters.
 
-# Generate data
-sigma = 0.005
-t_eval = np.arange(0, 900, 2)
-values = model.predict(t_eval=t_eval)
-CorruptValues = values["Terminal voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
+PyBOP comes with a number of example notebooks and scripts which can be found in the examples folder.
 
-# Dataset definition
-dataset = [
-    pybop.Dataset("Time [s]", t_eval),
-    pybop.Dataset("Current function [A]", values["Current [A]"].data),
-    pybop.Dataset("Terminal voltage [V]", CorruptValues),
-]
+The (`spm_example` script)[https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_example.py] illustrates a straightforward example that begins by creating artificial data from a single particle model (SPM). The unknown parameter values are then discovered by implementing an RMSE cost function using the terminal voltage as the observed signal. The main output is the set of estimated parameters, namely the negative and positive electrode active material volume fractions in this example. To run this example:
 
-# Generate problem, cost function, and optimisation class
-problem = pybop.Problem(model, parameters, dataset)
-cost = pybop.SumSquaredError(problem)
-opt = pybop.Optimisation(cost, optimiser=pybop.GradientDescent())
-opt.optimiser.learning_rate = 0.025
-opt.optimiser.max_iterations = 100
+```bash
+python examples/scripts/spm_example.py
+```
 
-# Run optimisation
-x, output, final_cost, num_evals = opt.run()
-print("Estimated parameters:", x)
+The (`RMSE_estimation` script)[https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/rmse_estimation.py] provides a second example which differs by importing the example `Chen_example.csv` dataset and then estimates the same SPM parameters based on the same RMSE cost function. To run this example:
+
+```bash
+python examples/scripts/rmse_estimation.py
 ```
 
 <!-- Code of Conduct -->
@@ -148,7 +124,7 @@ PyBOP aims to foster a broad consortium of developers and users, building on and
 
 -   Interoperability (Modularity to enable maximum impact and inclusivity)
 
--   User-friendliness (putting user requirements first via suser-assistance & workflows)
+-   User-friendliness (putting user requirements first via user-assistance & workflows)
 
 
 <!-- Contributing -->
