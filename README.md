@@ -103,13 +103,13 @@ These general cases encompass a wide variety of optimisation problems, which req
 
 PyBOP comes with a number of example notebooks and scripts which can be found in the examples folder.
 
-The (`spm_example` script)[https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_example.py] illustrates a straightforward example that begins by creating artificial data from a single particle model (SPM). The unknown parameter values are then discovered by implementing an RMSE cost function using the terminal voltage as the observed signal. The main output is the set of estimated parameters, namely the negative and positive electrode active material volume fractions in this example. To run this example:
+The [`spm_example` script](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_example.py) illustrates a straightforward example that begins by creating artificial data from a single particle model (SPM). The unknown parameter values are then discovered by implementing an RMSE cost function using the terminal voltage as the observed signal. The main output is the set of estimated parameters, namely the negative and positive electrode active material volume fractions in this example. To run this example:
 
 ```bash
 python examples/scripts/spm_example.py
 ```
 
-The (`RMSE_estimation` script)[https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/rmse_estimation.py] provides a second example which differs by importing the example `Chen_example.csv` dataset and then estimates the same SPM parameters based on the same RMSE cost function. To run this example:
+The [`RMSE_estimation` script](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/rmse_estimation.py) provides a second example which differs by importing the example `Chen_example.csv` dataset and then estimates the same SPM parameters based on the same RMSE cost function. To run this example:
 
 ```bash
 python examples/scripts/rmse_estimation.py
