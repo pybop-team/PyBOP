@@ -42,9 +42,8 @@ class SciPyMinimize(BaseOptimiser):
         # Get performance statistics
         x = output.x
         final_cost = output.fun
-        num_evals = output.nfev
 
-        return x, output, final_cost, num_evals
+        return x, final_cost
 
     def needs_sensitivities(self):
         """

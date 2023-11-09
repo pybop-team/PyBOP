@@ -6,12 +6,20 @@ import numpy as np
 class Optimisation:
     """
     Optimisation class for PyBOP.
+    This class provides functionality for PyBOP optimisers and Pints optimisers.
+    args:
+        cost: PyBOP cost function
+        optimiser: A PyBOP or Pints optimiser
+        sigma0: initial step size
+        verbose: print optimisation progress
+
     """
 
     def __init__(
         self,
         cost,
         optimiser,
+        sigma0=None,
         verbose=False,
     ):
         self.cost = cost
@@ -19,25 +27,24 @@ class Optimisation:
         self.optimiser = optimiser
         self.verbose = verbose
         self.x0 = cost.problem.x0
-        self.bounds = cost.problem.bounds
-        self.fit_parameters = {}
-        self.learning_rate = 0.025
-        self.max_iterations = 200
-        self.max_unchanged_iterations = 10
-        self.max_evaluations = None
-        self.threshold = None
-        self.sigma0 = 0.1
+        self.bounds = self.problem.bounds
+        self.sigma0 = sigma0
+
+        # Convert x0 to pints vector
+        self._x0 = pints.vector(self.x0)
+
+        # PyBOP doesn't currently support the pints transformation class
+        self._transformation = None
 
         # Check if minimising or maximising
         self._minimising = not isinstance(cost, pints.LogPDF)
-
         if self._minimising:
-            self._function = cost
+            self._function = self.cost
         else:
             self._function = pints.ProbabilityBasedError(cost)
         del cost
 
-        # Create optimiser
+        # Construct Optimiser
         if self.optimiser is None or issubclass(self.optimiser, pints.Optimiser):
             self.pints = True
             self.optimiser = self.optimiser or pints.CMAES
@@ -56,47 +63,86 @@ class Optimisation:
         # Check if sensitivities are required
         self._needs_sensitivities = self.optimiser.needs_sensitivities()
 
+        # Track optimiser's f_best or f_guessed
+        self._use_f_guessed = None
+        self.set_f_guessed_tracking()
+
+        # Parallelisation
+        self._parallel = False
+        self._n_workers = 1
+        self.set_parallel()
+
+        # User callback
+        self._callback = None
+
+        #
+        # Stopping criteria
+        #
+
+        # Maximum iterations
+        self._max_iterations = None
+        self.set_max_iterations()
+
+        # Maximum unchanged iterations
+        self._unchanged_threshold = 1  # smallest significant f change
+        self._unchanged_max_iterations = None
+        self.set_max_unchanged_iterations()
+
+        # Maximum evaluations
+        self._max_evaluations = None
+
+        # Threshold value
+        self._threshold = None
+
+        # Post-run statistics
+        self._evaluations = None
+        self._iterations = None
+
     def run(self):
         """
         Run the optimisation algorithm.
         Selects between PyBOP backend or Pints backend.
         returns:
             x: best parameters
-            output: optimiser output
             final_cost: final cost
-            num_evals: number of evaluations
         """
 
         if self.pints:
-            x, output, final_cost, num_evals = self._run_pints()
+            x, final_cost = self._run_pints()
         elif not self.pints:
-            x, output, final_cost, num_evals = self._run_pybop()
+            x, final_cost = self._run_pybop()
 
-        return x, output, final_cost, num_evals
+        return x, final_cost
 
     def _run_pybop(self):
         """
-        Run method for PyBOP optimisers.
+        Run method for PyBOP based optimisers.
+        returns:
+            x: best parameters
+            final_cost: final cost
         """
-        x, output, final_cost, num_evals = self.optimiser.optimise(
+        x, final_cost = self.optimiser.optimise(
             cost_function=self.cost,
             x0=self.x0,
             bounds=self.bounds,
         )
-        return x, output, final_cost, num_evals
+        return x, final_cost
 
     def _run_pints(self):
         """
         Run method for PINTS optimisers.
-        This method is based on the run method in the PINTS.OptimisationController class.
+        This method is heavily based on the run method in the PINTS.OptimisationController class.
+        returns:
+            x: best parameters
+            final_cost: final cost
         """
 
         # Check stopping criteria
         has_stopping_criterion = False
-        has_stopping_criterion |= self.max_iterations is not None
-        has_stopping_criterion |= self.max_unchanged_iterations is not None
-        has_stopping_criterion |= self.max_evaluations is not None
-        has_stopping_criterion |= self.threshold is not None
+        has_stopping_criterion |= self._max_iterations is not None
+        has_stopping_criterion |= self._unchanged_max_iterations is not None
+        has_stopping_criterion |= self._max_evaluations is not None
+        has_stopping_criterion |= self._threshold is not None
         if not has_stopping_criterion:
             raise ValueError("At least one stopping criterion must be set.")
 
@@ -104,8 +150,7 @@ class Optimisation:
         iteration = 0
         evaluations = 0
 
-        # Unchanged iterations count (used for stopping or just for
-        # information)
+        # Unchanged iterations counter
         unchanged_iterations = 0
 
         # Choose method to evaluate
@@ -114,18 +159,28 @@ class Optimisation:
             f = f.evaluateS1
 
         # Create evaluator object
-        evaluator = pints.SequentialEvaluator(f)
+        if self._parallel:
+            # Get number of workers
+            n_workers = self._n_workers
+
+            # For population based optimisers, don't use more workers than
+            # particles!
+            if isinstance(self._optimiser, pints.PopulationBasedOptimiser):
+                n_workers = min(n_workers, self._optimiser.population_size())
+            evaluator = pints.ParallelEvaluator(f, n_workers=n_workers)
+        else:
+            evaluator = pints.SequentialEvaluator(f)
 
         # Keep track of current best and best-guess scores.
         fb = fg = np.inf
 
         # Internally we always minimise! Keep a 2nd value to show the user.
-        fb_user, fg_user = (fb, fg) if self._minimising else (-fb, -fg)
+        fg_user = (fb, fg) if self._minimising else (-fb, -fg)
 
         # Keep track of the last significant change
         f_sig = np.inf
 
-        # Set up progress reporting
+        # Run the ask-and-tell loop
         running = True
         try:
             while running:
@@ -140,8 +195,8 @@ class Optimisation:
 
                 # Update the scores
                 fb = self.optimiser.f_best()
-                fg = self.optimiser.f_guess()
-                fb_user, fg_user = (fb, fg) if self._minimising else (-fb, -fg)
+                fg = self.optimiser.f_guessed()
+                fg_user = (fb, fg) if self._minimising else (-fb, -fg)
 
                 # Check for significant changes
                 f_new = fg if self._use_f_guessed else fb
@@ -151,23 +206,20 @@ class Optimisation:
                 else:
                     unchanged_iterations += 1
 
-                # Update evaluation count
+                # Update counts
                 evaluations += len(fs)
-
-                # Update iteration count
                 iteration += 1
 
-                #
-                # Check stopping criteria
-                #
-
+                # Check stopping criteria:
                 # Maximum number of iterations
                 if (
                     self._max_iterations is not None
                     and iteration >= self._max_iterations
                 ):
                     running = False
-                    ("Maximum number of iterations (" + str(iteration) + ") reached.")
+                    halt_message = (
+                        "Maximum number of iterations (" + str(iteration) + ") reached."
+                    )
 
                 # Maximum number of iterations without significant change
                 halt = (
@@ -176,7 +228,7 @@ class Optimisation:
                 )
                 if running and halt:
                     running = False
-                    (
+                    halt_message = (
                         "No significant change for "
                         + str(unchanged_iterations)
                         + " iterations."
@@ -188,7 +240,7 @@ class Optimisation:
                     and evaluations >= self._max_evaluations
                 ):
                     running = False
-                    (
+                    halt_message = (
                         "Maximum number of evaluations ("
                         + str(self._max_evaluations)
                         + ") reached."
@@ -198,7 +250,7 @@ class Optimisation:
                 halt = self._threshold is not None and f_new < self._threshold
                 if running and halt:
                     running = False
-                    (
+                    halt_message = (
                         "Objective function crossed threshold: "
                         + str(self._threshold)
                         + "."
@@ -206,15 +258,14 @@ class Optimisation:
 
                 # Error in optimiser
                 error = self.optimiser.stop()
-                if error:  # pragma: no cover
+                if error:
                     running = False
-                    str(error)
+                    halt_message = str(error)
 
                 elif self._callback is not None:
                     self._callback(iteration - 1, self.optimiser)
 
-        except (Exception, SystemExit, KeyboardInterrupt):  # pragma: no cover
-            # Unexpected end!
+        except (Exception, SystemExit, KeyboardInterrupt):
             # Show last result and exit
             print("\n" + "-" * 40)
             print("Unexpected termination.")
@@ -229,6 +280,9 @@ class Optimisation:
                 print(pints.strfloat(p))
             print("-" * 40)
             raise
+
+        if self.verbose:
+            print("Halt: " + halt_message)
 
         # Save post-run statistics
         self._evaluations = evaluations
@@ -248,3 +302,108 @@ class Optimisation:
 
         # Return best position and score
         return x, f if self._minimising else -f
+
+    def f_guessed_tracking(self):
+        """
+        Returns ``True`` if f_guessed instead of f_best is being tracked,
+        ``False`` otherwise. See also :meth:`set_f_guessed_tracking`.
+
+        Credit: PINTS
+        """
+        return self._use_f_guessed
+
+    def set_f_guessed_tracking(self, use_f_guessed=False):
+        """
+        Sets the method used to track the optimiser progress to
+        :meth:`pints.Optimiser.f_guessed()` or
+        :meth:`pints.Optimiser.f_best()` (default).
+
+        The tracked ``f`` value is used to evaluate stopping criteria.
+
+        Credit: PINTS
+        """
+        self._use_f_guessed = bool(use_f_guessed)
+
+    def set_log_interval(self, iters=20, warm_up=3):
+        """
+        Changes the frequency with which messages are logged.
+
+        Parameters
+        ----------
+        ``interval``
+            A log message will be shown every ``iters`` iterations.
+        ``warm_up``
+            A log message will be shown every iteration, for the first
+            ``warm_up`` iterations.
+
+        Credit: PINTS
+        """
+        iters = int(iters)
+        if iters < 1:
+            raise ValueError("Interval must be greater than zero.")
+        warm_up = max(0, int(warm_up))
+
+        self._message_interval = iters
+        self._message_warm_up = warm_up
+
+    def set_parallel(self, parallel=False):
+        """
+        Enables/disables parallel evaluation.
+
+        If ``parallel=True``, the method will run using a number of worker
+        processes equal to the detected cpu core count. The number of workers
+        can be set explicitly by setting ``parallel`` to an integer greater
+        than 0.
+        Parallelisation can be disabled by setting ``parallel`` to ``0`` or
+        ``False``.
+
+        Credit: PINTS
+        """
+        if parallel is True:
+            self._parallel = True
+            self._n_workers = pints.ParallelEvaluator.cpu_count()
+        elif parallel >= 1:
+            self._parallel = True
+            self._n_workers = int(parallel)
+        else:
+            self._parallel = False
+            self._n_workers = 1
+
+    def set_max_iterations(self, iterations=10000):
+        """
+        Adds a stopping criterion, allowing the routine to halt after the
+        given number of ``iterations``.
+
+        This criterion is enabled by default. To disable it, use
+        ``set_max_iterations(None)``.
+
+        Credit: PINTS
+        """
+        if iterations is not None:
+            iterations = int(iterations)
+            if iterations < 0:
+                raise ValueError("Maximum number of iterations cannot be negative.")
+        self._max_iterations = iterations
+
+    def set_max_unchanged_iterations(self, iterations=200, threshold=1e-11):
+        """
+        Adds a stopping criterion, allowing the routine to halt if the
+        objective function doesn't change by more than ``threshold`` for the
+        given number of ``iterations``.
+
+        This criterion is enabled by default. To disable it, use
+        ``set_max_unchanged_iterations(None)``.
+
+        Credit: PINTS
+        """
+        if iterations is not None:
+            iterations = int(iterations)
+            if iterations < 0:
+                raise ValueError("Maximum number of iterations cannot be negative.")
+
+        threshold = float(threshold)
+        if threshold < 0:
+            raise ValueError("Minimum significant change cannot be negative.")
+
+        self._unchanged_max_iterations = iterations
+        self._unchanged_threshold = threshold

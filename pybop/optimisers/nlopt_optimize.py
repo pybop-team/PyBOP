@@ -42,11 +42,9 @@ class NLoptOptimize(BaseOptimiser):
         x = self.optim.optimize(x0)
 
         # Get performance statistics
-        output = self.optim
         final_cost = self.optim.last_optimum_value()
-        num_evals = self.optim.get_numevals()
 
-        return x, output, final_cost, num_evals
+        return x, final_cost
 
     def needs_sensitivities(self):
         """

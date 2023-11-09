@@ -73,9 +73,8 @@ class SumSquaredError(ProblemCost):
         if not isinstance(problem, pybop.Problem):
             raise ValueError("This cost function only supports pybop problems")
 
-    def compute(self, x, grad=None):
+    def __call__(self, x, grad=None):
         # Compute the cost
-
         return np.sum(
             (np.sum(((self.problem.evaluate(x) - self._target) ** 2), axis=0)), axis=0
         )

@@ -3,6 +3,16 @@ import pints
 
 class GradientDescent(pints.GradientDescent):
     """
+    Gradient descent optimiser. Inherits from the PINTS gradient descent class.
+    """
+
+    def __init__(self, x0, sigma0=0.1, bounds=None):
+        boundaries = PintsBoundaries(bounds, x0)
+        super().__init__(x0, sigma0, boundaries)
+
+
+class CMAES(pints.CMAES):
+    """
     Class for the PINTS optimisation. Extends the BaseOptimiser class.
     """
 

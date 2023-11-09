@@ -39,7 +39,7 @@ cost = pybop.RootMeanSquaredError(problem)
 parameterisation = pybop.Optimisation(cost=cost, optimiser=pybop.NLoptOptimize)
 
 # Run the optimisation problem
-x, output, final_cost, num_evals = parameterisation.run()
+x, final_cost = parameterisation.run()
 
 # Show the generated data
 simulated_values = problem.evaluate(x)

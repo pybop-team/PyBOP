@@ -56,7 +56,7 @@ class TestModelParameterisation:
         parameterisation = pybop.Optimisation(cost=cost, optimiser=optimiser)
 
         # Run the optimisation problem
-        x, _, final_cost, _ = parameterisation.run()
+        x, final_cost = parameterisation.run()
 
         # Assertions
         np.testing.assert_allclose(final_cost, 0, atol=1e-2)
@@ -113,7 +113,7 @@ class TestModelParameterisation:
             parameterisation = pybop.Optimisation(cost=cost, optimiser=optimiser)
 
             # Run the optimisation problem
-            x, _, final_cost, _ = parameterisation.run()
+            x, final_cost = parameterisation.run()
 
             # Assertions
             np.testing.assert_allclose(final_cost, 0, atol=1e-2)
@@ -169,7 +169,7 @@ class TestModelParameterisation:
         parameterisation = pybop.Optimisation(cost=cost, optimiser=optimiser)
 
         # Run the optimisation problem
-        x, _, final_cost, _ = parameterisation.run()
+        x, final_cost = parameterisation.run()
 
         # Assertions
         with np.testing.assert_raises(AssertionError):
