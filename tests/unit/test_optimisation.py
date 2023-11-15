@@ -53,7 +53,9 @@ class TestOptimisation:
             )
         ]
 
-        problem = pybop.Problem(pybop.lithium_ion.SPM(), parameters, dataset, signal="Terminal voltage [V]")
+        problem = pybop.Problem(
+            pybop.lithium_ion.SPM(), parameters, dataset, signal="Terminal voltage [V]"
+        )
         cost = pybop.SumSquaredError(problem)
 
         opt = pybop.Optimisation(cost=cost, optimiser=pybop.NLoptOptimize)
@@ -71,5 +73,6 @@ class TestOptimisation:
 
         class randomclass:
             pass
+
         with pytest.raises(ValueError):
             pybop.Optimisation(cost=cost, optimiser=randomclass)
