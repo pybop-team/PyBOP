@@ -35,9 +35,10 @@ dataset = [
 # Generate problem, cost function, and optimisation class
 problem = pybop.Problem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
-opt = pybop.Optimisation(cost, optimiser=pybop.CMAES, verbose=True)
+optim = pybop.Optimisation(cost, optimiser=pybop.CMAES)
+optim.set_max_iterations(100)
 
-x, final_cost = opt.run()
+x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
 # Show the generated data

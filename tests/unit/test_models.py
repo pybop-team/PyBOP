@@ -22,3 +22,7 @@ class TestModels:
         model = pybop.lithium_ion.SPM()
         model.build()
         assert model.built_model is not None
+
+        # Test that the model can be built again
+        model.build()
+        assert model.built_model is not None

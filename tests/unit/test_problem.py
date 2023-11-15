@@ -42,6 +42,9 @@ class TestProblem:
         assert problem._model == model
         assert problem._model._built_model is not None
 
+        # Test model.simulate
+        model.simulate(inputs=[0.5,0.5], t_eval=np.linspace(0, 10, 100))
+
     def getdata(self, model, x0):
         model.parameter_set = model.pybamm_model.default_parameter_values
 

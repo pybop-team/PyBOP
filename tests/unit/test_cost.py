@@ -9,8 +9,8 @@ class TestCosts:
     """
 
     @pytest.mark.unit
-    def test_RootMeanSquaredError(self):
-        # Tests cost function
+    def test_costs(self):
+        # Construct Problem
         model = pybop.lithium_ion.SPM()
         parameters = [
             pybop.Parameter(
@@ -32,7 +32,24 @@ class TestCosts:
 
         signal = "Voltage [V]"
         problem = pybop.Problem(model, parameters, dataset, signal=signal)
+
+        # Base Cost
+        cost = pybop.BaseCost(problem)
+        assert cost.problem == problem
+        with pytest.raises(NotImplementedError):
+            cost([0.5])
+        with pytest.raises(NotImplementedError):
+            cost.n_parameters()
+
+        # Root Mean Squared Error
         cost = pybop.RootMeanSquaredError(problem)
+        cost([0.5])
+
+        assert type(cost([0.5])) == np.float64
+        assert cost([0.5]) >= 0
+
+        # Root Mean Squared Error
+        cost = pybop.SumSquaredError(problem)
         cost([0.5])
 
         assert type(cost([0.5])) == np.float64

@@ -1,5 +1,4 @@
 import numpy as np
-import pybop
 
 
 class BaseCost:
@@ -34,9 +33,6 @@ class RootMeanSquaredError(BaseCost):
     def __init__(self, problem):
         super(RootMeanSquaredError, self).__init__(problem)
 
-        if not isinstance(problem, pybop.Problem):
-            raise ValueError("This cost function only supports pybop problems")
-
     def __call__(self, x, grad=None):
         """
         Computes the cost.
@@ -55,9 +51,6 @@ class SumSquaredError(BaseCost):
 
     def __init__(self, problem):
         super(SumSquaredError, self).__init__(problem)
-
-        if not isinstance(problem, pybop.Problem):
-            raise ValueError("This cost function only supports pybop problems")
 
     def __call__(self, x, grad=None):
         """

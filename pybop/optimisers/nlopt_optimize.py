@@ -10,11 +10,12 @@ class NLoptOptimize(BaseOptimiser):
     def __init__(self, n_param, xtol=None, method=None):
         super().__init__()
         self.name = "NLoptOptimize"
+        self.n_param = n_param
 
         if method is not None:
-            self.optim = nlopt.opt(method, n_param)
+            self.optim = nlopt.opt(method, self.n_param)
         else:
-            self.optim = nlopt.opt(nlopt.LN_BOBYQA, n_param)
+            self.optim = nlopt.opt(nlopt.LN_BOBYQA, self.n_param)
 
         if xtol is not None:
             self.optim.set_xtol_rel(xtol)

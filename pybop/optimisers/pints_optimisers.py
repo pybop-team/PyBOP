@@ -37,22 +37,20 @@ class PintsBoundaries(object):
         """
         Returns ``True`` if and only if the given point in parameter space is
         within the boundaries.
-
-        Parameters
-        ----------
-        parameters
-            A point in parameter space
         """
-        result = False
-        if (
-            parameters[0] >= self.bounds["lower"][0]
-            and parameters[1] >= self.bounds["lower"][1]
-            and parameters[0] <= self.bounds["upper"][0]
-            and parameters[1] <= self.bounds["upper"][1]
-        ):
-            result = True
 
-        return result
+        lower_bounds = self.bounds["lower"]
+        upper_bounds = self.bounds["upper"]
+
+        if len(parameters) != len(lower_bounds):
+            raise ValueError("Parameters length mismatch")
+
+        within_bounds = all(
+            low <= param <= high
+            for low, high, param in zip(lower_bounds, upper_bounds, parameters)
+        )
+
+        return within_bounds
 
     def n_parameters(self):
         """

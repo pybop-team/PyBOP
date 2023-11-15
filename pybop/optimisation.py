@@ -46,20 +46,26 @@ class Optimisation:
         del cost
 
         # Construct Optimiser
-        if self.optimiser is None or issubclass(self.optimiser, pints.Optimiser):
-            self.pints = True
-            self.optimiser = self.optimiser or pints.CMAES
-            self.optimiser = optimiser(self.x0, self.sigma0, self.bounds)
+        self.pints = True
 
-        elif issubclass(self.optimiser, pybop.NLoptOptimize):
-            self.pints = False
-            self.optimiser = self.optimiser(self.problem.n_parameters)
-
-        elif issubclass(self.optimiser, pybop.SciPyMinimize):
-            self.pints = False
-            self.optimiser = self.optimiser()
+        if self.optimiser is None:
+            self.optimiser = pints.CMAES
+        elif issubclass(self.optimiser, pints.Optimiser):
+            pass
         else:
-            raise ValueError("Optimiser selected is not supported.")
+            self.pints = False
+
+            if issubclass(self.optimiser, pybop.NLoptOptimize):
+                self.optimiser = self.optimiser(self.problem.n_parameters)
+
+            elif issubclass(self.optimiser, pybop.SciPyMinimize):
+                self.optimiser = self.optimiser()
+
+            else:
+                raise ValueError("Unknown optimiser type")
+
+        if self.pints:
+            self.optimiser = self.optimiser(self.x0, self.sigma0, self.bounds)
 
         # Check if sensitivities are required
         self._needs_sensitivities = self.optimiser.needs_sensitivities()
@@ -76,10 +82,7 @@ class Optimisation:
         # User callback
         self._callback = None
 
-        #
-        # Stopping criteria
-        #
-
+        # Define stopping criteria
         # Maximum iterations
         self._max_iterations = None
         self.set_max_iterations()
