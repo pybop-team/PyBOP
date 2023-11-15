@@ -30,7 +30,7 @@ plt.xlabel("Time")
 plt.ylabel("Values")
 plt.plot(time, CorruptValues)
 plt.plot(time, voltage)
-plt.draw() # use draw instead of show so that computation continues
+plt.draw()  # use draw instead of show so that computation continues
 
 # Generate problem
 problem = pints.SingleOutputProblem(model, time, CorruptValues)

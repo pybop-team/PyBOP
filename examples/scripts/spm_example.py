@@ -1,6 +1,5 @@
 import pybop
 import numpy as np
-import matplotlib.pyplot as plt
 
 # Parameter set and model definition
 parameter_set = pybop.ParameterSet("pybamm", "Chen2020")

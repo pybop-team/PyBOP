@@ -26,13 +26,13 @@ corrupt_values = voltage + np.random.normal(0, sigma, len(voltage))
 
 # Show the generated data
 plt.figure()
-#plt.title("Synthetic data and corrupted signal")
+# plt.title("Synthetic data and corrupted signal")
 plt.xlabel("Time (s)")
 plt.ylabel("Voltage (V)")
 plt.plot(time, corrupt_values, label="corrupted signal")
 plt.plot(time, voltage, label="synthetic data")
 plt.legend(loc="upper right")
-plt.draw() # use draw instead of show so that computation continues
+plt.draw()  # use draw instead of show so that computation continues
 
 # Generate problem, cost function, and optimisation class
 problem = pints.SingleOutputProblem(model, time, corrupt_values)
@@ -55,7 +55,7 @@ simulated_values = problem.evaluate(x1[:3])
 
 # Show the generated data
 plt.figure()
-#plt.title("Corrupted signal and estimation")
+# plt.title("Corrupted signal and estimation")
 plt.xlabel("Time (s)")
 plt.ylabel("Voltage (V)")
 plt.plot(time, corrupt_values, label="corrupted signal")
