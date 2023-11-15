@@ -29,6 +29,7 @@ class Optimisation:
         self.x0 = cost.problem.x0
         self.bounds = self.problem.bounds
         self.sigma0 = sigma0
+        self.log = []
 
         # Convert x0 to pints vector
         self._x0 = pints.vector(self.x0)
@@ -186,7 +187,7 @@ class Optimisation:
             while running:
                 # Ask optimiser for new points
                 xs = self.optimiser.ask()
-
+                self.log.append(xs)
                 # Evaluate points
                 fs = evaluator.evaluate(xs)
 

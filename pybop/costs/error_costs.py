@@ -9,12 +9,13 @@ class BaseCost:
     Lower cost values indicate a better fit.
     """
 
-    def __call__(self, x):
-        raise NotImplementedError
+    def __init__(self, problem):
+        self.problem = problem
+        self._target = problem._target
 
-    def compute(self, x):
+    def __call__(self, x, grad=None):
         """
-        Calls the forward models and computes the cost.
+        Returns the cost function value and computes the cost.
         """
         raise NotImplementedError
 
@@ -25,24 +26,7 @@ class BaseCost:
         raise NotImplementedError
 
 
-class ProblemCost(BaseCost):
-    """
-    Extends the base cost function class for a single output problem.
-    """
-
-    def __init__(self, problem):
-        super(ProblemCost, self).__init__()
-        self.problem = problem
-        self._target = problem._target
-
-    def n_parameters(self):
-        """
-        Returns the dimension of the parameter space.
-        """
-        return self.problem.n_parameters
-
-
-class RootMeanSquaredError(ProblemCost):
+class RootMeanSquaredError(BaseCost):
     """
     Defines the root mean square error cost function.
     """
@@ -54,15 +38,17 @@ class RootMeanSquaredError(ProblemCost):
             raise ValueError("This cost function only supports pybop problems")
 
     def __call__(self, x, grad=None):
-        # Compute the cost
+        """
+        Computes the cost.
+        """
         try:
             return np.sqrt(np.mean((self.problem.evaluate(x) - self._target) ** 2))
 
         except Exception as e:
-            raise ValueError(f"Error in RMSE calculation: {e}")
+            raise ValueError(f"Error in cost calculation: {e}")
 
 
-class SumSquaredError(ProblemCost):
+class SumSquaredError(BaseCost):
     """
     Defines the sum squared error cost function.
     """
@@ -74,13 +60,22 @@ class SumSquaredError(ProblemCost):
             raise ValueError("This cost function only supports pybop problems")
 
     def __call__(self, x, grad=None):
-        # Compute the cost
-        return np.sum(
-            (np.sum(((self.problem.evaluate(x) - self._target) ** 2), axis=0)), axis=0
-        )
+        """
+        Computes the cost.
+        """
+        try:
+            return np.sum(
+                (np.sum(((self.problem.evaluate(x) - self._target) ** 2), axis=0)),
+                axis=0,
+            )
+        except Exception as e:
+            raise ValueError(f"Error in cost calculation: {e}")
 
     def evaluateS1(self, x):
-        # Compute the cost
+        """
+        Compute the cost and corresponding
+        gradients with respect to the parameters.
+        """
         y, dy = self.problem.evaluateS1(x)
         dy = dy.reshape(
             (

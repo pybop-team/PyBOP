@@ -187,18 +187,6 @@ class BaseModel:
         else:
             raise ValueError("This sim method currently only supports PyBaMM models")
 
-    def n_parameters(self):
-        """
-        Returns the dimension of the parameter space.
-        """
-        return len(self.fit_parameters)
-
-    def n_outputs(self):
-        """
-        Returns the number of outputs this model has. The default is 1.
-        """
-        return 1
-
     @property
     def built_model(self):
         return self._built_model

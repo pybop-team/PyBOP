@@ -22,9 +22,3 @@ class TestModels:
         model = pybop.lithium_ion.SPM()
         model.build()
         assert model.built_model is not None
-
-    @pytest.mark.unit
-    def test_n_parameters(self):
-        model = pybop.BaseModel()
-        n = model.n_outputs()
-        assert isinstance(n, int)
