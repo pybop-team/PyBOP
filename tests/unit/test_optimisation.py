@@ -88,3 +88,37 @@ class TestOptimisation:
 
         with pytest.raises(ValueError):
             pybop.Optimisation(cost=cost, optimiser=randomclass)
+
+    @pytest.mark.unit
+    def test_halting(self):
+        # Tests halting criteria
+        model = pybop.lithium_ion.SPM()
+
+        dataset = [
+            pybop.Dataset("Time [s]", np.linspace(0, 3600, 100)),
+            pybop.Dataset("Current function [A]", np.zeros(100)),
+            pybop.Dataset("Terminal voltage [V]", np.ones(100)),
+        ]
+
+        param = [
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.75, 0.2),
+                bounds=[0.73, 0.77],
+            )
+        ]
+
+        problem = pybop.Problem(model, param, dataset, signal="Terminal voltage [V]")
+        cost = pybop.SumSquaredError(problem)
+
+        # Test max evalutions
+        optim = pybop.Optimisation(cost=cost, optimiser=pybop.GradientDescent)
+        optim.set_max_evaluations(10)
+        x, __ = optim.run()
+        assert optim._iterations == 10
+
+        # Test max unchanged iterations
+        optim = pybop.Optimisation(cost=cost, optimiser=pybop.GradientDescent)
+        optim.set_max_unchanged_iterations(1)
+        x, __ = optim.run()
+        assert optim._iterations == 2

@@ -329,6 +329,22 @@ class Optimisation:
         """
         self._use_f_guessed = bool(use_f_guessed)
 
+    def set_max_evaluations(self, evaluations=None):
+        """
+        Adds a stopping criterion, allowing the routine to halt after the
+        given number of ``evaluations``.
+
+        This criterion is disabled by default. To enable, pass in any positive
+        integer. To disable again, use ``set_max_evaluations(None)``.
+
+        Credit: PINTS
+        """
+        if evaluations is not None:
+            evaluations = int(evaluations)
+            if evaluations < 0:
+                raise ValueError("Maximum number of evaluations cannot be negative.")
+        self._max_evaluations = evaluations
+
     def set_parallel(self, parallel=False):
         """
         Enables/disables parallel evaluation.
