@@ -30,7 +30,7 @@ class TestModels:
         model._unprocessed_model = None
 
         with pytest.raises(ValueError):
-            model.predict(None,None)
+            model.predict(None, None)
 
     @pytest.mark.unit
     def test_predict_with_inputs(self):
@@ -38,12 +38,11 @@ class TestModels:
         model = pybop.lithium_ion.SPM()
         t_eval = np.linspace(0, 10, 100)
         inputs = {
-        "Negative electrode active material volume fraction": 0.52,
-        "Positive electrode active material volume fraction": 0.63,
+            "Negative electrode active material volume fraction": 0.52,
+            "Positive electrode active material volume fraction": 0.63,
         }
 
-
-        res = model.predict(t_eval=t_eval,inputs=inputs)
+        res = model.predict(t_eval=t_eval, inputs=inputs)
         assert len(res["Terminal voltage [V]"].data) == 100
 
     @pytest.mark.unit
