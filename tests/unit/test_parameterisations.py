@@ -23,7 +23,9 @@ class TestModelParameterisation:
         dataset = [
             pybop.Dataset("Time [s]", solution["Time [s]"].data),
             pybop.Dataset("Current function [A]", solution["Current [A]"].data),
-            pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
+            pybop.Dataset(
+                "Terminal voltage [V]", solution["Terminal voltage [V]"].data
+            ),
         ]
 
         # Fitting parameters
@@ -41,25 +43,20 @@ class TestModelParameterisation:
         ]
 
         # Define the cost to optimise
-        cost = pybop.RMSE()
-        signal = "Voltage [V]"
+        signal = "Terminal voltage [V]"
+        problem = pybop.Problem(
+            model, parameters, dataset, signal=signal, init_soc=init_soc
+        )
+        cost = pybop.RootMeanSquaredError(problem)
 
         # Select optimiser
-        optimiser = pybop.NLoptOptimize(n_param=len(parameters))
+        optimiser = pybop.NLoptOptimize
 
         # Build the optimisation problem
-        parameterisation = pybop.Optimisation(
-            cost=cost,
-            model=model,
-            optimiser=optimiser,
-            parameters=parameters,
-            dataset=dataset,
-            signal=signal,
-            init_soc=init_soc,
-        )
+        parameterisation = pybop.Optimisation(cost=cost, optimiser=optimiser)
 
         # Run the optimisation problem
-        x, _, final_cost, _ = parameterisation.run()
+        x, final_cost = parameterisation.run()
 
         # Assertions
         np.testing.assert_allclose(final_cost, 0, atol=1e-2)
@@ -79,7 +76,9 @@ class TestModelParameterisation:
         dataset = [
             pybop.Dataset("Time [s]", solution["Time [s]"].data),
             pybop.Dataset("Current function [A]", solution["Current [A]"].data),
-            pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
+            pybop.Dataset(
+                "Terminal voltage [V]", solution["Terminal voltage [V]"].data
+            ),
         ]
 
         # Fitting parameters
@@ -97,29 +96,30 @@ class TestModelParameterisation:
         ]
 
         # Define the cost to optimise
-        cost = pybop.RMSE()
-        signal = "Voltage [V]"
+        signal = "Terminal voltage [V]"
+        problem = pybop.Problem(
+            model, parameters, dataset, signal=signal, init_soc=init_soc
+        )
+        cost = pybop.RootMeanSquaredError(problem)
 
         # Select optimisers
-        optimisers = [
-            pybop.NLoptOptimize(n_param=len(parameters)),
-            pybop.SciPyMinimize(),
-        ]
+        optimisers = [pybop.NLoptOptimize, pybop.SciPyMinimize, pybop.CMAES]
 
         # Test each optimiser
         for optimiser in optimisers:
-            parameterisation = pybop.Optimisation(
-                cost=cost,
-                model=model,
-                optimiser=optimiser,
-                parameters=parameters,
-                dataset=dataset,
-                signal=signal,
-                init_soc=init_soc,
-            )
+            parameterisation = pybop.Optimisation(cost=cost, optimiser=optimiser)
 
-            # Run the optimisation problem
-            x, _, final_cost, _ = parameterisation.run()
+            if optimiser == pybop.CMAES:
+                parameterisation.set_max_iterations(100)
+                parameterisation.set_f_guessed_tracking(True)
+
+                x, final_cost = parameterisation.run()
+
+                assert parameterisation._iterations == 100
+                assert parameterisation._use_f_guessed is True
+
+            else:
+                x, final_cost = parameterisation.run()
 
             # Assertions
             np.testing.assert_allclose(final_cost, 0, atol=1e-2)
@@ -128,7 +128,9 @@ class TestModelParameterisation:
     @pytest.mark.parametrize("init_soc", [0.3, 0.5, 0.8])
     @pytest.mark.unit
     def test_model_misparameterisation(self, init_soc):
-        # Define model
+        # Define two different models with different parameter sets
+        # The optimisation should fail as the models are not the same
+
         parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
@@ -142,7 +144,9 @@ class TestModelParameterisation:
         dataset = [
             pybop.Dataset("Time [s]", solution["Time [s]"].data),
             pybop.Dataset("Current function [A]", solution["Current [A]"].data),
-            pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
+            pybop.Dataset(
+                "Terminal voltage [V]", solution["Terminal voltage [V]"].data
+            ),
         ]
 
         # Fitting parameters
@@ -160,25 +164,20 @@ class TestModelParameterisation:
         ]
 
         # Define the cost to optimise
-        cost = pybop.RMSE()
-        signal = "Voltage [V]"
+        signal = "Terminal voltage [V]"
+        problem = pybop.Problem(
+            model, parameters, dataset, signal=signal, init_soc=init_soc
+        )
+        cost = pybop.RootMeanSquaredError(problem)
 
         # Select optimiser
-        optimiser = pybop.NLoptOptimize(n_param=len(parameters))
+        optimiser = pybop.NLoptOptimize
 
         # Build the optimisation problem
-        parameterisation = pybop.Optimisation(
-            cost=cost,
-            model=model,
-            optimiser=optimiser,
-            parameters=parameters,
-            dataset=dataset,
-            signal=signal,
-            init_soc=init_soc,
-        )
+        parameterisation = pybop.Optimisation(cost=cost, optimiser=optimiser)
 
         # Run the optimisation problem
-        x, _, final_cost, _ = parameterisation.run()
+        x, final_cost = parameterisation.run()
 
         # Assertions
         with np.testing.assert_raises(AssertionError):

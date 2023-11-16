@@ -9,9 +9,9 @@ class SciPyMinimize(BaseOptimiser):
 
     def __init__(self, method=None, bounds=None):
         super().__init__()
+        self.name = "SciPyMinimize"
         self.method = method
         self.bounds = bounds
-        self.name = "SciPy Optimiser"
 
         if self.method is None:
             self.method = "L-BFGS-B"
@@ -40,6 +40,11 @@ class SciPyMinimize(BaseOptimiser):
         # Get performance statistics
         x = output.x
         final_cost = output.fun
-        num_evals = output.nfev
 
-        return x, output, final_cost, num_evals
+        return x, final_cost
+
+    def needs_sensitivities(self):
+        """
+        Returns True if the optimiser needs sensitivities.
+        """
+        return False

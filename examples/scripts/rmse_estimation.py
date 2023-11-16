@@ -1,12 +1,13 @@
 import pybop
 import pandas as pd
+import matplotlib.pyplot as plt
 
 # Form dataset
 Measurements = pd.read_csv("examples/scripts/Chen_example.csv", comment="#").to_numpy()
 dataset = [
     pybop.Dataset("Time [s]", Measurements[:, 0]),
     pybop.Dataset("Current function [A]", Measurements[:, 1]),
-    pybop.Dataset("Voltage [V]", Measurements[:, 2]),
+    pybop.Dataset("Terminal voltage [V]", Measurements[:, 2]),
 ]
 
 # Define model
@@ -30,31 +31,23 @@ parameters = [
 ]
 
 # Define the cost to optimise
-cost = pybop.RMSE()
-signal = "Voltage [V]"
+signal = "Terminal voltage [V]"
+problem = pybop.Problem(model, parameters, dataset, signal=signal, init_soc=0.98)
+cost = pybop.RootMeanSquaredError(problem)
 
 # Build the optimisation problem
-parameterisation = pybop.Optimisation(
-    cost=cost,
-    model=model,
-    optimiser=pybop.NLoptOptimize(n_param=len(parameters)),
-    parameters=parameters,
-    dataset=dataset,
-    signal=signal,
-    init_soc=0.97,
-)
+parameterisation = pybop.Optimisation(cost=cost, optimiser=pybop.NLoptOptimize)
 
 # Run the optimisation problem
-x, output, final_cost, num_evals = parameterisation.run()
+x, final_cost = parameterisation.run()
 
-# get MAP estimate, starting at a random initial point in parameter space
-# parameterisation.map(x0=[p.sample() for p in parameters])
+# Show the generated data
+simulated_values = problem.evaluate(x)
 
-# or sample from posterior
-# parameterisation.sample(1000, n_chains=4, ....)
-
-# or SOBER
-# parameterisation.sober()
-
-
-# Optimisation = pybop.optimisation(model, cost=cost, parameters=parameters, observation=observation)
+plt.figure()
+plt.xlabel("Time")
+plt.ylabel("Values")
+plt.plot(dataset[0].data, dataset[2].data, label="Measured")
+plt.plot(dataset[0].data, simulated_values, label="Simulated")
+plt.legend(bbox_to_anchor=(0.6, 1), loc="upper left", fontsize=12)
+plt.show()
