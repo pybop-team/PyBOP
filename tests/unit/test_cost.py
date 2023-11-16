@@ -55,6 +55,20 @@ class TestCosts:
         assert type(cost([0.5])) == np.float64
         assert cost([0.5]) >= 0
 
+        # Test catch on non-matching vector lengths
+        # Sum Squared Error
+        cost = pybop.SumSquaredError(problem)
+        with pytest.raises(ValueError):
+            cost(["test-entry"])
+
+        with pytest.raises(ValueError):
+            cost.evaluateS1(["test-entry"])
+
+        # Root Mean Squared Error
+        cost = pybop.RootMeanSquaredError(problem)
+        with pytest.raises(ValueError):
+            cost(["test-entry"])
+
     def getdata(self, model, x0):
         model.parameter_set = model.pybamm_model.default_parameter_values
         model.parameter_set.update(

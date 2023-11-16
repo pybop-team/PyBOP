@@ -103,17 +103,23 @@ class TestModelParameterisation:
         cost = pybop.RootMeanSquaredError(problem)
 
         # Select optimisers
-        optimisers = [
-            pybop.NLoptOptimize,
-            pybop.SciPyMinimize,
-        ]
+        optimisers = [pybop.NLoptOptimize, pybop.SciPyMinimize, pybop.CMAES]
 
         # Test each optimiser
         for optimiser in optimisers:
             parameterisation = pybop.Optimisation(cost=cost, optimiser=optimiser)
 
-            # Run the optimisation problem
-            x, final_cost = parameterisation.run()
+            if optimiser == pybop.CMAES:
+                parameterisation.set_max_iterations(100)
+                parameterisation.set_f_guessed_tracking(True)
+
+                x, final_cost = parameterisation.run()
+
+                assert parameterisation._iterations == 100
+                assert parameterisation._use_f_guessed is True
+
+            else:
+                x, final_cost = parameterisation.run()
 
             # Assertions
             np.testing.assert_allclose(final_cost, 0, atol=1e-2)
@@ -122,7 +128,9 @@ class TestModelParameterisation:
     @pytest.mark.parametrize("init_soc", [0.3, 0.5, 0.8])
     @pytest.mark.unit
     def test_model_misparameterisation(self, init_soc):
-        # Define model
+        # Define two different models with different parameter sets
+        # The optimisation should fail as the models are not the same
+
         parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 

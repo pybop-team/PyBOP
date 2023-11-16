@@ -69,15 +69,19 @@ class SumSquaredError(BaseCost):
         Compute the cost and corresponding
         gradients with respect to the parameters.
         """
-        y, dy = self.problem.evaluateS1(x)
-        dy = dy.reshape(
-            (
-                self.problem.n_time_data,
-                self.problem.n_outputs,
-                self.problem.n_parameters,
+        try:
+            y, dy = self.problem.evaluateS1(x)
+            dy = dy.reshape(
+                (
+                    self.problem.n_time_data,
+                    self.problem.n_outputs,
+                    self.problem.n_parameters,
+                )
             )
-        )
-        r = y - self._target
-        e = np.sum(np.sum(r**2, axis=0), axis=0)
-        de = 2 * np.sum(np.sum((r.T * dy.T), axis=2), axis=1)
-        return e, de
+            r = y - self._target
+            e = np.sum(np.sum(r**2, axis=0), axis=0)
+            de = 2 * np.sum(np.sum((r.T * dy.T), axis=2), axis=1)
+            return e, de
+
+        except Exception as e:
+            raise ValueError(f"Error in cost calculation: {e}")

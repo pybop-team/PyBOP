@@ -17,6 +17,11 @@ class TestModels:
         ):
             model.simulate(None, None)
 
+        with pytest.raises(
+            ValueError, match="Model must be built before calling simulate"
+        ):
+            model.simulateS1(None, None)
+
     @pytest.mark.unit
     def test_build(self):
         model = pybop.lithium_ion.SPM()

@@ -18,7 +18,7 @@ class Optimisation:
     def __init__(
         self,
         cost,
-        optimiser,
+        optimiser=None,
         sigma0=None,
         verbose=False,
     ):
@@ -49,7 +49,7 @@ class Optimisation:
         self.pints = True
 
         if self.optimiser is None:
-            self.optimiser = pints.CMAES
+            self.optimiser = pybop.CMAES
         elif issubclass(self.optimiser, pints.Optimiser):
             pass
         else:
@@ -190,7 +190,7 @@ class Optimisation:
             while running:
                 # Ask optimiser for new points
                 xs = self.optimiser.ask()
-                self.log.append(xs)
+
                 # Evaluate points
                 fs = evaluator.evaluate(xs)
 
@@ -213,6 +213,7 @@ class Optimisation:
                 # Update counts
                 evaluations += len(fs)
                 iteration += 1
+                self.log.append(xs)
 
                 # Check stopping criteria:
                 # Maximum number of iterations
@@ -327,28 +328,6 @@ class Optimisation:
         Credit: PINTS
         """
         self._use_f_guessed = bool(use_f_guessed)
-
-    def set_log_interval(self, iters=20, warm_up=3):
-        """
-        Changes the frequency with which messages are logged.
-
-        Parameters
-        ----------
-        ``interval``
-            A log message will be shown every ``iters`` iterations.
-        ``warm_up``
-            A log message will be shown every iteration, for the first
-            ``warm_up`` iterations.
-
-        Credit: PINTS
-        """
-        iters = int(iters)
-        if iters < 1:
-            raise ValueError("Interval must be greater than zero.")
-        warm_up = max(0, int(warm_up))
-
-        self._message_interval = iters
-        self._message_warm_up = warm_up
 
     def set_parallel(self, parallel=False):
         """
