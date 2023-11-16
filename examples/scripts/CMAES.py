@@ -2,7 +2,6 @@ import pybop
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Parameter set and model definition
 parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
 model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
@@ -20,29 +19,25 @@ parameters = [
     ),
 ]
 
-# Generate data
 sigma = 0.001
 t_eval = np.arange(0, 900, 2)
 values = model.predict(t_eval=t_eval)
-corrupt_values = values["Terminal voltage [V]"].data + np.random.normal(
+CorruptValues = values["Terminal voltage [V]"].data + np.random.normal(
     0, sigma, len(t_eval)
 )
 
-# Dataset definition
 dataset = [
     pybop.Dataset("Time [s]", t_eval),
     pybop.Dataset("Current function [A]", values["Current [A]"].data),
-    pybop.Dataset("Terminal voltage [V]", corrupt_values),
+    pybop.Dataset("Terminal voltage [V]", CorruptValues),
 ]
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.Problem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.Optimisation(cost, optimiser=pybop.GradientDescent)
-optim.optimiser.set_learning_rate(0.025)
+optim = pybop.Optimisation(cost, optimiser=pybop.CMAES)
 optim.set_max_iterations(100)
 
-# Run optimisation
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
@@ -52,7 +47,7 @@ simulated_values = problem.evaluate(x)
 plt.figure(dpi=100)
 plt.xlabel("Time", fontsize=12)
 plt.ylabel("Values", fontsize=12)
-plt.plot(t_eval, corrupt_values, label="Measured")
+plt.plot(t_eval, CorruptValues, label="Measured")
 plt.fill_between(t_eval, simulated_values - sigma, simulated_values + sigma, alpha=0.2)
 plt.plot(t_eval, simulated_values, label="Simulated")
 plt.legend(bbox_to_anchor=(0.6, 1), loc="upper left", fontsize=12)

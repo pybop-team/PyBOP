@@ -12,6 +12,7 @@ class BaseModel:
         self.pybamm_model = None
         self.fit_parameters = None
         self.dataset = None
+        self.signal = None
 
     def build(
         self,
@@ -83,13 +84,14 @@ class BaseModel:
                 self._parameter_set[i] = "[input]"
 
         if self.dataset is not None and self.fit_parameters is not None:
-            self.parameter_set["Current function [A]"] = pybamm.Interpolant(
-                self.dataset["Time [s]"].data,
-                self.dataset["Current function [A]"].data,
-                pybamm.t,
-            )
-            # Set t_eval
-            self.time_data = self._parameter_set["Current function [A]"].x[0]
+            if "Current function [A]" not in self.fit_keys:
+                self.parameter_set["Current function [A]"] = pybamm.Interpolant(
+                    self.dataset["Time [s]"].data,
+                    self.dataset["Current function [A]"].data,
+                    pybamm.t,
+                )
+                # Set t_eval
+                self.time_data = self._parameter_set["Current function [A]"].x[0]
 
         self._model_with_set_params = self._parameter_set.process_model(
             self._unprocessed_model, inplace=False
@@ -102,6 +104,7 @@ class BaseModel:
         Run the forward model and return the result in Numpy array format
         aligning with Pints' ForwardModel simulate method.
         """
+
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
         else:
@@ -111,15 +114,18 @@ class BaseModel:
                 }
                 return self.solver.solve(
                     self.built_model, inputs=inputs_dict, t_eval=t_eval
-                )["Terminal voltage [V]"].data
+                )[self.signal].data
             else:
-                return self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
+                return self.solver.solve(
+                    self.built_model, inputs=inputs, t_eval=t_eval
+                )[self.signal].data
 
     def simulateS1(self, inputs, t_eval):
         """
         Run the forward model and return the function evaulation and it's gradient
         aligning with Pints' ForwardModel simulateS1 method.
         """
+
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
         else:
@@ -143,10 +149,10 @@ class BaseModel:
                 )
 
             return (
-                sol["Terminal voltage [V]"].data,
+                sol[self.signal].data,
                 np.asarray(
                     [
-                        sol["Terminal voltage [V]"].sensitivities[key].toarray()
+                        sol[self.signal].sensitivities[key].toarray()
                         for key in self.fit_keys
                     ]
                 ).T,
@@ -180,18 +186,6 @@ class BaseModel:
                 ).solve(initial_soc=init_soc)
         else:
             raise ValueError("This sim method currently only supports PyBaMM models")
-
-    def n_parameters(self):
-        """
-        Returns the dimension of the parameter space.
-        """
-        return len(self.fit_parameters)
-
-    def n_outputs(self):
-        """
-        Returns the number of outputs this model has. The default is 1.
-        """
-        return 1
 
     @property
     def built_model(self):

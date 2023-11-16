@@ -26,7 +26,7 @@ script_path = path.dirname(__file__)
 #
 # Cost function class
 #
-from .costs.error_costs import RMSE, MLE, PEM, MAP
+from .costs.error_costs import BaseCost, RootMeanSquaredError, SumSquaredError
 
 #
 # Dataset class
@@ -50,7 +50,7 @@ from .optimisation import Optimisation
 from .optimisers.base_optimiser import BaseOptimiser
 from .optimisers.nlopt_optimize import NLoptOptimize
 from .optimisers.scipy_minimize import SciPyMinimize
-from .optimisers.pints_optimiser import PintsOptimiser, PintsError, PintsBoundaries
+from .optimisers.pints_optimisers import GradientDescent, CMAES
 
 #
 # Parameter classes
@@ -62,7 +62,7 @@ from .parameters.priors import Gaussian, Uniform, Exponential
 #
 # Problem class
 #
-from ._problem import SingleOutputProblem
+from ._problem import Problem
 
 #
 # Plotting class

@@ -9,12 +9,13 @@ class NLoptOptimize(BaseOptimiser):
 
     def __init__(self, n_param, xtol=None, method=None):
         super().__init__()
-        self.name = "NLOpt Optimiser"
+        self.name = "NLoptOptimize"
+        self.n_param = n_param
 
         if method is not None:
-            self.optim = nlopt.opt(method, n_param)
+            self.optim = nlopt.opt(method, self.n_param)
         else:
-            self.optim = nlopt.opt(nlopt.LN_BOBYQA, n_param)
+            self.optim = nlopt.opt(nlopt.LN_BOBYQA, self.n_param)
 
         if xtol is not None:
             self.optim.set_xtol_rel(xtol)
@@ -42,8 +43,12 @@ class NLoptOptimize(BaseOptimiser):
         x = self.optim.optimize(x0)
 
         # Get performance statistics
-        output = self.optim
         final_cost = self.optim.last_optimum_value()
-        num_evals = self.optim.get_numevals()
 
-        return x, output, final_cost, num_evals
+        return x, final_cost
+
+    def needs_sensitivities(self):
+        """
+        Returns True if the optimiser needs sensitivities.
+        """
+        return False
