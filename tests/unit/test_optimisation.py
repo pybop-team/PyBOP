@@ -1,12 +1,27 @@
 import pybop
 import numpy as np
 import pytest
+from pybop.costs.standalone import StandaloneCost
 
 
 class TestOptimisation:
     """
     A class to test the optimisation class.
     """
+
+    @pytest.mark.unit
+    def test_standalone(self):
+        # Build an Optimisation problem with a StandaloneCost
+        cost = StandaloneCost()
+
+        opt = pybop.Optimisation(cost=cost, optimiser=pybop.NLoptOptimize)
+
+        assert len(opt.x0) == opt.n_parameters
+
+        x, final_cost = opt.run()
+
+        np.testing.assert_allclose(x, 0, atol=1e-2)
+        np.testing.assert_allclose(final_cost, 42, atol=1e-2)
 
     @pytest.mark.unit
     def test_prior_sampling(self):
