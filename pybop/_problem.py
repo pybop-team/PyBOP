@@ -56,10 +56,7 @@ class Problem:
             for i, param in enumerate(self.parameters):
                 self.x0[i] = param.rvs(1)
         elif len(x0) != self.n_parameters:
-        raise ValueError("x0 dimensions does not match number of parameters")
-            raise ValueError("Not enough input values in x0.")
-        elif len(x0) > self.n_parameters:
-            raise ValueError("Too many input values in x0.")
+            raise ValueError("x0 dimensions do not match number of parameters")
 
         # Add the initial values to the parameter definitions
         for i, param in enumerate(self.parameters):
