@@ -38,6 +38,8 @@ class TestCosts:
         assert cost.problem == problem
         with pytest.raises(NotImplementedError):
             cost([0.5])
+        with pytest.raises(NotImplementedError):
+            cost.n_parameters()
 
         # Root Mean Squared Error
         cost = pybop.RootMeanSquaredError(problem)
