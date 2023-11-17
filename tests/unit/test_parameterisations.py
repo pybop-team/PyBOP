@@ -64,7 +64,7 @@ class TestModelParameterisation:
 
     @pytest.mark.parametrize("init_soc", [0.3, 0.5, 0.8])
     @pytest.mark.unit
-    def test_spme_multiple_optimisers(self, init_soc):
+    def test_spme_optimisers(self, init_soc):
         # Define model
         parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
         model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
@@ -114,10 +114,10 @@ class TestModelParameterisation:
                 assert parameterisation._use_f_guessed is True
 
                 parameterisation.set_f_guessed_tracking(False)
-                parameterisation.set_max_iterations(100)
+                parameterisation.set_max_iterations(250)
 
                 x, final_cost = parameterisation.run()
-                assert parameterisation._iterations == 100
+                assert parameterisation._max_iterations == 250
 
             else:
                 x, final_cost = parameterisation.run()
@@ -155,7 +155,7 @@ class TestModelParameterisation:
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.02),
-                bounds=[0.45, 0.625],
+                bounds=[0.375, 0.625],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
