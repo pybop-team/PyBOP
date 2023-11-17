@@ -37,6 +37,11 @@ class TestProblem:
             pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
         ]
 
+        # Test incorrect number of initial parameter values
+        with pytest.raises(ValueError):
+            pybop.Problem(model, parameters, dataset, signal=signal, x0=np.array([]))
+
+        # Construct Problem
         problem = pybop.Problem(model, parameters, dataset, signal=signal)
 
         assert problem._model == model
