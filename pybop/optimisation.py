@@ -23,11 +23,11 @@ class Optimisation:
         verbose=False,
     ):
         self.cost = cost
-        self.problem = cost.problem
         self.optimiser = optimiser
         self.verbose = verbose
-        self.x0 = cost.problem.x0
-        self.bounds = self.problem.bounds
+        self.x0 = cost.x0
+        self.bounds = cost.bounds
+        self.n_parameters = cost.n_parameters
         self.sigma0 = sigma0
         self.log = []
 
@@ -56,7 +56,7 @@ class Optimisation:
             self.pints = False
 
             if issubclass(self.optimiser, pybop.NLoptOptimize):
-                self.optimiser = self.optimiser(self.problem.n_parameters)
+                self.optimiser = self.optimiser(self.n_parameters)
 
             elif issubclass(self.optimiser, pybop.SciPyMinimize):
                 self.optimiser = self.optimiser()
