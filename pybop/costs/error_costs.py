@@ -61,7 +61,7 @@ class SumSquaredError(BaseCost):
         super(SumSquaredError, self).__init__(problem)
 
         # Default fail gradient
-        self._de = 1
+        self._de = 1.0
 
     def __call__(self, x, grad=None):
         """
