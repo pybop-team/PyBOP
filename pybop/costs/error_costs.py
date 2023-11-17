@@ -10,10 +10,11 @@ class BaseCost:
 
     def __init__(self, problem):
         self.problem = problem
-        self._target = problem._target
-        self.x0 = problem.x0
-        self.bounds = problem.bounds
-        self.n_parameters = problem.n_parameters
+        if problem is not None:
+            self._target = problem._target
+            self.x0 = problem.x0
+            self.bounds = problem.bounds
+            self.n_parameters = problem.n_parameters
 
     def __call__(self, x, grad=None):
         """
