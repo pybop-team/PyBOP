@@ -103,12 +103,12 @@ PyBOP has two general types of intended use cases:
 
 These general cases encompass a wide variety of optimisation problems that require careful consideration based on the choice of battery model, the available data and/or the choice of design parameters.
 
-PyBOP comes with a number of [example](https://github.com/pybop-team/PyBOP/blob/develop/examples) notebooks and scripts which can be found in the examples folder.
+PyBOP comes with a number of [example notebooks and scripts](https://github.com/pybop-team/PyBOP/blob/develop/examples) which can be found in the examples folder.
 
 The [spm_descent.py](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_descent.py) script illustrates a straightforward example that starts by generating artificial data from a single particle model (SPM). The unknown parameter values are identified by implementing a sum-of-square error cost function using the terminal voltage as the observed signal and a gradient descent optimiser. To run this example:
 
 ```bash
-python examples/scripts/spm_example.py
+python examples/scripts/spm_descent.py
 ```
 
 In addition, [spm_nlopt.ipynb](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/spm_nlopt.ipynb) provides a second example in notebook form. This example estimates the SPM parameters based on an RMSE cost function and a BOBYQA optimiser.
@@ -120,7 +120,7 @@ PyBOP aims to foster a broad consortium of developers and users, building on and
 
 -   Inclusivity and fairness (those who wish to contribute may do so, and their input is appropriately recognised)
 
--   Interoperability (Modularity for maximum impact and inclusivity)
+-   Interoperability (modularity for maximum impact and inclusivity)
 
 -   User-friendliness (putting user requirements first via user-assistance & workflows)
 
