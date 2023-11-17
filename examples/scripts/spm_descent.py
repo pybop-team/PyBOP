@@ -2,6 +2,7 @@ import pybop
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Parameter set and model definition
 parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
 model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
@@ -19,6 +20,7 @@ parameters = [
     ),
 ]
 
+# Generate data
 sigma = 0.001
 t_eval = np.arange(0, 900, 2)
 values = model.predict(t_eval=t_eval)
@@ -26,6 +28,7 @@ corrupt_values = values["Terminal voltage [V]"].data + np.random.normal(
     0, sigma, len(t_eval)
 )
 
+# Dataset definition
 dataset = [
     pybop.Dataset("Time [s]", t_eval),
     pybop.Dataset("Current function [A]", values["Current [A]"].data),
@@ -39,6 +42,7 @@ optim = pybop.Optimisation(cost, optimiser=pybop.GradientDescent)
 optim.optimiser.set_learning_rate(0.025)
 optim.set_max_iterations(100)
 
+# Run optimisation
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
