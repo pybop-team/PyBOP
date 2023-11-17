@@ -57,6 +57,9 @@ class TestCosts:
         assert rmse_cost([0.5]) >= 0
         assert type(sums_cost([0.5])) == np.float64 or np.isinf(sums_cost([0.5]))
         assert sums_cost([0.5]) >= 0
+        e, de = sums_cost.evaluateS1([0.5])
+        assert type(e) == np.float64 or np.isinf(sums_cost([0.5]))
+        assert type(de) == np.ndarray
 
         # Test option setting
         sums_cost.set_fail_gradient(1)
