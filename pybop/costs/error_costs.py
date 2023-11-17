@@ -11,16 +11,13 @@ class BaseCost:
     def __init__(self, problem):
         self.problem = problem
         self._target = problem._target
+        self.x0 = problem.x0
+        self.bounds = problem.bounds
+        self.n_parameters = problem.n_parameters
 
     def __call__(self, x, grad=None):
         """
         Returns the cost function value and computes the cost.
-        """
-        raise NotImplementedError
-
-    def n_parameters(self):
-        """
-        Returns the size of the parameter space.
         """
         raise NotImplementedError
 
