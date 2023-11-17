@@ -54,10 +54,16 @@ class RootMeanSquaredError(BaseCost):
 class SumSquaredError(BaseCost):
     """
     Defines the sum squared error cost function.
+
+    The initial fail gradient is set equal to one, but this can be
+    changed at any time with :meth:`set_fail_gradient()`.
     """
 
     def __init__(self, problem):
         super(SumSquaredError, self).__init__(problem)
+
+        # Default fail gradient
+        self._de = 1
 
     def __call__(self, x, grad=None):
         """
@@ -92,10 +98,29 @@ class SumSquaredError(BaseCost):
                     self.problem.n_parameters,
                 )
             )
-            r = y - self._target
-            e = np.sum(np.sum(r**2, axis=0), axis=0)
-            de = 2 * np.sum(np.sum((r.T * dy.T), axis=2), axis=1)
+            if len(y) < len(self._target):
+                e = np.inf
+                de = self._de*np.ones(self.problem.n_parameters)
+            else:
+                r = y - self._target
+                e = np.sum(np.sum(r**2, axis=0), axis=0)
+                de = 2 * np.sum(np.sum((r.T * dy.T), axis=2), axis=1)
+
             return e, de
 
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}")
+
+    def set_fail_gradient(self, de):
+        """
+        Sets the fail gradient for this optimiser.
+
+        Parameters
+        ----------
+        de : float
+            The fail gradient, as a non-negative float.
+        """
+        de = float(de)
+        if de < 0:
+            raise ValueError("Learning rate must be nonnegative.")
+        self._de = de
