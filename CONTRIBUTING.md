@@ -159,14 +159,15 @@ This also means that, if you can't fix the bug yourself, it will be much easier 
 1. Run individual test scripts instead of the whole test suite:
 
    ```bash
-   pytest tests/unit/path/to/test
+   pytest tests/unit/path/to/test --unit -v
    ```
 
    You can also run an individual test from a particular script, e.g.
 
    ```bash
-   pytest tests/unit/test_quick_plot.py TestQuickPlot.test_failure
+   pytest tests/unit/path/to/test.py::TestClass:test_name --unit -v
    ```
+   where `--unit` is a flag to run only unit tests and `-v` is a flag to display verbose output.
 
 2. Set break-points, either in your IDE or using the Python debugging module. To use the latter, add the following line where you want to set the break point
 
