@@ -95,34 +95,30 @@ pytest --unit -v
 ```
 
 ### Using PyBOP
-PyBOP has two general types of intended use case:
+PyBOP has two general types of intended use cases:
 1. parameter estimation from battery test data
 2. design optimisation subject to battery manufacturing/usage constraints
 
-These general cases encompass a wide variety of optimisation problems, which require careful consideration based on the choice of battery model, the available data and/or the choice of design parameters.
+These general cases encompass a wide variety of optimisation problems that require careful consideration based on the choice of battery model, the available data and/or the choice of design parameters.
 
-PyBOP comes with a number of example notebooks and scripts which can be found in the examples folder.
+PyBOP comes with a number of [example](https://github.com/pybop-team/PyBOP/blob/develop/examples) notebooks and scripts which can be found in the examples folder.
 
-The [`spm_example` script](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_example.py) illustrates a straightforward example that begins by creating artificial data from a single particle model (SPM). The unknown parameter values are then discovered by implementing an RMSE cost function using the terminal voltage as the observed signal. The main output is the set of estimated parameters, namely the negative and positive electrode active material volume fractions in this example. To run this example:
+The [spm_descent.py](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_descent.py) script illustrates a straightforward example that starts by generating artificial data from a single particle model (SPM). The unknown parameter values are identified by implementing a sum-of-square error cost function using the terminal voltage as the observed signal and a gradient descent optimiser. To run this example:
 
 ```bash
 python examples/scripts/spm_example.py
 ```
 
-The [`RMSE_estimation` script](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/rmse_estimation.py) provides a second example which differs by importing the example `Chen_example.csv` dataset and then estimates the same SPM parameters based on the same RMSE cost function. To run this example:
-
-```bash
-python examples/scripts/rmse_estimation.py
-```
+In addition, [spm_nlopt.ipynb](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/spm_nlopt.ipynb) provides a second example in notebook form. This example estimates the SPM parameters based on an RMSE cost function and a BOBYQA optimiser.
 
 <!-- Code of Conduct -->
 ## Code of Conduct
 
 PyBOP aims to foster a broad consortium of developers and users, building on and learning from the success of the [PyBaMM](https://pybamm.org/) community. Our values are:
 
--   Inclusivity and fairness (those who want to contribute may do so, and their input is appropriately recognised)
+-   Inclusivity and fairness (those who wish to contribute may do so, and their input is appropriately recognised)
 
--   Interoperability (Modularity to enable maximum impact and inclusivity)
+-   Interoperability (Modularity for maximum impact and inclusivity)
 
 -   User-friendliness (putting user requirements first via user-assistance & workflows)
 
