@@ -88,17 +88,17 @@ class SumSquaredError(BaseCost):
         """
         try:
             y, dy = self.problem.evaluateS1(x)
-            dy = dy.reshape(
-                (
-                    self.problem.n_time_data,
-                    self.problem.n_outputs,
-                    self.problem.n_parameters,
-                )
-            )
             if len(y) < len(self._target):
                 e = np.inf
                 de = self._de * np.ones(self.problem.n_parameters)
             else:
+                dy = dy.reshape(
+                    (
+                        self.problem.n_time_data,
+                        self.problem.n_outputs,
+                        self.problem.n_parameters,
+                    )
+                )
                 r = y - self._target
                 e = np.sum(np.sum(r**2, axis=0), axis=0)
                 de = 2 * np.sum(np.sum((r.T * dy.T), axis=2), axis=1)
