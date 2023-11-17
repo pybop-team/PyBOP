@@ -8,10 +8,12 @@ class TestCosts:
     Class for tests cost functions
     """
 
+    @pytest.mark.parametrize("cut_off", [2.5,3.777])
     @pytest.mark.unit
-    def test_costs(self):
-        # Construct Problem
+    def test_costs(self, cut_off):
+        # Construct model
         model = pybop.lithium_ion.SPM()
+
         parameters = [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
@@ -23,51 +25,53 @@ class TestCosts:
         # Form dataset
         x0 = np.array([0.52])
         solution = self.getdata(model, x0)
-
         dataset = [
             pybop.Dataset("Time [s]", solution["Time [s]"].data),
             pybop.Dataset("Current function [A]", solution["Current [A]"].data),
             pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
         ]
 
+        # Construct Problem
         signal = "Voltage [V]"
-        problem = pybop.Problem(model, parameters, dataset, signal=signal)
+        model.parameter_set.update({"Lower voltage cut-off [V]": cut_off})
+        problem = pybop.Problem(model, parameters, dataset, signal=signal, x0=x0)
 
         # Base Cost
-        cost = pybop.BaseCost(problem)
-        assert cost.problem == problem
+        base_cost = pybop.BaseCost(problem)
+        assert base_cost.problem == problem
         with pytest.raises(NotImplementedError):
-            cost([0.5])
+            base_cost([0.5])
         with pytest.raises(NotImplementedError):
-            cost.n_parameters()
+            base_cost.n_parameters()
 
         # Root Mean Squared Error
-        cost = pybop.RootMeanSquaredError(problem)
-        cost([0.5])
+        rmse_cost = pybop.RootMeanSquaredError(problem)
+        rmse_cost([0.5])
 
-        assert type(cost([0.5])) == np.float64
-        assert cost([0.5]) >= 0
-
-        # Root Mean Squared Error
-        cost = pybop.SumSquaredError(problem)
-        cost([0.5])
-
-        assert type(cost([0.5])) == np.float64
-        assert cost([0.5]) >= 0
-
-        # Test catch on non-matching vector lengths
         # Sum Squared Error
-        cost = pybop.SumSquaredError(problem)
-        with pytest.raises(ValueError):
-            cost(["test-entry"])
+        sums_cost = pybop.SumSquaredError(problem)
+        sums_cost([0.5])
 
-        with pytest.raises(ValueError):
-            cost.evaluateS1(["test-entry"])
+        # Test type of returned value
+        assert type(rmse_cost([0.5])) == np.float64 or np.isinf(rmse_cost([0.5]))
+        assert rmse_cost([0.5]) >= 0
+        assert type(sums_cost([0.5])) == np.float64 or np.isinf(sums_cost([0.5]))
+        assert sums_cost([0.5]) >= 0
 
-        # Root Mean Squared Error
-        cost = pybop.RootMeanSquaredError(problem)
+        # Test option setting
+        sums_cost.set_fail_gradient(1)
+
+        # Test exception for non-numeric inputs
         with pytest.raises(ValueError):
-            cost(["test-entry"])
+            rmse_cost(["StringInputShouldNotWork"])
+        with pytest.raises(ValueError):
+            sums_cost(["StringInputShouldNotWork"])
+        with pytest.raises(ValueError):
+            sums_cost.evaluateS1(["StringInputShouldNotWork"])
+
+        # Test treatment of simulations that terminated early
+        # by variation of the cut-off voltage.
+       
 
     def getdata(self, model, x0):
         model.parameter_set = model.pybamm_model.default_parameter_values
