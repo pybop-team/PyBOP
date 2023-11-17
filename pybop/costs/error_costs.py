@@ -100,7 +100,7 @@ class SumSquaredError(BaseCost):
             )
             if len(y) < len(self._target):
                 e = np.inf
-                de = self._de*np.ones(self.problem.n_parameters)
+                de = self._de * np.ones(self.problem.n_parameters)
             else:
                 r = y - self._target
                 e = np.sum(np.sum(r**2, axis=0), axis=0)
