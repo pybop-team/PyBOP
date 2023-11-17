@@ -129,6 +129,19 @@ else, type
 pytest --unit -v
 ```
 
+To run individual test files, you can use
+
+```bash
+pytest tests/unit/path/to/test --unit -v
+```
+
+And for individual tests,
+
+```bash
+pytest tests/unit/path/to/test.py::TestClass:test_name --unit -v
+```
+where `--unit` is a flag to run only unit tests and `-v` is a flag to display verbose output.
+
 ### Writing tests
 
 Every new feature should have its own test. To create ones, have a look at the `test` directory and see if there's a test for a similar method. Copy-pasting is a good way to start.
