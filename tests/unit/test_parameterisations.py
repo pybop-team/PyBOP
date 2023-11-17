@@ -155,7 +155,7 @@ class TestModelParameterisation:
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.02),
-                bounds=[0.375, 0.625],
+                bounds=[0.45, 0.625],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
