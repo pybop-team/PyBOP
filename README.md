@@ -28,6 +28,8 @@
   <a href="https://github.com/pybop-team/PyBOP/blob/develop/LICENSE">
     <img src="https://img.shields.io/github/license/pybop-team/PyBOP" alt="license" />
   </a>
+  <a href="https://colab.research.google.com/github/pybop-team/PyBOP/blob/develop/">
+    <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" />
 </p>
 
 </div>
