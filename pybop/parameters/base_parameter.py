@@ -15,6 +15,9 @@ class Parameter:
             raise ValueError("Lower bound must be less than upper bound")
 
     def rvs(self, n_samples):
+        """
+        Returns a random value sample from the prior distribution.
+        """
         sample = self.prior.rvs(n_samples)
 
         if sample < self.lower_bound:

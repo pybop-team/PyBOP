@@ -35,7 +35,12 @@ class RootMeanSquaredError(BaseCost):
         Computes the cost.
         """
         try:
-            return np.sqrt(np.mean((self.problem.evaluate(x) - self._target) ** 2))
+            prediction = self.problem.evaluate(x)
+
+            if len(prediction) < len(self._target):
+                return np.float64(np.inf)  # simulation stopped early
+            else:
+                return np.sqrt(np.mean((prediction - self._target) ** 2))
 
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}")
@@ -44,20 +49,32 @@ class RootMeanSquaredError(BaseCost):
 class SumSquaredError(BaseCost):
     """
     Defines the sum squared error cost function.
+
+    The initial fail gradient is set equal to one, but this can be
+    changed at any time with :meth:`set_fail_gradient()`.
     """
 
     def __init__(self, problem):
         super(SumSquaredError, self).__init__(problem)
+
+        # Default fail gradient
+        self._de = 1.0
 
     def __call__(self, x, grad=None):
         """
         Computes the cost.
         """
         try:
-            return np.sum(
-                (np.sum(((self.problem.evaluate(x) - self._target) ** 2), axis=0)),
-                axis=0,
-            )
+            prediction = self.problem.evaluate(x)
+
+            if len(prediction) < len(self._target):
+                return np.float64(np.inf)  # simulation stopped early
+            else:
+                return np.sum(
+                    (np.sum(((prediction - self._target) ** 2), axis=0)),
+                    axis=0,
+                )
+
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}")
 
@@ -68,17 +85,29 @@ class SumSquaredError(BaseCost):
         """
         try:
             y, dy = self.problem.evaluateS1(x)
-            dy = dy.reshape(
-                (
-                    self.problem.n_time_data,
-                    self.problem.n_outputs,
-                    self.problem.n_parameters,
+            if len(y) < len(self._target):
+                e = np.float64(np.inf)
+                de = self._de * np.ones(self.problem.n_parameters)
+            else:
+                dy = dy.reshape(
+                    (
+                        self.problem.n_time_data,
+                        self.problem.n_outputs,
+                        self.problem.n_parameters,
+                    )
                 )
-            )
-            r = y - self._target
-            e = np.sum(np.sum(r**2, axis=0), axis=0)
-            de = 2 * np.sum(np.sum((r.T * dy.T), axis=2), axis=1)
+                r = y - self._target
+                e = np.sum(np.sum(r**2, axis=0), axis=0)
+                de = 2 * np.sum(np.sum((r.T * dy.T), axis=2), axis=1)
+
             return e, de
 
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}")
+
+    def set_fail_gradient(self, de):
+        """
+        Sets the fail gradient for this optimiser.
+        """
+        de = float(de)
+        self._de = de
