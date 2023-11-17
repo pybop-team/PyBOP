@@ -41,11 +41,9 @@ class RootMeanSquaredError(BaseCost):
             prediction = self.problem.evaluate(x)
 
             if len(prediction) < len(self._target):
-                cost = np.Infinity  # simulation stopped early
+                return np.inf  # simulation stopped early
             else:
-                cost = np.sqrt(np.mean((prediction - self._target) ** 2))
-
-            return cost
+                return np.sqrt(np.mean((prediction - self._target) ** 2))
 
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}")
@@ -73,14 +71,13 @@ class SumSquaredError(BaseCost):
             prediction = self.problem.evaluate(x)
 
             if len(prediction) < len(self._target):
-                cost = np.Infinity  # simulation stopped early
+                return np.inf  # simulation stopped early
             else:
-                cost = np.sum(
+                return np.sum(
                     (np.sum(((prediction - self._target) ** 2), axis=0)),
                     axis=0,
                 )
-
-            return cost
+        
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}")
 
