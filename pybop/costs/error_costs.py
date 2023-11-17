@@ -111,13 +111,6 @@ class SumSquaredError(BaseCost):
     def set_fail_gradient(self, de):
         """
         Sets the fail gradient for this optimiser.
-
-        Parameters
-        ----------
-        de : float
-            The fail gradient, as a non-negative float.
         """
         de = float(de)
-        if de < 0:
-            raise ValueError("Learning rate must be nonnegative.")
         self._de = de
