@@ -53,12 +53,14 @@ class TestCosts:
         sums_cost([0.5])
 
         # Test type of returned value
-        assert type(rmse_cost([0.5])) == np.float64 or np.isinf(rmse_cost([0.5]))
+        assert type(rmse_cost([0.5])) == np.float64
         assert rmse_cost([0.5]) >= 0
-        assert type(sums_cost([0.5])) == np.float64 or np.isinf(sums_cost([0.5]))
+
+        assert type(sums_cost([0.5])) == np.float64
         assert sums_cost([0.5]) >= 0
         e, de = sums_cost.evaluateS1([0.5])
-        assert type(e) == np.float64 or np.isinf(sums_cost([0.5]))
+
+        assert type(e) == np.float64
         assert type(de) == np.ndarray
 
         # Test option setting
