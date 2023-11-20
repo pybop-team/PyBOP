@@ -7,6 +7,9 @@ class GradientDescent(pints.GradientDescent):
     """
 
     def __init__(self, x0, sigma0=0.1, bounds=None):
+        if bounds is not None:
+            print("Boundaries ignored by GradientDescent")
+
         boundaries = None  # Bounds ignored in pints.GradDesc
         super().__init__(x0, sigma0, boundaries)
 
