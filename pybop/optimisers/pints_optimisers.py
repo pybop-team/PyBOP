@@ -17,7 +17,10 @@ class CMAES(pints.CMAES):
     """
 
     def __init__(self, x0, sigma0=0.1, bounds=None):
-        boundaries = PintsBoundaries(bounds, x0)
+        if bounds is not None:
+            boundaries = pints.RectangularBoundaries(bounds["lower"], bounds["upper"])
+        else:
+            boundaries = PintsBoundaries(bounds, x0)
         super().__init__(x0, sigma0, boundaries)
 
 
