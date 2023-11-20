@@ -49,7 +49,17 @@
       "profile": "http://www.rse.ox.ac.uk",
       "contributions": [
         "ideas",
-        "mentoring"
+        "mentoring",
+        "review"
+      ]
+    },
+    {
+      "login": "brosaplanella",
+      "name": "Ferran Brosa Planella",
+      "avatar_url": "https://avatars.githubusercontent.com/u/28443643?v=4",
+      "profile": "https://www.brosaplanella.xyz",
+      "contributions": [
+        "review"
       ]
     }
   ],
