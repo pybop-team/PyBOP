@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class Parameter:
     """ ""
     Class for creating parameters in PyBOP.
@@ -18,14 +21,16 @@ class Parameter:
         """
         Returns a random value sample from the prior distribution.
         """
-        sample = self.prior.rvs(n_samples)
+        samples = self.prior.rvs(n_samples)
 
-        if sample < self.lower_bound:
-            return self.lower_bound
-        elif sample > self.upper_bound:
-            return self.upper_bound
-        else:
-            return sample
+        # Constrain samples to be within bounds
+        samples = np.clip(samples, self.lower_bound, self.upper_bound)
+
+        # Adjust samples that exactly equal bounds
+        samples[samples == self.lower_bound] += samples * 0.0001
+        samples[samples == self.upper_bound] -= samples * 0.0001
+
+        return samples
 
     def update(self, value):
         self.value = value

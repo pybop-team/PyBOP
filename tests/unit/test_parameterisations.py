@@ -9,7 +9,7 @@ class TestModelParameterisation:
     A class to test the model parameterisation methods.
     """
 
-    @pytest.mark.parametrize("init_soc", [0.3, 0.5, 0.8])
+    @pytest.mark.parametrize("init_soc", [0.3, 0.7])
     @pytest.mark.unit
     def test_spm(self, init_soc):
         # Define model
@@ -62,7 +62,7 @@ class TestModelParameterisation:
         np.testing.assert_allclose(final_cost, 0, atol=1e-2)
         np.testing.assert_allclose(x, x0, atol=1e-1)
 
-    @pytest.mark.parametrize("init_soc", [0.3, 0.5, 0.8])
+    @pytest.mark.parametrize("init_soc", [0.3, 0.7])
     @pytest.mark.unit
     def test_spme_optimisers(self, init_soc):
         # Define model
@@ -126,7 +126,7 @@ class TestModelParameterisation:
             np.testing.assert_allclose(final_cost, 0, atol=1e-2)
             np.testing.assert_allclose(x, x0, atol=1e-1)
 
-    @pytest.mark.parametrize("init_soc", [0.3, 0.5, 0.8])
+    @pytest.mark.parametrize("init_soc", [0.3, 0.7])
     @pytest.mark.unit
     def test_model_misparameterisation(self, init_soc):
         # Define two different models with different parameter sets

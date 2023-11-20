@@ -20,7 +20,8 @@ class CMAES(pints.CMAES):
         if bounds is not None:
             boundaries = pints.RectangularBoundaries(bounds["lower"], bounds["upper"])
         else:
-            boundaries = PintsBoundaries(bounds, x0)
+            boundaries = None  # PintsBoundaries(bounds, x0)
+
         super().__init__(x0, sigma0, boundaries)
 
 
