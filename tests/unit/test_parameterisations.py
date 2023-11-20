@@ -112,6 +112,8 @@ class TestModelParameterisation:
             if optimiser == pybop.CMAES:
                 parameterisation.set_f_guessed_tracking(True)
                 assert parameterisation._use_f_guessed is True
+                parameterisation.set_max_iterations(1)
+                x, final_cost = parameterisation.run()
 
                 parameterisation.set_f_guessed_tracking(False)
                 parameterisation.set_max_iterations(250)
