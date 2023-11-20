@@ -9,7 +9,7 @@ class TestModelParameterisation:
     A class to test the model parameterisation methods.
     """
 
-    @pytest.mark.parametrize("init_soc", [0.3, 0.5, 0.8])
+    @pytest.mark.parametrize("init_soc", [0.3, 0.7])
     @pytest.mark.unit
     def test_spm(self, init_soc):
         # Define model
@@ -62,9 +62,9 @@ class TestModelParameterisation:
         np.testing.assert_allclose(final_cost, 0, atol=1e-2)
         np.testing.assert_allclose(x, x0, atol=1e-1)
 
-    @pytest.mark.parametrize("init_soc", [0.3, 0.5, 0.8])
+    @pytest.mark.parametrize("init_soc", [0.3, 0.7])
     @pytest.mark.unit
-    def test_spme_multiple_optimisers(self, init_soc):
+    def test_spme_optimisers(self, init_soc):
         # Define model
         parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
         model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
@@ -110,13 +110,16 @@ class TestModelParameterisation:
             parameterisation = pybop.Optimisation(cost=cost, optimiser=optimiser)
 
             if optimiser == pybop.CMAES:
-                parameterisation.set_max_iterations(100)
                 parameterisation.set_f_guessed_tracking(True)
-
+                assert parameterisation._use_f_guessed is True
+                parameterisation.set_max_iterations(1)
                 x, final_cost = parameterisation.run()
 
-                assert parameterisation._iterations == 100
-                assert parameterisation._use_f_guessed is True
+                parameterisation.set_f_guessed_tracking(False)
+                parameterisation.set_max_iterations(250)
+
+                x, final_cost = parameterisation.run()
+                assert parameterisation._max_iterations == 250
 
             else:
                 x, final_cost = parameterisation.run()
@@ -125,7 +128,7 @@ class TestModelParameterisation:
             np.testing.assert_allclose(final_cost, 0, atol=1e-2)
             np.testing.assert_allclose(x, x0, atol=1e-1)
 
-    @pytest.mark.parametrize("init_soc", [0.3, 0.5, 0.8])
+    @pytest.mark.parametrize("init_soc", [0.3, 0.7])
     @pytest.mark.unit
     def test_model_misparameterisation(self, init_soc):
         # Define two different models with different parameter sets

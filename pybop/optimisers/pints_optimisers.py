@@ -7,7 +7,10 @@ class GradientDescent(pints.GradientDescent):
     """
 
     def __init__(self, x0, sigma0=0.1, bounds=None):
-        boundaries = PintsBoundaries(bounds, x0)
+        if bounds is not None:
+            print("Boundaries ignored by GradientDescent")
+
+        boundaries = None  # Bounds ignored in pints.GradDesc
         super().__init__(x0, sigma0, boundaries)
 
 
@@ -17,44 +20,11 @@ class CMAES(pints.CMAES):
     """
 
     def __init__(self, x0, sigma0=0.1, bounds=None):
-        boundaries = PintsBoundaries(bounds, x0)
-        super().__init__(x0, sigma0, boundaries)
+        if bounds is not None:
+            self.boundaries = pints.RectangularBoundaries(
+                bounds["lower"], bounds["upper"]
+            )
+        else:
+            self.boundaries = None
 
-
-class PintsBoundaries(object):
-    """
-    An interface class for PyBOP that extends the PINTS ErrorMeasure class.
-
-    From PINTS:
-    Abstract class representing boundaries on a parameter space.
-    """
-
-    def __init__(self, bounds, x0):
-        self.bounds = bounds
-        self.x0 = x0
-
-    def check(self, parameters):
-        """
-        Returns ``True`` if and only if the given point in parameter space is
-        within the boundaries.
-        """
-
-        lower_bounds = self.bounds["lower"]
-        upper_bounds = self.bounds["upper"]
-
-        if len(parameters) != len(lower_bounds):
-            raise ValueError("Parameters length mismatch")
-
-        within_bounds = all(
-            low <= param <= high
-            for low, high, param in zip(lower_bounds, upper_bounds, parameters)
-        )
-
-        return within_bounds
-
-    def n_parameters(self):
-        """
-        Returns the dimension of the parameter space these boundaries are
-        defined on.
-        """
-        return len(self.x0)
+        super().__init__(x0, sigma0, self.boundaries)
