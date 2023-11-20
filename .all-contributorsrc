@@ -16,7 +16,8 @@
         "infra",
         "test",
         "code",
-        "example"
+        "example",
+        "review"
       ]
     },
     {
