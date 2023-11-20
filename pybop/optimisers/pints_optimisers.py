@@ -7,7 +7,7 @@ class GradientDescent(pints.GradientDescent):
     """
 
     def __init__(self, x0, sigma0=0.1, bounds=None):
-        boundaries = PintsBoundaries(bounds, x0)
+        boundaries = None  # Bounds ignored in pints.GradDesc
         super().__init__(x0, sigma0, boundaries)
 
 
@@ -18,11 +18,13 @@ class CMAES(pints.CMAES):
 
     def __init__(self, x0, sigma0=0.1, bounds=None):
         if bounds is not None:
-            boundaries = pints.RectangularBoundaries(bounds["lower"], bounds["upper"])
+            self.boundaries = pints.RectangularBoundaries(
+                bounds["lower"], bounds["upper"]
+            )
         else:
-            boundaries = None  # PintsBoundaries(bounds, x0)
+            self.boundaries = None
 
-        super().__init__(x0, sigma0, boundaries)
+        super().__init__(x0, sigma0, self.boundaries)
 
 
 class PintsBoundaries(object):

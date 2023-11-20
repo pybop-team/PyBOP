@@ -92,6 +92,11 @@ class TestOptimisation:
             == "Covariance Matrix Adaptation Evolution Strategy (CMA-ES)"
         )
 
+        # None with no bounds
+        cost.bounds = None
+        opt = pybop.Optimisation(cost=cost)
+        assert opt.optimiser.boundaries is None
+
         # SciPy
         opt = pybop.Optimisation(cost=cost, optimiser=pybop.SciPyMinimize)
         assert opt.optimiser is not None
