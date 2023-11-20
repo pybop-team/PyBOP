@@ -301,3 +301,6 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/python,macos,windows,linux,c
+
+# Visual Studio Code settings
+.vscode/*
