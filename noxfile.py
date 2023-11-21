@@ -13,7 +13,7 @@ def unit(session):
 
 @nox.session
 def coverage(session):
-    session.run_always("pip", "install", "-e", ".")
+    session.run_always("pip", "install", "-e", ".[all]")
     session.install("pytest-cov")
     session.run("pytest", "--unit", "-v", "--cov", "--cov-report=xml")
 
@@ -21,6 +21,6 @@ def coverage(session):
 @nox.session
 def notebooks(session):
     """Run the examples tests for Jupyter notebooks."""
-    session.run_always("pip", "install", "-e", ".")
+    session.run_always("pip", "install", "-e", ".[all]")
     session.install("pytest", "nbmake")
     session.run("pytest", "--nbmake", "examples/", external=True)
