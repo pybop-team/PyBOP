@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/Temp_Logo.png" alt="logo" width="400" height="auto" />
   <h1>Python Battery Optimisation and Parameterisation</h1>
 
-<p>
+
   <a href="https://github.com/pybop-team/PyBOP/actions/workflows/scheduled_tests.yaml">
     <img src="https://github.com/pybop-team/PyBOP/actions/workflows/scheduled_tests.yaml/badge.svg" alt="Scheduled" />
   </a>
@@ -34,7 +34,6 @@
   <a href = "https://github.com/pybop-team/PyBOP/releases">
     <img src = "https://img.shields.io/github/v/release/pybop-team/PyBOP?color=gold"  alt = releases />
   </a>
-</p>
 
 </div>
 
