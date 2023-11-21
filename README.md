@@ -29,9 +29,9 @@
     <img src="https://img.shields.io/github/license/pybop-team/PyBOP" alt="license" />
   </a>
   <a href="https://colab.research.google.com/github/pybop-team/PyBOP/blob/develop/">
-    <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" />
+    <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="open In colab" />
   </a>
-  <a href = "https://github.com/pybop-team/PyBOP/releases" >
+  <a href = "https://github.com/pybop-team/PyBOP/releases">
     <img src = "https://img.shields.io/github/v/release/pybop-team/PyBOP?color=gold"  alt = releases />
   </a>
 </p>
