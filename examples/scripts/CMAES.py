@@ -53,3 +53,6 @@ plt.plot(t_eval, simulated_values, label="Simulated")
 plt.legend(bbox_to_anchor=(0.6, 1), loc="upper left", fontsize=12)
 plt.tick_params(axis="both", labelsize=12)
 plt.show()
+
+# Plot the cost landscape
+pybop.plot_cost2D(cost, steps=15)

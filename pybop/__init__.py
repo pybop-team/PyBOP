@@ -67,7 +67,7 @@ from ._problem import Problem
 #
 # Plotting class
 #
-from .plotting.quick_plot import QuickPlot
+from .plotting.plot_cost2D import plot_cost2D
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop

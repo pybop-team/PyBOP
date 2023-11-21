@@ -1,6 +1,8 @@
 import pytest
 import matplotlib
+import plotly
 
+plotly.io.renderers.default = None
 matplotlib.use("Template")
 
 
