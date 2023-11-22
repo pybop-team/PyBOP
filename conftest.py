@@ -12,13 +12,21 @@ def pytest_addoption(parser):
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "unit: mark test as a unit test")
+    config.addinivalue_line("markers", "examples: mark test as an example")
 
 
 def pytest_collection_modifyitems(config, items):
+    def skip_marker(marker_name, reason):
+        skip = pytest.mark.skip(reason=reason)
+        for item in items:
+            if marker_name in item.keywords:
+                item.add_marker(skip)
+
     if config.getoption("--unit"):
-        # --unit given in cli: do not skip unit tests
+        skip_marker("examples", "need --examples option to run")
         return
-    skip_unit = pytest.mark.skip(reason="need --unit option to run")
-    for item in items:
-        if "unit" in item.keywords:
-            item.add_marker(skip_unit)
+
+    if config.getoption("--examples"):
+        return
+
+    skip_marker("unit", "need --unit option to run")
