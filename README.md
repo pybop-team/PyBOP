@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/Temp_Logo.png" alt="logo" width="400" height="auto" />
   <h1>Python Battery Optimisation and Parameterisation</h1>
 
-<p>
+
   <a href="https://github.com/pybop-team/PyBOP/actions/workflows/scheduled_tests.yaml">
     <img src="https://github.com/pybop-team/PyBOP/actions/workflows/scheduled_tests.yaml/badge.svg" alt="Scheduled" />
   </a>
@@ -29,8 +29,11 @@
     <img src="https://img.shields.io/github/license/pybop-team/PyBOP" alt="license" />
   </a>
   <a href="https://colab.research.google.com/github/pybop-team/PyBOP/blob/develop/">
-    <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" />
-</p>
+    <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="open In colab" />
+  </a>
+  <a href = "https://github.com/pybop-team/PyBOP/releases">
+    <img src = "https://img.shields.io/github/v/release/pybop-team/PyBOP?color=gold"  alt = releases />
+  </a>
 
 </div>
 
@@ -48,6 +51,32 @@ The diagram below presents PyBOP's conceptual framework. The PyBOP software spec
 ## Getting Started
 
 <!-- Installation -->
+### Installation
+
+Within your virtual environment, install PyBOP:
+
+```bash
+pip install pybop
+```
+
+To install the most recent state of PyBOP, install from the `develop` branch,
+
+```bash
+pip install git+https://github.com/pybop-team/PyBOP.git@develop
+```
+
+To alternatively install PyBOP from a local directory, use the following template, substituting in the relevant path:
+
+```bash
+pip install -e "path/to/pybop"
+```
+
+To check whether PyBOP has been installed correctly, run one of the examples in the following section or the full set of unit tests:
+
+```bash
+pytest --unit -v
+```
+
 ### Prerequisites
 To use and/or contribute to PyBOP, first install Python (3.8-3.11). On a Debian-based distribution, this looks like:
 
@@ -58,9 +87,8 @@ sudo apt install python3 python3-virtualenv
 
 For further information, please refer to the similar [installation instructions for PyBaMM](https://docs.pybamm.org/en/latest/source/user_guide/installation/GNU-linux.html).
 
-### Installation
-
-Create a virtual environment called `pybop-env` within your current directory:
+### Virtual Environments
+To create a virtual environment called `pybop-env` within your current directory:
 
 ```bash
 virtualenv pybop-env
@@ -76,24 +104,6 @@ Later, you can deactivate the environment:
 
 ```bash
 deactivate
-```
-
-Within your virtual environment, install the `develop` branch of PyBOP:
-
-```bash
-pip install git+https://github.com/pybop-team/PyBOP.git@develop
-```
-
-To alternatively install PyBOP from a local directory, use the following template, substituting in the relevant path:
-
-```bash
-pip install -e "PATH_TO_PYBOP"
-```
-
-To check whether PyBOP has been installed correctly, run one of the examples in the following section or the full set of unit tests:
-
-```bash
-pytest --unit -v
 ```
 
 ### Using PyBOP
