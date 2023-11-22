@@ -8,6 +8,9 @@ def pytest_addoption(parser):
     parser.addoption(
         "--unit", action="store_true", default=False, help="run unit tests"
     )
+    parser.addoption(
+        "--examples", action="store_true", default=False, help="run examples tests"
+    )
 
 
 def pytest_configure(config):
@@ -27,6 +30,7 @@ def pytest_collection_modifyitems(config, items):
         return
 
     if config.getoption("--examples"):
+        skip_marker("unit", "need --unit option to run")
         return
 
     skip_marker("unit", "need --unit option to run")
