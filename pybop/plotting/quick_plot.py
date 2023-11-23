@@ -1,7 +1,6 @@
 import numpy as np
 import textwrap
 import pybop
-import plotly.graph_objs as go
 
 
 class StandardPlot:
@@ -88,6 +87,14 @@ class StandardPlot:
             self.y_upper = (self.y + self.sigma).tolist()
             self.y_lower = (self.y - self.sigma).tolist()
 
+        # Attempt to import plotly when an instance is created
+        try:
+            import plotly.graph_objs as go
+
+            self.go = go
+        except ImportError as e:
+            raise ImportError(f"Plotly is required for this class to work: {e}")
+
     @staticmethod
     def wrap_text(text, width):
         """
@@ -112,7 +119,7 @@ class StandardPlot:
         """
         Create the layout for the plot.
         """
-        return go.Layout(
+        return self.go.Layout(
             title=self.title,
             title_x=0.5,
             xaxis=dict(title=self.xaxis_title, titlefont_size=12, tickfont_size=12),
@@ -132,7 +139,7 @@ class StandardPlot:
         traces = []
 
         wrapped_trace_name = self.wrap_text(self.trace_name, width=40)
-        simulated_trace = go.Scatter(
+        simulated_trace = self.go.Scatter(
             x=self.x,
             y=self.y,
             line=dict(width=4),
@@ -141,10 +148,10 @@ class StandardPlot:
         )
 
         if self.y2 is not None:
-            target_trace = go.Scatter(
+            target_trace = self.go.Scatter(
                 x=self.x, y=self.y2, mode="markers", name="Target"
             )
-            fill_trace = go.Scatter(
+            fill_trace = self.go.Scatter(
                 x=self.x + self.x[::-1],
                 y=self.y_upper + self.y_lower[::-1],
                 fill="toself",
@@ -165,7 +172,7 @@ class StandardPlot:
         """
         layout = self.create_layout()
         traces = self.create_traces()
-        fig = go.Figure(data=traces, layout=layout)
+        fig = self.go.Figure(data=traces, layout=layout)
         return fig
 
 
