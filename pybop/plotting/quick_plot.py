@@ -1,85 +1,217 @@
 import numpy as np
+import textwrap
+import pybop
+import plotly.graph_objs as go
 
 
-def quick_plot(params, cost, width=720, height=540):
+class StandardPlot:
+    """
+    A class for creating and displaying a plotly figure that compares a target dataset against a simulated model output.
+
+    This class provides an interface for generating interactive plots using Plotly, with the ability to include an
+    optional secondary dataset and visualize uncertainty if provided.
+
+    Attributes:
+    -----------
+    x : list
+        The x-axis data points.
+    y : list or np.ndarray
+        The primary y-axis data points representing the simulated model output.
+    y2 : list or np.ndarray, optional
+        An optional secondary y-axis data points representing the target dataset against which the model output is compared.
+    cost : float
+        The cost associated with the model output.
+    title : str, optional
+        The title of the plot.
+    xaxis_title : str, optional
+        The title for the x-axis.
+    yaxis_title : str, optional
+        The title for the y-axis.
+    trace_name : str, optional
+        The name of the primary trace representing the model output. Defaults to "Simulated".
+    width : int, optional
+        The width of the figure in pixels. Defaults to 720.
+    height : int, optional
+        The height of the figure in pixels. Defaults to 540.
+
+    Methods:
+    --------
+    wrap_text(text, width)
+        A static method that wraps text to a specified width, inserting HTML line breaks for use in plot labels.
+
+    create_layout()
+        Creates the layout for the plot, including titles and axis labels.
+
+    create_traces()
+        Creates the traces for the plot, including the primary dataset, optional secondary dataset, and an optional uncertainty visualization.
+
+    __call__()
+        Generates the plotly figure when the class instance is called as a function.
+
+    Example:
+    --------
+    >>> x_data = [1, 2, 3, 4]
+    >>> y_simulated = [10, 15, 13, 17]
+    >>> y_target = [11, 14, 12, 16]
+    >>> plot = pybop.StandardPlot(x_data, y_simulated, cost=0.05, y2=y_target,
+                            title="Model vs. Target", xaxis_title="X Axis", yaxis_title="Y Axis")
+    >>> fig = plot()  # Generate the figure
+    >>> fig.show()    # Display the figure in a browser
+    """
+
+    def __init__(
+        self,
+        x,
+        y,
+        cost,
+        y2=None,
+        title=None,
+        xaxis_title=None,
+        yaxis_title=None,
+        trace_name=None,
+        width=720,
+        height=540,
+    ):
+        self.x = x if isinstance(x, list) else x.tolist()
+        self.y = y
+        self.y2 = y2
+        self.cost = cost
+        self.width = width
+        self.height = height
+        self.title = title
+        self.xaxis_title = xaxis_title
+        self.yaxis_title = yaxis_title
+        self.trace_name = trace_name or "Simulated"
+
+        if self.y2 is not None:
+            self.sigma = np.std(self.y - self.y2)
+            self.y_upper = (self.y + self.sigma).tolist()
+            self.y_lower = (self.y - self.sigma).tolist()
+
+    @staticmethod
+    def wrap_text(text, width):
+        """
+        Wrap text to a specified width.
+
+        Parameters:
+        -----------
+        text: str
+            Text to be wrapped.
+        width: int
+            Width to wrap text to.
+
+        Returns:
+        --------
+        str
+            Wrapped text with HTML line breaks.
+        """
+        wrapped_text = textwrap.fill(text, width=width, break_long_words=False)
+        return wrapped_text.replace("\n", "<br>")
+
+    def create_layout(self):
+        """
+        Create the layout for the plot.
+        """
+        return go.Layout(
+            title=self.title,
+            title_x=0.5,
+            xaxis=dict(title=self.xaxis_title, titlefont_size=12, tickfont_size=12),
+            yaxis=dict(title=self.yaxis_title, titlefont_size=12, tickfont_size=12),
+            legend=dict(x=1, y=1, xanchor="right", yanchor="top", font_size=12),
+            showlegend=True,
+            autosize=False,
+            width=self.width,
+            height=self.height,
+            margin=dict(l=10, r=10, b=10, t=75, pad=4),
+        )
+
+    def create_traces(self):
+        """
+        Create the traces for the plot.
+        """
+        traces = []
+
+        wrapped_trace_name = self.wrap_text(self.trace_name, width=40)
+        simulated_trace = go.Scatter(
+            x=self.x,
+            y=self.y,
+            line=dict(width=4),
+            mode="lines",
+            name=wrapped_trace_name,
+        )
+
+        if self.y2 is not None:
+            target_trace = go.Scatter(
+                x=self.x, y=self.y2, mode="markers", name="Target"
+            )
+            fill_trace = go.Scatter(
+                x=self.x + self.x[::-1],
+                y=self.y_upper + self.y_lower[::-1],
+                fill="toself",
+                fillcolor="rgba(255,229,204,0.8)",
+                line=dict(color="rgba(255,255,255,0)"),
+                hoverinfo="skip",
+                showlegend=False,
+            )
+            traces.extend([fill_trace, target_trace])
+
+        traces.append(simulated_trace)
+
+        return traces
+
+    def __call__(self):
+        """
+        Generate the plotly figure.
+        """
+        layout = self.create_layout()
+        traces = self.create_traces()
+        fig = go.Figure(data=traces, layout=layout)
+        return fig
+
+
+def quick_plot(params, cost, title="Scatter Plot", width=720, height=540):
     """
     Plot the target dataset against the minimised model output.
 
-    Inputs:
+    Parameters:
+    ----------
+    params : array-like
+        Optimised parameters.
+    cost : cost object
+        Cost object containing the problem, dataset, and signal.
+    title : str, optional
+        Title of the plot (default is "Scatter Plot").
+    width : int, optional
+        Width of the figure in pixels (default is 720).
+    height : int, optional
+        Height of the figure in pixels (default is 540).
+
+    Returns:
     -------
-    x: array
-        Optimised parameters
-    cost: cost object
-        Cost object containing the problem, dataset, and signal
+    fig : plotly.graph_objs.Figure
+        The Plotly figure object for the scatter plot.
     """
 
-    # Generate the model output
-    x = cost.problem._dataset["Time [s]"].data
-    y = cost.problem.evaluate(params)
-    y2 = cost.problem.target()
+    # Extract the time data and evaluate the model's output and target values
+    time_data = cost.problem._dataset["Time [s]"].data
+    model_output = cost.problem.evaluate(params)
+    target_output = cost.problem.target()
 
-    # Create figure
-    fig = create_figure(x, y, y2, cost, width, height)
-
-    # Display figure
-    fig.show()
-
-    return fig
-
-
-def create_figure(x, y, y2, cost, width, height):
-    # Import plotly only when needed
-    import plotly.graph_objs as go
-
-    # Estimate the uncertainty (sigma) of the model output
-    x = x.tolist()
-    sigma = np.std(y - y2)
-    y_upper = (y + sigma).tolist()
-    y_lower = (y - sigma).tolist()
-
-    # Create traces for the measured and simulated values
-    target_trace = go.Scatter(
-        x=x,
-        y=y2,
-        mode="markers",
-        name="Target",
-    )
-
-    simulated_trace = go.Scatter(
-        x=x, y=y, line=dict(width=4), mode="lines", name="Model"
-    )
-
-    # Create a trace for the fill area representing the uncertainty (sigma)
-    fill_trace = go.Scatter(
-        x=x + x[::-1],
-        y=y_upper + y_lower[::-1],
-        fill="toself",
-        fillcolor="rgba(255,229,204,0.8)",
-        line=dict(color="rgba(255,255,255,0)"),
-        hoverinfo="skip",
-        showlegend=False,
-    )
-
-    # Define the layout for the plot
-    layout = go.Layout(
-        title="Optimised Comparison",
-        title_x=0.55,
-        title_y=0.9,
-        xaxis=dict(title="Time [s]", titlefont_size=12, tickfont_size=12),
-        yaxis=dict(title=cost.problem.signal, titlefont_size=12, tickfont_size=12),
-        legend=dict(x=0.85, y=1, xanchor="left", yanchor="top", font_size=12),
-        showlegend=True,
-    )
-
-    # Combine the traces and layout into a figure
-    fig = go.Figure(data=[fill_trace, target_trace, simulated_trace], layout=layout)
-
-    # Update the figure to adjust the layout and axis properties
-    fig.update_layout(
-        autosize=False,
+    # Create the figure using the StandardPlot class
+    fig = pybop.StandardPlot(
+        x=time_data,
+        y=model_output,
+        cost=cost,
+        y2=target_output,
+        xaxis_title="Time [s]",
+        yaxis_title=cost.problem.signal,
+        title=title,
+        trace_name="Model",
         width=width,
         height=height,
-        margin=dict(l=10, r=10, b=10, t=75, pad=4),
-    )
+    )()
+
+    # Display the figure
+    fig.show()
 
     return fig

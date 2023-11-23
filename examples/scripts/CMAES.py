@@ -1,6 +1,7 @@
 import pybop
 import numpy as np
 
+# Define model
 parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
 model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
@@ -18,6 +19,7 @@ parameters = [
     ),
 ]
 
+# Generate data
 sigma = 0.01
 t_eval = np.arange(0, 900, 2)
 values = model.predict(t_eval=t_eval)
@@ -25,6 +27,7 @@ CorruptValues = values["Terminal voltage [V]"].data + np.random.normal(
     0, sigma, len(t_eval)
 )
 
+# Form dataset for optimisation
 dataset = [
     pybop.Dataset("Time [s]", t_eval),
     pybop.Dataset("Current function [A]", values["Current [A]"].data),
@@ -37,11 +40,15 @@ cost = pybop.SumSquaredError(problem)
 optim = pybop.Optimisation(cost, optimiser=pybop.CMAES)
 optim.set_max_iterations(100)
 
+# Run the optimisation
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
 # Plot the timeseries output
-pybop.quick_plot(x, cost)
+pybop.quick_plot(x, cost, title="Optimised Comparison")
+
+# Plot convergence
+pybop.plot_convergence(optim)
 
 # Plot the cost landscape
 pybop.plot_cost2d(cost, steps=15)
