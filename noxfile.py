@@ -8,14 +8,22 @@ nox.options.reuse_existing_virtualenvs = True
 def unit(session):
     session.run_always("pip", "install", "-e", ".[all]")
     session.install("pytest")
-    session.run("pytest", "--unit", "-v")
+    session.run("pytest", "--unit", "-v", "--showlocals")
 
 
 @nox.session
 def coverage(session):
     session.run_always("pip", "install", "-e", ".[all]")
     session.install("pytest-cov")
-    session.run("pytest", "--unit", "-v", "--cov", "--cov-report=xml")
+    session.run(
+        "pytest",
+        "--unit",
+        "--examples",
+        "-v",
+        "--cov",
+        "--cov-report=xml",
+        "--showlocals",
+    )
 
 
 @nox.session

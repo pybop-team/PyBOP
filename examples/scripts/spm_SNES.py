@@ -1,9 +1,9 @@
 import pybop
 import numpy as np
 
-# Parameter set and model definition
+# Define model
 parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
-model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = [
@@ -19,29 +19,25 @@ parameters = [
     ),
 ]
 
-# Generate data
 sigma = 0.001
 t_eval = np.arange(0, 900, 2)
 values = model.predict(t_eval=t_eval)
-corrupt_values = values["Terminal voltage [V]"].data + np.random.normal(
+CorruptValues = values["Terminal voltage [V]"].data + np.random.normal(
     0, sigma, len(t_eval)
 )
 
-# Dataset definition
 dataset = [
     pybop.Dataset("Time [s]", t_eval),
     pybop.Dataset("Current function [A]", values["Current [A]"].data),
-    pybop.Dataset("Terminal voltage [V]", corrupt_values),
+    pybop.Dataset("Terminal voltage [V]", CorruptValues),
 ]
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.Problem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.Optimisation(cost, optimiser=pybop.GradientDescent)
-optim.optimiser.set_learning_rate(0.025)
+optim = pybop.Optimisation(cost, optimiser=pybop.SNES)
 optim.set_max_iterations(100)
 
-# Run optimisation
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
 

@@ -34,7 +34,7 @@ class TestModels:
 
     @pytest.mark.unit
     def test_predict_with_inputs(self):
-        # Define model
+        # Define SPM
         model = pybop.lithium_ion.SPM()
         t_eval = np.linspace(0, 10, 100)
         inputs = {
@@ -42,6 +42,11 @@ class TestModels:
             "Positive electrode active material volume fraction": 0.63,
         }
 
+        res = model.predict(t_eval=t_eval, inputs=inputs)
+        assert len(res["Terminal voltage [V]"].data) == 100
+
+        # Define SPMe
+        model = pybop.lithium_ion.SPMe()
         res = model.predict(t_eval=t_eval, inputs=inputs)
         assert len(res["Terminal voltage [V]"].data) == 100
 

@@ -27,19 +27,19 @@ def plot_convergence(
     # Extract the cost function from the optimisation object
     cost_function = optim.cost
 
-    # Compute the maximum cost for each iteration
-    max_cost_per_iteration = [
-        max(cost_function(solution) for solution in log_entry)
+    # Compute the minimum cost for each iteration
+    min_cost_per_iteration = [
+        min(cost_function(solution) for solution in log_entry)
         for log_entry in optim.log
     ]
 
     # Generate a list of iteration numbers
-    iteration_numbers = list(range(1, len(max_cost_per_iteration) + 1))
+    iteration_numbers = list(range(1, len(min_cost_per_iteration) + 1))
 
     # Create the convergence plot using the StandardPlot class
     fig = pybop.StandardPlot(
         x=iteration_numbers,
-        y=max_cost_per_iteration,
+        y=min_cost_per_iteration,
         cost=cost_function,
         xaxis_title=xaxis_title,
         yaxis_title=yaxis_title,

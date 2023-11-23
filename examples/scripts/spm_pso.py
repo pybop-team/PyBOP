@@ -3,7 +3,7 @@ import numpy as np
 
 # Define model
 parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
-model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = [
@@ -19,15 +19,13 @@ parameters = [
     ),
 ]
 
-# Generate data
-sigma = 0.01
+sigma = 0.001
 t_eval = np.arange(0, 900, 2)
 values = model.predict(t_eval=t_eval)
 CorruptValues = values["Terminal voltage [V]"].data + np.random.normal(
     0, sigma, len(t_eval)
 )
 
-# Form dataset for optimisation
 dataset = [
     pybop.Dataset("Time [s]", t_eval),
     pybop.Dataset("Current function [A]", values["Current [A]"].data),
@@ -37,10 +35,9 @@ dataset = [
 # Generate problem, cost function, and optimisation class
 problem = pybop.Problem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.Optimisation(cost, optimiser=pybop.CMAES)
+optim = pybop.Optimisation(cost, optimiser=pybop.PSO)
 optim.set_max_iterations(100)
 
-# Run the optimisation
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
 

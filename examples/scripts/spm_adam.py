@@ -37,8 +37,7 @@ dataset = [
 # Generate problem, cost function, and optimisation class
 problem = pybop.Problem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.Optimisation(cost, optimiser=pybop.GradientDescent)
-optim.optimiser.set_learning_rate(0.025)
+optim = pybop.Optimisation(cost, optimiser=pybop.Adam)
 optim.set_max_iterations(100)
 
 # Run optimisation
