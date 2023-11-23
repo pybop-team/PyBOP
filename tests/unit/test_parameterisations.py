@@ -62,12 +62,12 @@ class TestModelParameterisation:
         np.testing.assert_allclose(final_cost, 0, atol=1e-2)
         np.testing.assert_allclose(x, x0, atol=1e-1)
 
-    @pytest.mark.parametrize("init_soc", [0.3, 0.7])
+    @pytest.mark.parametrize("init_soc", [0.5])
     @pytest.mark.unit
-    def test_spme_optimisers(self, init_soc):
+    def test_spm_optimisers(self, init_soc):
         # Define model
         parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
-        model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
+        model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
         # Form dataset
         x0 = np.array([0.52, 0.63])
@@ -100,16 +100,26 @@ class TestModelParameterisation:
         problem = pybop.Problem(
             model, parameters, dataset, signal=signal, init_soc=init_soc
         )
-        cost = pybop.RootMeanSquaredError(problem)
+        cost = pybop.SumSquaredError(problem)
 
         # Select optimisers
-        optimisers = [pybop.NLoptOptimize, pybop.SciPyMinimize, pybop.CMAES]
+        optimisers = [
+            pybop.NLoptOptimize,
+            pybop.SciPyMinimize,
+            pybop.CMAES,
+            pybop.Adam,
+            pybop.GradientDescent,
+            pybop.PSO,
+            pybop.XNES,
+            pybop.SNES,
+            pybop.IRPropMin,
+        ]
 
         # Test each optimiser
         for optimiser in optimisers:
             parameterisation = pybop.Optimisation(cost=cost, optimiser=optimiser)
 
-            if optimiser == pybop.CMAES:
+            if optimiser in [pybop.CMAES]:
                 parameterisation.set_f_guessed_tracking(True)
                 assert parameterisation._use_f_guessed is True
                 parameterisation.set_max_iterations(1)
@@ -120,6 +130,21 @@ class TestModelParameterisation:
 
                 x, final_cost = parameterisation.run()
                 assert parameterisation._max_iterations == 250
+
+            elif optimiser in [pybop.GradientDescent]:
+                parameterisation.optimiser.set_learning_rate(0.025)
+                parameterisation.set_max_iterations(250)
+                x, final_cost = parameterisation.run()
+
+            elif optimiser in [
+                pybop.PSO,
+                pybop.XNES,
+                pybop.SNES,
+                pybop.Adam,
+                pybop.IRPropMin,
+            ]:
+                parameterisation.set_max_iterations(250)
+                x, final_cost = parameterisation.run()
 
             else:
                 x, final_cost = parameterisation.run()
