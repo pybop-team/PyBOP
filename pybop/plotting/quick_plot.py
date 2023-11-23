@@ -41,12 +41,12 @@ def create_figure(x, y, y2, cost, width, height):
     target_trace = go.Scatter(
         x=x,
         y=y2,
-        line=dict(color="rgb(102,102,255,0.1)"),
         mode="markers",
         name="Target",
     )
+
     simulated_trace = go.Scatter(
-        x=x, y=y, line=dict(width=4, color="rgb(255,128,0)"), mode="lines", name="Model"
+        x=x, y=y, line=dict(width=4), mode="lines", name="Model"
     )
 
     # Create a trace for the fill area representing the uncertainty (sigma)

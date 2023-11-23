@@ -67,7 +67,7 @@ from ._problem import Problem
 #
 # Plotting class
 #
-from .plotting.plot_cost2D import plot_cost2D
+from .plotting.plot_cost2d import plot_cost2d
 from .plotting.quick_plot import quick_plot
 
 #

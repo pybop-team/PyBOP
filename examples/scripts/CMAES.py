@@ -44,4 +44,7 @@ print("Estimated parameters:", x)
 pybop.quick_plot(x, cost)
 
 # Plot the cost landscape
-pybop.plot_cost2D(cost, steps=15)
+pybop.plot_cost2d(cost, steps=15)
+
+# Plot the cost landscape with optimisation path
+pybop.plot_cost2d(cost, optim=optim, steps=15)
