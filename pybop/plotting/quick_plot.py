@@ -68,8 +68,8 @@ class StandardPlot:
         xaxis_title=None,
         yaxis_title=None,
         trace_name=None,
-        width=720,
-        height=540,
+        width=1024,
+        height=576,
     ):
         self.x = x if isinstance(x, list) else x.tolist()
         self.y = y
@@ -176,7 +176,7 @@ class StandardPlot:
         return fig
 
 
-def quick_plot(params, cost, title="Scatter Plot", width=720, height=540):
+def quick_plot(params, cost, title="Scatter Plot", width=1024, height=576):
     """
     Plot the target dataset against the minimised model output.
 

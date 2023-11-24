@@ -21,18 +21,16 @@ def pytest_configure(config):
 
 
 def pytest_collection_modifyitems(config, items):
-    def skip_marker(marker_name, reason):
-        skip = pytest.mark.skip(reason=reason)
+    if config.getoption("--unit") and not config.getoption("--examples"):
+        skip_examples = pytest.mark.skip(
+            reason="need --examples option to run examples tests"
+        )
         for item in items:
-            if marker_name in item.keywords:
-                item.add_marker(skip)
+            if "examples" in item.keywords:
+                item.add_marker(skip_examples)
 
-    if config.getoption("--unit"):
-        skip_marker("examples", "need --examples option to run")
-        return
-
-    if config.getoption("--examples"):
-        skip_marker("unit", "need --unit option to run")
-        return
-
-    skip_marker("unit", "need --unit option to run")
+    if config.getoption("--examples") and not config.getoption("--unit"):
+        skip_unit = pytest.mark.skip(reason="need --unit option to run unit tests")
+        for item in items:
+            if "unit" in item.keywords:
+                item.add_marker(skip_unit)

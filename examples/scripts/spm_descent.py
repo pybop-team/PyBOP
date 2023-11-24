@@ -51,6 +51,9 @@ pybop.quick_plot(x, cost, title="Optimised Comparison")
 # Plot convergence
 pybop.plot_convergence(optim)
 
+# Plot the parameter traces
+pybop.plot_parameters(optim)
+
 # Plot the cost landscape
 pybop.plot_cost2d(cost, steps=15)
 
