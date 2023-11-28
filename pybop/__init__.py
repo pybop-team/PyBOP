@@ -38,6 +38,7 @@ from .datasets.base_dataset import Dataset
 #
 from .models.base_model import BaseModel
 from .models import lithium_ion
+from .models import empirical
 
 #
 # Main optimisation class
