@@ -17,6 +17,7 @@ class BaseModel:
     def build(
         self,
         dataset=None,
+        experiment=None,
         fit_parameters=None,
         check_model=True,
         init_soc=None,
@@ -28,13 +29,18 @@ class BaseModel:
         """
         self.fit_parameters = fit_parameters
         self.dataset = dataset
+        self.experiment = experiment
         if self.fit_parameters is not None:
             self.fit_keys = list(self.fit_parameters.keys())
 
         if init_soc is not None:
             self.set_init_soc(init_soc)
 
-        if self._built_model:
+        if experiment is not None:
+            # Leave the build until later to apply the experiment
+            return
+
+        elif self._built_model:
             return
 
         elif self.pybamm_model.is_discretised:

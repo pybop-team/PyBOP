@@ -34,7 +34,9 @@ class TestCosts:
         # Construct Problem
         signal = "Voltage [V]"
         model.parameter_set.update({"Lower voltage cut-off [V]": cut_off})
-        problem = pybop.Problem(model, parameters, dataset, signal=signal, x0=x0)
+        problem = pybop.FittingProblem(
+            parameters, dataset, model=model, signal=signal, x0=x0
+        )
 
         # Base Cost
         base_cost = pybop.BaseCost(problem)
