@@ -9,7 +9,7 @@ class TestExamples:
     A class to test the example scripts.
     """
 
-    @pytest.mark.unit
+    @pytest.mark.examples
     def test_example_scripts(self):
         path_to_example_scripts = os.path.join(
             pybop.script_path, "..", "examples", "scripts"
