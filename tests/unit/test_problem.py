@@ -10,6 +10,46 @@ class TestProblem:
     """
 
     @pytest.mark.unit
+    def test_base_problem(self):
+        # Define model
+        model = pybop.lithium_ion.SPM()
+        model.parameter_set = model.pybamm_model.default_parameter_values
+        x0 = np.array([0.52, 0.63])
+        model.parameter_set.update(
+            {
+                "Negative electrode active material volume fraction": x0[0],
+                "Positive electrode active material volume fraction": x0[1],
+            }
+        )
+
+        parameters = [
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.5, 0.02),
+                bounds=[0.375, 0.625],
+            ),
+            pybop.Parameter(
+                "Positive electrode active material volume fraction",
+                prior=pybop.Gaussian(0.65, 0.02),
+                bounds=[0.525, 0.75],
+            ),
+        ]
+
+        # Test incorrect number of initial parameter values
+        with pytest.raises(ValueError):
+            pybop._problem.BaseProblem(parameters, model=model, x0=np.array([]))
+
+        # Construct Problem
+        problem = pybop._problem.BaseProblem(parameters, model=model)
+
+        assert problem._model == model
+
+        with pytest.raises(NotImplementedError):
+            problem.evaluate([0.5, 0.5])
+        with pytest.raises(NotImplementedError):
+            problem.evaluateS1([0.5, 0.5])
+
+    @pytest.mark.unit
     def test_fitting_problem(self):
         # Define model
         model = pybop.lithium_ion.SPM()
