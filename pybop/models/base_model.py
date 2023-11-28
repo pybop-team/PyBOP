@@ -10,7 +10,7 @@ class BaseModel:
     def __init__(self, name="Base Model"):
         self.name = name
         self.pybamm_model = None
-        self.fit_parameters = None
+        self.parameters = None
         self.dataset = None
         self.signal = None
 
@@ -18,7 +18,7 @@ class BaseModel:
         self,
         dataset=None,
         experiment=None,
-        fit_parameters=None,
+        parameters=None,
         check_model=True,
         init_soc=None,
     ):
@@ -27,11 +27,11 @@ class BaseModel:
         For PyBaMM forward models, this method follows a
         similar process to pybamm.Simulation.build().
         """
-        self.fit_parameters = fit_parameters
+        self.parameters = parameters
         self.dataset = dataset
         self.experiment = experiment
-        if self.fit_parameters is not None:
-            self.fit_keys = list(self.fit_parameters.keys())
+        if self.parameters is not None:
+            self.fit_keys = list(self.parameters.keys())
 
         if init_soc is not None:
             self.set_init_soc(init_soc)
@@ -84,12 +84,12 @@ class BaseModel:
         if self.model_with_set_params:
             return
 
-        if self.fit_parameters is not None:
+        if self.parameters is not None:
             # set input parameters in parameter set from fitting parameters
-            for i in self.fit_parameters.keys():
+            for i in self.parameters.keys():
                 self._parameter_set[i] = "[input]"
 
-        if self.dataset is not None and self.fit_parameters is not None:
+        if self.dataset is not None and self.parameters is not None:
             if "Current function [A]" not in self.fit_keys:
                 self.parameter_set["Current function [A]"] = pybamm.Interpolant(
                     self.dataset["Time [s]"].data,
@@ -115,9 +115,7 @@ class BaseModel:
             raise ValueError("Model must be built before calling simulate")
         else:
             if not isinstance(inputs, dict):
-                inputs_dict = {
-                    key: inputs[i] for i, key in enumerate(self.fit_parameters)
-                }
+                inputs_dict = {key: inputs[i] for i, key in enumerate(self.parameters)}
                 return self.solver.solve(
                     self.built_model, inputs=inputs_dict, t_eval=t_eval
                 )[self.signal].data
@@ -136,9 +134,7 @@ class BaseModel:
             raise ValueError("Model must be built before calling simulate")
         else:
             if not isinstance(inputs, dict):
-                inputs_dict = {
-                    key: inputs[i] for i, key in enumerate(self.fit_parameters)
-                }
+                inputs_dict = {key: inputs[i] for i, key in enumerate(self.parameters)}
 
                 sol = self.solver.solve(
                     self.built_model,
@@ -178,7 +174,7 @@ class BaseModel:
         parameter_set = parameter_set or self._parameter_set
         if inputs is not None:
             if not isinstance(inputs, dict):
-                inputs = {key: inputs[i] for i, key in enumerate(self.fit_parameters)}
+                inputs = {key: inputs[i] for i, key in enumerate(self.parameters)}
             parameter_set.update(inputs)
         if self._unprocessed_model is not None:
             if experiment is None:

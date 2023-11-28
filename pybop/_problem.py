@@ -3,7 +3,7 @@ import numpy as np
 
 class BaseProblem:
     """
-    Defines a PyBOP single output problem, follows the PINTS interface.
+    Defines the PyBOP base problem, following the PINTS interface.
     """
 
     def __init__(
@@ -39,9 +39,7 @@ class BaseProblem:
         # Add the initial values to the parameter definitions
         for i, param in enumerate(self.parameters):
             param.update(value=self.x0[i])
-        self.fit_parameters = {o.name: o.value for o in parameters}
-
-        # Then build the model
+        self.parameters = {o.name: o.value for o in parameters}
 
     def evaluate(self, parameters):
         """
@@ -59,7 +57,7 @@ class BaseProblem:
 
 class FittingProblem(BaseProblem):
     """
-    Defines a PyBOP single output problem, follows the PINTS interface.
+    Defines the problem class for a fitting (parameter estimation) problem.
     """
 
     def __init__(
@@ -100,7 +98,7 @@ class FittingProblem(BaseProblem):
         if self._model._built_model is None:
             self._model.build(
                 dataset=self._dataset,
-                fit_parameters=self.fit_parameters,
+                parameters=self.parameters,
                 check_model=self.check_model,
                 init_soc=self.init_soc,
             )
@@ -119,11 +117,11 @@ class FittingProblem(BaseProblem):
         Evaluate the model with the given parameters and return the signal and
         its derivatives.
         """
-        for i, key in enumerate(self.fit_parameters):
-            self.fit_parameters[key] = parameters[i]
+        for i, key in enumerate(self.parameters):
+            self.parameters[key] = parameters[i]
 
         y, dy = self._model.simulateS1(
-            inputs=self.fit_parameters,
+            inputs=self.parameters,
             t_eval=self._time_data,
         )
 
@@ -132,7 +130,7 @@ class FittingProblem(BaseProblem):
 
 class DesignProblem(BaseProblem):
     """
-    Defines a PyBOP single output problem, follows the PINTS interface.
+    Defines the problem class for a design optimiation problem.
     """
 
     def __init__(
@@ -152,7 +150,7 @@ class DesignProblem(BaseProblem):
         if self._model._built_model is None:
             self._model.build(
                 experiment=self.experiment,
-                fit_parameters=self.fit_parameters,
+                parameters=self.parameters,
                 check_model=self.check_model,
                 init_soc=self.init_soc,
             )
@@ -171,11 +169,11 @@ class DesignProblem(BaseProblem):
         Evaluate the model with the given parameters and return the signal and
         its derivatives.
         """
-        for i, key in enumerate(self.fit_parameters):
-            self.fit_parameters[key] = parameters[i]
+        for i, key in enumerate(self.parameters):
+            self.parameters[key] = parameters[i]
 
         y, dy = self._model.simulateS1(
-            inputs=self.fit_parameters,
+            inputs=self.parameters,
             t_eval=self._time_data,
         )
 
