@@ -10,7 +10,7 @@ class TestProblem:
     """
 
     @pytest.mark.unit
-    def test_problem(self):
+    def test_fitting_problem(self):
         # Define model
         model = pybop.lithium_ion.SPM()
         parameters = [
@@ -74,3 +74,54 @@ class TestProblem:
         )
         sim = model.predict(experiment=experiment)
         return sim
+
+    def test_design_problem(self):
+        # Define model
+        model = pybop.lithium_ion.SPM()
+        model.parameter_set = model.pybamm_model.default_parameter_values
+        x0 = np.array([0.52, 0.63])
+        model.parameter_set.update(
+            {
+                "Negative electrode active material volume fraction": x0[0],
+                "Positive electrode active material volume fraction": x0[1],
+            }
+        )
+
+        # Define target experiment
+        experiment = pybamm.Experiment(
+            [
+                (
+                    "Discharge at 1C for 5 minutes (1 second period)",
+                    "Rest for 2 minutes (1 second period)",
+                    "Charge at 1C for 5 minutes (1 second period)",
+                    "Rest for 2 minutes (1 second period)",
+                ),
+            ]
+            * 2
+        )
+
+        parameters = [
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.5, 0.02),
+                bounds=[0.375, 0.625],
+            ),
+            pybop.Parameter(
+                "Positive electrode active material volume fraction",
+                prior=pybop.Gaussian(0.65, 0.02),
+                bounds=[0.525, 0.75],
+            ),
+        ]
+
+        # Test incorrect number of initial parameter values
+        with pytest.raises(ValueError):
+            pybop.DesignProblem(parameters, experiment, model=model, x0=np.array([]))
+
+        # Construct Problem
+        problem = pybop.DesignProblem(parameters, experiment, model=model)
+
+        assert problem._model == model
+        # problem._model._built_model is None (with an experiment)
+
+        # Test model.predict
+        model.predict(inputs=[0.5, 0.5], experiment=experiment)

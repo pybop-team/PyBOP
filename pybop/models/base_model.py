@@ -177,6 +177,8 @@ class BaseModel:
         """
         parameter_set = parameter_set or self._parameter_set
         if inputs is not None:
+            if not isinstance(inputs, dict):
+                inputs = {key: inputs[i] for i, key in enumerate(self.fit_parameters)}
             parameter_set.update(inputs)
         if self._unprocessed_model is not None:
             if experiment is None:
