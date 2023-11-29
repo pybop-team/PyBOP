@@ -15,6 +15,14 @@ def pytest_addoption(parser):
     )
 
 
+def pytest_terminal_summary(terminalreporter, exitstatus, config):
+    """Add additional section to terminal summary reporting."""
+    total_time = sum([x.duration for x in terminalreporter.stats.get("passed", [])])
+    num_tests = len(terminalreporter.stats.get("passed", []))
+    print(f"\nTotal number of tests completed: {num_tests}")
+    print(f"Total time taken: {total_time:.2f} seconds")
+
+
 def pytest_configure(config):
     config.addinivalue_line("markers", "unit: mark test as a unit test")
     config.addinivalue_line("markers", "examples: mark test as an example")
