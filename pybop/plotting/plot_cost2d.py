@@ -1,13 +1,16 @@
 import numpy as np
 
 
-def plot_cost2d(cost, optim=None, steps=10):
+def plot_cost2d(cost, bounds=None, optim=None, steps=10):
     """
     Query the cost landscape for a given parameter space and plot using plotly.
     """
 
-    # Set up parameter bounds
-    bounds = get_param_bounds(cost)
+    if bounds is None:
+        # Set up parameter bounds
+        bounds = get_param_bounds(cost)
+    else:
+        bounds = bounds
 
     # Generate grid
     x = np.linspace(bounds[0, 0], bounds[0, 1], steps)
