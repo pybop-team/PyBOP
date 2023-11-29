@@ -2,19 +2,18 @@ import pybop
 import numpy as np
 import matplotlib.pyplot as plt
 
-# parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
-model = pybop.empirical.Thevenin()
+model = pybop.empirical.Thevenin()  # (options={"number of rc elements": 2})
 
 # Fitting parameters
 parameters = [
     pybop.Parameter(
         "R0 [Ohm]",
-        prior=pybop.Gaussian(0.001, 0.0001),
-        bounds=[1e-5, 1e-2],
+        prior=pybop.Gaussian(0.0002, 0.0001),
+        bounds=[1e-4, 1e-2],
     ),
     pybop.Parameter(
         "R1 [Ohm]",
-        prior=pybop.Gaussian(0.001, 0.0001),
+        prior=pybop.Gaussian(0.0001, 0.0001),
         bounds=[1e-5, 1e-2],
     ),
 ]
@@ -22,14 +21,12 @@ parameters = [
 sigma = 0.001
 t_eval = np.arange(0, 900, 2)
 values = model.predict(t_eval=t_eval)
-CorruptValues = values["Battery voltage [V]"].data + np.random.normal(
-    0, sigma, len(t_eval)
-)
+CorruptValues = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
 
 dataset = [
     pybop.Dataset("Time [s]", t_eval),
     pybop.Dataset("Current function [A]", values["Current [A]"].data),
-    pybop.Dataset("Battery voltage [V]", CorruptValues),
+    pybop.Dataset("Voltage [V]", CorruptValues),
 ]
 
 # Generate problem, cost function, and optimisation class

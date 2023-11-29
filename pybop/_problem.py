@@ -11,7 +11,7 @@ class Problem:
         model,
         parameters,
         dataset,
-        signal="Battery voltage [V]",
+        signal="Voltage [V]",
         check_model=True,
         init_soc=None,
         x0=None,
