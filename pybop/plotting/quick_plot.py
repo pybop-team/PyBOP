@@ -93,21 +93,38 @@ class StandardPlot:
         # Attempt to import plotly when an instance is created
         try:
             import plotly.graph_objs as go
+            import plotly.io as pio
 
             self.go = go
 
         except ImportError:
-            print("Plotly is not installed. Installing now...")
-            subprocess.check_call([sys.executable, "-m", "pip", "install", "plotly"])
+            user_input = (
+                input(
+                    "Plotly is not installed. To proceed, we need to install plotly. (y/n)?"
+                )
+                .strip()
+                .lower()
+            )
 
-            # Try to import again after installing
-            import plotly.graph_objs as go
+            if user_input == "y":
+                try:
+                    subprocess.check_call(
+                        [sys.executable, "-m", "pip", "install", "plotly"]
+                    )
+                except subprocess.CalledProcessError as e:
+                    print(f"Error installing plotly: {e}")
+                    return
 
-            self.go = go
+                # Try to import again after installing
+                import plotly.graph_objs as go
+                import plotly.io as pio
+
+                self.go = go
+
+            else:
+                print("Installation cancelled by user.")
 
         # Check for the existence of a browser for use by plotly
-        import plotly.io as pio
-
         if pio.renderers.default == "browser":
             try:
                 webbrowser.get()

@@ -1,7 +1,7 @@
+import subprocess
 import pybop
 import math
-import plotly.graph_objs as go
-from plotly.subplots import make_subplots
+import sys
 
 
 def plot_parameters(
@@ -89,15 +89,32 @@ def create_traces(params, trace_data, x_values=None):
     """
 
     # Attempt to import plotly graph objects when an instance is created
-    # try:
-    #     import plotly.graph_objs as go
+    try:
+        import plotly.graph_objs as go
 
-    # except ImportError:
-    #     print("Plotly is not installed. Installing now...")
-    #     subprocess.check_call([sys.executable, "-m", "pip", "install", "plotly"])
+    except ImportError:
+        user_input = (
+            input(
+                "Plotly is not installed. To proceed, we need to install plotly. (y/n)?"
+            )
+            .strip()
+            .lower()
+        )
 
-    #     # Try to import again after installing
-    #     import plotly.graph_objs as go
+        if user_input == "y":
+            try:
+                subprocess.check_call(
+                    [sys.executable, "-m", "pip", "install", "plotly"]
+                )
+            except subprocess.CalledProcessError as e:
+                print(f"Error installing plotly: {e}")
+                return
+
+            # Try to import again after installing
+            import plotly.graph_objs as go
+
+        else:
+            print("Installation cancelled by user.")
 
     traces = []
 
@@ -146,15 +163,32 @@ def create_subplots_with_traces(
     """
 
     # Attempt to import plotly subplots when an instance is created
-    # try:
-    #     from plotly.subplots import make_subplots
+    try:
+        from plotly.subplots import make_subplots
 
-    # except ImportError:
-    #     print("Plotly is not installed. Installing now...")
-    #     subprocess.check_call([sys.executable, "-m", "pip", "install", "plotly"])
+    except ImportError:
+        user_input = (
+            input(
+                "Plotly is not installed. To proceed, we need to install plotly. (y/n)?"
+            )
+            .strip()
+            .lower()
+        )
 
-    #     # Try to import again after installing
-    #     from plotly.subplots import make_subplots
+        if user_input == "y":
+            try:
+                subprocess.check_call(
+                    [sys.executable, "-m", "pip", "install", "plotly"]
+                )
+            except subprocess.CalledProcessError as e:
+                print(f"Error installing plotly: {e}")
+                return
+
+            # Try to import again after installing
+            from plotly.subplots import make_subplots
+
+        else:
+            print("Installation cancelled by user.")
 
     num_traces = len(traces)
     num_cols = int(math.ceil(math.sqrt(num_traces)))
