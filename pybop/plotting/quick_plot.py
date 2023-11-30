@@ -98,6 +98,7 @@ class StandardPlot:
 
         # Check for the existence of a browser for use by plotly
         import plotly.io as pio
+
         if pio.renderers.default == "browser" and os.getenv("BROWSER") is None:
             raise ValueError(
                 "\n\nIn order to view figures in the browser using Plotly, "
