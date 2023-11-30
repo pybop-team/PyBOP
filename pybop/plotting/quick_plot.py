@@ -106,7 +106,7 @@ class StandardPlot:
                 "path to your chosen browser. To do this, please enter a command such "
                 "as the following to add this your virtual environment activation file:\n\n"
                 "echo 'export BROWSER=\"/mnt/c/Program Files/Mozilla Firefox/firefox.exe\"' >> pybop-env/bin/activate"
-                "\n\nThen reactivate your virtual environment. Alternatively you can use a"
+                "\n\nThen reactivate your virtual environment. Alternatively you can use a "
                 "different Plotly renderer. For more information see: "
                 "https://plotly.com/python/renderers/#setting-the-default-renderer"
             )
