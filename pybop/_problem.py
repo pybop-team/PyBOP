@@ -148,7 +148,7 @@ class DesignProblem(BaseProblem):
         # Build the model if required
         if experiment is not None:
             # Leave the build until later to apply the experiment
-            return
+            self._model.parameters = self.parameters
 
         elif self._model._built_model is None:
             self._model.build(
