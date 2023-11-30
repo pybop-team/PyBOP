@@ -1,7 +1,9 @@
 import numpy as np
+import webbrowser
+import subprocess
 import textwrap
 import pybop
-import os
+import sys
 
 
 class StandardPlot:
@@ -93,23 +95,34 @@ class StandardPlot:
             import plotly.graph_objs as go
 
             self.go = go
-        except ImportError as e:
-            raise ImportError(f"Plotly is required for this class to work: {e}")
+
+        except ImportError:
+            print("Plotly is not installed. Installing now...")
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "plotly"])
+
+            # Try to import again after installing
+            import plotly.graph_objs as go
+
+            self.go = go
 
         # Check for the existence of a browser for use by plotly
         import plotly.io as pio
 
-        if pio.renderers.default == "browser" and os.getenv("BROWSER") is None:
-            raise ValueError(
-                "\n\nIn order to view figures in the browser using Plotly, "
-                "you need to set the environment variable BROWSER equal to the "
-                "path to your chosen browser. To do this, please enter a command such "
-                "as the following to add this your virtual environment activation file:\n\n"
-                "echo 'export BROWSER=\"/mnt/c/Program Files/Mozilla Firefox/firefox.exe\"' >> pybop-env/bin/activate"
-                "\n\nThen reactivate your virtual environment. Alternatively you can use a "
-                "different Plotly renderer. For more information see: "
-                "https://plotly.com/python/renderers/#setting-the-default-renderer"
-            )
+        if pio.renderers.default == "browser":
+            try:
+                webbrowser.get()
+            except webbrowser.Error:
+                # If no browser is found, raise an error
+                raise ValueError(
+                    "\n\n **Browser Not Found** \nFor Windows users, in order to view figures in the browser using Plotly, "
+                    "you need to set the environment variable BROWSER equal to the "
+                    "path to your chosen browser. To do this, please enter a command like "
+                    "the following to add this your virtual environment activation file:\n\n"
+                    "echo 'export BROWSER=\"/mnt/c/Program Files/Mozilla Firefox/firefox.exe\"' >> pybop-env/bin/activate"
+                    "\n\nThen reactivate your virtual environment. Alternatively you can use a "
+                    "different Plotly renderer. For more information see: "
+                    "https://plotly.com/python/renderers/#setting-the-default-renderer"
+                )
 
     @staticmethod
     def wrap_text(text, width):

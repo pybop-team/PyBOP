@@ -1,6 +1,6 @@
 import pybop
 import math
-import plotly.graph_objects as go
+import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 
 
@@ -88,6 +88,17 @@ def create_traces(params, trace_data, x_values=None):
     - The function assumes that `go` from `plotly.graph_objs` is already imported as `go`.
     """
 
+    # Attempt to import plotly graph objects when an instance is created
+    # try:
+    #     import plotly.graph_objs as go
+
+    # except ImportError:
+    #     print("Plotly is not installed. Installing now...")
+    #     subprocess.check_call([sys.executable, "-m", "pip", "install", "plotly"])
+
+    #     # Try to import again after installing
+    #     import plotly.graph_objs as go
+
     traces = []
 
     # If x_values are not provided:
@@ -133,6 +144,18 @@ def create_subplots_with_traces(
     :param layout_kwargs: Additional keyword arguments to be passed to fig.update_layout for custom layout.
     :return: A plotly figure object with the subplots.
     """
+
+    # Attempt to import plotly subplots when an instance is created
+    # try:
+    #     from plotly.subplots import make_subplots
+
+    # except ImportError:
+    #     print("Plotly is not installed. Installing now...")
+    #     subprocess.check_call([sys.executable, "-m", "pip", "install", "plotly"])
+
+    #     # Try to import again after installing
+    #     from plotly.subplots import make_subplots
+
     num_traces = len(traces)
     num_cols = int(math.ceil(math.sqrt(num_traces)))
     num_rows = int(math.ceil(num_traces / num_cols))
