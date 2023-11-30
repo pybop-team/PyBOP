@@ -2,7 +2,38 @@ import pybop
 import numpy as np
 import matplotlib.pyplot as plt
 
-model = pybop.empirical.Thevenin()  # (options={"number of rc elements": 2})
+# Define the initial parameter set
+params = {
+    "chemistry": "ecm",
+    "Initial SoC": 0.5,
+    "Initial temperature [K]": 25 + 273.15,
+    "Cell capacity [A.h]": 5,
+    "Nominal cell capacity [A.h]": 5,
+    "Ambient temperature [K]": 25 + 273.15,
+    "Current function [A]": 5,
+    "Upper voltage cut-off [V]": 4.2,
+    "Lower voltage cut-off [V]": 3.0,
+    "Cell thermal mass [J/K]": 1000,
+    "Cell-jig heat transfer coefficient [W/K]": 10,
+    "Jig thermal mass [J/K]": 500,
+    "Jig-air heat transfer coefficient [W/K]": 10,
+    "Open-circuit voltage [V]": pybop.empirical.Thevenin().default_parameter_values[
+        "Open-circuit voltage [V]"
+    ],
+    "R0 [Ohm]": 0.001,
+    "Element-1 initial overpotential [V]": 0,
+    "Element-2 initial overpotential [V]": 0,
+    "R1 [Ohm]": 0.0002,
+    "R2 [Ohm]": 0.0003,
+    "C1 [F]": 10000,
+    "C2 [F]": 5000,
+    "Entropic change [V/K]": 0.0004,
+}
+
+# Define the model
+model = pybop.empirical.Thevenin(
+    parameter_set=params, options={"number of rc elements": 2}
+)
 
 # Fitting parameters
 parameters = [
