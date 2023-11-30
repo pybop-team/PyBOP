@@ -36,11 +36,7 @@ class BaseModel:
         if init_soc is not None:
             self.set_init_soc(init_soc)
 
-        if experiment is not None:
-            # Leave the build until later to apply the experiment
-            return
-
-        elif self._built_model:
+        if self._built_model:
             return
 
         elif self.pybamm_model.is_discretised:
