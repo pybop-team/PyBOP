@@ -15,8 +15,7 @@ class BaseProblem:
         x0=None,
     ):
         self._model = model
-        if model is not None:
-            self.check_model = check_model
+        self.check_model = check_model
         self.parameters = parameters
         self.init_soc = init_soc
         self.x0 = x0
@@ -64,7 +63,7 @@ class FittingProblem(BaseProblem):
         self,
         parameters,
         dataset,
-        model=None,
+        model,
         signal="Terminal voltage [V]",
         check_model=True,
         init_soc=None,
@@ -137,7 +136,7 @@ class DesignProblem(BaseProblem):
         self,
         parameters,
         experiment,
-        model=None,
+        model,
         check_model=True,
         init_soc=None,
         x0=None,
@@ -146,7 +145,7 @@ class DesignProblem(BaseProblem):
         self.experiment = experiment
         self._target = None
 
-        # Set the fitting parameters and build the model
+        # Set the input parameters and build the model
         if self._model._built_model is None:
             self._model.build(
                 experiment=self.experiment,
