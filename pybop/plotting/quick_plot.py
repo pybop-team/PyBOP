@@ -1,6 +1,7 @@
 import numpy as np
 import textwrap
 import pybop
+import os
 
 
 class StandardPlot:
@@ -94,6 +95,20 @@ class StandardPlot:
             self.go = go
         except ImportError as e:
             raise ImportError(f"Plotly is required for this class to work: {e}")
+
+        # Check for the existence of a browser for use by plotly
+        import plotly.io as pio
+        if pio.renderers.default == "browser" and os.getenv("BROWSER") is None:
+            raise ValueError(
+                "\n\nIn order to view figures in the browser using Plotly, "
+                "you need to set the environment variable BROWSER equal to the "
+                "path to your chosen browser. To do this, please enter a command such "
+                "as the following to add this your virtual environment activation file:\n\n"
+                "echo 'export BROWSER=\"/mnt/c/Program Files/Mozilla Firefox/firefox.exe\"' >> pybop-env/bin/activate"
+                "\n\nThen reactivate your virtual environment. Alternatively you can use a"
+                "different Plotly renderer. For more information see: "
+                "https://plotly.com/python/renderers/#setting-the-default-renderer"
+            )
 
     @staticmethod
     def wrap_text(text, width):
