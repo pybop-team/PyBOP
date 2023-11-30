@@ -112,6 +112,15 @@ def create_traces(params, trace_data, x_values=None):
 
             # Try to import again after installing
             import plotly.graph_objs as go
+            import plotly.io as pio
+
+            # Set a default renderer if it installs without
+            if pio.renderers.default is None:
+                pio.renderers.default = "browser"
+                print(
+                    "The Plotly renderer was set to an empty string during installation, which will not generate any plots, "
+                    'so we have set the default renderer as the "browser".'
+                )
 
         else:
             print("Installation cancelled by user.")
@@ -186,6 +195,15 @@ def create_subplots_with_traces(
 
             # Try to import again after installing
             from plotly.subplots import make_subplots
+            import plotly.io as pio
+
+            # Set a default renderer if it installs without
+            if pio.renderers.default == "":
+                pio.renderers.default = "browser"
+                print(
+                    "The Plotly renderer was set to an empty string during installation, which will not generate any plots, "
+                    'so we have set the default renderer as the "browser".'
+                )
 
         else:
             print("Installation cancelled by user.")
