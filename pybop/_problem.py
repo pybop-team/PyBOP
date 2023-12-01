@@ -61,9 +61,9 @@ class FittingProblem(BaseProblem):
 
     def __init__(
         self,
+        model,
         parameters,
         dataset,
-        model,
         signal="Terminal voltage [V]",
         check_model=True,
         init_soc=None,
@@ -134,9 +134,9 @@ class DesignProblem(BaseProblem):
 
     def __init__(
         self,
+        model,
         parameters,
         experiment,
-        model,
         check_model=True,
         init_soc=None,
         x0=None,

@@ -84,11 +84,11 @@ class TestProblem:
         # Test incorrect number of initial parameter values
         with pytest.raises(ValueError):
             pybop.FittingProblem(
-                parameters, dataset, model, signal=signal, x0=np.array([])
+                model, parameters, dataset, signal=signal, x0=np.array([])
             )
 
         # Construct Problem
-        problem = pybop.FittingProblem(parameters, dataset, model, signal=signal)
+        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 
         assert problem._model == model
         assert problem._model._built_model is not None
@@ -100,10 +100,10 @@ class TestProblem:
     def test_design_problem(self, parameters, experiment, model):
         # Test incorrect number of initial parameter values
         with pytest.raises(ValueError):
-            pybop.DesignProblem(parameters, experiment, model, x0=np.array([]))
+            pybop.DesignProblem(model, parameters, experiment, x0=np.array([]))
 
         # Construct Problem
-        problem = pybop.DesignProblem(parameters, experiment, model)
+        problem = pybop.DesignProblem(model, parameters, experiment)
 
         assert problem._model == model
         assert (

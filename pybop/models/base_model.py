@@ -17,7 +17,6 @@ class BaseModel:
     def build(
         self,
         dataset=None,
-        experiment=None,
         parameters=None,
         check_model=True,
         init_soc=None,
@@ -29,7 +28,6 @@ class BaseModel:
         """
         self.parameters = parameters
         self.dataset = dataset
-        self.experiment = experiment
         if self.parameters is not None:
             self.fit_keys = list(self.parameters.keys())
 
