@@ -32,6 +32,10 @@ setup(
         "nlopt>=2.6",
         "pints>=0.5",
     ],
+    extras_require={
+        "plot": ["plotly>=5.0"],
+        "all": ["pybop[plot]"],
+    },
     # https://pypi.org/classifiers/
     classifiers=[],
     python_requires=">=3.8,<=3.12",

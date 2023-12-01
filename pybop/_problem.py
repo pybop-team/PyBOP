@@ -95,3 +95,9 @@ class Problem:
         )
 
         return (np.asarray(y), np.asarray(dy))
+
+    def target(self):
+        """
+        Returns the target dataset.
+        """
+        return self._target

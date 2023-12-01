@@ -1,6 +1,5 @@
 import pybop
 import pandas as pd
-import matplotlib.pyplot as plt
 
 # Form dataset
 Measurements = pd.read_csv("examples/scripts/Chen_example.csv", comment="#").to_numpy()
@@ -36,18 +35,22 @@ problem = pybop.Problem(model, parameters, dataset, signal=signal, init_soc=0.98
 cost = pybop.RootMeanSquaredError(problem)
 
 # Build the optimisation problem
-parameterisation = pybop.Optimisation(cost=cost, optimiser=pybop.NLoptOptimize)
+optim = pybop.Optimisation(cost=cost, optimiser=pybop.NLoptOptimize)
 
 # Run the optimisation problem
-x, final_cost = parameterisation.run()
+x, final_cost = optim.run()
 
-# Show the generated data
-simulated_values = problem.evaluate(x)
+# Plot the timeseries output
+pybop.quick_plot(x, cost, title="Optimised Comparison")
 
-plt.figure()
-plt.xlabel("Time")
-plt.ylabel("Values")
-plt.plot(dataset[0].data, dataset[2].data, label="Measured")
-plt.plot(dataset[0].data, simulated_values, label="Simulated")
-plt.legend(bbox_to_anchor=(0.6, 1), loc="upper left", fontsize=12)
-plt.show()
+# Plot convergence
+pybop.plot_convergence(optim)
+
+# Plot the parameter traces
+pybop.plot_parameters(optim)
+
+# Plot the cost landscape
+pybop.plot_cost2d(cost, steps=15)
+
+# Plot the cost landscape with optimisation path
+pybop.plot_cost2d(cost, optim=optim, steps=15)
