@@ -1,7 +1,5 @@
-import subprocess
 import pybop
 import math
-import sys
 
 
 def plot_parameters(
@@ -88,42 +86,8 @@ def create_traces(params, trace_data, x_values=None):
     - The function assumes that `go` from `plotly.graph_objs` is already imported as `go`.
     """
 
-    # Attempt to import plotly graph objects when an instance is created
-    try:
-        import plotly.graph_objs as go
-
-    except ImportError:
-        user_input = (
-            input(
-                "Plotly is not installed. To proceed, we need to install plotly. (y/n)?"
-            )
-            .strip()
-            .lower()
-        )
-
-        if user_input == "y":
-            try:
-                subprocess.check_call(
-                    [sys.executable, "-m", "pip", "install", "plotly"]
-                )
-            except subprocess.CalledProcessError as e:
-                print(f"Error installing plotly: {e}")
-                return
-
-            # Try to import again after installing
-            import plotly.graph_objs as go
-            import plotly.io as pio
-
-            # Set a default renderer if it installs without
-            if pio.renderers.default is None:
-                pio.renderers.default = "browser"
-                print(
-                    "The Plotly renderer was set to an empty string during installation, which will not generate any plots, "
-                    'so we have set the default renderer as the "browser".'
-                )
-
-        else:
-            print("Installation cancelled by user.")
+    # Attempt to import plotly when an instance is created
+    go = pybop.PlotlyManager().go
 
     traces = []
 
@@ -171,42 +135,8 @@ def create_subplots_with_traces(
     :return: A plotly figure object with the subplots.
     """
 
-    # Attempt to import plotly subplots when an instance is created
-    try:
-        from plotly.subplots import make_subplots
-
-    except ImportError:
-        user_input = (
-            input(
-                "Plotly is not installed. To proceed, we need to install plotly. (y/n)?"
-            )
-            .strip()
-            .lower()
-        )
-
-        if user_input == "y":
-            try:
-                subprocess.check_call(
-                    [sys.executable, "-m", "pip", "install", "plotly"]
-                )
-            except subprocess.CalledProcessError as e:
-                print(f"Error installing plotly: {e}")
-                return
-
-            # Try to import again after installing
-            from plotly.subplots import make_subplots
-            import plotly.io as pio
-
-            # Set a default renderer if it installs without
-            if pio.renderers.default == "":
-                pio.renderers.default = "browser"
-                print(
-                    "The Plotly renderer was set to an empty string during installation, which will not generate any plots, "
-                    'so we have set the default renderer as the "browser".'
-                )
-
-        else:
-            print("Installation cancelled by user.")
+    # Attempt to import plotly when an instance is created
+    make_subplots = pybop.PlotlyManager().make_subplots
 
     num_traces = len(traces)
     num_cols = int(math.ceil(math.sqrt(num_traces)))

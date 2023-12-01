@@ -1,9 +1,6 @@
 import numpy as np
-import webbrowser
-import subprocess
 import textwrap
 import pybop
-import sys
 
 
 class StandardPlot:
@@ -91,73 +88,7 @@ class StandardPlot:
             self.y_lower = (self.y - self.sigma).tolist()
 
         # Attempt to import plotly when an instance is created
-        try:
-            import plotly.graph_objs as go
-            import plotly.io as pio
-
-            self.go = go
-
-        except ImportError:
-            user_input = (
-                input(
-                    "Plotly is not installed. To proceed, we need to install plotly. (y/n)?"
-                )
-                .strip()
-                .lower()
-            )
-
-            if user_input == "y":
-                try:
-                    subprocess.check_call(
-                        [sys.executable, "-m", "pip", "install", "plotly"]
-                    )
-                except subprocess.CalledProcessError as e:
-                    print(f"Error installing plotly: {e}")
-                    return
-
-                # Try to import again after installing
-                import plotly.graph_objs as go
-                import plotly.io as pio
-
-                self.go = go
-
-                # Set a default renderer if it installs without
-                if pio.renderers.default == "":
-                    pio.renderers.default = "browser"
-                    print(
-                        "The Plotly renderer was set to an empty string during installation, which will not generate any plots, "
-                        'so we have set the default renderer as the "browser".'
-                    )
-
-            else:
-                print("Installation cancelled by user.")
-
-        # Check for a plotly renderer
-        if pio.renderers.default == "":
-            print(
-                "The Plotly renderer is an empty string, if this was not on purpose use the following commands "
-                "to see the options and set the renderer:\n"
-                "    pio.renderers\n"
-                '    pio.renderers.default = "browser"\n'
-                "For more information see: https://plotly.com/python/renderers/#setting-the-default-renderer"
-            )
-
-        # Check for the existence of a browser for use by plotly
-        if pio.renderers.default == "browser":
-            try:
-                webbrowser.get()
-            except webbrowser.Error:
-                # If no browser is found, raise an exception with a helpful message
-                raise Exception(
-                    "\n **Browser Not Found** \nFor Windows users, in order to view figures in the browser using Plotly, "
-                    "you need to set the environment variable BROWSER equal to the "
-                    "path to your chosen browser. To do this, please enter a command like "
-                    "the following to add this to your virtual environment activation file:\n\n"
-                    "echo 'export BROWSER=\"/mnt/c/Program Files/Mozilla Firefox/firefox.exe\"' >> your-env/bin/activate"
-                    "\n\nThen reactivate your virtual environment. Alternatively, you can use a "
-                    "different Plotly renderer. For more information see: "
-                    "https://plotly.com/python/renderers/#setting-the-default-renderer"
-                )
+        self.go = pybop.PlotlyManager().go
 
     @staticmethod
     def wrap_text(text, width):
