@@ -14,7 +14,7 @@ def unit(session):
 @nox.session
 def coverage(session):
     session.run_always("pip", "install", "-e", ".[all]")
-    session.install("pytest-cov")
+    session.install("pytest", "pytest-cov", "pytest-mock")
     session.run(
         "pytest",
         "--unit",
