@@ -10,20 +10,8 @@ class TestProblem:
     """
 
     @pytest.fixture
-    def x0(self):
-        return np.array([0.52, 0.63])
-
-    @pytest.fixture
-    def model(self, x0):
-        model = pybop.lithium_ion.SPM()
-        model.parameter_set = model.pybamm_model.default_parameter_values
-        model.parameter_set.update(
-            {
-                "Negative electrode active material volume fraction": x0[0],
-                "Positive electrode active material volume fraction": x0[1],
-            }
-        )
-        return model
+    def model(self):
+        return pybop.lithium_ion.SPM()
 
     @pytest.fixture
     def parameters(self):
@@ -56,6 +44,14 @@ class TestProblem:
 
     @pytest.fixture
     def dataset(self, model, experiment):
+        model.parameter_set = model.pybamm_model.default_parameter_values
+        x0 = np.array([0.52, 0.63])
+        model.parameter_set.update(
+            {
+                "Negative electrode active material volume fraction": x0[0],
+                "Positive electrode active material volume fraction": x0[1],
+            }
+        )
         solution = model.predict(experiment=experiment)
         return [
             pybop.Dataset("Time [s]", solution["Time [s]"].data),
