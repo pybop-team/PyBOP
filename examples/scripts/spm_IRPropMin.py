@@ -1,7 +1,7 @@
 import pybop
 import numpy as np
-import matplotlib.pyplot as plt
 
+# Define model
 parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
@@ -39,15 +39,17 @@ optim.set_max_iterations(100)
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
-# Show the generated data
-simulated_values = problem.evaluate(x)
+# Plot the timeseries output
+pybop.quick_plot(x, cost, title="Optimised Comparison")
 
-plt.figure(dpi=100)
-plt.xlabel("Time", fontsize=12)
-plt.ylabel("Values", fontsize=12)
-plt.plot(t_eval, CorruptValues, label="Measured")
-plt.fill_between(t_eval, simulated_values - sigma, simulated_values + sigma, alpha=0.2)
-plt.plot(t_eval, simulated_values, label="Simulated")
-plt.legend(bbox_to_anchor=(0.6, 1), loc="upper left", fontsize=12)
-plt.tick_params(axis="both", labelsize=12)
-plt.show()
+# Plot convergence
+pybop.plot_convergence(optim)
+
+# Plot the parameter traces
+pybop.plot_parameters(optim)
+
+# Plot the cost landscape
+pybop.plot_cost2d(cost, steps=15)
+
+# Plot the cost landscape with optimisation path
+pybop.plot_cost2d(cost, optim=optim, steps=15)
