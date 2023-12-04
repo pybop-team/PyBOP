@@ -12,7 +12,7 @@ class TestParameterSets:
     def test_parameter_set(self):
         # Tests parameter set creation
         with pytest.raises(ValueError):
-            pybop.ParameterSet.pybamm("Chen2020s")
+            pybop.ParameterSet.pybamm("sChen2010s")
 
         parameter_test = pybop.ParameterSet.pybamm("Chen2020")
         np.testing.assert_allclose(

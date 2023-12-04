@@ -7,22 +7,20 @@ nox.options.reuse_existing_virtualenvs = True
 @nox.session
 def unit(session):
     session.run_always("pip", "install", "-e", ".[all]")
-    session.install("pytest", "pytest-mock")
-    session.run("pytest", "--unit", "-v", "--showlocals")
+    session.install("pytest", "pytest-mock", "pytest-xdist")
+    session.run("pytest", "--unit")
 
 
 @nox.session
 def coverage(session):
     session.run_always("pip", "install", "-e", ".[all]")
-    session.install("pytest", "pytest-cov", "pytest-mock")
+    session.install("pytest", "pytest-cov", "pytest-mock", "pytest-xdist")
     session.run(
         "pytest",
         "--unit",
         "--examples",
-        "-v",
         "--cov",
         "--cov-report=xml",
-        "--showlocals",
     )
 
 
@@ -30,5 +28,5 @@ def coverage(session):
 def notebooks(session):
     """Run the examples tests for Jupyter notebooks."""
     session.run_always("pip", "install", "-e", ".[all]")
-    session.install("pytest", "nbmake")
+    session.install("pytest", "nbmake", "pytest-xdist")
     session.run("pytest", "--nbmake", "examples/", external=True)

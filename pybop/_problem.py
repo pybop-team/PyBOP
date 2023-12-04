@@ -58,10 +58,6 @@ class Problem:
         elif len(x0) != self.n_parameters:
             raise ValueError("x0 dimensions do not match number of parameters")
 
-        # Add the initial values to the parameter definitions
-        for i, param in enumerate(self.parameters):
-            param.update(value=self.x0[i])
-
         # Set the fitting parameters and build the model
         self.fit_parameters = {o.name: o.value for o in parameters}
         if self._model._built_model is None:
