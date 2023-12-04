@@ -13,7 +13,7 @@ class TestModelParameterisation:
     @pytest.mark.unit
     def test_spm(self, init_soc):
         # Define model
-        parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
+        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
         # Form dataset
@@ -66,7 +66,7 @@ class TestModelParameterisation:
     @pytest.mark.unit
     def test_spm_optimisers(self, init_soc):
         # Define model
-        parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
+        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
         # Form dataset
@@ -159,10 +159,10 @@ class TestModelParameterisation:
         # Define two different models with different parameter sets
         # The optimisation should fail as the models are not the same
 
-        parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
+        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
-        second_parameter_set = pybop.ParameterSet("pybamm", "Ecker2015")
+        second_parameter_set = pybop.ParameterSet.pybamm("Ecker2015")
         second_model = pybop.lithium_ion.SPM(parameter_set=second_parameter_set)
 
         # Form observations

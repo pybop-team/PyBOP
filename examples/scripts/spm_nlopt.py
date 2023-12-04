@@ -10,7 +10,7 @@ dataset = [
 ]
 
 # Define model
-parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
+parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 model = pybop.models.lithium_ion.SPM(
     parameter_set=parameter_set, options={"thermal": "lumped"}
 )
