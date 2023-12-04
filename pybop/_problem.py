@@ -38,7 +38,6 @@ class BaseProblem:
         # Add the initial values to the parameter definitions
         for i, param in enumerate(self.parameters):
             param.update(value=self.x0[i])
-        self.parameters = {o.name: o.value for o in parameters}
 
     def evaluate(self, parameters):
         """
@@ -97,7 +96,7 @@ class FittingProblem(BaseProblem):
         if self._model._built_model is None:
             self._model.build(
                 dataset=self._dataset,
-                parameters=self.parameters,
+                parameters={o.name: o.value for o in self.parameters},
                 check_model=self.check_model,
                 init_soc=self.init_soc,
             )
@@ -116,11 +115,9 @@ class FittingProblem(BaseProblem):
         Evaluate the model with the given parameters and return the signal and
         its derivatives.
         """
-        for i, key in enumerate(self.parameters):
-            self.parameters[key] = parameters[i]
 
         y, dy = self._model.simulateS1(
-            inputs=self.parameters,
+            inputs=parameters,
             t_eval=self._time_data,
         )
 
@@ -154,12 +151,12 @@ class DesignProblem(BaseProblem):
         # Build the model if required
         if experiment is not None:
             # Leave the build until later to apply the experiment
-            self._model.parameters = self.parameters
+            self._model.parameters = {o.name: o.value for o in self.parameters}
 
         elif self._model._built_model is None:
             self._model.build(
                 experiment=self.experiment,
-                parameters=self.parameters,
+                parameters={o.name: o.value for o in self.parameters},
                 check_model=self.check_model,
                 init_soc=self.init_soc,
             )
@@ -178,11 +175,9 @@ class DesignProblem(BaseProblem):
         Evaluate the model with the given parameters and return the signal and
         its derivatives.
         """
-        for i, key in enumerate(self.parameters):
-            self.parameters[key] = parameters[i]
 
         y, dy = self._model.simulateS1(
-            inputs=self.parameters,
+            inputs=parameters,
             t_eval=self._time_data,
         )
 
