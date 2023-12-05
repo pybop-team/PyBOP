@@ -87,7 +87,4 @@ class ParameterSet:
         """
         Create a PyBaMM parameter set.
         """
-        try:
-            return pybamm.ParameterValues(name).copy()
-        except ValueError as e:
-            raise ValueError(f"Parameter set '{name}' not found. PyBaMM error: {e}")
+        return pybamm.ParameterValues(name).copy()
