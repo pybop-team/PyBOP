@@ -71,7 +71,7 @@ from .parameters.priors import Gaussian, Uniform, Exponential
 #
 # Problem class
 #
-from ._problem import Problem
+from ._problem import FittingProblem, DesignProblem
 
 #
 # Plotting class

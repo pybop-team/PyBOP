@@ -44,7 +44,7 @@ class TestModelParameterisation:
 
         # Define the cost to optimise
         signal = "Terminal voltage [V]"
-        problem = pybop.Problem(
+        problem = pybop.FittingProblem(
             model, parameters, dataset, signal=signal, init_soc=init_soc
         )
         cost = pybop.RootMeanSquaredError(problem)
@@ -97,7 +97,7 @@ class TestModelParameterisation:
 
         # Define the cost to optimise
         signal = "Terminal voltage [V]"
-        problem = pybop.Problem(
+        problem = pybop.FittingProblem(
             model, parameters, dataset, signal=signal, init_soc=init_soc
         )
         cost = pybop.SumSquaredError(problem)
@@ -193,7 +193,7 @@ class TestModelParameterisation:
 
         # Define the cost to optimise
         signal = "Terminal voltage [V]"
-        problem = pybop.Problem(
+        problem = pybop.FittingProblem(
             model, parameters, dataset, signal=signal, init_soc=init_soc
         )
         cost = pybop.RootMeanSquaredError(problem)

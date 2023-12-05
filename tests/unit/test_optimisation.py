@@ -29,8 +29,12 @@ class TestOptimisation:
 
     @pytest.fixture
     def problem(self, parameters, dataset):
-        return pybop.Problem(
-            pybop.lithium_ion.SPM(), parameters, dataset, signal="Terminal voltage [V]"
+        model = pybop.lithium_ion.SPM()
+        return pybop.FittingProblem(
+            model,
+            parameters,
+            dataset,
+            signal="Terminal voltage [V]",
         )
 
     @pytest.fixture
