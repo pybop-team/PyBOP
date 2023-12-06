@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/Temp_Logo.png" alt="logo" width="400" height="auto" />
   <h1>Python Battery Optimisation and Parameterisation</h1>
 
-<p>
+
   <a href="https://github.com/pybop-team/PyBOP/actions/workflows/scheduled_tests.yaml">
     <img src="https://github.com/pybop-team/PyBOP/actions/workflows/scheduled_tests.yaml/badge.svg" alt="Scheduled" />
   </a>
@@ -28,16 +28,20 @@
   <a href="https://github.com/pybop-team/PyBOP/blob/develop/LICENSE">
     <img src="https://img.shields.io/github/license/pybop-team/PyBOP" alt="license" />
   </a>
-</p>
+  <a href="https://colab.research.google.com/github/pybop-team/PyBOP/blob/develop/">
+    <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="open In colab" />
+  </a>
+  <a href = "https://github.com/pybop-team/PyBOP/releases">
+    <img src = "https://img.shields.io/github/v/release/pybop-team/PyBOP?color=gold"  alt = releases />
+  </a>
 
 </div>
 
 <!-- Software Specification -->
 ## PyBOP
-PyBOP provides a comprehensive suite of tools for parameterisation and optimisation of battery models. It aims to implement Bayesian and frequentist techniques with example workflows to guide the user. PyBOP can be applied to parameterise a wide range of battery models, including the electrochemical and equivalent circuit models available in [PyBaMM](https://pybamm.org/). A major emphasis in PyBOP is understandable and actionable diagnostics for the user, while still providing extensibility for advanced probabilistic methods. By building on the state-of-the-art battery models and leveraging Python's accessibility, PyBOP enables agile and robust parameterisation and optimisation.
+PyBOP offers a full range of tools for the parameterisation and optimisation of battery models, utilising both Bayesian and frequentist approaches with example workflows to assist the user. PyBOP can be used to parameterise various battery models, which include electrochemical and equivalent circuit models that are present in [PyBaMM](https://pybamm.org/). PyBOP prioritises clear and informative diagnostics for users, while also allowing for advanced probabilistic methods.
 
-The figure below gives PyBOP's current conceptual structure. The living software specification of PyBOP can be found [here](https://github.com/pybop-team/software-spec). This package is under active development, expect API (Application Programming Interface) evolution with releases.
-
+The diagram below presents PyBOP's conceptual framework. The PyBOP software specification is available at [this link](https://github.com/pybop-team/software-spec). This product is currently undergoing development, and users can expect the API to evolve with future releases.
 
 <p align="center">
     <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/PyBOP_Architecture.png" alt="Data flows from battery cycling machines to Galv Harvesters, then to the     Galv server and REST API. Metadata can be updated and data read using the web client, and data can be downloaded by the Python client." width="600" />
@@ -47,51 +51,15 @@ The figure below gives PyBOP's current conceptual structure. The living software
 ## Getting Started
 
 <!-- Installation -->
-### Prerequisites
-To use and/or contribute to PyBOP, you must first install Python 3 (specifically, 3.8-3.11). For example, on a Debian-based distribution (Debian, Ubuntu - including via WSL, Linux Mint), open a terminal and enter:
-
-```bash
-sudo apt update
-sudo apt install python3 python3-virtualenv
-```
-
-For further information, please refer to the similar [installation instructions for PyBaMM](https://docs.pybamm.org/en/latest/source/user_guide/installation/GNU-linux.html).
-
 ### Installation
 
-Create a virtual environment called `pybop-env` within your current directory using:
+Within your virtual environment, install PyBOP:
 
 ```bash
-virtualenv pybop-env
+pip install pybop
 ```
 
-Activate the environment with:
-
-```bash
-source pybop-env/bin/activate
-```
-
-You can check which version of python is installed within the virtual environment by typing:
-
-```bash
-python --version
-```
-
-Later, you can deactivate the environment and go back to your original system using:
-
-```bash
-deactivate
-```
-
-Note that there are alternative packages that can be used to create and manage [virtual environments](https://realpython.com/python-virtual-environments-a-primer/), for example [pyenv](https://github.com/pyenv/pyenv#installation) and [pyenv-virtualenv](https://github.com/pyenv/pyenv-virtualenv#installation). In this case, follow the instructions to install these packages and then to create, activate and deactivate a virtual environment, use:
-
-```bash
-pyenv virtualenv pybop-env
-pyenv activate pybop-env
-pyenv deactivate
-```
-
-Within your virtual environment, install the `develop` branch of PyBOP:
+To install the most recent state of PyBOP, install from the `develop` branch,
 
 ```bash
 pip install git+https://github.com/pybop-team/PyBOP.git@develop
@@ -100,106 +68,67 @@ pip install git+https://github.com/pybop-team/PyBOP.git@develop
 To alternatively install PyBOP from a local directory, use the following template, substituting in the relevant path:
 
 ```bash
-pip install -e "PATH_TO_PYBOP"
+pip install -e "path/to/pybop"
 ```
 
-Now, with PyBOP installed in your virtual environment, you can run Python scripts that import and use the functionality of this package.
+To check whether PyBOP has been installed correctly, run one of the examples in the following section. For a development installation, please refer to the [contributing guide](https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md#Installation).
 
-<!-- Example Usage -->
-### Usage
-PyBOP has two classes of intended use cases:
+### Prerequisites
+To use and/or contribute to PyBOP, first install Python (3.8-3.11). On a Debian-based distribution, this looks like:
+
+```bash
+sudo apt update
+sudo apt install python3 python3-virtualenv
+```
+
+For further information, please refer to the similar [installation instructions for PyBaMM](https://docs.pybamm.org/en/latest/source/user_guide/installation/GNU-linux.html).
+
+### Virtual Environments
+To create a virtual environment called `pybop-env` within your current directory:
+
+```bash
+virtualenv pybop-env
+```
+
+Activate the environment:
+
+```bash
+source pybop-env/bin/activate
+```
+
+Later, you can deactivate the environment:
+
+```bash
+deactivate
+```
+
+### Using PyBOP
+PyBOP has two general types of intended use cases:
 1. parameter estimation from battery test data
 2. design optimisation subject to battery manufacturing/usage constraints
 
-These classes encompass a wide variety of optimisation problems, which depend on the choice of battery model, the available data and/or the choice of design parameters.
+These general cases encompass a wide variety of optimisation problems that require careful consideration based on the choice of battery model, the available data and/or the choice of design parameters.
 
-### Parameter estimation
-The example below shows a simple fitting routine that starts by generating synthetic data from a single particle model with modified parameter values. An RMSE cost function using the terminal voltage as the optimised signal is completed to determine the unknown parameter values. First, the synthetic data is generated:
+PyBOP comes with a number of [example notebooks and scripts](https://github.com/pybop-team/PyBOP/blob/develop/examples) which can be found in the examples folder.
 
-```python
-import pybop
-import pybamm
-import pandas as pd
-import numpy as np
+The [spm_descent.py](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_descent.py) script illustrates a straightforward example that starts by generating artificial data from a single particle model (SPM). The unknown parameter values are identified by implementing a sum-of-square error cost function using the terminal voltage as the observed signal and a gradient descent optimiser. To run this example:
 
-def getdata(x0):
-        model = pybamm.lithium_ion.SPM()
-        params = model.default_parameter_values
-
-        params.update(
-            {
-                "Negative electrode active material volume fraction": x0[0],
-                "Positive electrode active material volume fraction": x0[1],
-            }
-        )
-        experiment = pybamm.Experiment(
-            [
-                (
-                    "Discharge at 2C for 5 minutes (1 second period)",
-                    "Rest for 2 minutes (1 second period)",
-                    "Charge at 1C for 5 minutes (1 second period)",
-                    "Rest for 2 minutes (1 second period)",
-                ),
-            ]
-            * 2
-        )
-        sim = pybamm.Simulation(model, experiment=experiment, parameter_values=params)
-        return sim.solve()
-
-
-# Form observations
-x0 = np.array([0.55, 0.63])
-solution = getdata(x0)
+```bash
+python examples/scripts/spm_descent.py
 ```
-Next, the observed variables are defined, with the model construction and parameter definitions following. Finally, the parameterisation class is constructed and parameter fitting is completed.
-```python
-observations = [
-    pybop.Observed("Time [s]", solution["Time [s]"].data),
-    pybop.Observed("Current function [A]", solution["Current [A]"].data),
-    pybop.Observed("Voltage [V]", solution["Terminal voltage [V]"].data),
-]
 
-# Define model
-model = pybop.models.lithium_ion.SPM()
-model.parameter_set = model.pybamm_model.default_parameter_values
-
-# Fitting parameters
-params = [
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.5, 0.05),
-        bounds=[0.35, 0.75],
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.65, 0.05),
-        bounds=[0.45, 0.85],
-    ),
-]
-
-parameterisation = pybop.Parameterisation(
-    model, observations=observations, fit_parameters=params
-)
-
-# get RMSE estimate using NLOpt
-results, last_optim, num_evals = parameterisation.rmse(
-    signal="Voltage [V]", method="nlopt" # results = [0.54452026, 0.63064801]
-)
-```
+In addition, [spm_nlopt.ipynb](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/spm_nlopt.ipynb) provides a second example in notebook form. This example estimates the SPM parameters based on an RMSE cost function and a BOBYQA optimiser.
 
 <!-- Code of Conduct -->
 ## Code of Conduct
 
-PyBOP aims to foster a broad consortium of developers and users, building on and
-learning from the success of the [PyBaMM](https://pybamm.org/) community. Our values are:
+PyBOP aims to foster a broad consortium of developers and users, building on and learning from the success of the [PyBaMM](https://pybamm.org/) community. Our values are:
 
--   Open-source (code and ideas should be shared)
+-   Inclusivity and fairness (those who wish to contribute may do so, and their input is appropriately recognised)
 
--   Inclusivity and fairness (those who want to contribute may do so, and their input is appropriately recognised)
+-   Interoperability (modularity for maximum impact and inclusivity)
 
--   Interoperability (aiming for modularity to enable maximum impact and inclusivity)
-
--   User-friendliness (putting user requirements first, thinking about user-assistance & workflows)
+-   User-friendliness (putting user requirements first via user-assistance & workflows)
 
 
 <!-- Contributing -->
@@ -213,10 +142,11 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <table>
   <tbody>
     <tr>
-      <td align="center" valign="top" width="14.28%"><a href="http://bradyplanden.github.io"><img src="https://avatars.githubusercontent.com/u/55357039?v=4?s=100" width="100px;" alt="Brady Planden"/><br /><sub><b>Brady Planden</b></sub></a><br /><a href="#infra-BradyPlanden" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=BradyPlanden" title="Tests">⚠️</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=BradyPlanden" title="Code">💻</a> <a href="#example-BradyPlanden" title="Examples">💡</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/NicolaCourtier"><img src="https://avatars.githubusercontent.com/u/45851982?v=4?s=100" width="100px;" alt="NicolaCourtier"/><br /><sub><b>NicolaCourtier</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=NicolaCourtier" title="Code">💻</a> <a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3ANicolaCourtier" title="Reviewed Pull Requests">👀</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://bradyplanden.github.io"><img src="https://avatars.githubusercontent.com/u/55357039?v=4?s=100" width="100px;" alt="Brady Planden"/><br /><sub><b>Brady Planden</b></sub></a><br /><a href="#infra-BradyPlanden" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=BradyPlanden" title="Tests">⚠️</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=BradyPlanden" title="Code">💻</a> <a href="#example-BradyPlanden" title="Examples">💡</a> <a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3ABradyPlanden" title="Reviewed Pull Requests">👀</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/NicolaCourtier"><img src="https://avatars.githubusercontent.com/u/45851982?v=4?s=100" width="100px;" alt="NicolaCourtier"/><br /><sub><b>NicolaCourtier</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=NicolaCourtier" title="Code">💻</a> <a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3ANicolaCourtier" title="Reviewed Pull Requests">👀</a> <a href="#example-NicolaCourtier" title="Examples">💡</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=NicolaCourtier" title="Tests">⚠️</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://howey.eng.ox.ac.uk"><img src="https://avatars.githubusercontent.com/u/2247552?v=4?s=100" width="100px;" alt="David Howey"/><br /><sub><b>David Howey</b></sub></a><br /><a href="#ideas-davidhowey" title="Ideas, Planning, & Feedback">🤔</a> <a href="#mentoring-davidhowey" title="Mentoring">🧑‍🏫</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="http://www.rse.ox.ac.uk"><img src="https://avatars.githubusercontent.com/u/1148404?v=4?s=100" width="100px;" alt="Martin Robinson"/><br /><sub><b>Martin Robinson</b></sub></a><br /><a href="#ideas-martinjrobins" title="Ideas, Planning, & Feedback">🤔</a> <a href="#mentoring-martinjrobins" title="Mentoring">🧑‍🏫</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://www.rse.ox.ac.uk"><img src="https://avatars.githubusercontent.com/u/1148404?v=4?s=100" width="100px;" alt="Martin Robinson"/><br /><sub><b>Martin Robinson</b></sub></a><br /><a href="#ideas-martinjrobins" title="Ideas, Planning, & Feedback">🤔</a> <a href="#mentoring-martinjrobins" title="Mentoring">🧑‍🏫</a> <a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3Amartinjrobins" title="Reviewed Pull Requests">👀</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.brosaplanella.xyz"><img src="https://avatars.githubusercontent.com/u/28443643?v=4?s=100" width="100px;" alt="Ferran Brosa Planella"/><br /><sub><b>Ferran Brosa Planella</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3Abrosaplanella" title="Reviewed Pull Requests">👀</a></td>
     </tr>
   </tbody>
 </table>

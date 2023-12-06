@@ -1,21 +1,23 @@
 import pybamm
+import numpy as np
 
 
-class BaseModel():
+class BaseModel:
     """
-    Base class for PyBOP models
+    Base class for pybop models.
     """
 
     def __init__(self, name="Base Model"):
         self.name = name
         self.pybamm_model = None
-        self.fit_parameters = None
-        self.observations = None
+        self.parameters = None
+        self.dataset = None
+        self.signal = None
 
     def build(
         self,
-        observations=None,
-        fit_parameters=None,
+        dataset=None,
+        parameters=None,
         check_model=True,
         init_soc=None,
     ):
@@ -24,8 +26,10 @@ class BaseModel():
         For PyBaMM forward models, this method follows a
         similar process to pybamm.Simulation.build().
         """
-        self.fit_parameters = fit_parameters
-        self.observations = observations
+        self.parameters = parameters
+        self.dataset = dataset
+        if self.parameters is not None:
+            self.fit_keys = list(self.parameters.keys())
 
         if init_soc is not None:
             self.set_init_soc(init_soc)
@@ -59,7 +63,7 @@ class BaseModel():
             self.op_conds_to_built_solvers = None
 
         param = self.pybamm_model.param
-        self.parameter_set = (
+        self._parameter_set = (
             self._unprocessed_parameter_set.set_initial_stoichiometries(
                 init_soc, param=param, inplace=False
             )
@@ -74,19 +78,20 @@ class BaseModel():
         if self.model_with_set_params:
             return
 
-        if self.fit_parameters is not None:
+        if self.parameters is not None:
             # set input parameters in parameter set from fitting parameters
-            for i in self.fit_parameters.keys():
-                self.parameter_set[i] = "[input]"
+            for i in self.parameters.keys():
+                self._parameter_set[i] = "[input]"
 
-        if self.observations is not None and self.fit_parameters is not None:
-            self.parameter_set["Current function [A]"] = pybamm.Interpolant(
-                self.observations["Time [s]"].data,
-                self.observations["Current function [A]"].data,
-                pybamm.t,
-            )
-            # Set t_eval
-            self.time_data = self._parameter_set["Current function [A]"].x[0]
+        if self.dataset is not None and self.parameters is not None:
+            if "Current function [A]" not in self.fit_keys:
+                self.parameter_set["Current function [A]"] = pybamm.Interpolant(
+                    self.dataset["Time [s]"].data,
+                    self.dataset["Current function [A]"].data,
+                    pybamm.t,
+                )
+                # Set t_eval
+                self.time_data = self._parameter_set["Current function [A]"].x[0]
 
         self._model_with_set_params = self._parameter_set.process_model(
             self._unprocessed_model, inplace=False
@@ -99,50 +104,86 @@ class BaseModel():
         Run the forward model and return the result in Numpy array format
         aligning with Pints' ForwardModel simulate method.
         """
+
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
         else:
             if not isinstance(inputs, dict):
-                inputs_dict = {
-                    key: inputs[i] for i, key in enumerate(self.fit_parameters)
-                }
-            return self.solver.solve(
-                self.built_model, inputs=inputs_dict, t_eval=t_eval
-            )["Terminal voltage [V]"].data
+                inputs_dict = {key: inputs[i] for i, key in enumerate(self.parameters)}
+                return self.solver.solve(
+                    self.built_model, inputs=inputs_dict, t_eval=t_eval
+                )[self.signal].data
+            else:
+                return self.solver.solve(
+                    self.built_model, inputs=inputs, t_eval=t_eval
+                )[self.signal].data
 
-    def predict(self, inputs=None, t_eval=None, parameter_set=None, experiment=None):
+    def simulateS1(self, inputs, t_eval):
+        """
+        Run the forward model and return the function evaulation and it's gradient
+        aligning with Pints' ForwardModel simulateS1 method.
+        """
+
+        if self._built_model is None:
+            raise ValueError("Model must be built before calling simulate")
+        else:
+            if not isinstance(inputs, dict):
+                inputs_dict = {key: inputs[i] for i, key in enumerate(self.parameters)}
+
+                sol = self.solver.solve(
+                    self.built_model,
+                    inputs=inputs_dict,
+                    t_eval=t_eval,
+                    calculate_sensitivities=True,
+                )
+            else:
+                sol = self.solver.solve(
+                    self.built_model,
+                    inputs=inputs,
+                    t_eval=t_eval,
+                    calculate_sensitivities=True,
+                )
+
+            return (
+                sol[self.signal].data,
+                np.asarray(
+                    [
+                        sol[self.signal].sensitivities[key].toarray()
+                        for key in self.fit_keys
+                    ]
+                ).T,
+            )
+
+    def predict(
+        self,
+        inputs=None,
+        t_eval=None,
+        parameter_set=None,
+        experiment=None,
+        init_soc=None,
+    ):
         """
         Create a PyBaMM simulation object, solve it, and return a solution object.
         """
-        parameter_set = parameter_set or self.parameter_set
+        parameter_set = parameter_set or self._parameter_set
         if inputs is not None:
+            if not isinstance(inputs, dict):
+                inputs = {key: inputs[i] for i, key in enumerate(self.parameters)}
             parameter_set.update(inputs)
         if self._unprocessed_model is not None:
             if experiment is None:
                 return pybamm.Simulation(
                     self._unprocessed_model,
                     parameter_values=parameter_set,
-                ).solve(t_eval=t_eval)
+                ).solve(t_eval=t_eval, initial_soc=init_soc)
             else:
                 return pybamm.Simulation(
                     self._unprocessed_model,
                     experiment=experiment,
                     parameter_values=parameter_set,
-                ).solve()
+                ).solve(initial_soc=init_soc)
         else:
             raise ValueError("This sim method currently only supports PyBaMM models")
-
-    def n_parameters(self):
-        """
-        Returns the dimension of the parameter space.
-        """
-        return len(self.fit_parameters)
-
-    def n_outputs(self):
-        """
-        Returns the number of outputs this model has. The default is 1.
-        """
-        return 1
 
     @property
     def built_model(self):

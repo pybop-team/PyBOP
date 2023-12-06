@@ -30,7 +30,8 @@ jobs:
       - name: Unit tests with nox
         run: |
           python -m nox -s unit
-  
+          python -m nox -s notebooks
+
     #M-series Mac Mini
   build-apple-mseries:
     runs-on: [self-hosted, macOS, ARM64]
@@ -57,6 +58,7 @@ jobs:
           pyenv activate pybop-${{ matrix.python-version }}
           python -m pip install --upgrade pip wheel setuptools nox
           python -m nox -s unit
+          python -m nox -s notebooks
 
       - name: Uninstall pyenv-virtualenv & python
         if: always()

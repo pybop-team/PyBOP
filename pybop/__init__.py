@@ -7,7 +7,7 @@
 #
 
 import sys
-import os
+from os import path
 
 #
 # Version info
@@ -20,34 +20,66 @@ from pybop.version import __version__
 # Float format: a float can be converted to a 17 digit decimal and back without
 # loss of information
 FLOAT_FORMAT = "{: .17e}"
-# Absolute path to the pybop module
-script_path = os.path.dirname(__file__)
+# Absolute path to the pybop repo
+script_path = path.dirname(__file__)
 
 #
-# Model Classes
+# Cost function class
 #
+from .costs.error_costs import BaseCost, RootMeanSquaredError, SumSquaredError
+
+#
+# Dataset class
+#
+from .datasets.base_dataset import Dataset
+
+#
+# Model classes
+#
+from .models.base_model import BaseModel
 from .models import lithium_ion
-from .models.BaseModel import BaseModel
 
 #
-# Parameterisation class
+# Main optimisation class
 #
-from .parameters.parameter_set import ParameterSet
-from .parameters.parameter import Parameter
-from .datasets.observations import Observed
+from .optimisation import Optimisation
 
 #
-# Priors class
+# Optimiser class
 #
+from .optimisers.base_optimiser import BaseOptimiser
+from .optimisers.nlopt_optimize import NLoptOptimize
+from .optimisers.scipy_minimize import SciPyMinimize
+from .optimisers.pints_optimisers import (
+    GradientDescent,
+    Adam,
+    CMAES,
+    IRPropMin,
+    PSO,
+    SNES,
+    XNES,
+)
+
+#
+# Parameter classes
+#
+from .parameters.base_parameter import Parameter
+from .parameters.base_parameter_set import ParameterSet
 from .parameters.priors import Gaussian, Uniform, Exponential
 
 #
-# Optimisation class
+# Problem class
 #
-from .optimisation import Optimisation
-from .optimisers import BaseOptimiser
-from .optimisers.NLoptOptimize import NLoptOptimize
-from .optimisers.SciPyMinimize import SciPyMinimize
+from ._problem import FittingProblem, DesignProblem
+
+#
+# Plotting class
+#
+from .plotting.plot_cost2d import plot_cost2d
+from .plotting.quick_plot import StandardPlot, quick_plot
+from .plotting.plot_convergence import plot_convergence
+from .plotting.plot_parameters import plot_parameters
+from .plotting.plotly_manager import PlotlyManager
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop
