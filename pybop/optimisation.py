@@ -58,7 +58,9 @@ class Optimisation:
             if issubclass(self.optimiser, pybop.NLoptOptimize):
                 self.optimiser = self.optimiser(self.n_parameters)
 
-            elif issubclass(self.optimiser, pybop.SciPyMinimize):
+            elif issubclass(
+                self.optimiser, (pybop.SciPyMinimize, pybop.SciPyDifferentialEvolution)
+            ):
                 self.optimiser = self.optimiser()
 
             else:

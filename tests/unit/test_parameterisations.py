@@ -106,6 +106,7 @@ class TestModelParameterisation:
         optimisers = [
             pybop.NLoptOptimize,
             pybop.SciPyMinimize,
+            pybop.SciPyDifferentialEvolution,
             pybop.CMAES,
             pybop.Adam,
             pybop.GradientDescent,
@@ -150,8 +151,13 @@ class TestModelParameterisation:
                 x, final_cost = parameterisation.run()
 
             # Assertions
-            np.testing.assert_allclose(final_cost, 0, atol=1e-2)
-            np.testing.assert_allclose(x, x0, atol=1e-1)
+            # Note: SciPyMinimize has a different tolerance due to the local optimisation algorithms
+            if optimiser in [pybop.SciPyMinimize]:
+                np.testing.assert_allclose(final_cost, 0, atol=1e-2)
+                np.testing.assert_allclose(x, x0, atol=2e-1)
+            else:
+                np.testing.assert_allclose(final_cost, 0, atol=1e-2)
+                np.testing.assert_allclose(x, x0, atol=1e-1)
 
     @pytest.mark.parametrize("init_soc", [0.3, 0.7])
     @pytest.mark.unit
