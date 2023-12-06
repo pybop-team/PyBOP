@@ -29,8 +29,12 @@ class TestOptimisation:
 
     @pytest.fixture
     def problem(self, parameters, dataset):
-        return pybop.Problem(
-            pybop.lithium_ion.SPM(), parameters, dataset, signal="Terminal voltage [V]"
+        model = pybop.lithium_ion.SPM()
+        return pybop.FittingProblem(
+            model,
+            parameters,
+            dataset,
+            signal="Terminal voltage [V]",
         )
 
     @pytest.fixture
@@ -53,16 +57,15 @@ class TestOptimisation:
     )
     @pytest.mark.unit
     def test_optimiser_classes(self, cost, optimiser_class, expected_name):
-        if optimiser_class not in [pybop.NLoptOptimize, pybop.SciPyMinimize]:
-            cost.bounds = None
-            opt = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
-            assert opt.optimiser.boundaries is None
-            assert opt.optimiser.name() == expected_name
-        else:
-            opt = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
-            assert opt.optimiser.name == expected_name
+        cost.bounds = None
+        opt = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
 
         assert opt.optimiser is not None
+        assert opt.optimiser.name() == expected_name
+
+        if optimiser_class not in [pybop.NLoptOptimize, pybop.SciPyMinimize]:
+            assert opt.optimiser.boundaries is None
+
         if optimiser_class == pybop.NLoptOptimize:
             assert opt.optimiser.n_param == 1
 

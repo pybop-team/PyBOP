@@ -9,7 +9,6 @@ class NLoptOptimize(BaseOptimiser):
 
     def __init__(self, n_param, xtol=None, method=None):
         super().__init__()
-        self.name = "NLoptOptimize"
         self.n_param = n_param
 
         if method is not None:
@@ -52,3 +51,9 @@ class NLoptOptimize(BaseOptimiser):
         Returns True if the optimiser needs sensitivities.
         """
         return False
+
+    def name(self):
+        """
+        Returns the name of the optimiser.
+        """
+        return "NLoptOptimize"

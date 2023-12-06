@@ -6,7 +6,7 @@ class BaseOptimiser:
     """
 
     def __init__(self):
-        self.name = "Base Optimiser"
+        pass
 
     def optimise(self, cost_function, x0=None, bounds=None):
         """
@@ -28,3 +28,9 @@ class BaseOptimiser:
 
         """
         pass
+
+    def name(self):
+        """
+        Returns the name of the optimiser.
+        """
+        return "Base Optimiser"

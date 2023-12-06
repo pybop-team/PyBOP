@@ -70,12 +70,16 @@ from .parameters.priors import Gaussian, Uniform, Exponential
 #
 # Problem class
 #
-from ._problem import Problem
+from ._problem import FittingProblem, DesignProblem
 
 #
 # Plotting class
 #
-from .plotting.quick_plot import QuickPlot
+from .plotting.plot_cost2d import plot_cost2d
+from .plotting.quick_plot import StandardPlot, quick_plot
+from .plotting.plot_convergence import plot_convergence
+from .plotting.plot_parameters import plot_parameters
+from .plotting.plotly_manager import PlotlyManager
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop

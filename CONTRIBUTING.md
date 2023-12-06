@@ -1,7 +1,20 @@
 # Contributing to PyBOP
 
-If you'd like to contribute to PyBOP, please have a look at the [pre-commit](#pre-commit-checks) and the [workflow](#workflow) guidelines below.
+If you'd like to contribute to PyBOP, please have a look at the guidelines below.
 
+## Installation
+
+To install PyBOP for development purposes, which includes the testing and plotting dependencies, use the `[all]` flag as demonstrated below:
+
+For `zsh`:
+
+```sh
+pip install -e '.[all]'
+```
+For `bash`:
+```sh
+pip install -e .[all]
+```
 ## Pre-commit checks
 
 Before you commit any code, please perform the following checks:
@@ -123,7 +136,7 @@ If you have nox installed, to run unit tests, type
 nox -s unit
 ```
 
-else, type
+Alternatively, to run tests standalone with pytest, run,
 
 ```bash
 pytest --unit -v
