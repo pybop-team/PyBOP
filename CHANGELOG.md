@@ -1,6 +1,7 @@
 # [Unreleased](https://github.com/pybop-team/PyBOP)
 
 ## Features
+- [#131](https://github.com/pybop-team/PyBOP/issues/131) - Adds `SciPyDifferentialEvolution` optimiser
 - [#127](https://github.com/pybop-team/PyBOP/issues/127) - Adds Windows and macOS runners to the `test_on_push` action
 - [#114](https://github.com/pybop-team/PyBOP/issues/114) - Adds standard plotting class `pybop.StandardPlot()` via plotly backend
 - [#114](https://github.com/pybop-team/PyBOP/issues/114) - Adds `quick_plot()`, `plot_convergence()`, and `plot_cost2d()` methods
@@ -9,6 +10,7 @@
 - [#120](https://github.com/pybop-team/PyBOP/issues/120) - Updates the parameterisation test settings including the number of iterations
 
 ## Bug Fixes
+- [#131](https://github.com/pybop-team/PyBOP/issues/131) - Increases the SciPyMinimize optimiser assertion tolerances reduce CI/CD failures
 
 # [v23.11](https://github.com/pybop-team/PyBOP/releases/tag/v23.11)
 - Initial release
