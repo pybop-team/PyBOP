@@ -104,6 +104,7 @@ class TestModelParameterisation:
         # Test each optimiser
         for optimiser in optimisers:
             parameterisation = pybop.Optimisation(cost=spm_cost, optimiser=optimiser)
+            parameterisation.set_max_unchanged_iterations(iterations=15, threshold=5e-4)
 
             if optimiser in [pybop.CMAES]:
                 parameterisation.set_f_guessed_tracking(True)
