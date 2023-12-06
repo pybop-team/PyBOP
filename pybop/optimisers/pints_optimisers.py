@@ -9,7 +9,7 @@ class GradientDescent(pints.GradientDescent):
 
     def __init__(self, x0, sigma0=0.1, bounds=None):
         if bounds is not None:
-            print("Boundaries ignored by GradientDescent")
+            print("NOTE: Boundaries ignored by Gradient Descent")
 
         self.boundaries = None  # Bounds ignored in pints.GradDesc
         super().__init__(x0, sigma0, self.boundaries)
@@ -23,7 +23,7 @@ class Adam(pints.Adam):
 
     def __init__(self, x0, sigma0=0.1, bounds=None):
         if bounds is not None:
-            print("Boundaries ignored by Adam")
+            print("NOTE: Boundaries ignored by Adam")
 
         self.boundaries = None  # Bounds ignored in pints.Adam
         super().__init__(x0, sigma0, self.boundaries)

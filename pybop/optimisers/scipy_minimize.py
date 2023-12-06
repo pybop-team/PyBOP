@@ -9,7 +9,6 @@ class SciPyMinimize(BaseOptimiser):
 
     def __init__(self, method=None, bounds=None):
         super().__init__()
-        self.name = "SciPyMinimize"
         self.method = method
         self.bounds = bounds
 
@@ -48,3 +47,9 @@ class SciPyMinimize(BaseOptimiser):
         Returns True if the optimiser needs sensitivities.
         """
         return False
+
+    def name(self):
+        """
+        Returns the name of the optimiser.
+        """
+        return "SciPyMinimize"
