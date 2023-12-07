@@ -38,10 +38,6 @@ def plot_parameters(
     attribute containing a history of the iterations.
     """
 
-    if optim.optimiser.name() in ["NLoptOptimize", "SciPyMinimize"]:
-        print("Parameter plot not yet supported for this optimiser.")
-        return
-
     # Extract parameters from the optimisation object
     params = optim.cost.problem.parameters
 

@@ -27,14 +27,22 @@ class SciPyMinimize(BaseOptimiser):
         bounds: bounds array
         """
 
+        # Add callback storing history of parameter values
+        self.log = [[x0]]
+
+        def callback(x):
+            self.log.append([x])
+
         if bounds is not None:
             # Reformat bounds and run the optimser
             bounds = (
                 (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
             )
-            output = minimize(cost_function, x0, method=self.method, bounds=bounds)
+            output = minimize(
+                cost_function, x0, method=self.method, bounds=bounds, callback=callback
+            )
         else:
-            output = minimize(cost_function, x0, method=self.method)
+            output = minimize(cost_function, x0, method=self.method, callback=callback)
 
         # Get performance statistics
         x = output.x

@@ -35,7 +35,7 @@ problem = pybop.FittingProblem(model, parameters, dataset, signal=signal, init_s
 cost = pybop.RootMeanSquaredError(problem)
 
 # Build the optimisation problem
-optim = pybop.Optimisation(cost=cost, optimiser=pybop.NLoptOptimize)
+optim = pybop.Optimisation(cost=cost, optimiser=pybop.SciPyMinimize)
 
 # Run the optimisation problem
 x, final_cost = optim.run()

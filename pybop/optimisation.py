@@ -134,6 +134,8 @@ class Optimisation:
             x0=self.x0,
             bounds=self.bounds,
         )
+        self.log = self.optimiser.log
+
         return x, final_cost
 
     def _run_pints(self):
