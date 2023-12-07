@@ -372,7 +372,7 @@ class Optimisation:
             self._parallel = False
             self._n_workers = 1
 
-    def set_max_iterations(self, iterations=10000):
+    def set_max_iterations(self, iterations=1000):
         """
         Adds a stopping criterion, allowing the routine to halt after the
         given number of ``iterations``.
@@ -388,7 +388,7 @@ class Optimisation:
                 raise ValueError("Maximum number of iterations cannot be negative.")
         self._max_iterations = iterations
 
-    def set_max_unchanged_iterations(self, iterations=200, threshold=1e-11):
+    def set_max_unchanged_iterations(self, iterations=25, threshold=1e-5):
         """
         Adds a stopping criterion, allowing the routine to halt if the
         objective function doesn't change by more than ``threshold`` for the

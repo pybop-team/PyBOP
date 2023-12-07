@@ -9,27 +9,14 @@ class TestModelParameterisation:
     A class to test the model parameterisation methods.
     """
 
-    @pytest.mark.parametrize("init_soc", [0.3, 0.7])
-    @pytest.mark.unit
-    def test_spm(self, init_soc):
-        # Define model
+    @pytest.fixture
+    def model(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-        model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+        return pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
-        # Form dataset
-        x0 = np.array([0.52, 0.63])
-        solution = self.getdata(model, x0, init_soc)
-
-        dataset = [
-            pybop.Dataset("Time [s]", solution["Time [s]"].data),
-            pybop.Dataset("Current function [A]", solution["Current [A]"].data),
-            pybop.Dataset(
-                "Terminal voltage [V]", solution["Terminal voltage [V]"].data
-            ),
-        ]
-
-        # Fitting parameters
-        parameters = [
+    @pytest.fixture
+    def parameters(self):
+        return [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.02),
@@ -39,6 +26,23 @@ class TestModelParameterisation:
                 "Positive electrode active material volume fraction",
                 prior=pybop.Gaussian(0.65, 0.02),
                 bounds=[0.525, 0.75],
+            ),
+        ]
+
+    @pytest.fixture
+    def x0(self):
+        return np.array([0.52, 0.63])
+
+    @pytest.mark.parametrize("init_soc", [0.3, 0.7])
+    @pytest.mark.unit
+    def test_spm(self, parameters, model, x0, init_soc):
+        # Form dataset
+        solution = self.getdata(model, x0, init_soc)
+        dataset = [
+            pybop.Dataset("Time [s]", solution["Time [s]"].data),
+            pybop.Dataset("Current function [A]", solution["Current [A]"].data),
+            pybop.Dataset(
+                "Terminal voltage [V]", solution["Terminal voltage [V]"].data
             ),
         ]
 
@@ -62,17 +66,11 @@ class TestModelParameterisation:
         np.testing.assert_allclose(final_cost, 0, atol=1e-2)
         np.testing.assert_allclose(x, x0, atol=1e-1)
 
-    @pytest.mark.parametrize("init_soc", [0.5])
-    @pytest.mark.unit
-    def test_spm_optimisers(self, init_soc):
-        # Define model
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-        model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
-
+    @pytest.fixture
+    def spm_cost(self, parameters, model, x0):
         # Form dataset
-        x0 = np.array([0.52, 0.63])
+        init_soc = 0.5
         solution = self.getdata(model, x0, init_soc)
-
         dataset = [
             pybop.Dataset("Time [s]", solution["Time [s]"].data),
             pybop.Dataset("Current function [A]", solution["Current [A]"].data),
@@ -81,27 +79,15 @@ class TestModelParameterisation:
             ),
         ]
 
-        # Fitting parameters
-        parameters = [
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.5, 0.02),
-                bounds=[0.375, 0.625],
-            ),
-            pybop.Parameter(
-                "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.65, 0.02),
-                bounds=[0.525, 0.75],
-            ),
-        ]
-
         # Define the cost to optimise
         signal = "Terminal voltage [V]"
         problem = pybop.FittingProblem(
             model, parameters, dataset, signal=signal, init_soc=init_soc
         )
-        cost = pybop.SumSquaredError(problem)
+        return pybop.SumSquaredError(problem)
 
+    @pytest.mark.unit
+    def test_spm_optimisers(self, spm_cost, x0):
         # Select optimisers
         optimisers = [
             pybop.NLoptOptimize,
@@ -117,7 +103,8 @@ class TestModelParameterisation:
 
         # Test each optimiser
         for optimiser in optimisers:
-            parameterisation = pybop.Optimisation(cost=cost, optimiser=optimiser)
+            parameterisation = pybop.Optimisation(cost=spm_cost, optimiser=optimiser)
+            parameterisation.set_max_unchanged_iterations(iterations=15, threshold=5e-4)
 
             if optimiser in [pybop.CMAES]:
                 parameterisation.set_f_guessed_tracking(True)
@@ -126,14 +113,14 @@ class TestModelParameterisation:
                 x, final_cost = parameterisation.run()
 
                 parameterisation.set_f_guessed_tracking(False)
-                parameterisation.set_max_iterations(250)
+                parameterisation.set_max_iterations(100)
 
                 x, final_cost = parameterisation.run()
-                assert parameterisation._max_iterations == 250
+                assert parameterisation._max_iterations == 100
 
             elif optimiser in [pybop.GradientDescent]:
                 parameterisation.optimiser.set_learning_rate(0.025)
-                parameterisation.set_max_iterations(250)
+                parameterisation.set_max_iterations(100)
                 x, final_cost = parameterisation.run()
 
             elif optimiser in [
@@ -143,7 +130,7 @@ class TestModelParameterisation:
                 pybop.Adam,
                 pybop.IRPropMin,
             ]:
-                parameterisation.set_max_iterations(250)
+                parameterisation.set_max_iterations(100)
                 x, final_cost = parameterisation.run()
 
             else:
@@ -155,39 +142,19 @@ class TestModelParameterisation:
 
     @pytest.mark.parametrize("init_soc", [0.3, 0.7])
     @pytest.mark.unit
-    def test_model_misparameterisation(self, init_soc):
+    def test_model_misparameterisation(self, parameters, model, x0, init_soc):
         # Define two different models with different parameter sets
         # The optimisation should fail as the models are not the same
-
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-        model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
-
         second_parameter_set = pybop.ParameterSet.pybamm("Ecker2015")
         second_model = pybop.lithium_ion.SPM(parameter_set=second_parameter_set)
 
-        # Form observations
-        x0 = np.array([0.52, 0.63])
+        # Form dataset
         solution = self.getdata(second_model, x0, init_soc)
-
         dataset = [
             pybop.Dataset("Time [s]", solution["Time [s]"].data),
             pybop.Dataset("Current function [A]", solution["Current [A]"].data),
             pybop.Dataset(
                 "Terminal voltage [V]", solution["Terminal voltage [V]"].data
-            ),
-        ]
-
-        # Fitting parameters
-        parameters = [
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.5, 0.02),
-                bounds=[0.375, 0.625],
-            ),
-            pybop.Parameter(
-                "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.65, 0.02),
-                bounds=[0.525, 0.75],
             ),
         ]
 
