@@ -63,7 +63,7 @@ class FittingProblem(BaseProblem):
         model,
         parameters,
         dataset,
-        signal="Terminal voltage [V]",
+        signal="Voltage [V]",
         check_model=True,
         init_soc=None,
         x0=None,

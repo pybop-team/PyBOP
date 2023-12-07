@@ -38,6 +38,7 @@ from .datasets.base_dataset import Dataset
 #
 from .models.base_model import BaseModel
 from .models import lithium_ion
+from .models import empirical
 
 #
 # Main optimisation class
@@ -63,8 +64,8 @@ from .optimisers.pints_optimisers import (
 #
 # Parameter classes
 #
-from .parameters.base_parameter import Parameter
-from .parameters.base_parameter_set import ParameterSet
+from .parameters.parameter import Parameter
+from .parameters.parameter_set import ParameterSet
 from .parameters.priors import Gaussian, Uniform, Exponential
 
 #
