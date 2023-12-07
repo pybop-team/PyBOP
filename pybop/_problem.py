@@ -39,13 +39,13 @@ class BaseProblem:
         for i, param in enumerate(self.parameters):
             param.update(value=self.x0[i])
 
-    def evaluate(self, parameters):
+    def evaluate(self, x):
         """
         Evaluate the model with the given parameters and return the signal.
         """
         raise NotImplementedError
 
-    def evaluateS1(self, parameters):
+    def evaluateS1(self, x):
         """
         Evaluate the model with the given parameters and return the signal and
         its derivatives.
@@ -96,28 +96,28 @@ class FittingProblem(BaseProblem):
         if self._model._built_model is None:
             self._model.build(
                 dataset=self._dataset,
-                parameters={o.name: o.value for o in self.parameters},
+                parameters=self.parameters,
                 check_model=self.check_model,
                 init_soc=self.init_soc,
             )
 
-    def evaluate(self, parameters):
+    def evaluate(self, x):
         """
         Evaluate the model with the given parameters and return the signal.
         """
 
-        y = np.asarray(self._model.simulate(inputs=parameters, t_eval=self._time_data))
+        y = np.asarray(self._model.simulate(inputs=x, t_eval=self._time_data))
 
         return y
 
-    def evaluateS1(self, parameters):
+    def evaluateS1(self, x):
         """
         Evaluate the model with the given parameters and return the signal and
         its derivatives.
         """
 
         y, dy = self._model.simulateS1(
-            inputs=parameters,
+            inputs=x,
             t_eval=self._time_data,
         )
 
@@ -151,33 +151,35 @@ class DesignProblem(BaseProblem):
         # Build the model if required
         if experiment is not None:
             # Leave the build until later to apply the experiment
-            self._model.parameters = {o.name: o.value for o in self.parameters}
+            self._model.parameters = self.parameters
+            if self.parameters is not None:
+                self._model.fit_keys = [param.name for param in self.parameters]
 
         elif self._model._built_model is None:
             self._model.build(
                 experiment=self.experiment,
-                parameters={o.name: o.value for o in self.parameters},
+                parameters=self.parameters,
                 check_model=self.check_model,
                 init_soc=self.init_soc,
             )
 
-    def evaluate(self, parameters):
+    def evaluate(self, x):
         """
         Evaluate the model with the given parameters and return the signal.
         """
 
-        y = np.asarray(self._model.simulate(inputs=parameters, t_eval=self._time_data))
+        y = np.asarray(self._model.simulate(inputs=x, t_eval=self._time_data))
 
         return y
 
-    def evaluateS1(self, parameters):
+    def evaluateS1(self, x):
         """
         Evaluate the model with the given parameters and return the signal and
         its derivatives.
         """
 
         y, dy = self._model.simulateS1(
-            inputs=parameters,
+            inputs=x,
             t_eval=self._time_data,
         )
 
