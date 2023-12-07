@@ -412,6 +412,8 @@ class Optimisation:
         self._unchanged_threshold = threshold
 
     def store_optimised_parameters(self, x):
-        # Add the initial values to the parameter definitions
+        """
+        Store the optimised parameters in the PyBOP parameter class.
+        """
         for i, param in enumerate(self.cost.problem.parameters):
             param.update(value=x[i])
