@@ -12,12 +12,12 @@ class PlotlyManager:
     to display plots.
 
     Methods:
-        `ensure_plotly_installed`: Verifies if Plotly is installed and installs it if necessary.
-        `prompt_for_plotly_installation`: Prompts the user for permission to install Plotly.
-        `install_plotly_package`: Installs the Plotly package using pip.
-        `post_install_setup`: Sets up Plotly default renderer after installation.
-        `check_renderer_settings`: Verifies that the Plotly renderer is correctly set.
-        `check_browser_availability`: Checks if a web browser is available for rendering plots.
+        ``ensure_plotly_installed``: Verifies if Plotly is installed and installs it if necessary.
+        ``prompt_for_plotly_installation``: Prompts the user for permission to install Plotly.
+        ``install_plotly_package``: Installs the Plotly package using pip.
+        ``post_install_setup``: Sets up Plotly default renderer after installation.
+        ``check_renderer_settings``: Verifies that the Plotly renderer is correctly set.
+        ``check_browser_availability``: Checks if a web browser is available for rendering plots.
 
     Usage:
         Instantiate the PlotlyManager class to automatically ensure Plotly is installed

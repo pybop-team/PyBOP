@@ -66,24 +66,24 @@ def create_traces(params, trace_data, x_values=None):
     """
     Generate a list of Plotly Scatter trace objects from provided trace data.
 
-    This function assumes that each column in the `trace_data` represents a separate trace to be plotted,
-    and that the `params` list contains objects with a `name` attribute used for trace names.
-    Text wrapping for trace names is performed by `pybop.StandardPlot.wrap_text`.
+    This function assumes that each column in the ``trace_data`` represents a separate trace to be plotted,
+    and that the ``params`` list contains objects with a ``name`` attribute used for trace names.
+    Text wrapping for trace names is performed by ``pybop.StandardPlot.wrap_text``.
 
     Parameters:
-    - params (list): A list of objects, where each object has a `name` attribute used as the trace name.
-                     The list should have the same length as the number of traces in `trace_data`.
+    - params (list): A list of objects, where each object has a ``name`` attribute used as the trace name.
+                     The list should have the same length as the number of traces in ``trace_data``.
     - trace_data (list of lists): A 2D list where each inner list represents y-values for a trace.
     - x_values (list, optional): A list of x-values to be used for all traces. If not provided, a
                                  range of integers starting from 0 will be used.
 
     Returns:
-    - list: A list of Plotly `go.Scatter` objects, each representing a trace to be plotted.
+    - list: A list of Plotly ``go.Scatter`` objects, each representing a trace to be plotted.
 
     Notes:
-    - The function depends on `pybop.StandardPlot.wrap_text` for text wrapping, which needs to be available
+    - The function depends on ``pybop.StandardPlot.wrap_text`` for text wrapping, which needs to be available
       in the execution context.
-    - The function assumes that `go` from `plotly.graph_objs` is already imported as `go`.
+    - The function assumes that ``go`` from ``plotly.graph_objs`` is already imported as ``go``.
     """
 
     # Attempt to import plotly when an instance is created
