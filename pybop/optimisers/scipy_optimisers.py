@@ -27,14 +27,21 @@ class SciPyMinimize(BaseOptimiser):
         bounds: bounds array
         """
 
+        # Add callback storing history of parameter values
+        self.log = [[x0]]
+
+        def callback(x):
+            self.log.append([x])
+
+        # Reformat bounds
         if bounds is not None:
-            # Reformat bounds and run the optimser
             bounds = (
                 (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
             )
-            output = minimize(cost_function, x0, method=self.method, bounds=bounds)
-        else:
-            output = minimize(cost_function, x0, method=self.method)
+
+        output = minimize(
+            cost_function, x0, method=self.method, bounds=bounds, callback=callback
+        )
 
         # Get performance statistics
         x = output.x
@@ -91,6 +98,12 @@ class SciPyDifferentialEvolution(BaseOptimiser):
                 "Ignoring x0. Initial conditions are not used for differential_evolution."
             )
 
+        # Add callback storing history of parameter values
+        self.log = []
+
+        def callback(x, convergence):
+            self.log.append([x])
+
         # Reformat bounds if necessary
         if isinstance(bounds, dict):
             bounds = [
@@ -103,6 +116,7 @@ class SciPyDifferentialEvolution(BaseOptimiser):
             strategy=self.strategy,
             maxiter=self.maxiter,
             popsize=self.popsize,
+            callback=callback,
         )
 
         # Get performance statistics
