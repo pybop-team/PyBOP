@@ -35,6 +35,15 @@ setup(
     extras_require={
         "plot": ["plotly>=5.0"],
         "all": ["pybop[plot]"],
+        "docs": [
+            "sphinx>=6",
+            "pydata-sphinx-theme",
+            "sphinx-autobuild",
+            "sphinx-autoapi",
+            "sphinx_copybutton",
+            "sphinx_design",
+            "myst-parser",
+        ],
     },
     # https://pypi.org/classifiers/
     classifiers=[],

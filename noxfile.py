@@ -32,3 +32,38 @@ def notebooks(session):
     session.run_always("pip", "install", "-e", ".[all]")
     session.install("pytest", "nbmake")
     session.run("pytest", "--nbmake", "examples/", external=True)
+
+
+@nox.session
+def build_docs(session):
+    """
+    Build the documentation and load it in a browser tab, rebuilding on changes.
+    Credit: PyBaMM Team
+    """
+    envbindir = session.bin
+    session.install("-e", ".[all,docs]")
+    session.chdir("docs")
+    # Local development
+    if session.interactive:
+        session.run(
+            "sphinx-autobuild",
+            "-j",
+            "auto",
+            "--open-browser",
+            "-qT",
+            ".",
+            f"{envbindir}/../tmp/html",
+        )
+    # Runs in CI only, treating warnings as errors
+    else:
+        session.run(
+            "sphinx-build",
+            "-j",
+            "auto",
+            "-b",
+            "html",
+            "-W",
+            "--keep-going",
+            ".",
+            f"{envbindir}/../tmp/html",
+        )
