@@ -13,7 +13,6 @@
 - [#120](https://github.com/pybop-team/PyBOP/issues/120) - Updates the parameterisation test settings including the number of iterations
 
 ## Bug Fixes
-- [#131](https://github.com/pybop-team/PyBOP/issues/131) - Increases the SciPyMinimize optimiser assertion tolerances reduce CI/CD failures
 
 # [v23.11](https://github.com/pybop-team/PyBOP/releases/tag/v23.11)
 - Initial release
