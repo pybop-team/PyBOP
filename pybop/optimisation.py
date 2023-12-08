@@ -135,6 +135,7 @@ class Optimisation:
             cost_function=self.cost,
             x0=self.x0,
             bounds=self.bounds,
+            maxiter=self._max_iterations,
         )
         self.log = self.optimiser.log
 

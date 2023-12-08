@@ -8,9 +8,10 @@ class NLoptOptimize(BaseOptimiser):
     Wrapper class for the NLOpt optimiser class. Extends the BaseOptimiser class.
     """
 
-    def __init__(self, n_param, xtol=None, method=None):
+    def __init__(self, n_param, xtol=None, method=None, maxiter=None):
         super().__init__()
         self.n_param = n_param
+        self.maxiter = maxiter
 
         if method is not None:
             self.optim = nlopt.opt(method, self.n_param)
@@ -45,6 +46,10 @@ class NLoptOptimize(BaseOptimiser):
         self.optim.set_min_objective(cost_wrapper)
         self.optim.set_lower_bounds(bounds["lower"])
         self.optim.set_upper_bounds(bounds["upper"])
+
+        # Set max iterations
+        if self.maxiter is not None:
+            self.optim.set_maxeval(self.maxiter)
 
         # Run the optimser
         x = self.optim.optimize(x0)

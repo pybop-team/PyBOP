@@ -7,10 +7,15 @@ class SciPyMinimize(BaseOptimiser):
     Wrapper class for the SciPy optimisation class. Extends the BaseOptimiser class.
     """
 
-    def __init__(self, method=None, bounds=None):
+    def __init__(self, method=None, bounds=None, maxiter=None):
         super().__init__()
         self.method = method
         self.bounds = bounds
+        self.maxiter = maxiter
+        if self.maxiter is not None:
+            self.options = {"maxiter": self.maxiter}
+        else:
+            self.options = {}
 
         if self.method is None:
             self.method = "COBYLA"  # "L-BFGS-B"
@@ -40,7 +45,12 @@ class SciPyMinimize(BaseOptimiser):
             )
 
         output = minimize(
-            cost_function, x0, method=self.method, bounds=bounds, callback=callback
+            cost_function,
+            x0,
+            method=self.method,
+            bounds=bounds,
+            options=self.options,
+            callback=callback,
         )
 
         # Get performance statistics
