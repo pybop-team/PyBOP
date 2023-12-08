@@ -2,6 +2,7 @@ from importlib.metadata import distributions
 from distutils.spawn import find_executable
 from pybop import PlotlyManager
 import subprocess
+import plotly
 import pytest
 
 # Find the Python executable
@@ -46,6 +47,9 @@ def uninstall_plotly_if_installed():
     # If Plotly was uninstalled for the test, reinstall it afterwards
     if was_installed:
         subprocess.check_call([python_executable, "-m", "pip", "install", "plotly"])
+
+    # Reset the default renderer for tests
+    plotly.io.renderers.default = None
 
 
 @pytest.mark.unit
@@ -99,6 +103,9 @@ def test_post_install_setup(plotly_installed):
     plotly_manager.post_install_setup()
 
     assert plotly_manager.pio.renderers.default == "browser"
+
+    # Reset the default renderer for tests
+    plotly.io.renderers.default = None
 
 
 def is_package_installed(package_name):

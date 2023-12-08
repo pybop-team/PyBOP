@@ -118,6 +118,10 @@ class Optimisation:
         elif not self.pints:
             x, final_cost = self._run_pybop()
 
+        # Store the optimised parameters
+        if self.cost.problem is not None:
+            self.store_optimised_parameters(x)
+
         return x, final_cost
 
     def _run_pybop(self):
@@ -132,6 +136,8 @@ class Optimisation:
             x0=self.x0,
             bounds=self.bounds,
         )
+        self.log = self.optimiser.log
+
         return x, final_cost
 
     def _run_pints(self):
@@ -408,3 +414,10 @@ class Optimisation:
 
         self._unchanged_max_iterations = iterations
         self._unchanged_threshold = threshold
+
+    def store_optimised_parameters(self, x):
+        """
+        Store the optimised parameters in the PyBOP parameter class.
+        """
+        for i, param in enumerate(self.cost.problem.parameters):
+            param.update(value=x[i])

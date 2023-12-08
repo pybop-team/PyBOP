@@ -11,7 +11,7 @@ class TestModelParameterisation:
 
     @pytest.fixture
     def model(self):
-        parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
+        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
         return pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
     @pytest.fixture
@@ -151,7 +151,7 @@ class TestModelParameterisation:
     def test_model_misparameterisation(self, parameters, model, x0, init_soc):
         # Define two different models with different parameter sets
         # The optimisation should fail as the models are not the same
-        second_parameter_set = pybop.ParameterSet("pybamm", "Ecker2015")
+        second_parameter_set = pybop.ParameterSet.pybamm("Ecker2015")
         second_model = pybop.lithium_ion.SPM(parameter_set=second_parameter_set)
 
         # Form dataset

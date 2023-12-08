@@ -6,10 +6,11 @@ class Parameter:
     Class for creating parameters in PyBOP.
     """
 
-    def __init__(self, name, value=None, prior=None, bounds=None):
+    def __init__(self, name, initial_value=None, prior=None, bounds=None):
         self.name = name
         self.prior = prior
-        self.value = value
+        self.initial_value = initial_value
+        self.value = initial_value
         self.bounds = bounds
         self.lower_bound = self.bounds[0]
         self.upper_bound = self.bounds[1]

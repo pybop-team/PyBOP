@@ -1,5 +1,6 @@
 import nlopt
 from .base_optimiser import BaseOptimiser
+import numpy as np
 
 
 class NLoptOptimize(BaseOptimiser):
@@ -33,8 +34,15 @@ class NLoptOptimize(BaseOptimiser):
         bounds: bounds array
         """
 
+        # Add callback storing history of parameter values
+        self.log = [[x0]]
+
+        def cost_wrapper(x, grad):
+            self.log.append([np.array(x)])
+            return cost_function(x, grad)
+
         # Pass settings to the optimiser
-        self.optim.set_min_objective(cost_function)
+        self.optim.set_min_objective(cost_wrapper)
         self.optim.set_lower_bounds(bounds["lower"])
         self.optim.set_upper_bounds(bounds["upper"])
 
