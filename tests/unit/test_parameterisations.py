@@ -92,6 +92,7 @@ class TestModelParameterisation:
         optimisers = [
             pybop.NLoptOptimize,
             pybop.SciPyMinimize,
+            pybop.SciPyDifferentialEvolution,
             pybop.CMAES,
             pybop.Adam,
             pybop.GradientDescent,
