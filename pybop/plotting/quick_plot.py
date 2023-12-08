@@ -33,22 +33,8 @@ class StandardPlot:
     height : int, optional
         The height of the figure in pixels. Defaults to 540.
 
-    Methods:
-    --------
-    wrap_text(text, width)
-        A static method that wraps text to a specified width, inserting HTML line breaks for use in plot labels.
-
-    create_layout()
-        Creates the layout for the plot, including titles and axis labels.
-
-    create_traces()
-        Creates the traces for the plot, including the primary dataset, optional secondary dataset, and an optional uncertainty visualization.
-
-    __call__()
-        Generates the plotly figure when the class instance is called as a function.
-
     Example:
-    --------
+    ----------
     >>> x_data = [1, 2, 3, 4]
     >>> y_simulated = [10, 15, 13, 17]
     >>> y_target = [11, 14, 12, 16]
@@ -103,7 +89,7 @@ class StandardPlot:
             Width to wrap text to.
 
         Returns:
-        --------
+        ----------
         str
             Wrapped text with HTML line breaks.
         """
@@ -176,7 +162,7 @@ def quick_plot(params, cost, title="Scatter Plot", width=1024, height=576):
     Plot the target dataset against the minimised model output.
 
     Parameters:
-    ----------
+    -----------
     params : array-like
         Optimised parameters.
     cost : cost object
@@ -189,7 +175,7 @@ def quick_plot(params, cost, title="Scatter Plot", width=1024, height=576):
         Height of the figure in pixels (default is 540).
 
     Returns:
-    -------
+    ----------
     fig : plotly.graph_objs.Figure
         The Plotly figure object for the scatter plot.
     """

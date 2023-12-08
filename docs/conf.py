@@ -8,23 +8,19 @@ from pathlib import Path
 sys.path.append(str(Path(".").resolve()))
 
 # -- Project information -----------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
-
 project = "PyBOP"
 copyright = "2023, The PyBOP Team"
 author = "The PyBOP Team"
 release = "v23.11"
 
 # -- General configuration ---------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
-
 extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
-    "sphinxext.rediraffe",
+    # "sphinxext.rediraffe",
     "sphinx_design",
     "sphinx_copybutton",
     "autoapi.extension",
@@ -54,9 +50,6 @@ autoapi_root = "api"
 autoapi_member_order = "groupwise"
 
 # -- Options for HTML output -------------------------------------------------
-# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-
-# Set html_theme
 html_theme = "pydata_sphinx_theme"
 html_show_sourcelink = False
 html_title = "PyBOP Documentation"
@@ -69,10 +62,10 @@ html_theme_options = {
             "url": "https://github.com/pybop-team/pybop",
             "icon": "fab fa-github-square",
         },
-        # other icon links
+        # add other icon links as needed
     ],
     "search_bar_text": "Search the docs...",
-    # other options
+    "show_prev_next": False,
 }
 
 html_static_path = ["_static"]

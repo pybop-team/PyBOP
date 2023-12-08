@@ -9,7 +9,7 @@ def plot_parameters(
     Plot the evolution of the parameters during the optimisation process.
 
     Parameters:
-    ----------
+    ------------
     optim : optimisation object
         An object representing the optimisation process, which should contain
         information about the cost function, optimiser, and the history of the
@@ -25,14 +25,14 @@ def plot_parameters(
         plot represents (default is "Convergence").
 
     Returns:
-    -------
+    ----------
     fig : plotly.graph_objs.Figure
         The Plotly figure object for the plot depicting how the parameters of
         the optimisation algorithm evolve over its course. This can be useful
         for diagnosing the behaviour of the optimisation algorithm.
 
     Notes:
-    -----
+    ----------
     The function assumes that the 'optim' object has a 'cost.problem.parameters'
     attribute containing the parameters of the optimisation algorithm and a 'log'
     attribute containing a history of the iterations.

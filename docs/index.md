@@ -6,11 +6,11 @@ myst:
 html_theme.sidebar_secondary.remove: true
 ---
 
-# The PyBOP Package
+<h2> Parameterise and Optimise Battery Models with PyBOP </h2>
 
-A Python package for battery model optimisation and parameterisation.
+Welcome to PyBOP, an advanced Python package dedicated to the optimization and parameterization of battery models. PyBOP is designed to streamline your workflow, whether you are conducting academic research, working in industry, or simply interested in battery technology and modelling.
 
-Version: v23.11
+**Version: v23.11**
 
 ```{gallery-grid}
 :grid-columns: 1 2 2 2
@@ -20,8 +20,10 @@ Version: v23.11
   link: "api/index.html"
 - header: "{fas}`bolt;pst-color-primary` Installation"
   content: "Setting up PyBOP is straightforward. Follow our step-by-step guide to install PyBOP on your system."
+  link: "user_guide/installation.html"
 - header: "{fas}`circle-half-stroke;pst-color-primary` Usage"
   content: "Discover how to use PyBOP effectively with our usage examples. From basic tasks to advanced features, learn how to solve real-world problems with PyBOP."
+  link: "user_guide/index.html"
 - header: "{fab}`python;pst-color-primary` Contributing"
   content: "Contribute to the PyBOP project and become a part of our growing community."
   link: "contributing.html"
@@ -32,4 +34,5 @@ Version: v23.11
 :hidden:
 
 contributing
+user_guide/index
 ```

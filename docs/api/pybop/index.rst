@@ -513,36 +513,19 @@ Attributes
    It also ensures that the Plotly renderer and browser settings are properly configured
    to display plots.
 
-   .. method:: ``ensure_plotly_installed``
-
-      Verifies if Plotly is installed and installs it if necessary.
-
-   .. method:: ``prompt_for_plotly_installation``
-
-      Prompts the user for permission to install Plotly.
-
-   .. method:: ``install_plotly_package``
-
-      Installs the Plotly package using pip.
-
-   .. method:: ``post_install_setup``
-
-      Sets up Plotly default renderer after installation.
-
-   .. method:: ``check_renderer_settings``
-
-      Verifies that the Plotly renderer is correctly set.
-
-   .. method:: ``check_browser_availability``
-
-      Checks if a web browser is available for rendering plots.
-
+   Methods:
+   ``ensure_plotly_installed``: Verifies if Plotly is installed and installs it if necessary.
+   ``prompt_for_plotly_installation``: Prompts the user for permission to install Plotly.
+   ``install_plotly_package``: Installs the Plotly package using pip.
+   ``post_install_setup``: Sets up Plotly default renderer after installation.
+   ``check_renderer_settings``: Verifies that the Plotly renderer is correctly set.
+   ``check_browser_availability``: Checks if a web browser is available for rendering plots.
 
    Usage:
-       Instantiate the PlotlyManager class to automatically ensure Plotly is installed
-       and configured correctly when creating an instance.
-       Example:
-           plotly_manager = PlotlyManager()
+   Instantiate the PlotlyManager class to automatically ensure Plotly is installed
+   and configured correctly when creating an instance.
+   Example:
+   plotly_manager = PlotlyManager()
 
    .. py:method:: check_browser_availability()
 
@@ -658,22 +641,8 @@ Attributes
    height : int, optional
        The height of the figure in pixels. Defaults to 540.
 
-   Methods:
-   --------
-   wrap_text(text, width)
-       A static method that wraps text to a specified width, inserting HTML line breaks for use in plot labels.
-
-   create_layout()
-       Creates the layout for the plot, including titles and axis labels.
-
-   create_traces()
-       Creates the traces for the plot, including the primary dataset, optional secondary dataset, and an optional uncertainty visualization.
-
-   __call__()
-       Generates the plotly figure when the class instance is called as a function.
-
    Example:
-   --------
+   ----------
    >>> x_data = [1, 2, 3, 4]
    >>> y_simulated = [10, 15, 13, 17]
    >>> y_target = [11, 14, 12, 16]
@@ -710,7 +679,7 @@ Attributes
           Width to wrap text to.
 
       Returns:
-      --------
+      ----------
       str
           Wrapped text with HTML line breaks.
 
@@ -788,14 +757,36 @@ Attributes
        Title of the plot (default is "Convergence").
 
    Returns:
-   -------
+   ----------
    fig : plotly.graph_objs.Figure
        The Plotly figure object for the convergence plot.
 
 
 .. py:function:: plot_cost2d(cost, bounds=None, optim=None, steps=10)
 
-   Query the cost landscape for a given parameter space and plot using plotly.
+   Query the cost landscape for a given parameter space and plot it using Plotly.
+
+   This function creates a 2D plot that visualizes the cost landscape over a grid
+   of points within specified parameter bounds. If no bounds are provided, it determines
+   them from the bounds on the parameter class.
+
+   :param cost: A callable representing the cost function to be queried. It should
+                take a list of parameters and return a cost value.
+   :type cost: callable
+   :param bounds: The bounds for the parameter space as a 2x2 array, with each
+                  sub-array representing the min and max bounds for a parameter.
+                  If None, bounds will be determined by `get_param_bounds`.
+   :type bounds: numpy.ndarray, optional
+   :param optim: An optional optimizer instance. If provided, it will be used to
+                 overlay optimizer-specific information on the plot.
+   :type optim: object, optional
+   :param steps: The number of steps to divide the parameter space grid. More steps
+                 result in finer resolution but increase computational cost.
+   :type steps: int, optional
+   :return: A Plotly figure object representing the cost landscape plot.
+   :rtype: plotly.graph_objs.Figure
+
+   :raises ValueError: If the cost function does not behave as expected.
 
 
 .. py:function:: plot_parameters(optim, xaxis_titles='Iteration', yaxis_titles=None, title='Convergence')
@@ -803,7 +794,7 @@ Attributes
    Plot the evolution of the parameters during the optimisation process.
 
    Parameters:
-   ----------
+   ------------
    optim : optimisation object
        An object representing the optimisation process, which should contain
        information about the cost function, optimiser, and the history of the
@@ -819,14 +810,14 @@ Attributes
        plot represents (default is "Convergence").
 
    Returns:
-   -------
+   ----------
    fig : plotly.graph_objs.Figure
        The Plotly figure object for the plot depicting how the parameters of
        the optimisation algorithm evolve over its course. This can be useful
        for diagnosing the behaviour of the optimisation algorithm.
 
    Notes:
-   -----
+   ----------
    The function assumes that the 'optim' object has a 'cost.problem.parameters'
    attribute containing the parameters of the optimisation algorithm and a 'log'
    attribute containing a history of the iterations.
@@ -837,7 +828,7 @@ Attributes
    Plot the target dataset against the minimised model output.
 
    Parameters:
-   ----------
+   -----------
    params : array-like
        Optimised parameters.
    cost : cost object
@@ -850,7 +841,7 @@ Attributes
        Height of the figure in pixels (default is 540).
 
    Returns:
-   -------
+   ----------
    fig : plotly.graph_objs.Figure
        The Plotly figure object for the scatter plot.
 

@@ -19,7 +19,7 @@ def plot_convergence(
         Title of the plot (default is "Convergence").
 
     Returns:
-    -------
+    ----------
     fig : plotly.graph_objs.Figure
         The Plotly figure object for the convergence plot.
     """
