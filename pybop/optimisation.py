@@ -58,7 +58,9 @@ class Optimisation:
             if issubclass(self.optimiser, pybop.NLoptOptimize):
                 self.optimiser = self.optimiser(self.n_parameters)
 
-            elif issubclass(self.optimiser, pybop.SciPyMinimize):
+            elif issubclass(
+                self.optimiser, (pybop.SciPyMinimize, pybop.SciPyDifferentialEvolution)
+            ):
                 self.optimiser = self.optimiser()
 
             else:
@@ -116,6 +118,10 @@ class Optimisation:
         elif not self.pints:
             x, final_cost = self._run_pybop()
 
+        # Store the optimised parameters
+        if self.cost.problem is not None:
+            self.store_optimised_parameters(x)
+
         return x, final_cost
 
     def _run_pybop(self):
@@ -129,7 +135,10 @@ class Optimisation:
             cost_function=self.cost,
             x0=self.x0,
             bounds=self.bounds,
+            maxiter=self._max_iterations,
         )
+        self.log = self.optimiser.log
+
         return x, final_cost
 
     def _run_pints(self):
@@ -406,3 +415,10 @@ class Optimisation:
 
         self._unchanged_max_iterations = iterations
         self._unchanged_threshold = threshold
+
+    def store_optimised_parameters(self, x):
+        """
+        Store the optimised parameters in the PyBOP parameter class.
+        """
+        for i, param in enumerate(self.cost.problem.parameters):
+            param.update(value=x[i])

@@ -39,12 +39,12 @@ def plot_cost2d(cost, bounds=None, optim=None, steps=10):
     y = np.linspace(bounds[1, 0], bounds[1, 1], steps)
 
     # Initialize cost matrix
-    costs = np.zeros((len(x), len(y)))
+    costs = np.zeros((len(y), len(x)))
 
     # Populate cost matrix
     for i, xi in enumerate(x):
         for j, yj in enumerate(y):
-            costs[i, j] = cost([xi, yj])
+            costs[j, i] = cost([xi, yj])
 
     # Create figure
     fig = create_figure(x, y, costs, bounds, cost.problem.parameters, optim)
@@ -95,8 +95,8 @@ def create_figure(x, y, z, bounds, params, optim):
         # Plot optimisation trace
         fig.add_trace(
             go.Scatter(
-                x=optim_trace[0:-1, 0],
-                y=optim_trace[0:-1, 1],
+                x=optim_trace[:, 0],
+                y=optim_trace[:, 1],
                 mode="markers",
                 marker=dict(
                     color=[i / len(optim_trace) for i in range(len(optim_trace))],

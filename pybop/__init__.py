@@ -38,6 +38,7 @@ from ._dataset import Dataset
 #
 from .models.base_model import BaseModel
 from .models import lithium_ion
+from .models import empirical
 
 #
 # Main optimisation class
@@ -49,7 +50,7 @@ from .optimisation import Optimisation
 #
 from .optimisers.base_optimiser import BaseOptimiser
 from .optimisers.nlopt_optimize import NLoptOptimize
-from .optimisers.scipy_minimize import SciPyMinimize
+from .optimisers.scipy_optimisers import SciPyMinimize, SciPyDifferentialEvolution
 from .optimisers.pints_optimisers import (
     GradientDescent,
     Adam,
@@ -63,8 +64,8 @@ from .optimisers.pints_optimisers import (
 #
 # Parameter classes
 #
-from .parameters.base_parameter import Parameter
-from .parameters.base_parameter_set import ParameterSet
+from .parameters.parameter import Parameter
+from .parameters.parameter_set import ParameterSet
 from .parameters.priors import Gaussian, Uniform, Exponential
 
 #

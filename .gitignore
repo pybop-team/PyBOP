@@ -304,3 +304,6 @@ $RECYCLE.BIN/
 
 # Visual Studio Code settings
 .vscode/*
+
+# Output JSON files
+*fit_ecm_parameters.json

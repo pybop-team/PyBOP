@@ -46,6 +46,7 @@ class TestOptimisation:
         [
             (pybop.NLoptOptimize, "NLoptOptimize"),
             (pybop.SciPyMinimize, "SciPyMinimize"),
+            (pybop.SciPyDifferentialEvolution, "SciPyDifferentialEvolution"),
             (pybop.GradientDescent, "Gradient descent"),
             (pybop.Adam, "Adam"),
             (pybop.CMAES, "Covariance Matrix Adaptation Evolution Strategy (CMA-ES)"),
@@ -63,7 +64,11 @@ class TestOptimisation:
         assert opt.optimiser is not None
         assert opt.optimiser.name() == expected_name
 
-        if optimiser_class not in [pybop.NLoptOptimize, pybop.SciPyMinimize]:
+        if optimiser_class not in [
+            pybop.NLoptOptimize,
+            pybop.SciPyMinimize,
+            pybop.SciPyDifferentialEvolution,
+        ]:
             assert opt.optimiser.boundaries is None
 
         if optimiser_class == pybop.NLoptOptimize:

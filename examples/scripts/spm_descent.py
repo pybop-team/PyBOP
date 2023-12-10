@@ -2,7 +2,7 @@ import pybop
 import numpy as np
 
 # Parameter set and model definition
-parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
+parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
 # Fitting parameters
@@ -23,15 +23,13 @@ parameters = [
 sigma = 0.001
 t_eval = np.arange(0, 900, 2)
 values = model.predict(t_eval=t_eval)
-corrupt_values = values["Terminal voltage [V]"].data + np.random.normal(
-    0, sigma, len(t_eval)
-)
+corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
 
 # Dataset definition
 dataset = [
     pybop.Dataset("Time [s]", t_eval),
     pybop.Dataset("Current function [A]", values["Current [A]"].data),
-    pybop.Dataset("Terminal voltage [V]", corrupt_values),
+    pybop.Dataset("Voltage [V]", corrupt_values),
 ]
 
 # Generate problem, cost function, and optimisation class
