@@ -8,7 +8,7 @@ html_theme.sidebar_secondary.remove: true
 
 <h2> Parameterise and Optimise Battery Models with PyBOP </h2>
 
-Welcome to PyBOP, an advanced Python package dedicated to the optimization and parameterization of battery models. PyBOP is designed to streamline your workflow, whether you are conducting academic research, working in industry, or simply interested in battery technology and modelling.
+Welcome to PyBOP, a Python package dedicated to the optimization and parameterization of battery models. PyBOP is designed to streamline your workflow, whether you are conducting academic research, working in industry, or simply interested in battery technology and modelling.
 
 **Version: v23.11**
 
@@ -33,6 +33,6 @@ Welcome to PyBOP, an advanced Python package dedicated to the optimization and p
 :maxdepth: 2
 :hidden:
 
-contributing
 user_guide/index
+contributing
 ```

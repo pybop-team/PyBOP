@@ -20,23 +20,20 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
-    # "sphinxext.rediraffe",
     "sphinx_design",
     "sphinx_copybutton",
     "autoapi.extension",
     # custom extentions
     "_extension.gallery_directive",
-    # "_extension.component_directive",
     # For extension examples and demos
     "myst_parser",
     # "ablog",
     # "jupyter_sphinx",
-    # "sphinxcontrib.youtube",
     # "nbsphinx",
     # "numpydoc",
     # "sphinx_togglebutton",
     # "jupyterlite_sphinx",
-    # "sphinx_favicon",
+    "sphinx_favicon",
 ]
 
 templates_path = ["_templates"]

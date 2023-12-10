@@ -41,6 +41,7 @@ setup(
             "sphinx-autobuild",
             "sphinx-autoapi",
             "sphinx_copybutton",
+            "sphinx_favicon",
             "sphinx_design",
             "myst-parser",
         ],

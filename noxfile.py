@@ -35,7 +35,7 @@ def notebooks(session):
 
 
 @nox.session
-def build_docs(session):
+def docs(session):
     """
     Build the documentation and load it in a browser tab, rebuilding on changes.
     Credit: PyBaMM Team

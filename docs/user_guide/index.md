@@ -19,4 +19,4 @@ installation
 
 usage
 
-```{toctree}
+```
