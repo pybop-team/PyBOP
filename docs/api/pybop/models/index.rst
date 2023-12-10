@@ -10,6 +10,7 @@ Subpackages
    :titlesonly:
    :maxdepth: 3
 
+   empirical/index.rst
    lithium_ion/index.rst
 
 

@@ -10,6 +10,6 @@ Submodules
    :titlesonly:
    :maxdepth: 1
 
-   base_parameter/index.rst
-   base_parameter_set/index.rst
+   parameter/index.rst
+   parameter_set/index.rst
    priors/index.rst

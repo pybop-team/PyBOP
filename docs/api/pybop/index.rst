@@ -57,6 +57,7 @@ Classes
    pybop.PlotlyManager
    pybop.RootMeanSquaredError
    pybop.SNES
+   pybop.SciPyDifferentialEvolution
    pybop.SciPyMinimize
    pybop.StandardPlot
    pybop.SumSquaredError
@@ -92,8 +93,23 @@ Attributes
 
    Bases: :py:obj:`pints.Adam`
 
-   Adam optimiser. Inherits from the PINTS Adam class.
-   https://github.com/pints-team/pints/blob/main/pints/_optimisers/_adam.py
+   Implements the Adam optimization algorithm.
+
+   This class extends the Adam optimizer from the PINTS library, which combines
+   ideas from RMSProp and Stochastic Gradient Descent with momentum. Note that
+   this optimizer does not support boundary constraints.
+
+   :param x0: Initial position from which optimization will start.
+   :type x0: array_like
+   :param sigma0: Initial step size (default is 0.1).
+   :type sigma0: float, optional
+   :param bounds: Ignored by this optimizer, provided for API consistency.
+   :type bounds: sequence or ``Bounds``, optional
+
+   .. seealso::
+
+      :obj:`pints.Adam`
+          The PINTS implementation this class is based on.
 
 
 .. py:class:: BaseCost(problem)
@@ -141,7 +157,37 @@ Attributes
 .. py:class:: BaseModel(name='Base Model')
 
 
-   Base class for pybop models.
+   A base class for constructing and simulating models using PyBaMM.
+
+   This class serves as a foundation for building specific models in PyBaMM.
+   It provides methods to set up the model, define parameters, and perform
+   simulations. The class is designed to be subclassed for creating models
+   with custom behavior.
+
+   .. method:: build(dataset=None, parameters=None, check_model=True, init_soc=None)
+
+      Construct the PyBaMM model if not already built.
+
+   .. method:: set_init_soc(init_soc)
+
+      Set the initial state of charge for the battery model.
+
+   .. method:: set_params()
+
+      Assign the parameters to the model.
+
+   .. method:: simulate(inputs, t_eval)
+
+      Execute the forward model simulation and return the result.
+
+   .. method:: simulateS1(inputs, t_eval)
+
+      Perform the forward model simulation with sensitivities.
+
+   .. method:: predict(inputs=None, t_eval=None, parameter_set=None, experiment=None, init_soc=None)
+
+      Solve the model using PyBaMM's simulation framework and return the solution.
+
 
    .. py:property:: built_model
 
@@ -172,60 +218,168 @@ Attributes
 
    .. py:method:: build(dataset=None, parameters=None, check_model=True, init_soc=None)
 
-      Build the PyBOP model (if not built already).
-      For PyBaMM forward models, this method follows a
-      similar process to pybamm.Simulation.build().
+      Construct the PyBaMM model if not already built, and set parameters.
+
+      This method initializes the model components, applies the given parameters,
+      sets up the mesh and discretization if needed, and prepares the model
+      for simulations.
+
+      :param dataset: The dataset to be used in the model construction.
+      :type dataset: pybamm.Dataset, optional
+      :param parameters: A dictionary containing parameter values to apply to the model.
+      :type parameters: dict, optional
+      :param check_model: If True, the model will be checked for correctness after construction.
+      :type check_model: bool, optional
+      :param init_soc: The initial state of charge to be used in simulations.
+      :type init_soc: float, optional
 
 
    .. py:method:: predict(inputs=None, t_eval=None, parameter_set=None, experiment=None, init_soc=None)
 
-      Create a PyBaMM simulation object, solve it, and return a solution object.
+      Solve the model using PyBaMM's simulation framework and return the solution.
+
+      This method sets up a PyBaMM simulation by configuring the model, parameters, experiment
+      (if any), and initial state of charge (if provided). It then solves the simulation and
+      returns the resulting solution object.
+
+      :param inputs: Input parameters for the simulation. If the input is array-like, it is converted
+                     to a dictionary using the model's fitting keys. Defaults to None, indicating
+                     that the default parameters should be used.
+      :type inputs: dict or array-like, optional
+      :param t_eval: An array of time points at which to evaluate the solution. Defaults to None,
+                     which means the time points need to be specified within experiment or elsewhere.
+      :type t_eval: array-like, optional
+      :param parameter_set: A PyBaMM ParameterValues object or a dictionary containing the parameter values
+                            to use for the simulation. Defaults to the model's current ParameterValues if None.
+      :type parameter_set: pybamm.ParameterValues, optional
+      :param experiment: A PyBaMM Experiment object specifying the experimental conditions under which
+                         the simulation should be run. Defaults to None, indicating no experiment.
+      :type experiment: pybamm.Experiment, optional
+      :param init_soc: The initial state of charge for the simulation, as a fraction (between 0 and 1).
+                       Defaults to None.
+      :type init_soc: float, optional
+
+      :returns: The solution object returned after solving the simulation.
+      :rtype: pybamm.Solution
+
+      :raises ValueError: If the model has not been configured properly before calling this method or
+          if PyBaMM models are not supported by the current simulation method.
 
 
    .. py:method:: set_init_soc(init_soc)
 
-      Set the initial state of charge.
+      Set the initial state of charge for the battery model.
+
+      :param init_soc: The initial state of charge to be used in the model.
+      :type init_soc: float
 
 
    .. py:method:: set_params()
 
-      Set the parameters in the model.
+      Assign the parameters to the model.
+
+      This method processes the model with the given parameters, sets up
+      the geometry, and updates the model instance.
 
 
    .. py:method:: simulate(inputs, t_eval)
 
-      Run the forward model and return the result in Numpy array format
-      aligning with Pints' ForwardModel simulate method.
+      Execute the forward model simulation and return the result.
+
+      :param inputs: The input parameters for the simulation. If array-like, it will be
+                     converted to a dictionary using the model's fit keys.
+      :type inputs: dict or array-like
+      :param t_eval: An array of time points at which to evaluate the solution.
+      :type t_eval: array-like
+
+      :returns: The simulation result corresponding to the specified signal.
+      :rtype: array-like
+
+      :raises ValueError: If the model has not been built before simulation.
 
 
    .. py:method:: simulateS1(inputs, t_eval)
 
-      Run the forward model and return the function evaulation and it's gradient
-      aligning with Pints' ForwardModel simulateS1 method.
+      Perform the forward model simulation with sensitivities.
+
+      :param inputs: The input parameters for the simulation. If array-like, it will be
+                     converted to a dictionary using the model's fit keys.
+      :type inputs: dict or array-like
+      :param t_eval: An array of time points at which to evaluate the solution and its
+                     sensitivities.
+      :type t_eval: array-like
+
+      :returns: A tuple containing the simulation result and the sensitivities.
+      :rtype: tuple
+
+      :raises ValueError: If the model has not been built before simulation.
 
 
 
 .. py:class:: BaseOptimiser
 
 
-   Base class for the optimisation methods.
+   A base class for defining optimisation methods.
+
+   This class serves as a template for creating optimisers. It provides a basic structure for
+   an optimisation algorithm, including the initial setup and a method stub for performing
+   the optimisation process. Child classes should override the optimise and _runoptimise
+   methods with specific algorithms.
+
+   .. method:: optimise(cost_function, x0=None, bounds=None, maxiter=None)
+
+      Initiates the optimisation process. This is a stub and should be implemented in child classes.
+
+   .. method:: _runoptimise(cost_function, x0=None, bounds=None)
+
+      Contains the logic for the optimisation algorithm. This is a stub and should be implemented in child classes.
+
+   .. method:: name()
+
+      Returns the name of the optimiser.
 
 
    .. py:method:: _runoptimise(cost_function, x0=None, bounds=None)
 
-      Run optimisation method, to be overloaded by child classes.
+      Contains the logic for the optimisation algorithm.
 
+      This method should be implemented by child classes to perform the actual optimisation.
+
+      :param cost_function: The cost function to be minimised by the optimiser.
+      :type cost_function: callable
+      :param x0: Initial guess for the parameters. Default is None.
+      :type x0: ndarray, optional
+      :param bounds: Bounds on the parameters. Default is None.
+      :type bounds: sequence or Bounds, optional
+
+      :returns: * *This method is expected to return the result of the optimisation, the format of which*
+                * *will be determined by the child class implementation.*
 
 
    .. py:method:: name()
 
       Returns the name of the optimiser.
 
+      :returns: The name of the optimiser, which is "BaseOptimiser" for this base class.
+      :rtype: str
 
-   .. py:method:: optimise(cost_function, x0=None, bounds=None)
 
-      Optimisiation method to be overloaded by child classes.
+   .. py:method:: optimise(cost_function, x0=None, bounds=None, maxiter=None)
 
+      Initiates the optimisation process.
+
+      This method should be overridden by child classes with the specific optimisation algorithm.
+
+      :param cost_function: The cost function to be minimised by the optimiser.
+      :type cost_function: callable
+      :param x0: Initial guess for the parameters. Default is None.
+      :type x0: ndarray, optional
+      :param bounds: Bounds on the parameters. Default is None.
+      :type bounds: sequence or Bounds, optional
+      :param maxiter: Maximum number of iterations to perform. Default is None.
+      :type maxiter: int, optional
+
+      :rtype: The result of the optimisation process. The specific type of this result will depend on the child implementation.
 
 
 
@@ -234,8 +388,23 @@ Attributes
 
    Bases: :py:obj:`pints.CMAES`
 
-   Class for the PINTS optimisation. Extends the BaseOptimiser class.
-   https://github.com/pints-team/pints/blob/main/pints/_optimisers/_cmaes.py
+   Adapter for the Covariance Matrix Adaptation Evolution Strategy (CMA-ES) optimizer in PINTS.
+
+   CMA-ES is an evolutionary algorithm for difficult non-linear non-convex optimization problems.
+   It adapts the covariance matrix of a multivariate normal distribution to capture the shape of the cost landscape.
+
+   :param x0: The initial parameter vector to optimize.
+   :type x0: array_like
+   :param sigma0: Initial standard deviation of the sampling distribution, defaults to 0.1.
+   :type sigma0: float, optional
+   :param bounds: A dictionary with 'lower' and 'upper' keys containing arrays for lower and upper bounds on the parameters.
+                  If ``None``, no bounds are enforced.
+   :type bounds: dict, optional
+
+   .. seealso::
+
+      :obj:`pints.CMAES`
+          PINTS implementation of CMA-ES algorithm.
 
 
 .. py:class:: Dataset(name, data)
@@ -279,12 +448,12 @@ Attributes
 
    Defines the problem class for a design optimiation problem.
 
-   .. py:method:: evaluate(parameters)
+   .. py:method:: evaluate(x)
 
       Evaluate the model with the given parameters and return the signal.
 
 
-   .. py:method:: evaluateS1(parameters)
+   .. py:method:: evaluateS1(x)
 
       Evaluate the model with the given parameters and return the signal and
       its derivatives.
@@ -299,36 +468,68 @@ Attributes
 .. py:class:: Exponential(scale)
 
 
-   Exponential prior class.
+   Represents an exponential distribution with a specified scale parameter.
+
+   This class provides methods to calculate the pdf, the log pdf, and to generate random
+   variates from the distribution.
+
+   :param scale: The scale parameter (lambda) of the exponential distribution.
+   :type scale: float
 
    .. py:method:: __repr__()
 
-      Return repr(self).
+      Returns a string representation of the Uniform object.
 
 
    .. py:method:: logpdf(x)
 
+      Calculates the logarithm of the pdf of the exponential distribution at x.
+
+      :param x: The point at which to evaluate the log pdf.
+      :type x: float
+
+      :returns: The log of the probability density function value at x.
+      :rtype: float
+
 
    .. py:method:: pdf(x)
+
+      Calculates the probability density function of the exponential distribution at x.
+
+      :param x: The point at which to evaluate the pdf.
+      :type x: float
+
+      :returns: The probability density function value at x.
+      :rtype: float
 
 
    .. py:method:: rvs(size)
 
+      Generates random variates from the exponential distribution.
+
+      :param size: The number of random variates to generate.
+      :type size: int
+
+      :returns: An array of random variates from the exponential distribution.
+      :rtype: array_like
+
+      :raises ValueError: If the size parameter is not positive.
 
 
-.. py:class:: FittingProblem(model, parameters, dataset, signal='Terminal voltage [V]', check_model=True, init_soc=None, x0=None)
+
+.. py:class:: FittingProblem(model, parameters, dataset, signal='Voltage [V]', check_model=True, init_soc=None, x0=None)
 
 
    Bases: :py:obj:`BaseProblem`
 
    Defines the problem class for a fitting (parameter estimation) problem.
 
-   .. py:method:: evaluate(parameters)
+   .. py:method:: evaluate(x)
 
       Evaluate the model with the given parameters and return the signal.
 
 
-   .. py:method:: evaluateS1(parameters)
+   .. py:method:: evaluateS1(x)
 
       Evaluate the model with the given parameters and return the signal and
       its derivatives.
@@ -343,20 +544,54 @@ Attributes
 .. py:class:: Gaussian(mean, sigma)
 
 
-   Gaussian prior class.
+   Represents a Gaussian (normal) distribution with a given mean and standard deviation.
+
+   This class provides methods to calculate the probability density function (pdf),
+   the logarithm of the pdf, and to generate random variates (rvs) from the distribution.
+
+   :param mean: The mean (mu) of the Gaussian distribution.
+   :type mean: float
+   :param sigma: The standard deviation (sigma) of the Gaussian distribution.
+   :type sigma: float
 
    .. py:method:: __repr__()
 
-      Return repr(self).
+      Returns a string representation of the Gaussian object.
 
 
    .. py:method:: logpdf(x)
 
+      Calculates the logarithm of the probability density function of the Gaussian distribution at x.
+
+      :param x: The point at which to evaluate the log pdf.
+      :type x: float
+
+      :returns: The logarithm of the probability density function value at x.
+      :rtype: float
+
 
    .. py:method:: pdf(x)
 
+      Calculates the probability density function of the Gaussian distribution at x.
+
+      :param x: The point at which to evaluate the pdf.
+      :type x: float
+
+      :returns: The probability density function value at x.
+      :rtype: float
+
 
    .. py:method:: rvs(size)
+
+      Generates random variates from the Gaussian distribution.
+
+      :param size: The number of random variates to generate.
+      :type size: int
+
+      :returns: An array of random variates from the Gaussian distribution.
+      :rtype: array_like
+
+      :raises ValueError: If the size parameter is not positive.
 
 
 
@@ -365,8 +600,23 @@ Attributes
 
    Bases: :py:obj:`pints.GradientDescent`
 
-   Gradient descent optimiser. Inherits from the PINTS gradient descent class.
-   https://github.com/pints-team/pints/blob/main/pints/_optimisers/_gradient_descent.py
+   Implements a simple gradient descent optimization algorithm.
+
+   This class extends the gradient descent optimizer from the PINTS library, designed
+   to minimize a scalar function of one or more variables. Note that this optimizer
+   does not support boundary constraints.
+
+   :param x0: Initial position from which optimization will start.
+   :type x0: array_like
+   :param sigma0: Initial step size (default is 0.1).
+   :type sigma0: float, optional
+   :param bounds: Ignored by this optimizer, provided for API consistency.
+   :type bounds: sequence or ``Bounds``, optional
+
+   .. seealso::
+
+      :obj:`pints.GradientDescent`
+          The PINTS implementation this class is based on.
 
 
 .. py:class:: IRPropMin(x0, sigma0=0.1, bounds=None)
@@ -374,37 +624,87 @@ Attributes
 
    Bases: :py:obj:`pints.IRPropMin`
 
-   IRProp- optimiser. Inherits from the PINTS IRPropMinus class.
-   https://github.com/pints-team/pints/blob/main/pints/_optimisers/_irpropmin.py
+   Implements the iRpropMin optimization algorithm.
+
+   This class inherits from the PINTS IRPropMin class, which is an optimizer that
+   uses resilient backpropagation with weight-backtracking. It is designed to handle
+   problems with large plateaus, noisy gradients, and local minima.
+
+   :param x0: Initial position from which optimization will start.
+   :type x0: array_like
+   :param sigma0: Initial step size (default is 0.1).
+   :type sigma0: float, optional
+   :param bounds: Lower and upper bounds for each optimization parameter.
+   :type bounds: dict, optional
+
+   .. seealso::
+
+      :obj:`pints.IRPropMin`
+          The PINTS implementation this class is based on.
 
 
-.. py:class:: NLoptOptimize(n_param, xtol=None, method=None)
+.. py:class:: NLoptOptimize(n_param, xtol=None, method=None, maxiter=None)
 
 
    Bases: :py:obj:`pybop.optimisers.base_optimiser.BaseOptimiser`
 
-   Wrapper class for the NLOpt optimiser class. Extends the BaseOptimiser class.
+   Extends BaseOptimiser to utilize the NLopt library for nonlinear optimization.
+
+   This class serves as an interface to the NLopt optimization algorithms. It allows the user to
+   define an optimization problem with bounds, initial guesses, and to select an optimization method
+   provided by NLopt.
+
+   :param n_param: Number of parameters to optimize.
+   :type n_param: int
+   :param xtol: The relative tolerance for optimization (stopping criteria). If not provided, a default of 1e-5 is used.
+   :type xtol: float, optional
+   :param method: The NLopt algorithm to use for optimization. If not provided, LN_BOBYQA is used by default.
+   :type method: nlopt.algorithm, optional
+   :param maxiter: The maximum number of iterations to perform during optimization. If not provided, NLopt's default is used.
+   :type maxiter: int, optional
+
+   .. method:: _runoptimise(cost_function, x0, bounds)
+
+      Performs the optimization using the NLopt library.
+
+   .. method:: needs_sensitivities()
+
+      Indicates whether the optimizer requires gradient information.
+
+   .. method:: name()
+
+      Returns the name of the optimizer.
+
 
    .. py:method:: _runoptimise(cost_function, x0, bounds)
 
-      Run the NLOpt optimisation method.
+      Runs the optimization process using the NLopt library.
 
-      Inputs
-      ----------
-      cost_function: function for optimising
-      method: optimisation algorithm
-      x0: initialisation array
-      bounds: bounds array
+      :param cost_function: The objective function to minimize. It should take an array of parameter values and return the scalar cost.
+      :type cost_function: callable
+      :param x0: The initial guess for the parameters.
+      :type x0: array_like
+      :param bounds: A dictionary containing the 'lower' and 'upper' bounds arrays for the parameters.
+      :type bounds: dict
+
+      :returns: A tuple containing the optimized parameter values and the final cost.
+      :rtype: tuple
 
 
    .. py:method:: name()
 
-      Returns the name of the optimiser.
+      Returns the name of this optimizer instance.
+
+      :returns: The name 'NLoptOptimize' representing this NLopt optimization class.
+      :rtype: str
 
 
    .. py:method:: needs_sensitivities()
 
-      Returns True if the optimiser needs sensitivities.
+      Indicates if the optimizer requires gradient information for the cost function.
+
+      :returns: False, as the default NLopt algorithms do not require gradient information.
+      :rtype: bool
 
 
 
@@ -511,45 +811,192 @@ Attributes
       Credit: PINTS
 
 
+   .. py:method:: store_optimised_parameters(x)
+
+      Store the optimised parameters in the PyBOP parameter class.
+
+
 
 .. py:class:: PSO(x0, sigma0=0.1, bounds=None)
 
 
    Bases: :py:obj:`pints.PSO`
 
-   Particle swarm optimiser. Inherits from the PINTS PSO class.
-   https://github.com/pints-team/pints/blob/main/pints/_optimisers/_pso.py
+   Implements a particle swarm optimization (PSO) algorithm.
+
+   This class extends the PSO optimizer from the PINTS library. PSO is a
+   metaheuristic optimization method inspired by the social behavior of birds
+   flocking or fish schooling, suitable for global optimization problems.
+
+   :param x0: Initial positions of particles, which the optimization will use.
+   :type x0: array_like
+   :param sigma0: Spread of the initial particle positions (default is 0.1).
+   :type sigma0: float, optional
+   :param bounds: Lower and upper bounds for each optimization parameter.
+   :type bounds: dict, optional
+
+   .. seealso::
+
+      :obj:`pints.PSO`
+          The PINTS implementation this class is based on.
 
 
-.. py:class:: Parameter(name, value=None, prior=None, bounds=None)
+.. py:class:: Parameter(name, initial_value=None, prior=None, bounds=None)
 
 
-   ""
-   Class for creating parameters in PyBOP.
+   Represents a parameter within the PyBOP framework.
+
+   This class encapsulates the definition of a parameter, including its name, prior
+   distribution, initial value, bounds, and a margin to ensure the parameter stays
+   within feasible limits during optimization or sampling.
+
+   :param name: The name of the parameter.
+   :type name: str
+   :param initial_value: The initial value to be assigned to the parameter. Defaults to None.
+   :type initial_value: float, optional
+   :param prior: The prior distribution from which parameter values are drawn. Defaults to None.
+   :type prior: scipy.stats distribution, optional
+   :param bounds: A tuple defining the lower and upper bounds for the parameter.
+                  Defaults to None.
+   :type bounds: tuple, optional
+
+   .. method:: rvs(n_samples)
+
+      Draw random samples from the parameter's prior distribution.
+
+   .. method:: update(value)
+
+      Update the parameter's current value.
+
+   .. method:: set_margin(margin)
+
+      Set the margin to a specified positive value less than 1.
+
+
+   :raises ValueError: If the lower bound is not strictly less than the upper bound, or if
+       the margin is set outside the interval (0, 1).
 
    .. py:method:: __repr__()
 
-      Return repr(self).
+      Return a string representation of the Parameter instance.
+
+      :returns: A string including the parameter's name, prior, bounds, and current value.
+      :rtype: str
 
 
    .. py:method:: rvs(n_samples)
 
-      Returns a random value sample from the prior distribution.
+      Draw random samples from the parameter's prior distribution.
+
+      The samples are constrained to be within the parameter's bounds, excluding
+      a predefined margin at the boundaries.
+
+      :param n_samples: The number of samples to draw.
+      :type n_samples: int
+
+      :returns: An array of samples drawn from the prior distribution within the parameter's bounds.
+      :rtype: array-like
 
 
    .. py:method:: set_margin(margin)
 
-      Sets the margin for the parameter.
+      Set the margin to a specified positive value less than 1.
+
+      The margin is used to ensure parameter samples are not drawn exactly at the bounds,
+      which may be problematic in some optimization or sampling algorithms.
+
+      :param margin: The new margin value to be used, which must be in the interval (0, 1).
+      :type margin: float
+
+      :raises ValueError: If the margin is not between 0 and 1.
 
 
    .. py:method:: update(value)
 
+      Update the parameter's current value.
+
+      :param value: The new value to be assigned to the parameter.
+      :type value: float
 
 
-.. py:class:: ParameterSet
+
+.. py:class:: ParameterSet(json_path=None, params_dict=None)
 
 
-   Class for creating parameter sets in PyBOP.
+   Handles the import and export of parameter sets for battery models.
+
+   This class provides methods to load parameters from a JSON file and to export them
+   back to a JSON file. It also includes custom logic to handle special cases, such
+   as parameter values that require specific initialization.
+
+   :param json_path: Path to a JSON file containing parameter data. If provided, parameters will be imported from this file during initialization.
+   :type json_path: str, optional
+   :param params_dict: A dictionary of parameters to initialize the ParameterSet with. If not provided, an empty dictionary is used.
+   :type params_dict: dict, optional
+
+   .. py:method:: _handle_special_cases()
+
+      Processes special cases for parameter values that require custom handling.
+
+      For example, if the open-circuit voltage is specified as 'default', it will
+      fetch the default value from the PyBaMM empirical Thevenin model.
+
+
+   .. py:method:: export_parameters(output_json_path, fit_params=None)
+
+      Exports parameters to a JSON file specified by `output_json_path`.
+
+      The current state of the `params` attribute is written to the file. If `fit_params`
+      is provided, these parameters are updated before export. Non-serializable values
+      are handled and noted in the output JSON.
+
+      :param output_json_path: The file path where the JSON output will be saved.
+      :type output_json_path: str
+      :param fit_params: Parameters that have been fitted and need to be included in the export.
+      :type fit_params: list of fitted parameter objects, optional
+
+      :raises ValueError: If there are no parameters to export.
+
+
+   .. py:method:: import_parameters(json_path=None)
+
+      Imports parameters from a JSON file specified by the `json_path` attribute.
+
+      If a `json_path` is provided at initialization or as an argument, that JSON file
+      is loaded and the parameters are stored in the `params` attribute. Special cases
+      are handled appropriately.
+
+      :param json_path: Path to the JSON file from which to import parameters. If provided, it overrides the instance's `json_path`.
+      :type json_path: str, optional
+
+      :returns: The dictionary containing the imported parameters.
+      :rtype: dict
+
+      :raises FileNotFoundError: If the specified JSON file cannot be found.
+
+
+   .. py:method:: is_json_serializable(value)
+
+      Determines if the given `value` can be serialized to JSON format.
+
+      :param value: The value to check for JSON serializability.
+      :type value: any
+
+      :returns: True if the value is JSON serializable, False otherwise.
+      :rtype: bool
+
+
+   .. py:method:: pybamm(name)
+      :classmethod:
+
+      Retrieves a PyBaMM parameter set by name.
+
+      :param name: The name of the PyBaMM parameter set to retrieve.
+      :type name: str
+
+      :returns: A PyBaMM parameter set corresponding to the provided name.
+      :rtype: pybamm.ParameterValues
+
 
 
 .. py:class:: PlotlyManager
@@ -642,37 +1089,120 @@ Attributes
 
    Bases: :py:obj:`pints.SNES`
 
-   Stochastic natural evolution strategy optimiser. Inherits from the PINTS SNES class.
-   https://github.com/pints-team/pints/blob/main/pints/_optimisers/_snes.py
+   Implements the stochastic natural evolution strategy (SNES) optimization algorithm.
+
+   Inheriting from the PINTS SNES class, this optimizer is an evolutionary algorithm
+   that evolves a probability distribution on the parameter space, guiding the search
+   for the optimum based on the natural gradient of expected fitness.
+
+   :param x0: Initial position from which optimization will start.
+   :type x0: array_like
+   :param sigma0: Initial step size (default is 0.1).
+   :type sigma0: float, optional
+   :param bounds: Lower and upper bounds for each optimization parameter.
+   :type bounds: dict, optional
+
+   .. seealso::
+
+      :obj:`pints.SNES`
+          The PINTS implementation this class is based on.
 
 
-.. py:class:: SciPyMinimize(method=None, bounds=None)
+.. py:class:: SciPyDifferentialEvolution(bounds=None, strategy='best1bin', maxiter=1000, popsize=15)
 
 
    Bases: :py:obj:`pybop.optimisers.base_optimiser.BaseOptimiser`
 
-   Wrapper class for the SciPy optimisation class. Extends the BaseOptimiser class.
+   Adapts SciPy's differential_evolution function for global optimization.
 
-   .. py:method:: _runoptimise(cost_function, x0, bounds)
+   This class provides a global optimization strategy based on differential evolution, useful for problems involving continuous parameters and potentially multiple local minima.
 
-      Run the SciPy optimisation method.
+   :param bounds: Bounds for variables. Must be provided as it is essential for differential evolution.
+   :type bounds: sequence or ``Bounds``
+   :param strategy: The differential evolution strategy to use. Defaults to 'best1bin'.
+   :type strategy: str, optional
+   :param maxiter: Maximum number of iterations to perform. Defaults to 1000.
+   :type maxiter: int, optional
+   :param popsize: The number of individuals in the population. Defaults to 15.
+   :type popsize: int, optional
 
-      Inputs
-      ----------
-      cost_function: function for optimising
-      method: optimisation algorithm
-      x0: initialisation array
-      bounds: bounds array
+   .. py:method:: _runoptimise(cost_function, x0=None, bounds=None)
+
+      Executes the optimization process using SciPy's differential_evolution function.
+
+      :param cost_function: The objective function to minimize.
+      :type cost_function: callable
+      :param x0: Ignored parameter, provided for API consistency.
+      :type x0: array_like, optional
+      :param bounds: Bounds for the variables, required for differential evolution.
+      :type bounds: sequence or ``Bounds``
+
+      :returns: A tuple (x, final_cost) containing the optimized parameters and the value of ``cost_function`` at the optimum.
+      :rtype: tuple
 
 
    .. py:method:: name()
 
-      Returns the name of the optimiser.
+      Provides the name of the optimization strategy.
+
+      :returns: The name 'SciPyDifferentialEvolution'.
+      :rtype: str
 
 
    .. py:method:: needs_sensitivities()
 
-      Returns True if the optimiser needs sensitivities.
+      Determines if the optimization algorithm requires gradient information.
+
+      :returns: False, indicating that gradient information is not required for differential evolution.
+      :rtype: bool
+
+
+
+.. py:class:: SciPyMinimize(method=None, bounds=None, maxiter=None)
+
+
+   Bases: :py:obj:`pybop.optimisers.base_optimiser.BaseOptimiser`
+
+   Adapts SciPy's minimize function for use as an optimization strategy.
+
+   This class provides an interface to various scalar minimization algorithms implemented in SciPy, allowing fine-tuning of the optimization process through method selection and option configuration.
+
+   :param method: The type of solver to use. If not specified, defaults to 'COBYLA'.
+   :type method: str, optional
+   :param bounds: Bounds for variables as supported by the selected method.
+   :type bounds: sequence or ``Bounds``, optional
+   :param maxiter: Maximum number of iterations to perform.
+   :type maxiter: int, optional
+
+   .. py:method:: _runoptimise(cost_function, x0, bounds)
+
+      Executes the optimization process using SciPy's minimize function.
+
+      :param cost_function: The objective function to minimize.
+      :type cost_function: callable
+      :param x0: Initial guess for the parameters.
+      :type x0: array_like
+      :param bounds: Bounds for the variables.
+      :type bounds: sequence or `Bounds`
+
+      :returns: A tuple (x, final_cost) containing the optimized parameters and the value of `cost_function` at the optimum.
+      :rtype: tuple
+
+
+   .. py:method:: name()
+
+      Provides the name of the optimization strategy.
+
+      :returns: The name 'SciPyMinimize'.
+      :rtype: str
+
+
+   .. py:method:: needs_sensitivities()
+
+      Determines if the optimization algorithm requires gradient information.
+
+      :returns: False, indicating that gradient information is not required.
+      :rtype: bool
 
 
 
@@ -816,20 +1346,54 @@ Attributes
 .. py:class:: Uniform(lower, upper)
 
 
-   Uniform prior class.
+   Represents a uniform distribution over a specified interval.
+
+   This class provides methods to calculate the pdf, the log pdf, and to generate
+   random variates from the distribution.
+
+   :param lower: The lower bound of the distribution.
+   :type lower: float
+   :param upper: The upper bound of the distribution.
+   :type upper: float
 
    .. py:method:: __repr__()
 
-      Return repr(self).
+      Returns a string representation of the Uniform object.
 
 
    .. py:method:: logpdf(x)
 
+      Calculates the logarithm of the pdf of the uniform distribution at x.
+
+      :param x: The point at which to evaluate the log pdf.
+      :type x: float
+
+      :returns: The log of the probability density function value at x.
+      :rtype: float
+
 
    .. py:method:: pdf(x)
 
+      Calculates the probability density function of the uniform distribution at x.
+
+      :param x: The point at which to evaluate the pdf.
+      :type x: float
+
+      :returns: The probability density function value at x.
+      :rtype: float
+
 
    .. py:method:: rvs(size)
+
+      Generates random variates from the uniform distribution.
+
+      :param size: The number of random variates to generate.
+      :type size: int
+
+      :returns: An array of random variates from the uniform distribution.
+      :rtype: array_like
+
+      :raises ValueError: If the size parameter is not positive.
 
 
 
@@ -838,8 +1402,21 @@ Attributes
 
    Bases: :py:obj:`pints.XNES`
 
-   Exponential natural evolution strategy optimiser. Inherits from the PINTS XNES class.
-   https://github.com/pints-team/pints/blob/main/pints/_optimisers/_xnes.py
+   Implements the Exponential Natural Evolution Strategy (XNES) optimizer from PINTS.
+
+   XNES is an evolutionary algorithm that samples from a multivariate normal distribution, which is updated iteratively to fit the distribution of successful solutions.
+
+   :param x0: The initial parameter vector to optimize.
+   :type x0: array_like
+   :param sigma0: Initial standard deviation of the sampling distribution, defaults to 0.1.
+   :type sigma0: float, optional
+   :param bounds: A dictionary with 'lower' and 'upper' keys containing arrays for lower and upper bounds on the parameters. If ``None``, no bounds are enforced.
+   :type bounds: dict, optional
+
+   .. seealso::
+
+      :obj:`pints.XNES`
+          PINTS implementation of XNES algorithm.
 
 
 .. py:function:: plot_convergence(optim, xaxis_title='Iteration', yaxis_title='Cost', title='Convergence')

@@ -118,3 +118,8 @@ Classes
       ``False``.
 
       Credit: PINTS
+
+
+   .. py:method:: store_optimised_parameters(x)
+
+      Store the optimised parameters in the PyBOP parameter class.

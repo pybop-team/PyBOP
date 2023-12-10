@@ -13,4 +13,4 @@ Submodules
    base_optimiser/index.rst
    nlopt_optimize/index.rst
    pints_optimisers/index.rst
-   scipy_minimize/index.rst
+   scipy_optimisers/index.rst

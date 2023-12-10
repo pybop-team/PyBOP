@@ -1,28 +1,19 @@
-:py:mod:`pybop.models.lithium_ion`
-==================================
+:py:mod:`pybop.models.lithium_ion.echem`
+========================================
 
-.. py:module:: pybop.models.lithium_ion
-
-
-Submodules
-----------
-.. toctree::
-   :titlesonly:
-   :maxdepth: 1
-
-   echem/index.rst
+.. py:module:: pybop.models.lithium_ion.echem
 
 
-Package Contents
-----------------
+Module Contents
+---------------
 
 Classes
 ~~~~~~~
 
 .. autoapisummary::
 
-   pybop.models.lithium_ion.SPM
-   pybop.models.lithium_ion.SPMe
+   pybop.models.lithium_ion.echem.SPM
+   pybop.models.lithium_ion.echem.SPMe
 
 
 
