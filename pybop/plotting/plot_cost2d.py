@@ -3,29 +3,31 @@ import numpy as np
 
 def plot_cost2d(cost, bounds=None, optim=None, steps=10):
     """
-    Query the cost landscape for a given parameter space and plot it using Plotly.
+    Plot a 2D visualization of a cost landscape using Plotly.
 
-    This function creates a 2D plot that visualizes the cost landscape over a grid
-    of points within specified parameter bounds. If no bounds are provided, it determines
-    them from the bounds on the parameter class.
+    This function generates a contour plot representing the cost landscape for a provided
+    callable cost function over a grid of parameter values within the specified bounds.
 
-    :param cost: A callable representing the cost function to be queried. It should
-                 take a list of parameters and return a cost value.
-    :type cost: callable
-    :param bounds: The bounds for the parameter space as a 2x2 array, with each
-                   sub-array representing the min and max bounds for a parameter.
-                   If None, bounds will be determined by `get_param_bounds`.
-    :type bounds: numpy.ndarray, optional
-    :param optim: An optional optimizer instance. If provided, it will be used to
-                  overlay optimizer-specific information on the plot.
-    :type optim: object, optional
-    :param steps: The number of steps to divide the parameter space grid. More steps
-                  result in finer resolution but increase computational cost.
-    :type steps: int, optional
-    :return: A Plotly figure object representing the cost landscape plot.
-    :rtype: plotly.graph_objs.Figure
+    Parameters
+    ----------
+    cost : callable
+        The cost function to be evaluated. Must accept a list of parameters and return a cost value.
+    bounds : numpy.ndarray, optional
+        A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses `get_param_bounds`.
+    optim : object, optional
+        An optimizer instance which, if provided, overlays its specific trace on the plot.
+    steps : int, optional
+        The number of intervals to divide the parameter space into along each dimension (default is 10).
 
-    :raises ValueError: If the cost function does not behave as expected.
+    Returns
+    -------
+    plotly.graph_objs.Figure
+        The Plotly figure object containing the cost landscape plot.
+
+    Raises
+    ------
+    ValueError
+        If the cost function does not return a valid cost when called with a parameter list.
     """
 
     if bounds is None:
@@ -57,7 +59,17 @@ def plot_cost2d(cost, bounds=None, optim=None, steps=10):
 
 def get_param_bounds(cost):
     """
-    Use parameters bounds for range of cost landscape
+    Retrieve parameter bounds from a cost function's associated problem parameters.
+
+    Parameters
+    ----------
+    cost : callable
+        The cost function with an associated 'problem' attribute containing 'parameters'.
+
+    Returns
+    -------
+    numpy.ndarray
+        An array of shape (n_parameters, 2) containing the bounds for each parameter.
     """
     bounds = np.empty((len(cost.problem.parameters), 2))
     for i, param in enumerate(cost.problem.parameters):
@@ -66,6 +78,30 @@ def get_param_bounds(cost):
 
 
 def create_figure(x, y, z, bounds, params, optim):
+    """
+    Create a Plotly figure with a 2D contour plot of the cost landscape.
+
+    Parameters
+    ----------
+    x : numpy.ndarray
+        1D array of x-coordinates for the meshgrid.
+    y : numpy.ndarray
+        1D array of y-coordinates for the meshgrid.
+    z : numpy.ndarray
+        2D array of cost function values corresponding to the meshgrid.
+    bounds : numpy.ndarray
+        A 2x2 array specifying the [min, max] bounds for each parameter.
+    params : iterable
+        An iterable of parameter objects with 'name' attributes for axis labeling.
+    optim : object
+        An optimizer instance with 'log' and 'x0' attributes for plotting traces.
+
+    Returns
+    -------
+    plotly.graph_objs.Figure
+        The Plotly figure object with the contour plot and optimization traces.
+    """
+
     # Import plotly only when needed
     import plotly.graph_objects as go
 

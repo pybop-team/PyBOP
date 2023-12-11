@@ -50,7 +50,7 @@ For Developers
 
 If you are installing PyBOP for development purposes, such as contributing to the project, please ensure that you follow the guidelines outlined in the contributing guide. It includes additional steps that might be necessary for setting up a development environment, including the installation of dependencies and setup of pre-commit hooks.
 
-`Contributing Guide <https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md#Installation>`_
+`Contributing Guide <../contributing.html>`_
 
 Further Assistance
 ------------------
@@ -62,6 +62,5 @@ Next Steps
 
 After installing PyBOP, you might want to:
 
-* Explore the `Quick Start Guide <quickstart>`_ to begin using PyBOP.
-* Read through the `User Manual <usermanual>`_ for in-depth documentation on PyBOP's features.
+* Explore the `Quick Start Guide <usage.html>`_ to begin using PyBOP.
 * Check out the `API Reference <../api/index.html>`_ for detailed information on PyBOP's programming interface.

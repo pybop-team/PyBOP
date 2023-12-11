@@ -5,14 +5,31 @@ import numpy as np
 
 class Optimisation:
     """
-    Optimisation class for PyBOP.
-    This class provides functionality for PyBOP optimisers and Pints optimisers.
-    args:
-        cost: PyBOP cost function
-        optimiser: A PyBOP or Pints optimiser
-        sigma0: initial step size
-        verbose: print optimisation progress
+    A class for conducting optimization using PyBOP or PINTS optimizers.
 
+    Parameters
+    ----------
+    cost : pints.ErrorMeasure or pints.LogPDF
+        An objective function to be optimized, which can be either a PINTS error measure or log PDF.
+    optimiser : pints.Optimiser or subclass of pybop.BaseOptimizer, optional
+        An optimizer from either the PINTS or PyBOP framework to perform the optimization (default: None).
+    sigma0 : float or sequence, optional
+        Initial step size or standard deviation for the optimizer (default: None).
+    verbose : bool, optional
+        If True, the optimization progress is printed (default: False).
+
+    Attributes
+    ----------
+    x0 : numpy.ndarray
+        Initial parameter values for the optimization.
+    bounds : dict
+        Dictionary containing the parameter bounds with keys 'lower' and 'upper'.
+    n_parameters : int
+        Number of parameters in the optimization problem.
+    sigma0 : float or sequence
+        Initial step size or standard deviation for the optimizer.
+    log : list
+        Log of the optimization process.
     """
 
     def __init__(
@@ -106,11 +123,14 @@ class Optimisation:
 
     def run(self):
         """
-        Run the optimisation algorithm.
-        Selects between PyBOP backend or Pints backend.
-        returns:
-            x: best parameters
-            final_cost: final cost
+        Run the optimization and return the optimized parameters and final cost.
+
+        Returns
+        -------
+        x : numpy.ndarray
+            The best parameter set found by the optimization.
+        final_cost : float
+            The final cost associated with the best parameters.
         """
 
         if self.pints:
@@ -126,10 +146,14 @@ class Optimisation:
 
     def _run_pybop(self):
         """
-        Run method for PyBOP based optimisers.
-        returns:
-            x: best parameters
-            final_cost: final cost
+        Internal method to run the optimization using a PyBOP optimizer.
+
+        Returns
+        -------
+        x : numpy.ndarray
+            The best parameter set found by the optimization.
+        final_cost : float
+            The final cost associated with the best parameters.
         """
         x, final_cost = self.optimiser.optimise(
             cost_function=self.cost,
@@ -143,11 +167,18 @@ class Optimisation:
 
     def _run_pints(self):
         """
-        Run method for PINTS optimisers.
+        Internal method to run the optimization using a PINTS optimizer.
+
+        Returns
+        -------
+        x : numpy.ndarray
+            The best parameter set found by the optimization.
+        final_cost : float
+            The final cost associated with the best parameters.
+
+        See Also
+        --------
         This method is heavily based on the run method in the PINTS.OptimisationController class.
-        returns:
-            x: best parameters
-            final_cost: final cost
         """
 
         # Check stopping criteria
@@ -319,34 +350,37 @@ class Optimisation:
 
     def f_guessed_tracking(self):
         """
-        Returns ``True`` if f_guessed instead of f_best is being tracked,
-        ``False`` otherwise. See also :meth:`set_f_guessed_tracking`.
-
+        Check if f_guessed instead of f_best is being tracked.
         Credit: PINTS
+
+        Returns
+        -------
+        bool
+            True if f_guessed is being tracked, False otherwise.
         """
         return self._use_f_guessed
 
     def set_f_guessed_tracking(self, use_f_guessed=False):
         """
-        Sets the method used to track the optimiser progress to
-        :meth:`pints.Optimiser.f_guessed()` or
-        :meth:`pints.Optimiser.f_best()` (default).
-
-        The tracked ``f`` value is used to evaluate stopping criteria.
-
+        Set the method used to track the optimizer progress.
         Credit: PINTS
+
+        Parameters
+        ----------
+        use_f_guessed : bool, optional
+            If True, track f_guessed; otherwise, track f_best (default: False).
         """
         self._use_f_guessed = bool(use_f_guessed)
 
     def set_max_evaluations(self, evaluations=None):
         """
-        Adds a stopping criterion, allowing the routine to halt after the
-        given number of ``evaluations``.
-
-        This criterion is disabled by default. To enable, pass in any positive
-        integer. To disable again, use ``set_max_evaluations(None)``.
-
+        Set a maximum number of evaluations stopping criterion.
         Credit: PINTS
+
+        Parameters
+        ----------
+        evaluations : int, optional
+            The maximum number of evaluations after which to stop the optimization (default: None).
         """
         if evaluations is not None:
             evaluations = int(evaluations)
@@ -356,16 +390,14 @@ class Optimisation:
 
     def set_parallel(self, parallel=False):
         """
-        Enables/disables parallel evaluation.
-
-        If ``parallel=True``, the method will run using a number of worker
-        processes equal to the detected cpu core count. The number of workers
-        can be set explicitly by setting ``parallel`` to an integer greater
-        than 0.
-        Parallelisation can be disabled by setting ``parallel`` to ``0`` or
-        ``False``.
-
+        Enable or disable parallel evaluation.
         Credit: PINTS
+
+        Parameters
+        ----------
+        parallel : bool or int, optional
+            If True, use as many worker processes as there are CPU cores. If an integer, use that many workers.
+            If False or 0, disable parallelism (default: False).
         """
         if parallel is True:
             self._parallel = True
@@ -379,13 +411,14 @@ class Optimisation:
 
     def set_max_iterations(self, iterations=1000):
         """
-        Adds a stopping criterion, allowing the routine to halt after the
-        given number of ``iterations``.
-
-        This criterion is enabled by default. To disable it, use
-        ``set_max_iterations(None)``.
-
+        Set the maximum number of iterations as a stopping criterion.
         Credit: PINTS
+
+        Parameters
+        ----------
+        iterations : int, optional
+            The maximum number of iterations to run (default is 1000).
+            Set to `None` to remove this stopping criterion.
         """
         if iterations is not None:
             iterations = int(iterations)
@@ -395,14 +428,16 @@ class Optimisation:
 
     def set_max_unchanged_iterations(self, iterations=25, threshold=1e-5):
         """
-        Adds a stopping criterion, allowing the routine to halt if the
-        objective function doesn't change by more than ``threshold`` for the
-        given number of ``iterations``.
-
-        This criterion is enabled by default. To disable it, use
-        ``set_max_unchanged_iterations(None)``.
-
+        Set the maximum number of iterations without significant change as a stopping criterion.
         Credit: PINTS
+
+        Parameters
+        ----------
+        iterations : int, optional
+            The maximum number of unchanged iterations to run (default is 25).
+            Set to `None` to remove this stopping criterion.
+        threshold : float, optional
+            The minimum significant change in the objective function value that resets the unchanged iteration counter (default is 1e-5).
         """
         if iterations is not None:
             iterations = int(iterations)
@@ -418,7 +453,14 @@ class Optimisation:
 
     def store_optimised_parameters(self, x):
         """
-        Store the optimised parameters in the PyBOP parameter class.
+        Update the problem parameters with optimized values.
+
+        The optimized parameter values are stored within the associated PyBOP parameter class.
+
+        Parameters
+        ----------
+        x : array-like
+            Optimized parameter values.
         """
         for i, param in enumerate(self.cost.problem.parameters):
             param.update(value=x[i])

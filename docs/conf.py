@@ -54,16 +54,22 @@ html_title = "PyBOP Documentation"
 
 # html_theme options
 html_theme_options = {
+    "header_links_before_dropdown": 4,
     "icon_links": [
+        {
+            "name": "PyPI",
+            "url": "https://pypi.org/project/pybop/",
+            "icon": "fa-custom fa-pypi",
+        },
         {
             "name": "GitHub",
             "url": "https://github.com/pybop-team/pybop",
             "icon": "fab fa-github-square",
         },
-        # add other icon links as needed
     ],
     "search_bar_text": "Search the docs...",
     "show_prev_next": False,
 }
 
 html_static_path = ["_static"]
+html_js_files = ["custom-icon.js"]
