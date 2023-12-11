@@ -6,15 +6,6 @@ class BaseOptimiser:
     an optimisation algorithm, including the initial setup and a method stub for performing
     the optimisation process. Child classes should override the optimise and _runoptimise
     methods with specific algorithms.
-
-    Methods
-    -------
-    optimise(cost_function, x0=None, bounds=None, maxiter=None)
-        Initiates the optimisation process. This is a stub and should be implemented in child classes.
-    _runoptimise(cost_function, x0=None, bounds=None)
-        Contains the logic for the optimisation algorithm. This is a stub and should be implemented in child classes.
-    name()
-        Returns the name of the optimiser.
     """
 
     def __init__(self):

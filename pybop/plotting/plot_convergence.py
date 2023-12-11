@@ -8,7 +8,7 @@ def plot_convergence(
     Plot the convergence of the optimisation algorithm.
 
     Parameters:
-    ----------
+    -----------
     optim : optimisation object
         Optimisation object containing the cost function and optimiser.
     xaxis_title : str, optional
@@ -19,7 +19,7 @@ def plot_convergence(
         Title of the plot (default is "Convergence").
 
     Returns:
-    ----------
+    ---------
     fig : plotly.graph_objs.Figure
         The Plotly figure object for the convergence plot.
     """

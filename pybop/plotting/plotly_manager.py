@@ -22,21 +22,6 @@ class PlotlyManager:
     make_subplots : function
         The function from Plotly for creating subplot figures.
 
-    Methods
-    -------
-    ensure_plotly_installed()
-        Verifies if Plotly is installed, importing necessary modules and prompting for installation if missing.
-    prompt_for_plotly_installation()
-        Prompts the user for permission to install Plotly and proceeds with installation if consented.
-    install_plotly()
-        Installs the Plotly package using pip.
-    post_install_setup()
-        Sets up Plotly default renderer after installation.
-    check_renderer_settings()
-        Verifies that the Plotly renderer is correctly set.
-    check_browser_availability()
-        Checks if a web browser is available for rendering plots.
-
     Examples
     --------
     >>> plotly_manager = PlotlyManager()

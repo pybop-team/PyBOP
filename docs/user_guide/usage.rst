@@ -46,16 +46,11 @@ These examples are also available on our `GitHub repository <https://github.com/
 Next Steps
 ----------
 
-Once you're comfortable with the basics demonstrated in the examples, you can dive deeper into the functionality of PyBOP by:
-
-- Exploring the :ref:`user-guide` for a comprehensive overview of features.
-- Delving into the :ref:`api-reference` for detailed API documentation.
-- Checking out the :ref:`advanced-topics` for in-depth discussions on specific PyBOP features and how to customize them for complex scenarios.
+Once you're comfortable with the basics demonstrated in the examples, you can dive deeper into the functionality of PyBOP by delving into the :ref:`api-reference` for detailed API documentation.
 
 Support and Contributions
 -------------------------
 
 If you encounter any issues or have questions as you start using PyBOP, don't hesitate to reach out to our community:
 
-- **Support**: Visit our :ref:`support` page for FAQs and contact information.
-- **Contributions**: Interested in contributing to PyBOP? Check out our :ref:`contributing-guide` for guidelines on how to contribute.
+- **Contributions**: Interested in contributing to PyBOP? Check out our [contributing-guide](contributing-guide) for guidelines on how to contribute.

@@ -11,20 +11,6 @@ class BaseModel:
     simulations. The class is designed to be subclassed for creating models
     with custom behavior.
 
-    Methods
-    -------
-    build(dataset=None, parameters=None, check_model=True, init_soc=None)
-        Construct the PyBaMM model if not already built.
-    set_init_soc(init_soc)
-        Set the initial state of charge for the battery model.
-    set_params()
-        Assign the parameters to the model.
-    simulate(inputs, t_eval)
-        Execute the forward model simulation and return the result.
-    simulateS1(inputs, t_eval)
-        Perform the forward model simulation with sensitivities.
-    predict(inputs=None, t_eval=None, parameter_set=None, experiment=None, init_soc=None)
-        Solve the model using PyBaMM's simulation framework and return the solution.
     """
 
     def __init__(self, name="Base Model"):

@@ -21,15 +21,6 @@ class Parameter:
         A tuple defining the lower and upper bounds for the parameter.
         Defaults to None.
 
-    Methods
-    -------
-    rvs(n_samples)
-        Draw random samples from the parameter's prior distribution.
-    update(value)
-        Update the parameter's current value.
-    set_margin(margin)
-        Set the margin to a specified positive value less than 1.
-
     Raises
     ------
     ValueError

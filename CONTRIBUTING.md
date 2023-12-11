@@ -2,7 +2,7 @@
 
 If you'd like to contribute to PyBOP, please have a look at the guidelines below.
 
-## Installation
+## Developer-Installation
 
 To install PyBOP for development purposes, which includes the testing and plotting dependencies, use the `[all]` flag as demonstrated below:
 
@@ -30,7 +30,7 @@ pip install pre-commit
 pre-commit install
 ```
 
-This would run the checks every time a commit is created locally. The checks will only run on the files modified by that commit, but the checks can be triggered for all the files using -
+This would run the checks every time a commit is created locally. The checks will only run on the files modified by that commit, but the checks can be triggered for all the files using,
 
 ```bash
 pre-commit run --all-files
@@ -47,7 +47,7 @@ We use [GIT](https://en.wikipedia.org/wiki/Git) and [GitHub](https://en.wikipedi
 1. Create an [issue](https://guides.github.com/features/issues/) where new proposals can be discussed before any coding is done.
 2. Create a [branch](https://help.github.com/articles/creating-and-deleting-branches-within-your-repository/) of this repo (ideally on your own [fork](https://help.github.com/articles/fork-a-repo/)), where all changes will be made
 3. Download the source code onto your local system, by [cloning](https://help.github.com/articles/cloning-a-repository/) the repository (or your fork of the repository).
-4. [Install](Developer-Install) PyBOP with the developer options.
+4. [Install](#developer-installation) PyBOP with the developer options.
 5. [Test](#testing) if your installation worked: `$ pytest --unit -v`.
 
 You now have everything you need to start making changes!

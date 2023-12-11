@@ -21,15 +21,6 @@ class NLoptOptimize(BaseOptimiser):
         The NLopt algorithm to use for optimization. If not provided, LN_BOBYQA is used by default.
     maxiter : int, optional
         The maximum number of iterations to perform during optimization. If not provided, NLopt's default is used.
-
-    Methods
-    -------
-    _runoptimise(cost_function, x0, bounds)
-        Performs the optimization using the NLopt library.
-    needs_sensitivities()
-        Indicates whether the optimizer requires gradient information.
-    name()
-        Returns the name of the optimizer.
     """
 
     def __init__(self, n_param, xtol=None, method=None, maxiter=None):
