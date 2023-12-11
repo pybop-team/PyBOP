@@ -126,6 +126,16 @@ def plot_great_things(self, x, y, z):
 
 This allows people to (1) use PyBOP without ever importing Matplotlib and (2) configure Matplotlib's back-end in their scripts, which _must_ be done before e.g. `pyplot` is first imported.
 
+### Building documentation
+
+We use [Sphinx](http://www.sphinx-doc.org/en/stable/) to build our documentation. A nox session has been created to reduce the overhead when building the documentation locally. To run this session, type
+
+```bash
+nox -s docs
+```
+
+This will build the docs using sphinx-autobuild and render them in your browser.
+
 ## Testing
 
 All code requires testing. We use the [pytest](https://docs.pytest.org/en/) package for our tests. (These tests typically just check that the code runs without error, and so, are more _debugging_ than _testing_ in a strict sense. Nevertheless, they are very useful to have!)
