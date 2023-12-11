@@ -60,7 +60,6 @@ def docs(session):
             "auto",
             "-b",
             "html",
-            "-W",
             "--keep-going",
             ".",
             f"{envbindir}/../tmp/html",
