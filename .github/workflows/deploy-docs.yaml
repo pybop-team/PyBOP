@@ -6,6 +6,9 @@ on:
   workflow_dispatch:
   push:
 
+permissions:
+  contents: write # allow write access for docs deployment
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
