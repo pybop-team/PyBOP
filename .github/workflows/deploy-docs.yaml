@@ -3,6 +3,7 @@ name: Deploy Documentation
 on:
   # release:
   #   types: [created]
+  workflow_dispatch:
   push:
 
 jobs:
@@ -11,6 +12,8 @@ jobs:
     steps:
     - name: Check out PyBOP repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0    # Fetch all history for .GitInfo and .Lastmod
 
     - name: Set up Python 3.11
       id: setup-python
