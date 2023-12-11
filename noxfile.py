@@ -62,5 +62,5 @@ def docs(session):
             "html",
             "--keep-going",
             ".",
-            f"{envbindir}/../tmp/html",
+            "_build/html",
         )
