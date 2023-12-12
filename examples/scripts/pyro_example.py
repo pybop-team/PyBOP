@@ -2,6 +2,7 @@ import pybop
 import numpy as np
 import torch
 import pyro
+import plotly.express as px
 import pyro.distributions as dist
 from pyro.infer import MCMC, NUTS
 
@@ -34,6 +35,10 @@ sigma = 0.001
 t_eval = np.arange(0, 900, 2)
 values = model.predict(t_eval=t_eval)
 corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
+print(
+    parameter_set["Negative electrode active material volume fraction"],
+    parameter_set["Positive electrode active material volume fraction"],
+)
 
 # Dataset definition
 dataset = [
@@ -96,10 +101,19 @@ def pyro_model(dataset, t_eval, model):
 
 # Run NUTS HMC using Pyro's MCMC
 nuts_kernel = NUTS(pyro_model)
-mcmc = MCMC(nuts_kernel, num_samples=20, warmup_steps=30)
+mcmc = MCMC(nuts_kernel, num_samples=100, warmup_steps=50, num_chains=2)
 mcmc.run(dataset, t_eval, model)
 
 # Extract the samples
 samples = mcmc.get_samples()
 print(samples["neg_vol_frac_unconstrained"])
 print(samples["pos_vol_frac_unconstrained"])
+
+# Assuming `samples` is a 1-D array containing MCMC samples of the parameter of interest
+fig = px.histogram(
+    samples,
+    nbins=30,
+    labels={"value": "Parameter Value"},
+    title="Posterior Distribution",
+)
+fig.show()
