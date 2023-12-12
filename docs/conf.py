@@ -27,12 +27,6 @@ extensions = [
     "_extension.gallery_directive",
     # For extension examples and demos
     "myst_parser",
-    # "ablog",
-    # "jupyter_sphinx",
-    # "nbsphinx",
-    # "numpydoc",
-    # "sphinx_togglebutton",
-    # "jupyterlite_sphinx",
     "sphinx_favicon",
 ]
 
