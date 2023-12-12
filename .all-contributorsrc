@@ -61,6 +61,24 @@
       "contributions": [
         "review"
       ]
+    },
+    {
+      "login": "FaradayInstitution",
+      "name": "Faraday Institution",
+      "avatar_url": "/assets/UKRI.svg",
+      "profile": "https://faraday.ac.uk",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "UKRI",
+      "name": "UK Research and Innovation",
+      "avatar_url": "/assets/UKRI.svg",
+      "profile": "https://www.ukri.org/",
+      "contributions": [
+        "financial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
