@@ -6,12 +6,14 @@ class Dataset:
     Class for experimental observations.
     """
 
-    def __init__(self, name, data):
-        self.name = name
-        self.data = data
+    def __init__(self, data_dictionary):
+        if not isinstance(data_dictionary, dict):
+            raise ValueError("The input to pybop.Dataset must be a dictionary.")
+        self.data = data_dictionary
+        self.names = self.data.keys()
 
     def __repr__(self):
-        return f"Dataset: {self.name} \n Data: {self.data}"
+        return f"Dataset: {type(self.data)} \n Contains: {self.names}"
 
     def Interpolant(self):
         if self.variable == "time":

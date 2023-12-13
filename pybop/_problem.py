@@ -72,7 +72,7 @@ class FittingProblem(BaseProblem):
         if model is not None:
             self._model.signal = signal
         self.signal = signal
-        self._dataset = {o.name: o for o in dataset}
+        self._dataset = dataset.data
         self.n_outputs = len([self.signal])
 
         # Check that the dataset contains time and current
@@ -80,9 +80,9 @@ class FittingProblem(BaseProblem):
             if name not in self._dataset:
                 raise ValueError(f"expected {name} in list of dataset")
 
-        self._time_data = self._dataset["Time [s]"].data
+        self._time_data = self._dataset["Time [s]"]
         self.n_time_data = len(self._time_data)
-        self._target = self._dataset[signal].data
+        self._target = self._dataset[signal]
 
         if np.any(self._time_data < 0):
             raise ValueError("Times can not be negative.")

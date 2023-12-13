@@ -86,8 +86,8 @@ class BaseModel:
         if self.dataset is not None and self.parameters is not None:
             if "Current function [A]" not in self.fit_keys:
                 self.parameter_set["Current function [A]"] = pybamm.Interpolant(
-                    self.dataset["Time [s]"].data,
-                    self.dataset["Current function [A]"].data,
+                    self.dataset["Time [s]"],
+                    self.dataset["Current function [A]"],
                     pybamm.t,
                 )
                 # Set t_eval

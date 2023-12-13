@@ -53,11 +53,13 @@ class TestProblem:
             }
         )
         solution = model.predict(experiment=experiment)
-        return [
-            pybop.Dataset("Time [s]", solution["Time [s]"].data),
-            pybop.Dataset("Current function [A]", solution["Current [A]"].data),
-            pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
-        ]
+        return pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Voltage [V]": solution["Terminal voltage [V]"].data,
+            }
+        )
 
     @pytest.fixture
     def signal(self):

@@ -38,13 +38,13 @@ class TestModelParameterisation:
     def test_spm(self, parameters, model, x0, init_soc):
         # Form dataset
         solution = self.getdata(model, x0, init_soc)
-        dataset = [
-            pybop.Dataset("Time [s]", solution["Time [s]"].data),
-            pybop.Dataset("Current function [A]", solution["Current [A]"].data),
-            pybop.Dataset(
-                "Terminal voltage [V]", solution["Terminal voltage [V]"].data
-            ),
-        ]
+        dataset = pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Terminal voltage [V]": solution["Terminal voltage [V]"].data,
+            }
+        )
 
         # Define the cost to optimise
         signal = "Terminal voltage [V]"
@@ -71,13 +71,13 @@ class TestModelParameterisation:
         # Form dataset
         init_soc = 0.5
         solution = self.getdata(model, x0, init_soc)
-        dataset = [
-            pybop.Dataset("Time [s]", solution["Time [s]"].data),
-            pybop.Dataset("Current function [A]", solution["Current [A]"].data),
-            pybop.Dataset(
-                "Terminal voltage [V]", solution["Terminal voltage [V]"].data
-            ),
-        ]
+        dataset = pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Terminal voltage [V]": solution["Terminal voltage [V]"].data,
+            }
+        )
 
         # Define the cost to optimise
         signal = "Terminal voltage [V]"
@@ -151,13 +151,13 @@ class TestModelParameterisation:
 
         # Form dataset
         solution = self.getdata(second_model, x0, init_soc)
-        dataset = [
-            pybop.Dataset("Time [s]", solution["Time [s]"].data),
-            pybop.Dataset("Current function [A]", solution["Current [A]"].data),
-            pybop.Dataset(
-                "Terminal voltage [V]", solution["Terminal voltage [V]"].data
-            ),
-        ]
+        dataset = pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Terminal voltage [V]": solution["Terminal voltage [V]"].data,
+            }
+        )
 
         # Define the cost to optimise
         signal = "Terminal voltage [V]"
