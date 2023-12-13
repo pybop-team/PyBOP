@@ -1,10 +1,6 @@
 import pybop
 import numpy as np
-import torch
-import pyro
 import plotly.express as px
-import pyro.distributions as dist
-from pyro.infer import MCMC, NUTS
 
 
 # Define the transformation from unconstrained space (0, 1) to the desired interval (lower_bound, upper_bound)
@@ -50,70 +46,24 @@ dataset = [
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 
+# Define parameter priors with bounds
+parameter_priors = {
+    "Negative electrode active material volume fraction": (1, 1, 0.6, 0.9),
+    "Positive electrode active material volume fraction": (1, 1, 0.5, 0.8),
+}
 
-# Define a Pyro model
-def pyro_model(dataset, t_eval, model):
-    # Define the Beta distribution parameters
-    # These can be chosen to reflect the prior belief about the parameters
-    alpha = 1  # 23
-    beta = 1  # 20
-
-    # Sample from the Beta distribution (in the 0, 1 range)
-    neg_vol_frac_unconstrained = pyro.sample(
-        "neg_vol_frac_unconstrained", dist.Beta(alpha, beta)
-    )
-    pos_vol_frac_unconstrained = pyro.sample(
-        "pos_vol_frac_unconstrained", dist.Beta(alpha, beta)
-    )
-
-    # Transform to the desired intervals
-    neg_vol_frac = transform_to_interval(neg_vol_frac_unconstrained, 0.6, 0.9)
-    pos_vol_frac = transform_to_interval(pos_vol_frac_unconstrained, 0.5, 0.8)
-
-    # print(neg_vol_frac, pos_vol_frac, "\n")
-
-    # Set the priors in the model
-    model.parameter_set.update(
-        {"Negative electrode active material volume fraction": neg_vol_frac.item()}
-    )
-    model.parameter_set.update(
-        {"Positive electrode active material volume fraction": pos_vol_frac.item()}
-    )
-
-    # Predict the values from the model
-    # predicted_values = model.predict(t_eval=t_eval)
-    predicted_values = model.simulate(
-        inputs=[neg_vol_frac.item(), pos_vol_frac.item()], t_eval=t_eval
-    )
-
-    # Convert your predicted and observed data to PyTorch tensors
-    voltage_obs = torch.tensor(dataset[2].data, dtype=torch.float32)
-    voltage_pred = torch.tensor(predicted_values, dtype=torch.float32)
-
-    # Make sure sigma is a tensor as well
-    sigma_tensor = torch.tensor(sigma, dtype=torch.float32)
-
-    # Likelihood of the observations
-    pyro.sample(
-        "obs", dist.Normal(voltage_pred, sigma_tensor).to_event(1), obs=voltage_obs
-    )
-
-
-# Run NUTS HMC using Pyro's MCMC
-nuts_kernel = NUTS(pyro_model)
-mcmc = MCMC(nuts_kernel, num_samples=100, warmup_steps=50, num_chains=2)
-mcmc.run(dataset, t_eval, model)
+sampler = pybop.MonteCarloSampler(problem, "NUTS", parameter_priors)
 
 # Extract the samples
-samples = mcmc.get_samples()
-print(samples["neg_vol_frac_unconstrained"])
-print(samples["pos_vol_frac_unconstrained"])
+samples = sampler.run(num_samples=10, warmup_steps=20, num_chains=1)
 
-# Assuming `samples` is a 1-D array containing MCMC samples of the parameter of interest
-fig = px.histogram(
-    samples,
-    nbins=30,
-    labels={"value": "Parameter Value"},
-    title="Posterior Distribution",
-)
-fig.show()
+# Plotting
+for param_name in parameter_priors.keys():
+    param_samples = samples[f"{param_name}_unconstrained"]
+    fig = px.histogram(
+        x=param_samples.numpy(),
+        nbins=30,
+        labels={"x": f"{param_name}"},
+        title=f"Posterior Distribution for {param_name}",
+    )
+    fig.show()

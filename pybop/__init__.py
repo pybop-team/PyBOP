@@ -46,6 +46,11 @@ from .models import empirical
 from .optimisation import Optimisation
 
 #
+# Monte Carlo Sampling class
+#
+from ._mcmc import MonteCarloSampler
+
+#
 # Optimiser class
 #
 from .optimisers.base_optimiser import BaseOptimiser
