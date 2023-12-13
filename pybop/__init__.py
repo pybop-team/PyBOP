@@ -48,7 +48,7 @@ from .optimisation import Optimisation
 #
 # Monte Carlo Sampling class
 #
-from ._mcmc import MonteCarloSampler
+from ._inference import BayesianSampler
 
 #
 # Optimiser class

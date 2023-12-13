@@ -52,17 +52,18 @@ parameter_priors = {
     "Positive electrode active material volume fraction": (1, 1, 0.5, 0.8),
 }
 
-sampler = pybop.MonteCarloSampler(problem, "NUTS", parameter_priors)
-
-# Extract the samples
-samples = sampler.run(num_samples=10, warmup_steps=20, num_chains=1)
+# Create the sampler and run
+sampler = pybop.BayesianSampler(problem, "NUTS", parameter_priors)
+samples = sampler.run(
+    num_samples=20, warmup_steps=20, num_chains=1
+)  # Change to 500, 500, 4 for real run
 
 # Plotting
 for param_name in parameter_priors.keys():
-    param_samples = samples[f"{param_name}_unconstrained"]
+    param_samples = samples[f"{param_name}"]
     fig = px.histogram(
         x=param_samples.numpy(),
-        nbins=30,
+        nbins=60,
         labels={"x": f"{param_name}"},
         title=f"Posterior Distribution for {param_name}",
     )
