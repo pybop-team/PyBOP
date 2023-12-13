@@ -4,7 +4,6 @@ on:
   release:
     types: [created]
   workflow_dispatch:
-  push:
 
 permissions:
   contents: write # allow write access for docs deployment

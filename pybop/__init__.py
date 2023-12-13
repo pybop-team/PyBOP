@@ -43,7 +43,7 @@ from .models import empirical
 #
 # Main optimisation class
 #
-from .optimisation import Optimisation
+from ._optimisation import Optimisation
 
 #
 # Optimiser class

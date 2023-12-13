@@ -29,7 +29,7 @@ def notebooks(session):
     """Run the examples tests for Jupyter notebooks."""
     session.run_always("pip", "install", "-e", ".[all]")
     session.install("pytest", "nbmake")
-    session.run("pytest", "--nbmake", "examples/", external=True)
+    session.run("pytest", "--nbmake", "--examples", "examples/", external=True)
 
 
 @nox.session
