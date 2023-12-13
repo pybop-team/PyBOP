@@ -34,7 +34,10 @@ setup(
     ],
     extras_require={
         "plot": ["plotly>=5.0"],
-        "all": ["pybop[plot]"],
+        "bayesian": [
+            "pyro-ppl>=1.7"
+        ],  # Here until it becomes promoted to install_requires
+        "all": ["pybop[plot,bayesian]"],
     },
     # https://pypi.org/classifiers/
     classifiers=[],
