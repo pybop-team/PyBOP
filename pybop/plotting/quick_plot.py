@@ -199,21 +199,22 @@ def quick_plot(params, cost, title="Scatter Plot", width=1024, height=576):
     model_output = cost.problem.evaluate(params)
     target_output = cost.problem.target()
 
-    # Create the figure using the StandardPlot class
-    fig = pybop.StandardPlot(
-        x=time_data,
-        y=model_output,
-        cost=cost,
-        y2=target_output,
-        xaxis_title="Time [s]",
-        yaxis_title=cost.problem.signal,
-        title=title,
-        trace_name="Model",
-        width=width,
-        height=height,
-    )()
+    for i in range(0, cost.problem.n_outputs):
+        # Create the figure using the StandardPlot class
+        fig = pybop.StandardPlot(
+            x=time_data,
+            y=model_output[:, i],
+            cost=cost,
+            y2=target_output[:, i],
+            xaxis_title="Time [s]",
+            yaxis_title=cost.problem.signal[i],
+            title=title,
+            trace_name="Model",
+            width=width,
+            height=height,
+        )()
 
-    # Display the figure
-    fig.show()
+        # Display the figure
+        fig.show()
 
     return fig

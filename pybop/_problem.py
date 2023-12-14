@@ -69,28 +69,38 @@ class FittingProblem(BaseProblem):
         x0=None,
     ):
         super().__init__(parameters, model, check_model, init_soc, x0)
-        if model is not None:
-            self._model.signal = signal
+        if isinstance(signal, str):
+            signal = [signal]
         self.signal = signal
+        self.n_outputs = len(self.signal)
         self._dataset = dataset.data
-        self.n_outputs = len([self.signal])
 
         # Check that the dataset contains time and current
-        for name in ["Time [s]", "Current function [A]", signal]:
+        for name in ["Time [s]", "Current function [A]"] + signal:
             if name not in self._dataset:
                 raise ValueError(f"expected {name} in list of dataset")
 
         self._time_data = self._dataset["Time [s]"]
         self.n_time_data = len(self._time_data)
-        self._target = self._dataset[signal]
-
         if np.any(self._time_data < 0):
             raise ValueError("Times can not be negative.")
         if np.any(self._time_data[:-1] >= self._time_data[1:]):
             raise ValueError("Times must be increasing.")
 
-        if len(self._target) != len(self._time_data):
-            raise ValueError("Time data and signal data must be the same length.")
+        target = [self._dataset[signal] for signal in self.signal]
+        self._target = np.vstack(target).T
+        if self.n_outputs == 1:
+            if len(self._target) != self.n_time_data:
+                raise ValueError("Time data and target data must be the same length.")
+        else:
+            if self._target.shape != (self.n_time_data, self.n_outputs):
+                raise ValueError("Time data and target data must be the same shape.")
+
+        # Add useful parameters to model
+        if model is not None:
+            self._model.signal = self.signal
+            self._model.n_outputs = self.n_outputs
+            self._model.n_time_data = self.n_time_data
 
         # Build the model
         if self._model._built_model is None:
