@@ -8,7 +8,7 @@ nox.options.reuse_existing_virtualenvs = True
 def unit(session):
     session.run_always("pip", "install", "-e", ".[all]")
     session.install("pytest", "pytest-mock")
-    session.run("pytest", "--unit", "-v", "--showlocals")
+    session.run("pytest", "--unit")
 
 
 @nox.session
@@ -19,10 +19,8 @@ def coverage(session):
         "pytest",
         "--unit",
         "--examples",
-        "-v",
         "--cov",
         "--cov-report=xml",
-        "--showlocals",
     )
 
 
@@ -31,4 +29,38 @@ def notebooks(session):
     """Run the examples tests for Jupyter notebooks."""
     session.run_always("pip", "install", "-e", ".[all]")
     session.install("pytest", "nbmake")
-    session.run("pytest", "--nbmake", "examples/", external=True)
+    session.run("pytest", "--nbmake", "--examples", "examples/", external=True)
+
+
+@nox.session
+def docs(session):
+    """
+    Build the documentation and load it in a browser tab, rebuilding on changes.
+    Credit: PyBaMM Team
+    """
+    envbindir = session.bin
+    session.install("-e", ".[all,docs]")
+    session.chdir("docs")
+    # Local development
+    if session.interactive:
+        session.run(
+            "sphinx-autobuild",
+            "-j",
+            "auto",
+            "--open-browser",
+            "-qT",
+            ".",
+            f"{envbindir}/../tmp/html",
+        )
+    # Runs in CI only, treating warnings as errors
+    else:
+        session.run(
+            "sphinx-build",
+            "-j",
+            "auto",
+            "-b",
+            "html",
+            "--keep-going",
+            ".",
+            "_build/html",
+        )

@@ -26,30 +26,31 @@ script_path = path.dirname(__file__)
 #
 # Cost function class
 #
-from .costs.error_costs import BaseCost, RootMeanSquaredError, SumSquaredError
+from ._costs import BaseCost, RootMeanSquaredError, SumSquaredError
 
 #
 # Dataset class
 #
-from .datasets.base_dataset import Dataset
+from ._dataset import Dataset
 
 #
 # Model classes
 #
 from .models.base_model import BaseModel
 from .models import lithium_ion
+from .models import empirical
 
 #
 # Main optimisation class
 #
-from .optimisation import Optimisation
+from ._optimisation import Optimisation
 
 #
 # Optimiser class
 #
 from .optimisers.base_optimiser import BaseOptimiser
 from .optimisers.nlopt_optimize import NLoptOptimize
-from .optimisers.scipy_minimize import SciPyMinimize
+from .optimisers.scipy_optimisers import SciPyMinimize, SciPyDifferentialEvolution
 from .optimisers.pints_optimisers import (
     GradientDescent,
     Adam,
@@ -63,8 +64,8 @@ from .optimisers.pints_optimisers import (
 #
 # Parameter classes
 #
-from .parameters.base_parameter import Parameter
-from .parameters.base_parameter_set import ParameterSet
+from .parameters.parameter import Parameter
+from .parameters.parameter_set import ParameterSet
 from .parameters.priors import Gaussian, Uniform, Exponential
 
 #

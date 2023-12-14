@@ -1,7 +1,7 @@
 import pybop
 import numpy as np
 import pytest
-from pybop.costs.standalone import StandaloneCost
+from examples.costs.standalone import StandaloneCost
 
 
 class TestOptimisation:
@@ -11,11 +11,13 @@ class TestOptimisation:
 
     @pytest.fixture
     def dataset(self):
-        return [
-            pybop.Dataset("Time [s]", np.linspace(0, 360, 10)),
-            pybop.Dataset("Current function [A]", np.zeros(10)),
-            pybop.Dataset("Terminal voltage [V]", np.ones(10)),
-        ]
+        return pybop.Dataset(
+            {
+                "Time [s]": np.linspace(0, 360, 10),
+                "Current function [A]": np.zeros(10),
+                "Terminal voltage [V]": np.ones(10),
+            }
+        )
 
     @pytest.fixture
     def parameters(self):
@@ -34,7 +36,7 @@ class TestOptimisation:
             model,
             parameters,
             dataset,
-            signal="Terminal voltage [V]",
+            signal=["Terminal voltage [V]"],
         )
 
     @pytest.fixture
@@ -46,6 +48,7 @@ class TestOptimisation:
         [
             (pybop.NLoptOptimize, "NLoptOptimize"),
             (pybop.SciPyMinimize, "SciPyMinimize"),
+            (pybop.SciPyDifferentialEvolution, "SciPyDifferentialEvolution"),
             (pybop.GradientDescent, "Gradient descent"),
             (pybop.Adam, "Adam"),
             (pybop.CMAES, "Covariance Matrix Adaptation Evolution Strategy (CMA-ES)"),
@@ -63,7 +66,11 @@ class TestOptimisation:
         assert opt.optimiser is not None
         assert opt.optimiser.name() == expected_name
 
-        if optimiser_class not in [pybop.NLoptOptimize, pybop.SciPyMinimize]:
+        if optimiser_class not in [
+            pybop.NLoptOptimize,
+            pybop.SciPyMinimize,
+            pybop.SciPyDifferentialEvolution,
+        ]:
             assert opt.optimiser.boundaries is None
 
         if optimiser_class == pybop.NLoptOptimize:

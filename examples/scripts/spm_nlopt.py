@@ -3,14 +3,16 @@ import pandas as pd
 
 # Form dataset
 Measurements = pd.read_csv("examples/scripts/Chen_example.csv", comment="#").to_numpy()
-dataset = [
-    pybop.Dataset("Time [s]", Measurements[:, 0]),
-    pybop.Dataset("Current function [A]", Measurements[:, 1]),
-    pybop.Dataset("Terminal voltage [V]", Measurements[:, 2]),
-]
+dataset = pybop.Dataset(
+    {
+        "Time [s]": Measurements[:, 0],
+        "Current function [A]": Measurements[:, 1],
+        "Voltage [V]": Measurements[:, 2],
+    }
+)
 
 # Define model
-parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
+parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 model = pybop.models.lithium_ion.SPM(
     parameter_set=parameter_set, options={"thermal": "lumped"}
 )
@@ -30,7 +32,7 @@ parameters = [
 ]
 
 # Define the cost to optimise
-signal = "Terminal voltage [V]"
+signal = ["Voltage [V]"]
 problem = pybop.FittingProblem(model, parameters, dataset, signal=signal, init_soc=0.98)
 cost = pybop.RootMeanSquaredError(problem)
 
@@ -39,6 +41,7 @@ optim = pybop.Optimisation(cost=cost, optimiser=pybop.NLoptOptimize)
 
 # Run the optimisation problem
 x, final_cost = optim.run()
+print("Estimated parameters:", x)
 
 # Plot the timeseries output
 pybop.quick_plot(x, cost, title="Optimised Comparison")

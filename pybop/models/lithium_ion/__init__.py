@@ -1,4 +1,4 @@
 #
 # Import lithium ion based models
 #
-from .base_echem import SPM, SPMe
+from .echem import SPM, SPMe

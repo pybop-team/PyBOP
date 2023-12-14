@@ -25,7 +25,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/pybop-team/PyBOP",
     install_requires=[
-        "pybamm>=23.1",
+        "pybamm>=23.5",
         "numpy>=1.16",
         "scipy>=1.3",
         "pandas>=1.0",
@@ -35,6 +35,16 @@ setup(
     extras_require={
         "plot": ["plotly>=5.0"],
         "all": ["pybop[plot]"],
+        "docs": [
+            "sphinx>=6",
+            "pydata-sphinx-theme",
+            "sphinx-autobuild",
+            "sphinx-autoapi",
+            "sphinx_copybutton",
+            "sphinx_favicon",
+            "sphinx_design",
+            "myst-parser",
+        ],
     },
     # https://pypi.org/classifiers/
     classifiers=[],
