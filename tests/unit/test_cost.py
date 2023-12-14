@@ -34,7 +34,7 @@ class TestCosts:
         )
 
         # Construct Problem
-        signal = "Voltage [V]"
+        signal = ["Voltage [V]"]
         model.parameter_set.update({"Lower voltage cut-off [V]": cut_off})
         problem = pybop.FittingProblem(model, parameters, dataset, signal=signal, x0=x0)
 

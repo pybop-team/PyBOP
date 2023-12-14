@@ -32,7 +32,7 @@ parameters = [
 ]
 
 # Define the cost to optimise
-signal = "Voltage [V]"
+signal = ["Voltage [V]"]
 problem = pybop.FittingProblem(model, parameters, dataset, signal=signal, init_soc=0.98)
 cost = pybop.RootMeanSquaredError(problem)
 

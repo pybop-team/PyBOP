@@ -36,7 +36,7 @@ class TestOptimisation:
             model,
             parameters,
             dataset,
-            signal="Terminal voltage [V]",
+            signal=["Terminal voltage [V]"],
         )
 
     @pytest.fixture
