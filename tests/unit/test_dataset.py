@@ -21,14 +21,14 @@ class TestDataset:
             "Current function [A]": solution["Current [A]"].data,
             "Voltage [V]": solution["Terminal voltage [V]"].data,
         }
-        dataset = pybop.Dataset(data_dictionary)         
+        dataset = pybop.Dataset(data_dictionary)
 
         # Test repr
         print(dataset)
 
         # Test data structure
         assert dataset.data == data_dictionary
-        
+
         # Test exception for non-dictionary inputs
         with pytest.raises(ValueError):
             pybop.Dataset(["StringInputShouldNotWork"])
