@@ -163,11 +163,15 @@ class BaseModel:
             if not isinstance(inputs, dict):
                 inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
 
-            sol = self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
+            if self.check_params(inputs):
+                sol = self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
 
-            predictions = [sol[signal].data for signal in self.signal]
+                predictions = [sol[signal].data for signal in self.signal]
 
-            return np.vstack(predictions).T
+                return np.vstack(predictions).T
+
+            else:
+                return [np.inf]
 
     def simulateS1(self, inputs, t_eval):
         """
@@ -199,23 +203,27 @@ class BaseModel:
             if not isinstance(inputs, dict):
                 inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
 
-            sol = self.solver.solve(
-                self.built_model,
-                inputs=inputs,
-                t_eval=t_eval,
-                calculate_sensitivities=True,
-            )
+            if self.check_params(inputs):
+                sol = self.solver.solve(
+                    self.built_model,
+                    inputs=inputs,
+                    t_eval=t_eval,
+                    calculate_sensitivities=True,
+                )
 
-            predictions = [sol[signal].data for signal in self.signal]
+                predictions = [sol[signal].data for signal in self.signal]
 
-            sensitivities = [
-                np.array(
-                    [[sol[signal].sensitivities[key]] for signal in self.signal]
-                ).reshape(len(sol[self.signal[0]].data), self.n_outputs)
-                for key in self.fit_keys
-            ]
+                sensitivities = [
+                    np.array(
+                        [[sol[signal].sensitivities[key]] for signal in self.signal]
+                    ).reshape(len(sol[self.signal[0]].data), self.n_outputs)
+                    for key in self.fit_keys
+                ]
 
-            return np.vstack(predictions).T, np.dstack(sensitivities)
+                return np.vstack(predictions).T, np.dstack(sensitivities)
+
+            else:
+                return [np.inf], [np.inf]
 
     def predict(
         self,
@@ -269,20 +277,44 @@ class BaseModel:
                 inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
             parameter_set.update(inputs)
 
-        if self._unprocessed_model is not None:
-            if experiment is None:
-                return pybamm.Simulation(
-                    self._unprocessed_model,
-                    parameter_values=parameter_set,
-                ).solve(t_eval=t_eval, initial_soc=init_soc)
+        if self.check_params(inputs):
+            if self._unprocessed_model is not None:
+                if experiment is None:
+                    return pybamm.Simulation(
+                        self._unprocessed_model,
+                        parameter_values=parameter_set,
+                    ).solve(t_eval=t_eval, initial_soc=init_soc)
+                else:
+                    return pybamm.Simulation(
+                        self._unprocessed_model,
+                        experiment=experiment,
+                        parameter_values=parameter_set,
+                    ).solve(initial_soc=init_soc)
             else:
-                return pybamm.Simulation(
-                    self._unprocessed_model,
-                    experiment=experiment,
-                    parameter_values=parameter_set,
-                ).solve(initial_soc=init_soc)
+                raise ValueError(
+                    "This sim method currently only supports PyBaMM models"
+                )
+
         else:
-            raise ValueError("This sim method currently only supports PyBaMM models")
+            return [np.inf]
+
+    def check_params(self, inputs=None):
+        """
+        A compatibility check for the model parameters which can be implemented by subclasses
+        if required, otherwise it returns True by default.
+
+        Parameters
+        ----------
+        inputs : dict
+            The input parameters for the simulation.
+
+        Returns
+        -------
+        bool
+            A boolean which signifies whether the parameters are compatible.
+
+        """
+        return True
 
     @property
     def built_model(self):
