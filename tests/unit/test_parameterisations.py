@@ -133,7 +133,7 @@ class TestModelParameterisation:
         np.testing.assert_allclose(x, x0, atol=1e-1)
 
     @pytest.fixture
-    def spm_cost_2(self, parameters, model, x0):
+    def spm_two_signal_cost(self, parameters, model, x0):
         # Form dataset
         init_soc = 0.5
         solution = self.getdata(model, x0, init_soc)
@@ -162,9 +162,11 @@ class TestModelParameterisation:
         ],
     )
     @pytest.mark.unit
-    def test_multiple_signals(self, optimiser, spm_cost_2, x0):
+    def test_multiple_signals(self, optimiser, spm_two_signal_cost, x0):
         # Test each optimiser
-        parameterisation = pybop.Optimisation(cost=spm_cost_2, optimiser=optimiser)
+        parameterisation = pybop.Optimisation(
+            cost=spm_two_signal_cost, optimiser=optimiser
+        )
         parameterisation.set_max_unchanged_iterations(iterations=15, threshold=5e-4)
         parameterisation.set_max_iterations(100)
 
