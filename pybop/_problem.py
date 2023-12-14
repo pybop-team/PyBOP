@@ -3,7 +3,20 @@ import numpy as np
 
 class BaseProblem:
     """
-    Defines the PyBOP base problem, following the PINTS interface.
+    Base class for defining a problem within the PyBOP framework, compatible with PINTS.
+
+    Parameters
+    ----------
+    parameters : list
+        List of parameters for the problem.
+    model : object, optional
+        The model to be used for the problem (default: None).
+    check_model : bool, optional
+        Flag to indicate if the model should be checked (default: True).
+    init_soc : float, optional
+        Initial state of charge (default: None).
+    x0 : np.ndarray, optional
+        Initial parameter values (default: None).
     """
 
     def __init__(
@@ -42,20 +55,52 @@ class BaseProblem:
     def evaluate(self, x):
         """
         Evaluate the model with the given parameters and return the signal.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            Parameter values to evaluate the model at.
+
+        Raises
+        ------
+        NotImplementedError
+            This method must be implemented by subclasses.
         """
         raise NotImplementedError
 
     def evaluateS1(self, x):
         """
-        Evaluate the model with the given parameters and return the signal and
-        its derivatives.
+        Evaluate the model with the given parameters and return the signal and its derivatives.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            Parameter values to evaluate the model at.
+
+        Raises
+        ------
+        NotImplementedError
+            This method must be implemented by subclasses.
         """
         raise NotImplementedError
 
 
 class FittingProblem(BaseProblem):
     """
-    Defines the problem class for a fitting (parameter estimation) problem.
+    Problem class for fitting (parameter estimation) problems.
+
+    Extends `BaseProblem` with specifics for fitting a model to a dataset.
+
+    Parameters
+    ----------
+    model : object
+        The model to fit.
+    parameters : list
+        List of parameters for the problem.
+    dataset : list
+        List of data objects to fit the model to.
+    signal : str, optional
+        The signal to fit (default: "Voltage [V]").
     """
 
     def __init__(
@@ -114,6 +159,11 @@ class FittingProblem(BaseProblem):
     def evaluate(self, x):
         """
         Evaluate the model with the given parameters and return the signal.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            Parameter values to evaluate the model at.
         """
 
         y = np.asarray(self._model.simulate(inputs=x, t_eval=self._time_data))
@@ -122,8 +172,12 @@ class FittingProblem(BaseProblem):
 
     def evaluateS1(self, x):
         """
-        Evaluate the model with the given parameters and return the signal and
-        its derivatives.
+        Evaluate the model with the given parameters and return the signal and its derivatives.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            Parameter values to evaluate the model at.
         """
 
         y, dy = self._model.simulateS1(
@@ -135,14 +189,30 @@ class FittingProblem(BaseProblem):
 
     def target(self):
         """
-        Returns the target dataset.
+        Return the target dataset.
+
+        Returns
+        -------
+        np.ndarray
+            The target dataset array.
         """
         return self._target
 
 
 class DesignProblem(BaseProblem):
     """
-    Defines the problem class for a design optimiation problem.
+    Problem class for design optimization problems.
+
+    Extends `BaseProblem` with specifics for applying a model to an experimental design.
+
+    Parameters
+    ----------
+    model : object
+        The model to apply the design to.
+    parameters : list
+        List of parameters for the problem.
+    experiment : object
+        The experimental setup to apply the model to.
     """
 
     def __init__(
@@ -176,6 +246,11 @@ class DesignProblem(BaseProblem):
     def evaluate(self, x):
         """
         Evaluate the model with the given parameters and return the signal.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            Parameter values to evaluate the model at.
         """
 
         y = np.asarray(self._model.simulate(inputs=x, t_eval=self._time_data))
@@ -184,8 +259,12 @@ class DesignProblem(BaseProblem):
 
     def evaluateS1(self, x):
         """
-        Evaluate the model with the given parameters and return the signal and
-        its derivatives.
+        Evaluate the model with the given parameters and return the signal and its derivatives.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            Parameter values to evaluate the model at.
         """
 
         y, dy = self._model.simulateS1(
@@ -197,6 +276,10 @@ class DesignProblem(BaseProblem):
 
     def target(self):
         """
-        Returns the target dataset.
+        Return the target dataset (not applicable for design problems).
+
+        Returns
+        -------
+        None
         """
         return self._target

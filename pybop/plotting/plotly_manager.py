@@ -5,28 +5,32 @@ import sys
 
 class PlotlyManager:
     """
-    Manages the installation and configuration of Plotly for generating visualisations.
+    Manages the installation and configuration of Plotly for generating visualizations.
 
-    This class checks if Plotly is installed and, if not, prompts the user to install it.
-    It also ensures that the Plotly renderer and browser settings are properly configured
-    to display plots.
+    This class ensures that Plotly is installed and properly configured to display
+    plots in a web browser.
 
-    Methods:
-        `ensure_plotly_installed`: Verifies if Plotly is installed and installs it if necessary.
-        `prompt_for_plotly_installation`: Prompts the user for permission to install Plotly.
-        `install_plotly_package`: Installs the Plotly package using pip.
-        `post_install_setup`: Sets up Plotly default renderer after installation.
-        `check_renderer_settings`: Verifies that the Plotly renderer is correctly set.
-        `check_browser_availability`: Checks if a web browser is available for rendering plots.
+    Upon instantiation, it checks for Plotly's presence, installs it if missing,
+    and configures the default renderer and browser settings.
 
-    Usage:
-        Instantiate the PlotlyManager class to automatically ensure Plotly is installed
-        and configured correctly when creating an instance.
-        Example:
-            plotly_manager = PlotlyManager()
+    Attributes
+    ----------
+    go : module
+        The Plotly graph_objects module for creating figures.
+    pio : module
+        The Plotly input/output module for configuring the renderer.
+    make_subplots : function
+        The function from Plotly for creating subplot figures.
+
+    Examples
+    --------
+    >>> plotly_manager = PlotlyManager()
     """
 
     def __init__(self):
+        """
+        Initialize the PlotlyManager, ensuring Plotly is installed and configured.
+        """
         self.go = None
         self.pio = None
         self.make_subplots = None
@@ -35,7 +39,9 @@ class PlotlyManager:
         self.check_browser_availability()
 
     def ensure_plotly_installed(self):
-        """Verifies if Plotly is installed, importing necessary modules and prompting for installation if missing."""
+        """
+        Check if Plotly is installed and import necessary modules; prompt for installation if missing.
+        """
         try:
             import plotly.graph_objs as go
             import plotly.io as pio
@@ -48,7 +54,9 @@ class PlotlyManager:
             self.prompt_for_plotly_installation()
 
     def prompt_for_plotly_installation(self):
-        """Prompts the user for permission to install Plotly and proceeds with installation if consented."""
+        """
+        Prompt the user for Plotly installation and install it upon agreement.
+        """
         user_input = (
             input(
                 "Plotly is not installed. To proceed, we need to install plotly. (Y/n)? "
@@ -64,7 +72,9 @@ class PlotlyManager:
             sys.exit(1)  # Exit if user cancels installation
 
     def install_plotly(self):
-        """Attempts to install the Plotly package using pip and exits if installation fails."""
+        """
+        Install the Plotly package using pip. Exit if installation fails.
+        """
         try:
             subprocess.check_call([sys.executable, "-m", "pip", "install", "plotly"])
         except subprocess.CalledProcessError as e:
@@ -72,7 +82,9 @@ class PlotlyManager:
             sys.exit(1)  # Exit if installation fails
 
     def post_install_setup(self):
-        """After successful installation, imports Plotly and sets the default renderer if necessary."""
+        """
+        Import Plotly modules and set the default renderer after installation.
+        """
         import plotly.graph_objs as go
         import plotly.io as pio
         from plotly.subplots import make_subplots
@@ -87,7 +99,9 @@ class PlotlyManager:
             )
 
     def check_renderer_settings(self):
-        """Checks if the Plotly renderer is set and provides information on how to set it if empty."""
+        """
+        Check and provide information on setting the Plotly renderer if it's not already set.
+        """
         if self.pio and self.pio.renderers.default == "":
             print(
                 "The Plotly renderer is an empty string. To set the renderer, use:\n"
@@ -97,7 +111,9 @@ class PlotlyManager:
             )
 
     def check_browser_availability(self):
-        """Ensures a web browser is available for rendering plots with the 'browser' renderer and provides guidance if not."""
+        """
+        Confirm a web browser is available for Plotly's 'browser' renderer; provide guidance if not.
+        """
         if self.pio and self.pio.renderers.default == "browser":
             try:
                 webbrowser.get()
