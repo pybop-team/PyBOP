@@ -6,7 +6,7 @@ class StandaloneCost(pybop.BaseCost):
     """
     A standalone cost function example that inherits from pybop.BaseCost.
 
-    This class represents a simple cost function without a problem obkect, used for demonstration purposes.
+    This class represents a simple cost function without a problem object, used for demonstration purposes.
     It is a quadratic function of one variable with a constant term, defined by
     the formula: cost(x) = x^2 + 42.
 

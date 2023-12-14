@@ -70,7 +70,7 @@ class Gaussian:
         Raises
         ------
         ValueError
-            If the size parameter is not positive.
+            If the size parameter is negative.
         """
         if size < 0:
             raise ValueError("size must be positive")
@@ -153,7 +153,7 @@ class Uniform:
         Raises
         ------
         ValueError
-            If the size parameter is not positive.
+            If the size parameter is negative.
         """
         if size < 0:
             raise ValueError("size must be positive")
@@ -235,7 +235,7 @@ class Exponential:
         Raises
         ------
         ValueError
-            If the size parameter is not positive.
+            If the size parameter is negative.
         """
         if size < 0:
             raise ValueError("size must be positive")

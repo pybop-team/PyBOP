@@ -1,4 +1,4 @@
-# Contributing to PyBOP
+# Contributing
 
 If you'd like to contribute to PyBOP, please have a look at the guidelines below.
 
@@ -82,7 +82,7 @@ python -m pip install pre-commit
 pre-commit run ruff
 ```
 
-ruff is configured inside the file `pre-commit-config.yaml`, allowing us to ignore some errors. If you think this should be added or removed, please submit an [issue](#issues)
+ruff is configured inside the file `pre-commit-config.yaml`, allowing us to ignore some errors. If you think this should be added or removed, please submit an [issue](https://guides.github.com/features/issues/).
 
 When you commit your changes they will be checked against ruff automatically (see [Pre-commit checks](#pre-commit-checks)).
 
@@ -293,7 +293,7 @@ Configuration files:
 setup.py
 ```
 
-Note that this file must be kept in sync with the version number in [pybop/**init**.py](pybop/__init__.py).
+Note that this file must be kept in sync with the version number in [pybop/**init**.py](https://github.com/pybop-team/PyBOP/blob/develop/pybop/__init__.py).
 
 ### Continuous Integration using GitHub actions
 
@@ -316,11 +316,10 @@ Code coverage (how much of our code is seen by the (Linux) unit tests) is tested
 
 GitHub does some magic with particular filenames. In particular:
 
-- The first page people see when they go to [our GitHub page](https://github.com/pybop-team/PyBOP) displays the contents of [README.md](README.md), which is written in the [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet) format. Some guidelines can be found [here](https://help.github.com/articles/about-readmes/).
-- The license for using PyBOP is stored in [LICENSE](LICENSE.txt), and [automatically](https://help.github.com/articles/adding-a-license-to-a-repository/) linked to by GitHub.
-- This file, [CONTRIBUTING.md](CONTRIBUTING.md) is recognised as the contribution guidelines and a link is [automatically](https://github.com/blog/1184-contributing-guidelines) displayed when new issues or pull requests are created.
+- The first page people see when they go to [our GitHub page](https://github.com/pybop-team/PyBOP) displays the contents of [README.md](https://github.com/pybop-team/PyBOP/blob/develop/README.md), which is written in the [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet) format. Some guidelines can be found [here](https://help.github.com/articles/about-readmes/).
+- The license for using PyBOP is stored in [LICENSE](https://github.com/pybop-team/PyBOP/blob/develop/LICENSE), and [automatically](https://help.github.com/articles/adding-a-license-to-a-repository/) linked to by GitHub.
+- This file, [CONTRIBUTING.md](https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md) is recognised as the contribution guidelines and a link is [automatically](https://github.com/blog/1184-contributing-guidelines) displayed when new issues or pull requests are created.
 
 ## Acknowledgements
 
-This CONTRIBUTING.md file, along with large sections of the code infrastructure,
-was copied from the excellent [Pints repo](https://github.com/pints-team/pints), and [PyBaMM repo](https://github.com/pybamm-team/PyBaMM)
+This CONTRIBUTING.md file, along with large sections of the code infrastructure, was copied from the excellent [Pints repo](https://github.com/pints-team/pints), and [PyBaMM repo](https://github.com/pybamm-team/PyBaMM)

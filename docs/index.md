@@ -13,24 +13,25 @@ Welcome to PyBOP, a Python package dedicated to the optimization and parameteriz
 ```{gallery-grid}
 :grid-columns: 1 2 2 2
 
-- header: "{fab}`bootstrap;pst-color-primary` API Documentation"
-  content: "Get detailed information on functions, classes, and modules that allow you to fully leverage the power of PyBOP in your own projects."
-  link: "api/index.html"
 - header: "{fas}`bolt;pst-color-primary` Installation"
   content: "Setting up PyBOP is straightforward. Follow our step-by-step guide to install PyBOP on your system."
-  link: "user_guide/installation.html"
-- header: "{fas}`circle-half-stroke;pst-color-primary` Usage"
-  content: "Discover how to use PyBOP effectively with our usage examples. From basic tasks to advanced features, learn how to solve real-world problems with PyBOP."
-  link: "user_guide/index.html"
+  link: "installation.html"
+- header: "{fas}`circle-half-stroke;pst-color-primary` Quick Start"
+  content: "Discover how to use PyBOP effectively. From basic tasks to advanced features, learn how to solve real-world problems with PyBOP."
+  link: "quick_start.html"
 - header: "{fab}`python;pst-color-primary` Contributing"
   content: "Contribute to the PyBOP project and become a part of our growing community."
-  link: "contributing.html"
+  link: "Contributing.html"
+- header: "{fab}`bootstrap;pst-color-primary` API Reference"
+  content: "Get detailed information on functions, classes, and modules that allow you to fully leverage the power of PyBOP in your own projects."
+  link: "api/index.html"
 ```
 
 ```{toctree}
 :maxdepth: 2
 :hidden:
 
-user_guide/index
-contributing
+installation
+quick_start
+Contributing <Contributing>
 ```

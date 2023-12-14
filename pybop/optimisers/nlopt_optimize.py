@@ -83,7 +83,7 @@ class NLoptOptimize(BaseOptimiser):
 
     def needs_sensitivities(self):
         """
-        Indicates if the optimizer requires gradient information for the cost function.
+        Indicates if the optimiser requires gradient information for the cost function.
 
         Returns
         -------
@@ -94,7 +94,7 @@ class NLoptOptimize(BaseOptimiser):
 
     def name(self):
         """
-        Returns the name of this optimizer instance.
+        Returns the name of this optimiser instance.
 
         Returns
         -------

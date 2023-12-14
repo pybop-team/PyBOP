@@ -5,8 +5,8 @@ class GradientDescent(pints.GradientDescent):
     """
     Implements a simple gradient descent optimization algorithm.
 
-    This class extends the gradient descent optimizer from the PINTS library, designed
-    to minimize a scalar function of one or more variables. Note that this optimizer
+    This class extends the gradient descent optimiser from the PINTS library, designed
+    to minimize a scalar function of one or more variables. Note that this optimiser
     does not support boundary constraints.
 
     Parameters
@@ -16,7 +16,7 @@ class GradientDescent(pints.GradientDescent):
     sigma0 : float, optional
         Initial step size (default is 0.1).
     bounds : sequence or ``Bounds``, optional
-        Ignored by this optimizer, provided for API consistency.
+        Ignored by this optimiser, provided for API consistency.
 
     See Also
     --------
@@ -35,9 +35,9 @@ class Adam(pints.Adam):
     """
     Implements the Adam optimization algorithm.
 
-    This class extends the Adam optimizer from the PINTS library, which combines
+    This class extends the Adam optimiser from the PINTS library, which combines
     ideas from RMSProp and Stochastic Gradient Descent with momentum. Note that
-    this optimizer does not support boundary constraints.
+    this optimiser does not support boundary constraints.
 
     Parameters
     ----------
@@ -46,7 +46,7 @@ class Adam(pints.Adam):
     sigma0 : float, optional
         Initial step size (default is 0.1).
     bounds : sequence or ``Bounds``, optional
-        Ignored by this optimizer, provided for API consistency.
+        Ignored by this optimiser, provided for API consistency.
 
     See Also
     --------
@@ -65,7 +65,7 @@ class IRPropMin(pints.IRPropMin):
     """
     Implements the iRpropMin optimization algorithm.
 
-    This class inherits from the PINTS IRPropMin class, which is an optimizer that
+    This class inherits from the PINTS IRPropMin class, which is an optimiser that
     uses resilient backpropagation with weight-backtracking. It is designed to handle
     problems with large plateaus, noisy gradients, and local minima.
 
@@ -97,7 +97,7 @@ class PSO(pints.PSO):
     """
     Implements a particle swarm optimization (PSO) algorithm.
 
-    This class extends the PSO optimizer from the PINTS library. PSO is a
+    This class extends the PSO optimiser from the PINTS library. PSO is a
     metaheuristic optimization method inspired by the social behavior of birds
     flocking or fish schooling, suitable for global optimization problems.
 
@@ -129,7 +129,7 @@ class SNES(pints.SNES):
     """
     Implements the stochastic natural evolution strategy (SNES) optimization algorithm.
 
-    Inheriting from the PINTS SNES class, this optimizer is an evolutionary algorithm
+    Inheriting from the PINTS SNES class, this optimiser is an evolutionary algorithm
     that evolves a probability distribution on the parameter space, guiding the search
     for the optimum based on the natural gradient of expected fitness.
 
@@ -159,7 +159,7 @@ class SNES(pints.SNES):
 
 class XNES(pints.XNES):
     """
-    Implements the Exponential Natural Evolution Strategy (XNES) optimizer from PINTS.
+    Implements the Exponential Natural Evolution Strategy (XNES) optimiser from PINTS.
 
     XNES is an evolutionary algorithm that samples from a multivariate normal distribution, which is updated iteratively to fit the distribution of successful solutions.
 
@@ -189,7 +189,7 @@ class XNES(pints.XNES):
 
 class CMAES(pints.CMAES):
     """
-    Adapter for the Covariance Matrix Adaptation Evolution Strategy (CMA-ES) optimizer in PINTS.
+    Adapter for the Covariance Matrix Adaptation Evolution Strategy (CMA-ES) optimiser in PINTS.
 
     CMA-ES is an evolutionary algorithm for difficult non-linear non-convex optimization problems.
     It adapts the covariance matrix of a multivariate normal distribution to capture the shape of the cost landscape.

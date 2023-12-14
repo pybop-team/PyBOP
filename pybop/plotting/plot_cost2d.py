@@ -15,7 +15,7 @@ def plot_cost2d(cost, bounds=None, optim=None, steps=10):
     bounds : numpy.ndarray, optional
         A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses `get_param_bounds`.
     optim : object, optional
-        An optimizer instance which, if provided, overlays its specific trace on the plot.
+        An optimiser instance which, if provided, overlays its specific trace on the plot.
     steps : int, optional
         The number of intervals to divide the parameter space into along each dimension (default is 10).
 
@@ -94,7 +94,7 @@ def create_figure(x, y, z, bounds, params, optim):
     params : iterable
         An iterable of parameter objects with 'name' attributes for axis labeling.
     optim : object
-        An optimizer instance with 'log' and 'x0' attributes for plotting traces.
+        An optimiser instance with 'log' and 'x0' attributes for plotting traces.
 
     Returns
     -------

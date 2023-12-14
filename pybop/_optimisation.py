@@ -5,16 +5,16 @@ import numpy as np
 
 class Optimisation:
     """
-    A class for conducting optimization using PyBOP or PINTS optimizers.
+    A class for conducting optimization using PyBOP or PINTS optimisers.
 
     Parameters
     ----------
-    cost : pints.ErrorMeasure or pints.LogPDF
-        An objective function to be optimized, which can be either a PINTS error measure or log PDF.
-    optimiser : pints.Optimiser or subclass of pybop.BaseOptimizer, optional
-        An optimizer from either the PINTS or PyBOP framework to perform the optimization (default: None).
+    cost : pybop.BaseCost or pints.ErrorMeasure
+        An objective function to be optimized, which can be either a pybop.Cost or PINTS error measure
+    optimiser : pybop.Optimiser or subclass of pybop.BaseOptimiser, optional
+        An optimiser from either the PINTS or PyBOP framework to perform the optimization (default: None).
     sigma0 : float or sequence, optional
-        Initial step size or standard deviation for the optimizer (default: None).
+        Initial step size or standard deviation for the optimiser (default: None).
     verbose : bool, optional
         If True, the optimization progress is printed (default: False).
 
@@ -27,7 +27,7 @@ class Optimisation:
     n_parameters : int
         Number of parameters in the optimization problem.
     sigma0 : float or sequence
-        Initial step size or standard deviation for the optimizer.
+        Initial step size or standard deviation for the optimiser.
     log : list
         Log of the optimization process.
     """
@@ -146,7 +146,7 @@ class Optimisation:
 
     def _run_pybop(self):
         """
-        Internal method to run the optimization using a PyBOP optimizer.
+        Internal method to run the optimization using a PyBOP optimiser.
 
         Returns
         -------
@@ -167,7 +167,7 @@ class Optimisation:
 
     def _run_pints(self):
         """
-        Internal method to run the optimization using a PINTS optimizer.
+        Internal method to run the optimization using a PINTS optimiser.
 
         Returns
         -------
@@ -362,7 +362,7 @@ class Optimisation:
 
     def set_f_guessed_tracking(self, use_f_guessed=False):
         """
-        Set the method used to track the optimizer progress.
+        Set the method used to track the optimiser progress.
         Credit: PINTS
 
         Parameters

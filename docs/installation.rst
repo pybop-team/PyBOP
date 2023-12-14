@@ -1,6 +1,6 @@
 .. _installation:
 
-Installation Guide for PyBOP
+Installation
 *****************************
 
 PyBOP is a versatile Python package designed for optimization and parameterization of battery models. Follow the instructions below to install PyBOP and set up your environment to begin utilizing its capabilities.
@@ -52,7 +52,7 @@ For Developers
 
 If you are installing PyBOP for development purposes, such as contributing to the project, please ensure that you follow the guidelines outlined in the contributing guide. It includes additional steps that might be necessary for setting up a development environment, including the installation of dependencies and setup of pre-commit hooks.
 
-`Contributing Guide <../contributing.html>`_
+`Contributing Guide <../Contributing.html>`_
 
 Further Assistance
 ------------------
@@ -64,5 +64,5 @@ Next Steps
 
 After installing PyBOP, you might want to:
 
-* Explore the `Quick Start Guide <usage.html>`_ to begin using PyBOP.
+* Explore the `Quick Start Guide <quick_start.html>`_ to begin using PyBOP.
 * Check out the `API Reference <../api/index.html>`_ for detailed information on PyBOP's programming interface.
