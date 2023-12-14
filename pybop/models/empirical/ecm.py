@@ -4,8 +4,32 @@ from ..base_model import BaseModel
 
 class Thevenin(BaseModel):
     """
-    Composition of the PyBaMM Single Particle Model class.
+    The Thevenin class represents an equivalent circuit model based on the Thevenin model in PyBaMM.
 
+    This class encapsulates the PyBaMM equivalent circuit Thevenin model, providing an interface
+    to define the parameters, geometry, submesh types, variable points, spatial methods, and solver
+    to be used for simulations.
+
+    Parameters
+    ----------
+    name : str, optional
+        A name for the model instance. Defaults to "Equivalent Circuit Thevenin Model".
+    parameter_set : dict or None, optional
+        A dictionary of parameters to be used for the model. If None, the default parameters from PyBaMM are used.
+    geometry : dict or None, optional
+        The geometry definitions for the model. If None, the default geometry from PyBaMM is used.
+    submesh_types : dict or None, optional
+        The types of submeshes to use. If None, the default submesh types from PyBaMM are used.
+    var_pts : dict or None, optional
+        The number of points for each variable in the model to define the discretization. If None, the default is used.
+    spatial_methods : dict or None, optional
+        The spatial methods to be used for discretization. If None, the default spatial methods from PyBaMM are used.
+    solver : pybamm.Solver or None, optional
+        The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
+    options : dict or None, optional
+        A dictionary of options to pass to the PyBaMM Thevenin model.
+    **kwargs :
+        Additional arguments passed to the PyBaMM Thevenin model constructor.
     """
 
     def __init__(

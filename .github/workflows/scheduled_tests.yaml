@@ -33,7 +33,7 @@ jobs:
           python -m nox -s unit
           python -m nox -s notebooks
 
-    #M-series Mac Mini
+  #M-series Mac Mini
   build-apple-mseries:
     runs-on: [self-hosted, macOS, ARM64]
     env:
