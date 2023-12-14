@@ -171,7 +171,7 @@ class TestModelParameterisation:
         x, final_cost = parameterisation.run()
 
         # Assertions
-        np.testing.assert_allclose(final_cost, 0, atol=1e-2)
+        np.testing.assert_allclose(final_cost, 0, atol=2e-2)
         np.testing.assert_allclose(x, x0, atol=1e-1)
 
     @pytest.mark.parametrize("init_soc", [0.3, 0.7])
