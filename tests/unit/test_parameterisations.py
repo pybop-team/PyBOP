@@ -19,19 +19,19 @@ class TestModelParameterisation:
         return [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.5, 0.02),
-                bounds=[0.375, 0.625],
+                prior=pybop.Gaussian(0.6, 0.02),
+                bounds=[0.375, 0.7],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.65, 0.02),
-                bounds=[0.525, 0.75],
+                prior=pybop.Gaussian(0.5, 0.02),
+                bounds=[0.375, 0.625],
             ),
         ]
 
     @pytest.fixture
     def x0(self):
-        return np.array([0.52, 0.63])
+        return np.array([0.63, 0.51])
 
     @pytest.mark.parametrize("init_soc", [0.3, 0.7])
     @pytest.mark.unit
