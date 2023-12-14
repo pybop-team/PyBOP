@@ -18,8 +18,8 @@ class TestDataset:
         # Form dataset
         data_dictionary = {
             "Time [s]": solution["Time [s]"].data,
-            "Current function [A]": solution["Current [A]"].data,
-            "Voltage [V]": solution["Terminal voltage [V]"].data,
+            "Current [A]": solution["Current [A]"].data,
+            "Terminal voltage [V]": solution["Terminal voltage [V]"].data,
         }
         dataset = pybop.Dataset(data_dictionary)
 
@@ -34,3 +34,7 @@ class TestDataset:
             pybop.Dataset(["StringInputShouldNotWork"])
         with pytest.raises(ValueError):
             pybop.Dataset(solution["Time [s]"].data)
+
+        # Test conversion of pybamm solution into dictionary
+        assert dataset.data == pybop.Dataset(solution).data
+        assert dataset.names == pybop.Dataset(solution).names

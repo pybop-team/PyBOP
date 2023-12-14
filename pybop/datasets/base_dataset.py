@@ -7,6 +7,8 @@ class Dataset:
     """
 
     def __init__(self, data_dictionary):
+        if isinstance(data_dictionary, pybamm.solvers.solution.Solution):
+            data_dictionary = data_dictionary.get_data_dict()
         if not isinstance(data_dictionary, dict):
             raise ValueError("The input to pybop.Dataset must be a dictionary.")
         self.data = data_dictionary
