@@ -2,16 +2,19 @@
 
 
 # -- Path setup --------------------------------------------------------------
+import os
 import sys
-from pathlib import Path
 
-sys.path.append(str(Path(".").resolve()))
+root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+sys.path.insert(0, root_path)
+
+from pybop.version import __version__  # noqa: E402
 
 # -- Project information -----------------------------------------------------
 project = "PyBOP"
 copyright = "2023, The PyBOP Team"
 author = "The PyBOP Team"
-release = "v23.11"
+release = f"v{__version__}"
 
 # -- General configuration ---------------------------------------------------
 extensions = [
