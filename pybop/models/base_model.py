@@ -121,8 +121,8 @@ class BaseModel:
         if self.dataset is not None and self.parameters is not None:
             if "Current function [A]" not in self.fit_keys:
                 self.parameter_set["Current function [A]"] = pybamm.Interpolant(
-                    self.dataset["Time [s]"].data,
-                    self.dataset["Current function [A]"].data,
+                    self.dataset["Time [s]"],
+                    self.dataset["Current function [A]"],
                     pybamm.t,
                 )
                 # Set t_eval
@@ -163,9 +163,11 @@ class BaseModel:
             if not isinstance(inputs, dict):
                 inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
 
-            return self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)[
-                self.signal
-            ].data
+            sol = self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
+
+            predictions = [sol[signal].data for signal in self.signal]
+
+            return np.vstack(predictions).T
 
     def simulateS1(self, inputs, t_eval):
         """
@@ -204,15 +206,16 @@ class BaseModel:
                 calculate_sensitivities=True,
             )
 
-            return (
-                sol[self.signal].data,
-                np.asarray(
-                    [
-                        sol[self.signal].sensitivities[key].toarray()
-                        for key in self.fit_keys
-                    ]
-                ).T,
-            )
+            predictions = [sol[signal].data for signal in self.signal]
+
+            sensitivities = [
+                np.array(
+                    [[sol[signal].sensitivities[key]] for signal in self.signal]
+                ).reshape(len(sol[self.signal[0]].data), self.n_outputs)
+                for key in self.fit_keys
+            ]
+
+            return np.vstack(predictions).T, np.dstack(sensitivities)
 
     def predict(
         self,

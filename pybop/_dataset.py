@@ -18,20 +18,22 @@ class Dataset:
 
     """
 
-    def __init__(self, name, data):
+    def __init__(self, data_dictionary):
         """
         Initialize a Dataset instance with a name and data.
 
         Parameters
         ----------
-        name : str
-            The name for the dataset.
-        data : array-like
+        data_dictionary : dict or instance of pybamm.solvers.solution.Solution
             The experimental data to store within the dataset.
         """
 
-        self.name = name
-        self.data = data
+        if isinstance(data_dictionary, pybamm.solvers.solution.Solution):
+            data_dictionary = data_dictionary.get_data_dict()
+        if not isinstance(data_dictionary, dict):
+            raise ValueError("The input to pybop.Dataset must be a dictionary.")
+        self.data = data_dictionary
+        self.names = self.data.keys()
 
     def __repr__(self):
         """
@@ -40,9 +42,9 @@ class Dataset:
         Returns
         -------
         str
-            A string that includes the name and data of the dataset.
+            A string that includes the type and contents of the dataset.
         """
-        return f"Dataset: {self.name} \n Data: {self.data}"
+        return f"Dataset: {type(self.data)} \n Contains: {self.names}"
 
     def Interpolant(self):
         """
