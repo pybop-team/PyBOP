@@ -11,7 +11,7 @@ class NLoptOptimize(BaseOptimiser):
     def __init__(self, n_param, xtol=None, method=None, maxiter=None):
         super().__init__()
         self.n_param = n_param
-        self.maxiter = maxiter
+        self._max_iterations = maxiter
 
         if method is not None:
             self.optim = nlopt.opt(method, self.n_param)
@@ -48,8 +48,8 @@ class NLoptOptimize(BaseOptimiser):
         self.optim.set_upper_bounds(bounds["upper"])
 
         # Set max iterations
-        if self.maxiter is not None:
-            self.optim.set_maxeval(self.maxiter)
+        if self._max_iterations is not None:
+            self.optim.set_maxeval(self._max_iterations)
 
         # Run the optimser
         x = self.optim.optimize(x0)

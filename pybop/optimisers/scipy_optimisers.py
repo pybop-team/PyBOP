@@ -11,11 +11,8 @@ class SciPyMinimize(BaseOptimiser):
         super().__init__()
         self.method = method
         self.bounds = bounds
-        self.maxiter = maxiter
-        if self.maxiter is not None:
-            self.options = {"maxiter": self.maxiter}
-        else:
-            self.options = {}
+        self.options = {}
+        self._max_iterations = maxiter
 
         if self.method is None:
             self.method = "COBYLA"  # "L-BFGS-B"
@@ -43,6 +40,12 @@ class SciPyMinimize(BaseOptimiser):
             bounds = (
                 (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
             )
+
+        # Set max iterations
+        if self._max_iterations is not None:
+            self.options = {"maxiter": self._max_iterations}
+        else:
+            self.options.pop("maxiter", None)
 
         output = minimize(
             cost_function,
@@ -81,7 +84,7 @@ class SciPyDifferentialEvolution(BaseOptimiser):
         super().__init__()
         self.bounds = bounds
         self.strategy = strategy
-        self.maxiter = maxiter
+        self._max_iterations = maxiter
         self.popsize = popsize
 
     def _runoptimise(self, cost_function, x0=None, bounds=None):
@@ -124,7 +127,7 @@ class SciPyDifferentialEvolution(BaseOptimiser):
             cost_function,
             bounds,
             strategy=self.strategy,
-            maxiter=self.maxiter,
+            maxiter=self._max_iterations,
             popsize=self.popsize,
             callback=callback,
         )
