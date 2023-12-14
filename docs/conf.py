@@ -45,6 +45,10 @@ autoapi_root = "api"
 autoapi_member_order = "groupwise"
 
 # -- Options for HTML output -------------------------------------------------
+# Define the json_url for our version switcher.
+json_url = "http://pybop-docs.readthedocs.io/en/latest/_static/switcher.json"
+version_match = os.environ.get("READTHEDOCS_VERSION")
+
 html_theme = "pydata_sphinx_theme"
 html_show_sourcelink = False
 html_title = "PyBOP Documentation"
@@ -66,7 +70,20 @@ html_theme_options = {
     ],
     "search_bar_text": "Search the docs...",
     "show_prev_next": False,
+    "navbar_align": "content",
+    "navbar_center": ["navbar-nav", "version-switcher"],
+    "show_version_warning_banner": True,
+    "switcher": {
+        "json_url": json_url,
+        "version_match": version_match,
+    },
+    "footer_start": ["copyright"],
+    "footer_center": ["sphinx-version"],
 }
 
 html_static_path = ["_static"]
 html_js_files = ["custom-icon.js"]
+
+# -- Language ----------------------------------------------------------------
+
+language = "en"

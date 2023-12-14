@@ -1,7 +1,7 @@
 import nox
 
 # nox options
-nox.options.reuse_existing_virtualenvs = False
+nox.options.reuse_existing_virtualenvs = True
 
 
 @nox.session
