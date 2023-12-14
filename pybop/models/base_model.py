@@ -215,7 +215,7 @@ class BaseModel:
                 for key in self.fit_keys
             ]
 
-            return (np.vstack(predictions).T, np.dstack(sensitivities))
+            return np.vstack(predictions).T, np.dstack(sensitivities)
 
     def predict(
         self,
