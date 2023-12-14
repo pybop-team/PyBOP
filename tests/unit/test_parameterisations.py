@@ -47,7 +47,7 @@ class TestModelParameterisation:
         )
 
         # Define the cost to optimise
-        signal = "Terminal voltage [V]"
+        signal = ["Terminal voltage [V]"]
         problem = pybop.FittingProblem(
             model, parameters, dataset, signal=signal, init_soc=init_soc
         )
@@ -80,66 +80,99 @@ class TestModelParameterisation:
         )
 
         # Define the cost to optimise
-        signal = "Terminal voltage [V]"
+        signal = ["Terminal voltage [V]"]
         problem = pybop.FittingProblem(
             model, parameters, dataset, signal=signal, init_soc=init_soc
         )
         return pybop.SumSquaredError(problem)
 
-    @pytest.mark.unit
-    def test_spm_optimisers(self, spm_cost, x0):
-        # Select optimisers
-        optimisers = [
+    @pytest.mark.parametrize(
+        "optimiser",
+        [
             pybop.NLoptOptimize,
             pybop.SciPyMinimize,
             pybop.SciPyDifferentialEvolution,
-            pybop.CMAES,
             pybop.Adam,
+            pybop.CMAES,
             pybop.GradientDescent,
-            pybop.PSO,
-            pybop.XNES,
-            pybop.SNES,
             pybop.IRPropMin,
-        ]
-
+            pybop.PSO,
+            pybop.SNES,
+            pybop.XNES,
+        ],
+    )
+    @pytest.mark.unit
+    def test_spm_optimisers(self, optimiser, spm_cost, x0):
         # Test each optimiser
-        for optimiser in optimisers:
-            parameterisation = pybop.Optimisation(cost=spm_cost, optimiser=optimiser)
-            parameterisation.set_max_unchanged_iterations(iterations=15, threshold=5e-4)
+        parameterisation = pybop.Optimisation(cost=spm_cost, optimiser=optimiser)
+        parameterisation.set_max_unchanged_iterations(iterations=15, threshold=5e-4)
 
-            if optimiser in [pybop.CMAES]:
-                parameterisation.set_f_guessed_tracking(True)
-                assert parameterisation._use_f_guessed is True
-                parameterisation.set_max_iterations(1)
-                x, final_cost = parameterisation.run()
+        if optimiser in [pybop.CMAES]:
+            parameterisation.set_f_guessed_tracking(True)
+            assert parameterisation._use_f_guessed is True
+            parameterisation.set_max_iterations(1)
+            x, final_cost = parameterisation.run()
 
-                parameterisation.set_f_guessed_tracking(False)
-                parameterisation.set_max_iterations(100)
+            parameterisation.set_f_guessed_tracking(False)
+            parameterisation.set_max_iterations(100)
 
-                x, final_cost = parameterisation.run()
-                assert parameterisation._max_iterations == 100
+            x, final_cost = parameterisation.run()
+            assert parameterisation._max_iterations == 100
 
-            elif optimiser in [pybop.GradientDescent]:
-                parameterisation.optimiser.set_learning_rate(0.025)
-                parameterisation.set_max_iterations(100)
-                x, final_cost = parameterisation.run()
+        elif optimiser in [pybop.GradientDescent]:
+            parameterisation.optimiser.set_learning_rate(0.025)
+            parameterisation.set_max_iterations(100)
+            x, final_cost = parameterisation.run()
 
-            elif optimiser in [
-                pybop.PSO,
-                pybop.XNES,
-                pybop.SNES,
-                pybop.Adam,
-                pybop.IRPropMin,
-            ]:
-                parameterisation.set_max_iterations(100)
-                x, final_cost = parameterisation.run()
+        else:
+            parameterisation.set_max_iterations(100)
+            x, final_cost = parameterisation.run()
 
-            else:
-                x, final_cost = parameterisation.run()
+        # Assertions
+        np.testing.assert_allclose(final_cost, 0, atol=1e-2)
+        np.testing.assert_allclose(x, x0, atol=1e-1)
 
-            # Assertions
-            np.testing.assert_allclose(final_cost, 0, atol=1e-2)
-            np.testing.assert_allclose(x, x0, atol=1e-1)
+    @pytest.fixture
+    def spm_cost_2(self, parameters, model, x0):
+        # Form dataset
+        init_soc = 0.5
+        solution = self.getdata(model, x0, init_soc)
+        dataset = pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Terminal voltage [V]": solution["Terminal voltage [V]"].data,
+            }
+        )
+
+        # Define the cost to optimise
+        signal = ["Terminal voltage [V]", "Time [s]"]
+        problem = pybop.FittingProblem(
+            model, parameters, dataset, signal=signal, init_soc=init_soc
+        )
+        return pybop.SumSquaredError(problem)
+
+    @pytest.mark.parametrize(
+        "optimiser",
+        [
+            pybop.NLoptOptimize,
+            pybop.SciPyMinimize,
+            pybop.Adam,
+            pybop.CMAES,
+        ],
+    )
+    @pytest.mark.unit
+    def test_multiple_signals(self, optimiser, spm_cost_2, x0):
+        # Test each optimiser
+        parameterisation = pybop.Optimisation(cost=spm_cost_2, optimiser=optimiser)
+        parameterisation.set_max_unchanged_iterations(iterations=15, threshold=5e-4)
+        parameterisation.set_max_iterations(100)
+
+        x, final_cost = parameterisation.run()
+
+        # Assertions
+        np.testing.assert_allclose(final_cost, 0, atol=1e-2)
+        np.testing.assert_allclose(x, x0, atol=1e-1)
 
     @pytest.mark.parametrize("init_soc", [0.3, 0.7])
     @pytest.mark.unit
@@ -160,7 +193,7 @@ class TestModelParameterisation:
         )
 
         # Define the cost to optimise
-        signal = "Terminal voltage [V]"
+        signal = ["Terminal voltage [V]"]
         problem = pybop.FittingProblem(
             model, parameters, dataset, signal=signal, init_soc=init_soc
         )
