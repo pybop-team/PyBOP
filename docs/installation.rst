@@ -12,13 +12,13 @@ The simplest method to install PyBOP is using pip. Run the following command in 
 
 .. code-block:: console
 
-    $ pip install pybop
+    pip install pybop
 
 This command will download and install the latest stable version of PyBOP. If you want to install a specific version, you can specify the version number using the following command:
 
 .. code-block:: console
 
-    $ pip install pybop==23.11
+    pip install pybop==23.11
 
 Installing the Development Version
 ----------------------------------
@@ -27,7 +27,7 @@ If you're interested in the cutting-edge features and want to try out the latest
 
 .. code-block:: console
 
-    $ pip install git+https://github.com/pybop-team/PyBOP.git@develop
+    pip install git+https://github.com/pybop-team/PyBOP.git@develop
 
 Please note that the development version may be less stable than the official releases.
 
@@ -38,21 +38,24 @@ For those who prefer to install PyBOP from a local clone of the repository or wi
 
 .. code-block:: console
 
-    $ pip install -e "path/to/pybop"
+    pip install -e "path/to/pybop"
 
 In editable mode, changes you make to the source code will immediately affect the PyBOP installation without the need for reinstallation.
 
 Verifying Installation
 ----------------------
 
-To verify that PyBOP has been installed successfully, try running one of the provided example scripts included in the documentation or repository. If the example executes without any errors, PyBOP is ready to use.
+To verify that PyBOP has been installed successfully, try running one of the provided example scripts included in the documentation or repository. If the example executes without any errors, PyBOP is ready to use. Alternatively, you can run the following command in your terminal to check the version of PyBOP that is installed:
+
+.. code-block:: console
+
+    python -c "import pybop; print(pybop.__version__)"
+
 
 For Developers
 --------------
 
-If you are installing PyBOP for development purposes, such as contributing to the project, please ensure that you follow the guidelines outlined in the contributing guide. It includes additional steps that might be necessary for setting up a development environment, including the installation of dependencies and setup of pre-commit hooks.
-
-`Contributing Guide <../Contributing.html>`_
+If you are installing PyBOP for development purposes, such as contributing to the project, please ensure that you follow the guidelines outlined in the `Contributing Guide <../Contributing.html>`_. It includes additional steps that might be necessary for setting up a development environment, including the installation of dependencies and setup of pre-commit hooks.
 
 Further Assistance
 ------------------

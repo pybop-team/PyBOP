@@ -17,7 +17,7 @@ pip install -e .[all]
 ```
 ## Pre-commit checks
 
-Before you commit any code, please perform the following checks:
+Before you commit any code, please perform the following checks using [Nox](https://nox.thea.codes/en/stable/index.html):
 
 - [All tests pass](#testing): `$ nox -s unit`
 
@@ -128,7 +128,7 @@ This allows people to (1) use PyBOP without ever importing Matplotlib and (2) co
 
 ### Building documentation
 
-We use [Sphinx](http://www.sphinx-doc.org/en/stable/) to build our documentation. A nox session has been created to reduce the overhead when building the documentation locally. To run this session, type
+We use [Sphinx](http://www.sphinx-doc.org/en/stable/) to build our documentation. A [Nox](https://nox.thea.codes/en/stable/index.html) session has been created to reduce the overhead when building the documentation locally. To run this session, type
 
 ```bash
 nox -s docs
