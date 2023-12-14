@@ -24,15 +24,22 @@ class BaseProblem:
         parameters,
         model=None,
         check_model=True,
+        signal=["Voltage [V]"],
         init_soc=None,
         x0=None,
     ):
+        self.parameters = parameters
         self._model = model
         self.check_model = check_model
-        self.parameters = parameters
+        if isinstance(signal, str):
+            signal = [signal]
+        self.signal = signal
         self.init_soc = init_soc
         self.x0 = x0
         self.n_parameters = len(self.parameters)
+        self.n_outputs = len(self.signal)
+        self._time_data = None
+        self._target = None
 
         # Set bounds
         self.bounds = dict(
@@ -84,6 +91,28 @@ class BaseProblem:
         """
         raise NotImplementedError
 
+    def time_data(self):
+        """
+        Returns the time data.
+
+        Returns
+        -------
+        np.ndarray
+            The time array.
+        """
+        return self._time_data
+
+    def target(self):
+        """
+        Return the target dataset.
+
+        Returns
+        -------
+        np.ndarray
+            The target dataset array.
+        """
+        return self._target
+
 
 class FittingProblem(BaseProblem):
     """
@@ -108,20 +137,16 @@ class FittingProblem(BaseProblem):
         model,
         parameters,
         dataset,
-        signal=["Voltage [V]"],
         check_model=True,
+        signal=["Voltage [V]"],
         init_soc=None,
         x0=None,
     ):
-        super().__init__(parameters, model, check_model, init_soc, x0)
-        if isinstance(signal, str):
-            signal = [signal]
-        self.signal = signal
-        self.n_outputs = len(self.signal)
+        super().__init__(parameters, model, check_model, signal, init_soc, x0)
         self._dataset = dataset.data
 
         # Check that the dataset contains time and current
-        for name in ["Time [s]", "Current function [A]"] + signal:
+        for name in ["Time [s]", "Current function [A]"] + self.signal:
             if name not in self._dataset:
                 raise ValueError(f"expected {name} in list of dataset")
 
@@ -187,17 +212,6 @@ class FittingProblem(BaseProblem):
 
         return (np.asarray(y), np.asarray(dy))
 
-    def target(self):
-        """
-        Return the target dataset.
-
-        Returns
-        -------
-        np.ndarray
-            The target dataset array.
-        """
-        return self._target
-
 
 class DesignProblem(BaseProblem):
     """
@@ -221,12 +235,12 @@ class DesignProblem(BaseProblem):
         parameters,
         experiment,
         check_model=True,
+        signal=["Voltage [V]"],
         init_soc=None,
         x0=None,
     ):
-        super().__init__(parameters, model, check_model, init_soc, x0)
+        super().__init__(parameters, model, check_model, signal, init_soc, x0)
         self.experiment = experiment
-        self._target = None
 
         # Build the model if required
         if experiment is not None:
@@ -273,13 +287,3 @@ class DesignProblem(BaseProblem):
         )
 
         return (np.asarray(y), np.asarray(dy))
-
-    def target(self):
-        """
-        Return the target dataset (not applicable for design problems).
-
-        Returns
-        -------
-        None
-        """
-        return self._target
