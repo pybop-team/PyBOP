@@ -102,13 +102,25 @@ class TestProblem:
         for bad_dataset in [
             pybop.Dataset({"Time [s]": np.array([0])}),
             pybop.Dataset(
-                {"Time [s]": np.array([-1]), "Current function [A]": np.array([0])}
+                {
+                    "Time [s]": np.array([-1]),
+                    "Current function [A]": np.array([0]),
+                    "Voltage [V]": np.array([0]),
+                }
             ),
             pybop.Dataset(
-                {"Time [s]": np.array([1, 0]), "Current function [A]": np.array([0, 0])}
+                {
+                    "Time [s]": np.array([1, 0]),
+                    "Current function [A]": np.array([0, 0]),
+                    "Voltage [V]": np.array([0, 0]),
+                }
             ),
             pybop.Dataset(
-                {"Time [s]": np.array([0]), "Current function [A]": np.array([0, 0])}
+                {
+                    "Time [s]": np.array([0]),
+                    "Current function [A]": np.array([0, 0]),
+                    "Voltage [V]": np.array([0, 0]),
+                }
             ),
         ]:
             with pytest.raises(ValueError):
