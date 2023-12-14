@@ -81,6 +81,9 @@ class TestProblem:
         with pytest.raises(NotImplementedError):
             problem.evaluateS1([0.5, 0.5])
 
+        with pytest.raises(ValueError):
+            pybop._problem.BaseProblem(parameters, model=model, signal=[0.5, 0.5])
+
     @pytest.mark.unit
     def test_fitting_problem(self, parameters, dataset, model, signal):
         # Test incorrect number of initial parameter values

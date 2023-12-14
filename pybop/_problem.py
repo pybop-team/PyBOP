@@ -33,6 +33,8 @@ class BaseProblem:
         self.check_model = check_model
         if isinstance(signal, str):
             signal = [signal]
+        elif not all(isinstance(item, str) for item in signal):
+            raise ValueError("Signal should be either a string or list of strings.")
         self.signal = signal
         self.init_soc = init_soc
         self.x0 = x0
