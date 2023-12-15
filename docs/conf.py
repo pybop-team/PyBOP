@@ -73,12 +73,12 @@ html_theme_options = {
     "navbar_align": "content",
     "navbar_center": ["navbar-nav", "version-switcher"],
     "show_version_warning_banner": True,
+    "footer_start": ["copyright"],
+    "footer_center": ["sphinx-version"],
     "switcher": {
         "json_url": json_url,
         "version_match": version_match,
     },
-    "footer_start": ["copyright"],
-    "footer_center": ["sphinx-version"],
 }
 
 html_static_path = ["_static"]

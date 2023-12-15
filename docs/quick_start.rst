@@ -14,7 +14,7 @@ To begin using PyBOP:
 
    .. code-block:: console
 
-       $ pip install pybop
+       pip install pybop
 
    For detailed installation instructions, including how to install specific versions or from source, see the :ref:`installation` section.
 
