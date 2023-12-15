@@ -1,7 +1,6 @@
 import pytest
 import pybop
 import pybamm
-import numpy as np
 
 
 class TestExperiment:
