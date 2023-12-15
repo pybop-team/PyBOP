@@ -1,5 +1,4 @@
 import pybop
-import pybamm
 import pytest
 import numpy as np
 
@@ -233,7 +232,7 @@ class TestModelParameterisation:
                 "Positive electrode active material volume fraction": x0[1],
             }
         )
-        experiment = pybamm.Experiment(
+        experiment = pybop.Experiment(
             [
                 (
                     "Discharge at 1C for 3 minutes (1 second period)",

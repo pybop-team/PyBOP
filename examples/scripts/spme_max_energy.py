@@ -1,5 +1,4 @@
 import pybop
-import pybamm
 import numpy as np
 import warnings
 
@@ -109,7 +108,7 @@ def cell_mass(parameter_set):
 
 
 # Define test protocol
-experiment = pybamm.Experiment(
+experiment = pybop.Experiment(
     ["Discharge at 1C until 2.5 V (5 seconds period)"],
 )
 init_soc = 1  # start from full charge
