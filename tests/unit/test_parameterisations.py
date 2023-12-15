@@ -165,7 +165,7 @@ class TestModelParameterisation:
         [
             pybop.NLoptOptimize,
             pybop.SciPyDifferentialEvolution,
-            pybop.Adam,
+            pybop.IRPropMin,
             pybop.CMAES,
         ],
     )
