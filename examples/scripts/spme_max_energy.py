@@ -73,19 +73,19 @@ def cell_mass(ps):
     )
     +(ps["Negative electrode porosity"] * electrolyte_density)
 
-    # Areal mass densities [kg.m-2]
-    positive_mass = ps["Positive electrode thickness [m]"] * positive_mass_density
-    negative_mass = ps["Negative electrode thickness [m]"] * negative_mass_density
-    separator_mass = (
+    # Area densities [kg.m-2]
+    positive_area_density = ps["Positive electrode thickness [m]"] * positive_mass_density
+    negative_area_density = ps["Negative electrode thickness [m]"] * negative_mass_density
+    separator_area_density = (
         ps["Separator thickness [m]"]
         * ps["Separator porosity"]
         * ps["Separator density [kg.m-3]"]
     )
-    positive_current_collector_mass = (
+    positive_current_collector_area_density = (
         ps["Positive current collector thickness [m]"]
         * ps["Positive current collector density [kg.m-3]"]
     )
-    negative_current_collector_mass = (
+    negative_current_collector_area_density = (
         ps["Negative current collector thickness [m]"]
         * ps["Negative current collector density [kg.m-3]"]
     )
@@ -94,11 +94,11 @@ def cell_mass(ps):
     cross_sectional_area = ps["Electrode height [m]"] * ps["Electrode width [m]"]
 
     return cross_sectional_area * (
-        positive_mass
-        + separator_mass
-        + negative_mass
-        + positive_current_collector_mass
-        + negative_current_collector_mass
+        positive_area_density
+        + separator_area_density
+        + negative_area_density
+        + positive_current_collector_area_density
+        + negative_current_collector_area_density
     )
 
 
