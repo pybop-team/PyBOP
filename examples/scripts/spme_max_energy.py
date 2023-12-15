@@ -1,5 +1,4 @@
 import pybop
-import matplotlib.pyplot as plt
 import pybamm
 import numpy as np
 import warnings
