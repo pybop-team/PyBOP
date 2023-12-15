@@ -53,45 +53,51 @@ def nominal_capacity(x, model):
     model._parameter_set.update({"Nominal cell capacity [A.h]": theoretical_capacity})
 
 
-def cell_mass(ps):
+def cell_mass(parameter_set):
     """
     Compute the total cell mass [kg] for the current parameter set.
     """
 
     # Approximations due to SPM(e) parameter set limitations
-    electrolyte_density = ps["Separator density [kg.m-3]"]
+    electrolyte_density = parameter_set["Separator density [kg.m-3]"]
 
     # Electrode mass densities [kg.m-3]
     positive_mass_density = (
-        ps["Positive electrode active material volume fraction"]
-        * ps["Positive electrode density [kg.m-3]"]
+        parameter_set["Positive electrode active material volume fraction"]
+        * parameter_set["Positive electrode density [kg.m-3]"]
     )
-    +(ps["Positive electrode porosity"] * electrolyte_density)
+    +(parameter_set["Positive electrode porosity"] * electrolyte_density)
     negative_mass_density = (
-        ps["Negative electrode active material volume fraction"]
-        * ps["Negative electrode density [kg.m-3]"]
+        parameter_set["Negative electrode active material volume fraction"]
+        * parameter_set["Negative electrode density [kg.m-3]"]
     )
-    +(ps["Negative electrode porosity"] * electrolyte_density)
+    +(parameter_set["Negative electrode porosity"] * electrolyte_density)
 
     # Area densities [kg.m-2]
-    positive_area_density = ps["Positive electrode thickness [m]"] * positive_mass_density
-    negative_area_density = ps["Negative electrode thickness [m]"] * negative_mass_density
+    positive_area_density = (
+        parameter_set["Positive electrode thickness [m]"] * positive_mass_density
+    )
+    negative_area_density = (
+        parameter_set["Negative electrode thickness [m]"] * negative_mass_density
+    )
     separator_area_density = (
-        ps["Separator thickness [m]"]
-        * ps["Separator porosity"]
-        * ps["Separator density [kg.m-3]"]
+        parameter_set["Separator thickness [m]"]
+        * parameter_set["Separator porosity"]
+        * parameter_set["Separator density [kg.m-3]"]
     )
     positive_current_collector_area_density = (
-        ps["Positive current collector thickness [m]"]
-        * ps["Positive current collector density [kg.m-3]"]
+        parameter_set["Positive current collector thickness [m]"]
+        * parameter_set["Positive current collector density [kg.m-3]"]
     )
     negative_current_collector_area_density = (
-        ps["Negative current collector thickness [m]"]
-        * ps["Negative current collector density [kg.m-3]"]
+        parameter_set["Negative current collector thickness [m]"]
+        * parameter_set["Negative current collector density [kg.m-3]"]
     )
 
     # Cross-sectional area [m2]
-    cross_sectional_area = ps["Electrode height [m]"] * ps["Electrode width [m]"]
+    cross_sectional_area = (
+        parameter_set["Electrode height [m]"] * parameter_set["Electrode width [m]"]
+    )
 
     return cross_sectional_area * (
         positive_area_density
