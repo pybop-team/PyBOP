@@ -145,3 +145,4 @@ class TestProblem:
 
         # Test model.predict
         model.predict(inputs=[0.5, 0.5], experiment=experiment)
+        model.predict(inputs=[1.1, 0.5], experiment=experiment)
