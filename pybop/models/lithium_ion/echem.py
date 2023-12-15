@@ -68,6 +68,8 @@ class SPM(BaseModel):
         self._mesh = None
         self._disc = None
 
+        self._electrode_soh = pybamm.lithium_ion.electrode_soh
+
     def check_params(self, inputs=None):
         """
         A compatibility check for the model parameters which can be implemented by subclasses
@@ -182,6 +184,8 @@ class SPMe(BaseModel):
         self._built_initial_soc = None
         self._mesh = None
         self._disc = None
+
+        self._electrode_soh = pybamm.lithium_ion.electrode_soh
 
     def check_params(self, inputs=None):
         """
