@@ -126,7 +126,7 @@ class SciPyDifferentialEvolution(BaseOptimiser):
         self.bounds = bounds
         self.strategy = strategy
         self._max_iterations = maxiter
-        self.popsize = popsize
+        self._population_size = popsize
 
     def _runoptimise(self, cost_function, x0=None, bounds=None):
         """
@@ -172,7 +172,7 @@ class SciPyDifferentialEvolution(BaseOptimiser):
             bounds,
             strategy=self.strategy,
             maxiter=self._max_iterations,
-            popsize=self.popsize,
+            popsize=self._population_size,
             callback=callback,
         )
 
@@ -181,6 +181,19 @@ class SciPyDifferentialEvolution(BaseOptimiser):
         final_cost = output.fun
 
         return x, final_cost
+
+    def set_population_size(self, population_size=None):
+        """
+        Sets a population size to use in this optimisation.
+        Credit: PINTS
+
+        """
+        # Check population size or set using heuristic
+        if population_size is not None:
+            population_size = int(population_size)
+            if population_size < 1:
+                raise ValueError("Population size must be at least 1.")
+            self._population_size = population_size
 
     def needs_sensitivities(self):
         """

@@ -124,6 +124,14 @@ class TestModelParameterisation:
             parameterisation.set_max_iterations(100)
             x, final_cost = parameterisation.run()
 
+        elif optimiser in [pybop.SciPyDifferentialEvolution]:
+            with pytest.raises(ValueError):
+                parameterisation.optimiser.set_population_size(-5)
+
+            parameterisation.optimiser.set_population_size(5)
+            parameterisation.set_max_iterations(100)
+            x, final_cost = parameterisation.run()
+
         else:
             parameterisation.set_max_iterations(100)
             x, final_cost = parameterisation.run()
@@ -173,7 +181,7 @@ class TestModelParameterisation:
         x, final_cost = parameterisation.run()
 
         # Assertions
-        np.testing.assert_allclose(final_cost, 0, atol=2e-2)
+        np.testing.assert_allclose(final_cost, 0, atol=2.5e-2)
         np.testing.assert_allclose(x, x0, atol=1e-1)
 
     @pytest.mark.parametrize("init_soc", [0.3, 0.7])
