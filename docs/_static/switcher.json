@@ -1,0 +1,12 @@
+[
+    {
+      "version": "latest",
+      "url": "https://pybop-docs.readthedocs.io/en/latest/",
+      "preferred": true
+    },
+    {
+      "name": "v23.11 (stable)",
+      "version": "v23.11",
+      "url": "https://pybop-docs.readthedocs.io/en/latest/"
+    }
+  ]
