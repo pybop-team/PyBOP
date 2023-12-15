@@ -156,7 +156,8 @@ class GravimetricEnergyDensity(pybop.BaseCost):
                 gravimetric_energy_density_Ah = np.trapz(voltage * current) / (
                     3600 * cell_mass(self.problem._model._parameter_set)
                 )
-                # Take negative in order to maximise energy density
+                # Return the negative energy density, as the optimiser minimises
+                # this function, to carry out maximisation of the energy density
                 return -gravimetric_energy_density_Ah
 
 
