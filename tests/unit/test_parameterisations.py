@@ -178,6 +178,9 @@ class TestModelParameterisation:
         parameterisation.set_max_unchanged_iterations(iterations=15, threshold=5e-4)
         parameterisation.set_max_iterations(100)
 
+        if optimiser in [pybop.SciPyDifferentialEvolution]:
+            parameterisation.optimiser.set_population_size(5)
+
         x, final_cost = parameterisation.run()
 
         # Assertions
