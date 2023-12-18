@@ -52,19 +52,3 @@ class StandaloneProblem(BaseProblem):
         """
 
         return parameters[0] * self._time_data + parameters[1]
-
-    def evaluateS1(self, parameters):
-        """
-        Evaluate the model with the given parameters and return the signal and its derivatives.
-
-        Parameters
-        ----------
-        x : np.ndarray
-            Parameter values to evaluate the model at.
-        """
-
-        y = parameters[0] * self._time_data + parameters[1]
-
-        dy = self._time_data
-
-        return (np.asarray(y), np.asarray(dy))
