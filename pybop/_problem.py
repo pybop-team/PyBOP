@@ -1,10 +1,15 @@
+from dataclasses import dataclass
 import numpy as np
+
+from pybop.observers.observer import Observer
 
 
 class BaseProblem:
     """
     Defines the PyBOP base problem, following the PINTS interface.
     """
+
+    State = np.ndarray
 
     def __init__(
         self,
@@ -42,6 +47,11 @@ class BaseProblem:
     def evaluate(self, x):
         """
         Evaluate the model with the given parameters and return the signal.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            The parameters to evaluate the model with
         """
         raise NotImplementedError
 
@@ -49,6 +59,11 @@ class BaseProblem:
         """
         Evaluate the model with the given parameters and return the signal and
         its derivatives.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            The parameters to evaluate the model with
         """
         raise NotImplementedError
 
@@ -67,6 +82,7 @@ class FittingProblem(BaseProblem):
         check_model=True,
         init_soc=None,
         x0=None,
+        observer: Observer | None = None,
     ):
         super().__init__(parameters, model, check_model, init_soc, x0)
         if model is not None:
@@ -74,6 +90,7 @@ class FittingProblem(BaseProblem):
         self.signal = signal
         self._dataset = {o.name: o for o in dataset}
         self.n_outputs = len([self.signal])
+        self._observer = observer
 
         # Check that the dataset contains time and current
         for name in ["Time [s]", "Current function [A]", signal]:
@@ -106,7 +123,17 @@ class FittingProblem(BaseProblem):
         Evaluate the model with the given parameters and return the signal.
         """
 
-        y = np.asarray(self._model.simulate(inputs=x, t_eval=self._time_data))
+        if self._observer is not None:
+            self._observer.reset()
+            y = [self._observer.get_current_state().get_current_state_as_ndarray()]
+            for y, t in zip(self._target, self._time_data):
+                self._observer.observe(y, t)
+                y.append(
+                    self._observer.get_current_state().get_current_state_as_ndarray()
+                )
+            y = np.hstack(y)
+        else:
+            y = np.asarray(self._model.simulate(inputs=x, t_eval=self._time_data))
 
         return y
 
@@ -116,10 +143,13 @@ class FittingProblem(BaseProblem):
         its derivatives.
         """
 
-        y, dy = self._model.simulateS1(
-            inputs=x,
-            t_eval=self._time_data,
-        )
+        if self._observer is not None:
+            raise NotImplementedError("S1 not implemented for observers")
+        else:
+            y, dy = self._model.simulateS1(
+                inputs=x,
+                t_eval=self._time_data,
+            )
 
         return (np.asarray(y), np.asarray(dy))
 
@@ -190,3 +220,27 @@ class DesignProblem(BaseProblem):
         Returns the target dataset.
         """
         return self._target
+
+
+class OnlineFittingProblem(FittingProblem):
+    """
+    Defines the problem class for a fitting (parameter estimation) problem.
+
+    This problem class is designed for online fitting, where the measurements are
+    incorporated into the predicted solution as they are made. This covers both observers and
+    kalman filter-based approaches.
+    """
+
+    def __init__(
+        self,
+        model,
+        parameters,
+        dataset,
+        signal="Voltage [V]",
+        check_model=True,
+        init_soc=None,
+        x0=None,
+    ):
+        super().__init__(model, parameters, dataset, signal, check_model, init_soc, x0)
+
+    r

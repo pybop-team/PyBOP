@@ -1,5 +1,23 @@
+from dataclasses import dataclass
+from typing import Dict
 import pybamm
 import numpy as np
+
+Inputs = Dict[str, float]
+
+
+@dataclass
+class TimeSeriesState(object):
+    """
+    The current state of a time series model that is a pybamm model
+    """
+
+    sol: pybamm.Solution
+    inputs: Inputs
+    t: float = 0.0
+
+    def get_current_state_as_ndarray(self) -> np.ndarray:
+        return self.sol.y[:, -1]
 
 
 class BaseModel:
@@ -98,6 +116,41 @@ class BaseModel:
         )
         self._parameter_set.process_geometry(self.geometry)
         self.pybamm_model = self._model_with_set_params
+
+    def reinit(
+        self, inputs: Inputs, t: float = 0.0, x: np.ndarray | None = None
+    ) -> TimeSeriesState:
+        """
+        Returns the initial state of the problem.
+        """
+        if self._built_model is None:
+            raise ValueError("Model must be built before calling reinit")
+
+        if not isinstance(inputs, dict):
+            inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+
+        if x is None:
+            sol = None
+        else:
+            sol = pybamm.Solution(t, x, self._built_model, inputs)
+        return TimeSeriesState(sol=sol, inputs=inputs, t=0.0)
+
+    def predict(self, state: TimeSeriesState, time: np.ndarray) -> TimeSeriesState:
+        """
+        predict forward in time from the given state until the given time.
+
+        Parameters
+        ----------
+        state : TimeSeriesState
+            The current state of the model
+        time : np.ndarray
+            The time to predict the system to
+        """
+        dt = time - state.t
+        new_sol = self.solver.step(
+            state.sol, self.built_model, dt, npts=2, inputs=state.inputs, save=False
+        )
+        return TimeSeriesState(sol=new_sol, inputs=state.inputs, t=time)
 
     def simulate(self, inputs, t_eval):
         """
