@@ -1,4 +1,3 @@
-import pybop
 import numpy as np
 from pybop._problem import BaseProblem
 
