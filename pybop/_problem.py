@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 import numpy as np
 
 from pybop.observers.observer import Observer
@@ -220,27 +219,3 @@ class DesignProblem(BaseProblem):
         Returns the target dataset.
         """
         return self._target
-
-
-class OnlineFittingProblem(FittingProblem):
-    """
-    Defines the problem class for a fitting (parameter estimation) problem.
-
-    This problem class is designed for online fitting, where the measurements are
-    incorporated into the predicted solution as they are made. This covers both observers and
-    kalman filter-based approaches.
-    """
-
-    def __init__(
-        self,
-        model,
-        parameters,
-        dataset,
-        signal="Voltage [V]",
-        check_model=True,
-        init_soc=None,
-        x0=None,
-    ):
-        super().__init__(model, parameters, dataset, signal, check_model, init_soc, x0)
-
-    r

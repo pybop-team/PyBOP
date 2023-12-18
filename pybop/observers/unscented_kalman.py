@@ -41,14 +41,14 @@ class ObserverUkf(Observer):
             P0=sigma0,
             Rp=process,
             Rm=measure,
-            f=self._model.predict(),
+            f=self._model.step(),
             h=measure_f,
         )
 
     def observe(self, value: np.ndarray, time: float) -> None:
         def f(x: np.ndarray) -> np.ndarray:
             sol = self._model.reinit(inputs=self._state.inputs, t=self._state.t, x=x)
-            return self._model.predict(sol, time).get_current_state_as_ndarray()
+            return self._model.step(sol, time).get_current_state_as_ndarray()
 
         self._ukf.f = f
         self._ukf.step(value)
@@ -189,7 +189,7 @@ class UkfFilter(object):
         S = linalg.qr(
             np.hstack([sigma_points[1].w_c * (s1_2L_concat - x), sqrtR]), mode="r"
         )
-        S = UskFilter.cholupdate(S, sigma_points[0].x - x, sigma_points[0].w_c)
+        S = UkfFilter.cholupdate(S, sigma_points[0].x - x, sigma_points[0].w_c)
         return x, S
 
     @staticmethod

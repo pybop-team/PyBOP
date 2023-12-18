@@ -1,4 +1,3 @@
-from typing import Callable
 import numpy as np
 from pybop.models.base_model import BaseModel, TimeSeriesState
 
@@ -44,7 +43,7 @@ class Observer(object):
         if time < self._state.t:
             raise ValueError("Time must be increasing.")
 
-        self._state = self._model.predict(self._state, time)
+        self._state = self._model.step(self._state, time)
 
     def get_current_state(self) -> TimeSeriesState:
         """

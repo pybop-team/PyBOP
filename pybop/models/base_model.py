@@ -135,9 +135,9 @@ class BaseModel:
             sol = pybamm.Solution(t, x, self._built_model, inputs)
         return TimeSeriesState(sol=sol, inputs=inputs, t=0.0)
 
-    def predict(self, state: TimeSeriesState, time: np.ndarray) -> TimeSeriesState:
+    def step(self, state: TimeSeriesState, time: np.ndarray) -> TimeSeriesState:
         """
-        predict forward in time from the given state until the given time.
+        step forward in time from the given state until the given time.
 
         Parameters
         ----------
