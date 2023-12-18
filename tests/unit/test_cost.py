@@ -1,12 +1,49 @@
 import pytest
 import pybop
 import numpy as np
+from examples.standalone.problem import StandaloneProblem
 
 
 class TestCosts:
     """
     Class for tests cost functions
     """
+
+    @pytest.mark.unit
+    def test_standalone_problem(self):
+        # Define parameters to estimate
+        parameters = [
+            pybop.Parameter(
+                "Gradient",
+                prior=pybop.Gaussian(4.2, 0.02),
+                bounds=[-1, 10],
+            ),
+            pybop.Parameter(
+                "Intercept",
+                prior=pybop.Gaussian(3.3, 0.02),
+                bounds=[-1, 10],
+            ),
+        ]
+
+        # Define target data
+        t_eval = np.linspace(0, 1, 100)
+        x0 = np.array([3, 4])
+        dataset = pybop.Dataset(
+            {
+                "Time [s]": t_eval,
+                "Output": x0[0] * t_eval + x0[1],
+            }
+        )
+        signal = "Output"
+
+        # Define a problem without a model
+        problem = StandaloneProblem(parameters, dataset, signal=signal)
+
+        # Root Mean Squared Error
+        rmse_cost = pybop.RootMeanSquaredError(problem)
+        x = rmse_cost([1, 2])
+
+        np.testing.assert_allclose(x, 3.138, atol=1e-2)
 
     @pytest.mark.parametrize("cut_off", [2.5, 3.777])
     @pytest.mark.unit

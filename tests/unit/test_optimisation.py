@@ -1,7 +1,7 @@
 import pybop
 import numpy as np
 import pytest
-from examples.costs.standalone import StandaloneCost
+from examples.standalone.cost import StandaloneCost
 
 
 class TestOptimisation:
