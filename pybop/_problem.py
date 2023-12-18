@@ -8,8 +8,6 @@ class BaseProblem:
     Defines the PyBOP base problem, following the PINTS interface.
     """
 
-    State = np.ndarray
-
     def __init__(
         self,
         parameters,
