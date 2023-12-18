@@ -18,18 +18,20 @@ class BayesianSampler:
         A dictionary of prior distributions for the model parameters.
     """
 
-    def __init__(self, problem, kernel, parameter_priors):
+    def __init__(self, problem, kernel, transform_space=False):
         self.problem = problem
         self.posterior = None
-        self.parameter_priors = parameter_priors
+        self.parameter_priors = {
+            param.name: (param.prior, param.bounds) for param in problem.parameters
+        }
         self.kernel = getattr(pyro.infer, kernel)(self.define_sampling_model)
         self.input_params = torch.zeros(len(self.parameter_priors), dtype=torch.float32)
+        self.transform_space = transform_space
 
     def define_sampling_model(self):
         """
         Defines the model for MCMC sampling, including the prior and likelihood.
         """
-
         # Transform the parameters to the desired interval
         self.transform_to_parameter_space(self.parameter_priors)
 
@@ -44,9 +46,7 @@ class BayesianSampler:
         # sigma_tensor = torch.tensor(sigma, dtype=torch.float32)
 
         # Likelihood of the observations
-        pyro.sample(
-            "obs", dist.Normal(voltage_pred, 0.001).to_event(1), obs=voltage_obs
-        )
+        pyro.sample("obs", dist.Normal(voltage_pred, 0.01).to_event(1), obs=voltage_obs)
 
     def run(self, num_samples=100, warmup_steps=200, num_chains=1):
         """
@@ -75,7 +75,11 @@ class BayesianSampler:
         )
         self.mcmc.run()
         self.samples = self.mcmc.get_samples()
-        self.transform_to_parameter_space(self.parameter_priors, samples=self.samples)
+
+        if self.transform_space:
+            self.transform_to_parameter_space(
+                self.parameter_priors, samples=self.samples
+            )
 
         return self.samples
 
@@ -91,35 +95,29 @@ class BayesianSampler:
             A dictionary containing unconstrained samples to be transformed. If None, new samples are drawn. (default: None)
         """
         if samples is None:
-            for i, (param_name, (alpha, beta, lower_bound, upper_bound)) in enumerate(
-                parameter_priors.items()
-            ):
-                # Sample from the Beta distribution (in the 0, 1 range)
-                unconstrained = pyro.sample(
-                    f"{param_name}_unconstrained", dist.Beta(alpha, beta)
-                )
+            for i, (param_name, (prior, bounds)) in enumerate(parameter_priors.items()):
+                # Sample from the distribution
+                # unconstrained = torch.nn.init.trunc_normal_(pyro.sample(
+                #     f"{param_name}_unconstrained", prior
+                # ),prior.loc, prior.scale, bounds[0], bounds[1])
+
+                unconstrained = pyro.sample(f"{param_name}_unconstrained", prior)
 
                 # Transform to the desired interval, and store the value
-                self.input_params[i] = self.scale_to_bounds(
-                    unconstrained, lower_bound, upper_bound
-                )
+                self.input_params[i] = self.scale_to_bounds(unconstrained, bounds)
         else:
-            for i, (param_name, (alpha, beta, lower_bound, upper_bound)) in enumerate(
-                parameter_priors.items()
-            ):
+            for i, (param_name, (prior, bounds)) in enumerate(parameter_priors.items()):
                 # Transform to the desired interval, and store the value
                 self.samples.update(
                     {
                         param_name: self.scale_to_bounds(
-                            samples[f"{param_name}_unconstrained"],
-                            lower_bound,
-                            upper_bound,
+                            samples[f"{param_name}_unconstrained"], bounds
                         )
                     }
                 )
 
     @staticmethod
-    def scale_to_bounds(unconstrained, lower_bound, upper_bound):
+    def scale_to_bounds(unconstrained, bounds):
         """
         Transforms a sample from the [0, 1] interval to the desired [lower_bound, upper_bound] interval.
 
@@ -137,4 +135,4 @@ class BayesianSampler:
         float or torch.Tensor
             The transformed value in the [lower_bound, upper_bound] interval.
         """
-        return unconstrained * (upper_bound - lower_bound) + lower_bound
+        return unconstrained * (bounds[1] - bounds[0]) + bounds[0]

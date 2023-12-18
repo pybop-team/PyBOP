@@ -1,4 +1,5 @@
 import scipy.stats as stats
+from pyro import distributions as dist
 
 
 class Gaussian:
@@ -25,6 +26,14 @@ class Gaussian:
 
     def __repr__(self):
         return f"{self.name}, mean: {self.mean}, sigma: {self.sigma}"
+
+
+class Normal(dist.Normal):
+    pass
+
+
+class Beta(dist.Beta):
+    pass
 
 
 class Uniform:

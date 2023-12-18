@@ -71,7 +71,7 @@ from .optimisers.pints_optimisers import (
 #
 from .parameters.parameter import Parameter
 from .parameters.parameter_set import ParameterSet
-from .parameters.priors import Gaussian, Uniform, Exponential
+from .parameters.priors import Normal, Beta, Gaussian, Uniform, Exponential
 
 #
 # Problem class

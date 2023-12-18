@@ -1,4 +1,5 @@
 import numpy as np
+import pybop
 
 
 class Parameter:
@@ -19,11 +20,14 @@ class Parameter:
         if self.lower_bound >= self.upper_bound:
             raise ValueError("Lower bound must be less than upper bound")
 
-    def rvs(self, n_samples):
+    def rvs(self, n_samples=None):
         """
         Returns a random value sample from the prior distribution.
         """
-        samples = self.prior.rvs(n_samples)
+        if isinstance(self.prior, (pybop.Normal, pybop.Beta)):
+            samples = self.prior.sample().item()
+        else:
+            samples = self.prior.rvs(n_samples)
 
         # Constrain samples to be within bounds
         offset = self.margin * (self.upper_bound - self.lower_bound)
