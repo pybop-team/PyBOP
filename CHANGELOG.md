@@ -4,7 +4,7 @@
 
 ## Bug Fixes
 
-# [v23.12]()
+# [v23.12](https://github.com/pybop-team/PyBOP/tree/v23.12) - 2023-12-19
 ## Features
 
 - [#141](https://github.com/pybop-team/PyBOP/pull/141) - Adds documentation with Sphinx and PyData Sphinx Theme. Updates docstrings across package, relocates `costs` and `dataset` to top-level of package. Adds noxfile session and deployment workflow for docs.
