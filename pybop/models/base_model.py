@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Any, Dict
 import pybamm
 import numpy as np
+import casadi
 
 Inputs = Dict[str, float]
 
@@ -17,7 +18,10 @@ class TimeSeriesState(object):
     t: float = 0.0
 
     def as_ndarray(self) -> np.ndarray:
-        return self.sol.y[:, -1]
+        y = self.sol.y[:, -1]
+        if isinstance(y, casadi.DM):
+            y = y.full()
+        return y
 
 
 class BaseModel:
@@ -185,7 +189,7 @@ class BaseModel:
         )
         return TimeSeriesState(sol=new_sol, inputs=state.inputs, t=time)
 
-    def simulate(self, inputs, t_eval):
+    def simulate(self, inputs, t_eval) -> np.ndarray[np.float64]:
         """
         Run the forward model and return the result in Numpy array format
         aligning with Pints' ForwardModel simulate method.

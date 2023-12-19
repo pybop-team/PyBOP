@@ -47,8 +47,8 @@ class Observer(object):
         """
         if time < self._state.t:
             raise ValueError("Time must be increasing.")
-
-        self._state = self._model.step(self._state, time)
+        if time != self._state.t:
+            self._state = self._model.step(self._state, time)
 
     def get_current_state(self) -> TimeSeriesState:
         """
@@ -61,3 +61,9 @@ class Observer(object):
         Returns the current measurement.
         """
         return self._state.sol[self._signal].data[-1]
+
+    def get_current_time(self) -> float:
+        """
+        Returns the current time.
+        """
+        return self._state.t

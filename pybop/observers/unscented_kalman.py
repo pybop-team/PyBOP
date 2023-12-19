@@ -39,22 +39,39 @@ class UnscentedKalmanFilterObserver(Observer):
         measure: Covariance,
     ) -> None:
         super().__init__(model, inputs, signal)
+        self._process = process
 
         self._ukf = UkfFilter(
-            x0=self._model.reinit().x,
+            x0=self._model.reinit(inputs).as_ndarray(),
             P0=sigma0,
             Rp=process,
             Rm=measure,
-            f=self._model.step(),
+            f=self._model.step,
             h=self.get_current_measure,
         )
 
-    def observe(self, value: np.ndarray, time: float) -> None:
-        def f(x: np.ndarray) -> np.ndarray:
-            sol = self._model.reinit(inputs=self._state.inputs, t=self._state.t, x=x)
-            return self._model.step(sol, time).get_current_state_as_ndarray()
+    def observe(self, time: float, value: np.ndarray | None = None) -> None:
+        if value is None:
+            raise ValueError("Measurement must be provided.")
+
+        dt = time - self.get_current_time()
+        if dt < 0:
+            raise ValueError("Time must be increasing.")
+
+        if dt == 0:
+
+            def f(x: np.ndarray) -> np.ndarray:
+                return x
+        else:
+
+            def f(x: np.ndarray) -> np.ndarray:
+                sol = self._model.reinit(
+                    inputs=self._state.inputs, t=self._state.t, x=x
+                )
+                return self._model.step(sol, time).as_ndarray()
 
         self._ukf.f = f
+        self._ukf.Rp = dt * self._process
         self._ukf.step(value)
 
 
