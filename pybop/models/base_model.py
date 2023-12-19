@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict
+from typing import Any, Dict
 import pybamm
 import numpy as np
 
@@ -16,7 +16,7 @@ class TimeSeriesState(object):
     inputs: Inputs
     t: float = 0.0
 
-    def get_current_state_as_ndarray(self) -> np.ndarray:
+    def as_ndarray(self) -> np.ndarray:
         return self.sol.y[:, -1]
 
 
@@ -60,13 +60,42 @@ class BaseModel:
             self._built_model = self.pybamm_model
         else:
             self.set_params()
-            self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
-            self._disc = pybamm.Discretisation(self.mesh, self.spatial_methods)
-            self._built_model = self._disc.process_model(
-                self._model_with_set_params, inplace=False, check_model=check_model
-            )
 
-            # Clear solver
+            any_disc_variables_exist = (
+                self.geometry is not None
+                or self.var_pts is not None
+                or self.spatial_methods is not None
+                or self.submesh_types is not None
+            )
+            if any_disc_variables_exist and self.geometry is None:
+                raise ValueError(
+                    "Geometry must be provided if any discretisation variables are provided"
+                )
+            if any_disc_variables_exist and self.submesh_types is None:
+                raise ValueError(
+                    "Submesh types must be provided if any discretisation variables are provided"
+                )
+            if any_disc_variables_exist and self.var_pts is None:
+                raise ValueError(
+                    "Variable points must be provided if any discretisation variables are provided"
+                )
+            if any_disc_variables_exist and self.spatial_methods is None:
+                raise ValueError(
+                    "Spatial methods must be provided if any discretisation variables are provided"
+                )
+
+            if any_disc_variables_exist:
+                self._mesh = pybamm.Mesh(
+                    self.geometry, self.submesh_types, self.var_pts
+                )
+                self._disc = pybamm.Discretisation(self.mesh, self.spatial_methods)
+                self._built_model = self._disc.process_model(
+                    self._model_with_set_params, inplace=False, check_model=check_model
+                )
+            else:
+                self._built_model = self._model_with_set_params
+
+            # Clear solver and setup model
             self._solver._model_set_up = {}
 
     def set_init_soc(self, init_soc):
@@ -114,7 +143,8 @@ class BaseModel:
         self._model_with_set_params = self._parameter_set.process_model(
             self._unprocessed_model, inplace=False
         )
-        self._parameter_set.process_geometry(self.geometry)
+        if self.geometry is not None:
+            self._parameter_set.process_geometry(self.geometry)
         self.pybamm_model = self._model_with_set_params
 
     def reinit(
@@ -126,13 +156,16 @@ class BaseModel:
         if self._built_model is None:
             raise ValueError("Model must be built before calling reinit")
 
+        self._solver.set_up(self._built_model, inputs=inputs)
+
         if not isinstance(inputs, dict):
             inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
 
         if x is None:
-            sol = None
-        else:
-            sol = pybamm.Solution(t, x, self._built_model, inputs)
+            x = self._built_model.y0
+
+        sol = pybamm.Solution([np.array([t])], [x], self._built_model, inputs)
+
         return TimeSeriesState(sol=sol, inputs=inputs, t=0.0)
 
     def step(self, state: TimeSeriesState, time: np.ndarray) -> TimeSeriesState:
@@ -250,16 +283,18 @@ class BaseModel:
         return self._geometry
 
     @geometry.setter
-    def geometry(self, geometry):
-        self._geometry = geometry.copy()
+    def geometry(self, geometry: pybamm.Geometry | None):
+        self._geometry = geometry.copy() if geometry is not None else None
 
     @property
     def submesh_types(self):
         return self._submesh_types
 
     @submesh_types.setter
-    def submesh_types(self, submesh_types):
-        self._submesh_types = submesh_types.copy()
+    def submesh_types(self, submesh_types: Dict[str, Any] | None):
+        self._submesh_types = (
+            submesh_types.copy() if submesh_types is not None else None
+        )
 
     @property
     def mesh(self):
@@ -270,16 +305,16 @@ class BaseModel:
         return self._var_pts
 
     @var_pts.setter
-    def var_pts(self, var_pts):
-        self._var_pts = var_pts.copy()
+    def var_pts(self, var_pts: Dict[str, int] | None):
+        self._var_pts = var_pts.copy() if var_pts is not None else None
 
     @property
     def spatial_methods(self):
         return self._spatial_methods
 
     @spatial_methods.setter
-    def spatial_methods(self, spatial_methods):
-        self._spatial_methods = spatial_methods.copy()
+    def spatial_methods(self, spatial_methods: Dict[str, Any] | None):
+        self._spatial_methods = spatial_methods.copy() if spatial_methods else None
 
     @property
     def solver(self):
@@ -287,4 +322,4 @@ class BaseModel:
 
     @solver.setter
     def solver(self, solver):
-        self._solver = solver.copy()
+        self._solver = solver.copy() if solver is not None else None

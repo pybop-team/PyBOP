@@ -39,6 +39,8 @@ from .datasets.base_dataset import Dataset
 from .models.base_model import BaseModel
 from .models import lithium_ion
 from .models import empirical
+from .models.base_model import TimeSeriesState
+from .models.base_model import Inputs
 
 #
 # Main optimisation class
@@ -72,6 +74,12 @@ from .parameters.priors import Gaussian, Uniform, Exponential
 # Problem class
 #
 from ._problem import FittingProblem, DesignProblem
+
+#
+# Observer classes
+#
+from .observers.unscented_kalman import UnscentedKalmanFilterObserver
+from .observers.observer import Observer
 
 #
 # Plotting class

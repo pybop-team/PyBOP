@@ -1,3 +1,4 @@
+from typing import Dict
 import numpy as np
 from pybop.models.base_model import BaseModel, TimeSeriesState
 
@@ -13,32 +14,36 @@ class Observer(object):
     ----------
     model : BaseModel
       The model to observe.
-    measure : Callable[[TimeSeriesState], np.ndarray]
-      The measurement function.
-    sigma0 : np.ndarray
-      The covariance matrix of the initial state.
+    inputs: Dict[str, float]
+      The inputs to the model.
+    sigmal: str
+      The signal to observe.
     """
 
     Covariance = np.ndarray
 
-    def __init__(self, model: BaseModel) -> None:
-        self._state = model.reinit()
+    def __init__(self, model: BaseModel, inputs: Dict[str, float], signal: str) -> None:
+        if model._built_model is None:
+            raise ValueError("Only built models can bse used in Observers")
+        model.signal = signal
+        self._state = model.reinit(inputs)
         self._model = model
+        self._signal = signal
 
     def reset(self) -> None:
         self._state = self._model.reinit()
 
-    def observe(self, value: np.ndarray, time: float) -> None:
+    def observe(self, time: float, value: np.ndarray | None = None) -> None:
         """
-        Predict the time series model until t = `time` and observe the measurement `value`.
+        Predict the time series model until t = `time` and optionally observe the measurement `value`.
 
         Parameters
         ----------
-        value : np.ndarray
-          The new observation.
-
         time : float
           The time of the new observation.
+
+        value : np.ndarray (optional)
+          The new observation.
         """
         if time < self._state.t:
             raise ValueError("Time must be increasing.")
@@ -50,3 +55,9 @@ class Observer(object):
         Returns the current state of the model.
         """
         return self._state
+
+    def get_current_measure(self) -> np.ndarray:
+        """
+        Returns the current measurement.
+        """
+        return self._state.sol[self._signal].data[-1]

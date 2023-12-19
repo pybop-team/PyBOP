@@ -1,13 +1,13 @@
 from dataclasses import dataclass
-from pybop.models.base_model import BaseModel, TimeSeriesState
-
-from pybop.observers.observer import Observer
 import numpy as np
 import scipy.linalg as linalg
-from typing import Callable, List, Tuple
+from typing import Callable, Dict, List, Tuple
+
+from pybop.models.base_model import BaseModel, Inputs, TimeSeriesState
+from pybop.observers.observer import Observer
 
 
-class ObserverUkf(Observer):
+class UnscentedKalmanFilterObserver(Observer):
     """
     An observer using the unscented kalman filter. This is a wrapper class for PyBOP, see class UkfFilter for more details on the method.
 
@@ -15,8 +15,10 @@ class ObserverUkf(Observer):
     ----------
     model : BaseModel
         The model to observe.
-    measure_f : Callable[[TimeSeriesState], np.ndarray]
-        The measurement function.
+    inputs: Dict[str, float]
+        The inputs to the model.
+    signal: str
+        The signal to observe.
     sigma0 : np.ndarray
         The covariance matrix of the initial state.
     process : np.ndarray
@@ -30,19 +32,21 @@ class ObserverUkf(Observer):
     def __init__(
         self,
         model: BaseModel,
-        measure_f: Callable[[TimeSeriesState], np.ndarray],
+        inputs: Inputs,
+        signal: str,
         sigma0: Covariance,
         process: Covariance,
         measure: Covariance,
     ) -> None:
-        super().__init__(self, model)
+        super().__init__(model, inputs, signal)
+
         self._ukf = UkfFilter(
             x0=self._model.reinit().x,
             P0=sigma0,
             Rp=process,
             Rm=measure,
             f=self._model.step(),
-            h=measure_f,
+            h=self.get_current_measure,
         )
 
     def observe(self, value: np.ndarray, time: float) -> None:
