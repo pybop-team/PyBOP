@@ -159,7 +159,7 @@ class BaseModel:
         self, inputs: Inputs, t: float = 0.0, x: np.ndarray | None = None
     ) -> TimeSeriesState:
         """
-        Returns the initial state of the problem.
+        Initialises the solver with the given inputs and returns the initial state of the problem
         """
         if self._built_model is None:
             raise ValueError("Model must be built before calling reinit")
@@ -171,6 +171,17 @@ class BaseModel:
 
         if x is None:
             x = self._built_model.y0
+
+        sol = pybamm.Solution([np.array([t])], [x], self._built_model, inputs)
+
+        return TimeSeriesState(sol=sol, inputs=inputs, t=t)
+
+    def get_state(self, inputs: Inputs, t: float, x: np.ndarray) -> TimeSeriesState:
+        """
+        Returns the given state for the problem (inputs are assumed constant since last reinit)
+        """
+        if self._built_model is None:
+            raise ValueError("Model must be built before calling reinit")
 
         sol = pybamm.Solution([np.array([t])], [x], self._built_model, inputs)
 

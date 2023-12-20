@@ -55,7 +55,7 @@ class UnscentedKalmanFilterObserver(Observer):
 
         def measure_f(x: np.ndarray) -> np.ndarray:
             x = x.reshape(-1, 1)
-            sol = self._model.reinit(inputs=self._state.inputs, t=self._state.t, x=x)
+            sol = self._model.get_state(inputs=self._state.inputs, t=self._state.t, x=x)
             return self.get_measure(sol).reshape(-1)
 
         self._ukf = UkfFilter(
@@ -83,7 +83,7 @@ class UnscentedKalmanFilterObserver(Observer):
 
             def f(x: np.ndarray) -> np.ndarray:
                 x = x.reshape(-1, 1)
-                sol = self._model.reinit(
+                sol = self._model.get_state(
                     inputs=self._state.inputs, t=self._state.t, x=x
                 )
                 return self._model.step(sol, time).as_ndarray().reshape(-1)
@@ -91,7 +91,7 @@ class UnscentedKalmanFilterObserver(Observer):
         self._ukf.f = f
         self._ukf.Rp = dt * self._process
         self._ukf.step(value)
-        self._state = self._model.reinit(
+        self._state = self._model.get_state(
             inputs=self._state.inputs, t=time, x=self._ukf.x
         )
 
