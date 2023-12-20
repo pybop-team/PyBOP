@@ -26,48 +26,61 @@ script_path = path.dirname(__file__)
 #
 # Cost function class
 #
-from .costs.error_costs import BaseCost, RootMeanSquaredError, SumSquaredError
+from ._costs import BaseCost, RootMeanSquaredError, SumSquaredError
 
 #
 # Dataset class
 #
-from .datasets.base_dataset import Dataset
+from ._dataset import Dataset
 
 #
 # Model classes
 #
 from .models.base_model import BaseModel
 from .models import lithium_ion
+from .models import empirical
 
 #
 # Main optimisation class
 #
-from .optimisation import Optimisation
+from ._optimisation import Optimisation
 
 #
 # Optimiser class
 #
 from .optimisers.base_optimiser import BaseOptimiser
 from .optimisers.nlopt_optimize import NLoptOptimize
-from .optimisers.scipy_minimize import SciPyMinimize
-from .optimisers.pints_optimisers import GradientDescent, CMAES
+from .optimisers.scipy_optimisers import SciPyMinimize, SciPyDifferentialEvolution
+from .optimisers.pints_optimisers import (
+    GradientDescent,
+    Adam,
+    CMAES,
+    IRPropMin,
+    PSO,
+    SNES,
+    XNES,
+)
 
 #
 # Parameter classes
 #
-from .parameters.base_parameter import Parameter
-from .parameters.base_parameter_set import ParameterSet
+from .parameters.parameter import Parameter
+from .parameters.parameter_set import ParameterSet
 from .parameters.priors import Gaussian, Uniform, Exponential
 
 #
 # Problem class
 #
-from ._problem import Problem
+from ._problem import FittingProblem, DesignProblem
 
 #
 # Plotting class
 #
-from .plotting.quick_plot import QuickPlot
+from .plotting.plot_cost2d import plot_cost2d
+from .plotting.quick_plot import StandardPlot, quick_plot
+from .plotting.plot_convergence import plot_convergence
+from .plotting.plot_parameters import plot_parameters
+from .plotting.plotly_manager import PlotlyManager
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop

@@ -1,10 +1,23 @@
-# Contributing to PyBOP
+# Contributing
 
-If you'd like to contribute to PyBOP, please have a look at the [pre-commit](#pre-commit-checks) and the [workflow](#workflow) guidelines below.
+If you'd like to contribute to PyBOP, please have a look at the guidelines below.
 
+## Developer-Installation
+
+To install PyBOP for development purposes, which includes the testing and plotting dependencies, use the `[all]` flag as demonstrated below:
+
+For `zsh`:
+
+```sh
+pip install -e '.[all]'
+```
+For `bash`:
+```sh
+pip install -e .[all]
+```
 ## Pre-commit checks
 
-Before you commit any code, please perform the following checks:
+Before you commit any code, please perform the following checks using [Nox](https://nox.thea.codes/en/stable/index.html):
 
 - [All tests pass](#testing): `$ nox -s unit`
 
@@ -17,7 +30,7 @@ pip install pre-commit
 pre-commit install
 ```
 
-This would run the checks every time a commit is created locally. The checks will only run on the files modified by that commit, but the checks can be triggered for all the files using -
+This would run the checks every time a commit is created locally. The checks will only run on the files modified by that commit, but the checks can be triggered for all the files using,
 
 ```bash
 pre-commit run --all-files
@@ -34,7 +47,7 @@ We use [GIT](https://en.wikipedia.org/wiki/Git) and [GitHub](https://en.wikipedi
 1. Create an [issue](https://guides.github.com/features/issues/) where new proposals can be discussed before any coding is done.
 2. Create a [branch](https://help.github.com/articles/creating-and-deleting-branches-within-your-repository/) of this repo (ideally on your own [fork](https://help.github.com/articles/fork-a-repo/)), where all changes will be made
 3. Download the source code onto your local system, by [cloning](https://help.github.com/articles/cloning-a-repository/) the repository (or your fork of the repository).
-4. [Install](Developer-Install) PyBOP with the developer options.
+4. [Install](#developer-installation) PyBOP with the developer options.
 5. [Test](#testing) if your installation worked: `$ pytest --unit -v`.
 
 You now have everything you need to start making changes!
@@ -69,7 +82,7 @@ python -m pip install pre-commit
 pre-commit run ruff
 ```
 
-ruff is configured inside the file `pre-commit-config.yaml`, allowing us to ignore some errors. If you think this should be added or removed, please submit an [issue](#issues)
+ruff is configured inside the file `pre-commit-config.yaml`, allowing us to ignore some errors. If you think this should be added or removed, please submit an [issue](https://guides.github.com/features/issues/).
 
 When you commit your changes they will be checked against ruff automatically (see [Pre-commit checks](#pre-commit-checks)).
 
@@ -113,6 +126,16 @@ def plot_great_things(self, x, y, z):
 
 This allows people to (1) use PyBOP without ever importing Matplotlib and (2) configure Matplotlib's back-end in their scripts, which _must_ be done before e.g. `pyplot` is first imported.
 
+### Building documentation
+
+We use [Sphinx](http://www.sphinx-doc.org/en/stable/) to build our documentation. A [Nox](https://nox.thea.codes/en/stable/index.html) session has been created to reduce the overhead when building the documentation locally. To run this session, type
+
+```bash
+nox -s docs
+```
+
+This will build the docs using sphinx-autobuild and render them in your browser.
+
 ## Testing
 
 All code requires testing. We use the [pytest](https://docs.pytest.org/en/) package for our tests. (These tests typically just check that the code runs without error, and so, are more _debugging_ than _testing_ in a strict sense. Nevertheless, they are very useful to have!)
@@ -123,7 +146,7 @@ If you have nox installed, to run unit tests, type
 nox -s unit
 ```
 
-else, type
+Alternatively, to run tests standalone with pytest, run,
 
 ```bash
 pytest --unit -v
@@ -270,7 +293,7 @@ Configuration files:
 setup.py
 ```
 
-Note that this file must be kept in sync with the version number in [pybop/**init**.py](pybop/__init__.py).
+Note that this file must be kept in sync with the version number in [pybop/**init**.py](https://github.com/pybop-team/PyBOP/blob/develop/pybop/__init__.py).
 
 ### Continuous Integration using GitHub actions
 
@@ -293,11 +316,10 @@ Code coverage (how much of our code is seen by the (Linux) unit tests) is tested
 
 GitHub does some magic with particular filenames. In particular:
 
-- The first page people see when they go to [our GitHub page](https://github.com/pybop-team/PyBOP) displays the contents of [README.md](README.md), which is written in the [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet) format. Some guidelines can be found [here](https://help.github.com/articles/about-readmes/).
-- The license for using PyBOP is stored in [LICENSE](LICENSE.txt), and [automatically](https://help.github.com/articles/adding-a-license-to-a-repository/) linked to by GitHub.
-- This file, [CONTRIBUTING.md](CONTRIBUTING.md) is recognised as the contribution guidelines and a link is [automatically](https://github.com/blog/1184-contributing-guidelines) displayed when new issues or pull requests are created.
+- The first page people see when they go to [our GitHub page](https://github.com/pybop-team/PyBOP) displays the contents of [README.md](https://github.com/pybop-team/PyBOP/blob/develop/README.md), which is written in the [Markdown](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet) format. Some guidelines can be found [here](https://help.github.com/articles/about-readmes/).
+- The license for using PyBOP is stored in [LICENSE](https://github.com/pybop-team/PyBOP/blob/develop/LICENSE), and [automatically](https://help.github.com/articles/adding-a-license-to-a-repository/) linked to by GitHub.
+- This file, [CONTRIBUTING.md](https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md) is recognised as the contribution guidelines and a link is [automatically](https://github.com/blog/1184-contributing-guidelines) displayed when new issues or pull requests are created.
 
 ## Acknowledgements
 
-This CONTRIBUTING.md file, along with large sections of the code infrastructure,
-was copied from the excellent [Pints repo](https://github.com/pints-team/pints), and [PyBaMM repo](https://github.com/pybamm-team/PyBaMM)
+This CONTRIBUTING.md file, along with large sections of the code infrastructure, was copied from the excellent [Pints repo](https://github.com/pints-team/pints), and [PyBaMM repo](https://github.com/pybamm-team/PyBaMM)

@@ -1,17 +1,18 @@
 import pybop
 import pandas as pd
-import matplotlib.pyplot as plt
 
 # Form dataset
 Measurements = pd.read_csv("examples/scripts/Chen_example.csv", comment="#").to_numpy()
-dataset = [
-    pybop.Dataset("Time [s]", Measurements[:, 0]),
-    pybop.Dataset("Current function [A]", Measurements[:, 1]),
-    pybop.Dataset("Terminal voltage [V]", Measurements[:, 2]),
-]
+dataset = pybop.Dataset(
+    {
+        "Time [s]": Measurements[:, 0],
+        "Current function [A]": Measurements[:, 1],
+        "Voltage [V]": Measurements[:, 2],
+    }
+)
 
 # Define model
-parameter_set = pybop.ParameterSet("pybamm", "Chen2020")
+parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 model = pybop.models.lithium_ion.SPM(
     parameter_set=parameter_set, options={"thermal": "lumped"}
 )
@@ -31,23 +32,28 @@ parameters = [
 ]
 
 # Define the cost to optimise
-signal = "Terminal voltage [V]"
-problem = pybop.Problem(model, parameters, dataset, signal=signal, init_soc=0.98)
+signal = ["Voltage [V]"]
+problem = pybop.FittingProblem(model, parameters, dataset, signal=signal, init_soc=0.98)
 cost = pybop.RootMeanSquaredError(problem)
 
 # Build the optimisation problem
-parameterisation = pybop.Optimisation(cost=cost, optimiser=pybop.NLoptOptimize)
+optim = pybop.Optimisation(cost=cost, optimiser=pybop.NLoptOptimize)
 
 # Run the optimisation problem
-x, final_cost = parameterisation.run()
+x, final_cost = optim.run()
+print("Estimated parameters:", x)
 
-# Show the generated data
-simulated_values = problem.evaluate(x)
+# Plot the timeseries output
+pybop.quick_plot(x, cost, title="Optimised Comparison")
 
-plt.figure()
-plt.xlabel("Time")
-plt.ylabel("Values")
-plt.plot(dataset[0].data, dataset[2].data, label="Measured")
-plt.plot(dataset[0].data, simulated_values, label="Simulated")
-plt.legend(bbox_to_anchor=(0.6, 1), loc="upper left", fontsize=12)
-plt.show()
+# Plot convergence
+pybop.plot_convergence(optim)
+
+# Plot the parameter traces
+pybop.plot_parameters(optim)
+
+# Plot the cost landscape
+pybop.plot_cost2d(cost, steps=15)
+
+# Plot the cost landscape with optimisation path
+pybop.plot_cost2d(cost, optim=optim, steps=15)

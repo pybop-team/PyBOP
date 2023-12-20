@@ -3,7 +3,7 @@
   <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/Temp_Logo.png" alt="logo" width="400" height="auto" />
   <h1>Python Battery Optimisation and Parameterisation</h1>
 
-<p>
+
   <a href="https://github.com/pybop-team/PyBOP/actions/workflows/scheduled_tests.yaml">
     <img src="https://github.com/pybop-team/PyBOP/actions/workflows/scheduled_tests.yaml/badge.svg" alt="Scheduled" />
   </a>
@@ -29,8 +29,11 @@
     <img src="https://img.shields.io/github/license/pybop-team/PyBOP" alt="license" />
   </a>
   <a href="https://colab.research.google.com/github/pybop-team/PyBOP/blob/develop/">
-    <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab" />
-</p>
+    <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="open In colab" />
+  </a>
+  <a href = "https://github.com/pybop-team/PyBOP/releases">
+    <img src = "https://img.shields.io/github/v/release/pybop-team/PyBOP?color=gold"  alt = releases />
+  </a>
 
 </div>
 
@@ -48,6 +51,28 @@ The diagram below presents PyBOP's conceptual framework. The PyBOP software spec
 ## Getting Started
 
 <!-- Installation -->
+### Installation
+
+Within your virtual environment, install PyBOP:
+
+```bash
+pip install pybop
+```
+
+To install the most recent state of PyBOP, install from the `develop` branch,
+
+```bash
+pip install git+https://github.com/pybop-team/PyBOP.git@develop
+```
+
+To alternatively install PyBOP from a local directory, use the following template, substituting in the relevant path:
+
+```bash
+pip install -e "path/to/pybop"
+```
+
+To check whether PyBOP has been installed correctly, run one of the examples in the following section. For a development installation, please refer to the [contributing guide](https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md#Installation).
+
 ### Prerequisites
 To use and/or contribute to PyBOP, first install Python (3.8-3.11). On a Debian-based distribution, this looks like:
 
@@ -58,9 +83,8 @@ sudo apt install python3 python3-virtualenv
 
 For further information, please refer to the similar [installation instructions for PyBaMM](https://docs.pybamm.org/en/latest/source/user_guide/installation/GNU-linux.html).
 
-### Installation
-
-Create a virtual environment called `pybop-env` within your current directory:
+### Virtual Environments
+To create a virtual environment called `pybop-env` within your current directory:
 
 ```bash
 virtualenv pybop-env
@@ -76,24 +100,6 @@ Later, you can deactivate the environment:
 
 ```bash
 deactivate
-```
-
-Within your virtual environment, install the `develop` branch of PyBOP:
-
-```bash
-pip install git+https://github.com/pybop-team/PyBOP.git@develop
-```
-
-To alternatively install PyBOP from a local directory, use the following template, substituting in the relevant path:
-
-```bash
-pip install -e "PATH_TO_PYBOP"
-```
-
-To check whether PyBOP has been installed correctly, run one of the examples in the following section or the full set of unit tests:
-
-```bash
-pytest --unit -v
 ```
 
 ### Using PyBOP
@@ -136,10 +142,13 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <table>
   <tbody>
     <tr>
-      <td align="center" valign="top" width="14.28%"><a href="http://bradyplanden.github.io"><img src="https://avatars.githubusercontent.com/u/55357039?v=4?s=100" width="100px;" alt="Brady Planden"/><br /><sub><b>Brady Planden</b></sub></a><br /><a href="#infra-BradyPlanden" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=BradyPlanden" title="Tests">⚠️</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=BradyPlanden" title="Code">💻</a> <a href="#example-BradyPlanden" title="Examples">💡</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/NicolaCourtier"><img src="https://avatars.githubusercontent.com/u/45851982?v=4?s=100" width="100px;" alt="NicolaCourtier"/><br /><sub><b>NicolaCourtier</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=NicolaCourtier" title="Code">💻</a> <a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3ANicolaCourtier" title="Reviewed Pull Requests">👀</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://bradyplanden.github.io"><img src="https://avatars.githubusercontent.com/u/55357039?v=4?s=100" width="100px;" alt="Brady Planden"/><br /><sub><b>Brady Planden</b></sub></a><br /><a href="#infra-BradyPlanden" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=BradyPlanden" title="Tests">⚠️</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=BradyPlanden" title="Code">💻</a> <a href="#example-BradyPlanden" title="Examples">💡</a> <a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3ABradyPlanden" title="Reviewed Pull Requests">👀</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/NicolaCourtier"><img src="https://avatars.githubusercontent.com/u/45851982?v=4?s=100" width="100px;" alt="NicolaCourtier"/><br /><sub><b>NicolaCourtier</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=NicolaCourtier" title="Code">💻</a> <a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3ANicolaCourtier" title="Reviewed Pull Requests">👀</a> <a href="#example-NicolaCourtier" title="Examples">💡</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=NicolaCourtier" title="Tests">⚠️</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://howey.eng.ox.ac.uk"><img src="https://avatars.githubusercontent.com/u/2247552?v=4?s=100" width="100px;" alt="David Howey"/><br /><sub><b>David Howey</b></sub></a><br /><a href="#ideas-davidhowey" title="Ideas, Planning, & Feedback">🤔</a> <a href="#mentoring-davidhowey" title="Mentoring">🧑‍🏫</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="http://www.rse.ox.ac.uk"><img src="https://avatars.githubusercontent.com/u/1148404?v=4?s=100" width="100px;" alt="Martin Robinson"/><br /><sub><b>Martin Robinson</b></sub></a><br /><a href="#ideas-martinjrobins" title="Ideas, Planning, & Feedback">🤔</a> <a href="#mentoring-martinjrobins" title="Mentoring">🧑‍🏫</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://www.rse.ox.ac.uk"><img src="https://avatars.githubusercontent.com/u/1148404?v=4?s=100" width="100px;" alt="Martin Robinson"/><br /><sub><b>Martin Robinson</b></sub></a><br /><a href="#ideas-martinjrobins" title="Ideas, Planning, & Feedback">🤔</a> <a href="#mentoring-martinjrobins" title="Mentoring">🧑‍🏫</a> <a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3Amartinjrobins" title="Reviewed Pull Requests">👀</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.brosaplanella.xyz"><img src="https://avatars.githubusercontent.com/u/28443643?v=4?s=100" width="100px;" alt="Ferran Brosa Planella"/><br /><sub><b>Ferran Brosa Planella</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3Abrosaplanella" title="Reviewed Pull Requests">👀</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.ukri.org/"><img src="assets/UKRI.png" width="100px;" alt="UKRI"/><br /><sub><b>UKRI</b></sub></a><br /><a href="#financial-UKRI" title="Financial">💵</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://faraday.ac.uk"><img src="https://avatars2.githubusercontent.com/u/42166506?v=4?s=100" width="100px;" alt="Faraday Institution"/><br /><sub><b>Faraday Institution</b></sub></a><br /><a href="#financial-FaradayInstitution" title="Financial">💵</a></td>
     </tr>
   </tbody>
 </table>

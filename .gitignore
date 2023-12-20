@@ -175,6 +175,9 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/examples/generated/
+docs/api/
+warnings.txt
 
 # PyBuilder
 .pybuilder/
@@ -304,3 +307,6 @@ $RECYCLE.BIN/
 
 # Visual Studio Code settings
 .vscode/*
+
+# Output JSON files
+**/fit_ecm_parameters.json
