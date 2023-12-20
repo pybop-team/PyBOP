@@ -1,3 +1,4 @@
+from typing import Optional
 import numpy as np
 
 from pybop.observers.observer import Observer
@@ -146,7 +147,7 @@ class FittingProblem(BaseProblem):
         signal=["Voltage [V]"],
         init_soc=None,
         x0=None,
-        observer: Observer | None = None,
+        observer: Optional[Observer] = None,
     ):
         super().__init__(parameters, model, check_model, signal, init_soc, x0)
         self._dataset = dataset.data

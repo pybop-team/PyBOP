@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 import pybamm
 import numpy as np
 import casadi
@@ -191,7 +191,7 @@ class BaseModel:
         self.pybamm_model = self._model_with_set_params
 
     def reinit(
-        self, inputs: Inputs, t: float = 0.0, x: np.ndarray | None = None
+        self, inputs: Inputs, t: float = 0.0, x: Optional[np.ndarray] = None
     ) -> TimeSeriesState:
         """
         Initialises the solver with the given inputs and returns the initial state of the problem
@@ -410,7 +410,7 @@ class BaseModel:
         return self._geometry
 
     @geometry.setter
-    def geometry(self, geometry: pybamm.Geometry | None):
+    def geometry(self, geometry: Optional[pybamm.Geometry]):
         self._geometry = geometry.copy() if geometry is not None else None
 
     @property
@@ -418,7 +418,7 @@ class BaseModel:
         return self._submesh_types
 
     @submesh_types.setter
-    def submesh_types(self, submesh_types: Dict[str, Any] | None):
+    def submesh_types(self, submesh_types: Optional[Dict[str, Any]]):
         self._submesh_types = (
             submesh_types.copy() if submesh_types is not None else None
         )
@@ -432,7 +432,7 @@ class BaseModel:
         return self._var_pts
 
     @var_pts.setter
-    def var_pts(self, var_pts: Dict[str, int] | None):
+    def var_pts(self, var_pts: Optional[Dict[str, int]]):
         self._var_pts = var_pts.copy() if var_pts is not None else None
 
     @property
@@ -440,7 +440,7 @@ class BaseModel:
         return self._spatial_methods
 
     @spatial_methods.setter
-    def spatial_methods(self, spatial_methods: Dict[str, Any] | None):
+    def spatial_methods(self, spatial_methods: Optional[Dict[str, Any]]):
         self._spatial_methods = spatial_methods.copy() if spatial_methods else None
 
     @property

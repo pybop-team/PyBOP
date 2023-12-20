@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import numpy as np
 import scipy.linalg as linalg
-from typing import Tuple
+from typing import Optional, Tuple
 
 from pybop.models.base_model import BaseModel, Inputs
 from pybop.observers.observer import Observer
@@ -67,7 +67,7 @@ class UnscentedKalmanFilterObserver(Observer):
             h=measure_f,
         )
 
-    def observe(self, time: float, value: np.ndarray | None = None) -> None:
+    def observe(self, time: float, value: Optional[np.ndarray] = None) -> None:
         if value is None:
             raise ValueError("Measurement must be provided.")
 

@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Optional
 import numpy as np
 from pybop.models.base_model import BaseModel, TimeSeriesState
 
@@ -33,7 +33,7 @@ class Observer(object):
     def reset(self) -> None:
         self._state = self._model.reinit()
 
-    def observe(self, time: float, value: np.ndarray | None = None) -> None:
+    def observe(self, time: float, value: Optional[np.ndarray] = None) -> None:
         """
         Predict the time series model until t = `time` and optionally observe the measurement `value`.
 
