@@ -46,10 +46,10 @@ class ExponentialDecay(BaseModel):
         self._parameter_set = self.default_parameter_values
         self._unprocessed_parameter_set = self._parameter_set
 
-        self.geometry = None
-        self.submesh_types = None
-        self.var_pts = None
-        self.spatial_methods = None
+        self.geometry = self.pybamm_model.default_geometry
+        self.submesh_types = self.pybamm_model.default_submesh_types
+        self.var_pts = self.pybamm_model.default_var_pts
+        self.spatial_methods = self.pybamm_model.default_spatial_methods
         self.solver = pybamm.CasadiSolver(mode="fast")
         self._model_with_set_params = None
         self._built_model = None

@@ -96,39 +96,11 @@ class BaseModel:
         else:
             self.set_params()
 
-            any_disc_variables_exist = (
-                self.geometry is not None
-                or self.var_pts is not None
-                or self.spatial_methods is not None
-                or self.submesh_types is not None
+            self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
+            self._disc = pybamm.Discretisation(self.mesh, self.spatial_methods)
+            self._built_model = self._disc.process_model(
+                self._model_with_set_params, inplace=False, check_model=check_model
             )
-            if any_disc_variables_exist and self.geometry is None:
-                raise ValueError(
-                    "Geometry must be provided if any discretisation variables are provided"
-                )
-            if any_disc_variables_exist and self.submesh_types is None:
-                raise ValueError(
-                    "Submesh types must be provided if any discretisation variables are provided"
-                )
-            if any_disc_variables_exist and self.var_pts is None:
-                raise ValueError(
-                    "Variable points must be provided if any discretisation variables are provided"
-                )
-            if any_disc_variables_exist and self.spatial_methods is None:
-                raise ValueError(
-                    "Spatial methods must be provided if any discretisation variables are provided"
-                )
-
-            if any_disc_variables_exist:
-                self._mesh = pybamm.Mesh(
-                    self.geometry, self.submesh_types, self.var_pts
-                )
-                self._disc = pybamm.Discretisation(self.mesh, self.spatial_methods)
-                self._built_model = self._disc.process_model(
-                    self._model_with_set_params, inplace=False, check_model=check_model
-                )
-            else:
-                self._built_model = self._model_with_set_params
 
             # Clear solver and setup model
             self._solver._model_set_up = {}
@@ -441,7 +413,9 @@ class BaseModel:
 
     @spatial_methods.setter
     def spatial_methods(self, spatial_methods: Optional[Dict[str, Any]]):
-        self._spatial_methods = spatial_methods.copy() if spatial_methods else None
+        self._spatial_methods = (
+            spatial_methods.copy() if spatial_methods is not None else None
+        )
 
     @property
     def solver(self):
