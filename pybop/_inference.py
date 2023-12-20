@@ -46,7 +46,9 @@ class BayesianSampler:
         # sigma_tensor = torch.tensor(sigma, dtype=torch.float32)
 
         # Likelihood of the observations
-        pyro.sample("obs", dist.Normal(voltage_pred, 0.01).to_event(1), obs=voltage_obs)
+        pyro.sample(
+            "obs", dist.Normal(voltage_pred, 0.001).to_event(1), obs=voltage_obs
+        )
 
     def run(self, num_samples=100, warmup_steps=200, num_chains=1):
         """
@@ -97,10 +99,6 @@ class BayesianSampler:
         if samples is None:
             for i, (param_name, (prior, bounds)) in enumerate(parameter_priors.items()):
                 # Sample from the distribution
-                # unconstrained = torch.nn.init.trunc_normal_(pyro.sample(
-                #     f"{param_name}_unconstrained", prior
-                # ),prior.loc, prior.scale, bounds[0], bounds[1])
-
                 unconstrained = pyro.sample(f"{param_name}_unconstrained", prior)
 
                 # Transform to the desired interval, and store the value
@@ -135,4 +133,15 @@ class BayesianSampler:
         float or torch.Tensor
             The transformed value in the [lower_bound, upper_bound] interval.
         """
-        return unconstrained * (bounds[1] - bounds[0]) + bounds[0]
+        # Scale the unconstrained value to the new bounds
+        constrained = unconstrained * (bounds[1] - bounds[0]) + bounds[0]
+
+        # Clamp the value to ensure it lies within the specified bounds
+        if hasattr(constrained, "clamp"):
+            # If constrained is a torch.Tensor, use torch's clamp method
+            constrained = constrained.clamp(min=bounds[0], max=bounds[1])
+        else:
+            # If constrained is a float, use the min/max built-in functions
+            constrained = max(min(constrained, bounds[1]), bounds[0])
+
+        return constrained
