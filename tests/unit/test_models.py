@@ -70,9 +70,7 @@ class TestModels:
         model = ExponentialDecay(pybamm.ParameterValues({"k": k, "y0": y0}))
         model.build()
         state = model.reinit(inputs={})
-        np.testing.assert_array_almost_equal(
-            state.get_current_state_as_ndarray(), np.array([y0])
-        )
+        np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
 
     @pytest.mark.unit
     def test_simulate(self):
@@ -80,7 +78,7 @@ class TestModels:
         y0 = 1
         model = ExponentialDecay(pybamm.ParameterValues({"k": k, "y0": y0}))
         model.build()
-        model.signal = "y"
+        model.signal = "y_0"
         inputs = {}
         t_eval = np.linspace(0, 10, 100)
         expected = y0 * np.exp(-k * t_eval)

@@ -18,7 +18,11 @@ class TimeSeriesState(object):
     t: float = 0.0
 
     def as_ndarray(self) -> np.ndarray:
-        y = self.sol.y[:, -1]
+        ncol = self.sol.y.shape[1]
+        if ncol > 1:
+            y = self.sol.y[:, -1]
+        else:
+            y = self.sol.y
         if isinstance(y, casadi.DM):
             y = y.full()
         return y
@@ -170,7 +174,7 @@ class BaseModel:
 
         sol = pybamm.Solution([np.array([t])], [x], self._built_model, inputs)
 
-        return TimeSeriesState(sol=sol, inputs=inputs, t=0.0)
+        return TimeSeriesState(sol=sol, inputs=inputs, t=t)
 
     def step(self, state: TimeSeriesState, time: np.ndarray) -> TimeSeriesState:
         """

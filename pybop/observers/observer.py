@@ -60,7 +60,11 @@ class Observer(object):
         """
         Returns the current measurement.
         """
-        return self._state.sol[self._signal].data[-1]
+        return self.get_measure(self._state)
+
+    def get_measure(self, x: TimeSeriesState) -> np.ndarray:
+        m = x.sol[self._signal].data[-1]
+        return np.array([[m]])
 
     def get_current_time(self) -> float:
         """

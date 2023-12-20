@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 import numpy as np
 import scipy.linalg as linalg
-from typing import Callable, Dict, List, Tuple
+from typing import Tuple
 
-from pybop.models.base_model import BaseModel, Inputs, TimeSeriesState
+from pybop.models.base_model import BaseModel, Inputs
 from pybop.observers.observer import Observer
 
 
@@ -41,13 +41,30 @@ class UnscentedKalmanFilterObserver(Observer):
         super().__init__(model, inputs, signal)
         self._process = process
 
+        x0 = self.get_current_state().as_ndarray()
+        m0 = self.get_current_measure()
+
+        m = len(m0)
+        n = len(x0)
+        if sigma0.shape != (n, n):
+            raise ValueError(f"sigma0 must be a square matrix of size n = {n}")
+        if process.shape != (n, n):
+            raise ValueError(f"process must be a square matrix of size n = {n}")
+        if measure.shape != (m, m):
+            raise ValueError(f"measure must be a square matrix of size m = {m}")
+
+        def measure_f(x: np.ndarray) -> np.ndarray:
+            x = x.reshape(-1, 1)
+            sol = self._model.reinit(inputs=self._state.inputs, t=self._state.t, x=x)
+            return self.get_measure(sol).reshape(-1)
+
         self._ukf = UkfFilter(
-            x0=self._model.reinit(inputs).as_ndarray(),
+            x0=x0,
             P0=sigma0,
             Rp=process,
             Rm=measure,
-            f=self._model.step,
-            h=self.get_current_measure,
+            f=None,
+            h=measure_f,
         )
 
     def observe(self, time: float, value: np.ndarray | None = None) -> None:
@@ -65,14 +82,18 @@ class UnscentedKalmanFilterObserver(Observer):
         else:
 
             def f(x: np.ndarray) -> np.ndarray:
+                x = x.reshape(-1, 1)
                 sol = self._model.reinit(
                     inputs=self._state.inputs, t=self._state.t, x=x
                 )
-                return self._model.step(sol, time).as_ndarray()
+                return self._model.step(sol, time).as_ndarray().reshape(-1)
 
         self._ukf.f = f
         self._ukf.Rp = dt * self._process
         self._ukf.step(value)
+        self._state = self._model.reinit(
+            inputs=self._state.inputs, t=time, x=self._ukf.x
+        )
 
 
 @dataclass
@@ -121,7 +142,7 @@ class UkfFilter(object):
     ) -> None:
         self.x = x0
         self.S = linalg.cholesky(P0)
-        self.sqrtR = linalg.cholesky(Rp)
+        self.sqrtRp = linalg.cholesky(Rp)
         self.sqrtRm = linalg.cholesky(Rm)
         self.alpha = 1e-3
         self.beta = 2
@@ -131,7 +152,7 @@ class UkfFilter(object):
     @staticmethod
     def gen_sigma_points(
         x: np.ndarray, S: np.ndarray, alpha: float, beta: float
-    ) -> List[SigmaPoint]:
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Generates the sigma points for the unscented transform
 
@@ -155,38 +176,24 @@ class UkfFilter(object):
         List[float]
             The weights of the covariance points
         """
+        kappa = 1.0
         L = len(x)
-        sigma = L * alpha**2 - 1
+        sigma = alpha**2 * (L + kappa) - L
         eta = np.sqrt(L + sigma)
-        return (
-            [
-                SigmaPoint(
-                    x=x,
-                    w_m=sigma / (L + sigma),
-                    w_c=sigma / (L + sigma) + (1 - alpha**2 + beta),
-                )
-            ]
-            + [
-                SigmaPoint(
-                    x=x + eta * S[:, i],
-                    w_m=1 / (2 * (L + sigma)),
-                    w_c=1 / (2 * (L + sigma)),
-                )
-                for i in range(S.shape[1])
-            ]
-            + [
-                SigmaPoint(
-                    x=x - eta * S[:, i],
-                    w_m=1 / (2 * (L + sigma)),
-                    w_c=1 / (2 * (L + sigma)),
-                )
-                for i in range(S.shape[1])
-            ]
+        wm_0 = sigma / (L + sigma)
+        wc_0 = wm_0 + (1 - alpha**2 + beta)
+        points = np.hstack(
+            [x]
+            + [x + eta * S[:, i].reshape(-1, 1) for i in range(L)]
+            + [x - eta * S[:, i].reshape(-1, 1) for i in range(L)]
         )
+        w_m = np.array([wm_0] + [(1 - wm_0) / (2 * L)] * (2 * L))
+        w_c = np.array([wc_0] + [(1 - wc_0) / (2 * L)] * (2 * L))
+        return (points, w_m, w_c)
 
     @staticmethod
     def unscented_transform(
-        sigma_points: List[SigmaPoint], sqrtR: np.ndarray
+        sigma_points: np.ndarray, w_m: np.ndarray, w_c: np.ndarray, sqrtR: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Performs the unscented transform
@@ -203,22 +210,32 @@ class UkfFilter(object):
         Tuple[np.ndarray, np.ndarray]
             The mean and covariance of the sigma points
         """
-        x = np.sum(
-            [sigma_point.w_m * sigma_point.x for sigma_point in sigma_points], axis=0
-        )
-        s1_2L_concat = np.hstack([sigma_point.x for sigma_point in sigma_points])
-        S = linalg.qr(
-            np.hstack([sigma_points[1].w_c * (s1_2L_concat - x), sqrtR]), mode="r"
-        )
-        S = UkfFilter.cholupdate(S, sigma_points[0].x - x, sigma_points[0].w_c)
+        x = np.sum(w_m * sigma_points, axis=1).reshape(-1, 1)
+        A = np.sqrt(w_c[1:]) * (sigma_points[:, 1:] - x)
+        (
+            _,
+            S,
+        ) = linalg.qr(A.T, mode="economic")
+        S = UkfFilter.cholupdate(S, sigma_points[:, 0:1] - x, w_c[0])
         return x, S
+
+    @staticmethod
+    def hypot(x: float, y: float) -> float:
+        x = abs(x)
+        y = abs(y)
+        t = x if x < y else y
+        x = x if x > y else y
+        t = t / x
+        return x * np.sqrt(1 + t * t)
 
     @staticmethod
     def cholupdate(R: np.ndarray, x: np.ndarray, w: float) -> np.ndarray:
         """
-        Updates the cholesky decomposition of a matrix
+        Updates the cholesky decomposition of a matrix (see https://github.com/modusdatascience/choldate/blob/master/choldate/_choldate.pyx)
 
-        TODO: no idea if this works, copilot wrote it, need to replace with something more low-level
+        Note: will be in scipy soon so replace with this: https://github.com/scipy/scipy/pull/16499
+
+        TODO: need to replace with something more low-level
 
         Parameters
         ----------
@@ -234,14 +251,17 @@ class UkfFilter(object):
         np.ndarray
             The updated cholesky decomposition
         """
+        x = x.flatten()
         p = x.shape[0]
         for k in range(p):
             r = np.sqrt(R[k, k] ** 2 + w * x[k] ** 2)
+            # r = UkfFilter.hypot(R[k, k], x[k])
             c = r / R[k, k]
             s = x[k] / R[k, k]
             R[k, k] = r
-            R[k, k + 1 :] = (R[k, k + 1 :] + w * s * x[k + 1 :]) / c
-            x[k + 1 :] = c * x[k + 1 :] - s * R[k, k + 1 :]
+            if k < p - 1:
+                R[k, k + 1 :] = (R[k, k + 1 :] + w * s * x[k + 1 :]) / c
+                x[k + 1 :] = c * x[k + 1 :] - s * R[k, k + 1 :]
         return R
 
     def step(self, y: np.ndarray) -> None:
@@ -253,32 +273,19 @@ class UkfFilter(object):
         y : np.ndarray
             The measurement vector
         """
-        sigma_points = self.gen_sigma_points(self.x, self.S, self.alpha, self.beta)
-        sigma_points = [
-            SigmaPoint(
-                x=self.f(sigma_point.x), w_m=sigma_point.w_m, w_c=sigma_point.w_c
-            )
-            for sigma_point in sigma_points
-        ]
-        x_minus, S_minus = self.unscented_transform(sigma_points, self.sqrtRp)
-
-        sigma_points_y = [
-            SigmaPoint(
-                x=self.h(sigma_point.x), w_m=sigma_point.w_m, w_c=sigma_point.w_c
-            )
-            for sigma_point in sigma_points
-        ]
-        y_minus, S_y = self.unscented_transform(sigma_points_y, self.sqrtRm)
-
-        P = np.sum(
-            [
-                sigma_point.w_c
-                * np.outer(sigma_point.x - x_minus, sigma_point_y.x - y_minus)
-                for sigma_point, sigma_point_y in zip(sigma_points, sigma_points_y)
-            ],
-            axis=0,
+        sigma_points, w_m, w_c = self.gen_sigma_points(
+            self.x, self.S, self.alpha, self.beta
         )
-        gain = linalg.lstsq(linalg.lstsq(P, S_y.transpose()), S_y)
+        sigma_points = np.apply_along_axis(self.f, 0, sigma_points)
+
+        x_minus, S_minus = self.unscented_transform(sigma_points, w_m, w_c, self.sqrtRp)
+        sigma_points_y = np.apply_along_axis(self.h, 0, sigma_points)
+        y_minus, S_y = self.unscented_transform(sigma_points_y, w_m, w_c, self.sqrtRm)
+        P = np.sum(
+            w_c * np.multiply.outer(sigma_points - x_minus, sigma_points_y - y_minus),
+            axis=(1, 3),
+        )
+        gain = linalg.lstsq(linalg.lstsq(P.T, S_y.transpose())[0].T, S_y)[0]
         self.x = x_minus + gain @ (y - y_minus)
         U = gain @ S_y
         self.S = self.cholupdate(S_minus, U, -1)
