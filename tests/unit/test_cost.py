@@ -1,3 +1,4 @@
+from __future__ import annotations
 import pytest
 import pybop
 import numpy as np
