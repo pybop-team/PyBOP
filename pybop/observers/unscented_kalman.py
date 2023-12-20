@@ -67,7 +67,7 @@ class UnscentedKalmanFilterObserver(Observer):
             h=measure_f,
         )
 
-    def observe(self, time: float, value: Optional[np.ndarray] = None) -> None:
+    def observe(self, time: float, value: np.ndarray) -> None:
         if value is None:
             raise ValueError("Measurement must be provided.")
 
@@ -218,15 +218,6 @@ class UkfFilter(object):
         ) = linalg.qr(A.T, mode="economic")
         S = UkfFilter.cholupdate(S, sigma_points[:, 0:1] - x, w_c[0])
         return x, S
-
-    @staticmethod
-    def hypot(x: float, y: float) -> float:
-        x = abs(x)
-        y = abs(y)
-        t = x if x < y else y
-        x = x if x > y else y
-        t = t / x
-        return x * np.sqrt(1 + t * t)
 
     @staticmethod
     def cholupdate(R: np.ndarray, x: np.ndarray, w: float) -> np.ndarray:
