@@ -3,11 +3,13 @@ import pandas as pd
 
 # Form dataset
 Measurements = pd.read_csv("examples/scripts/Chen_example.csv", comment="#").to_numpy()
-dataset = [
-    pybop.Dataset("Time [s]", Measurements[:, 0]),
-    pybop.Dataset("Current function [A]", Measurements[:, 1]),
-    pybop.Dataset("Voltage [V]", Measurements[:, 2]),
-]
+dataset = pybop.Dataset(
+    {
+        "Time [s]": Measurements[:, 0],
+        "Current function [A]": Measurements[:, 1],
+        "Voltage [V]": Measurements[:, 2],
+    }
+)
 
 # Define model
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
@@ -30,7 +32,7 @@ parameters = [
 ]
 
 # Define the cost to optimise
-signal = "Voltage [V]"
+signal = ["Voltage [V]"]
 problem = pybop.FittingProblem(model, parameters, dataset, signal=signal, init_soc=0.98)
 cost = pybop.RootMeanSquaredError(problem)
 

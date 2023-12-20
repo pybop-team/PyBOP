@@ -25,14 +25,16 @@ class TestCosts:
         # Form dataset
         x0 = np.array([0.52])
         solution = self.getdata(model, x0)
-        dataset = [
-            pybop.Dataset("Time [s]", solution["Time [s]"].data),
-            pybop.Dataset("Current function [A]", solution["Current [A]"].data),
-            pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
-        ]
+        dataset = pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Voltage [V]": solution["Terminal voltage [V]"].data,
+            }
+        )
 
         # Construct Problem
-        signal = "Voltage [V]"
+        signal = ["Voltage [V]"]
         model.parameter_set.update({"Lower voltage cut-off [V]": cut_off})
         problem = pybop.FittingProblem(model, parameters, dataset, signal=signal, x0=x0)
 
