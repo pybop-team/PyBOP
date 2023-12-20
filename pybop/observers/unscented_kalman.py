@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import numpy as np
 import scipy.linalg as linalg
-from typing import Optional, Tuple
+from typing import Tuple
 
 from pybop.models.base_model import BaseModel, Inputs
 from pybop.observers.observer import Observer
