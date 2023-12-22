@@ -90,10 +90,11 @@ class UnscentedKalmanFilterObserver(Observer):
 
         self._ukf.f = f
         self._ukf.Rp = dt * self._process
-        self._ukf.step(value)
+        log_likelihood = self._ukf.step(value)
         self._state = self._model.get_state(
             inputs=self._state.inputs, t=time, x=self._ukf.x
         )
+        return log_likelihood
 
 
 @dataclass
@@ -255,14 +256,19 @@ class UkfFilter(object):
                 x[k + 1 :] = c * x[k + 1 :] - s * R[k, k + 1 :]
         return R
 
-    def step(self, y: np.ndarray) -> None:
+    def step(self, y: np.ndarray) -> float:
         """
-        Steps the filter forward one step using a measurement
+        Steps the filter forward one step using a measurement. Returns the log likelihood of the measurement.
 
         Parameters
         ----------
         y : np.ndarray
             The measurement vector
+
+        Returns
+        -------
+        float
+            The log likelihood of the measurement
         """
         sigma_points, w_m, w_c = self.gen_sigma_points(
             self.x, self.S, self.alpha, self.beta
@@ -277,6 +283,13 @@ class UkfFilter(object):
             axis=(1, 3),
         )
         gain = linalg.lstsq(linalg.lstsq(P.T, S_y.transpose())[0].T, S_y)[0]
-        self.x = x_minus + gain @ (y - y_minus)
+        residual = y - y_minus
+        self.x = x_minus + gain @ residual
         U = gain @ S_y
         self.S = self.cholupdate(S_minus, U, -1)
+        log_det = 2 * np.sum(np.log(np.diag(self.S)))
+        n = len(y)
+        log_likelihood = -0.5 * (
+            n * log_det + residual.T @ linalg.cho_solve((self.S, True), residual)
+        )
+        return log_likelihood

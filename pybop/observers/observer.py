@@ -1,6 +1,6 @@
 from typing import Dict, Optional
 import numpy as np
-from pybop.models.base_model import BaseModel, TimeSeriesState
+from pybop.models.base_model import BaseModel, Inputs, TimeSeriesState
 
 
 class Observer(object):
@@ -33,9 +33,13 @@ class Observer(object):
     def reset(self) -> None:
         self._state = self._model.reinit()
 
-    def observe(self, time: float, value: Optional[np.ndarray] = None) -> None:
+    def observe(self, time: float, value: Optional[np.ndarray] = None) -> float:
         """
         Predict the time series model until t = `time` and optionally observe the measurement `value`.
+
+        Returns the log likelihood of the model given the value and inputs. If no value is given, the log likelihood is 0.
+
+        The base observer does not perform any value observation and always returns 0.
 
         Parameters
         ----------
@@ -49,6 +53,28 @@ class Observer(object):
             raise ValueError("Time must be increasing.")
         if time != self._state.t:
             self._state = self._model.step(self._state, time)
+        return 0.0
+
+    def log_likelihood(
+        self, values: np.ndarray, times: np.ndarray, inputs: Inputs
+    ) -> float:
+        """
+        Returns the log likelihood of the model given the values and inputs.
+
+        Parameters
+        ----------
+        values : np.ndarray
+          The values of the model.
+        inputs : Inputs
+          The inputs to the model.
+        """
+        if len(values) != len(times):
+            raise ValueError("values and times must have the same length.")
+        log_likelihood = 0.0
+        self.reset()
+        for t, v in zip(times, values):
+            log_likelihood += self.observe(t, v)
+        return log_likelihood
 
     def get_current_state(self) -> TimeSeriesState:
         """
