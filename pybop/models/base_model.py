@@ -171,10 +171,10 @@ class BaseModel:
         if self._built_model is None:
             raise ValueError("Model must be built before calling reinit")
 
-        self._solver.set_up(self._built_model, inputs=inputs)
-
         if not isinstance(inputs, dict):
             inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+
+        self._solver.set_up(self._built_model, inputs=inputs)
 
         if x is None:
             x = self._built_model.y0

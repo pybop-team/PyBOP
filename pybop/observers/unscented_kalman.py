@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import numpy as np
 import scipy.linalg as linalg
-from typing import Tuple
+from typing import List, Tuple
 
 from pybop.models.base_model import BaseModel, Inputs
 from pybop.observers.observer import Observer
@@ -19,12 +19,12 @@ class UnscentedKalmanFilterObserver(Observer):
         The inputs to the model.
     signal: str
         The signal to observe.
-    sigma0 : np.ndarray
-        The covariance matrix of the initial state.
-    process : np.ndarray
-        The covariance matrix of the process noise.
-    measure : np.ndarray
-        The covariance matrix of the measurement noise.
+    sigma0 : np.ndarray | float
+        The covariance matrix of the initial state. If a float is provided, the covariance matrix is set to sigma0 * np.eye(n), where n is the number of states.
+    process : np.ndarray | float
+        The covariance matrix of the process noise. If a float is provided, the covariance matrix is set to process * np.eye(n), where n is the number of states.
+    measure : np.ndarray | float
+        The covariance matrix of the measurement noise. If a float is provided, the covariance matrix is set to measure * np.eye(m), where m is the number of measurements.
     """
 
     Covariance = np.ndarray
@@ -33,10 +33,10 @@ class UnscentedKalmanFilterObserver(Observer):
         self,
         model: BaseModel,
         inputs: Inputs,
-        signal: str,
-        sigma0: Covariance,
-        process: Covariance,
-        measure: Covariance,
+        signal: List[str],
+        sigma0: Covariance | float,
+        process: Covariance | float,
+        measure: Covariance | float,
     ) -> None:
         super().__init__(model, inputs, signal)
         self._process = process
@@ -46,12 +46,21 @@ class UnscentedKalmanFilterObserver(Observer):
 
         m = len(m0)
         n = len(x0)
+        if isinstance(sigma0, float):
+            sigma0 = sigma0 * np.eye(n)
+        if isinstance(process, float):
+            process = process * np.eye(n)
+        if isinstance(measure, float):
+            measure = measure * np.eye(m)
+
         if sigma0.shape != (n, n):
             raise ValueError(f"sigma0 must be a square matrix of size n = {n}")
         if process.shape != (n, n):
             raise ValueError(f"process must be a square matrix of size n = {n}")
         if measure.shape != (m, m):
             raise ValueError(f"measure must be a square matrix of size m = {m}")
+
+        self._sigma0 = sigma0
 
         def measure_f(x: np.ndarray) -> np.ndarray:
             x = x.reshape(-1, 1)
@@ -67,7 +76,12 @@ class UnscentedKalmanFilterObserver(Observer):
             h=measure_f,
         )
 
-    def observe(self, time: float, value: np.ndarray) -> None:
+    def reset(self, inputs: Inputs) -> None:
+        super().reset(inputs)
+        self._ukf.x = self.get_current_state().as_ndarray()
+        self._ukf.S = linalg.cholesky(self._sigma0)
+
+    def observe(self, time: float, value: np.ndarray) -> float:
         if value is None:
             raise ValueError("Measurement must be provided.")
 
@@ -290,6 +304,6 @@ class UkfFilter(object):
         log_det = 2 * np.sum(np.log(np.diag(self.S)))
         n = len(y)
         log_likelihood = -0.5 * (
-            n * log_det + residual.T @ linalg.cho_solve((self.S, True), residual)
+            n * log_det + residual.T @ linalg.cho_solve((S_y, True), residual)
         )
-        return log_likelihood
+        return np.sum(log_likelihood)

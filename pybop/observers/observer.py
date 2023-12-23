@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 import numpy as np
 from pybop.models.base_model import BaseModel, Inputs, TimeSeriesState
 
@@ -16,22 +16,28 @@ class Observer(object):
       The model to observe.
     inputs: Dict[str, float]
       The inputs to the model.
-    sigmal: str
+    sigmal: List[str]
       The signal to observe.
     """
 
     Covariance = np.ndarray
 
-    def __init__(self, model: BaseModel, inputs: Dict[str, float], signal: str) -> None:
+    def __init__(self, model: BaseModel, inputs: Inputs, signal: List[str]) -> None:
         if model._built_model is None:
             raise ValueError("Only built models can bse used in Observers")
-        model.signal = signal
+        if not isinstance(inputs, dict):
+            raise ValueError("Inputs must be of type Dict[str, float]")
+        if not isinstance(signal, list):
+            raise ValueError("Signal must be of type List[str]")
+
+        if model.signal is None:
+            model.signal = signal
         self._state = model.reinit(inputs)
         self._model = model
         self._signal = signal
 
-    def reset(self) -> None:
-        self._state = self._model.reinit()
+    def reset(self, inputs: Inputs) -> None:
+        self._state = self._model.reinit(inputs)
 
     def observe(self, time: float, value: Optional[np.ndarray] = None) -> float:
         """
@@ -71,9 +77,12 @@ class Observer(object):
         if len(values) != len(times):
             raise ValueError("values and times must have the same length.")
         log_likelihood = 0.0
-        self.reset()
+        self.reset(inputs)
         for t, v in zip(times, values):
-            log_likelihood += self.observe(t, v)
+            try:
+                log_likelihood += self.observe(t, v)
+            except ValueError:
+                return np.float64(-np.inf)
         return log_likelihood
 
     def get_current_state(self) -> TimeSeriesState:
@@ -89,8 +98,8 @@ class Observer(object):
         return self.get_measure(self._state)
 
     def get_measure(self, x: TimeSeriesState) -> np.ndarray:
-        m = x.sol[self._signal].data[-1]
-        return np.array([[m]])
+        measures = [x.sol[s].data[-1] for s in self._signal]
+        return np.array([[m] for m in measures])
 
     def get_current_time(self) -> float:
         """
