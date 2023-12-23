@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import List, Optional
 import numpy as np
 from pybop.models.base_model import BaseModel, Inputs, TimeSeriesState
 
