@@ -211,9 +211,19 @@ def quick_plot(params, cost, title="Scatter Plot", width=1024, height=576):
     """
 
     # Extract the time data and evaluate the model's output and target values
-    time_data = cost.problem._dataset["Time [s]"].data
+    time_data = cost.problem.time_data()
     model_output = cost.problem.evaluate(params)
     target_output = cost.problem.target()
+
+    # Ensure outputs have the same length
+    len_diff = len(target_output) - len(model_output)
+    if len_diff > 0:
+        model_output = np.concatenate(
+            (model_output, np.full([len_diff, np.shape(model_output)[1]], np.nan)),
+            axis=0,
+        )
+    elif len_diff < 0:
+        model_output = model_output[0:len_diff]
 
     for i in range(0, cost.problem.n_outputs):
         # Create the figure using the StandardPlot class

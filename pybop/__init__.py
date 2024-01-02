@@ -41,6 +41,11 @@ from .models import lithium_ion
 from .models import empirical
 
 #
+# Experiment class
+#
+from ._experiment import Experiment
+
+#
 # Main optimisation class
 #
 from ._optimisation import Optimisation

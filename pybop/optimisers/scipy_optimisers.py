@@ -1,5 +1,6 @@
 from scipy.optimize import minimize, differential_evolution
 from .base_optimiser import BaseOptimiser
+import numpy as np
 
 
 class SciPyMinimize(BaseOptimiser):
@@ -53,6 +54,19 @@ class SciPyMinimize(BaseOptimiser):
         def callback(x):
             self.log.append([x])
 
+        # Scale the cost function and eliminate nan values
+        self.cost0 = cost_function(x0)
+        self.inf_count = 0
+        if np.isinf(self.cost0):
+            raise Exception("The initial parameter values return an infinite cost.")
+
+        def cost_wrapper(x):
+            cost = cost_function(x) / self.cost0
+            if np.isinf(cost):
+                self.inf_count += 1
+                cost = 1 + 0.9**self.inf_count  # for fake finite gradient
+            return cost
+
         # Reformat bounds
         if bounds is not None:
             bounds = (
@@ -66,7 +80,7 @@ class SciPyMinimize(BaseOptimiser):
             self.options.pop("maxiter", None)
 
         output = minimize(
-            cost_function,
+            cost_wrapper,
             x0,
             method=self.method,
             bounds=bounds,
@@ -76,7 +90,7 @@ class SciPyMinimize(BaseOptimiser):
 
         # Get performance statistics
         x = output.x
-        final_cost = output.fun
+        final_cost = cost_function(x)
 
         return x, final_cost
 
@@ -126,7 +140,7 @@ class SciPyDifferentialEvolution(BaseOptimiser):
         self.bounds = bounds
         self.strategy = strategy
         self._max_iterations = maxiter
-        self.popsize = popsize
+        self._population_size = popsize
 
     def _runoptimise(self, cost_function, x0=None, bounds=None):
         """
@@ -172,7 +186,7 @@ class SciPyDifferentialEvolution(BaseOptimiser):
             bounds,
             strategy=self.strategy,
             maxiter=self._max_iterations,
-            popsize=self.popsize,
+            popsize=self._population_size,
             callback=callback,
         )
 
@@ -181,6 +195,19 @@ class SciPyDifferentialEvolution(BaseOptimiser):
         final_cost = output.fun
 
         return x, final_cost
+
+    def set_population_size(self, population_size=None):
+        """
+        Sets a population size to use in this optimisation.
+        Credit: PINTS
+
+        """
+        # Check population size or set using heuristic
+        if population_size is not None:
+            population_size = int(population_size)
+            if population_size < 1:
+                raise ValueError("Population size must be at least 1.")
+            self._population_size = population_size
 
     def needs_sensitivities(self):
         """
