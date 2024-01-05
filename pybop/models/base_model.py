@@ -1,5 +1,31 @@
+from dataclasses import dataclass
+from typing import Any, Dict, Optional
 import pybamm
 import numpy as np
+import casadi
+
+Inputs = Dict[str, float]
+
+
+@dataclass
+class TimeSeriesState(object):
+    """
+    The current state of a time series model that is a pybamm model
+    """
+
+    sol: pybamm.Solution
+    inputs: Inputs
+    t: float = 0.0
+
+    def as_ndarray(self) -> np.ndarray:
+        ncol = self.sol.y.shape[1]
+        if ncol > 1:
+            y = self.sol.y[:, -1]
+        else:
+            y = self.sol.y
+        if isinstance(y, casadi.DM):
+            y = y.full()
+        return y
 
 
 class BaseModel:
@@ -69,13 +95,14 @@ class BaseModel:
             self._built_model = self.pybamm_model
         else:
             self.set_params()
+
             self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
             self._disc = pybamm.Discretisation(self.mesh, self.spatial_methods)
             self._built_model = self._disc.process_model(
                 self._model_with_set_params, inplace=False, check_model=check_model
             )
 
-            # Clear solver
+            # Clear solver and setup model
             self._solver._model_set_up = {}
 
     def set_init_soc(self, init_soc):
@@ -131,10 +158,60 @@ class BaseModel:
         self._model_with_set_params = self._parameter_set.process_model(
             self._unprocessed_model, inplace=False
         )
-        self._parameter_set.process_geometry(self.geometry)
+        if self.geometry is not None:
+            self._parameter_set.process_geometry(self.geometry)
         self.pybamm_model = self._model_with_set_params
 
-    def simulate(self, inputs, t_eval):
+    def reinit(
+        self, inputs: Inputs, t: float = 0.0, x: Optional[np.ndarray] = None
+    ) -> TimeSeriesState:
+        """
+        Initialises the solver with the given inputs and returns the initial state of the problem
+        """
+        if self._built_model is None:
+            raise ValueError("Model must be built before calling reinit")
+
+        if not isinstance(inputs, dict):
+            inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+
+        self._solver.set_up(self._built_model, inputs=inputs)
+
+        if x is None:
+            x = self._built_model.y0
+
+        sol = pybamm.Solution([np.array([t])], [x], self._built_model, inputs)
+
+        return TimeSeriesState(sol=sol, inputs=inputs, t=t)
+
+    def get_state(self, inputs: Inputs, t: float, x: np.ndarray) -> TimeSeriesState:
+        """
+        Returns the given state for the problem (inputs are assumed constant since last reinit)
+        """
+        if self._built_model is None:
+            raise ValueError("Model must be built before calling reinit")
+
+        sol = pybamm.Solution([np.array([t])], [x], self._built_model, inputs)
+
+        return TimeSeriesState(sol=sol, inputs=inputs, t=t)
+
+    def step(self, state: TimeSeriesState, time: np.ndarray) -> TimeSeriesState:
+        """
+        step forward in time from the given state until the given time.
+
+        Parameters
+        ----------
+        state : TimeSeriesState
+            The current state of the model
+        time : np.ndarray
+            The time to predict the system to
+        """
+        dt = time - state.t
+        new_sol = self.solver.step(
+            state.sol, self.built_model, dt, npts=2, inputs=state.inputs, save=False
+        )
+        return TimeSeriesState(sol=new_sol, inputs=state.inputs, t=time)
+
+    def simulate(self, inputs, t_eval) -> np.ndarray[np.float64]:
         """
         Execute the forward model simulation and return the result.
 
@@ -305,16 +382,18 @@ class BaseModel:
         return self._geometry
 
     @geometry.setter
-    def geometry(self, geometry):
-        self._geometry = geometry.copy()
+    def geometry(self, geometry: Optional[pybamm.Geometry]):
+        self._geometry = geometry.copy() if geometry is not None else None
 
     @property
     def submesh_types(self):
         return self._submesh_types
 
     @submesh_types.setter
-    def submesh_types(self, submesh_types):
-        self._submesh_types = submesh_types.copy()
+    def submesh_types(self, submesh_types: Optional[Dict[str, Any]]):
+        self._submesh_types = (
+            submesh_types.copy() if submesh_types is not None else None
+        )
 
     @property
     def mesh(self):
@@ -325,16 +404,18 @@ class BaseModel:
         return self._var_pts
 
     @var_pts.setter
-    def var_pts(self, var_pts):
-        self._var_pts = var_pts.copy()
+    def var_pts(self, var_pts: Optional[Dict[str, int]]):
+        self._var_pts = var_pts.copy() if var_pts is not None else None
 
     @property
     def spatial_methods(self):
         return self._spatial_methods
 
     @spatial_methods.setter
-    def spatial_methods(self, spatial_methods):
-        self._spatial_methods = spatial_methods.copy()
+    def spatial_methods(self, spatial_methods: Optional[Dict[str, Any]]):
+        self._spatial_methods = (
+            spatial_methods.copy() if spatial_methods is not None else None
+        )
 
     @property
     def solver(self):
@@ -342,4 +423,4 @@ class BaseModel:
 
     @solver.setter
     def solver(self, solver):
-        self._solver = solver.copy()
+        self._solver = solver.copy() if solver is not None else None

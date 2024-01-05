@@ -1,4 +1,7 @@
+from typing import Optional
 import numpy as np
+
+from pybop.observers.observer import Observer
 
 
 class BaseProblem:
@@ -79,7 +82,8 @@ class BaseProblem:
 
     def evaluateS1(self, x):
         """
-        Evaluate the model with the given parameters and return the signal and its derivatives.
+        Evaluate the model with the given parameters and return the signal and
+        its derivatives.
 
         Parameters
         ----------
@@ -143,6 +147,7 @@ class FittingProblem(BaseProblem):
         signal=["Voltage [V]"],
         init_soc=None,
         x0=None,
+        observer: Optional[Observer] = None,
     ):
         super().__init__(parameters, model, check_model, signal, init_soc, x0)
         self._dataset = dataset.data
@@ -192,7 +197,6 @@ class FittingProblem(BaseProblem):
         x : np.ndarray
             Parameter values to evaluate the model at.
         """
-
         y = np.asarray(self._model.simulate(inputs=x, t_eval=self._time_data))
 
         return y
