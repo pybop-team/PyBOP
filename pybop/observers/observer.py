@@ -24,7 +24,7 @@ class Observer(object):
 
     def __init__(self, model: BaseModel, inputs: Inputs, signal: List[str]) -> None:
         if model._built_model is None:
-            raise ValueError("Only built models can bse used in Observers")
+            raise ValueError("Only built models can be used in Observers")
         if not isinstance(inputs, dict):
             raise ValueError("Inputs must be of type Dict[str, float]")
         if not isinstance(signal, list):
