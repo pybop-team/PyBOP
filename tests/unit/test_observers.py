@@ -23,7 +23,7 @@ class TestObserver:
     @pytest.mark.unit
     def test_observer(self, model):
         inputs = {"k": 0.1, "y0": 1.0}
-        signal = "2y"
+        signal = ["2y"]
         n = model.nstate
         observer = pybop.Observer(model, inputs, signal)
         t_eval = np.linspace(0, 1, 100)
