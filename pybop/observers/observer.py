@@ -51,7 +51,6 @@ class Observer(object):
         ----------
         time : float
           The time of the new observation.
-
         value : np.ndarray (optional)
           The new observation.
         """
