@@ -5,7 +5,7 @@ from pybop.models.base_model import BaseModel
 
 class ExponentialDecay(BaseModel):
     """
-    exponential decay model with two parameters y0 and k
+    Exponential decay model with two parameters y0 and k
 
     dy/dt = -ky
     y(0) = y0
