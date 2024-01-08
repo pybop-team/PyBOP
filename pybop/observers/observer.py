@@ -16,7 +16,7 @@ class Observer(object):
       The model to observe.
     inputs: Dict[str, float]
       The inputs to the model.
-    sigmal: List[str]
+    signal: List[str]
       The signal to observe.
     """
 
