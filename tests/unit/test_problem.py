@@ -1,6 +1,5 @@
 import pybop
 import numpy as np
-import pybamm
 import pytest
 
 
@@ -30,7 +29,7 @@ class TestProblem:
 
     @pytest.fixture
     def experiment(self):
-        return pybamm.Experiment(
+        return pybop.Experiment(
             [
                 (
                     "Discharge at 1C for 5 minutes (1 second period)",
@@ -145,3 +144,4 @@ class TestProblem:
 
         # Test model.predict
         model.predict(inputs=[0.5, 0.5], experiment=experiment)
+        model.predict(inputs=[1.1, 0.5], experiment=experiment)

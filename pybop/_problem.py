@@ -259,6 +259,12 @@ class DesignProblem(BaseProblem):
                 init_soc=self.init_soc,
             )
 
+        # Add an example dataset for plotting comparison
+        sol = self.evaluate(self.x0)
+        self._time_data = sol[:, -1]
+        self._target = sol[:, 0:-1]
+        self._dataset = None
+
     def evaluate(self, x):
         """
         Evaluate the model with the given parameters and return the signal.
@@ -269,23 +275,16 @@ class DesignProblem(BaseProblem):
             Parameter values to evaluate the model at.
         """
 
-        y = np.asarray(self._model.simulate(inputs=x, t_eval=self._time_data))
-
-        return y
-
-    def evaluateS1(self, x):
-        """
-        Evaluate the model with the given parameters and return the signal and its derivatives.
-
-        Parameters
-        ----------
-        x : np.ndarray
-            Parameter values to evaluate the model at.
-        """
-
-        y, dy = self._model.simulateS1(
+        sol = self._model.predict(
             inputs=x,
-            t_eval=self._time_data,
+            experiment=self.experiment,
+            init_soc=self.init_soc,
         )
 
-        return (np.asarray(y), np.asarray(dy))
+        if sol == [np.inf]:
+            return sol
+
+        else:
+            predictions = [sol[signal].data for signal in self.signal + ["Time [s]"]]
+
+            return np.vstack(predictions).T
