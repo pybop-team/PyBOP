@@ -24,7 +24,7 @@ class TestUKF:
     @pytest.fixture
     def dataset(self, model: pybop.BaseModel):
         inputs = {"k": 0.1, "y0": 1.0}
-        observer = pybop.Observer(model, inputs, "2y")
+        observer = pybop.Observer(model, inputs, ["2y"])
         measurements = []
         t_eval = np.linspace(0, 20, 10)
         for t in t_eval:
@@ -36,7 +36,7 @@ class TestUKF:
     @pytest.fixture
     def observer(self, model: pybop.BaseModel):
         inputs = {"k": 0.1, "y0": 1.0}
-        signal = "2y"
+        signal = ["2y"]
         n = model.nstate
         sigma0 = np.diag([1e-4] * n)
         process = np.diag([1e-4] * n)
