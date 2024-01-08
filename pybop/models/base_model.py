@@ -196,7 +196,7 @@ class BaseModel:
 
     def step(self, state: TimeSeriesState, time: np.ndarray) -> TimeSeriesState:
         """
-        step forward in time from the given state until the given time.
+        Step forward in time from the given state until the given time.
 
         Parameters
         ----------
