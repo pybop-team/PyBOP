@@ -39,7 +39,7 @@ def docs(session):
     Credit: PyBaMM Team
     """
     envbindir = session.bin
-    session.install("-e", ".[all,docs]")
+    session.install("-e", ".[all]")
     session.chdir("docs")
     # Local development
     if session.interactive:
