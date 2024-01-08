@@ -3,11 +3,13 @@ import pandas as pd
 
 # Form dataset
 Measurements = pd.read_csv("examples/scripts/Chen_example.csv", comment="#").to_numpy()
-dataset = [
-    pybop.Dataset("Time [s]", Measurements[:, 0]),
-    pybop.Dataset("Current function [A]", Measurements[:, 1]),
-    pybop.Dataset("Voltage [V]", Measurements[:, 2]),
-]
+dataset = pybop.Dataset(
+    {
+        "Time [s]": Measurements[:, 0],
+        "Current function [A]": Measurements[:, 1],
+        "Voltage [V]": Measurements[:, 2],
+    }
+)
 
 # Define model
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
@@ -19,18 +21,18 @@ model = pybop.models.lithium_ion.SPM(
 parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.75, 0.05),
-        bounds=[0.6, 0.9],
+        prior=pybop.Gaussian(0.6, 0.05),
+        bounds=[0.5, 0.8],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.65, 0.05),
-        bounds=[0.5, 0.8],
+        prior=pybop.Gaussian(0.48, 0.05),
+        bounds=[0.4, 0.7],
     ),
 ]
 
 # Define the cost to optimise
-signal = "Voltage [V]"
+signal = ["Voltage [V]"]
 problem = pybop.FittingProblem(model, parameters, dataset, signal=signal, init_soc=0.98)
 cost = pybop.RootMeanSquaredError(problem)
 

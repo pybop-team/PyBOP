@@ -6,11 +6,18 @@ import pybop
 
 class ParameterSet:
     """
-    A class to manage the import and export of parameter sets for battery models.
+    Handles the import and export of parameter sets for battery models.
 
-    Attributes:
-        json_path (str): The file path to a JSON file containing parameter data.
-        params (dict): A dictionary containing parameter key-value pairs.
+    This class provides methods to load parameters from a JSON file and to export them
+    back to a JSON file. It also includes custom logic to handle special cases, such
+    as parameter values that require specific initialization.
+
+    Parameters
+    ----------
+    json_path : str, optional
+        Path to a JSON file containing parameter data. If provided, parameters will be imported from this file during initialization.
+    params_dict : dict, optional
+        A dictionary of parameters to initialize the ParameterSet with. If not provided, an empty dictionary is used.
     """
 
     def __init__(self, json_path=None, params_dict=None):
@@ -20,7 +27,26 @@ class ParameterSet:
 
     def import_parameters(self, json_path=None):
         """
-        Import parameters from a JSON file.
+        Imports parameters from a JSON file specified by the `json_path` attribute.
+
+        If a `json_path` is provided at initialization or as an argument, that JSON file
+        is loaded and the parameters are stored in the `params` attribute. Special cases
+        are handled appropriately.
+
+        Parameters
+        ----------
+        json_path : str, optional
+            Path to the JSON file from which to import parameters. If provided, it overrides the instance's `json_path`.
+
+        Returns
+        -------
+        dict
+            The dictionary containing the imported parameters.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the specified JSON file cannot be found.
         """
 
         # Read JSON file
@@ -34,7 +60,10 @@ class ParameterSet:
 
     def _handle_special_cases(self):
         """
-        Handles special cases for parameter values that require custom logic.
+        Processes special cases for parameter values that require custom handling.
+
+        For example, if the open-circuit voltage is specified as 'default', it will
+        fetch the default value from the PyBaMM empirical Thevenin model.
         """
         if (
             "Open-circuit voltage [V]" in self.params
@@ -48,7 +77,23 @@ class ParameterSet:
 
     def export_parameters(self, output_json_path, fit_params=None):
         """
-        Export parameters to a JSON file.
+        Exports parameters to a JSON file specified by `output_json_path`.
+
+        The current state of the `params` attribute is written to the file. If `fit_params`
+        is provided, these parameters are updated before export. Non-serializable values
+        are handled and noted in the output JSON.
+
+        Parameters
+        ----------
+        output_json_path : str
+            The file path where the JSON output will be saved.
+        fit_params : list of fitted parameter objects, optional
+            Parameters that have been fitted and need to be included in the export.
+
+        Raises
+        ------
+        ValueError
+            If there are no parameters to export.
         """
         if not self.params:
             raise ValueError("No parameters to export. Please import parameters first.")
@@ -74,7 +119,17 @@ class ParameterSet:
 
     def is_json_serializable(self, value):
         """
-        Check if the value is serializable to JSON.
+        Determines if the given `value` can be serialized to JSON format.
+
+        Parameters
+        ----------
+        value : any
+            The value to check for JSON serializability.
+
+        Returns
+        -------
+        bool
+            True if the value is JSON serializable, False otherwise.
         """
         try:
             json.dumps(value)
@@ -85,6 +140,16 @@ class ParameterSet:
     @classmethod
     def pybamm(cls, name):
         """
-        Create a PyBaMM parameter set.
+        Retrieves a PyBaMM parameter set by name.
+
+        Parameters
+        ----------
+        name : str
+            The name of the PyBaMM parameter set to retrieve.
+
+        Returns
+        -------
+        pybamm.ParameterValues
+            A PyBaMM parameter set corresponding to the provided name.
         """
         return pybamm.ParameterValues(name).copy()

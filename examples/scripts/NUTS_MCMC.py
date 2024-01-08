@@ -31,11 +31,13 @@ print(
 )
 
 # Dataset definition
-dataset = [
-    pybop.Dataset("Time [s]", t_eval),
-    pybop.Dataset("Current function [A]", values["Current [A]"].data),
-    pybop.Dataset("Voltage [V]", corrupt_values),
-]
+dataset = pybop.Dataset(
+    {
+        "Time [s]": t_eval,
+        "Current function [A]": values["Current [A]"].data,
+        "Voltage [V]": corrupt_values,
+    }
+)
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
@@ -43,7 +45,7 @@ problem = pybop.FittingProblem(model, parameters, dataset)
 # Create the sampler and run
 sampler = pybop.BayesianSampler(problem, "NUTS", transform_space=True)
 samples = sampler.run(
-    num_samples=250, warmup_steps=250, num_chains=1
+    num_samples=5, warmup_steps=5, num_chains=1
 )  # Change to 500, 500, 4 for real run
 
 # Plotting

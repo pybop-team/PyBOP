@@ -1,6 +1,5 @@
 import pybop
 import numpy as np
-import pybamm
 import pytest
 
 
@@ -30,7 +29,7 @@ class TestProblem:
 
     @pytest.fixture
     def experiment(self):
-        return pybamm.Experiment(
+        return pybop.Experiment(
             [
                 (
                     "Discharge at 1C for 5 minutes (1 second period)",
@@ -53,11 +52,13 @@ class TestProblem:
             }
         )
         solution = model.predict(experiment=experiment)
-        return [
-            pybop.Dataset("Time [s]", solution["Time [s]"].data),
-            pybop.Dataset("Current function [A]", solution["Current [A]"].data),
-            pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
-        ]
+        return pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Voltage [V]": solution["Terminal voltage [V]"].data,
+            }
+        )
 
     @pytest.fixture
     def signal(self):
@@ -79,6 +80,9 @@ class TestProblem:
         with pytest.raises(NotImplementedError):
             problem.evaluateS1([0.5, 0.5])
 
+        with pytest.raises(ValueError):
+            pybop._problem.BaseProblem(parameters, model=model, signal=[0.5, 0.5])
+
     @pytest.mark.unit
     def test_fitting_problem(self, parameters, dataset, model, signal):
         # Test incorrect number of initial parameter values
@@ -96,6 +100,34 @@ class TestProblem:
         # Test model.simulate
         model.simulate(inputs=[0.5, 0.5], t_eval=np.linspace(0, 10, 100))
 
+        # Test problem construction errors
+        for bad_dataset in [
+            pybop.Dataset({"Time [s]": np.array([0])}),
+            pybop.Dataset(
+                {
+                    "Time [s]": np.array([-1]),
+                    "Current function [A]": np.array([0]),
+                    "Voltage [V]": np.array([0]),
+                }
+            ),
+            pybop.Dataset(
+                {
+                    "Time [s]": np.array([1, 0]),
+                    "Current function [A]": np.array([0, 0]),
+                    "Voltage [V]": np.array([0, 0]),
+                }
+            ),
+            pybop.Dataset(
+                {
+                    "Time [s]": np.array([0]),
+                    "Current function [A]": np.array([0, 0]),
+                    "Voltage [V]": np.array([0, 0]),
+                }
+            ),
+        ]:
+            with pytest.raises(ValueError):
+                pybop.FittingProblem(model, parameters, bad_dataset, signal=signal)
+
     @pytest.mark.unit
     def test_design_problem(self, parameters, experiment, model):
         # Test incorrect number of initial parameter values
@@ -112,3 +144,4 @@ class TestProblem:
 
         # Test model.predict
         model.predict(inputs=[0.5, 0.5], experiment=experiment)
+        model.predict(inputs=[1.1, 0.5], experiment=experiment)

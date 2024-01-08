@@ -25,14 +25,16 @@ class TestCosts:
         # Form dataset
         x0 = np.array([0.52])
         solution = self.getdata(model, x0)
-        dataset = [
-            pybop.Dataset("Time [s]", solution["Time [s]"].data),
-            pybop.Dataset("Current function [A]", solution["Current [A]"].data),
-            pybop.Dataset("Voltage [V]", solution["Terminal voltage [V]"].data),
-        ]
+        dataset = pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Voltage [V]": solution["Terminal voltage [V]"].data,
+            }
+        )
 
         # Construct Problem
-        signal = "Voltage [V]"
+        signal = ["Voltage [V]"]
         model.parameter_set.update({"Lower voltage cut-off [V]": cut_off})
         problem = pybop.FittingProblem(model, parameters, dataset, signal=signal, x0=x0)
 
@@ -40,7 +42,8 @@ class TestCosts:
         base_cost = pybop.BaseCost(problem)
         assert base_cost.problem == problem
         with pytest.raises(NotImplementedError):
-            base_cost([0.5])
+            base_cost._evaluate([0.5])
+            base_cost._evaluateS1([0.5])
 
         # Root Mean Squared Error
         rmse_cost = pybop.RootMeanSquaredError(problem)
@@ -53,13 +56,15 @@ class TestCosts:
         # Test type of returned value
         assert type(rmse_cost([0.5])) == np.float64
         assert rmse_cost([0.5]) >= 0
+        assert rmse_cost([1.1]) == np.inf
 
         assert type(sums_cost([0.5])) == np.float64
         assert sums_cost([0.5]) >= 0
         e, de = sums_cost.evaluateS1([0.5])
-
         assert type(e) == np.float64
         assert type(de) == np.ndarray
+        e, de = sums_cost.evaluateS1([1.1])
+        assert e == np.inf
 
         # Test option setting
         sums_cost.set_fail_gradient(1)

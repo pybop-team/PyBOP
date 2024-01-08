@@ -37,7 +37,17 @@ setup(
         "bayesian": [
             "pyro-ppl>=1.7"
         ],  # Here until it becomes promoted to install_requires
-        "all": ["pybop[plot,bayesian]"],
+        "all": ["pybop[plot]"],
+        "docs": [
+            "sphinx>=6",
+            "pydata-sphinx-theme",
+            "sphinx-autobuild",
+            "sphinx-autoapi",
+            "sphinx_copybutton",
+            "sphinx_favicon",
+            "sphinx_design",
+            "myst-parser",
+        ],
     },
     # https://pypi.org/classifiers/
     classifiers=[],

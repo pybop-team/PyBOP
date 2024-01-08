@@ -9,13 +9,13 @@ model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.7, 0.05),
-        bounds=[0.6, 0.9],
+        prior=pybop.Gaussian(0.6, 0.05),
+        bounds=[0.5, 0.8],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.58, 0.05),
-        bounds=[0.5, 0.8],
+        prior=pybop.Gaussian(0.48, 0.05),
+        bounds=[0.4, 0.7],
     ),
 ]
 
@@ -24,11 +24,13 @@ t_eval = np.arange(0, 900, 2)
 values = model.predict(t_eval=t_eval)
 corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
 
-dataset = [
-    pybop.Dataset("Time [s]", t_eval),
-    pybop.Dataset("Current function [A]", values["Current [A]"].data),
-    pybop.Dataset("Voltage [V]", corrupt_values),
-]
+dataset = pybop.Dataset(
+    {
+        "Time [s]": t_eval,
+        "Current function [A]": values["Current [A]"].data,
+        "Voltage [V]": corrupt_values,
+    }
+)
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)

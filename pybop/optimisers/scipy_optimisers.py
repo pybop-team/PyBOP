@@ -1,35 +1,51 @@
 from scipy.optimize import minimize, differential_evolution
 from .base_optimiser import BaseOptimiser
+import numpy as np
 
 
 class SciPyMinimize(BaseOptimiser):
     """
-    Wrapper class for the SciPy optimisation class. Extends the BaseOptimiser class.
+    Adapts SciPy's minimize function for use as an optimization strategy.
+
+    This class provides an interface to various scalar minimization algorithms implemented in SciPy, allowing fine-tuning of the optimization process through method selection and option configuration.
+
+    Parameters
+    ----------
+    method : str, optional
+        The type of solver to use. If not specified, defaults to 'COBYLA'.
+    bounds : sequence or ``Bounds``, optional
+        Bounds for variables as supported by the selected method.
+    maxiter : int, optional
+        Maximum number of iterations to perform.
     """
 
     def __init__(self, method=None, bounds=None, maxiter=None):
         super().__init__()
         self.method = method
         self.bounds = bounds
-        self.maxiter = maxiter
-        if self.maxiter is not None:
-            self.options = {"maxiter": self.maxiter}
-        else:
-            self.options = {}
+        self.options = {}
+        self._max_iterations = maxiter
 
         if self.method is None:
             self.method = "COBYLA"  # "L-BFGS-B"
 
     def _runoptimise(self, cost_function, x0, bounds):
         """
-        Run the SciPy optimisation method.
+        Executes the optimization process using SciPy's minimize function.
 
-        Inputs
+        Parameters
         ----------
-        cost_function: function for optimising
-        method: optimisation algorithm
-        x0: initialisation array
-        bounds: bounds array
+        cost_function : callable
+            The objective function to minimize.
+        x0 : array_like
+            Initial guess for the parameters.
+        bounds : sequence or `Bounds`
+            Bounds for the variables.
+
+        Returns
+        -------
+        tuple
+            A tuple (x, final_cost) containing the optimized parameters and the value of `cost_function` at the optimum.
         """
 
         # Add callback storing history of parameter values
@@ -38,14 +54,33 @@ class SciPyMinimize(BaseOptimiser):
         def callback(x):
             self.log.append([x])
 
+        # Scale the cost function and eliminate nan values
+        self.cost0 = cost_function(x0)
+        self.inf_count = 0
+        if np.isinf(self.cost0):
+            raise Exception("The initial parameter values return an infinite cost.")
+
+        def cost_wrapper(x):
+            cost = cost_function(x) / self.cost0
+            if np.isinf(cost):
+                self.inf_count += 1
+                cost = 1 + 0.9**self.inf_count  # for fake finite gradient
+            return cost
+
         # Reformat bounds
         if bounds is not None:
             bounds = (
                 (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
             )
 
+        # Set max iterations
+        if self._max_iterations is not None:
+            self.options = {"maxiter": self._max_iterations}
+        else:
+            self.options.pop("maxiter", None)
+
         output = minimize(
-            cost_function,
+            cost_wrapper,
             x0,
             method=self.method,
             bounds=bounds,
@@ -55,49 +90,75 @@ class SciPyMinimize(BaseOptimiser):
 
         # Get performance statistics
         x = output.x
-        final_cost = output.fun
+        final_cost = cost_function(x)
 
         return x, final_cost
 
     def needs_sensitivities(self):
         """
-        Returns True if the optimiser needs sensitivities.
+        Determines if the optimization algorithm requires gradient information.
+
+        Returns
+        -------
+        bool
+            False, indicating that gradient information is not required.
         """
         return False
 
     def name(self):
         """
-        Returns the name of the optimiser.
+        Provides the name of the optimization strategy.
+
+        Returns
+        -------
+        str
+            The name 'SciPyMinimize'.
         """
         return "SciPyMinimize"
 
 
 class SciPyDifferentialEvolution(BaseOptimiser):
     """
-    Wrapper class for the SciPy differential_evolution optimisation method. Extends the BaseOptimiser class.
+    Adapts SciPy's differential_evolution function for global optimization.
+
+    This class provides a global optimization strategy based on differential evolution, useful for problems involving continuous parameters and potentially multiple local minima.
+
+    Parameters
+    ----------
+    bounds : sequence or ``Bounds``
+        Bounds for variables. Must be provided as it is essential for differential evolution.
+    strategy : str, optional
+        The differential evolution strategy to use. Defaults to 'best1bin'.
+    maxiter : int, optional
+        Maximum number of iterations to perform. Defaults to 1000.
+    popsize : int, optional
+        The number of individuals in the population. Defaults to 15.
     """
 
     def __init__(self, bounds=None, strategy="best1bin", maxiter=1000, popsize=15):
         super().__init__()
         self.bounds = bounds
         self.strategy = strategy
-        self.maxiter = maxiter
-        self.popsize = popsize
+        self._max_iterations = maxiter
+        self._population_size = popsize
 
     def _runoptimise(self, cost_function, x0=None, bounds=None):
         """
-        Run the SciPy differential_evolution optimisation method.
+        Executes the optimization process using SciPy's differential_evolution function.
 
-        Inputs
+        Parameters
         ----------
-        cost_function : function
-            The objective function to be minimized.
-        x0 : array_like
-            Initial guess. Only used to determine the dimensionality of the problem.
-        bounds : sequence or `Bounds`
-            Bounds for variables. There are two ways to specify the bounds:
-                1. Instance of `Bounds` class.
-                2. Sequence of (min, max) pairs for each element in x, defining the finite lower and upper bounds for the optimizing argument of `cost_function`.
+        cost_function : callable
+            The objective function to minimize.
+        x0 : array_like, optional
+            Ignored parameter, provided for API consistency.
+        bounds : sequence or ``Bounds``
+            Bounds for the variables, required for differential evolution.
+
+        Returns
+        -------
+        tuple
+            A tuple (x, final_cost) containing the optimized parameters and the value of ``cost_function`` at the optimum.
         """
 
         if bounds is None:
@@ -124,8 +185,8 @@ class SciPyDifferentialEvolution(BaseOptimiser):
             cost_function,
             bounds,
             strategy=self.strategy,
-            maxiter=self.maxiter,
-            popsize=self.popsize,
+            maxiter=self._max_iterations,
+            popsize=self._population_size,
             callback=callback,
         )
 
@@ -135,14 +196,37 @@ class SciPyDifferentialEvolution(BaseOptimiser):
 
         return x, final_cost
 
+    def set_population_size(self, population_size=None):
+        """
+        Sets a population size to use in this optimisation.
+        Credit: PINTS
+
+        """
+        # Check population size or set using heuristic
+        if population_size is not None:
+            population_size = int(population_size)
+            if population_size < 1:
+                raise ValueError("Population size must be at least 1.")
+            self._population_size = population_size
+
     def needs_sensitivities(self):
         """
-        Returns False as differential_evolution does not need sensitivities.
+        Determines if the optimization algorithm requires gradient information.
+
+        Returns
+        -------
+        bool
+            False, indicating that gradient information is not required for differential evolution.
         """
         return False
 
     def name(self):
         """
-        Returns the name of the optimiser.
+        Provides the name of the optimization strategy.
+
+        Returns
+        -------
+        str
+            The name 'SciPyDifferentialEvolution'.
         """
         return "SciPyDifferentialEvolution"

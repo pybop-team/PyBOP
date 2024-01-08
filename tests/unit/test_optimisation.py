@@ -1,7 +1,7 @@
 import pybop
 import numpy as np
 import pytest
-from pybop.costs.standalone import StandaloneCost
+from examples.costs.standalone import StandaloneCost
 
 
 class TestOptimisation:
@@ -11,19 +11,21 @@ class TestOptimisation:
 
     @pytest.fixture
     def dataset(self):
-        return [
-            pybop.Dataset("Time [s]", np.linspace(0, 360, 10)),
-            pybop.Dataset("Current function [A]", np.zeros(10)),
-            pybop.Dataset("Terminal voltage [V]", np.ones(10)),
-        ]
+        return pybop.Dataset(
+            {
+                "Time [s]": np.linspace(0, 360, 10),
+                "Current function [A]": np.zeros(10),
+                "Terminal voltage [V]": np.ones(10),
+            }
+        )
 
     @pytest.fixture
     def parameters(self):
         return [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.75, 0.2),
-                bounds=[0.73, 0.77],
+                prior=pybop.Gaussian(0.6, 0.2),
+                bounds=[0.58, 0.62],
             )
         ]
 
@@ -34,7 +36,7 @@ class TestOptimisation:
             model,
             parameters,
             dataset,
-            signal="Terminal voltage [V]",
+            signal=["Terminal voltage [V]"],
         )
 
     @pytest.fixture
@@ -113,7 +115,7 @@ class TestOptimisation:
         for i in range(50):
             opt = pybop.Optimisation(cost=cost, optimiser=pybop.NLoptOptimize)
 
-            assert opt.x0 <= 0.77 and opt.x0 >= 0.73
+            assert opt.x0 <= 0.62 and opt.x0 >= 0.58
 
     @pytest.mark.unit
     def test_halting(self, cost):

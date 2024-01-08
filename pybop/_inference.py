@@ -20,6 +20,7 @@ class BayesianSampler:
 
     def __init__(self, problem, kernel, transform_space=False):
         self.problem = problem
+        self.signal = problem.signal
         self.posterior = None
         self.parameter_priors = {
             param.name: (param.prior, param.bounds) for param in problem.parameters
@@ -39,8 +40,9 @@ class BayesianSampler:
         predicted_values = self.problem.evaluate(x=self.input_params.detach().numpy())
 
         # Convert your predicted and observed data to PyTorch tensors
+        # breakpoint()
         voltage_obs = torch.tensor(
-            self.problem._dataset[self.problem.signal].data, dtype=torch.float32
+            self.problem._dataset[self.signal[0]].data, dtype=torch.float32
         )
         voltage_pred = torch.tensor(predicted_values, dtype=torch.float32)
         # sigma_tensor = torch.tensor(sigma, dtype=torch.float32)
