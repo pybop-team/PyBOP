@@ -37,7 +37,7 @@ setup(
         "bayesian": [
             "pyro-ppl>=1.7"
         ],  # Here until it becomes promoted to install_requires
-        "all": ["pybop[plot]"],
+        "all": ["pybop[plot,bayesian]"],
         "docs": [
             "sphinx>=6",
             "pydata-sphinx-theme",
