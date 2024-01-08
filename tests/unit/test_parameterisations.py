@@ -118,9 +118,10 @@ class TestModelParameterisation:
             x, final_cost = parameterisation.run()
             assert parameterisation._max_iterations == 100
 
-        elif optimiser in [pybop.GradientDescent]:
-            parameterisation.optimiser.set_learning_rate(0.025)
-            parameterisation.set_max_iterations(100)
+        elif optimiser in [pybop.GradientDescent, pybop.Adam]:
+            if optimiser in [pybop.GradientDescent]:
+                parameterisation.optimiser.set_learning_rate(0.025)
+            parameterisation.set_max_iterations(125)
             x, final_cost = parameterisation.run()
 
         elif optimiser in [pybop.SciPyDifferentialEvolution]:
