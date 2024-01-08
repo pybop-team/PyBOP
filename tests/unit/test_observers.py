@@ -8,7 +8,7 @@ from tests.unit.exponential_decay import ExponentialDecay
 
 class TestObserver:
     """
-    A class to test the unscented kalman filter.
+    A class to test the observer class.
     """
 
     @pytest.fixture(params=[1, 2])
