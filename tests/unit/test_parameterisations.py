@@ -113,10 +113,10 @@ class TestModelParameterisation:
             x, final_cost = parameterisation.run()
 
             parameterisation.set_f_guessed_tracking(False)
-            parameterisation.set_max_iterations(100)
+            parameterisation.set_max_iterations(125)
 
             x, final_cost = parameterisation.run()
-            assert parameterisation._max_iterations == 100
+            assert parameterisation._max_iterations == 125
 
         elif optimiser in [pybop.GradientDescent, pybop.Adam]:
             if optimiser in [pybop.GradientDescent]:
@@ -129,11 +129,11 @@ class TestModelParameterisation:
                 parameterisation.optimiser.set_population_size(-5)
 
             parameterisation.optimiser.set_population_size(5)
-            parameterisation.set_max_iterations(100)
+            parameterisation.set_max_iterations(125)
             x, final_cost = parameterisation.run()
 
         else:
-            parameterisation.set_max_iterations(100)
+            parameterisation.set_max_iterations(125)
             x, final_cost = parameterisation.run()
 
         # Assertions

@@ -70,7 +70,7 @@ class SPM(BaseModel):
 
         self._electrode_soh = pybamm.lithium_ion.electrode_soh
 
-    def check_params(self, inputs=None):
+    def check_params(self, inputs=None, parameter_set=None):
         """
         A compatibility check for the model parameters which can be implemented by subclasses
         if required, otherwise it returns True by default.
@@ -86,6 +86,8 @@ class SPM(BaseModel):
             A boolean which signifies whether the parameters are compatible.
 
         """
+        parameter_set = parameter_set or self._parameter_set
+
         related_parameters = dict.fromkeys(
             [
                 "Negative electrode active material volume fraction",
@@ -99,12 +101,13 @@ class SPM(BaseModel):
             if inputs is not None and key in inputs.keys():
                 related_parameters[key] = inputs[key]
             else:
-                related_parameters[key] = self._parameter_set[key]
+                related_parameters[key] = parameter_set[key]
 
         if (
             related_parameters["Negative electrode active material volume fraction"]
             + related_parameters["Negative electrode porosity"]
-        ) > 1:
+            > 1
+        ):
             return False
 
         elif (
@@ -187,7 +190,7 @@ class SPMe(BaseModel):
 
         self._electrode_soh = pybamm.lithium_ion.electrode_soh
 
-    def check_params(self, inputs=None):
+    def check_params(self, inputs=None, parameter_set=None):
         """
         A compatibility check for the model parameters which can be implemented by subclasses
         if required, otherwise it returns True by default.
@@ -203,6 +206,8 @@ class SPMe(BaseModel):
             A boolean which signifies whether the parameters are compatible.
 
         """
+        parameter_set = parameter_set or self._parameter_set
+
         related_parameters = dict.fromkeys(
             [
                 "Negative electrode active material volume fraction",
@@ -216,7 +221,7 @@ class SPMe(BaseModel):
             if inputs is not None and key in inputs.keys():
                 related_parameters[key] = inputs[key]
             else:
-                related_parameters[key] = self._parameter_set[key]
+                related_parameters[key] = parameter_set[key]
 
         if (
             related_parameters["Negative electrode active material volume fraction"]

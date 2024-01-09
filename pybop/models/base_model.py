@@ -163,7 +163,7 @@ class BaseModel:
             if not isinstance(inputs, dict):
                 inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
 
-            if self.check_params(inputs):
+            if self.check_params(inputs=inputs):
                 sol = self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
 
                 predictions = [sol[signal].data for signal in self.signal]
@@ -203,7 +203,7 @@ class BaseModel:
             if not isinstance(inputs, dict):
                 inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
 
-            if self.check_params(inputs):
+            if self.check_params(inputs=inputs):
                 sol = self.solver.solve(
                     self.built_model,
                     inputs=inputs,
@@ -277,7 +277,7 @@ class BaseModel:
                 inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
             parameter_set.update(inputs)
 
-        if self.check_params(inputs):
+        if self.check_params(inputs=inputs, parameter_set=parameter_set):
             if self._unprocessed_model is not None:
                 if experiment is None:
                     return pybamm.Simulation(
@@ -298,7 +298,7 @@ class BaseModel:
         else:
             return [np.inf]
 
-    def check_params(self, inputs=None):
+    def check_params(self, inputs=None, parameter_set=None):
         """
         A compatibility check for the model parameters which can be implemented by subclasses
         if required, otherwise it returns True by default.
