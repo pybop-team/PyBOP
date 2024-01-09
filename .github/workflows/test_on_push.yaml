@@ -48,6 +48,7 @@ jobs:
       - name: Unit tests with nox
         run: |
           nox -s unit
+          nox -s notebooks
 
   # Runs only on Ubuntu with Python 3.11
   check_coverage:
