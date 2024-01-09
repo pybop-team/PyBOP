@@ -45,7 +45,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip nox
-      - name: Unit tests with nox
+      - name: Unit and notebook tests with nox
         run: |
           nox -s unit
           nox -s notebooks
