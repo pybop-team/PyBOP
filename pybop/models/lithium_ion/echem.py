@@ -1,4 +1,5 @@
 import pybamm
+import warnings
 from ..base_model import BaseModel
 
 
@@ -105,13 +106,21 @@ class SPM(BaseModel):
             related_parameters["Negative electrode active material volume fraction"]
             + related_parameters["Negative electrode porosity"]
         ) > 1:
-            return False
+            warnings.warn(
+                "Non-physical point encountered - [Negative electrode active material volume fraction + Negative electrode porosity] > 1.0!",
+                UserWarning,
+            )
+            return True
 
         elif (
             related_parameters["Positive electrode active material volume fraction"]
             + related_parameters["Positive electrode porosity"]
         ) > 1:
-            return False
+            warnings.warn(
+                "Non-physical point encountered - [Positive electrode active material volume fraction + Positive electrode porosity] > 1.0!",
+                UserWarning,
+            )
+            return True
 
         else:
             return True
@@ -222,13 +231,21 @@ class SPMe(BaseModel):
             related_parameters["Negative electrode active material volume fraction"]
             + related_parameters["Negative electrode porosity"]
         ) > 1:
-            return False
+            warnings.warn(
+                "Non-physical point encountered - [Negative electrode active material volume fraction + Negative electrode porosity] > 1.0!",
+                UserWarning,
+            )
+            return True
 
         elif (
             related_parameters["Positive electrode active material volume fraction"]
             + related_parameters["Positive electrode porosity"]
         ) > 1:
-            return False
+            warnings.warn(
+                "Non-physical point encountered - [Positive electrode active material volume fraction + Positive electrode porosity] > 1.0!",
+                UserWarning,
+            )
+            return True
 
         else:
             return True
