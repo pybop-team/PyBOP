@@ -1,9 +1,9 @@
+from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 import pybamm
 import numpy as np
 import casadi
-from __future__ import annotations
 
 Inputs = Dict[str, float]
 
