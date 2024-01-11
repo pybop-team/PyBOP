@@ -16,7 +16,7 @@ class Observer(object):
       The model to observe.
     inputs: Dict[str, float]
       The inputs to the model.
-    sigmal: List[str]
+    signal: List[str]
       The signal to observe.
     """
 
@@ -24,7 +24,7 @@ class Observer(object):
 
     def __init__(self, model: BaseModel, inputs: Inputs, signal: List[str]) -> None:
         if model._built_model is None:
-            raise ValueError("Only built models can bse used in Observers")
+            raise ValueError("Only built models can be used in Observers")
         if not isinstance(inputs, dict):
             raise ValueError("Inputs must be of type Dict[str, float]")
         if not isinstance(signal, list):
@@ -51,7 +51,6 @@ class Observer(object):
         ----------
         time : float
           The time of the new observation.
-
         value : np.ndarray (optional)
           The new observation.
         """

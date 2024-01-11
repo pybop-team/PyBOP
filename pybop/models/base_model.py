@@ -188,7 +188,7 @@ class BaseModel:
         Returns the given state for the problem (inputs are assumed constant since last reinit)
         """
         if self._built_model is None:
-            raise ValueError("Model must be built before calling reinit")
+            raise ValueError("Model must be built before calling get_state")
 
         sol = pybamm.Solution([np.array([t])], [x], self._built_model, inputs)
 
@@ -196,7 +196,7 @@ class BaseModel:
 
     def step(self, state: TimeSeriesState, time: np.ndarray) -> TimeSeriesState:
         """
-        step forward in time from the given state until the given time.
+        Step forward in time from the given state until the given time.
 
         Parameters
         ----------
