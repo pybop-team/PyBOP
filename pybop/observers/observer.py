@@ -97,6 +97,13 @@ class Observer(object):
         """
         return self.get_measure(self._state)
 
+    def get_current_covariance(self) -> Covariance:
+        """
+        Returns the current covariance of the model.
+        """
+        n = len(self._state)
+        return np.zeros((n, n))
+
     def get_measure(self, x: TimeSeriesState) -> np.ndarray:
         measures = [x.sol[s].data[-1] for s in self._signal]
         return np.array([[m] for m in measures])

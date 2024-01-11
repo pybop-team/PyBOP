@@ -26,6 +26,8 @@ class TimeSeriesState(object):
         if isinstance(y, casadi.DM):
             y = y.full()
         return y
+    def __len__(self):
+        return self.sol.y.shape[0]
 
 
 class BaseModel:

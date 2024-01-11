@@ -110,6 +110,9 @@ class UnscentedKalmanFilterObserver(Observer):
         )
         return log_likelihood
 
+    def get_current_covariance(self) -> Covariance:
+        return self._ukf.S @ self._ukf.S.T
+
 
 @dataclass
 class SigmaPoint(object):
@@ -293,10 +296,6 @@ class UkfFilter(object):
         x_minus, S_minus = self.unscented_transform(sigma_points, w_m, w_c, self.sqrtRp)
         sigma_points_y = np.apply_along_axis(self.h, 0, sigma_points)
         y_minus, S_y = self.unscented_transform(sigma_points_y, w_m, w_c, self.sqrtRm)
-        # P = np.sum(
-        #    w_c * np.multiply.outer(sigma_points - x_minus, sigma_points_y - y_minus),
-        #    axis=(1, 3),
-        # )
         P = np.einsum(
             "k,jk,lk -> jl ", w_c, sigma_points - x_minus, sigma_points_y - y_minus
         )
