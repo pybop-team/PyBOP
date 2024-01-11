@@ -71,7 +71,7 @@ class SPM(BaseModel):
 
         self._electrode_soh = pybamm.lithium_ion.electrode_soh
 
-    def check_params(self, inputs=None):
+    def _check_params(self, inputs=None, silent=True):
         """
         A compatibility check for the model parameters which can be implemented by subclasses
         if required, otherwise it returns True by default.
@@ -85,45 +85,41 @@ class SPM(BaseModel):
         -------
         bool
             A boolean which signifies whether the parameters are compatible.
-
         """
-        related_parameters = dict.fromkeys(
-            [
+
+        electrode_params = [
+            (
                 "Negative electrode active material volume fraction",
                 "Negative electrode porosity",
+            ),
+            (
                 "Positive electrode active material volume fraction",
                 "Positive electrode porosity",
-            ]
-        )
+            ),
+        ]
 
-        for key in related_parameters.keys():
-            if inputs is not None and key in inputs.keys():
-                related_parameters[key] = inputs[key]
-            else:
-                related_parameters[key] = self._parameter_set[key]
+        related_parameters = {
+            key: inputs.get(key)
+            if inputs and key in inputs
+            else self._parameter_set[key]
+            for pair in electrode_params
+            for key in pair
+        }
 
-        if (
-            related_parameters["Negative electrode active material volume fraction"]
-            + related_parameters["Negative electrode porosity"]
-        ) > 1:
-            warnings.warn(
-                "Non-physical point encountered - [Negative electrode active material volume fraction + Negative electrode porosity] > 1.0!",
-                UserWarning,
-            )
-            return True
+        def warn_and_return(warn_message):
+            warnings.warn(warn_message, UserWarning)
+            return silent
 
-        elif (
-            related_parameters["Positive electrode active material volume fraction"]
-            + related_parameters["Positive electrode porosity"]
-        ) > 1:
-            warnings.warn(
-                "Non-physical point encountered - [Positive electrode active material volume fraction + Positive electrode porosity] > 1.0!",
-                UserWarning,
-            )
-            return True
+        for material_vol_fraction, porosity in electrode_params:
+            if related_parameters[material_vol_fraction] + related_parameters[
+                porosity
+            ] > 1 and self.param_check_counter <= len(electrode_params):
+                self.param_check_counter += 1
+                return warn_and_return(
+                    f"Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
+                )
 
-        else:
-            return True
+        return True
 
 
 class SPMe(BaseModel):
@@ -196,7 +192,7 @@ class SPMe(BaseModel):
 
         self._electrode_soh = pybamm.lithium_ion.electrode_soh
 
-    def check_params(self, inputs=None):
+    def _check_params(self, inputs=None, silent=True):
         """
         A compatibility check for the model parameters which can be implemented by subclasses
         if required, otherwise it returns True by default.
@@ -210,42 +206,38 @@ class SPMe(BaseModel):
         -------
         bool
             A boolean which signifies whether the parameters are compatible.
-
         """
-        related_parameters = dict.fromkeys(
-            [
+
+        electrode_params = [
+            (
                 "Negative electrode active material volume fraction",
                 "Negative electrode porosity",
+            ),
+            (
                 "Positive electrode active material volume fraction",
                 "Positive electrode porosity",
-            ]
-        )
+            ),
+        ]
 
-        for key in related_parameters.keys():
-            if inputs is not None and key in inputs.keys():
-                related_parameters[key] = inputs[key]
-            else:
-                related_parameters[key] = self._parameter_set[key]
+        related_parameters = {
+            key: inputs.get(key)
+            if inputs and key in inputs
+            else self._parameter_set[key]
+            for pair in electrode_params
+            for key in pair
+        }
 
-        if (
-            related_parameters["Negative electrode active material volume fraction"]
-            + related_parameters["Negative electrode porosity"]
-        ) > 1:
-            warnings.warn(
-                "Non-physical point encountered - [Negative electrode active material volume fraction + Negative electrode porosity] > 1.0!",
-                UserWarning,
-            )
-            return True
+        def warn_and_return(warn_message):
+            warnings.warn(warn_message, UserWarning)
+            return silent
 
-        elif (
-            related_parameters["Positive electrode active material volume fraction"]
-            + related_parameters["Positive electrode porosity"]
-        ) > 1:
-            warnings.warn(
-                "Non-physical point encountered - [Positive electrode active material volume fraction + Positive electrode porosity] > 1.0!",
-                UserWarning,
-            )
-            return True
+        for material_vol_fraction, porosity in electrode_params:
+            if related_parameters[material_vol_fraction] + related_parameters[
+                porosity
+            ] > 1 and self.param_check_counter <= len(electrode_params):
+                self.param_check_counter += 1
+                return warn_and_return(
+                    f"Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
+                )
 
-        else:
-            return True
+        return True

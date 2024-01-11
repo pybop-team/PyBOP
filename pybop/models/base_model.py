@@ -27,6 +27,7 @@ class BaseModel:
         self.parameters = None
         self.dataset = None
         self.signal = None
+        self.param_check_counter = 0
 
     def build(
         self,
@@ -298,7 +299,7 @@ class BaseModel:
         else:
             return [np.inf]
 
-    def check_params(self, inputs=None):
+    def check_params(self, inputs=None, silent=True):
         """
         A compatibility check for the model parameters which can be implemented by subclasses
         if required, otherwise it returns True by default.
@@ -314,7 +315,11 @@ class BaseModel:
             A boolean which signifies whether the parameters are compatible.
 
         """
-        return True
+        if inputs is not None:
+            if not isinstance(inputs, dict):
+                inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+
+        return self._check_params(inputs=inputs, silent=silent)
 
     @property
     def built_model(self):
