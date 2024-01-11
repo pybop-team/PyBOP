@@ -20,6 +20,7 @@ class Observer(object):
       The signal to observe.
     """
 
+    # define a subtype for covariance matrices for use by derived classes
     Covariance = np.ndarray
 
     def __init__(self, model: BaseModel, inputs: Inputs, signal: List[str]) -> None:
