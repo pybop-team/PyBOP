@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional
 import pybamm
 import numpy as np
 import casadi
+from __future__ import annotations
 
 Inputs = Dict[str, float]
 
@@ -26,6 +27,7 @@ class TimeSeriesState(object):
         if isinstance(y, casadi.DM):
             y = y.full()
         return y
+
     def __len__(self):
         return self.sol.y.shape[0]
 
