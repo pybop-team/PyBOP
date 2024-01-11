@@ -40,7 +40,7 @@ class Optimisation:
         sigma0=None,
         verbose=False,
         physical_viability=True,
-        infesible_locations=True,
+        infeasible_locations=True,
     ):
         self.cost = cost
         self.optimiser = optimiser
@@ -50,15 +50,15 @@ class Optimisation:
         self.n_parameters = cost.n_parameters
         self.sigma0 = sigma0
         self.physical_viability = physical_viability
-        self.infesible_locations = infesible_locations
+        self.infeasible_locations = infeasible_locations
         self.log = []
 
         # Convert x0 to pints vector
         self._x0 = pints.vector(self.x0)
 
-        # Set Infesible Locations
+        # Set infeasible Locations
         if self.cost.problem is not None:
-            self.cost.problem._model.infesible_locations = self.infesible_locations
+            self.cost.problem._model.infeasible_locations = self.infeasible_locations
 
         # PyBOP doesn't currently support the pints transformation class
         self._transformation = None
@@ -486,7 +486,7 @@ class Optimisation:
         Check if the optimised parameters are physically viable.
         """
 
-        if self.cost.problem._model.check_params(inputs=x, infesible_locations=False):
+        if self.cost.problem._model.check_params(inputs=x, infeasible_locations=False):
             return
         else:
             warnings.warn(

@@ -76,7 +76,7 @@ class Thevenin(BaseModel):
         self._mesh = None
         self._disc = None
 
-    def _check_params(self, inputs=None, infesible_locations=True):
+    def _check_params(self, inputs=None, infeasible_locations=True):
         """
         A compatibility check for the model parameters which can be implemented by subclasses
         if required, otherwise it returns True by default.
