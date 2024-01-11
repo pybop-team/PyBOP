@@ -226,12 +226,13 @@ class UkfFilter(object):
             The mean and covariance of the sigma points
         """
         x = np.sum(w_m * sigma_points, axis=1).reshape(-1, 1)
-        A = np.sqrt(w_c[1:]) * (sigma_points[:, 1:] - x)
+        sigma_points_diff = sigma_points - x
+        A = np.sqrt(w_c[1:]) * (sigma_points_diff[:, 1:])
         (
             _,
             S,
         ) = linalg.qr(A.T, mode="economic")
-        S = UkfFilter.cholupdate(S, sigma_points[:, 0:1] - x, w_c[0])
+        S = UkfFilter.cholupdate(S, sigma_points_diff[:, 0:1], w_c[0])
         return x, S
 
     @staticmethod
