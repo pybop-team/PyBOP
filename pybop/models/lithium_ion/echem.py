@@ -71,7 +71,7 @@ class SPM(BaseModel):
 
         self._electrode_soh = pybamm.lithium_ion.electrode_soh
 
-    def _check_params(self, inputs=None, silent=True):
+    def _check_params(self, inputs=None, infesible_locations=True):
         """
         A compatibility check for the model parameters which can be implemented by subclasses
         if required, otherwise it returns True by default.
@@ -108,7 +108,7 @@ class SPM(BaseModel):
 
         def warn_and_return(warn_message):
             warnings.warn(warn_message, UserWarning)
-            return silent
+            return infesible_locations
 
         for material_vol_fraction, porosity in electrode_params:
             if related_parameters[material_vol_fraction] + related_parameters[
@@ -192,7 +192,7 @@ class SPMe(BaseModel):
 
         self._electrode_soh = pybamm.lithium_ion.electrode_soh
 
-    def _check_params(self, inputs=None, silent=True):
+    def _check_params(self, inputs=None, infesible_locations=True):
         """
         A compatibility check for the model parameters which can be implemented by subclasses
         if required, otherwise it returns True by default.
@@ -229,7 +229,7 @@ class SPMe(BaseModel):
 
         def warn_and_return(warn_message):
             warnings.warn(warn_message, UserWarning)
-            return silent
+            return infesible_locations
 
         for material_vol_fraction, porosity in electrode_params:
             if related_parameters[material_vol_fraction] + related_parameters[

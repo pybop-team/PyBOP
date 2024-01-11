@@ -66,6 +66,10 @@ class TestCosts:
         # Test option setting
         sums_cost.set_fail_gradient(1)
 
+        # Test infesible locations
+        rmse_cost.problem._model.infesible_locations = False
+        assert rmse_cost([1.1]) == np.inf
+
         # Test UserWarnings
         with pytest.warns(UserWarning) as record:
             rmse_cost([1.1])
