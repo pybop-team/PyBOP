@@ -203,7 +203,7 @@ class BaseModel:
         state : TimeSeriesState
             The current state of the model
         time : np.ndarray
-            The time to predict the system to
+            The time to predict the system to (in whatever time units the model is in)
         """
         dt = time - state.t
         new_sol = self.solver.step(
