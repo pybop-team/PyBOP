@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import numpy as np
 import scipy.linalg as linalg
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from pybop.models.base_model import BaseModel, Inputs
 from pybop.observers.observer import Observer
@@ -34,9 +34,9 @@ class UnscentedKalmanFilterObserver(Observer):
         model: BaseModel,
         inputs: Inputs,
         signal: List[str],
-        sigma0: Covariance | float,
-        process: Covariance | float,
-        measure: Covariance | float,
+        sigma0: Union[Covariance, float],
+        process: Union[Covariance, float],
+        measure: Union[Covariance, float],
     ) -> None:
         super().__init__(model, inputs, signal)
         self._process = process
@@ -293,9 +293,12 @@ class UkfFilter(object):
         x_minus, S_minus = self.unscented_transform(sigma_points, w_m, w_c, self.sqrtRp)
         sigma_points_y = np.apply_along_axis(self.h, 0, sigma_points)
         y_minus, S_y = self.unscented_transform(sigma_points_y, w_m, w_c, self.sqrtRm)
-        P = np.sum(
-            w_c * np.multiply.outer(sigma_points - x_minus, sigma_points_y - y_minus),
-            axis=(1, 3),
+        # P = np.sum(
+        #    w_c * np.multiply.outer(sigma_points - x_minus, sigma_points_y - y_minus),
+        #    axis=(1, 3),
+        # )
+        P = np.einsum(
+            "k,jk,lk -> jl ", w_c, sigma_points - x_minus, sigma_points_y - y_minus
         )
         gain = linalg.lstsq(linalg.lstsq(P.T, S_y.transpose())[0].T, S_y)[0]
         residual = y - y_minus
