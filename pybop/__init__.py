@@ -43,6 +43,11 @@ from .models.base_model import TimeSeriesState
 from .models.base_model import Inputs
 
 #
+# Experiment class
+#
+from ._experiment import Experiment
+
+#
 # Main optimisation class
 #
 from ._optimisation import Optimisation

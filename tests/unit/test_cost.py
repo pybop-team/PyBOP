@@ -66,7 +66,8 @@ class TestCosts:
         base_cost = pybop.BaseCost(problem)
         assert base_cost.problem == problem
         with pytest.raises(NotImplementedError):
-            base_cost([0.5])
+            base_cost._evaluate([0.5])
+            base_cost._evaluateS1([0.5])
 
     @pytest.mark.unit
     def test_costs(self, cost):
