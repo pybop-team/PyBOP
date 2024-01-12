@@ -80,6 +80,12 @@ class TestCosts:
         # Test type of returned value
         assert type(cost([0.5])) == np.float64
 
+        # Test UserWarnings
+        if isinstance(cost, (pybop.SumSquaredError, pybop.RootMeanSquaredError)):
+            assert cost([0.5]) >= 0
+            with pytest.warns(UserWarning) as record:
+                cost([1.1])
+
         if isinstance(cost, pybop.SumSquaredError):
             e, de = cost.evaluateS1([0.5])
 
@@ -92,6 +98,17 @@ class TestCosts:
             # Test exception for non-numeric inputs
             with pytest.raises(ValueError):
                 cost.evaluateS1(["StringInputShouldNotWork"])
+
+            with pytest.warns(UserWarning) as record:
+                cost.evaluateS1([1.1])
+
+            for i in range(len(record)):
+                assert "Non-physical point encountered" in str(record[i].message)
+
+        if isinstance(cost, pybop.RootMeanSquaredError):
+            # Test infeasible locations
+            cost.problem._model.infeasible_locations = False
+            assert cost([1.1]) == np.inf
 
         # Test exception for non-numeric inputs
         with pytest.raises(ValueError):

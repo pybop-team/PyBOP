@@ -54,6 +54,20 @@ class TestModels:
         assert len(res["Terminal voltage [V]"].data) == 100
 
     @pytest.mark.unit
+    def test_predict_without_infeasible_locations(self):
+        # Define SPM
+        model = pybop.lithium_ion.SPM()
+        model.infeasible_locations = False
+        t_eval = np.linspace(0, 10, 100)
+        inputs = {
+            "Negative electrode active material volume fraction": 0.9,
+            "Positive electrode active material volume fraction": 0.9,
+        }
+
+        res = model.predict(t_eval=t_eval, inputs=inputs)
+        assert np.isinf(res).any()
+
+    @pytest.mark.unit
     def test_build(self):
         model = pybop.lithium_ion.SPM()
         model.build()
