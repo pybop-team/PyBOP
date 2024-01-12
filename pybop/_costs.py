@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 
 
 class BaseCost:
@@ -333,15 +334,19 @@ class GravimetricEnergyDensity(BaseCost):
             float: The negative gravimetric energy density or infinity in case of infeasible parameters.
         """
         try:
-            self.nominal_capacity(x, self.problem._model)
-            solution = self.problem.evaluate(x)
+            with warnings.catch_warnings():
+                # Convert UserWarning to an exception
+                warnings.filterwarnings("error", category=UserWarning)
 
-            voltage, current = solution[:, 0], solution[:, 1]
-            negative_energy_density = -np.trapz(voltage * current, dx=self.dt) / (
-                3600 * self.cell_mass(self.parameter_set)
-            )
+                self.nominal_capacity(x, self.problem._model)
+                solution = self.problem.evaluate(x)
 
-            return negative_energy_density
+                voltage, current = solution[:, 0], solution[:, 1]
+                negative_energy_density = -np.trapz(voltage * current, dx=self.dt) / (
+                    3600 * self.cell_mass(self.parameter_set)
+                )
+
+                return negative_energy_density
 
         except UserWarning as e:
             print(f"Ignoring this sample due to: {e}")
