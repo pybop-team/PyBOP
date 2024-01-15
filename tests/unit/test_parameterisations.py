@@ -104,7 +104,7 @@ class TestModelParameterisation:
     def test_spm_optimisers(self, optimiser, spm_cost, x0):
         # Test each optimiser
         parameterisation = pybop.Optimisation(cost=spm_cost, optimiser=optimiser)
-        parameterisation.set_max_unchanged_iterations(iterations=15, threshold=5e-4)
+        parameterisation.set_max_unchanged_iterations(iterations=25, threshold=5e-4)
 
         if optimiser in [pybop.CMAES]:
             parameterisation.set_f_guessed_tracking(True)
@@ -118,10 +118,9 @@ class TestModelParameterisation:
             x, final_cost = parameterisation.run()
             assert parameterisation._max_iterations == 125
 
-        elif optimiser in [pybop.GradientDescent, pybop.Adam]:
-            if optimiser in [pybop.GradientDescent]:
-                parameterisation.optimiser.set_learning_rate(0.025)
-            parameterisation.set_max_iterations(125)
+        elif optimiser in [pybop.GradientDescent]:
+            parameterisation.optimiser.set_learning_rate(0.02)
+            parameterisation.set_max_iterations(150)
             x, final_cost = parameterisation.run()
 
         elif optimiser in [pybop.SciPyDifferentialEvolution]:
@@ -129,6 +128,11 @@ class TestModelParameterisation:
                 parameterisation.optimiser.set_population_size(-5)
 
             parameterisation.optimiser.set_population_size(5)
+            parameterisation.set_max_iterations(125)
+            x, final_cost = parameterisation.run()
+
+        elif optimiser in [pybop.SciPyMinimize]:
+            parameterisation.cost.problem._model.infeasible_locations = False
             parameterisation.set_max_iterations(125)
             x, final_cost = parameterisation.run()
 

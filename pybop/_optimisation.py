@@ -1,6 +1,7 @@
 import pybop
 import pints
 import numpy as np
+import warnings
 
 
 class Optimisation:
@@ -38,6 +39,8 @@ class Optimisation:
         optimiser=None,
         sigma0=None,
         verbose=False,
+        physical_viability=True,
+        infeasible_locations=True,
     ):
         self.cost = cost
         self.optimiser = optimiser
@@ -46,10 +49,16 @@ class Optimisation:
         self.bounds = cost.bounds
         self.n_parameters = cost.n_parameters
         self.sigma0 = sigma0
+        self.physical_viability = physical_viability
+        self.infeasible_locations = infeasible_locations
         self.log = []
 
         # Convert x0 to pints vector
         self._x0 = pints.vector(self.x0)
+
+        # Set infeasible Locations
+        if self.cost.problem is not None:
+            self.cost.problem._model.infeasible_locations = self.infeasible_locations
 
         # PyBOP doesn't currently support the pints transformation class
         self._transformation = None
@@ -345,6 +354,13 @@ class Optimisation:
         if self._transformation is not None:
             x = self._transformation.to_model(x)
 
+        # Store the optimised parameters
+        self.store_optimised_parameters(x)
+
+        # Check if parameters are viable
+        if self.physical_viability:
+            self.check_optimal_parameters(x)
+
         # Return best position and score
         return x, f if self._minimising else -f
 
@@ -464,3 +480,16 @@ class Optimisation:
         """
         for i, param in enumerate(self.cost.problem.parameters):
             param.update(value=x[i])
+
+    def check_optimal_parameters(self, x):
+        """
+        Check if the optimised parameters are physically viable.
+        """
+
+        if self.cost.problem._model.check_params(inputs=x, infeasible_locations=False):
+            return
+        else:
+            warnings.warn(
+                "Optimised parameters are not physically viable! Consider retrying optimisation",
+                UserWarning,
+            )
