@@ -1,4 +1,5 @@
 import pybamm
+import copy
 import numpy as np
 
 
@@ -75,7 +76,7 @@ class BaseModel:
                 self._model_with_set_params, inplace=False, check_model=check_model
             )
 
-            # Clear solver
+            # Clear solver and setup model
             self._solver._model_set_up = {}
 
     def set_init_soc(self, init_soc):
@@ -103,14 +104,14 @@ class BaseModel:
         # Save solved initial SOC in case we need to rebuild the model
         self._built_initial_soc = init_soc
 
-    def set_params(self):
+    def set_params(self, rebuild=False):
         """
         Assign the parameters to the model.
 
         This method processes the model with the given parameters, sets up
         the geometry, and updates the model instance.
         """
-        if self.model_with_set_params:
+        if self.model_with_set_params and not rebuild:
             return
 
         # Mark any simulation inputs in the parameter set
@@ -133,6 +134,62 @@ class BaseModel:
         )
         self._parameter_set.process_geometry(self.geometry)
         self.pybamm_model = self._model_with_set_params
+
+    def rebuild(
+        self,
+        dataset=None,
+        parameters=None,
+        parameter_set=None,
+        check_model=True,
+        init_soc=None,
+    ):
+        """
+        Rebuild the PyBaMM model for a given parameter set.
+
+        This method requires the self.build() method to be called first, and
+        then rebuilds the model for a given parameter set. Specifically,
+        this method applies the given parameters, sets up the mesh and discretization if needed, and prepares the model
+        for simulations.
+
+        Parameters
+        ----------
+        dataset : pybamm.Dataset, optional
+            The dataset to be used in the model construction.
+        parameters : dict, optional
+            A dictionary containing parameter values to apply to the model.
+        parameter_set : pybop.parameter_set, optional
+            A PyBOP parameter set object or a dictionary containing the parameter values
+        check_model : bool, optional
+            If True, the model will be checked for correctness after construction.
+        init_soc : float, optional
+            The initial state of charge to be used in simulations.
+        """
+        self.dataset = dataset
+        self.parameters = parameters
+
+        if parameter_set is not None:
+            self._parameter_set = parameter_set
+            self._unprocessed_parameter_set = parameter_set
+            self.geometry = self.pybamm_model.default_geometry
+
+        if self.parameters is not None:
+            self.fit_keys = [param.name for param in self.parameters]
+
+        if init_soc is not None:
+            self.set_init_soc(init_soc)
+
+        if self._built_model is None:
+            raise ValueError("Model must be built before calling rebuild")
+
+        self.set_params(rebuild=True)
+        self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
+        self._disc = pybamm.Discretisation(self.mesh, self.spatial_methods)
+        self._built_model = self._disc.process_model(
+            self._model_with_set_params, inplace=False, check_model=check_model
+        )
+
+        # Clear solver and setup model
+        self._solver._model_set_up = {}
 
     def simulate(self, inputs, t_eval):
         """
@@ -315,6 +372,17 @@ class BaseModel:
 
         """
         return True
+
+    def copy(self):
+        """
+        Return a copy of the model.
+
+        Returns
+        -------
+        BaseModel
+            A copy of the model.
+        """
+        return copy.copy(self)
 
     @property
     def built_model(self):
