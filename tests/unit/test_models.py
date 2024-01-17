@@ -100,20 +100,31 @@ class TestModels:
         initial_built_model = model.copy()
         assert initial_built_model._built_model is not None
 
-        # Test that the model can be built again
+        # Run prediction
+        t_eval = np.linspace(0, 100, 100)
+        out_init = initial_built_model.predict(t_eval=t_eval)
+
+        # Test that the model can be rebuilt with different geometric parameters
         parameter_set.update({"Negative electrode thickness [m]": 4.00e-05})
         model.rebuild(parameter_set=parameter_set)
         rebuilt_model = model
         assert rebuilt_model._built_model is not None
 
-        with pytest.raises(AssertionError):
-            assert (
-                rebuilt_model._mesh["negative electrode"].nodes[1]
-                == initial_built_model._mesh["negative electrode"].nodes[1]
-            ), "Mesh nodes mismatch"
+        # Test model geometry
+        assert (
+            rebuilt_model._mesh["negative electrode"].nodes[1]
+            != initial_built_model._mesh["negative electrode"].nodes[1]
+        )
+        assert (
+            rebuilt_model.geometry["negative electrode"]["x_n"]["max"]
+            != initial_built_model.geometry["negative electrode"]["x_n"]["max"]
+        )
 
+        # Compare model results
+        out_rebuild = rebuilt_model.predict(t_eval=t_eval)
         with pytest.raises(AssertionError):
-            assert (
-                rebuilt_model.geometry["negative electrode"]["x_n"]["max"]
-                == initial_built_model.geometry["negative electrode"]["x_n"]["max"]
-            ), "Geometry max mismatch"
+            np.testing.assert_allclose(
+                out_init["Terminal voltage [V]"].data,
+                out_rebuild["Terminal voltage [V]"].data,
+                atol=1e-5,
+            )
