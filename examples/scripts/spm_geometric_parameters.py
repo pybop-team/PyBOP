@@ -10,12 +10,12 @@ parameters = [
     pybop.Parameter(
         "Positive particle radius [m]",
         prior=pybop.Gaussian(5.22e-06, 0.05e-06),
-        bounds=[4e-06, 6e-06],
+        bounds=[5e-06, 6e-06],
     ),
     pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.48, 0.05),
-        bounds=[0.4, 0.7],
+        "Negative particle radius [m]",
+        prior=pybop.Gaussian(5.9e-06, 0.05e-06),
+        bounds=[5e-06, 6.5e-06],
     ),
 ]
 
@@ -37,7 +37,7 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.Optimisation(cost, optimiser=pybop.CMAES)
+optim = pybop.Optimisation(cost, optimiser=pybop.SNES)
 optim.set_max_iterations(100)
 
 # Run the optimisation

@@ -202,6 +202,9 @@ class FittingProblem(BaseProblem):
         """
 
         if (x != self.x).all() and self._model.matched_parameters:
+            for i, param in enumerate(self.parameters):
+                param.update(value=x[i])
+
             self._model.rebuild(parameters=self.parameters)
             self.x = x
 

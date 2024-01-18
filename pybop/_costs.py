@@ -169,7 +169,6 @@ class RootMeanSquaredError(BaseCost):
             The root mean square error.
 
         """
-
         prediction = self.problem.evaluate(x)
 
         if len(prediction) < len(self._target):

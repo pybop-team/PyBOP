@@ -28,10 +28,10 @@ class BaseModel:
         self.parameters = None
         self.dataset = None
         self.signal = None
-        self.init_build_counter = 0
         self.has_predict = False
         self.matched_parameters = {}
         self.non_matched_parameters = {}
+        self.fit_keys = []
 
     def build(
         self,
@@ -119,11 +119,11 @@ class BaseModel:
             return
 
         # Mark any simulation inputs in the parameter set
-        if self.parameters is not None:
+        if self.non_matched_parameters:
             for i in self.fit_keys:
                 self._parameter_set[i] = "[input]"
 
-        if self.dataset is not None and self.parameters is not None:
+        if self.dataset is not None and self.non_matched_parameters:
             if "Current function [A]" not in self.fit_keys:
                 self.parameter_set["Current function [A]"] = pybamm.Interpolant(
                     self.dataset["Time [s]"],
@@ -199,7 +199,7 @@ class BaseModel:
         for param in processed_parameters:
             if param in self.rebuild_parameters:
                 self.matched_parameters[param] = processed_parameters[param]
-            elif self.init_build_counter == 0:
+            else:
                 self.non_matched_parameters[param] = processed_parameters[param]
 
         if self.matched_parameters:
@@ -208,10 +208,8 @@ class BaseModel:
             self._unprocessed_parameter_set = self.parameter_set
             self.geometry = self.pybamm_model.default_geometry
 
-        if self.non_matched_parameters and self.init_build_counter == 0:
+        if self.non_matched_parameters:
             self.fit_keys = [param for param in self.non_matched_parameters]
-
-        self.init_build_counter += 1
 
     def simulate(self, inputs, t_eval):
         """
@@ -235,22 +233,24 @@ class BaseModel:
         ValueError
             If the model has not been built before simulation.
         """
-
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
         else:
-            if not isinstance(inputs, dict):
-                inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
-
-            if self.check_params(inputs):
-                sol = self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
-
-                predictions = [sol[signal].data for signal in self.signal]
-
-                return np.vstack(predictions).T
-
+            if not self.fit_keys and self.matched_parameters:
+                sol = self.solver.solve(self.built_model, t_eval=t_eval)
             else:
-                return [np.inf]
+                if not isinstance(inputs, dict):
+                    inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+                    if self.check_params(inputs):
+                        sol = self.solver.solve(
+                            self.built_model, inputs=inputs, t_eval=t_eval
+                        )
+                    else:
+                        return [np.inf]
+
+            predictions = [sol[signal].data for signal in self.signal]
+
+            return np.vstack(predictions).T
 
     def simulateS1(self, inputs, t_eval):
         """

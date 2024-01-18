@@ -95,8 +95,23 @@ class TestModels:
     @pytest.mark.unit
     def test_rebuild_geometric_parameters(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameters = [
+            pybop.Parameter(
+                "Positive particle radius [m]",
+                prior=pybop.Gaussian(4.8e-06, 0.05e-06),
+                bounds=[4e-06, 6e-06],
+                initial_value=4.8e-06,
+            ),
+            pybop.Parameter(
+                "Negative electrode thickness [m]",
+                prior=pybop.Gaussian(40e-06, 1e-06),
+                bounds=[30e-06, 50e-06],
+                initial_value=48e-06,
+            ),
+        ]
+
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
-        model.build()
+        model.build(parameters=parameters)
         initial_built_model = model.copy()
         assert initial_built_model._built_model is not None
 
@@ -105,8 +120,9 @@ class TestModels:
         out_init = initial_built_model.predict(t_eval=t_eval)
 
         # Test that the model can be rebuilt with different geometric parameters
-        parameter_set.update({"Negative electrode thickness [m]": 4.00e-05})
-        model.rebuild(parameter_set=parameter_set)
+        parameters[0].update(5e-06)
+        parameters[1].update(45e-06)
+        model.rebuild(parameters=parameters)
         rebuilt_model = model
         assert rebuilt_model._built_model is not None
 
@@ -118,6 +134,16 @@ class TestModels:
         assert (
             rebuilt_model.geometry["negative electrode"]["x_n"]["max"]
             != initial_built_model.geometry["negative electrode"]["x_n"]["max"]
+        )
+
+        assert (
+            rebuilt_model.geometry["positive particle"]["r_p"]["max"]
+            != initial_built_model.geometry["positive particle"]["r_p"]["max"]
+        )
+
+        assert (
+            rebuilt_model._mesh["positive particle"].nodes[1]
+            != initial_built_model._mesh["positive particle"].nodes[1]
         )
 
         # Compare model results
