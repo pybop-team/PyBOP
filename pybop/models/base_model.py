@@ -28,6 +28,10 @@ class BaseModel:
         self.parameters = None
         self.dataset = None
         self.signal = None
+        self.init_build_counter = 0
+        self.has_predict = False
+        self.matched_parameters = {}
+        self.non_matched_parameters = {}
 
     def build(
         self,
@@ -57,7 +61,7 @@ class BaseModel:
         self.dataset = dataset
         self.parameters = parameters
         if self.parameters is not None:
-            self.fit_keys = [param.name for param in self.parameters]
+            self.set_parameter_classification(self.parameters)
 
         if init_soc is not None:
             self.set_init_soc(init_soc)
@@ -166,14 +170,8 @@ class BaseModel:
         """
         self.dataset = dataset
         self.parameters = parameters
-
-        if parameter_set is not None:
-            self._parameter_set = parameter_set
-            self._unprocessed_parameter_set = parameter_set
-            self.geometry = self.pybamm_model.default_geometry
-
-        if self.parameters is not None:
-            self.fit_keys = [param.name for param in self.parameters]
+        if parameters is not None:
+            self.set_parameter_classification(parameters)
 
         if init_soc is not None:
             self.set_init_soc(init_soc)
@@ -190,6 +188,30 @@ class BaseModel:
 
         # Clear solver and setup model
         self._solver._model_set_up = {}
+
+    def set_parameter_classification(self, parameters):
+        """
+        Set the parameter classification for the model.
+        """
+        processed_parameters = {param.name: param.value for param in parameters}
+
+        # Iterate over self.rebuild_parameters to separate matched and non-matched parameters
+        for param in processed_parameters:
+            if param in self.rebuild_parameters:
+                self.matched_parameters[param] = processed_parameters[param]
+            elif self.init_build_counter == 0:
+                self.non_matched_parameters[param] = processed_parameters[param]
+
+        if self.matched_parameters:
+            self.parameter_set.update(self.matched_parameters)
+            self._parameter_set = self.parameter_set
+            self._unprocessed_parameter_set = self.parameter_set
+            self.geometry = self.pybamm_model.default_geometry
+
+        if self.non_matched_parameters and self.init_build_counter == 0:
+            self.fit_keys = [param for param in self.non_matched_parameters]
+
+        self.init_build_counter += 1
 
     def simulate(self, inputs, t_eval):
         """
@@ -328,6 +350,7 @@ class BaseModel:
             if PyBaMM models are not supported by the current simulation method.
 
         """
+        self.has_predict = True
         parameter_set = parameter_set or self._parameter_set
         if inputs is not None:
             if not isinstance(inputs, dict):

@@ -146,6 +146,7 @@ class FittingProblem(BaseProblem):
     ):
         super().__init__(parameters, model, check_model, signal, init_soc, x0)
         self._dataset = dataset.data
+        self.x = self.x0
 
         # Check that the dataset contains time and current
         for name in ["Time [s]", "Current function [A]"] + self.signal:
@@ -182,6 +183,13 @@ class FittingProblem(BaseProblem):
                 check_model=self.check_model,
                 init_soc=self.init_soc,
             )
+        elif self._model.has_predict is True:
+            self._model.rebuild(
+                dataset=self._dataset,
+                parameters=self.parameters,
+                check_model=self.check_model,
+                init_soc=self.init_soc,
+            )
 
     def evaluate(self, x):
         """
@@ -192,6 +200,10 @@ class FittingProblem(BaseProblem):
         x : np.ndarray
             Parameter values to evaluate the model at.
         """
+
+        if (x != self.x).all() and self._model.matched_parameters:
+            self._model.rebuild(parameters=self.parameters)
+            self.x = x
 
         y = np.asarray(self._model.simulate(inputs=x, t_eval=self._time_data))
 

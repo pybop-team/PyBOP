@@ -69,6 +69,32 @@ class SPM(BaseModel):
         self._disc = None
 
         self._electrode_soh = pybamm.lithium_ion.electrode_soh
+        self.rebuild_parameters = self.set_rebuild_parameters()
+
+    def set_rebuild_parameters(self):
+        """
+        Sets the parameters that can be changed when rebuilding the model.
+
+        Returns
+        -------
+        dict
+            A dictionary of parameters that can be changed when rebuilding the model.
+
+        """
+        rebuild_parameters = dict.fromkeys(
+            [
+                "Negative particle radius [m]",
+                "Negative electrode porosity",
+                "Negative electrode thickness [m]",
+                "Positive particle radius [m]",
+                "Positive electrode porosity",
+                "Positive electrode thickness [m]",
+                "Separator porosity",
+                "Separator thickness [m]",
+            ]
+        )
+
+        return rebuild_parameters
 
     def check_params(self, inputs=None):
         """
@@ -186,6 +212,32 @@ class SPMe(BaseModel):
         self._disc = None
 
         self._electrode_soh = pybamm.lithium_ion.electrode_soh
+        self.rebuild_parameters = self.set_rebuild_parameters()
+
+    def set_rebuild_parameters(self):
+        """
+        Sets the parameters that can be changed when rebuilding the model.
+
+        Returns
+        -------
+        dict
+            A dictionary of parameters that can be changed when rebuilding the model.
+
+        """
+        rebuild_parameters = dict.fromkeys(
+            [
+                "Negative particle radius [m]",
+                "Negative electrode porosity",
+                "Negative electrode thickness [m]",
+                "Positive particle radius [m]",
+                "Positive electrode porosity",
+                "Positive electrode thickness [m]",
+                "Separator porosity",
+                "Separator thickness [m]",
+            ]
+        )
+
+        return rebuild_parameters
 
     def check_params(self, inputs=None):
         """
