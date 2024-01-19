@@ -125,7 +125,7 @@ class BaseModel:
 
         if self.dataset is not None and self.non_matched_parameters:
             if "Current function [A]" not in self.fit_keys:
-                self.parameter_set["Current function [A]"] = pybamm.Interpolant(
+                self._parameter_set["Current function [A]"] = pybamm.Interpolant(
                     self.dataset["Time [s]"],
                     self.dataset["Current function [A]"],
                     pybamm.t,
@@ -192,24 +192,39 @@ class BaseModel:
     def set_parameter_classification(self, parameters):
         """
         Set the parameter classification for the model.
+
+        Parameters
+        ----------
+        parameters : Pybop.ParameterSet
+
+        Returns
+        -------
+        None
+            The method updates attributes on self.
+
         """
         processed_parameters = {param.name: param.value for param in parameters}
+        matched_parameters = {
+            param: processed_parameters[param]
+            for param in processed_parameters
+            if param in self.rebuild_parameters
+        }
+        non_matched_parameters = {
+            param: processed_parameters[param]
+            for param in processed_parameters
+            if param not in self.rebuild_parameters
+        }
 
-        # Iterate over self.rebuild_parameters to separate matched and non-matched parameters
-        for param in processed_parameters:
-            if param in self.rebuild_parameters:
-                self.matched_parameters[param] = processed_parameters[param]
-            else:
-                self.non_matched_parameters[param] = processed_parameters[param]
+        self.matched_parameters.update(matched_parameters)
+        self.non_matched_parameters.update(non_matched_parameters)
 
         if self.matched_parameters:
-            self.parameter_set.update(self.matched_parameters)
-            self._parameter_set = self.parameter_set
-            self._unprocessed_parameter_set = self.parameter_set
+            self._parameter_set.update(self.matched_parameters)
+            self._unprocessed_parameter_set = self._parameter_set
             self.geometry = self.pybamm_model.default_geometry
 
         if self.non_matched_parameters:
-            self.fit_keys = [param for param in self.non_matched_parameters]
+            self.fit_keys = list(self.non_matched_parameters.keys())
 
     def simulate(self, inputs, t_eval):
         """

@@ -48,17 +48,17 @@ def nominal_capacity(
     inputs = {
         key: x[i] for i, key in enumerate([param.name for param in model.parameters])
     }
-    model._parameter_set.update(inputs)
+    model.parameter_set.update(inputs)
 
     theoretical_energy = model._electrode_soh.calculate_theoretical_energy(  # All of the computational time is in this line (~0.7)
-        model._parameter_set
+        model.parameter_set
     )
-    average_voltage = model._parameter_set["Positive electrode OCP [V]"](
+    average_voltage = model.parameter_set["Positive electrode OCP [V]"](
         mean_sto_pos
-    ) - model._parameter_set["Negative electrode OCP [V]"](mean_sto_neg)
+    ) - model.parameter_set["Negative electrode OCP [V]"](mean_sto_neg)
 
     theoretical_capacity = theoretical_energy / average_voltage
-    model._parameter_set.update({"Nominal cell capacity [A.h]": theoretical_capacity})
+    model.parameter_set.update({"Nominal cell capacity [A.h]": theoretical_capacity})
 
 
 def cell_mass(parameter_set):  # This is very low compute time
@@ -153,7 +153,7 @@ class GravimetricEnergyDensity(pybop.BaseCost):
         """
         with warnings.catch_warnings(record=True) as w:
             # Update the C-rate and run the simulation
-            nominal_capacity(x, self.problem._model)
+            nominal_capacity(x, self.problem.model)
             sol = self.problem.evaluate(x)
 
             if any(w) and issubclass(w[-1].category, UserWarning):
@@ -167,7 +167,7 @@ class GravimetricEnergyDensity(pybop.BaseCost):
                 gravimetric_energy_density = -np.trapz(
                     voltage * current, dx=dt
                 ) / (  # trapz over-estimates compares to pybamm (~0.5%)
-                    3600 * cell_mass(self.problem._model._parameter_set)
+                    3600 * cell_mass(self.problem.model.parameter_set)
                 )
             # Return the negative energy density, as the optimiser minimises
             # this function, to carry out maximisation of the energy density
@@ -186,7 +186,7 @@ print(f"Initial gravimetric energy density: {-cost(cost.x0):.2f} Wh.kg-1")
 print(f"Optimised gravimetric energy density: {-final_cost:.2f} Wh.kg-1")
 
 # Plot the timeseries output
-nominal_capacity(x, cost.problem._model)
+nominal_capacity(x, cost.problem.model)
 pybop.quick_plot(x, cost, title="Optimised Comparison")
 
 # Plot the cost landscape with optimisation path

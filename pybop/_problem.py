@@ -221,6 +221,10 @@ class FittingProblem(BaseProblem):
         x : np.ndarray
             Parameter values to evaluate the model at.
         """
+        if self._model.matched_parameters:
+            raise RuntimeError(
+                "Gradient not available when using geometric parameters."
+            )
 
         y, dy = self._model.simulateS1(
             inputs=x,
@@ -303,3 +307,7 @@ class DesignProblem(BaseProblem):
             predictions = [sol[signal].data for signal in self.signal + ["Time [s]"]]
 
             return np.vstack(predictions).T
+
+    @property
+    def model(self):
+        return self._model
