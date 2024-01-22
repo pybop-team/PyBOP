@@ -18,6 +18,10 @@ class Optimisation:
         Initial step size or standard deviation for the optimiser (default: None).
     verbose : bool, optional
         If True, the optimization progress is printed (default: False).
+    physical_viability : bool, optional
+        If True, the feasibility of the optimised parameters is checked (default: True).
+    infeasible_locations : bool, optional
+        If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
     Attributes
     ----------
@@ -56,9 +60,13 @@ class Optimisation:
         # Convert x0 to pints vector
         self._x0 = pints.vector(self.x0)
 
-        # Set infeasible Locations
-        if self.cost.problem is not None:
+        # Set whether to allow infeasible locations
+        if self.cost.problem is not None and hasattr(self.cost.problem, "_model"):
             self.cost.problem._model.infeasible_locations = self.infeasible_locations
+        else:
+            # Turn off this feature as there is no model
+            self.physical_viability = False
+            self.infeasible_locations = False
 
         # PyBOP doesn't currently support the pints transformation class
         self._transformation = None
@@ -150,6 +158,10 @@ class Optimisation:
         # Store the optimised parameters
         if self.cost.problem is not None:
             self.store_optimised_parameters(x)
+
+        # Check if parameters are viable
+        if self.physical_viability:
+            self.check_optimal_parameters(x)
 
         return x, final_cost
 
@@ -357,10 +369,6 @@ class Optimisation:
         # Store the optimised parameters
         self.store_optimised_parameters(x)
 
-        # Check if parameters are viable
-        if self.physical_viability:
-            self.check_optimal_parameters(x)
-
         # Return best position and score
         return x, f if self._minimising else -f
 
@@ -490,6 +498,8 @@ class Optimisation:
             return
         else:
             warnings.warn(
-                "Optimised parameters are not physically viable! Consider retrying optimisation",
+                "Optimised parameters are not physically viable! \nConsider retrying the optimisation"
+                + " with a non-gradient-based optimiser and the option infeasible_locations=False",
                 UserWarning,
+                stacklevel=2,
             )
