@@ -73,8 +73,7 @@ class SPM(BaseModel):
 
     def _check_params(self, inputs=None, infeasible_locations=True):
         """
-        A compatibility check for the model parameters which can be implemented by subclasses
-        if required, otherwise it returns True by default.
+        Check compatibility of the model parameters.
 
         Parameters
         ----------
@@ -194,8 +193,7 @@ class SPMe(BaseModel):
 
     def _check_params(self, inputs=None, infeasible_locations=True):
         """
-        A compatibility check for the model parameters which can be implemented by subclasses
-        if required, otherwise it returns True by default.
+        Check compatibility of the model parameters.
 
         Parameters
         ----------

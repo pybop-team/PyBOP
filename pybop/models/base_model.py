@@ -302,13 +302,14 @@ class BaseModel:
 
     def check_params(self, inputs=None, infeasible_locations=True):
         """
-        A compatibility check for the model parameters which can be implemented by subclasses
-        if required, otherwise it returns True by default.
+        Check compatibility of the model parameters.
 
         Parameters
         ----------
         inputs : dict
             The input parameters for the simulation.
+        infeasible_locations : bool, optional
+            If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
         Returns
         -------
@@ -323,6 +324,25 @@ class BaseModel:
         return self._check_params(
             inputs=inputs, infeasible_locations=infeasible_locations
         )
+
+    def _check_params(self, inputs=None, infeasible_locations=True):
+        """
+        A compatibility check for the model parameters which can be implemented by subclasses
+        if required, otherwise it returns True by default.
+
+        Parameters
+        ----------
+        inputs : dict
+            The input parameters for the simulation.
+        infeasible_locations : bool, optional
+            If True, infeasible parameter values will be allowed in the optimisation (default: True).
+
+        Returns
+        -------
+        bool
+            A boolean which signifies whether the parameters are compatible.
+        """
+        return True
 
     @property
     def built_model(self):

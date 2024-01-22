@@ -78,13 +78,14 @@ class Thevenin(BaseModel):
 
     def _check_params(self, inputs=None, infeasible_locations=True):
         """
-        A compatibility check for the model parameters which can be implemented by subclasses
-        if required, otherwise it returns True by default.
+        Check the compatibility of the model parameters.
 
         Parameters
         ----------
         inputs : dict
             The input parameters for the simulation.
+        infeasible_locations : bool, optional
+            If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
         Returns
         -------
