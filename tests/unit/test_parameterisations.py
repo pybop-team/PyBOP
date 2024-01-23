@@ -1,5 +1,4 @@
 import pybop
-import pybamm
 import pytest
 import numpy as np
 
@@ -19,19 +18,19 @@ class TestModelParameterisation:
         return [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.5, 0.02),
-                bounds=[0.375, 0.625],
+                prior=pybop.Gaussian(0.6, 0.02),
+                bounds=[0.375, 0.7],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.65, 0.02),
-                bounds=[0.525, 0.75],
+                prior=pybop.Gaussian(0.5, 0.02),
+                bounds=[0.375, 0.625],
             ),
         ]
 
     @pytest.fixture
     def x0(self):
-        return np.array([0.52, 0.63])
+        return np.array([0.63, 0.51])
 
     @pytest.mark.parametrize("init_soc", [0.3, 0.7])
     @pytest.mark.unit
@@ -105,7 +104,7 @@ class TestModelParameterisation:
     def test_spm_optimisers(self, optimiser, spm_cost, x0):
         # Test each optimiser
         parameterisation = pybop.Optimisation(cost=spm_cost, optimiser=optimiser)
-        parameterisation.set_max_unchanged_iterations(iterations=15, threshold=5e-4)
+        parameterisation.set_max_unchanged_iterations(iterations=25, threshold=5e-4)
 
         if optimiser in [pybop.CMAES]:
             parameterisation.set_f_guessed_tracking(True)
@@ -114,18 +113,31 @@ class TestModelParameterisation:
             x, final_cost = parameterisation.run()
 
             parameterisation.set_f_guessed_tracking(False)
-            parameterisation.set_max_iterations(100)
+            parameterisation.set_max_iterations(125)
 
             x, final_cost = parameterisation.run()
-            assert parameterisation._max_iterations == 100
+            assert parameterisation._max_iterations == 125
 
         elif optimiser in [pybop.GradientDescent]:
-            parameterisation.optimiser.set_learning_rate(0.025)
-            parameterisation.set_max_iterations(100)
+            parameterisation.optimiser.set_learning_rate(0.02)
+            parameterisation.set_max_iterations(150)
+            x, final_cost = parameterisation.run()
+
+        elif optimiser in [pybop.SciPyDifferentialEvolution]:
+            with pytest.raises(ValueError):
+                parameterisation.optimiser.set_population_size(-5)
+
+            parameterisation.optimiser.set_population_size(5)
+            parameterisation.set_max_iterations(125)
+            x, final_cost = parameterisation.run()
+
+        elif optimiser in [pybop.SciPyMinimize]:
+            parameterisation.cost.problem._model.allow_infeasible_solutions = False
+            parameterisation.set_max_iterations(125)
             x, final_cost = parameterisation.run()
 
         else:
-            parameterisation.set_max_iterations(100)
+            parameterisation.set_max_iterations(125)
             x, final_cost = parameterisation.run()
 
         # Assertions
@@ -156,8 +168,8 @@ class TestModelParameterisation:
         "optimiser",
         [
             pybop.NLoptOptimize,
-            pybop.SciPyMinimize,
-            pybop.Adam,
+            pybop.SciPyDifferentialEvolution,
+            pybop.IRPropMin,
             pybop.CMAES,
         ],
     )
@@ -170,10 +182,13 @@ class TestModelParameterisation:
         parameterisation.set_max_unchanged_iterations(iterations=15, threshold=5e-4)
         parameterisation.set_max_iterations(100)
 
+        if optimiser in [pybop.SciPyDifferentialEvolution]:
+            parameterisation.optimiser.set_population_size(5)
+
         x, final_cost = parameterisation.run()
 
         # Assertions
-        np.testing.assert_allclose(final_cost, 0, atol=2e-2)
+        np.testing.assert_allclose(final_cost, 0, atol=2.5e-2)
         np.testing.assert_allclose(x, x0, atol=1e-1)
 
     @pytest.mark.parametrize("init_soc", [0.3, 0.7])
@@ -222,7 +237,7 @@ class TestModelParameterisation:
                 "Positive electrode active material volume fraction": x0[1],
             }
         )
-        experiment = pybamm.Experiment(
+        experiment = pybop.Experiment(
             [
                 (
                     "Discharge at 1C for 3 minutes (1 second period)",

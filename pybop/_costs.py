@@ -35,6 +35,34 @@ class BaseCost:
 
     def __call__(self, x, grad=None):
         """
+        Call the evaluate function for a given set of parameters.
+
+        Parameters
+        ----------
+        x : array-like
+            The parameters for which to evaluate the cost.
+        grad : array-like, optional
+            An array to store the gradient of the cost function with respect
+            to the parameters.
+
+        Returns
+        -------
+        float
+            The calculated cost function value.
+
+        Raises
+        ------
+        ValueError
+            If an error occurs during the calculation of the cost.
+        """
+        try:
+            return self._evaluate(x, grad)
+
+        except Exception as e:
+            raise ValueError(f"Error in cost calculation: {e}")
+
+    def _evaluate(self, x, grad=None):
+        """
         Calculate the cost function value for a given set of parameters.
 
         This method must be implemented by subclasses.
@@ -57,7 +85,54 @@ class BaseCost:
         NotImplementedError
             If the method has not been implemented by the subclass.
         """
+        raise NotImplementedError
 
+    def evaluateS1(self, x):
+        """
+        Call _evaluateS1 for a given set of parameters.
+
+        Parameters
+        ----------
+        x : array-like
+            The parameters for which to compute the cost and gradient.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the cost and the gradient. The cost is a float,
+            and the gradient is an array-like of the same length as `x`.
+
+        Raises
+        ------
+        ValueError
+            If an error occurs during the calculation of the cost or gradient.
+        """
+        try:
+            return self._evaluateS1(x)
+
+        except Exception as e:
+            raise ValueError(f"Error in cost calculation: {e}")
+
+    def _evaluateS1(self, x):
+        """
+        Compute the cost and its gradient with respect to the parameters.
+
+        Parameters
+        ----------
+        x : array-like
+            The parameters for which to compute the cost and gradient.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the cost and the gradient. The cost is a float,
+            and the gradient is an array-like of the same length as `x`.
+
+        Raises
+        ------
+        NotImplementedError
+            If the method has not been implemented by the subclass.
+        """
         raise NotImplementedError
 
 
@@ -76,7 +151,7 @@ class RootMeanSquaredError(BaseCost):
     def __init__(self, problem):
         super(RootMeanSquaredError, self).__init__(problem)
 
-    def __call__(self, x, grad=None):
+    def _evaluate(self, x, grad=None):
         """
         Calculate the root mean square error for a given set of parameters.
 
@@ -93,22 +168,14 @@ class RootMeanSquaredError(BaseCost):
         float
             The root mean square error.
 
-        Raises
-        ------
-        ValueError
-            If an error occurs during the calculation of the cost.
         """
 
-        try:
-            prediction = self.problem.evaluate(x)
+        prediction = self.problem.evaluate(x)
 
-            if len(prediction) < len(self._target):
-                return np.float64(np.inf)  # simulation stopped early
-            else:
-                return np.sqrt(np.mean((prediction - self._target) ** 2))
-
-        except Exception as e:
-            raise ValueError(f"Error in cost calculation: {e}")
+        if len(prediction) < len(self._target):
+            return np.float64(np.inf)  # simulation stopped early
+        else:
+            return np.sqrt(np.mean((prediction - self._target) ** 2))
 
 
 class SumSquaredError(BaseCost):
@@ -135,7 +202,7 @@ class SumSquaredError(BaseCost):
         # Default fail gradient
         self._de = 1.0
 
-    def __call__(self, x, grad=None):
+    def _evaluate(self, x, grad=None):
         """
         Calculate the sum of squared errors for a given set of parameters.
 
@@ -151,27 +218,18 @@ class SumSquaredError(BaseCost):
         -------
         float
             The sum of squared errors.
-
-        Raises
-        ------
-        ValueError
-            If an error occurs during the calculation of the cost.
         """
-        try:
-            prediction = self.problem.evaluate(x)
+        prediction = self.problem.evaluate(x)
 
-            if len(prediction) < len(self._target):
-                return np.float64(np.inf)  # simulation stopped early
-            else:
-                return np.sum(
-                    (np.sum(((prediction - self._target) ** 2), axis=0)),
-                    axis=0,
-                )
+        if len(prediction) < len(self._target):
+            return np.float64(np.inf)  # simulation stopped early
+        else:
+            return np.sum(
+                (np.sum(((prediction - self._target) ** 2), axis=0)),
+                axis=0,
+            )
 
-        except Exception as e:
-            raise ValueError(f"Error in cost calculation: {e}")
-
-    def evaluateS1(self, x):
+    def _evaluateS1(self, x):
         """
         Compute the cost and its gradient with respect to the parameters.
 
@@ -191,27 +249,23 @@ class SumSquaredError(BaseCost):
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        try:
-            y, dy = self.problem.evaluateS1(x)
-            if len(y) < len(self._target):
-                e = np.float64(np.inf)
-                de = self._de * np.ones(self.problem.n_parameters)
-            else:
-                dy = dy.reshape(
-                    (
-                        self.problem.n_time_data,
-                        self.problem.n_outputs,
-                        self.problem.n_parameters,
-                    )
+        y, dy = self.problem.evaluateS1(x)
+        if len(y) < len(self._target):
+            e = np.float64(np.inf)
+            de = self._de * np.ones(self.problem.n_parameters)
+        else:
+            dy = dy.reshape(
+                (
+                    self.problem.n_time_data,
+                    self.problem.n_outputs,
+                    self.problem.n_parameters,
                 )
-                r = y - self._target
-                e = np.sum(np.sum(r**2, axis=0), axis=0)
-                de = 2 * np.sum(np.sum((r.T * dy.T), axis=2), axis=1)
+            )
+            r = y - self._target
+            e = np.sum(np.sum(r**2, axis=0), axis=0)
+            de = 2 * np.sum(np.sum((r.T * dy.T), axis=2), axis=1)
 
-            return e, de
-
-        except Exception as e:
-            raise ValueError(f"Error in cost calculation: {e}")
+        return e, de
 
     def set_fail_gradient(self, de):
         """
