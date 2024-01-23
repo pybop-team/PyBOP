@@ -29,7 +29,6 @@ setup(
         "numpy>=1.16",
         "scipy>=1.3",
         "pandas>=1.0",
-        "nlopt>=2.6",
         "pints>=0.5",
     ],
     extras_require={
