@@ -176,7 +176,9 @@ class GravimetricEnergyDensity(pybop.BaseCost):
 
 # Generate cost function and optimisation class
 cost = GravimetricEnergyDensity(problem)
-optim = pybop.Optimisation(cost, optimiser=pybop.PSO, verbose=True)
+optim = pybop.Optimisation(
+    cost, optimiser=pybop.PSO, verbose=True, allow_infeasible_solutions=False
+)
 optim.set_max_iterations(5)
 
 # Run optimisation
