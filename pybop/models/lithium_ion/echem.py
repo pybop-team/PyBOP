@@ -1,4 +1,5 @@
 import pybamm
+import warnings
 from ..base_model import BaseModel
 
 
@@ -96,51 +97,54 @@ class SPM(BaseModel):
 
         return rebuild_parameters
 
-    def check_params(self, inputs=None):
+    def _check_params(self, inputs=None, allow_infeasible_solutions=True):
         """
-        A compatibility check for the model parameters which can be implemented by subclasses
-        if required, otherwise it returns True by default.
+        Check compatibility of the model parameters.
 
         Parameters
         ----------
         inputs : dict
             The input parameters for the simulation.
+        allow_infeasible_solutions : bool, optional
+            If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
         Returns
         -------
         bool
             A boolean which signifies whether the parameters are compatible.
-
         """
-        related_parameters = dict.fromkeys(
-            [
+
+        electrode_params = [
+            (
                 "Negative electrode active material volume fraction",
                 "Negative electrode porosity",
+            ),
+            (
                 "Positive electrode active material volume fraction",
                 "Positive electrode porosity",
-            ]
-        )
+            ),
+        ]
 
-        for key in related_parameters.keys():
-            if inputs is not None and key in inputs.keys():
-                related_parameters[key] = inputs[key]
-            else:
-                related_parameters[key] = self._parameter_set[key]
+        related_parameters = {
+            key: inputs.get(key)
+            if inputs and key in inputs
+            else self._parameter_set[key]
+            for pair in electrode_params
+            for key in pair
+        }
 
-        if (
-            related_parameters["Negative electrode active material volume fraction"]
-            + related_parameters["Negative electrode porosity"]
-        ) > 1:
-            return False
+        for material_vol_fraction, porosity in electrode_params:
+            if (
+                related_parameters[material_vol_fraction] + related_parameters[porosity]
+                > 1
+            ):
+                if self.param_check_counter <= len(electrode_params):
+                    infeasibility_warning = "Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
+                    warnings.warn(infeasibility_warning, UserWarning)
+                self.param_check_counter += 1
+                return allow_infeasible_solutions
 
-        elif (
-            related_parameters["Positive electrode active material volume fraction"]
-            + related_parameters["Positive electrode porosity"]
-        ) > 1:
-            return False
-
-        else:
-            return True
+        return True
 
 
 class SPMe(BaseModel):
@@ -239,48 +243,51 @@ class SPMe(BaseModel):
 
         return rebuild_parameters
 
-    def check_params(self, inputs=None):
+    def _check_params(self, inputs=None, allow_infeasible_solutions=True):
         """
-        A compatibility check for the model parameters which can be implemented by subclasses
-        if required, otherwise it returns True by default.
+        Check compatibility of the model parameters.
 
         Parameters
         ----------
         inputs : dict
             The input parameters for the simulation.
+        allow_infeasible_solutions : bool, optional
+            If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
         Returns
         -------
         bool
             A boolean which signifies whether the parameters are compatible.
-
         """
-        related_parameters = dict.fromkeys(
-            [
+
+        electrode_params = [
+            (
                 "Negative electrode active material volume fraction",
                 "Negative electrode porosity",
+            ),
+            (
                 "Positive electrode active material volume fraction",
                 "Positive electrode porosity",
-            ]
-        )
+            ),
+        ]
 
-        for key in related_parameters.keys():
-            if inputs is not None and key in inputs.keys():
-                related_parameters[key] = inputs[key]
-            else:
-                related_parameters[key] = self._parameter_set[key]
+        related_parameters = {
+            key: inputs.get(key)
+            if inputs and key in inputs
+            else self._parameter_set[key]
+            for pair in electrode_params
+            for key in pair
+        }
 
-        if (
-            related_parameters["Negative electrode active material volume fraction"]
-            + related_parameters["Negative electrode porosity"]
-        ) > 1:
-            return False
+        for material_vol_fraction, porosity in electrode_params:
+            if (
+                related_parameters[material_vol_fraction] + related_parameters[porosity]
+                > 1
+            ):
+                if self.param_check_counter <= len(electrode_params):
+                    infeasibility_warning = "Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
+                    warnings.warn(infeasibility_warning, UserWarning)
+                self.param_check_counter += 1
+                return allow_infeasible_solutions
 
-        elif (
-            related_parameters["Positive electrode active material volume fraction"]
-            + related_parameters["Positive electrode porosity"]
-        ) > 1:
-            return False
-
-        else:
-            return True
+        return True

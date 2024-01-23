@@ -32,6 +32,8 @@ class BaseModel:
         self.matched_parameters = {}
         self.non_matched_parameters = {}
         self.fit_keys = []
+        self.param_check_counter = 0
+        self.allow_infeasible_solutions = True
 
     def build(
         self,
@@ -253,10 +255,14 @@ class BaseModel:
         else:
             if not self.fit_keys and self.matched_parameters:
                 sol = self.solver.solve(self.built_model, t_eval=t_eval)
+
             else:
                 if not isinstance(inputs, dict):
                     inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
-                    if self.check_params(inputs):
+                    if self.check_params(
+                        inputs=inputs,
+                        allow_infeasible_solutions=self.allow_infeasible_solutions,
+                    ):
                         sol = self.solver.solve(
                             self.built_model, inputs=inputs, t_eval=t_eval
                         )
@@ -297,7 +303,7 @@ class BaseModel:
             if not isinstance(inputs, dict):
                 inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
 
-            if self.check_params(inputs):
+            if self.check_params(inputs, self.allow_infeasible_solutions):
                 sol = self.solver.solve(
                     self.built_model,
                     inputs=inputs,
@@ -372,7 +378,7 @@ class BaseModel:
                 inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
             parameter_set.update(inputs)
 
-        if self.check_params(inputs):
+        if self.check_params(inputs, self.allow_infeasible_solutions):
             if self._unprocessed_model is not None:
                 if experiment is None:
                     return pybamm.Simulation(
@@ -393,7 +399,32 @@ class BaseModel:
         else:
             return [np.inf]
 
-    def check_params(self, inputs=None):
+    def check_params(self, inputs=None, allow_infeasible_solutions=True):
+        """
+        Check compatibility of the model parameters.
+
+        Parameters
+        ----------
+        inputs : dict
+            The input parameters for the simulation.
+        allow_infeasible_solutions : bool, optional
+            If True, infeasible parameter values will be allowed in the optimisation (default: True).
+
+        Returns
+        -------
+        bool
+            A boolean which signifies whether the parameters are compatible.
+
+        """
+        if inputs is not None:
+            if not isinstance(inputs, dict):
+                inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+
+        return self._check_params(
+            inputs=inputs, allow_infeasible_solutions=allow_infeasible_solutions
+        )
+
+    def _check_params(self, inputs=None, allow_infeasible_solutions=True):
         """
         A compatibility check for the model parameters which can be implemented by subclasses
         if required, otherwise it returns True by default.
@@ -402,12 +433,13 @@ class BaseModel:
         ----------
         inputs : dict
             The input parameters for the simulation.
+        allow_infeasible_solutions : bool, optional
+            If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
         Returns
         -------
         bool
             A boolean which signifies whether the parameters are compatible.
-
         """
         return True
 
