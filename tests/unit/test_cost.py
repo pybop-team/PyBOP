@@ -49,14 +49,24 @@ class TestCosts:
         if cls == pybop.RootMeanSquaredError or cls == pybop.SumSquaredError:
             return cls(problem)
         elif cls == pybop.ObserverCost:
+            state = problem._model.reinit(inputs)
+            n = len(state)
+            sigma_diag = [0.0] * n
+            sigma_diag[0] = 1e-4
+            sigma_diag[1] = 1e-4
+            process_diag = [0.0] * n
+            process_diag[0] = 1e-4
+            process_diag[1] = 1e-4
+            sigma0 = np.diag(sigma_diag)
+            process = np.diag(process_diag)
             return cls(
                 problem,
                 observer=pybop.UnscentedKalmanFilterObserver(
                     problem._model,
                     inputs,
                     problem.signal,
-                    sigma0=1e-4,
-                    process=1e-4,
+                    sigma0=sigma0,
+                    process=process,
                     measure=1e-4,
                 ),
             )

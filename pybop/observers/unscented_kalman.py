@@ -21,8 +21,10 @@ class UnscentedKalmanFilterObserver(Observer):
         The signal to observe.
     sigma0 : np.ndarray | float
         The covariance matrix of the initial state. If a float is provided, the covariance matrix is set to sigma0 * np.eye(n), where n is the number of states.
+        To remove a state from the filter, set the corresponding row and col to zero in both sigma0 and process.
     process : np.ndarray | float
         The covariance matrix of the process noise. If a float is provided, the covariance matrix is set to process * np.eye(n), where n is the number of states.
+        To remove a state from the filter, set the corresponding row and col to zero in both sigma0 and process.
     measure : np.ndarray | float
         The covariance matrix of the measurement noise. If a float is provided, the covariance matrix is set to measure * np.eye(m), where m is the number of measurements.
     """
@@ -78,8 +80,7 @@ class UnscentedKalmanFilterObserver(Observer):
 
     def reset(self, inputs: Inputs) -> None:
         super().reset(inputs)
-        self._ukf.x = self.get_current_state().as_ndarray()
-        self._ukf.S = linalg.cholesky(self._sigma0)
+        self._ukf.reset(self.get_current_state().as_ndarray(), self._sigma0)
 
     def observe(self, time: float, value: np.ndarray) -> float:
         if value is None:
@@ -158,18 +159,43 @@ class UkfFilter(object):
         f: callable,
         h: callable,
     ) -> None:
+        # find states that are zero in both sigma0 and process
+        zero_rows = np.logical_and(np.all(P0 == 0, axis=0), np.all(Rp == 0, axis=0))
+        zero_cols = np.logical_and(np.all(P0 == 0, axis=1), np.all(Rp == 0, axis=1))
+        zeros = np.logical_and(zero_rows, zero_cols)
+        ones = np.logical_not(zeros)
+        states = np.array(range(len(x0)))[ones]
+
+        S_filtered = linalg.cholesky(P0[ones, :][:, ones])
+        sqrtRp_filtered = linalg.cholesky(Rp[ones, :][:, ones])
+
+        n = len(x0)
+        S = np.zeros((n, n))
+        sqrtRp = np.zeros((n, n))
+        S[ones, :][:, ones] = S_filtered
+        sqrtRp[ones, :][:, ones] = sqrtRp_filtered
+
         self.x = x0
-        self.S = linalg.cholesky(P0)
-        self.sqrtRp = linalg.cholesky(Rp)
+        self.S = S
+        self.sqrtRp = sqrtRp
         self.sqrtRm = linalg.cholesky(Rm)
         self.alpha = 1e-3
         self.beta = 2
         self.f = f
         self.h = h
+        self.states = states
+
+    def reset(self, x: np.ndarray, S: np.ndarray) -> None:
+        self.x = x[self.states]
+        S_filtered = S[self.states, :][:, self.states]
+        S_filtered = linalg.cholesky(S_filtered)
+        S_full = S.copy()
+        S_full[self.states, :][:, self.states] = S_filtered
+        self.S = S_full
 
     @staticmethod
     def gen_sigma_points(
-        x: np.ndarray, S: np.ndarray, alpha: float, beta: float
+        x: np.ndarray, S: np.ndarray, alpha: float, beta: float, states: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Generates the sigma points for the unscented transform
@@ -184,6 +210,8 @@ class UkfFilter(object):
             The spread of the sigma points. Typically 1e-4 < alpha < 1
         beta : float
             The prior knowledge of the distribution. Typically 2 for a Gaussian distribution
+        states: np.ndarray
+            array of indices of states to use for the sigma points
 
         Returns
         -------
@@ -195,15 +223,15 @@ class UkfFilter(object):
             The weights of the covariance points
         """
         kappa = 1.0
-        L = len(x)
+        L = len(states)
         sigma = alpha**2 * (L + kappa) - L
         eta = np.sqrt(L + sigma)
         wm_0 = sigma / (L + sigma)
         wc_0 = wm_0 + (1 - alpha**2 + beta)
         points = np.hstack(
             [x]
-            + [x + eta * S[:, i].reshape(-1, 1) for i in range(L)]
-            + [x - eta * S[:, i].reshape(-1, 1) for i in range(L)]
+            + [x + eta * S[:, i].reshape(-1, 1) for i in states]
+            + [x - eta * S[:, i].reshape(-1, 1) for i in states]
         )
         w_m = np.array([wm_0] + [(1 - wm_0) / (2 * L)] * (2 * L))
         w_c = np.array([wc_0] + [(1 - wc_0) / (2 * L)] * (2 * L))
@@ -211,7 +239,11 @@ class UkfFilter(object):
 
     @staticmethod
     def unscented_transform(
-        sigma_points: np.ndarray, w_m: np.ndarray, w_c: np.ndarray, sqrtR: np.ndarray
+        sigma_points: np.ndarray,
+        w_m: np.ndarray,
+        w_c: np.ndarray,
+        sqrtR: np.ndarray,
+        states: Union[np.ndarray, None] = None,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Performs the unscented transform
@@ -222,6 +254,8 @@ class UkfFilter(object):
             The sigma points
         sqrtR : np.ndarray
             The square root of the covariance matrix
+        states: np.ndarray
+            array of indices of states to use for the transform
 
         Returns
         -------
@@ -230,13 +264,30 @@ class UkfFilter(object):
         """
         x = np.sum(w_m * sigma_points, axis=1).reshape(-1, 1)
         sigma_points_diff = sigma_points - x
-        A = np.sqrt(w_c[1:]) * (sigma_points_diff[:, 1:])
+        A = np.hstack([np.sqrt(w_c[1:]) * (sigma_points_diff[:, 1:]), sqrtR])
         (
             _,
             S,
         ) = linalg.qr(A.T, mode="economic")
-        S = UkfFilter.cholupdate(S, sigma_points_diff[:, 0:1], w_c[0])
+        if states is None:
+            S = UkfFilter.cholupdate(S, sigma_points_diff[:, 0:1], w_c[0])
+        else:
+            S = UkfFilter.filtered_cholupdate(
+                S, sigma_points_diff[:, 0:1], w_c[0], states
+            )
+
         return x, S
+
+    @staticmethod
+    def filtered_cholupdate(
+        R: np.ndarray, x: np.ndarray, w: float, states: np.ndarray
+    ) -> np.ndarray:
+        R_full = R.copy()
+        R_filtered = R[states, :][:, states]
+        x_filtered = x[states]
+        R_filtered = UkfFilter.cholupdate(R_filtered, x_filtered, w)
+        R_full[states, :][:, states] = R_filtered
+        return R_full
 
     @staticmethod
     def cholupdate(R: np.ndarray, x: np.ndarray, w: float) -> np.ndarray:
@@ -289,11 +340,13 @@ class UkfFilter(object):
             The log likelihood of the measurement
         """
         sigma_points, w_m, w_c = self.gen_sigma_points(
-            self.x, self.S, self.alpha, self.beta
+            self.x, self.S, self.alpha, self.beta, self.states
         )
         sigma_points = np.apply_along_axis(self.f, 0, sigma_points)
 
-        x_minus, S_minus = self.unscented_transform(sigma_points, w_m, w_c, self.sqrtRp)
+        x_minus, S_minus = self.unscented_transform(
+            sigma_points, w_m, w_c, self.sqrtRp, self.states
+        )
         sigma_points_y = np.apply_along_axis(self.h, 0, sigma_points)
         y_minus, S_y = self.unscented_transform(sigma_points_y, w_m, w_c, self.sqrtRm)
         P = np.einsum(
@@ -303,7 +356,7 @@ class UkfFilter(object):
         residual = y - y_minus
         self.x = x_minus + gain @ residual
         U = gain @ S_y
-        self.S = self.cholupdate(S_minus, U, -1)
+        self.S = self.filtered_cholupdate(S_minus, U, -1, self.states)
         log_det = 2 * np.sum(np.log(np.diag(self.S)))
         n = len(y)
         log_likelihood = -0.5 * (

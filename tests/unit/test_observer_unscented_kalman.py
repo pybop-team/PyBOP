@@ -15,7 +15,7 @@ class TestUKF:
 
     measure_noise = 1e-4
 
-    @pytest.fixture(params=[1, 2])
+    @pytest.fixture(params=[1, 2, 3])
     def model(self, request):
         model = ExponentialDecay(
             parameters=pybamm.ParameterValues({"k": "[input]", "y0": "[input]"}),
@@ -46,6 +46,12 @@ class TestUKF:
         n = model.nstate
         sigma0 = np.diag([self.measure_noise] * n)
         process = np.diag([1e-6] * n)
+        # for 3rd  model, set sigma0 and process to zero for the 1st and 2nd state
+        if n == 3:
+            sigma0[0, 0] = 0
+            sigma0[1, 1] = 0
+            process[0, 0] = 0
+            process[1, 1] = 0
         measure = np.diag([1e-4])
         observer = pybop.UnscentedKalmanFilterObserver(
             model, inputs, signal, sigma0, process, measure
