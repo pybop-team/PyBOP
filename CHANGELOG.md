@@ -2,6 +2,8 @@
 
 ## Features
 
+- [#151](https://github.com/pybop-team/PyBOP/issues/151) - Adds a standalone version of the Problem class.
+
 ## Bug Fixes
 
 - [#164](https://github.com/pybop-team/PyBOP/issues/164) - Fixes convergence issues with gradient-based optimisers, changes default `model.check_params()` to allow infeasible solutions during optimisation iterations. Adds a feasibility check on the optimal parameters.
