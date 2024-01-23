@@ -71,15 +71,16 @@ class SPM(BaseModel):
 
         self._electrode_soh = pybamm.lithium_ion.electrode_soh
 
-    def _check_params(self, inputs=None, infeasible_locations=True):
+    def _check_params(self, inputs=None, allow_infeasible_solutions=True):
         """
-        A compatibility check for the model parameters which can be implemented by subclasses
-        if required, otherwise it returns True by default.
+        Check compatibility of the model parameters.
 
         Parameters
         ----------
         inputs : dict
             The input parameters for the simulation.
+        allow_infeasible_solutions : bool, optional
+            If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
         Returns
         -------
@@ -106,18 +107,16 @@ class SPM(BaseModel):
             for key in pair
         }
 
-        def warn_and_return(warn_message):
-            warnings.warn(warn_message, UserWarning)
-            return infeasible_locations
-
         for material_vol_fraction, porosity in electrode_params:
-            if related_parameters[material_vol_fraction] + related_parameters[
-                porosity
-            ] > 1 and self.param_check_counter <= len(electrode_params):
+            if (
+                related_parameters[material_vol_fraction] + related_parameters[porosity]
+                > 1
+            ):
+                if self.param_check_counter <= len(electrode_params):
+                    infeasibility_warning = "Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
+                    warnings.warn(infeasibility_warning, UserWarning)
                 self.param_check_counter += 1
-                return warn_and_return(
-                    f"Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
-                )
+                return allow_infeasible_solutions
 
         return True
 
@@ -192,15 +191,16 @@ class SPMe(BaseModel):
 
         self._electrode_soh = pybamm.lithium_ion.electrode_soh
 
-    def _check_params(self, inputs=None, infeasible_locations=True):
+    def _check_params(self, inputs=None, allow_infeasible_solutions=True):
         """
-        A compatibility check for the model parameters which can be implemented by subclasses
-        if required, otherwise it returns True by default.
+        Check compatibility of the model parameters.
 
         Parameters
         ----------
         inputs : dict
             The input parameters for the simulation.
+        allow_infeasible_solutions : bool, optional
+            If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
         Returns
         -------
@@ -227,17 +227,15 @@ class SPMe(BaseModel):
             for key in pair
         }
 
-        def warn_and_return(warn_message):
-            warnings.warn(warn_message, UserWarning)
-            return infeasible_locations
-
         for material_vol_fraction, porosity in electrode_params:
-            if related_parameters[material_vol_fraction] + related_parameters[
-                porosity
-            ] > 1 and self.param_check_counter <= len(electrode_params):
+            if (
+                related_parameters[material_vol_fraction] + related_parameters[porosity]
+                > 1
+            ):
+                if self.param_check_counter <= len(electrode_params):
+                    infeasibility_warning = "Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
+                    warnings.warn(infeasibility_warning, UserWarning)
                 self.param_check_counter += 1
-                return warn_and_return(
-                    f"Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
-                )
+                return allow_infeasible_solutions
 
         return True

@@ -132,7 +132,7 @@ class TestModelParameterisation:
             x, final_cost = parameterisation.run()
 
         elif optimiser in [pybop.SciPyMinimize]:
-            parameterisation.cost.problem._model.infeasible_locations = False
+            parameterisation.cost.problem._model.allow_infeasible_solutions = False
             parameterisation.set_max_iterations(125)
             x, final_cost = parameterisation.run()
 

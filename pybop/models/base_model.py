@@ -58,7 +58,7 @@ class BaseModel:
         self.dataset = None
         self.signal = None
         self.param_check_counter = 0
-        self.infeasible_locations = True
+        self.allow_infeasible_solutions = True
 
     def build(
         self,
@@ -246,7 +246,7 @@ class BaseModel:
             if not isinstance(inputs, dict):
                 inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
 
-            if self.check_params(inputs, self.infeasible_locations):
+            if self.check_params(inputs, self.allow_infeasible_solutions):
                 sol = self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
 
                 predictions = [sol[signal].data for signal in self.signal]
@@ -286,7 +286,7 @@ class BaseModel:
             if not isinstance(inputs, dict):
                 inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
 
-            if self.check_params(inputs, self.infeasible_locations):
+            if self.check_params(inputs, self.allow_infeasible_solutions):
                 sol = self.solver.solve(
                     self.built_model,
                     inputs=inputs,
@@ -360,7 +360,7 @@ class BaseModel:
                 inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
             parameter_set.update(inputs)
 
-        if self.check_params(inputs, self.infeasible_locations):
+        if self.check_params(inputs, self.allow_infeasible_solutions):
             if self._unprocessed_model is not None:
                 if experiment is None:
                     return pybamm.Simulation(
@@ -381,15 +381,16 @@ class BaseModel:
         else:
             return [np.inf]
 
-    def check_params(self, inputs=None, infeasible_locations=True):
+    def check_params(self, inputs=None, allow_infeasible_solutions=True):
         """
-        A compatibility check for the model parameters which can be implemented by subclasses
-        if required, otherwise it returns True by default.
+        Check compatibility of the model parameters.
 
         Parameters
         ----------
         inputs : dict
             The input parameters for the simulation.
+        allow_infeasible_solutions : bool, optional
+            If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
         Returns
         -------
@@ -402,8 +403,27 @@ class BaseModel:
                 inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
 
         return self._check_params(
-            inputs=inputs, infeasible_locations=infeasible_locations
+            inputs=inputs, allow_infeasible_solutions=allow_infeasible_solutions
         )
+
+    def _check_params(self, inputs=None, allow_infeasible_solutions=True):
+        """
+        A compatibility check for the model parameters which can be implemented by subclasses
+        if required, otherwise it returns True by default.
+
+        Parameters
+        ----------
+        inputs : dict
+            The input parameters for the simulation.
+        allow_infeasible_solutions : bool, optional
+            If True, infeasible parameter values will be allowed in the optimisation (default: True).
+
+        Returns
+        -------
+        bool
+            A boolean which signifies whether the parameters are compatible.
+        """
+        return True
 
     @property
     def built_model(self):
