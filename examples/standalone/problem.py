@@ -41,7 +41,7 @@ class StandaloneProblem(BaseProblem):
             if self._target.shape != (self.n_time_data, self.n_outputs):
                 raise ValueError("Time data and target data must be the same shape.")
 
-    def evaluate(self, parameters):
+    def evaluate(self, x):
         """
         Evaluate the model with the given parameters and return the signal.
 
@@ -49,6 +49,33 @@ class StandaloneProblem(BaseProblem):
         ----------
         x : np.ndarray
             Parameter values to evaluate the model at.
+
+        Returns
+        -------
+        y : np.ndarray
+            The model output y(t) simulated with inputs x.
         """
 
-        return parameters[0] * self._time_data + parameters[1]
+        return x[0] * self._time_data + x[1]
+
+    def evaluateS1(self, x):
+        """
+        Evaluate the model with the given parameters and return the signal and its derivatives.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            Parameter values to evaluate the model at.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the simulation result y(t) and the sensitivities dy/dx(t) evaluated
+            with given inputs x.
+        """
+
+        y = x[0] * self._time_data + x[1]
+
+        dy = np.dstack([self._time_data, np.zeros(self._time_data.shape)])
+
+        return (np.asarray(y), np.asarray(dy))

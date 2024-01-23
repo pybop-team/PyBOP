@@ -191,6 +191,11 @@ class FittingProblem(BaseProblem):
         ----------
         x : np.ndarray
             Parameter values to evaluate the model at.
+
+        Returns
+        -------
+        y : np.ndarray
+            The model output y(t) simulated with inputs x.
         """
 
         y = np.asarray(self._model.simulate(inputs=x, t_eval=self._time_data))
@@ -205,6 +210,12 @@ class FittingProblem(BaseProblem):
         ----------
         x : np.ndarray
             Parameter values to evaluate the model at.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the simulation result y(t) and the sensitivities dy/dx(t) evaluated
+            with given inputs x.
         """
 
         y, dy = self._model.simulateS1(
@@ -267,6 +278,11 @@ class DesignProblem(BaseProblem):
         ----------
         x : np.ndarray
             Parameter values to evaluate the model at.
+
+        Returns
+        -------
+        y : np.ndarray
+            The model output y(t) simulated with inputs x.
         """
 
         y = np.asarray(self._model.simulate(inputs=x, t_eval=self._time_data))
@@ -281,6 +297,12 @@ class DesignProblem(BaseProblem):
         ----------
         x : np.ndarray
             Parameter values to evaluate the model at.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the simulation result y(t) and the sensitivities dy/dx(t) evaluated
+            with given inputs x.
         """
 
         y, dy = self._model.simulateS1(
