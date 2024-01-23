@@ -67,7 +67,7 @@ class TestCosts:
         sums_cost.set_fail_gradient(1)
 
         # Test infeasible locations
-        rmse_cost.problem._model.infeasible_locations = False
+        rmse_cost.problem._model.allow_infeasible_solutions = False
         assert rmse_cost([1.1]) == np.inf
 
         # Test UserWarnings

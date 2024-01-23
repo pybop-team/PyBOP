@@ -71,7 +71,7 @@ class SPM(BaseModel):
 
         self._electrode_soh = pybamm.lithium_ion.electrode_soh
 
-    def _check_params(self, inputs=None, infeasible_locations=True):
+    def _check_params(self, inputs=None, allow_infeasible_solutions=True):
         """
         Check compatibility of the model parameters.
 
@@ -79,7 +79,7 @@ class SPM(BaseModel):
         ----------
         inputs : dict
             The input parameters for the simulation.
-        infeasible_locations : bool, optional
+        allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
         Returns
@@ -116,7 +116,7 @@ class SPM(BaseModel):
                     infeasibility_warning = "Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
                     warnings.warn(infeasibility_warning, UserWarning)
                 self.param_check_counter += 1
-                return infeasible_locations
+                return allow_infeasible_solutions
 
         return True
 
@@ -191,7 +191,7 @@ class SPMe(BaseModel):
 
         self._electrode_soh = pybamm.lithium_ion.electrode_soh
 
-    def _check_params(self, inputs=None, infeasible_locations=True):
+    def _check_params(self, inputs=None, allow_infeasible_solutions=True):
         """
         Check compatibility of the model parameters.
 
@@ -199,7 +199,7 @@ class SPMe(BaseModel):
         ----------
         inputs : dict
             The input parameters for the simulation.
-        infeasible_locations : bool, optional
+        allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
         Returns
@@ -236,6 +236,6 @@ class SPMe(BaseModel):
                     infeasibility_warning = "Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
                     warnings.warn(infeasibility_warning, UserWarning)
                 self.param_check_counter += 1
-                return infeasible_locations
+                return allow_infeasible_solutions
 
         return True

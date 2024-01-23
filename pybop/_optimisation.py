@@ -20,7 +20,7 @@ class Optimisation:
         If True, the optimization progress is printed (default: False).
     physical_viability : bool, optional
         If True, the feasibility of the optimised parameters is checked (default: True).
-    infeasible_locations : bool, optional
+    allow_infeasible_solutions : bool, optional
         If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
     Attributes
@@ -44,7 +44,7 @@ class Optimisation:
         sigma0=None,
         verbose=False,
         physical_viability=True,
-        infeasible_locations=True,
+        allow_infeasible_solutions=True,
     ):
         self.cost = cost
         self.optimiser = optimiser
@@ -54,7 +54,7 @@ class Optimisation:
         self.n_parameters = cost.n_parameters
         self.sigma0 = sigma0
         self.physical_viability = physical_viability
-        self.infeasible_locations = infeasible_locations
+        self.allow_infeasible_solutions = allow_infeasible_solutions
         self.log = []
 
         # Convert x0 to pints vector
@@ -62,11 +62,13 @@ class Optimisation:
 
         # Set whether to allow infeasible locations
         if self.cost.problem is not None and hasattr(self.cost.problem, "_model"):
-            self.cost.problem._model.infeasible_locations = self.infeasible_locations
+            self.cost.problem._model.allow_infeasible_solutions = (
+                self.allow_infeasible_solutions
+            )
         else:
             # Turn off this feature as there is no model
             self.physical_viability = False
-            self.infeasible_locations = False
+            self.allow_infeasible_solutions = False
 
         # PyBOP doesn't currently support the pints transformation class
         self._transformation = None
@@ -494,12 +496,14 @@ class Optimisation:
         Check if the optimised parameters are physically viable.
         """
 
-        if self.cost.problem._model.check_params(inputs=x, infeasible_locations=False):
+        if self.cost.problem._model.check_params(
+            inputs=x, allow_infeasible_solutions=False
+        ):
             return
         else:
             warnings.warn(
                 "Optimised parameters are not physically viable! \nConsider retrying the optimisation"
-                + " with a non-gradient-based optimiser and the option infeasible_locations=False",
+                + " with a non-gradient-based optimiser and the option allow_infeasible_solutions=False",
                 UserWarning,
                 stacklevel=2,
             )
