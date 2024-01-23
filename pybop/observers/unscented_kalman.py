@@ -94,6 +94,7 @@ class UnscentedKalmanFilterObserver(Observer):
 
             def f(x: np.ndarray) -> np.ndarray:
                 return x
+
         else:
 
             def f(x: np.ndarray) -> np.ndarray:

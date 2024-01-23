@@ -117,7 +117,7 @@ class TestCosts:
 
         if isinstance(cost, pybop.RootMeanSquaredError):
             # Test infeasible locations
-            cost.problem._model.infeasible_locations = False
+            cost.problem._model.allow_infeasible_solutions = False
             assert cost([1.1]) == np.inf
 
         # Test exception for non-numeric inputs
