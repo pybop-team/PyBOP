@@ -57,6 +57,10 @@ class TestStandalone:
 
         np.testing.assert_allclose(x, 3.138, atol=1e-2)
 
+        # Test the sensitivities
+        sums_cost = pybop.SumSquaredError(problem)
+        sums_cost.evaluateS1([1, 2])
+
         # Test incorrect number of initial parameter values
         with pytest.raises(ValueError):
             StandaloneProblem(parameters, dataset, signal=signal, x0=np.array([]))
@@ -79,6 +83,12 @@ class TestStandalone:
             pybop.Dataset(
                 {
                     "Time [s]": np.array([0]),
+                    "Output": np.array([0, 0]),
+                }
+            ),
+            pybop.Dataset(
+                {
+                    "Time [s]": np.array([[0], [0]]),
                     "Output": np.array([0, 0]),
                 }
             ),
