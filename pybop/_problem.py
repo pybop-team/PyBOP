@@ -159,14 +159,13 @@ class FittingProblem(BaseProblem):
         if np.any(self._time_data[:-1] >= self._time_data[1:]):
             raise ValueError("Times must be increasing.")
 
+        for signal in self.signal:
+            if len(self._dataset[signal]) != self.n_time_data:
+                raise ValueError(
+                    f"Time data and {signal} data must be the same length."
+                )
         target = [self._dataset[signal] for signal in self.signal]
         self._target = np.vstack(target).T
-        if self.n_outputs == 1:
-            if len(self._target) != self.n_time_data:
-                raise ValueError("Time data and target data must be the same length.")
-        else:
-            if self._target.shape != (self.n_time_data, self.n_outputs):
-                raise ValueError("Time data and target data must be the same shape.")
 
         # Add useful parameters to model
         if model is not None:

@@ -124,16 +124,13 @@ class TestProblem:
                     "Voltage [V]": np.array([0, 0]),
                 }
             ),
-            pybop.Dataset(
-                {
-                    "Time [s]": np.array([[0], [0]]),
-                    "Current function [A]": np.array([0, 0]),
-                    "Voltage [V]": np.array([0, 0]),
-                }
-            ),
         ]:
             with pytest.raises(ValueError):
                 pybop.FittingProblem(model, parameters, bad_dataset, signal=signal)
+
+        two_signals = ["Voltage [V]", "Time [s]"]
+        with pytest.raises(ValueError):
+            pybop.FittingProblem(model, parameters, bad_dataset, signal=two_signals)
 
     @pytest.mark.unit
     def test_design_problem(self, parameters, experiment, model):
