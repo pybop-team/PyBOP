@@ -46,7 +46,6 @@ class TestOptimisation:
     @pytest.mark.parametrize(
         "optimiser_class, expected_name",
         [
-            (pybop.NLoptOptimize, "NLoptOptimize"),
             (pybop.SciPyMinimize, "SciPyMinimize"),
             (pybop.SciPyDifferentialEvolution, "SciPyDifferentialEvolution"),
             (pybop.GradientDescent, "Gradient descent"),
@@ -67,14 +66,10 @@ class TestOptimisation:
         assert opt.optimiser.name() == expected_name
 
         if optimiser_class not in [
-            pybop.NLoptOptimize,
             pybop.SciPyMinimize,
             pybop.SciPyDifferentialEvolution,
         ]:
             assert opt.optimiser.boundaries is None
-
-        if optimiser_class == pybop.NLoptOptimize:
-            assert opt.optimiser.n_param == 1
 
     @pytest.mark.unit
     def test_default_optimiser_with_bounds(self, cost):
@@ -102,7 +97,7 @@ class TestOptimisation:
     def test_standalone(self):
         # Build an Optimisation problem with a StandaloneCost
         cost = StandaloneCost()
-        opt = pybop.Optimisation(cost=cost, optimiser=pybop.NLoptOptimize)
+        opt = pybop.Optimisation(cost=cost, optimiser=pybop.SciPyDifferentialEvolution)
         x, final_cost = opt.run()
 
         assert len(opt.x0) == opt.n_parameters
@@ -113,7 +108,7 @@ class TestOptimisation:
     def test_prior_sampling(self, cost):
         # Tests prior sampling
         for i in range(50):
-            opt = pybop.Optimisation(cost=cost, optimiser=pybop.NLoptOptimize)
+            opt = pybop.Optimisation(cost=cost, optimiser=pybop.CMAES)
 
             assert opt.x0 <= 0.62 and opt.x0 >= 0.58
 
