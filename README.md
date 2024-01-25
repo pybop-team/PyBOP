@@ -117,7 +117,7 @@ The [spm_descent.py](https://github.com/pybop-team/PyBOP/blob/develop/examples/s
 python examples/scripts/spm_descent.py
 ```
 
-In addition, [spm_nlopt.ipynb](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/spm_nlopt.ipynb) provides a second example in notebook form. This example estimates the SPM parameters based on an RMSE cost function and a BOBYQA optimiser.
+In addition, [spm_CMAES.ipynb](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/spm_CMAES.ipynb) provides a second example in notebook form. This example estimates the SPM parameters based on an RMSE cost function and a BOBYQA optimiser.
 
 <!-- Code of Conduct -->
 ## Code of Conduct

@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#118](https://github.com/pybop-team/PyBOP/issues/118) - Adds example jupyter notebooks.
 - [#151](https://github.com/pybop-team/PyBOP/issues/151) - Adds a standalone version of the Problem class.
 
 ## Bug Fixes
