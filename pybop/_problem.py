@@ -171,8 +171,13 @@ class FittingProblem(BaseProblem):
         # Add useful parameters to model
         if model is not None:
             self._model.signal = self.signal
+            self._model.output_variables = self.signal
             self._model.n_outputs = self.n_outputs
             self._model.n_time_data = self.n_time_data
+            # self._model.solver = pybamm.IDAKLUSolver(
+            # atol=1e-8, rtol=1e-8,
+            # options=self._model.options,
+            # output_variables=self._model.output_variables)
 
         # Build the model
         if self._model._built_model is None:

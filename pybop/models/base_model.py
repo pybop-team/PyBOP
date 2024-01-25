@@ -27,6 +27,7 @@ class BaseModel:
         self.parameters = None
         self.dataset = None
         self.signal = None
+        self.output_variables = None
         self.param_check_counter = 0
         self.allow_infeasible_solutions = True
 
@@ -168,9 +169,9 @@ class BaseModel:
             if self.check_params(inputs, self.allow_infeasible_solutions):
                 sol = self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
 
-                predictions = [sol[signal].data for signal in self.signal]
+                # predictions = [sol[signal].data for signal in self.signal]
 
-                return np.vstack(predictions).T
+                return sol.T  # np.vstack(predictions).T
 
             else:
                 return [np.inf]
