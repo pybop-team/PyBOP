@@ -5,7 +5,7 @@ import pytest
 from pybop.observers.unscented_kalman import UkfFilter
 import matplotlib.pyplot as plt
 
-from tests.unit.exponential_decay import ExponentialDecay
+from examples.standalone.exponential_decay import ExponentialDecay
 
 
 class TestUKF:

@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 import pybamm
 
-from tests.unit.exponential_decay import ExponentialDecay
+from examples.standalone.exponential_decay import ExponentialDecay
 
 
 class TestModels:
