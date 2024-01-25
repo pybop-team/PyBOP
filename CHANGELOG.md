@@ -2,11 +2,11 @@
 
 ## Features
 
+- [#118](https://github.com/pybop-team/PyBOP/issues/118) - Adds example jupyter notebooks.
 - [#151](https://github.com/pybop-team/PyBOP/issues/151) - Adds a standalone version of the Problem class.
 
 ## Bug Fixes
 
-- [#118](https://github.com/pybop-team/PyBOP/issues/118) - Adds example jupyter notebooks.
 - [#164](https://github.com/pybop-team/PyBOP/issues/164) - Fixes convergence issues with gradient-based optimisers, changes default `model.check_params()` to allow infeasible solutions during optimisation iterations. Adds a feasibility check on the optimal parameters.
 
 # [v23.12](https://github.com/pybop-team/PyBOP/tree/v23.12) - 2023-12-19
