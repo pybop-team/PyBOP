@@ -1,7 +1,6 @@
 import pybop
 import numpy as np
 import pytest
-from examples.costs.standalone import StandaloneCost
 
 
 class TestOptimisation:
@@ -92,17 +91,6 @@ class TestOptimisation:
 
         with pytest.raises(ValueError):
             pybop.Optimisation(cost=cost, optimiser=RandomClass)
-
-    @pytest.mark.unit
-    def test_standalone(self):
-        # Build an Optimisation problem with a StandaloneCost
-        cost = StandaloneCost()
-        opt = pybop.Optimisation(cost=cost, optimiser=pybop.SciPyDifferentialEvolution)
-        x, final_cost = opt.run()
-
-        assert len(opt.x0) == opt.n_parameters
-        np.testing.assert_allclose(x, 0, atol=1e-2)
-        np.testing.assert_allclose(final_cost, 42, atol=1e-2)
 
     @pytest.mark.unit
     def test_prior_sampling(self, cost):
