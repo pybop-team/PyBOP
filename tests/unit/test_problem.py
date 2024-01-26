@@ -128,6 +128,10 @@ class TestProblem:
             with pytest.raises(ValueError):
                 pybop.FittingProblem(model, parameters, bad_dataset, signal=signal)
 
+        two_signals = ["Voltage [V]", "Time [s]"]
+        with pytest.raises(ValueError):
+            pybop.FittingProblem(model, parameters, bad_dataset, signal=two_signals)
+
     @pytest.mark.unit
     def test_design_problem(self, parameters, experiment, model):
         # Test incorrect number of initial parameter values
