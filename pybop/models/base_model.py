@@ -27,7 +27,6 @@ class BaseModel:
         self.parameters = None
         self.dataset = None
         self.signal = None
-        self.output_variables = None
         self.param_check_counter = 0
         self.allow_infeasible_solutions = True
 
@@ -169,9 +168,9 @@ class BaseModel:
             if self.check_params(inputs, self.allow_infeasible_solutions):
                 sol = self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
 
-                # predictions = [sol[signal].data for signal in self.signal]
-
-                return sol.T  # np.vstack(predictions).T
+                predictions = [sol[signal].data for signal in self.signal]
+                # breakpoint()
+                return np.vstack(predictions).T
 
             else:
                 return [np.inf]
@@ -344,6 +343,37 @@ class BaseModel:
             A boolean which signifies whether the parameters are compatible.
         """
         return True
+
+    def update_solver(self, output_variables):
+        """
+        Update the PyBaMM solver with the specified output variables.
+
+        This method creates a new instance of the PyBaMM IDAKLU solver, which is a
+        variable-step, variable-order solver for stiff systems of differential
+        equations. The solver is configured with the specified absolute and relative
+        tolerances, as well as any additional options that have been set on the
+        object.
+
+        Args:
+            output_variables (list): A list of PyBaMM variables to include in the
+                output of the solver. These variables should be instances of the
+                :py:class:`pybamm.Symbol` class.
+
+        Returns:
+            None
+        """
+        self.options = {
+            "linear_solver": "SUNLinSol_KLU",
+            "jacobian": "sparse",
+            "num_threads": 4,
+        }
+
+        self._solver = pybamm.IDAKLUSolver(
+            atol=1e-8,
+            rtol=1e-8,
+            options=self.options,
+            output_variables=output_variables,
+        )
 
     @property
     def built_model(self):
