@@ -1,4 +1,5 @@
 import pybamm
+import numpy as np
 
 
 class Dataset:
@@ -36,6 +37,30 @@ class Dataset:
             A string that includes the type and contents of the dataset.
         """
         return f"Dataset: {type(self.data)} \n Contains: {self.names}"
+    
+    def __getitem__(self,key):
+        """
+        Return the data corresponding to a particular key.
+
+        Parameters
+        ----------
+        key : str
+            The name of a data series within the dataset.
+
+        Returns
+        -------
+        list or np.ndarray
+            The data series corresonding to the key.
+
+        Raises
+        ------
+        ValueError
+            The key must exist in the dataset.
+        """
+        if key not in self.data.keys():
+            raise ValueError(f"The key {key} does not exist in this dataset.")
+        
+        return self.data[key]
 
     def Interpolant(self):
         """
@@ -64,6 +89,11 @@ class Dataset:
         -------
         bool
             If True, the dataset has the expected attributes.
+
+        Raises
+        ------
+        ValueError
+            If the time series and the data series are not consistent.
         """
         if isinstance(signal, str):
             signal = [signal]
@@ -73,9 +103,17 @@ class Dataset:
             if name not in self.names:
                 raise ValueError(f"expected {name} in list of dataset")
 
+        # Check for increasing times
+        time_data = self.data["Time [s]"]
+        if np.any(time_data < 0):
+            raise ValueError("Times can not be negative.")
+        if np.any(time_data[:-1] >= time_data[1:]):
+            raise ValueError("Times must be increasing.")
+
         # Check for consistent data
+        n_time_data = len(time_data)
         for s in signal:
-            if len(self.data[s]) != len(self.data["Time [s]"]):
+            if len(self.data[s]) != n_time_data:
                 raise ValueError(f"Time data and {s} data must be the same length.")
 
         return True
