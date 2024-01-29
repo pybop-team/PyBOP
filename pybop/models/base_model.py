@@ -87,7 +87,9 @@ class BaseModel:
         """
         self.dataset = dataset
         self.parameters = parameters
-        if self.parameters is not None:
+        if self.parameters is None:
+            self.fit_keys = []
+        else:
             self.fit_keys = [param.name for param in self.parameters]
 
         if init_soc is not None:

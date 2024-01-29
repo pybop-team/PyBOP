@@ -86,6 +86,13 @@ class TestModels:
         state = model.reinit(inputs={})
         np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
 
+        state = model.reinit(inputs=[])
+        np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
+
+        model = ExponentialDecay(pybamm.ParameterValues({"k": k, "y0": y0}))
+        with pytest.raises(ValueError):
+            model.reinit(inputs={})
+
     @pytest.mark.unit
     def test_simulate(self):
         k = 0.1

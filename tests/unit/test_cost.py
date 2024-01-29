@@ -90,6 +90,10 @@ class TestCosts:
         # Test type of returned value
         assert type(cost([0.5])) == np.float64
 
+        if isinstance(cost, pybop.ObserverCost):
+            with pytest.raises(NotImplementedError):
+                cost.evaluateS1([0.5])
+
         # Test UserWarnings
         if isinstance(cost, (pybop.SumSquaredError, pybop.RootMeanSquaredError)):
             assert cost([0.5]) >= 0
