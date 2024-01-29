@@ -293,7 +293,7 @@ def plot_trajectories(x, y, trace_names=None, show=True, **layout_kwargs):
         X-axis data points.
     y : list or np.ndarray
         Y-axis data points for each trajectory.
-    trace_names : str or list of strings, optional
+    trace_names : list or str, optional
         Name(s) for the trace(s) (default: None).
     **layout_kwargs : optional
             Valid Plotly layout keys and their values,

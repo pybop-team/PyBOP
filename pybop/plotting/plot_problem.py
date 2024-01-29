@@ -65,7 +65,11 @@ def quick_plot(problem, parameter_values=None, show=True, **layout_kwargs):
 
         # Add the data as markers
         target_trace = plot_dict.create_trace(
-            x=time_data, y=target_output[:, i], name="Target", mode="markers"
+            x=time_data,
+            y=target_output[:, i],
+            name="Target",
+            mode="markers",
+            showlegend=True,
         )
         plot_dict.traces.append(target_trace)
 

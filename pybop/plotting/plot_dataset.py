@@ -2,7 +2,7 @@ import pybop
 
 
 def plot_dataset(
-    dataset, signal=["Voltage [V]"], trace_names="Data", show=True, **layout_kwargs
+    dataset, signal=["Voltage [V]"], trace_names=None, show=True, **layout_kwargs
 ):
     """
     Quickly plot a PyBOP Dataset using Plotly.
@@ -36,8 +36,10 @@ def plot_dataset(
     y = [data[s] for s in signal]
     if len(signal) == 1:
         yaxis_title = signal[0]
+        if trace_names is None:
+            trace_names = ["Data"]
     else:
-        yaxis_title = None
+        yaxis_title = "Output"
         if trace_names is None:
             trace_names = signal
 
