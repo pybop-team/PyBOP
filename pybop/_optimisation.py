@@ -488,7 +488,7 @@ class Optimisation:
         x : array-like
             Optimized parameter values.
         """
-        for i, param in enumerate(self.cost.problem.parameters):
+        for i, param in enumerate(self.cost.parameters):
             param.update(value=x[i])
 
     def check_optimal_parameters(self, x):

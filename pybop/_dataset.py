@@ -10,22 +10,13 @@ class Dataset:
 
     Parameters
     ----------
-    name : str
-        The name of the dataset, providing a label for identification.
-    data : array-like
-        The actual experimental data, typically in a structured form such as
-        a NumPy array or a pandas DataFrame.
-
+    data_dictionary : dict or instance of pybamm.solvers.solution.Solution
+        The experimental data to store within the dataset.
     """
 
     def __init__(self, data_dictionary):
         """
-        Initialize a Dataset instance with a name and data.
-
-        Parameters
-        ----------
-        data_dictionary : dict or instance of pybamm.solvers.solution.Solution
-            The experimental data to store within the dataset.
+        Initialize a Dataset instance with data and a set of names.
         """
 
         if isinstance(data_dictionary, pybamm.solvers.solution.Solution):
@@ -64,3 +55,27 @@ class Dataset:
             self.Interpolant = pybamm.Interpolant(self.x, self.y, pybamm.t)
         else:
             NotImplementedError("Only time interpolation is supported")
+
+    def check(self, signal=["Voltage [V]"]):
+        """
+        Check the consistency of a PyBOP Dataset against the expected format.
+
+        Returns
+        -------
+        bool
+            If True, the dataset has the expected attributes.
+        """
+        if isinstance(signal, str):
+            signal = [signal]
+
+        # Check that the dataset contains time and chosen signal
+        for name in ["Time [s]"] + signal:
+            if name not in self.names:
+                raise ValueError(f"expected {name} in list of dataset")
+
+        # Check for consistent data
+        for s in signal:
+            if len(self.data[s]) != len(self.data["Time [s]"]):
+                raise ValueError(f"Time data and {s} data must be the same length.")
+
+        return True

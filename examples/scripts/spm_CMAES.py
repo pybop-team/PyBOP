@@ -44,8 +44,11 @@ optim.set_max_iterations(100)
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
+# Plot the time series
+pybop.plot_dataset(dataset)
+
 # Plot the timeseries output
-pybop.quick_plot(x, cost, title="Optimised Comparison")
+pybop.quick_plot(problem, parameter_values=x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)
@@ -58,4 +61,4 @@ pybop.plot_cost2d(cost, steps=15)
 
 # Plot the cost landscape with optimisation path and updated bounds
 bounds = np.array([[0.55, 0.75], [0.48, 0.68]])
-pybop.plot_cost2d(cost, optim=optim, bounds=bounds, steps=15)
+pybop.plot_optim2d(optim, bounds=bounds, steps=15)
