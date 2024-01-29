@@ -170,3 +170,10 @@ def test_standard_plot(dataset, plotly_installed):
             [dataset.data["Time [s]"], dataset.data["Current [A]"]],
             dataset.data["Terminal voltage [V]"],
         )
+
+
+@pytest.mark.unit
+def test_plot_dataset(dataset, plotly_installed):
+    # Test plotting of a dataset
+    pybop.plot_dataset(dataset, signal=["Terminal voltage [V]"])
+    pybop.plot_dataset(dataset, signal=["Terminal voltage [V]", "Current [A]"])
