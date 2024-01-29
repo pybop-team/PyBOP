@@ -37,8 +37,8 @@ class Dataset:
             A string that includes the type and contents of the dataset.
         """
         return f"Dataset: {type(self.data)} \n Contains: {self.names}"
-    
-    def __getitem__(self,key):
+
+    def __getitem__(self, key):
         """
         Return the data corresponding to a particular key.
 
@@ -59,7 +59,7 @@ class Dataset:
         """
         if key not in self.data.keys():
             raise ValueError(f"The key {key} does not exist in this dataset.")
-        
+
         return self.data[key]
 
     def Interpolant(self):
