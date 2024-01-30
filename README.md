@@ -111,13 +111,13 @@ These general cases encompass a wide variety of optimisation problems that requi
 
 PyBOP comes with a number of [example notebooks and scripts](https://github.com/pybop-team/PyBOP/blob/develop/examples) which can be found in the examples folder.
 
-The [spm_descent.py](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_descent.py) script illustrates a straightforward example that starts by generating artificial data from a single particle model (SPM). The unknown parameter values are identified by implementing a sum-of-square error cost function using the terminal voltage as the observed signal and a gradient descent optimiser. To run this example:
+The [spm_pso.py](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_pso.py) script illustrates a straightforward example that starts by generating artificial data from a single particle model (SPM). The unknown parameter values are identified by employing a sum-of-squared errors cost function using the terminal voltage as the observed signal and a particle swarm optimisation algorithm. To run this example:
 
 ```bash
-python examples/scripts/spm_descent.py
+python examples/scripts/spm_pso.py
 ```
 
-In addition, [spm_CMAES.ipynb](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/spm_CMAES.ipynb) provides a second example in notebook form. This example estimates the SPM parameters based on an RMSE cost function and a BOBYQA optimiser.
+Alternatively, [spm_CMAES.ipynb](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/spm_CMAES.ipynb) provides an example in notebook form. This example estimates SPM parameters based on a sum-of-squared errors cost function and a CMA-ES optimiser.
 
 <!-- Code of Conduct -->
 ## Code of Conduct
