@@ -56,7 +56,6 @@ from ._optimisation import Optimisation
 # Optimiser class
 #
 from .optimisers.base_optimiser import BaseOptimiser
-from .optimisers.nlopt_optimize import NLoptOptimize
 from .optimisers.scipy_optimisers import SciPyMinimize, SciPyDifferentialEvolution
 from .optimisers.pints_optimisers import (
     GradientDescent,
