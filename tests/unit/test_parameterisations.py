@@ -53,7 +53,7 @@ class TestModelParameterisation:
         cost = pybop.RootMeanSquaredError(problem)
 
         # Select optimiser
-        optimiser = pybop.NLoptOptimize
+        optimiser = pybop.CMAES
 
         # Build the optimisation problem
         parameterisation = pybop.Optimisation(cost=cost, optimiser=optimiser)
@@ -88,7 +88,6 @@ class TestModelParameterisation:
     @pytest.mark.parametrize(
         "optimiser",
         [
-            pybop.NLoptOptimize,
             pybop.SciPyMinimize,
             pybop.SciPyDifferentialEvolution,
             pybop.Adam,
@@ -167,7 +166,6 @@ class TestModelParameterisation:
     @pytest.mark.parametrize(
         "optimiser",
         [
-            pybop.NLoptOptimize,
             pybop.SciPyDifferentialEvolution,
             pybop.IRPropMin,
             pybop.CMAES,
@@ -217,7 +215,7 @@ class TestModelParameterisation:
         cost = pybop.RootMeanSquaredError(problem)
 
         # Select optimiser
-        optimiser = pybop.NLoptOptimize
+        optimiser = pybop.CMAES
 
         # Build the optimisation problem
         parameterisation = pybop.Optimisation(cost=cost, optimiser=optimiser)
