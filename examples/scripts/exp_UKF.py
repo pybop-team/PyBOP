@@ -1,7 +1,7 @@
 import pybop
 import pybamm
 import numpy as np
-from examples.standalone.exponential_decay import ExponentialDecay
+from examples.standalone.model import ExponentialDecay
 
 # Parameter set and model definition
 parameter_set = pybamm.ParameterValues({"k": "[input]", "y0": "[input]"})

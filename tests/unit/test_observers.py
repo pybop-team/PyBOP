@@ -2,7 +2,7 @@ import pybop
 import numpy as np
 import pybamm
 import pytest
-from examples.standalone.exponential_decay import ExponentialDecay
+from examples.standalone.model import ExponentialDecay
 
 
 class TestObserver:

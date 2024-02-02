@@ -3,7 +3,7 @@ import numpy as np
 import pybamm
 import pytest
 from pybop.observers.unscented_kalman import SquareRootUKF
-from examples.standalone.exponential_decay import ExponentialDecay
+from examples.standalone.model import ExponentialDecay
 
 
 class TestUKF:
