@@ -301,7 +301,7 @@ class ObserverCost(BaseCost):
         super(ObserverCost, self).__init__(problem)
         self._observer = observer
 
-    def __call__(self, x, grad=None):
+    def _evaluate(self, x, grad=None):
         """
         Calculate the observer cost for a given set of parameters.
 
@@ -317,16 +317,12 @@ class ObserverCost(BaseCost):
         -------
         float
             The observer cost (negative of the log likelihood).
-
         """
-        try:
-            inputs = {key: x[i] for i, key in enumerate(self._observer._model.fit_keys)}
-            log_likelihood = self._observer.log_likelihood(
-                self.problem.target(), self.problem.time_data(), inputs
-            )
-            return -log_likelihood
-        except Exception as e:
-            raise ValueError(f"Error in cost calculation: {e}")
+        inputs = {key: x[i] for i, key in enumerate(self._observer._model.fit_keys)}
+        log_likelihood = self._observer.log_likelihood(
+            self.problem.target(), self.problem.time_data(), inputs
+        )
+        return -log_likelihood
 
     def evaluateS1(self, x):
         """
