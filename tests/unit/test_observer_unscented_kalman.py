@@ -2,9 +2,7 @@ import pybop
 import numpy as np
 import pybamm
 import pytest
-from pybop.observers.unscented_kalman import UkfFilter
-import matplotlib.pyplot as plt
-
+from pybop.observers.unscented_kalman import SquareRootUKF
 from examples.standalone.exponential_decay import ExponentialDecay
 
 
@@ -19,7 +17,7 @@ class TestUKF:
     def model(self, request):
         model = ExponentialDecay(
             parameters=pybamm.ParameterValues({"k": "[input]", "y0": "[input]"}),
-            nstate=request.param,
+            n_states=request.param,
         )
         model.build()
         return model
@@ -43,7 +41,7 @@ class TestUKF:
     def observer(self, model: pybop.BaseModel):
         inputs = {"k": 0.1, "y0": 1.0}
         signal = ["2y"]
-        n = model.nstate
+        n = model.n_states
         sigma0 = np.diag([self.measure_noise] * n)
         process = np.diag([1e-6] * n)
         # for 3rd  model, set sigma0 and process to zero for the 1st and 2nd state
@@ -77,7 +75,7 @@ class TestUKF:
 
         # The following is equivalent to the above
         R1_ = R.copy()
-        UkfFilter.cholupdate(R1_, u.copy(), 1.0)
+        SquareRootUKF.cholupdate(R1_, u.copy(), 1.0)
         np.testing.assert_array_almost_equal(R1, R1_)
 
     @pytest.mark.unit
@@ -85,15 +83,11 @@ class TestUKF:
         t_eval = dataset["Time [s]"]
         measurements = dataset["y"]
         inputs = observer._state.inputs
-        n = observer._model.nstate
+        n = observer._model.n_states
         expected = inputs["y0"] * np.exp(-inputs["k"] * t_eval)
-        plt_x = []
-        plt_y = []
-        plt_stddev = []
-        plt_m = []
-        for i in range(len(t_eval)):
+
+        for i, t in enumerate(t_eval):
             y = np.array([[expected[i]]] * n)
-            t = t_eval[i]
             ym = measurements[:, i]
             observer.observe(t, ym)
             np.testing.assert_array_almost_equal(
@@ -106,23 +100,6 @@ class TestUKF:
                 np.array([2 * y[0]]),
                 decimal=4,
             )
-            plt_x.append(t)
-            plt_y.append(observer.get_current_state().as_ndarray()[0][0])
-            plt_stddev.append(np.sqrt(observer.get_current_covariance()[0, 0]))
-            plt_m.append(ym[0])
-        plt_y = np.array(plt_y)
-        plt_stddev = np.array(plt_stddev)
-        plt_m = np.array(plt_m)
-        plt.clf()
-        plt.plot(plt_x, plt_y, label="UKF")
-        plt.plot(plt_x, expected, "--", label="Expected")
-        plt.plot(plt_x, plt_y + plt_stddev, label="UKF + stddev")
-        plt.plot(
-            plt_x, expected + np.sqrt(self.measure_noise), label="Expected + stddev"
-        )
-        plt.plot(plt_x, plt_m / 2, ".", label="Measurement")
-        plt.legend()
-        plt.savefig(f"test{n}.png")
 
     @pytest.mark.unit
     def test_observe_no_measurement(self, observer):
@@ -140,7 +117,7 @@ class TestUKF:
     def test_wrong_input_shapes(self, model):
         inputs = {"k": 0.1, "y0": 1.0}
         signal = "2y"
-        n = model.nstate
+        n = model.n_states
 
         sigma0 = np.diag([1e-4] * (n + 1))
         process = np.diag([1e-4] * n)

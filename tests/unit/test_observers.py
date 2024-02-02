@@ -2,7 +2,6 @@ import pybop
 import numpy as np
 import pybamm
 import pytest
-
 from examples.standalone.exponential_decay import ExponentialDecay
 
 
@@ -15,7 +14,7 @@ class TestObserver:
     def model(self, request):
         model = ExponentialDecay(
             parameters=pybamm.ParameterValues({"k": "[input]", "y0": "[input]"}),
-            nstate=request.param,
+            n_states=request.param,
         )
         model.build()
         return model
@@ -24,7 +23,7 @@ class TestObserver:
     def test_observer(self, model):
         inputs = {"k": 0.1, "y0": 1.0}
         signal = ["2y"]
-        n = model.nstate
+        n = model.n_states
         observer = pybop.Observer(model, inputs, signal)
         t_eval = np.linspace(0, 1, 100)
         expected = inputs["y0"] * np.exp(-inputs["k"] * t_eval)
