@@ -113,6 +113,8 @@ class BaseModel:
             # Clear solver and setup model
             self._solver._model_set_up = {}
 
+        self.n_states = self._built_model.len_rhs_and_alg  # len_rhs + len_alg
+
     def set_init_soc(self, init_soc):
         """
         Set the initial state of charge for the battery model.
