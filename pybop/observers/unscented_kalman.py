@@ -9,7 +9,7 @@ from pybop.observers.observer import Observer
 
 class UnscentedKalmanFilterObserver(Observer):
     """
-    An observer using the unscented kalman filter. This is a wrapper class for PyBOP, see class UkfFilter for more details on the method.
+    An observer using the unscented Kalman filter. This is a wrapper class for PyBOP, see class SquareRootUKF for more details on the method.
 
     Parameters
     ----------
@@ -69,7 +69,7 @@ class UnscentedKalmanFilterObserver(Observer):
             sol = self._model.get_state(inputs=self._state.inputs, t=self._state.t, x=x)
             return self.get_measure(sol).reshape(-1)
 
-        self._ukf = UkfFilter(
+        self._ukf = SquareRootUKF(
             x0=x0,
             P0=sigma0,
             Rp=process,
@@ -85,6 +85,8 @@ class UnscentedKalmanFilterObserver(Observer):
     def observe(self, time: float, value: np.ndarray) -> float:
         if value is None:
             raise ValueError("Measurement must be provided.")
+        elif isinstance(value, np.floating):
+            value = np.array([value])
 
         dt = time - self.get_current_time()
         if dt < 0:
@@ -113,6 +115,7 @@ class UnscentedKalmanFilterObserver(Observer):
         return log_likelihood
 
     def get_current_covariance(self) -> Covariance:
+        # Get the covariance from the square-root covariance
         return self._ukf.S @ self._ukf.S.T
 
 
@@ -127,13 +130,14 @@ class SigmaPoint(object):
     w_c: float
 
 
-class UkfFilter(object):
+class SquareRootUKF(object):
     """
-    van der Menve, R., & Wan, E. A. (n.d.). THE SQUARE-ROOT UNSCENTED KALMAN FILTER FOR STATE AND PARAMETER-ESTIMATION. http://wol.ra.phy.cam.ac.uk/mackay
+    van der Menve, R., & Wan, E. A. (2001). THE SQUARE-ROOT UNSCENTED KALMAN FILTER FOR STATE AND PARAMETER-ESTIMATION.
+    https://doi.org/10.1109/ICASSP.2001.940586
 
-    we implement a UKF filter with additive process and measurement noise
+    We implement a square root unscented Kalman filter (UKF) with additive process and measurement noise.
 
-    the square root unscented kalman filter is a variant of the unscented kalman filter that is more numerically stable and has better performance.
+    The square root UKF is a variant of the UKF that is more numerically stable and has better performance.
 
     Parameters
     ----------
@@ -160,12 +164,13 @@ class UkfFilter(object):
         f: callable,
         h: callable,
     ) -> None:
-        # find states that are zero in both sigma0 and process
+        # Find states that are zero in both sigma0 and process
         zero_rows = np.logical_and(np.all(P0 == 0, axis=0), np.all(Rp == 0, axis=0))
         zero_cols = np.logical_and(np.all(P0 == 0, axis=1), np.all(Rp == 0, axis=1))
         zeros = np.logical_and(zero_rows, zero_cols)
         ones = np.logical_not(zeros)
         states = np.array(range(len(x0)))[ones]
+        bool_mask = np.vstack(ones) & np.hstack(ones)
 
         S_filtered = linalg.cholesky(P0[ones, :][:, ones])
         sqrtRp_filtered = linalg.cholesky(Rp[ones, :][:, ones])
@@ -173,8 +178,8 @@ class UkfFilter(object):
         n = len(x0)
         S = np.zeros((n, n))
         sqrtRp = np.zeros((n, n))
-        S[ones, :][:, ones] = S_filtered
-        sqrtRp[ones, :][:, ones] = sqrtRp_filtered
+        S[bool_mask] = S_filtered.flatten()
+        sqrtRp[bool_mask] = sqrtRp_filtered.flatten()
 
         self.x = x0
         self.S = S
@@ -185,13 +190,14 @@ class UkfFilter(object):
         self.f = f
         self.h = h
         self.states = states
+        self.bool_mask = bool_mask
 
     def reset(self, x: np.ndarray, S: np.ndarray) -> None:
         self.x = x[self.states]
         S_filtered = S[self.states, :][:, self.states]
         S_filtered = linalg.cholesky(S_filtered)
         S_full = S.copy()
-        S_full[self.states, :][:, self.states] = S_filtered
+        S_full[self.bool_mask] = S_filtered.flatten()
         self.S = S_full
 
     @staticmethod
@@ -199,7 +205,7 @@ class UkfFilter(object):
         x: np.ndarray, S: np.ndarray, alpha: float, beta: float, states: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
-        Generates the sigma points for the unscented transform
+        Generates 2L+1 sigma points for the unscented transform, where L is the number of states.
 
         Parameters
         ----------
@@ -221,21 +227,29 @@ class UkfFilter(object):
         List[float]
             The weights of the sigma points
         List[float]
-            The weights of the covariance points
+            The weights of the covariance of the sigma points
         """
-        kappa = 1.0
+        # Set the scaling parameters: sigma and eta
+        kappa = 0.0
         L = len(states)
         sigma = alpha**2 * (L + kappa) - L
         eta = np.sqrt(L + sigma)
-        wm_0 = sigma / (L + sigma)
-        wc_0 = wm_0 + (1 - alpha**2 + beta)
+
+        # Define the sigma points
         points = np.hstack(
             [x]
             + [x + eta * S[:, i].reshape(-1, 1) for i in states]
             + [x - eta * S[:, i].reshape(-1, 1) for i in states]
         )
-        w_m = np.array([wm_0] + [(1 - wm_0) / (2 * L)] * (2 * L))
-        w_c = np.array([wc_0] + [(1 - wc_0) / (2 * L)] * (2 * L))
+
+        # Define the weights of the sigma points
+        w_m0 = sigma / (L + sigma)
+        w_m = np.array([w_m0] + [1 / (2 * (L + sigma))] * (2 * L))
+
+        # Define the weights of the covariance of the sigma points
+        w_c0 = w_m0 + (1 - alpha**2 + beta)
+        w_c = np.array([w_c0] + [1 / (2 * (L + sigma))] * (2 * L))
+
         return (points, w_m, w_c)
 
     @staticmethod
@@ -261,19 +275,19 @@ class UkfFilter(object):
         Returns
         -------
         Tuple[np.ndarray, np.ndarray]
-            The mean and covariance of the sigma points
+            The mean and square-root covariance of the sigma points
         """
+        # Update the predicted mean of the sigma points
         x = np.sum(w_m * sigma_points, axis=1).reshape(-1, 1)
+
+        # Update the predicted square-root covariance
         sigma_points_diff = sigma_points - x
         A = np.hstack([np.sqrt(w_c[1:]) * (sigma_points_diff[:, 1:]), sqrtR])
-        (
-            _,
-            S,
-        ) = linalg.qr(A.T, mode="economic")
+        (_, S) = linalg.qr(A.T, mode="economic")
         if states is None:
-            S = UkfFilter.cholupdate(S, sigma_points_diff[:, 0:1], w_c[0])
+            S = SquareRootUKF.cholupdate(S, sigma_points_diff[:, 0:1], w_c[0])
         else:
-            S = UkfFilter.filtered_cholupdate(
+            S = SquareRootUKF.filtered_cholupdate(
                 S, sigma_points_diff[:, 0:1], w_c[0], states
             )
 
@@ -286,14 +300,17 @@ class UkfFilter(object):
         R_full = R.copy()
         R_filtered = R[states, :][:, states]
         x_filtered = x[states]
-        R_filtered = UkfFilter.cholupdate(R_filtered, x_filtered, w)
-        R_full[states, :][:, states] = R_filtered
+        R_filtered = SquareRootUKF.cholupdate(R_filtered, x_filtered, w)
+        ones = np.full(len(x), False)
+        ones[states] = True
+        bool_mask = np.vstack(ones) & np.hstack(ones)
+        R_full[bool_mask] = R_filtered.flatten()
         return R_full
 
     @staticmethod
     def cholupdate(R: np.ndarray, x: np.ndarray, w: float) -> np.ndarray:
         """
-        Updates the cholesky decomposition of a matrix (see https://github.com/modusdatascience/choldate/blob/master/choldate/_choldate.pyx)
+        Updates the Cholesky decomposition of a matrix (see https://github.com/modusdatascience/choldate/blob/master/choldate/_choldate.pyx)
 
         Note: will be in scipy soon so replace with this: https://github.com/scipy/scipy/pull/16499
 
@@ -302,7 +319,7 @@ class UkfFilter(object):
         Parameters
         ----------
         R : np.ndarray
-            The cholesky decomposition of the matrix
+            The Cholesky decomposition of the matrix
         x : np.ndarray
             The vector to add to the matrix
         w : float
@@ -311,20 +328,30 @@ class UkfFilter(object):
         Returns
         -------
         np.ndarray
-            The updated cholesky decomposition
+            The updated Cholesky decomposition
         """
-        x = x.flatten()
+        sign = np.sign(w)
+        x = np.sqrt(abs(w)) * x.flatten()
         p = x.shape[0]
         for k in range(p):
-            r = np.sqrt(R[k, k] ** 2 + w * x[k] ** 2)
-            # r = UkfFilter.hypot(R[k, k], x[k])
+            Rkk = abs(R[k, k])
+            xk = abs(x[k])
+            r = SquareRootUKF.hypot(Rkk, xk, sign)
             c = r / R[k, k]
             s = x[k] / R[k, k]
             R[k, k] = r
             if k < p - 1:
-                R[k, k + 1 :] = (R[k, k + 1 :] + w * s * x[k + 1 :]) / c
+                R[k, k + 1 :] = (R[k, k + 1 :] + sign * s * x[k + 1 :]) / c
                 x[k + 1 :] = c * x[k + 1 :] - s * R[k, k + 1 :]
         return R
+
+    def hypot(R: float, x: float, sign: float) -> float:
+        if R < x:
+            return R * np.sqrt(1 + sign * R**2 / x**2)
+        elif x < R:
+            return np.sqrt(R**2 + sign * x**2)
+        else:
+            return 0.0
 
     def step(self, y: np.ndarray) -> float:
         """
@@ -340,24 +367,37 @@ class UkfFilter(object):
         float
             The log likelihood of the measurement
         """
+        # Sigma point calculation
         sigma_points, w_m, w_c = self.gen_sigma_points(
             self.x, self.S, self.alpha, self.beta, self.states
         )
+        # Update sigma points in time
         sigma_points = np.apply_along_axis(self.f, 0, sigma_points)
 
+        # Compute the mean and square-root covariance
         x_minus, S_minus = self.unscented_transform(
             sigma_points, w_m, w_c, self.sqrtRp, self.states
         )
+
+        # Compute the output corresponding to the updated sigma points
         sigma_points_y = np.apply_along_axis(self.h, 0, sigma_points)
+
+        # Compute the mean and square-root covariance
         y_minus, S_y = self.unscented_transform(sigma_points_y, w_m, w_c, self.sqrtRm)
+
+        # Compute the gain from the covariance
         P = np.einsum(
             "k,jk,lk -> jl ", w_c, sigma_points - x_minus, sigma_points_y - y_minus
         )
         gain = linalg.lstsq(linalg.lstsq(P.T, S_y.transpose())[0].T, S_y)[0]
+
+        # Update the states and square-root covariance based on the gain
         residual = y - y_minus
         self.x = x_minus + gain @ residual
         U = gain @ S_y
         self.S = self.filtered_cholupdate(S_minus, U, -1, self.states)
+
+        # Compute the log-likelihood of the covariance
         log_det = 2 * np.sum(np.log(np.diag(self.S)))
         n = len(y)
         log_likelihood = -0.5 * (
