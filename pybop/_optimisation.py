@@ -91,10 +91,7 @@ class Optimisation:
         else:
             self.pints = False
 
-            if issubclass(self.optimiser, pybop.NLoptOptimize):
-                self.optimiser = self.optimiser(self.n_parameters)
-
-            elif issubclass(
+            if issubclass(
                 self.optimiser, (pybop.SciPyMinimize, pybop.SciPyDifferentialEvolution)
             ):
                 self.optimiser = self.optimiser()

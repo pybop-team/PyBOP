@@ -14,7 +14,7 @@ class TestStandalone:
     def test_standalone(self):
         # Build an Optimisation problem with a StandaloneCost
         cost = StandaloneCost()
-        opt = pybop.Optimisation(cost=cost, optimiser=pybop.NLoptOptimize)
+        opt = pybop.Optimisation(cost=cost, optimiser=pybop.SciPyDifferentialEvolution)
         x, final_cost = opt.run()
 
         assert len(opt.x0) == opt.n_parameters
