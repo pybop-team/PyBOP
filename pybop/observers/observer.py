@@ -1,9 +1,11 @@
 from typing import List, Optional
 import numpy as np
+from pybop._problem import BaseProblem
 from pybop.models.base_model import BaseModel, Inputs, TimeSeriesState
+from pybop.parameters.parameter import Parameter
 
 
-class Observer(object):
+class Observer(BaseProblem):
     """
     An observer of a time series state. Observers:
      1. keep track of the distribution of a current time series model state
@@ -12,30 +14,45 @@ class Observer(object):
 
     Parameters
     ----------
+    parameters : list
+        List of parameters for the problem.
     model : BaseModel
       The model to observe.
-    inputs: Dict[str, float]
-      The inputs to the model.
+    check_model : bool, optional
+        Flag to indicate if the model should be checked (default: True).
     signal: List[str]
       The signal to observe.
+    init_soc : float, optional
+        Initial state of charge (default: None).
+    x0 : np.ndarray, optional
+        Initial parameter values (default: None).
     """
 
     # define a subtype for covariance matrices for use by derived classes
     Covariance = np.ndarray
 
-    def __init__(self, model: BaseModel, inputs: Inputs, signal: List[str]) -> None:
+    def __init__(
+        self,
+        parameters: List[Parameter],
+        model: BaseModel,
+        check_model=True,
+        signal=["Voltage [V]"],
+        init_soc=None,
+        x0=None,
+    ) -> None:
+        super().__init__(parameters, model, check_model, signal, init_soc, x0)
         if model._built_model is None:
             raise ValueError("Only built models can be used in Observers")
-        if not isinstance(inputs, dict):
-            raise ValueError("Inputs must be of type Dict[str, float]")
-        if not isinstance(signal, list):
-            raise ValueError("Signal must be of type List[str]")
-
         if model.signal is None:
-            model.signal = signal
+            model.signal = self.signal
+
+        inputs = dict()
+        for param in self.parameters:
+            inputs[param.name] = param.value
+
         self._state = model.reinit(inputs)
         self._model = model
-        self._signal = signal
+        self._signal = self.signal
 
     def reset(self, inputs: Inputs) -> None:
         self._state = self._model.reinit(inputs)
@@ -51,9 +68,9 @@ class Observer(object):
         Parameters
         ----------
         time : float
-          The time of the new observation.
+            The time of the new observation.
         value : np.ndarray (optional)
-          The new observation.
+            The new observation.
         """
         if time < self._state.t:
             raise ValueError("Time must be increasing.")
@@ -70,9 +87,11 @@ class Observer(object):
         Parameters
         ----------
         values : np.ndarray
-          The values of the model.
+            The values of the model.
+        times : np.ndarray
+            The times at which to observe the model.
         inputs : Inputs
-          The inputs to the model.
+            The inputs to the model.
         """
         if len(values) != len(times):
             raise ValueError("values and times must have the same length.")
@@ -81,7 +100,7 @@ class Observer(object):
         for t, v in zip(times, values):
             try:
                 log_likelihood += self.observe(t, v)
-            except ValueError:
+            except Exception:
                 return np.float64(-np.inf)
         return log_likelihood
 
@@ -113,3 +132,41 @@ class Observer(object):
         Returns the current time.
         """
         return self._state.t
+
+    def evaluate(self, x):
+        """
+        Evaluate the model with the given parameters and return the signal.
+
+        Parameters
+        ----------
+        x : np.ndarray
+            Parameter values to evaluate the model at.
+
+        Returns
+        -------
+        y : np.ndarray
+            The model output y(t) simulated with inputs x.
+        """
+        inputs = dict()
+        if isinstance(x[0], Parameter):
+            for param in x:
+                inputs[param.name] = param.value
+        else:  # x is an array of parameter values
+            for i, param in enumerate(self.parameters):
+                inputs[param.name] = x[i]
+        self.reset(inputs)
+
+        output = []
+        if hasattr(self, "_dataset"):
+            ym = self._target
+            for i, t in enumerate(self._time_data):
+                self.observe(t, ym[i])
+                ys = self.get_current_measure()
+                output.append(ys)
+        else:
+            for t in self._time_data:
+                self.observe(t)
+                ys = self.get_current_measure()
+                output.append(ys)
+
+        return np.vstack(output)

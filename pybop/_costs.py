@@ -1,7 +1,6 @@
 import numpy as np
 
 from pybop.observers.observer import Observer
-from pybop._problem import FittingProblem
 
 
 class BaseCost:
@@ -26,6 +25,8 @@ class BaseCost:
         The bounds for the model parameters.
     n_parameters : int
         The number of parameters in the model.
+    n_outputs : int
+        The number of outputs in the model.
     """
 
     def __init__(self, problem):
@@ -35,6 +36,7 @@ class BaseCost:
             self.x0 = problem.x0
             self.bounds = problem.bounds
             self.n_parameters = problem.n_parameters
+            self.n_outputs = problem.n_outputs
 
     def __call__(self, x, grad=None):
         """
@@ -255,13 +257,13 @@ class SumSquaredError(BaseCost):
         y, dy = self.problem.evaluateS1(x)
         if len(y) < len(self._target):
             e = np.float64(np.inf)
-            de = self._de * np.ones(self.problem.n_parameters)
+            de = self._de * np.ones(self.n_parameters)
         else:
             dy = dy.reshape(
                 (
                     self.problem.n_time_data,
-                    self.problem.n_outputs,
-                    self.problem.n_parameters,
+                    self.n_outputs,
+                    self.n_parameters,
                 )
             )
             r = y - self._target
@@ -297,8 +299,8 @@ class ObserverCost(BaseCost):
 
     """
 
-    def __init__(self, problem: FittingProblem, observer: Observer):
-        super(ObserverCost, self).__init__(problem)
+    def __init__(self, observer: Observer):
+        super().__init__(problem=observer)
         self._observer = observer
 
     def _evaluate(self, x, grad=None):
@@ -320,7 +322,7 @@ class ObserverCost(BaseCost):
         """
         inputs = {key: x[i] for i, key in enumerate(self._observer._model.fit_keys)}
         log_likelihood = self._observer.log_likelihood(
-            self.problem.target(), self.problem.time_data(), inputs
+            self._target, self._observer.time_data(), inputs
         )
         return -log_likelihood
 

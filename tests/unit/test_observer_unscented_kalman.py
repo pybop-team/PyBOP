@@ -16,16 +16,34 @@ class TestUKF:
     @pytest.fixture(params=[1, 2, 3])
     def model(self, request):
         model = ExponentialDecay(
-            parameters=pybamm.ParameterValues({"k": "[input]", "y0": "[input]"}),
+            parameter_set=pybamm.ParameterValues({"k": "[input]", "y0": "[input]"}),
             n_states=request.param,
         )
         model.build()
         return model
 
     @pytest.fixture
-    def dataset(self, model: pybop.BaseModel):
-        inputs = {"k": 0.1, "y0": 1.0}
-        observer = pybop.Observer(model, inputs, ["2y"])
+    def parameters(self):
+        return [
+            pybop.Parameter(
+                "k",
+                prior=pybop.Gaussian(0.1, 0.05),
+                bounds=[0, 1],
+            ),
+            pybop.Parameter(
+                "y0",
+                prior=pybop.Gaussian(1, 0.05),
+                bounds=[0, 3],
+            ),
+        ]
+
+    @pytest.fixture
+    def x0(self):
+        return np.array([0.1, 1.0])
+
+    @pytest.fixture
+    def dataset(self, model: pybop.BaseModel, parameters, x0):
+        observer = pybop.Observer(parameters, model, signal=["2y"], x0=x0)
         measurements = []
         t_eval = np.linspace(0, 20, 10)
         for t in t_eval:
@@ -38,9 +56,7 @@ class TestUKF:
         return {"Time [s]": t_eval, "y": measurements}
 
     @pytest.fixture
-    def observer(self, model: pybop.BaseModel):
-        inputs = {"k": 0.1, "y0": 1.0}
-        signal = ["2y"]
+    def observer(self, model: pybop.BaseModel, parameters, x0):
         n = model.n_states
         sigma0 = np.diag([self.measure_noise] * n)
         process = np.diag([1e-6] * n)
@@ -52,7 +68,7 @@ class TestUKF:
             process[1, 1] = 0
         measure = np.diag([1e-4])
         observer = pybop.UnscentedKalmanFilterObserver(
-            model, inputs, signal, sigma0, process, measure
+            parameters, model, sigma0, process, measure, signal=["2y"], x0=x0
         )
         return observer
 
@@ -114,8 +130,7 @@ class TestUKF:
             observer.observe(0, np.array([2]))
 
     @pytest.mark.unit
-    def test_wrong_input_shapes(self, model):
-        inputs = {"k": 0.1, "y0": 1.0}
+    def test_wrong_input_shapes(self, model, parameters):
         signal = "2y"
         n = model.n_states
 
@@ -124,7 +139,7 @@ class TestUKF:
         measure = np.diag([1e-4])
         with pytest.raises(ValueError):
             pybop.UnscentedKalmanFilterObserver(
-                model, inputs, signal, sigma0, process, measure
+                parameters, model, sigma0, process, measure, signal=signal
             )
 
         sigma0 = np.diag([1e-4] * n)
@@ -132,7 +147,7 @@ class TestUKF:
         measure = np.diag([1e-4])
         with pytest.raises(ValueError):
             pybop.UnscentedKalmanFilterObserver(
-                model, inputs, signal, sigma0, process, measure
+                parameters, model, sigma0, process, measure, signal=signal
             )
 
         sigma0 = np.diag([1e-4] * n)
@@ -140,5 +155,5 @@ class TestUKF:
         measure = np.diag([1e-4] * 2)
         with pytest.raises(ValueError):
             pybop.UnscentedKalmanFilterObserver(
-                model, inputs, signal, sigma0, process, measure
+                parameters, model, sigma0, process, measure, signal=signal
             )

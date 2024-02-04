@@ -5,8 +5,8 @@ from examples.standalone.model import ExponentialDecay
 
 # Parameter set and model definition
 parameter_set = pybamm.ParameterValues({"k": "[input]", "y0": "[input]"})
-model = ExponentialDecay(parameters=parameter_set, n_states=1)
-model.build()
+model = ExponentialDecay(parameter_set=parameter_set, n_states=1)
+x0 = np.array([0.1, 1.0])
 
 # Fitting parameters
 parameters = [
@@ -22,64 +22,70 @@ parameters = [
     ),
 ]
 
-# Make a prediction without process noise
-inputs = {"k": 0.1, "y0": 1.0}
-signal = ["2y"]
-t_eval = np.linspace(0, 20, 10)
+# Verification: save fixed inputs for testing
+inputs = dict()
+for i, param in enumerate(parameters):
+    inputs[param.name] = x0[i]
+
+# Make a prediction with measurement noise
 sigma = 1e-2
+t_eval = np.linspace(0, 20, 10)
 values = model.predict(t_eval=t_eval, inputs=inputs)
 values = values["2y"].data
 corrupt_values = values + np.random.normal(0, sigma, len(t_eval))
 
-# Verification step: make another prediction using the Observer class
-simulator = pybop.Observer(model, inputs, signal)
-measurements = []
-for i, t in enumerate(t_eval):
-    simulator.observe(t)
-    ys = simulator.get_current_measure() + np.random.normal(0, sigma)
-    measurements.append(ys)
-measurements = np.hstack(measurements)[0]
-
 # Verification step: compute the analytical solution for 2y
-expected = 2 * inputs["y0"] * np.exp(-inputs["k"] * t_eval)
+expected_values = 2 * inputs["y0"] * np.exp(-inputs["k"] * t_eval)
+
+# Verification step: make another prediction using the Observer class
+model.build(parameters=parameters)
+simulator = pybop.Observer(parameters, model, signal=["2y"], x0=x0)
+simulator._time_data = t_eval
+measurements = simulator.evaluate(x0)
+measurements = measurements[:, 0]
 
 # Verification step: Compare by plotting
 go = pybop.PlotlyManager().go
 line1 = go.Scatter(x=t_eval, y=corrupt_values, name="Corrupt values", mode="markers")
-line2 = go.Scatter(x=t_eval, y=measurements, name="Observed values", mode="markers")
-line3 = go.Scatter(x=t_eval, y=expected, name="Expected tracjectory", mode="lines")
+line2 = go.Scatter(
+    x=t_eval, y=expected_values, name="Expected trajectory", mode="lines"
+)
+line3 = go.Scatter(x=t_eval, y=measurements, name="Observed values", mode="markers")
 fig = go.Figure(data=[line1, line2, line3])
 
 # Form dataset
 dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
-        "Current function [A]": 0 * t_eval,
-        signal[0]: corrupt_values,
+        "Current function [A]": 0 * t_eval,  # placeholder
+        "2y": corrupt_values,
     }
 )
 
-# Re-build model with dataset and unknown parameters
-model.build(dataset=dataset, parameters=parameters)
+# Build the model to get the number of states
+model.build(dataset=dataset.data, parameters=parameters)
 
 # Define the UKF observer
+signal = ["2y"]
 n_states = model.n_states
 n_signals = len(signal)
 covariance = np.diag([sigma**2] * n_states)
 process_noise = np.diag([1e-6] * n_states)
 measurement_noise = np.diag([sigma**2] * n_signals)
 observer = pybop.UnscentedKalmanFilterObserver(
-    model, inputs, signal, covariance, process_noise, measurement_noise
+    parameters,
+    model,
+    covariance,
+    process_noise,
+    measurement_noise,
+    dataset,
+    signal=signal,
+    x0=x0,
 )
 
 # Verification step: Find the maximum likelihood estimate given the true parameters
-ym = dataset.data[signal[0]]
-estimation = []
-for i, t in enumerate(t_eval):
-    observer.observe(t, ym[i])
-    ys = observer.get_current_measure()
-    estimation.append(ys)
-estimation = np.hstack(estimation)[0]
+estimation = observer.evaluate(x0)
+estimation = estimation[:, 0]
 
 # Verification step: Add the estimate to the plot
 line4 = go.Scatter(x=t_eval, y=estimation, name="Estimated trajectory", mode="lines")
@@ -87,8 +93,7 @@ fig.add_trace(line4)
 fig.show()
 
 # Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
-cost = pybop.ObserverCost(problem, observer)
+cost = pybop.ObserverCost(observer)
 optim = pybop.Optimisation(cost, optimiser=pybop.CMAES, verbose=True)
 
 # Run optimisation

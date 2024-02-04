@@ -5,6 +5,7 @@ from typing import List, Tuple, Union
 
 from pybop.models.base_model import BaseModel, Inputs
 from pybop.observers.observer import Observer
+from pybop.parameters.parameter import Parameter
 
 
 class UnscentedKalmanFilterObserver(Observer):
@@ -13,12 +14,10 @@ class UnscentedKalmanFilterObserver(Observer):
 
     Parameters
     ----------
+    parameters: List[Parameters]
+        The inputs to the model.
     model : BaseModel
         The model to observe.
-    inputs: Dict[str, float]
-        The inputs to the model.
-    signal: str
-        The signal to observe.
     sigma0 : np.ndarray | float
         The covariance matrix of the initial state. If a float is provided, the covariance matrix is set to sigma0 * np.eye(n), where n is the number of states.
         To remove a state from the filter, set the corresponding row and col to zero in both sigma0 and process.
@@ -27,20 +26,65 @@ class UnscentedKalmanFilterObserver(Observer):
         To remove a state from the filter, set the corresponding row and col to zero in both sigma0 and process.
     measure : np.ndarray | float
         The covariance matrix of the measurement noise. If a float is provided, the covariance matrix is set to measure * np.eye(m), where m is the number of measurements.
+    dataset : Dataset
+        Dataset object containing the data to fit the model to.
+    check_model : bool, optional
+        Flag to indicate if the model should be checked (default: True).
+    signal: str
+        The signal to observe.
+    init_soc : float, optional
+        Initial state of charge (default: None).
+    x0 : np.ndarray, optional
+        Initial parameter values (default: None).
     """
 
     Covariance = np.ndarray
 
     def __init__(
         self,
+        parameters: List[Parameter],
         model: BaseModel,
-        inputs: Inputs,
-        signal: List[str],
         sigma0: Union[Covariance, float],
         process: Union[Covariance, float],
         measure: Union[Covariance, float],
+        dataset=None,
+        check_model=True,
+        signal=["Voltage [V]"],
+        init_soc=None,
+        x0=None,
     ) -> None:
-        super().__init__(model, inputs, signal)
+        super().__init__(parameters, model, check_model, signal, init_soc, x0)
+        if dataset is not None:
+            self._dataset = dataset.data
+
+            # Check that the dataset contains time and current
+            for name in ["Time [s]", "Current function [A]"] + self.signal:
+                if name not in self._dataset:
+                    raise ValueError(f"expected {name} in list of dataset")
+
+            self._time_data = self._dataset["Time [s]"]
+            self.n_time_data = len(self._time_data)
+            if np.any(self._time_data < 0):
+                raise ValueError("Times can not be negative.")
+            if np.any(self._time_data[:-1] >= self._time_data[1:]):
+                raise ValueError("Times must be increasing.")
+
+            for signal in self.signal:
+                if len(self._dataset[signal]) != self.n_time_data:
+                    raise ValueError(
+                        f"Time data and {signal} data must be the same length."
+                    )
+            target = [self._dataset[signal] for signal in self.signal]
+            self._target = np.vstack(target).T
+
+        # Add useful parameters to model
+        if model is not None:
+            self._model.signal = self.signal
+            self._model.n_outputs = self.n_outputs
+            if dataset is not None:
+                self._model.n_time_data = self.n_time_data
+
+        # Observer initiation
         self._process = process
 
         x0 = self.get_current_state().as_ndarray()

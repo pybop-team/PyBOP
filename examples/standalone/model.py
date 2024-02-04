@@ -15,7 +15,7 @@ class ExponentialDecay(BaseModel):
     def __init__(
         self,
         name: str = "Constant Model",
-        parameters: pybamm.ParameterValues = None,
+        parameter_set: pybamm.ParameterValues = None,
         n_states: int = 1,
     ):
         super().__init__()
@@ -41,7 +41,7 @@ class ExponentialDecay(BaseModel):
         self.name = name
 
         self.default_parameter_values = (
-            default_parameter_values if parameters is None else parameters
+            default_parameter_values if parameter_set is None else parameter_set
         )
         self._parameter_set = self.default_parameter_values
         self._unprocessed_parameter_set = self._parameter_set
