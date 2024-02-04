@@ -237,7 +237,7 @@ class SquareRootUKF(object):
         self.bool_mask = bool_mask
 
     def reset(self, x: np.ndarray, S: np.ndarray) -> None:
-        self.x = x[self.states]
+        self.x = x
         S_filtered = S[self.states, :][:, self.states]
         S_filtered = linalg.cholesky(S_filtered)
         S_full = S.copy()
@@ -325,15 +325,32 @@ class SquareRootUKF(object):
         x = np.sum(w_m * sigma_points, axis=1).reshape(-1, 1)
 
         # Update the predicted square-root covariance
-        sigma_points_diff = sigma_points - x
-        A = np.hstack([np.sqrt(w_c[1:]) * (sigma_points_diff[:, 1:]), sqrtR])
-        (_, S) = linalg.qr(A.T, mode="economic")
         if states is None:
+            sigma_points_diff = sigma_points - x
+            A = np.hstack([np.sqrt(w_c[1:]) * (sigma_points_diff[:, 1:]), sqrtR])
+            (_, S) = linalg.qr(A.T, mode="economic")
             S = SquareRootUKF.cholupdate(S, sigma_points_diff[:, 0:1], w_c[0])
         else:
-            S = SquareRootUKF.filtered_cholupdate(
-                S, sigma_points_diff[:, 0:1], w_c[0], states
+            # First overwrite states without noise to remove numerial error
+            clean = np.full(len(x), True)
+            clean[states] = False
+            x[clean] = sigma_points[clean, 0].reshape(-1, 1)
+
+            sigma_points_diff = sigma_points[states, :] - x[states]
+            A = np.hstack(
+                [
+                    np.sqrt(w_c[1:]) * (sigma_points_diff[:, 1:]),
+                    sqrtR[states, :][:, states],
+                ]
             )
+            (_, S_filtered) = linalg.qr(A.T, mode="economic")
+            S_filtered = SquareRootUKF.cholupdate(
+                S_filtered, sigma_points_diff[:, 0:1], w_c[0]
+            )
+            ones = np.logical_not(clean)
+            bool_mask = np.vstack(ones) & np.hstack(ones)
+            S = np.zeros_like(sqrtR)
+            S[bool_mask] = S_filtered.flatten()
 
         return x, S
 
@@ -415,6 +432,7 @@ class SquareRootUKF(object):
         sigma_points, w_m, w_c = self.gen_sigma_points(
             self.x, self.S, self.alpha, self.beta, self.states
         )
+
         # Update sigma points in time
         sigma_points = np.apply_along_axis(self.f, 0, sigma_points)
 
@@ -442,7 +460,8 @@ class SquareRootUKF(object):
         self.S = self.filtered_cholupdate(S_minus, U, -1, self.states)
 
         # Compute the log-likelihood of the covariance
-        log_det = 2 * np.sum(np.log(np.diag(self.S)))
+        S = self.S[self.states, :][:, self.states]
+        log_det = 2 * np.sum(np.log(np.diag(S)))
         n = len(y)
         log_likelihood = -0.5 * (
             n * log_det + residual.T @ linalg.cho_solve((S_y, True), residual)
