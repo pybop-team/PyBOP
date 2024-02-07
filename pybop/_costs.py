@@ -306,6 +306,15 @@ class GravimetricEnergyDensity(BaseCost):
         """
         super().__init__(problem)
         self.problem = problem
+        if update_capacity is True:
+            nominal_capacity_warning = (
+                "The nominal capacity is approximated for each iteration."
+            )
+        else:
+            nominal_capacity_warning = (
+                "The nominal capacity is fixed at the initial model value."
+            )
+        warnings.warn(nominal_capacity_warning, UserWarning)
         self.update_capacity = update_capacity
         self.parameter_set = problem._model._parameter_set
         self.update_simulation_data(problem.x0)
@@ -318,7 +327,9 @@ class GravimetricEnergyDensity(BaseCost):
             initial_conditions (array): The initial conditions for the simulation.
         """
         if self.update_capacity:
-            self.nominal_capacity(self.problem.x0, self.problem._model)
+            self.problem._model.approximate_capacity(
+                self.problem.x0, self.problem._model
+            )
         solution = self.problem.evaluate(initial_conditions)
         self.problem._time_data = solution[:, -1]
         self.problem._target = solution[:, 0:-1]
@@ -341,12 +352,14 @@ class GravimetricEnergyDensity(BaseCost):
                 warnings.filterwarnings("error", category=UserWarning)
 
                 if self.update_capacity:
-                    self.nominal_capacity(x, self.problem._model)
+                    self.problem._model.approximate_capacity(
+                        x,
+                    )
                 solution = self.problem.evaluate(x)
 
                 voltage, current = solution[:, 0], solution[:, 1]
                 negative_energy_density = -np.trapz(voltage * current, dx=self.dt) / (
-                    3600 * self.cell_mass(self.parameter_set)
+                    3600 * self.problem._model.cell_mass(self.parameter_set)
                 )
 
                 return negative_energy_density
@@ -358,133 +371,3 @@ class GravimetricEnergyDensity(BaseCost):
         except Exception as e:
             print(f"An error occurred during the evaluation: {e}")
             return np.inf
-
-    def nominal_capacity(self, x, model):
-        """
-        Calculate and update the nominal cell capacity based on the theoretical energy density
-        and an average voltage.
-
-        The nominal capacity is computed by dividing the theoretical energy (in watt-hours) by
-        the average open circuit potential (voltage) of the cell.
-
-        Parameters:
-        - x (array-like): An array of values representing the model inputs.
-        - model (BatteryModel): An instance of the battery model that contains methods and
-                                parameters for calculating the state of health and other
-                                properties of the battery.
-
-        Returns:
-        - None: The nominal cell capacity is updated directly in the model's parameter set.
-        """
-        # Extract stoichiometries and compute mean values
-        (
-            min_sto_neg,
-            max_sto_neg,
-            min_sto_pos,
-            max_sto_pos,
-        ) = model._electrode_soh.get_min_max_stoichiometries(model._parameter_set)
-        mean_sto_neg = (min_sto_neg + max_sto_neg) / 2
-        mean_sto_pos = (min_sto_pos + max_sto_pos) / 2
-
-        inputs = {
-            key: x[i]
-            for i, key in enumerate([param.name for param in model.parameters])
-        }
-        model._parameter_set.update(inputs)
-
-        # Calculate theoretical energy density
-        theoretical_energy = model._electrode_soh.calculate_theoretical_energy(
-            model._parameter_set
-        )
-
-        # Calculate average voltage
-        positive_electrode_ocp = model._parameter_set["Positive electrode OCP [V]"]
-        negative_electrode_ocp = model._parameter_set["Negative electrode OCP [V]"]
-        average_voltage = positive_electrode_ocp(mean_sto_pos) - negative_electrode_ocp(
-            mean_sto_neg
-        )
-
-        # Calculate and update nominal capacity
-        theoretical_capacity = theoretical_energy / average_voltage
-        model._parameter_set.update(
-            {"Nominal cell capacity [A.h]": theoretical_capacity}
-        )
-
-    def cell_mass(self, parameter_set):
-        """
-        Calculate the total cell mass in kilograms.
-
-        This method uses the provided parameter set to calculate the mass of different
-        components of the cell, such as electrodes, separator, and current collectors,
-        based on their densities, porosities, and thicknesses. It then calculates the
-        total mass by summing the mass of each component.
-
-        Parameters:
-        - parameter_set (dict): A dictionary containing the parameter values necessary
-                                for the mass calculations.
-
-        Returns:
-        - float: The total mass of the cell in kilograms.
-        """
-
-        def mass_density(
-            active_material_vol_frac, density, porosity, electrolyte_density
-        ):
-            return (active_material_vol_frac * density) + (
-                porosity * electrolyte_density
-            )
-
-        def area_density(thickness, mass_density):
-            return thickness * mass_density
-
-        # Approximations due to SPM(e) parameter set limitations
-        electrolyte_density = parameter_set["Separator density [kg.m-3]"]
-
-        # Calculate mass densities
-        positive_mass_density = mass_density(
-            parameter_set["Positive electrode active material volume fraction"],
-            parameter_set["Positive electrode density [kg.m-3]"],
-            parameter_set["Positive electrode porosity"],
-            electrolyte_density,
-        )
-        negative_mass_density = mass_density(
-            parameter_set["Negative electrode active material volume fraction"],
-            parameter_set["Negative electrode density [kg.m-3]"],
-            parameter_set["Negative electrode porosity"],
-            electrolyte_density,
-        )
-
-        # Calculate area densities
-        positive_area_density = area_density(
-            parameter_set["Positive electrode thickness [m]"], positive_mass_density
-        )
-        negative_area_density = area_density(
-            parameter_set["Negative electrode thickness [m]"], negative_mass_density
-        )
-        separator_area_density = area_density(
-            parameter_set["Separator thickness [m]"],
-            parameter_set["Separator porosity"] * electrolyte_density,
-        )
-        positive_cc_area_density = area_density(
-            parameter_set["Positive current collector thickness [m]"],
-            parameter_set["Positive current collector density [kg.m-3]"],
-        )
-        negative_cc_area_density = area_density(
-            parameter_set["Negative current collector thickness [m]"],
-            parameter_set["Negative current collector density [kg.m-3]"],
-        )
-
-        # Calculate cross-sectional area
-        cross_sectional_area = (
-            parameter_set["Electrode height [m]"] * parameter_set["Electrode width [m]"]
-        )
-
-        # Calculate and return total cell mass
-        total_area_density = (
-            positive_area_density
-            + negative_area_density
-            + separator_area_density
-            + positive_cc_area_density
-            + negative_cc_area_density
-        )
-        return cross_sectional_area * total_area_density
