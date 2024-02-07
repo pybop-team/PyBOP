@@ -327,9 +327,7 @@ class GravimetricEnergyDensity(BaseCost):
             initial_conditions (array): The initial conditions for the simulation.
         """
         if self.update_capacity:
-            self.problem._model.approximate_capacity(
-                self.problem.x0, self.problem._model
-            )
+            self.problem._model.approximate_capacity(self.problem.x0)
         solution = self.problem.evaluate(initial_conditions)
         self.problem._time_data = solution[:, -1]
         self.problem._target = solution[:, 0:-1]
@@ -352,9 +350,7 @@ class GravimetricEnergyDensity(BaseCost):
                 warnings.filterwarnings("error", category=UserWarning)
 
                 if self.update_capacity:
-                    self.problem._model.approximate_capacity(
-                        x,
-                    )
+                    self.problem._model.approximate_capacity(x)
                 solution = self.problem.evaluate(x)
 
                 voltage, current = solution[:, 0], solution[:, 1]

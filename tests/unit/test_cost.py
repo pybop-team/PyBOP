@@ -128,3 +128,7 @@ class TestCosts:
         assert cost([0.4]) <= 0  # Should be a viable design
         assert cost([0.8]) == np.inf  # Should exceed active material + porosity < 1
         assert cost([1.4]) == np.inf  # Definitely not viable
+
+        # Compute after updating nominal capacity
+        cost = pybop.GravimetricEnergyDensity(problem, update_capacity=True)
+        cost([0.4])
