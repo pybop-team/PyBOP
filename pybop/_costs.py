@@ -1,5 +1,7 @@
 import numpy as np
 
+from pybop.observers.observer import Observer
+
 
 class BaseCost:
     """
@@ -23,6 +25,8 @@ class BaseCost:
         The bounds for the model parameters.
     n_parameters : int
         The number of parameters in the model.
+    n_outputs : int
+        The number of outputs in the model.
     """
 
     def __init__(self, problem):
@@ -32,6 +36,7 @@ class BaseCost:
             self.x0 = problem.x0
             self.bounds = problem.bounds
             self.n_parameters = problem.n_parameters
+            self.n_outputs = problem.n_outputs
 
     def __call__(self, x, grad=None):
         """
@@ -252,13 +257,13 @@ class SumSquaredError(BaseCost):
         y, dy = self.problem.evaluateS1(x)
         if len(y) < len(self._target):
             e = np.float64(np.inf)
-            de = self._de * np.ones(self.problem.n_parameters)
+            de = self._de * np.ones(self.n_parameters)
         else:
             dy = dy.reshape(
                 (
                     self.problem.n_time_data,
-                    self.problem.n_outputs,
-                    self.problem.n_parameters,
+                    self.n_outputs,
+                    self.n_parameters,
                 )
             )
             r = y - self._target
@@ -281,3 +286,64 @@ class SumSquaredError(BaseCost):
         """
         de = float(de)
         self._de = de
+
+
+class ObserverCost(BaseCost):
+    """
+    Observer cost function.
+
+    Computes the cost function for an observer model, which is log likelihood
+    of the data points given the model parameters.
+
+    Inherits all parameters and attributes from ``BaseCost``.
+
+    """
+
+    def __init__(self, observer: Observer):
+        super().__init__(problem=observer)
+        self._observer = observer
+
+    def _evaluate(self, x, grad=None):
+        """
+        Calculate the observer cost for a given set of parameters.
+
+        Parameters
+        ----------
+        x : array-like
+            The parameters for which to evaluate the cost.
+        grad : array-like, optional
+            An array to store the gradient of the cost function with respect
+            to the parameters.
+
+        Returns
+        -------
+        float
+            The observer cost (negative of the log likelihood).
+        """
+        inputs = {key: x[i] for i, key in enumerate(self._observer._model.fit_keys)}
+        log_likelihood = self._observer.log_likelihood(
+            self._target, self._observer.time_data(), inputs
+        )
+        return -log_likelihood
+
+    def evaluateS1(self, x):
+        """
+        Compute the cost and its gradient with respect to the parameters.
+
+        Parameters
+        ----------
+        x : array-like
+            The parameters for which to compute the cost and gradient.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the cost and the gradient. The cost is a float,
+            and the gradient is an array-like of the same length as `x`.
+
+        Raises
+        ------
+        ValueError
+            If an error occurs during the calculation of the cost or gradient.
+        """
+        raise NotImplementedError
