@@ -113,6 +113,8 @@ class BaseModel:
             # Clear solver and setup model
             self._solver._model_set_up = {}
 
+        self.n_states = self._built_model.len_rhs_and_alg  # len_rhs + len_alg
+
     def set_init_soc(self, init_soc):
         """
         Set the initial state of charge for the battery model.
@@ -214,7 +216,7 @@ class BaseModel:
             The time to predict the system to (in whatever time units the model is in)
         """
         dt = time - state.t
-        new_sol = self.solver.step(
+        new_sol = self._solver.step(
             state.sol, self.built_model, dt, npts=2, inputs=state.inputs, save=False
         )
         return TimeSeriesState(sol=new_sol, inputs=state.inputs, t=time)
@@ -252,7 +254,7 @@ class BaseModel:
                 inputs=inputs,
                 allow_infeasible_solutions=self.allow_infeasible_solutions,
             ):
-                sol = self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
+                sol = self._solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
 
                 predictions = [sol[signal].data for signal in self.signal]
 
@@ -295,7 +297,7 @@ class BaseModel:
                 inputs=inputs,
                 allow_infeasible_solutions=self.allow_infeasible_solutions,
             ):
-                sol = self.solver.solve(
+                sol = self._solver.solve(
                     self.built_model,
                     inputs=inputs,
                     t_eval=t_eval,

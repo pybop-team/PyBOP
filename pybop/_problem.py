@@ -1,7 +1,4 @@
-from typing import Optional
 import numpy as np
-
-from pybop.observers.observer import Observer
 
 
 class BaseProblem:
@@ -16,6 +13,8 @@ class BaseProblem:
         The model to be used for the problem (default: None).
     check_model : bool, optional
         Flag to indicate if the model should be checked (default: True).
+    signal: List[str]
+      The signal to observe.
     init_soc : float, optional
         Initial state of charge (default: None).
     x0 : np.ndarray, optional
@@ -132,8 +131,8 @@ class FittingProblem(BaseProblem):
         The model to fit.
     parameters : list
         List of parameters for the problem.
-    dataset : list
-        List of data objects to fit the model to.
+    dataset : Dataset
+        Dataset object containing the data to fit the model to.
     signal : str, optional
         The signal to fit (default: "Voltage [V]").
     """
@@ -147,7 +146,6 @@ class FittingProblem(BaseProblem):
         signal=["Voltage [V]"],
         init_soc=None,
         x0=None,
-        observer: Optional[Observer] = None,
     ):
         super().__init__(parameters, model, check_model, signal, init_soc, x0)
         self._dataset = dataset.data
@@ -155,7 +153,7 @@ class FittingProblem(BaseProblem):
         # Check that the dataset contains time and current
         for name in ["Time [s]", "Current function [A]"] + self.signal:
             if name not in self._dataset:
-                raise ValueError(f"expected {name} in list of dataset")
+                raise ValueError(f"Expected {name} in list of dataset")
 
         self._time_data = self._dataset["Time [s]"]
         self.n_time_data = len(self._time_data)

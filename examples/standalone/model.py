@@ -15,15 +15,15 @@ class ExponentialDecay(BaseModel):
     def __init__(
         self,
         name: str = "Constant Model",
-        parameters: pybamm.ParameterValues = None,
-        nstate: int = 1,
+        parameter_set: pybamm.ParameterValues = None,
+        n_states: int = 1,
     ):
         super().__init__()
-        self.nstate = nstate
-        if nstate < 1:
-            raise ValueError("nstate must be greater than 0")
+        self.n_states = n_states
+        if n_states < 1:
+            raise ValueError("The number of states (n_states) must be greater than 0")
         self.pybamm_model = pybamm.BaseModel()
-        ys = [pybamm.Variable(f"y_{i}") for i in range(nstate)]
+        ys = [pybamm.Variable(f"y_{i}") for i in range(n_states)]
         k = pybamm.Parameter("k")
         y0 = pybamm.Parameter("y0")
         self.pybamm_model.rhs = {y: -k * y for y in ys}
@@ -41,7 +41,7 @@ class ExponentialDecay(BaseModel):
         self.name = name
 
         self.default_parameter_values = (
-            default_parameter_values if parameters is None else parameters
+            default_parameter_values if parameter_set is None else parameter_set
         )
         self._parameter_set = self.default_parameter_values
         self._unprocessed_parameter_set = self._parameter_set
