@@ -159,14 +159,13 @@ class FittingProblem(BaseProblem):
         if np.any(self._time_data[:-1] >= self._time_data[1:]):
             raise ValueError("Times must be increasing.")
 
+        for signal in self.signal:
+            if len(self._dataset[signal]) != self.n_time_data:
+                raise ValueError(
+                    f"Time data and {signal} data must be the same length."
+                )
         target = [self._dataset[signal] for signal in self.signal]
         self._target = np.vstack(target).T
-        if self.n_outputs == 1:
-            if len(self._target) != self.n_time_data:
-                raise ValueError("Time data and target data must be the same length.")
-        else:
-            if self._target.shape != (self.n_time_data, self.n_outputs):
-                raise ValueError("Time data and target data must be the same shape.")
 
         # Add useful parameters to model
         if model is not None:
@@ -191,6 +190,11 @@ class FittingProblem(BaseProblem):
         ----------
         x : np.ndarray
             Parameter values to evaluate the model at.
+
+        Returns
+        -------
+        y : np.ndarray
+            The model output y(t) simulated with inputs x.
         """
 
         y = np.asarray(self._model.simulate(inputs=x, t_eval=self._time_data))
@@ -205,6 +209,12 @@ class FittingProblem(BaseProblem):
         ----------
         x : np.ndarray
             Parameter values to evaluate the model at.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the simulation result y(t) and the sensitivities dy/dx(t) evaluated
+            with given inputs x.
         """
 
         y, dy = self._model.simulateS1(
@@ -259,6 +269,12 @@ class DesignProblem(BaseProblem):
                 init_soc=self.init_soc,
             )
 
+        # Add an example dataset for plotting comparison
+        sol = self.evaluate(self.x0)
+        self._time_data = sol[:, -1]
+        self._target = sol[:, 0:-1]
+        self._dataset = None
+
     def evaluate(self, x):
         """
         Evaluate the model with the given parameters and return the signal.
@@ -267,25 +283,23 @@ class DesignProblem(BaseProblem):
         ----------
         x : np.ndarray
             Parameter values to evaluate the model at.
+
+        Returns
+        -------
+        y : np.ndarray
+            The model output y(t) simulated with inputs x.
         """
 
-        y = np.asarray(self._model.simulate(inputs=x, t_eval=self._time_data))
-
-        return y
-
-    def evaluateS1(self, x):
-        """
-        Evaluate the model with the given parameters and return the signal and its derivatives.
-
-        Parameters
-        ----------
-        x : np.ndarray
-            Parameter values to evaluate the model at.
-        """
-
-        y, dy = self._model.simulateS1(
+        sol = self._model.predict(
             inputs=x,
-            t_eval=self._time_data,
+            experiment=self.experiment,
+            init_soc=self.init_soc,
         )
 
-        return (np.asarray(y), np.asarray(dy))
+        if sol == [np.inf]:
+            return sol
+
+        else:
+            predictions = [sol[signal].data for signal in self.signal + ["Time [s]"]]
+
+            return np.vstack(predictions).T

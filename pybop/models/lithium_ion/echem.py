@@ -1,4 +1,5 @@
 import pybamm
+import warnings
 from ..base_model import BaseModel
 
 
@@ -68,6 +69,58 @@ class SPM(BaseModel):
         self._mesh = None
         self._disc = None
 
+        self._electrode_soh = pybamm.lithium_ion.electrode_soh
+
+    def _check_params(
+        self, inputs=None, parameter_set=None, allow_infeasible_solutions=True
+    ):
+        """
+        Check compatibility of the model parameters.
+
+        Parameters
+        ----------
+        inputs : dict
+            The input parameters for the simulation.
+        allow_infeasible_solutions : bool, optional
+            If True, infeasible parameter values will be allowed in the optimisation (default: True).
+
+        Returns
+        -------
+        bool
+            A boolean which signifies whether the parameters are compatible.
+        """
+        parameter_set = parameter_set or self._parameter_set
+
+        electrode_params = [
+            (
+                "Negative electrode active material volume fraction",
+                "Negative electrode porosity",
+            ),
+            (
+                "Positive electrode active material volume fraction",
+                "Positive electrode porosity",
+            ),
+        ]
+
+        related_parameters = {
+            key: inputs.get(key) if inputs and key in inputs else parameter_set[key]
+            for pair in electrode_params
+            for key in pair
+        }
+
+        for material_vol_fraction, porosity in electrode_params:
+            if (
+                related_parameters[material_vol_fraction] + related_parameters[porosity]
+                > 1
+            ):
+                if self.param_check_counter <= len(electrode_params):
+                    infeasibility_warning = "Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
+                    warnings.warn(infeasibility_warning, UserWarning)
+                self.param_check_counter += 1
+                return allow_infeasible_solutions
+
+        return True
+
 
 class SPMe(BaseModel):
     """
@@ -136,3 +189,55 @@ class SPMe(BaseModel):
         self._built_initial_soc = None
         self._mesh = None
         self._disc = None
+
+        self._electrode_soh = pybamm.lithium_ion.electrode_soh
+
+    def _check_params(
+        self, inputs=None, parameter_set=None, allow_infeasible_solutions=True
+    ):
+        """
+        Check compatibility of the model parameters.
+
+        Parameters
+        ----------
+        inputs : dict
+            The input parameters for the simulation.
+        allow_infeasible_solutions : bool, optional
+            If True, infeasible parameter values will be allowed in the optimisation (default: True).
+
+        Returns
+        -------
+        bool
+            A boolean which signifies whether the parameters are compatible.
+        """
+        parameter_set = parameter_set or self._parameter_set
+
+        electrode_params = [
+            (
+                "Negative electrode active material volume fraction",
+                "Negative electrode porosity",
+            ),
+            (
+                "Positive electrode active material volume fraction",
+                "Positive electrode porosity",
+            ),
+        ]
+
+        related_parameters = {
+            key: inputs.get(key) if inputs and key in inputs else parameter_set[key]
+            for pair in electrode_params
+            for key in pair
+        }
+
+        for material_vol_fraction, porosity in electrode_params:
+            if (
+                related_parameters[material_vol_fraction] + related_parameters[porosity]
+                > 1
+            ):
+                if self.param_check_counter <= len(electrode_params):
+                    infeasibility_warning = "Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
+                    warnings.warn(infeasibility_warning, UserWarning)
+                self.param_check_counter += 1
+                return allow_infeasible_solutions
+
+        return True

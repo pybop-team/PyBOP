@@ -9,13 +9,13 @@ model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.7, 0.05),
-        bounds=[0.6, 0.9],
+        prior=pybop.Gaussian(0.6, 0.05),
+        bounds=[0.5, 0.8],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.58, 0.05),
-        bounds=[0.5, 0.8],
+        prior=pybop.Gaussian(0.48, 0.05),
+        bounds=[0.4, 0.7],
     ),
 ]
 
@@ -57,5 +57,5 @@ pybop.plot_parameters(optim)
 pybop.plot_cost2d(cost, steps=15)
 
 # Plot the cost landscape with optimisation path and updated bounds
-bounds = np.array([[0.6, 0.9], [0.5, 0.8]])
+bounds = np.array([[0.55, 0.75], [0.48, 0.68]])
 pybop.plot_cost2d(cost, optim=optim, bounds=bounds, steps=15)
