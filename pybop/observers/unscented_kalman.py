@@ -214,7 +214,7 @@ class SquareRootUKF(object):
         zeros = np.logical_and(zero_rows, zero_cols)
         ones = np.logical_not(zeros)
         states = np.array(range(len(x0)))[ones]
-        bool_mask = np.vstack(ones) & np.hstack(ones)
+        bool_mask = np.ix_(ones, ones)
 
         S_filtered = linalg.cholesky(P0[ones, :][:, ones])
         sqrtRp_filtered = linalg.cholesky(Rp[ones, :][:, ones])
@@ -222,8 +222,8 @@ class SquareRootUKF(object):
         n = len(x0)
         S = np.zeros((n, n))
         sqrtRp = np.zeros((n, n))
-        S[bool_mask] = S_filtered.flatten()
-        sqrtRp[bool_mask] = sqrtRp_filtered.flatten()
+        S[bool_mask] = S_filtered
+        sqrtRp[bool_mask] = sqrtRp_filtered
 
         self.x = x0
         self.S = S
@@ -241,7 +241,7 @@ class SquareRootUKF(object):
         S_filtered = S[self.states, :][:, self.states]
         S_filtered = linalg.cholesky(S_filtered)
         S_full = S.copy()
-        S_full[self.bool_mask] = S_filtered.flatten()
+        S_full[self.bool_mask] = S_filtered
         self.S = S_full
 
     @staticmethod
@@ -348,9 +348,8 @@ class SquareRootUKF(object):
                 S_filtered, sigma_points_diff[:, 0:1], w_c[0]
             )
             ones = np.logical_not(clean)
-            bool_mask = np.vstack(ones) & np.hstack(ones)
             S = np.zeros_like(sqrtR)
-            S[bool_mask] = S_filtered.flatten()
+            S[np.ix_(ones, ones)] = S_filtered
 
         return x, S
 
@@ -364,8 +363,7 @@ class SquareRootUKF(object):
         R_filtered = SquareRootUKF.cholupdate(R_filtered, x_filtered, w)
         ones = np.full(len(x), False)
         ones[states] = True
-        bool_mask = np.vstack(ones) & np.hstack(ones)
-        R_full[bool_mask] = R_filtered.flatten()
+        R_full[np.ix_(ones, ones)] = R_filtered
         return R_full
 
     @staticmethod
