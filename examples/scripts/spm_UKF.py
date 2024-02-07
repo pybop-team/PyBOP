@@ -41,8 +41,8 @@ model.build(dataset=dataset.data, parameters=parameters)
 signal = ["Voltage [V]"]
 n_states = model.n_states
 n_signals = len(signal)
-covariance = np.diag([0] * 29 + [sigma**2] + [0] * 9 + [sigma**2])
-process_noise = np.diag([0] * 29 + [1e-6] + [0] * 9 + [1e-6])
+covariance = np.diag([0] * 19 + [sigma**2] + [0] * 19 + [sigma**2])
+process_noise = np.diag([0] * 19 + [1e-6] + [0] * 19 + [1e-6])
 measurement_noise = np.diag([sigma**2])
 observer = pybop.UnscentedKalmanFilterObserver(
     parameters,
