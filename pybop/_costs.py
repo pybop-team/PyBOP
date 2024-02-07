@@ -297,7 +297,7 @@ class GravimetricEnergyDensity(BaseCost):
         dt (float): The time step size used in the simulation.
     """
 
-    def __init__(self, problem):
+    def __init__(self, problem, update_capacity=False):
         """
         Initializes the gravimetric energy density calculator with a problem.
 
@@ -306,6 +306,7 @@ class GravimetricEnergyDensity(BaseCost):
         """
         super().__init__(problem)
         self.problem = problem
+        self.update_capacity = update_capacity
         self.parameter_set = problem._model._parameter_set
         self.update_simulation_data(problem.x0)
 
@@ -316,7 +317,8 @@ class GravimetricEnergyDensity(BaseCost):
         Args:
             initial_conditions (array): The initial conditions for the simulation.
         """
-        self.nominal_capacity(self.problem.x0, self.problem._model)
+        if self.update_capacity:
+            self.nominal_capacity(self.problem.x0, self.problem._model)
         solution = self.problem.evaluate(initial_conditions)
         self.problem._time_data = solution[:, -1]
         self.problem._target = solution[:, 0:-1]
@@ -338,7 +340,8 @@ class GravimetricEnergyDensity(BaseCost):
                 # Convert UserWarning to an exception
                 warnings.filterwarnings("error", category=UserWarning)
 
-                self.nominal_capacity(x, self.problem._model)
+                if self.update_capacity:
+                    self.nominal_capacity(x, self.problem._model)
                 solution = self.problem.evaluate(x)
 
                 voltage, current = solution[:, 0], solution[:, 1]

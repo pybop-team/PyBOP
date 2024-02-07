@@ -47,7 +47,7 @@ cost = pybop.GravimetricEnergyDensity(problem)
 optim = pybop.Optimisation(
     cost, optimiser=pybop.PSO, verbose=True, allow_infeasible_solutions=False
 )
-optim.set_max_iterations(5)
+optim.set_max_iterations(15)
 
 # Run optimisation
 x, final_cost = optim.run()
@@ -56,7 +56,7 @@ print(f"Initial gravimetric energy density: {-cost(cost.x0):.2f} Wh.kg-1")
 print(f"Optimised gravimetric energy density: {-final_cost:.2f} Wh.kg-1")
 
 # Plot the timeseries output
-cost.nominal_capacity(x, cost.problem._model)
+# cost.nominal_capacity(x, cost.problem._model)
 pybop.quick_plot(x, cost, title="Optimised Comparison")
 
 # Plot the cost landscape with optimisation path
