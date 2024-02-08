@@ -345,15 +345,16 @@ class BaseModel:
             else:
                 if not isinstance(inputs, dict):
                     inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
-                    if self.check_params(
-                        inputs=inputs,
-                        allow_infeasible_solutions=self.allow_infeasible_solutions,
-                    ):
-                        sol = self.solver.solve(
-                            self.built_model, inputs=inputs, t_eval=t_eval
-                        )
-                    else:
-                        return [np.inf]
+
+                if self.check_params(
+                    inputs=inputs,
+                    allow_infeasible_solutions=self.allow_infeasible_solutions,
+                ):
+                    sol = self.solver.solve(
+                        self.built_model, inputs=inputs, t_eval=t_eval
+                    )
+                else:
+                    return [np.inf]
 
             predictions = [sol[signal].data for signal in self.signal]
 
