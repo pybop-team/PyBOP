@@ -3,7 +3,7 @@ from ..base_model import BaseModel
 
 class ECircuitModel(BaseModel):
     """
-    An intermediate class to extend the functionality of the electrochemical PyBaMM models.
+    Overwrites and extends `BaseModel` class for circuit-based PyBaMM models.
     """
 
     def __init__(self):
