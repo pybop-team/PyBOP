@@ -4,7 +4,7 @@ from ..base_model import BaseModel
 
 class EChemBaseModel(BaseModel):
     """
-    An intermediate class to extend the functionality of the electrochemical PyBaMM models.
+    Overwrites and extends `BaseModel` class for electrochemical PyBaMM models.
     """
 
     def __init__(self):
