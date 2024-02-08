@@ -42,7 +42,8 @@ class TestCosts:
         base_cost = pybop.BaseCost(problem)
         assert base_cost.problem == problem
         with pytest.raises(NotImplementedError):
-            base_cost([0.5])
+            base_cost._evaluate([0.5])
+            base_cost._evaluateS1([0.5])
 
         # Root Mean Squared Error
         rmse_cost = pybop.RootMeanSquaredError(problem)
@@ -59,12 +60,24 @@ class TestCosts:
         assert type(sums_cost([0.5])) == np.float64
         assert sums_cost([0.5]) >= 0
         e, de = sums_cost.evaluateS1([0.5])
-
         assert type(e) == np.float64
         assert type(de) == np.ndarray
 
         # Test option setting
         sums_cost.set_fail_gradient(1)
+
+        # Test infeasible locations
+        rmse_cost.problem._model.allow_infeasible_solutions = False
+        assert rmse_cost([1.1]) == np.inf
+
+        # Test UserWarnings
+        with pytest.warns(UserWarning) as record:
+            rmse_cost([1.1])
+            sums_cost.evaluateS1([1.1])
+
+        assert len(record) == 2
+        for i in range(len(record)):
+            assert "Non-physical point encountered" in str(record[i].message)
 
         # Test exception for non-numeric inputs
         with pytest.raises(ValueError):

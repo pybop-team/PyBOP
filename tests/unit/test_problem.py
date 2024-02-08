@@ -1,6 +1,5 @@
 import pybop
 import numpy as np
-import pybamm
 import pytest
 
 
@@ -30,7 +29,7 @@ class TestProblem:
 
     @pytest.fixture
     def experiment(self):
-        return pybamm.Experiment(
+        return pybop.Experiment(
             [
                 (
                     "Discharge at 1C for 5 minutes (1 second period)",
@@ -129,6 +128,10 @@ class TestProblem:
             with pytest.raises(ValueError):
                 pybop.FittingProblem(model, parameters, bad_dataset, signal=signal)
 
+        two_signals = ["Voltage [V]", "Time [s]"]
+        with pytest.raises(ValueError):
+            pybop.FittingProblem(model, parameters, bad_dataset, signal=two_signals)
+
     @pytest.mark.unit
     def test_design_problem(self, parameters, experiment, model):
         # Test incorrect number of initial parameter values
@@ -145,3 +148,4 @@ class TestProblem:
 
         # Test model.predict
         model.predict(inputs=[0.5, 0.5], experiment=experiment)
+        model.predict(inputs=[1.1, 0.5], experiment=experiment)
