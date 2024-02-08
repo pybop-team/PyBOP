@@ -1,6 +1,9 @@
 import pybop
 import pytest
 import numpy as np
+import pybamm
+
+from examples.standalone.model import ExponentialDecay
 
 
 class TestModels:
@@ -168,3 +171,31 @@ class TestModels:
                 out_rebuild["Terminal voltage [V]"].data,
                 atol=1e-5,
             )
+
+    def test_reinit(self):
+        k = 0.1
+        y0 = 1
+        model = ExponentialDecay(pybamm.ParameterValues({"k": k, "y0": y0}))
+        model.build()
+        state = model.reinit(inputs={})
+        np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
+
+        state = model.reinit(inputs=[])
+        np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
+
+        model = ExponentialDecay(pybamm.ParameterValues({"k": k, "y0": y0}))
+        with pytest.raises(ValueError):
+            model.reinit(inputs={})
+
+    @pytest.mark.unit
+    def test_simulate(self):
+        k = 0.1
+        y0 = 1
+        model = ExponentialDecay(pybamm.ParameterValues({"k": k, "y0": y0}))
+        model.build()
+        model.signal = ["y_0"]
+        inputs = {}
+        t_eval = np.linspace(0, 10, 100)
+        expected = y0 * np.exp(-k * t_eval).reshape(-1, 1)
+        solved = model.simulate(inputs, t_eval)
+        np.testing.assert_array_almost_equal(solved, expected, decimal=5)

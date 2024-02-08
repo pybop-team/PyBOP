@@ -97,7 +97,9 @@ class SPM(BaseModel):
 
         return rebuild_parameters
 
-    def _check_params(self, inputs=None, allow_infeasible_solutions=True):
+    def _check_params(
+        self, inputs=None, parameter_set=None, allow_infeasible_solutions=True
+    ):
         """
         Check compatibility of the model parameters.
 
@@ -113,6 +115,7 @@ class SPM(BaseModel):
         bool
             A boolean which signifies whether the parameters are compatible.
         """
+        parameter_set = parameter_set or self._parameter_set
 
         electrode_params = [
             (
@@ -126,9 +129,7 @@ class SPM(BaseModel):
         ]
 
         related_parameters = {
-            key: inputs.get(key)
-            if inputs and key in inputs
-            else self._parameter_set[key]
+            key: inputs.get(key) if inputs and key in inputs else parameter_set[key]
             for pair in electrode_params
             for key in pair
         }
@@ -243,7 +244,9 @@ class SPMe(BaseModel):
 
         return rebuild_parameters
 
-    def _check_params(self, inputs=None, allow_infeasible_solutions=True):
+    def _check_params(
+        self, inputs=None, parameter_set=None, allow_infeasible_solutions=True
+    ):
         """
         Check compatibility of the model parameters.
 
@@ -259,6 +262,7 @@ class SPMe(BaseModel):
         bool
             A boolean which signifies whether the parameters are compatible.
         """
+        parameter_set = parameter_set or self._parameter_set
 
         electrode_params = [
             (
@@ -272,9 +276,7 @@ class SPMe(BaseModel):
         ]
 
         related_parameters = {
-            key: inputs.get(key)
-            if inputs and key in inputs
-            else self._parameter_set[key]
+            key: inputs.get(key) if inputs and key in inputs else parameter_set[key]
             for pair in electrode_params
             for key in pair
         }

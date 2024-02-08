@@ -5,7 +5,7 @@
 # This file is adapted from Pints
 # (see https://github.com/pints-team/pints)
 #
-
+from __future__ import annotations
 import sys
 from os import path
 
@@ -26,7 +26,7 @@ script_path = path.dirname(__file__)
 #
 # Cost function class
 #
-from ._costs import BaseCost, RootMeanSquaredError, SumSquaredError
+from ._costs import BaseCost, RootMeanSquaredError, SumSquaredError, ObserverCost
 
 #
 # Dataset class
@@ -39,6 +39,8 @@ from ._dataset import Dataset
 from .models.base_model import BaseModel
 from .models import lithium_ion
 from .models import empirical
+from .models.base_model import TimeSeriesState
+from .models.base_model import Inputs
 
 #
 # Experiment class
@@ -54,7 +56,6 @@ from ._optimisation import Optimisation
 # Optimiser class
 #
 from .optimisers.base_optimiser import BaseOptimiser
-from .optimisers.nlopt_optimize import NLoptOptimize
 from .optimisers.scipy_optimisers import SciPyMinimize, SciPyDifferentialEvolution
 from .optimisers.pints_optimisers import (
     GradientDescent,
@@ -77,6 +78,12 @@ from .parameters.priors import Gaussian, Uniform, Exponential
 # Problem class
 #
 from ._problem import FittingProblem, DesignProblem
+
+#
+# Observer classes
+#
+from .observers.unscented_kalman import UnscentedKalmanFilterObserver
+from .observers.observer import Observer
 
 #
 # Plotting class
