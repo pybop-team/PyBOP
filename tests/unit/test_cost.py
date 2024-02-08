@@ -33,7 +33,7 @@ class TestCosts:
 
     @pytest.fixture
     def x0(self):
-        return np.array([0.5])
+        return np.array([0.52])
 
     @pytest.fixture
     def dataset(self, model, experiment, x0):
@@ -56,10 +56,9 @@ class TestCosts:
     def signal(self):
         return "Voltage [V]"
 
-    @pytest.mark.parametrize("cut_off", [2.5, 3.777])
-    @pytest.mark.unit
-    def test_costs(self, cut_off, model, parameters, dataset, signal, x0):
-        # Construct Problem
+    @pytest.fixture(params=[2.5, 3.777])
+    def problem(self, model, parameters, dataset, signal, x0, request):
+        cut_off = request.param
         model.parameter_set.update({"Lower voltage cut-off [V]": cut_off})
         problem = pybop.FittingProblem(model, parameters, dataset, signal=signal, x0=x0)
         return problem
