@@ -58,22 +58,10 @@ class UnscentedKalmanFilterObserver(Observer):
             self._dataset = dataset.data
 
             # Check that the dataset contains time and current
-            for name in ["Time [s]", "Current function [A]"] + self.signal:
-                if name not in self._dataset:
-                    raise ValueError(f"expected {name} in list of dataset")
+            dataset.check(self.signal + ["Current function [A]"])
 
             self._time_data = self._dataset["Time [s]"]
             self.n_time_data = len(self._time_data)
-            if np.any(self._time_data < 0):
-                raise ValueError("Times can not be negative.")
-            if np.any(self._time_data[:-1] >= self._time_data[1:]):
-                raise ValueError("Times must be increasing.")
-
-            for signal in self.signal:
-                if len(self._dataset[signal]) != self.n_time_data:
-                    raise ValueError(
-                        f"Time data and {signal} data must be the same length."
-                    )
             target = [self._dataset[signal] for signal in self.signal]
             self._target = np.vstack(target).T
 

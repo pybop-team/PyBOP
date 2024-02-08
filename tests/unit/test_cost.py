@@ -38,6 +38,7 @@ class TestCosts:
         signal = ["Voltage [V]"]
         model.parameter_set.update({"Lower voltage cut-off [V]": cut_off})
         problem = pybop.FittingProblem(model, parameters, dataset, signal=signal, x0=x0)
+        problem.dataset = dataset # add this to pass the pybop dataset to cost
         return problem
 
     @pytest.fixture(
@@ -59,7 +60,7 @@ class TestCosts:
             process_diag[1] = 1e-4
             sigma0 = np.diag(sigma_diag)
             process = np.diag(process_diag)
-            dataset = type("dataset", (object,), {"data": problem._dataset})()
+            dataset = problem.dataset
             return cls(
                 pybop.UnscentedKalmanFilterObserver(
                     problem.parameters,
