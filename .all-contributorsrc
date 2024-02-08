@@ -50,7 +50,9 @@
       "contributions": [
         "ideas",
         "mentoring",
-        "review"
+        "review",
+        "code",
+        "test"
       ]
     },
     {
