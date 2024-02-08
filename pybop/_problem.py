@@ -13,6 +13,8 @@ class BaseProblem:
         The model to be used for the problem (default: None).
     check_model : bool, optional
         Flag to indicate if the model should be checked (default: True).
+    signal: List[str]
+      The signal to observe.
     init_soc : float, optional
         Initial state of charge (default: None).
     x0 : np.ndarray, optional
@@ -79,7 +81,8 @@ class BaseProblem:
 
     def evaluateS1(self, x):
         """
-        Evaluate the model with the given parameters and return the signal and its derivatives.
+        Evaluate the model with the given parameters and return the signal and
+        its derivatives.
 
         Parameters
         ----------
@@ -128,8 +131,8 @@ class FittingProblem(BaseProblem):
         The model to fit.
     parameters : list
         List of parameters for the problem.
-    dataset : list
-        List of data objects to fit the model to.
+    dataset : Dataset
+        Dataset object containing the data to fit the model to.
     signal : str, optional
         The signal to fit (default: "Voltage [V]").
     """
@@ -185,7 +188,6 @@ class FittingProblem(BaseProblem):
         y : np.ndarray
             The model output y(t) simulated with inputs x.
         """
-
         y = np.asarray(self._model.simulate(inputs=x, t_eval=self._time_data))
 
         return y
