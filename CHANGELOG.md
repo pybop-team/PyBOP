@@ -16,6 +16,8 @@
 
 ## Bug Fixes
 
+- [#182](https://github.com/pybop-team/PyBOP/pull/182) - Allow square-brackets indexing of Dataset
+
 # [v23.11](https://github.com/pybop-team/PyBOP/releases/tag/v23.11)
 - Initial release
 - Adds Pints, NLOpt, and SciPy optimisers
