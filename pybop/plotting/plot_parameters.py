@@ -1,5 +1,4 @@
 import pybop
-import numpy as np
 
 
 def plot_parameters(optim, show=True, **layout_kwargs):
