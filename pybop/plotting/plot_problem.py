@@ -56,18 +56,26 @@ def quick_plot(problem, parameter_values=None, show=True, **layout_kwargs):
         )
 
         # Create a plotting dictionary
+        if isinstance(problem, pybop.DesignProblem):
+            trace_name = "Optimised"
+        else:
+            trace_name = "Model"
         plot_dict = pybop.StandardPlot(
             x=time_data,
             y=model_output[:, i],
             layout_options=default_layout_options,
-            trace_names="Model",
+            trace_names=trace_name,
         )
 
         # Add the data as markers
+        if isinstance(problem, pybop.DesignProblem):
+            name = "Initial"
+        else:
+            name = "Target"
         target_trace = plot_dict.create_trace(
             x=time_data,
             y=target_output[:, i],
-            name="Target",
+            name=name,
             mode="markers",
             showlegend=True,
         )
