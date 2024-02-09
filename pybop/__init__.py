@@ -33,6 +33,7 @@ from .costs.fitting_costs import (
     ObserverCost,
 )
 from .costs.design_costs import (
+    DesignCost,
     GravimetricEnergyDensity,
     VolumetricEnergyDensity,
 )
