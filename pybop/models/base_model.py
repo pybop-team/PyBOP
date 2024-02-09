@@ -416,7 +416,15 @@ class BaseModel:
         """
         if inputs is not None:
             if not isinstance(inputs, dict):
-                inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+                if isinstance(inputs, list):
+                    for entry in inputs:
+                        if not isinstance(entry, (int, float)):
+                            raise ValueError(
+                                "Expecting inputs in the form of a dictionary, numeric list"
+                                + f" or None, but received a list with type: {type(inputs)}"
+                            )
+                else:
+                    inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
 
         return self._check_params(
             inputs=inputs, allow_infeasible_solutions=allow_infeasible_solutions
@@ -452,6 +460,25 @@ class BaseModel:
         parameter_set : dict, optional
             A dictionary containing the parameter values necessary for the mass
             calculations.
+
+        Raises
+        ------
+        NotImplementedError
+            If the method has not been implemented by the subclass.
+        """
+        raise NotImplementedError
+
+    def cell_volume(self, parameter_set=None):
+        """
+        Calculate the cell volume in m3.
+
+        This method must be implemented by subclasses.
+
+        Parameters
+        ----------
+        parameter_set : dict, optional
+            A dictionary containing the parameter values necessary for the volume
+            calculation.
 
         Raises
         ------

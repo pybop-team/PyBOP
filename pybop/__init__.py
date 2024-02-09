@@ -26,12 +26,16 @@ script_path = path.dirname(__file__)
 #
 # Cost function class
 #
-from ._costs import (
-    BaseCost,
+from .costs.base_cost import BaseCost
+from .costs.fitting_costs import (
     RootMeanSquaredError,
     SumSquaredError,
     ObserverCost,
+)
+from .costs.design_costs import (
+    DesignCost,
     GravimetricEnergyDensity,
+    VolumetricEnergyDensity,
 )
 
 #
