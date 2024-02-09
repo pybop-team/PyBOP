@@ -89,10 +89,10 @@ from .observers.observer import Observer
 # Plotting class
 #
 from .plotting.plotly_manager import PlotlyManager
-from .plotting.standard_plot import StandardPlot, StandardSubplot, plot_trajectories
-from .plotting.plot_cost import plot_cost2d
+from .plotting.quick_plot import StandardPlot, StandardSubplot, plot_trajectories
+from .plotting.plot_cost2d import plot_cost2d
 from .plotting.plot_dataset import plot_dataset
-from .plotting.plot_optimisation import plot_convergence, plot_parameters, plot_optim2d
+from .plotting.plot_convergence import plot_convergence, plot_parameters, plot_optim2d
 from .plotting.plot_problem import quick_plot
 
 #
