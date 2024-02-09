@@ -105,6 +105,12 @@ class TestCosts:
             base_cost._evaluateS1([0.5])
 
     @pytest.mark.unit
+    def test_design_base(self, problem):
+        design_cost = pybop.DesignCost(problem)
+        with pytest.raises(NotImplementedError):
+            design_cost._evaluate([0.5])
+
+    @pytest.mark.unit
     def test_costs(self, cost):
         higher_cost = cost([0.5])
         lower_cost = cost([0.52])
