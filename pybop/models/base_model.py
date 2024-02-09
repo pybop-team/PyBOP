@@ -441,6 +441,44 @@ class BaseModel:
         """
         return True
 
+    def cell_mass(self, parameter_set=None):
+        """
+        Calculate the cell mass in kilograms.
+
+        This method must be implemented by subclasses.
+
+        Parameters
+        ----------
+        parameter_set : dict, optional
+            A dictionary containing the parameter values necessary for the mass
+            calculations.
+
+        Raises
+        ------
+        NotImplementedError
+            If the method has not been implemented by the subclass.
+        """
+        raise NotImplementedError
+
+    def approximate_capacity(self, x):
+        """
+        Calculate a new estimate for the nominal capacity based on the theoretical energy density
+        and an average voltage.
+
+        This method must be implemented by subclasses.
+
+        Parameters
+        ----------
+        x : array-like
+            An array of values representing the model inputs.
+
+        Raises
+        ------
+        NotImplementedError
+            If the method has not been implemented by the subclass.
+        """
+        raise NotImplementedError
+
     @property
     def built_model(self):
         return self._built_model
