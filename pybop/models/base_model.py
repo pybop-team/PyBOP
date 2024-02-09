@@ -416,7 +416,15 @@ class BaseModel:
         """
         if inputs is not None:
             if not isinstance(inputs, dict):
-                inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+                if isinstance(inputs, list):
+                    for entry in inputs:
+                        if not isinstance(entry, (int, float)):
+                            raise ValueError(
+                                "Expecting inputs in the form of a dictionary, numeric list"
+                                + f" or None, but received a list with type: {type(inputs)}"
+                            )
+                else:
+                    inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
 
         return self._check_params(
             inputs=inputs, allow_infeasible_solutions=allow_infeasible_solutions
@@ -440,6 +448,63 @@ class BaseModel:
             A boolean which signifies whether the parameters are compatible.
         """
         return True
+
+    def cell_mass(self, parameter_set=None):
+        """
+        Calculate the cell mass in kilograms.
+
+        This method must be implemented by subclasses.
+
+        Parameters
+        ----------
+        parameter_set : dict, optional
+            A dictionary containing the parameter values necessary for the mass
+            calculations.
+
+        Raises
+        ------
+        NotImplementedError
+            If the method has not been implemented by the subclass.
+        """
+        raise NotImplementedError
+
+    def cell_volume(self, parameter_set=None):
+        """
+        Calculate the cell volume in m3.
+
+        This method must be implemented by subclasses.
+
+        Parameters
+        ----------
+        parameter_set : dict, optional
+            A dictionary containing the parameter values necessary for the volume
+            calculation.
+
+        Raises
+        ------
+        NotImplementedError
+            If the method has not been implemented by the subclass.
+        """
+        raise NotImplementedError
+
+    def approximate_capacity(self, x):
+        """
+        Calculate a new estimate for the nominal capacity based on the theoretical energy density
+        and an average voltage.
+
+        This method must be implemented by subclasses.
+
+        Parameters
+        ----------
+        x : array-like
+            An array of values representing the model inputs.
+
+        Raises
+        ------
+        NotImplementedError
+            If the method has not been implemented by the subclass.
+        """
+        raise NotImplementedError
 
     @property
     def built_model(self):
