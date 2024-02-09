@@ -1,7 +1,5 @@
 import pybop
 
-## NOTE: This is a brittle example, the classes and methods below will be
-## integrated into pybop in a future release.
 
 # A design optimisation example loosely based on work by L.D. Couto
 # available at https://doi.org/10.1016/j.energy.2022.125966.
@@ -11,6 +9,10 @@ import pybop
 # cross-sectional area = height x width (only need change one)
 # electrode widths, particle radii, volume fractions and
 # separator width.
+
+# This script can be easily adjusted to consider the volumetric
+# (instead of gravimetric) energy density by changing the line which
+# defines the cost.
 
 # Define parameter set and model
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
@@ -42,8 +44,10 @@ problem = pybop.DesignProblem(
     model, parameters, experiment, signal=signal, init_soc=init_soc
 )
 
-# Generate cost function and optimisation class
+# Generate cost function and optimisation class:
+# select either the gravimetric or volumetric energy density
 cost = pybop.GravimetricEnergyDensity(problem)
+# cost = pybop.VolumetricEnergyDensity(problem)
 optim = pybop.Optimisation(
     cost, optimiser=pybop.PSO, verbose=True, allow_infeasible_solutions=False
 )
@@ -52,11 +56,16 @@ optim.set_max_iterations(15)
 # Run optimisation
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
-print(f"Initial gravimetric energy density: {-cost(cost.x0):.2f} Wh.kg-1")
-print(f"Optimised gravimetric energy density: {-final_cost:.2f} Wh.kg-1")
+if isinstance(cost, pybop.GravimetricEnergyDensity):
+    print(f"Initial gravimetric energy density: {-cost(cost.x0):.2f} Wh.kg-1")
+    print(f"Optimised gravimetric energy density: {-final_cost:.2f} Wh.kg-1")
+elif isinstance(cost, pybop.VolumetricEnergyDensity):
+    print(f"Initial volumetric energy density: {-cost(cost.x0):.2f} Wh.m-3")
+    print(f"Optimised volumetric energy density: {-final_cost:.2f} Wh.m-3")
 
 # Plot the timeseries output
-# model.approximate_capacity(x)
+if cost.update_capacity:
+    cost.problem._model.approximate_capacity(x)
 pybop.quick_plot(x, cost, title="Optimised Comparison")
 
 # Plot the cost landscape with optimisation path

@@ -113,6 +113,9 @@ class TestModels:
 
         with pytest.raises(NotImplementedError):
             base.cell_mass()
+        
+        with pytest.raises(NotImplementedError):
+            base.cell_volume()
 
         with pytest.raises(NotImplementedError):
             base.approximate_capacity(x)

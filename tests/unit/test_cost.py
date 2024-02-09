@@ -155,9 +155,13 @@ class TestCosts:
         # Test treatment of simulations that terminated early
         # by variation of the cut-off voltage.
 
+    @pytest.mark.parametrize(
+        "cost_class",
+        [pybop.GravimetricEnergyDensity, pybop.VolumetricEnergyDensity],
+    )
     @pytest.mark.unit
-    def test_gravimetric_energy_density_cost(
-        self, model, parameters, experiment, signal
+    def test_energy_density_costs(
+        self, cost_class, model, parameters, experiment, signal,
     ):
         # Construct Problem
         problem = pybop.DesignProblem(
@@ -165,11 +169,11 @@ class TestCosts:
         )
 
         # Construct Cost
-        cost = pybop.GravimetricEnergyDensity(problem)
+        cost = cost_class(problem)
         assert cost([0.4]) <= 0  # Should be a viable design
         assert cost([0.8]) == np.inf  # Should exceed active material + porosity < 1
         assert cost([1.4]) == np.inf  # Definitely not viable
 
         # Compute after updating nominal capacity
-        cost = pybop.GravimetricEnergyDensity(problem, update_capacity=True)
+        cost = cost_class(problem, update_capacity=True)
         cost([0.4])

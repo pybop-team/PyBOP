@@ -32,6 +32,7 @@ from ._costs import (
     SumSquaredError,
     ObserverCost,
     GravimetricEnergyDensity,
+    VolumetricEnergyDensity,
 )
 
 #

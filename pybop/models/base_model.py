@@ -460,6 +460,25 @@ class BaseModel:
         """
         raise NotImplementedError
 
+    def cell_volume(self, parameter_set=None):
+        """
+        Calculate the cell volume in m3.
+
+        This method must be implemented by subclasses.
+
+        Parameters
+        ----------
+        parameter_set : dict, optional
+            A dictionary containing the parameter values necessary for the volume
+            calculation.
+
+        Raises
+        ------
+        NotImplementedError
+            If the method has not been implemented by the subclass.
+        """
+        raise NotImplementedError
+
     def approximate_capacity(self, x):
         """
         Calculate a new estimate for the nominal capacity based on the theoretical energy density
