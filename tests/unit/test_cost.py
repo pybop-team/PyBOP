@@ -161,7 +161,12 @@ class TestCosts:
     )
     @pytest.mark.unit
     def test_energy_density_costs(
-        self, cost_class, model, parameters, experiment, signal,
+        self,
+        cost_class,
+        model,
+        parameters,
+        experiment,
+        signal,
     ):
         # Construct Problem
         problem = pybop.DesignProblem(
