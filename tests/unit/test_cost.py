@@ -101,6 +101,7 @@ class TestCosts:
         assert base_cost.problem == problem
         with pytest.raises(NotImplementedError):
             base_cost._evaluate([0.5])
+        with pytest.raises(NotImplementedError):
             base_cost._evaluateS1([0.5])
 
     @pytest.mark.unit
