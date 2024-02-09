@@ -100,15 +100,15 @@ class TestCosts:
         base_cost = pybop.BaseCost(problem)
         assert base_cost.problem == problem
         with pytest.raises(NotImplementedError):
-            base_cost._evaluate([0.5])
+            base_cost([0.5])
         with pytest.raises(NotImplementedError):
-            base_cost._evaluateS1([0.5])
+            base_cost.evaluateS1([0.5])
 
     @pytest.mark.unit
     def test_design_base(self, problem):
         design_cost = pybop.DesignCost(problem)
         with pytest.raises(NotImplementedError):
-            design_cost._evaluate([0.5])
+            design_cost([0.5])
 
     @pytest.mark.unit
     def test_costs(self, cost):
@@ -182,9 +182,20 @@ class TestCosts:
 
         # Construct Cost
         cost = cost_class(problem)
+
+        # Test type of returned value
+        assert type(cost([0.5])) == np.float64
         assert cost([0.4]) <= 0  # Should be a viable design
         assert cost([0.8]) == np.inf  # Should exceed active material + porosity < 1
         assert cost([1.4]) == np.inf  # Definitely not viable
+
+        # Test infeasible locations
+        cost.problem._model.allow_infeasible_solutions = False
+        assert cost([1.1]) == np.inf
+
+        # Test exception for non-numeric inputs
+        with pytest.raises(ValueError):
+            cost(["StringInputShouldNotWork"])
 
         # Compute after updating nominal capacity
         cost = cost_class(problem, update_capacity=True)

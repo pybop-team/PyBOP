@@ -58,6 +58,9 @@ class BaseCost:
         try:
             return self._evaluate(x, grad)
 
+        except NotImplementedError as e:
+            raise e
+
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}")
 
@@ -109,6 +112,9 @@ class BaseCost:
         """
         try:
             return self._evaluateS1(x)
+
+        except NotImplementedError as e:
+            raise e
 
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}")

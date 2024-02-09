@@ -130,10 +130,6 @@ class GravimetricEnergyDensity(DesignCost):
             print(f"Ignoring this sample due to: {e}")
             return np.inf
 
-        except Exception as e:
-            print(f"An error occurred during the evaluation: {e}")
-            return np.inf
-
 
 class VolumetricEnergyDensity(DesignCost):
     """
@@ -182,8 +178,4 @@ class VolumetricEnergyDensity(DesignCost):
 
         except UserWarning as e:
             print(f"Ignoring this sample due to: {e}")
-            return np.inf
-
-        except Exception as e:
-            print(f"An error occurred during the evaluation: {e}")
             return np.inf
