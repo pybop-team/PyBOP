@@ -28,6 +28,7 @@ class BaseCost:
         self.problem = problem
         if problem is not None:
             self._target = problem._target
+            self.parameters = problem.parameters
             self.x0 = problem.x0
             self.bounds = problem.bounds
             self.n_parameters = problem.n_parameters
