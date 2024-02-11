@@ -10,7 +10,7 @@
 python_version=("3.8" "3.9" "3.10" "3.11")
 os=("ubuntu-latest" "windows-latest" "macos-latest")
 # This command fetches the last four PyBaMM versions excluding release candidates from PyPI
-pybamm_version=$(curl -s https://pypi.org/pypi/pybamm/json | jq -r '.releases | keys[]' | grep -v rc | tail -n 4 | tr '\n' ' ')
+pybamm_version=($(curl -s https://pypi.org/pypi/pybamm/json | jq -r '.releases | keys[]' | grep -v rc | tail -n 4 | awk '{print "\"" $1 "\"" }' | paste -sd " " -))
 
 json='{
   "include": [
@@ -23,7 +23,7 @@ for py_ver in "${python_version[@]}"; do
       json+='{
         "os": "'$os_type'",
         "python_version": "'$py_ver'",
-        "pybamm_version": "'$pybamm_ver'"
+        "pybamm_version": '$pybamm_ver'
       },'
     done
   done
@@ -37,5 +37,5 @@ json+='
   ]
 }'
 
-
-echo "$json" | jq .
+# escape "" quotes with \ and print the JSON output in one line
+echo "$json" | jq -c . | sed 's/"/\\"/g'
