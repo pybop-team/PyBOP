@@ -13,6 +13,7 @@ on:
 jobs:
   # Dynamically create a matrix of OS, Python, and PyBaMM versions
   create_pybamm_matrix:
+    name: Dynamically create GitHub Actions matrix
     runs-on: ubuntu-latest
     outputs:
       pybop_matrix: ${{ steps.set-matrix.outputs.matrix }}
@@ -22,9 +23,11 @@ jobs:
         with:
           path: .github/workflows/build_matrix.sh
 
-      - name: Dynamically create GitHub Actions matrix
+      - name: Run script to create matrix
         id: set-matrix
         run: |
+          chmod +x .github/workflows/build_matrix.sh
+          git update-index --chmod=+x ./.github/workflows/build_matrix.sh
           bash .github/workflows/build_matrix.sh >> matrix_json
           echo "matrix=$(cat matrix_json)" >> "$GITHUB_OUTPUT"
 
