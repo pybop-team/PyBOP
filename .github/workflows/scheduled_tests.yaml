@@ -55,6 +55,7 @@ jobs:
   # M-series Mac Mini
   build-apple-mseries:
     runs-on: [self-hosted, macOS, ARM64]
+    if: github.repository == 'pybop-team/PyBOP'
     env:
       GITHUB_PATH: ${PYENV_ROOT/bin:$PATH}
     strategy:
