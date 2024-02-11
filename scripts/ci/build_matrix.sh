@@ -38,4 +38,4 @@ json+='
 }'
 
 # escape "" quotes with \ and print the JSON output in one line
-echo "$json" | jq -c . | sed 's/"/\\"/g'
+echo "$json" | jq -r 'tostring' | sed 's/"/\\"/g'
