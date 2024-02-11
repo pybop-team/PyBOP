@@ -28,8 +28,7 @@ jobs:
       - name: Run script to create matrix
         id: set-matrix
         run: |
-          bash scripts/ci/build_matrix.sh >> matrix_json
-          echo "matrix=$(cat matrix_json)" >> "$GITHUB_OUTPUT"
+          echo "matrix=$(bash scripts/ci/build_matrix.sh)" >> "$GITHUB_OUTPUT"
 
   build:
     needs: [create_pybamm_matrix]
