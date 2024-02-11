@@ -27,7 +27,6 @@ jobs:
         id: set-matrix
         run: |
           chmod +x .github/workflows/build_matrix.sh
-          git update-index --chmod=+x ./.github/workflows/build_matrix.sh
           bash .github/workflows/build_matrix.sh >> matrix_json
           echo "matrix=$(cat matrix_json)" >> "$GITHUB_OUTPUT"
 
