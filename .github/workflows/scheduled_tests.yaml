@@ -15,8 +15,6 @@ jobs:
   create_pybamm_matrix:
     name: Dynamically create GitHub Actions matrix
     runs-on: ubuntu-latest
-    outputs:
-      pybop_matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Check out PyBOP repository
         uses: actions/checkout@v4
@@ -29,6 +27,8 @@ jobs:
         id: set-matrix
         run: |
           echo "matrix=$(bash scripts/ci/build_matrix.sh)" >> "$GITHUB_OUTPUT"
+    outputs:
+      pybop_matrix: ${{ steps.set-matrix.outputs.matrix }}
 
   build:
     needs: [create_pybamm_matrix]
