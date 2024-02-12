@@ -10,6 +10,10 @@ on:
   schedule:
     - cron: '0 9 * * *'
 
+# Check noxfile.py for associated environment variables
+env:
+  PYBOP_SCHEDULED: 1
+
 jobs:
   # Dynamically create a matrix of OS, Python, and PyBaMM versions
   create_pybamm_matrix:
@@ -37,6 +41,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{fromJson(needs.create_pybamm_matrix.outputs.pybop_matrix)}}
+    env:
+      PYBAMM_VERSION: ${{ matrix.pybamm_version }}
 
     steps:
       - uses: actions/checkout@v4
@@ -44,13 +50,16 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python_version }}
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip nox
+
       - name: Unit tests with nox
-        run: |
-          python -m nox -s unit
-          python -m nox -s notebooks
+        run: python -m nox -s unit
+
+      - name: Run notebooks with nox
+        run: python -m nox -s notebooks
 
   # M-series Mac Mini
   build-apple-mseries:
