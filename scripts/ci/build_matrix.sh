@@ -5,14 +5,14 @@
 # It generates a matrix of all combinations of the following variables:
 # - python_version: 3.X
 # - os: ubuntu-latest, windows-latest, macos-latest
-# - pybamm_version: the last four versions of PyBaMM from PyPI, excluding release candidates
+# - pybamm_version: the last X versions of PyBaMM from PyPI, excluding release candidates
 
 # To update the matrix, the variables below can be modified as needed.
 
 python_version=("3.8" "3.9" "3.10" "3.11")
 os=("ubuntu-latest" "windows-latest" "macos-latest")
-# This command fetches the last four PyBaMM versions excluding release candidates from PyPI
-pybamm_version=($(curl -s https://pypi.org/pypi/pybamm/json | jq -r '.releases | keys[]' | grep -v rc | tail -n 4 | awk '{print "\"" $1 "\"" }' | paste -sd " " -))
+# This command fetches the last three PyBaMM versions excluding release candidates from PyPI
+pybamm_version=($(curl -s https://pypi.org/pypi/pybamm/json | jq -r '.releases | keys[]' | grep -v rc | tail -n 3 | awk '{print "\"" $1 "\"" }' | paste -sd " " -))
 
 # open dict
 json='{
