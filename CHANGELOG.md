@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#123](https://github.com/pybop-team/PyBOP/issues/187) - Configures scheduled tests to run against the last three PyPI releases of PyBaMM via dynamic GitHub Actions matrix generation.
 - [#187](https://github.com/pybop-team/PyBOP/issues/187) - Adds M1 Github runner to `test_on_push` workflow, updt. self-hosted supported python versions in scheduled tests.
 - [#118](https://github.com/pybop-team/PyBOP/issues/118) - Adds example jupyter notebooks.
 - [#151](https://github.com/pybop-team/PyBOP/issues/151) - Adds a standalone version of the Problem class.
@@ -15,6 +16,7 @@
 - [#164](https://github.com/pybop-team/PyBOP/issues/164) - Fixes convergence issues with gradient-based optimisers, changes default `model.check_params()` to allow infeasible solutions during optimisation iterations. Adds a feasibility check on the optimal parameters.
 
 # [v23.12](https://github.com/pybop-team/PyBOP/tree/v23.12) - 2023-12-19
+
 ## Features
 
 - [#141](https://github.com/pybop-team/PyBOP/pull/141) - Adds documentation with Sphinx and PyData Sphinx Theme. Updates docstrings across package, relocates `costs` and `dataset` to top-level of package. Adds noxfile session and deployment workflow for docs.
