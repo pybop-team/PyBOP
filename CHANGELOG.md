@@ -10,6 +10,7 @@
 
 ## Bug Fixes
 
+- [#196](https://github.com/pybop-team/PyBOP/issues/196) - Fixes failing observer cost tests.
 - [#63](https://github.com/pybop-team/PyBOP/issues/63) - Removes NLOpt Optimiser from future releases. This is to support deployment to the Apple M-Series platform.
 - [#164](https://github.com/pybop-team/PyBOP/issues/164) - Fixes convergence issues with gradient-based optimisers, changes default `model.check_params()` to allow infeasible solutions during optimisation iterations. Adds a feasibility check on the optimal parameters.
 
