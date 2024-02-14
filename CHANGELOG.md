@@ -2,7 +2,7 @@
 
 ## Features
 
-- [#123](https://github.com/pybop-team/PyBOP/issues/187) - Configures scheduled tests to run against the last three PyPI releases of PyBaMM via dynamic GitHub Actions matrix generation.
+- [#123](https://github.com/pybop-team/PyBOP/issues/123) - Configures scheduled tests to run against the last three PyPI releases of PyBaMM via dynamic GitHub Actions matrix generation.
 - [#187](https://github.com/pybop-team/PyBOP/issues/187) - Adds M1 Github runner to `test_on_push` workflow, updt. self-hosted supported python versions in scheduled tests.
 - [#118](https://github.com/pybop-team/PyBOP/issues/118) - Adds example jupyter notebooks.
 - [#151](https://github.com/pybop-team/PyBOP/issues/151) - Adds a standalone version of the Problem class.
@@ -11,6 +11,7 @@
 
 ## Bug Fixes
 
+- [#123](https://github.com/pybop-team/PyBOP/issues/123) - Reinstates check for availability of parameter sets via PyBaMM upon retrieval by `pybop.ParameterSet.pybamm()`.
 - [#196](https://github.com/pybop-team/PyBOP/issues/196) - Fixes failing observer cost tests.
 - [#63](https://github.com/pybop-team/PyBOP/issues/63) - Removes NLOpt Optimiser from future releases. This is to support deployment to the Apple M-Series platform.
 - [#164](https://github.com/pybop-team/PyBOP/issues/164) - Fixes convergence issues with gradient-based optimisers, changes default `model.check_params()` to allow infeasible solutions during optimisation iterations. Adds a feasibility check on the optimal parameters.
