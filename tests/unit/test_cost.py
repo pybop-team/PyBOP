@@ -27,7 +27,7 @@ class TestCosts:
     def experiment(self):
         return pybop.Experiment(
             [
-                ("Discharge at 1C for 5 minutes (5 second period)"),
+                ("Discharge at 1C for 10 minutes (20 second period)"),
             ]
         )
 
@@ -60,7 +60,9 @@ class TestCosts:
     def problem(self, model, parameters, dataset, signal, x0, request):
         cut_off = request.param
         model.parameter_set.update({"Lower voltage cut-off [V]": cut_off})
-        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal, x0=x0)
+        problem = pybop.FittingProblem(
+            model, parameters, dataset, signal=signal, x0=x0, init_soc=1.0
+        )
         problem.dataset = dataset  # add this to pass the pybop dataset to cost
         return problem
 
@@ -113,7 +115,7 @@ class TestCosts:
 
     @pytest.mark.unit
     def test_costs(self, cost):
-        higher_cost = cost([0.5])
+        higher_cost = cost([0.55])
         lower_cost = cost([0.52])
         assert higher_cost > lower_cost or (
             higher_cost == lower_cost and higher_cost == np.inf
