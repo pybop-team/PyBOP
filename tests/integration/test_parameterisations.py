@@ -32,43 +32,17 @@ class TestModelParameterisation:
     def x0(self):
         return np.array([0.63, 0.51])
 
-    @pytest.mark.parametrize("init_soc", [0.3, 0.7])
-    @pytest.mark.unit
-    def test_spm(self, parameters, model, x0, init_soc):
-        # Form dataset
-        solution = self.getdata(model, x0, init_soc)
-        dataset = pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Terminal voltage [V]": solution["Terminal voltage [V]"].data,
-            }
-        )
+    @pytest.fixture(params=[0.3, 0.7])
+    def init_soc(self, request):
+        return request.param
 
-        # Define the cost to optimise
-        signal = ["Terminal voltage [V]"]
-        problem = pybop.FittingProblem(
-            model, parameters, dataset, signal=signal, init_soc=init_soc
-        )
-        cost = pybop.RootMeanSquaredError(problem)
-
-        # Select optimiser
-        optimiser = pybop.CMAES
-
-        # Build the optimisation problem
-        parameterisation = pybop.Optimisation(cost=cost, optimiser=optimiser)
-
-        # Run the optimisation problem
-        x, final_cost = parameterisation.run()
-
-        # Assertions
-        np.testing.assert_allclose(final_cost, 0, atol=1e-2)
-        np.testing.assert_allclose(x, x0, atol=1e-1)
+    @pytest.fixture(params=[pybop.RootMeanSquaredError, pybop.SumSquaredError])
+    def cost_class(self, request):
+        return request.param
 
     @pytest.fixture
-    def spm_cost(self, parameters, model, x0):
+    def spm_costs(self, parameters, model, x0, cost_class, init_soc):
         # Form dataset
-        init_soc = 0.5
         solution = self.getdata(model, x0, init_soc)
         dataset = pybop.Dataset(
             {
@@ -83,7 +57,7 @@ class TestModelParameterisation:
         problem = pybop.FittingProblem(
             model, parameters, dataset, signal=signal, init_soc=init_soc
         )
-        return pybop.SumSquaredError(problem)
+        return cost_class(problem)
 
     @pytest.mark.parametrize(
         "optimiser",
@@ -99,10 +73,10 @@ class TestModelParameterisation:
             pybop.XNES,
         ],
     )
-    @pytest.mark.unit
-    def test_spm_optimisers(self, optimiser, spm_cost, x0):
+    @pytest.mark.integration
+    def test_spm_optimisers(self, optimiser, spm_costs, x0):
         # Test each optimiser
-        parameterisation = pybop.Optimisation(cost=spm_cost, optimiser=optimiser)
+        parameterisation = pybop.Optimisation(cost=spm_costs, optimiser=optimiser)
         parameterisation.set_max_unchanged_iterations(iterations=25, threshold=5e-4)
 
         if optimiser in [pybop.CMAES]:
@@ -141,7 +115,7 @@ class TestModelParameterisation:
 
         # Assertions
         np.testing.assert_allclose(final_cost, 0, atol=1e-2)
-        np.testing.assert_allclose(x, x0, atol=1e-1)
+        np.testing.assert_allclose(x, x0, atol=1e-2)
 
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, x0):
@@ -171,7 +145,7 @@ class TestModelParameterisation:
             pybop.CMAES,
         ],
     )
-    @pytest.mark.unit
+    @pytest.mark.integration
     def test_multiple_signals(self, optimiser, spm_two_signal_cost, x0):
         # Test each optimiser
         parameterisation = pybop.Optimisation(
@@ -190,7 +164,7 @@ class TestModelParameterisation:
         np.testing.assert_allclose(x, x0, atol=1e-1)
 
     @pytest.mark.parametrize("init_soc", [0.3, 0.7])
-    @pytest.mark.unit
+    @pytest.mark.integration
     def test_model_misparameterisation(self, parameters, model, x0, init_soc):
         # Define two different models with different parameter sets
         # The optimisation should fail as the models are not the same

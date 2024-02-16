@@ -104,9 +104,9 @@ class TestOptimisation:
     def test_halting(self, cost):
         # Test max evalutions
         optim = pybop.Optimisation(cost=cost, optimiser=pybop.GradientDescent)
-        optim.set_max_evaluations(10)
+        optim.set_max_evaluations(1)
         x, __ = optim.run()
-        assert optim._iterations == 10
+        assert optim._iterations == 1
 
         # Test max unchanged iterations
         optim = pybop.Optimisation(cost=cost, optimiser=pybop.GradientDescent)

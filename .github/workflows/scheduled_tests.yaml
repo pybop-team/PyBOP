@@ -6,9 +6,10 @@ on:
     branches:
       - main
 
-  # runs every day at 09:00 UTC
+  # runs every day at 09:00 and 15:00 UTC
   schedule:
     - cron: '0 9 * * *'
+    - cron: '0 15 * * *'
 
 jobs:
   build:
@@ -30,7 +31,7 @@ jobs:
           python -m pip install --upgrade pip nox
       - name: Unit tests with nox
         run: |
-          python -m nox -s unit
+          python -m nox -s coverage
           python -m nox -s notebooks
 
   #M-series Mac Mini
@@ -58,7 +59,7 @@ jobs:
           eval "$(pyenv init -)"
           pyenv activate pybop-${{ matrix.python-version }}
           python -m pip install --upgrade pip wheel setuptools nox
-          python -m nox -s unit
+          python -m nox -s coverage
           python -m nox -s notebooks
 
       - name: Uninstall pyenv-virtualenv & python

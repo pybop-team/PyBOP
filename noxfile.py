@@ -18,10 +18,24 @@ def coverage(session):
     session.run(
         "pytest",
         "--unit",
-        "--examples",
+        "--integration",
         "--cov",
         "--cov-report=xml",
     )
+
+
+@nox.session
+def integration(session):
+    session.run_always("pip", "install", "-e", ".[all]")
+    session.install("pytest", "pytest-mock")
+    session.run("pytest", "--integration")
+
+
+@nox.session
+def examples(session):
+    session.run_always("pip", "install", "-e", ".[all]")
+    session.install("pytest", "pytest-mock")
+    session.run("pytest", "--examples")
 
 
 @nox.session

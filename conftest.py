@@ -11,6 +11,12 @@ def pytest_addoption(parser):
         "--unit", action="store_true", default=False, help="run unit tests"
     )
     parser.addoption(
+        "--integration",
+        action="store_true",
+        default=False,
+        help="run integration tests",
+    )
+    parser.addoption(
         "--examples", action="store_true", default=False, help="run examples tests"
     )
 
@@ -25,28 +31,48 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
 
 def pytest_configure(config):
     config.addinivalue_line("markers", "unit: mark test as a unit test")
+    config.addinivalue_line("markers", "integration: mark test as an integration test")
     config.addinivalue_line("markers", "examples: mark test as an example")
 
 
 def pytest_collection_modifyitems(config, items):
-    unit_option = config.getoption("--unit")
-    examples_option = config.getoption("--examples")
+    unit = config.getoption("--unit")
+    integration = config.getoption("--integration")
+    examples = config.getoption("--examples")
 
-    if not unit_option and not examples_option:
-        skip_all = pytest.mark.skip(reason="need --unit or --examples option to run")
+    if not unit and not examples and not integration:
+        skip_all = pytest.mark.skip(
+            reason="need --unit or --examples or --integration option to run"
+        )
         for item in items:
             item.add_marker(skip_all)
 
-    elif unit_option and not examples_option:
-        skip_examples = pytest.mark.skip(
-            reason="need --examples option to run examples tests"
+    elif unit and not examples and not integration:
+        skip_examples_integration = pytest.mark.skip(
+            reason="need --examples option to run examples tests, or --integration option to run integration tests"
         )
         for item in items:
             if "examples" in item.keywords:
-                item.add_marker(skip_examples)
+                item.add_marker(skip_examples_integration)
+            if "integration" in item.keywords:
+                item.add_marker(skip_examples_integration)
 
-    if examples_option and not unit_option:
-        skip_unit = pytest.mark.skip(reason="need --unit option to run unit tests")
+    elif examples and not unit and not integration:
+        skip_unit_integration = pytest.mark.skip(
+            reason="need --unit option to run unit tests or --integration option to run integration tests"
+        )
         for item in items:
             if "unit" in item.keywords:
-                item.add_marker(skip_unit)
+                item.add_marker(skip_unit_integration)
+            if "integration" in item.keywords:
+                item.add_marker(skip_unit_integration)
+
+    elif integration and not unit and not examples:
+        skip_unit_examples = pytest.mark.skip(
+            reason="need --unit option to run unit tests or --examples option to run examples tests"
+        )
+        for item in items:
+            if "unit" in item.keywords:
+                item.add_marker(skip_unit_examples)
+            if "examples" in item.keywords:
+                item.add_marker(skip_unit_examples)

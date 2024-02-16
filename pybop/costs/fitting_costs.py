@@ -45,6 +45,46 @@ class RootMeanSquaredError(BaseCost):
         else:
             return np.sqrt(np.mean((prediction - self._target) ** 2))
 
+    def _evaluateS1(self, x):
+        """
+        Compute the cost and its gradient with respect to the parameters.
+
+        Parameters
+        ----------
+        x : array-like
+            The parameters for which to compute the cost and gradient.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the cost and the gradient. The cost is a float,
+            and the gradient is an array-like of the same length as `x`.
+
+        Raises
+        ------
+        ValueError
+            If an error occurs during the calculation of the cost or gradient.
+        """
+        y, dy = self.problem.evaluateS1(x)
+        if len(y) < len(self._target):
+            e = np.float64(np.inf)
+            de = self._de * np.ones(self.n_parameters)
+        else:
+            dy = dy.reshape(
+                (
+                    self.problem.n_time_data,
+                    self.n_outputs,
+                    self.n_parameters,
+                )
+            )
+            r = y - self._target
+            e = np.sqrt(np.mean((r) ** 2))
+            de = np.mean((r.T * dy.T), axis=2) / np.sqrt(
+                np.mean((r.T * dy.T) ** 2, axis=2)
+            )
+
+        return e, de.flatten()
+
 
 class SumSquaredError(BaseCost):
     """
