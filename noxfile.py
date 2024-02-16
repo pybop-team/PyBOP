@@ -1,20 +1,31 @@
+import os
 import nox
+
 
 # nox options
 nox.options.reuse_existing_virtualenvs = True
+nox.options.venv_backend = "virtualenv"
+
+# Environment variables to control CI behaviour for nox sessions
+PYBOP_SCHEDULED = int(os.environ.get("PYBOP_SCHEDULED", 0))
+PYBAMM_VERSION = os.environ.get("PYBAMM_VERSION", None)
 
 
 @nox.session
 def unit(session):
-    session.run_always("pip", "install", "-e", ".[all]")
-    session.install("pytest", "pytest-mock")
+    session.install("-e", ".[all]", silent=False)
+    if PYBOP_SCHEDULED:
+        session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
+    session.install("pytest", "pytest-mock", silent=False)
     session.run("pytest", "--unit")
 
 
 @nox.session
 def coverage(session):
-    session.run_always("pip", "install", "-e", ".[all]")
-    session.install("pytest", "pytest-cov", "pytest-mock")
+    session.install("-e", ".[all]", silent=False)
+    if PYBOP_SCHEDULED:
+        session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
+    session.install("pytest", "pytest-cov", "pytest-mock", silent=False)
     session.run(
         "pytest",
         "--unit",
@@ -41,8 +52,10 @@ def examples(session):
 @nox.session
 def notebooks(session):
     """Run the examples tests for Jupyter notebooks."""
-    session.run_always("pip", "install", "-e", ".[all]")
-    session.install("pytest", "nbmake")
+    session.install("-e", ".[all]", silent=False)
+    if PYBOP_SCHEDULED:
+        session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
+    session.install("pytest", "nbmake", silent=False)
     session.run("pytest", "--nbmake", "--examples", "examples/", external=True)
 
 
@@ -53,7 +66,7 @@ def docs(session):
     Credit: PyBaMM Team
     """
     envbindir = session.bin
-    session.install("-e", ".[all,docs]")
+    session.install("-e", ".[all,docs]", silent=False)
     session.chdir("docs")
     # Local development
     if session.interactive:
