@@ -20,6 +20,7 @@ DEFAULT_SUBPLOT_OPTIONS = dict(
     start_cell="bottom-left",
 )
 DEFAULT_TRACE_OPTIONS = dict(line=dict(width=4), mode="lines")
+DEFAULT_SUBPLOT_TRACE_OPTIONS = dict(line=dict(width=2), mode="lines")
 
 
 class StandardPlot:
@@ -184,6 +185,23 @@ class StandardPlot:
         wrapped_text = textwrap.fill(text, width=width, break_long_words=False)
         return wrapped_text.replace("\n", "<br>")
 
+    @staticmethod
+    def remove_brackets(s):
+        """
+        Remove square brackets from a string and replace with forward slashes
+        as per section 7.1 of the SI Handbook
+        """
+        # If s is an iterable (but not a string), apply the function recursively to each element
+        if hasattr(s, "__iter__") and not isinstance(s, str):
+            return type(s)(StandardPlot.remove_brackets(i) for i in s)
+        elif isinstance(s, str):
+            start = s.find("[")
+            end = s.find("]")
+            if start != -1 and end != -1:
+                char_in_brackets = s[start + 1 : end]
+                return s[:start] + " / " + char_in_brackets + s[end + 1 :]
+        return s
+
 
 class StandardSubplot(StandardPlot):
     """
@@ -226,7 +244,7 @@ class StandardSubplot(StandardPlot):
         layout=None,
         layout_options=DEFAULT_LAYOUT_OPTIONS,
         subplot_options=DEFAULT_SUBPLOT_OPTIONS,
-        trace_options=DEFAULT_TRACE_OPTIONS,
+        trace_options=DEFAULT_SUBPLOT_TRACE_OPTIONS,
         trace_names=None,
         trace_name_width=40,
     ):
@@ -297,8 +315,8 @@ def plot_trajectories(x, y, trace_names=None, show=True, **layout_kwargs):
         Name(s) for the trace(s) (default: None).
     **layout_kwargs : optional
             Valid Plotly layout keys and their values,
-            e.g. `xaxis_title="Time [s]"` or
-            `xaxis={"title": "Time [s]", "titlefont_size": 18}`.
+            e.g. `xaxis_title="Time / s"` or
+            `xaxis={"title": "Time / s", "titlefont_size": 18}`.
 
     Returns
     -------

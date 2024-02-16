@@ -24,7 +24,12 @@ FLOAT_FORMAT = "{: .17e}"
 script_path = path.dirname(__file__)
 
 #
-# Cost function class
+# Utilities
+#
+from ._utils import is_numeric
+
+#
+# Cost class
 #
 from .costs.base_cost import BaseCost
 from .costs.fitting_costs import (

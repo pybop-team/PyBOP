@@ -1,3 +1,4 @@
+import pybop
 import numpy as np
 import warnings
 
@@ -29,7 +30,7 @@ class DesignCost(BaseCost):
         problem : object
             The problem instance containing the model and data.
         """
-        super().__init__(problem)
+        super(DesignCost, self).__init__(problem)
         self.problem = problem
         if update_capacity is True:
             nominal_capacity_warning = (
@@ -92,7 +93,7 @@ class GravimetricEnergyDensity(DesignCost):
     """
 
     def __init__(self, problem, update_capacity=False):
-        super().__init__(problem, update_capacity)
+        super(GravimetricEnergyDensity, self).__init__(problem, update_capacity)
 
     def _evaluate(self, x, grad=None):
         """
@@ -110,6 +111,9 @@ class GravimetricEnergyDensity(DesignCost):
         float
             The negative gravimetric energy density or infinity in case of infeasible parameters.
         """
+        if not all(pybop.is_numeric(i) for i in x):
+            raise ValueError("Input must be a numeric array.")
+
         try:
             with warnings.catch_warnings():
                 # Convert UserWarning to an exception
@@ -126,8 +130,14 @@ class GravimetricEnergyDensity(DesignCost):
 
                 return negative_energy_density
 
+        # Catch infeasible solutions and return infinity
         except UserWarning as e:
             print(f"Ignoring this sample due to: {e}")
+            return np.inf
+
+        # Catch any other exception and return infinity
+        except Exception as e:
+            print(f"An error occurred during the evaluation: {e}")
             return np.inf
 
 
@@ -142,7 +152,7 @@ class VolumetricEnergyDensity(DesignCost):
     """
 
     def __init__(self, problem, update_capacity=False):
-        super().__init__(problem, update_capacity)
+        super(VolumetricEnergyDensity, self).__init__(problem, update_capacity)
 
     def _evaluate(self, x, grad=None):
         """
@@ -160,6 +170,8 @@ class VolumetricEnergyDensity(DesignCost):
         float
             The negative volumetric energy density or infinity in case of infeasible parameters.
         """
+        if not all(pybop.is_numeric(i) for i in x):
+            raise ValueError("Input must be a numeric array.")
         try:
             with warnings.catch_warnings():
                 # Convert UserWarning to an exception
@@ -176,6 +188,12 @@ class VolumetricEnergyDensity(DesignCost):
 
                 return negative_energy_density
 
+        # Catch infeasible solutions and return infinity
         except UserWarning as e:
             print(f"Ignoring this sample due to: {e}")
+            return np.inf
+
+        # Catch any other exception and return infinity
+        except Exception as e:
+            print(f"An error occurred during the evaluation: {e}")
             return np.inf

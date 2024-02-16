@@ -98,5 +98,5 @@ def get_param_bounds(cost):
         for i, param in enumerate(cost.parameters):
             bounds[i] = param.bounds
         return bounds
-
-    return None
+    else:
+        return None
