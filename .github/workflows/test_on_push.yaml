@@ -62,6 +62,7 @@ jobs:
 
   # Runs only on Ubuntu with Python 3.11
   check_coverage:
+    needs: style
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
