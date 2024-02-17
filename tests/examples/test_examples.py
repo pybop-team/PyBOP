@@ -9,7 +9,6 @@ class TestExamples:
     A class to test the example scripts.
     """
 
-    @staticmethod
     def list_of_examples():
         list = []
         path_to_example_scripts = os.path.join(
