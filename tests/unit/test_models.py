@@ -199,3 +199,17 @@ class TestModels:
         expected = y0 * np.exp(-k * t_eval).reshape(-1, 1)
         solved = model.simulate(inputs, t_eval)
         np.testing.assert_array_almost_equal(solved, expected, decimal=5)
+
+    @pytest.mark.unit
+    def test_basemodel(self):
+        base = pybop.BaseModel()
+        x = np.array([1, 2, 3])
+
+        with pytest.raises(NotImplementedError):
+            base.cell_mass()
+
+        with pytest.raises(NotImplementedError):
+            base.cell_volume()
+
+        with pytest.raises(NotImplementedError):
+            base.approximate_capacity(x)

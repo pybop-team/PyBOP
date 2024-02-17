@@ -118,6 +118,10 @@ class BaseProblem:
         """
         return self._target
 
+    @property
+    def model(self):
+        return self._model
+
 
 class FittingProblem(BaseProblem):
     """
@@ -324,7 +328,3 @@ class DesignProblem(BaseProblem):
             predictions = [sol[signal].data for signal in self.signal + ["Time [s]"]]
 
             return np.vstack(predictions).T
-
-    @property
-    def model(self):
-        return self._model
