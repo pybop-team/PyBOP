@@ -110,25 +110,13 @@ jobs:
           pyenv install ${{ matrix.python_version }} -s
           pyenv virtualenv ${{ matrix.python_version }} pybop-${{ matrix.python_version }}-${{ matrix.pybamm_version }}
 
-      - name: Install dependencies & run unit tests
+      - name: Install dependencies & run unit + notebook tests
         shell: bash
         run: |
           eval "$(pyenv init -)"
           pyenv activate pybop-${{ matrix.python_version }}-${{ matrix.pybamm_version }}
-
-      - name: Install dependencies
-        run: |
-          eval "$(pyenv init -)"
           python -m pip install --upgrade pip nox
-
-      - name: Unit tests with nox
-        run: |
-          eval "$(pyenv init -)"
           python -m nox -s unit
-
-      - name: Run notebooks with nox
-        run: |
-          eval "$(pyenv init -)"
           python -m nox -s notebooks
 
       - name: Uninstall pyenv-virtualenv & python
