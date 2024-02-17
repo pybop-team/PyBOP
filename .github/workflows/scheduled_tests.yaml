@@ -56,7 +56,9 @@ jobs:
           filtered_matrix = {'include': filtered_entries}
 
           # Set the output variable for other jobs to use
-          print(f"::set-output name=matrix::{json.dumps(filtered_matrix)}")
+          output_file = environ['GITHUB_OUTPUT']
+          with open(output_file, "a", encoding="utf-8") as output_stream:
+              output_stream.write(f"matrix={json.dumps(filtered_matrix)}\n")
         shell: python
 
   build:
