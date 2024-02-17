@@ -36,6 +36,7 @@ jobs:
 
   # filter the matrix to only include the macOS-latest entries
   filter_pybamm_matrix:
+    name: Filter the matrix for macOS-latest entries
     needs: [create_pybamm_matrix]
     runs-on: ubuntu-latest
     outputs:
