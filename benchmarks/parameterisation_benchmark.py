@@ -31,18 +31,20 @@ class ParameterisationBenchmark:
         parameters = [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.68, 0.05),
-                bounds=[0.5, 0.8],
+                prior=pybop.Gaussian(0.6, 0.02),
+                bounds=[0.375, 0.7],
+                initial_value=0.63,
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.58, 0.05),
-                bounds=[0.4, 0.7],
+                prior=pybop.Gaussian(0.5, 0.02),
+                bounds=[0.375, 0.625],
+                initial_value=0.51,
             ),
         ]
 
         # Generate data
-        sigma = 0.002
+        sigma = 0.001
         t_eval = np.arange(0, 900, 2)
         values = model.predict(t_eval=t_eval)
         corrupt_values = values["Voltage [V]"].data + np.random.normal(
@@ -58,7 +60,7 @@ class ParameterisationBenchmark:
             }
         )
         problem = pybop.FittingProblem(
-            model=model, dataset=dataset, parameters=parameters
+            model=model, dataset=dataset, parameters=parameters, init_soc=0.5
         )
         self.cost = pybop.SumSquaredError(problem=problem)
 
