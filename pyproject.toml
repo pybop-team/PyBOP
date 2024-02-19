@@ -16,7 +16,7 @@ readme = "README.md"
 license = { file = "LICENSE" }
 # https://pypi.org/classifiers/
 classifiers = []
-requires-python = ">=3.8, <=3.12"
+requires-python = ">=3.8, <3.12"
 dependencies = [
   "pybamm>=23.5",
   "numpy>=1.16",
