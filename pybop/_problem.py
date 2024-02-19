@@ -61,7 +61,7 @@ class BaseProblem:
 
         # Add the initial values to the parameter definitions
         for i, param in enumerate(self.parameters):
-            param.update(value=self.x0[i])
+            param.update(initial_value=self.x0[i])
 
     def evaluate(self, x):
         """
@@ -211,7 +211,7 @@ class FittingProblem(BaseProblem):
         y : np.ndarray
             The model output y(t) simulated with inputs x.
         """
-        if (x != self.x).all() and self._model.matched_parameters:
+        if (x != self.x).any() and self._model.matched_parameters:
             for i, param in enumerate(self.parameters):
                 param.update(value=x[i])
 
