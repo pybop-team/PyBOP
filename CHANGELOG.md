@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#203](https://github.com/pybop-team/PyBOP/pull/203) - Adds support for modern Python packaging via a `pyproject.toml` file and configures the `pytest` test runner and `ruff` linter to use their configurations stored as declarative metadata.
 - [#123](https://github.com/pybop-team/PyBOP/issues/123) - Configures scheduled tests to run against the last three PyPI releases of PyBaMM via dynamic GitHub Actions matrix generation.
 - [#187](https://github.com/pybop-team/PyBOP/issues/187) - Adds M1 Github runner to `test_on_push` workflow, updt. self-hosted supported python versions in scheduled tests.
 - [#118](https://github.com/pybop-team/PyBOP/issues/118) - Adds example jupyter notebooks.
@@ -34,6 +35,8 @@
 - [#145](https://github.com/pybop-team/PyBOP/issues/145) - Reformats Dataset to contain a dictionary and signal into a list of strings
 
 ## Bug Fixes
+
+- [#182](https://github.com/pybop-team/PyBOP/pull/182) - Allow square-brackets indexing of Dataset
 
 # [v23.11](https://github.com/pybop-team/PyBOP/releases/tag/v23.11)
 - Initial release
