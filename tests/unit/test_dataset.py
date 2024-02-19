@@ -28,6 +28,7 @@ class TestDataset:
 
         # Test data structure
         assert dataset.data == data_dictionary
+        assert np.all(dataset["Time [s]"] == solution["Time [s]"].data)
 
         # Test exception for non-dictionary inputs
         with pytest.raises(ValueError):

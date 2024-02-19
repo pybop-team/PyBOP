@@ -35,6 +35,34 @@ jobs:
     outputs:
       pybop_matrix: ${{ steps.set-matrix.outputs.matrix }}
 
+  # filter the matrix to only include the macOS-latest entries
+  filter_pybamm_matrix:
+    name: Filter the matrix for macOS-latest entries
+    needs: [create_pybamm_matrix]
+    runs-on: ubuntu-latest
+    outputs:
+      filtered_pybop_matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Filter pybop matrix
+        id: set-matrix
+        run: |
+          import json
+          import os
+
+          # Get the matrix
+          matrix_json = '${{ needs.create_pybamm_matrix.outputs.pybop_matrix }}'
+          matrix = json.loads(matrix_json)
+
+          # Filter the matrix for macOS-latest entries only
+          filtered_entries = [entry for entry in matrix['include'] if entry['os'] == 'macos-latest']
+          filtered_matrix = {'include': filtered_entries}
+
+          # Set the output variable for other jobs to use
+          output_file = os.environ['GITHUB_OUTPUT']
+          with open(output_file, "a", encoding="utf-8") as output_stream:
+              output_stream.write(f"matrix={json.dumps(filtered_matrix)}\n")
+        shell: python
+
   build:
     needs: [create_pybamm_matrix]
     name: Build (${{ matrix.os }}, Python ${{ matrix.python_version }}, PyBaMM ${{ matrix.pybamm_version }})
@@ -64,14 +92,16 @@ jobs:
 
   # M-series Mac Mini
   build-apple-mseries:
+    needs: [filter_pybamm_matrix]
+    name: Build (MacOS M-series, Python ${{ matrix.python_version }}, PyBaMM ${{ matrix.pybamm_version }})
     runs-on: [self-hosted, macOS, ARM64]
     if: github.repository == 'pybop-team/PyBOP'
     env:
       GITHUB_PATH: ${PYENV_ROOT/bin:$PATH}
+      PYBAMM_VERSION: ${{ matrix.pybamm_version }}
     strategy:
       fail-fast: false
-      matrix:
-        python_version: ["3.8", "3.9", "3.10", "3.11"]
+      matrix: ${{fromJson(needs.filter_pybamm_matrix.outputs.filtered_pybop_matrix)}}
 
     steps:
       - uses: actions/checkout@v4
@@ -80,14 +110,14 @@ jobs:
         run: |
           eval "$(pyenv init -)"
           pyenv install ${{ matrix.python_version }} -s
-          pyenv virtualenv ${{ matrix.python_version }} pybop-${{ matrix.python_version }}
+          pyenv virtualenv ${{ matrix.python_version }} pybop-${{ matrix.python_version }}-${{ matrix.pybamm_version }}
 
-      - name: Install dependencies & run unit tests
+      - name: Install dependencies & run unit + notebook tests
         shell: bash
         run: |
           eval "$(pyenv init -)"
-          pyenv activate pybop-${{ matrix.python_version }}
-          python -m pip install --upgrade pip wheel setuptools nox
+          pyenv activate pybop-${{ matrix.python_version }}-${{ matrix.pybamm_version }}
+          python -m pip install --upgrade pip nox
           python -m nox -s coverage
           python -m nox -s notebooks
 
@@ -96,5 +126,5 @@ jobs:
         shell: bash
         run: |
           eval "$(pyenv init -)"
-          pyenv activate pybop-${{ matrix.python_version }}
+          pyenv activate pybop-${{ matrix.python_version }}-${{ matrix.pybamm_version }}
           pyenv uninstall -f $( python --version )
