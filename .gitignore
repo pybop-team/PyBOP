@@ -310,3 +310,6 @@ $RECYCLE.BIN/
 
 # Output JSON files
 **/fit_ecm_parameters.json
+
+# Airspeed Velocity
+*.asv/
