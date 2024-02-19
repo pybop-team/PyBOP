@@ -28,8 +28,8 @@ dependencies = [
 [project.optional-dependencies]
 plot = ["plotly>=5.0"]
 docs = [
-    "sphinx>=6",
     "pydata-sphinx-theme",
+    "sphinx>=6",
     "sphinx-autobuild",
     "sphinx-autoapi",
     "sphinx_copybutton",
@@ -37,6 +37,16 @@ docs = [
     "sphinx_design",
     "myst-parser",
 ]
+dev = [
+    "nox",
+    "nbmake",
+    "pre-commit",
+    "pytest>=6",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-xdist",
+    "ruff",
+    ]
 all = ["pybop[plot]"]
 
 [tool.setuptools.packages.find]
