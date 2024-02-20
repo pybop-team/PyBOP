@@ -1,6 +1,7 @@
 import pybop
 import pints
 import numpy as np
+import warnings
 
 
 class Optimisation:
@@ -17,6 +18,10 @@ class Optimisation:
         Initial step size or standard deviation for the optimiser (default: None).
     verbose : bool, optional
         If True, the optimization progress is printed (default: False).
+    physical_viability : bool, optional
+        If True, the feasibility of the optimised parameters is checked (default: True).
+    allow_infeasible_solutions : bool, optional
+        If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
     Attributes
     ----------
@@ -38,6 +43,8 @@ class Optimisation:
         optimiser=None,
         sigma0=None,
         verbose=False,
+        physical_viability=True,
+        allow_infeasible_solutions=True,
     ):
         self.cost = cost
         self.optimiser = optimiser
@@ -46,10 +53,22 @@ class Optimisation:
         self.bounds = cost.bounds
         self.n_parameters = cost.n_parameters
         self.sigma0 = sigma0
+        self.physical_viability = physical_viability
+        self.allow_infeasible_solutions = allow_infeasible_solutions
         self.log = []
 
         # Convert x0 to pints vector
         self._x0 = pints.vector(self.x0)
+
+        # Set whether to allow infeasible locations
+        if self.cost.problem is not None and hasattr(self.cost.problem, "_model"):
+            self.cost.problem._model.allow_infeasible_solutions = (
+                self.allow_infeasible_solutions
+            )
+        else:
+            # Turn off this feature as there is no model
+            self.physical_viability = False
+            self.allow_infeasible_solutions = False
 
         # PyBOP doesn't currently support the pints transformation class
         self._transformation = None
@@ -72,10 +91,7 @@ class Optimisation:
         else:
             self.pints = False
 
-            if issubclass(self.optimiser, pybop.NLoptOptimize):
-                self.optimiser = self.optimiser(self.n_parameters)
-
-            elif issubclass(
+            if issubclass(
                 self.optimiser, (pybop.SciPyMinimize, pybop.SciPyDifferentialEvolution)
             ):
                 self.optimiser = self.optimiser()
@@ -141,6 +157,10 @@ class Optimisation:
         # Store the optimised parameters
         if self.cost.problem is not None:
             self.store_optimised_parameters(x)
+
+        # Check if parameters are viable
+        if self.physical_viability:
+            self.check_optimal_parameters(x)
 
         return x, final_cost
 
@@ -345,6 +365,9 @@ class Optimisation:
         if self._transformation is not None:
             x = self._transformation.to_model(x)
 
+        # Store the optimised parameters
+        self.store_optimised_parameters(x)
+
         # Return best position and score
         return x, f if self._minimising else -f
 
@@ -464,3 +487,20 @@ class Optimisation:
         """
         for i, param in enumerate(self.cost.problem.parameters):
             param.update(value=x[i])
+
+    def check_optimal_parameters(self, x):
+        """
+        Check if the optimised parameters are physically viable.
+        """
+
+        if self.cost.problem._model.check_params(
+            inputs=x, allow_infeasible_solutions=False
+        ):
+            return
+        else:
+            warnings.warn(
+                "Optimised parameters are not physically viable! \nConsider retrying the optimisation"
+                + " with a non-gradient-based optimiser and the option allow_infeasible_solutions=False",
+                UserWarning,
+                stacklevel=2,
+            )

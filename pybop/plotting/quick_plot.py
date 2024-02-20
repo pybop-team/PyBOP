@@ -154,8 +154,13 @@ class StandardPlot:
         )
 
         if self.y2 is not None:
+            if isinstance(self.cost.problem, pybop.DesignProblem):
+                name = "Initial"
+            else:
+                name = "Target"
+
             target_trace = self.go.Scatter(
-                x=self.x, y=self.y2, mode="markers", name="Target"
+                x=self.x, y=self.y2, mode="markers", name=name
             )
             fill_trace = self.go.Scatter(
                 x=self.x + self.x[::-1],
@@ -214,6 +219,10 @@ def quick_plot(params, cost, title="Scatter Plot", width=1024, height=576):
     time_data = cost.problem.time_data()
     model_output = cost.problem.evaluate(params)
     target_output = cost.problem.target()
+    if isinstance(cost.problem, pybop.DesignProblem):
+        trace_name = "Optimised"
+    else:
+        trace_name = "Model"
 
     # Ensure outputs have the same length
     len_diff = len(target_output) - len(model_output)
@@ -235,7 +244,7 @@ def quick_plot(params, cost, title="Scatter Plot", width=1024, height=576):
             xaxis_title="Time [s]",
             yaxis_title=cost.problem.signal[i],
             title=title,
-            trace_name="Model",
+            trace_name=trace_name,
             width=width,
             height=height,
         )()

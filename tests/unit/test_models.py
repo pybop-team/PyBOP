@@ -1,6 +1,9 @@
 import pybop
 import pytest
 import numpy as np
+import pybamm
+
+from examples.standalone.model import ExponentialDecay
 
 
 class TestModels:
@@ -51,6 +54,20 @@ class TestModels:
         assert len(res["Terminal voltage [V]"].data) == 100
 
     @pytest.mark.unit
+    def test_predict_without_allow_infeasible_solutions(self):
+        # Define SPM
+        model = pybop.lithium_ion.SPM()
+        model.allow_infeasible_solutions = False
+        t_eval = np.linspace(0, 10, 100)
+        inputs = {
+            "Negative electrode active material volume fraction": 0.9,
+            "Positive electrode active material volume fraction": 0.9,
+        }
+
+        res = model.predict(t_eval=t_eval, inputs=inputs)
+        assert np.isinf(res).any()
+
+    @pytest.mark.unit
     def test_build(self):
         model = pybop.lithium_ion.SPM()
         model.build()
@@ -59,3 +76,46 @@ class TestModels:
         # Test that the model can be built again
         model.build()
         assert model.built_model is not None
+
+    @pytest.mark.unit
+    def test_reinit(self):
+        k = 0.1
+        y0 = 1
+        model = ExponentialDecay(pybamm.ParameterValues({"k": k, "y0": y0}))
+        model.build()
+        state = model.reinit(inputs={})
+        np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
+
+        state = model.reinit(inputs=[])
+        np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
+
+        model = ExponentialDecay(pybamm.ParameterValues({"k": k, "y0": y0}))
+        with pytest.raises(ValueError):
+            model.reinit(inputs={})
+
+    @pytest.mark.unit
+    def test_simulate(self):
+        k = 0.1
+        y0 = 1
+        model = ExponentialDecay(pybamm.ParameterValues({"k": k, "y0": y0}))
+        model.build()
+        model.signal = ["y_0"]
+        inputs = {}
+        t_eval = np.linspace(0, 10, 100)
+        expected = y0 * np.exp(-k * t_eval).reshape(-1, 1)
+        solved = model.simulate(inputs, t_eval)
+        np.testing.assert_array_almost_equal(solved, expected, decimal=5)
+
+    @pytest.mark.unit
+    def test_basemodel(self):
+        base = pybop.BaseModel()
+        x = np.array([1, 2, 3])
+
+        with pytest.raises(NotImplementedError):
+            base.cell_mass()
+
+        with pytest.raises(NotImplementedError):
+            base.cell_volume()
+
+        with pytest.raises(NotImplementedError):
+            base.approximate_capacity(x)

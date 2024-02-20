@@ -1,8 +1,8 @@
 import pybamm
-from ..base_model import BaseModel
+from .echem_base import EChemBaseModel
 
 
-class SPM(BaseModel):
+class SPM(EChemBaseModel):
     """
     Wraps the Single Particle Model (SPM) for simulating lithium-ion batteries, as implemented in PyBaMM.
 
@@ -70,54 +70,8 @@ class SPM(BaseModel):
 
         self._electrode_soh = pybamm.lithium_ion.electrode_soh
 
-    def check_params(self, inputs=None):
-        """
-        A compatibility check for the model parameters which can be implemented by subclasses
-        if required, otherwise it returns True by default.
 
-        Parameters
-        ----------
-        inputs : dict
-            The input parameters for the simulation.
-
-        Returns
-        -------
-        bool
-            A boolean which signifies whether the parameters are compatible.
-
-        """
-        related_parameters = dict.fromkeys(
-            [
-                "Negative electrode active material volume fraction",
-                "Negative electrode porosity",
-                "Positive electrode active material volume fraction",
-                "Positive electrode porosity",
-            ]
-        )
-
-        for key in related_parameters.keys():
-            if inputs is not None and key in inputs.keys():
-                related_parameters[key] = inputs[key]
-            else:
-                related_parameters[key] = self._parameter_set[key]
-
-        if (
-            related_parameters["Negative electrode active material volume fraction"]
-            + related_parameters["Negative electrode porosity"]
-        ) > 1:
-            return False
-
-        elif (
-            related_parameters["Positive electrode active material volume fraction"]
-            + related_parameters["Positive electrode porosity"]
-        ) > 1:
-            return False
-
-        else:
-            return True
-
-
-class SPMe(BaseModel):
+class SPMe(EChemBaseModel):
     """
     Represents the Single Particle Model with Electrolyte (SPMe) for lithium-ion batteries.
 
@@ -186,49 +140,3 @@ class SPMe(BaseModel):
         self._disc = None
 
         self._electrode_soh = pybamm.lithium_ion.electrode_soh
-
-    def check_params(self, inputs=None):
-        """
-        A compatibility check for the model parameters which can be implemented by subclasses
-        if required, otherwise it returns True by default.
-
-        Parameters
-        ----------
-        inputs : dict
-            The input parameters for the simulation.
-
-        Returns
-        -------
-        bool
-            A boolean which signifies whether the parameters are compatible.
-
-        """
-        related_parameters = dict.fromkeys(
-            [
-                "Negative electrode active material volume fraction",
-                "Negative electrode porosity",
-                "Positive electrode active material volume fraction",
-                "Positive electrode porosity",
-            ]
-        )
-
-        for key in related_parameters.keys():
-            if inputs is not None and key in inputs.keys():
-                related_parameters[key] = inputs[key]
-            else:
-                related_parameters[key] = self._parameter_set[key]
-
-        if (
-            related_parameters["Negative electrode active material volume fraction"]
-            + related_parameters["Negative electrode porosity"]
-        ) > 1:
-            return False
-
-        elif (
-            related_parameters["Positive electrode active material volume fraction"]
-            + related_parameters["Positive electrode porosity"]
-        ) > 1:
-            return False
-
-        else:
-            return True

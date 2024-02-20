@@ -5,14 +5,14 @@
 # This file is adapted from Pints
 # (see https://github.com/pints-team/pints)
 #
-
+from __future__ import annotations
 import sys
 from os import path
 
 #
 # Version info
 #
-from pybop.version import __version__
+from pybop._version import __version__
 
 #
 # Constants
@@ -26,7 +26,17 @@ script_path = path.dirname(__file__)
 #
 # Cost function class
 #
-from ._costs import BaseCost, RootMeanSquaredError, SumSquaredError
+from .costs.base_cost import BaseCost
+from .costs.fitting_costs import (
+    RootMeanSquaredError,
+    SumSquaredError,
+    ObserverCost,
+)
+from .costs.design_costs import (
+    DesignCost,
+    GravimetricEnergyDensity,
+    VolumetricEnergyDensity,
+)
 
 #
 # Dataset class
@@ -39,6 +49,8 @@ from ._dataset import Dataset
 from .models.base_model import BaseModel
 from .models import lithium_ion
 from .models import empirical
+from .models.base_model import TimeSeriesState
+from .models.base_model import Inputs
 
 #
 # Experiment class
@@ -59,7 +71,6 @@ from ._inference import BayesianSampler
 # Optimiser class
 #
 from .optimisers.base_optimiser import BaseOptimiser
-from .optimisers.nlopt_optimize import NLoptOptimize
 from .optimisers.scipy_optimisers import SciPyMinimize, SciPyDifferentialEvolution
 from .optimisers.pints_optimisers import (
     GradientDescent,
@@ -82,6 +93,12 @@ from .parameters.priors import Normal, Beta, Gaussian, Uniform, Exponential
 # Problem class
 #
 from ._problem import FittingProblem, DesignProblem
+
+#
+# Observer classes
+#
+from .observers.unscented_kalman import UnscentedKalmanFilterObserver
+from .observers.observer import Observer
 
 #
 # Plotting class
