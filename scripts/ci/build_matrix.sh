@@ -18,32 +18,16 @@ pybamm_version=($(curl -s https://pypi.org/pypi/pybamm/json | jq -r '.releases |
 json='{
   "include": [
 '
-# Function to check if a PyBaMM version is compatible with a Python version
-is_compatible() {
-  local pybamm_ver="$1"
-  local py_ver="$2"
-
-  # Compatibility check
-  if [[ "$pybamm_ver" == "23.5" && "$py_ver" == "3.12" ]]; then
-    return 1 # Incompatible
-  elif [[ "$pybamm_ver" == "23.9" && "$py_ver" == "3.12" ]]; then
-    return 1 # Incompatible
-  fi
-
-  return 0 # Compatible
-}
 
 # loop through each combination of variables to generate matrix components
 for py_ver in "${python_version[@]}"; do
   for os_type in "${os[@]}"; do
     for pybamm_ver in "${pybamm_version[@]}"; do
-      if is_compatible "$pybamm_ver" "$py_ver"; then
         json+='{
           "os": "'$os_type'",
           "python_version": "'$py_ver'",
           "pybamm_version": "'$pybamm_ver'"
         },'
-      fi
     done
   done
 done
@@ -56,4 +40,5 @@ json+='
   ]
 }'
 
-echo "$json" | jq -c .
+# Filter out incompatible combinations
+echo "$json" | jq -c 'del(.include[] | select(.pybamm_version == "23.5" and .python_version == "3.12"))'
