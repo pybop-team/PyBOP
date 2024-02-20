@@ -12,22 +12,38 @@
 python_version=("3.8" "3.9" "3.10" "3.11" "3.12")
 os=("ubuntu-latest" "windows-latest" "macos-latest")
 # This command fetches the last three PyBaMM versions excluding release candidates from PyPI
-pybamm_version=($(curl -s https://pypi.org/pypi/pybamm/json | jq -r '.releases | keys[]' | grep -v rc | tail -n 3 | awk '{print "\"" $1 "\"" }' | paste -sd " " -))
+pybamm_version=($(curl -s https://pypi.org/pypi/pybamm/json | jq -r '.releases | keys[]' | grep -v rc | tail -n 3 | paste -sd " " -))
 
 # open dict
 json='{
   "include": [
 '
+# Function to check if a PyBaMM version is compatible with a Python version
+is_compatible() {
+  local pybamm_ver="$1"
+  local py_ver="$2"
+
+  # Compatibility check
+  if [[ "$pybamm_ver" == "23.5" && "$py_ver" == "3.12" ]]; then
+    return 1 # Incompatible
+  elif [[ "$pybamm_ver" == "23.9" && "$py_ver" == "3.12" ]]; then
+    return 1 # Incompatible
+  fi
+
+  return 0 # Compatible
+}
 
 # loop through each combination of variables to generate matrix components
 for py_ver in "${python_version[@]}"; do
   for os_type in "${os[@]}"; do
     for pybamm_ver in "${pybamm_version[@]}"; do
-      json+='{
-        "os": "'$os_type'",
-        "python_version": "'$py_ver'",
-        "pybamm_version": '$pybamm_ver'
-      },'
+      if is_compatible "$pybamm_ver" "$py_ver"; then
+        json+='{
+          "os": "'$os_type'",
+          "python_version": "'$py_ver'",
+          "pybamm_version": "'$pybamm_ver'"
+        },'
+      fi
     done
   done
 done
