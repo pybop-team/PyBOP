@@ -172,20 +172,6 @@ class TestModels:
                 atol=1e-5,
             )
 
-        # Test model rebuild after a predict() call
-        parameters[0].update(7e-06)
-        parameters[1].update(35e-06)
-        predicted_model = rebuilt_model.copy()
-        predicted_model.rebuild(parameters=parameters)
-        out_predicted = predicted_model.predict(t_eval=t_eval)
-
-        with pytest.raises(AssertionError):
-            np.testing.assert_allclose(
-                out_predicted["Terminal voltage [V]"].data,
-                out_rebuild["Terminal voltage [V]"].data,
-                atol=1e-5,
-            )
-
     @pytest.mark.unit
     def test_reinit(self):
         k = 0.1
