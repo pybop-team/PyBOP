@@ -28,12 +28,15 @@ class Parameter:
         the margin is set outside the interval (0, 1).
     """
 
-    def __init__(self, name, initial_value=None, prior=None, bounds=None):
+    def __init__(
+        self, name, initial_value=None, true_value=None, prior=None, bounds=None
+    ):
         """
         Construct the parameter class with a name, initial value, prior, and bounds.
         """
         self.name = name
         self.prior = prior
+        self.true_value = true_value
         self.initial_value = initial_value
         self.value = initial_value
         self.bounds = bounds
@@ -69,7 +72,7 @@ class Parameter:
 
         return samples
 
-    def update(self, value):
+    def update(self, value=None, initial_value=None):
         """
         Update the parameter's current value.
 
@@ -78,7 +81,12 @@ class Parameter:
         value : float
             The new value to be assigned to the parameter.
         """
-        self.value = value
+        if value is not None:
+            self.value = value
+        elif initial_value is not None:
+            self.value = initial_value
+        else:
+            raise ValueError("No value provided to update parameter")
 
     def __repr__(self):
         """

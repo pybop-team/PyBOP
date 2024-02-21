@@ -9,10 +9,10 @@
 
 # To update the matrix, the variables below can be modified as needed.
 
-python_version=("3.8" "3.9" "3.10" "3.11")
+python_version=("3.8" "3.9" "3.10" "3.11" "3.12")
 os=("ubuntu-latest" "windows-latest" "macos-latest")
 # This command fetches the last three PyBaMM versions excluding release candidates from PyPI
-pybamm_version=($(curl -s https://pypi.org/pypi/pybamm/json | jq -r '.releases | keys[]' | grep -v rc | tail -n 3 | awk '{print "\"" $1 "\"" }' | paste -sd " " -))
+pybamm_version=($(curl -s https://pypi.org/pypi/pybamm/json | jq -r '.releases | keys[]' | grep -v rc | tail -n 3 | paste -sd " " -))
 
 # open dict
 json='{
@@ -26,7 +26,7 @@ for py_ver in "${python_version[@]}"; do
       json+='{
         "os": "'$os_type'",
         "python_version": "'$py_ver'",
-        "pybamm_version": '$pybamm_ver'
+        "pybamm_version": "'$pybamm_ver'"
       },'
     done
   done
@@ -39,5 +39,9 @@ json=${json%,}
 json+='
   ]
 }'
+
+# Filter out incompatible combinations
+json=$(echo "$json" | jq -c 'del(.include[] | select(.pybamm_version == "23.5" and .python_version == "3.12"))')
+json=$(echo "$json" | jq -c 'del(.include[] | select(.pybamm_version == "23.9" and .python_version == "3.12"))')
 
 echo "$json" | jq -c .

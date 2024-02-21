@@ -13,19 +13,17 @@ PYBAMM_VERSION = os.environ.get("PYBAMM_VERSION", None)
 
 @nox.session
 def unit(session):
-    session.install("-e", ".[all]", silent=False)
+    session.install("-e", ".[all,dev]", silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
-    session.install("pytest", "pytest-mock", silent=False)
     session.run("pytest", "--unit")
 
 
 @nox.session
 def coverage(session):
-    session.install("-e", ".[all]", silent=False)
+    session.install("-e", ".[all,dev]", silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
-    session.install("pytest", "pytest-cov", "pytest-mock", silent=False)
     session.run(
         "pytest",
         "--unit",
@@ -52,10 +50,9 @@ def examples(session):
 @nox.session
 def notebooks(session):
     """Run the examples tests for Jupyter notebooks."""
-    session.install("-e", ".[all]", silent=False)
+    session.install("-e", ".[all,dev]", silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
-    session.install("pytest", "nbmake", silent=False)
     session.run("pytest", "--nbmake", "--examples", "examples/", external=True)
 
 
