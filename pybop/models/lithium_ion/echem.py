@@ -69,6 +69,7 @@ class SPM(EChemBaseModel):
         self._disc = None
 
         self._electrode_soh = pybamm.lithium_ion.electrode_soh
+        self.rebuild_parameters = self.set_rebuild_parameters()
 
 
 class SPMe(EChemBaseModel):
@@ -140,3 +141,4 @@ class SPMe(EChemBaseModel):
         self._disc = None
 
         self._electrode_soh = pybamm.lithium_ion.electrode_soh
+        self.rebuild_parameters = self.set_rebuild_parameters()

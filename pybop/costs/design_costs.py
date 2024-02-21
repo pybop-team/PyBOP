@@ -41,7 +41,7 @@ class DesignCost(BaseCost):
             )
         warnings.warn(nominal_capacity_warning, UserWarning)
         self.update_capacity = update_capacity
-        self.parameter_set = problem._model._parameter_set
+        self.parameter_set = problem.model.parameter_set
         self.update_simulation_data(problem.x0)
 
     def update_simulation_data(self, initial_conditions):
@@ -54,7 +54,7 @@ class DesignCost(BaseCost):
             The initial conditions for the simulation.
         """
         if self.update_capacity:
-            self.problem._model.approximate_capacity(self.problem.x0)
+            self.problem.model.approximate_capacity(self.problem.x0)
         solution = self.problem.evaluate(initial_conditions)
         self.problem._time_data = solution[:, -1]
         self.problem._target = solution[:, 0:-1]
@@ -116,12 +116,12 @@ class GravimetricEnergyDensity(DesignCost):
                 warnings.filterwarnings("error", category=UserWarning)
 
                 if self.update_capacity:
-                    self.problem._model.approximate_capacity(x)
+                    self.problem.model.approximate_capacity(x)
                 solution = self.problem.evaluate(x)
 
                 voltage, current = solution[:, 0], solution[:, 1]
                 negative_energy_density = -np.trapz(voltage * current, dx=self.dt) / (
-                    3600 * self.problem._model.cell_mass(self.parameter_set)
+                    3600 * self.problem.model.cell_mass(self.parameter_set)
                 )
 
                 return negative_energy_density
@@ -166,12 +166,12 @@ class VolumetricEnergyDensity(DesignCost):
                 warnings.filterwarnings("error", category=UserWarning)
 
                 if self.update_capacity:
-                    self.problem._model.approximate_capacity(x)
+                    self.problem.model.approximate_capacity(x)
                 solution = self.problem.evaluate(x)
 
                 voltage, current = solution[:, 0], solution[:, 1]
                 negative_energy_density = -np.trapz(voltage * current, dx=self.dt) / (
-                    3600 * self.problem._model.cell_volume(self.parameter_set)
+                    3600 * self.problem.model.cell_volume(self.parameter_set)
                 )
 
                 return negative_energy_density
