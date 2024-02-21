@@ -63,7 +63,7 @@ jobs:
         shell: python
 
   build:
-    needs: [filter_pybamm_matrix]
+    needs: [create_pybamm_matrix, filter_pybamm_matrix]
     name: Build (${{ matrix.os }}, Python ${{ matrix.python_version }}, PyBaMM ${{ matrix.pybamm_version }})
     runs-on: ${{ matrix.os }}
     strategy:
