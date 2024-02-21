@@ -23,11 +23,11 @@ json='{
 for py_ver in "${python_version[@]}"; do
   for os_type in "${os[@]}"; do
     for pybamm_ver in "${pybamm_version[@]}"; do
-        json+='{
-          "os": "'$os_type'",
-          "python_version": "'$py_ver'",
-          "pybamm_version": "'$pybamm_ver'"
-        },'
+      json+='{
+        "os": "'$os_type'",
+        "python_version": "'$py_ver'",
+        "pybamm_version": "'$pybamm_ver'"
+      },'
     done
   done
 done
@@ -41,4 +41,7 @@ json+='
 }'
 
 # Filter out incompatible combinations
-echo "$json" | jq -c 'del(.include[] | select(.pybamm_version == "23.5" and .python_version == "3.12"))'
+json=$(echo "$json" | jq -c 'del(.include[] | select(.pybamm_version == "23.5" and .python_version == "3.12"))')
+json=$(echo "$json" | jq -c 'del(.include[] | select(.pybamm_version == "23.9" and .python_version == "3.12"))')
+
+echo "$json" | jq -c .
