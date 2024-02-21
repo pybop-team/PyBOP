@@ -8,14 +8,16 @@ model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 # Fitting parameters
 parameters = [
     pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.6, 0.05),
-        bounds=[0.5, 0.8],
+        "Negative particle radius [m]",
+        prior=pybop.Gaussian(6e-06, 0.1e-6),
+        bounds=[1e-6, 9e-6],
+        true_value=parameter_set["Negative particle radius [m]"],
     ),
     pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.48, 0.05),
-        bounds=[0.4, 0.7],
+        "Positive particle radius [m]",
+        prior=pybop.Gaussian(4.5e-06, 0.1e-6),
+        bounds=[1e-6, 9e-6],
+        true_value=parameter_set["Positive particle radius [m]"],
     ),
 ]
 
@@ -42,6 +44,13 @@ optim.set_max_iterations(100)
 
 # Run the optimisation
 x, final_cost = optim.run()
+print(
+    "True parameters:",
+    [
+        parameters[0].true_value,
+        parameters[1].true_value,
+    ],
+)
 print("Estimated parameters:", x)
 
 # Plot the time series
@@ -59,6 +68,5 @@ pybop.plot_parameters(optim)
 # Plot the cost landscape
 pybop.plot_cost2d(cost, steps=15)
 
-# Plot the cost landscape with optimisation path and updated bounds
-bounds = np.array([[0.55, 0.75], [0.48, 0.68]])
-pybop.plot_optim2d(optim, bounds=bounds, steps=15)
+# Plot the cost landscape with optimisation path
+pybop.plot_optim2d(optim, steps=15)

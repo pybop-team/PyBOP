@@ -12,7 +12,7 @@ from os import path
 #
 # Version info
 #
-from pybop.version import __version__
+from pybop._version import __version__
 
 #
 # Constants

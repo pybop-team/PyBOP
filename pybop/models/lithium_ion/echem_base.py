@@ -232,3 +232,28 @@ class EChemBaseModel(BaseModel):
         self._parameter_set.update(
             {"Nominal cell capacity [A.h]": theoretical_capacity}
         )
+
+    def set_rebuild_parameters(self):
+        """
+        Sets the parameters that can be changed when rebuilding the model.
+
+        Returns
+        -------
+        dict
+            A dictionary of parameters that can be changed when rebuilding the model.
+
+        """
+        rebuild_parameters = dict.fromkeys(
+            [
+                "Negative particle radius [m]",
+                "Negative electrode porosity",
+                "Negative electrode thickness [m]",
+                "Positive particle radius [m]",
+                "Positive electrode porosity",
+                "Positive electrode thickness [m]",
+                "Separator porosity",
+                "Separator thickness [m]",
+            ]
+        )
+
+        return rebuild_parameters

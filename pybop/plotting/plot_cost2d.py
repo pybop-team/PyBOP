@@ -51,7 +51,7 @@ def plot_cost2d(cost, bounds=None, steps=10, show=True, **layout_kwargs):
     # Populate cost matrix
     for i, xi in enumerate(x):
         for j, yj in enumerate(y):
-            costs[j, i] = cost([xi, yj])
+            costs[j, i] = cost(np.array([xi, yj]))
 
     # Import plotly only when needed
     go = pybop.PlotlyManager().go
