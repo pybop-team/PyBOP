@@ -58,7 +58,6 @@ class BaseModel:
         self.parameters = None
         self.dataset = None
         self.signal = None
-        self.has_predict = False
         self.matched_parameters = {}
         self.non_matched_parameters = {}
         self.fit_keys = []
@@ -461,7 +460,6 @@ class BaseModel:
             if PyBaMM models are not supported by the current simulation method.
 
         """
-        self.has_predict = True
         parameter_set = parameter_set or self._parameter_set
         if inputs is not None:
             if not isinstance(inputs, dict):

@@ -189,13 +189,6 @@ class FittingProblem(BaseProblem):
                 check_model=self.check_model,
                 init_soc=self.init_soc,
             )
-        elif self._model.has_predict is True:
-            self._model.rebuild(
-                dataset=self._dataset,
-                parameters=self.parameters,
-                check_model=self.check_model,
-                init_soc=self.init_soc,
-            )
 
     def evaluate(self, x):
         """
