@@ -42,7 +42,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: asv_periodic_results
-          path: results
+          path: .asv/results
 
       - name: Uninstall pyenv-virtualenv & python
         if: always()
