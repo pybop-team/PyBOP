@@ -56,3 +56,21 @@ class TestObserver:
                 np.array([[2 * y]]),
                 decimal=4,
             )
+
+        # Test with invalid inputs
+        with pytest.raises(ValueError):
+            observer.observe(-1)
+        with pytest.raises(ValueError):
+            observer.log_likelihood(
+                t_eval, np.array([1]), inputs=observer._state.inputs
+            )
+
+        # Test covariance
+        covariance = observer.get_current_covariance()
+        assert np.shape(covariance) == (n, n)
+
+    @pytest.mark.unit
+    def test_unbuilt_model(self, parameters):
+        model = ExponentialDecay()
+        with pytest.raises(ValueError):
+            pybop.Observer(parameters, model)
