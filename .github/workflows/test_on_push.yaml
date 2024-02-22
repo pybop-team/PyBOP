@@ -1,4 +1,4 @@
-name: test_on_push
+name: PyBOP
 
 on:
   workflow_dispatch:
@@ -27,8 +27,36 @@ jobs:
           python -m pip install pre-commit
           pre-commit run ruff
 
+  integration_tests:
+    needs: style
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.11"]
+        # Include MacOS M-series Runners
+        include:
+          - os: macos-14
+            python-version: "3.11"
 
-  build:
+    name: Integration tests (${{ matrix.os }} / Python ${{ matrix.python-version }})
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip nox
+
+      - name: Integration tests
+        run: |
+          nox -s integration
+
+  unit_tests:
     needs: style
     runs-on: ${{ matrix.os }}
     strategy:
@@ -48,6 +76,8 @@ jobs:
           - os: macos-14
             python-version: "3.12"
 
+    name: Unit tests (${{ matrix.os }} / Python ${{ matrix.python-version }})
+
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -62,9 +92,30 @@ jobs:
         run: |
           nox -s unit
 
-      - name: Integration tests
+  example_tests:
+    needs: style
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.11"]
+        # Include MacOS M-series Runners
+        include:
+          - os: macos-14
+            python-version: "3.11"
+
+    name: Test examples (${{ matrix.os }} / Python ${{ matrix.python-version }})
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
         run: |
-          nox -s integration
+          python -m pip install --upgrade pip nox
 
       - name: Run examples
         run: |
