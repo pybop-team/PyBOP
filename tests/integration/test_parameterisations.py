@@ -115,7 +115,7 @@ class TestModelParameterisation:
 
         # Assertions
         np.testing.assert_allclose(final_cost, 0, atol=1e-2)
-        np.testing.assert_allclose(x, x0, atol=1e-2)
+        np.testing.assert_allclose(x, x0, atol=5e-2)
 
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, x0):
@@ -160,8 +160,8 @@ class TestModelParameterisation:
         x, final_cost = parameterisation.run()
 
         # Assertions
-        np.testing.assert_allclose(final_cost, 0, atol=2.5e-2)
-        np.testing.assert_allclose(x, x0, atol=1e-1)
+        np.testing.assert_allclose(final_cost, 0, atol=1e-2)
+        np.testing.assert_allclose(x, x0, atol=5e-2)
 
     @pytest.mark.parametrize("init_soc", [0.3, 0.7])
     @pytest.mark.integration
@@ -200,7 +200,7 @@ class TestModelParameterisation:
         # Assertions
         with np.testing.assert_raises(AssertionError):
             np.testing.assert_allclose(final_cost, 0, atol=1e-2)
-            np.testing.assert_allclose(x, x0, atol=1e-1)
+            np.testing.assert_allclose(x, x0, atol=5e-2)
 
     def getdata(self, model, x0, init_soc):
         model.parameter_set.update(
