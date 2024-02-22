@@ -52,7 +52,7 @@ def uninstall_plotly_if_installed():
     plotly.io.renderers.default = None
 
 
-@pytest.mark.unit
+@pytest.mark.plots
 def test_initialization_with_plotly_installed(plotly_installed):
     """Test initialization when Plotly is installed."""
     assert is_package_installed("plotly")
@@ -67,7 +67,7 @@ def test_initialization_with_plotly_installed(plotly_installed):
     assert plotly_manager.make_subplots == make_subplots
 
 
-@pytest.mark.unit
+@pytest.mark.plots
 def test_prompt_for_plotly_installation(mocker, uninstall_plotly_if_installed):
     """Test prompt for Plotly installation when not installed."""
     assert not is_package_installed("plotly")
@@ -83,7 +83,7 @@ def test_prompt_for_plotly_installation(mocker, uninstall_plotly_if_installed):
     assert plotly_manager.make_subplots == make_subplots
 
 
-@pytest.mark.unit
+@pytest.mark.plots
 def test_cancel_installation(mocker, uninstall_plotly_if_installed):
     """Test exit if Plotly installation is canceled."""
     assert not is_package_installed("plotly")
@@ -96,7 +96,7 @@ def test_cancel_installation(mocker, uninstall_plotly_if_installed):
     assert not is_package_installed("plotly")
 
 
-@pytest.mark.unit
+@pytest.mark.plots
 def test_post_install_setup(plotly_installed):
     """Test post-install setup."""
     plotly_manager = PlotlyManager()
