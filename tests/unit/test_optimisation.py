@@ -113,3 +113,9 @@ class TestOptimisation:
         optim.set_max_unchanged_iterations(1)
         x, __ = optim.run()
         assert optim._iterations == 2
+
+        # Test invalid maximum values
+        with pytest.raises(ValueError):
+            optim.set_max_evaluations(-1)
+        with pytest.raises(ValueError):
+            optim.set_max_unchanged_iterations(-1)
