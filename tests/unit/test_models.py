@@ -220,6 +220,9 @@ class TestModels:
         solved = model.simulate(inputs, t_eval)
         np.testing.assert_array_almost_equal(solved, expected, decimal=5)
 
+        with pytest.raises(ValueError):
+            ExponentialDecay(n_states=-1)
+
     @pytest.mark.unit
     def test_basemodel(self):
         base = pybop.BaseModel()
