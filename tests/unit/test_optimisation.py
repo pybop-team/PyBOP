@@ -119,3 +119,11 @@ class TestOptimisation:
             optim.set_max_evaluations(-1)
         with pytest.raises(ValueError):
             optim.set_max_unchanged_iterations(-1)
+        with pytest.raises(ValueError):
+            optim.set_max_unchanged_iterations(1, threshold=-1)
+
+    @pytest.mark.unit
+    def test_unphysical_result(self, cost):
+        # Trigger parameters not physically viable warning
+        optim = pybop.Optimisation(cost=cost)
+        optim.check_optimal_parameters(np.array([2]))
