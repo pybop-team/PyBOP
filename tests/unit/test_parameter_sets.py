@@ -77,3 +77,10 @@ class TestParameterSets:
         params.export_parameters(
             "examples/scripts/parameters/fit_ecm_parameters.json", fit_params=parameters
         )
+
+        # Test error when there no parameters to export
+        empty_params = pybop.ParameterSet()
+        with pytest.raises(ValueError):
+            empty_params.export_parameters(
+                "examples/scripts/parameters/fit_ecm_parameters.json"
+            )
