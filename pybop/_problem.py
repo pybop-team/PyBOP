@@ -46,10 +46,18 @@ class BaseProblem:
         self._target = None
 
         # Set bounds
-        self.bounds = dict(
-            lower=[param.bounds[0] for param in self.parameters],
-            upper=[param.bounds[1] for param in self.parameters],
-        )
+        self.bounds = {"lower": [], "upper": []}
+        count = 0
+        for param in self.parameters:
+            if param.bounds is not None:
+                self.bounds["lower"].append(param.bounds[0])
+                self.bounds["upper"].append(param.bounds[1])
+            else:
+                self.bounds["lower"].append(None)
+                self.bounds["upper"].append(None)
+                count += 1
+        if count == len(self.parameters):
+            self.bounds = None
 
         # Sample from prior for x0
         if x0 is None:
