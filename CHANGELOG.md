@@ -2,6 +2,11 @@
 
 ## Features
 
+- [#206](https://github.com/pybop-team/PyBOP/pull/206) - Adds Python 3.12 support with corresponding github actions changes.
+- [#18](https://github.com/pybop-team/PyBOP/pull/18) - Adds geometric parameter fitting capability, via `model.rebuild()` with `model.rebuild_parameters`.
+- [#203](https://github.com/pybop-team/PyBOP/pull/203) - Adds support for modern Python packaging via a `pyproject.toml` file and configures the `pytest` test runner and `ruff` linter to use their configurations stored as declarative metadata.
+- [#123](https://github.com/pybop-team/PyBOP/issues/123) - Configures scheduled tests to run against the last three PyPI releases of PyBaMM via dynamic GitHub Actions matrix generation.
+- [#187](https://github.com/pybop-team/PyBOP/issues/187) - Adds M1 Github runner to `test_on_push` workflow, updt. self-hosted supported python versions in scheduled tests.
 - [#118](https://github.com/pybop-team/PyBOP/issues/118) - Adds example jupyter notebooks.
 - [#151](https://github.com/pybop-team/PyBOP/issues/151) - Adds a standalone version of the Problem class.
 - [#12](https://github.com/pybop-team/PyBOP/issues/12) - Adds initial implementation of an Observer class and an unscented Kalman filter.
@@ -9,10 +14,13 @@
 
 ## Bug Fixes
 
+- [#123](https://github.com/pybop-team/PyBOP/issues/123) - Reinstates check for availability of parameter sets via PyBaMM upon retrieval by `pybop.ParameterSet.pybamm()`.
+- [#196](https://github.com/pybop-team/PyBOP/issues/196) - Fixes failing observer cost tests.
 - [#63](https://github.com/pybop-team/PyBOP/issues/63) - Removes NLOpt Optimiser from future releases. This is to support deployment to the Apple M-Series platform.
 - [#164](https://github.com/pybop-team/PyBOP/issues/164) - Fixes convergence issues with gradient-based optimisers, changes default `model.check_params()` to allow infeasible solutions during optimisation iterations. Adds a feasibility check on the optimal parameters.
 
 # [v23.12](https://github.com/pybop-team/PyBOP/tree/v23.12) - 2023-12-19
+
 ## Features
 
 - [#141](https://github.com/pybop-team/PyBOP/pull/141) - Adds documentation with Sphinx and PyData Sphinx Theme. Updates docstrings across package, relocates `costs` and `dataset` to top-level of package. Adds noxfile session and deployment workflow for docs.
@@ -29,6 +37,8 @@
 - [#145](https://github.com/pybop-team/PyBOP/issues/145) - Reformats Dataset to contain a dictionary and signal into a list of strings
 
 ## Bug Fixes
+
+- [#182](https://github.com/pybop-team/PyBOP/pull/182) - Allow square-brackets indexing of Dataset
 
 # [v23.11](https://github.com/pybop-team/PyBOP/releases/tag/v23.11)
 - Initial release

@@ -10,7 +10,7 @@ class TestParameterSets:
 
     @pytest.mark.unit
     def test_parameter_set(self):
-        # Tests parameter set creation
+        # Tests parameter set creation and validation
         with pytest.raises(ValueError):
             pybop.ParameterSet.pybamm("sChen2010s")
 

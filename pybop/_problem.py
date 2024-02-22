@@ -61,7 +61,7 @@ class BaseProblem:
 
         # Add the initial values to the parameter definitions
         for i, param in enumerate(self.parameters):
-            param.update(value=self.x0[i])
+            param.update(initial_value=self.x0[i])
 
     def evaluate(self, x):
         """
@@ -118,6 +118,10 @@ class BaseProblem:
         """
         return self._target
 
+    @property
+    def model(self):
+        return self._model
+
 
 class FittingProblem(BaseProblem):
     """
@@ -149,6 +153,7 @@ class FittingProblem(BaseProblem):
     ):
         super().__init__(parameters, model, check_model, signal, init_soc, x0)
         self._dataset = dataset.data
+        self.x = self.x0
 
         # Check that the dataset contains time and current
         dataset.check(self.signal + ["Current function [A]"])
@@ -188,6 +193,13 @@ class FittingProblem(BaseProblem):
         y : np.ndarray
             The model output y(t) simulated with inputs x.
         """
+        if (x != self.x).any() and self._model.matched_parameters:
+            for i, param in enumerate(self.parameters):
+                param.update(value=x[i])
+
+            self._model.rebuild(parameters=self.parameters)
+            self.x = x
+
         y = np.asarray(self._model.simulate(inputs=x, t_eval=self._time_data))
 
         return y
@@ -207,6 +219,10 @@ class FittingProblem(BaseProblem):
             A tuple containing the simulation result y(t) and the sensitivities dy/dx(t) evaluated
             with given inputs x.
         """
+        if self._model.matched_parameters:
+            raise RuntimeError(
+                "Gradient not available when using geometric parameters."
+            )
 
         y, dy = self._model.simulateS1(
             inputs=x,

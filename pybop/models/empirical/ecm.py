@@ -75,6 +75,7 @@ class Thevenin(ECircuitModel):
         self._built_initial_soc = None
         self._mesh = None
         self._disc = None
+        self.rebuild_parameters = {}
 
     def _check_params(self, inputs=None, allow_infeasible_solutions=True):
         """

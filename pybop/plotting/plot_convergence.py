@@ -96,7 +96,7 @@ def plot_optim2d(optim, bounds=None, steps=10, show=True, **layout_kwargs):
     fig = pybop.plot_cost2d(cost, bounds=bounds, steps=steps, show=False)
 
     # Import plotly only when needed
-    import plotly.graph_objects as go
+    go = pybop.PlotlyManager().go
 
     # Plot the initial guess
     fig.add_trace(

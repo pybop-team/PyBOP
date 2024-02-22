@@ -2,6 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 import pybamm
+import copy
 import numpy as np
 import casadi
 
@@ -57,6 +58,9 @@ class BaseModel:
         self.parameters = None
         self.dataset = None
         self.signal = None
+        self.matched_parameters = {}
+        self.non_matched_parameters = {}
+        self.fit_keys = []
         self.param_check_counter = 0
         self.allow_infeasible_solutions = True
 
@@ -87,10 +91,11 @@ class BaseModel:
         """
         self.dataset = dataset
         self.parameters = parameters
-        if self.parameters is None:
-            self.fit_keys = []
-        else:
+        if self.parameters is not None:
+            self.set_parameter_classification(self.parameters)
             self.fit_keys = [param.name for param in self.parameters]
+        else:
+            self.fit_keys = []
 
         if init_soc is not None:
             self.set_init_soc(init_soc)
@@ -140,24 +145,24 @@ class BaseModel:
         # Save solved initial SOC in case we need to rebuild the model
         self._built_initial_soc = init_soc
 
-    def set_params(self):
+    def set_params(self, rebuild=False):
         """
         Assign the parameters to the model.
 
         This method processes the model with the given parameters, sets up
         the geometry, and updates the model instance.
         """
-        if self.model_with_set_params:
+        if self.model_with_set_params and not rebuild:
             return
 
         # Mark any simulation inputs in the parameter set
-        if self.parameters is not None:
+        if self.non_matched_parameters:
             for i in self.fit_keys:
                 self._parameter_set[i] = "[input]"
 
-        if self.dataset is not None and self.parameters is not None:
+        if self.dataset is not None and self.non_matched_parameters:
             if "Current function [A]" not in self.fit_keys:
-                self.parameter_set["Current function [A]"] = pybamm.Interpolant(
+                self._parameter_set["Current function [A]"] = pybamm.Interpolant(
                     self.dataset["Time [s]"],
                     self.dataset["Current function [A]"],
                     pybamm.t,
@@ -171,6 +176,93 @@ class BaseModel:
         if self.geometry is not None:
             self._parameter_set.process_geometry(self.geometry)
         self.pybamm_model = self._model_with_set_params
+
+    def rebuild(
+        self,
+        dataset=None,
+        parameters=None,
+        parameter_set=None,
+        check_model=True,
+        init_soc=None,
+    ):
+        """
+        Rebuild the PyBaMM model for a given parameter set.
+
+        This method requires the self.build() method to be called first, and
+        then rebuilds the model for a given parameter set. Specifically,
+        this method applies the given parameters, sets up the mesh and discretization if needed, and prepares the model
+        for simulations.
+
+        Parameters
+        ----------
+        dataset : pybamm.Dataset, optional
+            The dataset to be used in the model construction.
+        parameters : dict, optional
+            A dictionary containing parameter values to apply to the model.
+        parameter_set : pybop.parameter_set, optional
+            A PyBOP parameter set object or a dictionary containing the parameter values
+        check_model : bool, optional
+            If True, the model will be checked for correctness after construction.
+        init_soc : float, optional
+            The initial state of charge to be used in simulations.
+        """
+        self.dataset = dataset
+        self.parameters = parameters
+        if parameters is not None:
+            self.set_parameter_classification(parameters)
+
+        if init_soc is not None:
+            self.set_init_soc(init_soc)
+
+        if self._built_model is None:
+            raise ValueError("Model must be built before calling rebuild")
+
+        self.set_params(rebuild=True)
+        self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
+        self._disc = pybamm.Discretisation(self.mesh, self.spatial_methods)
+        self._built_model = self._disc.process_model(
+            self._model_with_set_params, inplace=False, check_model=check_model
+        )
+
+        # Clear solver and setup model
+        self._solver._model_set_up = {}
+
+    def set_parameter_classification(self, parameters):
+        """
+        Set the parameter classification for the model.
+
+        Parameters
+        ----------
+        parameters : Pybop.ParameterSet
+
+        Returns
+        -------
+        None
+            The method updates attributes on self.
+
+        """
+        processed_parameters = {param.name: param.value for param in parameters}
+        matched_parameters = {
+            param: processed_parameters[param]
+            for param in processed_parameters
+            if param in self.rebuild_parameters
+        }
+        non_matched_parameters = {
+            param: processed_parameters[param]
+            for param in processed_parameters
+            if param not in self.rebuild_parameters
+        }
+
+        self.matched_parameters.update(matched_parameters)
+        self.non_matched_parameters.update(non_matched_parameters)
+
+        if self.matched_parameters:
+            self._parameter_set.update(self.matched_parameters)
+            self._unprocessed_parameter_set = self._parameter_set
+            self.geometry = self.pybamm_model.default_geometry
+
+        if self.non_matched_parameters:
+            self.fit_keys = list(self.non_matched_parameters.keys())
 
     def reinit(
         self, inputs: Inputs, t: float = 0.0, x: Optional[np.ndarray] = None
@@ -243,25 +335,29 @@ class BaseModel:
         ValueError
             If the model has not been built before simulation.
         """
-
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
         else:
-            if not isinstance(inputs, dict):
-                inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
-
-            if self.check_params(
-                inputs=inputs,
-                allow_infeasible_solutions=self.allow_infeasible_solutions,
-            ):
-                sol = self._solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
-
-                predictions = [sol[signal].data for signal in self.signal]
-
-                return np.vstack(predictions).T
+            if not self.fit_keys and self.matched_parameters:
+                sol = self.solver.solve(self.built_model, t_eval=t_eval)
 
             else:
-                return [np.inf]
+                if not isinstance(inputs, dict):
+                    inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+
+                if self.check_params(
+                    inputs=inputs,
+                    allow_infeasible_solutions=self.allow_infeasible_solutions,
+                ):
+                    sol = self.solver.solve(
+                        self.built_model, inputs=inputs, t_eval=t_eval
+                    )
+                else:
+                    return [np.inf]
+
+            predictions = [sol[signal].data for signal in self.signal]
+
+            return np.vstack(predictions).T
 
     def simulateS1(self, inputs, t_eval):
         """
@@ -448,6 +544,17 @@ class BaseModel:
             A boolean which signifies whether the parameters are compatible.
         """
         return True
+
+    def copy(self):
+        """
+        Return a copy of the model.
+
+        Returns
+        -------
+        BaseModel
+            A copy of the model.
+        """
+        return copy.copy(self)
 
     def cell_mass(self, parameter_set=None):
         """
