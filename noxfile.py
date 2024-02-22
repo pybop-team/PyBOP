@@ -25,13 +25,18 @@ def coverage(session):
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
     session.run(
-        "pytest",
-        "--unit",
-        "--integration",
-        "--plots",
-        "--cov",
-        "--cov-report=xml",
+        "pytest", "--unit", "--cov", "--cov-append", "--cov-report=xml", "-n", "auto"
     )
+    session.run(
+        "pytest",
+        "--integration",
+        "--cov",
+        "--cov-append",
+        "--cov-report=xml",
+        "-n",
+        "auto",
+    )
+    session.run("pytest", "--plots", "--cov", "--cov-append", "--cov-report=xml")
 
 
 @nox.session
