@@ -69,6 +69,21 @@ class TestObserver:
         covariance = observer.get_current_covariance()
         assert np.shape(covariance) == (n, n)
 
+        # Test evaluate with different inputs
+        observer._time_data = t_eval
+        observer.evaluate(x0)
+        observer.evaluate(parameters)
+
+        # Test evaluate with dataset
+        observer._dataset = pybop.Dataset(
+            {
+                "Time [s]": t_eval,
+                "Output": expected,
+            }
+        )
+        observer._target = expected
+        observer.evaluate(x0)
+
     @pytest.mark.unit
     def test_unbuilt_model(self, parameters):
         model = ExponentialDecay()
