@@ -1,3 +1,4 @@
+import sys
 import pybop
 import numpy as np
 
@@ -94,7 +95,9 @@ def quick_plot(problem, parameter_values=None, show=True, **layout_kwargs):
         # Generate the figure and update the layout
         fig = plot_dict(show=False)
         fig.update_layout(**layout_kwargs)
-        if show:
+        if "ipykernel" in sys.modules and show:
+            fig.show("svg")
+        elif show:
             fig.show()
 
         figure_list.append(fig)

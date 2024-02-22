@@ -1,4 +1,5 @@
 import pybop
+import sys
 
 
 def plot_dataset(
@@ -52,7 +53,9 @@ def plot_dataset(
         yaxis_title=yaxis_title,
     )
     fig.update_layout(**layout_kwargs)
-    if show is True:
+    if "ipykernel" in sys.modules and show:
+        fig.show("svg")
+    elif show:
         fig.show()
 
     return fig

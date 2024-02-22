@@ -1,3 +1,4 @@
+import sys
 import pybop
 import numpy as np
 
@@ -48,7 +49,9 @@ def plot_convergence(optim, show=True, **layout_kwargs):
     # Generate and display the figure
     fig = plot_dict(show=False)
     fig.update_layout(**layout_kwargs)
-    if show:
+    if "ipykernel" in sys.modules and show:
+        fig.show("svg")
+    elif show:
         fig.show()
 
     return fig
@@ -132,7 +135,9 @@ def plot_optim2d(optim, bounds=None, steps=10, show=True, **layout_kwargs):
 
     # Update the layout and display the figure
     fig.update_layout(**layout_kwargs)
-    if show:
+    if "ipykernel" in sys.modules and show:
+        fig.show("svg")
+    elif show:
         fig.show()
 
     return fig

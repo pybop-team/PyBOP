@@ -1,5 +1,6 @@
 import numpy as np
 import textwrap
+import sys
 import math
 import pybop
 
@@ -144,7 +145,9 @@ class StandardPlot:
             If True, the figure is shown upon creation (default: True).
         """
         fig = self.go.Figure(data=self.traces, layout=self.layout)
-        if show is True:
+        if "ipykernel" in sys.modules and show:
+            fig.show("svg")
+        elif show:
             fig.show()
 
         return fig
@@ -295,7 +298,9 @@ class StandardSubplot(StandardPlot):
                 fig.update_xaxes(title_text=x_title, row=row, col=col)
                 fig.update_yaxes(title_text=y_title, row=row, col=col)
 
-        if show is True:
+        if "ipykernel" in sys.modules and show:
+            fig.show("svg")
+        elif show:
             fig.show()
 
         return fig
@@ -333,7 +338,9 @@ def plot_trajectories(x, y, trace_names=None, show=True, **layout_kwargs):
     # Generate the figure and update the layout
     fig = plot_dict(show=False)
     fig.update_layout(**layout_kwargs)
-    if show:
+    if "ipykernel" in sys.modules and show:
+        fig.show("svg")
+    elif show:
         fig.show()
 
     return fig

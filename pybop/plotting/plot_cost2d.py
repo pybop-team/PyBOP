@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 
 
@@ -73,7 +74,9 @@ def plot_cost2d(cost, bounds=None, steps=10, show=True, **layout_kwargs):
     # Create contour plot and update the layout
     fig = go.Figure(data=[go.Contour(x=x, y=y, z=costs)], layout=layout)
     fig.update_layout(**layout_kwargs)
-    if show:
+    if "ipykernel" in sys.modules and show:
+        fig.show("svg")
+    elif show:
         fig.show()
 
     return fig

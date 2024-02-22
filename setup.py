@@ -32,7 +32,7 @@ setup(
         "pints>=0.5",
     ],
     extras_require={
-        "plot": ["plotly>=5.0"],
+        "plot": ["plotly>=5.0", "kaleido>=0.2"],
         "all": ["pybop[plot]"],
         "docs": [
             "sphinx>=6",
