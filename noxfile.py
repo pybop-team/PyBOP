@@ -41,14 +41,14 @@ def coverage(session):
 
 @nox.session
 def integration(session):
-    session.run_always("pip", "install", "-e", ".[all,dev]")
+    session.install("-e", ".[all,dev]", silent=False)
     session.install("pytest", "pytest-mock")
     session.run("pytest", "--integration", "-n", "auto")
 
 
 @nox.session
 def examples(session):
-    session.run_always("pip", "install", "-e", ".[all,dev]")
+    session.install("-e", ".[all,dev]", silent=False)
     session.run("pytest", "--examples", "-n", "auto")
 
 
