@@ -11,10 +11,17 @@ class TestModels:
     A class to test the models.
     """
 
-    @pytest.mark.parametrize(
-        "model",
-        [pybop.lithium_ion.SPM(), pybop.lithium_ion.SPMe(), pybop.empirical.Thevenin()],
+    @pytest.fixture(
+        params=[
+            pybop.lithium_ion.SPM(),
+            pybop.lithium_ion.SPMe(),
+            pybop.empirical.Thevenin(),
+        ]
     )
+    def model(self, request):
+        model = request.param
+        return model.copy()
+
     @pytest.mark.unit
     def test_simulate_without_build_model(self, model):
         with pytest.raises(
@@ -27,10 +34,6 @@ class TestModels:
         ):
             model.simulateS1(None, None)
 
-    @pytest.mark.parametrize(
-        "model",
-        [pybop.lithium_ion.SPM(), pybop.lithium_ion.SPMe(), pybop.empirical.Thevenin()],
-    )
     @pytest.mark.unit
     def test_predict_without_pybamm(self, model):
         model._unprocessed_model = None
@@ -38,10 +41,6 @@ class TestModels:
         with pytest.raises(ValueError):
             model.predict(None, None)
 
-    @pytest.mark.parametrize(
-        "model",
-        [pybop.lithium_ion.SPM(), pybop.lithium_ion.SPMe(), pybop.empirical.Thevenin()],
-    )
     @pytest.mark.unit
     def test_predict_with_inputs(self, model):
         # Define inputs
@@ -51,39 +50,30 @@ class TestModels:
                 "Negative electrode active material volume fraction": 0.52,
                 "Positive electrode active material volume fraction": 0.63,
             }
-            signal = "Terminal voltage [V]"
         elif isinstance(model, (pybop.empirical.Thevenin)):
             inputs = {
                 "R0 [Ohm]": 0.0002,
                 "R1 [Ohm]": 0.0001,
             }
-            signal = "Voltage [V]"
         else:
             raise ValueError("Inputs not defined for this type of model.")
 
         res = model.predict(t_eval=t_eval, inputs=inputs)
-        assert len(res[signal].data) == 100
+        assert len(res["Voltage [V]"].data) == 100
 
-    @pytest.mark.parametrize(
-        "model",
-        [pybop.lithium_ion.SPM(), pybop.lithium_ion.SPMe()],
-    )
     @pytest.mark.unit
     def test_predict_without_allow_infeasible_solutions(self, model):
-        model.allow_infeasible_solutions = False
-        t_eval = np.linspace(0, 10, 100)
-        inputs = {
-            "Negative electrode active material volume fraction": 0.9,
-            "Positive electrode active material volume fraction": 0.9,
-        }
+        if isinstance(model, (pybop.lithium_ion.SPM, pybop.lithium_ion.SPMe)):
+            model.allow_infeasible_solutions = False
+            t_eval = np.linspace(0, 10, 100)
+            inputs = {
+                "Negative electrode active material volume fraction": 0.9,
+                "Positive electrode active material volume fraction": 0.9,
+            }
 
-        res = model.predict(t_eval=t_eval, inputs=inputs)
-        assert np.isinf(res).any()
+            res = model.predict(t_eval=t_eval, inputs=inputs)
+            assert np.isinf(res).any()
 
-    @pytest.mark.parametrize(
-        "model",
-        [pybop.lithium_ion.SPM(), pybop.lithium_ion.SPMe(), pybop.empirical.Thevenin()],
-    )
     @pytest.mark.unit
     def test_build(self, model):
         model.build()
@@ -93,10 +83,6 @@ class TestModels:
         model.build()
         assert model.built_model is not None
 
-    @pytest.mark.parametrize(
-        "model",
-        [pybop.lithium_ion.SPM(), pybop.lithium_ion.SPMe(), pybop.empirical.Thevenin()],
-    )
     @pytest.mark.unit
     def test_rebuild(self, model):
         model.build()
