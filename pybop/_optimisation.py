@@ -449,7 +449,7 @@ class Optimisation:
                 raise ValueError("Maximum number of iterations cannot be negative.")
         self._max_iterations = iterations
 
-    def set_max_unchanged_iterations(self, iterations=25, threshold=1e-5):
+    def set_max_unchanged_iterations(self, iterations=5, threshold=1e-5):
         """
         Set the maximum number of iterations without significant change as a stopping criterion.
         Credit: PINTS
