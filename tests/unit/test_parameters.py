@@ -51,3 +51,17 @@ class TestParameters:
         assert parameter.margin == 1e-4
         parameter.set_margin(margin=1e-3)
         assert parameter.margin == 1e-3
+
+    @pytest.mark.unit
+    def test_invalid_inputs(self, parameter):
+        # Test error with invalid value
+        with pytest.raises(ValueError):
+            parameter.set_margin(margin=-1)
+
+        # Test error with no parameter value
+        with pytest.raises(ValueError):
+            parameter.update()
+
+        # Test error with opposite bounds
+        with pytest.raises(ValueError):
+            pybop.Parameter("Name", bounds=[0.7, 0.3])

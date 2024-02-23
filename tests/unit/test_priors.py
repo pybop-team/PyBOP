@@ -57,3 +57,12 @@ class TestPriors:
         assert repr(Gaussian) == "Gaussian, mean: 0.5, sigma: 1"
         assert repr(Uniform) == "Uniform, lower: 0, upper: 1"
         assert repr(Exponential) == "Exponential, scale: 1"
+
+    @pytest.mark.unit
+    def test_invalid_size(self, Gaussian, Uniform, Exponential):
+        with pytest.raises(ValueError):
+            Gaussian.rvs(-1)
+        with pytest.raises(ValueError):
+            Uniform.rvs(-1)
+        with pytest.raises(ValueError):
+            Exponential.rvs(-1)
