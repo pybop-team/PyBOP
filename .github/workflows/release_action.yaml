@@ -15,7 +15,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: "3.8"
+        python-version: "3.12"
     - name: Install pypa/build
       run: >-
         python3 -m
@@ -23,7 +23,7 @@ jobs:
         build
         --user
     - name: Build a binary wheel and a source tarball
-      run: python3 -m build
+      run: python -m build
     - name: Store the distribution packages
       uses: actions/upload-artifact@v3
       with:
@@ -36,8 +36,7 @@ jobs:
     if: >
       startsWith(github.ref, 'refs/tags/') &&
       !contains(github.ref, 'rc')
-    needs:
-    - build
+    needs: build
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -53,6 +52,9 @@ jobs:
         path: dist/
     - name: Publish distribution 📦 to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
 
   github-release:
     name: >-
@@ -113,3 +115,5 @@ jobs:
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         repository-url: https://test.pypi.org/legacy/
+        user: __token__
+        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
