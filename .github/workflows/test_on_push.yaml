@@ -1,4 +1,4 @@
-name: test_on_push
+name: PyBOP
 
 on:
   workflow_dispatch:
@@ -27,26 +27,16 @@ jobs:
           python -m pip install pre-commit
           pre-commit run ruff
 
-
-  build:
+  integration_tests:
     needs: style
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
-        exclude: # We run the coverage tests on Ubuntu with Python 3.11
-          - os: ubuntu-latest
-            python-version: "3.11"
-        # Include MacOS M-series Runners
-        include:
-          - os: macos-14
-            python-version: "3.10"
-          - os: macos-14
-            python-version: "3.11"
-          - os: macos-14
-            python-version: "3.12"
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-14]
+        python-version: ["3.12"]
+
+    name: Integration tests (${{ matrix.os }} / Python ${{ matrix.python-version }})
 
     steps:
       - uses: actions/checkout@v4
@@ -57,33 +47,99 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip nox
-      - name: Unit and notebook tests with nox
+
+      - name: Integration tests
+        run: |
+          nox -s integration
+
+  unit_tests:
+    needs: style
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        exclude: # We run the coverage tests on Ubuntu with Python 3.12
+          - os: ubuntu-latest
+            python-version: "3.12"
+        # Include MacOS M-series Runners
+        include:
+          - os: macos-14
+            python-version: "3.10"
+          - os: macos-14
+            python-version: "3.11"
+          - os: macos-14
+            python-version: "3.12"
+
+    name: Unit tests (${{ matrix.os }} / Python ${{ matrix.python-version }})
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip nox
+
+      - name: Unit tests
         run: |
           nox -s unit
+
+  example_tests:
+    needs: style
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-14]
+        python-version: ["3.12"]
+
+    name: Test examples (${{ matrix.os }} / Python ${{ matrix.python-version }})
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip nox
+
+      - name: Run examples
+        run: |
+          nox -s examples
+
+      - name: Run notebooks
+        run: |
           nox -s notebooks
 
-  # Runs only on Ubuntu with Python 3.11
+  # Runs only on Ubuntu with Python 3.12
   check_coverage:
+    needs: style
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-    name: Coverage tests (ubuntu-latest / Python 3.11)
+    name: Coverage tests (ubuntu-latest / Python 3.12)
 
     steps:
       - name: Check out PyBOP repository
         uses: actions/checkout@v4
-      - name: Set up Python 3.11
+      - name: Set up Python 3.12
         id: setup-python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: 3.12
           cache: 'pip'
           cache-dependency-path: setup.py
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip nox
-      - name: Run coverage tests for Ubuntu with Python 3.11 and generate report
+      - name: Run coverage tests for Ubuntu with Python 3.12 and generate report
         run: nox -s coverage
 
       - name: Upload coverage report
