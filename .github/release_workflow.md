@@ -14,7 +14,7 @@ To create a new release, follow these steps:
    - Open a PR to the `main` branch. Once the PR is merged, proceed to the next step.
 
 2. **Tag the Release:**
-   - Create a new Git tag for the release. For a full release, use a tag like `v24.2`. For a release candidate, use a tag like `v24.2-rc.1`.
+   - Create a new Git tag for the release. For a full release, use a tag like `v24.2`. For a release candidate, use a tag like `v24.2rc.1`.
    - Push the tag to the remote repository: `git push origin <tag_name>`.
 
 3. **Create a GitHub Release:**
