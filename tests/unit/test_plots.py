@@ -68,6 +68,13 @@ class TestPlots:
         # Plot the cost landscape
         pybop.plot_cost2d(cost, steps=5)
 
+        # Test without bounds
+        for param in cost.problem.parameters:
+            param.bounds = None
+        with pytest.raises(ValueError):
+            pybop.plot_cost2d(cost, steps=5)
+        pybop.plot_cost2d(cost, bounds=np.array([[1e-6, 9e-6], [1e-6, 9e-6]]), steps=5)
+
     @pytest.fixture
     def optim(self, cost):
         # Define and run an example optimisation
