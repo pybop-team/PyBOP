@@ -98,12 +98,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.11"]
-        # Include MacOS M-series Runners
-        include:
-          - os: macos-14
-            python-version: "3.11"
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-14]
+        python-version: ["3.12"]
 
     name: Test examples (${{ matrix.os }} / Python ${{ matrix.python-version }})
 
