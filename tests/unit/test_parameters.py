@@ -61,6 +61,7 @@ class TestParameters:
         )
         assert parameter.bounds is None
 
+    @pytest.mark.unit
     def test_invalid_inputs(self, parameter):
         # Test error with invalid value
         with pytest.raises(ValueError):
