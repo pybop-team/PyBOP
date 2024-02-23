@@ -59,7 +59,12 @@ def notebooks(session):
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
     session.run(
-        "pytest", "--notebooks", "--nbmake", "examples/", "-n", "auto",
+        "pytest",
+        "--notebooks",
+        "--nbmake",
+        "examples/",
+        "-n",
+        "auto",
     )
 
 
