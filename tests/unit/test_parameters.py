@@ -60,3 +60,16 @@ class TestParameters:
             "Negative electrode active material volume fraction",
         )
         assert parameter.bounds is None
+
+    def test_invalid_inputs(self, parameter):
+        # Test error with invalid value
+        with pytest.raises(ValueError):
+            parameter.set_margin(margin=-1)
+
+        # Test error with no parameter value
+        with pytest.raises(ValueError):
+            parameter.update()
+
+        # Test error with opposite bounds
+        with pytest.raises(ValueError):
+            pybop.Parameter("Name", bounds=[0.7, 0.3])
