@@ -49,7 +49,6 @@ def integration(session):
 @nox.session
 def examples(session):
     session.run_always("pip", "install", "-e", ".[all,dev]")
-    session.install("pytest", "pytest-mock")
     session.run("pytest", "--examples", "-n", "auto")
 
 
