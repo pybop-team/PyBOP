@@ -10,6 +10,7 @@
 # - Publish website
 name: Benchmarks
 on:
+  push:
   # Everyday at 12 pm UTC
   schedule:
     - cron: "0 12 * * *"
@@ -27,14 +28,14 @@ jobs:
         shell: bash
         run: |
             eval "$(pyenv init -)"
-            pyenv install 3.11 -s
-            pyenv virtualenv 3.11 pybop-311-bench
+            pyenv install 3.12 -s
+            pyenv virtualenv 3.12 pybop-312-bench
 
       - name: Install dependencies & run benchmarks
         shell: bash
         run: |
             eval "$(pyenv init -)"
-            pyenv activate pybop-311-bench
+            pyenv activate pybop-312-bench
             python -m pip install --upgrade pip nox
             python -m nox -s benchmarks
 
@@ -49,7 +50,7 @@ jobs:
         shell: bash
         run: |
             eval "$(pyenv init -)"
-            pyenv activate pybop-311-bench
+            pyenv activate pybop-312-bench
             pyenv uninstall -f $( python --version )
 
   publish-results:

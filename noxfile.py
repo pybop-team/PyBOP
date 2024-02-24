@@ -46,7 +46,7 @@ def notebooks(session):
 def bench(session):
     """Run the benchmarks."""
     session.install("-e", ".[all,dev]", silent=False)
-    session.run("pip", "install", "asv")
+    session.install("asv")
     session.run("asv", "machine", "--machine", "SelfHostedRunner")
     session.run(
         "asv", "run", "--machine", "SelfHostedRunner", "--show-stderr", "--python=same"
