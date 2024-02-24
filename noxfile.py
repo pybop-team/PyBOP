@@ -46,11 +46,8 @@ def notebooks(session):
 def benchmarks(session):
     """Run the benchmarks."""
     session.install("-e", ".[all,dev]", silent=False)
-    session.install("asv")
-    session.run("asv", "machine", "--machine", "SelfHostedRunner")
-    session.run(
-        "asv", "run", "--machine", "SelfHostedRunner", "--show-stderr", "--python=same"
-    )
+    session.install("asv[virtualenv]")
+    session.run("asv", "run", "--show-stderr", "--python=same")
 
 
 @nox.session

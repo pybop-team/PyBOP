@@ -8,15 +8,15 @@ class ParameterisationBenchmark:
         [pybop.lithium_ion.SPM, pybop.lithium_ion.SPMe],
         ["Chen2020"],
         [
-            pybop.SciPyMinimize,
-            pybop.SciPyDifferentialEvolution,
-            pybop.Adam,
+            # pybop.SciPyMinimize,
+            # pybop.SciPyDifferentialEvolution,
+            # pybop.Adam,
             pybop.CMAES,
-            pybop.GradientDescent,
-            pybop.IRPropMin,
-            pybop.PSO,
-            pybop.SNES,
-            pybop.XNES,
+            # pybop.GradientDescent,
+            # pybop.IRPropMin,
+            # pybop.PSO,
+            # pybop.SNES,
+            # pybop.XNES,
         ],
     ]
 
