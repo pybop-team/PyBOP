@@ -43,7 +43,7 @@ def notebooks(session):
 
 
 @nox.session
-def bench(session):
+def benchmarks(session):
     """Run the benchmarks."""
     session.install("-e", ".[all,dev]", silent=False)
     session.install("asv")
