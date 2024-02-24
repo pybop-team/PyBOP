@@ -36,10 +36,10 @@ jobs:
         run: |
             eval "$(pyenv init -)"
             pyenv activate pybop-312-bench
-            python -m pip install --upgrade pip asv[virtualenv]
             python -m pip install -e .[all,dev]
-            asv machine --machine "SelfHostedRunner"
-            asv run --machine "SelfHostedRunner" NEW --show-stderr -v
+            python -m pip install asv[virtualenv]
+            python -m asv machine --machine "SelfHostedRunner"
+            python -m asv run --machine "SelfHostedRunner" NEW --show-stderr -v
 
       - name: Upload results as artifact
         uses: actions/upload-artifact@v4
