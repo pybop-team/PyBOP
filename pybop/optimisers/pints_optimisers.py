@@ -1,4 +1,5 @@
 import pints
+import numpy as np
 
 
 class GradientDescent(pints.GradientDescent):
@@ -116,12 +117,16 @@ class PSO(pints.PSO):
     """
 
     def __init__(self, x0, sigma0=0.1, bounds=None):
-        if bounds is not None:
+        if bounds is None:
+            self.boundaries = None
+        elif not np.all(np.isfinite(sum(bounds.values(), []))):
+            raise ValueError(
+                "Either all bounds or no bounds must be set for Pints PSO."
+            )
+        else:
             self.boundaries = pints.RectangularBoundaries(
                 bounds["lower"], bounds["upper"]
             )
-        else:
-            self.boundaries = None
         super().__init__(x0, sigma0, self.boundaries)
 
 

@@ -45,7 +45,7 @@ class BaseProblem:
         self._time_data = None
         self._target = None
 
-        # Set bounds
+        # Set bounds (for all or no parameters)
         self.bounds = {"lower": [], "upper": []}
         count = 0
         for param in self.parameters:
@@ -53,11 +53,22 @@ class BaseProblem:
                 self.bounds["lower"].append(param.bounds[0])
                 self.bounds["upper"].append(param.bounds[1])
             else:
-                self.bounds["lower"].append(None)
-                self.bounds["upper"].append(None)
+                self.bounds["lower"].append(-np.inf)
+                self.bounds["upper"].append(np.inf)
                 count += 1
         if count == len(self.parameters):
             self.bounds = None
+
+        # Set initial standard deviation (for all or no parameters)
+        count = 0
+        self.sigma0 = []
+        for param in self.parameters:
+            if hasattr(param.prior, "sigma"):
+                self.sigma0.append(param.prior.sigma)
+            else:
+                count += 1
+        if count > 0:
+            self.sigma0 = None
 
         # Sample from prior for x0
         if x0 is None:
