@@ -55,7 +55,7 @@ include = ["pybop", "pybop.*"]
 Homepage = "https://github.com/pybop-team/PyBOP"
 
 [tool.pytest.ini_options]
-addopts = "--showlocals -v"
+addopts = "--showlocals -v -n auto"
 
 [tool.ruff]
 extend-include = ["*.ipynb"]

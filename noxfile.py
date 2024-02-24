@@ -24,13 +24,30 @@ def coverage(session):
     session.install("-e", ".[all,dev]", silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
+    session.run("pytest", "--unit", "--cov", "--cov-append", "--cov-report=xml")
     session.run(
         "pytest",
-        "--unit",
-        "--examples",
+        "--integration",
         "--cov",
+        "--cov-append",
         "--cov-report=xml",
     )
+    session.run(
+        "pytest", "--plots", "--cov", "--cov-append", "--cov-report=xml", "-n", "1"
+    )
+
+
+@nox.session
+def integration(session):
+    session.install("-e", ".[all,dev]", silent=False)
+    session.install("pytest", "pytest-mock")
+    session.run("pytest", "--integration")
+
+
+@nox.session
+def examples(session):
+    session.install("-e", ".[all,dev]", silent=False)
+    session.run("pytest", "--examples")
 
 
 @nox.session
@@ -39,7 +56,12 @@ def notebooks(session):
     session.install("-e", ".[all,dev]", silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
-    session.run("pytest", "--nbmake", "--examples", "examples/", external=True)
+    session.run(
+        "pytest",
+        "--notebooks",
+        "--nbmake",
+        "examples/",
+    )
 
 
 @nox.session
