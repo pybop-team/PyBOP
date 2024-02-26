@@ -2,6 +2,13 @@
 
 ## Features
 
+
+## Bug Fixes
+
+# [v24.2](https://github.com/pybop-team/PyBOP/tree/v4.2) - 2024-02-26
+
+## Features
+
 - [#215](https://github.com/pybop-team/PyBOP/pull/215) - Adds `release_workflow.md` and updates `release_action.yaml`
 - [#204](https://github.com/pybop-team/PyBOP/pull/204) - Splits integration, unit, examples, plots tests, update workflows. Adds pytest `--examples`, `--integration`, `--plots` args. Adds tests for coverage after removal of examples. Adds examples and integrations nox sessions. Adds `pybop.RMSE._evaluateS1()` method
 - [#206](https://github.com/pybop-team/PyBOP/pull/206) - Adds Python 3.12 support with corresponding github actions changes.
