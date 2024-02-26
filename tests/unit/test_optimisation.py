@@ -111,12 +111,15 @@ class TestOptimisation:
         # Test max unchanged iterations
         optim = pybop.Optimisation(cost=cost, optimiser=pybop.GradientDescent)
         optim.set_max_unchanged_iterations(1)
+        optim.set_min_iterations(3)
         x, __ = optim.run()
         assert optim._iterations == 2
 
-        # Test invalid maximum values
+        # Test invalid values
         with pytest.raises(ValueError):
             optim.set_max_evaluations(-1)
+        with pytest.raises(ValueError):
+            optim.set_min_iterations(-1)
         with pytest.raises(ValueError):
             optim.set_max_unchanged_iterations(-1)
         with pytest.raises(ValueError):

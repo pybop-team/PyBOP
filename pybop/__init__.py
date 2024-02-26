@@ -24,6 +24,16 @@ FLOAT_FORMAT = "{: .17e}"
 script_path = path.dirname(__file__)
 
 #
+# Problem class
+#
+from ._problem import BaseProblem, FittingProblem, DesignProblem
+
+#
+# Likelihood classes
+#
+from ._likelihoods import BaseLikelihood, GaussianLogLikelihood, GaussianLogLikelihoodKnownSigma
+
+#
 # Cost function class
 #
 from .costs.base_cost import BaseCost
@@ -31,6 +41,7 @@ from .costs.fitting_costs import (
     RootMeanSquaredError,
     SumSquaredError,
     ObserverCost,
+    ProbabilityCost,
 )
 from .costs.design_costs import (
     DesignCost,
@@ -84,10 +95,6 @@ from .parameters.parameter import Parameter
 from .parameters.parameter_set import ParameterSet
 from .parameters.priors import Gaussian, Uniform, Exponential
 
-#
-# Problem class
-#
-from ._problem import FittingProblem, DesignProblem
 
 #
 # Observer classes

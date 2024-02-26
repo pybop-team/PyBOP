@@ -20,7 +20,7 @@ parameters = [
 ]
 
 # Generate data
-sigma = 0.001
+sigma = 0.01
 t_eval = np.arange(0, 900, 2)
 values = model.predict(t_eval=t_eval)
 corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
@@ -36,15 +36,18 @@ dataset = pybop.Dataset(
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.SumSquaredError(problem)
-optim = pybop.Optimisation(cost, optimiser=pybop.IRPropMin)
+likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma=sigma)
+optim = pybop.Optimisation(likelihood, optimiser=pybop.CMAES)
+optim.set_max_unchanged_iterations(20)
+optim.set_min_iterations(20)
 optim.set_max_iterations(100)
 
+# Run the optimisation
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
 # Plot the timeseries output
-pybop.quick_plot(x, cost, title="Optimised Comparison")
+pybop.quick_plot(x[0:2], likelihood, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)
@@ -53,7 +56,8 @@ pybop.plot_convergence(optim)
 pybop.plot_parameters(optim)
 
 # Plot the cost landscape
-pybop.plot_cost2d(cost, steps=15)
+pybop.plot_cost2d(likelihood, steps=15)
 
-# Plot the cost landscape with optimisation path
-pybop.plot_cost2d(cost, optim=optim, steps=15)
+# Plot the cost landscape with optimisation path and updated bounds
+bounds = np.array([[0.55, 0.77], [0.48, 0.68]])
+pybop.plot_cost2d(likelihood, optim=optim, bounds=bounds, steps=15)

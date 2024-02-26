@@ -190,6 +190,61 @@ class SumSquaredError(BaseCost):
         self._de = de
 
 
+class ProbabilityCost(BaseCost):
+    """
+    Probability based cost function.
+
+    Changes the sign of the log likelihood to make it a cost function.
+
+    Inherits all parameters and attributes from ``BaseCost``.
+    """
+
+    def __init__(self, log_likelihood):
+        super(ProbabilityCost, self).__init__(log_likelihood)
+
+    def _evaluate(self, x, grad=None):
+        """
+        Calculate the probability based cost for a given set of parameters.
+
+        Parameters
+        ----------
+        x : array-like
+            The parameters for which to evaluate the cost.
+        grad : array-like, optional
+            An array to store the gradient of the cost function with respect
+            to the parameters.
+
+        Returns
+        -------
+        float
+            The probability based cost.
+        """
+        return -self.log_likelihood(x)
+
+    def _evaluateS1(self, x):
+        """
+        Compute the cost and its gradient with respect to the parameters.
+
+        Parameters
+        ----------
+        x : array-like
+            The parameters for which to compute the cost and gradient.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the cost and the gradient. The cost is a float,
+            and the gradient is an array-like of the same length as `x`.
+
+        Raises
+        ------
+        ValueError
+            If an error occurs during the calculation of the cost or gradient.
+        """
+        likelihood, dl = self.log_likelihood._evaluateS1(x)
+        return -likelihood, -dl
+
+
 class ObserverCost(BaseCost):
     """
     Observer cost function.

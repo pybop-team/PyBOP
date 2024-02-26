@@ -1,3 +1,7 @@
+from pybop import BaseProblem
+from pybop import BaseLikelihood
+
+
 class BaseCost:
     """
     Base class for defining cost functions.
@@ -24,14 +28,16 @@ class BaseCost:
         The number of outputs in the model.
     """
 
-    def __init__(self, problem):
+    def __init__(self, problem=None):
         self.problem = problem
-        if problem is not None:
+        if isinstance(self.problem, BaseProblem):
             self._target = problem._target
             self.x0 = problem.x0
             self.bounds = problem.bounds
             self.n_parameters = problem.n_parameters
             self.n_outputs = problem.n_outputs
+        elif isinstance(self.problem, BaseLikelihood):
+            self.log_likelihood = problem
 
     def __call__(self, x, grad=None):
         """
