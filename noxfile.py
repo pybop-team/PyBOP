@@ -39,7 +39,7 @@ def notebooks(session):
     session.install("-e", ".[all,dev]", silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
-    session.run("pytest", "--nbmake", "--examples", "examples/", external=True)
+    session.run("pytest", "--nbmake", "--examples", "examples/")
 
 
 @nox.session
