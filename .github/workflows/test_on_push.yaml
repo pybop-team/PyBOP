@@ -80,6 +80,7 @@ jobs:
       - name: Compile PyBaMM from source with IDAKLU solver (macos-latest)
         if: matrix.os == 'macos-latest'
         run: |
+          brew reinstall gcc
           cd pybamm
           python -m nox -s pybamm-requires
           python -m pip install .[all]
@@ -88,6 +89,7 @@ jobs:
       - name: Compile PyBaMM from source with IDAKLU solver (macos-14)
         if: matrix.os == 'macos-14'
         run: |
+          brew reinstall gcc
           cd pybamm
           python -m nox -s pybamm-requires
           python -m pip install .[all]
@@ -106,7 +108,7 @@ jobs:
           CMAKE_BUILD_PARALLEL_LEVEL: 4
         run: |
           cd pybamm
-          python -m nox -s pybamm-requires
+          git clone --depth 1 --branch v2.11.1 https://github.com/pybind/pybind11.git
           python -m pip install .[all]
           cd ..
 
@@ -146,7 +148,7 @@ jobs:
           ref: v24.1
           path: pybamm
 
-      - name: Compile PyBaMM from source with IDAKLU solver
+      - name: Compile PyBaMM from source with IDAKLU solver (ubuntu-latest)
         run: |
           cd pybamm
           sudo apt-get update
