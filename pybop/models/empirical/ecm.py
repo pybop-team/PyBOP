@@ -1,8 +1,8 @@
 import pybamm
-from ..base_model import BaseModel
+from .ecm_base import ECircuitModel
 
 
-class Thevenin(BaseModel):
+class Thevenin(ECircuitModel):
     """
     The Thevenin class represents an equivalent circuit model based on the Thevenin model in PyBaMM.
 
@@ -75,6 +75,7 @@ class Thevenin(BaseModel):
         self._built_initial_soc = None
         self._mesh = None
         self._disc = None
+        self.rebuild_parameters = {}
 
     def _check_params(self, inputs=None, allow_infeasible_solutions=True):
         """

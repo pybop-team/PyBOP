@@ -46,7 +46,7 @@ def plot_cost2d(cost, bounds=None, optim=None, steps=10):
     # Populate cost matrix
     for i, xi in enumerate(x):
         for j, yj in enumerate(y):
-            costs[j, i] = cost([xi, yj])
+            costs[j, i] = cost(np.array([xi, yj]))
 
     # Create figure
     fig = create_figure(x, y, costs, bounds, cost.problem.parameters, optim)

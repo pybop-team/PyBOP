@@ -152,4 +152,10 @@ class ParameterSet:
         pybamm.ParameterValues
             A PyBaMM parameter set corresponding to the provided name.
         """
+
+        msg = f"Parameter set '{name}' is not a valid PyBaMM parameter set. Available parameter sets are: {list(pybamm.parameter_sets)}"
+
+        if name not in list(pybamm.parameter_sets):
+            raise ValueError(msg)
+
         return pybamm.ParameterValues(name).copy()

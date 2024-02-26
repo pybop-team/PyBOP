@@ -13,6 +13,8 @@ class BaseProblem:
         The model to be used for the problem (default: None).
     check_model : bool, optional
         Flag to indicate if the model should be checked (default: True).
+    signal: List[str]
+      The signal to observe.
     init_soc : float, optional
         Initial state of charge (default: None).
     x0 : np.ndarray, optional
@@ -59,7 +61,7 @@ class BaseProblem:
 
         # Add the initial values to the parameter definitions
         for i, param in enumerate(self.parameters):
-            param.update(value=self.x0[i])
+            param.update(initial_value=self.x0[i])
 
     def evaluate(self, x):
         """
@@ -79,7 +81,8 @@ class BaseProblem:
 
     def evaluateS1(self, x):
         """
-        Evaluate the model with the given parameters and return the signal and its derivatives.
+        Evaluate the model with the given parameters and return the signal and
+        its derivatives.
 
         Parameters
         ----------
@@ -115,6 +118,10 @@ class BaseProblem:
         """
         return self._target
 
+    @property
+    def model(self):
+        return self._model
+
 
 class FittingProblem(BaseProblem):
     """
@@ -128,8 +135,8 @@ class FittingProblem(BaseProblem):
         The model to fit.
     parameters : list
         List of parameters for the problem.
-    dataset : list
-        List of data objects to fit the model to.
+    dataset : Dataset
+        Dataset object containing the data to fit the model to.
     signal : str, optional
         The signal to fit (default: "Voltage [V]").
     """
@@ -146,11 +153,12 @@ class FittingProblem(BaseProblem):
     ):
         super().__init__(parameters, model, check_model, signal, init_soc, x0)
         self._dataset = dataset.data
+        self.x = self.x0
 
         # Check that the dataset contains time and current
         for name in ["Time [s]", "Current function [A]"] + self.signal:
             if name not in self._dataset:
-                raise ValueError(f"expected {name} in list of dataset")
+                raise ValueError(f"Expected {name} in list of dataset")
 
         self._time_data = self._dataset["Time [s]"]
         self.n_time_data = len(self._time_data)
@@ -197,6 +205,12 @@ class FittingProblem(BaseProblem):
         y : np.ndarray
             The model output y(t) simulated with inputs x.
         """
+        if (x != self.x).any() and self._model.matched_parameters:
+            for i, param in enumerate(self.parameters):
+                param.update(value=x[i])
+
+            self._model.rebuild(parameters=self.parameters)
+            self.x = x
 
         y = np.asarray(self._model.simulate(inputs=x, t_eval=self._time_data))
 
@@ -217,6 +231,10 @@ class FittingProblem(BaseProblem):
             A tuple containing the simulation result y(t) and the sensitivities dy/dx(t) evaluated
             with given inputs x.
         """
+        if self._model.matched_parameters:
+            raise RuntimeError(
+                "Gradient not available when using geometric parameters."
+            )
 
         y, dy = self._model.simulateS1(
             inputs=x,
