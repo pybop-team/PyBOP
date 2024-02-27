@@ -6,9 +6,10 @@ on:
     branches:
       - main
 
-  # runs every day at 09:00 UTC
+  # runs every day at 09:00 and 15:00 UTC
   schedule:
     - cron: '0 9 * * *'
+    - cron: '0 15 * * *'
 
 # Check noxfile.py for associated environment variables
 env:
@@ -84,7 +85,7 @@ jobs:
           python -m pip install --upgrade pip nox
 
       - name: Unit tests with nox
-        run: python -m nox -s unit
+        run: python -m nox -s coverage
 
       - name: Run notebooks with nox
         run: python -m nox -s notebooks
@@ -117,7 +118,7 @@ jobs:
           eval "$(pyenv init -)"
           pyenv activate pybop-${{ matrix.python_version }}-${{ matrix.pybamm_version }}
           python -m pip install --upgrade pip nox
-          python -m nox -s unit
+          python -m nox -s coverage
           python -m nox -s notebooks
 
       - name: Uninstall pyenv-virtualenv & python

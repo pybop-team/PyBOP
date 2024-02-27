@@ -355,7 +355,7 @@ class BaseModel:
                     return [np.inf]
 
                 predictions = [sol[signal].data for signal in self.signal]
-                # breakpoint()
+
                 return np.vstack(predictions).T
 
     def simulateS1(self, inputs, t_eval):
