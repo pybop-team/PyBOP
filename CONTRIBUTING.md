@@ -4,17 +4,19 @@ If you'd like to contribute to PyBOP, please have a look at the guidelines below
 
 ## Developer-Installation
 
-To install PyBOP for development purposes, which includes the testing and plotting dependencies, use the `[all]` flag as demonstrated below:
+To install PyBOP for development purposes, which includes the plotting dependencies, use the `[all]` and the `[dev]` flags as demonstrated below:
 
 For `zsh`:
 
 ```sh
-pip install -e '.[all]'
+pip install -e '.[all,dev]'
 ```
+
 For `bash`:
 ```sh
-pip install -e .[all]
+pip install -e .[all,dev]
 ```
+
 ## Pre-commit checks
 
 Before you commit any code, please perform the following checks using [Nox](https://nox.thea.codes/en/stable/index.html):
@@ -40,7 +42,7 @@ If you would like to skip the failing checks and push the code for further discu
 
 ## Workflow
 
-We use [GIT](https://en.wikipedia.org/wiki/Git) and [GitHub](https://en.wikipedia.org/wiki/GitHub) to coordinate our work. When making any kind of update, we try to follow the procedure below.
+We use [Git](https://en.wikipedia.org/wiki/Git) and [GitHub](https://en.wikipedia.org/wiki/GitHub) to coordinate our work. When making any kind of update, we try to follow the procedure below.
 
 ### A. Before you begin
 
@@ -105,8 +107,8 @@ On the other hand... We _do_ want to compare several tools, to generate document
 
 1. Core PyBOP: A minimal set, including things like NumPy, SciPy, etc. All infrastructure should run against this set of dependencies, as well as any numerical methods we implement ourselves.
 2. Extras: Other inference packages and their dependencies. Methods we don't want to implement ourselves, but do want to provide an interface to can have their dependencies added here.
-3. Documentation generating code: Everything you need to generate and work on the docs.
-4. Development code: Everything you need to do PyBOP development (so all of the above packages, plus ruff and other testing tools).
+3. Documentation generating code: Everything you need to generate and work on the docs. This is managed by the `[docs]` set of extras.
+4. Development code: Everything you need to do PyBOP development (so all of the above packages, plus ruff and other testing tools). This is managed by the `[dev]` set of extras.
 
 Only 'core pybop' is installed by default. The others have to be specified explicitly when running the installation command.
 
@@ -283,14 +285,14 @@ as above, and then use some of the profiling tools. In order of increasing detai
 
 ## Infrastructure
 
-### Setuptools
+### Installation via `pip`
 
-Installation of PyBOP _and dependencies_ is handled via [setuptools](http://setuptools.readthedocs.io/)
+Installation of PyBOP and its dependencies is handled via [`pip`](https://pip.pypa.io/) through the [setuptools](http://setuptools.readthedocs.io/) build-backend.
 
 Configuration files:
 
 ```
-setup.py
+pyproject.toml
 ```
 
 Note that this file must be kept in sync with the version number in [pybop/**init**.py](https://github.com/pybop-team/PyBOP/blob/develop/pybop/__init__.py).

@@ -35,6 +35,9 @@ class Dataset:
         self.data = data_dictionary
         self.names = self.data.keys()
 
+    def __getitem__(self, key):
+        return self.data[key]
+
     def __repr__(self):
         """
         Return a string representation of the Dataset instance.
