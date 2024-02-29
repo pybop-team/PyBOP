@@ -60,7 +60,7 @@ class BaseProblem:
             self.bounds = None
 
         # Set initial standard deviation (for all or no parameters)
-        all_have_sigma = False  # assumption
+        all_have_sigma = True  # assumption
         self.sigma0 = []
         for param in self.parameters:
             if hasattr(param.prior, "sigma"):
