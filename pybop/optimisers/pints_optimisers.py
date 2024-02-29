@@ -145,7 +145,7 @@ class SNES(pints.SNES):
     x0 : array_like
         Initial position from which optimization will start.
     sigma0 : float, optional
-        Initial step size (default is 0.1).
+        Initial standard deviation of the sampling distribution, defaults to 0.1.
     bounds : dict, optional
         Lower and upper bounds for each optimization parameter.
 
