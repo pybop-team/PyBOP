@@ -119,7 +119,7 @@ class PSO(pints.PSO):
     def __init__(self, x0, sigma0=0.1, bounds=None):
         if bounds is None:
             self.boundaries = None
-        elif not np.all(np.isfinite(sum(bounds.values(), []))):
+        elif not all(np.isfinite(value) for sublist in bounds.values() for value in sublist):
             raise ValueError(
                 "Either all bounds or no bounds must be set for Pints PSO."
             )
