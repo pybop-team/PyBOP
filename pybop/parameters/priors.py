@@ -1,4 +1,5 @@
 import scipy.stats as stats
+import numpy as np
 
 
 class Gaussian:
@@ -168,6 +169,20 @@ class Uniform:
         """
         return f"{self.name}, lower: {self.lower}, upper: {self.upper}"
 
+    @property
+    def mean(self):
+        """
+        Returns the mean of the distribution.
+        """
+        return (self.upper - self.lower) / 2
+
+    @property
+    def sigma(self):
+        """
+        Returns the standard deviation of the distribution.
+        """
+        return (self.upper - self.lower) / (2 * np.sqrt(3))
+
 
 class Exponential:
     """
@@ -247,3 +262,17 @@ class Exponential:
         Returns a string representation of the Uniform object.
         """
         return f"{self.name}, scale: {self.scale}"
+
+    @property
+    def mean(self):
+        """
+        Returns the mean of the distribution.
+        """
+        return self.scale
+
+    @property
+    def sigma(self):
+        """
+        Returns the standard deviation of the distribution.
+        """
+        return self.scale

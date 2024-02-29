@@ -30,8 +30,8 @@ def plot_cost2d(cost, bounds=None, optim=None, steps=10):
         If the cost function does not return a valid cost when called with a parameter list.
     """
 
+    # Set up parameter bounds
     if bounds is None:
-        # Set up parameter bounds
         bounds = get_param_bounds(cost)
     else:
         bounds = bounds
@@ -73,7 +73,10 @@ def get_param_bounds(cost):
     """
     bounds = np.empty((len(cost.problem.parameters), 2))
     for i, param in enumerate(cost.problem.parameters):
-        bounds[i] = param.bounds
+        if param.bounds is not None:
+            bounds[i] = param.bounds
+        else:
+            raise ValueError("plot_cost2d could not find bounds required for plotting")
     return bounds
 
 
