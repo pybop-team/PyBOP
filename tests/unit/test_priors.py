@@ -32,6 +32,14 @@ class TestPriors:
         np.testing.assert_allclose(Uniform.logpdf(0.5), 0, atol=1e-4)
         np.testing.assert_allclose(Exponential.logpdf(1), -1, atol=1e-4)
 
+        # Test properties
+        assert Uniform.mean == (Uniform.upper - Uniform.lower) / 2
+        np.testing.assert_allclose(
+            Uniform.sigma, (Uniform.upper - Uniform.lower) / (2 * np.sqrt(3)), atol=1e-8
+        )
+        assert Exponential.mean == Exponential.scale
+        assert Exponential.sigma == Exponential.scale
+
     @pytest.mark.unit
     def test_gaussian_rvs(self, Gaussian):
         samples = Gaussian.rvs(size=500)

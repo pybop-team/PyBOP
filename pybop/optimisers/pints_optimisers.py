@@ -1,4 +1,5 @@
 import pints
+import numpy as np
 
 
 class GradientDescent(pints.GradientDescent):
@@ -116,12 +117,18 @@ class PSO(pints.PSO):
     """
 
     def __init__(self, x0, sigma0=0.1, bounds=None):
-        if bounds is not None:
+        if bounds is None:
+            self.boundaries = None
+        elif not all(
+            np.isfinite(value) for sublist in bounds.values() for value in sublist
+        ):
+            raise ValueError(
+                "Either all bounds or no bounds must be set for Pints PSO."
+            )
+        else:
             self.boundaries = pints.RectangularBoundaries(
                 bounds["lower"], bounds["upper"]
             )
-        else:
-            self.boundaries = None
         super().__init__(x0, sigma0, self.boundaries)
 
 
@@ -138,7 +145,7 @@ class SNES(pints.SNES):
     x0 : array_like
         Initial position from which optimization will start.
     sigma0 : float, optional
-        Initial step size (default is 0.1).
+        Initial standard deviation of the sampling distribution, defaults to 0.1.
     bounds : dict, optional
         Lower and upper bounds for each optimization parameter.
 

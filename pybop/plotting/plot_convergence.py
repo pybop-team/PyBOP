@@ -29,7 +29,8 @@ def plot_convergence(optim, show=True, **layout_kwargs):
 
     # Compute the minimum cost for each iteration
     min_cost_per_iteration = [
-        min(cost(solution) for solution in log_entry) for log_entry in log
+        min((cost(solution) for solution in log_entry), default=np.inf)
+        for log_entry in log
     ]
 
     # Generate a list of iteration numbers
