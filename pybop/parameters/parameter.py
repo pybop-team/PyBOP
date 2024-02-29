@@ -135,10 +135,11 @@ class Parameter:
             If the lower bound is not strictly less than the upper bound, or if
             the margin is set outside the interval (0, 1).
         """
-        if bounds is not None and bounds[0] >= bounds[1]:
-            self.lower_bound = bounds[0]
-            self.upper_bound = bounds[1]
-        else:
-            raise ValueError("Lower bound must be less than upper bound")
+        if bounds is not None:
+            if bounds[0] >= bounds[1]:
+                raise ValueError("Lower bound must be less than upper bound")
+            else:
+                self.lower_bound = bounds[0]
+                self.upper_bound = bounds[1]
 
         self.bounds = bounds
