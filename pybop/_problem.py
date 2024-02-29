@@ -47,27 +47,25 @@ class BaseProblem:
 
         # Set bounds (for all or no parameters)
         self.bounds = {"lower": [], "upper": []}
-        count = 0
         for param in self.parameters:
             if param.bounds is not None:
                 self.bounds["lower"].append(param.bounds[0])
                 self.bounds["upper"].append(param.bounds[1])
+                all_unbounded = False
             else:
                 self.bounds["lower"].append(-np.inf)
                 self.bounds["upper"].append(np.inf)
                 count += 1
-        if count == len(self.parameters):
+        if not all_unbounded:
             self.bounds = None
 
         # Set initial standard deviation (for all or no parameters)
-        count = 0
         self.sigma0 = []
         for param in self.parameters:
             if hasattr(param.prior, "sigma"):
                 self.sigma0.append(param.prior.sigma)
-            else:
-                count += 1
-        if count > 0:
+                has_sigma = True
+        if not has_sigma:
             self.sigma0 = None
 
         # Sample from prior for x0
