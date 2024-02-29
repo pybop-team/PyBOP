@@ -142,7 +142,9 @@ class SciPyDifferentialEvolution(BaseOptimiser):
 
         if bounds is None:
             raise ValueError("Bounds must be specified for differential_evolution.")
-        elif not all(np.isfinite(value) for sublist in bounds.values() for value in sublist):
+        elif not all(
+            np.isfinite(value) for sublist in bounds.values() for value in sublist
+        ):
             raise ValueError("Bounds must be specified for differential_evolution.")
         elif isinstance(bounds, dict):
             bounds = [
