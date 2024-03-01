@@ -53,6 +53,7 @@ class Observer(BaseProblem):
         self._state = model.reinit(inputs)
         self._model = model
         self._signal = self.signal
+        self._n_outputs = len(self._signal)
 
     def reset(self, inputs: Inputs) -> None:
         self._state = self._model.reinit(inputs)
@@ -78,9 +79,7 @@ class Observer(BaseProblem):
             self._state = self._model.step(self._state, time)
         return 0.0
 
-    def log_likelihood(
-        self, values: np.ndarray, times: np.ndarray, inputs: Inputs
-    ) -> float:
+    def log_likelihood(self, values: dict, times: np.ndarray, inputs: Inputs) -> float:
         """
         Returns the log likelihood of the model given the values and inputs.
 
@@ -93,16 +92,22 @@ class Observer(BaseProblem):
         inputs : Inputs
             The inputs to the model.
         """
-        if len(values) != len(times):
-            raise ValueError("values and times must have the same length.")
-        log_likelihood = 0.0
-        self.reset(inputs)
-        for t, v in zip(times, values):
-            try:
-                log_likelihood += self.observe(t, v)
-            except Exception:
-                return np.float64(-np.inf)
-        return log_likelihood
+        if self._n_outputs == 1:
+            signal = self._signal[0]
+            if len(values[signal]) != len(times):
+                raise ValueError("values and times must have the same length.")
+            log_likelihood = 0.0
+            self.reset(inputs)
+            for t, v in zip(times, values[signal]):
+                try:
+                    log_likelihood += self.observe(t, v)
+                except Exception:
+                    return np.float64(-np.inf)
+            return log_likelihood
+        else:
+            raise ValueError(
+                "Obersever.log_likelihood is currently restricted to single output models."
+            )
 
     def get_current_state(self) -> TimeSeriesState:
         """
@@ -156,17 +161,24 @@ class Observer(BaseProblem):
                 inputs[param.name] = x[i]
         self.reset(inputs)
 
-        output = []
-        if hasattr(self, "_dataset"):
-            ym = self._target
-            for i, t in enumerate(self._time_data):
-                self.observe(t, ym[i])
-                ys = self.get_current_measure()
-                output.append(ys)
-        else:
-            for t in self._time_data:
-                self.observe(t)
-                ys = self.get_current_measure()
-                output.append(ys)
+        if self._n_outputs == 1:
+            signal = self._signal[0]
+            output = []
+            if hasattr(self, "_dataset"):
+                ym = self._target[signal]
+                for i, t in enumerate(self._time_data):
+                    self.observe(t, ym[i])
+                    ys = self.get_current_measure()
+                    output.append(ys)
+            else:
+                for t in self._time_data:
+                    self.observe(t)
+                    ys = self.get_current_measure()
+                    output.append(ys)
 
-        return np.vstack(output)
+            out = {signal: np.vstack(output) for signal in self._signal}
+            return out
+        else:
+            raise ValueError(
+                "Observer is currently restricted to single output models."
+            )

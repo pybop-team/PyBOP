@@ -42,7 +42,8 @@ model.build(parameters=parameters)
 simulator = pybop.Observer(parameters, model, signal=["2y"], x0=x0)
 simulator._time_data = t_eval
 measurements = simulator.evaluate(x0)
-measurements = measurements[:, 0]
+
+measurements = measurements["2y"]
 
 # Verification step: Compare by plotting
 go = pybop.PlotlyManager().go
@@ -85,7 +86,7 @@ observer = pybop.UnscentedKalmanFilterObserver(
 
 # Verification step: Find the maximum likelihood estimate given the true parameters
 estimation = observer.evaluate(x0)
-estimation = estimation[:, 0]
+estimation = estimation["2y"]
 
 # Verification step: Add the estimate to the plot
 line4 = go.Scatter(x=t_eval, y=estimation, name="Estimated trajectory", mode="lines")
