@@ -57,9 +57,13 @@ class DesignCost(BaseCost):
         if self.update_capacity:
             self.problem.model.approximate_capacity(self.problem.x0)
         solution = self.problem.evaluate(initial_conditions)
-        self.problem._time_data = solution[:, -1]
-        self.problem._target = solution[:, 0:-1]
-        self.dt = solution[1, -1] - solution[0, -1]
+
+        if "Time [s]" not in solution:
+            raise ValueError("The solution does not contain time data.")
+        self.problem._time_data = solution["Time [s]"]
+        self.problem._capacity_data = solution["Discharge capacity [A.h]"]
+        self.problem._target = {key: solution[key] for key in self.problem.signal}
+        self.dt = solution["Time [s]"][1] - solution["Time [s]"][0]
 
     def _evaluate(self, x, grad=None):
         """
@@ -123,7 +127,7 @@ class GravimetricEnergyDensity(DesignCost):
                     self.problem.model.approximate_capacity(x)
                 solution = self.problem.evaluate(x)
 
-                voltage, current = solution[:, 0], solution[:, 1]
+                voltage, current = solution["Voltage [V]"], solution["Current [A]"]
                 negative_energy_density = -np.trapz(voltage * current, dx=self.dt) / (
                     3600 * self.problem.model.cell_mass(self.parameter_set)
                 )
@@ -181,7 +185,7 @@ class VolumetricEnergyDensity(DesignCost):
                     self.problem.model.approximate_capacity(x)
                 solution = self.problem.evaluate(x)
 
-                voltage, current = solution[:, 0], solution[:, 1]
+                voltage, current = solution["Voltage [V]"], solution["Current [A]"]
                 negative_energy_density = -np.trapz(voltage * current, dx=self.dt) / (
                     3600 * self.problem.model.cell_volume(self.parameter_set)
                 )

@@ -20,7 +20,7 @@ parameters = [
 ]
 
 # Generate data
-sigma = 0.001
+sigma = 0.01
 t_eval = np.arange(0, 900, 2)
 values = model.predict(t_eval=t_eval)
 corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
@@ -31,14 +31,23 @@ dataset = pybop.Dataset(
         "Time [s]": t_eval,
         "Current function [A]": values["Current [A]"].data,
         "Voltage [V]": corrupt_values,
+        "Bulk open-circuit voltage [V]": values["Bulk open-circuit voltage [V]"].data,
     }
 )
 
+signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 # Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.SumSquaredError(problem)
-optim = pybop.Optimisation(cost, optimiser=pybop.Adam, verbose=True)
+problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
+cost = pybop.RootMeanSquaredError(problem)
+optim = pybop.Optimisation(
+    cost,
+    optimiser=pybop.Adam,
+    verbose=True,
+    allow_infeasible_solutions=True,
+    sigma0=sigma,
+)
 optim.set_max_iterations(100)
+optim.set_max_unchanged_iterations(20)
 
 # Run optimisation
 x, final_cost = optim.run()

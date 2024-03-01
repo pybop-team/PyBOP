@@ -81,6 +81,7 @@ class TestModelParameterisation:
 
         if optimiser in [pybop.CMAES]:
             parameterisation.set_f_guessed_tracking(True)
+            parameterisation.cost.problem._model.allow_infeasible_solutions = False
             assert parameterisation._use_f_guessed is True
             parameterisation.set_max_iterations(1)
             x, final_cost = parameterisation.run()
@@ -126,12 +127,15 @@ class TestModelParameterisation:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current function [A]": solution["Current [A]"].data,
-                "Terminal voltage [V]": solution["Terminal voltage [V]"].data,
+                "Voltage [V]": solution["Voltage [V]"].data,
+                "Bulk open-circuit voltage [V]": solution[
+                    "Bulk open-circuit voltage [V]"
+                ].data,
             }
         )
 
         # Define the cost to optimise
-        signal = ["Terminal voltage [V]", "Time [s]"]
+        signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
         problem = pybop.FittingProblem(
             model, parameters, dataset, signal=signal, init_soc=init_soc
         )

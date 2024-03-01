@@ -1,4 +1,5 @@
 import numpy as np
+import pybop
 
 
 class BaseProblem:
@@ -27,6 +28,7 @@ class BaseProblem:
         model=None,
         check_model=True,
         signal=["Voltage [V]"],
+        default_variables=[],
         init_soc=None,
         x0=None,
     ):
@@ -44,6 +46,11 @@ class BaseProblem:
         self.n_outputs = len(self.signal)
         self._time_data = None
         self._target = None
+
+        if isinstance(model, (pybop.BaseModel, pybop.lithium_ion.EChemBaseModel)):
+            self.default_variables = default_variables
+        else:
+            self.default_variables = []
 
         # Set bounds
         self.bounds = dict(
@@ -148,10 +155,13 @@ class FittingProblem(BaseProblem):
         dataset,
         check_model=True,
         signal=["Voltage [V]"],
+        default_variables=["Time [s]", "Discharge capacity [A.h]"],
         init_soc=None,
         x0=None,
     ):
-        super().__init__(parameters, model, check_model, signal, init_soc, x0)
+        super().__init__(
+            parameters, model, check_model, signal, default_variables, init_soc, x0
+        )
         self._dataset = dataset.data
         self.x = self.x0
 
@@ -161,12 +171,13 @@ class FittingProblem(BaseProblem):
         # Unpack time and target data
         self._time_data = self._dataset["Time [s]"]
         self.n_time_data = len(self._time_data)
-        target = [self._dataset[signal] for signal in self.signal]
-        self._target = np.vstack(target).T
+        self._target = {signal: self._dataset[signal] for signal in self.signal}
 
         # Add useful parameters to model
         if model is not None:
             self._model.signal = self.signal
+            self._model.default_variables = self.default_variables
+            self._model.n_parameters = self.n_parameters
             self._model.n_outputs = self.n_outputs
             self._model.n_time_data = self.n_time_data
 
@@ -193,14 +204,14 @@ class FittingProblem(BaseProblem):
         y : np.ndarray
             The model output y(t) simulated with inputs x.
         """
-        if (x != self.x).any() and self._model.matched_parameters:
+        if np.any(x != self.x) and self._model.matched_parameters:
             for i, param in enumerate(self.parameters):
                 param.update(value=x[i])
 
             self._model.rebuild(parameters=self.parameters)
             self.x = x
 
-        y = np.asarray(self._model.simulate(inputs=x, t_eval=self._time_data))
+        y = self._model.simulate(inputs=x, t_eval=self._time_data)
 
         return y
 
@@ -229,7 +240,7 @@ class FittingProblem(BaseProblem):
             t_eval=self._time_data,
         )
 
-        return (np.asarray(y), np.asarray(dy))
+        return (y, np.asarray(dy))
 
 
 class DesignProblem(BaseProblem):
@@ -255,10 +266,13 @@ class DesignProblem(BaseProblem):
         experiment,
         check_model=True,
         signal=["Voltage [V]"],
+        default_variables=["Time [s]", "Current [A]", "Discharge capacity [A.h]"],
         init_soc=None,
         x0=None,
     ):
-        super().__init__(parameters, model, check_model, signal, init_soc, x0)
+        super().__init__(
+            parameters, model, check_model, signal, default_variables, init_soc, x0
+        )
         self.experiment = experiment
 
         # Build the model if required
@@ -278,8 +292,9 @@ class DesignProblem(BaseProblem):
 
         # Add an example dataset for plotting comparison
         sol = self.evaluate(self.x0)
-        self._time_data = sol[:, -1]
-        self._target = sol[:, 0:-1]
+        self._time_data = sol["Time [s]"]
+        self._capacity_data = sol["Discharge capacity [A.h]"]
+        self._target = {key: sol[key] for key in self.signal}
         self._dataset = None
 
     def evaluate(self, x):
@@ -307,6 +322,8 @@ class DesignProblem(BaseProblem):
             return sol
 
         else:
-            predictions = [sol[signal].data for signal in self.signal + ["Time [s]"]]
+            predictions = {}
+            for signal in self.signal + self.default_variables:
+                predictions[signal] = sol[signal].data
 
-            return np.vstack(predictions).T
+        return predictions
