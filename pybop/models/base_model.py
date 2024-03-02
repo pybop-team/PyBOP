@@ -58,8 +58,7 @@ class BaseModel:
         self.parameters = None
         self.dataset = None
         self.signal = None
-        self.non_parameters = None
-        self.default_variables = []
+        self.additional_variables = []
         self.matched_parameters = {}
         self.non_matched_parameters = {}
         self.fit_keys = []
@@ -359,7 +358,7 @@ class BaseModel:
 
             predictions = {
                 signal: sol[signal].data
-                for signal in (self.signal + self.default_variables)
+                for signal in (self.signal + self.additional_variables)
             }
 
             return predictions

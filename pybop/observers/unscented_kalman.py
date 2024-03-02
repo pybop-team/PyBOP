@@ -50,10 +50,13 @@ class UnscentedKalmanFilterObserver(Observer):
         dataset=None,
         check_model=True,
         signal=["Voltage [V]"],
+        additional_variables=[],
         init_soc=None,
         x0=None,
     ) -> None:
-        super().__init__(parameters, model, check_model, signal, init_soc, x0)
+        super().__init__(
+            parameters, model, check_model, signal, additional_variables, init_soc, x0
+        )
         if dataset is not None:
             self._dataset = dataset.data
 

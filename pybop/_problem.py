@@ -16,6 +16,8 @@ class BaseProblem:
         Flag to indicate if the model should be checked (default: True).
     signal: List[str]
       The signal to observe.
+    additional_variables : List[str], optional
+        Additional variables to observe and store in the solution (default: []).
     init_soc : float, optional
         Initial state of charge (default: None).
     x0 : np.ndarray, optional
@@ -28,7 +30,7 @@ class BaseProblem:
         model=None,
         check_model=True,
         signal=["Voltage [V]"],
-        default_variables=[],
+        additional_variables=[],
         init_soc=None,
         x0=None,
     ):
@@ -48,9 +50,9 @@ class BaseProblem:
         self._target = None
 
         if isinstance(model, (pybop.BaseModel, pybop.lithium_ion.EChemBaseModel)):
-            self.default_variables = default_variables
+            self.additional_variables = additional_variables
         else:
-            self.default_variables = []
+            self.additional_variables = []
 
         # Set bounds
         self.bounds = dict(
@@ -146,6 +148,12 @@ class FittingProblem(BaseProblem):
         Dataset object containing the data to fit the model to.
     signal : str, optional
         The signal to fit (default: "Voltage [V]").
+    additional_variables : List[str], optional
+        Additional variables to observe and store in the solution (default: []).
+    init_soc : float, optional
+        Initial state of charge (default: None).
+    x0 : np.ndarray, optional
+        Initial parameter values (default: None).
     """
 
     def __init__(
@@ -155,12 +163,13 @@ class FittingProblem(BaseProblem):
         dataset,
         check_model=True,
         signal=["Voltage [V]"],
-        default_variables=["Time [s]", "Discharge capacity [A.h]"],
+        additional_variables=[],
         init_soc=None,
         x0=None,
     ):
+        additional_variables += ["Time [s]", "Discharge capacity [A.h]"]
         super().__init__(
-            parameters, model, check_model, signal, default_variables, init_soc, x0
+            parameters, model, check_model, signal, additional_variables, init_soc, x0
         )
         self._dataset = dataset.data
         self.x = self.x0
@@ -176,7 +185,7 @@ class FittingProblem(BaseProblem):
         # Add useful parameters to model
         if model is not None:
             self._model.signal = self.signal
-            self._model.default_variables = self.default_variables
+            self._model.additional_variables = self.additional_variables
             self._model.n_parameters = self.n_parameters
             self._model.n_outputs = self.n_outputs
             self._model.n_time_data = self.n_time_data
@@ -257,6 +266,16 @@ class DesignProblem(BaseProblem):
         List of parameters for the problem.
     experiment : object
         The experimental setup to apply the model to.
+    check_model : bool, optional
+        Flag to indicate if the model parameters should be checked for feasibility each iteration (default: True).
+    signal : str, optional
+        The signal to fit (default: "Voltage [V]").
+    additional_variables : List[str], optional
+        Additional variables to observe and store in the solution (default: []).
+    init_soc : float, optional
+        Initial state of charge (default: None).
+    x0 : np.ndarray, optional
+        Initial parameter values (default: None).
     """
 
     def __init__(
@@ -266,12 +285,13 @@ class DesignProblem(BaseProblem):
         experiment,
         check_model=True,
         signal=["Voltage [V]"],
-        default_variables=["Time [s]", "Current [A]", "Discharge capacity [A.h]"],
+        additional_variables=[],
         init_soc=None,
         x0=None,
     ):
+        additional_variables += ["Time [s]", "Current [A]", "Discharge capacity [A.h]"]
         super().__init__(
-            parameters, model, check_model, signal, default_variables, init_soc, x0
+            parameters, model, check_model, signal, additional_variables, init_soc, x0
         )
         self.experiment = experiment
 
@@ -323,7 +343,7 @@ class DesignProblem(BaseProblem):
 
         else:
             predictions = {}
-            for signal in self.signal + self.default_variables:
+            for signal in self.signal + self.additional_variables:
                 predictions[signal] = sol[signal].data
 
         return predictions

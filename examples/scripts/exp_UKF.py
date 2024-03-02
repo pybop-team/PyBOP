@@ -43,15 +43,15 @@ simulator = pybop.Observer(parameters, model, signal=["2y"], x0=x0)
 simulator._time_data = t_eval
 measurements = simulator.evaluate(x0)
 
-measurements = measurements["2y"]
-
 # Verification step: Compare by plotting
 go = pybop.PlotlyManager().go
 line1 = go.Scatter(x=t_eval, y=corrupt_values, name="Corrupt values", mode="markers")
 line2 = go.Scatter(
     x=t_eval, y=expected_values, name="Expected trajectory", mode="lines"
 )
-line3 = go.Scatter(x=t_eval, y=measurements, name="Observed values", mode="markers")
+line3 = go.Scatter(
+    x=t_eval, y=measurements["2y"], name="Observed values", mode="markers"
+)
 fig = go.Figure(data=[line1, line2, line3])
 
 # Form dataset

@@ -22,6 +22,8 @@ class Observer(BaseProblem):
         Flag to indicate if the model should be checked (default: True).
     signal: List[str]
       The signal to observe.
+    additional_variables : List[str], optional
+        Additional variables to observe and store in the solution (default: []).
     init_soc : float, optional
         Initial state of charge (default: None).
     x0 : np.ndarray, optional
@@ -37,10 +39,13 @@ class Observer(BaseProblem):
         model: BaseModel,
         check_model=True,
         signal=["Voltage [V]"],
+        additional_variables=[],
         init_soc=None,
         x0=None,
     ) -> None:
-        super().__init__(parameters, model, check_model, signal, init_soc, x0)
+        super().__init__(
+            parameters, model, check_model, signal, additional_variables, init_soc, x0
+        )
         if model._built_model is None:
             raise ValueError("Only built models can be used in Observers")
         if model.signal is None:
@@ -161,24 +166,20 @@ class Observer(BaseProblem):
                 inputs[param.name] = x[i]
         self.reset(inputs)
 
-        if self._n_outputs == 1:
-            signal = self._signal[0]
-            output = []
-            if hasattr(self, "_dataset"):
+        output = {}
+        ys = []
+        if hasattr(self, "_dataset"):
+            for signal in self._signal:
                 ym = self._target[signal]
                 for i, t in enumerate(self._time_data):
                     self.observe(t, ym[i])
-                    ys = self.get_current_measure()
-                    output.append(ys)
-            else:
+                    ys.append(self.get_current_measure())
+                output[signal] = np.vstack(ys)
+        else:
+            for signal in self._signal:
                 for t in self._time_data:
                     self.observe(t)
-                    ys = self.get_current_measure()
-                    output.append(ys)
+                    ys.append(self.get_current_measure())
+                output[signal] = np.vstack(ys)
 
-            out = {signal: np.vstack(output) for signal in self._signal}
-            return out
-        else:
-            raise ValueError(
-                "Observer is currently restricted to single output models."
-            )
+        return output
