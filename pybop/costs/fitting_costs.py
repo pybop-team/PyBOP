@@ -98,16 +98,17 @@ class RootMeanSquaredError(BaseCost):
             r = r.reshape(self.problem.n_time_data)
             dy = dy.reshape(self.n_parameters, self.problem.n_time_data)
             e = np.sqrt(np.mean(r**2))
-            de = np.mean((r * dy), axis=1) / np.sqrt(
-                np.mean((r * dy) ** 2, axis=1) + np.finfo(float).eps
+            de = np.mean((r * dy), axis=1) / (
+                np.sqrt(np.mean((r * dy) ** 2, axis=1) + np.finfo(float).eps)
             )
             return e.item(), de.flatten()
 
         else:
             r = r.reshape(self.n_outputs, self.problem.n_time_data)
             e = np.sqrt(np.mean(r**2, axis=1))
-            de = np.mean((r[:, :, np.newaxis] * dy), axis=1) / np.sqrt(
-                np.mean((r[:, :, np.newaxis] * dy) ** 2, axis=1) + np.finfo(float).eps
+            de = np.mean((r[:, :, np.newaxis] * dy), axis=1) / (
+                np.sqrt(np.mean((r[:, :, np.newaxis] * dy) ** 2, axis=1))
+                + np.finfo(float).eps
             )
             return np.sum(e), np.sum(de, axis=1)
 
@@ -162,7 +163,7 @@ class SumSquaredError(BaseCost):
 
         e = np.array(
             [
-                np.sum(((prediction[signal] - self._target[signal]) ** 2), axis=0)
+                np.sum(((prediction[signal] - self._target[signal]) ** 2))
                 for signal in prediction
                 if signal not in ["Time [s]", "Discharge capacity [A.h]"]
             ]
@@ -217,7 +218,7 @@ class SumSquaredError(BaseCost):
 
         else:
             r = r.reshape(self.n_outputs, self.problem.n_time_data)
-            e = np.sum(r**2, axis=0)
+            e = np.sum(r**2, axis=1)
             de = 2 * np.sum((r[:, :, np.newaxis] * dy), axis=1)
             return np.sum(e), np.sum(de, axis=1)
 

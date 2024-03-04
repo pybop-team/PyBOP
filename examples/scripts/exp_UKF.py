@@ -86,10 +86,11 @@ observer = pybop.UnscentedKalmanFilterObserver(
 
 # Verification step: Find the maximum likelihood estimate given the true parameters
 estimation = observer.evaluate(x0)
-estimation = estimation["2y"]
 
 # Verification step: Add the estimate to the plot
-line4 = go.Scatter(x=t_eval, y=estimation, name="Estimated trajectory", mode="lines")
+line4 = go.Scatter(
+    x=t_eval, y=estimation["2y"], name="Estimated trajectory", mode="lines"
+)
 fig.add_trace(line4)
 fig.show()
 
