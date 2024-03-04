@@ -10,7 +10,7 @@ class BaseLikelihood:
         self.problem = problem
         self._n_output = problem.n_outputs
         self._n_times = problem.n_time_data
-        self.sigma = np.zeros(self._n_output)
+        self._sigma = sigma or np.zeros(self._n_output)
         self.x0 = problem.x0
         self.bounds = problem.bounds
         self._n_parameters = problem.n_parameters
@@ -23,13 +23,20 @@ class BaseLikelihood:
         """
         raise NotImplementedError
 
-    def update_sigma(self, sigma):
+    def set_sigma(self, sigma):
         """
         Setter for sigma parameter
         """
-        self.sigma = sigma
-        if np.any(sigma) <= 0:
+        if np.any(sigma <= 0):
             raise ValueError("Sigma must not be negative")
+        else:
+            self._sigma = sigma
+
+    def get_sigma(self):
+        """
+        Getter for sigma parameter
+        """
+        return self._sigma
 
     def get_n_parameters(self):
         """
@@ -55,10 +62,10 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
     def __init__(self, problem, sigma=None):
         super(GaussianLogLikelihoodKnownSigma, self).__init__(problem, sigma=sigma)
         if sigma is not None:
-            self.update_sigma(sigma)
-        self._offset = -0.5 * self._n_times * np.log(2 * np.pi / self.sigma)
-        self._multip = -1 / (2.0 * self.sigma**2)
-        self._sigma2 = self.sigma**-2
+            self.set_sigma(sigma)
+        self._offset = -0.5 * self._n_times * np.log(2 * np.pi / self._sigma)
+        self._multip = -1 / (2.0 * self._sigma**2)
+        self._sigma2 = self._sigma**-2
         self._dl = np.ones(self._n_parameters)
 
     def __call__(self, x):
@@ -107,7 +114,7 @@ class GaussianLogLikelihood(BaseLikelihood):
     def __init__(self, problem):
         super(GaussianLogLikelihood, self).__init__(problem)
         self._logpi = -0.5 * self._n_times * np.log(2 * np.pi)
-        self._dl = np.ones(self._n_parameters)
+        self._dl = np.ones(self._n_parameters + self._n_output)
 
     def __call__(self, x):
         """
@@ -123,7 +130,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         """
         sigma = np.asarray(x[-self._n_output :])
 
-        if any(sigma <= 0):
+        if np.any(sigma <= 0):
             return -np.inf
 
         e = self._target - self.problem.evaluate(x[: -self._n_output])
@@ -140,13 +147,13 @@ class GaussianLogLikelihood(BaseLikelihood):
         """
         sigma = np.asarray(x[-self._n_output :])
 
-        if any(sigma <= 0):
-            return -np.inf
+        if np.any(sigma <= 0):
+            return -np.inf, self._dl
 
         y, dy = self.problem.evaluateS1(x[: -self._n_output])
         if len(y) < len(self._target):
             likelihood = -np.float64(np.inf)
-            dl = self._dl * np.ones(self._n_parameters)
+            dl = self._dl
         else:
             dy = dy.reshape(
                 (
@@ -161,6 +168,6 @@ class GaussianLogLikelihood(BaseLikelihood):
 
             # Add sigma gradient to dl
             dsigma = -self._n_times / sigma + sigma**-(3.0) * np.sum(e**2, axis=0)
-            dl = np.concatenate((dl, np.array(list(dsigma))))
+            dl = np.concatenate((dl, dsigma))
 
         return likelihood, dl

@@ -52,8 +52,8 @@ class Optimisation:
         self.optimiser = optimiser
         self.verbose = verbose
         self.bounds = cost.bounds
+        self.sigma0 = sigma0 or cost.sigma0
         self.n_parameters = cost.n_parameters
-        self.sigma0 = sigma0
         self.physical_viability = physical_viability
         self.allow_infeasible_solutions = allow_infeasible_solutions
         self.log = []
@@ -97,7 +97,7 @@ class Optimisation:
             if issubclass(
                 self.optimiser, (pybop.SciPyMinimize, pybop.SciPyDifferentialEvolution)
             ):
-                self.optimiser = self.optimiser()
+                self.optimiser = self.optimiser(bounds=self.bounds)
 
             else:
                 raise ValueError("Unknown optimiser type")
@@ -185,7 +185,6 @@ class Optimisation:
         x, final_cost = self.optimiser.optimise(
             cost_function=self.cost,
             x0=self.x0,
-            bounds=self.bounds,
             maxiter=self._max_iterations,
         )
         self.log = self.optimiser.log
