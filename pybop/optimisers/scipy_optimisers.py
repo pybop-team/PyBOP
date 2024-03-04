@@ -12,7 +12,8 @@ class SciPyMinimize(BaseOptimiser):
     Parameters
     ----------
     method : str, optional
-        The type of solver to use. If not specified, defaults to 'COBYLA'.
+        The type of solver to use. If not specified, defaults to 'Nelder-Mead'.
+        Options: 'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP', 'trust-constr', 'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov'.
     bounds : sequence or ``Bounds``, optional
         Bounds for variables as supported by the selected method.
     maxiter : int, optional
@@ -27,7 +28,7 @@ class SciPyMinimize(BaseOptimiser):
         self._max_iterations = maxiter
 
         if self.method is None:
-            self.method = "COBYLA"  # "L-BFGS-B"
+            self.method = "Nelder-Mead"
 
     def _runoptimise(self, cost_function, x0, bounds):
         """

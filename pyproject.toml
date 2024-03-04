@@ -41,7 +41,7 @@ dev = [
     "nox",
     "nbmake",
     "pre-commit",
-    "pytest<=8",
+    "pytest>=6",
     "pytest-cov",
     "pytest-mock",
     "pytest-xdist",

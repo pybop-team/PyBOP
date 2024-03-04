@@ -13,20 +13,6 @@ class TestPlots:
         # Define an example model
         return pybop.lithium_ion.SPM()
 
-    # @pytest.fixture
-    # def parameters(self):
-    #     return [
-    #         pybop.Parameter(
-    #             "Negative particle radius [m]",
-    #             prior=pybop.Gaussian(6e-06, 0.1e-6),
-    #             bounds=[1e-6, 9e-6],
-    #         ),
-    #         pybop.Parameter(
-    #             "Positive particle radius [m]",
-    #             prior=pybop.Gaussian(4.5e-06, 0.1e-6),
-    #             bounds=[1e-6, 9e-6],
-    #         ),
-    #     ]
     @pytest.fixture
     def parameters(self):
         return [
