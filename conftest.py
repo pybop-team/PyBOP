@@ -52,7 +52,7 @@ def pytest_collection_modifyitems(config, items):
         "integration": "integration",
         "plots": "plots",
         "notebooks": "notebooks",
-        "docs": "doc",
+        "docs": "docs",
     }
     selected_markers = [
         marker for option, marker in options.items() if config.getoption(option)

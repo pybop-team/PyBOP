@@ -82,7 +82,7 @@ def run_doc_tests(session):
     used).
     """
     session.install("-e", ".[all,docs,dev]", silent=False)
-    session.run("pytest", "--docs")
+    session.run("pytest", "--docs", "-n", "0")
 
 
 @nox.session(name="pre-commit")
