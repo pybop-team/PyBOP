@@ -38,9 +38,14 @@ def coverage(session):
 
 
 @nox.session
+def plots(session):
+    session.install("-e", ".[plot,dev]", silent=False)
+    session.run("pytest", "--plots", "-n", "0")
+
+
+@nox.session
 def integration(session):
     session.install("-e", ".[all,dev]", silent=False)
-    session.install("pytest", "pytest-mock")
     session.run("pytest", "--integration")
 
 
@@ -81,7 +86,7 @@ def run_doc_tests(session):
     Checks if the documentation can be built, runs any doctests (currently not
     used).
     """
-    session.install("-e", ".[all,docs,dev]", silent=False)
+    session.install("-e", ".[plot,docs,dev]", silent=False)
     session.run("pytest", "--docs", "-n", "0")
 
 

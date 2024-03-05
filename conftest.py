@@ -42,7 +42,7 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "examples: mark test as an example")
     config.addinivalue_line("markers", "plots: mark test as a plot test")
     config.addinivalue_line("markers", "notebook: mark test as a notebook test")
-    config.addinivalue_line("markers", "doc: mark test as a doc test")
+    config.addinivalue_line("markers", "docs: mark test as a doc test")
 
 
 def pytest_collection_modifyitems(config, items):
@@ -66,7 +66,7 @@ def pytest_collection_modifyitems(config, items):
     # If no options were passed, skip all tests
     if not selected_markers:
         skip_all = pytest.mark.skip(
-            reason="Need at least one of --unit, --examples, --integration, or --plots option to run"
+            reason="Need at least one of --unit, --examples, --integration, --docs, or --plots option to run"
         )
         for item in items:
             item.add_marker(skip_all)
