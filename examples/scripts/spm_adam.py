@@ -10,12 +10,10 @@ parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         prior=pybop.Gaussian(0.68, 0.05),
-        bounds=[0.5, 0.8],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
         prior=pybop.Gaussian(0.58, 0.05),
-        bounds=[0.4, 0.7],
     ),
 ]
 
@@ -54,7 +52,8 @@ pybop.plot_convergence(optim)
 pybop.plot_parameters(optim)
 
 # Plot the cost landscape
-pybop.plot_cost2d(cost, steps=15)
+bounds = np.array([[0.5, 0.8], [0.4, 0.7]])
+pybop.plot_cost2d(cost, bounds=bounds, steps=15)
 
 # Plot the cost landscape with optimisation path
-pybop.plot_cost2d(cost, optim=optim, steps=15)
+pybop.plot_cost2d(cost, optim=optim, bounds=bounds, steps=15)

@@ -1,4 +1,5 @@
 import pybop
+import numpy as np
 
 
 def plot_convergence(
@@ -29,7 +30,7 @@ def plot_convergence(
 
     # Compute the minimum cost for each iteration
     min_cost_per_iteration = [
-        min(cost_function(solution) for solution in log_entry)
+        min((cost_function(solution) for solution in log_entry), default=np.inf)
         for log_entry in optim.log
     ]
 

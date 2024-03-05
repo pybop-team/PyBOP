@@ -18,6 +18,10 @@ class BaseCost:
         The initial guess for the model parameters.
     bounds : tuple
         The bounds for the model parameters.
+    sigma0 : scalar or array
+        Initial standard deviation around ``x0``. Either a scalar value (one
+        standard deviation for all coordinates) or an array with one entry
+        per dimension. Not all methods will use this information.
     n_parameters : int
         The number of parameters in the model.
     n_outputs : int
@@ -26,10 +30,14 @@ class BaseCost:
 
     def __init__(self, problem):
         self.problem = problem
+        self.x0 = None
+        self.bounds = None
+        self.sigma0 = None
         if problem is not None:
             self._target = problem._target
             self.x0 = problem.x0
             self.bounds = problem.bounds
+            self.sigma0 = problem.sigma0
             self.n_parameters = problem.n_parameters
             self.n_outputs = problem.n_outputs
 
