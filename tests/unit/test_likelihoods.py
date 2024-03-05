@@ -69,7 +69,7 @@ class TestLikelihoods:
         assert likelihood.problem == problem
         assert likelihood._n_output == 1
         assert likelihood._n_times == problem.n_time_data
-        assert np.array_equal(likelihood._sigma, np.array([0.2]))
+        assert np.array_equal(likelihood.get_sigma(), np.array([0.2]))
         assert likelihood.x0 == problem.x0
         assert likelihood.bounds == problem.bounds
         assert likelihood._n_parameters == 1

@@ -10,7 +10,7 @@ class BaseLikelihood:
         self.problem = problem
         self._n_output = problem.n_outputs
         self._n_times = problem.n_time_data
-        self._sigma = sigma or np.zeros(self._n_output)
+        self.sigma0 = sigma or np.zeros(self._n_output)
         self.x0 = problem.x0
         self.bounds = problem.bounds
         self._n_parameters = problem.n_parameters
@@ -30,13 +30,13 @@ class BaseLikelihood:
         if np.any(sigma <= 0):
             raise ValueError("Sigma must not be negative")
         else:
-            self._sigma = sigma
+            self.sigma0 = sigma
 
     def get_sigma(self):
         """
         Getter for sigma parameter
         """
-        return self._sigma
+        return self.sigma0
 
     def get_n_parameters(self):
         """
@@ -51,7 +51,7 @@ class BaseLikelihood:
 
 class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
     """
-    This class represents a Gaussian Log Likelihood with a known signma,
+    This class represents a Gaussian Log Likelihood with a known sigma,
     which assumes that the data follows a Gaussian distribution and computes
     the log-likelihood of observed data under this assumption.
 
@@ -63,9 +63,9 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         super(GaussianLogLikelihoodKnownSigma, self).__init__(problem, sigma=sigma)
         if sigma is not None:
             self.set_sigma(sigma)
-        self._offset = -0.5 * self._n_times * np.log(2 * np.pi / self._sigma)
-        self._multip = -1 / (2.0 * self._sigma**2)
-        self._sigma2 = self._sigma**-2
+        self._offset = -0.5 * self._n_times * np.log(2 * np.pi / self.sigma0)
+        self._multip = -1 / (2.0 * self.sigma0**2)
+        self.sigma2 = self.sigma0**-2
         self._dl = np.ones(self._n_parameters)
 
     def __call__(self, x):
@@ -96,7 +96,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
             )
             e = self._target - y
             likelihood = np.sum(self._offset + self._multip * np.sum(e**2, axis=0))
-            dl = np.sum((self._sigma2 * np.sum((e.T * dy.T), axis=2)), axis=1)
+            dl = np.sum((self.sigma2 * np.sum((e.T * dy.T), axis=2)), axis=1)
 
         return likelihood, dl
 
