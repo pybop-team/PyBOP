@@ -66,13 +66,21 @@ class TestCosts:
         return problem
 
     @pytest.fixture(
-        params=[pybop.RootMeanSquaredError, pybop.SumSquaredError, pybop.ObserverCost]
+        params=[
+            pybop.RootMeanSquaredError,
+            pybop.SumSquaredError,
+            pybop.ObserverCost,
+            pybop.ProbabilityCost,
+        ]
     )
     def cost(self, problem, request):
         cls = request.param
-        if cls == pybop.RootMeanSquaredError or cls == pybop.SumSquaredError:
+        if cls in [pybop.SumSquaredError, pybop.RootMeanSquaredError]:
             return cls(problem)
-        elif cls == pybop.ObserverCost:
+        elif cls in [pybop.ProbabilityCost]:
+            likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma=0.01)
+            return cls(likelihood)
+        elif cls in [pybop.ObserverCost]:
             inputs = {p.name: problem.x0[i] for i, p in enumerate(problem.parameters)}
             state = problem._model.reinit(inputs)
             n = len(state)
@@ -133,7 +141,7 @@ class TestCosts:
             with pytest.warns(UserWarning) as record:
                 cost([1.1])
 
-        if isinstance(cost, pybop.SumSquaredError):
+        if cost in [pybop.SumSquaredError, pybop.ProbabilityCost]:
             e, de = cost.evaluateS1([0.5])
 
             assert type(e) == np.float64
