@@ -19,6 +19,9 @@ class RootMeanSquaredError(BaseCost):
     def __init__(self, problem):
         super(RootMeanSquaredError, self).__init__(problem)
 
+        # Default fail gradient
+        self._de = 1.0
+
     def _evaluate(self, x, grad=None):
         """
         Calculate the root mean square error for a given set of parameters.
@@ -83,6 +86,21 @@ class RootMeanSquaredError(BaseCost):
             )
 
         return e, de.flatten()
+
+    def set_fail_gradient(self, de):
+        """
+        Set the fail gradient to a specified value.
+
+        The fail gradient is used if an error occurs during the calculation
+        of the gradient. This method allows updating the default gradient value.
+
+        Parameters
+        ----------
+        de : float
+            The new fail gradient value to be used.
+        """
+        de = float(de)
+        self._de = de
 
 
 class SumSquaredError(BaseCost):

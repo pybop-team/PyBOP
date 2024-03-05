@@ -141,14 +141,14 @@ class TestCosts:
             with pytest.warns(UserWarning) as record:
                 cost([1.1])
 
-        if cost in [pybop.SumSquaredError, pybop.ProbabilityCost]:
+            # Test option setting
+            cost.set_fail_gradient(1)
+
+        if isinstance(cost, (pybop.SumSquaredError, pybop.ProbabilityCost)):
             e, de = cost.evaluateS1([0.5])
 
             assert type(e) == np.float64
             assert type(de) == np.ndarray
-
-            # Test option setting
-            cost.set_fail_gradient(1)
 
             # Test exception for non-numeric inputs
             with pytest.raises(ValueError):
