@@ -25,6 +25,7 @@ def pytest_addoption(parser):
     parser.addoption(
         "--notebooks", action="store_true", default=False, help="run notebook tests"
     )
+    parser.addoption("--docs", action="store_true", default=False, help="run doc tests")
 
 
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
@@ -41,6 +42,7 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "examples: mark test as an example")
     config.addinivalue_line("markers", "plots: mark test as a plot test")
     config.addinivalue_line("markers", "notebook: mark test as a notebook test")
+    config.addinivalue_line("markers", "docs: mark test as a doc test")
 
 
 def pytest_collection_modifyitems(config, items):
@@ -50,6 +52,7 @@ def pytest_collection_modifyitems(config, items):
         "integration": "integration",
         "plots": "plots",
         "notebooks": "notebooks",
+        "docs": "docs",
     }
     selected_markers = [
         marker for option, marker in options.items() if config.getoption(option)
@@ -63,7 +66,7 @@ def pytest_collection_modifyitems(config, items):
     # If no options were passed, skip all tests
     if not selected_markers:
         skip_all = pytest.mark.skip(
-            reason="Need at least one of --unit, --examples, --integration, or --plots option to run"
+            reason="Need at least one of --unit, --examples, --integration, --docs, or --plots option to run"
         )
         for item in items:
             item.add_marker(skip_all)

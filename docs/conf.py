@@ -4,10 +4,9 @@
 # -- Path setup --------------------------------------------------------------
 import os
 import sys
+from pathlib import Path
 
-root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.insert(0, root_path)
-
+sys.path.append(str(Path(".").resolve()))
 from pybop._version import __version__  # noqa: E402
 
 # -- Project information -----------------------------------------------------
