@@ -36,10 +36,6 @@ class BaseLikelihood(BaseCost):
         """
         return self._n_parameters
 
-    @property
-    def n_parameters(self):
-        return self._n_parameters
-
 
 class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
     """

@@ -45,6 +45,10 @@ class BaseCost:
             self._n_parameters = problem.n_parameters
             self.n_outputs = problem.n_outputs
 
+    @property
+    def n_parameters(self):
+        return self._n_parameters
+
     def __call__(self, x, grad=None):
         """
         Call the evaluate function for a given set of parameters.
