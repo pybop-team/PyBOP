@@ -14,6 +14,7 @@ class BaseLikelihood(BaseCost):
         self.sigma0 = sigma or np.zeros(self._n_output)
         self._n_parameters = problem.n_parameters
         self.log_likelihood = problem
+        self._minimising = False
 
     def set_sigma(self, sigma):
         """

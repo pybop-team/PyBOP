@@ -36,7 +36,7 @@ class BaseCost:
         self.x0 = None
         self.bounds = None
         self.sigma0 = None
-        self._minimising = 1
+        self._minimising = True
         if isinstance(self.problem, BaseProblem):
             self._target = problem._target
             self.x0 = problem.x0
@@ -78,7 +78,10 @@ class BaseCost:
             If an error occurs during the calculation of the cost.
         """
         try:
-            return self._minimising * self._evaluate(x, grad)
+            if self._minimising:
+                return self._evaluate(x, grad)
+            else:  # minimise the negative cost
+                return -self._evaluate(x, grad)
 
         except NotImplementedError as e:
             raise e
@@ -133,7 +136,10 @@ class BaseCost:
             If an error occurs during the calculation of the cost or gradient.
         """
         try:
-            return self._minimising * self._evaluateS1(x)
+            if self._minimising:
+                return self._evaluateS1(x)
+            else:  # minimise the negative cost
+                return -self._evaluateS1(x)
 
         except NotImplementedError as e:
             raise e
