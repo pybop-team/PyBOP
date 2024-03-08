@@ -36,7 +36,13 @@ class TestModelParameterisation:
     def init_soc(self, request):
         return request.param
 
-    @pytest.fixture(params=[pybop.RootMeanSquaredError, pybop.SumSquaredError])
+    @pytest.fixture(
+        params=[
+            pybop.GaussianLogLikelihoodKnownSigma,
+            pybop.RootMeanSquaredError,
+            pybop.SumSquaredError,
+        ]
+    )
     def cost_class(self, request):
         return request.param
 
@@ -57,7 +63,10 @@ class TestModelParameterisation:
         problem = pybop.FittingProblem(
             model, parameters, dataset, signal=signal, init_soc=init_soc
         )
-        return cost_class(problem)
+        if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
+            return cost_class(problem, sigma=[0.01, 0.01])
+        else:
+            return cost_class(problem)
 
     @pytest.mark.parametrize(
         "optimiser",
@@ -124,7 +133,8 @@ class TestModelParameterisation:
             x, final_cost = parameterisation.run()
 
         # Assertions
-        np.testing.assert_allclose(final_cost, 0, atol=1e-2)
+        if not isinstance(spm_cost, pybop.GaussianLogLikelihoodKnownSigma):
+            np.testing.assert_allclose(final_cost, 0, atol=1e-2)
         np.testing.assert_allclose(x, x0, atol=5e-2)
 
     @pytest.fixture
