@@ -39,16 +39,14 @@ class RootMeanSquaredError(BaseCost):
         """
         prediction = self.problem.evaluate(x)
 
-        for key in prediction:
-            if key not in ["Time [s]", "Discharge capacity [A.h]"]:
-                if len(prediction.get(key, [])) != len(self._target.get(key, [])):
-                    return np.float64(np.inf)  # prediction doesn't match target
+        for key in self.signal:
+            if len(prediction.get(key, [])) != len(self._target.get(key, [])):
+                return np.float64(np.inf)  # prediction doesn't match target
 
         e = np.array(
             [
                 np.sqrt(np.mean((prediction[signal] - self._target[signal]) ** 2))
-                for signal in prediction
-                if signal not in ["Time [s]", "Discharge capacity [A.h]"]
+                for signal in self.signal
             ]
         )
 
@@ -79,20 +77,13 @@ class RootMeanSquaredError(BaseCost):
         """
         y, dy = self.problem.evaluateS1(x)
 
-        for key in y:
-            if key not in ["Time [s]", "Discharge capacity [A.h]"]:
-                if len(y.get(key, [])) != len(self._target.get(key, [])):
-                    e = np.float64(np.inf)
-                    de = self._de * np.ones(self.n_parameters)
-                    return e, de
+        for key in self.signal:
+            if len(y.get(key, [])) != len(self._target.get(key, [])):
+                e = np.float64(np.inf)
+                de = self._de * np.ones(self.n_parameters)
+                return e, de
 
-        r = np.array(
-            [
-                y[signal] - self._target[signal]
-                for signal in y
-                if signal not in ["Time [s]", "Discharge capacity [A.h]"]
-            ]
-        )
+        r = np.array([y[signal] - self._target[signal] for signal in self.signal])
 
         if self.n_outputs == 1:
             r = r.reshape(self.problem.n_time_data)
@@ -156,16 +147,14 @@ class SumSquaredError(BaseCost):
         """
         prediction = self.problem.evaluate(x)
 
-        for key in prediction:
-            if key not in ["Time [s]", "Discharge capacity [A.h]"]:
-                if len(prediction.get(key, [])) != len(self._target.get(key, [])):
-                    return np.float64(np.inf)  # prediction doesn't match target
+        for key in self.signal:
+            if len(prediction.get(key, [])) != len(self._target.get(key, [])):
+                return np.float64(np.inf)  # prediction doesn't match target
 
         e = np.array(
             [
                 np.sum(((prediction[signal] - self._target[signal]) ** 2))
-                for signal in prediction
-                if signal not in ["Time [s]", "Discharge capacity [A.h]"]
+                for signal in self.signal
             ]
         )
         if self.n_outputs == 1:
@@ -194,20 +183,13 @@ class SumSquaredError(BaseCost):
             If an error occurs during the calculation of the cost or gradient.
         """
         y, dy = self.problem.evaluateS1(x)
-        for key in y:
-            if key not in ["Time [s]", "Discharge capacity [A.h]"]:
-                if len(y.get(key, [])) != len(self._target.get(key, [])):
-                    e = np.float64(np.inf)
-                    de = self._de * np.ones(self.n_parameters)
-                    return e, de
+        for key in self.signal:
+            if len(y.get(key, [])) != len(self._target.get(key, [])):
+                e = np.float64(np.inf)
+                de = self._de * np.ones(self.n_parameters)
+                return e, de
 
-        r = np.array(
-            [
-                y[signal] - self._target[signal]
-                for signal in y
-                if signal not in ["Time [s]", "Discharge capacity [A.h]"]
-            ]
-        )
+        r = np.array([y[signal] - self._target[signal] for signal in self.signal])
 
         if self.n_outputs == 1:
             r = r.reshape(self.problem.n_time_data)

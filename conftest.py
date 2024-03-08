@@ -1,6 +1,7 @@
 import pytest
 import matplotlib
 import plotly
+import sys
 
 plotly.io.renderers.default = None
 matplotlib.use("Template")
@@ -41,6 +42,10 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "examples: mark test as an example")
     config.addinivalue_line("markers", "plots: mark test as a plot test")
     config.addinivalue_line("markers", "notebook: mark test as a notebook test")
+
+    if sys.platform.startswith("win"):
+        # Set the output encoding to UTF-8 on Windows
+        sys.stdout = open(sys.stdout.fileno(), mode="w", encoding="utf8", buffering=1)
 
 
 def pytest_collection_modifyitems(config, items):

@@ -147,9 +147,9 @@ class FittingProblem(BaseProblem):
     dataset : Dataset
         Dataset object containing the data to fit the model to.
     signal : str, optional
-        The signal to fit (default: "Voltage [V]").
+        The variable used for fitting (default: "Voltage [V]").
     additional_variables : List[str], optional
-        Additional variables to observe and store in the solution (default: []).
+        Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
     init_soc : float, optional
         Initial state of charge (default: None).
     x0 : np.ndarray, optional
@@ -167,7 +167,7 @@ class FittingProblem(BaseProblem):
         init_soc=None,
         x0=None,
     ):
-        additional_variables += ["Time [s]", "Discharge capacity [A.h]"]
+        additional_variables += ["Time [s]"]
         super().__init__(
             parameters, model, check_model, signal, additional_variables, init_soc, x0
         )
@@ -271,7 +271,7 @@ class DesignProblem(BaseProblem):
     signal : str, optional
         The signal to fit (default: "Voltage [V]").
     additional_variables : List[str], optional
-        Additional variables to observe and store in the solution (default: []).
+        Additional variables to observe and store in the solution (default additions are: ["Time [s]", "Current [A]"]).
     init_soc : float, optional
         Initial state of charge (default: None).
     x0 : np.ndarray, optional
@@ -289,7 +289,7 @@ class DesignProblem(BaseProblem):
         init_soc=None,
         x0=None,
     ):
-        additional_variables += ["Time [s]", "Current [A]", "Discharge capacity [A.h]"]
+        additional_variables += ["Time [s]", "Current [A]"]
         super().__init__(
             parameters, model, check_model, signal, additional_variables, init_soc, x0
         )
@@ -313,7 +313,6 @@ class DesignProblem(BaseProblem):
         # Add an example dataset for plotting comparison
         sol = self.evaluate(self.x0)
         self._time_data = sol["Time [s]"]
-        self._capacity_data = sol["Discharge capacity [A.h]"]
         self._target = {key: sol[key] for key in self.signal}
         self._dataset = None
 
