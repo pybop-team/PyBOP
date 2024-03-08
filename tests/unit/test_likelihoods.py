@@ -67,13 +67,19 @@ class TestLikelihoods:
     def test_base_likelihood_init(self, problem):
         likelihood = pybop.BaseLikelihood(problem, sigma=np.array([0.2]))
         assert likelihood.problem == problem
-        assert likelihood._n_output == 1
+        assert likelihood.n_outputs == 1
         assert likelihood._n_times == problem.n_time_data
         assert np.array_equal(likelihood.get_sigma(), np.array([0.2]))
         assert likelihood.x0 == problem.x0
         assert likelihood.bounds == problem.bounds
         assert likelihood._n_parameters == 1
         assert np.array_equal(likelihood._target, problem._target)
+
+    @pytest.mark.unit
+    def test_base_likelihood_call_raises_not_implemented_error(self, problem):
+        likelihood = pybop.BaseLikelihood(problem)
+        with pytest.raises(NotImplementedError):
+            likelihood(np.array([0.5, 0.5]))
 
     @pytest.mark.unit
     def test_base_likelihood_set_get_sigma(self, problem):

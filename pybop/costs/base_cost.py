@@ -1,4 +1,5 @@
 from pybop import BaseProblem
+import numpy as np
 
 
 class BaseCost:
@@ -31,17 +32,17 @@ class BaseCost:
         The number of outputs in the model.
     """
 
-    def __init__(self, problem=None):
+    def __init__(self, problem=None, sigma=None):
         self.problem = problem
         self.x0 = None
         self.bounds = None
-        self.sigma0 = None
+        self.sigma0 = sigma
         self._minimising = True
         if isinstance(self.problem, BaseProblem):
             self._target = problem._target
             self.x0 = problem.x0
             self.bounds = problem.bounds
-            self.sigma0 = problem.sigma0
+            self.sigma0 = sigma or problem.sigma0 or np.zeros(self.n_outputs)
             self._n_parameters = problem.n_parameters
             self.n_outputs = problem.n_outputs
 

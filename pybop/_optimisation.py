@@ -40,6 +40,7 @@ class Optimisation:
     def __init__(
         self,
         cost,
+        x0=None,
         optimiser=None,
         sigma0=None,
         verbose=False,
@@ -47,7 +48,7 @@ class Optimisation:
         allow_infeasible_solutions=True,
     ):
         self.cost = cost
-        self.x0 = cost.x0
+        self.x0 = x0 or cost.x0
         self.optimiser = optimiser
         self.verbose = verbose
         self.bounds = cost.bounds
