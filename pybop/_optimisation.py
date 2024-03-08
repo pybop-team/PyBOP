@@ -75,7 +75,7 @@ class Optimisation:
 
         # Check if minimising or maximising
         if isinstance(cost, pybop.BaseLikelihood):
-            self.cost._minimising = -1.0
+            self.cost._minimising = -1
         self._minimising = self.cost._minimising
         self._function = self.cost
 

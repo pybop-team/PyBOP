@@ -36,7 +36,7 @@ class BaseCost:
         self.x0 = None
         self.bounds = None
         self.sigma0 = None
-        self._minimising = 1.0
+        self._minimising = 1
         if isinstance(self.problem, BaseProblem):
             self._target = problem._target
             self.x0 = problem.x0
