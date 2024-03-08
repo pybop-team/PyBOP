@@ -1,7 +1,8 @@
 import numpy as np
+from pybop.costs.base_cost import BaseCost
 
 
-class BaseLikelihood:
+class BaseLikelihood(BaseCost):
     """
     Base class for likelihoods
     """
@@ -15,13 +16,7 @@ class BaseLikelihood:
         self.bounds = problem.bounds
         self._n_parameters = problem.n_parameters
         self._target = problem._target
-
-    def __call__(self, x):
-        """
-        Calls the problem.evaluate method and calculates
-        the log-likelihood
-        """
-        raise NotImplementedError
+        self.log_likelihood = problem
 
     def set_sigma(self, sigma):
         """
@@ -68,7 +63,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         self.sigma2 = self.sigma0**-2
         self._dl = np.ones(self._n_parameters)
 
-    def __call__(self, x):
+    def _evaluate(self, x, grad=None):
         """
         Calls the problem.evaluate method and calculates
         the log-likelihood
@@ -76,7 +71,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         e = self._target - self.problem.evaluate(x)
         return np.sum(self._offset + self._multip * np.sum(e**2, axis=0))
 
-    def _evaluateS1(self, x):
+    def _evaluateS1(self, x, grad=None):
         """
         Calls the problem.evaluateS1 method and calculates
         the log-likelihood
@@ -116,7 +111,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         self._logpi = -0.5 * self._n_times * np.log(2 * np.pi)
         self._dl = np.ones(self._n_parameters + self._n_output)
 
-    def __call__(self, x):
+    def _evaluate(self, x, grad=None):
         """
         Evaluates the Gaussian log-likelihood for the given parameters.
 
@@ -140,7 +135,7 @@ class GaussianLogLikelihood(BaseLikelihood):
             - np.sum(e**2, axis=0) / (2.0 * sigma**2)
         )
 
-    def _evaluateS1(self, x):
+    def _evaluateS1(self, x, grad=None):
         """
         Calls the problem.evaluateS1 method and calculates
         the log-likelihood
@@ -163,11 +158,11 @@ class GaussianLogLikelihood(BaseLikelihood):
                 )
             )
             e = self._target - y
-            likelihood = self.__call__(x)
-            dl = np.sum((sigma**-(2.0) * np.sum((e.T * dy.T), axis=2)), axis=1)
+            likelihood = self._evaluate(x)
+            dl = np.sum((sigma ** -(2.0) * np.sum((e.T * dy.T), axis=2)), axis=1)
 
             # Add sigma gradient to dl
-            dsigma = -self._n_times / sigma + sigma**-(3.0) * np.sum(e**2, axis=0)
+            dsigma = -self._n_times / sigma + sigma ** -(3.0) * np.sum(e**2, axis=0)
             dl = np.concatenate((dl, dsigma))
 
         return likelihood, dl

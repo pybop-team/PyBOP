@@ -40,7 +40,6 @@ class Optimisation:
     def __init__(
         self,
         cost,
-        x0=None,
         optimiser=None,
         sigma0=None,
         verbose=False,
@@ -48,7 +47,7 @@ class Optimisation:
         allow_infeasible_solutions=True,
     ):
         self.cost = cost
-        self.x0 = x0
+        self.x0 = cost.x0
         self.optimiser = optimiser
         self.verbose = verbose
         self.bounds = cost.bounds
@@ -58,9 +57,7 @@ class Optimisation:
         self.allow_infeasible_solutions = allow_infeasible_solutions
         self.log = []
 
-        # Catch x0, and convert to pints vector
-        if x0 is None:
-            self.x0 = cost.x0
+        # Convert x0 to pints vector
         self._x0 = pints.vector(self.x0)
 
         # Set whether to allow infeasible locations
@@ -77,12 +74,10 @@ class Optimisation:
         self._transformation = None
 
         # Check if minimising or maximising
-        self._minimising = not isinstance(cost, pybop.BaseLikelihood)
-        if self._minimising:
-            self._function = self.cost
-        else:
-            self._function = pybop.ProbabilityCost(cost)
-        del cost
+        if isinstance(cost, pybop.BaseLikelihood):
+            self.cost._minimising = -1.0
+        self._minimising = self.cost._minimising
+        self._function = self.cost
 
         # Construct Optimiser
         self.pints = True
