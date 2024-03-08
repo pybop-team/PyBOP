@@ -29,11 +29,6 @@ script_path = path.dirname(__file__)
 from ._problem import BaseProblem, FittingProblem, DesignProblem
 
 #
-# Likelihood classes
-#
-from ._likelihoods import BaseLikelihood, GaussianLogLikelihood, GaussianLogLikelihoodKnownSigma
-
-#
 # Cost function class
 #
 from .costs.base_cost import BaseCost
@@ -41,12 +36,16 @@ from .costs.fitting_costs import (
     RootMeanSquaredError,
     SumSquaredError,
     ObserverCost,
-    ProbabilityCost,
 )
 from .costs.design_costs import (
     DesignCost,
     GravimetricEnergyDensity,
     VolumetricEnergyDensity,
+)
+from .costs._likelihoods import (
+    BaseLikelihood,
+    GaussianLogLikelihood,
+    GaussianLogLikelihoodKnownSigma,
 )
 
 #

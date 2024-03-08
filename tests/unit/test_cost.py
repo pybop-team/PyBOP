@@ -70,16 +70,12 @@ class TestCosts:
             pybop.RootMeanSquaredError,
             pybop.SumSquaredError,
             pybop.ObserverCost,
-            pybop.ProbabilityCost,
         ]
     )
     def cost(self, problem, request):
         cls = request.param
         if cls in [pybop.SumSquaredError, pybop.RootMeanSquaredError]:
             return cls(problem)
-        elif cls in [pybop.ProbabilityCost]:
-            likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma=0.01)
-            return cls(likelihood)
         elif cls in [pybop.ObserverCost]:
             inputs = {p.name: problem.x0[i] for i, p in enumerate(problem.parameters)}
             state = problem._model.reinit(inputs)
@@ -144,7 +140,7 @@ class TestCosts:
             # Test option setting
             cost.set_fail_gradient(1)
 
-        if isinstance(cost, (pybop.SumSquaredError, pybop.ProbabilityCost)):
+        if isinstance(cost, pybop.SumSquaredError):
             e, de = cost.evaluateS1([0.5])
 
             assert type(e) == np.float64

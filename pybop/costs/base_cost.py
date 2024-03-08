@@ -1,5 +1,4 @@
 from pybop import BaseProblem
-from pybop import BaseLikelihood
 
 
 class BaseCost:
@@ -26,7 +25,7 @@ class BaseCost:
         Initial standard deviation around ``x0``. Either a scalar value (one
         standard deviation for all coordinates) or an array with one entry
         per dimension. Not all methods will use this information.
-    n_parameters : int
+    _n_parameters : int
         The number of parameters in the model.
     n_outputs : int
         The number of outputs in the model.
@@ -37,17 +36,26 @@ class BaseCost:
         self.x0 = None
         self.bounds = None
         self.sigma0 = None
+        self._minimising = True
         if isinstance(self.problem, BaseProblem):
             self._target = problem._target
             self.x0 = problem.x0
             self.bounds = problem.bounds
             self.sigma0 = problem.sigma0
-            self.n_parameters = problem.n_parameters
+            self._n_parameters = problem.n_parameters
             self.n_outputs = problem.n_outputs
-        elif isinstance(self.problem, BaseLikelihood):
-            self.log_likelihood = problem
+
+    @property
+    def n_parameters(self):
+        return self._n_parameters
 
     def __call__(self, x, grad=None):
+        """
+        Call the evaluate function for a given set of parameters.
+        """
+        return self.evaluate(x, grad)
+
+    def evaluate(self, x, grad=None):
         """
         Call the evaluate function for a given set of parameters.
 
@@ -70,7 +78,10 @@ class BaseCost:
             If an error occurs during the calculation of the cost.
         """
         try:
-            return self._evaluate(x, grad)
+            if self._minimising:
+                return self._evaluate(x, grad)
+            else:  # minimise the negative cost
+                return -self._evaluate(x, grad)
 
         except NotImplementedError as e:
             raise e
@@ -125,7 +136,10 @@ class BaseCost:
             If an error occurs during the calculation of the cost or gradient.
         """
         try:
-            return self._evaluateS1(x)
+            if self._minimising:
+                return self._evaluateS1(x)
+            else:  # minimise the negative cost
+                return -self._evaluateS1(x)
 
         except NotImplementedError as e:
             raise e
