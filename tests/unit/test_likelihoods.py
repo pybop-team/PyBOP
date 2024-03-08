@@ -111,7 +111,7 @@ class TestLikelihoods:
             problem, sigma=np.array([1.0])
         )
         result = likelihood(np.array([0.5]))
-        grad_result, grad_likelihood = likelihood._evaluateS1(np.array([0.5]))
+        grad_result, grad_likelihood = likelihood.evaluateS1(np.array([0.5]))
         assert isinstance(result, float)
         np.testing.assert_allclose(result, grad_result, atol=1e-5)
         assert np.all(grad_likelihood <= 0)
@@ -120,7 +120,7 @@ class TestLikelihoods:
     def test_gaussian_log_likelihood(self, problem):
         likelihood = pybop.GaussianLogLikelihood(problem)
         result = likelihood(np.array([0.5, 0.5]))
-        grad_result, grad_likelihood = likelihood._evaluateS1(np.array([0.5, 0.5]))
+        grad_result, grad_likelihood = likelihood.evaluateS1(np.array([0.5, 0.5]))
         assert isinstance(result, float)
         np.testing.assert_allclose(result, grad_result, atol=1e-5)
         assert np.all(grad_likelihood <= 0)

@@ -42,9 +42,9 @@ class BaseCost:
             self._target = problem._target
             self.x0 = problem.x0
             self.bounds = problem.bounds
-            self.sigma0 = sigma or problem.sigma0 or np.zeros(self.n_outputs)
-            self._n_parameters = problem.n_parameters
             self.n_outputs = problem.n_outputs
+            self._n_parameters = problem.n_parameters
+            self.sigma0 = sigma or problem.sigma0 or np.zeros(self._n_parameters)
 
     @property
     def n_parameters(self):
@@ -140,7 +140,8 @@ class BaseCost:
             if self._minimising:
                 return self._evaluateS1(x)
             else:  # minimise the negative cost
-                return -self._evaluateS1(x)
+                L, dl = self._evaluateS1(x)
+                return -L, -dl
 
         except NotImplementedError as e:
             raise e

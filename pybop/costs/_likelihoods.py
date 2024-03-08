@@ -8,13 +8,20 @@ class BaseLikelihood(BaseCost):
     """
 
     def __init__(self, problem, sigma=None):
-        super(BaseLikelihood, self).__init__(problem, sigma=sigma)
+        super(BaseLikelihood, self).__init__(problem, sigma)
         self._n_times = problem.n_time_data
 
     def set_sigma(self, sigma):
         """
         Setter for sigma parameter
         """
+
+        if sigma is not type(np.array([])):
+            try:
+                sigma = np.array(sigma)
+            except Exception:
+                raise ValueError("Sigma must be a numpy array")
+
         if np.any(sigma <= 0):
             raise ValueError("Sigma must not be negative")
         else:
@@ -43,8 +50,8 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         _logpi (float): Precomputed offset value for the log-likelihood function.
     """
 
-    def __init__(self, problem, sigma=None):
-        super(GaussianLogLikelihoodKnownSigma, self).__init__(problem, sigma=sigma)
+    def __init__(self, problem, sigma):
+        super(GaussianLogLikelihoodKnownSigma, self).__init__(problem, sigma)
         if sigma is not None:
             self.set_sigma(sigma)
         self._offset = -0.5 * self._n_times * np.log(2 * np.pi / self.sigma0)

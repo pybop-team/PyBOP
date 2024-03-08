@@ -19,8 +19,15 @@ parameters = [
     ),
 ]
 
+# Set initial parameter values
+parameter_set.update(
+    {
+        "Negative electrode active material volume fraction": 0.63,
+        "Positive electrode active material volume fraction": 0.51,
+    }
+)
 # Generate data
-sigma = 0.01
+sigma = 0.005
 t_eval = np.arange(0, 900, 2)
 values = model.predict(t_eval=t_eval)
 corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
@@ -36,7 +43,7 @@ dataset = pybop.Dataset(
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
-likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma=sigma)
+likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma=[0.03, 0.03])
 optim = pybop.Optimisation(likelihood, optimiser=pybop.CMAES)
 optim.set_max_unchanged_iterations(20)
 optim.set_min_iterations(20)
