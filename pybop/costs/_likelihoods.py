@@ -14,7 +14,6 @@ class BaseLikelihood(BaseCost):
         self.sigma0 = sigma or np.zeros(self._n_output)
         self._n_parameters = problem.n_parameters
         self.log_likelihood = problem
-        self._minimising = False
 
     def set_sigma(self, sigma):
         """
@@ -153,10 +152,10 @@ class GaussianLogLikelihood(BaseLikelihood):
             )
             e = self._target - y
             likelihood = self._evaluate(x)
-            dl = np.sum((sigma ** -(2.0) * np.sum((e.T * dy.T), axis=2)), axis=1)
+            dl = np.sum((sigma**-(2.0) * np.sum((e.T * dy.T), axis=2)), axis=1)
 
             # Add sigma gradient to dl
-            dsigma = -self._n_times / sigma + sigma ** -(3.0) * np.sum(e**2, axis=0)
+            dsigma = -self._n_times / sigma + sigma**-(3.0) * np.sum(e**2, axis=0)
             dl = np.concatenate((dl, dsigma))
 
         return likelihood, dl
