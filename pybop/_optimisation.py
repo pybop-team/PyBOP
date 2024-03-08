@@ -29,7 +29,7 @@ class Optimisation:
         Initial parameter values for the optimization.
     bounds : dict
         Dictionary containing the parameter bounds with keys 'lower' and 'upper'.
-    n_parameters : int
+    _n_parameters : int
         Number of parameters in the optimization problem.
     sigma0 : float or sequence
         Initial step size or standard deviation for the optimiser.
@@ -52,7 +52,7 @@ class Optimisation:
         self.verbose = verbose
         self.bounds = cost.bounds
         self.sigma0 = sigma0 or cost.sigma0
-        self.n_parameters = cost.n_parameters
+        self._n_parameters = cost._n_parameters
         self.physical_viability = physical_viability
         self.allow_infeasible_solutions = allow_infeasible_solutions
         self.log = []

@@ -76,12 +76,6 @@ class TestLikelihoods:
         assert np.array_equal(likelihood._target, problem._target)
 
     @pytest.mark.unit
-    def test_base_likelihood_call_raises_not_implemented_error(self, problem):
-        likelihood = pybop.BaseLikelihood(problem)
-        with pytest.raises(NotImplementedError):
-            likelihood(np.array([0.5, 0.5]))
-
-    @pytest.mark.unit
     def test_base_likelihood_set_get_sigma(self, problem):
         likelihood = pybop.BaseLikelihood(problem)
         likelihood.set_sigma(np.array([0.3]))

@@ -8,14 +8,11 @@ class BaseLikelihood(BaseCost):
     """
 
     def __init__(self, problem, sigma=None):
-        self.problem = problem
+        super(BaseLikelihood, self).__init__(problem)
         self._n_output = problem.n_outputs
         self._n_times = problem.n_time_data
         self.sigma0 = sigma or np.zeros(self._n_output)
-        self.x0 = problem.x0
-        self.bounds = problem.bounds
         self._n_parameters = problem.n_parameters
-        self._target = problem._target
         self.log_likelihood = problem
 
     def set_sigma(self, sigma):

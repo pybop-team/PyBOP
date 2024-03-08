@@ -25,7 +25,7 @@ class BaseCost:
         Initial standard deviation around ``x0``. Either a scalar value (one
         standard deviation for all coordinates) or an array with one entry
         per dimension. Not all methods will use this information.
-    n_parameters : int
+    _n_parameters : int
         The number of parameters in the model.
     n_outputs : int
         The number of outputs in the model.
@@ -42,7 +42,7 @@ class BaseCost:
             self.x0 = problem.x0
             self.bounds = problem.bounds
             self.sigma0 = problem.sigma0
-            self.n_parameters = problem.n_parameters
+            self._n_parameters = problem.n_parameters
             self.n_outputs = problem.n_outputs
 
     def __call__(self, x, grad=None):

@@ -70,13 +70,13 @@ class RootMeanSquaredError(BaseCost):
         y, dy = self.problem.evaluateS1(x)
         if len(y) < len(self._target):
             e = np.float64(np.inf)
-            de = self._de * np.ones(self.n_parameters)
+            de = self._de * np.ones(self._n_parameters)
         else:
             dy = dy.reshape(
                 (
                     self.problem.n_time_data,
                     self.n_outputs,
-                    self.n_parameters,
+                    self._n_parameters,
                 )
             )
             r = y - self._target
@@ -177,13 +177,13 @@ class SumSquaredError(BaseCost):
         y, dy = self.problem.evaluateS1(x)
         if len(y) < len(self._target):
             e = np.float64(np.inf)
-            de = self._de * np.ones(self.n_parameters)
+            de = self._de * np.ones(self._n_parameters)
         else:
             dy = dy.reshape(
                 (
                     self.problem.n_time_data,
                     self.n_outputs,
-                    self.n_parameters,
+                    self._n_parameters,
                 )
             )
             r = y - self._target
