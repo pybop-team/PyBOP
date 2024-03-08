@@ -29,7 +29,7 @@ class Optimisation:
         Initial parameter values for the optimization.
     bounds : dict
         Dictionary containing the parameter bounds with keys 'lower' and 'upper'.
-    n_parameters : int
+    _n_parameters : int
         Number of parameters in the optimization problem.
     sigma0 : float or sequence
         Initial step size or standard deviation for the optimiser.
@@ -40,6 +40,7 @@ class Optimisation:
     def __init__(
         self,
         cost,
+        x0=None,
         optimiser=None,
         sigma0=None,
         verbose=False,
@@ -47,12 +48,12 @@ class Optimisation:
         allow_infeasible_solutions=True,
     ):
         self.cost = cost
+        self.x0 = x0 or cost.x0
         self.optimiser = optimiser
         self.verbose = verbose
-        self.x0 = cost.x0
         self.bounds = cost.bounds
         self.sigma0 = sigma0 or cost.sigma0
-        self.n_parameters = cost.n_parameters
+        self._n_parameters = cost._n_parameters
         self.physical_viability = physical_viability
         self.allow_infeasible_solutions = allow_infeasible_solutions
         self.log = []
@@ -74,12 +75,10 @@ class Optimisation:
         self._transformation = None
 
         # Check if minimising or maximising
-        self._minimising = not isinstance(cost, pints.LogPDF)
-        if self._minimising:
-            self._function = self.cost
-        else:
-            self._function = pints.ProbabilityBasedError(cost)
-        del cost
+        if isinstance(cost, pybop.BaseLikelihood):
+            self.cost._minimising = False
+        self._minimising = self.cost._minimising
+        self._function = self.cost
 
         # Construct Optimiser
         self.pints = True
@@ -121,6 +120,10 @@ class Optimisation:
         # Maximum iterations
         self._max_iterations = None
         self.set_max_iterations()
+
+        # Minimum iterations
+        self._min_iterations = None
+        self.set_min_iterations()
 
         # Maximum unchanged iterations
         self._unchanged_threshold = 1  # smallest significant f change
@@ -289,6 +292,7 @@ class Optimisation:
                 halt = (
                     self._unchanged_max_iterations is not None
                     and unchanged_iterations >= self._unchanged_max_iterations
+                    and iteration >= self._min_iterations
                 )
                 if running and halt:
                     running = False
@@ -447,6 +451,22 @@ class Optimisation:
             if iterations < 0:
                 raise ValueError("Maximum number of iterations cannot be negative.")
         self._max_iterations = iterations
+
+    def set_min_iterations(self, iterations=2):
+        """
+        Set the minimum number of iterations as a stopping criterion.
+
+        Parameters
+        ----------
+        iterations : int, optional
+            The minimum number of iterations to run (default is 100).
+            Set to `None` to remove this stopping criterion.
+        """
+        if iterations is not None:
+            iterations = int(iterations)
+            if iterations < 0:
+                raise ValueError("Minimum number of iterations cannot be negative.")
+        self._min_iterations = iterations
 
     def set_max_unchanged_iterations(self, iterations=5, threshold=1e-5):
         """

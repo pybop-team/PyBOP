@@ -1,3 +1,7 @@
+from pybop import BaseProblem
+import numpy as np
+
+
 class BaseCost:
     """
     Base class for defining cost functions.
@@ -22,27 +26,38 @@ class BaseCost:
         Initial standard deviation around ``x0``. Either a scalar value (one
         standard deviation for all coordinates) or an array with one entry
         per dimension. Not all methods will use this information.
-    n_parameters : int
+    _n_parameters : int
         The number of parameters in the model.
     n_outputs : int
         The number of outputs in the model.
     """
 
-    def __init__(self, problem):
+    def __init__(self, problem=None, sigma=None):
         self.problem = problem
         self.x0 = None
         self.bounds = None
-        self.sigma0 = None
-        if problem is not None:
+        self.sigma0 = sigma
+        self._minimising = True
+        if isinstance(self.problem, BaseProblem):
             self._target = problem._target
             self.parameters = problem.parameters
             self.x0 = problem.x0
             self.bounds = problem.bounds
-            self.sigma0 = problem.sigma0
-            self.n_parameters = problem.n_parameters
             self.n_outputs = problem.n_outputs
+            self._n_parameters = problem.n_parameters
+            self.sigma0 = sigma or problem.sigma0 or np.zeros(self._n_parameters)
+
+    @property
+    def n_parameters(self):
+        return self._n_parameters
 
     def __call__(self, x, grad=None):
+        """
+        Call the evaluate function for a given set of parameters.
+        """
+        return self.evaluate(x, grad)
+
+    def evaluate(self, x, grad=None):
         """
         Call the evaluate function for a given set of parameters.
 
@@ -65,7 +80,10 @@ class BaseCost:
             If an error occurs during the calculation of the cost.
         """
         try:
-            return self._evaluate(x, grad)
+            if self._minimising:
+                return self._evaluate(x, grad)
+            else:  # minimise the negative cost
+                return -self._evaluate(x, grad)
 
         except NotImplementedError as e:
             raise e
@@ -120,7 +138,11 @@ class BaseCost:
             If an error occurs during the calculation of the cost or gradient.
         """
         try:
-            return self._evaluateS1(x)
+            if self._minimising:
+                return self._evaluateS1(x)
+            else:  # minimise the negative cost
+                L, dl = self._evaluateS1(x)
+                return -L, -dl
 
         except NotImplementedError as e:
             raise e
