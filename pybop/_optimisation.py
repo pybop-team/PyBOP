@@ -175,15 +175,16 @@ class Optimisation:
         final_cost : float
             The final cost associated with the best parameters.
         """
-        x, final_cost = self.optimiser.optimise(
+        result = self.optimiser.optimise(
             cost_function=self.cost,
             x0=self.x0,
             bounds=self.bounds,
             maxiter=self._max_iterations,
         )
         self.log = self.optimiser.log
+        self._iterations = result.nit
 
-        return x, final_cost
+        return result.x, self.cost(result.x)
 
     def _run_pints(self):
         """

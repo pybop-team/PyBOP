@@ -80,7 +80,7 @@ class SciPyMinimize(BaseOptimiser):
         else:
             self.options.pop("maxiter", None)
 
-        output = minimize(
+        result = minimize(
             cost_wrapper,
             x0,
             method=self.method,
@@ -89,11 +89,7 @@ class SciPyMinimize(BaseOptimiser):
             callback=callback,
         )
 
-        # Get performance statistics
-        x = output.x
-        final_cost = cost_function(x)
-
-        return x, final_cost
+        return result
 
     def needs_sensitivities(self):
         """
@@ -182,7 +178,7 @@ class SciPyDifferentialEvolution(BaseOptimiser):
                 (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
             ]
 
-        output = differential_evolution(
+        result = differential_evolution(
             cost_function,
             bounds,
             strategy=self.strategy,
@@ -191,11 +187,7 @@ class SciPyDifferentialEvolution(BaseOptimiser):
             callback=callback,
         )
 
-        # Get performance statistics
-        x = output.x
-        final_cost = output.fun
-
-        return x, final_cost
+        return result
 
     def set_population_size(self, population_size=None):
         """
