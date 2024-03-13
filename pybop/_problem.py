@@ -199,6 +199,7 @@ class FittingProblem(BaseProblem):
             self._model.signal = self.signal
             self._model.n_outputs = self.n_outputs
             self._model.n_time_data = self.n_time_data
+            self._model.update_solver(self.signal)
 
         # Build the model
         if self._model._built_model is None:

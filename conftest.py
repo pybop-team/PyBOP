@@ -5,6 +5,9 @@ import plotly
 plotly.io.renderers.default = None
 matplotlib.use("Template")
 
+# Ignore the pybamm/ folder and any subdirectories from test discovery
+collect_ignore = ["pybamm/"]
+
 
 def pytest_addoption(parser):
     parser.addoption(

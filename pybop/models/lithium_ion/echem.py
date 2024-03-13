@@ -41,7 +41,8 @@ class SPM(EChemBaseModel):
         options=None,
     ):
         super().__init__()
-        self.pybamm_model = pybamm.lithium_ion.SPM(options=options)
+        self.options = options
+        self.pybamm_model = pybamm.lithium_ion.SPM(options=self.options)
         self._unprocessed_model = self.pybamm_model
         self.name = name
 

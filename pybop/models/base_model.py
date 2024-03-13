@@ -2,7 +2,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 import pybamm
-import copy
 import numpy as np
 import casadi
 
@@ -355,9 +354,9 @@ class BaseModel:
                 else:
                     return [np.inf]
 
-            predictions = [sol[signal].data for signal in self.signal]
+                predictions = [sol[signal].data for signal in self.signal]
 
-            return np.vstack(predictions).T
+                return np.vstack(predictions).T
 
     def simulateS1(self, inputs, t_eval):
         """
@@ -545,73 +544,36 @@ class BaseModel:
         """
         return True
 
-    def copy(self):
+    def update_solver(self, output_variables):
         """
-        Return a copy of the model.
+        Update the PyBaMM solver with the specified output variables.
 
-        Returns
-        -------
-        BaseModel
-            A copy of the model.
+        This method creates a new instance of the PyBaMM IDAKLU solver, which is a
+        variable-step, variable-order solver for stiff systems of differential
+        equations. The solver is configured with the specified absolute and relative
+        tolerances, as well as any additional options that have been set on the
+        object.
+
+        Args:
+            output_variables (list): A list of PyBaMM variables to include in the
+                output of the solver. These variables should be instances of the
+                :py:class:`pybamm.Symbol` class.
+
+        Returns:
+            None
         """
-        return copy.copy(self)
+        self.options = {
+            "linear_solver": "SUNLinSol_KLU",
+            "jacobian": "sparse",
+            "num_threads": 4,
+        }
 
-    def cell_mass(self, parameter_set=None):
-        """
-        Calculate the cell mass in kilograms.
-
-        This method must be implemented by subclasses.
-
-        Parameters
-        ----------
-        parameter_set : dict, optional
-            A dictionary containing the parameter values necessary for the mass
-            calculations.
-
-        Raises
-        ------
-        NotImplementedError
-            If the method has not been implemented by the subclass.
-        """
-        raise NotImplementedError
-
-    def cell_volume(self, parameter_set=None):
-        """
-        Calculate the cell volume in m3.
-
-        This method must be implemented by subclasses.
-
-        Parameters
-        ----------
-        parameter_set : dict, optional
-            A dictionary containing the parameter values necessary for the volume
-            calculation.
-
-        Raises
-        ------
-        NotImplementedError
-            If the method has not been implemented by the subclass.
-        """
-        raise NotImplementedError
-
-    def approximate_capacity(self, x):
-        """
-        Calculate a new estimate for the nominal capacity based on the theoretical energy density
-        and an average voltage.
-
-        This method must be implemented by subclasses.
-
-        Parameters
-        ----------
-        x : array-like
-            An array of values representing the model inputs.
-
-        Raises
-        ------
-        NotImplementedError
-            If the method has not been implemented by the subclass.
-        """
-        raise NotImplementedError
+        self._solver = pybamm.IDAKLUSolver(
+            atol=1e-8,
+            rtol=1e-8,
+            options=self.options,
+            output_variables=output_variables,
+        )
 
     @property
     def built_model(self):

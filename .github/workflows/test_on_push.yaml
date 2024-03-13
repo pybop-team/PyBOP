@@ -36,86 +36,80 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest, macos-14]
         python-version: ["3.12"]
 
-    name: Integration tests (${{ matrix.os }} / Python ${{ matrix.python-version }})
+    name: Tests (${{ matrix.os }} / Python ${{ matrix.python-version }})
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out PyBOP repository
+        uses: actions/checkout@v4
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip nox
 
-      - name: Integration tests
-        run: |
-          nox -s integration
-
-  unit_tests:
-    needs: style
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
-        exclude: # We run the coverage tests on Ubuntu with Python 3.12
-          - os: ubuntu-latest
-            python-version: "3.12"
-        # Include MacOS M-series Runners
-        include:
-          - os: macos-14
-            python-version: "3.10"
-          - os: macos-14
-            python-version: "3.11"
-          - os: macos-14
-            python-version: "3.12"
-
-    name: Unit tests (${{ matrix.os }} / Python ${{ matrix.python-version }})
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+      - name: Check out PyBaMM v24.1
+        uses: actions/checkout@v4
         with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
+          repository: pybamm-team/PyBaMM
+          ref: v24.1
+          path: pybamm
+
+      - name: Compile PyBaMM from source with IDAKLU solver (ubuntu-latest)
+        if: matrix.os == 'ubuntu-latest'
         run: |
-          python -m pip install --upgrade pip nox
+          cd pybamm
+          sudo apt-get update && sudo apt-get install -y libopenblas-dev
+          python -m nox -s pybamm-requires
+          python -m pip install .[all]
+          cd ..
 
-      - name: Unit tests
+      - name: Compile PyBaMM from source with IDAKLU solver (macos-latest)
+        if: matrix.os == 'macos-latest'
         run: |
-          nox -s unit
+          brew reinstall gcc
+          brew install libomp
+          cd pybamm
+          python -m nox -s pybamm-requires
+          python -m pip install .[all]
+          cd ..
 
-  example_tests:
-    needs: style
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-14]
-        python-version: ["3.12"]
-
-    name: Test examples (${{ matrix.os }} / Python ${{ matrix.python-version }})
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
+      - name: Compile PyBaMM from source with IDAKLU solver (macos-14)
+        if: matrix.os == 'macos-14'
         run: |
-          python -m pip install --upgrade pip nox
+          brew reinstall gcc
+          brew install libomp
+          cd pybamm
+          python -m nox -s pybamm-requires
+          python -m pip install .[all]
+          cd ..
 
-      - name: Run examples
+      # TODO: remove later, temporary addition to test Windows build
+      - name: Compile PyBaMM from source with IDAKLU solver (windows-latest)
+        if: matrix.os == 'windows-latest'
+        env:
+          PYBAMM_USE_VCPKG: "ON"
+          VCPKG_ROOT_DIR: C:\vcpkg
+          VCPKG_DEFAULT_TRIPLET: x64-windows-static-md
+          VCPKG_FEATURE_FLAGS: manifests,registries
+          CMAKE_GENERATOR: "Visual Studio 17 2022"
+          CMAKE_GENERATOR_PLATFORM: x64
+          CMAKE_BUILD_PARALLEL_LEVEL: 4
         run: |
-          nox -s examples
+          cd pybamm
+          git clone --depth 1 --branch v2.11.1 https://github.com/pybind/pybind11.git
+          python -m pip install .[all]
+          cd ..
 
-      - name: Run notebooks
+      - name: Unit and notebook tests with nox
         run: |
-          nox -s notebooks
+          pip install -e .[all,dev]
+          python -m pytest --unit
+          python -m pytest --nbmake --examples examples/
+          python -m pytest --integration
 
   # Runs only on Ubuntu with Python 3.12
   check_coverage:
@@ -139,8 +133,28 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip nox
+
+      - name: Check out PyBaMM v24.1
+        uses: actions/checkout@v4
+        with:
+          repository: pybamm-team/PyBaMM
+          ref: v24.1
+          path: pybamm
+
+      - name: Compile PyBaMM from source with IDAKLU solver (ubuntu-latest)
+        run: |
+          cd pybamm
+          sudo apt-get update
+          sudo apt-get install -y libopenblas-dev
+          python -m nox -s pybamm-requires
+          python -m pip install .[all]
+          rm -rf pybind11/
+          cd ..
+
       - name: Run coverage tests for Ubuntu with Python 3.12 and generate report
-        run: nox -s coverage
+        run: |
+            pip install -e .[all,dev]
+            python -m pytest --unit --examples --cov --cov-report=xml
 
       - name: Upload coverage report
         uses: codecov/codecov-action@v3
