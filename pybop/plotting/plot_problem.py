@@ -32,37 +32,37 @@ def quick_plot(problem, parameter_values=None, show=True, **layout_kwargs):
         parameter_values = problem.x0
 
     # Extract the time data and evaluate the model's output and target values
-    reference_time_data = problem.time_data()
+    xaxis_data = problem.time_data()
     model_output = problem.evaluate(parameter_values)
     target_output = problem.target()
 
     # Create a plot for each output
     figure_list = []
-    for i in range(0, problem.n_outputs):
+    for i in problem.signal:
         default_layout_options = dict(
             title="Scatter Plot",
             xaxis_title="Time / s",
-            yaxis_title=pybop.StandardPlot.remove_brackets(problem.signal[i]),
+            yaxis_title=pybop.StandardPlot.remove_brackets(i),
         )
 
         # Create a plotting dictionary
         if isinstance(problem, pybop.DesignProblem):
             trace_name = "Optimised"
-            opt_time_data = model_output[:, -1]
+            opt_time_data = model_output["Time [s]"]
         else:
             trace_name = "Model"
-            opt_time_data = reference_time_data
+            opt_time_data = xaxis_data
 
         plot_dict = pybop.StandardPlot(
             x=opt_time_data,
-            y=model_output[:, i],
+            y=model_output[i],
             layout_options=default_layout_options,
             trace_names=trace_name,
         )
 
         target_trace = plot_dict.create_trace(
-            x=reference_time_data,
-            y=target_output[:, i],
+            x=xaxis_data,
+            y=target_output[i],
             name="Reference",
             mode="markers",
             showlegend=True,
@@ -71,12 +71,12 @@ def quick_plot(problem, parameter_values=None, show=True, **layout_kwargs):
 
         if isinstance(problem, pybop.FittingProblem):
             # Compute the standard deviation as proxy for uncertainty
-            plot_dict.sigma = np.std(model_output[:, i] - target_output[:, i])
+            plot_dict.sigma = np.std(model_output[i] - target_output[i])
 
             # Convert x and upper and lower limits into lists to create a filled trace
-            x = reference_time_data.tolist()
-            y_upper = (model_output[:, i] + plot_dict.sigma).tolist()
-            y_lower = (model_output[:, i] - plot_dict.sigma).tolist()
+            x = xaxis_data.tolist()
+            y_upper = (model_output[i] + plot_dict.sigma).tolist()
+            y_lower = (model_output[i] - plot_dict.sigma).tolist()
 
             fill_trace = plot_dict.create_trace(
                 x=x + x[::-1],

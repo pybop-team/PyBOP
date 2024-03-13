@@ -3,7 +3,9 @@ import pybop
 import numpy as np
 
 
-def plot_cost2d(cost, bounds=None, steps=10, show=True, **layout_kwargs):
+def plot_cost2d(
+    cost, gradient=False, bounds=None, steps=10, show=True, **layout_kwargs
+):
     """
     Plot a 2D visualisation of a cost landscape using Plotly.
 
@@ -54,6 +56,23 @@ def plot_cost2d(cost, bounds=None, steps=10, show=True, **layout_kwargs):
         for j, yj in enumerate(y):
             costs[j, i] = cost(np.array([xi, yj]))
 
+    if gradient:
+        grad_parameter_costs = []
+
+        # Determine the number of gradient outputs from cost.evaluateS1
+        num_gradients = len(cost.evaluateS1(np.array([x[0], y[0]]))[1])
+
+        # Create an array to hold each gradient output & populate
+        grads = [np.zeros((len(y), len(x))) for _ in range(num_gradients)]
+        for i, xi in enumerate(x):
+            for j, yj in enumerate(y):
+                (*current_grads,) = cost.evaluateS1(np.array([xi, yj]))[1]
+                for k, grad_output in enumerate(current_grads):
+                    grads[k][j, i] = grad_output
+
+        # Append the arrays to the grad_parameter_costs list
+        grad_parameter_costs.extend(grads)
+
     # Import plotly only when needed
     go = pybop.PlotlyManager().go
 
@@ -79,6 +98,32 @@ def plot_cost2d(cost, bounds=None, steps=10, show=True, **layout_kwargs):
         fig.show("svg")
     elif show:
         fig.show()
+
+    if gradient:
+        grad_figs = []
+        for i, grad_costs in enumerate(grad_parameter_costs):
+            # Update title for gradient plots
+            updated_layout_options = layout_options.copy()
+            updated_layout_options["title"] = f"Gradient for Parameter: {i+1}"
+
+            # Create contour plot with updated layout options
+            grad_layout = go.Layout(updated_layout_options)
+
+            # Create fig
+            grad_fig = go.Figure(
+                data=[go.Contour(x=x, y=y, z=grad_costs)], layout=grad_layout
+            )
+            grad_fig.update_layout(**layout_kwargs)
+
+            if "ipykernel" in sys.modules and show:
+                grad_fig.show("svg")
+            elif show:
+                grad_fig.show()
+
+            # append grad_fig to list
+            grad_figs.append(grad_fig)
+
+        return fig, grad_figs
 
     return fig
 

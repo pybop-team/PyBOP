@@ -33,6 +33,7 @@ class BaseCost:
             self.bounds = problem.bounds
             self.n_parameters = problem.n_parameters
             self.n_outputs = problem.n_outputs
+            self.signal = problem.signal
 
     def __call__(self, x, grad=None):
         """

@@ -12,7 +12,8 @@ class SciPyMinimize(BaseOptimiser):
     Parameters
     ----------
     method : str, optional
-        The type of solver to use. If not specified, defaults to 'COBYLA'.
+        The type of solver to use. If not specified, defaults to 'Nelder-Mead'.
+        Options: 'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP', 'trust-constr', 'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov'.
     bounds : sequence or ``Bounds``, optional
         Bounds for variables as supported by the selected method.
     maxiter : int, optional
@@ -27,7 +28,7 @@ class SciPyMinimize(BaseOptimiser):
         self._max_iterations = maxiter
 
         if self.method is None:
-            self.method = "COBYLA"  # "L-BFGS-B"
+            self.method = "Nelder-Mead"
 
     def _runoptimise(self, cost_function, x0, bounds):
         """
@@ -48,9 +49,10 @@ class SciPyMinimize(BaseOptimiser):
             A tuple (x, final_cost) containing the optimized parameters and the value of `cost_function` at the optimum.
         """
 
-        # Add callback storing history of parameter values
         self.log = [[x0]]
+        self.options = {"maxiter": self._max_iterations}
 
+        # Add callback storing history of parameter values
         def callback(x):
             self.log.append([x])
 
@@ -73,13 +75,7 @@ class SciPyMinimize(BaseOptimiser):
                 (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
             )
 
-        # Set max iterations
-        if self._max_iterations is not None:
-            self.options = {"maxiter": self._max_iterations}
-        else:
-            self.options.pop("maxiter", None)
-
-        output = minimize(
+        result = minimize(
             cost_wrapper,
             x0,
             method=self.method,
@@ -88,11 +84,7 @@ class SciPyMinimize(BaseOptimiser):
             callback=callback,
         )
 
-        # Get performance statistics
-        x = output.x
-        final_cost = cost_function(x)
-
-        return x, final_cost
+        return result
 
     def needs_sensitivities(self):
         """
@@ -161,6 +153,8 @@ class SciPyDifferentialEvolution(BaseOptimiser):
             A tuple (x, final_cost) containing the optimized parameters and the value of ``cost_function`` at the optimum.
         """
 
+        self.log = []
+
         if bounds is None:
             raise ValueError("Bounds must be specified for differential_evolution.")
 
@@ -170,8 +164,6 @@ class SciPyDifferentialEvolution(BaseOptimiser):
             )
 
         # Add callback storing history of parameter values
-        self.log = []
-
         def callback(x, convergence):
             self.log.append([x])
 
@@ -181,7 +173,7 @@ class SciPyDifferentialEvolution(BaseOptimiser):
                 (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
             ]
 
-        output = differential_evolution(
+        result = differential_evolution(
             cost_function,
             bounds,
             strategy=self.strategy,
@@ -190,11 +182,7 @@ class SciPyDifferentialEvolution(BaseOptimiser):
             callback=callback,
         )
 
-        # Get performance statistics
-        x = output.x
-        final_cost = output.fun
-
-        return x, final_cost
+        return result
 
     def set_population_size(self, population_size=None):
         """

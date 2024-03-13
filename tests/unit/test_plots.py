@@ -17,14 +17,14 @@ class TestPlots:
     def parameters(self):
         return [
             pybop.Parameter(
-                "Negative particle radius [m]",
-                prior=pybop.Gaussian(6e-06, 0.1e-6),
-                bounds=[1e-6, 9e-6],
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.68, 0.05),
+                bounds=[0.5, 0.8],
             ),
             pybop.Parameter(
-                "Positive particle radius [m]",
-                prior=pybop.Gaussian(4.5e-06, 0.1e-6),
-                bounds=[1e-6, 9e-6],
+                "Positive electrode active material volume fraction",
+                prior=pybop.Gaussian(0.58, 0.05),
+                bounds=[0.4, 0.7],
             ),
         ]
 
@@ -65,7 +65,7 @@ class TestPlots:
     @pytest.mark.unit
     def test_cost_plots(self, cost):
         # Test plotting of Cost objects
-        pybop.plot_cost2d(cost, steps=5)
+        pybop.plot_cost2d(cost, gradient=True, steps=5)
 
     @pytest.fixture
     def optim(self, cost):
