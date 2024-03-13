@@ -91,7 +91,7 @@ class TestModelParameterisation:
 
         if optimiser in [pybop.CMAES]:
             parameterisation.set_f_guessed_tracking(True)
-            parameterisation.cost.problem._model.allow_infeasible_solutions = False
+            parameterisation.cost.problem.model.allow_infeasible_solutions = False
             assert parameterisation._use_f_guessed is True
             parameterisation.set_max_iterations(1)
             x, final_cost = parameterisation.run()
@@ -115,7 +115,7 @@ class TestModelParameterisation:
             x, final_cost = parameterisation.run()
 
         elif optimiser in [pybop.SciPyMinimize]:
-            parameterisation.cost.problem._model.allow_infeasible_solutions = False
+            parameterisation.cost.problem.model.allow_infeasible_solutions = False
             x, final_cost = parameterisation.run()
 
         else:

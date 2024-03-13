@@ -98,24 +98,6 @@ def plot_optim2d(optim, bounds=None, steps=10, show=True, **layout_kwargs):
     # Import plotly only when needed
     go = pybop.PlotlyManager().go
 
-    # Plot the initial guess
-    fig.add_trace(
-        go.Scatter(
-            x=[optim.x0[0]],
-            y=[optim.x0[1]],
-            mode="markers",
-            marker_symbol="x",
-            marker=dict(
-                color="red",
-                line_color="midnightblue",
-                line_width=1,
-                size=12,
-                showscale=False,
-            ),
-            showlegend=False,
-        )
-    )
-
     # Plot the optimisation trace
     optim_trace = np.array([item for sublist in optim.log for item in sublist])
     optim_trace = optim_trace.reshape(-1, 2)
@@ -127,6 +109,24 @@ def plot_optim2d(optim, bounds=None, steps=10, show=True, **layout_kwargs):
             marker=dict(
                 color=[i / len(optim_trace) for i in range(len(optim_trace))],
                 colorscale="YlOrBr",
+                showscale=False,
+            ),
+            showlegend=False,
+        )
+    )
+
+    # Plot the initial guess
+    fig.add_trace(
+        go.Scatter(
+            x=[optim.x0[0]],
+            y=[optim.x0[1]],
+            mode="markers",
+            marker_symbol="circle",
+            marker=dict(
+                color="mediumspringgreen",
+                line_color="mediumspringgreen",
+                line_width=1,
+                size=14,
                 showscale=False,
             ),
             showlegend=False,
