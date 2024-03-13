@@ -10,6 +10,7 @@ but might be abstracted into a standalone package if it proves useful.
 
 Credit: PyData Sphinx Theme
 """
+
 from pathlib import Path
 from typing import Any, Dict, List
 
