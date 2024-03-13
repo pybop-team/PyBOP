@@ -153,10 +153,10 @@ class TestCosts:
             for i in range(len(record)):
                 assert "Non-physical point encountered" in str(record[i].message)
 
-        if isinstance(cost, pybop.RootMeanSquaredError):
             # Test infeasible locations
             cost.problem._model.allow_infeasible_solutions = False
             assert cost([1.1]) == np.inf
+            assert cost.evaluateS1([1.1]) == (np.inf, cost._de)
 
         # Test exception for non-numeric inputs
         with pytest.raises(ValueError):

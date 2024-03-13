@@ -49,9 +49,10 @@ class SciPyMinimize(BaseOptimiser):
             A tuple (x, final_cost) containing the optimized parameters and the value of `cost_function` at the optimum.
         """
 
-        # Add callback storing history of parameter values
         self.log = [[x0]]
+        self.options = {"maxiter": self._max_iterations}
 
+        # Add callback storing history of parameter values
         def callback(x):
             self.log.append([x])
 
@@ -73,12 +74,6 @@ class SciPyMinimize(BaseOptimiser):
             bounds = (
                 (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
             )
-
-        # Set max iterations
-        if self._max_iterations is not None:
-            self.options = {"maxiter": self._max_iterations}
-        else:
-            self.options.pop("maxiter", None)
 
         result = minimize(
             cost_wrapper,
@@ -158,6 +153,8 @@ class SciPyDifferentialEvolution(BaseOptimiser):
             A tuple (x, final_cost) containing the optimized parameters and the value of ``cost_function`` at the optimum.
         """
 
+        self.log = []
+
         if bounds is None:
             raise ValueError("Bounds must be specified for differential_evolution.")
 
@@ -167,8 +164,6 @@ class SciPyDifferentialEvolution(BaseOptimiser):
             )
 
         # Add callback storing history of parameter values
-        self.log = []
-
         def callback(x, convergence):
             self.log.append([x])
 
