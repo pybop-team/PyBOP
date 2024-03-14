@@ -160,7 +160,7 @@ class BaseModel:
             for i in self.fit_keys:
                 self._parameter_set[i] = "[input]"
 
-        if self.dataset is not None and self.non_matched_parameters:
+        if self.dataset is not None and (not rebuild or self.non_matched_parameters):
             if "Current function [A]" not in self.fit_keys:
                 self._parameter_set["Current function [A]"] = pybamm.Interpolant(
                     self.dataset["Time [s]"],
