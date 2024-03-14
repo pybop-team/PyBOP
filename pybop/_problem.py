@@ -54,11 +54,30 @@ class BaseProblem:
         else:
             self.additional_variables = []
 
-        # Set bounds
-        self.bounds = dict(
-            lower=[param.bounds[0] for param in self.parameters],
-            upper=[param.bounds[1] for param in self.parameters],
-        )
+        # Set bounds (for all or no parameters)
+        all_unbounded = True  # assumption
+        self.bounds = {"lower": [], "upper": []}
+        for param in self.parameters:
+            if param.bounds is not None:
+                self.bounds["lower"].append(param.bounds[0])
+                self.bounds["upper"].append(param.bounds[1])
+                all_unbounded = False
+            else:
+                self.bounds["lower"].append(-np.inf)
+                self.bounds["upper"].append(np.inf)
+        if all_unbounded:
+            self.bounds = None
+
+        # Set initial standard deviation (for all or no parameters)
+        all_have_sigma = True  # assumption
+        self.sigma0 = []
+        for param in self.parameters:
+            if hasattr(param.prior, "sigma"):
+                self.sigma0.append(param.prior.sigma)
+            else:
+                all_have_sigma = False
+        if not all_have_sigma:
+            self.sigma0 = None
 
         # Sample from prior for x0
         if x0 is None:

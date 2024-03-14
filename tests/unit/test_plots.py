@@ -67,6 +67,13 @@ class TestPlots:
         # Test plotting of Cost objects
         pybop.plot_cost2d(cost, gradient=True, steps=5)
 
+        # Test without bounds
+        for param in cost.problem.parameters:
+            param.bounds = None
+        with pytest.raises(ValueError):
+            pybop.plot_cost2d(cost, steps=5)
+        pybop.plot_cost2d(cost, bounds=np.array([[0.5, 0.8], [0.4, 0.7]]), steps=5)
+
     @pytest.fixture
     def optim(self, cost):
         # Define and run an example optimisation

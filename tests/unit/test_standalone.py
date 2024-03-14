@@ -17,7 +17,7 @@ class TestStandalone:
         opt = pybop.Optimisation(cost=cost, optimiser=pybop.SciPyDifferentialEvolution)
         x, final_cost = opt.run()
 
-        assert len(opt.x0) == opt.n_parameters
+        assert len(opt.x0) == opt._n_parameters
         np.testing.assert_allclose(x, 0, atol=1e-2)
         np.testing.assert_allclose(final_cost, 42, atol=1e-2)
 

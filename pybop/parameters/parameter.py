@@ -39,13 +39,8 @@ class Parameter:
         self.true_value = true_value
         self.initial_value = initial_value
         self.value = initial_value
-        self.bounds = bounds
-        self.lower_bound = self.bounds[0]
-        self.upper_bound = self.bounds[1]
+        self.set_bounds(bounds)
         self.margin = 1e-4
-
-        if self.lower_bound >= self.upper_bound:
-            raise ValueError("Lower bound must be less than upper bound")
 
     def rvs(self, n_samples):
         """
@@ -67,8 +62,11 @@ class Parameter:
         samples = self.prior.rvs(n_samples)
 
         # Constrain samples to be within bounds
-        offset = self.margin * (self.upper_bound - self.lower_bound)
-        samples = np.clip(samples, self.lower_bound + offset, self.upper_bound - offset)
+        if self.bounds is not None:
+            offset = self.margin * (self.upper_bound - self.lower_bound)
+            samples = np.clip(
+                samples, self.lower_bound + offset, self.upper_bound - offset
+            )
 
         return samples
 
@@ -120,3 +118,28 @@ class Parameter:
             raise ValueError("Margin must be between 0 and 1")
 
         self.margin = margin
+
+    def set_bounds(self, bounds=None):
+        """
+        Set the upper and lower bounds.
+
+        Parameters
+        ----------
+        bounds : tuple, optional
+            A tuple defining the lower and upper bounds for the parameter.
+            Defaults to None.
+
+        Raises
+        ------
+        ValueError
+            If the lower bound is not strictly less than the upper bound, or if
+            the margin is set outside the interval (0, 1).
+        """
+        if bounds is not None:
+            if bounds[0] >= bounds[1]:
+                raise ValueError("Lower bound must be less than upper bound")
+            else:
+                self.lower_bound = bounds[0]
+                self.upper_bound = bounds[1]
+
+        self.bounds = bounds

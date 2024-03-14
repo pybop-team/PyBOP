@@ -10,15 +10,24 @@ parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         prior=pybop.Gaussian(0.6, 0.05),
+        bounds=[0.5, 0.8],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
         prior=pybop.Gaussian(0.48, 0.05),
+        bounds=[0.4, 0.7],
     ),
 ]
 
+# Set initial parameter values
+parameter_set.update(
+    {
+        "Negative electrode active material volume fraction": 0.63,
+        "Positive electrode active material volume fraction": 0.51,
+    }
+)
 # Generate data
-sigma = 0.001
+sigma = 0.005
 t_eval = np.arange(0, 900, 2)
 values = model.predict(t_eval=t_eval)
 corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
@@ -34,15 +43,18 @@ dataset = pybop.Dataset(
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.SumSquaredError(problem)
-optim = pybop.Optimisation(cost, optimiser=pybop.IRPropMin)
+likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma=[0.03, 0.03])
+optim = pybop.Optimisation(likelihood, optimiser=pybop.CMAES)
+optim.set_max_unchanged_iterations(20)
+optim.set_min_iterations(20)
 optim.set_max_iterations(100)
 
+# Run the optimisation
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
 # Plot the timeseries output
-pybop.quick_plot(problem, parameter_values=x, title="Optimised Comparison")
+pybop.quick_plot(problem, parameter_values=x[0:2], title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)
@@ -50,6 +62,9 @@ pybop.plot_convergence(optim)
 # Plot the parameter traces
 pybop.plot_parameters(optim)
 
+# Plot the cost landscape
+pybop.plot_cost2d(likelihood, steps=15)
+
 # Plot the cost landscape with optimisation path
-bounds = np.array([[0.5, 0.8], [0.4, 0.7]])
+bounds = np.array([[0.55, 0.77], [0.48, 0.68]])
 pybop.plot_optim2d(optim, bounds=bounds, steps=15)

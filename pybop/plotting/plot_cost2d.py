@@ -142,10 +142,11 @@ def get_param_bounds(cost):
     bounds : numpy.ndarray
         An array of shape (n_parameters, 2) containing the bounds for each parameter.
     """
-    if hasattr(cost, "problem"):
-        bounds = np.empty((len(cost.parameters), 2))
-        for i, param in enumerate(cost.parameters):
+    bounds = np.empty((len(cost.parameters), 2))
+    for i, param in enumerate(cost.parameters):
+        if param.bounds is not None:
             bounds[i] = param.bounds
-        return bounds
-    else:
-        return None
+        else:
+            raise ValueError("plot_cost2d could not find bounds required for plotting")
+
+    return bounds

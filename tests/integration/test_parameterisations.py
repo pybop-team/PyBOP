@@ -30,7 +30,7 @@ class TestModelParameterisation:
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
                 prior=pybop.Gaussian(0.55, 0.05),
-                bounds=[0.375, 0.75],
+                # no bounds
             ),
         ]
 
@@ -38,7 +38,13 @@ class TestModelParameterisation:
     def init_soc(self, request):
         return request.param
 
-    @pytest.fixture(params=[pybop.RootMeanSquaredError, pybop.SumSquaredError])
+    @pytest.fixture(
+        params=[
+            pybop.GaussianLogLikelihoodKnownSigma,
+            pybop.RootMeanSquaredError,
+            pybop.SumSquaredError,
+        ]
+    )
     def cost_class(self, request):
         return request.param
 
@@ -63,7 +69,10 @@ class TestModelParameterisation:
         problem = pybop.FittingProblem(
             model, parameters, dataset, signal=signal, init_soc=init_soc
         )
-        return cost_class(problem)
+        if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
+            return cost_class(problem, sigma=[0.05, 0.05])
+        else:
+            return cost_class(problem)
 
     @pytest.mark.parametrize(
         "optimiser",
@@ -81,13 +90,24 @@ class TestModelParameterisation:
     )
     @pytest.mark.integration
     def test_spm_optimisers(self, optimiser, spm_costs):
+        # Some optimisers require a complete set of bounds
+        if optimiser in [pybop.SciPyDifferentialEvolution, pybop.PSO]:
+            spm_costs.problem.parameters[1].set_bounds([0.375, 0.75])
+            bounds = {"lower": [], "upper": []}
+            for param in spm_costs.problem.parameters:
+                bounds["lower"].append(param.bounds[0])
+                bounds["upper"].append(param.bounds[1])
+            spm_costs.problem.bounds = bounds
+            spm_costs.bounds = bounds
+
         # Test each optimiser
-        initial_cost = spm_costs(spm_costs.x0)
         parameterisation = pybop.Optimisation(
             cost=spm_costs, optimiser=optimiser, sigma0=0.05
         )
-        parameterisation.set_max_unchanged_iterations(iterations=25, threshold=5e-4)
+        parameterisation.set_max_unchanged_iterations(iterations=35, threshold=5e-4)
         parameterisation.set_max_iterations(125)
+
+        initial_cost = parameterisation.cost(spm_costs.x0)
 
         if optimiser in [pybop.CMAES]:
             parameterisation.set_f_guessed_tracking(True)
@@ -148,7 +168,11 @@ class TestModelParameterisation:
         problem = pybop.FittingProblem(
             model, parameters, dataset, signal=signal, init_soc=init_soc
         )
-        return cost_class(problem)
+
+        if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
+            return cost_class(problem, sigma=[0.05, 0.05])
+        else:
+            return cost_class(problem)
 
     @pytest.mark.parametrize(
         "multi_optimiser",
@@ -160,13 +184,23 @@ class TestModelParameterisation:
     )
     @pytest.mark.integration
     def test_multiple_signals(self, multi_optimiser, spm_two_signal_cost):
+        # Some optimisers require a complete set of bounds
+        if multi_optimiser in [pybop.SciPyDifferentialEvolution]:
+            spm_two_signal_cost.problem.parameters[1].set_bounds([0.375, 0.75])
+            bounds = {"lower": [], "upper": []}
+            for param in spm_two_signal_cost.problem.parameters:
+                bounds["lower"].append(param.bounds[0])
+                bounds["upper"].append(param.bounds[1])
+            spm_two_signal_cost.problem.bounds = bounds
+            spm_two_signal_cost.bounds = bounds
+
         # Test each optimiser
-        initial_cost = spm_two_signal_cost(spm_two_signal_cost.x0)
         parameterisation = pybop.Optimisation(
             cost=spm_two_signal_cost, optimiser=multi_optimiser, sigma0=0.05
         )
         parameterisation.set_max_unchanged_iterations(iterations=15, threshold=5e-4)
         parameterisation.set_max_iterations(125)
+        initial_cost = parameterisation.cost(spm_two_signal_cost.x0)
 
         if multi_optimiser in [pybop.SciPyDifferentialEvolution]:
             parameterisation.optimiser.set_population_size(5)

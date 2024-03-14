@@ -8,13 +8,19 @@ class BaseOptimiser:
     methods with specific algorithms.
     """
 
-    def __init__(self):
+    def __init__(self, bounds=None):
         """
         Initializes the BaseOptimiser.
+
+        Parameters
+        ----------
+        bounds : sequence or Bounds, optional
+            Bounds on the parameters. Default is None.
         """
+        self.bounds = bounds
         pass
 
-    def optimise(self, cost_function, x0=None, bounds=None, maxiter=None):
+    def optimise(self, cost_function, x0=None, maxiter=None):
         """
         Initiates the optimisation process.
 
@@ -26,8 +32,6 @@ class BaseOptimiser:
             The cost function to be minimised by the optimiser.
         x0 : ndarray, optional
             Initial guess for the parameters. Default is None.
-        bounds : sequence or Bounds, optional
-            Bounds on the parameters. Default is None.
         maxiter : int, optional
             Maximum number of iterations to perform. Default is None.
 
@@ -37,15 +41,14 @@ class BaseOptimiser:
         """
         self.cost_function = cost_function
         self.x0 = x0
-        self.bounds = bounds
         self._max_iterations = maxiter
 
         # Run optimisation
-        result = self._runoptimise(self.cost_function, x0=self.x0, bounds=self.bounds)
+        result = self._runoptimise(self.cost_function, x0=self.x0)
 
         return result
 
-    def _runoptimise(self, cost_function, x0=None, bounds=None):
+    def _runoptimise(self, cost_function, x0=None):
         """
         Contains the logic for the optimisation algorithm.
 
@@ -57,8 +60,6 @@ class BaseOptimiser:
             The cost function to be minimised by the optimiser.
         x0 : ndarray, optional
             Initial guess for the parameters. Default is None.
-        bounds : sequence or Bounds, optional
-            Bounds on the parameters. Default is None.
 
         Returns
         -------

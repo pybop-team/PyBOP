@@ -28,6 +28,12 @@ Before you commit any code, please perform the following checks using [Nox](http
 `PyBOP` uses a set of `pre-commit` hooks and the `pre-commit` bot to format and prettify the codebase. The hooks can be installed locally using -
 
 ```bash
+nox -s pre-commit
+```
+
+alternatively, without nox:
+
+```bash
 pip install pre-commit
 pre-commit install
 ```
@@ -50,7 +56,7 @@ We use [Git](https://en.wikipedia.org/wiki/Git) and [GitHub](https://en.wikipedi
 2. Create a [branch](https://help.github.com/articles/creating-and-deleting-branches-within-your-repository/) of this repo (ideally on your own [fork](https://help.github.com/articles/fork-a-repo/)), where all changes will be made
 3. Download the source code onto your local system, by [cloning](https://help.github.com/articles/cloning-a-repository/) the repository (or your fork of the repository).
 4. [Install](#developer-installation) PyBOP with the developer options.
-5. [Test](#testing) if your installation worked: `$ pytest --unit -v`.
+5. [Test](#testing) if your installation worked: `nox -s unit` or `$ pytest --unit -v`.
 
 You now have everything you need to start making changes!
 
@@ -112,21 +118,21 @@ On the other hand... We _do_ want to compare several tools, to generate document
 
 Only 'core pybop' is installed by default. The others have to be specified explicitly when running the installation command.
 
-### Matplotlib
+### Plotly
 
-We use Matplotlib in PyBOP, but with two caveats:
+We use Plotly in PyBOP, but with two caveats:
 
-First, Matplotlib should only be used in plotting methods, and these should _never_ be called by other PyBOP methods. So users who don't like Matplotlib will not be forced to use it in any way. Use in notebooks is OK and encouraged.
+First, Plotly should only be used in plotting methods, and these should _never_ be called by other PyBOP methods. So users who don't like Plotly will not be forced to use it in any way. Use in notebooks is OK and encouraged.
 
-Second, Matplotlib should never be imported at the module level, but always inside methods. For example:
+Second, Plotly should never be imported at the module level, but always inside methods. For example:
 
-```
+```python
 def plot_great_things(self, x, y, z):
-    import matplotlib.pyplot as pl
+   go = pybop.PlotlyManager().go
     ...
 ```
 
-This allows people to (1) use PyBOP without ever importing Matplotlib and (2) configure Matplotlib's back-end in their scripts, which _must_ be done before e.g. `pyplot` is first imported.
+This allows people to (1) use PyBOP without ever importing Plotly and (2) configure Plotly's settings in their scripts, which _must_ be done before e.g. `graph_objects` is first imported.
 
 ### Building documentation
 
@@ -136,7 +142,11 @@ We use [Sphinx](http://www.sphinx-doc.org/en/stable/) to build our documentation
 nox -s docs
 ```
 
-This will build the docs using sphinx-autobuild and render them in your browser.
+This will build the docs using sphinx-autobuild and render them in your browser. Likewise, to test the docs build, the following nox session is available:
+
+```bash
+nox -s doctests
+```
 
 ## Testing
 
@@ -165,7 +175,16 @@ And for individual tests,
 ```bash
 pytest tests/unit/path/to/test.py::TestClass:test_name --unit -v
 ```
-where `--unit` is a flag to run only unit tests and `-v` is a flag to display verbose output.
+where `--unit` is a flag to run only unit tests and `-v` is a flag to display verbose output. Furthermore, to run all the standard tests, type
+
+```bash
+nox -s tests
+```
+Additionally, to run the standard and docs tests, type
+
+```bash
+nox -s quick
+```
 
 ### Writing tests
 
