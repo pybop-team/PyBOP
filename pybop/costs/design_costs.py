@@ -1,7 +1,7 @@
-import pybop
 import numpy as np
 import warnings
 
+from pybop import is_numeric
 from pybop.costs.base_cost import BaseCost
 
 
@@ -114,7 +114,7 @@ class GravimetricEnergyDensity(DesignCost):
         float
             The negative gravimetric energy density or infinity in case of infeasible parameters.
         """
-        if not all(pybop.is_numeric(i) for i in x):
+        if not all(is_numeric(i) for i in x):
             raise ValueError("Input must be a numeric array.")
 
         try:
@@ -173,7 +173,7 @@ class VolumetricEnergyDensity(DesignCost):
         float
             The negative volumetric energy density or infinity in case of infeasible parameters.
         """
-        if not all(pybop.is_numeric(i) for i in x):
+        if not all(is_numeric(i) for i in x):
             raise ValueError("Input must be a numeric array.")
         try:
             with warnings.catch_warnings():

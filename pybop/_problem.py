@@ -49,7 +49,7 @@ class BaseProblem:
         self._time_data = None
         self._target = None
 
-        if isinstance(model, (pybop.BaseModel, pybop.lithium_ion.EChemBaseModel)):
+        if isinstance(model, pybop.BaseModel):
             self.additional_variables = additional_variables
         else:
             self.additional_variables = []
@@ -186,7 +186,10 @@ class FittingProblem(BaseProblem):
         init_soc=None,
         x0=None,
     ):
-        additional_variables += ["Time [s]"]
+        # Add time and remove duplicates
+        additional_variables.extend(["Time [s]"])
+        additional_variables = list(set(additional_variables))
+
         super().__init__(
             parameters, model, check_model, signal, additional_variables, init_soc, x0
         )
@@ -308,7 +311,10 @@ class DesignProblem(BaseProblem):
         init_soc=None,
         x0=None,
     ):
-        additional_variables += ["Time [s]", "Current [A]"]
+        # Add time and current and remove duplicates
+        additional_variables.extend(["Time [s]", "Current [A]"])
+        additional_variables = list(set(additional_variables))
+
         super().__init__(
             parameters, model, check_model, signal, additional_variables, init_soc, x0
         )
