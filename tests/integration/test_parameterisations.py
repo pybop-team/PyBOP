@@ -24,7 +24,7 @@ class TestModelParameterisation:
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.02),
-                bounds=[0.375, 0.625],
+                # no bounds
             ),
         ]
 
@@ -36,12 +36,18 @@ class TestModelParameterisation:
     def init_soc(self, request):
         return request.param
 
-    @pytest.fixture(params=[pybop.RootMeanSquaredError, pybop.SumSquaredError])
+    @pytest.fixture(
+        params=[
+            pybop.GaussianLogLikelihoodKnownSigma,
+            pybop.RootMeanSquaredError,
+            pybop.SumSquaredError,
+        ]
+    )
     def cost_class(self, request):
         return request.param
 
     @pytest.fixture
-    def spm_costs(self, parameters, model, x0, cost_class, init_soc):
+    def spm_cost(self, parameters, model, x0, cost_class, init_soc):
         # Form dataset
         solution = self.getdata(model, x0, init_soc)
         dataset = pybop.Dataset(
@@ -57,7 +63,10 @@ class TestModelParameterisation:
         problem = pybop.FittingProblem(
             model, parameters, dataset, signal=signal, init_soc=init_soc
         )
-        return cost_class(problem)
+        if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
+            return cost_class(problem, sigma=[0.01, 0.01])
+        else:
+            return cost_class(problem)
 
     @pytest.mark.parametrize(
         "optimiser",
@@ -74,9 +83,19 @@ class TestModelParameterisation:
         ],
     )
     @pytest.mark.integration
-    def test_spm_optimisers(self, optimiser, spm_costs, x0):
+    def test_spm_optimisers(self, optimiser, spm_cost, x0):
+        # Some optimisers require a complete set of bounds
+        if optimiser in [pybop.SciPyDifferentialEvolution, pybop.PSO]:
+            spm_cost.problem.parameters[1].set_bounds([0.375, 0.625])
+            bounds = {"lower": [], "upper": []}
+            for param in spm_cost.problem.parameters:
+                bounds["lower"].append(param.bounds[0])
+                bounds["upper"].append(param.bounds[1])
+            spm_cost.problem.bounds = bounds
+            spm_cost.bounds = bounds
+
         # Test each optimiser
-        parameterisation = pybop.Optimisation(cost=spm_costs, optimiser=optimiser)
+        parameterisation = pybop.Optimisation(cost=spm_cost, optimiser=optimiser)
         parameterisation.set_max_unchanged_iterations(iterations=25, threshold=5e-4)
 
         if optimiser in [pybop.CMAES]:
@@ -114,7 +133,8 @@ class TestModelParameterisation:
             x, final_cost = parameterisation.run()
 
         # Assertions
-        np.testing.assert_allclose(final_cost, 0, atol=1e-2)
+        if not isinstance(spm_cost, pybop.GaussianLogLikelihoodKnownSigma):
+            np.testing.assert_allclose(final_cost, 0, atol=1e-2)
         np.testing.assert_allclose(x, x0, atol=5e-2)
 
     @pytest.fixture
@@ -147,6 +167,16 @@ class TestModelParameterisation:
     )
     @pytest.mark.integration
     def test_multiple_signals(self, optimiser, spm_two_signal_cost, x0):
+        # Some optimisers require a complete set of bounds
+        if optimiser in [pybop.SciPyDifferentialEvolution]:
+            spm_two_signal_cost.problem.parameters[1].set_bounds([0.375, 0.625])
+            bounds = {"lower": [], "upper": []}
+            for param in spm_two_signal_cost.problem.parameters:
+                bounds["lower"].append(param.bounds[0])
+                bounds["upper"].append(param.bounds[1])
+            spm_two_signal_cost.problem.bounds = bounds
+            spm_two_signal_cost.bounds = bounds
+
         # Test each optimiser
         parameterisation = pybop.Optimisation(
             cost=spm_two_signal_cost, optimiser=optimiser

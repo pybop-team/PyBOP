@@ -38,9 +38,14 @@ def coverage(session):
 
 
 @nox.session
+def plots(session):
+    session.install("-e", ".[plot,dev]", silent=False)
+    session.run("pytest", "--plots", "-n", "0")
+
+
+@nox.session
 def integration(session):
     session.install("-e", ".[all,dev]", silent=False)
-    session.install("pytest", "pytest-mock")
     session.run("pytest", "--integration")
 
 
@@ -62,6 +67,49 @@ def notebooks(session):
         "--nbmake",
         "examples/",
     )
+
+
+@nox.session(name="tests")
+def run_tests(session):
+    """Run all the tests."""
+    session.install("-e", ".[all,dev]", silent=False)
+    if PYBOP_SCHEDULED:
+        session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
+    session.run(
+        "pytest", "--unit", "--integration", "--nbmake", "--examples", "-n", "auto"
+    )
+
+
+@nox.session(name="doctest")
+def run_doc_tests(session):
+    """
+    Checks if the documentation can be built, runs any doctests (currently not
+    used).
+    """
+    session.install("-e", ".[plot,docs,dev]", silent=False)
+    session.run("pytest", "--docs", "-n", "0")
+
+
+@nox.session(name="pre-commit")
+def lint(session):
+    """
+    Check all files against the defined pre-commit hooks.
+
+    Credit: PyBaMM Team
+    """
+    session.install("pre-commit", silent=False)
+    session.run("pre-commit", "run", "--all-files")
+
+
+@nox.session(name="quick", reuse_venv=True)
+def run_quick(session):
+    """
+    Run integration tests, unit tests, and doctests sequentially
+
+    Credit: PyBaMM Team
+    """
+    run_tests(session)
+    run_doc_tests(session)
 
 
 @nox.session

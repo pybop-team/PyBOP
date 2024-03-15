@@ -83,6 +83,12 @@ class TestProblem:
         with pytest.raises(ValueError):
             pybop._problem.BaseProblem(parameters, model=model, signal=[1e-5, 1e-5])
 
+        # Test without bounds
+        for param in parameters:
+            param.bounds = None
+        problem = pybop._problem.BaseProblem(parameters, model=model)
+        assert problem.bounds is None
+
     @pytest.mark.unit
     def test_fitting_problem(self, parameters, dataset, model, signal):
         # Test incorrect number of initial parameter values
