@@ -86,8 +86,8 @@ jobs:
           PUSH_BENCH_NAME: ${{ secrets.PUSH_BENCH_NAME }}
         run: |
           cp -vr new_results/* results
-          git config user.email "$PUSH_BENCH_EMAIL"
-          git config user.name "$PUSH_BENCH_NAME"
+          git config --global user.email "$PUSH_BENCH_EMAIL"
+          git config --global user.name "$PUSH_BENCH_NAME"
           git add results
           git commit -am "Add new benchmark results"
           git push
