@@ -2,27 +2,17 @@ import pybop
 import numpy as np
 
 
-class ParameterisationBenchmark:
+class BenchmarkOptimisationConstruction:
     param_names = ["model", "parameter_set", "optimiser"]
     params = [
         [pybop.lithium_ion.SPM, pybop.lithium_ion.SPMe],
         ["Chen2020"],
-        [
-            pybop.SciPyMinimize,
-            pybop.SciPyDifferentialEvolution,
-            pybop.Adam,
-            pybop.CMAES,
-            pybop.GradientDescent,
-            pybop.IRPropMin,
-            pybop.PSO,
-            pybop.SNES,
-            pybop.XNES,
-        ],
+        [pybop.CMAES],
     ]
 
     def setup(self, model, parameter_set, optimiser):
         """
-        Set up the parameterization problem for benchmarking.
+        Set up the model, problem, and cost for optimization benchmarking.
 
         Args:
             model (pybop.Model): The model class to be benchmarked.
@@ -36,20 +26,20 @@ class ParameterisationBenchmark:
         parameters = [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.6, 0.03),
+                prior=pybop.Gaussian(0.6, 0.02),
                 bounds=[0.375, 0.7],
                 initial_value=0.63,
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.5, 0.03),
+                prior=pybop.Gaussian(0.5, 0.02),
                 bounds=[0.375, 0.625],
                 initial_value=0.51,
             ),
         ]
 
         # Generate synthetic data
-        sigma = 0.003
+        sigma = 0.001
         t_eval = np.arange(0, 900, 2)
         values = model_instance.predict(t_eval=t_eval)
         corrupt_values = values["Voltage [V]"].data + np.random.normal(
@@ -71,30 +61,26 @@ class ParameterisationBenchmark:
         )
 
         # Create cost function
-        cost = pybop.SumSquaredError(problem=problem)
+        self.cost = pybop.SumSquaredError(problem=problem)
 
-        # Create optimization instance
-        self.optim = pybop.Optimisation(cost, optimiser=optimiser)
-
-    def time_parameterisation(self, _model, _parameter_set, _optimiser):
+    def time_optimisation_construction(self, model, parameter_set, optimiser):
         """
-        Benchmark the parameterization process.
+        Benchmark the construction of the optimization class.
 
         Args:
-            _model (pybop.Model): The model class being benchmarked (unused).
-            _parameter_set (str): The name of the parameter set being used (unused).
-            _optimiser (pybop.Optimiser): The optimizer class being used (unused).
-        """
-        self.optim.run()
-
-    def time_optimiser_ask(self, _model, _parameter_set, optimiser):
-        """
-        Benchmark the optimizer's ask method.
-
-        Args:
-            _model (pybop.Model): The model class being benchmarked (unused).
-            _parameter_set (str): The name of the parameter set being used (unused).
+            model (pybop.Model): The model class being benchmarked.
+            parameter_set (str): The name of the parameter set being used.
             optimiser (pybop.Optimiser): The optimizer class being used.
         """
-        if optimiser not in [pybop.SciPyMinimize, pybop.SciPyDifferentialEvolution]:
-            self.optim.optimiser.ask()
+        self.optim = pybop.Optimisation(self.cost, optimiser=optimiser)
+
+    def time_cost(self, model, parameter_set, optimiser):
+        """
+        Benchmark the cost function evaluation.
+
+        Args:
+            model (pybop.Model): The model class being benchmarked.
+            parameter_set (str): The name of the parameter set being used.
+            optimiser (pybop.Optimiser): The optimizer class being used.
+        """
+        self.cost([0.63, 0.51])
