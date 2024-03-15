@@ -96,7 +96,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         for key in self.signal:
             if len(y.get(key, [])) != len(self._target.get(key, [])):
                 likelihood = np.float64(np.inf)
-                dl = self._de * np.ones(self.n_parameters)
+                dl = self._dl * np.ones(self.n_parameters)
                 return -likelihood, -dl
 
         r = np.array([self._target[signal] - y[signal] for signal in self.signal])

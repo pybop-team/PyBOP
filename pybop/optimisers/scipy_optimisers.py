@@ -20,10 +20,11 @@ class SciPyMinimize(BaseOptimiser):
         Maximum number of iterations to perform.
     """
 
-    def __init__(self, method=None, bounds=None, maxiter=None):
+    def __init__(self, method=None, bounds=None, maxiter=None, tol=1e-5):
         super().__init__()
         self.method = method
         self.bounds = bounds
+        self.tol = tol
         self.options = {}
         self._max_iterations = maxiter
 
@@ -79,6 +80,7 @@ class SciPyMinimize(BaseOptimiser):
             x0,
             method=self.method,
             bounds=bounds,
+            tol=self.tol,
             options=self.options,
             callback=callback,
         )
@@ -126,8 +128,11 @@ class SciPyDifferentialEvolution(BaseOptimiser):
         The number of individuals in the population. Defaults to 15.
     """
 
-    def __init__(self, bounds=None, strategy="best1bin", maxiter=1000, popsize=15):
+    def __init__(
+        self, bounds=None, strategy="best1bin", maxiter=1000, popsize=15, tol=1e-5
+    ):
         super().__init__()
+        self.tol = tol
         self.strategy = strategy
         self._max_iterations = maxiter
         self._population_size = popsize
@@ -178,6 +183,7 @@ class SciPyDifferentialEvolution(BaseOptimiser):
             strategy=self.strategy,
             maxiter=self._max_iterations,
             popsize=self._population_size,
+            tol=self.tol,
             callback=callback,
         )
 

@@ -156,8 +156,6 @@ class Optimisation:
             x, final_cost = self._run_pints()
         elif not self.pints:
             x, final_cost = self._run_pybop()
-            if not self._minimising:
-                final_cost = -final_cost
 
         # Store the optimised parameters
         if self.cost.problem is not None:
@@ -374,8 +372,10 @@ class Optimisation:
         # Store the optimised parameters
         self.store_optimised_parameters(x)
 
-        # Return best position and score
-        return x, f if self._minimising else -f
+        # Return best position and the score used internally,
+        # i.e the negative log-likelihood in the case of
+        # self._minimising = False
+        return x, f
 
     def f_guessed_tracking(self):
         """

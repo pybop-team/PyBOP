@@ -70,7 +70,7 @@ class TestModelParameterisation:
             model, parameters, dataset, signal=signal, init_soc=init_soc
         )
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
-            return cost_class(problem, sigma=[0.05, 0.05])
+            return cost_class(problem, sigma=[0.03, 0.03])
         else:
             return cost_class(problem)
 
@@ -123,7 +123,11 @@ class TestModelParameterisation:
             assert parameterisation._max_iterations == 125
 
         elif optimiser in [pybop.GradientDescent]:
-            parameterisation.optimiser.set_learning_rate(0.02)
+            if isinstance(spm_costs, pybop.GaussianLogLikelihoodKnownSigma):
+                parameterisation.optimiser.set_learning_rate(1.8e-5)
+                parameterisation.set_min_iterations(150)
+            else:
+                parameterisation.optimiser.set_learning_rate(0.02)
             parameterisation.set_max_iterations(150)
             x, final_cost = parameterisation.run()
 
@@ -196,9 +200,9 @@ class TestModelParameterisation:
 
         # Test each optimiser
         parameterisation = pybop.Optimisation(
-            cost=spm_two_signal_cost, optimiser=multi_optimiser, sigma0=0.05
+            cost=spm_two_signal_cost, optimiser=multi_optimiser, sigma0=0.03
         )
-        parameterisation.set_max_unchanged_iterations(iterations=15, threshold=5e-4)
+        parameterisation.set_max_unchanged_iterations(iterations=35, threshold=5e-4)
         parameterisation.set_max_iterations(125)
         initial_cost = parameterisation.cost(spm_two_signal_cost.x0)
 
