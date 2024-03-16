@@ -21,6 +21,7 @@ on:
 jobs:
   benchmarks:
     runs-on: [self-hosted, macOS, ARM64]
+    if: github.repository == 'pybop-team/PyBOP'
     steps:
       - uses: actions/checkout@v4
 
@@ -59,6 +60,7 @@ jobs:
     name: Push and publish results
     needs: benchmarks
     runs-on: ubuntu-latest
+    if: github.repository == 'pybop-team/PyBOP'
     steps:
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
