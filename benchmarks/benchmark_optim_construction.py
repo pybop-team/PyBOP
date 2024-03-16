@@ -1,5 +1,6 @@
 import pybop
 import numpy as np
+from .benchmark_utils import set_random_seed
 
 
 class BenchmarkOptimisationConstruction:
@@ -19,6 +20,9 @@ class BenchmarkOptimisationConstruction:
             parameter_set (str): The name of the parameter set to be used.
             optimiser (pybop.Optimiser): The optimizer class to be used.
         """
+        # Set random seed
+        set_random_seed()
+
         # Create model instance
         model_instance = model(parameter_set=pybop.ParameterSet.pybamm(parameter_set))
 
@@ -74,7 +78,7 @@ class BenchmarkOptimisationConstruction:
         """
         self.optim = pybop.Optimisation(self.cost, optimiser=optimiser)
 
-    def time_cost(self, model, parameter_set, optimiser):
+    def time_cost_evaluate(self, model, parameter_set, optimiser):
         """
         Benchmark the cost function evaluation.
 

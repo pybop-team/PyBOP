@@ -1,8 +1,9 @@
 import pybop
 import numpy as np
+from .benchmark_utils import set_random_seed
 
 
-class ParameterisationBenchmark:
+class BenchmarkParameterisation:
     param_names = ["model", "parameter_set", "optimiser"]
     params = [
         [pybop.lithium_ion.SPM, pybop.lithium_ion.SPMe],
@@ -29,6 +30,9 @@ class ParameterisationBenchmark:
             parameter_set (str): The name of the parameter set to be used.
             optimiser (pybop.Optimiser): The optimizer class to be used.
         """
+        # Set random seed
+        set_random_seed()
+
         # Create model instance
         model_instance = model(parameter_set=pybop.ParameterSet.pybamm(parameter_set))
 

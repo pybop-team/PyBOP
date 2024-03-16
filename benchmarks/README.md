@@ -48,13 +48,19 @@ With `asv` installed and your benchmarks set up, you can now run benchmarks usin
 To run all benchmarks in your python env:
 
 ```bash
-asv run --python=same
+asv run
 ```
 
 This will test the current state of your codebase by default. You can specify a range of commits to run benchmarks against by appending a commit range to the command, like so:
 
 ```bash
 asv run <commit-hash-1>..<commit-hash-2>
+```
+
+For quick benchmarking, pass the `--quick` argument to `asv run`. This runs each benchmark once and returns the singular value.
+
+```bash
+asv run --quick
 ```
 
 ### Running Specific Benchmarks

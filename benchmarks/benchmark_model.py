@@ -1,5 +1,6 @@
 import pybop
 import numpy as np
+from .benchmark_utils import set_random_seed
 
 
 class BenchmarkModel:
@@ -17,6 +18,9 @@ class BenchmarkModel:
             model (pybop.Model): The model class to be benchmarked.
             parameter_set (str): The name of the parameter set to be used.
         """
+        # Set random seed
+        set_random_seed()
+
         # Create model instance
         self.model = model(parameter_set=pybop.ParameterSet.pybamm(parameter_set))
 
