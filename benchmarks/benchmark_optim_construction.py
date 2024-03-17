@@ -61,7 +61,7 @@ class BenchmarkOptimisationConstruction:
 
         # Create fitting problem
         problem = pybop.FittingProblem(
-            model=model_instance, dataset=dataset, parameters=parameters, init_soc=0.5
+            model=model_instance, dataset=dataset, parameters=parameters
         )
 
         # Create cost function

@@ -313,3 +313,4 @@ $RECYCLE.BIN/
 
 # Airspeed Velocity
 *.asv/
+results/

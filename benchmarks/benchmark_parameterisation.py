@@ -34,21 +34,26 @@ class BenchmarkParameterisation:
         set_random_seed()
 
         # Create model instance
-        model_instance = model(parameter_set=pybop.ParameterSet.pybamm(parameter_set))
+        params = pybop.ParameterSet.pybamm(parameter_set)
+        params.update(
+            {
+                "Negative electrode active material volume fraction": 0.63,
+                "Positive electrode active material volume fraction": 0.51,
+            }
+        )
+        model_instance = model(parameter_set=params)
 
         # Define fitting parameters
         parameters = [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.6, 0.03),
+                prior=pybop.Gaussian(0.55, 0.03),
                 bounds=[0.375, 0.7],
-                initial_value=0.63,
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.5, 0.03),
-                bounds=[0.375, 0.625],
-                initial_value=0.51,
+                prior=pybop.Gaussian(0.55, 0.03),
+                bounds=[0.375, 0.7],
             ),
         ]
 
@@ -70,34 +75,58 @@ class BenchmarkParameterisation:
         )
 
         # Create fitting problem
-        problem = pybop.FittingProblem(
-            model=model_instance, dataset=dataset, parameters=parameters, init_soc=0.5
-        )
+        problem = pybop.FittingProblem(model_instance, parameters, dataset)
 
         # Create cost function
         cost = pybop.SumSquaredError(problem=problem)
 
         # Create optimization instance
         self.optim = pybop.Optimisation(cost, optimiser=optimiser)
+        if optimiser in [pybop.GradientDescent]:
+            self.optim.optimiser.set_learning_rate(
+                0.008
+            )  # Compromise between stability & performance
 
-    def time_parameterisation(self, _model, _parameter_set, _optimiser):
+    def time_parameterisation(self, model, parameter_set, optimiser):
         """
-        Benchmark the parameterization process.
+        Benchmark the parameterization process. Optimiser options are left at high values
+        to ensure the threshold is met and the optimisation process is completed.
 
         Args:
-            _model (pybop.Model): The model class being benchmarked (unused).
-            _parameter_set (str): The name of the parameter set being used (unused).
-            _optimiser (pybop.Optimiser): The optimizer class being used (unused).
+            model (pybop.Model): The model class being benchmarked (unused).
+            parameter_set (str): The name of the parameter set being used (unused).
+            optimiser (pybop.Optimiser): The optimizer class being used (unused).
         """
-        self.optim.run()
+        # Set optimizer options for consistent benchmarking
+        self.optim.set_max_unchanged_iterations(iterations=25, threshold=1e-5)
+        self.optim.set_max_iterations(250)
+        self.optim.set_min_iterations(2)
+        x, _ = self.optim.run()
+        return x
 
-    def time_optimiser_ask(self, _model, _parameter_set, optimiser):
+    def track_results(self, model, parameter_set, optimiser):
+        """
+        Track the results of the optimization.
+        Note: These results will be different than the time_parameterisation
+        as they are ran seperately. These results should be used to verify the
+        optimisation algorithm typically converges.
+
+        Args:
+            model (pybop.Model): The model class being benchmarked (unused).
+            parameter_set (str): The name of the parameter set being used (unused).
+            optimiser (pybop.Optimiser): The optimizer class being used (unused).
+        """
+        x = self.time_parameterisation(model, parameter_set, optimiser)
+
+        return tuple(x)
+
+    def time_optimiser_ask(self, model, parameter_set, optimiser):
         """
         Benchmark the optimizer's ask method.
 
         Args:
-            _model (pybop.Model): The model class being benchmarked (unused).
-            _parameter_set (str): The name of the parameter set being used (unused).
+            model (pybop.Model): The model class being benchmarked (unused).
+            parameter_set (str): The name of the parameter set being used (unused).
             optimiser (pybop.Optimiser): The optimizer class being used.
         """
         if optimiser not in [pybop.SciPyMinimize, pybop.SciPyDifferentialEvolution]:
