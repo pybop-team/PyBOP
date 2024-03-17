@@ -1,9 +1,10 @@
 import numpy as np
+from pybop import BaseProblem
 
 
-class BaseProblem:
+class GITT(BaseProblem):
     """
-    Base class for defining a problem within the PyBOP framework, compatible with PINTS.
+    Problem class for GITT experiments.
 
     Parameters
     ----------
