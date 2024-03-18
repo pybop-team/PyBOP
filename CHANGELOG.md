@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#233](https://github.com/pybop-team/PyBOP/pull/233) - Enforces model rebuild on initialisation of a Problem to allow a change of experiment, fixes if statement triggering current function update, updates `predictions` to `simulation` to keep distinction between `predict` and `simulate` and adds `test_changes`.
 - [#218](https://github.com/pybop-team/PyBOP/pull/218) - Adds likelihood base class, `GaussianLogLikelihoodKnownSigma`, `GaussianLogLikelihood`, and `ProbabilityBased` cost function. As well as addition of a maximum likelihood estimation (MLE) example.
 - [#185](https://github.com/pybop-team/PyBOP/pull/185) - Adds a pull request template, additional nox sessions `quick` for standard tests + docs, `pre-commit` for pre-commit, `test` to run all standard tests, `doctest` for docs.
 - [#215](https://github.com/pybop-team/PyBOP/pull/215) - Adds `release_workflow.md` and updates `release_action.yaml`
