@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 
 
-class TestChanges:
+class TestModelAndExperimentChanges:
     """
     A class to test that different inputs return different outputs.
     """
