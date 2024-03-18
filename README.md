@@ -31,6 +31,9 @@
   <a href="https://colab.research.google.com/github/pybop-team/PyBOP/blob/develop/">
     <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="open In colab" />
   </a>
+  <a href = "https://pybop-team.github.io/pybop-bench/">
+    <img alt="Static Badge" src="https://img.shields.io/badge/https%3A%2F%2Fpybop-team.github.io%2Fpybop-bench%2F?label=Benchmarks">
+  </a>
   <a href = "https://github.com/pybop-team/PyBOP/releases">
     <img src = "https://img.shields.io/github/v/release/pybop-team/PyBOP?color=gold"  alt = releases />
   </a>

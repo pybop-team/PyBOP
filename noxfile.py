@@ -113,6 +113,14 @@ def run_quick(session):
 
 
 @nox.session
+def benchmarks(session):
+    """Run the benchmarks."""
+    session.install("-e", ".[all,dev]", silent=False)
+    session.install("asv[virtualenv]")
+    session.run("asv", "run", "--show-stderr", "--python=same")
+
+
+@nox.session
 def docs(session):
     """
     Build the documentation and load it in a browser tab, rebuilding on changes.
