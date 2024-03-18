@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#179](https://github.com/pybop-team/PyBOP/pull/203) - Adds `asv` configuration for benchmarking and initial benchmark suite.
 - [#218](https://github.com/pybop-team/PyBOP/pull/218) - Adds likelihood base class, `GaussianLogLikelihoodKnownSigma`, `GaussianLogLikelihood`, and `ProbabilityBased` cost function. As well as addition of a maximum likelihood estimation (MLE) example.
 - [#185](https://github.com/pybop-team/PyBOP/pull/185) - Adds a pull request template, additional nox sessions `quick` for standard tests + docs, `pre-commit` for pre-commit, `test` to run all standard tests, `doctest` for docs.
 - [#215](https://github.com/pybop-team/PyBOP/pull/215) - Adds `release_workflow.md` and updates `release_action.yaml`
@@ -18,6 +19,7 @@
 
 ## Bug Fixes
 
+- [#233](https://github.com/pybop-team/PyBOP/pull/233) - Enforces model rebuild on initialisation of a Problem to allow a change of experiment, fixes if statement triggering current function update, updates `predictions` to `simulation` to keep distinction between `predict` and `simulate` and adds `test_changes`.
 - [#123](https://github.com/pybop-team/PyBOP/issues/123) - Reinstates check for availability of parameter sets via PyBaMM upon retrieval by `pybop.ParameterSet.pybamm()`.
 - [#196](https://github.com/pybop-team/PyBOP/issues/196) - Fixes failing observer cost tests.
 - [#63](https://github.com/pybop-team/PyBOP/issues/63) - Removes NLOpt Optimiser from future releases. This is to support deployment to the Apple M-Series platform.
