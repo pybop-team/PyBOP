@@ -92,7 +92,7 @@ class BaseModel:
         self.dataset = dataset
         self.parameters = parameters
         if self.parameters is not None:
-            self.update_classified_parameters(self.parameters)
+            self.classify_and_update_parameters(self.parameters)
             self.fit_keys = [param.name for param in self.parameters]
         else:
             self.fit_keys = []
@@ -209,7 +209,7 @@ class BaseModel:
         self.dataset = dataset
         self.parameters = parameters
         if parameters is not None:
-            self.update_classified_parameters(parameters)
+            self.classify_and_update_parameters(parameters)
 
         if init_soc is not None:
             self.set_init_soc(init_soc)
@@ -227,7 +227,7 @@ class BaseModel:
         # Clear solver and setup model
         self._solver._model_set_up = {}
 
-    def update_classified_parameters(self, parameters):
+    def classify_and_update_parameters(self, parameters):
         """
         Update the parameter values according to their classification as either
         'matched_parameters' which require a model rebuild and
@@ -381,7 +381,9 @@ class BaseModel:
             raise ValueError("Model must be built before calling simulate")
         else:
             if self.matched_parameters:
-                raise ValueError("Cannot use sensitivies for parameters which require a model rebuild")
+                raise ValueError(
+                    "Cannot use sensitivies for parameters which require a model rebuild"
+                )
 
             if not isinstance(inputs, dict):
                 inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
@@ -457,7 +459,7 @@ class BaseModel:
             if PyBaMM models are not supported by the current simulation method.
 
         """
-        parameter_set = parameter_set or self._parameter_set
+        parameter_set = parameter_set or self._unprocessed_parameter_set
         if inputs is not None:
             if not isinstance(inputs, dict):
                 inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}

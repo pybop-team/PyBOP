@@ -34,15 +34,16 @@ class TestChanges:
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
         parameters = [parameter]
         init_soc = 0.5
-
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+
         t_eval = [0, 3600]  # Default 1C discharge to cut-off voltage
         solution_1 = model.predict(init_soc=init_soc, t_eval=t_eval)
         cost_1 = self.final_cost(solution_1, model, parameters, init_soc)
 
-        model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
         experiment = pybop.Experiment(["Charge at 1C until 4.1 V (2 seconds period)"])
-        solution_2 = model.predict(init_soc=init_soc, experiment=experiment, inputs=[parameter.true_value])
+        solution_2 = model.predict(
+            init_soc=init_soc, experiment=experiment, inputs=[parameter.true_value]
+        )
         cost_2 = self.final_cost(solution_2, model, parameters, init_soc)
 
         with np.testing.assert_raises(AssertionError):
