@@ -36,7 +36,7 @@ class TestChanges:
         init_soc = 0.5
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
-        t_eval = [0, 3600]  # Default 1C discharge to cut-off voltage
+        t_eval = np.arange(0, 3600, 2)  # Default 1C discharge to cut-off voltage
         solution_1 = model.predict(init_soc=init_soc, t_eval=t_eval)
         cost_1 = self.final_cost(solution_1, model, parameters, init_soc)
 
