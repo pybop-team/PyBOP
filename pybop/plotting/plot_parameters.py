@@ -1,4 +1,5 @@
 import pybop
+import sys
 
 
 def plot_parameters(optim, show=True, **layout_kwargs):
@@ -71,7 +72,9 @@ def plot_parameters(optim, show=True, **layout_kwargs):
     # Generate the figure and update the layout
     fig = plot_dict(show=False)
     fig.update_layout(**layout_kwargs)
-    if show:
+    if "ipykernel" in sys.modules and show:
+        fig.show("svg")
+    elif show:
         fig.show()
 
     return fig

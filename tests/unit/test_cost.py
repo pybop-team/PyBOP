@@ -126,7 +126,7 @@ class TestCosts:
         )
 
         # Test type of returned value
-        assert type(cost([0.5])) == np.float64
+        assert np.isscalar(cost([0.5]))
 
         if isinstance(cost, pybop.ObserverCost):
             with pytest.raises(NotImplementedError):
@@ -144,7 +144,7 @@ class TestCosts:
         if isinstance(cost, pybop.SumSquaredError):
             e, de = cost.evaluateS1([0.5])
 
-            assert type(e) == np.float64
+            assert np.isscalar(e)
             assert type(de) == np.ndarray
 
             # Test exception for non-numeric inputs
@@ -157,10 +157,12 @@ class TestCosts:
             for i in range(len(record)):
                 assert "Non-physical point encountered" in str(record[i].message)
 
-        if isinstance(cost, pybop.RootMeanSquaredError):
             # Test infeasible locations
             cost.problem._model.allow_infeasible_solutions = False
             assert cost([1.1]) == np.inf
+            assert cost.evaluateS1([1.1]) == (np.inf, cost._de)
+            assert cost([0.01]) == np.inf
+            assert cost.evaluateS1([0.01]) == (np.inf, cost._de)
 
         # Test exception for non-numeric inputs
         with pytest.raises(ValueError):
@@ -191,10 +193,11 @@ class TestCosts:
         cost = cost_class(problem)
 
         # Test type of returned value
-        assert type(cost([0.5])) == np.float64
+        assert np.isscalar(cost([0.5]))
         assert cost([0.4]) <= 0  # Should be a viable design
         assert cost([0.8]) == np.inf  # Should exceed active material + porosity < 1
         assert cost([1.4]) == np.inf  # Definitely not viable
+        assert cost([-0.1]) == np.inf  # Should not be a viable design
 
         # Test infeasible locations
         cost.problem._model.allow_infeasible_solutions = False

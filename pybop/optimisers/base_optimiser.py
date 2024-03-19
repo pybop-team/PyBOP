@@ -41,7 +41,7 @@ class BaseOptimiser:
         """
         self.cost_function = cost_function
         self.x0 = x0
-        self.maxiter = maxiter
+        self._max_iterations = maxiter
 
         # Run optimisation
         result = self._runoptimise(self.cost_function, x0=self.x0)

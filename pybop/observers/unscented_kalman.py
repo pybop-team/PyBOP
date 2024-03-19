@@ -50,10 +50,13 @@ class UnscentedKalmanFilterObserver(Observer):
         dataset=None,
         check_model=True,
         signal=["Voltage [V]"],
+        additional_variables=[],
         init_soc=None,
         x0=None,
     ) -> None:
-        super().__init__(parameters, model, check_model, signal, init_soc, x0)
+        super().__init__(
+            parameters, model, check_model, signal, additional_variables, init_soc, x0
+        )
         if dataset is not None:
             self._dataset = dataset.data
 
@@ -62,8 +65,7 @@ class UnscentedKalmanFilterObserver(Observer):
 
             self._time_data = self._dataset["Time [s]"]
             self.n_time_data = len(self._time_data)
-            target = [self._dataset[signal] for signal in self.signal]
-            self._target = np.vstack(target).T
+            self._target = {signal: self._dataset[signal] for signal in self.signal}
 
         # Add useful parameters to model
         if model is not None:

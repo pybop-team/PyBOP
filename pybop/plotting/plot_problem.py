@@ -1,3 +1,4 @@
+import sys
 import pybop
 import numpy as np
 
@@ -19,8 +20,8 @@ def quick_plot(problem, parameter_values=None, show=True, **layout_kwargs):
         If True, the figure is shown upon creation (default: True).
     **layout_kwargs : optional
             Valid Plotly layout keys and their values,
-            e.g. `xaxis_title="Time [s]"` or
-            `xaxis={"title": "Time [s]", "titlefont_size": 18}`.
+            e.g. `xaxis_title="Time / s"` or
+            `xaxis={"title": "Time / s", "titlefont_size": 18}`.
 
     Returns
     -------
@@ -31,73 +32,62 @@ def quick_plot(problem, parameter_values=None, show=True, **layout_kwargs):
         parameter_values = problem.x0
 
     # Extract the time data and evaluate the model's output and target values
-    time_data = problem.time_data()
+    xaxis_data = problem.time_data()
     model_output = problem.evaluate(parameter_values)
     target_output = problem.target()
 
-    # Ensure outputs have the same length
-    len_diff = len(target_output) - len(model_output)
-    if len_diff > 0:
-        model_output = np.concatenate(
-            (model_output, np.full([len_diff, np.shape(model_output)[1]], np.nan)),
-            axis=0,
-        )
-    elif len_diff < 0:
-        target_output = np.concatenate(
-            (target_output, np.full([-len_diff, np.shape(target_output)[1]], np.nan)),
-            axis=0,
-        )
-
     # Create a plot for each output
     figure_list = []
-    for i in range(0, problem.n_outputs):
+    for i in problem.signal:
         default_layout_options = dict(
-            title="Scatter Plot", xaxis_title="Time [s]", yaxis_title=problem.signal[i]
+            title="Scatter Plot",
+            xaxis_title="Time / s",
+            yaxis_title=pybop.StandardPlot.remove_brackets(i),
         )
 
         # Create a plotting dictionary
         if isinstance(problem, pybop.DesignProblem):
             trace_name = "Optimised"
+            opt_time_data = model_output["Time [s]"]
         else:
             trace_name = "Model"
+            opt_time_data = xaxis_data
+
         plot_dict = pybop.StandardPlot(
-            x=time_data,
-            y=model_output[:, i],
+            x=opt_time_data,
+            y=model_output[i],
             layout_options=default_layout_options,
             trace_names=trace_name,
         )
 
-        # Add the data as markers
-        if isinstance(problem, pybop.DesignProblem):
-            name = "Initial"
-        else:
-            name = "Target"
         target_trace = plot_dict.create_trace(
-            x=time_data,
-            y=target_output[:, i],
-            name=name,
+            x=xaxis_data,
+            y=target_output[i],
+            name="Reference",
             mode="markers",
             showlegend=True,
         )
         plot_dict.traces.append(target_trace)
 
-        # Compute the standard deviation as proxy for uncertainty
-        plot_dict.sigma = np.std(model_output[:, i] - target_output[:, i])
+        if isinstance(problem, pybop.FittingProblem):
+            # Compute the standard deviation as proxy for uncertainty
+            plot_dict.sigma = np.std(model_output[i] - target_output[i])
 
-        # Convert x and upper and lower limits into lists to create a filled trace
-        x = time_data.tolist()
-        y_upper = (model_output[:, i] + plot_dict.sigma).tolist()
-        y_lower = (model_output[:, i] - plot_dict.sigma).tolist()
-        fill_trace = plot_dict.create_trace(
-            x=x + x[::-1],
-            y=y_upper + y_lower[::-1],
-            fill="toself",
-            fillcolor="rgba(255,229,204,0.8)",
-            line=dict(color="rgba(255,255,255,0)"),
-            hoverinfo="skip",
-            showlegend=False,
-        )
-        plot_dict.traces.append(fill_trace)
+            # Convert x and upper and lower limits into lists to create a filled trace
+            x = xaxis_data.tolist()
+            y_upper = (model_output[i] + plot_dict.sigma).tolist()
+            y_lower = (model_output[i] - plot_dict.sigma).tolist()
+
+            fill_trace = plot_dict.create_trace(
+                x=x + x[::-1],
+                y=y_upper + y_lower[::-1],
+                fill="toself",
+                fillcolor="rgba(255,229,204,0.8)",
+                line=dict(color="rgba(255,255,255,0)"),
+                hoverinfo="skip",
+                showlegend=False,
+            )
+            plot_dict.traces.append(fill_trace)
 
         # Reverse the order of the traces to put the model on top
         plot_dict.traces = plot_dict.traces[::-1]
@@ -105,7 +95,9 @@ def quick_plot(problem, parameter_values=None, show=True, **layout_kwargs):
         # Generate the figure and update the layout
         fig = plot_dict(show=False)
         fig.update_layout(**layout_kwargs)
-        if show:
+        if "ipykernel" in sys.modules and show:
+            fig.show("svg")
+        elif show:
             fig.show()
 
         figure_list.append(fig)

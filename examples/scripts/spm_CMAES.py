@@ -33,11 +33,13 @@ dataset = pybop.Dataset(
         "Time [s]": t_eval,
         "Current function [A]": values["Current [A]"].data,
         "Voltage [V]": corrupt_values,
+        "Bulk open-circuit voltage [V]": values["Bulk open-circuit voltage [V]"].data,
     }
 )
 
+signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 # Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset)
+problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 cost = pybop.SumSquaredError(problem)
 optim = pybop.Optimisation(cost, optimiser=pybop.CMAES)
 optim.set_max_iterations(100)

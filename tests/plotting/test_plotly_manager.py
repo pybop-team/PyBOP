@@ -134,41 +134,39 @@ def dataset(plotly_installed):
 @pytest.mark.unit
 def test_standard_plot(dataset, plotly_installed):
     # Check the StandardPlot class
-    pybop.StandardPlot(dataset.data["Time [s]"], dataset.data["Terminal voltage [V]"])
+    pybop.StandardPlot(dataset["Time [s]"], dataset["Terminal voltage [V]"])
 
     # Check the StandardSubplot class
     pybop.StandardSubplot(
-        dataset.data["Time [s]"],
-        [dataset.data["Terminal voltage [V]"], dataset.data["Current [A]"]],
+        dataset["Time [s]"],
+        [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
         num_rows=1,
     )
     pybop.StandardSubplot(
-        dataset.data["Time [s]"],
-        [dataset.data["Terminal voltage [V]"], dataset.data["Current [A]"]],
+        dataset["Time [s]"],
+        [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
         num_cols=1,
     )
 
     # Check plotting numpy arrays, lists, and lists of numpy arrays
+    pybop.plot_trajectories(dataset["Time [s]"], dataset["Terminal voltage [V]"])
     pybop.plot_trajectories(
-        dataset.data["Time [s]"], dataset.data["Terminal voltage [V]"]
+        dataset["Time [s]"].tolist(), dataset["Terminal voltage [V]"].tolist()
     )
     pybop.plot_trajectories(
-        dataset.data["Time [s]"].tolist(), dataset.data["Terminal voltage [V]"].tolist()
+        [dataset["Time [s]"]],
+        [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
     )
     pybop.plot_trajectories(
-        [dataset.data["Time [s]"]],
-        [dataset.data["Terminal voltage [V]"], dataset.data["Current [A]"]],
-    )
-    pybop.plot_trajectories(
-        [dataset.data["Time [s]"], dataset.data["Time [s]"]],
-        [dataset.data["Terminal voltage [V]"], dataset.data["Current [A]"]],
+        [dataset["Time [s]"], dataset["Time [s]"]],
+        [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
     )
 
     # Test incorrect dimensions
     with pytest.raises(ValueError):
         pybop.plot_trajectories(
-            [dataset.data["Time [s]"], dataset.data["Current [A]"]],
-            dataset.data["Terminal voltage [V]"],
+            [dataset["Time [s]"], dataset["Current [A]"]],
+            dataset["Terminal voltage [V]"],
         )
 
 

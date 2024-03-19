@@ -44,6 +44,7 @@ class BaseCost:
             self.x0 = problem.x0
             self.bounds = problem.bounds
             self.n_outputs = problem.n_outputs
+            self.signal = problem.signal
             self._n_parameters = problem.n_parameters
             self.sigma0 = sigma or problem.sigma0 or np.zeros(self._n_parameters)
 
