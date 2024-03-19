@@ -161,6 +161,8 @@ class TestCosts:
             cost.problem._model.allow_infeasible_solutions = False
             assert cost([1.1]) == np.inf
             assert cost.evaluateS1([1.1]) == (np.inf, cost._de)
+            assert cost([0.01]) == np.inf
+            assert cost.evaluateS1([0.01]) == (np.inf, cost._de)
 
         # Test exception for non-numeric inputs
         with pytest.raises(ValueError):

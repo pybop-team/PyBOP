@@ -64,18 +64,17 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         Calls the problem.evaluate method and calculates
         the log-likelihood
         """
-        prediction = self.problem.evaluate(x)
+        y = self.problem.evaluate(x)
 
         for key in self.signal:
-            if len(prediction.get(key, [])) != len(self._target.get(key, [])):
+            if len(y.get(key, [])) != len(self._target.get(key, [])):
                 return -np.float64(np.inf)  # prediction doesn't match target
 
         e = np.array(
             [
                 np.sum(
                     self._offset
-                    + self._multip
-                    * np.sum((self._target[signal] - prediction[signal]) ** 2)
+                    + self._multip * np.sum((self._target[signal] - y[signal]) ** 2)
                 )
                 for signal in self.signal
             ]
@@ -92,6 +91,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         the log-likelihood
         """
         y, dy = self.problem.evaluateS1(x)
+
         for key in self.signal:
             if len(y.get(key, [])) != len(self._target.get(key, [])):
                 likelihood = np.float64(np.inf)
@@ -144,10 +144,10 @@ class GaussianLogLikelihood(BaseLikelihood):
         if np.any(sigma <= 0):
             return -np.inf
 
-        prediction = self.problem.evaluate(x[: -self.n_outputs])
+        y = self.problem.evaluate(x[: -self.n_outputs])
 
         for key in self.signal:
-            if len(prediction.get(key, [])) != len(self._target.get(key, [])):
+            if len(y.get(key, [])) != len(self._target.get(key, [])):
                 return -np.float64(np.inf)  # prediction doesn't match target
 
         e = np.array(
@@ -155,8 +155,7 @@ class GaussianLogLikelihood(BaseLikelihood):
                 np.sum(
                     self._logpi
                     - self._n_times * np.log(sigma)
-                    - np.sum((self._target[signal] - prediction[signal]) ** 2)
-                    / (2.0 * sigma**2)
+                    - np.sum((self._target[signal] - y[signal]) ** 2) / (2.0 * sigma**2)
                 )
                 for signal in self.signal
             ]
@@ -173,6 +172,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         the log-likelihood
         """
         sigma = np.asarray(x[-self.n_outputs :])
+
         if np.any(sigma <= 0):
             return -np.float64(np.inf), -self._dl * np.ones(self.n_parameters)
 

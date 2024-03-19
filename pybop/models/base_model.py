@@ -410,7 +410,9 @@ class BaseModel:
                         for signal in self.signal
                         for key in self.fit_keys
                     ]
-                ).reshape(self.n_parameters, self.n_time_data, self.n_outputs)
+                ).reshape(
+                    self.n_parameters, sol[self.signal[0]].data.shape[0], self.n_outputs
+                )
 
                 return y, dy
 
