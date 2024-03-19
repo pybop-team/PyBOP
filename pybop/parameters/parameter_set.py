@@ -57,6 +57,36 @@ class ParameterSet:
         if self.params["chemistry"] is not None:
             self.chemistry = self.params["chemistry"]
         return self.params
+    
+    def import_from_bpx(self, json_path=None):
+        """
+        Imports parameters from a JSON file in the BPX format specified by the `json_path`
+        attribute.
+        Credit: PyBaMM
+
+        If a `json_path` is provided at initialization or as an argument, that JSON file
+        is loaded and the parameters are stored in the `params` attribute.
+
+        Parameters
+        ----------
+        json_path : str, optional
+            Path to the JSON file from which to import parameters. If provided, it overrides the instance's `json_path`.
+
+        Returns
+        -------
+        dict
+            The dictionary containing the imported parameters.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the specified JSON file cannot be found.
+        """
+
+        # Read JSON file
+        if not self.params and self.json_path:
+            self.params = pybamm.ParameterValues.create_from_bpx(self.json_path)
+        return self.params
 
     def _handle_special_cases(self):
         """
