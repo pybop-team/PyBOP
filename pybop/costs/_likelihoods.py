@@ -17,9 +17,9 @@ class BaseLikelihood(BaseCost):
         """
 
         if not isinstance(sigma, np.ndarray):
-            sigma = np.array([sigma])
+            sigma = np.array(sigma)
 
-        if not np.isreal(sigma).all():
+        if not np.issubdtype(sigma.dtype, np.number):
             raise ValueError("Sigma must contain only numeric values")
 
         if np.any(sigma <= 0):

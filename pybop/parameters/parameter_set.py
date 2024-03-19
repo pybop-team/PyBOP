@@ -69,11 +69,9 @@ class ParameterSet:
             "Open-circuit voltage [V]" in self.params
             and self.params["Open-circuit voltage [V]"] == "default"
         ):
-            self.params[
-                "Open-circuit voltage [V]"
-            ] = pybop.empirical.Thevenin().default_parameter_values[
-                "Open-circuit voltage [V]"
-            ]
+            self.params["Open-circuit voltage [V]"] = (
+                pybop.empirical.Thevenin().default_parameter_values["Open-circuit voltage [V]"]
+            )
 
     def export_parameters(self, output_json_path, fit_params=None):
         """

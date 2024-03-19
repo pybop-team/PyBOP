@@ -76,7 +76,7 @@ class BaseModel:
         Construct the PyBaMM model if not already built, and set parameters.
 
         This method initializes the model components, applies the given parameters,
-        sets up the mesh and discretization if needed, and prepares the model
+        sets up the mesh and discretisation if needed, and prepares the model
         for simulations.
 
         Parameters
@@ -93,7 +93,7 @@ class BaseModel:
         self.dataset = dataset
         self.parameters = parameters
         if self.parameters is not None:
-            self.set_parameter_classification(self.parameters)
+            self.classify_and_update_parameters(self.parameters)
             self.fit_keys = [param.name for param in self.parameters]
         else:
             self.fit_keys = []
@@ -107,6 +107,7 @@ class BaseModel:
         elif self.pybamm_model.is_discretised:
             self._model_with_set_params = self.pybamm_model
             self._built_model = self.pybamm_model
+
         else:
             self.set_params()
 
@@ -157,11 +158,10 @@ class BaseModel:
             return
 
         # Mark any simulation inputs in the parameter set
-        if self.non_matched_parameters:
-            for i in self.fit_keys:
-                self._parameter_set[i] = "[input]"
+        for key in self.non_matched_parameters.keys():
+            self._parameter_set[key] = "[input]"
 
-        if self.dataset is not None and self.non_matched_parameters:
+        if self.dataset is not None and (not self.matched_parameters or not rebuild):
             if "Current function [A]" not in self.fit_keys:
                 self._parameter_set["Current function [A]"] = pybamm.Interpolant(
                     self.dataset["Time [s]"],
@@ -191,8 +191,8 @@ class BaseModel:
 
         This method requires the self.build() method to be called first, and
         then rebuilds the model for a given parameter set. Specifically,
-        this method applies the given parameters, sets up the mesh and discretization if needed, and prepares the model
-        for simulations.
+        this method applies the given parameters, sets up the mesh and
+        discretisation if needed, and prepares the model for simulations.
 
         Parameters
         ----------
@@ -210,7 +210,7 @@ class BaseModel:
         self.dataset = dataset
         self.parameters = parameters
         if parameters is not None:
-            self.set_parameter_classification(parameters)
+            self.classify_and_update_parameters(parameters)
 
         if init_soc is not None:
             self.set_init_soc(init_soc)
@@ -228,29 +228,26 @@ class BaseModel:
         # Clear solver and setup model
         self._solver._model_set_up = {}
 
-    def set_parameter_classification(self, parameters):
+    def classify_and_update_parameters(self, parameters):
         """
-        Set the parameter classification for the model.
+        Update the parameter values according to their classification as either
+        'matched_parameters' which require a model rebuild and
+        'non_matched_parameters' which are standard inputs.
 
         Parameters
         ----------
-        parameters : Pybop.ParameterSet
-
-        Returns
-        -------
-        None
-            The method updates attributes on self.
+        parameters : pybop.ParameterSet
 
         """
-        processed_parameters = {param.name: param.value for param in parameters}
+        parameter_dictionary = {param.name: param.value for param in parameters}
         matched_parameters = {
-            param: processed_parameters[param]
-            for param in processed_parameters
+            param: parameter_dictionary[param]
+            for param in parameter_dictionary
             if param in self.rebuild_parameters
         }
         non_matched_parameters = {
-            param: processed_parameters[param]
-            for param in processed_parameters
+            param: parameter_dictionary[param]
+            for param in parameter_dictionary
             if param not in self.rebuild_parameters
         }
 
@@ -261,9 +258,6 @@ class BaseModel:
             self._parameter_set.update(self.matched_parameters)
             self._unprocessed_parameter_set = self._parameter_set
             self.geometry = self.pybamm_model.default_geometry
-
-        if self.non_matched_parameters:
-            self.fit_keys = list(self.non_matched_parameters.keys())
 
     def reinit(
         self, inputs: Inputs, t: float = 0.0, x: Optional[np.ndarray] = None
@@ -306,7 +300,7 @@ class BaseModel:
         state : TimeSeriesState
             The current state of the model
         time : np.ndarray
-            The time to predict the system to (in whatever time units the model is in)
+            The time to simulate the system until (in whatever time units the model is in)
         """
         dt = time - state.t
         new_sol = self._solver.step(
@@ -339,7 +333,7 @@ class BaseModel:
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
         else:
-            if not self.fit_keys and self.matched_parameters:
+            if self.matched_parameters and not self.non_matched_parameters:
                 sol = self.solver.solve(self.built_model, t_eval=t_eval)
 
             else:
@@ -356,12 +350,12 @@ class BaseModel:
                 else:
                     return {signal: [np.inf] for signal in self.signal}
 
-            predictions = {
+            y = {
                 signal: sol[signal].data
                 for signal in (self.signal + self.additional_variables)
             }
 
-            return predictions
+            return y
 
     def simulateS1(self, inputs, t_eval):
         """
@@ -390,6 +384,11 @@ class BaseModel:
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
         else:
+            if self.matched_parameters:
+                raise ValueError(
+                    "Cannot use sensitivies for parameters which require a model rebuild"
+                )
+
             if not isinstance(inputs, dict):
                 inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
 
@@ -403,7 +402,7 @@ class BaseModel:
                     t_eval=t_eval,
                     calculate_sensitivities=True,
                 )
-                predictions = {signal: sol[signal].data for signal in self.signal}
+                y = {signal: sol[signal].data for signal in self.signal}
 
                 dy = np.asarray(
                     [
@@ -413,7 +412,7 @@ class BaseModel:
                     ]
                 ).reshape(self.n_parameters, self.n_time_data, self.n_outputs)
 
-                return predictions, dy
+                return y, dy
 
             else:
                 return {signal: [np.inf] for signal in self.signal}, [np.inf]
@@ -464,7 +463,7 @@ class BaseModel:
             if PyBaMM models are not supported by the current simulation method.
 
         """
-        parameter_set = parameter_set or self._parameter_set
+        parameter_set = parameter_set or self._unprocessed_parameter_set
         if inputs is not None:
             if not isinstance(inputs, dict):
                 inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
