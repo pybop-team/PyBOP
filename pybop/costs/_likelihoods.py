@@ -16,11 +16,11 @@ class BaseLikelihood(BaseCost):
         Setter for sigma parameter
         """
 
-        if sigma is not type(np.array([])):
-            try:
-                sigma = np.array(sigma)
-            except Exception:
-                raise ValueError("Sigma must be a numpy array")
+        if not isinstance(sigma, np.ndarray):
+            sigma = np.array([sigma])
+
+        if not np.isreal(sigma).all():
+            raise ValueError("Sigma must contain only numeric values")
 
         if np.any(sigma <= 0):
             raise ValueError("Sigma must not be negative")

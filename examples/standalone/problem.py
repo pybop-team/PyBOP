@@ -14,12 +14,12 @@ class StandaloneProblem(BaseProblem):
         model=None,
         check_model=True,
         signal=None,
-        default_variables=None,
+        additional_variables=None,
         init_soc=None,
         x0=None,
     ):
         super().__init__(
-            parameters, model, check_model, signal, default_variables, init_soc, x0
+            parameters, model, check_model, signal, additional_variables, init_soc, x0
         )
         self._dataset = dataset.data
 

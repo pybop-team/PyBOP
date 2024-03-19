@@ -74,6 +74,8 @@ class TestLikelihoods:
         assert likelihood.bounds == problem.bounds
         assert likelihood._n_parameters == 1
         assert np.array_equal(likelihood._target, problem._target)
+        with pytest.raises(ValueError):
+            likelihood.set_sigma("Test")
 
     @pytest.mark.unit
     def test_base_likelihood_call_raises_not_implemented_error(self, problem):
@@ -126,9 +128,8 @@ class TestLikelihoods:
         assert np.all(grad_likelihood <= 0)
 
     @pytest.mark.unit
-    def test_gaussian_log_likelihood_call_returns_negative_inf_for_non_positive_sigma(
-        self, problem
-    ):
+    def test_gaussian_log_likelihood_call_returns_negative_inf(self, problem):
         likelihood = pybop.GaussianLogLikelihood(problem)
-        result = likelihood(np.array([-0.5]))
-        assert result == -np.inf
+        assert likelihood(np.array([-0.5])) == -np.inf  # negative value
+        with pytest.raises(ValueError):
+            assert likelihood(np.array([0.3])) == -np.inf  # parameter value too small
