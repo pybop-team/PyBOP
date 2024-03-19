@@ -1,5 +1,6 @@
-import pybop
 import math
+
+import pybop
 
 
 def plot_parameters(

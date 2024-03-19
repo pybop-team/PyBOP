@@ -1,7 +1,9 @@
-import pybop
-import pints
-import numpy as np
 import warnings
+
+import numpy as np
+import pints
+
+import pybop
 
 
 class Optimisation:

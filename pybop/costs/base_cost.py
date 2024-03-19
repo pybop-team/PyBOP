@@ -1,5 +1,6 @@
-from pybop import BaseProblem
 import numpy as np
+
+from pybop import BaseProblem
 
 
 class BaseCost:

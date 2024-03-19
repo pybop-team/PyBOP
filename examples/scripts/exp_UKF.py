@@ -1,6 +1,7 @@
-import pybop
-import pybamm
 import numpy as np
+import pybamm
+
+import pybop
 from examples.standalone.model import ExponentialDecay
 
 # Parameter set and model definition

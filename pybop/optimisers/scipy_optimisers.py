@@ -1,6 +1,7 @@
-from scipy.optimize import minimize, differential_evolution
-from .base_optimiser import BaseOptimiser
 import numpy as np
+from scipy.optimize import differential_evolution, minimize
+
+from .base_optimiser import BaseOptimiser
 
 
 class SciPyMinimize(BaseOptimiser):

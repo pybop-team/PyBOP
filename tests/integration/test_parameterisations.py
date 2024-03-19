@@ -1,6 +1,7 @@
-import pybop
-import pytest
 import numpy as np
+import pytest
+
+import pybop
 
 
 class TestModelParameterisation:

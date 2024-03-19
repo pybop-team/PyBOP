@@ -1,6 +1,5 @@
 import pybop
 
-
 # A design optimisation example loosely based on work by L.D. Couto
 # available at https://doi.org/10.1016/j.energy.2022.125966.
 

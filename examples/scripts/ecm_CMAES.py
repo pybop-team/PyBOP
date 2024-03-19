@@ -1,5 +1,6 @@
-import pybop
 import numpy as np
+
+import pybop
 
 # Import the ECM parameter set from JSON
 params = pybop.ParameterSet(

@@ -1,6 +1,6 @@
 import os
-import nox
 
+import nox
 
 # nox options
 nox.options.reuse_existing_virtualenvs = True

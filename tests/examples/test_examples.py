@@ -1,7 +1,9 @@
-import pybop
-import pytest
-import runpy
 import os
+import runpy
+
+import pytest
+
+import pybop
 
 
 class TestExamples:

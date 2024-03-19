@@ -1,7 +1,8 @@
-import pybop
 import numpy as np
 import pybamm
 import pytest
+
+import pybop
 from examples.standalone.model import ExponentialDecay
 
 
