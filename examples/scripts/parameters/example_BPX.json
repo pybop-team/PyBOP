@@ -16,7 +16,7 @@
                 "Specific heat capacity [J.K-1.kg-1]": 999,
                 "Thermal conductivity [W.m-1.K-1]": 1.89,
                 "Density [kg.m-3]": 1940,
-                "Electrode area [m2]": 0.08959998, 
+                "Electrode area [m2]": 0.08959998,
                 "Number of electrode pairs connected in parallel to make a cell": 1,
                 "External surface area [m2]": 0.00431,
                 "Volume [m3]": 1.7e-05

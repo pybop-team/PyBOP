@@ -57,7 +57,7 @@ class ParameterSet:
         if self.params["chemistry"] is not None:
             self.chemistry = self.params["chemistry"]
         return self.params
-    
+
     def import_from_bpx(self, json_path=None):
         """
         Imports parameters from a JSON file in the BPX format specified by the `json_path`
