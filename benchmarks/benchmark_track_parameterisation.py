@@ -3,7 +3,7 @@ import numpy as np
 from .benchmark_utils import set_random_seed
 
 
-class BenchmarkParameterisation:
+class BenchmarkTrackParameterisation:
     param_names = ["model", "parameter_set", "optimiser"]
     params = [
         [pybop.lithium_ion.SPM, pybop.lithium_ion.SPMe],
@@ -87,30 +87,31 @@ class BenchmarkParameterisation:
                 0.008
             )  # Compromise between stability & performance
 
-    def time_parameterisation(self, model, parameter_set, optimiser):
+        # Track output results
+        self.x = self.results_tracking(model, parameter_set, optimiser)
+
+    def track_x1(self, model, parameter_set, optimiser):
+        return self.x[0]
+
+    def track_x2(self, model, parameter_set, optimiser):
+        return self.x[1]
+
+    def results_tracking(self, model, parameter_set, optimiser):
         """
-        Benchmark the parameterization process. Optimiser options are left at high values
-        to ensure the threshold is met and the optimisation process is completed.
+        Track the results of the optimization.
+        Note: These results will be different than the time_parameterisation
+        as they are ran seperately. These results should be used to verify the
+        optimisation algorithm typically converges.
 
         Args:
             model (pybop.Model): The model class being benchmarked (unused).
             parameter_set (str): The name of the parameter set being used (unused).
             optimiser (pybop.Optimiser): The optimizer class being used (unused).
         """
+
         # Set optimizer options for consistent benchmarking
         self.optim.set_max_unchanged_iterations(iterations=25, threshold=1e-5)
         self.optim.set_max_iterations(250)
         self.optim.set_min_iterations(2)
-        self.optim.run()
-
-    def time_optimiser_ask(self, model, parameter_set, optimiser):
-        """
-        Benchmark the optimizer's ask method.
-
-        Args:
-            model (pybop.Model): The model class being benchmarked (unused).
-            parameter_set (str): The name of the parameter set being used (unused).
-            optimiser (pybop.Optimiser): The optimizer class being used.
-        """
-        if optimiser not in [pybop.SciPyMinimize, pybop.SciPyDifferentialEvolution]:
-            self.optim.optimiser.ask()
+        x, _ = self.optim.run()
+        return x
