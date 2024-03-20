@@ -8,6 +8,16 @@ class TestPlots:
     A class to test the plotting classes.
     """
 
+    @pytest.mark.unit
+    def test_standard_plot(self):
+        # Test standard plot and removal of brackets
+        plot_dict = pybop.StandardPlot(
+            x=np.ones(10),
+            y=np.ones((2, 10)),
+            trace_names=["Trace [1]", "Trace [2]"],
+        )
+        plot_dict()
+
     @pytest.fixture
     def model(self):
         # Define an example model
@@ -46,6 +56,11 @@ class TestPlots:
     @pytest.mark.unit
     def test_dataset_plots(self, dataset):
         # Test plotting of Dataset objects
+        pybop.plot_trajectories(
+            dataset["Time [s]"],
+            dataset["Voltage [V]"],
+            trace_names=["Time [s]", "Voltage [V]"],
+        )
         pybop.plot_dataset(dataset, signal=["Voltage [V]"])
 
     @pytest.fixture
