@@ -1,0 +1,100 @@
+# Initial Source: pybop-team/PyBop
+
+# This workflow periodically runs the benchmarks suite in benchmarks/
+# using asv and publish the results, effectively updating
+# the display website hosted in the pybop-bench repo
+
+# Steps:
+# - Benchmark all commits since the last one that was benchmarked
+# - Push results to pybop-bench repo
+# - Publish website
+name: Benchmarks
+on:
+  # Everyday at 12 pm UTC
+  schedule:
+    - cron: "0 12 * * *"
+  # Make it possible to trigger the
+  # workflow manually
+  workflow_dispatch:
+
+jobs:
+  benchmarks:
+    runs-on: [self-hosted, macOS, ARM64]
+    if: github.repository == 'pybop-team/PyBOP'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install python & create virtualenv
+        shell: bash
+        run: |
+            eval "$(pyenv init -)"
+            pyenv install 3.12 -s
+            pyenv virtualenv 3.12 pybop-312-bench
+
+      - name: Install dependencies & run benchmarks
+        shell: bash
+        run: |
+            eval "$(pyenv init -)"
+            pyenv activate pybop-312-bench
+            python -m pip install -e .[all,dev]
+            python -m pip install asv[virtualenv]
+            python -m asv machine --machine "SelfHostedRunner"
+            python -m asv run --machine "SelfHostedRunner" NEW --show-stderr -v
+
+      - name: Upload results as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: asv_periodic_results
+          path: results
+
+      - name: Uninstall pyenv-virtualenv & python
+        if: always()
+        shell: bash
+        run: |
+            eval "$(pyenv init -)"
+            pyenv activate pybop-312-bench
+            pyenv uninstall -f $( python --version )
+
+  publish-results:
+    name: Push and publish results
+    needs: benchmarks
+    runs-on: ubuntu-latest
+    if: github.repository == 'pybop-team/PyBOP'
+    steps:
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - name: Install asv
+        run: pip install asv
+
+      - name: Checkout pybop-bench repo
+        uses: actions/checkout@v4
+        with:
+          repository: pybop-team/pybop-bench
+          token: ${{ secrets.PUSH_BENCH_TOKEN }}
+
+      - name: Download results artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: asv_periodic_results
+          path: new_results
+
+      - name: Copy new results and push to pybop-bench repo
+        env:
+          PUSH_BENCH_EMAIL: ${{ secrets.PUSH_BENCH_EMAIL }}
+          PUSH_BENCH_NAME: ${{ secrets.PUSH_BENCH_NAME }}
+        run: |
+          cp -vr new_results/* results
+          git config --global user.email "$PUSH_BENCH_EMAIL"
+          git config --global user.name "$PUSH_BENCH_NAME"
+          git add results
+          git commit -am "Add new benchmark results"
+          git push
+
+      - name: Publish results
+        run: |
+          asv publish
+          git fetch origin gh-pages:gh-pages
+          asv gh-pages

@@ -1,7 +1,7 @@
-import pybamm
+from pybamm import Experiment
 
 
-class Experiment(pybamm.Experiment):
+class Experiment(Experiment):
     """
     Wraps the Experiment class for generating experiment conditions for PyBaMM models.
     Credit: PyBaMM

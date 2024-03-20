@@ -468,7 +468,7 @@ class Optimisation:
                 raise ValueError("Minimum number of iterations cannot be negative.")
         self._min_iterations = iterations
 
-    def set_max_unchanged_iterations(self, iterations=5, threshold=1e-5):
+    def set_max_unchanged_iterations(self, iterations=15, threshold=1e-5):
         """
         Set the maximum number of iterations without significant change as a stopping criterion.
         Credit: PINTS
@@ -476,7 +476,7 @@ class Optimisation:
         Parameters
         ----------
         iterations : int, optional
-            The maximum number of unchanged iterations to run (default is 25).
+            The maximum number of unchanged iterations to run (default is 15).
             Set to `None` to remove this stopping criterion.
         threshold : float, optional
             The minimum significant change in the objective function value that resets the unchanged iteration counter (default is 1e-5).
