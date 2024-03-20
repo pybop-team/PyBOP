@@ -68,7 +68,7 @@ pybop.plot_convergence(optim)
 pybop.plot_parameters(optim)
 
 # Plot the cost landscape
-pybop.plot_cost2d(cost, steps=15)
+pybop.plot2d(cost, steps=15)
 
 # Plot the cost landscape with optimisation path
-pybop.plot_optim2d(optim, steps=15)
+pybop.plot2d(optim, steps=15)

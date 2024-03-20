@@ -76,4 +76,4 @@ pybop.quick_plot(observer, parameter_values=x, title="Optimised Comparison")
 # pybop.plot_parameters(optim)
 
 # # Plot the cost landscape with optimisation path
-# pybop.plot_optim2d(optim, steps=15)
+# pybop.plot2d(optim, steps=15)
