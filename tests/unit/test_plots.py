@@ -106,3 +106,12 @@ class TestPlots:
 
         # Plot the cost landscape with optimisation path
         pybop.plot_optim2d(optim, steps=5)
+
+    @pytest.mark.unit
+    def test_with_ipykernel(self, dataset, cost, optim):
+        import ipykernel
+        pybop.plot_dataset(dataset, signal=["Voltage [V]"])
+        pybop.plot_cost2d(cost, gradient=True, steps=5)
+        pybop.plot_convergence(optim)
+        pybop.plot_parameters(optim)
+        pybop.plot_optim2d(optim, steps=5)
