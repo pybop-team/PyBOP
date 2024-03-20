@@ -190,12 +190,12 @@ class GaussianLogLikelihood(BaseLikelihood):
             r = r.reshape(self.problem.n_time_data)
             dy = dy.reshape(self.n_parameters, self.problem.n_time_data)
             dl = sigma ** (-2.0) * np.sum((r * dy), axis=1)
-            dsigma = -self.n_time_data / sigma + sigma ** -(3.0) * np.sum(r**2, axis=0)
+            dsigma = -self.n_time_data / sigma + sigma**-(3.0) * np.sum(r**2, axis=0)
             dl = np.concatenate((dl, dsigma))
             return likelihood, dl
         else:
             r = r.reshape(self.n_outputs, self.problem.n_time_data)
             dl = sigma ** (-2.0) * np.sum((r[:, :, np.newaxis] * dy), axis=1)
-            dsigma = -self.n_time_data / sigma + sigma ** -(3.0) * np.sum(r**2, axis=0)
+            dsigma = -self.n_time_data / sigma + sigma**-(3.0) * np.sum(r**2, axis=0)
             dl = np.concatenate((dl, dsigma))
             return likelihood, np.sum(dl, axis=1)
