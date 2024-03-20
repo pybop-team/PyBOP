@@ -20,7 +20,7 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
         # this model. These are purely symbolic at this stage, and will be set by the
         # `ParameterValues` class when the model is processed.
         self.options["working electrode"] = "positive"
-        
+
         param = self.param
         t = pybamm.t
         ######################

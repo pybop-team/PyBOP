@@ -47,7 +47,7 @@ class EChemBaseModel(BaseModel):
                     "Positive electrode active material volume fraction",
                     "Positive electrode porosity",
                 ),
-            ]            
+            ]
 
         related_parameters = {
             key: inputs.get(key) if inputs and key in inputs else parameter_set[key]

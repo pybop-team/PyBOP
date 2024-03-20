@@ -1,4 +1,3 @@
-import numpy as np
 import pybop
 
 
@@ -33,8 +32,10 @@ class GITT(pybop.FittingProblem):
         if model == "Weppner & Huggins":
             model = pybop.lithium_ion.WeppnerHuggins(parameter_set=parameter_set)
         else:
-            raise ValueError(f"Model {model} not recognised. THe only model available is 'Weppner & Huggins'.")
-        
+            raise ValueError(
+                f"Model {model} not recognised. THe only model available is 'Weppner & Huggins'."
+            )
+
         parameters = [
             pybop.Parameter(
                 "Positive electrode diffusivity [m2.s-1]",

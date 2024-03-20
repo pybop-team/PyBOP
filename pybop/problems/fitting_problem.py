@@ -2,7 +2,6 @@ import numpy as np
 from pybop import BaseProblem
 
 
-
 class FittingProblem(BaseProblem):
     """
     Problem class for fitting (parameter estimation) problems.

@@ -144,6 +144,7 @@ class SPMe(EChemBaseModel):
         self._electrode_soh = pybamm.lithium_ion.electrode_soh
         self.rebuild_parameters = self.set_rebuild_parameters()
 
+
 class WeppnerHuggins(EChemBaseModel):
     """
     Represents the Weppner & Huggins model to fit diffusion coefficients to GITT data.
