@@ -112,7 +112,7 @@ from .observers.observer import Observer
 #
 from .plotting.plotly_manager import PlotlyManager
 from .plotting.quick_plot import StandardPlot, StandardSubplot, plot_trajectories
-from .plotting.plot_cost2d import plot2d
+from .plotting.plot2d import plot2d
 from .plotting.plot_dataset import plot_dataset
 from .plotting.plot_convergence import plot_convergence
 from .plotting.plot_parameters import plot_parameters
