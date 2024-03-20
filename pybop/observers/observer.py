@@ -111,7 +111,7 @@ class Observer(BaseProblem):
             return log_likelihood
         else:
             raise ValueError(
-                "Obersever.log_likelihood is currently restricted to single output models."
+                "Observer.log_likelihood is currently restricted to single output models."
             )
 
     def get_current_state(self) -> TimeSeriesState:
