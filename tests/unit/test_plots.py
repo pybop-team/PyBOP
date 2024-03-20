@@ -109,7 +109,6 @@ class TestPlots:
 
     @pytest.mark.unit
     def test_with_ipykernel(self, dataset, cost, optim):
-        import ipykernel
         pybop.plot_dataset(dataset, signal=["Voltage [V]"])
         pybop.plot_cost2d(cost, gradient=True, steps=5)
         pybop.plot_convergence(optim)
