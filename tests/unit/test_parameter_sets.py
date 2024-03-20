@@ -84,3 +84,11 @@ class TestParameterSets:
             empty_params.export_parameters(
                 "examples/scripts/parameters/fit_ecm_parameters.json"
             )
+
+    @pytest.mark.unit
+    def test_bpx_parameter_sets(self):
+        # Test importing a BPX json file
+        bpx_parameters = pybop.ParameterSet(
+            json_path="examples/scripts/parameters/example_BPX.json"
+        )
+        bpx_parameters.import_from_bpx()
