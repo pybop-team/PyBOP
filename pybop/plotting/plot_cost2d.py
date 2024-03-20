@@ -3,9 +3,7 @@ import pybop
 import numpy as np
 
 
-def plot_cost2d(
-    cost, gradient=False, bounds=None, steps=10, show=True, **layout_kwargs
-):
+def plot2d(cost, gradient=False, bounds=None, steps=10, show=True, **layout_kwargs):
     """
     Plot a 2D visualisation of a cost landscape using Plotly.
 
@@ -147,6 +145,6 @@ def get_param_bounds(cost):
         if param.bounds is not None:
             bounds[i] = param.bounds
         else:
-            raise ValueError("plot_cost2d could not find bounds required for plotting")
+            raise ValueError("plot2d could not find bounds required for plotting")
 
     return bounds

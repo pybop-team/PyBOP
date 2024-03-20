@@ -94,14 +94,14 @@ class TestPlots:
     @pytest.mark.unit
     def test_cost_plots(self, cost):
         # Test plotting of Cost objects
-        pybop.plot_cost2d(cost, gradient=True, steps=5)
+        pybop.plot2d(cost, gradient=True, steps=5)
 
         # Test without bounds
         for param in cost.problem.parameters:
             param.bounds = None
         with pytest.raises(ValueError):
-            pybop.plot_cost2d(cost, steps=5)
-        pybop.plot_cost2d(cost, bounds=np.array([[0.5, 0.8], [0.4, 0.7]]), steps=5)
+            pybop.plot2d(cost, steps=5)
+        pybop.plot2d(cost, bounds=np.array([[0.5, 0.8], [0.4, 0.7]]), steps=5)
 
     @pytest.fixture
     def optim(self, cost):
@@ -127,7 +127,7 @@ class TestPlots:
 
         print(ipykernel.__version__)
         pybop.plot_dataset(dataset, signal=["Voltage [V]"])
-        pybop.plot_cost2d(cost, gradient=True, steps=5)
+        pybop.plot2d(cost, gradient=True, steps=5)
         pybop.plot_convergence(optim)
         pybop.plot_parameters(optim)
         pybop.plot_optim2d(optim, steps=5)

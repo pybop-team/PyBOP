@@ -94,7 +94,7 @@ def plot_optim2d(optim, bounds=None, steps=10, show=True, **layout_kwargs):
     cost = optim.cost
 
     # Create the cost landscape
-    fig = pybop.plot_cost2d(cost, bounds=bounds, steps=steps, show=False)
+    fig = pybop.plot2d(cost, bounds=bounds, steps=steps, show=False)
 
     # Import plotly only when needed
     go = pybop.PlotlyManager().go
