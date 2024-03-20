@@ -10,11 +10,12 @@ class TestPlots:
 
     @pytest.mark.unit
     def test_standard_plot(self):
-        # Test standard plot and removal of brackets
+        # Test standard plot
+        trace_names = pybop.StandardPlot.remove_brackets(["Trace [1]", "Trace [2]"])
         plot_dict = pybop.StandardPlot(
-            x=np.ones(10),
+            x=np.ones((2, 10)),
             y=np.ones((2, 10)),
-            trace_names=["Trace [1]", "Trace [2]"],
+            trace_names=trace_names,
         )
         plot_dict()
 
@@ -64,18 +65,31 @@ class TestPlots:
         pybop.plot_dataset(dataset, signal=["Voltage [V]"])
 
     @pytest.fixture
-    def problem(self, model, parameters, dataset):
+    def fitting_problem(self, model, parameters, dataset):
         return pybop.FittingProblem(model, parameters, dataset)
 
-    @pytest.mark.unit
-    def test_problem_plots(self, problem):
-        # Test plotting of Problem objects
-        pybop.quick_plot(problem, title="Optimised Comparison")
+    @pytest.fixture
+    def experiment(self):
+        return pybop.Experiment(
+            [
+                ("Discharge at 1C for 10 minutes (20 second period)"),
+            ]
+        )
 
     @pytest.fixture
-    def cost(self, problem):
+    def design_problem(self, model, parameters, experiment):
+        return pybop.DesignProblem(model, parameters, experiment)
+
+    @pytest.mark.unit
+    def test_problem_plots(self, fitting_problem, design_problem):
+        # Test plotting of Problem objects
+        pybop.quick_plot(fitting_problem, title="Optimised Comparison")
+        pybop.quick_plot(design_problem)
+
+    @pytest.fixture
+    def cost(self, fitting_problem):
         # Define an example cost
-        return pybop.SumSquaredError(problem)
+        return pybop.SumSquaredError(fitting_problem)
 
     @pytest.mark.unit
     def test_cost_plots(self, cost):
