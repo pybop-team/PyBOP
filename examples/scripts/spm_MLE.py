@@ -63,7 +63,7 @@ pybop.plot_convergence(optim)
 pybop.plot_parameters(optim)
 
 # Plot the cost landscape
-pybop.plot_cost2d(likelihood, steps=15)
+pybop.plot2d(likelihood, steps=15)
 
 # Plot the cost landscape with optimisation path
 bounds = np.array([[0.55, 0.77], [0.48, 0.68]])
