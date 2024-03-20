@@ -9,7 +9,7 @@ class BaseLikelihood(BaseCost):
 
     def __init__(self, problem, sigma=None):
         super(BaseLikelihood, self).__init__(problem, sigma)
-        self._n_times = problem.n_time_data
+        self.n_time_data = problem.n_time_data
 
     def set_sigma(self, sigma):
         """
@@ -54,7 +54,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         super(GaussianLogLikelihoodKnownSigma, self).__init__(problem, sigma)
         if sigma is not None:
             self.set_sigma(sigma)
-        self._offset = -0.5 * self._n_times * np.log(2 * np.pi / self.sigma0)
+        self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi / self.sigma0)
         self._multip = -1 / (2.0 * self.sigma0**2)
         self.sigma2 = self.sigma0**-2
         self._dl = np.ones(self._n_parameters)
@@ -124,7 +124,7 @@ class GaussianLogLikelihood(BaseLikelihood):
 
     def __init__(self, problem):
         super(GaussianLogLikelihood, self).__init__(problem)
-        self._logpi = -0.5 * self._n_times * np.log(2 * np.pi)
+        self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
         self._dl = np.ones(self._n_parameters + self.n_outputs)
 
     def _evaluate(self, x, grad=None):
@@ -154,7 +154,7 @@ class GaussianLogLikelihood(BaseLikelihood):
             [
                 np.sum(
                     self._logpi
-                    - self._n_times * np.log(sigma)
+                    - self.n_time_data * np.log(sigma)
                     - np.sum((self._target[signal] - y[signal]) ** 2) / (2.0 * sigma**2)
                 )
                 for signal in self.signal
@@ -190,12 +190,12 @@ class GaussianLogLikelihood(BaseLikelihood):
             r = r.reshape(self.problem.n_time_data)
             dy = dy.reshape(self.n_parameters, self.problem.n_time_data)
             dl = sigma ** (-2.0) * np.sum((r * dy), axis=1)
-            dsigma = -self._n_times / sigma + sigma**-(3.0) * np.sum(r**2, axis=0)
+            dsigma = -self.n_time_data / sigma + sigma ** -(3.0) * np.sum(r**2, axis=0)
             dl = np.concatenate((dl, dsigma))
             return likelihood, dl
         else:
             r = r.reshape(self.n_outputs, self.problem.n_time_data)
             dl = sigma ** (-2.0) * np.sum((r[:, :, np.newaxis] * dy), axis=1)
-            dsigma = -self._n_times / sigma + sigma**-(3.0) * np.sum(r**2, axis=0)
+            dsigma = -self.n_time_data / sigma + sigma ** -(3.0) * np.sum(r**2, axis=0)
             dl = np.concatenate((dl, dsigma))
             return likelihood, np.sum(dl, axis=1)
