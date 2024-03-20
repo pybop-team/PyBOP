@@ -3,7 +3,9 @@ import pybop
 import numpy as np
 
 
-def plot2d(cost, gradient=False, bounds=None, steps=10, show=True, **layout_kwargs):
+def plot2d(
+    cost_or_optim, gradient=False, bounds=None, steps=10, show=True, **layout_kwargs
+):
     """
     Plot a 2D visualisation of a cost landscape using Plotly.
 
@@ -12,8 +14,12 @@ def plot2d(cost, gradient=False, bounds=None, steps=10, show=True, **layout_kwar
 
     Parameters
     ----------
-    cost : callable
-        The cost function to be evaluated. Must accept a list of parameter values and return a cost value.
+    cost_or_optim : a callable cost function, pybop Cost or Optimisation object
+        Either:
+        - the cost function to be evaluated. Must accept a list of parameter values and return a cost value.
+        - an Optimisation object which provides a specific optimisation trace overlaid on the cost landscape.
+    gradient : bool, optional
+        If True, the gradient is shown (default: False).
     bounds : numpy.ndarray, optional
         A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses `get_param_bounds`.
     steps : int, optional
@@ -35,6 +41,15 @@ def plot2d(cost, gradient=False, bounds=None, steps=10, show=True, **layout_kwar
     ValueError
         If the cost function does not return a valid cost when called with a parameter list.
     """
+
+    # Assign input as a cost or optimisation object
+    if isinstance(cost_or_optim, pybop.Optimisation):
+        optim = cost_or_optim
+        plot_optim = True
+        cost = optim.cost
+    else:
+        cost = cost_or_optim
+        plot_optim = False
 
     # Set up parameter bounds
     if bounds is None:
@@ -91,6 +106,44 @@ def plot2d(cost, gradient=False, bounds=None, steps=10, show=True, **layout_kwar
 
     # Create contour plot and update the layout
     fig = go.Figure(data=[go.Contour(x=x, y=y, z=costs)], layout=layout)
+
+    if plot_optim:
+        # Plot the optimisation trace
+        optim_trace = np.array([item for sublist in optim.log for item in sublist])
+        optim_trace = optim_trace.reshape(-1, 2)
+        fig.add_trace(
+            go.Scatter(
+                x=optim_trace[:, 0],
+                y=optim_trace[:, 1],
+                mode="markers",
+                marker=dict(
+                    color=[i / len(optim_trace) for i in range(len(optim_trace))],
+                    colorscale="YlOrBr",
+                    showscale=False,
+                ),
+                showlegend=False,
+            )
+        )
+
+        # Plot the initial guess
+        fig.add_trace(
+            go.Scatter(
+                x=[optim.x0[0]],
+                y=[optim.x0[1]],
+                mode="markers",
+                marker_symbol="circle",
+                marker=dict(
+                    color="mediumspringgreen",
+                    line_color="mediumspringgreen",
+                    line_width=1,
+                    size=14,
+                    showscale=False,
+                ),
+                showlegend=False,
+            )
+        )
+
+    # Update the layout and display the figure
     fig.update_layout(**layout_kwargs)
     if "ipykernel" in sys.modules and show:
         fig.show("svg")

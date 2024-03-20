@@ -119,7 +119,7 @@ class TestPlots:
         pybop.plot_parameters(optim)
 
         # Plot the cost landscape with optimisation path
-        pybop.plot_optim2d(optim, steps=5)
+        pybop.plot2d(optim, steps=5)
 
     @pytest.mark.unit
     def test_with_ipykernel(self, dataset, cost, optim):
@@ -130,4 +130,4 @@ class TestPlots:
         pybop.plot2d(cost, gradient=True, steps=5)
         pybop.plot_convergence(optim)
         pybop.plot_parameters(optim)
-        pybop.plot_optim2d(optim, steps=5)
+        pybop.plot2d(optim, steps=5)
