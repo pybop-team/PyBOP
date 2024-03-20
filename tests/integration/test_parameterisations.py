@@ -215,7 +215,7 @@ class TestModelParameterisation:
         assert initial_cost > final_cost
         np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
 
-    @pytest.mark.parametrize("init_soc", [0.4, 0.7])
+    @pytest.mark.parametrize("init_soc", [0.4, 0.6])
     @pytest.mark.integration
     def test_model_misparameterisation(self, parameters, model, init_soc):
         # Define two different models with different parameter sets
