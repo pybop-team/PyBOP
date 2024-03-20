@@ -1,5 +1,6 @@
 import pybamm
 from .echem_base import EChemBaseModel
+from .weppner_huggins import BaseWeppnerHuggins
 
 
 class SPM(EChemBaseModel):
@@ -114,6 +115,69 @@ class SPMe(EChemBaseModel):
     ):
         super().__init__()
         self.pybamm_model = pybamm.lithium_ion.SPMe(options=options)
+        self._unprocessed_model = self.pybamm_model
+        self.name = name
+
+        # Set parameters, using either the provided ones or the default
+        self.default_parameter_values = self.pybamm_model.default_parameter_values
+        self._parameter_set = (
+            parameter_set or self.pybamm_model.default_parameter_values
+        )
+        self._unprocessed_parameter_set = self._parameter_set
+
+        # Define model geometry and discretization
+        self.geometry = geometry or self.pybamm_model.default_geometry
+        self.submesh_types = submesh_types or self.pybamm_model.default_submesh_types
+        self.var_pts = var_pts or self.pybamm_model.default_var_pts
+        self.spatial_methods = (
+            spatial_methods or self.pybamm_model.default_spatial_methods
+        )
+        self.solver = solver or self.pybamm_model.default_solver
+
+        # Internal attributes for the built model are initialized but not set
+        self._model_with_set_params = None
+        self._built_model = None
+        self._built_initial_soc = None
+        self._mesh = None
+        self._disc = None
+
+        self._electrode_soh = pybamm.lithium_ion.electrode_soh
+        self.rebuild_parameters = self.set_rebuild_parameters()
+
+class WeppnerHuggins(EChemBaseModel):
+    """
+    Represents the Weppner & Huggins model to fit diffusion coefficients to GITT data.
+
+    Parameters
+    ----------
+    name: str, optional
+        A name for the model instance, defaults to "Weppner & Huggins model".
+    parameter_set: pybamm.ParameterValues or dict, optional
+        A dictionary or a ParameterValues object containing the parameters for the model. If None, the default parameters are used.
+    geometry: dict, optional
+        A dictionary defining the model's geometry. If None, the default geometry is used.
+    submesh_types: dict, optional
+        A dictionary defining the types of submeshes to use. If None, the default submesh types are used.
+    var_pts: dict, optional
+        A dictionary specifying the number of points for each variable for discretization. If None, the default variable points are used.
+    spatial_methods: dict, optional
+        A dictionary specifying the spatial methods for discretization. If None, the default spatial methods are used.
+    solver: pybamm.Solver, optional
+        The solver to use for simulating the model. If None, the default solver is used.
+    """
+
+    def __init__(
+        self,
+        name="Weppner & Huggins model",
+        parameter_set=None,
+        geometry=None,
+        submesh_types=None,
+        var_pts=None,
+        spatial_methods=None,
+        solver=None,
+    ):
+        super().__init__()
+        self.pybamm_model = BaseWeppnerHuggins()
         self._unprocessed_model = self.pybamm_model
         self.name = name
 
