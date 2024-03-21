@@ -19,6 +19,9 @@ class RootMeanSquaredError(BaseCost):
     def __init__(self, problem):
         super(RootMeanSquaredError, self).__init__(problem)
 
+        # Default fail gradient
+        self._de = 1.0
+
     def _evaluate(self, x, grad=None):
         """
         Calculate the root mean square error for a given set of parameters.
@@ -39,10 +42,21 @@ class RootMeanSquaredError(BaseCost):
         """
         prediction = self.problem.evaluate(x)
 
-        if len(prediction) < len(self._target):
-            return np.float64(np.inf)  # simulation stopped early
+        for key in self.signal:
+            if len(prediction.get(key, [])) != len(self._target.get(key, [])):
+                return np.float64(np.inf)  # prediction doesn't match target
+
+        e = np.array(
+            [
+                np.sqrt(np.mean((prediction[signal] - self._target[signal]) ** 2))
+                for signal in self.signal
+            ]
+        )
+
+        if self.n_outputs == 1:
+            return e.item()
         else:
-            return np.sqrt(np.mean((prediction - self._target) ** 2))
+            return np.sum(e)
 
     def _evaluateS1(self, x):
         """
@@ -65,24 +79,47 @@ class RootMeanSquaredError(BaseCost):
             If an error occurs during the calculation of the cost or gradient.
         """
         y, dy = self.problem.evaluateS1(x)
-        if len(y) < len(self._target):
-            e = np.float64(np.inf)
-            de = self._de * np.ones(self.n_parameters)
-        else:
-            dy = dy.reshape(
-                (
-                    self.problem.n_time_data,
-                    self.n_outputs,
-                    self.n_parameters,
-                )
-            )
-            r = y - self._target
-            e = np.sqrt(np.mean((r) ** 2))
-            de = np.mean((r.T * dy.T), axis=2) / np.sqrt(
-                np.mean((r.T * dy.T) ** 2, axis=2)
-            )
 
-        return e, de.flatten()
+        for key in self.signal:
+            if len(y.get(key, [])) != len(self._target.get(key, [])):
+                e = np.float64(np.inf)
+                de = self._de * np.ones(self.n_parameters)
+                return e, de
+
+        r = np.array([y[signal] - self._target[signal] for signal in self.signal])
+
+        if self.n_outputs == 1:
+            r = r.reshape(self.problem.n_time_data)
+            dy = dy.reshape(self.n_parameters, self.problem.n_time_data)
+            e = np.sqrt(np.mean(r**2))
+            de = np.mean((r * dy), axis=1) / (
+                np.sqrt(np.mean((r * dy) ** 2, axis=1) + np.finfo(float).eps)
+            )
+            return e.item(), de.flatten()
+
+        else:
+            r = r.reshape(self.n_outputs, self.problem.n_time_data)
+            e = np.sqrt(np.mean(r**2, axis=1))
+            de = np.mean((r[:, :, np.newaxis] * dy), axis=1) / (
+                np.sqrt(np.mean((r[:, :, np.newaxis] * dy) ** 2, axis=1))
+                + np.finfo(float).eps
+            )
+            return np.sum(e), np.sum(de, axis=1)
+
+    def set_fail_gradient(self, de):
+        """
+        Set the fail gradient to a specified value.
+
+        The fail gradient is used if an error occurs during the calculation
+        of the gradient. This method allows updating the default gradient value.
+
+        Parameters
+        ----------
+        de : float
+            The new fail gradient value to be used.
+        """
+        de = float(de)
+        self._de = de
 
 
 class SumSquaredError(BaseCost):
@@ -128,13 +165,20 @@ class SumSquaredError(BaseCost):
         """
         prediction = self.problem.evaluate(x)
 
-        if len(prediction) < len(self._target):
-            return np.float64(np.inf)  # simulation stopped early
+        for key in self.signal:
+            if len(prediction.get(key, [])) != len(self._target.get(key, [])):
+                return np.float64(np.inf)  # prediction doesn't match target
+
+        e = np.array(
+            [
+                np.sum(((prediction[signal] - self._target[signal]) ** 2))
+                for signal in self.signal
+            ]
+        )
+        if self.n_outputs == 1:
+            return e.item()
         else:
-            return np.sum(
-                (np.sum(((prediction - self._target) ** 2), axis=0)),
-                axis=0,
-            )
+            return np.sum(e)
 
     def _evaluateS1(self, x):
         """
@@ -157,22 +201,26 @@ class SumSquaredError(BaseCost):
             If an error occurs during the calculation of the cost or gradient.
         """
         y, dy = self.problem.evaluateS1(x)
-        if len(y) < len(self._target):
-            e = np.float64(np.inf)
-            de = self._de * np.ones(self.n_parameters)
-        else:
-            dy = dy.reshape(
-                (
-                    self.problem.n_time_data,
-                    self.n_outputs,
-                    self.n_parameters,
-                )
-            )
-            r = y - self._target
-            e = np.sum(np.sum(r**2, axis=0), axis=0)
-            de = 2 * np.sum(np.sum((r.T * dy.T), axis=2), axis=1)
+        for key in self.signal:
+            if len(y.get(key, [])) != len(self._target.get(key, [])):
+                e = np.float64(np.inf)
+                de = self._de * np.ones(self.n_parameters)
+                return e, de
 
-        return e, de
+        r = np.array([y[signal] - self._target[signal] for signal in self.signal])
+
+        if self.n_outputs == 1:
+            r = r.reshape(self.problem.n_time_data)
+            dy = dy.reshape(self.n_parameters, self.problem.n_time_data)
+            e = np.sum(r**2, axis=0)
+            de = 2 * np.sum((r * dy), axis=1)
+            return e.item(), de
+
+        else:
+            r = r.reshape(self.n_outputs, self.problem.n_time_data)
+            e = np.sum(r**2, axis=1)
+            de = 2 * np.sum((r[:, :, np.newaxis] * dy), axis=1)
+            return np.sum(e), np.sum(de, axis=1)
 
     def set_fail_gradient(self, de):
         """

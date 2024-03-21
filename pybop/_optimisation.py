@@ -29,7 +29,7 @@ class Optimisation:
         Initial parameter values for the optimization.
     bounds : dict
         Dictionary containing the parameter bounds with keys 'lower' and 'upper'.
-    n_parameters : int
+    _n_parameters : int
         Number of parameters in the optimization problem.
     sigma0 : float or sequence
         Initial step size or standard deviation for the optimiser.
@@ -40,6 +40,7 @@ class Optimisation:
     def __init__(
         self,
         cost,
+        x0=None,
         optimiser=None,
         sigma0=None,
         verbose=False,
@@ -47,12 +48,12 @@ class Optimisation:
         allow_infeasible_solutions=True,
     ):
         self.cost = cost
+        self.x0 = x0 or cost.x0
         self.optimiser = optimiser
         self.verbose = verbose
-        self.x0 = cost.x0
         self.bounds = cost.bounds
-        self.n_parameters = cost.n_parameters
-        self.sigma0 = sigma0
+        self.sigma0 = sigma0 or cost.sigma0
+        self._n_parameters = cost._n_parameters
         self.physical_viability = physical_viability
         self.allow_infeasible_solutions = allow_infeasible_solutions
         self.log = []
@@ -74,12 +75,10 @@ class Optimisation:
         self._transformation = None
 
         # Check if minimising or maximising
-        self._minimising = not isinstance(cost, pints.LogPDF)
-        if self._minimising:
-            self._function = self.cost
-        else:
-            self._function = pints.ProbabilityBasedError(cost)
-        del cost
+        if isinstance(cost, pybop.BaseLikelihood):
+            self.cost._minimising = False
+        self._minimising = self.cost._minimising
+        self._function = self.cost
 
         # Construct Optimiser
         self.pints = True
@@ -94,7 +93,7 @@ class Optimisation:
             if issubclass(
                 self.optimiser, (pybop.SciPyMinimize, pybop.SciPyDifferentialEvolution)
             ):
-                self.optimiser = self.optimiser()
+                self.optimiser = self.optimiser(bounds=self.bounds)
 
             else:
                 raise ValueError("Unknown optimiser type")
@@ -121,6 +120,10 @@ class Optimisation:
         # Maximum iterations
         self._max_iterations = None
         self.set_max_iterations()
+
+        # Minimum iterations
+        self._min_iterations = None
+        self.set_min_iterations()
 
         # Maximum unchanged iterations
         self._unchanged_threshold = 1  # smallest significant f change
@@ -175,15 +178,15 @@ class Optimisation:
         final_cost : float
             The final cost associated with the best parameters.
         """
-        x, final_cost = self.optimiser.optimise(
+        result = self.optimiser.optimise(
             cost_function=self.cost,
             x0=self.x0,
-            bounds=self.bounds,
             maxiter=self._max_iterations,
         )
         self.log = self.optimiser.log
+        self._iterations = result.nit
 
-        return x, final_cost
+        return result.x, self.cost(result.x)
 
     def _run_pints(self):
         """
@@ -290,6 +293,7 @@ class Optimisation:
                 halt = (
                     self._unchanged_max_iterations is not None
                     and unchanged_iterations >= self._unchanged_max_iterations
+                    and iteration >= self._min_iterations
                 )
                 if running and halt:
                     running = False
@@ -368,8 +372,10 @@ class Optimisation:
         # Store the optimised parameters
         self.store_optimised_parameters(x)
 
-        # Return best position and score
-        return x, f if self._minimising else -f
+        # Return best position and the score used internally,
+        # i.e the negative log-likelihood in the case of
+        # self._minimising = False
+        return x, f
 
     def f_guessed_tracking(self):
         """
@@ -449,7 +455,23 @@ class Optimisation:
                 raise ValueError("Maximum number of iterations cannot be negative.")
         self._max_iterations = iterations
 
-    def set_max_unchanged_iterations(self, iterations=5, threshold=1e-5):
+    def set_min_iterations(self, iterations=2):
+        """
+        Set the minimum number of iterations as a stopping criterion.
+
+        Parameters
+        ----------
+        iterations : int, optional
+            The minimum number of iterations to run (default is 100).
+            Set to `None` to remove this stopping criterion.
+        """
+        if iterations is not None:
+            iterations = int(iterations)
+            if iterations < 0:
+                raise ValueError("Minimum number of iterations cannot be negative.")
+        self._min_iterations = iterations
+
+    def set_max_unchanged_iterations(self, iterations=15, threshold=1e-5):
         """
         Set the maximum number of iterations without significant change as a stopping criterion.
         Credit: PINTS
@@ -457,7 +479,7 @@ class Optimisation:
         Parameters
         ----------
         iterations : int, optional
-            The maximum number of unchanged iterations to run (default is 25).
+            The maximum number of unchanged iterations to run (default is 15).
             Set to `None` to remove this stopping criterion.
         threshold : float, optional
             The minimum significant change in the objective function value that resets the unchanged iteration counter (default is 1e-5).
@@ -485,7 +507,7 @@ class Optimisation:
         x : array-like
             Optimized parameter values.
         """
-        for i, param in enumerate(self.cost.problem.parameters):
+        for i, param in enumerate(self.cost.parameters):
             param.update(value=x[i])
 
     def check_optimal_parameters(self, x):

@@ -18,7 +18,7 @@ class StandaloneCost(pybop.BaseCost):
         BaseCost interface.
     x0 : array-like
         The initial guess for the optimization problem, set to [4.2].
-    n_parameters : int
+    _n_parameters : int
         The number of parameters in the model, which is 1 in this case.
     bounds : dict
         A dictionary containing the lower and upper bounds for the parameter,
@@ -40,7 +40,7 @@ class StandaloneCost(pybop.BaseCost):
         super().__init__(problem)
 
         self.x0 = np.array([4.2])
-        self.n_parameters = len(self.x0)
+        self._n_parameters = len(self.x0)
 
         self.bounds = dict(
             lower=[-1],

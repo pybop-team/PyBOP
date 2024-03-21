@@ -22,6 +22,8 @@ class TestParameters:
         assert parameter.prior.mean == 0.6
         assert parameter.prior.sigma == 0.02
         assert parameter.bounds == [0.375, 0.7]
+        assert parameter.lower_bound == 0.375
+        assert parameter.upper_bound == 0.7
         assert parameter.initial_value == 0.6
 
     @pytest.mark.unit
@@ -51,6 +53,13 @@ class TestParameters:
         assert parameter.margin == 1e-4
         parameter.set_margin(margin=1e-3)
         assert parameter.margin == 1e-3
+
+    @pytest.mark.unit
+    def test_no_bounds(self):
+        parameter = pybop.Parameter(
+            "Negative electrode active material volume fraction",
+        )
+        assert parameter.bounds is None
 
     @pytest.mark.unit
     def test_invalid_inputs(self, parameter):

@@ -58,31 +58,31 @@ class TestOptimisation:
     )
     @pytest.mark.unit
     def test_optimiser_classes(self, cost, optimiser_class, expected_name):
-        cost.bounds = None
         opt = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
 
         assert opt.optimiser is not None
         assert opt.optimiser.name() == expected_name
 
-        if optimiser_class not in [
-            pybop.SciPyMinimize,
-            pybop.SciPyDifferentialEvolution,
-        ]:
-            assert opt.optimiser.boundaries is None
+        # Test without bounds
+        cost.bounds = None
+        if optimiser_class in [pybop.SciPyDifferentialEvolution]:
+            with pytest.raises(ValueError):
+                pybop.Optimisation(cost=cost, optimiser=optimiser_class)
+        else:
+            opt = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
+
+            if optimiser_class in [pybop.SciPyMinimize]:
+                assert opt.optimiser.bounds is None
+            else:
+                assert opt.optimiser.boundaries is None
 
     @pytest.mark.unit
-    def test_default_optimiser_with_bounds(self, cost):
+    def test_default_optimiser(self, cost):
         opt = pybop.Optimisation(cost=cost)
         assert (
             opt.optimiser.name()
             == "Covariance Matrix Adaptation Evolution Strategy (CMA-ES)"
         )
-
-    @pytest.mark.unit
-    def test_default_optimiser_no_bounds(self, cost):
-        cost.bounds = None
-        opt = pybop.Optimisation(cost=cost)
-        assert opt.optimiser.boundaries is None
 
     @pytest.mark.unit
     def test_incorrect_optimiser_class(self, cost):
@@ -111,16 +111,30 @@ class TestOptimisation:
         # Test max unchanged iterations
         optim = pybop.Optimisation(cost=cost, optimiser=pybop.GradientDescent)
         optim.set_max_unchanged_iterations(1)
+        optim.set_min_iterations(1)
         x, __ = optim.run()
         assert optim._iterations == 2
 
-        # Test invalid maximum values
+        # Test invalid values
         with pytest.raises(ValueError):
             optim.set_max_evaluations(-1)
+        with pytest.raises(ValueError):
+            optim.set_min_iterations(-1)
         with pytest.raises(ValueError):
             optim.set_max_unchanged_iterations(-1)
         with pytest.raises(ValueError):
             optim.set_max_unchanged_iterations(1, threshold=-1)
+
+    @pytest.mark.unit
+    def test_infeasible_solutions(self, cost):
+        # Test infeasible solutions
+        for optimiser in [pybop.SciPyMinimize, pybop.GradientDescent]:
+            optim = pybop.Optimisation(
+                cost=cost, optimiser=optimiser, allow_infeasible_solutions=False
+            )
+            optim.set_max_iterations(1)
+            optim.run()
+            assert optim._iterations == 1
 
     @pytest.mark.unit
     def test_unphysical_result(self, cost):

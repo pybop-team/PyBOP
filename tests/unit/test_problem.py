@@ -83,6 +83,12 @@ class TestProblem:
         with pytest.raises(ValueError):
             pybop._problem.BaseProblem(parameters, model=model, signal=[1e-5, 1e-5])
 
+        # Test without bounds
+        for param in parameters:
+            param.bounds = None
+        problem = pybop._problem.BaseProblem(parameters, model=model)
+        assert problem.bounds is None
+
     @pytest.mark.unit
     def test_fitting_problem(self, parameters, dataset, model, signal):
         # Test incorrect number of initial parameter values
@@ -167,7 +173,7 @@ class TestProblem:
         assert problem._model._built_model is not None
         with pytest.raises(AssertionError):
             np.testing.assert_allclose(
-                out["Terminal voltage [V]"].data,
-                problem_output,
+                out["Voltage [V]"].data,
+                problem_output["Voltage [V]"],
                 atol=1e-5,
             )
