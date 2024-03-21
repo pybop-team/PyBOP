@@ -1,10 +1,12 @@
 from __future__ import annotations
+
+import copy
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
-import pybamm
-import copy
-import numpy as np
+
 import casadi
+import numpy as np
+import pybamm
 
 Inputs = Dict[str, float]
 

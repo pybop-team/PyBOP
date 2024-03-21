@@ -1,6 +1,8 @@
 import sys
-import pybop
+
 import numpy as np
+
+import pybop
 
 
 def plot_convergence(optim, show=True, **layout_kwargs):

@@ -1,5 +1,6 @@
-import numpy as np
 import warnings
+
+import numpy as np
 
 from pybop import is_numeric
 from pybop.costs.base_cost import BaseCost

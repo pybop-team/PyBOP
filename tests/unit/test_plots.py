@@ -1,7 +1,8 @@
-import pybop
 import numpy as np
 import pytest
 from packaging import version
+
+import pybop
 
 
 class TestPlots:

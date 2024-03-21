@@ -1,6 +1,8 @@
 import sys
-import pybop
+
 import numpy as np
+
+import pybop
 
 
 def quick_plot(problem, parameter_values=None, show=True, **layout_kwargs):

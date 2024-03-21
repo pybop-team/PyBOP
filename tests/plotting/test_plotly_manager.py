@@ -1,11 +1,13 @@
-from importlib.metadata import distributions
-from distutils.spawn import find_executable
-from pybop import PlotlyManager
 import subprocess
+from distutils.spawn import find_executable
+from importlib.metadata import distributions
+
+import numpy as np
 import plotly
 import pytest
+
 import pybop
-import numpy as np
+from pybop import PlotlyManager
 
 # Find the Python executable
 python_executable = find_executable("python")
