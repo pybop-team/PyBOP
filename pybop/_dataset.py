@@ -1,5 +1,5 @@
-import pybamm
 import numpy as np
+import pybamm
 
 
 class Dataset:

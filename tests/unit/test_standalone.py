@@ -1,6 +1,7 @@
-import pytest
-import pybop
 import numpy as np
+import pytest
+
+import pybop
 from examples.standalone.cost import StandaloneCost
 from examples.standalone.problem import StandaloneProblem
 

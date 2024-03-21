@@ -1,6 +1,8 @@
 import sys
-import pybop
+
 import numpy as np
+
+import pybop
 
 
 def plot2d(

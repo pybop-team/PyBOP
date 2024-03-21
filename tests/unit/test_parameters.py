@@ -1,5 +1,6 @@
-import pybop
 import pytest
+
+import pybop
 
 
 class TestParameters:

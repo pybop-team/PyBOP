@@ -1,4 +1,5 @@
 import numpy as np
+
 from pybop.costs.base_cost import BaseCost
 
 

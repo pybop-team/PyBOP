@@ -1,5 +1,6 @@
-import pybop
 import sys
+
+import pybop
 
 
 def plot_dataset(

@@ -1,5 +1,6 @@
-import pybop
 import pandas as pd
+
+import pybop
 
 # Form dataset
 Measurements = pd.read_csv("examples/scripts/Chen_example.csv", comment="#").to_numpy()
