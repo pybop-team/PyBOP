@@ -14,10 +14,13 @@ class StandaloneProblem(BaseProblem):
         model=None,
         check_model=True,
         signal=None,
+        additional_variables=None,
         init_soc=None,
         x0=None,
     ):
-        super().__init__(parameters, model, check_model, signal, init_soc, x0)
+        super().__init__(
+            parameters, model, check_model, signal, additional_variables, init_soc, x0
+        )
         self._dataset = dataset.data
 
         # Check that the dataset contains time and current
@@ -37,8 +40,7 @@ class StandaloneProblem(BaseProblem):
                 raise ValueError(
                     f"Time data and {signal} data must be the same length."
                 )
-        target = [self._dataset[signal] for signal in self.signal]
-        self._target = np.vstack(target).T
+        self._target = {signal: self._dataset[signal] for signal in self.signal}
 
     def evaluate(self, x):
         """
@@ -55,7 +57,7 @@ class StandaloneProblem(BaseProblem):
             The model output y(t) simulated with inputs x.
         """
 
-        return x[0] * self._time_data + x[1]
+        return {signal: x[0] * self._time_data + x[1] for signal in self.signal}
 
     def evaluateS1(self, x):
         """
@@ -73,8 +75,8 @@ class StandaloneProblem(BaseProblem):
             with given inputs x.
         """
 
-        y = x[0] * self._time_data + x[1]
+        y = {signal: x[0] * self._time_data + x[1] for signal in self.signal}
 
-        dy = np.dstack([self._time_data, np.zeros(self._time_data.shape)])
+        dy = [self._time_data, np.zeros(self._time_data.shape)]
 
-        return (np.asarray(y), np.asarray(dy))
+        return (y, np.asarray(dy))

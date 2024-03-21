@@ -126,6 +126,17 @@ class TestOptimisation:
             optim.set_max_unchanged_iterations(1, threshold=-1)
 
     @pytest.mark.unit
+    def test_infeasible_solutions(self, cost):
+        # Test infeasible solutions
+        for optimiser in [pybop.SciPyMinimize, pybop.GradientDescent]:
+            optim = pybop.Optimisation(
+                cost=cost, optimiser=optimiser, allow_infeasible_solutions=False
+            )
+            optim.set_max_iterations(1)
+            optim.run()
+            assert optim._iterations == 1
+
+    @pytest.mark.unit
     def test_unphysical_result(self, cost):
         # Trigger parameters not physically viable warning
         optim = pybop.Optimisation(cost=cost)

@@ -61,9 +61,9 @@ print(f"Optimised gravimetric energy density: {-final_cost:.2f} Wh.kg-1")
 
 # Plot the timeseries output
 if cost.update_capacity:
-    cost.problem._model.approximate_capacity(x)
-pybop.quick_plot(x, cost, title="Optimised Comparison")
+    problem._model.approximate_capacity(x)
+pybop.quick_plot(problem, parameter_values=x, title="Optimised Comparison")
 
 # Plot the cost landscape with optimisation path
 if len(x) == 2:
-    pybop.plot_cost2d(cost, optim=optim, steps=3)
+    pybop.plot2d(optim, steps=3)
