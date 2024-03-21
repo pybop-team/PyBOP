@@ -224,9 +224,12 @@ class EChemBaseModel(BaseModel):
         # Calculate average voltage
         positive_electrode_ocp = self._parameter_set["Positive electrode OCP [V]"]
         negative_electrode_ocp = self._parameter_set["Negative electrode OCP [V]"]
-        average_voltage = positive_electrode_ocp(mean_sto_pos) - negative_electrode_ocp(
-            mean_sto_neg
-        )
+        try:
+            average_voltage = positive_electrode_ocp(
+                mean_sto_pos
+            ) - negative_electrode_ocp(mean_sto_neg)
+        except Exception as e:
+            raise ValueError(f"Error in average voltage calculation: {e}")
 
         # Calculate and update nominal capacity
         theoretical_capacity = theoretical_energy / average_voltage

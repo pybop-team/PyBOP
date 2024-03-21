@@ -85,8 +85,11 @@ params.export_parameters(
     "examples/scripts/parameters/fit_ecm_parameters.json", fit_params=parameters
 )
 
+# Plot the time series
+pybop.plot_dataset(dataset)
+
 # Plot the timeseries output
-pybop.quick_plot(x, cost, title="Optimised Comparison")
+pybop.quick_plot(problem, parameter_values=x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)
@@ -95,8 +98,8 @@ pybop.plot_convergence(optim)
 pybop.plot_parameters(optim)
 
 # Plot the cost landscape
-pybop.plot_cost2d(cost, steps=15)
+pybop.plot2d(cost, steps=15)
 
 # Plot the cost landscape with optimisation path and updated bounds
 bounds = np.array([[1e-4, 1e-2], [1e-5, 1e-2]])
-pybop.plot_cost2d(cost, optim=optim, bounds=bounds, steps=15)
+pybop.plot2d(optim, bounds=bounds, steps=15)

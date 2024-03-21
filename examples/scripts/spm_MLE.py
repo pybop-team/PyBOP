@@ -55,7 +55,7 @@ x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
 # Plot the timeseries output
-pybop.quick_plot(x[0:2], likelihood, title="Optimised Comparison")
+pybop.quick_plot(problem, parameter_values=x[0:2], title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)
@@ -64,8 +64,8 @@ pybop.plot_convergence(optim)
 pybop.plot_parameters(optim)
 
 # Plot the cost landscape
-pybop.plot_cost2d(likelihood, steps=15)
+pybop.plot2d(likelihood, steps=15)
 
-# Plot the cost landscape with optimisation path and updated bounds
+# Plot the cost landscape with optimisation path
 bounds = np.array([[0.55, 0.77], [0.48, 0.68]])
-pybop.plot_cost2d(likelihood, optim=optim, bounds=bounds, steps=15)
+pybop.plot2d(optim, bounds=bounds, steps=15)

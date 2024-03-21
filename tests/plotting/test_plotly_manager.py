@@ -2,9 +2,11 @@ import subprocess
 from distutils.spawn import find_executable
 from importlib.metadata import distributions
 
+import numpy as np
 import plotly
 import pytest
 
+import pybop
 from pybop import PlotlyManager
 
 # Find the Python executable
@@ -113,3 +115,65 @@ def test_post_install_setup(plotly_installed):
 def is_package_installed(package_name):
     """Check if a package is installed without raising an exception."""
     return any(d.metadata["Name"] == package_name for d in distributions())
+
+
+@pytest.fixture
+def dataset(plotly_installed):
+    # Construct and simulate model
+    model = pybop.lithium_ion.SPM()
+    model.parameter_set = model.pybamm_model.default_parameter_values
+    solution = model.predict(t_eval=np.linspace(0, 10, 100))
+
+    # Form dataset
+    data_dictionary = {
+        "Time [s]": solution["Time [s]"].data,
+        "Current [A]": solution["Current [A]"].data,
+        "Terminal voltage [V]": solution["Terminal voltage [V]"].data,
+    }
+    return pybop.Dataset(data_dictionary)
+
+
+@pytest.mark.unit
+def test_standard_plot(dataset, plotly_installed):
+    # Check the StandardPlot class
+    pybop.StandardPlot(dataset["Time [s]"], dataset["Terminal voltage [V]"])
+
+    # Check the StandardSubplot class
+    pybop.StandardSubplot(
+        dataset["Time [s]"],
+        [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
+        num_rows=1,
+    )
+    pybop.StandardSubplot(
+        dataset["Time [s]"],
+        [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
+        num_cols=1,
+    )
+
+    # Check plotting numpy arrays, lists, and lists of numpy arrays
+    pybop.plot_trajectories(dataset["Time [s]"], dataset["Terminal voltage [V]"])
+    pybop.plot_trajectories(
+        dataset["Time [s]"].tolist(), dataset["Terminal voltage [V]"].tolist()
+    )
+    pybop.plot_trajectories(
+        [dataset["Time [s]"]],
+        [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
+    )
+    pybop.plot_trajectories(
+        [dataset["Time [s]"], dataset["Time [s]"]],
+        [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
+    )
+
+    # Test incorrect dimensions
+    with pytest.raises(ValueError):
+        pybop.plot_trajectories(
+            [dataset["Time [s]"], dataset["Current [A]"]],
+            dataset["Terminal voltage [V]"],
+        )
+
+
+@pytest.mark.unit
+def test_plot_dataset(dataset, plotly_installed):
+    # Test plotting of a dataset
+    pybop.plot_dataset(dataset, signal=["Terminal voltage [V]"])
+    pybop.plot_dataset(dataset, signal=["Terminal voltage [V]", "Current [A]"])

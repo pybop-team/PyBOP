@@ -2,6 +2,7 @@ import warnings
 
 import numpy as np
 
+from pybop import is_numeric
 from pybop.costs.base_cost import BaseCost
 
 
@@ -30,7 +31,7 @@ class DesignCost(BaseCost):
         problem : object
             The problem instance containing the model and data.
         """
-        super().__init__(problem)
+        super(DesignCost, self).__init__(problem)
         self.problem = problem
         if update_capacity is True:
             nominal_capacity_warning = (
@@ -57,9 +58,12 @@ class DesignCost(BaseCost):
         if self.update_capacity:
             self.problem.model.approximate_capacity(self.problem.x0)
         solution = self.problem.evaluate(initial_conditions)
-        self.problem._time_data = solution[:, -1]
-        self.problem._target = solution[:, 0:-1]
-        self.dt = solution[1, -1] - solution[0, -1]
+
+        if "Time [s]" not in solution:
+            raise ValueError("The solution does not contain time data.")
+        self.problem._time_data = solution["Time [s]"]
+        self.problem._target = {key: solution[key] for key in self.problem.signal}
+        self.dt = solution["Time [s]"][1] - solution["Time [s]"][0]
 
     def _evaluate(self, x, grad=None):
         """
@@ -93,7 +97,7 @@ class GravimetricEnergyDensity(DesignCost):
     """
 
     def __init__(self, problem, update_capacity=False):
-        super().__init__(problem, update_capacity)
+        super(GravimetricEnergyDensity, self).__init__(problem, update_capacity)
 
     def _evaluate(self, x, grad=None):
         """
@@ -111,6 +115,9 @@ class GravimetricEnergyDensity(DesignCost):
         float
             The negative gravimetric energy density or infinity in case of infeasible parameters.
         """
+        if not all(is_numeric(i) for i in x):
+            raise ValueError("Input must be a numeric array.")
+
         try:
             with warnings.catch_warnings():
                 # Convert UserWarning to an exception
@@ -120,15 +127,21 @@ class GravimetricEnergyDensity(DesignCost):
                     self.problem.model.approximate_capacity(x)
                 solution = self.problem.evaluate(x)
 
-                voltage, current = solution[:, 0], solution[:, 1]
+                voltage, current = solution["Voltage [V]"], solution["Current [A]"]
                 negative_energy_density = -np.trapz(voltage * current, dx=self.dt) / (
                     3600 * self.problem.model.cell_mass(self.parameter_set)
                 )
 
                 return negative_energy_density
 
+        # Catch infeasible solutions and return infinity
         except UserWarning as e:
             print(f"Ignoring this sample due to: {e}")
+            return np.inf
+
+        # Catch any other exception and return infinity
+        except Exception as e:
+            print(f"An error occurred during the evaluation: {e}")
             return np.inf
 
 
@@ -143,7 +156,7 @@ class VolumetricEnergyDensity(DesignCost):
     """
 
     def __init__(self, problem, update_capacity=False):
-        super().__init__(problem, update_capacity)
+        super(VolumetricEnergyDensity, self).__init__(problem, update_capacity)
 
     def _evaluate(self, x, grad=None):
         """
@@ -161,6 +174,8 @@ class VolumetricEnergyDensity(DesignCost):
         float
             The negative volumetric energy density or infinity in case of infeasible parameters.
         """
+        if not all(is_numeric(i) for i in x):
+            raise ValueError("Input must be a numeric array.")
         try:
             with warnings.catch_warnings():
                 # Convert UserWarning to an exception
@@ -170,13 +185,19 @@ class VolumetricEnergyDensity(DesignCost):
                     self.problem.model.approximate_capacity(x)
                 solution = self.problem.evaluate(x)
 
-                voltage, current = solution[:, 0], solution[:, 1]
+                voltage, current = solution["Voltage [V]"], solution["Current [A]"]
                 negative_energy_density = -np.trapz(voltage * current, dx=self.dt) / (
                     3600 * self.problem.model.cell_volume(self.parameter_set)
                 )
 
                 return negative_energy_density
 
+        # Catch infeasible solutions and return infinity
         except UserWarning as e:
             print(f"Ignoring this sample due to: {e}")
+            return np.inf
+
+        # Catch any other exception and return infinity
+        except Exception as e:
+            print(f"An error occurred during the evaluation: {e}")
             return np.inf

@@ -40,3 +40,11 @@ class TestDataset:
         # Test conversion of pybamm solution into dictionary
         assert dataset.data == pybop.Dataset(solution).data
         assert dataset.names == pybop.Dataset(solution).names
+
+        # Test getitem and missing key
+        dataset["Time [s]"]
+        with pytest.raises(ValueError):
+            dataset["Time"]
+
+        # Test conversion of single signal to list
+        assert dataset.check(signal="Terminal voltage [V]")
