@@ -125,7 +125,7 @@ class TestPlots:
     def test_with_ipykernel(self, dataset, cost, optim):
         import ipykernel
 
-        print(ipykernel.__version__)
+        assert ipykernel.__version__ >= 0.6
         pybop.plot_dataset(dataset, signal=["Voltage [V]"])
         pybop.plot2d(cost, gradient=True, steps=5)
         pybop.plot_convergence(optim)
