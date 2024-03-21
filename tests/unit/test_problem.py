@@ -173,7 +173,7 @@ class TestProblem:
         assert problem._model._built_model is not None
         with pytest.raises(AssertionError):
             np.testing.assert_allclose(
-                out["Terminal voltage [V]"].data,
-                problem_output,
+                out["Voltage [V]"].data,
+                problem_output["Voltage [V]"],
                 atol=1e-5,
             )

@@ -26,7 +26,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-plot = ["plotly>=5.0"]
+# Split kaleido into two dependencies to avoid Windows hang
+# See: https://github.com/plotly/Kaleido/issues/110
+plot = ["plotly>=5.0",
+        "kaleido==0.1.0.post1; sys_platform == 'win32'",
+        "kaleido>=0.2; sys_platform != 'win32'",
+]
 docs = [
     "pydata-sphinx-theme",
     "sphinx>=6",

@@ -58,6 +58,7 @@ class BaseModel:
         self.parameters = None
         self.dataset = None
         self.signal = None
+        self.additional_variables = []
         self.matched_parameters = {}
         self.non_matched_parameters = {}
         self.fit_keys = []
@@ -347,11 +348,14 @@ class BaseModel:
                         self.built_model, inputs=inputs, t_eval=t_eval
                     )
                 else:
-                    return [np.inf]
+                    return {signal: [np.inf] for signal in self.signal}
 
-            simulation = [sol[signal].data for signal in self.signal]
+            y = {
+                signal: sol[signal].data
+                for signal in (self.signal + self.additional_variables)
+            }
 
-            return np.vstack(simulation).T
+            return y
 
     def simulateS1(self, inputs, t_eval):
         """
@@ -398,20 +402,22 @@ class BaseModel:
                     t_eval=t_eval,
                     calculate_sensitivities=True,
                 )
+                y = {signal: sol[signal].data for signal in self.signal}
 
-                simulation = [sol[signal].data for signal in self.signal]
+                dy = np.asarray(
+                    [
+                        sol[signal].sensitivities[key].toarray()
+                        for signal in self.signal
+                        for key in self.fit_keys
+                    ]
+                ).reshape(
+                    self.n_parameters, sol[self.signal[0]].data.shape[0], self.n_outputs
+                )
 
-                sensitivities = [
-                    np.array(
-                        [[sol[signal].sensitivities[key]] for signal in self.signal]
-                    ).reshape(len(sol[self.signal[0]].data), self.n_outputs)
-                    for key in self.fit_keys
-                ]
-
-                return np.vstack(simulation).T, np.dstack(sensitivities)
+                return y, dy
 
             else:
-                return [np.inf], [np.inf]
+                return {signal: [np.inf] for signal in self.signal}, [np.inf]
 
     def predict(
         self,
