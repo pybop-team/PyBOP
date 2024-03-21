@@ -1,5 +1,6 @@
-import pybop
 import numpy as np
+
+import pybop
 
 # Define model
 bpx_parameters = pybop.ParameterSet(
