@@ -55,6 +55,7 @@ class TestOptimisation:
             (pybop.XNES, "Exponential Natural Evolution Strategy (xNES)"),
             (pybop.PSO, "Particle Swarm Optimisation (PSO)"),
             (pybop.IRPropMin, "iRprop-"),
+            (pybop.NelderMead, "Nelder-Mead"),
         ],
     )
     @pytest.mark.unit

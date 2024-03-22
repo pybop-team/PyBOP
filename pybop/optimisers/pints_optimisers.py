@@ -194,6 +194,37 @@ class XNES(pints.XNES):
         super().__init__(x0, sigma0, self.boundaries)
 
 
+class NelderMead(pints.NelderMead):
+    """
+    Implements the Nelder-Mead downhill simplex method from PINTS.
+
+    This is a deterministic local optimiser. In most update steps it performs
+    either 1 evaluation, or 2 sequential evaluations, so that it will not
+    typically benefit from parallelisation.
+
+    Parameters
+    ----------
+    x0 : array_like
+        The initial parameter vector to optimize.
+    sigma0 : float, optional
+        Initial standard deviation of the sampling distribution, defaults to 0.1. Does not appear to be used.
+    bounds : dict, optional
+        A dictionary with 'lower' and 'upper' keys containing arrays for lower and upper bounds on the parameters.
+        If ``None``, no bounds are enforced.
+
+    See Also
+    --------
+    pints.CMAES : PINTS implementation of CMA-ES algorithm.
+    """
+
+    def __init__(self, x0, sigma0=0.1, bounds=None):
+        if bounds is not None:
+            print("NOTE: Boundaries ignored by NelderMead")
+
+        self.boundaries = None  # Bounds ignored in pints.NelderMead
+        super().__init__(x0, sigma0, self.boundaries)
+
+
 class CMAES(pints.CMAES):
     """
     Adapter for the Covariance Matrix Adaptation Evolution Strategy (CMA-ES) optimiser in PINTS.

@@ -84,6 +84,7 @@ class TestModelParameterisation:
             pybop.CMAES,
             pybop.GradientDescent,
             pybop.IRPropMin,
+            pybop.NelderMead,
             pybop.PSO,
             pybop.SNES,
             pybop.XNES,
