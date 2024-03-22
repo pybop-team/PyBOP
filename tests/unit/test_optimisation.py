@@ -116,10 +116,7 @@ class TestOptimisation:
     @pytest.mark.unit
     def test_default_optimiser(self, cost):
         opt = pybop.Optimisation(cost=cost)
-        assert (
-            opt.optimiser.name()
-            == "Exponential Natural Evolution Strategy (xNES)"
-        )
+        assert opt.optimiser.name() == "Exponential Natural Evolution Strategy (xNES)"
 
     @pytest.mark.unit
     def test_incorrect_optimiser_class(self, cost):
