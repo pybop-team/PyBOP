@@ -142,3 +142,11 @@ class TestOptimisation:
         # Trigger parameters not physically viable warning
         optim = pybop.Optimisation(cost=cost)
         optim.check_optimal_parameters(np.array([2]))
+
+    @pytest.mark.unit
+    def test_scipy_wrap_cost(self, cost):
+        optim = pybop.Optimisation(cost=cost, optimiser=pybop.SciPyMinimize)
+        optim.optimiser.set_wrap_cost(wrap_cost=True)
+        optim.set_max_iterations(1)
+        x, __ = optim.run()
+        assert optim._iterations == 1

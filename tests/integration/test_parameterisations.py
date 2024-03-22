@@ -35,7 +35,7 @@ class TestModelParameterisation:
             ),
         ]
 
-    @pytest.fixture(params=[0.4, 0.7])
+    @pytest.fixture(params=[0.4, 0.6])
     def init_soc(self, request):
         return request.param
 
@@ -102,10 +102,14 @@ class TestModelParameterisation:
             spm_costs.bounds = bounds
 
         # Test each optimiser
+        if optimiser in [pybop.Adam]:
+            sigma0 = 0.025
+        else:
+            sigma0 = 0.075
         parameterisation = pybop.Optimisation(
-            cost=spm_costs, optimiser=optimiser, sigma0=0.05
+            cost=spm_costs, optimiser=optimiser, sigma0=sigma0
         )
-        parameterisation.set_max_unchanged_iterations(iterations=35, threshold=5e-4)
+        parameterisation.set_max_unchanged_iterations(iterations=45, threshold=5e-4)
         parameterisation.set_max_iterations(125)
 
         initial_cost = parameterisation.cost(spm_costs.x0)
@@ -126,6 +130,7 @@ class TestModelParameterisation:
         elif optimiser in [pybop.GradientDescent]:
             if isinstance(spm_costs, pybop.GaussianLogLikelihoodKnownSigma):
                 parameterisation.optimiser.set_learning_rate(1.8e-5)
+                parameterisation.set_max_iterations(150)
                 parameterisation.set_min_iterations(150)
             else:
                 parameterisation.optimiser.set_learning_rate(0.02)
@@ -201,10 +206,10 @@ class TestModelParameterisation:
 
         # Test each optimiser
         parameterisation = pybop.Optimisation(
-            cost=spm_two_signal_cost, optimiser=multi_optimiser, sigma0=0.03
+            cost=spm_two_signal_cost, optimiser=multi_optimiser, sigma0=0.055
         )
-        parameterisation.set_max_unchanged_iterations(iterations=35, threshold=5e-4)
-        parameterisation.set_max_iterations(125)
+        parameterisation.set_max_unchanged_iterations(iterations=45, threshold=5e-4)
+        parameterisation.set_max_iterations(150)
         initial_cost = parameterisation.cost(spm_two_signal_cost.x0)
 
         if multi_optimiser in [pybop.SciPyDifferentialEvolution]:

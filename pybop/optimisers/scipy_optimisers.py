@@ -21,13 +21,16 @@ class SciPyMinimize(BaseOptimiser):
         Maximum number of iterations to perform.
     """
 
-    def __init__(self, method=None, bounds=None, maxiter=None, tol=1e-5):
+    def __init__(
+        self, method=None, bounds=None, maxiter=None, wrap_cost=False, tol=1e-5
+    ):
         super().__init__()
         self.method = method
         self.bounds = bounds
         self.tol = tol
         self.options = {}
         self._max_iterations = maxiter
+        self._wrap_cost = wrap_cost
 
         if self.method is None:
             self.method = "Nelder-Mead"
@@ -57,17 +60,20 @@ class SciPyMinimize(BaseOptimiser):
             self.log.append([x])
 
         # Scale the cost function and eliminate nan values
-        self.cost0 = cost_function(x0)
-        self.inf_count = 0
-        if np.isinf(self.cost0):
-            raise Exception("The initial parameter values return an infinite cost.")
+        if self._wrap_cost:
+            self.cost0 = cost_function(x0)
+            self.inf_count = 0
+            if np.isinf(self.cost0):
+                raise Exception("The initial parameter values return an infinite cost.")
 
-        def cost_wrapper(x):
-            cost = cost_function(x) / self.cost0
-            if np.isinf(cost):
-                self.inf_count += 1
-                cost = 1 + 0.9**self.inf_count  # for fake finite gradient
-            return cost
+            def cost_wrapper(x):
+                cost = cost_function(x) / self.cost0
+                if np.isinf(cost):
+                    self.inf_count += 1
+                    cost = 1 + 0.9**self.inf_count  # for fake finite gradient
+                return cost
+        else:
+            cost_wrapper = cost_function
 
         # Reformat bounds
         if self.bounds is not None:
@@ -87,6 +93,12 @@ class SciPyMinimize(BaseOptimiser):
         )
 
         return result
+
+    def set_wrap_cost(self, wrap_cost=False):
+        """
+        Sets the wrap_cost attribute to True or False. If True, the cost function is scaled and inf values are eliminated.
+        """
+        self._wrap_cost = wrap_cost
 
     def needs_sensitivities(self):
         """
