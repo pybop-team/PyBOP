@@ -112,8 +112,7 @@ class TestOptimisation:
         optim.run(bounds=bounds)
         assert optim.optimiser.bounds == bounds
         bounds = [
-            (lower, upper)
-            for lower, upper in zip(bounds["lower"], bounds["upper"])
+            (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
         ]
         optim.run(bounds=bounds)
         assert optim.optimiser.bounds == bounds
