@@ -104,7 +104,7 @@ class TestOptimisation:
         optim = pybop.Optimisation(
             cost=cost, optimiser=optimiser_class, maxiter=1, tol=1e-3
         )
-        assert optim.optimiser.needs_sensitivities() == False
+        assert not optim.optimiser.needs_sensitivities()
 
         # Check and update bounds
         assert optim.optimiser.bounds == cost.bounds
