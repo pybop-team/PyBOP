@@ -104,6 +104,19 @@ class TestOptimisation:
         optim = pybop.Optimisation(
             cost=cost, optimiser=optimiser_class, maxiter=1, tol=1e-3
         )
+        assert optim.optimiser.needs_sensitivities() == False
+
+        # Check and update bounds
+        assert optim.optimiser.bounds == cost.bounds
+        bounds = {"upper": [0.61], "lower": [0.59]}
+        optim.run(bounds=bounds)
+        assert optim.optimiser.bounds == bounds
+        bounds = [
+            (lower, upper)
+            for lower, upper in zip(bounds["lower"], bounds["upper"])
+        ]
+        optim.run(bounds=bounds)
+        assert optim.optimiser.bounds == bounds
 
         # Check and update tol
         assert optim.optimiser.options["tol"] == 1e-3

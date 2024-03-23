@@ -28,7 +28,7 @@ class SciPyMinimize(BaseOptimiser):
 
     Parameters
     ----------
-    bounds : sequence or ``Bounds``, optional
+    bounds : dict, sequence or scipy.optimize.Bounds, optional
         Bounds for variables as supported by the selected method.
     maxiter : int, optional
         Maximum number of iterations to perform.
@@ -150,7 +150,7 @@ class SciPyDifferentialEvolution(BaseOptimiser):
 
     Parameters
     ----------
-    bounds : sequence or ``Bounds``
+    bounds : dict, sequence or scipy.optimize.Bounds
         Bounds for variables. Must be provided as it is essential for differential evolution.
     strategy : str, optional
         The differential evolution strategy to use. Defaults to 'best1bin'.
@@ -203,16 +203,18 @@ class SciPyDifferentialEvolution(BaseOptimiser):
         # Reformat bounds
         if self.bounds is None:
             raise ValueError("Bounds must be specified for differential_evolution.")
-        elif not all(
-            np.isfinite(value) for sublist in self.bounds.values() for value in sublist
-        ):
-            raise ValueError("Bounds must be specified for differential_evolution.")
         elif isinstance(self.bounds, dict):
+            if not all(
+                np.isfinite(value) for sublist in self.bounds.values() for value in sublist
+            ):
+                raise ValueError("Bounds must be specified for differential_evolution.")
             bounds = [
                 (lower, upper)
                 for lower, upper in zip(self.bounds["lower"], self.bounds["upper"])
             ]
         else:
+            if not all(np.isfinite(value) for pair in self.bounds for value in pair):
+                raise ValueError("Bounds must be specified for differential_evolution.")
             bounds = self.bounds
 
         result = differential_evolution(
