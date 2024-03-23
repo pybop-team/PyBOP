@@ -93,7 +93,9 @@ class TestModelParameterisation:
     def test_spm_optimisers(self, optimiser, spm_costs):
         # Some optimisers require a complete set of bounds
         if optimiser in [pybop.SciPyDifferentialEvolution, pybop.PSO]:
-            spm_costs.problem.parameters[1].set_bounds([0.375, 0.75])
+            spm_costs.problem.parameters[1].set_bounds(
+                [0.3, 0.8]
+            )  # Large range to ensure IC within bounds
             bounds = {"lower": [], "upper": []}
             for param in spm_costs.problem.parameters:
                 bounds["lower"].append(param.bounds[0])
@@ -102,12 +104,10 @@ class TestModelParameterisation:
             spm_costs.bounds = bounds
 
         # Test each optimiser
-        if optimiser in [pybop.Adam]:
-            sigma0 = 0.025
-        else:
-            sigma0 = 0.075
         parameterisation = pybop.Optimisation(
-            cost=spm_costs, optimiser=optimiser, sigma0=sigma0
+            cost=spm_costs,
+            optimiser=optimiser,
+            sigma0=0.05,
         )
         parameterisation.set_max_unchanged_iterations(iterations=45, threshold=5e-4)
         parameterisation.set_max_iterations(125)
@@ -130,8 +130,8 @@ class TestModelParameterisation:
         elif optimiser in [pybop.GradientDescent]:
             if isinstance(spm_costs, pybop.GaussianLogLikelihoodKnownSigma):
                 parameterisation.optimiser.set_learning_rate(1.8e-5)
-                parameterisation.set_max_iterations(150)
-                parameterisation.set_min_iterations(150)
+                parameterisation.set_max_unchanged_iterations(iterations=65)
+                parameterisation.set_max_iterations(200)
             else:
                 parameterisation.optimiser.set_learning_rate(0.02)
             parameterisation.set_max_iterations(150)
@@ -196,7 +196,9 @@ class TestModelParameterisation:
     def test_multiple_signals(self, multi_optimiser, spm_two_signal_cost):
         # Some optimisers require a complete set of bounds
         if multi_optimiser in [pybop.SciPyDifferentialEvolution]:
-            spm_two_signal_cost.problem.parameters[1].set_bounds([0.375, 0.75])
+            spm_two_signal_cost.problem.parameters[1].set_bounds(
+                [0.3, 0.8]
+            )  # Large range to ensure IC within bounds
             bounds = {"lower": [], "upper": []}
             for param in spm_two_signal_cost.problem.parameters:
                 bounds["lower"].append(param.bounds[0])
@@ -206,15 +208,21 @@ class TestModelParameterisation:
 
         # Test each optimiser
         parameterisation = pybop.Optimisation(
-            cost=spm_two_signal_cost, optimiser=multi_optimiser, sigma0=0.055
+            cost=spm_two_signal_cost,
+            optimiser=multi_optimiser,
+            sigma0=0.03,
         )
-        parameterisation.set_max_unchanged_iterations(iterations=45, threshold=5e-4)
-        parameterisation.set_max_iterations(150)
-        initial_cost = parameterisation.cost(spm_two_signal_cost.x0)
+        parameterisation.set_max_iterations(200)
+
+        if multi_optimiser in [pybop.Adam]:
+            parameterisation.set_max_unchanged_iterations(iterations=85, threshold=1e-5)
+        else:
+            parameterisation.set_max_unchanged_iterations(iterations=35, threshold=5e-4)
 
         if multi_optimiser in [pybop.SciPyDifferentialEvolution]:
             parameterisation.optimiser.set_population_size(5)
 
+        initial_cost = parameterisation.cost(spm_two_signal_cost.x0)
         x, final_cost = parameterisation.run()
 
         # Assertions
