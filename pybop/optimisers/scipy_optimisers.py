@@ -22,7 +22,7 @@ class SciPyMinimize(BaseOptimiser):
     """
 
     def __init__(
-        self, method=None, bounds=None, maxiter=None, wrap_cost=False, tol=1e-5
+        self, method=None, bounds=None, maxiter=None, wrap_cost=False, tol=1e-6
     ):
         super().__init__()
         self.method = method

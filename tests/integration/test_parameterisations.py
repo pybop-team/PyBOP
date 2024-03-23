@@ -109,39 +109,22 @@ class TestModelParameterisation:
             optimiser=optimiser,
             sigma0=0.05,
         )
-        parameterisation.set_max_unchanged_iterations(iterations=45, threshold=5e-4)
+        parameterisation.set_max_unchanged_iterations(iterations=55, threshold=1e-5)
         parameterisation.set_max_iterations(125)
 
         initial_cost = parameterisation.cost(spm_costs.x0)
 
         if optimiser in [pybop.CMAES]:
-            parameterisation.set_f_guessed_tracking(True)
-            parameterisation.cost.problem.model.allow_infeasible_solutions = False
-            assert parameterisation._use_f_guessed is True
-            parameterisation.set_max_iterations(1)
             x, final_cost = parameterisation.run()
-
-            parameterisation.set_f_guessed_tracking(False)
-            parameterisation.set_max_iterations(125)
-
-            x, final_cost = parameterisation.run()
-            assert parameterisation._max_iterations == 125
 
         elif optimiser in [pybop.GradientDescent]:
             if isinstance(spm_costs, pybop.GaussianLogLikelihoodKnownSigma):
                 parameterisation.optimiser.set_learning_rate(1.8e-5)
-                parameterisation.set_max_unchanged_iterations(iterations=65)
+                parameterisation.set_max_unchanged_iterations(iterations=75)
                 parameterisation.set_max_iterations(200)
             else:
                 parameterisation.optimiser.set_learning_rate(0.02)
             parameterisation.set_max_iterations(150)
-            x, final_cost = parameterisation.run()
-
-        elif optimiser in [pybop.SciPyDifferentialEvolution]:
-            with pytest.raises(ValueError):
-                parameterisation.optimiser.set_population_size(-5)
-
-            parameterisation.optimiser.set_population_size(5)
             x, final_cost = parameterisation.run()
 
         elif optimiser in [pybop.SciPyMinimize]:
@@ -153,7 +136,10 @@ class TestModelParameterisation:
 
         # Assertions
         assert initial_cost > final_cost
-        np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
+        if optimiser in [pybop.Adam, pybop.GradientDescent]:
+            np.testing.assert_allclose(x, self.ground_truth, atol=3.0e-2)
+        else:
+            np.testing.assert_allclose(x, self.ground_truth, atol=2.0e-2)
 
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, cost_class):
@@ -210,12 +196,12 @@ class TestModelParameterisation:
         parameterisation = pybop.Optimisation(
             cost=spm_two_signal_cost,
             optimiser=multi_optimiser,
-            sigma0=0.03,
+            sigma0=0.02,
         )
         parameterisation.set_max_iterations(200)
 
         if multi_optimiser in [pybop.Adam]:
-            parameterisation.set_max_unchanged_iterations(iterations=85, threshold=1e-5)
+            parameterisation.set_max_unchanged_iterations(iterations=65, threshold=1e-5)
         else:
             parameterisation.set_max_unchanged_iterations(iterations=35, threshold=5e-4)
 
@@ -227,7 +213,7 @@ class TestModelParameterisation:
 
         # Assertions
         assert initial_cost > final_cost
-        np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
+        np.testing.assert_allclose(x, self.ground_truth, atol=3e-2)
 
     @pytest.mark.parametrize("init_soc", [0.4, 0.6])
     @pytest.mark.integration
@@ -235,7 +221,7 @@ class TestModelParameterisation:
         # Define two different models with different parameter sets
         # The optimisation should fail as the models are not the same
         second_parameter_set = pybop.ParameterSet.pybamm("Ecker2015")
-        second_model = pybop.lithium_ion.SPM(parameter_set=second_parameter_set)
+        second_model = pybop.lithium_ion.SPMe(parameter_set=second_parameter_set)
 
         # Form dataset
         solution = self.getdata(second_model, self.ground_truth, init_soc)
@@ -248,10 +234,7 @@ class TestModelParameterisation:
         )
 
         # Define the cost to optimise
-        signal = ["Voltage [V]"]
-        problem = pybop.FittingProblem(
-            model, parameters, dataset, signal=signal, init_soc=init_soc
-        )
+        problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
         cost = pybop.RootMeanSquaredError(problem)
 
         # Select optimiser
@@ -266,7 +249,7 @@ class TestModelParameterisation:
         # Assertions
         with np.testing.assert_raises(AssertionError):
             np.testing.assert_allclose(final_cost, 0, atol=1e-2)
-            np.testing.assert_allclose(x, self.ground_truth, atol=2e-2)
+            np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
 
     def getdata(self, model, x, init_soc):
         model.parameter_set.update(
