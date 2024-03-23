@@ -48,6 +48,7 @@ class Optimisation:
         verbose=False,
         physical_viability=True,
         allow_infeasible_solutions=True,
+        **optimiser_kwargs,
     ):
         self.cost = cost
         self.x0 = x0 or cost.x0
@@ -95,54 +96,62 @@ class Optimisation:
             if issubclass(
                 self.optimiser, (pybop.SciPyMinimize, pybop.SciPyDifferentialEvolution)
             ):
-                self.optimiser = self.optimiser(bounds=self.bounds)
+                if "maxiter" in optimiser_kwargs.keys():
+                    self.set_max_iterations(optimiser_kwargs["maxiter"])
+                else:
+                    self.set_max_iterations()
+                    optimiser_kwargs["maxiter"] = self._max_iterations
+
+                self.optimiser = self.optimiser(bounds=self.bounds, **optimiser_kwargs)
 
             else:
                 raise ValueError("Unknown optimiser type")
 
         if self.pints:
-            self.optimiser = self.optimiser(self.x0, self.sigma0, self.bounds)
+            self.optimiser = self.optimiser(
+                self.x0, self.sigma0, self.bounds, **optimiser_kwargs
+            )
 
-        # Check if sensitivities are required
-        self._needs_sensitivities = self.optimiser.needs_sensitivities()
+            # Check if sensitivities are required
+            self._needs_sensitivities = self.optimiser.needs_sensitivities()
 
-        # Track optimiser's f_best or f_guessed
-        self._use_f_guessed = None
-        self.set_f_guessed_tracking()
+            # Track optimiser's f_best or f_guessed
+            self._use_f_guessed = None
+            self.set_f_guessed_tracking()
 
-        # Parallelisation
-        self._parallel = False
-        self._n_workers = 1
-        self.set_parallel()
+            # Parallelisation
+            self._parallel = False
+            self._n_workers = 1
+            self.set_parallel()
 
-        # User callback
-        self._callback = None
+            # User callback
+            self._callback = None
 
-        # Define stopping criteria
-        # Maximum iterations
-        self._max_iterations = None
-        self.set_max_iterations()
+            # Define stopping criteria
+            # Maximum iterations
+            self._max_iterations = None
+            self.set_max_iterations()
 
-        # Minimum iterations
-        self._min_iterations = None
-        self.set_min_iterations()
+            # Minimum iterations
+            self._min_iterations = None
+            self.set_min_iterations()
 
-        # Maximum unchanged iterations
-        self._unchanged_threshold = 1  # smallest significant f change
-        self._unchanged_max_iterations = None
-        self.set_max_unchanged_iterations()
+            # Maximum unchanged iterations
+            self._unchanged_threshold = 1  # smallest significant f change
+            self._unchanged_max_iterations = None
+            self.set_max_unchanged_iterations()
 
-        # Maximum evaluations
-        self._max_evaluations = None
+            # Maximum evaluations
+            self._max_evaluations = None
 
-        # Threshold value
-        self._threshold = None
+            # Threshold value
+            self._threshold = None
 
-        # Post-run statistics
-        self._evaluations = None
-        self._iterations = None
+            # Post-run statistics
+            self._evaluations = None
+            self._iterations = None
 
-    def run(self):
+    def run(self, **optimiser_kwargs):
         """
         Run the optimization and return the optimized parameters and final cost.
 
@@ -157,7 +166,7 @@ class Optimisation:
         if self.pints:
             x, final_cost = self._run_pints()
         elif not self.pints:
-            x, final_cost = self._run_pybop()
+            x, final_cost = self._run_pybop(**optimiser_kwargs)
 
         # Store the optimised parameters
         if self.cost.problem is not None:
@@ -169,7 +178,7 @@ class Optimisation:
 
         return x, final_cost
 
-    def _run_pybop(self):
+    def _run_pybop(self, **optimiser_kwargs):
         """
         Internal method to run the optimization using a PyBOP optimiser.
 
@@ -180,10 +189,15 @@ class Optimisation:
         final_cost : float
             The final cost associated with the best parameters.
         """
+        if "maxiter" in optimiser_kwargs.keys():
+            self.set_max_iterations(optimiser_kwargs["maxiter"])
+        else:
+            optimiser_kwargs["maxiter"] = self._max_iterations
+
         result = self.optimiser.optimise(
             cost_function=self.cost,
             x0=self.x0,
-            maxiter=self._max_iterations,
+            **optimiser_kwargs,
         )
         self.log = self.optimiser.log
         self._iterations = result.nit

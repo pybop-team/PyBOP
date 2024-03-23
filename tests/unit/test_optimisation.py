@@ -59,29 +59,76 @@ class TestOptimisation:
     )
     @pytest.mark.unit
     def test_optimiser_classes(self, cost, optimiser_class, expected_name):
-        opt = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
+        optim = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
 
-        assert opt.optimiser is not None
-        assert opt.optimiser.name() == expected_name
+        assert optim.optimiser is not None
+        assert optim.optimiser.name() == expected_name
 
-        # Test without bounds
+        # Test construction without bounds
+        bounds = cost.bounds
         cost.bounds = None
-        if optimiser_class in [pybop.SciPyDifferentialEvolution]:
-            with pytest.raises(ValueError):
-                pybop.Optimisation(cost=cost, optimiser=optimiser_class)
-        else:
-            opt = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
+        optim = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
 
-            if optimiser_class in [pybop.SciPyMinimize]:
-                assert opt.optimiser.bounds is None
-            else:
-                assert opt.optimiser.boundaries is None
+        if optimiser_class in [pybop.SciPyMinimize, pybop.SciPyDifferentialEvolution]:
+            assert optim.optimiser.bounds is None
+        else:
+            assert optim.optimiser.boundaries is None
+
+        # Reset
+        cost.bounds = bounds
+
+    @pytest.mark.parametrize(
+        "optimiser_class",
+        [pybop.SciPyDifferentialEvolution],
+    )
+    @pytest.mark.unit
+    def test_missing_boundaries(self, cost, optimiser_class):
+        bounds = cost.bounds
+        cost.bounds = None
+        optim = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
+        with pytest.raises(
+            ValueError, match="Bounds must be specified for differential_evolution."
+        ):
+            optim.run()
+
+        # Reset
+        cost.bounds = bounds
+        optim.run(bounds=bounds)
+
+    @pytest.mark.parametrize(
+        "optimiser_class",
+        [pybop.SciPyMinimize, pybop.SciPyDifferentialEvolution],
+    )
+    @pytest.mark.unit
+    def test_scipy_kwargs(self, cost, optimiser_class):
+        optim = pybop.Optimisation(
+            cost=cost, optimiser=optimiser_class, maxiter=1, tol=1e-3
+        )
+
+        # Check and update tol
+        assert optim.optimiser.options["tol"] == 1e-3
+        optim.run(tol=1e-2)
+        assert optim.optimiser.options["tol"] == 1e-2
+
+        # Check and update maximum iterations
+        assert optim._max_iterations == 1
+        assert optim._iterations == 1
+        optim.run(maxiter=10)
+        assert optim._max_iterations == 10
+        assert optim._iterations <= 10
+
+        if optimiser_class in [pybop.SciPyDifferentialEvolution]:
+            # Check and update population size
+            optim.optimiser.set_population_size(10)
+            assert optim.optimiser.options["popsize"] == 10
+            optim.run(popsize=5)
+            assert optim.optimiser.options["popsize"] == 5
 
     @pytest.mark.unit
     def test_default_optimiser(self, cost):
-        opt = pybop.Optimisation(cost=cost)
+        optim = pybop.Optimisation(cost=cost)
         assert (
-            opt.optimiser.name()
+            optim.optimiser.name()
             == "Covariance Matrix Adaptation Evolution Strategy (CMA-ES)"
         )
 
@@ -97,9 +144,9 @@ class TestOptimisation:
     def test_prior_sampling(self, cost):
         # Tests prior sampling
         for i in range(50):
-            opt = pybop.Optimisation(cost=cost, optimiser=pybop.CMAES)
+            optim = pybop.Optimisation(cost=cost, optimiser=pybop.CMAES)
 
-            assert opt.x0 <= 0.62 and opt.x0 >= 0.58
+            assert optim.x0 <= 0.62 and optim.x0 >= 0.58
 
     @pytest.mark.unit
     def test_halting(self, cost):

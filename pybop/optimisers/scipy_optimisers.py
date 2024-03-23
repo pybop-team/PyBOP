@@ -3,36 +3,54 @@ from scipy.optimize import differential_evolution, minimize
 
 from .base_optimiser import BaseOptimiser
 
+DEFAULT_SCIPY_MINIMIZE_OPTIONS = dict(
+    bounds=None,
+    method="Nelder-Mead",
+    tol=1e-5,
+    options=dict(),
+)
+DEFAULT_SCIPY_DIFFERENTIAL_EVOLUTION_OPTIONS = dict(
+    bounds=None,
+    strategy="best1bin",
+    popsize=15,
+    maxiter=1000,
+    tol=1e-5,
+    options=dict(),
+)
+
 
 class SciPyMinimize(BaseOptimiser):
     """
     Adapts SciPy's minimize function for use as an optimization strategy.
 
-    This class provides an interface to various scalar minimization algorithms implemented in SciPy, allowing fine-tuning of the optimization process through method selection and option configuration.
+    This class provides an interface to various scalar minimization algorithms implemented in SciPy,
+    allowing fine-tuning of the optimization process through method selection and option configuration.
 
     Parameters
     ----------
-    method : str, optional
-        The type of solver to use. If not specified, defaults to 'Nelder-Mead'.
-        Options: 'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP', 'trust-constr', 'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov'.
     bounds : sequence or ``Bounds``, optional
         Bounds for variables as supported by the selected method.
     maxiter : int, optional
         Maximum number of iterations to perform.
+    **optimiser_kwargs : optional
+        Valid SciPy Minimize option keys and their values. For example, to specify the solver
+        use: `method='Nelder-Mead'`. Other options are: 'Nelder-Mead', 'Powell', 'CG', 'BFGS',
+        'Newton-CG', 'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP', 'trust-constr', 'dogleg', 'trust-ncg',
+        'trust-exact', 'trust-krylov'.
     """
 
-    def __init__(self, method=None, bounds=None, maxiter=None, tol=1e-5):
-        super().__init__()
-        self.method = method
-        self.bounds = bounds
-        self.tol = tol
-        self.options = {}
-        self._max_iterations = maxiter
+    def __init__(self, bounds=None, **optimiser_kwargs):
+        super().__init__(bounds)
+        self.options = DEFAULT_SCIPY_MINIMIZE_OPTIONS
+        for key, value in optimiser_kwargs.items():
+            self.options[key] = value
 
-        if self.method is None:
-            self.method = "Nelder-Mead"
+        # Overwrite the value of maxiter in the options dictionary
+        if "maxiter" in optimiser_kwargs.keys():
+            self.options["options"]["maxiter"] = self.options["maxiter"]
+            del self.options["maxiter"]
 
-    def _runoptimise(self, cost_function, x0):
+    def _runoptimise(self, cost_function, x0, **optimiser_kwargs):
         """
         Executes the optimization process using SciPy's minimize function.
 
@@ -46,11 +64,21 @@ class SciPyMinimize(BaseOptimiser):
         Returns
         -------
         tuple
-            A tuple (x, final_cost) containing the optimized parameters and the value of `cost_function` at the optimum.
+            A tuple (x, final_cost) containing the optimized parameters and the value of `cost_function`
+            at the optimum.
         """
+        for key, value in optimiser_kwargs.items():
+            if key == "bounds":
+                self.bounds = value
+            else:
+                self.options[key] = value
+
+        # Overwrite the value of maxiter in the options dictionary
+        if "maxiter" in optimiser_kwargs.keys():
+            self.options["options"]["maxiter"] = self.options["maxiter"]
+            del self.options["maxiter"]
 
         self.log = [[x0]]
-        self.options = {"maxiter": self._max_iterations}
 
         # Add callback storing history of parameter values
         def callback(x):
@@ -70,19 +98,21 @@ class SciPyMinimize(BaseOptimiser):
             return cost
 
         # Reformat bounds
-        if self.bounds is not None:
+        if isinstance(self.bounds, dict):
             bounds = (
                 (lower, upper)
                 for lower, upper in zip(self.bounds["lower"], self.bounds["upper"])
             )
+        else:
+            bounds = self.bounds
 
         result = minimize(
             cost_wrapper,
             x0,
-            method=self.method,
+            method=self.options["method"],
             bounds=bounds,
-            tol=self.tol,
-            options=self.options,
+            tol=self.options["tol"],
+            options=self.options["options"],
             callback=callback,
         )
 
@@ -115,7 +145,8 @@ class SciPyDifferentialEvolution(BaseOptimiser):
     """
     Adapts SciPy's differential_evolution function for global optimization.
 
-    This class provides a global optimization strategy based on differential evolution, useful for problems involving continuous parameters and potentially multiple local minima.
+    This class provides a global optimization strategy based on differential evolution, useful for
+    problems involving continuous parameters and potentially multiple local minima.
 
     Parameters
     ----------
@@ -129,28 +160,13 @@ class SciPyDifferentialEvolution(BaseOptimiser):
         The number of individuals in the population. Defaults to 15.
     """
 
-    def __init__(
-        self, bounds=None, strategy="best1bin", maxiter=1000, popsize=15, tol=1e-5
-    ):
-        super().__init__()
-        self.tol = tol
-        self.strategy = strategy
-        self._max_iterations = maxiter
-        self._population_size = popsize
+    def __init__(self, bounds, **optimiser_kwargs):
+        super().__init__(bounds)
+        self.options = DEFAULT_SCIPY_DIFFERENTIAL_EVOLUTION_OPTIONS
+        for key, value in optimiser_kwargs.items():
+            self.options[key] = value
 
-        if bounds is None:
-            raise ValueError("Bounds must be specified for differential_evolution.")
-        elif not all(
-            np.isfinite(value) for sublist in bounds.values() for value in sublist
-        ):
-            raise ValueError("Bounds must be specified for differential_evolution.")
-        elif isinstance(bounds, dict):
-            bounds = [
-                (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
-            ]
-        self.bounds = bounds
-
-    def _runoptimise(self, cost_function, x0=None):
+    def _runoptimise(self, cost_function, x0=None, **optimiser_kwargs):
         """
         Executes the optimization process using SciPy's differential_evolution function.
 
@@ -164,8 +180,14 @@ class SciPyDifferentialEvolution(BaseOptimiser):
         Returns
         -------
         tuple
-            A tuple (x, final_cost) containing the optimized parameters and the value of ``cost_function`` at the optimum.
+            A tuple (x, final_cost) containing the optimized parameters and the value of
+            ``cost_function`` at the optimum.
         """
+        for key, value in optimiser_kwargs.items():
+            if key == "bounds":
+                self.bounds = value
+            else:
+                self.options[key] = value
 
         self.log = []
 
@@ -178,13 +200,28 @@ class SciPyDifferentialEvolution(BaseOptimiser):
         def callback(x, convergence):
             self.log.append([x])
 
+        # Reformat bounds
+        if self.bounds is None:
+            raise ValueError("Bounds must be specified for differential_evolution.")
+        elif not all(
+            np.isfinite(value) for sublist in self.bounds.values() for value in sublist
+        ):
+            raise ValueError("Bounds must be specified for differential_evolution.")
+        elif isinstance(self.bounds, dict):
+            bounds = [
+                (lower, upper)
+                for lower, upper in zip(self.bounds["lower"], self.bounds["upper"])
+            ]
+        else:
+            bounds = self.bounds
+
         result = differential_evolution(
             cost_function,
-            self.bounds,
-            strategy=self.strategy,
-            maxiter=self._max_iterations,
-            popsize=self._population_size,
-            tol=self.tol,
+            bounds,
+            strategy=self.options["strategy"],
+            maxiter=self.options["maxiter"],
+            popsize=self.options["popsize"],
+            tol=self.options["tol"],
             callback=callback,
         )
 
@@ -201,7 +238,7 @@ class SciPyDifferentialEvolution(BaseOptimiser):
             population_size = int(population_size)
             if population_size < 1:
                 raise ValueError("Population size must be at least 1.")
-            self._population_size = population_size
+            self.options["popsize"] = population_size
 
     def needs_sensitivities(self):
         """
