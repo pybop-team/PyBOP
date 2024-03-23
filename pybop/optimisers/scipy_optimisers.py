@@ -42,8 +42,17 @@ class SciPyMinimize(BaseOptimiser):
     def __init__(self, bounds=None, **optimiser_kwargs):
         super().__init__(bounds)
         self.options = DEFAULT_SCIPY_MINIMIZE_OPTIONS
+        self.update_options(**optimiser_kwargs)
+
+    def update_options(self, **optimiser_kwargs):
+        """
+        Update the optimiser options.
+        """
         for key, value in optimiser_kwargs.items():
-            self.options[key] = value
+            if key == "bounds":
+                self.bounds = value
+            else:
+                self.options[key] = value
 
         # Overwrite the value of maxiter in the options dictionary
         if "maxiter" in optimiser_kwargs.keys():
@@ -67,17 +76,7 @@ class SciPyMinimize(BaseOptimiser):
             A tuple (x, final_cost) containing the optimized parameters and the value of `cost_function`
             at the optimum.
         """
-        for key, value in optimiser_kwargs.items():
-            if key == "bounds":
-                self.bounds = value
-            else:
-                self.options[key] = value
-
-        # Overwrite the value of maxiter in the options dictionary
-        if "maxiter" in optimiser_kwargs.keys():
-            self.options["options"]["maxiter"] = self.options["maxiter"]
-            del self.options["maxiter"]
-
+        self.update_options(**optimiser_kwargs)
         self.log = [[x0]]
 
         # Add callback storing history of parameter values
@@ -163,8 +162,20 @@ class SciPyDifferentialEvolution(BaseOptimiser):
     def __init__(self, bounds, **optimiser_kwargs):
         super().__init__(bounds)
         self.options = DEFAULT_SCIPY_DIFFERENTIAL_EVOLUTION_OPTIONS
+        self.update_options(**optimiser_kwargs)
+
+    def update_options(self, **optimiser_kwargs):
+        """
+        Update the optimiser options.
+        """
         for key, value in optimiser_kwargs.items():
-            self.options[key] = value
+            if key == "bounds":
+                self.bounds = value
+            else:
+                self.options[key] = value
+
+        if self.bounds is None:
+            raise ValueError("Bounds must be specified for differential_evolution.")
 
     def _runoptimise(self, cost_function, x0=None, **optimiser_kwargs):
         """
@@ -183,12 +194,7 @@ class SciPyDifferentialEvolution(BaseOptimiser):
             A tuple (x, final_cost) containing the optimized parameters and the value of
             ``cost_function`` at the optimum.
         """
-        for key, value in optimiser_kwargs.items():
-            if key == "bounds":
-                self.bounds = value
-            else:
-                self.options[key] = value
-
+        self.update_options(**optimiser_kwargs)
         self.log = []
 
         if x0 is not None:
@@ -201,9 +207,7 @@ class SciPyDifferentialEvolution(BaseOptimiser):
             self.log.append([x])
 
         # Reformat bounds
-        if self.bounds is None:
-            raise ValueError("Bounds must be specified for differential_evolution.")
-        elif isinstance(self.bounds, dict):
+        if isinstance(self.bounds, dict):
             if not all(
                 np.isfinite(value)
                 for sublist in self.bounds.values()

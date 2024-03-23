@@ -108,9 +108,11 @@ class Optimisation:
                 raise ValueError("Unknown optimiser type")
 
         if self.pints:
-            self.optimiser = self.optimiser(
-                self.x0, self.sigma0, self.bounds, **optimiser_kwargs
-            )
+            if optimiser_kwargs:
+                raise ValueError(
+                    "Additional keyword arguments cannot currently be passed to PINTS optimisers."
+                )
+            self.optimiser = self.optimiser(self.x0, self.sigma0, self.bounds)
 
             # Check if sensitivities are required
             self._needs_sensitivities = self.optimiser.needs_sensitivities()

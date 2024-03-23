@@ -59,6 +59,7 @@ class TestOptimisation:
     )
     @pytest.mark.unit
     def test_optimiser_classes(self, cost, optimiser_class, expected_name):
+        # Test construction
         optim = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
 
         assert optim.optimiser is not None
@@ -67,33 +68,20 @@ class TestOptimisation:
         # Test construction without bounds
         bounds = cost.bounds
         cost.bounds = None
-        optim = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
-
-        if optimiser_class in [pybop.SciPyMinimize, pybop.SciPyDifferentialEvolution]:
+        if optimiser_class in [pybop.SciPyDifferentialEvolution]:
+            with pytest.raises(
+                ValueError, match="Bounds must be specified for differential_evolution."
+            ):
+                optim = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
+        elif optimiser_class in [pybop.SciPyMinimize]:
+            optim = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
             assert optim.optimiser.bounds is None
         else:
+            optim = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
             assert optim.optimiser.boundaries is None
 
         # Reset
         cost.bounds = bounds
-
-    @pytest.mark.parametrize(
-        "optimiser_class",
-        [pybop.SciPyDifferentialEvolution],
-    )
-    @pytest.mark.unit
-    def test_missing_boundaries(self, cost, optimiser_class):
-        bounds = cost.bounds
-        cost.bounds = None
-        optim = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
-        with pytest.raises(
-            ValueError, match="Bounds must be specified for differential_evolution."
-        ):
-            optim.run()
-
-        # Reset
-        cost.bounds = bounds
-        optim.run(bounds=bounds)
 
     @pytest.mark.parametrize(
         "optimiser_class",
@@ -135,6 +123,12 @@ class TestOptimisation:
             assert optim.optimiser.options["popsize"] == 10
             optim.run(popsize=5)
             assert optim.optimiser.options["popsize"] == 5
+        else:
+            with pytest.raises(
+                ValueError,
+                match="Additional keyword arguments cannot currently be passed to PINTS optimisers.",
+            ):
+                optim = pybop.Optimisation(cost=cost, maxiter=1, tol=1e-3)
 
     @pytest.mark.unit
     def test_default_optimiser(self, cost):
