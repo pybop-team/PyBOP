@@ -11,6 +11,27 @@ class TestModels:
     A class to test the models.
     """
 
+    @pytest.mark.parametrize(
+        "model_class, expected_name",
+        [
+            (pybop.lithium_ion.SPM, "Single Particle Model"),
+            (pybop.lithium_ion.SPMe, "Single Particle Model with Electrolyte"),
+            (pybop.empirical.Thevenin, "Equivalent Circuit Thevenin Model"),
+        ],
+    )
+    @pytest.mark.unit
+    def test_model_classes(self, model_class, expected_name):
+        model = model_class()
+
+        assert model.pybamm_model is not None
+        assert model.name == expected_name
+
+        # Test initialisation with kwargs
+        parameter_set = pybop.ParameterSet(
+            params_dict={"Nominal cell capacity [A.h]": 5}
+        )
+        model = model_class(build=True, parameter_set=parameter_set)
+
     @pytest.fixture(
         params=[
             pybop.lithium_ion.SPM(),
@@ -222,3 +243,12 @@ class TestModels:
 
         with pytest.raises(NotImplementedError):
             base.approximate_capacity(x)
+
+    @pytest.mark.unit
+    def test_check_params(self):
+        base = pybop.BaseModel()
+        assert base.check_params()
+        assert base.check_params(inputs={"a": 1})
+        assert base.check_params(inputs=[1])
+        with pytest.raises(ValueError, match="Expecting inputs in the form of"):
+            base.check_params(inputs=["unexpected_string"])

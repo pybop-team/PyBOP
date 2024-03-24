@@ -2,6 +2,11 @@ import pybamm
 
 from .ecm_base import ECircuitModel
 
+DEFAULT_EMPIRICAL_MODEL_KWARGS = dict(
+    build=False,
+    options=None,
+)
+
 
 class Thevenin(ECircuitModel):
     """
@@ -29,8 +34,9 @@ class Thevenin(ECircuitModel):
         The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
     options : dict or None, optional
         A dictionary of options to pass to the PyBaMM Thevenin model.
-    **kwargs :
-        Additional arguments passed to the PyBaMM Thevenin model constructor.
+    **pybamm_kwargs : optional
+        Valid PyBaMM model option keys and their values. For example,
+        options : A dictionary of options to customise the behaviour of the PyBaMM model.
     """
 
     def __init__(
@@ -42,13 +48,13 @@ class Thevenin(ECircuitModel):
         var_pts=None,
         spatial_methods=None,
         solver=None,
-        options=None,
-        **kwargs,
+        **pybamm_kwargs,
     ):
         super().__init__()
-        self.pybamm_model = pybamm.equivalent_circuit.Thevenin(
-            options=options, **kwargs
-        )
+        model_options = DEFAULT_EMPIRICAL_MODEL_KWARGS
+        for key, value in pybamm_kwargs.items():
+            model_options[key] = value
+        self.pybamm_model = pybamm.equivalent_circuit.Thevenin(**model_options)
         self._unprocessed_model = self.pybamm_model
         self.name = name
 

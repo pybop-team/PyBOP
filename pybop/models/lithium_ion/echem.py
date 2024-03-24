@@ -2,6 +2,11 @@ import pybamm
 
 from .echem_base import EChemBaseModel
 
+DEFAULT_ECHEM_MODEL_KWARGS = dict(
+    build=False,
+    options=None,
+)
+
 
 class SPM(EChemBaseModel):
     """
@@ -26,8 +31,9 @@ class SPM(EChemBaseModel):
         The spatial methods used for discretization. If None, default spatial methods from PyBaMM are used.
     solver : pybamm.Solver, optional
         The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
-    options : dict, optional
-        A dictionary of options to customize the behavior of the PyBaMM model.
+    **pybamm_kwargs : optional
+        Valid PyBaMM model option keys and their values. For example,
+        options : A dictionary of options to customise the behaviour of the PyBaMM model.
     """
 
     def __init__(
@@ -39,10 +45,13 @@ class SPM(EChemBaseModel):
         var_pts=None,
         spatial_methods=None,
         solver=None,
-        options=None,
+        **pybamm_kwargs,
     ):
         super().__init__()
-        self.pybamm_model = pybamm.lithium_ion.SPM(options=options)
+        model_options = DEFAULT_ECHEM_MODEL_KWARGS
+        for key, value in pybamm_kwargs.items():
+            model_options[key] = value
+        self.pybamm_model = pybamm.lithium_ion.SPM(**model_options)
         self._unprocessed_model = self.pybamm_model
         self.name = name
 
@@ -98,8 +107,9 @@ class SPMe(EChemBaseModel):
         A dictionary specifying the spatial methods for discretization. If None, the default PyBaMM spatial methods for SPMe are used.
     solver: pybamm.Solver, optional
         The solver to use for simulating the model. If None, the default PyBaMM solver for SPMe is used.
-    options: dict, optional
-        A dictionary of options to customize the behavior of the PyBaMM model.
+    **pybamm_kwargs : optional
+        Valid PyBaMM model option keys and their values. For example,
+        options : A dictionary of options to customise the behaviour of the PyBaMM model.
     """
 
     def __init__(
@@ -111,10 +121,13 @@ class SPMe(EChemBaseModel):
         var_pts=None,
         spatial_methods=None,
         solver=None,
-        options=None,
+        **pybamm_kwargs,
     ):
         super().__init__()
-        self.pybamm_model = pybamm.lithium_ion.SPMe(options=options)
+        model_options = DEFAULT_ECHEM_MODEL_KWARGS
+        for key, value in pybamm_kwargs.items():
+            model_options[key] = value
+        self.pybamm_model = pybamm.lithium_ion.SPMe(**model_options)
         self._unprocessed_model = self.pybamm_model
         self.name = name
 
