@@ -1,7 +1,8 @@
 from dataclasses import dataclass
+from typing import List, Tuple, Union
+
 import numpy as np
 import scipy.linalg as linalg
-from typing import List, Tuple, Union
 
 from pybop.models.base_model import BaseModel, Inputs
 from pybop.observers.observer import Observer
@@ -50,32 +51,22 @@ class UnscentedKalmanFilterObserver(Observer):
         dataset=None,
         check_model=True,
         signal=["Voltage [V]"],
+        additional_variables=[],
         init_soc=None,
         x0=None,
     ) -> None:
-        super().__init__(parameters, model, check_model, signal, init_soc, x0)
+        super().__init__(
+            parameters, model, check_model, signal, additional_variables, init_soc, x0
+        )
         if dataset is not None:
             self._dataset = dataset.data
 
             # Check that the dataset contains time and current
-            for name in ["Time [s]", "Current function [A]"] + self.signal:
-                if name not in self._dataset:
-                    raise ValueError(f"expected {name} in list of dataset")
+            dataset.check(self.signal + ["Current function [A]"])
 
             self._time_data = self._dataset["Time [s]"]
             self.n_time_data = len(self._time_data)
-            if np.any(self._time_data < 0):
-                raise ValueError("Times can not be negative.")
-            if np.any(self._time_data[:-1] >= self._time_data[1:]):
-                raise ValueError("Times must be increasing.")
-
-            for signal in self.signal:
-                if len(self._dataset[signal]) != self.n_time_data:
-                    raise ValueError(
-                        f"Time data and {signal} data must be the same length."
-                    )
-            target = [self._dataset[signal] for signal in self.signal]
-            self._target = np.vstack(target).T
+            self._target = {signal: self._dataset[signal] for signal in self.signal}
 
         # Add useful parameters to model
         if model is not None:

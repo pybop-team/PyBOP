@@ -1,5 +1,5 @@
-import pints
 import numpy as np
+import pints
 
 
 class GradientDescent(pints.GradientDescent):

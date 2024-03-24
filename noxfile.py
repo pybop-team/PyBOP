@@ -1,6 +1,6 @@
 import os
-import nox
 
+import nox
 
 # nox options
 nox.options.reuse_existing_virtualenvs = True
@@ -33,7 +33,7 @@ def coverage(session):
         "--cov-report=xml",
     )
     session.run(
-        "pytest", "--plots", "--cov", "--cov-append", "--cov-report=xml", "-n", "1"
+        "pytest", "--plots", "--cov", "--cov-append", "--cov-report=xml", "-n", "0"
     )
 
 
@@ -110,6 +110,14 @@ def run_quick(session):
     """
     run_tests(session)
     run_doc_tests(session)
+
+
+@nox.session
+def benchmarks(session):
+    """Run the benchmarks."""
+    session.install("-e", ".[all,dev]", silent=False)
+    session.install("asv[virtualenv]")
+    session.run("asv", "run", "--show-stderr", "--python=same")
 
 
 @nox.session

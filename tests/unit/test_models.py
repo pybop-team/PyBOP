@@ -1,8 +1,8 @@
-import pybop
-import pytest
 import numpy as np
 import pybamm
+import pytest
 
+import pybop
 from examples.standalone.model import ExponentialDecay
 
 
@@ -202,9 +202,9 @@ class TestModels:
         model.signal = ["y_0"]
         inputs = {}
         t_eval = np.linspace(0, 10, 100)
-        expected = y0 * np.exp(-k * t_eval).reshape(-1, 1)
+        expected = y0 * np.exp(-k * t_eval)
         solved = model.simulate(inputs, t_eval)
-        np.testing.assert_array_almost_equal(solved, expected, decimal=5)
+        np.testing.assert_array_almost_equal(solved["y_0"], expected, decimal=5)
 
         with pytest.raises(ValueError):
             ExponentialDecay(n_states=-1)

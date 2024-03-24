@@ -1,6 +1,7 @@
-import pytest
-import pybop
 import numpy as np
+import pytest
+
+import pybop
 
 
 class TestDataset:
@@ -46,3 +47,8 @@ class TestDataset:
         )
         dataset["Current [A]"] = test_current
         assert np.all(dataset["Current [A]"] == test_current)
+        with pytest.raises(ValueError):
+            dataset["Time"]
+
+        # Test conversion of single signal to list
+        assert dataset.check(signal="Terminal voltage [V]")

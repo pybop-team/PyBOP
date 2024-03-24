@@ -1,6 +1,7 @@
-from scipy.optimize import minimize, differential_evolution
-from .base_optimiser import BaseOptimiser
 import numpy as np
+from scipy.optimize import differential_evolution, minimize
+
+from .base_optimiser import BaseOptimiser
 
 
 class SciPyMinimize(BaseOptimiser):
@@ -12,22 +13,24 @@ class SciPyMinimize(BaseOptimiser):
     Parameters
     ----------
     method : str, optional
-        The type of solver to use. If not specified, defaults to 'COBYLA'.
+        The type of solver to use. If not specified, defaults to 'Nelder-Mead'.
+        Options: 'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP', 'trust-constr', 'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov'.
     bounds : sequence or ``Bounds``, optional
         Bounds for variables as supported by the selected method.
     maxiter : int, optional
         Maximum number of iterations to perform.
     """
 
-    def __init__(self, method=None, bounds=None, maxiter=None):
+    def __init__(self, method=None, bounds=None, maxiter=None, tol=1e-5):
         super().__init__()
         self.method = method
         self.bounds = bounds
+        self.tol = tol
         self.options = {}
         self._max_iterations = maxiter
 
         if self.method is None:
-            self.method = "COBYLA"  # "L-BFGS-B"
+            self.method = "Nelder-Mead"
 
     def _runoptimise(self, cost_function, x0):
         """
@@ -46,9 +49,10 @@ class SciPyMinimize(BaseOptimiser):
             A tuple (x, final_cost) containing the optimized parameters and the value of `cost_function` at the optimum.
         """
 
-        # Add callback storing history of parameter values
         self.log = [[x0]]
+        self.options = {"maxiter": self._max_iterations}
 
+        # Add callback storing history of parameter values
         def callback(x):
             self.log.append([x])
 
@@ -72,26 +76,17 @@ class SciPyMinimize(BaseOptimiser):
                 for lower, upper in zip(self.bounds["lower"], self.bounds["upper"])
             )
 
-        # Set max iterations
-        if self._max_iterations is not None:
-            self.options = {"maxiter": self._max_iterations}
-        else:
-            self.options.pop("maxiter", None)
-
-        output = minimize(
+        result = minimize(
             cost_wrapper,
             x0,
             method=self.method,
             bounds=bounds,
+            tol=self.tol,
             options=self.options,
             callback=callback,
         )
 
-        # Get performance statistics
-        x = output.x
-        final_cost = cost_function(x)
-
-        return x, final_cost
+        return result
 
     def needs_sensitivities(self):
         """
@@ -134,8 +129,11 @@ class SciPyDifferentialEvolution(BaseOptimiser):
         The number of individuals in the population. Defaults to 15.
     """
 
-    def __init__(self, bounds=None, strategy="best1bin", maxiter=1000, popsize=15):
+    def __init__(
+        self, bounds=None, strategy="best1bin", maxiter=1000, popsize=15, tol=1e-5
+    ):
         super().__init__()
+        self.tol = tol
         self.strategy = strategy
         self._max_iterations = maxiter
         self._population_size = popsize
@@ -169,31 +167,28 @@ class SciPyDifferentialEvolution(BaseOptimiser):
             A tuple (x, final_cost) containing the optimized parameters and the value of ``cost_function`` at the optimum.
         """
 
+        self.log = []
+
         if x0 is not None:
             print(
                 "Ignoring x0. Initial conditions are not used for differential_evolution."
             )
 
         # Add callback storing history of parameter values
-        self.log = []
-
         def callback(x, convergence):
             self.log.append([x])
 
-        output = differential_evolution(
+        result = differential_evolution(
             cost_function,
             self.bounds,
             strategy=self.strategy,
             maxiter=self._max_iterations,
             popsize=self._population_size,
+            tol=self.tol,
             callback=callback,
         )
 
-        # Get performance statistics
-        x = output.x
-        final_cost = output.fun
-
-        return x, final_cost
+        return result
 
     def set_population_size(self, population_size=None):
         """

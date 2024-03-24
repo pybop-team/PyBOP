@@ -1,7 +1,9 @@
-import pybop
-import pints
-import numpy as np
 import warnings
+
+import numpy as np
+import pints
+
+import pybop
 
 
 class Optimisation:
@@ -178,14 +180,15 @@ class Optimisation:
         final_cost : float
             The final cost associated with the best parameters.
         """
-        x, final_cost = self.optimiser.optimise(
+        result = self.optimiser.optimise(
             cost_function=self.cost,
             x0=self.x0,
             maxiter=self._max_iterations,
         )
         self.log = self.optimiser.log
+        self._iterations = result.nit
 
-        return x, final_cost
+        return result.x, self.cost(result.x)
 
     def _run_pints(self):
         """
@@ -371,8 +374,10 @@ class Optimisation:
         # Store the optimised parameters
         self.store_optimised_parameters(x)
 
-        # Return best position and score
-        return x, f if self._minimising else -f
+        # Return best position and the score used internally,
+        # i.e the negative log-likelihood in the case of
+        # self._minimising = False
+        return x, f
 
     def f_guessed_tracking(self):
         """
@@ -468,7 +473,7 @@ class Optimisation:
                 raise ValueError("Minimum number of iterations cannot be negative.")
         self._min_iterations = iterations
 
-    def set_max_unchanged_iterations(self, iterations=5, threshold=1e-5):
+    def set_max_unchanged_iterations(self, iterations=15, threshold=1e-5):
         """
         Set the maximum number of iterations without significant change as a stopping criterion.
         Credit: PINTS
@@ -476,7 +481,7 @@ class Optimisation:
         Parameters
         ----------
         iterations : int, optional
-            The maximum number of unchanged iterations to run (default is 25).
+            The maximum number of unchanged iterations to run (default is 15).
             Set to `None` to remove this stopping criterion.
         threshold : float, optional
             The minimum significant change in the objective function value that resets the unchanged iteration counter (default is 1e-5).
@@ -504,7 +509,7 @@ class Optimisation:
         x : array-like
             Optimized parameter values.
         """
-        for i, param in enumerate(self.cost.problem.parameters):
+        for i, param in enumerate(self.cost.parameters):
             param.update(value=x[i])
 
     def check_optimal_parameters(self, x):

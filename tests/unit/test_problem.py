@@ -1,8 +1,8 @@
-import pybop
 import numpy as np
 import pytest
-
 from numpy.testing import assert_allclose, assert_array_equal
+
+import pybop
 
 
 class TestProblem:
@@ -187,7 +187,7 @@ class TestProblem:
         assert problem._model._built_model is not None
         with pytest.raises(AssertionError):
             assert_allclose(
-                out["Terminal voltage [V]"].data,
-                problem_output,
+                out["Voltage [V]"].data,
+                problem_output["Voltage [V]"],
                 atol=1e-5,
             )
