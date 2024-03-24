@@ -106,7 +106,7 @@ class TestProblem:
         assert problem._model._built_model is not None
 
         # Test get target
-        target = problem.get_target()[:, 0]
+        target = problem.get_target()["Voltage [V]"]
         assert_array_equal(target, dataset["Voltage [V]"])
 
         # Test set target
@@ -114,7 +114,7 @@ class TestProblem:
         problem.set_target(dataset)
 
         # Assert
-        target = problem.get_target()[:, 0]
+        target = problem.get_target()["Voltage [V]"]
         assert_array_equal(target, dataset["Voltage [V]"])
 
         # Test model.simulate
