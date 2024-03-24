@@ -1,4 +1,5 @@
 import numpy as np
+import pybop
 
 
 class BaseProblem:
@@ -126,7 +127,7 @@ class BaseProblem:
         """
         return self._time_data
 
-    def target(self):
+    def get_target(self):
         """
         Return the target dataset.
 
@@ -136,6 +137,22 @@ class BaseProblem:
             The target dataset array.
         """
         return self._target
+
+    def set_target(self, dataset):
+        """
+        Set the target dataset.
+
+        Parameters
+        ----------
+        target : np.ndarray
+            The target dataset array.
+        """
+        if self.signal is None:
+            raise ValueError("Signal must be defined to set target.")
+        if not isinstance(dataset, pybop.Dataset):
+            raise ValueError("Dataset must be a pybop Dataset object.")
+
+        self._target = np.vstack([dataset[signal] for signal in self.signal]).T
 
     @property
     def model(self):
@@ -191,8 +208,7 @@ class FittingProblem(BaseProblem):
                 raise ValueError(
                     f"Time data and {signal} data must be the same length."
                 )
-        target = [self._dataset[signal] for signal in self.signal]
-        self._target = np.vstack(target).T
+        self.set_target(dataset)
 
         # Add useful parameters to model
         if model is not None:

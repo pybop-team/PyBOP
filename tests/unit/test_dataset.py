@@ -39,3 +39,10 @@ class TestDataset:
         # Test conversion of pybamm solution into dictionary
         assert dataset.data == pybop.Dataset(solution).data
         assert dataset.names == pybop.Dataset(solution).names
+
+        # Test set and get item
+        test_current = solution["Current [A]"].data + np.ones_like(
+            solution["Current [A]"].data
+        )
+        dataset["Current [A]"] = test_current
+        assert np.all(dataset["Current [A]"] == test_current)

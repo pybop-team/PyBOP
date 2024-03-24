@@ -2,6 +2,8 @@ import pybop
 import numpy as np
 import pytest
 
+from numpy.testing import assert_allclose, assert_array_equal
+
 
 class TestProblem:
     """
@@ -65,7 +67,7 @@ class TestProblem:
         return "Voltage [V]"
 
     @pytest.mark.unit
-    def test_base_problem(self, parameters, model):
+    def test_base_problem(self, parameters, model, dataset):
         # Test incorrect number of initial parameter values
         with pytest.raises(ValueError):
             pybop._problem.BaseProblem(parameters, model=model, x0=np.array([]))
@@ -102,6 +104,18 @@ class TestProblem:
 
         assert problem._model == model
         assert problem._model._built_model is not None
+
+        # Test get target
+        target = problem.get_target()[:, 0]
+        assert_array_equal(target, dataset["Voltage [V]"])
+
+        # Test set target
+        dataset["Voltage [V]"] += np.random.normal(0, 0.05, len(dataset["Voltage [V]"]))
+        problem.set_target(dataset)
+
+        # Assert
+        target = problem.get_target()[:, 0]
+        assert_array_equal(target, dataset["Voltage [V]"])
 
         # Test model.simulate
         model.simulate(inputs=[1e-5, 1e-5], t_eval=np.linspace(0, 10, 100))
@@ -172,7 +186,7 @@ class TestProblem:
 
         assert problem._model._built_model is not None
         with pytest.raises(AssertionError):
-            np.testing.assert_allclose(
+            assert_allclose(
                 out["Terminal voltage [V]"].data,
                 problem_output,
                 atol=1e-5,

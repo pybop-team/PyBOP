@@ -218,7 +218,7 @@ def quick_plot(params, cost, title="Scatter Plot", width=1024, height=576):
     # Extract the time data and evaluate the model's output and target values
     time_data = cost.problem.time_data()
     model_output = cost.problem.evaluate(params)
-    target_output = cost.problem.target()
+    target_output = cost.problem.get_target()
     if isinstance(cost.problem, pybop.DesignProblem):
         trace_name = "Optimised"
     else:
