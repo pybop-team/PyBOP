@@ -1,6 +1,7 @@
-import pytest
-import pybop
 import pybamm
+import pytest
+
+import pybop
 
 
 class TestExperiment:

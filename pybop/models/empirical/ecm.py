@@ -1,4 +1,5 @@
 import pybamm
+
 from .ecm_base import ECircuitModel
 
 

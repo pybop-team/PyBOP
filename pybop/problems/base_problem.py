@@ -15,6 +15,8 @@ class BaseProblem:
         Flag to indicate if the model should be checked (default: True).
     signal: List[str]
       The signal to observe.
+    additional_variables : List[str], optional
+        Additional variables to observe and store in the solution (default: []).
     init_soc : float, optional
         Initial state of charge (default: None).
     x0 : np.ndarray, optional
@@ -27,6 +29,7 @@ class BaseProblem:
         model=None,
         check_model=True,
         signal=["Voltage [V]"],
+        additional_variables=[],
         init_soc=None,
         x0=None,
     ):
@@ -44,6 +47,11 @@ class BaseProblem:
         self.n_outputs = len(self.signal)
         self._time_data = None
         self._target = None
+
+        if isinstance(model, pybop.BaseModel):
+            self.additional_variables = additional_variables
+        else:
+            self.additional_variables = []
 
         # Set bounds (for all or no parameters)
         all_unbounded = True  # assumption
@@ -140,3 +148,4 @@ class BaseProblem:
     @property
     def model(self):
         return self._model
+    

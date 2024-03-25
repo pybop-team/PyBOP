@@ -1,4 +1,4 @@
 #
 # Import lithium ion based models
 #
-from .echem import SPM, SPMe, WeppnerHuggins
+from .echem import SPM, SPMe, WeppnerHuggins, EChemBaseModel

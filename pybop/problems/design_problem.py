@@ -16,6 +16,16 @@ class DesignProblem(BaseProblem):
         List of parameters for the problem.
     experiment : object
         The experimental setup to apply the model to.
+    check_model : bool, optional
+        Flag to indicate if the model parameters should be checked for feasibility each iteration (default: True).
+    signal : str, optional
+        The signal to fit (default: "Voltage [V]").
+    additional_variables : List[str], optional
+        Additional variables to observe and store in the solution (default additions are: ["Time [s]", "Current [A]"]).
+    init_soc : float, optional
+        Initial state of charge (default: None).
+    x0 : np.ndarray, optional
+        Initial parameter values (default: None).
     """
 
     def __init__(
@@ -25,10 +35,17 @@ class DesignProblem(BaseProblem):
         experiment,
         check_model=True,
         signal=["Voltage [V]"],
+        additional_variables=[],
         init_soc=None,
         x0=None,
     ):
-        super().__init__(parameters, model, check_model, signal, init_soc, x0)
+        # Add time and current and remove duplicates
+        additional_variables.extend(["Time [s]", "Current [A]"])
+        additional_variables = list(set(additional_variables))
+
+        super().__init__(
+            parameters, model, check_model, signal, additional_variables, init_soc, x0
+        )
         self.experiment = experiment
 
         # Build the model if required
@@ -48,8 +65,8 @@ class DesignProblem(BaseProblem):
 
         # Add an example dataset for plotting comparison
         sol = self.evaluate(self.x0)
-        self._time_data = sol[:, -1]
-        self._target = sol[:, 0:-1]
+        self._time_data = sol["Time [s]"]
+        self._target = {key: sol[key] for key in self.signal}
         self._dataset = None
 
     def evaluate(self, x):
@@ -77,6 +94,8 @@ class DesignProblem(BaseProblem):
             return sol
 
         else:
-            predictions = [sol[signal].data for signal in self.signal + ["Time [s]"]]
+            predictions = {}
+            for signal in self.signal + self.additional_variables:
+                predictions[signal] = sol[signal].data
 
-            return np.vstack(predictions).T
+        return predictions

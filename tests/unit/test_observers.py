@@ -1,7 +1,8 @@
-import pybop
 import numpy as np
 import pybamm
 import pytest
+
+import pybop
 from examples.standalone.model import ExponentialDecay
 
 
@@ -62,7 +63,7 @@ class TestObserver:
             observer.observe(-1)
         with pytest.raises(ValueError):
             observer.log_likelihood(
-                t_eval, np.array([1]), inputs=observer._state.inputs
+                {"2y": t_eval}, np.array([1]), inputs=observer._state.inputs
             )
 
         # Test covariance
@@ -81,7 +82,7 @@ class TestObserver:
                 "Output": expected,
             }
         )
-        observer._target = expected
+        observer._target = {"2y": expected}
         observer.evaluate(x0)
 
     @pytest.mark.unit

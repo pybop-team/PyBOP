@@ -1,4 +1,5 @@
 import numpy as np
+
 from pybop.costs.base_cost import BaseCost
 
 
@@ -9,18 +10,18 @@ class BaseLikelihood(BaseCost):
 
     def __init__(self, problem, sigma=None):
         super(BaseLikelihood, self).__init__(problem, sigma)
-        self._n_times = problem.n_time_data
+        self.n_time_data = problem.n_time_data
 
     def set_sigma(self, sigma):
         """
         Setter for sigma parameter
         """
 
-        if sigma is not type(np.array([])):
-            try:
-                sigma = np.array(sigma)
-            except Exception:
-                raise ValueError("Sigma must be a numpy array")
+        if not isinstance(sigma, np.ndarray):
+            sigma = np.array(sigma)
+
+        if not np.issubdtype(sigma.dtype, np.number):
+            raise ValueError("Sigma must contain only numeric values")
 
         if np.any(sigma <= 0):
             raise ValueError("Sigma must not be negative")
@@ -54,7 +55,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         super(GaussianLogLikelihoodKnownSigma, self).__init__(problem, sigma)
         if sigma is not None:
             self.set_sigma(sigma)
-        self._offset = -0.5 * self._n_times * np.log(2 * np.pi / self.sigma0)
+        self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi / self.sigma0)
         self._multip = -1 / (2.0 * self.sigma0**2)
         self.sigma2 = self.sigma0**-2
         self._dl = np.ones(self._n_parameters)
@@ -64,32 +65,52 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         Calls the problem.evaluate method and calculates
         the log-likelihood
         """
-        e = self._target - self.problem.evaluate(x)
-        return np.sum(self._offset + self._multip * np.sum(e**2, axis=0))
+        y = self.problem.evaluate(x)
+
+        for key in self.signal:
+            if len(y.get(key, [])) != len(self._target.get(key, [])):
+                return -np.float64(np.inf)  # prediction doesn't match target
+
+        e = np.array(
+            [
+                np.sum(
+                    self._offset
+                    + self._multip * np.sum((self._target[signal] - y[signal]) ** 2)
+                )
+                for signal in self.signal
+            ]
+        )
+
+        if self.n_outputs == 1:
+            return e.item()
+        else:
+            return np.sum(e)
 
     def _evaluateS1(self, x, grad=None):
         """
         Calls the problem.evaluateS1 method and calculates
         the log-likelihood
         """
-
         y, dy = self.problem.evaluateS1(x)
-        if len(y) < len(self._target):
-            likelihood = -np.float64(np.inf)
-            dl = self._dl * np.ones(self._n_parameters)
-        else:
-            dy = dy.reshape(
-                (
-                    self._n_times,
-                    self.n_outputs,
-                    self._n_parameters,
-                )
-            )
-            e = self._target - y
-            likelihood = np.sum(self._offset + self._multip * np.sum(e**2, axis=0))
-            dl = np.sum((self.sigma2 * np.sum((e.T * dy.T), axis=2)), axis=1)
 
-        return likelihood, dl
+        for key in self.signal:
+            if len(y.get(key, [])) != len(self._target.get(key, [])):
+                likelihood = np.float64(np.inf)
+                dl = self._dl * np.ones(self.n_parameters)
+                return -likelihood, -dl
+
+        r = np.array([self._target[signal] - y[signal] for signal in self.signal])
+        likelihood = self._evaluate(x)
+
+        if self.n_outputs == 1:
+            r = r.reshape(self.problem.n_time_data)
+            dy = dy.reshape(self.n_parameters, self.problem.n_time_data)
+            dl = self.sigma2 * np.sum((r * dy), axis=1)
+            return likelihood, dl
+        else:
+            r = r.reshape(self.n_outputs, self.problem.n_time_data)
+            dl = self.sigma2 * np.sum((r[:, :, np.newaxis] * dy), axis=1)
+            return likelihood, np.sum(dl, axis=1)
 
 
 class GaussianLogLikelihood(BaseLikelihood):
@@ -104,7 +125,7 @@ class GaussianLogLikelihood(BaseLikelihood):
 
     def __init__(self, problem):
         super(GaussianLogLikelihood, self).__init__(problem)
-        self._logpi = -0.5 * self._n_times * np.log(2 * np.pi)
+        self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
         self._dl = np.ones(self._n_parameters + self.n_outputs)
 
     def _evaluate(self, x, grad=None):
@@ -124,12 +145,27 @@ class GaussianLogLikelihood(BaseLikelihood):
         if np.any(sigma <= 0):
             return -np.inf
 
-        e = self._target - self.problem.evaluate(x[: -self.n_outputs])
-        return np.sum(
-            self._logpi
-            - self._n_times * np.log(sigma)
-            - np.sum(e**2, axis=0) / (2.0 * sigma**2)
+        y = self.problem.evaluate(x[: -self.n_outputs])
+
+        for key in self.signal:
+            if len(y.get(key, [])) != len(self._target.get(key, [])):
+                return -np.float64(np.inf)  # prediction doesn't match target
+
+        e = np.array(
+            [
+                np.sum(
+                    self._logpi
+                    - self.n_time_data * np.log(sigma)
+                    - np.sum((self._target[signal] - y[signal]) ** 2) / (2.0 * sigma**2)
+                )
+                for signal in self.signal
+            ]
         )
+
+        if self.n_outputs == 1:
+            return e.item()
+        else:
+            return np.sum(e)
 
     def _evaluateS1(self, x, grad=None):
         """
@@ -139,26 +175,28 @@ class GaussianLogLikelihood(BaseLikelihood):
         sigma = np.asarray(x[-self.n_outputs :])
 
         if np.any(sigma <= 0):
-            return -np.inf, self._dl
+            return -np.float64(np.inf), -self._dl * np.ones(self.n_parameters)
 
         y, dy = self.problem.evaluateS1(x[: -self.n_outputs])
-        if len(y) < len(self._target):
-            likelihood = -np.float64(np.inf)
-            dl = self._dl
-        else:
-            dy = dy.reshape(
-                (
-                    self._n_times,
-                    self.n_outputs,
-                    self._n_parameters,
-                )
-            )
-            e = self._target - y
-            likelihood = self._evaluate(x)
-            dl = np.sum((sigma**-(2.0) * np.sum((e.T * dy.T), axis=2)), axis=1)
+        for key in self.signal:
+            if len(y.get(key, [])) != len(self._target.get(key, [])):
+                likelihood = np.float64(np.inf)
+                dl = self._dl * np.ones(self.n_parameters)
+                return -likelihood, -dl
 
-            # Add sigma gradient to dl
-            dsigma = -self._n_times / sigma + sigma**-(3.0) * np.sum(e**2, axis=0)
+        r = np.array([self._target[signal] - y[signal] for signal in self.signal])
+        likelihood = self._evaluate(x)
+
+        if self.n_outputs == 1:
+            r = r.reshape(self.problem.n_time_data)
+            dy = dy.reshape(self.n_parameters, self.problem.n_time_data)
+            dl = sigma ** (-2.0) * np.sum((r * dy), axis=1)
+            dsigma = -self.n_time_data / sigma + sigma**-(3.0) * np.sum(r**2, axis=0)
             dl = np.concatenate((dl, dsigma))
-
-        return likelihood, dl
+            return likelihood, dl
+        else:
+            r = r.reshape(self.n_outputs, self.problem.n_time_data)
+            dl = sigma ** (-2.0) * np.sum((r[:, :, np.newaxis] * dy), axis=1)
+            dsigma = -self.n_time_data / sigma + sigma**-(3.0) * np.sum(r**2, axis=0)
+            dl = np.concatenate((dl, dsigma))
+            return likelihood, np.sum(dl, axis=1)

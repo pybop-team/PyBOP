@@ -17,7 +17,13 @@ class FittingProblem(BaseProblem):
     dataset : Dataset
         Dataset object containing the data to fit the model to.
     signal : str, optional
-        The signal to fit (default: "Voltage [V]").
+        The variable used for fitting (default: "Voltage [V]").
+    additional_variables : List[str], optional
+        Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
+    init_soc : float, optional
+        Initial state of charge (default: None).
+    x0 : np.ndarray, optional
+        Initial parameter values (default: None).
     """
 
     def __init__(
@@ -27,36 +33,33 @@ class FittingProblem(BaseProblem):
         dataset,
         check_model=True,
         signal=["Voltage [V]"],
+        additional_variables=[],
         init_soc=None,
         x0=None,
     ):
-        super().__init__(parameters, model, check_model, signal, init_soc, x0)
+        # Add time and remove duplicates
+        additional_variables.extend(["Time [s]"])
+        additional_variables = list(set(additional_variables))
+
+        super().__init__(
+            parameters, model, check_model, signal, additional_variables, init_soc, x0
+        )
         self._dataset = dataset.data
         self.x = self.x0
 
         # Check that the dataset contains time and current
-        for name in ["Time [s]", "Current function [A]"] + self.signal:
-            if name not in self._dataset:
-                raise ValueError(f"Expected {name} in list of dataset")
+        dataset.check(self.signal + ["Current function [A]"])
 
+        # Unpack time and target data
         self._time_data = self._dataset["Time [s]"]
         self.n_time_data = len(self._time_data)
-        if np.any(self._time_data < 0):
-            raise ValueError("Times can not be negative.")
-        if np.any(self._time_data[:-1] >= self._time_data[1:]):
-            raise ValueError("Times must be increasing.")
-
-        for signal in self.signal:
-            if len(self._dataset[signal]) != self.n_time_data:
-                raise ValueError(
-                    f"Time data and {signal} data must be the same length."
-                )
-        target = [self._dataset[signal] for signal in self.signal]
-        self._target = np.vstack(target).T
+        self._target = {signal: self._dataset[signal] for signal in self.signal}
 
         # Add useful parameters to model
         if model is not None:
             self._model.signal = self.signal
+            self._model.additional_variables = self.additional_variables
+            self._model.n_parameters = self.n_parameters
             self._model.n_outputs = self.n_outputs
             self._model.n_time_data = self.n_time_data
 
@@ -88,14 +91,14 @@ class FittingProblem(BaseProblem):
         y : np.ndarray
             The model output y(t) simulated with inputs x.
         """
-        if (x != self.x).any() and self._model.matched_parameters:
+        if np.any(x != self.x) and self._model.matched_parameters:
             for i, param in enumerate(self.parameters):
                 param.update(value=x[i])
 
             self._model.rebuild(parameters=self.parameters)
             self.x = x
 
-        y = np.asarray(self._model.simulate(inputs=x, t_eval=self._time_data))
+        y = self._model.simulate(inputs=x, t_eval=self._time_data)
 
         return y
 
@@ -124,4 +127,5 @@ class FittingProblem(BaseProblem):
             t_eval=self._time_data,
         )
 
-        return (np.asarray(y), np.asarray(dy))
+        return (y, np.asarray(dy))
+    
