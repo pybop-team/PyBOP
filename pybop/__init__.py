@@ -5,14 +5,14 @@
 # This file is adapted from Pints
 # (see https://github.com/pints-team/pints)
 #
-
+from __future__ import annotations
 import sys
 from os import path
 
 #
 # Version info
 #
-from pybop.version import __version__
+from pybop._version import __version__
 
 #
 # Constants
@@ -24,9 +24,35 @@ FLOAT_FORMAT = "{: .17e}"
 script_path = path.dirname(__file__)
 
 #
+# Utilities
+#
+from ._utils import is_numeric
+
+#
+# Cost class
+# Problem class
+#
+from ._problem import BaseProblem, FittingProblem, DesignProblem
+
+#
 # Cost function class
 #
-from ._costs import BaseCost, RootMeanSquaredError, SumSquaredError
+from .costs.base_cost import BaseCost
+from .costs.fitting_costs import (
+    RootMeanSquaredError,
+    SumSquaredError,
+    ObserverCost,
+)
+from .costs.design_costs import (
+    DesignCost,
+    GravimetricEnergyDensity,
+    VolumetricEnergyDensity,
+)
+from .costs._likelihoods import (
+    BaseLikelihood,
+    GaussianLogLikelihood,
+    GaussianLogLikelihoodKnownSigma,
+)
 
 #
 # Dataset class
@@ -39,6 +65,13 @@ from ._dataset import Dataset
 from .models.base_model import BaseModel
 from .models import lithium_ion
 from .models import empirical
+from .models.base_model import TimeSeriesState
+from .models.base_model import Inputs
+
+#
+# Experiment class
+#
+from ._experiment import Experiment
 
 #
 # Main optimisation class
@@ -49,7 +82,6 @@ from ._optimisation import Optimisation
 # Optimiser class
 #
 from .optimisers.base_optimiser import BaseOptimiser
-from .optimisers.nlopt_optimize import NLoptOptimize
 from .optimisers.scipy_optimisers import SciPyMinimize, SciPyDifferentialEvolution
 from .optimisers.pints_optimisers import (
     GradientDescent,
@@ -68,19 +100,23 @@ from .parameters.parameter import Parameter
 from .parameters.parameter_set import ParameterSet
 from .parameters.priors import Gaussian, Uniform, Exponential
 
+
 #
-# Problem class
+# Observer classes
 #
-from ._problem import FittingProblem, DesignProblem
+from .observers.unscented_kalman import UnscentedKalmanFilterObserver
+from .observers.observer import Observer
 
 #
 # Plotting class
 #
-from .plotting.plot_cost2d import plot_cost2d
-from .plotting.quick_plot import StandardPlot, quick_plot
+from .plotting.plotly_manager import PlotlyManager
+from .plotting.quick_plot import StandardPlot, StandardSubplot, plot_trajectories
+from .plotting.plot2d import plot2d
+from .plotting.plot_dataset import plot_dataset
 from .plotting.plot_convergence import plot_convergence
 from .plotting.plot_parameters import plot_parameters
-from .plotting.plotly_manager import PlotlyManager
+from .plotting.plot_problem import quick_plot
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop

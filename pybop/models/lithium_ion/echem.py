@@ -1,8 +1,9 @@
 import pybamm
-from ..base_model import BaseModel
+
+from .echem_base import EChemBaseModel
 
 
-class SPM(BaseModel):
+class SPM(EChemBaseModel):
     """
     Wraps the Single Particle Model (SPM) for simulating lithium-ion batteries, as implemented in PyBaMM.
 
@@ -68,8 +69,11 @@ class SPM(BaseModel):
         self._mesh = None
         self._disc = None
 
+        self._electrode_soh = pybamm.lithium_ion.electrode_soh
+        self.rebuild_parameters = self.set_rebuild_parameters()
 
-class SPMe(BaseModel):
+
+class SPMe(EChemBaseModel):
     """
     Represents the Single Particle Model with Electrolyte (SPMe) for lithium-ion batteries.
 
@@ -136,3 +140,6 @@ class SPMe(BaseModel):
         self._built_initial_soc = None
         self._mesh = None
         self._disc = None
+
+        self._electrode_soh = pybamm.lithium_ion.electrode_soh
+        self.rebuild_parameters = self.set_rebuild_parameters()

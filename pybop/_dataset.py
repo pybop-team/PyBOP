@@ -1,3 +1,4 @@
+import numpy as np
 import pybamm
 
 
@@ -10,22 +11,13 @@ class Dataset:
 
     Parameters
     ----------
-    name : str
-        The name of the dataset, providing a label for identification.
-    data : array-like
-        The actual experimental data, typically in a structured form such as
-        a NumPy array or a pandas DataFrame.
-
+    data_dictionary : dict or instance of pybamm.solvers.solution.Solution
+        The experimental data to store within the dataset.
     """
 
     def __init__(self, data_dictionary):
         """
-        Initialize a Dataset instance with a name and data.
-
-        Parameters
-        ----------
-        data_dictionary : dict or instance of pybamm.solvers.solution.Solution
-            The experimental data to store within the dataset.
+        Initialize a Dataset instance with data and a set of names.
         """
 
         if isinstance(data_dictionary, pybamm.solvers.solution.Solution):
@@ -46,6 +38,30 @@ class Dataset:
         """
         return f"Dataset: {type(self.data)} \n Contains: {self.names}"
 
+    def __getitem__(self, key):
+        """
+        Return the data corresponding to a particular key.
+
+        Parameters
+        ----------
+        key : str
+            The name of a data series within the dataset.
+
+        Returns
+        -------
+        list or np.ndarray
+            The data series corresonding to the key.
+
+        Raises
+        ------
+        ValueError
+            The key must exist in the dataset.
+        """
+        if key not in self.data.keys():
+            raise ValueError(f"The key {key} does not exist in this dataset.")
+
+        return self.data[key]
+
     def Interpolant(self):
         """
         Create an interpolation function of the dataset based on the independent variable.
@@ -64,3 +80,40 @@ class Dataset:
             self.Interpolant = pybamm.Interpolant(self.x, self.y, pybamm.t)
         else:
             NotImplementedError("Only time interpolation is supported")
+
+    def check(self, signal=["Voltage [V]"]):
+        """
+        Check the consistency of a PyBOP Dataset against the expected format.
+
+        Returns
+        -------
+        bool
+            If True, the dataset has the expected attributes.
+
+        Raises
+        ------
+        ValueError
+            If the time series and the data series are not consistent.
+        """
+        if isinstance(signal, str):
+            signal = [signal]
+
+        # Check that the dataset contains time and chosen signal
+        for name in ["Time [s]"] + signal:
+            if name not in self.names:
+                raise ValueError(f"expected {name} in list of dataset")
+
+        # Check for increasing times
+        time_data = self.data["Time [s]"]
+        if np.any(time_data < 0):
+            raise ValueError("Times can not be negative.")
+        if np.any(time_data[:-1] >= time_data[1:]):
+            raise ValueError("Times must be increasing.")
+
+        # Check for consistent data
+        n_time_data = len(time_data)
+        for s in signal:
+            if len(self.data[s]) != n_time_data:
+                raise ValueError(f"Time data and {s} data must be the same length.")
+
+        return True

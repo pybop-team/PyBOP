@@ -1,5 +1,6 @@
-import pybop
 import numpy as np
+
+import pybop
 
 # Define model
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
@@ -8,14 +9,16 @@ model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 # Fitting parameters
 parameters = [
     pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.7, 0.05),
-        bounds=[0.6, 0.9],
+        "Negative particle radius [m]",
+        prior=pybop.Gaussian(6e-06, 0.1e-6),
+        bounds=[1e-6, 9e-6],
+        true_value=parameter_set["Negative particle radius [m]"],
     ),
     pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.58, 0.05),
-        bounds=[0.5, 0.8],
+        "Positive particle radius [m]",
+        prior=pybop.Gaussian(4.5e-06, 0.1e-6),
+        bounds=[1e-6, 9e-6],
+        true_value=parameter_set["Positive particle radius [m]"],
     ),
 ]
 
@@ -31,21 +34,33 @@ dataset = pybop.Dataset(
         "Time [s]": t_eval,
         "Current function [A]": values["Current [A]"].data,
         "Voltage [V]": corrupt_values,
+        "Bulk open-circuit voltage [V]": values["Bulk open-circuit voltage [V]"].data,
     }
 )
 
+signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 # Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset)
+problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 cost = pybop.SumSquaredError(problem)
 optim = pybop.Optimisation(cost, optimiser=pybop.CMAES)
 optim.set_max_iterations(100)
 
 # Run the optimisation
 x, final_cost = optim.run()
+print(
+    "True parameters:",
+    [
+        parameters[0].true_value,
+        parameters[1].true_value,
+    ],
+)
 print("Estimated parameters:", x)
 
+# Plot the time series
+pybop.plot_dataset(dataset)
+
 # Plot the timeseries output
-pybop.quick_plot(x, cost, title="Optimised Comparison")
+pybop.quick_plot(problem, parameter_values=x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)
@@ -54,8 +69,7 @@ pybop.plot_convergence(optim)
 pybop.plot_parameters(optim)
 
 # Plot the cost landscape
-pybop.plot_cost2d(cost, steps=15)
+pybop.plot2d(cost, steps=15)
 
-# Plot the cost landscape with optimisation path and updated bounds
-bounds = np.array([[0.6, 0.9], [0.5, 0.8]])
-pybop.plot_cost2d(cost, optim=optim, bounds=bounds, steps=15)
+# Plot the cost landscape with optimisation path
+pybop.plot2d(optim, steps=15)

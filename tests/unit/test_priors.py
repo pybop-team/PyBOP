@@ -1,6 +1,7 @@
-import pybop
 import numpy as np
 import pytest
+
+import pybop
 
 
 class TestPriors:
@@ -32,6 +33,14 @@ class TestPriors:
         np.testing.assert_allclose(Uniform.logpdf(0.5), 0, atol=1e-4)
         np.testing.assert_allclose(Exponential.logpdf(1), -1, atol=1e-4)
 
+        # Test properties
+        assert Uniform.mean == (Uniform.upper - Uniform.lower) / 2
+        np.testing.assert_allclose(
+            Uniform.sigma, (Uniform.upper - Uniform.lower) / (2 * np.sqrt(3)), atol=1e-8
+        )
+        assert Exponential.mean == Exponential.scale
+        assert Exponential.sigma == Exponential.scale
+
     @pytest.mark.unit
     def test_gaussian_rvs(self, Gaussian):
         samples = Gaussian.rvs(size=500)
@@ -57,3 +66,12 @@ class TestPriors:
         assert repr(Gaussian) == "Gaussian, mean: 0.5, sigma: 1"
         assert repr(Uniform) == "Uniform, lower: 0, upper: 1"
         assert repr(Exponential) == "Exponential, scale: 1"
+
+    @pytest.mark.unit
+    def test_invalid_size(self, Gaussian, Uniform, Exponential):
+        with pytest.raises(ValueError):
+            Gaussian.rvs(-1)
+        with pytest.raises(ValueError):
+            Uniform.rvs(-1)
+        with pytest.raises(ValueError):
+            Exponential.rvs(-1)

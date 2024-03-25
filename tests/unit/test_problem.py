@@ -1,7 +1,7 @@
-import pybop
 import numpy as np
-import pybamm
 import pytest
+
+import pybop
 
 
 class TestProblem:
@@ -17,20 +17,20 @@ class TestProblem:
     def parameters(self):
         return [
             pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.5, 0.02),
-                bounds=[0.375, 0.625],
+                "Negative particle radius [m]",
+                prior=pybop.Gaussian(2e-05, 0.1e-5),
+                bounds=[1e-6, 5e-5],
             ),
             pybop.Parameter(
-                "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.65, 0.02),
-                bounds=[0.525, 0.75],
+                "Positive particle radius [m]",
+                prior=pybop.Gaussian(0.5e-05, 0.1e-5),
+                bounds=[1e-6, 5e-5],
             ),
         ]
 
     @pytest.fixture
     def experiment(self):
-        return pybamm.Experiment(
+        return pybop.Experiment(
             [
                 (
                     "Discharge at 1C for 5 minutes (1 second period)",
@@ -45,11 +45,11 @@ class TestProblem:
     @pytest.fixture
     def dataset(self, model, experiment):
         model.parameter_set = model.pybamm_model.default_parameter_values
-        x0 = np.array([0.52, 0.63])
+        x0 = np.array([2e-5, 0.5e-5])
         model.parameter_set.update(
             {
-                "Negative electrode active material volume fraction": x0[0],
-                "Positive electrode active material volume fraction": x0[1],
+                "Negative particle radius [m]": x0[0],
+                "Positive particle radius [m]": x0[1],
             }
         )
         solution = model.predict(experiment=experiment)
@@ -77,12 +77,18 @@ class TestProblem:
         assert problem._model == model
 
         with pytest.raises(NotImplementedError):
-            problem.evaluate([0.5, 0.5])
+            problem.evaluate([1e-5, 1e-5])
         with pytest.raises(NotImplementedError):
-            problem.evaluateS1([0.5, 0.5])
+            problem.evaluateS1([1e-5, 1e-5])
 
         with pytest.raises(ValueError):
-            pybop._problem.BaseProblem(parameters, model=model, signal=[0.5, 0.5])
+            pybop._problem.BaseProblem(parameters, model=model, signal=[1e-5, 1e-5])
+
+        # Test without bounds
+        for param in parameters:
+            param.bounds = None
+        problem = pybop._problem.BaseProblem(parameters, model=model)
+        assert problem.bounds is None
 
     @pytest.mark.unit
     def test_fitting_problem(self, parameters, dataset, model, signal):
@@ -99,7 +105,7 @@ class TestProblem:
         assert problem._model._built_model is not None
 
         # Test model.simulate
-        model.simulate(inputs=[0.5, 0.5], t_eval=np.linspace(0, 10, 100))
+        model.simulate(inputs=[1e-5, 1e-5], t_eval=np.linspace(0, 10, 100))
 
         # Test problem construction errors
         for bad_dataset in [
@@ -129,6 +135,10 @@ class TestProblem:
             with pytest.raises(ValueError):
                 pybop.FittingProblem(model, parameters, bad_dataset, signal=signal)
 
+        two_signals = ["Voltage [V]", "Time [s]"]
+        with pytest.raises(ValueError):
+            pybop.FittingProblem(model, parameters, bad_dataset, signal=two_signals)
+
     @pytest.mark.unit
     def test_design_problem(self, parameters, experiment, model):
         # Test incorrect number of initial parameter values
@@ -144,4 +154,27 @@ class TestProblem:
         )  # building postponed with input experiment
 
         # Test model.predict
-        model.predict(inputs=[0.5, 0.5], experiment=experiment)
+        model.predict(inputs=[1e-5, 1e-5], experiment=experiment)
+        model.predict(inputs=[3e-5, 3e-5], experiment=experiment)
+
+    @pytest.mark.unit
+    def test_problem_construct_with_model_predict(
+        self, parameters, model, dataset, signal
+    ):
+        # Construct model and predict
+        out = model.predict(inputs=[1e-5, 1e-5], t_eval=np.linspace(0, 10, 100))
+
+        problem = pybop.FittingProblem(
+            model, parameters, dataset=dataset, signal=signal
+        )
+
+        # Test problem evaluate
+        problem_output = problem.evaluate([2e-5, 2e-5])
+
+        assert problem._model._built_model is not None
+        with pytest.raises(AssertionError):
+            np.testing.assert_allclose(
+                out["Voltage [V]"].data,
+                problem_output["Voltage [V]"],
+                atol=1e-5,
+            )

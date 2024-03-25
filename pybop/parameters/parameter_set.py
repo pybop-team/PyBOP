@@ -1,6 +1,8 @@
 import json
 import types
+
 import pybamm
+
 import pybop
 
 
@@ -69,11 +71,9 @@ class ParameterSet:
             "Open-circuit voltage [V]" in self.params
             and self.params["Open-circuit voltage [V]"] == "default"
         ):
-            self.params[
-                "Open-circuit voltage [V]"
-            ] = pybop.empirical.Thevenin().default_parameter_values[
-                "Open-circuit voltage [V]"
-            ]
+            self.params["Open-circuit voltage [V]"] = (
+                pybop.empirical.Thevenin().default_parameter_values["Open-circuit voltage [V]"]
+            )
 
     def export_parameters(self, output_json_path, fit_params=None):
         """
@@ -152,4 +152,10 @@ class ParameterSet:
         pybamm.ParameterValues
             A PyBaMM parameter set corresponding to the provided name.
         """
+
+        msg = f"Parameter set '{name}' is not a valid PyBaMM parameter set. Available parameter sets are: {list(pybamm.parameter_sets)}"
+
+        if name not in list(pybamm.parameter_sets):
+            raise ValueError(msg)
+
         return pybamm.ParameterValues(name).copy()

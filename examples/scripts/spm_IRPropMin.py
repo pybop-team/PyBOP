@@ -1,5 +1,6 @@
-import pybop
 import numpy as np
+
+import pybop
 
 # Define model
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
@@ -9,16 +10,15 @@ model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.7, 0.05),
-        bounds=[0.6, 0.9],
+        prior=pybop.Gaussian(0.6, 0.05),
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.58, 0.05),
-        bounds=[0.5, 0.8],
+        prior=pybop.Gaussian(0.48, 0.05),
     ),
 ]
 
+# Generate data
 sigma = 0.001
 t_eval = np.arange(0, 900, 2)
 values = model.predict(t_eval=t_eval)
@@ -43,7 +43,7 @@ x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
 # Plot the timeseries output
-pybop.quick_plot(x, cost, title="Optimised Comparison")
+pybop.quick_plot(problem, parameter_values=x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)
@@ -51,8 +51,6 @@ pybop.plot_convergence(optim)
 # Plot the parameter traces
 pybop.plot_parameters(optim)
 
-# Plot the cost landscape
-pybop.plot_cost2d(cost, steps=15)
-
 # Plot the cost landscape with optimisation path
-pybop.plot_cost2d(cost, optim=optim, steps=15)
+bounds = np.array([[0.5, 0.8], [0.4, 0.7]])
+pybop.plot2d(optim, bounds=bounds, steps=15)

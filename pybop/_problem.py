@@ -1,5 +1,7 @@
 import numpy as np
 
+import pybop
+
 
 class BaseProblem:
     """
@@ -13,6 +15,10 @@ class BaseProblem:
         The model to be used for the problem (default: None).
     check_model : bool, optional
         Flag to indicate if the model should be checked (default: True).
+    signal: List[str]
+      The signal to observe.
+    additional_variables : List[str], optional
+        Additional variables to observe and store in the solution (default: []).
     init_soc : float, optional
         Initial state of charge (default: None).
     x0 : np.ndarray, optional
@@ -25,6 +31,7 @@ class BaseProblem:
         model=None,
         check_model=True,
         signal=["Voltage [V]"],
+        additional_variables=[],
         init_soc=None,
         x0=None,
     ):
@@ -43,11 +50,35 @@ class BaseProblem:
         self._time_data = None
         self._target = None
 
-        # Set bounds
-        self.bounds = dict(
-            lower=[param.bounds[0] for param in self.parameters],
-            upper=[param.bounds[1] for param in self.parameters],
-        )
+        if isinstance(model, pybop.BaseModel):
+            self.additional_variables = additional_variables
+        else:
+            self.additional_variables = []
+
+        # Set bounds (for all or no parameters)
+        all_unbounded = True  # assumption
+        self.bounds = {"lower": [], "upper": []}
+        for param in self.parameters:
+            if param.bounds is not None:
+                self.bounds["lower"].append(param.bounds[0])
+                self.bounds["upper"].append(param.bounds[1])
+                all_unbounded = False
+            else:
+                self.bounds["lower"].append(-np.inf)
+                self.bounds["upper"].append(np.inf)
+        if all_unbounded:
+            self.bounds = None
+
+        # Set initial standard deviation (for all or no parameters)
+        all_have_sigma = True  # assumption
+        self.sigma0 = []
+        for param in self.parameters:
+            if hasattr(param.prior, "sigma"):
+                self.sigma0.append(param.prior.sigma)
+            else:
+                all_have_sigma = False
+        if not all_have_sigma:
+            self.sigma0 = None
 
         # Sample from prior for x0
         if x0 is None:
@@ -59,7 +90,7 @@ class BaseProblem:
 
         # Add the initial values to the parameter definitions
         for i, param in enumerate(self.parameters):
-            param.update(value=self.x0[i])
+            param.update(initial_value=self.x0[i])
 
     def evaluate(self, x):
         """
@@ -79,7 +110,8 @@ class BaseProblem:
 
     def evaluateS1(self, x):
         """
-        Evaluate the model with the given parameters and return the signal and its derivatives.
+        Evaluate the model with the given parameters and return the signal and
+        its derivatives.
 
         Parameters
         ----------
@@ -115,6 +147,10 @@ class BaseProblem:
         """
         return self._target
 
+    @property
+    def model(self):
+        return self._model
+
 
 class FittingProblem(BaseProblem):
     """
@@ -128,10 +164,16 @@ class FittingProblem(BaseProblem):
         The model to fit.
     parameters : list
         List of parameters for the problem.
-    dataset : list
-        List of data objects to fit the model to.
+    dataset : Dataset
+        Dataset object containing the data to fit the model to.
     signal : str, optional
-        The signal to fit (default: "Voltage [V]").
+        The variable used for fitting (default: "Voltage [V]").
+    additional_variables : List[str], optional
+        Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
+    init_soc : float, optional
+        Initial state of charge (default: None).
+    x0 : np.ndarray, optional
+        Initial parameter values (default: None).
     """
 
     def __init__(
@@ -141,41 +183,43 @@ class FittingProblem(BaseProblem):
         dataset,
         check_model=True,
         signal=["Voltage [V]"],
+        additional_variables=[],
         init_soc=None,
         x0=None,
     ):
-        super().__init__(parameters, model, check_model, signal, init_soc, x0)
+        # Add time and remove duplicates
+        additional_variables.extend(["Time [s]"])
+        additional_variables = list(set(additional_variables))
+
+        super().__init__(
+            parameters, model, check_model, signal, additional_variables, init_soc, x0
+        )
         self._dataset = dataset.data
+        self.x = self.x0
 
         # Check that the dataset contains time and current
-        for name in ["Time [s]", "Current function [A]"] + self.signal:
-            if name not in self._dataset:
-                raise ValueError(f"expected {name} in list of dataset")
+        dataset.check(self.signal + ["Current function [A]"])
 
+        # Unpack time and target data
         self._time_data = self._dataset["Time [s]"]
         self.n_time_data = len(self._time_data)
-        if np.any(self._time_data < 0):
-            raise ValueError("Times can not be negative.")
-        if np.any(self._time_data[:-1] >= self._time_data[1:]):
-            raise ValueError("Times must be increasing.")
-
-        target = [self._dataset[signal] for signal in self.signal]
-        self._target = np.vstack(target).T
-        if self.n_outputs == 1:
-            if len(self._target) != self.n_time_data:
-                raise ValueError("Time data and target data must be the same length.")
-        else:
-            if self._target.shape != (self.n_time_data, self.n_outputs):
-                raise ValueError("Time data and target data must be the same shape.")
+        self._target = {signal: self._dataset[signal] for signal in self.signal}
 
         # Add useful parameters to model
         if model is not None:
             self._model.signal = self.signal
+            self._model.additional_variables = self.additional_variables
+            self._model.n_parameters = self.n_parameters
             self._model.n_outputs = self.n_outputs
             self._model.n_time_data = self.n_time_data
 
-        # Build the model
-        if self._model._built_model is None:
+            # Build the model from scratch
+            if self._model._built_model is not None:
+                self._model._model_with_set_params = None
+                self._model._built_model = None
+                self._model._built_initial_soc = None
+                self._model._mesh = None
+                self._model._disc = None
             self._model.build(
                 dataset=self._dataset,
                 parameters=self.parameters,
@@ -191,9 +235,20 @@ class FittingProblem(BaseProblem):
         ----------
         x : np.ndarray
             Parameter values to evaluate the model at.
-        """
 
-        y = np.asarray(self._model.simulate(inputs=x, t_eval=self._time_data))
+        Returns
+        -------
+        y : np.ndarray
+            The model output y(t) simulated with inputs x.
+        """
+        if np.any(x != self.x) and self._model.matched_parameters:
+            for i, param in enumerate(self.parameters):
+                param.update(value=x[i])
+
+            self._model.rebuild(parameters=self.parameters)
+            self.x = x
+
+        y = self._model.simulate(inputs=x, t_eval=self._time_data)
 
         return y
 
@@ -205,14 +260,24 @@ class FittingProblem(BaseProblem):
         ----------
         x : np.ndarray
             Parameter values to evaluate the model at.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the simulation result y(t) and the sensitivities dy/dx(t) evaluated
+            with given inputs x.
         """
+        if self._model.matched_parameters:
+            raise RuntimeError(
+                "Gradient not available when using geometric parameters."
+            )
 
         y, dy = self._model.simulateS1(
             inputs=x,
             t_eval=self._time_data,
         )
 
-        return (np.asarray(y), np.asarray(dy))
+        return (y, np.asarray(dy))
 
 
 class DesignProblem(BaseProblem):
@@ -229,6 +294,16 @@ class DesignProblem(BaseProblem):
         List of parameters for the problem.
     experiment : object
         The experimental setup to apply the model to.
+    check_model : bool, optional
+        Flag to indicate if the model parameters should be checked for feasibility each iteration (default: True).
+    signal : str, optional
+        The signal to fit (default: "Voltage [V]").
+    additional_variables : List[str], optional
+        Additional variables to observe and store in the solution (default additions are: ["Time [s]", "Current [A]"]).
+    init_soc : float, optional
+        Initial state of charge (default: None).
+    x0 : np.ndarray, optional
+        Initial parameter values (default: None).
     """
 
     def __init__(
@@ -238,10 +313,17 @@ class DesignProblem(BaseProblem):
         experiment,
         check_model=True,
         signal=["Voltage [V]"],
+        additional_variables=[],
         init_soc=None,
         x0=None,
     ):
-        super().__init__(parameters, model, check_model, signal, init_soc, x0)
+        # Add time and current and remove duplicates
+        additional_variables.extend(["Time [s]", "Current [A]"])
+        additional_variables = list(set(additional_variables))
+
+        super().__init__(
+            parameters, model, check_model, signal, additional_variables, init_soc, x0
+        )
         self.experiment = experiment
 
         # Build the model if required
@@ -259,6 +341,12 @@ class DesignProblem(BaseProblem):
                 init_soc=self.init_soc,
             )
 
+        # Add an example dataset for plotting comparison
+        sol = self.evaluate(self.x0)
+        self._time_data = sol["Time [s]"]
+        self._target = {key: sol[key] for key in self.signal}
+        self._dataset = None
+
     def evaluate(self, x):
         """
         Evaluate the model with the given parameters and return the signal.
@@ -267,25 +355,25 @@ class DesignProblem(BaseProblem):
         ----------
         x : np.ndarray
             Parameter values to evaluate the model at.
+
+        Returns
+        -------
+        y : np.ndarray
+            The model output y(t) simulated with inputs x.
         """
 
-        y = np.asarray(self._model.simulate(inputs=x, t_eval=self._time_data))
-
-        return y
-
-    def evaluateS1(self, x):
-        """
-        Evaluate the model with the given parameters and return the signal and its derivatives.
-
-        Parameters
-        ----------
-        x : np.ndarray
-            Parameter values to evaluate the model at.
-        """
-
-        y, dy = self._model.simulateS1(
+        sol = self._model.predict(
             inputs=x,
-            t_eval=self._time_data,
+            experiment=self.experiment,
+            init_soc=self.init_soc,
         )
 
-        return (np.asarray(y), np.asarray(dy))
+        if sol == [np.inf]:
+            return sol
+
+        else:
+            predictions = {}
+            for signal in self.signal + self.additional_variables:
+                predictions[signal] = sol[signal].data
+
+        return predictions

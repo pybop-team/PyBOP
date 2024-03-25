@@ -31,6 +31,9 @@
   <a href="https://colab.research.google.com/github/pybop-team/PyBOP/blob/develop/">
     <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="open In colab" />
   </a>
+  <a href = "https://pybop-team.github.io/pybop-bench/">
+    <img alt="Static Badge" src="https://img.shields.io/badge/https%3A%2F%2Fpybop-team.github.io%2Fpybop-bench%2F?label=Benchmarks">
+  </a>
   <a href = "https://github.com/pybop-team/PyBOP/releases">
     <img src = "https://img.shields.io/github/v/release/pybop-team/PyBOP?color=gold"  alt = releases />
   </a>
@@ -44,7 +47,7 @@ PyBOP offers a full range of tools for the parameterisation and optimisation of 
 The diagram below presents PyBOP's conceptual framework. The PyBOP software specification is available at [this link](https://github.com/pybop-team/software-spec). This product is currently undergoing development, and users can expect the API to evolve with future releases.
 
 <p align="center">
-    <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/PyBOP_Architecture.png" alt="Data flows from battery cycling machines to Galv Harvesters, then to the     Galv server and REST API. Metadata can be updated and data read using the web client, and data can be downloaded by the Python client." width="600" />
+    <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/pybop_architecture.svg" alt="pybop_arch.svg" width="600" />
 </p>
 
 <!-- Getting Started -->
@@ -74,7 +77,7 @@ pip install -e "path/to/pybop"
 To check whether PyBOP has been installed correctly, run one of the examples in the following section. For a development installation, please refer to the [contributing guide](https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md#Installation).
 
 ### Prerequisites
-To use and/or contribute to PyBOP, first install Python (3.8-3.11). On a Debian-based distribution, this looks like:
+To use and/or contribute to PyBOP, first install Python (3.8 — 3.12). On a Debian-based distribution, this looks like:
 
 ```bash
 sudo apt update
@@ -111,13 +114,13 @@ These general cases encompass a wide variety of optimisation problems that requi
 
 PyBOP comes with a number of [example notebooks and scripts](https://github.com/pybop-team/PyBOP/blob/develop/examples) which can be found in the examples folder.
 
-The [spm_descent.py](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_descent.py) script illustrates a straightforward example that starts by generating artificial data from a single particle model (SPM). The unknown parameter values are identified by implementing a sum-of-square error cost function using the terminal voltage as the observed signal and a gradient descent optimiser. To run this example:
+The [spm_pso.py](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_pso.py) script illustrates a straightforward example that starts by generating artificial data from a single particle model (SPM). The unknown parameter values are identified by employing a sum-of-squared errors cost function using the terminal voltage as the observed signal and a particle swarm optimisation algorithm. To run this example:
 
 ```bash
-python examples/scripts/spm_descent.py
+python examples/scripts/spm_pso.py
 ```
 
-In addition, [spm_nlopt.ipynb](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/spm_nlopt.ipynb) provides a second example in notebook form. This example estimates the SPM parameters based on an RMSE cost function and a BOBYQA optimiser.
+Alternatively, [spm_CMAES.ipynb](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/spm_CMAES.ipynb) provides an example in notebook form. This example estimates SPM parameters based on a sum-of-squared errors cost function and a CMA-ES optimiser.
 
 <!-- Code of Conduct -->
 ## Code of Conduct
@@ -145,10 +148,13 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="http://bradyplanden.github.io"><img src="https://avatars.githubusercontent.com/u/55357039?v=4?s=100" width="100px;" alt="Brady Planden"/><br /><sub><b>Brady Planden</b></sub></a><br /><a href="#infra-BradyPlanden" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=BradyPlanden" title="Tests">⚠️</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=BradyPlanden" title="Code">💻</a> <a href="#example-BradyPlanden" title="Examples">💡</a> <a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3ABradyPlanden" title="Reviewed Pull Requests">👀</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/NicolaCourtier"><img src="https://avatars.githubusercontent.com/u/45851982?v=4?s=100" width="100px;" alt="NicolaCourtier"/><br /><sub><b>NicolaCourtier</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=NicolaCourtier" title="Code">💻</a> <a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3ANicolaCourtier" title="Reviewed Pull Requests">👀</a> <a href="#example-NicolaCourtier" title="Examples">💡</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=NicolaCourtier" title="Tests">⚠️</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://howey.eng.ox.ac.uk"><img src="https://avatars.githubusercontent.com/u/2247552?v=4?s=100" width="100px;" alt="David Howey"/><br /><sub><b>David Howey</b></sub></a><br /><a href="#ideas-davidhowey" title="Ideas, Planning, & Feedback">🤔</a> <a href="#mentoring-davidhowey" title="Mentoring">🧑‍🏫</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="http://www.rse.ox.ac.uk"><img src="https://avatars.githubusercontent.com/u/1148404?v=4?s=100" width="100px;" alt="Martin Robinson"/><br /><sub><b>Martin Robinson</b></sub></a><br /><a href="#ideas-martinjrobins" title="Ideas, Planning, & Feedback">🤔</a> <a href="#mentoring-martinjrobins" title="Mentoring">🧑‍🏫</a> <a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3Amartinjrobins" title="Reviewed Pull Requests">👀</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://www.rse.ox.ac.uk"><img src="https://avatars.githubusercontent.com/u/1148404?v=4?s=100" width="100px;" alt="Martin Robinson"/><br /><sub><b>Martin Robinson</b></sub></a><br /><a href="#ideas-martinjrobins" title="Ideas, Planning, & Feedback">🤔</a> <a href="#mentoring-martinjrobins" title="Mentoring">🧑‍🏫</a> <a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3Amartinjrobins" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=martinjrobins" title="Code">💻</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=martinjrobins" title="Tests">⚠️</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://www.brosaplanella.xyz"><img src="https://avatars.githubusercontent.com/u/28443643?v=4?s=100" width="100px;" alt="Ferran Brosa Planella"/><br /><sub><b>Ferran Brosa Planella</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3Abrosaplanella" title="Reviewed Pull Requests">👀</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://www.ukri.org/"><img src="assets/UKRI.png" width="100px;" alt="UKRI"/><br /><sub><b>UKRI</b></sub></a><br /><a href="#financial-UKRI" title="Financial">💵</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://faraday.ac.uk"><img src="https://avatars2.githubusercontent.com/u/42166506?v=4?s=100" width="100px;" alt="Faraday Institution"/><br /><sub><b>Faraday Institution</b></sub></a><br /><a href="#financial-FaradayInstitution" title="Financial">💵</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.ukri.org/"><img src="assets/UKRI.png" width="100px;" alt="UK Research and Innovation"/><br /><sub><b>UK Research and Innovation</b></sub></a><br /><a href="#financial-UKRI" title="Financial">💵</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/agriyakhetarpal"><img src="https://avatars.githubusercontent.com/u/74401230?v=4?s=100" width="100px;" alt="Agriya Khetarpal"/><br /><sub><b>Agriya Khetarpal</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=agriyakhetarpal" title="Code">💻</a> <a href="#infra-agriyakhetarpal" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
     </tr>
   </tbody>
 </table>
