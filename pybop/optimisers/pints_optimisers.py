@@ -205,7 +205,7 @@ class NelderMead(pints.NelderMead):
     Implements the Nelder-Mead downhill simplex method from PINTS.
 
     This is a deterministic local optimiser. In most update steps it performs
-    either 1 evaluation, or 2 sequential evaluations, so that it will not
+    either one evaluation, or two sequential evaluations, so that it will not
     typically benefit from parallelisation.
 
     Parameters
