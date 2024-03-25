@@ -33,13 +33,13 @@ class GITT(pybop.FittingProblem):
             model = pybop.lithium_ion.WeppnerHuggins(parameter_set=parameter_set)
         else:
             raise ValueError(
-                f"Model {model} not recognised. THe only model available is 'Weppner & Huggins'."
+                f"Model {model} not recognised. The only model available is 'Weppner & Huggins'."
             )
 
         parameters = [
             pybop.Parameter(
                 "Positive electrode diffusivity [m2.s-1]",
-                prior=pybop.Gaussian(5e-14, 1e-15),
+                prior=pybop.Gaussian(5e-14, 1e-13),
                 bounds=[1e-16, 1e-11],
                 true_value=parameter_set["Positive electrode diffusivity [m2.s-1]"],
             ),
