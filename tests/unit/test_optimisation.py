@@ -109,7 +109,7 @@ class TestOptimisation:
         # Test catch for optimisers that can only run with multiple parameters
         with pytest.raises(
             ValueError,
-            match=r"is designed to optimise more than one parameter at a time",
+            match=r"requires optimisation of >= 2 parameters at once.",
         ):
             pybop.Optimisation(cost=cost, optimiser=pybop.CMAES)
 

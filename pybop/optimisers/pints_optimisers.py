@@ -219,7 +219,7 @@ class CMAES(pints.CMAES):
     def __init__(self, x0, sigma0=0.1, bounds=None):
         if len(x0) == 1:
             raise ValueError(
-                "CMAES is designed to optimise more than one parameter at a time. "
+                "CMAES requires optimisation of >= 2 parameters at once. "
                 + "Please choose another optimiser."
             )
         if bounds is not None:
