@@ -9,7 +9,7 @@ model = pybop.lithium_ion.SPM(
 )
 
 # Generate data
-sigma = 0.001
+sigma = 0.005
 t_eval = np.arange(0, 150, 2)
 values = model.predict(t_eval=t_eval)
 corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
@@ -63,7 +63,7 @@ problem = pybop.GITT(
 cost = pybop.RootMeanSquaredError(problem)
 
 # Build the optimisation problem
-optim = pybop.Optimisation(cost=cost, optimiser=pybop.SciPyMinimize)
+optim = pybop.Optimisation(cost=cost, optimiser=pybop.PSO, verbose=True)
 
 # Run the optimisation problem
 x, final_cost = optim.run()
