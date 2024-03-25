@@ -87,23 +87,14 @@ class RootMeanSquaredError(BaseCost):
                 return e, de
 
         r = np.array([y[signal] - self._target[signal] for signal in self.signal])
+        e = np.sqrt(np.mean(r**2, axis=1))
+        de = np.mean((r * dy.T), axis=2) / (
+            np.sqrt(np.mean((r * dy.T) ** 2, axis=2)) + np.finfo(float).eps
+        )
 
         if self.n_outputs == 1:
-            r = r.reshape(self.problem.n_time_data)
-            dy = dy.reshape(self.n_parameters, self.problem.n_time_data)
-            e = np.sqrt(np.mean(r**2))
-            de = np.mean((r * dy), axis=1) / (
-                np.sqrt(np.mean((r * dy) ** 2, axis=1) + np.finfo(float).eps)
-            )
             return e.item(), de.flatten()
-
         else:
-            r = r.reshape(self.n_outputs, self.problem.n_time_data)
-            e = np.sqrt(np.mean(r**2, axis=1))
-            de = np.mean((r[:, :, np.newaxis] * dy), axis=1) / (
-                np.sqrt(np.mean((r[:, :, np.newaxis] * dy) ** 2, axis=1))
-                + np.finfo(float).eps
-            )
             return np.sum(e), np.sum(de, axis=1)
 
     def set_fail_gradient(self, de):
@@ -208,19 +199,10 @@ class SumSquaredError(BaseCost):
                 return e, de
 
         r = np.array([y[signal] - self._target[signal] for signal in self.signal])
+        e = np.sum(np.sum(r**2, axis=0), axis=0)
+        de = 2 * np.sum(np.sum((r * dy.T), axis=2), axis=1)
 
-        if self.n_outputs == 1:
-            r = r.reshape(self.problem.n_time_data)
-            dy = dy.reshape(self.n_parameters, self.problem.n_time_data)
-            e = np.sum(r**2, axis=0)
-            de = 2 * np.sum((r * dy), axis=1)
-            return e.item(), de
-
-        else:
-            r = r.reshape(self.n_outputs, self.problem.n_time_data)
-            e = np.sum(r**2, axis=1)
-            de = 2 * np.sum((r[:, :, np.newaxis] * dy), axis=1)
-            return np.sum(e), np.sum(de, axis=1)
+        return e, de
 
     def set_fail_gradient(self, de):
         """

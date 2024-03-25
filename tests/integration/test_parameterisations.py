@@ -120,11 +120,8 @@ class TestModelParameterisation:
         elif optimiser in [pybop.GradientDescent]:
             if isinstance(spm_costs, pybop.GaussianLogLikelihoodKnownSigma):
                 parameterisation.optimiser.set_learning_rate(1.8e-5)
-                parameterisation.set_max_unchanged_iterations(iterations=75)
-                parameterisation.set_max_iterations(200)
             else:
                 parameterisation.optimiser.set_learning_rate(0.02)
-            parameterisation.set_max_iterations(150)
             x, final_cost = parameterisation.run()
 
         elif optimiser in [pybop.SciPyMinimize]:
@@ -136,10 +133,7 @@ class TestModelParameterisation:
 
         # Assertions
         assert initial_cost > final_cost
-        if optimiser in [pybop.Adam, pybop.GradientDescent]:
-            np.testing.assert_allclose(x, self.ground_truth, atol=3.0e-2)
-        else:
-            np.testing.assert_allclose(x, self.ground_truth, atol=2.0e-2)
+        np.testing.assert_allclose(x, self.ground_truth, atol=2.0e-2)
 
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, cost_class):
@@ -174,7 +168,7 @@ class TestModelParameterisation:
         "multi_optimiser",
         [
             pybop.SciPyDifferentialEvolution,
-            pybop.Adam,
+            pybop.IRPropMin,
             pybop.CMAES,
         ],
     )
@@ -198,12 +192,10 @@ class TestModelParameterisation:
             optimiser=multi_optimiser,
             sigma0=0.02,
         )
-        parameterisation.set_max_iterations(200)
+        parameterisation.set_max_unchanged_iterations(iterations=35, threshold=5e-4)
+        parameterisation.set_max_iterations(125)
 
-        if multi_optimiser in [pybop.Adam]:
-            parameterisation.set_max_unchanged_iterations(iterations=65, threshold=1e-5)
-        else:
-            parameterisation.set_max_unchanged_iterations(iterations=35, threshold=5e-4)
+        initial_cost = parameterisation.cost(spm_two_signal_cost.x0)
 
         if multi_optimiser in [pybop.SciPyDifferentialEvolution]:
             parameterisation.optimiser.set_population_size(5)
@@ -213,7 +205,7 @@ class TestModelParameterisation:
 
         # Assertions
         assert initial_cost > final_cost
-        np.testing.assert_allclose(x, self.ground_truth, atol=3e-2)
+        np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
 
     @pytest.mark.parametrize("init_soc", [0.4, 0.6])
     @pytest.mark.integration
