@@ -148,4 +148,3 @@ class BaseProblem:
     @property
     def model(self):
         return self._model
-    

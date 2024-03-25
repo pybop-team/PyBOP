@@ -1,7 +1,8 @@
-import pybop
-import pybamm
 import numpy as np
+import pybamm
 import pytest
+
+import pybop
 
 
 class TestGITT:
@@ -12,11 +13,11 @@ class TestGITT:
     @pytest.fixture
     def model(self):
         return "Weppner & Huggins"
-    
+
     @pytest.fixture
     def parameter_set(self):
         original_parameters = pybamm.ParameterValues("Xu2019")
-        
+
         return pybamm.ParameterValues(
             {
                 "Reference OCP [V]": 4.1821,
@@ -47,7 +48,6 @@ class TestGITT:
                 ],
             }
         )
-   
 
     @pytest.fixture
     def dataset(self):
@@ -61,7 +61,9 @@ class TestGITT:
         sigma = 0.005
         t_eval = np.arange(0, 150, 2)
         values = model.predict(t_eval=t_eval)
-        corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
+        corrupt_values = values["Voltage [V]"].data + np.random.normal(
+            0, sigma, len(t_eval)
+        )
 
         # Return dataset
         return pybop.Dataset(

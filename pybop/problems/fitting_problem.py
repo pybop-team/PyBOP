@@ -1,4 +1,5 @@
 import numpy as np
+
 from pybop import BaseProblem
 
 
@@ -128,4 +129,3 @@ class FittingProblem(BaseProblem):
         )
 
         return (y, np.asarray(dy))
-    

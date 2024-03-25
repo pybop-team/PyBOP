@@ -1,6 +1,7 @@
-import pybop
-import pybamm
 import numpy as np
+import pybamm
+
+import pybop
 
 # Define model
 original_parameters = pybamm.ParameterValues("Xu2019")

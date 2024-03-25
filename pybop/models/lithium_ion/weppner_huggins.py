@@ -1,8 +1,8 @@
 #
 # Weppner Huggins Model
 #
-import pybamm
 import numpy as np
+import pybamm
 
 
 class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
