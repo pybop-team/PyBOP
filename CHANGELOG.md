@@ -2,6 +2,13 @@
 
 ## Features
 
+
+## Bug Fixes
+
+# [v24.3](https://github.com/pybop-team/PyBOP/tree/v24.3) - 2024-03-25
+
+## Features
+
 - [#245](https://github.com/pybop-team/PyBOP/pull/245) - Updates ruff config for import linting.
 - [#198](https://github.com/pybop-team/PyBOP/pull/198) - Adds default subplot trace options, removes `[]` in axis plots as per SI standard, add varying signal length to quick_plot, restores design optimisation execption.
 - [#224](https://github.com/pybop-team/PyBOP/pull/224) - Updated prediction objects to dictionaries, cost class calculations, added `additional_variables` argument to problem class, updated scipy.minimize defualt method to Nelder-Mead, added gradient cost landscape plots with optional argument.
