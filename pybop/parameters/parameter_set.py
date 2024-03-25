@@ -56,6 +56,10 @@ class ParameterSet:
             with open(self.json_path, "r") as file:
                 self.params = json.load(file)
                 self._handle_special_cases()
+        else:
+            raise ValueError(
+                "Parameter set already constructed, or path to json file not provided."
+            )
         if self.params["chemistry"] is not None:
             self.chemistry = self.params["chemistry"]
         return self.params
@@ -88,6 +92,10 @@ class ParameterSet:
         # Read JSON file
         if not self.params and self.json_path:
             self.params = pybamm.ParameterValues.create_from_bpx(self.json_path)
+        else:
+            raise ValueError(
+                "Parameter set already constructed, or path to bpx file not provided."
+            )
         return self.params
 
     def _handle_special_cases(self):
