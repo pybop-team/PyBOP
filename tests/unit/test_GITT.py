@@ -84,15 +84,15 @@ class TestGITT:
         problem = pybop.GITT(model, parameter_set, dataset)
 
         # Test fixed attributes
-        parameters = [
-            pybop.Parameter(
-                "Positive electrode diffusivity [m2.s-1]",
-                prior=pybop.Gaussian(5e-14, 1e-13),
-                bounds=[1e-16, 1e-11],
-                # true_value=parameter_set["Positive electrode diffusivity [m2.s-1]"],
-                true_value=25,
-            ),
-        ]
+        # parameters = [
+        #     pybop.Parameter(
+        #         "Positive electrode diffusivity [m2.s-1]",
+        #         prior=pybop.Gaussian(5e-14, 1e-13),
+        #         bounds=[1e-16, 1e-11],
+        #         # true_value=parameter_set["Positive electrode diffusivity [m2.s-1]"],
+        #         true_value=25,
+        #     ),
+        # ]
 
         # assert problem.parameters == parameters
 
