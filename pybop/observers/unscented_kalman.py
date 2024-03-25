@@ -1,7 +1,8 @@
 from dataclasses import dataclass
+from typing import List, Tuple, Union
+
 import numpy as np
 import scipy.linalg as linalg
-from typing import List, Tuple, Union
 
 from pybop.models.base_model import BaseModel, Inputs
 from pybop.observers.observer import Observer

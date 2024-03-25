@@ -1,9 +1,10 @@
-import numpy as np
-import textwrap
-import sys
 import math
-import pybop
+import sys
+import textwrap
 
+import numpy as np
+
+import pybop
 
 DEFAULT_LAYOUT_OPTIONS = dict(
     title=None,

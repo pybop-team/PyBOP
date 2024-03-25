@@ -1,9 +1,10 @@
-import pybop
 import numpy as np
 import pybamm
 import pytest
-from pybop.observers.unscented_kalman import SquareRootUKF
+
+import pybop
 from examples.standalone.model import ExponentialDecay
+from pybop.observers.unscented_kalman import SquareRootUKF
 
 
 class TestUKF:

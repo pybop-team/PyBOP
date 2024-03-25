@@ -1,10 +1,12 @@
 from __future__ import annotations
+
+import copy
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
-import pybamm
-import copy
-import numpy as np
+
 import casadi
+import numpy as np
+import pybamm
 
 Inputs = Dict[str, float]
 
@@ -404,15 +406,23 @@ class BaseModel:
                 )
                 y = {signal: sol[signal].data for signal in self.signal}
 
-                dy = np.asarray(
-                    [
-                        sol[signal].sensitivities[key].toarray()
-                        for signal in self.signal
-                        for key in self.fit_keys
-                    ]
-                ).reshape(
-                    self.n_parameters, sol[self.signal[0]].data.shape[0], self.n_outputs
+                # Extract the sensitivities and stack them along a new axis for each signal
+                dy = np.empty(
+                    (
+                        sol[self.signal[0]].data.shape[0],
+                        self.n_outputs,
+                        self.n_parameters,
+                    )
                 )
+
+                for i, signal in enumerate(self.signal):
+                    dy[:, i, :] = np.stack(
+                        [
+                            sol[signal].sensitivities[key].toarray()[:, 0]
+                            for key in self.fit_keys
+                        ],
+                        axis=-1,
+                    )
 
                 return y, dy
 

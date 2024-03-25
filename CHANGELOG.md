@@ -5,10 +5,11 @@
 
 ## Bug Fixes
 
-# [v24.3](https://github.com/pybop-team/PyBOP/tree/v24.3) - 2024-03-21
+# [v24.3](https://github.com/pybop-team/PyBOP/tree/v24.3) - 2024-03-25
 
 ## Features
 
+- [#245](https://github.com/pybop-team/PyBOP/pull/245) - Updates ruff config for import linting.
 - [#198](https://github.com/pybop-team/PyBOP/pull/198) - Adds default subplot trace options, removes `[]` in axis plots as per SI standard, add varying signal length to quick_plot, restores design optimisation execption.
 - [#224](https://github.com/pybop-team/PyBOP/pull/224) - Updated prediction objects to dictionaries, cost class calculations, added `additional_variables` argument to problem class, updated scipy.minimize defualt method to Nelder-Mead, added gradient cost landscape plots with optional argument.
 - [#179](https://github.com/pybop-team/PyBOP/pull/203) - Adds `asv` configuration for benchmarking and initial benchmark suite.
@@ -28,6 +29,7 @@
 
 ## Bug Fixes
 
+- [#259](https://github.com/pybop-team/PyBOP/pull/259) - Fix gradient calculation from `model.simulateS1` to remove cross-polution and refactor cost._evaluateS1 for fitting costs.
 - [#233](https://github.com/pybop-team/PyBOP/pull/233) - Enforces model rebuild on initialisation of a Problem to allow a change of experiment, fixes if statement triggering current function update, updates `predictions` to `simulation` to keep distinction between `predict` and `simulate` and adds `test_changes`.
 - [#123](https://github.com/pybop-team/PyBOP/issues/123) - Reinstates check for availability of parameter sets via PyBaMM upon retrieval by `pybop.ParameterSet.pybamm()`.
 - [#196](https://github.com/pybop-team/PyBOP/issues/196) - Fixes failing observer cost tests.

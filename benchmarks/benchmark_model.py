@@ -1,5 +1,7 @@
-import pybop
 import numpy as np
+
+import pybop
+
 from .benchmark_utils import set_random_seed
 
 

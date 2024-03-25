@@ -1,5 +1,6 @@
-import pybop
 import numpy as np
+
+import pybop
 
 # Define model
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")

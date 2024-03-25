@@ -1,6 +1,6 @@
 import subprocess
-import webbrowser
 import sys
+import webbrowser
 
 
 class PlotlyManager:
