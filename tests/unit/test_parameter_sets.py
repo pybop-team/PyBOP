@@ -71,6 +71,7 @@ class TestParameterSets:
         )
 
         assert json_params.params == params.params
+        assert params() == params.params
 
         # Test exporting a json file
         parameters = [

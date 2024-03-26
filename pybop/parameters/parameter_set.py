@@ -27,6 +27,9 @@ class ParameterSet:
         self.params = params_dict or {}
         self.chemistry = None
 
+    def __call__(self):
+        return self.params
+
     def import_parameters(self, json_path=None):
         """
         Imports parameters from a JSON file specified by the `json_path` attribute.
