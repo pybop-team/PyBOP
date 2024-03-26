@@ -14,7 +14,7 @@ Inputs = Dict[str, float]
 @dataclass
 class TimeSeriesState(object):
     """
-    The current state of a time series model that is a pybamm model
+    The current state of a time series model that is a pybamm model.
     """
 
     sol: pybamm.Solution
@@ -46,7 +46,7 @@ class BaseModel:
 
     """
 
-    def __init__(self, name="Base Model"):
+    def __init__(self, name="Base Model", parameter_set=None):
         """
         Initialize the BaseModel with an optional name.
 
@@ -56,6 +56,15 @@ class BaseModel:
             The name given to the model instance.
         """
         self.name = name
+        if parameter_set is None:
+            self._parameter_set = None
+        elif isinstance(parameter_set, dict):
+            self._parameter_set = pybamm.ParameterValues(parameter_set)
+        elif isinstance(parameter_set, pybamm.ParameterValues):
+            self._parameter_set = parameter_set
+        else:  # a pybop parameter set
+            self._parameter_set = pybamm.ParameterValues(parameter_set())
+
         self.pybamm_model = None
         self.parameters = None
         self.dataset = None

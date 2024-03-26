@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#79](https://github.com/pybop-team/PyBOP/issues/79) - Adds BPX as a dependency and imports BPX support from PyBaMM.
 
 ## Bug Fixes
 
