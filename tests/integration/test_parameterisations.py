@@ -183,7 +183,7 @@ class TestModelParameterisation:
         "multi_optimiser",
         [
             pybop.SciPyDifferentialEvolution,
-            pybop.Adam,
+            pybop.IRPropMin,
             pybop.CMAES,
         ],
     )
@@ -205,6 +205,7 @@ class TestModelParameterisation:
         )
         parameterisation.set_max_unchanged_iterations(iterations=35, threshold=5e-4)
         parameterisation.set_max_iterations(125)
+
         initial_cost = parameterisation.cost(spm_two_signal_cost.x0)
 
         if multi_optimiser in [pybop.SciPyDifferentialEvolution]:
