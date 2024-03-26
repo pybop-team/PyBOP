@@ -38,6 +38,27 @@ class Dataset:
         """
         return f"Dataset: {type(self.data)} \n Contains: {self.names}"
 
+    def __setitem__(self, key, value):
+        """
+        Return the data corresponding to a particular key.
+
+        Parameters
+        ----------
+        key : str
+            The name of a data series within the dataset.
+
+        Returns
+        -------
+        list or np.ndarray
+            The data series corresonding to the key.
+
+        Raises
+        ------
+        ValueError
+            The key must exist in the dataset.
+        """
+        self.data[key] = value
+
     def __getitem__(self, key):
         """
         Return the data corresponding to a particular key.

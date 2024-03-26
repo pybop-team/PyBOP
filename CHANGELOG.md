@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#241](https://github.com/pybop-team/PyBOP/pull/241) - Adds experimental circuit model fitting notebook with LG M50 data.
 
 ## Bug Fixes
 

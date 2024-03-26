@@ -136,7 +136,7 @@ class BaseProblem:
         """
         return self._time_data
 
-    def target(self):
+    def get_target(self):
         """
         Return the target dataset.
 
@@ -146,6 +146,22 @@ class BaseProblem:
             The target dataset array.
         """
         return self._target
+
+    def set_target(self, dataset):
+        """
+        Set the target dataset.
+
+        Parameters
+        ----------
+        target : np.ndarray
+            The target dataset array.
+        """
+        if self.signal is None:
+            raise ValueError("Signal must be defined to set target.")
+        if not isinstance(dataset, pybop.Dataset):
+            raise ValueError("Dataset must be a pybop Dataset object.")
+
+        self._target = {signal: dataset[signal] for signal in self.signal}
 
     @property
     def model(self):
@@ -203,7 +219,7 @@ class FittingProblem(BaseProblem):
         # Unpack time and target data
         self._time_data = self._dataset["Time [s]"]
         self.n_time_data = len(self._time_data)
-        self._target = {signal: self._dataset[signal] for signal in self.signal}
+        self.set_target(dataset)
 
         # Add useful parameters to model
         if model is not None:
