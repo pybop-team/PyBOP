@@ -161,7 +161,7 @@ class BaseProblem:
         if not isinstance(dataset, pybop.Dataset):
             raise ValueError("Dataset must be a pybop Dataset object.")
 
-        self._target = {signal: self._dataset[signal] for signal in self.signal}
+        self._target = {signal: dataset[signal] for signal in self.signal}
 
     @property
     def model(self):
