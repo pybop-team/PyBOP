@@ -12,10 +12,18 @@ maintainers = [
   {name = "The PyBOP Team"},
 ]
 description = "Python Battery Optimisation and Parameterisation"
-readme = "README.md"
+readme = {file = "README.md", content-type = "text/markdown"}
 license = { file = "LICENSE" }
-# https://pypi.org/classifiers/
-classifiers = []
+classifiers = [
+  "License :: OSI Approved :: BSD License",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering",
+]
 requires-python = ">=3.8, <3.13"
 dependencies = [
   "pybamm>=23.5",
@@ -58,6 +66,10 @@ include = ["pybop", "pybop.*"]
 
 [project.urls]
 Homepage = "https://github.com/pybop-team/PyBOP"
+Documentation = "https://pybop-docs.readthedocs.io"
+Repository = "https://github.com/pybop-team/PyBOP"
+Releases = "https://github.com/pybop-team/PyBOP/releases"
+Changelog = "https://github.com/pybop-team/PyBOP/CHANGELOG.md"
 
 [tool.pytest.ini_options]
 addopts = "--showlocals -v -n auto"
