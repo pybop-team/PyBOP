@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#267](https://github.com/pybop-team/PyBOP/pull/267) - Add classifiers to pyproject.toml, update project.urls.
 
 ## Bug Fixes
 
