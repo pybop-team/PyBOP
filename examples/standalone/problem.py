@@ -78,6 +78,7 @@ class StandaloneProblem(BaseProblem):
 
         y = {signal: x[0] * self._time_data + x[1] for signal in self.signal}
 
-        dy = [self._time_data, np.zeros(self._time_data.shape)]
+        dy = np.zeros((self.n_time_data, self.n_outputs, self.n_parameters))
+        dy[:, 0, 0] = self._time_data
 
-        return (y, np.asarray(dy))
+        return (y, dy)
