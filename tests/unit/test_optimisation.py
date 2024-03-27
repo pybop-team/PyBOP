@@ -87,7 +87,7 @@ class TestOptimisation:
     def test_optimiser_classes(self, two_param_cost, optimiser_class, expected_name):
         # Test class construction
         cost = two_param_cost
-        opt = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
+        optim = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
 
         assert optim.optimiser is not None
         assert optim.optimiser.name() == expected_name
@@ -183,7 +183,7 @@ class TestOptimisation:
     def test_prior_sampling(self, cost):
         # Tests prior sampling
         for i in range(50):
-            opt = pybop.Optimisation(cost=cost)
+            optim = pybop.Optimisation(cost=cost)
 
             assert optim.x0 <= 0.62 and optim.x0 >= 0.58
 
