@@ -87,7 +87,7 @@ class Optimisation:
         self.pints = True
 
         if self.optimiser is None:
-            self.optimiser = pybop.CMAES
+            self.optimiser = pybop.XNES
         elif issubclass(self.optimiser, pints.Optimiser):
             pass
         else:

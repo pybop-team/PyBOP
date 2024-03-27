@@ -15,12 +15,12 @@ class TestOptimisation:
             {
                 "Time [s]": np.linspace(0, 360, 10),
                 "Current function [A]": np.zeros(10),
-                "Terminal voltage [V]": np.ones(10),
+                "Voltage [V]": np.ones(10),
             }
         )
 
     @pytest.fixture
-    def parameters(self):
+    def one_parameter(self):
         return [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
@@ -30,17 +30,42 @@ class TestOptimisation:
         ]
 
     @pytest.fixture
-    def problem(self, parameters, dataset):
-        model = pybop.lithium_ion.SPM()
-        return pybop.FittingProblem(
-            model,
-            parameters,
-            dataset,
-            signal=["Terminal voltage [V]"],
-        )
+    def two_parameters(self):
+        return [
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.6, 0.2),
+                bounds=[0.58, 0.62],
+            ),
+            pybop.Parameter(
+                "Positive electrode active material volume fraction",
+                prior=pybop.Gaussian(0.55, 0.05),
+                bounds=[0.53, 0.57],
+            ),
+        ]
 
     @pytest.fixture
-    def cost(self, problem):
+    def model(self):
+        return pybop.lithium_ion.SPM()
+
+    @pytest.fixture
+    def cost(self, model, one_parameter, dataset):
+        problem = pybop.FittingProblem(
+            model,
+            one_parameter,
+            dataset,
+            signal=["Voltage [V]"],
+        )
+        return pybop.SumSquaredError(problem)
+
+    @pytest.fixture
+    def two_param_cost(self, model, two_parameters, dataset):
+        problem = pybop.FittingProblem(
+            model,
+            two_parameters,
+            dataset,
+            signal=["Voltage [V]"],
+        )
         return pybop.SumSquaredError(problem)
 
     @pytest.mark.parametrize(
@@ -55,12 +80,14 @@ class TestOptimisation:
             (pybop.XNES, "Exponential Natural Evolution Strategy (xNES)"),
             (pybop.PSO, "Particle Swarm Optimisation (PSO)"),
             (pybop.IRPropMin, "iRprop-"),
+            (pybop.NelderMead, "Nelder-Mead"),
         ],
     )
     @pytest.mark.unit
-    def test_optimiser_classes(self, cost, optimiser_class, expected_name):
-        # Test construction
-        optim = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
+    def test_optimiser_classes(self, two_param_cost, optimiser_class, expected_name):
+        # Test class construction
+        cost = two_param_cost
+        opt = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
 
         assert optim.optimiser is not None
         assert optim.optimiser.name() == expected_name
@@ -131,12 +158,18 @@ class TestOptimisation:
                 optim = pybop.Optimisation(cost=cost, maxiter=1, tol=1e-3)
 
     @pytest.mark.unit
+    def test_single_parameter(self, cost):
+        # Test catch for optimisers that can only run with multiple parameters
+        with pytest.raises(
+            ValueError,
+            match=r"requires optimisation of >= 2 parameters at once.",
+        ):
+            pybop.Optimisation(cost=cost, optimiser=pybop.CMAES)
+
+    @pytest.mark.unit
     def test_default_optimiser(self, cost):
         optim = pybop.Optimisation(cost=cost)
-        assert (
-            optim.optimiser.name()
-            == "Covariance Matrix Adaptation Evolution Strategy (CMA-ES)"
-        )
+        assert optim.optimiser.name() == "Exponential Natural Evolution Strategy (xNES)"
 
     @pytest.mark.unit
     def test_incorrect_optimiser_class(self, cost):
@@ -150,7 +183,7 @@ class TestOptimisation:
     def test_prior_sampling(self, cost):
         # Tests prior sampling
         for i in range(50):
-            optim = pybop.Optimisation(cost=cost, optimiser=pybop.CMAES)
+            opt = pybop.Optimisation(cost=cost)
 
             assert optim.x0 <= 0.62 and optim.x0 >= 0.58
 
