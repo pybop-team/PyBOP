@@ -15,6 +15,7 @@ description = "Python Battery Optimisation and Parameterisation"
 readme = {file = "README.md", content-type = "text/markdown"}
 license = { file = "LICENSE" }
 classifiers = [
+  "Development Status :: 3 - Alpha"
   "License :: OSI Approved :: BSD License",
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
