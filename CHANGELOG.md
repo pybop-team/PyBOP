@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#267](https://github.com/pybop-team/PyBOP/pull/267) - Add classifiers to pyproject.toml, update project.urls.
 - [#195](https://github.com/pybop-team/PyBOP/issues/195) - Adds the Nelder-Mead optimiser from PINTS as another option.
 
 ## Bug Fixes
