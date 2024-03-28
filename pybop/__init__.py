@@ -29,10 +29,12 @@ script_path = path.dirname(__file__)
 from ._utils import is_numeric
 
 #
-# Cost class
-# Problem class
+# Problem classes
 #
-from ._problem import BaseProblem, FittingProblem, DesignProblem
+from .problems.base_problem import BaseProblem
+from .problems.fitting_problem import FittingProblem
+from .problems.design_problem import DesignProblem
+from .problems.gitt import GITT
 
 #
 # Cost function class
