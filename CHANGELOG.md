@@ -7,6 +7,7 @@
 
 ## Bug Fixes
 
+- [#236](https://github.com/pybop-team/PyBOP/issues/236) - Allows passing of keyword arguments to SciPy optimisers and fixes setting of max_iterations.
 - [#91](https://github.com/pybop-team/PyBOP/issues/91) - Adds a check on the number of parameters for CMAES and makes XNES the default optimiser.
 
 # [v24.3](https://github.com/pybop-team/PyBOP/tree/v24.3) - 2024-03-25

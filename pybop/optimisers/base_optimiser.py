@@ -18,9 +18,10 @@ class BaseOptimiser:
             Bounds on the parameters. Default is None.
         """
         self.bounds = bounds
+        self._max_iterations = None
         pass
 
-    def optimise(self, cost_function, x0=None, maxiter=None):
+    def optimise(self, cost_function, x0=None, **optimiser_kwargs):
         """
         Initiates the optimisation process.
 
@@ -32,8 +33,6 @@ class BaseOptimiser:
             The cost function to be minimised by the optimiser.
         x0 : ndarray, optional
             Initial guess for the parameters. Default is None.
-        maxiter : int, optional
-            Maximum number of iterations to perform. Default is None.
 
         Returns
         -------
@@ -41,14 +40,13 @@ class BaseOptimiser:
         """
         self.cost_function = cost_function
         self.x0 = x0
-        self._max_iterations = maxiter
 
         # Run optimisation
-        result = self._runoptimise(self.cost_function, x0=self.x0)
+        result = self._runoptimise(self.cost_function, x0=self.x0, **optimiser_kwargs)
 
         return result
 
-    def _runoptimise(self, cost_function, x0=None):
+    def _runoptimise(self, cost_function, x0=None, **optimiser_kwargs):
         """
         Contains the logic for the optimisation algorithm.
 
