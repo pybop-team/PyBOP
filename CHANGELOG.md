@@ -3,8 +3,11 @@
 ## Features
 
 - [#267](https://github.com/pybop-team/PyBOP/pull/267) - Add classifiers to pyproject.toml, update project.urls.
+- [#195](https://github.com/pybop-team/PyBOP/issues/195) - Adds the Nelder-Mead optimiser from PINTS as another option.
 
 ## Bug Fixes
+
+- [#91](https://github.com/pybop-team/PyBOP/issues/91) - Adds a check on the number of parameters for CMAES and makes XNES the default optimiser.
 
 # [v24.3](https://github.com/pybop-team/PyBOP/tree/v24.3) - 2024-03-25
 
