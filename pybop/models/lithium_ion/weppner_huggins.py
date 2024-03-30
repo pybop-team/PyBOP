@@ -60,6 +60,7 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
         ######################
         self.variables = {
             "Voltage [V]": V,
+            "Time [s]": t,
         }
 
     @property
