@@ -1,10 +1,12 @@
 from __future__ import annotations
+
+import copy
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
-import pybamm
-import copy
-import numpy as np
+
 import casadi
+import numpy as np
+import pybamm
 
 Inputs = Dict[str, float]
 
@@ -58,6 +60,7 @@ class BaseModel:
         self.parameters = None
         self.dataset = None
         self.signal = None
+        self.additional_variables = []
         self.matched_parameters = {}
         self.non_matched_parameters = {}
         self.fit_keys = []
@@ -351,11 +354,14 @@ class BaseModel:
                         print(f"Error: {e}")
                         return [np.inf]
                 else:
-                    return [np.inf]
+                    return {signal: [np.inf] for signal in self.signal}
 
-            simulation = [sol[signal].data for signal in self.signal]
+            y = {
+                signal: sol[signal].data
+                for signal in (self.signal + self.additional_variables)
+            }
 
-            return np.vstack(simulation).T
+            return y
 
     def simulateS1(self, inputs, t_eval):
         """
@@ -403,23 +409,33 @@ class BaseModel:
                         t_eval=t_eval,
                         calculate_sensitivities=True,
                     )
+                    y = {signal: sol[signal].data for signal in self.signal}
 
-                    simulation = [sol[signal].data for signal in self.signal]
+                    # Extract the sensitivities and stack them along a new axis for each signal
+                    dy = np.empty(
+                        (
+                            sol[self.signal[0]].data.shape[0],
+                            self.n_outputs,
+                            self.n_parameters,
+                        )
+                    )
 
-                    sensitivities = [
-                        np.array(
-                            [[sol[signal].sensitivities[key]] for signal in self.signal]
-                        ).reshape(len(sol[self.signal[0]].data), self.n_outputs)
-                        for key in self.fit_keys
-                    ]
+                    for i, signal in enumerate(self.signal):
+                        dy[:, i, :] = np.stack(
+                            [
+                                sol[signal].sensitivities[key].toarray()[:, 0]
+                                for key in self.fit_keys
+                            ],
+                            axis=-1,
+                        )
 
-                    return np.vstack(simulation).T, np.dstack(sensitivities)
+                    return y, dy
                 except Exception as e:
                     print(f"Error: {e}")
                     return [np.inf], [np.inf]
 
             else:
-                return [np.inf], [np.inf]
+                return {signal: [np.inf] for signal in self.signal}, [np.inf]
 
     def predict(
         self,

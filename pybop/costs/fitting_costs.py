@@ -42,10 +42,21 @@ class RootMeanSquaredError(BaseCost):
         """
         prediction = self.problem.evaluate(x)
 
-        if len(prediction) < len(self._target):
-            return np.float64(np.inf)  # simulation stopped early
+        for key in self.signal:
+            if len(prediction.get(key, [])) != len(self._target.get(key, [])):
+                return np.float64(np.inf)  # prediction doesn't match target
+
+        e = np.array(
+            [
+                np.sqrt(np.mean((prediction[signal] - self._target[signal]) ** 2))
+                for signal in self.signal
+            ]
+        )
+
+        if self.n_outputs == 1:
+            return e.item()
         else:
-            return np.sqrt(np.mean((prediction - self._target) ** 2))
+            return np.sum(e)
 
     def _evaluateS1(self, x):
         """
@@ -68,24 +79,23 @@ class RootMeanSquaredError(BaseCost):
             If an error occurs during the calculation of the cost or gradient.
         """
         y, dy = self.problem.evaluateS1(x)
-        if len(y) < len(self._target):
-            e = np.float64(np.inf)
-            de = self._de * np.ones(self._n_parameters)
-        else:
-            dy = dy.reshape(
-                (
-                    self.problem.n_time_data,
-                    self.n_outputs,
-                    self._n_parameters,
-                )
-            )
-            r = y - self._target
-            e = np.sqrt(np.mean((r) ** 2))
-            de = np.mean((r.T * dy.T), axis=2) / np.sqrt(
-                np.mean((r.T * dy.T) ** 2, axis=2)
-            )
 
-        return e, de.flatten()
+        for key in self.signal:
+            if len(y.get(key, [])) != len(self._target.get(key, [])):
+                e = np.float64(np.inf)
+                de = self._de * np.ones(self.n_parameters)
+                return e, de
+
+        r = np.array([y[signal] - self._target[signal] for signal in self.signal])
+        e = np.sqrt(np.mean(r**2, axis=1))
+        de = np.mean((r * dy.T), axis=2) / (
+            np.sqrt(np.mean((r * dy.T) ** 2, axis=2)) + np.finfo(float).eps
+        )
+
+        if self.n_outputs == 1:
+            return e.item(), de.flatten()
+        else:
+            return np.sum(e), np.sum(de, axis=1)
 
     def set_fail_gradient(self, de):
         """
@@ -146,13 +156,20 @@ class SumSquaredError(BaseCost):
         """
         prediction = self.problem.evaluate(x)
 
-        if len(prediction) < len(self._target):
-            return np.float64(np.inf)  # simulation stopped early
+        for key in self.signal:
+            if len(prediction.get(key, [])) != len(self._target.get(key, [])):
+                return np.float64(np.inf)  # prediction doesn't match target
+
+        e = np.array(
+            [
+                np.sum(((prediction[signal] - self._target[signal]) ** 2))
+                for signal in self.signal
+            ]
+        )
+        if self.n_outputs == 1:
+            return e.item()
         else:
-            return np.sum(
-                (np.sum(((prediction - self._target) ** 2), axis=0)),
-                axis=0,
-            )
+            return np.sum(e)
 
     def _evaluateS1(self, x):
         """
@@ -175,20 +192,15 @@ class SumSquaredError(BaseCost):
             If an error occurs during the calculation of the cost or gradient.
         """
         y, dy = self.problem.evaluateS1(x)
-        if len(y) < len(self._target):
-            e = np.float64(np.inf)
-            de = self._de * np.ones(self._n_parameters)
-        else:
-            dy = dy.reshape(
-                (
-                    self.problem.n_time_data,
-                    self.n_outputs,
-                    self._n_parameters,
-                )
-            )
-            r = y - self._target
-            e = np.sum(np.sum(r**2, axis=0), axis=0)
-            de = 2 * np.sum(np.sum((r.T * dy.T), axis=2), axis=1)
+        for key in self.signal:
+            if len(y.get(key, [])) != len(self._target.get(key, [])):
+                e = np.float64(np.inf)
+                de = self._de * np.ones(self.n_parameters)
+                return e, de
+
+        r = np.array([y[signal] - self._target[signal] for signal in self.signal])
+        e = np.sum(np.sum(r**2, axis=0), axis=0)
+        de = 2 * np.sum(np.sum((r * dy.T), axis=2), axis=1)
 
         return e, de
 

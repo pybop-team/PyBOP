@@ -1,23 +1,24 @@
-import pybop
+import sys
+
 import numpy as np
 
+import pybop
 
-def plot_convergence(
-    optim, xaxis_title="Iteration", yaxis_title="Cost", title="Convergence"
-):
+
+def plot_convergence(optim, show=True, **layout_kwargs):
     """
     Plot the convergence of the optimisation algorithm.
 
     Parameters
     -----------
-    optim : optimisation object
+    optim : object
         Optimisation object containing the cost function and optimiser.
-    xaxis_title : str, optional
-        Title for the x-axis (default is "Iteration").
-    yaxis_title : str, optional
-        Title for the y-axis (default is "Cost").
-    title : str, optional
-        Title of the plot (default is "Convergence").
+    show : bool, optional
+        If True, the figure is shown upon creation (default: True).
+    **layout_kwargs : optional
+        Valid Plotly layout keys and their values,
+        e.g. `xaxis_title="Time [s]"` or
+        `xaxis={"title": "Time [s]", "titlefont_size": 18}`.
 
     Returns
     ---------
@@ -25,30 +26,35 @@ def plot_convergence(
         The Plotly figure object for the convergence plot.
     """
 
-    # Extract the cost function from the optimisation object
-    cost_function = optim.cost
+    # Extract the cost function and log from the optimisation object
+    cost = optim.cost
+    log = optim.log
 
     # Compute the minimum cost for each iteration
     min_cost_per_iteration = [
-        min((cost_function(solution) for solution in log_entry), default=np.inf)
-        for log_entry in optim.log
+        min((cost(solution) for solution in log_entry), default=np.inf)
+        for log_entry in log
     ]
 
     # Generate a list of iteration numbers
     iteration_numbers = list(range(1, len(min_cost_per_iteration) + 1))
 
-    # Create the convergence plot using the StandardPlot class
-    fig = pybop.StandardPlot(
+    # Create a plotting dictionary
+    plot_dict = pybop.StandardPlot(
         x=iteration_numbers,
         y=min_cost_per_iteration,
-        cost=cost_function,
-        xaxis_title=xaxis_title,
-        yaxis_title=yaxis_title,
-        title=title,
-        trace_name=optim.optimiser.name(),
-    )()
+        layout_options=dict(
+            xaxis_title="Iteration", yaxis_title="Cost", title="Convergence"
+        ),
+        trace_names=optim.optimiser.name(),
+    )
 
-    # Display the figure
-    fig.show()
+    # Generate and display the figure
+    fig = plot_dict(show=False)
+    fig.update_layout(**layout_kwargs)
+    if "ipykernel" in sys.modules and show:
+        fig.show("svg")
+    elif show:
+        fig.show()
 
     return fig

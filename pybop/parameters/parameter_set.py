@@ -1,6 +1,8 @@
 import json
 import types
+
 import pybamm
+
 import pybop
 
 

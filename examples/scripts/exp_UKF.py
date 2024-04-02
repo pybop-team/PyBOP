@@ -1,6 +1,7 @@
-import pybop
-import pybamm
 import numpy as np
+import pybamm
+
+import pybop
 from examples.standalone.model import ExponentialDecay
 
 # Parameter set and model definition
@@ -42,7 +43,6 @@ model.build(parameters=parameters)
 simulator = pybop.Observer(parameters, model, signal=["2y"], x0=x0)
 simulator._time_data = t_eval
 measurements = simulator.evaluate(x0)
-measurements = measurements[:, 0]
 
 # Verification step: Compare by plotting
 go = pybop.PlotlyManager().go
@@ -50,7 +50,9 @@ line1 = go.Scatter(x=t_eval, y=corrupt_values, name="Corrupt values", mode="mark
 line2 = go.Scatter(
     x=t_eval, y=expected_values, name="Expected trajectory", mode="lines"
 )
-line3 = go.Scatter(x=t_eval, y=measurements, name="Observed values", mode="markers")
+line3 = go.Scatter(
+    x=t_eval, y=measurements["2y"], name="Observed values", mode="markers"
+)
 fig = go.Figure(data=[line1, line2, line3])
 
 # Form dataset
@@ -85,10 +87,11 @@ observer = pybop.UnscentedKalmanFilterObserver(
 
 # Verification step: Find the maximum likelihood estimate given the true parameters
 estimation = observer.evaluate(x0)
-estimation = estimation[:, 0]
 
 # Verification step: Add the estimate to the plot
-line4 = go.Scatter(x=t_eval, y=estimation, name="Estimated trajectory", mode="lines")
+line4 = go.Scatter(
+    x=t_eval, y=estimation["2y"], name="Estimated trajectory", mode="lines"
+)
 fig.add_trace(line4)
 fig.show()
 
@@ -101,7 +104,7 @@ x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
 # Plot the timeseries output (requires model that returns Voltage)
-pybop.quick_plot(x, cost, title="Optimised Comparison")
+pybop.quick_plot(observer, parameter_values=x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)
@@ -109,8 +112,5 @@ pybop.plot_convergence(optim)
 # Plot the parameter traces
 pybop.plot_parameters(optim)
 
-# Plot the cost landscape
-pybop.plot_cost2d(cost, steps=15)
-
 # Plot the cost landscape with optimisation path
-pybop.plot_cost2d(cost, optim=optim, steps=15)
+pybop.plot2d(optim, steps=15)
