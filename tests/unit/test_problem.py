@@ -91,6 +91,15 @@ class TestProblem:
         problem = pybop._problem.BaseProblem(parameters, model=model)
         assert problem.bounds is None
 
+        # Incorrect set target
+        with pytest.raises(ValueError, match="Dataset must be a pybop Dataset object."):
+            problem.set_target("This is not a dataset")
+
+        # No signal
+        problem.signal = None
+        with pytest.raises(ValueError, match="Signal must be defined to set target."):
+            problem.set_target(dataset)
+
     @pytest.mark.unit
     def test_fitting_problem(self, parameters, dataset, model, signal):
         # Test incorrect number of initial parameter values
