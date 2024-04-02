@@ -1,4 +1,5 @@
 #
 # Import lithium ion based models
 #
-from .ecm import ECircuitModel, Thevenin
+from .base_ecm import ECircuitModel
+from .ecm import Thevenin

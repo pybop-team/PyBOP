@@ -343,9 +343,13 @@ class BaseModel:
                     inputs=inputs,
                     allow_infeasible_solutions=self.allow_infeasible_solutions,
                 ):
-                    sol = self.solver.solve(
-                        self.built_model, inputs=inputs, t_eval=t_eval
-                    )
+                    try:
+                        sol = self.solver.solve(
+                            self.built_model, inputs=inputs, t_eval=t_eval
+                        )
+                    except Exception as e:
+                        print(f"Error: {e}")
+                        return [np.inf]
                 else:
                     return [np.inf]
 
@@ -392,23 +396,27 @@ class BaseModel:
                 inputs=inputs,
                 allow_infeasible_solutions=self.allow_infeasible_solutions,
             ):
-                sol = self._solver.solve(
-                    self.built_model,
-                    inputs=inputs,
-                    t_eval=t_eval,
-                    calculate_sensitivities=True,
-                )
+                try:
+                    sol = self._solver.solve(
+                        self.built_model,
+                        inputs=inputs,
+                        t_eval=t_eval,
+                        calculate_sensitivities=True,
+                    )
 
-                simulation = [sol[signal].data for signal in self.signal]
+                    simulation = [sol[signal].data for signal in self.signal]
 
-                sensitivities = [
-                    np.array(
-                        [[sol[signal].sensitivities[key]] for signal in self.signal]
-                    ).reshape(len(sol[self.signal[0]].data), self.n_outputs)
-                    for key in self.fit_keys
-                ]
+                    sensitivities = [
+                        np.array(
+                            [[sol[signal].sensitivities[key]] for signal in self.signal]
+                        ).reshape(len(sol[self.signal[0]].data), self.n_outputs)
+                        for key in self.fit_keys
+                    ]
 
-                return np.vstack(simulation).T, np.dstack(sensitivities)
+                    return np.vstack(simulation).T, np.dstack(sensitivities)
+                except Exception as e:
+                    print(f"Error: {e}")
+                    return [np.inf], [np.inf]
 
             else:
                 return [np.inf], [np.inf]
