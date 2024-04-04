@@ -7,6 +7,7 @@
 
 ## Bug Fixes
 
+- [#270](https://github.com/pybop-team/PyBOP/pull/270) - Updates PR template.
 - [#91](https://github.com/pybop-team/PyBOP/issues/91) - Adds a check on the number of parameters for CMAES and makes XNES the default optimiser.
 
 # [v24.3](https://github.com/pybop-team/PyBOP/tree/v24.3) - 2024-03-25
