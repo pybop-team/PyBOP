@@ -3,6 +3,8 @@
 ## Features
 
 - [#250](https://github.com/pybop-team/PyBOP/pull/250) - Adds DFN, MPM, MSMR models and moves multiple construction variables to BaseEChem. Adds exception catch on simulate & simulateS1.
+- [#268](https://github.com/pybop-team/PyBOP/pull/268) - Fixes the GitHub Release artifact uploads, allowing verification of
+codesigned binaries and source distributions via `sigstore-python`.
 - [#79](https://github.com/pybop-team/PyBOP/issues/79) - Adds BPX as a dependency and imports BPX support from PyBaMM.
 - [#267](https://github.com/pybop-team/PyBOP/pull/267) - Add classifiers to pyproject.toml, update project.urls.
 - [#195](https://github.com/pybop-team/PyBOP/issues/195) - Adds the Nelder-Mead optimiser from PINTS as another option.
