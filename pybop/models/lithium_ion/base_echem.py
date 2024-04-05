@@ -13,6 +13,7 @@ class EChemBaseModel(BaseModel):
     def __init__(
         self,
         model,
+        name="Electrochemical Base Model",
         parameter_set=None,
         geometry=None,
         submesh_types=None,
@@ -20,14 +21,12 @@ class EChemBaseModel(BaseModel):
         spatial_methods=None,
         solver=None,
     ):
-        super().__init__()
+        super().__init__(name=name, parameter_set=parameter_set)
         self.pybamm_model = model
 
         # Set parameters, using either the provided ones or the default
         self.default_parameter_values = self.pybamm_model.default_parameter_values
-        self._parameter_set = (
-            parameter_set or self.pybamm_model.default_parameter_values
-        )
+        self._parameter_set = self._parameter_set or self.default_parameter_values
         self._unprocessed_parameter_set = self._parameter_set
 
         # Define model geometry and discretization

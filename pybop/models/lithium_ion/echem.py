@@ -43,10 +43,10 @@ class SPM(EChemBaseModel):
     ):
         self.pybamm_model = pybamm.lithium_ion.SPM(options=options)
         self._unprocessed_model = self.pybamm_model
-        self.name = name
 
         super().__init__(
             model=self.pybamm_model,
+            name=name,
             parameter_set=parameter_set,
             geometry=geometry,
             submesh_types=submesh_types,
@@ -98,10 +98,10 @@ class SPMe(EChemBaseModel):
     ):
         self.pybamm_model = pybamm.lithium_ion.SPMe(options=options)
         self._unprocessed_model = self.pybamm_model
-        self.name = name
 
         super().__init__(
             model=self.pybamm_model,
+            name=name,
             parameter_set=parameter_set,
             geometry=geometry,
             submesh_types=submesh_types,
@@ -123,7 +123,7 @@ class DFN(EChemBaseModel):
     Parameters
     ----------
     name : str, optional
-        The name for the model instance, defaulting to "Single Particle Model".
+        The name for the model instance, defaulting to "Doyle-Fuller-Newman".
     parameter_set : pybamm.ParameterValues or dict, optional
         The parameters for the model. If None, default parameters provided by PyBaMM are used.
     geometry : dict, optional
@@ -153,10 +153,10 @@ class DFN(EChemBaseModel):
     ):
         self.pybamm_model = pybamm.lithium_ion.DFN(options=options)
         self._unprocessed_model = self.pybamm_model
-        self.name = name
 
         super().__init__(
             model=self.pybamm_model,
+            name=name,
             parameter_set=parameter_set,
             geometry=geometry,
             submesh_types=submesh_types,
@@ -176,7 +176,7 @@ class MPM(EChemBaseModel):
     Parameters
     ----------
     name : str, optional
-        The name for the model instance, defaulting to "Single Particle Model".
+        The name for the model instance, defaulting to "Many Particle Model".
     parameter_set : pybamm.ParameterValues or dict, optional
         The parameters for the model. If None, default parameters provided by PyBaMM are used.
     geometry : dict, optional
@@ -195,7 +195,7 @@ class MPM(EChemBaseModel):
 
     def __init__(
         self,
-        name="Doyle-Fuller-Newman",
+        name="Many Particle Model",
         parameter_set=None,
         geometry=None,
         submesh_types=None,
@@ -206,10 +206,10 @@ class MPM(EChemBaseModel):
     ):
         self.pybamm_model = pybamm.lithium_ion.MPM(options=options)
         self._unprocessed_model = self.pybamm_model
-        self.name = name
 
         super().__init__(
             model=self.pybamm_model,
+            name=name,
             parameter_set=parameter_set,
             geometry=geometry,
             submesh_types=submesh_types,
@@ -229,7 +229,7 @@ class MSMR(EChemBaseModel):
     Parameters
     ----------
     name : str, optional
-        The name for the model instance, defaulting to "Single Particle Model".
+        The name for the model instance, defaulting to "Multi Species Multi Reactions Model".
     parameter_set : pybamm.ParameterValues or dict, optional
         The parameters for the model. If None, default parameters provided by PyBaMM are used.
     geometry : dict, optional
@@ -248,7 +248,7 @@ class MSMR(EChemBaseModel):
 
     def __init__(
         self,
-        name="Doyle-Fuller-Newman",
+        name="Multi Species Multi Reactions Model",
         parameter_set=None,
         geometry=None,
         submesh_types=None,
@@ -259,10 +259,10 @@ class MSMR(EChemBaseModel):
     ):
         self.pybamm_model = pybamm.lithium_ion.MSMR(options=options)
         self._unprocessed_model = self.pybamm_model
-        self.name = name
 
         super().__init__(
             model=self.pybamm_model,
+            name=name,
             parameter_set=parameter_set,
             geometry=geometry,
             submesh_types=submesh_types,
