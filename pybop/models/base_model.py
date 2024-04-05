@@ -63,7 +63,7 @@ class BaseModel:
         elif isinstance(parameter_set, pybamm.ParameterValues):
             self._parameter_set = parameter_set
         else:  # a pybop parameter set
-            self._parameter_set = pybamm.ParameterValues(parameter_set())
+            self._parameter_set = pybamm.ParameterValues(parameter_set.params)
 
         self.pybamm_model = None
         self.parameters = None
