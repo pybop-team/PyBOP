@@ -225,3 +225,31 @@ class TestModels:
 
         with pytest.raises(NotImplementedError):
             base.approximate_capacity(x)
+
+    @pytest.mark.unit
+    def test_non_converged_solution(self):
+        model = pybop.lithium_ion.DFN()
+        parameters = [
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.2, 0.01),
+            ),
+            pybop.Parameter(
+                "Positive electrode active material volume fraction",
+                prior=pybop.Gaussian(0.2, 0.01),
+            ),
+        ]
+        dataset = pybop.Dataset(
+            {
+                "Time [s]": np.linspace(0, 100, 100),
+                "Current function [A]": np.zeros(100),
+                "Voltage [V]": np.zeros(100),
+            }
+        )
+
+        problem = pybop.FittingProblem(model, parameters=parameters, dataset=dataset)
+        res = problem.evaluate([-0.2, -0.2])
+        res_grad = problem.evaluateS1([-0.2, -0.2])
+
+        assert np.isinf(res).any()
+        assert np.isinf(res_grad).any()
