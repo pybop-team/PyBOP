@@ -16,7 +16,7 @@ class GradientDescent(pints.GradientDescent):
         Initial position from which optimization will start.
     sigma0 : float, optional
         Initial step size (default is 0.1).
-    bounds : sequence or ``Bounds``, optional
+    bounds : dict, optional
         Ignored by this optimiser, provided for API consistency.
 
     See Also
@@ -46,7 +46,7 @@ class Adam(pints.Adam):
         Initial position from which optimization will start.
     sigma0 : float, optional
         Initial step size (default is 0.1).
-    bounds : sequence or ``Bounds``, optional
+    bounds : dict, optional
         Ignored by this optimiser, provided for API consistency.
 
     See Also
@@ -77,7 +77,8 @@ class IRPropMin(pints.IRPropMin):
     sigma0 : float, optional
         Initial step size (default is 0.1).
     bounds : dict, optional
-        Lower and upper bounds for each optimization parameter.
+        A dictionary with 'lower' and 'upper' keys containing arrays for lower and upper
+        bounds on the parameters.
 
     See Also
     --------
@@ -109,7 +110,8 @@ class PSO(pints.PSO):
     sigma0 : float, optional
         Spread of the initial particle positions (default is 0.1).
     bounds : dict, optional
-        Lower and upper bounds for each optimization parameter.
+        A dictionary with 'lower' and 'upper' keys containing arrays for lower and upper
+        bounds on the parameters.
 
     See Also
     --------
@@ -147,7 +149,8 @@ class SNES(pints.SNES):
     sigma0 : float, optional
         Initial standard deviation of the sampling distribution, defaults to 0.1.
     bounds : dict, optional
-        Lower and upper bounds for each optimization parameter.
+        A dictionary with 'lower' and 'upper' keys containing arrays for lower and upper
+        bounds on the parameters.
 
     See Also
     --------
@@ -168,7 +171,9 @@ class XNES(pints.XNES):
     """
     Implements the Exponential Natural Evolution Strategy (XNES) optimiser from PINTS.
 
-    XNES is an evolutionary algorithm that samples from a multivariate normal distribution, which is updated iteratively to fit the distribution of successful solutions.
+    XNES is an evolutionary algorithm that samples from a multivariate normal
+    distribution, which is updated iteratively to fit the distribution of successful
+    solutions.
 
     Parameters
     ----------
@@ -177,7 +182,8 @@ class XNES(pints.XNES):
     sigma0 : float, optional
         Initial standard deviation of the sampling distribution, defaults to 0.1.
     bounds : dict, optional
-        A dictionary with 'lower' and 'upper' keys containing arrays for lower and upper bounds on the parameters. If ``None``, no bounds are enforced.
+        A dictionary with 'lower' and 'upper' keys containing arrays for lower and upper
+        bounds on the parameters. If ``None``, no bounds are enforced.
 
     See Also
     --------
@@ -194,12 +200,44 @@ class XNES(pints.XNES):
         super().__init__(x0, sigma0, self.boundaries)
 
 
+class NelderMead(pints.NelderMead):
+    """
+    Implements the Nelder-Mead downhill simplex method from PINTS.
+
+    This is a deterministic local optimiser. In most update steps it performs
+    either one evaluation, or two sequential evaluations, so that it will not
+    typically benefit from parallelisation.
+
+    Parameters
+    ----------
+    x0 : array_like
+        The initial parameter vector to optimize.
+    sigma0 : float, optional
+        Initial standard deviation of the sampling distribution, defaults to 0.1.
+        Does not appear to be used.
+    bounds : dict, optional
+        Ignored by this optimiser, provided for API consistency.
+
+    See Also
+    --------
+    pints.NelderMead : PINTS implementation of Nelder-Mead algorithm.
+    """
+
+    def __init__(self, x0, sigma0=0.1, bounds=None):
+        if bounds is not None:
+            print("NOTE: Boundaries ignored by NelderMead")
+
+        self.boundaries = None  # Bounds ignored in pints.NelderMead
+        super().__init__(x0, sigma0, self.boundaries)
+
+
 class CMAES(pints.CMAES):
     """
     Adapter for the Covariance Matrix Adaptation Evolution Strategy (CMA-ES) optimiser in PINTS.
 
     CMA-ES is an evolutionary algorithm for difficult non-linear non-convex optimization problems.
-    It adapts the covariance matrix of a multivariate normal distribution to capture the shape of the cost landscape.
+    It adapts the covariance matrix of a multivariate normal distribution to capture the shape of
+    the cost landscape.
 
     Parameters
     ----------
@@ -208,8 +246,8 @@ class CMAES(pints.CMAES):
     sigma0 : float, optional
         Initial standard deviation of the sampling distribution, defaults to 0.1.
     bounds : dict, optional
-        A dictionary with 'lower' and 'upper' keys containing arrays for lower and upper bounds on the parameters.
-        If ``None``, no bounds are enforced.
+        A dictionary with 'lower' and 'upper' keys containing arrays for lower and upper
+        bounds on the parameters. If ``None``, no bounds are enforced.
 
     See Also
     --------
@@ -217,6 +255,11 @@ class CMAES(pints.CMAES):
     """
 
     def __init__(self, x0, sigma0=0.1, bounds=None):
+        if len(x0) == 1:
+            raise ValueError(
+                "CMAES requires optimisation of >= 2 parameters at once. "
+                + "Please choose another optimiser."
+            )
         if bounds is not None:
             self.boundaries = pints.RectangularBoundaries(
                 bounds["lower"], bounds["upper"]
