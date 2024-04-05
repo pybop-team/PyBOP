@@ -115,6 +115,24 @@ class TestModels:
             )
 
     @pytest.mark.unit
+    def test_parameter_set_definition(self):
+        # Test initilisation with different types of parameter set
+        param_dict = {"Nominal cell capacity [A.h]": 5}
+        model = pybop.BaseModel(parameter_set=None)
+        assert model._parameter_set is None
+
+        model = pybop.BaseModel(parameter_set=param_dict)
+        parameter_set = pybamm.ParameterValues(param_dict)
+        assert model._parameter_set == parameter_set
+
+        model = pybop.BaseModel(parameter_set=parameter_set)
+        assert model._parameter_set == parameter_set
+
+        pybop_parameter_set = pybop.ParameterSet(params_dict=param_dict)
+        model = pybop.BaseModel(parameter_set=pybop_parameter_set)
+        assert model._parameter_set == parameter_set
+
+    @pytest.mark.unit
     def test_rebuild_geometric_parameters(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
         parameters = [

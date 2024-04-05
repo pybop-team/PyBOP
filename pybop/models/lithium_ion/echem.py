@@ -41,16 +41,13 @@ class SPM(EChemBaseModel):
         solver=None,
         options=None,
     ):
-        super().__init__()
+        super().__init__(name, parameter_set)
         self.pybamm_model = pybamm.lithium_ion.SPM(options=options)
         self._unprocessed_model = self.pybamm_model
-        self.name = name
 
         # Set parameters, using either the provided ones or the default
         self.default_parameter_values = self.pybamm_model.default_parameter_values
-        self._parameter_set = (
-            parameter_set or self.pybamm_model.default_parameter_values
-        )
+        self._parameter_set = self._parameter_set or self.default_parameter_values
         self._unprocessed_parameter_set = self._parameter_set
 
         # Define model geometry and discretization
@@ -113,16 +110,13 @@ class SPMe(EChemBaseModel):
         solver=None,
         options=None,
     ):
-        super().__init__()
+        super().__init__(name, parameter_set)
         self.pybamm_model = pybamm.lithium_ion.SPMe(options=options)
         self._unprocessed_model = self.pybamm_model
-        self.name = name
 
         # Set parameters, using either the provided ones or the default
         self.default_parameter_values = self.pybamm_model.default_parameter_values
-        self._parameter_set = (
-            parameter_set or self.pybamm_model.default_parameter_values
-        )
+        self._parameter_set = self._parameter_set or self.default_parameter_values
         self._unprocessed_parameter_set = self._parameter_set
 
         # Define model geometry and discretization
