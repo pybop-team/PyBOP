@@ -40,22 +40,15 @@ class Dataset:
 
     def __setitem__(self, key, value):
         """
-        Return the data corresponding to a particular key.
+        Set the data corresponding to a particular key.
 
         Parameters
         ----------
         key : str
-            The name of a data series within the dataset.
+            The name of the key to be set.
 
-        Returns
-        -------
-        list or np.ndarray
-            The data series corresonding to the key.
-
-        Raises
-        ------
-        ValueError
-            The key must exist in the dataset.
+        value : list or np.ndarray
+            The data series to be stored in the dataset.
         """
         self.data[key] = value
 
