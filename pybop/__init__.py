@@ -42,6 +42,7 @@ from .costs.fitting_costs import (
     RootMeanSquaredError,
     SumSquaredError,
     ObserverCost,
+    MAP,
 )
 from .costs.design_costs import (
     DesignCost,

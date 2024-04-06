@@ -1,5 +1,6 @@
 import numpy as np
 
+from pybop.costs._likelihoods import BaseLikelihood
 from pybop.costs.base_cost import BaseCost
 from pybop.observers.observer import Observer
 
@@ -279,3 +280,78 @@ class ObserverCost(BaseCost):
             If an error occurs during the calculation of the cost or gradient.
         """
         raise NotImplementedError
+
+
+class MAP(BaseLikelihood):
+    """
+    Maximum a posteriori cost function.
+
+    Computes the maximum a posteriori cost function, which is the sum of the
+    negative log likelihood and the log prior.
+
+    Inherits all parameters and attributes from ``BaseLikelihood``.
+
+    """
+
+    def __init__(self, likelihood, problem, sigma):
+        super(MAP, self).__init__(problem)
+        self.likelihood = likelihood
+        self.sigma = sigma
+
+    def _evaluate(self, x, grad=None):
+        """
+        Calculate the maximum a posteriori cost for a given set of parameters.
+
+        Parameters
+        ----------
+        x : array-like
+            The parameters for which to evaluate the cost.
+        grad : array-like, optional
+            An array to store the gradient of the cost function with respect
+            to the parameters.
+
+        Returns
+        -------
+        float
+            The maximum a posteriori cost.
+        """
+        log_likelihood = self.likelihood(
+            problem=self.problem, sigma=self.sigma
+        ).evaluate(x)
+        log_prior = sum(
+            param.prior.logpdf(x_i) for x_i, param in zip(x, self.problem.parameters)
+        )
+
+        posterior = log_likelihood + log_prior
+        return posterior
+
+    def _evaluateS1(self, x):
+        """
+        Compute the maximum a posteriori with respect to the parameters.
+        The method passes the likelihood gradient to the optimiser without modification.
+
+        Parameters
+        ----------
+        x : array-like
+            The parameters for which to compute the cost and gradient.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the cost and the gradient. The cost is a float,
+            and the gradient is an array-like of the same length as `x`.
+
+        Raises
+        ------
+        ValueError
+            If an error occurs during the calculation of the cost or gradient.
+        """
+        log_likelihood, dl = self.likelihood(
+            problem=self.problem, sigma=self.sigma
+        ).evaluateS1(x)
+        log_prior = sum(
+            param.prior.logpdf(x_i) for x_i, param in zip(x, self.problem.parameters)
+        )
+
+        posterior = log_likelihood + log_prior
+        return posterior, dl
