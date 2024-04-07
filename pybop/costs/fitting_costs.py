@@ -295,12 +295,12 @@ class MAP(BaseLikelihood):
 
     def __init__(self, problem, likelihood, sigma=None):
         super(MAP, self).__init__(problem)
-        self.likelihood = likelihood
         self.sigma0 = sigma
         if self.sigma0 is None:
             self.sigma0 = []
             for param in self.problem.parameters:
                 self.sigma0.append(param.prior.sigma)
+        self.likelihood = likelihood(problem=self.problem, sigma=self.sigma0)
 
     def _evaluate(self, x, grad=None):
         """
@@ -319,9 +319,7 @@ class MAP(BaseLikelihood):
         float
             The maximum a posteriori cost.
         """
-        log_likelihood = self.likelihood(
-            problem=self.problem, sigma=self.sigma0
-        ).evaluate(x)
+        log_likelihood = self.likelihood.evaluate(x)
         log_prior = sum(
             param.prior.logpdf(x_i) for x_i, param in zip(x, self.problem.parameters)
         )
@@ -350,9 +348,7 @@ class MAP(BaseLikelihood):
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        log_likelihood, dl = self.likelihood(
-            problem=self.problem, sigma=self.sigma
-        ).evaluateS1(x)
+        log_likelihood, dl = self.likelihood.evaluateS1(x)
         log_prior = sum(
             param.prior.logpdf(x_i) for x_i, param in zip(x, self.problem.parameters)
         )
