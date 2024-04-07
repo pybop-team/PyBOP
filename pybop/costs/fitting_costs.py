@@ -293,10 +293,14 @@ class MAP(BaseLikelihood):
 
     """
 
-    def __init__(self, likelihood, problem, sigma):
+    def __init__(self, problem, likelihood, sigma=None):
         super(MAP, self).__init__(problem)
         self.likelihood = likelihood
-        self.sigma = sigma
+        self.sigma0 = sigma
+        if self.sigma0 is None:
+            self.sigma0 = []
+            for param in self.problem.parameters:
+                self.sigma0.append(param.prior.sigma)
 
     def _evaluate(self, x, grad=None):
         """
@@ -316,7 +320,7 @@ class MAP(BaseLikelihood):
             The maximum a posteriori cost.
         """
         log_likelihood = self.likelihood(
-            problem=self.problem, sigma=self.sigma
+            problem=self.problem, sigma=self.sigma0
         ).evaluate(x)
         log_prior = sum(
             param.prior.logpdf(x_i) for x_i, param in zip(x, self.problem.parameters)
