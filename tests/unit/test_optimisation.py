@@ -104,10 +104,13 @@ class TestOptimisation:
             opt = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
             assert opt.optimiser.boundaries is None
 
-        # Test setting incorrect population size
+        # Test setting population size
         if optimiser_class in [pybop.SciPyDifferentialEvolution]:
             with pytest.raises(ValueError):
                 opt.optimiser.set_population_size(-5)
+
+            # Correct value
+            opt.optimiser.set_population_size(5)
 
     @pytest.mark.unit
     def test_single_parameter(self, cost):
