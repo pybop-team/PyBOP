@@ -1,6 +1,6 @@
 import os
-import nox
 
+import nox
 
 # nox options
 nox.options.reuse_existing_virtualenvs = True
@@ -33,7 +33,7 @@ def coverage(session):
         "--cov-report=xml",
     )
     session.run(
-        "pytest", "--plots", "--cov", "--cov-append", "--cov-report=xml", "-n", "1"
+        "pytest", "--plots", "--cov", "--cov-append", "--cov-report=xml", "-n", "0"
     )
 
 

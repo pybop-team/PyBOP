@@ -24,6 +24,12 @@ FLOAT_FORMAT = "{: .17e}"
 script_path = path.dirname(__file__)
 
 #
+# Utilities
+#
+from ._utils import is_numeric
+
+#
+# Cost class
 # Problem class
 #
 from .problems.base_problem import BaseProblem
@@ -84,6 +90,7 @@ from .optimisers.pints_optimisers import (
     Adam,
     CMAES,
     IRPropMin,
+    NelderMead,
     PSO,
     SNES,
     XNES,
@@ -106,11 +113,13 @@ from .observers.observer import Observer
 #
 # Plotting class
 #
-from .plotting.plot_cost2d import plot_cost2d
-from .plotting.quick_plot import StandardPlot, quick_plot
+from .plotting.plotly_manager import PlotlyManager
+from .plotting.quick_plot import StandardPlot, StandardSubplot, plot_trajectories
+from .plotting.plot2d import plot2d
+from .plotting.plot_dataset import plot_dataset
 from .plotting.plot_convergence import plot_convergence
 from .plotting.plot_parameters import plot_parameters
-from .plotting.plotly_manager import PlotlyManager
+from .plotting.plot_problem import quick_plot
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop

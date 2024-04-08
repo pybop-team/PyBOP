@@ -1,6 +1,7 @@
-import pybop
 import numpy as np
 import pytest
+
+import pybop
 
 
 class TestPriors:

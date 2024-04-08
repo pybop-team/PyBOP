@@ -1,5 +1,6 @@
-import pybop
 import numpy as np
+
+import pybop
 
 # Parameter set and model definition
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
@@ -67,7 +68,7 @@ x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
 # Plot the timeseries output (requires model that returns Voltage)
-pybop.quick_plot(x, cost, title="Optimised Comparison")
+pybop.quick_plot(observer, parameter_values=x, title="Optimised Comparison")
 
 # # Plot convergence
 # pybop.plot_convergence(optim)
@@ -75,8 +76,5 @@ pybop.quick_plot(x, cost, title="Optimised Comparison")
 # # Plot the parameter traces
 # pybop.plot_parameters(optim)
 
-# # Plot the cost landscape
-# pybop.plot_cost2d(cost, steps=5)
-
 # # Plot the cost landscape with optimisation path
-# pybop.plot_cost2d(cost, optim=optim, steps=5)
+# pybop.plot2d(optim, steps=15)

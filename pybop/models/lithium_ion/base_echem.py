@@ -1,4 +1,7 @@
 import warnings
+
+import pybamm
+
 from ..base_model import BaseModel
 
 
@@ -7,8 +10,44 @@ class EChemBaseModel(BaseModel):
     Overwrites and extends `BaseModel` class for electrochemical PyBaMM models.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(
+        self,
+        model,
+        name="Electrochemical Base Model",
+        parameter_set=None,
+        geometry=None,
+        submesh_types=None,
+        var_pts=None,
+        spatial_methods=None,
+        solver=None,
+    ):
+        super().__init__(name=name, parameter_set=parameter_set)
+        self.pybamm_model = model
+
+        # Set parameters, using either the provided ones or the default
+        self.default_parameter_values = self.pybamm_model.default_parameter_values
+        self._parameter_set = self._parameter_set or self.default_parameter_values
+        self._unprocessed_parameter_set = self._parameter_set
+
+        # Define model geometry and discretization
+        self.geometry = geometry or self.pybamm_model.default_geometry
+        self.submesh_types = submesh_types or self.pybamm_model.default_submesh_types
+        self.var_pts = var_pts or self.pybamm_model.default_var_pts
+        self.spatial_methods = (
+            spatial_methods or self.pybamm_model.default_spatial_methods
+        )
+        self.solver = solver or self.pybamm_model.default_solver
+        self.solver.max_step_decrease_count = 1
+
+        # Internal attributes for the built model are initialized but not set
+        self._model_with_set_params = None
+        self._built_model = None
+        self._built_initial_soc = None
+        self._mesh = None
+        self._disc = None
+
+        self._electrode_soh = pybamm.lithium_ion.electrode_soh
+        self.rebuild_parameters = self.set_rebuild_parameters()
 
     def _check_params(
         self, inputs=None, parameter_set=None, allow_infeasible_solutions=True
@@ -223,9 +262,12 @@ class EChemBaseModel(BaseModel):
         # Calculate average voltage
         positive_electrode_ocp = self._parameter_set["Positive electrode OCP [V]"]
         negative_electrode_ocp = self._parameter_set["Negative electrode OCP [V]"]
-        average_voltage = positive_electrode_ocp(mean_sto_pos) - negative_electrode_ocp(
-            mean_sto_neg
-        )
+        try:
+            average_voltage = positive_electrode_ocp(
+                mean_sto_pos
+            ) - negative_electrode_ocp(mean_sto_neg)
+        except Exception as e:
+            raise ValueError(f"Error in average voltage calculation: {e}")
 
         # Calculate and update nominal capacity
         theoretical_capacity = theoretical_energy / average_voltage

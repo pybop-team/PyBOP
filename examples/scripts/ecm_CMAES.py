@@ -1,14 +1,16 @@
-import pybop
 import numpy as np
 
+import pybop
+
 # Import the ECM parameter set from JSON
-params = pybop.ParameterSet(
+parameter_set = pybop.ParameterSet(
     json_path="examples/scripts/parameters/initial_ecm_parameters.json"
 )
+parameter_set.import_parameters()
 
 # Alternatively, define the initial parameter set with a dictionary
 # Add definitions for R's, C's, and initial overpotentials for any additional RC elements
-# params = pybop.ParameterSet(
+# parameter_set = pybop.ParameterSet(
 #     params_dict={
 #         "chemistry": "ecm",
 #         "Initial SoC": 0.5,
@@ -39,7 +41,7 @@ params = pybop.ParameterSet(
 
 # Define the model
 model = pybop.empirical.Thevenin(
-    parameter_set=params.import_parameters(), options={"number of rc elements": 2}
+    parameter_set=parameter_set, options={"number of rc elements": 2}
 )
 
 # Fitting parameters
@@ -80,12 +82,15 @@ x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
 # Export the parameters to JSON
-params.export_parameters(
+parameter_set.export_parameters(
     "examples/scripts/parameters/fit_ecm_parameters.json", fit_params=parameters
 )
 
+# Plot the time series
+pybop.plot_dataset(dataset)
+
 # Plot the timeseries output
-pybop.quick_plot(x, cost, title="Optimised Comparison")
+pybop.quick_plot(problem, parameter_values=x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)
@@ -94,8 +99,8 @@ pybop.plot_convergence(optim)
 pybop.plot_parameters(optim)
 
 # Plot the cost landscape
-pybop.plot_cost2d(cost, steps=15)
+pybop.plot2d(cost, steps=15)
 
 # Plot the cost landscape with optimisation path and updated bounds
 bounds = np.array([[1e-4, 1e-2], [1e-5, 1e-2]])
-pybop.plot_cost2d(cost, optim=optim, bounds=bounds, steps=15)
+pybop.plot2d(optim, bounds=bounds, steps=15)

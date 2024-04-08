@@ -1,8 +1,8 @@
-import pybop
-import pytest
 import numpy as np
 import pybamm
+import pytest
 
+import pybop
 from examples.standalone.model import ExponentialDecay
 
 
@@ -15,6 +15,9 @@ class TestModels:
         params=[
             pybop.lithium_ion.SPM(),
             pybop.lithium_ion.SPMe(),
+            pybop.lithium_ion.DFN(),
+            pybop.lithium_ion.MPM(),
+            pybop.lithium_ion.MSMR(options={"number of MSMR reactions": ("6", "4")}),
             pybop.empirical.Thevenin(),
         ]
     )
@@ -45,7 +48,7 @@ class TestModels:
     def test_predict_with_inputs(self, model):
         # Define inputs
         t_eval = np.linspace(0, 10, 100)
-        if isinstance(model, (pybop.lithium_ion.SPM, pybop.lithium_ion.SPMe)):
+        if isinstance(model, (pybop.lithium_ion.EChemBaseModel)):
             inputs = {
                 "Negative electrode active material volume fraction": 0.52,
                 "Positive electrode active material volume fraction": 0.63,
@@ -113,6 +116,24 @@ class TestModels:
             assert getattr(rebuilt_model, attribute) == getattr(
                 initial_built_model, attribute
             )
+
+    @pytest.mark.unit
+    def test_parameter_set_definition(self):
+        # Test initilisation with different types of parameter set
+        param_dict = {"Nominal cell capacity [A.h]": 5}
+        model = pybop.BaseModel(parameter_set=None)
+        assert model._parameter_set is None
+
+        model = pybop.BaseModel(parameter_set=param_dict)
+        parameter_set = pybamm.ParameterValues(param_dict)
+        assert model._parameter_set == parameter_set
+
+        model = pybop.BaseModel(parameter_set=parameter_set)
+        assert model._parameter_set == parameter_set
+
+        pybop_parameter_set = pybop.ParameterSet(params_dict=param_dict)
+        model = pybop.BaseModel(parameter_set=pybop_parameter_set)
+        assert model._parameter_set == parameter_set
 
     @pytest.mark.unit
     def test_rebuild_geometric_parameters(self):
@@ -202,9 +223,9 @@ class TestModels:
         model.signal = ["y_0"]
         inputs = {}
         t_eval = np.linspace(0, 10, 100)
-        expected = y0 * np.exp(-k * t_eval).reshape(-1, 1)
+        expected = y0 * np.exp(-k * t_eval)
         solved = model.simulate(inputs, t_eval)
-        np.testing.assert_array_almost_equal(solved, expected, decimal=5)
+        np.testing.assert_array_almost_equal(solved["y_0"], expected, decimal=5)
 
         with pytest.raises(ValueError):
             ExponentialDecay(n_states=-1)
@@ -222,3 +243,31 @@ class TestModels:
 
         with pytest.raises(NotImplementedError):
             base.approximate_capacity(x)
+
+    @pytest.mark.unit
+    def test_non_converged_solution(self):
+        model = pybop.lithium_ion.DFN()
+        parameters = [
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.2, 0.01),
+            ),
+            pybop.Parameter(
+                "Positive electrode active material volume fraction",
+                prior=pybop.Gaussian(0.2, 0.01),
+            ),
+        ]
+        dataset = pybop.Dataset(
+            {
+                "Time [s]": np.linspace(0, 100, 100),
+                "Current function [A]": np.zeros(100),
+                "Voltage [V]": np.zeros(100),
+            }
+        )
+
+        problem = pybop.FittingProblem(model, parameters=parameters, dataset=dataset)
+        res = problem.evaluate([-0.2, -0.2])
+        res_grad = problem.evaluateS1([-0.2, -0.2])
+
+        assert np.isinf(res).any()
+        assert np.isinf(res_grad).any()

@@ -1,6 +1,8 @@
-import pybop
 import numpy as np
 import pytest
+from numpy.testing import assert_allclose, assert_array_equal
+
+import pybop
 
 
 class TestProblem:
@@ -65,7 +67,7 @@ class TestProblem:
         return "Voltage [V]"
 
     @pytest.mark.unit
-    def test_base_problem(self, parameters, model):
+    def test_base_problem(self, parameters, model, dataset):
         # Test incorrect number of initial parameter values
         with pytest.raises(ValueError):
             pybop.BaseProblem(parameters, model=model, x0=np.array([]))
@@ -89,6 +91,15 @@ class TestProblem:
         problem = pybop.BaseProblem(parameters, model=model)
         assert problem.bounds is None
 
+        # Incorrect set target
+        with pytest.raises(ValueError, match="Dataset must be a pybop Dataset object."):
+            problem.set_target("This is not a dataset")
+
+        # No signal
+        problem.signal = None
+        with pytest.raises(ValueError, match="Signal must be defined to set target."):
+            problem.set_target(dataset)
+
     @pytest.mark.unit
     def test_fitting_problem(self, parameters, dataset, model, signal):
         # Test incorrect number of initial parameter values
@@ -102,6 +113,18 @@ class TestProblem:
 
         assert problem._model == model
         assert problem._model._built_model is not None
+
+        # Test get target
+        target = problem.get_target()["Voltage [V]"]
+        assert_array_equal(target, dataset["Voltage [V]"])
+
+        # Test set target
+        dataset["Voltage [V]"] += np.random.normal(0, 0.05, len(dataset["Voltage [V]"]))
+        problem.set_target(dataset)
+
+        # Assert
+        target = problem.get_target()["Voltage [V]"]
+        assert_array_equal(target, dataset["Voltage [V]"])
 
         # Test model.simulate
         model.simulate(inputs=[1e-5, 1e-5], t_eval=np.linspace(0, 10, 100))
@@ -172,8 +195,8 @@ class TestProblem:
 
         assert problem._model._built_model is not None
         with pytest.raises(AssertionError):
-            np.testing.assert_allclose(
-                out["Terminal voltage [V]"].data,
-                problem_output,
+            assert_allclose(
+                out["Voltage [V]"].data,
+                problem_output["Voltage [V]"],
                 atol=1e-5,
             )

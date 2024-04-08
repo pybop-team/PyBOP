@@ -15,6 +15,8 @@ class BaseProblem:
         Flag to indicate if the model should be checked (default: True).
     signal: List[str]
       The signal to observe.
+    additional_variables : List[str], optional
+        Additional variables to observe and store in the solution (default: []).
     init_soc : float, optional
         Initial state of charge (default: None).
     x0 : np.ndarray, optional
@@ -27,6 +29,7 @@ class BaseProblem:
         model=None,
         check_model=True,
         signal=["Voltage [V]"],
+        additional_variables=[],
         init_soc=None,
         x0=None,
     ):
@@ -44,6 +47,11 @@ class BaseProblem:
         self.n_outputs = len(self.signal)
         self._time_data = None
         self._target = None
+
+        if isinstance(model, pybop.BaseModel):
+            self.additional_variables = additional_variables
+        else:
+            self.additional_variables = []
 
         # Set bounds (for all or no parameters)
         all_unbounded = True  # assumption
@@ -126,7 +134,7 @@ class BaseProblem:
         """
         return self._time_data
 
-    def target(self):
+    def get_target(self):
         """
         Return the target dataset.
 
@@ -136,6 +144,22 @@ class BaseProblem:
             The target dataset array.
         """
         return self._target
+
+    def set_target(self, dataset):
+        """
+        Set the target dataset.
+
+        Parameters
+        ----------
+        target : np.ndarray
+            The target dataset array.
+        """
+        if self.signal is None:
+            raise ValueError("Signal must be defined to set target.")
+        if not isinstance(dataset, pybop.Dataset):
+            raise ValueError("Dataset must be a pybop Dataset object.")
+
+        self._target = {signal: dataset[signal] for signal in self.signal}
 
     @property
     def model(self):

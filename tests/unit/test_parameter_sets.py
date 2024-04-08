@@ -1,6 +1,7 @@
-import pybop
 import numpy as np
 import pytest
+
+import pybop
 
 
 class TestParameterSets:
@@ -22,10 +23,23 @@ class TestParameterSets:
     @pytest.mark.unit
     def test_ecm_parameter_sets(self):
         # Test importing a json file
+        json_params = pybop.ParameterSet()
+        with pytest.raises(
+            ValueError,
+            match="Parameter set already constructed, or path to json file not provided.",
+        ):
+            json_params.import_parameters()
+
         json_params = pybop.ParameterSet(
             json_path="examples/scripts/parameters/initial_ecm_parameters.json"
         )
         json_params.import_parameters()
+
+        with pytest.raises(
+            ValueError,
+            match="Parameter set already constructed, or path to json file not provided.",
+        ):
+            json_params.import_parameters()
 
         params = pybop.ParameterSet(
             params_dict={
@@ -55,9 +69,9 @@ class TestParameterSets:
                 "Entropic change [V/K]": 0.0004,
             }
         )
-        params.import_parameters()
 
         assert json_params.params == params.params
+        assert params() == params.params
 
         # Test exporting a json file
         parameters = [
@@ -84,3 +98,24 @@ class TestParameterSets:
             empty_params.export_parameters(
                 "examples/scripts/parameters/fit_ecm_parameters.json"
             )
+
+    @pytest.mark.unit
+    def test_bpx_parameter_sets(self):
+        # Test importing a BPX json file
+        bpx_parameters = pybop.ParameterSet()
+        with pytest.raises(
+            ValueError,
+            match="Parameter set already constructed, or path to bpx file not provided.",
+        ):
+            bpx_parameters.import_from_bpx()
+
+        bpx_parameters = pybop.ParameterSet(
+            json_path="examples/scripts/parameters/example_BPX.json"
+        )
+        bpx_parameters.import_from_bpx()
+
+        with pytest.raises(
+            ValueError,
+            match="Parameter set already constructed, or path to bpx file not provided.",
+        ):
+            bpx_parameters.import_from_bpx()
