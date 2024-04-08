@@ -1,6 +1,6 @@
 import pybamm
 
-from .ecm_base import ECircuitModel
+from .base_ecm import ECircuitModel
 
 
 class Thevenin(ECircuitModel):
