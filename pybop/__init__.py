@@ -90,6 +90,7 @@ from .optimisers.pints_optimisers import (
     Adam,
     CMAES,
     IRPropMin,
+    NelderMead,
     PSO,
     SNES,
     XNES,

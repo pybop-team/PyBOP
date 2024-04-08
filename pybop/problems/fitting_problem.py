@@ -54,7 +54,7 @@ class FittingProblem(BaseProblem):
         # Unpack time and target data
         self._time_data = self._dataset["Time [s]"]
         self.n_time_data = len(self._time_data)
-        self._target = {signal: self._dataset[signal] for signal in self.signal}
+        self.set_target(dataset)
 
         # Add useful parameters to model
         if model is not None:

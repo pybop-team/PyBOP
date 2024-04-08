@@ -4,7 +4,7 @@ ci:
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: "v0.3.3"
+    rev: "v0.3.4"
     hooks:
       - id: ruff
         args: [--fix, --show-fixes]
@@ -16,7 +16,7 @@ repos:
     rev: v4.5.0
     hooks:
         - id: check-added-large-files
-          args: ['--maxkb=1000']
+          args: ['--maxkb=2000']
         - id: check-case-conflict
         - id: check-merge-conflict
         - id: check-yaml

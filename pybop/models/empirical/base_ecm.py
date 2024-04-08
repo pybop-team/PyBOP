@@ -6,8 +6,8 @@ class ECircuitModel(BaseModel):
     Overwrites and extends `BaseModel` class for circuit-based PyBaMM models.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, name, parameter_set):
+        super().__init__(name, parameter_set)
 
     def _check_params(self, inputs=None, allow_infeasible_solutions=True):
         """
