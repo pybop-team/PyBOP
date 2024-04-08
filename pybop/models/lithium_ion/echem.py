@@ -305,7 +305,6 @@ class WeppnerHuggins(EChemBaseModel):
         spatial_methods=None,
         solver=None,
     ):
-
         self.pybamm_model = BaseWeppnerHuggins()
         self._unprocessed_model = self.pybamm_model
 
