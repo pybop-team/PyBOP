@@ -16,7 +16,7 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
 
     def __init__(self, name="Weppner & Huggins model"):
         super().__init__({}, name)
-        # `param` is a class containing all the relevant parameters and functions for
+        # `self.param` is a class containing all the relevant parameters and functions for
         # this model. These are purely symbolic at this stage, and will be set by the
         # `ParameterValues` class when the model is processed.
         self.options["working electrode"] = "positive"
@@ -33,7 +33,7 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
             "Maximum concentration in positive electrode [mol.m-3]"
         )
 
-        i_app = param.current_density_with_time
+        i_app = self.param.current_density_with_time
 
         U = pybamm.Parameter("Reference OCP [V]")
 
@@ -45,16 +45,15 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
 
         a = 3 * (epsilon / r_particle)
 
-        F = param.F
 
-        l_w = param.p.L
+        l_w = self.param.p.L
 
         ######################
         # Governing equations
         ######################
-        u_surf = (2 / (np.pi**0.5)) * (i_app / ((d_s**0.5) * a * F * l_w)) * (t**0.5)
+        u_surf = (2 / (np.pi**0.5)) * (i_app / ((d_s**0.5) * a * self.param.F * l_w)) * (t**0.5)
         # Linearised voltage
-        V = U + (Uprime * u_surf) / c_s_max
+        V = U + (U_prime * u_surf) / c_s_max
         ######################
         # (Some) variables
         ######################

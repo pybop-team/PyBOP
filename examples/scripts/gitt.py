@@ -4,7 +4,7 @@ import pybamm
 import pybop
 
 # Define model
-original_parameters = pybamm.ParameterValues("Xu2019")
+original_parameters = pybop.ParameterSet.pybamm("Xu2019")
 model = pybop.lithium_ion.SPM(
     parameter_set=original_parameters, options={"working electrode": "positive"}
 )
@@ -57,7 +57,6 @@ parameter_set = pybamm.ParameterValues(
 )
 
 # Define the cost to optimise
-signal = ["Voltage [V]"]
 problem = pybop.GITT(
     model="Weppner & Huggins", parameter_set=parameter_set, dataset=dataset
 )
