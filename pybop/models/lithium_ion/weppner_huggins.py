@@ -37,7 +37,7 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
 
         U = pybamm.Parameter("Reference OCP [V]")
 
-        Uprime = pybamm.Parameter("Derivative of the OCP wrt stoichiometry [V]")
+        U_prime = pybamm.Parameter("Derivative of the OCP wrt stoichiometry [V]")
 
         epsilon = pybamm.Parameter("Positive electrode active material volume fraction")
 
