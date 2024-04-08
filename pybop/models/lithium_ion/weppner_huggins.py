@@ -16,6 +16,21 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
 
     def __init__(self, name="Weppner & Huggins model"):
         super().__init__({}, name)
+
+        pybamm.citations.register("""
+            @article{Weppner1977,
+            title={{Determination of the kinetic parameters 
+            of mixed-conducting electrodes and application to the system Li3Sb}},
+            author={Weppner, W and Huggins, R A},
+            journal={Journal of The Electrochemical Society},
+            volume={124},
+            number={10},
+            pages={1569},
+            year={1977},
+            publisher={IOP Publishing}
+            }
+        """)
+
         # `self.param` is a class containing all the relevant parameters and functions for
         # this model. These are purely symbolic at this stage, and will be set by the
         # `ParameterValues` class when the model is processed.
