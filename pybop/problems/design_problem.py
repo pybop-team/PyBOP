@@ -2,6 +2,7 @@ import numpy as np
 
 from pybop import BaseProblem
 
+
 class DesignProblem(BaseProblem):
     """
     Problem class for design optimization problems.
