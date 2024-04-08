@@ -1,6 +1,6 @@
 from typing import List, Optional
 import numpy as np
-from pybop._problem import BaseProblem
+from pybop import BaseProblem
 from pybop.models.base_model import BaseModel, Inputs, TimeSeriesState
 from pybop.parameters.parameter import Parameter
 
