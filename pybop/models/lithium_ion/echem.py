@@ -305,33 +305,17 @@ class WeppnerHuggins(EChemBaseModel):
         spatial_methods=None,
         solver=None,
     ):
-        super().__init__()
+
         self.pybamm_model = BaseWeppnerHuggins()
         self._unprocessed_model = self.pybamm_model
-        self.name = name
 
-        # Set parameters, using either the provided ones or the default
-        self.default_parameter_values = self.pybamm_model.default_parameter_values
-        self._parameter_set = (
-            parameter_set or self.pybamm_model.default_parameter_values
+        super().__init__(
+            model=self.pybamm_model,
+            name=name,
+            parameter_set=parameter_set,
+            geometry=geometry,
+            submesh_types=submesh_types,
+            var_pts=var_pts,
+            spatial_methods=spatial_methods,
+            solver=solver,
         )
-        self._unprocessed_parameter_set = self._parameter_set
-
-        # Define model geometry and discretization
-        self.geometry = geometry or self.pybamm_model.default_geometry
-        self.submesh_types = submesh_types or self.pybamm_model.default_submesh_types
-        self.var_pts = var_pts or self.pybamm_model.default_var_pts
-        self.spatial_methods = (
-            spatial_methods or self.pybamm_model.default_spatial_methods
-        )
-        self.solver = solver or self.pybamm_model.default_solver
-
-        # Internal attributes for the built model are initialized but not set
-        self._model_with_set_params = None
-        self._built_model = None
-        self._built_initial_soc = None
-        self._mesh = None
-        self._disc = None
-
-        self._electrode_soh = pybamm.lithium_ion.electrode_soh
-        self.rebuild_parameters = self.set_rebuild_parameters()
