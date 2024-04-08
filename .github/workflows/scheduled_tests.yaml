@@ -87,8 +87,8 @@ jobs:
       - name: Unit tests with nox
         run: python -m nox -s coverage
 
-      - name: Run notebooks with nox
-        run: python -m nox -s notebooks
+      - name: Run examples with nox
+        run: python -m nox -s examples
 
   # M-series Mac Mini
   build-apple-mseries:
@@ -112,14 +112,14 @@ jobs:
           pyenv install ${{ matrix.python_version }} -s
           pyenv virtualenv ${{ matrix.python_version }} pybop-${{ matrix.python_version }}-${{ matrix.pybamm_version }}
 
-      - name: Install dependencies & run unit + notebook tests
+      - name: Install dependencies & run tests
         shell: bash
         run: |
           eval "$(pyenv init -)"
           pyenv activate pybop-${{ matrix.python_version }}-${{ matrix.pybamm_version }}
           python -m pip install --upgrade pip nox
           python -m nox -s coverage
-          python -m nox -s notebooks
+          python -m nox -s examples
 
       - name: Uninstall pyenv-virtualenv & python
         if: always()
