@@ -66,10 +66,7 @@ class TestModelParameterisation:
         )
 
         # Define the cost to optimise
-        signal = ["Voltage [V]"]
-        problem = pybop.FittingProblem(
-            model, parameters, dataset, signal=signal, init_soc=init_soc
-        )
+        problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
             return cost_class(problem, sigma=[0.03, 0.03])
         else:
