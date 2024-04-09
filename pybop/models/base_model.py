@@ -348,22 +348,20 @@ class BaseModel:
                 sol = self.solver.solve(self.built_model, t_eval=t_eval)
 
             else:
-                if not isinstance(inputs, dict):
-                    inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+                # if not isinstance(inputs, dict):
+                #     inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
 
-                if self.check_params(
-                    inputs=inputs,
-                    allow_infeasible_solutions=self.allow_infeasible_solutions,
-                ):
-                    try:
-                        sol = self.solver.solve(
-                            self.built_model, inputs=inputs, t_eval=t_eval
-                        )
-                    except Exception as e:
-                        print(f"Error: {e}")
-                        return [np.inf]
-                else:
-                    return {signal: [np.inf] for signal in self.signal}
+                # if self.check_params(
+                #     inputs=inputs,
+                #     allow_infeasible_solutions=self.allow_infeasible_solutions,
+                # ):
+                # try:
+                sol = self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
+                # except Exception as e:
+                #     print(f"Error: {e}")
+                #     return [np.inf]
+            # else:
+            #     return {signal: [np.inf] for signal in self.signal}
 
             y = {
                 signal: sol[signal].data

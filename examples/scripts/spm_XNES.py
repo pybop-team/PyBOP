@@ -1,22 +1,24 @@
+import time
+
 import numpy as np
 
 import pybop
 
 # Define model
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = [
     pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.68, 0.05),
-        bounds=[0.5, 0.8],
+        "Negative electrode conductivity [S.m-1]",
+        prior=pybop.Gaussian(150, 10),
+        bounds=[100, 300],
     ),
     pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.58, 0.05),
-        bounds=[0.4, 0.7],
+        "Positive electrode conductivity [S.m-1]",
+        prior=pybop.Gaussian(0.5, 0.1),
+        bounds=[0.05, 1],
     ),
 ]
 
@@ -33,24 +35,20 @@ dataset = pybop.Dataset(
         "Voltage [V]": corrupt_values,
     }
 )
+# Create list of dict of inputs to simulate
+j = [
+    {
+        "Negative electrode conductivity [S.m-1]": x * 30,
+        "Positive electrode conductivity [S.m-1]": x / 10,
+    }
+    for x in range(1, 9)
+]
 
-# Generate problem, cost function, and optimisation class
+# Generate problem, call model.simulate() and time it
 problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.SumSquaredError(problem)
-optim = pybop.Optimisation(cost, optimiser=pybop.XNES)
-optim.set_max_iterations(100)
 
-x, final_cost = optim.run()
-print("Estimated parameters:", x)
+time_start = time.time()
+problem.model.simulate(t_eval=t_eval, inputs=j)
+time_end = time.time()
 
-# Plot the timeseries output
-pybop.quick_plot(problem, parameter_values=x, title="Optimised Comparison")
-
-# Plot convergence
-pybop.plot_convergence(optim)
-
-# Plot the parameter traces
-pybop.plot_parameters(optim)
-
-# Plot the cost landscape with optimisation path
-pybop.plot2d(optim, steps=15)
+print("Time taken to evaluate the problem: ", time_end - time_start)
