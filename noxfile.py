@@ -51,13 +51,15 @@ def integration(session):
 
 @nox.session
 def examples(session):
+    """Run the examples and notebooks"""
     session.install("-e", ".[all,dev]", silent=False)
     session.run("pytest", "--examples")
+    notebooks(session)
 
 
 @nox.session
 def notebooks(session):
-    """Run the examples tests for Jupyter notebooks."""
+    """Run the Jupyter notebooks."""
     session.install("-e", ".[all,dev]", silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
