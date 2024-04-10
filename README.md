@@ -77,7 +77,7 @@ pip install -e "path/to/pybop"
 To check whether PyBOP has been installed correctly, run one of the examples in the following section. For a development installation, please refer to the [contributing guide](https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md#Installation).
 
 ### Prerequisites
-To use and/or contribute to PyBOP, first install Python (3.8 — 3.12). On a Debian-based distribution, this looks like:
+To use and/or contribute to PyBOP, first install Python (3.9 — 3.12). On a Debian-based distribution, this looks like:
 
 ```bash
 sudo apt update
