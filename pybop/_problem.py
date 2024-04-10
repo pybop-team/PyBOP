@@ -34,6 +34,7 @@ class BaseProblem:
         additional_variables=[],
         init_soc=None,
         x0=None,
+        eis=False,
     ):
         self.parameters = parameters
         self._model = model
@@ -45,6 +46,7 @@ class BaseProblem:
         self.signal = signal
         self.init_soc = init_soc
         self.x0 = x0
+        self.eis = eis
         self.n_parameters = len(self.parameters)
         self.n_outputs = len(self.signal)
         self._time_data = None
@@ -202,13 +204,21 @@ class FittingProblem(BaseProblem):
         additional_variables=[],
         init_soc=None,
         x0=None,
+        eis=False,
     ):
         # Add time and remove duplicates
         additional_variables.extend(["Time [s]"])
         additional_variables = list(set(additional_variables))
 
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc, x0
+            parameters,
+            model,
+            check_model,
+            signal,
+            additional_variables,
+            init_soc,
+            x0,
+            eis,
         )
         self._dataset = dataset.data
         self.x = self.x0
@@ -257,16 +267,30 @@ class FittingProblem(BaseProblem):
         y : np.ndarray
             The model output y(t) simulated with inputs x.
         """
-        if np.any(x != self.x) and self._model.matched_parameters:
-            for i, param in enumerate(self.parameters):
-                param.update(value=x[i])
+        if not self.eis:
+            if np.any(x != self.x) and self._model.matched_parameters:
+                for i, param in enumerate(self.parameters):
+                    param.update(value=x[i])
 
-            self._model.rebuild(parameters=self.parameters)
-            self.x = x
+                self._model.rebuild(parameters=self.parameters)
+                self.x = x
 
-        y = self._model.simulate(inputs=x, t_eval=self._time_data)
+            y = self._model.simulate(inputs=x, t_eval=self._time_data)
 
-        return y
+            return y
+        else:
+            if np.any(x != self.x) and self._model.matched_parameters:
+                for i, param in enumerate(self.parameters):
+                    param.update(value=x[i])
+
+                self._model.rebuild(parameters=self.parameters)
+                self.x = x
+
+            y = self._model.simulateEIS(
+                inputs=x, t_eval=self._time_data, frequencies=np.arange(100, 10000, 10)
+            )
+
+            return y
 
     def evaluateS1(self, x):
         """
@@ -332,13 +356,21 @@ class DesignProblem(BaseProblem):
         additional_variables=[],
         init_soc=None,
         x0=None,
+        eis=False,
     ):
         # Add time and current and remove duplicates
         additional_variables.extend(["Time [s]", "Current [A]"])
         additional_variables = list(set(additional_variables))
 
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc, x0
+            parameters,
+            model,
+            check_model,
+            signal,
+            additional_variables,
+            init_soc,
+            x0,
+            eis,
         )
         self.experiment = experiment
 

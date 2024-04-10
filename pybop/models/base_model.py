@@ -7,6 +7,8 @@ from typing import Any, Dict, Optional
 import casadi
 import numpy as np
 import pybamm
+from scipy.sparse import csc_matrix
+from scipy.sparse.linalg import splu
 
 Inputs = Dict[str, float]
 
@@ -130,6 +132,7 @@ class BaseModel:
 
             # Clear solver and setup model
             self._solver._model_set_up = {}
+            # self._solver.set_up(self._built_model, inputs={})
 
         self.n_states = self._built_model.len_rhs_and_alg  # len_rhs + len_alg
 
@@ -369,6 +372,88 @@ class BaseModel:
                 signal: sol[signal].data
                 for signal in (self.signal + self.additional_variables)
             }
+
+            return y
+
+    def simulateEIS(
+        self, inputs: Inputs, t_eval, frequencies: list
+    ) -> dict[str, np.ndarray]:
+        """
+        Execute the forward model simulation with electrochemical impedence spectroscopy
+        and return the result.
+
+        Parameters
+        ----------
+        inputs : dict or array-like
+            The input parameters for the simulation. If array-like, it will be
+            converted to a dictionary using the model's fit keys.
+        t_eval : array-like
+            An array of time points at which to evaluate the solution.
+
+        Returns
+        -------
+        array-like
+            The simulation result corresponding to the specified signal.
+
+        Raises
+        ------
+        ValueError
+            If the model has not been built before simulation.
+        """
+        if self._built_model is None:
+            raise ValueError("Model must be built before calling simulate")
+        else:
+            # if self.matched_parameters and not self.non_matched_parameters:
+            #     sol = self.solver.solve(self.built_model, t_eval=t_eval)
+
+            # else:
+            if not isinstance(inputs, dict):
+                inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+
+            if self.check_params(
+                inputs=inputs,
+                allow_infeasible_solutions=self.allow_infeasible_solutions,
+            ):
+                try:
+                    # Set up the solver for new inputs
+                    self._solver.set_up(self._built_model, inputs=inputs)
+
+                    # Extract necessary attributes from the model
+                    self.M = self._built_model.mass_matrix.entries
+                    self.y0 = self._built_model.concatenated_initial_conditions.entries
+                    self.J = self._built_model.jac_rhs_algebraic_eval(
+                        0, self.y0, []
+                    ).sparse()
+
+                    # Convert to Compressed Sparse Column format
+                    self.M = csc_matrix(self.M)
+                    self.J = csc_matrix(self.J)
+
+                    # Add forcing to the RHS on the current density
+                    self.b = np.zeros_like(self.y0)
+                    self.b[-1] = -1
+
+                    zs = []
+                    for frequency in frequencies:
+                        # Compute the system matrix
+                        A = 1.0j * 2 * np.pi * frequency * self.M - self.J
+
+                        # Factorize the matrix
+                        lu = splu(A)
+
+                        # Solve the system
+                        x = lu.solve(self.b)
+
+                        # Calculate and store the impedance
+                        z = -x[-2][0] / x[-1][0]
+                        zs.append(z)
+                except Exception as e:
+                    print(f"Error: {e}")
+                    return [np.inf]
+            else:
+                return {"Impedence": [np.inf]}
+
+            y = {"Impedence": zs}
 
             return y
 
