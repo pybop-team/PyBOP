@@ -4,7 +4,7 @@ import nox
 
 # nox options
 nox.options.reuse_existing_virtualenvs = True
-nox.options.venv_backend = "virtualenv"
+nox.options.force_venv_backend = "uv"
 
 # Environment variables to control CI behaviour for nox sessions
 PYBOP_SCHEDULED = int(os.environ.get("PYBOP_SCHEDULED", 0))
@@ -40,6 +40,7 @@ def coverage(session):
 @nox.session
 def plots(session):
     session.install("-e", ".[plot,dev]", silent=False)
+    session.install("pip")
     session.run("pytest", "--plots", "-n", "0")
 
 
