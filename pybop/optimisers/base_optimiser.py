@@ -25,8 +25,6 @@ class BaseOptimiser:
         """
         Initiates the optimisation process.
 
-        This method should be overridden by child classes with the specific optimisation algorithm.
-
         Parameters
         ----------
         cost_function : callable

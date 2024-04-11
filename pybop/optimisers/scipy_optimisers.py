@@ -30,8 +30,6 @@ class SciPyMinimize(BaseOptimiser):
     ----------
     bounds : dict, sequence or scipy.optimize.Bounds, optional
         Bounds for variables as supported by the selected method.
-    maxiter : int, optional
-        Maximum number of iterations to perform.
     **optimiser_kwargs : optional
         Valid SciPy Minimize option keys and their values. For example, to specify the solver
         use: `method='Nelder-Mead'`. Other options are: 'Nelder-Mead', 'Powell', 'CG', 'BFGS',
