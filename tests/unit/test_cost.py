@@ -123,6 +123,16 @@ class TestCosts:
             design_cost([0.5])
 
     @pytest.mark.unit
+    def test_MAP(self, problem):
+        # Incorrect likelihood
+        with pytest.raises(ValueError):
+            pybop.MAP(problem, pybop.SumSquaredError)
+
+        # Incorrect construction of likelihood
+        with pytest.raises(ValueError):
+            pybop.MAP(problem, pybop.GaussianLogLikelihoodKnownSigma, sigma="string")
+
+    @pytest.mark.unit
     def test_costs(self, cost):
         if isinstance(cost, pybop.BaseLikelihood):
             higher_cost = cost([0.52])

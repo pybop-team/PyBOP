@@ -300,7 +300,18 @@ class MAP(BaseLikelihood):
             self.sigma0 = []
             for param in self.problem.parameters:
                 self.sigma0.append(param.prior.sigma)
-        self.likelihood = likelihood(problem=self.problem, sigma=self.sigma0)
+
+        try:
+            self.likelihood = likelihood(problem=self.problem, sigma=self.sigma0)
+        except Exception as e:
+            raise ValueError(
+                f"An error occurred when constructing the Likelihood class: {e}"
+            )
+
+        if hasattr(self, "likelihood") and not isinstance(
+            self.likelihood, BaseLikelihood
+        ):
+            raise ValueError(f"{self.likelihood} must be a subclass of BaseLikelihood")
 
     def _evaluate(self, x, grad=None):
         """
