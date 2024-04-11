@@ -113,10 +113,6 @@ jobs:
         run: |
           nox -s examples
 
-      - name: Run notebooks
-        run: |
-          nox -s notebooks
-
   # Runs only on Ubuntu with Python 3.12
   check_coverage:
     needs: style
