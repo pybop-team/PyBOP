@@ -5,7 +5,6 @@
 # This file is adapted from Pints
 # (see https://github.com/pints-team/pints)
 #
-from __future__ import annotations
 import sys
 from os import path
 
