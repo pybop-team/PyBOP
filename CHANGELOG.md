@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#285](https://github.com/pybop-team/PyBOP/pull/285) - Drop support for Python 3.8.
 - [#275](https://github.com/pybop-team/PyBOP/pull/275) - Adds Maximum a Posteriori (MAP) cost function with corresponding tests.
 - [#273](https://github.com/pybop-team/PyBOP/pull/273) - Adds notebooks to nox examples session and updates CI workflows for change.
 - [#250](https://github.com/pybop-team/PyBOP/pull/250) - Adds DFN, MPM, MSMR models and moves multiple construction variables to BaseEChem. Adds exception catch on simulate & simulateS1.
