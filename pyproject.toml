@@ -24,7 +24,7 @@ classifiers = [
   "Intended Audience :: Science/Research",
   "Topic :: Scientific/Engineering",
 ]
-requires-python = ">3.8, <3.13"
+requires-python = ">=3.9, <3.13"
 dependencies = [
   "pybamm>=23.5",
   "numpy>=1.16",
