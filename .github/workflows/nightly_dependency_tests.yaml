@@ -1,4 +1,4 @@
-name: PyBOP
+name: Nightly dependencies@develop
 
 on:
   workflow_dispatch:
