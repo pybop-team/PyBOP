@@ -1,62 +1,34 @@
 <div align="center">
 
-  <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/Temp_Logo.png" alt="logo" width="400" height="auto" />
-  <h1>Python Battery Optimisation and Parameterisation</h1>
+  ![logo](https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/Temp_Logo.png)
+  # Python Battery Optimisation and Parameterisation
 
 
-  <a href="https://github.com/pybop-team/PyBOP/actions/workflows/scheduled_tests.yaml">
-    <img src="https://github.com/pybop-team/PyBOP/actions/workflows/scheduled_tests.yaml/badge.svg" alt="Scheduled" />
-  </a>
-  <a href="https://github.com/pybop-team/PyBOP/graphs/contributors">
-    <img src="https://img.shields.io/github/contributors/pybop-team/PyBOP" alt="Contributors" />
-  </a>
-  <a href="">
-    <img src="https://img.shields.io/github/last-commit/pybop-team/PyBOP/develop?color=purple" alt="Last Commit" />
-  </a>
-  <a href="">
-  <img src="https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fpybop-team%2FPyBOP%2Fdevelop%2Fpyproject.toml&label=Python
-  " alt="Python Versions" />
-  </a>
-  <a href="https://github.com/pybop-team/PyBOPe/network/members">
-    <img src="https://img.shields.io/github/forks/pybop-team/PyBOP?style=flat" alt="Forks" />
-  </a>
-  <a href="https://github.com/pybop-team/PyBOP/stargazers">
-    <img src="https://img.shields.io/github/stars/pybop-team/PyBOP?style=flat&color=gold" alt="Stars" />
-  </a>
-  <a href="https://codecov.io/gh/pybop-team/PyBOP">
-    <img src="https://codecov.io/gh/pybop-team/PyBOP/branch/develop/graph/badge.svg" alt="Codecov" />
-  </a>
-  <a href="https://github.com/pybop-team/PyBOP/issues/">
-    <img src="https://img.shields.io/github/issues/pybop-team/PyBOP" alt="Open Issues" />
-  </a>
-  <a href="https://github.com/pybop-team/PyBOP/blob/develop/LICENSE">
-    <img src="https://img.shields.io/github/license/pybop-team/PyBOP?color=blue" alt="License" />
-  </a>
-  <a href="https://colab.research.google.com/github/pybop-team/PyBOP/blob/develop/">
-    <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" />
-  </a>
-  <a href = "https://pybop-team.github.io/pybop-bench/">
-    <img alt="Static Badge" src="https://img.shields.io/badge/https%3A%2F%2Fpybop-team.github.io%2Fpybop-bench%2F?label=Benchmarks">
-  </a>
-  <a href = "https://github.com/pybop-team/PyBOP/releases">
-    <img src = "https://img.shields.io/github/v/release/pybop-team/PyBOP?color=gold"  alt = Releases />
-  </a>
+  [![Scheduled](https://github.com/pybop-team/PyBOP/actions/workflows/scheduled_tests.yaml/badge.svg)](https://github.com/pybop-team/PyBOP/actions/workflows/scheduled_tests.yaml)
+  [![Contributors](https://img.shields.io/github/contributors/pybop-team/PyBOP)](https://github.com/pybop-team/PyBOP/graphs/contributors)
+  [![Last Commit](https://img.shields.io/github/last-commit/pybop-team/PyBOP/develop?color=purple)](https://github.com/pybop-team/PyBOP/commits/develop)
+  [![Python Versions from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fpybop-team%2FPyBOP%2Fdevelop%2Fpyproject.toml&label=Python)](https://pypi.org/project/pybop/)
+  [![Forks](https://img.shields.io/github/forks/pybop-team/PyBOP?style=flat)](https://github.com/pybop-team/PyBOPe/network/members)
+  [![Stars](https://img.shields.io/github/stars/pybop-team/PyBOP?style=flat&color=gold)](https://github.com/pybop-team/PyBOP/stargazers)
+  [![Codecov](https://codecov.io/gh/pybop-team/PyBOP/branch/develop/graph/badge.svg)](https://codecov.io/gh/pybop-team/PyBOP)
+  [![Open Issues](https://img.shields.io/github/issues/pybop-team/PyBOP)](https://github.com/pybop-team/PyBOP/issues/)
+  [![License](https://img.shields.io/github/license/pybop-team/PyBOP?color=blue)](https://github.com/pybop-team/PyBOP/blob/develop/LICENSE)
+  [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/pybop-team/PyBOP/blob/develop/)
+  [![Static Badge](https://img.shields.io/badge/https%3A%2F%2Fpybop-team.github.io%2Fpybop-bench%2F?label=Benchmarks)](https://pybop-team.github.io/pybop-bench/)
+  [![Releases](https://img.shields.io/github/v/release/pybop-team/PyBOP?color=gold)](https://github.com/pybop-team/PyBOP/releases)
 
 </div>
 
-<!-- Software Specification -->
 ## PyBOP
 PyBOP provides a complete set of tools for parameterisation and optimisation of battery models, using both Bayesian and frequentist approaches, with [example workflows](https://github.com/pybop-team/PyBOP/tree/develop/examples/notebooks) to assist the user. PyBOP can be used to parameterise various battery models, including electrochemical and equivalent circuit models available in [PyBaMM](https://pybamm.org/). PyBOP prioritises clear and informative diagnostics for the user, while also allowing for advanced probabilistic methods.
 
-The diagram below shows the conceptual framework of PyBOP. PyBOP is currently under development, so users can expect the API to evolve with future releases.
+The diagram below shows the conceptual framework of PyBOP. This package is currently under development, so users can expect the API to evolve with future releases.
 
 <p align="center">
     <!-- <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/pybop_architecture.svg" alt="pybop_arch.svg" width="600" /> -->
-    <img src="assets/PyBOP-high-level.svg" alt="pybop_arch.svg" width="600" />
+    <img src="assets/PyBOP-high-level.svg" alt="pybop_arch.svg" width="700" />
 </p>
 
-
-<!-- Installation -->
 ## Installation
 
 Within your virtual environment, install PyBOP:
@@ -82,9 +54,9 @@ To check that PyBOP is installed correctly, run one of the examples in the follo
 ## Using PyBOP
 PyBOP has two intended uses:
 
-**1. Parameter estimation from battery test data**.
+1. Parameter estimation from battery test data.
 
-**2. Design optimisation under battery manufacturing/use constraints**.
+2. Design optimisation under battery manufacturing/use constraints.
 
 These include a wide variety of optimisation problems that require careful consideration due to the choice of battery model, data availability and/or the choice of design parameters.
 
@@ -122,7 +94,6 @@ The table below lists the currently supported [models](https://github.com/pybop-
 | | SciPy Minimize & Differential Evolution | |
 </p>
 
-<!-- Code of Conduct -->
 ## Code of Conduct
 
 PyBOP aims to foster a broad consortium of developers and users, building on and learning from the success of the [PyBaMM](https://pybamm.org/) community. Our values are:
@@ -133,8 +104,6 @@ PyBOP aims to foster a broad consortium of developers and users, building on and
 
 -   User-friendliness (putting user requirements first via user-assistance & workflows)
 
-
-<!-- Contributing -->
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
