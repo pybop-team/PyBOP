@@ -27,62 +27,14 @@ jobs:
           python -m pip install pre-commit
           pre-commit run ruff
 
-  update-dependency:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: Set up Python
-      uses: actions/setup-python@v3
-      with:
-        python-version: 3.12
-
-    # Update for pybamm develop
-    # with fix for pybtex optional dependency
-    - name: Update dependency version
-      run: |
-        python -m pip uninstall pybamm
-        python -m pip install pybtex
-        python -m pip install git+https://github.com/pybamm-team/PyBaMM.git@develop
-
-  integration_tests:
-    needs: [style, update-dependency]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-14]
-        python-version: ["3.12"]
-
-    name: Integration tests (${{ matrix.os }} / Python ${{ matrix.python-version }})
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip nox
-
-      - name: Integration tests
-        run: |
-          nox -s integration
-
-  unit_tests:
-    needs: [style, update-dependency]
+  Tests:
+    needs: style
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.9", "3.10", "3.11", "3.12"]
-        exclude: # We run the coverage tests on Ubuntu with Python 3.12
-          - os: ubuntu-latest
-            python-version: "3.12"
         # Include MacOS M-series Runners
         include:
           - os: macos-14
@@ -92,7 +44,7 @@ jobs:
           - os: macos-14
             python-version: "3.12"
 
-    name: Unit tests (${{ matrix.os }} / Python ${{ matrix.python-version }})
+    name: Test Suite (${{ matrix.os }} / Python ${{ matrix.python-version }})
 
     steps:
       - uses: actions/checkout@v4
@@ -102,65 +54,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip nox
+          python -m pip install -e .[all]
+          python -m pip uninstall pybamm
+          python -m pip install git+https://github.com/pybamm-team/PyBaMM.git@develop
+          python -m pip install pybtex
 
-      - name: Unit tests
+      - name: Run test suite
         run: |
-          nox -s unit
-
-  example_tests:
-    needs: [style, update-dependency]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-14]
-        python-version: ["3.12"]
-
-    name: Test examples (${{ matrix.os }} / Python ${{ matrix.python-version }})
-
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip nox
-
-      - name: Run examples
-        run: |
-          nox -s examples
-
-  # Runs only on Ubuntu with Python 3.12
-  check_coverage:
-    needs: [style, update-dependency]
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-    name: Coverage tests (ubuntu-latest / Python 3.12)
-
-    steps:
-      - name: Check out PyBOP repository
-        uses: actions/checkout@v4
-      - name: Set up Python 3.12
-        id: setup-python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
-          cache: 'pip'
-          cache-dependency-path: setup.py
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip nox
-      - name: Run coverage tests for Ubuntu with Python 3.12 and generate report
-        run: nox -s coverage
-
-      - name: Upload coverage report
-        uses: codecov/codecov-action@v4
-        with:
-          fail_ci_if_error: true
-          verbose: true
-          token: ${{ secrets.CODECOV_TOKEN }}
+          pytest --integration --unit --nbmake --examples
