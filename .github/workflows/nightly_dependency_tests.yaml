@@ -60,13 +60,16 @@ jobs:
           python -m pip install pybtex
 
       - name: Run unit tests
+        if: ${{ ! cancelled() }}
         run: |
           python -m pytest --unit
 
-      - name: Run integtration tests
+      - name: Run integration tests
+        if: ${{ ! cancelled() }}
         run: |
           python -m pytest --integration
 
       - name: Run examples tests
+        if: ${{ ! cancelled() }}
         run: |
           python -m pytest --nbmake --examples
