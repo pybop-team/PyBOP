@@ -2,7 +2,8 @@ name: Nightly dependencies@develop
 
 on:
   workflow_dispatch:
-  push:
+  schedule:
+    - cron: "0 23 * * *"
 
 concurrency:
   # github.workflow: name of the workflow, so that we don't cancel other workflows
