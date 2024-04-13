@@ -27,24 +27,28 @@ jobs:
           python -m pip install pre-commit
           pre-commit run ruff
 
-  update:
-    needs: style
+  update-dependency:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.12
-      - name: Update PyBaMM version to `develop`
-        uses: snok/install-poetry@v1
-      - name: Update version
-        run: |
-          poetry add pybamm@git+https://github.com/pybamm-team/pybamm.git#develop
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: 3.12
+
+    # Update for pybamm develop
+    # with fix for pybtex optional dependency
+    - name: Update dependency version
+      run: |
+        python -m pip uninstall pybamm
+        python -m pip install pybtex
+        python -m pip install git+https://github.com/pybamm-team/PyBaMM.git@develop
 
   integration_tests:
-    needs: [style, update]
+    needs: [style, update-dependency]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -69,7 +73,7 @@ jobs:
           nox -s integration
 
   unit_tests:
-    needs: style
+    needs: [style, update-dependency]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -105,7 +109,7 @@ jobs:
           nox -s unit
 
   example_tests:
-    needs: style
+    needs: [style, update-dependency]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -131,7 +135,7 @@ jobs:
 
   # Runs only on Ubuntu with Python 3.12
   check_coverage:
-    needs: style
+    needs: [style, update-dependency]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
