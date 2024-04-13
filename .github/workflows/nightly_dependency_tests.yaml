@@ -54,7 +54,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          python -m pip install -e .[all]
+          python -m pip install -e .[all,dev]
           python -m pip uninstall -y pybamm
           python -m pip install git+https://github.com/pybamm-team/PyBaMM.git@develop
           python -m pip install pybtex
