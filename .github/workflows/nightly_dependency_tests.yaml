@@ -55,7 +55,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install -e .[all]
-          python -m pip uninstall pybamm
+          python -m pip uninstall -y pybamm
           python -m pip install git+https://github.com/pybamm-team/PyBaMM.git@develop
           python -m pip install pybtex
 
