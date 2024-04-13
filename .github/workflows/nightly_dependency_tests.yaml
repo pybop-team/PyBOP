@@ -59,6 +59,14 @@ jobs:
           python -m pip install git+https://github.com/pybamm-team/PyBaMM.git@develop
           python -m pip install pybtex
 
-      - name: Run test suite
+      - name: Run unit tests
         run: |
-          pytest --integration --unit --nbmake --examples
+          python -m pytest --unit
+
+      - name: Run integtration tests
+        run: |
+          python -m pytest --integration
+
+      - name: Run examples tests
+        run: |
+          python -m pytest --nbmake --examples
