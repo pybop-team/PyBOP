@@ -8,53 +8,56 @@
     <img src="https://github.com/pybop-team/PyBOP/actions/workflows/scheduled_tests.yaml/badge.svg" alt="Scheduled" />
   </a>
   <a href="https://github.com/pybop-team/PyBOP/graphs/contributors">
-    <img src="https://img.shields.io/github/contributors/pybop-team/PyBOP" alt="contributors" />
+    <img src="https://img.shields.io/github/contributors/pybop-team/PyBOP" alt="Contributors" />
   </a>
   <a href="">
-    <img src="https://img.shields.io/github/last-commit/pybop-team/PyBOP/develop" alt="last update" />
+    <img src="https://img.shields.io/github/last-commit/pybop-team/PyBOP/develop?color=purple" alt="Last Commit" />
+  </a>
+  <a href="">
+  <img src="https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fpybop-team%2FPyBOP%2Fdevelop%2Fpyproject.toml&label=Python
+  " alt="Python Versions" />
   </a>
   <a href="https://github.com/pybop-team/PyBOPe/network/members">
-    <img src="https://img.shields.io/github/forks/pybop-team/PyBOP" alt="forks" />
+    <img src="https://img.shields.io/github/forks/pybop-team/PyBOP?style=flat" alt="Forks" />
   </a>
   <a href="https://github.com/pybop-team/PyBOP/stargazers">
-    <img src="https://img.shields.io/github/stars/pybop-team/PyBOP" alt="stars" />
+    <img src="https://img.shields.io/github/stars/pybop-team/PyBOP?style=flat&color=gold" alt="Stars" />
   </a>
   <a href="https://codecov.io/gh/pybop-team/PyBOP">
-    <img src="https://codecov.io/gh/pybop-team/PyBOP/branch/develop/graph/badge.svg" alt="codecov" />
+    <img src="https://codecov.io/gh/pybop-team/PyBOP/branch/develop/graph/badge.svg" alt="Codecov" />
   </a>
   <a href="https://github.com/pybop-team/PyBOP/issues/">
-    <img src="https://img.shields.io/github/issues/pybop-team/PyBOP" alt="open issues" />
+    <img src="https://img.shields.io/github/issues/pybop-team/PyBOP" alt="Open Issues" />
   </a>
   <a href="https://github.com/pybop-team/PyBOP/blob/develop/LICENSE">
-    <img src="https://img.shields.io/github/license/pybop-team/PyBOP" alt="license" />
+    <img src="https://img.shields.io/github/license/pybop-team/PyBOP?color=blue" alt="License" />
   </a>
   <a href="https://colab.research.google.com/github/pybop-team/PyBOP/blob/develop/">
-    <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="open In colab" />
+    <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open in Colab" />
   </a>
   <a href = "https://pybop-team.github.io/pybop-bench/">
     <img alt="Static Badge" src="https://img.shields.io/badge/https%3A%2F%2Fpybop-team.github.io%2Fpybop-bench%2F?label=Benchmarks">
   </a>
   <a href = "https://github.com/pybop-team/PyBOP/releases">
-    <img src = "https://img.shields.io/github/v/release/pybop-team/PyBOP?color=gold"  alt = releases />
+    <img src = "https://img.shields.io/github/v/release/pybop-team/PyBOP?color=gold"  alt = Releases />
   </a>
 
 </div>
 
 <!-- Software Specification -->
 ## PyBOP
-PyBOP offers a full range of tools for the parameterisation and optimisation of battery models, utilising both Bayesian and frequentist approaches with example workflows to assist the user. PyBOP can be used to parameterise various battery models, which include electrochemical and equivalent circuit models that are present in [PyBaMM](https://pybamm.org/). PyBOP prioritises clear and informative diagnostics for users, while also allowing for advanced probabilistic methods.
+PyBOP provides a complete set of tools for parameterisation and optimisation of battery models, using both Bayesian and frequentist approaches, with [example workflows](https://github.com/pybop-team/PyBOP/tree/develop/examples/notebooks) to assist the user. PyBOP can be used to parameterise various battery models, including electrochemical and equivalent circuit models available in [PyBaMM](https://pybamm.org/). PyBOP prioritises clear and informative diagnostics for the user, while also allowing for advanced probabilistic methods.
 
-The diagram below presents PyBOP's conceptual framework. The PyBOP software specification is available at [this link](https://github.com/pybop-team/software-spec). This product is currently undergoing development, and users can expect the API to evolve with future releases.
+The diagram below shows the conceptual framework of PyBOP. PyBOP is currently under development, so users can expect the API to evolve with future releases.
 
 <p align="center">
-    <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/pybop_architecture.svg" alt="pybop_arch.svg" width="600" />
+    <!-- <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/pybop_architecture.svg" alt="pybop_arch.svg" width="600" /> -->
+    <img src="assets/PyBOP-high-level.svg" alt="pybop_arch.svg" width="600" />
 </p>
 
-<!-- Getting Started -->
-## Getting Started
 
 <!-- Installation -->
-### Installation
+## Installation
 
 Within your virtual environment, install PyBOP:
 
@@ -68,59 +71,56 @@ To install the most recent state of PyBOP, install from the `develop` branch,
 pip install git+https://github.com/pybop-team/PyBOP.git@develop
 ```
 
-To alternatively install PyBOP from a local directory, use the following template, substituting in the relevant path:
+To install a previous version of PyBOP, use the following template and replace the version number:
 
 ```bash
-pip install -e "path/to/pybop"
+pip install pybop==v24.3
 ```
 
-To check whether PyBOP has been installed correctly, run one of the examples in the following section. For a development installation, please refer to the [contributing guide](https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md#Installation).
+To check that PyBOP is installed correctly, run one of the examples in the following section. For a development installation, see the [Contribution Guide](https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md#Installation). More installation information is available in our [documentation](https://pybop-docs.readthedocs.io/en/latest/installation.html).
 
-### Prerequisites
-To use and/or contribute to PyBOP, first install Python (3.9 — 3.12). On a Debian-based distribution, this looks like:
+## Using PyBOP
+PyBOP has two intended uses:
 
-```bash
-sudo apt update
-sudo apt install python3 python3-virtualenv
-```
+**1. Parameter estimation from battery test data**.
 
-For further information, please refer to the similar [installation instructions for PyBaMM](https://docs.pybamm.org/en/latest/source/user_guide/installation/GNU-linux.html).
+**2. Design optimisation under battery manufacturing/use constraints**.
 
-### Virtual Environments
-To create a virtual environment called `pybop-env` within your current directory:
+These include a wide variety of optimisation problems that require careful consideration due to the choice of battery model, data availability and/or the choice of design parameters.
 
-```bash
-virtualenv pybop-env
-```
+### Notebooks
+PyBOP comes with a number of [example notebooks](https://github.com/pybop-team/PyBOP/blob/develop/examples), which can be found in the examples folder. A few noteworthy ones are listed below.
 
-Activate the environment:
+- [Gravimetric design optimisation of a single particle model](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/spm_electrode_design.ipynb)
+- [Experimental GITT fitting of an ECM for an LG M50](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/LG_M50_ECM/1-single-pulse-circuit-model.ipynb)
+- [Parameter estimation for an equivalent circuit model ](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/equivalent_circuit_identification.ipynb)
+- [Parameter identification for a spatial pouch cell model](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/pouch_cell_identification.ipynb)
 
-```bash
-source pybop-env/bin/activate
-```
+### Scripts
+Additional script-based examples can be found in the [examples directory](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/). Some notable scripts are listed below.
 
-Later, you can deactivate the environment:
+- [Unscented Kalman filter parameter identification of a SPM](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_UKF.py)
+- [Import and export parameters using Faraday's BPX format](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/BPX_spm.py)
+- [Maximum a posteriori parameter identification of a SPM](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/BPX_spm.py)
+- [Gradient based parameter identification of a SPM](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_adam.py)
 
-```bash
-deactivate
-```
+### Supported Methods
+The table below lists the currently supported [models](https://github.com/pybop-team/PyBOP/tree/develop/pybop/models), [optimisers](https://github.com/pybop-team/PyBOP/tree/develop/pybop/models), and [cost functions](https://github.com/pybop-team/PyBOP/tree/develop/pybop/models) in PyBOP.
 
-### Using PyBOP
-PyBOP has two general types of intended use cases:
-1. parameter estimation from battery test data
-2. design optimisation subject to battery manufacturing/usage constraints
+<p align="center">
 
-These general cases encompass a wide variety of optimisation problems that require careful consideration based on the choice of battery model, the available data and/or the choice of design parameters.
-
-PyBOP comes with a number of [example notebooks and scripts](https://github.com/pybop-team/PyBOP/blob/develop/examples) which can be found in the examples folder.
-
-The [spm_pso.py](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_pso.py) script illustrates a straightforward example that starts by generating artificial data from a single particle model (SPM). The unknown parameter values are identified by employing a sum-of-squared errors cost function using the terminal voltage as the observed signal and a particle swarm optimisation algorithm. To run this example:
-
-```bash
-python examples/scripts/spm_pso.py
-```
-
-Alternatively, [spm_CMAES.ipynb](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/spm_CMAES.ipynb) provides an example in notebook form. This example estimates SPM parameters based on a sum-of-squared errors cost function and a CMA-ES optimiser.
+| Battery Models | Optimization Algorithms | Cost Functions |
+|-----------------------------------------------|-------------------------------------------------------------|------------------------------------------|
+| Single Particle Model (SPM) | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) | Sum of Squared Errors (SSE) |
+| Single Particle Model with Electrolyte (SPMe) | Particle Swarm Optimization (PSO) | Root Mean Squared Error (RMSE) |
+| Doyle-Fuller-Newman (DFN) | Adaptive Moment Estimation (Adam) | Maximum Likelihood Estimation (MLE) |
+| Many Particle Model (MPM) | Improved Resilient Backpropagation (iRProp-) | Maximum a Posteriori (MAP) |
+| Multi-Species Multi-Reactants (MSMR) | Exponential Natural Evolution Strategy (xNES) | Unscented Kalman Filter (UKF) |
+| Equivalent Circuit Models (ECM) | Separable Natural Evolution Strategy (sNES) | Gravimetric Energy Density |
+| | Gradient Descent | Volumetric Energy Density |
+| | Nelder-Mead | |
+| | SciPy Minimize & Differential Evolution | |
+</p>
 
 <!-- Code of Conduct -->
 ## Code of Conduct
@@ -150,11 +150,12 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="http://howey.eng.ox.ac.uk"><img src="https://avatars.githubusercontent.com/u/2247552?v=4?s=100" width="100px;" alt="David Howey"/><br /><sub><b>David Howey</b></sub></a><br /><a href="#ideas-davidhowey" title="Ideas, Planning, & Feedback">🤔</a> <a href="#mentoring-davidhowey" title="Mentoring">🧑‍🏫</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://www.rse.ox.ac.uk"><img src="https://avatars.githubusercontent.com/u/1148404?v=4?s=100" width="100px;" alt="Martin Robinson"/><br /><sub><b>Martin Robinson</b></sub></a><br /><a href="#ideas-martinjrobins" title="Ideas, Planning, & Feedback">🤔</a> <a href="#mentoring-martinjrobins" title="Mentoring">🧑‍🏫</a> <a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3Amartinjrobins" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=martinjrobins" title="Code">💻</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=martinjrobins" title="Tests">⚠️</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://www.brosaplanella.xyz"><img src="https://avatars.githubusercontent.com/u/28443643?v=4?s=100" width="100px;" alt="Ferran Brosa Planella"/><br /><sub><b>Ferran Brosa Planella</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/pulls?q=is%3Apr+reviewed-by%3Abrosaplanella" title="Reviewed Pull Requests">👀</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://faraday.ac.uk"><img src="https://avatars2.githubusercontent.com/u/42166506?v=4?s=100" width="100px;" alt="Faraday Institution"/><br /><sub><b>Faraday Institution</b></sub></a><br /><a href="#financial-FaradayInstitution" title="Financial">💵</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://www.ukri.org/"><img src="assets/UKRI.png" width="100px;" alt="UK Research and Innovation"/><br /><sub><b>UK Research and Innovation</b></sub></a><br /><a href="#financial-UKRI" title="Financial">💵</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/agriyakhetarpal"><img src="https://avatars.githubusercontent.com/u/74401230?v=4?s=100" width="100px;" alt="Agriya Khetarpal"/><br /><sub><b>Agriya Khetarpal</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=agriyakhetarpal" title="Code">💻</a> <a href="#infra-agriyakhetarpal" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
     </tr>
     <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/agriyakhetarpal"><img src="https://avatars.githubusercontent.com/u/74401230?v=4?s=100" width="100px;" alt="Agriya Khetarpal"/><br /><sub><b>Agriya Khetarpal</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=agriyakhetarpal" title="Code">💻</a> <a href="#infra-agriyakhetarpal" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://faraday.ac.uk"><img src="https://avatars2.githubusercontent.com/u/42166506?v=4?s=100" width="100px;" alt="Faraday Institution"/><br /><sub><b>Faraday Institution</b></sub></a><br /><a href="#financial-FaradayInstitution" title="Financial">💵</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.ukri.org/"><img src="assets/UKRI.png" width="100px;" alt="UK Research and Innovation"/><br /><sub><b>UK Research and Innovation</b></sub></a><br /><a href="#financial-UKRI" title="Financial">💵</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://heuintelligent.eu/"><img src="assets/logo-farger.svg" width="100px;" alt="IntelLiGent Project"/><br /><sub><b>IntelLiGent Project</b></sub></a><br /><a href="#financial-UKRI" title="Financial">💵</a></td>
     </tr>
   </tbody>
 </table>
@@ -164,4 +165,4 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
-This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specifications. Contributions of any kind are welcome! See `contributing.md` for ways to get started.
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specifications. Contributions of any kind are welcome! See `CONTRIBUTING.md` for ways to get started.
