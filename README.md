@@ -83,16 +83,17 @@ The table below lists the currently supported [models](https://github.com/pybop-
 
 | Battery Models | Optimization Algorithms | Cost Functions |
 |-----------------------------------------------|-------------------------------------------------------------|------------------------------------------|
-| Single Particle Model (SPM) | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) | Sum of Squared Errors (SSE) |
-| Single Particle Model with Electrolyte (SPMe) | Particle Swarm Optimization (PSO) | Root Mean Squared Error (RMSE) |
-| Doyle-Fuller-Newman (DFN) | Adaptive Moment Estimation (Adam) | Maximum Likelihood Estimation (MLE) |
-| Many Particle Model (MPM) | Improved Resilient Backpropagation (iRProp-) | Maximum a Posteriori (MAP) |
-| Multi-Species Multi-Reactants (MSMR) | Exponential Natural Evolution Strategy (xNES) | Unscented Kalman Filter (UKF) |
-| Equivalent Circuit Models (ECM) | Separable Natural Evolution Strategy (sNES) | Gravimetric Energy Density |
+| Single Particle Model (SPM) | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) | Sum of Squared Errors (SSE) <tr></tr> |
+| Single Particle Model with Electrolyte (SPMe) | Particle Swarm Optimization (PSO) | Root Mean Squared Error (RMSE) <tr></tr> |
+| Doyle-Fuller-Newman (DFN) | Adaptive Moment Estimation (Adam) | Maximum Likelihood Estimation (MLE) <tr></tr> |
+| Many Particle Model (MPM) | Improved Resilient Backpropagation (iRProp-) | Maximum a Posteriori (MAP) <tr></tr> |
+| Multi-Species Multi-Reactants (MSMR) | Exponential Natural Evolution Strategy (xNES) | Unscented Kalman Filter (UKF) <tr></tr> |
+| Equivalent Circuit Models (ECM) | Separable Natural Evolution Strategy (sNES) | Gravimetric Energy Density <tr></tr> |
 | | Gradient Descent | Volumetric Energy Density |
-| | Nelder-Mead | |
-| | SciPy Minimize & Differential Evolution | |
+| | Nelder-Mead | <tr></tr> |
+| | SciPy Minimize & Differential Evolution | <tr></tr> |
 </p>
+
 
 ## Code of Conduct
 
@@ -124,7 +125,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://faraday.ac.uk"><img src="https://avatars2.githubusercontent.com/u/42166506?v=4?s=100" width="100px;" alt="Faraday Institution"/><br /><sub><b>Faraday Institution</b></sub></a><br /><a href="#financial-FaradayInstitution" title="Financial">💵</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://www.ukri.org/"><img src="assets/UKRI.png" width="100px;" alt="UK Research and Innovation"/><br /><sub><b>UK Research and Innovation</b></sub></a><br /><a href="#financial-UKRI" title="Financial">💵</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://heuintelligent.eu/"><img src="assets/logo-farger.svg" width="100px;" alt="IntelLiGent Project"/><br /><sub><b>IntelLiGent Project</b></sub></a><br /><a href="#financial-UKRI" title="Financial">💵</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://heuintelligent.eu/"><img src="assets/logo-farger.svg" width="100px;" alt="EU IntelLiGent Project"/><br /><sub><b>EU IntelLiGent Project</b></sub></a><br /><a href="#financial-UKRI" title="Financial">💵</a></td>
     </tr>
   </tbody>
 </table>
