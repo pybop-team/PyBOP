@@ -89,7 +89,7 @@ The table below lists the currently supported [models](https://github.com/pybop-
 | Many Particle Model (MPM) | Improved Resilient Backpropagation (iRProp-) | Maximum a Posteriori (MAP) <tr></tr> |
 | Multi-Species Multi-Reactants (MSMR) | Exponential Natural Evolution Strategy (xNES) | Unscented Kalman Filter (UKF) <tr></tr> |
 | Equivalent Circuit Models (ECM) | Separable Natural Evolution Strategy (sNES) | Gravimetric Energy Density <tr></tr> |
-| | Gradient Descent | Volumetric Energy Density |
+| | Gradient Descent | Volumetric Energy Density <tr></tr> |
 | | Nelder-Mead | <tr></tr> |
 | | SciPy Minimize & Differential Evolution | <tr></tr> |
 </p>
