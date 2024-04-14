@@ -67,6 +67,7 @@ def notebooks(session):
         "pytest",
         "--notebooks",
         "--nbmake",
+        "--nbmake-timeout=600",
         "examples/",
     )
 
