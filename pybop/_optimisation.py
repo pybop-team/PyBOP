@@ -88,14 +88,12 @@ class Optimisation:
 
         if self.optimiser is None:
             self.optimiser = pybop.XNES
-        elif issubclass(self.optimiser, pints.Optimiser):
+        elif issubclass(self.optimiser, pybop.BasePintsOptimiser):
             pass
         else:
             self.pints = False
 
-            if issubclass(
-                self.optimiser, (pybop.SciPyMinimize, pybop.SciPyDifferentialEvolution)
-            ):
+            if issubclass(self.optimiser, pybop.BaseSciPyOptimiser):
                 if "maxiter" in optimiser_kwargs.keys():
                     self.set_max_iterations(optimiser_kwargs["maxiter"])
                 else:

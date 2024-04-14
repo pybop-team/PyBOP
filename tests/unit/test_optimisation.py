@@ -105,7 +105,7 @@ class TestOptimisation:
             assert optim.optimiser.bounds is None
         else:
             optim = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
-            assert optim.optimiser.boundaries is None
+            assert optim.optimiser._boundaries is None
 
         # Reset
         cost.bounds = bounds
@@ -119,7 +119,6 @@ class TestOptimisation:
         optim = pybop.Optimisation(
             cost=cost, optimiser=optimiser_class, maxiter=1, tol=1e-3
         )
-        assert not optim.optimiser.needs_sensitivities()
 
         # Check and update bounds
         assert optim.optimiser.bounds == cost.bounds
@@ -151,6 +150,14 @@ class TestOptimisation:
             optim.run(popsize=5)
             assert optim.optimiser.options["popsize"] == 5
         else:
+            # Check a method that uses gradient information
+            optim.run(method='L-BFGS-B', jac=True)
+            with pytest.raises(
+                ValueError, match="Expected the jac option to be either True, False or None.",
+            ):
+                optim.run(jac="Invalid string")
+            optim.run(method='Nelder-Mead', jac=False)
+
             with pytest.raises(
                 ValueError,
                 match="Additional keyword arguments cannot currently be passed to PINTS optimisers.",

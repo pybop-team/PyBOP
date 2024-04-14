@@ -6,6 +6,7 @@ from .base_optimiser import BaseOptimiser
 DEFAULT_SCIPY_MINIMIZE_OPTIONS = dict(
     bounds=None,
     method="Nelder-Mead",
+    jac=False,
     tol=1e-5,
     options=dict(),
 )
@@ -19,7 +20,58 @@ DEFAULT_SCIPY_DIFFERENTIAL_EVOLUTION_OPTIONS = dict(
 )
 
 
-class SciPyMinimize(BaseOptimiser):
+class BaseSciPyOptimiser(BaseOptimiser):
+    """
+    A base class for defining optimisation methods from the SciPy library.
+
+    Parameters
+    ----------
+    bounds : dict, sequence or scipy.optimize.Bounds, optional
+        Bounds for variables as supported by the selected method.
+    **optimiser_kwargs : optional
+        Valid SciPy option keys and their values.
+    """
+
+    def __init__(self, bounds=None, **optimiser_kwargs):
+        super().__init__(bounds)
+        self.update_options(**optimiser_kwargs)
+
+    def update_options(self, **optimiser_kwargs):
+        """
+        Update the optimiser options.
+        """
+        for key, value in optimiser_kwargs.items():
+            if key == "bounds":
+                self.bounds = value
+            else:
+                self.options[key] = value
+
+        # Set optimiser_specific options if required
+        self._update_optimiser_options(**optimiser_kwargs)
+
+    def _update_optimiser_options(self, **optimiser_kwargs):
+        """
+        Update optimiser-specific options. This function should be implemented in
+        child classes if required.
+        """
+        pass
+    
+    def name(self):
+        """
+        Provides the name of the optimisation strategy.
+
+        Overwrites the method in Base Optimiser with the method from the PINTS class
+        and therefore requires the instance of self to be passed as an input.
+
+        Returns
+        -------
+        str
+            The name given by PINTS.
+        """
+        return self._pints_class.name(self)
+
+
+class SciPyMinimize(BaseSciPyOptimiser):
     """
     Adapts SciPy's minimize function for use as an optimization strategy.
 
@@ -35,23 +87,20 @@ class SciPyMinimize(BaseOptimiser):
         use: `method='Nelder-Mead'`. Other options are: 'Nelder-Mead', 'Powell', 'CG', 'BFGS',
         'Newton-CG', 'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP', 'trust-constr', 'dogleg', 'trust-ncg',
         'trust-exact', 'trust-krylov'.
+
+    See Also
+    --------
+    scipy.optimize.minimize : The SciPy method this class is based on.
     """
 
     def __init__(self, bounds=None, **optimiser_kwargs):
-        super().__init__(bounds)
         self.options = DEFAULT_SCIPY_MINIMIZE_OPTIONS
-        self.update_options(**optimiser_kwargs)
+        super().__init__(bounds, **optimiser_kwargs)
 
-    def update_options(self, **optimiser_kwargs):
+    def _update_optimiser_options(self, **optimiser_kwargs):
         """
-        Update the optimiser options.
+        Update the optimiser-specific options.
         """
-        for key, value in optimiser_kwargs.items():
-            if key == "bounds":
-                self.bounds = value
-            else:
-                self.options[key] = value
-
         # Overwrite the value of maxiter in the options dictionary
         if "maxiter" in optimiser_kwargs.keys():
             self.options["options"]["maxiter"] = self.options["maxiter"]
@@ -59,7 +108,7 @@ class SciPyMinimize(BaseOptimiser):
 
     def _runoptimise(self, cost_function, x0, **optimiser_kwargs):
         """
-        Executes the optimization process using SciPy's minimize function.
+        Executes the optimisation process using SciPy's minimize function.
 
         Parameters
         ----------
@@ -87,12 +136,18 @@ class SciPyMinimize(BaseOptimiser):
         if np.isinf(self.cost0):
             raise Exception("The initial parameter values return an infinite cost.")
 
-        def cost_wrapper(x):
-            cost = cost_function(x) / self.cost0
-            if np.isinf(cost):
-                self.inf_count += 1
-                cost = 1 + 0.9**self.inf_count  # for fake finite gradient
-            return cost
+        if not self.options["jac"]:
+            def cost_wrapper(x):
+                cost = cost_function(x) / self.cost0
+                if np.isinf(cost):
+                    self.inf_count += 1
+                    cost = 1 + 0.9**self.inf_count  # for fake finite gradient
+                return cost
+        elif self.options["jac"] is True:
+            def cost_wrapper(x):
+                return cost_function.evaluateS1(x)
+        else:
+            raise ValueError("Expected the jac option to be either True, False or None.")
 
         # Reformat bounds
         if isinstance(self.bounds, dict):
@@ -107,6 +162,7 @@ class SciPyMinimize(BaseOptimiser):
             cost_wrapper,
             x0,
             method=self.options["method"],
+            jac=self.options["jac"],
             bounds=bounds,
             tol=self.options["tol"],
             options=self.options["options"],
@@ -114,17 +170,6 @@ class SciPyMinimize(BaseOptimiser):
         )
 
         return result
-
-    def needs_sensitivities(self):
-        """
-        Determines if the optimization algorithm requires gradient information.
-
-        Returns
-        -------
-        bool
-            False, indicating that gradient information is not required.
-        """
-        return False
 
     def name(self):
         """
@@ -138,7 +183,7 @@ class SciPyMinimize(BaseOptimiser):
         return "SciPyMinimize"
 
 
-class SciPyDifferentialEvolution(BaseOptimiser):
+class SciPyDifferentialEvolution(BaseSciPyOptimiser):
     """
     Adapts SciPy's differential_evolution function for global optimization.
 
@@ -155,23 +200,20 @@ class SciPyDifferentialEvolution(BaseOptimiser):
         Maximum number of iterations to perform. Defaults to 1000.
     popsize : int, optional
         The number of individuals in the population. Defaults to 15.
+
+    See Also
+    --------
+    scipy.optimize.differential_evolution : The SciPy method this class is based on.
     """
 
     def __init__(self, bounds, **optimiser_kwargs):
-        super().__init__(bounds)
         self.options = DEFAULT_SCIPY_DIFFERENTIAL_EVOLUTION_OPTIONS
-        self.update_options(**optimiser_kwargs)
+        super().__init__(bounds, **optimiser_kwargs)
 
-    def update_options(self, **optimiser_kwargs):
+    def _update_optimiser_options(self, **optimiser_kwargs):
         """
-        Update the optimiser options.
+        Update the optimiser-specific options.
         """
-        for key, value in optimiser_kwargs.items():
-            if key == "bounds":
-                self.bounds = value
-            else:
-                self.options[key] = value
-
         if self.bounds is None:
             raise ValueError("Bounds must be specified for differential_evolution.")
 
@@ -245,17 +287,6 @@ class SciPyDifferentialEvolution(BaseOptimiser):
             if population_size < 1:
                 raise ValueError("Population size must be at least 1.")
             self.options["popsize"] = population_size
-
-    def needs_sensitivities(self):
-        """
-        Determines if the optimization algorithm requires gradient information.
-
-        Returns
-        -------
-        bool
-            False, indicating that gradient information is not required for differential evolution.
-        """
-        return False
 
     def name(self):
         """

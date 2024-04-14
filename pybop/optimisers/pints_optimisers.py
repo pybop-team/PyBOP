@@ -1,8 +1,55 @@
 import numpy as np
 import pints
 
+from .base_optimiser import BaseOptimiser
 
-class GradientDescent(pints.GradientDescent):
+
+
+class BasePintsOptimiser(BaseOptimiser):
+    """
+    A base class for defining optimisation methods from the PINTS library.
+
+    Parameters
+    ----------
+    x0 : array_like
+        Initial position from which optimization will start.
+    sigma0 : float, optional
+        Initial step size or standard deviation depending on the optimiser (default is 0.1).
+    bounds : dict, optional
+        A dictionary with 'lower' and 'upper' keys containing arrays for lower and upper
+        bounds on the parameters.
+    """
+
+    def __init__(self, pints_class, x0, sigma0, bounds=None):
+        super().__init__(bounds)
+
+        self._pints_class = pints_class
+        if bounds is not None:
+            boundaries = pints.RectangularBoundaries(
+                bounds["lower"], bounds["upper"]
+            )
+        else:
+            boundaries = None
+        self._boundaries = boundaries
+
+        self._pints_class.__init__(self, x0, sigma0, self._boundaries)
+    
+    def name(self):
+        """
+        Provides the name of the optimisation strategy.
+
+        Overwrites the method in Base Optimiser with the method from the PINTS class
+        and therefore requires the instance of self to be passed as an input.
+
+        Returns
+        -------
+        str
+            The name given by PINTS.
+        """
+        return self._pints_class.name(self)
+
+
+class GradientDescent(BasePintsOptimiser, pints.GradientDescent):
     """
     Implements a simple gradient descent optimization algorithm.
 
@@ -27,12 +74,11 @@ class GradientDescent(pints.GradientDescent):
     def __init__(self, x0, sigma0=0.1, bounds=None):
         if bounds is not None:
             print("NOTE: Boundaries ignored by Gradient Descent")
+        bounds = None  # Bounds ignored in pints.GradDesc
+        BasePintsOptimiser.__init__(self, pints.GradientDescent, x0, sigma0, bounds)
 
-        self.boundaries = None  # Bounds ignored in pints.GradDesc
-        super().__init__(x0, sigma0, self.boundaries)
 
-
-class Adam(pints.Adam):
+class Adam(BasePintsOptimiser, pints.Adam):
     """
     Implements the Adam optimization algorithm.
 
@@ -57,12 +103,11 @@ class Adam(pints.Adam):
     def __init__(self, x0, sigma0=0.1, bounds=None):
         if bounds is not None:
             print("NOTE: Boundaries ignored by Adam")
+        bounds = None  # Bounds ignored in pints.Adam
+        BasePintsOptimiser.__init__(self, pints.Adam, x0, sigma0, bounds)
 
-        self.boundaries = None  # Bounds ignored in pints.Adam
-        super().__init__(x0, sigma0, self.boundaries)
 
-
-class IRPropMin(pints.IRPropMin):
+class IRPropMin(BasePintsOptimiser, pints.IRPropMin):
     """
     Implements the iRpropMin optimization algorithm.
 
@@ -86,16 +131,10 @@ class IRPropMin(pints.IRPropMin):
     """
 
     def __init__(self, x0, sigma0=0.1, bounds=None):
-        if bounds is not None:
-            self.boundaries = pints.RectangularBoundaries(
-                bounds["lower"], bounds["upper"]
-            )
-        else:
-            self.boundaries = None
-        super().__init__(x0, sigma0, self.boundaries)
+        BasePintsOptimiser.__init__(self, pints.IRPropMin, x0, sigma0, bounds)
 
 
-class PSO(pints.PSO):
+class PSO(BasePintsOptimiser, pints.PSO):
     """
     Implements a particle swarm optimization (PSO) algorithm.
 
@@ -119,22 +158,16 @@ class PSO(pints.PSO):
     """
 
     def __init__(self, x0, sigma0=0.1, bounds=None):
-        if bounds is None:
-            self.boundaries = None
-        elif not all(
+        if bounds is not None and not all(
             np.isfinite(value) for sublist in bounds.values() for value in sublist
         ):
             raise ValueError(
                 "Either all bounds or no bounds must be set for Pints PSO."
             )
-        else:
-            self.boundaries = pints.RectangularBoundaries(
-                bounds["lower"], bounds["upper"]
-            )
-        super().__init__(x0, sigma0, self.boundaries)
+        BasePintsOptimiser.__init__(self, pints.PSO, x0, sigma0, bounds)
 
 
-class SNES(pints.SNES):
+class SNES(BasePintsOptimiser, pints.SNES):
     """
     Implements the stochastic natural evolution strategy (SNES) optimization algorithm.
 
@@ -158,16 +191,10 @@ class SNES(pints.SNES):
     """
 
     def __init__(self, x0, sigma0=0.1, bounds=None):
-        if bounds is not None:
-            self.boundaries = pints.RectangularBoundaries(
-                bounds["lower"], bounds["upper"]
-            )
-        else:
-            self.boundaries = None
-        super().__init__(x0, sigma0, self.boundaries)
+        BasePintsOptimiser.__init__(self, pints.SNES, x0, sigma0, bounds)
 
 
-class XNES(pints.XNES):
+class XNES(BasePintsOptimiser, pints.XNES):
     """
     Implements the Exponential Natural Evolution Strategy (XNES) optimiser from PINTS.
 
@@ -191,16 +218,10 @@ class XNES(pints.XNES):
     """
 
     def __init__(self, x0, sigma0=0.1, bounds=None):
-        if bounds is not None:
-            self.boundaries = pints.RectangularBoundaries(
-                bounds["lower"], bounds["upper"]
-            )
-        else:
-            self.boundaries = None
-        super().__init__(x0, sigma0, self.boundaries)
+        BasePintsOptimiser.__init__(self, pints.XNES, x0, sigma0, bounds)
 
 
-class NelderMead(pints.NelderMead):
+class NelderMead(BasePintsOptimiser, pints.NelderMead):
     """
     Implements the Nelder-Mead downhill simplex method from PINTS.
 
@@ -226,12 +247,11 @@ class NelderMead(pints.NelderMead):
     def __init__(self, x0, sigma0=0.1, bounds=None):
         if bounds is not None:
             print("NOTE: Boundaries ignored by NelderMead")
+        bounds = None  # Bounds ignored in pints.NelderMead
+        BasePintsOptimiser.__init__(self, pints.NelderMead, x0, sigma0, bounds)
 
-        self.boundaries = None  # Bounds ignored in pints.NelderMead
-        super().__init__(x0, sigma0, self.boundaries)
 
-
-class CMAES(pints.CMAES):
+class CMAES(BasePintsOptimiser, pints.CMAES):
     """
     Adapter for the Covariance Matrix Adaptation Evolution Strategy (CMA-ES) optimiser in PINTS.
 
@@ -260,11 +280,4 @@ class CMAES(pints.CMAES):
                 "CMAES requires optimisation of >= 2 parameters at once. "
                 + "Please choose another optimiser."
             )
-        if bounds is not None:
-            self.boundaries = pints.RectangularBoundaries(
-                bounds["lower"], bounds["upper"]
-            )
-        else:
-            self.boundaries = None
-
-        super().__init__(x0, sigma0, self.boundaries)
+        BasePintsOptimiser.__init__(self, pints.CMAES, x0, sigma0, bounds)

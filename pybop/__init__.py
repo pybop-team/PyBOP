@@ -82,8 +82,13 @@ from ._optimisation import Optimisation
 # Optimiser class
 #
 from .optimisers.base_optimiser import BaseOptimiser
-from .optimisers.scipy_optimisers import SciPyMinimize, SciPyDifferentialEvolution
+from .optimisers.scipy_optimisers import (
+    BaseSciPyOptimiser,
+    SciPyMinimize,
+    SciPyDifferentialEvolution
+)
 from .optimisers.pints_optimisers import (
+    BasePintsOptimiser,
     GradientDescent,
     Adam,
     CMAES,

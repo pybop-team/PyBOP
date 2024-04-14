@@ -19,7 +19,6 @@ class BaseOptimiser:
         """
         self.bounds = bounds
         self._max_iterations = None
-        pass
 
     def optimise(self, cost_function, x0=None, **optimiser_kwargs):
         """
@@ -66,7 +65,7 @@ class BaseOptimiser:
 
     def name(self):
         """
-        Returns the name of the optimiser.
+        Returns the name of the optimiser, to be overwritten by child classes.
 
         Returns
         -------
