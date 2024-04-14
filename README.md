@@ -65,7 +65,7 @@ PyBOP comes with a number of [example notebooks](https://github.com/pybop-team/P
 
 - [Gravimetric design optimisation of a single particle model](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/spm_electrode_design.ipynb)
 - [Experimental GITT fitting of an ECM for an LG M50](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/LG_M50_ECM/1-single-pulse-circuit-model.ipynb)
-- [Parameter estimation for an equivalent circuit model ](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/equivalent_circuit_identification.ipynb)
+- [Compare PyBOP optimisers for parameter identification](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/multi_optimiser_identification.ipynb)
 - [Parameter identification for a spatial pouch cell model](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/pouch_cell_identification.ipynb)
 
 ### Scripts
@@ -92,6 +92,7 @@ The table below lists the currently supported [models](https://github.com/pybop-
 | | Gradient Descent | Volumetric Energy Density <tr></tr> |
 | | Nelder-Mead | <tr></tr> |
 | | SciPy Minimize & Differential Evolution | <tr></tr> |
+
 </p>
 
 
