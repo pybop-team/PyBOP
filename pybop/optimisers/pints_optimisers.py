@@ -4,7 +4,6 @@ import pints
 from .base_optimiser import BaseOptimiser
 
 
-
 class BasePintsOptimiser(BaseOptimiser):
     """
     A base class for defining optimisation methods from the PINTS library.
@@ -25,15 +24,13 @@ class BasePintsOptimiser(BaseOptimiser):
 
         self._pints_class = pints_class
         if bounds is not None:
-            boundaries = pints.RectangularBoundaries(
-                bounds["lower"], bounds["upper"]
-            )
+            boundaries = pints.RectangularBoundaries(bounds["lower"], bounds["upper"])
         else:
             boundaries = None
         self._boundaries = boundaries
 
         self._pints_class.__init__(self, x0, sigma0, self._boundaries)
-    
+
     def name(self):
         """
         Provides the name of the optimisation strategy.

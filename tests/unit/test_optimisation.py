@@ -151,12 +151,13 @@ class TestOptimisation:
             assert optim.optimiser.options["popsize"] == 5
         else:
             # Check a method that uses gradient information
-            optim.run(method='L-BFGS-B', jac=True)
+            optim.run(method="L-BFGS-B", jac=True)
             with pytest.raises(
-                ValueError, match="Expected the jac option to be either True, False or None.",
+                ValueError,
+                match="Expected the jac option to be either True, False or None.",
             ):
                 optim.run(jac="Invalid string")
-            optim.run(method='Nelder-Mead', jac=False)
+            optim.run(method="Nelder-Mead", jac=False)
 
             with pytest.raises(
                 ValueError,

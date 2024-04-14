@@ -55,7 +55,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
         child classes if required.
         """
         pass
-    
+
     def name(self):
         """
         Provides the name of the optimisation strategy.
@@ -137,6 +137,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
             raise Exception("The initial parameter values return an infinite cost.")
 
         if not self.options["jac"]:
+
             def cost_wrapper(x):
                 cost = cost_function(x) / self.cost0
                 if np.isinf(cost):
@@ -144,10 +145,13 @@ class SciPyMinimize(BaseSciPyOptimiser):
                     cost = 1 + 0.9**self.inf_count  # for fake finite gradient
                 return cost
         elif self.options["jac"] is True:
+
             def cost_wrapper(x):
                 return cost_function.evaluateS1(x)
         else:
-            raise ValueError("Expected the jac option to be either True, False or None.")
+            raise ValueError(
+                "Expected the jac option to be either True, False or None."
+            )
 
         # Reformat bounds
         if isinstance(self.bounds, dict):
