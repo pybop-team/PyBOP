@@ -1,6 +1,6 @@
 import numpy as np
 
-from pybop._problem import BaseProblem
+from pybop import BaseProblem
 
 
 class StandaloneProblem(BaseProblem):

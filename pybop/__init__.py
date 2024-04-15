@@ -31,7 +31,9 @@ from ._utils import is_numeric
 # Cost class
 # Problem class
 #
-from ._problem import BaseProblem, FittingProblem, DesignProblem
+from .problems.base_problem import BaseProblem
+from .problems.fitting_problem import FittingProblem
+from .problems.design_problem import DesignProblem
 
 #
 # Cost function class
