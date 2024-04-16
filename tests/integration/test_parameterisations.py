@@ -111,33 +111,36 @@ class TestModelParameterisation:
         parameterisation = pybop.Optimisation(
             cost=spm_costs, optimiser=optimiser, sigma0=0.05
         )
-        parameterisation.set_max_unchanged_iterations(iterations=35, threshold=5e-4)
-        parameterisation.set_max_iterations(125)
+        if issubclass(optimiser, pybop.BasePintsOptimiser):
+            parameterisation.optimiser.set_max_unchanged_iterations(
+                iterations=35, threshold=5e-4
+            )
+        parameterisation.optimiser.set_max_iterations(125)
 
         initial_cost = parameterisation.cost(spm_costs.x0)
 
         if optimiser in [pybop.CMAES]:
-            parameterisation.set_f_guessed_tracking(True)
+            parameterisation.optimiser.set_f_guessed_tracking(True)
             parameterisation.cost.problem.model.allow_infeasible_solutions = False
-            assert parameterisation._use_f_guessed is True
-            parameterisation.set_max_iterations(1)
+            assert parameterisation.optimiser._use_f_guessed is True
+            parameterisation.optimiser.set_max_iterations(1)
             x, final_cost = parameterisation.run()
 
-            parameterisation.set_f_guessed_tracking(False)
-            parameterisation.set_max_iterations(125)
+            parameterisation.optimiser.set_f_guessed_tracking(False)
+            parameterisation.optimiser.set_max_iterations(125)
 
             x, final_cost = parameterisation.run()
-            assert parameterisation._max_iterations == 125
+            assert parameterisation.optimiser._max_iterations == 125
 
         elif optimiser in [pybop.GradientDescent]:
             if isinstance(
                 spm_costs, (pybop.GaussianLogLikelihoodKnownSigma, pybop.MAP)
             ):
                 parameterisation.optimiser.set_learning_rate(1.8e-5)
-                parameterisation.set_min_iterations(150)
+                parameterisation.optimiser.set_min_iterations(150)
             else:
                 parameterisation.optimiser.set_learning_rate(0.02)
-            parameterisation.set_max_iterations(150)
+            parameterisation.optimiser.set_max_iterations(150)
             x, final_cost = parameterisation.run()
 
         elif optimiser in [pybop.SciPyDifferentialEvolution]:
@@ -213,8 +216,11 @@ class TestModelParameterisation:
         parameterisation = pybop.Optimisation(
             cost=spm_two_signal_cost, optimiser=multi_optimiser, sigma0=0.03
         )
-        parameterisation.set_max_unchanged_iterations(iterations=35, threshold=5e-4)
-        parameterisation.set_max_iterations(125)
+        if issubclass(multi_optimiser, pybop.BasePintsOptimiser):
+            parameterisation.optimiser.set_max_unchanged_iterations(
+                iterations=35, threshold=5e-4
+            )
+        parameterisation.optimiser.set_max_iterations(125)
 
         initial_cost = parameterisation.cost(spm_two_signal_cost.x0)
 

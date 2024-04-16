@@ -15,7 +15,7 @@ codesigned binaries and source distributions via `sigstore-python`.
 
 ## Bug Fixes
 
-- [#236](https://github.com/pybop-team/PyBOP/issues/236) - Allows passing of keyword arguments to SciPy optimisers and fixes setting of max_iterations.
+- [#236](https://github.com/pybop-team/PyBOP/issues/236) - Allows passing of keyword arguments to optimisers and fixes setting of max_iterations.
 - [#270](https://github.com/pybop-team/PyBOP/pull/270) - Updates PR template.
 - [#91](https://github.com/pybop-team/PyBOP/issues/91) - Adds a check on the number of parameters for CMAES and makes XNES the default optimiser.
 

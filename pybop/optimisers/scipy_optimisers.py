@@ -14,7 +14,6 @@ DEFAULT_SCIPY_DIFFERENTIAL_EVOLUTION_OPTIONS = dict(
     bounds=None,
     strategy="best1bin",
     popsize=15,
-    maxiter=1000,
     tol=1e-5,
     options=dict(),
 )
@@ -26,49 +25,68 @@ class BaseSciPyOptimiser(BaseOptimiser):
 
     Parameters
     ----------
+    x0 : array_like
+        Initial position from which optimisation will start.
+    sigma0 : float, optional
+        Initial step size or standard deviation depending on the optimiser.
     bounds : dict, sequence or scipy.optimize.Bounds, optional
         Bounds for variables as supported by the selected method.
     **optimiser_kwargs : optional
         Valid SciPy option keys and their values.
     """
 
-    def __init__(self, bounds=None, **optimiser_kwargs):
-        super().__init__(bounds)
+    def __init__(self, x0=None, sigma0=None, bounds=None, **optimiser_kwargs):
+        super().__init__(x0, sigma0, bounds)
         self.update_options(**optimiser_kwargs)
 
     def update_options(self, **optimiser_kwargs):
         """
         Update the optimiser options.
+
+        Parameters
+        ----------
+        **optimiser_kwargs : optional
+            Valid SciPy option keys and their values.
         """
+        # Use the first available value for maxiter and remove others
+        if "max_iterations" in optimiser_kwargs.keys():
+            optimiser_kwargs["maxiter"] = optimiser_kwargs.pop("max_iterations")
+        if "options" in optimiser_kwargs.keys():
+            if "maxiter" in optimiser_kwargs.keys():
+                optimiser_kwargs["options"].pop("maxiter", None)
+            elif "maxiter" in optimiser_kwargs["options"].keys():
+                optimiser_kwargs["maxiter"] = optimiser_kwargs["options"].pop("maxiter")
+
         for key, value in optimiser_kwargs.items():
             if key == "bounds":
                 self.bounds = value
+            elif key == "maxiter":
+                self.set_max_iterations(value)
             else:
                 self.options[key] = value
 
-        # Set optimiser_specific options if required
-        self._update_optimiser_options(**optimiser_kwargs)
-
-    def _update_optimiser_options(self, **optimiser_kwargs):
+    def _run(self, **optimiser_kwargs):
         """
-        Update optimiser-specific options. This function should be implemented in
-        child classes if required.
-        """
-        pass
+        Internal method to run the optimization using a PyBOP optimiser.
 
-    def name(self):
-        """
-        Provides the name of the optimisation strategy.
-
-        Overwrites the method in Base Optimiser with the method from the PINTS class
-        and therefore requires the instance of self to be passed as an input.
+        Parameters
+        ----------
+        **optimiser_kwargs : optional
+            Valid SciPy option keys and their values.
 
         Returns
         -------
-        str
-            The name given by PINTS.
+        x : numpy.ndarray
+            The best parameter set found by the optimization.
+        final_cost : float
+            The final cost associated with the best parameters.
         """
-        return self._pints_class.name(self)
+        self.update_options(**optimiser_kwargs)
+
+        result = self._run_optimiser()
+        self._iterations = result.nit
+
+        return result.x, self._cost_function(result.x)
 
 
 class SciPyMinimize(BaseSciPyOptimiser):
@@ -80,6 +98,10 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
     Parameters
     ----------
+    x0 : array_like
+        Initial position from which optimisation will start.
+    sigma0 : float, optional
+        Initial step size or standard deviation depending on the optimiser (default: None).
     bounds : dict, sequence or scipy.optimize.Bounds, optional
         Bounds for variables as supported by the selected method.
     **optimiser_kwargs : optional
@@ -93,29 +115,18 @@ class SciPyMinimize(BaseSciPyOptimiser):
     scipy.optimize.minimize : The SciPy method this class is based on.
     """
 
-    def __init__(self, bounds=None, **optimiser_kwargs):
+    def __init__(self, x0=None, sigma0=None, bounds=None, **optimiser_kwargs):
         self.options = DEFAULT_SCIPY_MINIMIZE_OPTIONS
-        super().__init__(bounds, **optimiser_kwargs)
+        super().__init__(x0, sigma0, bounds, **optimiser_kwargs)
 
-    def _update_optimiser_options(self, **optimiser_kwargs):
-        """
-        Update the optimiser-specific options.
-        """
-        # Overwrite the value of maxiter in the options dictionary
-        if "maxiter" in optimiser_kwargs.keys():
-            self.options["options"]["maxiter"] = self.options["maxiter"]
-            del self.options["maxiter"]
-
-    def _runoptimise(self, cost_function, x0, **optimiser_kwargs):
+    def _run_optimiser(self):
         """
         Executes the optimisation process using SciPy's minimize function.
 
         Parameters
         ----------
-        cost_function : callable
-            The objective function to minimize.
-        x0 : array_like
-            Initial guess for the parameters.
+        **optimiser_kwargs : optional
+            Valid SciPy option keys and their values.
 
         Returns
         -------
@@ -123,23 +134,22 @@ class SciPyMinimize(BaseSciPyOptimiser):
             A tuple (x, final_cost) containing the optimized parameters and the value of `cost_function`
             at the optimum.
         """
-        self.update_options(**optimiser_kwargs)
-        self.log = [[x0]]
+        self.log = [[self.x0]]
 
         # Add callback storing history of parameter values
         def callback(x):
             self.log.append([x])
 
         # Scale the cost function and eliminate nan values
-        self.cost0 = cost_function(x0)
+        self._cost0 = self._cost_function(self.x0)
         self.inf_count = 0
-        if np.isinf(self.cost0):
+        if np.isinf(self._cost0):
             raise Exception("The initial parameter values return an infinite cost.")
 
         if not self.options["jac"]:
 
             def cost_wrapper(x):
-                cost = cost_function(x) / self.cost0
+                cost = self._cost_function(x) / self._cost0
                 if np.isinf(cost):
                     self.inf_count += 1
                     cost = 1 + 0.9**self.inf_count  # for fake finite gradient
@@ -147,7 +157,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         elif self.options["jac"] is True:
 
             def cost_wrapper(x):
-                return cost_function.evaluateS1(x)
+                return self._cost_function.evaluateS1(x)
         else:
             raise ValueError(
                 "Expected the jac option to be either True, False or None."
@@ -162,9 +172,12 @@ class SciPyMinimize(BaseSciPyOptimiser):
         else:
             bounds = self.bounds
 
+        # Retrieve maximum iterations
+        self.options["options"]["maxiter"] = self._max_iterations
+
         result = minimize(
             cost_wrapper,
-            x0,
+            self.x0,
             method=self.options["method"],
             jac=self.options["jac"],
             bounds=bounds,
@@ -198,60 +211,55 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
     ----------
     bounds : dict, sequence or scipy.optimize.Bounds
         Bounds for variables. Must be provided as it is essential for differential evolution.
-    strategy : str, optional
-        The differential evolution strategy to use. Defaults to 'best1bin'.
-    maxiter : int, optional
-        Maximum number of iterations to perform. Defaults to 1000.
-    popsize : int, optional
-        The number of individuals in the population. Defaults to 15.
+    **optimiser_kwargs : optional
+        Valid SciPy option keys and their values, such as:
+        strategy : str, optional
+            The differential evolution strategy to use. Defaults to 'best1bin'.
+        maxiter : int, optional
+            Maximum number of iterations to perform. Defaults to 1000.
+        popsize : int, optional
+            The number of individuals in the population. Defaults to 15.
 
     See Also
     --------
     scipy.optimize.differential_evolution : The SciPy method this class is based on.
     """
 
-    def __init__(self, bounds, **optimiser_kwargs):
+    def __init__(self, x0=None, sigma0=None, bounds=None, **optimiser_kwargs):
         self.options = DEFAULT_SCIPY_DIFFERENTIAL_EVOLUTION_OPTIONS
-        super().__init__(bounds, **optimiser_kwargs)
+        super().__init__(x0, sigma0, bounds, **optimiser_kwargs)
 
-    def _update_optimiser_options(self, **optimiser_kwargs):
-        """
-        Update the optimiser-specific options.
-        """
-        if self.bounds is None:
-            raise ValueError("Bounds must be specified for differential_evolution.")
-
-    def _runoptimise(self, cost_function, x0=None, **optimiser_kwargs):
+    def _run_optimiser(self):
         """
         Executes the optimization process using SciPy's differential_evolution function.
 
         Parameters
         ----------
-        cost_function : callable
-            The objective function to minimize.
-        x0 : array_like, optional
-            Ignored parameter, provided for API consistency.
+        **optimiser_kwargs : optional
+            Valid SciPy Differential Evolution option keys and their values.
 
         Returns
         -------
         tuple
             A tuple (x, final_cost) containing the optimized parameters and the value of
-            ``cost_function`` at the optimum.
+            the cost function at the optimum.
         """
-        self.update_options(**optimiser_kwargs)
         self.log = []
 
-        if x0 is not None:
+        if self.x0 is not None:
             print(
                 "Ignoring x0. Initial conditions are not used for differential_evolution."
             )
+        self.x0 = None
 
         # Add callback storing history of parameter values
         def callback(x, convergence):
             self.log.append([x])
 
         # Reformat bounds
-        if isinstance(self.bounds, dict):
+        if self.bounds is None:
+            raise ValueError("Bounds must be specified for differential_evolution.")
+        elif isinstance(self.bounds, dict):
             if not all(
                 np.isfinite(value)
                 for sublist in self.bounds.values()
@@ -267,8 +275,11 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
                 raise ValueError("Bounds must be specified for differential_evolution.")
             bounds = self.bounds
 
+        # Retrieve maximum iterations
+        self.options["maxiter"] = self._max_iterations
+
         result = differential_evolution(
-            cost_function,
+            self._cost_function,
             bounds,
             strategy=self.options["strategy"],
             maxiter=self.options["maxiter"],
