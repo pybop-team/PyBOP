@@ -50,10 +50,9 @@ cost = pybop.GravimetricEnergyDensity(problem)
 optim = pybop.Optimisation(
     cost, optimiser=pybop.PSO, verbose=True, allow_infeasible_solutions=False
 )
-optim.set_max_iterations(15)
 
 # Run optimisation
-x, final_cost = optim.run()
+x, final_cost = optim.run(max_iterations=15)
 print("Estimated parameters:", x)
 print(f"Initial gravimetric energy density: {-cost(cost.x0):.2f} Wh.kg-1")
 print(f"Optimised gravimetric energy density: {-final_cost:.2f} Wh.kg-1")

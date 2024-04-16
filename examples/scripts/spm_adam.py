@@ -60,9 +60,9 @@ optim = pybop.Optimisation(
     verbose=True,
     allow_infeasible_solutions=True,
     sigma0=0.05,
+    max_iterations=100,
+    max_unchanged_iterations=45,
 )
-optim.set_max_iterations(100)
-optim.set_max_unchanged_iterations(45)
 
 # Run optimisation
 x, final_cost = optim.run()
