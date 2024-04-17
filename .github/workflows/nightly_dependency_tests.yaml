@@ -3,7 +3,7 @@ name: Nightly dependencies@develop
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 23 * * *"
+    - cron: "0 23 * * 1"
 
 concurrency:
   # github.workflow: name of the workflow, so that we don't cancel other workflows
@@ -18,16 +18,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
-        # Include MacOS M-series Runners
-        include:
-          - os: macos-14
-            python-version: "3.10"
-          - os: macos-14
-            python-version: "3.11"
-          - os: macos-14
-            python-version: "3.12"
+        os: [ubuntu-latest, macos-14]
+        python-version: ["3.12"]
 
     name: Test Suite (${{ matrix.os }} / Python ${{ matrix.python-version }})
 
@@ -42,7 +34,6 @@ jobs:
           python -m pip install -e .[all,dev]
           python -m pip uninstall -y pybamm
           python -m pip install "pybamm[all] @ git+https://github.com/pybamm-team/PyBaMM@develop"
-          python -m pip install pybtex
 
       - name: Run unit tests
         if: ${{ ! cancelled() }}
