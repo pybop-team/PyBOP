@@ -13,22 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  style:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.12
-
-      - name: Check formatting with pre-commit
-        run: |
-          python -m pip install pre-commit
-          pre-commit run ruff
-
-  Tests:
-    needs: style
+  nightly_tests:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -56,7 +41,7 @@ jobs:
         run: |
           python -m pip install -e .[all,dev]
           python -m pip uninstall -y pybamm
-          python -m pip install git+https://github.com/pybamm-team/PyBaMM.git@develop
+          python -m pip install "pybamm[all] @ git+https://github.com/pybamm-team/PyBaMM@develop"
           python -m pip install pybtex
 
       - name: Run unit tests
