@@ -39,10 +39,10 @@ jobs:
 
       - name: Run ${{ matrix.suite }} tests
         run: |
-          if [ ${{ matrix.suite }} == "unit"]; then
+          if [[ ${{ matrix.suite }} == "unit"]]; then
               python -m pytest --unit
-          elif [ ${{ matrix.suite }} == "integration"]; then
+          elif [[ ${{ matrix.suite }} == "integration"]]; then
               python -m pytest --integration
-          elif [ ${{ matrix.suite }} == "examples"]; then
+          elif [[ ${{ matrix.suite }} == "examples"]]; then
               python -m pytest --nbmake --examples
           fi
