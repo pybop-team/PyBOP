@@ -1,4 +1,4 @@
-name: Nightly dependencies@develop
+name: Nightly dependencies at develop
 
 on:
   workflow_dispatch:
