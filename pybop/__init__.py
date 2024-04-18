@@ -9,6 +9,19 @@ import sys
 from os import path
 
 #
+# Multiprocessing
+#
+try:
+    import multiprocessing as mp
+    if sys.platform == "win32":
+        mp.set_start_method("spawn")
+    else:
+        mp.set_start_method("fork")
+except ImportError as e:
+    print(f"Warning: multiprocessing module not available: {e}")
+    pass
+
+#
 # Version info
 #
 from pybop._version import __version__
