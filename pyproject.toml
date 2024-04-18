@@ -26,7 +26,7 @@ classifiers = [
 ]
 requires-python = ">=3.9, <3.13"
 dependencies = [
-  "pybamm>=23.5",
+  "pybamm>=23.9",
   "numpy>=1.16",
   "scipy>=1.3",
   "pints>=0.5",
