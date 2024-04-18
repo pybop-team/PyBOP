@@ -44,6 +44,7 @@ class TestModelParameterisation:
             pybop.GaussianLogLikelihoodKnownSigma,
             pybop.RootMeanSquaredError,
             pybop.SumSquaredError,
+            pybop.MAP,
         ]
     )
     def cost_class(self, request):
@@ -69,6 +70,10 @@ class TestModelParameterisation:
         problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
             return cost_class(problem, sigma=[0.03, 0.03])
+        elif cost_class in [pybop.MAP]:
+            return cost_class(
+                problem, pybop.GaussianLogLikelihoodKnownSigma, sigma=[0.03, 0.03]
+            )
         else:
             return cost_class(problem)
 
@@ -111,7 +116,9 @@ class TestModelParameterisation:
         initial_cost = parameterisation.cost(spm_costs.x0)
 
         if optimiser in [pybop.GradientDescent]:
-            if isinstance(spm_costs, pybop.GaussianLogLikelihoodKnownSigma):
+            if isinstance(
+                spm_costs, (pybop.GaussianLogLikelihoodKnownSigma, pybop.MAP)
+            ):
                 parameterisation.optimiser.set_learning_rate(1.8e-5)
             else:
                 parameterisation.optimiser.set_learning_rate(0.02)
@@ -154,6 +161,8 @@ class TestModelParameterisation:
 
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
             return cost_class(problem, sigma=[0.05, 0.05])
+        elif cost_class in [pybop.MAP]:
+            return cost_class(problem, pybop.GaussianLogLikelihoodKnownSigma)
         else:
             return cost_class(problem)
 
