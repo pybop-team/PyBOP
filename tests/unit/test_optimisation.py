@@ -94,16 +94,23 @@ class TestOptimisation:
 
         # Test without bounds
         cost.bounds = None
-        if optimiser_class in [pybop.SciPyDifferentialEvolution]:
+        if optimiser_class in [pybop.SciPyMinimize]:
+            opt = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
+            assert opt.optimiser.bounds is None
+        elif optimiser_class in [pybop.SciPyDifferentialEvolution]:
             with pytest.raises(ValueError):
                 pybop.Optimisation(cost=cost, optimiser=optimiser_class)
         else:
             opt = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
+            assert opt.optimiser.boundaries is None
 
-            if optimiser_class in [pybop.SciPyMinimize]:
-                assert opt.optimiser.bounds is None
-            else:
-                assert opt.optimiser.boundaries is None
+        # Test setting population size
+        if optimiser_class in [pybop.SciPyDifferentialEvolution]:
+            with pytest.raises(ValueError):
+                opt.optimiser.set_population_size(-5)
+
+            # Correct value
+            opt.optimiser.set_population_size(5)
 
     @pytest.mark.unit
     def test_single_parameter(self, cost):
@@ -149,6 +156,10 @@ class TestOptimisation:
         optim.set_min_iterations(1)
         x, __ = optim.run()
         assert optim._iterations == 2
+
+        # Test guessed values
+        optim.set_f_guessed_tracking(True)
+        assert optim._use_f_guessed is True
 
         # Test invalid values
         with pytest.raises(ValueError):

@@ -1,4 +1,4 @@
-name: PyBOP
+name: Pull Request
 
 on:
   workflow_dispatch:
