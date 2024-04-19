@@ -35,18 +35,18 @@ bibliography: paper.bib
 `PyBOP` offers a range of tools for the parameterisation and optimisation of battery models, using
 both Bayesian and frequentist approaches with example workflows to assist the user. `PyBOP` can be
 used to parameterise various battery models, including the electrochemical and equivalent circuit
-models provided by the complementary open-source package `PyBaMM` `[@Sulzer:2021]`.
+models provided by the complementary open-source package `PyBaMM` [@Sulzer:2021].
 
 # Statement of need
 
 `PyBOP` is designed to provide a user-friendly, object-oriented interface for the optimisation of
-battery models implemented in existing battery modelling software, e.g. `PyBaMM` `[@Sulzer:2021]`.
+battery models implemented in existing battery modelling software, e.g. `PyBaMM` [@Sulzer:2021].
 This software package is intended to serve a broad audience of students and researchers in both
 academia and the battery industry. `PyBOP` prioritises clear and informative diagnostics for both
 new and experienced users, while also leveraging advanced optimisation algorithms provided by `SciPy`
-`[@SciPy:2020]` and `PINTS` `[@Clerx:2019]`.
+[@SciPy:2020] and `PINTS` [@Clerx:2019].
 
-`PyBOP` supports the Battery Parameter eXchange (BPX) standard `[@BPX:2023]` for sharing battery 
+`PyBOP` supports the Battery Parameter eXchange (BPX) standard [@BPX:2023] for sharing battery 
 parameter sets. These parameter sets are costly to obtain due to a number of factors: the equipment
 cost and time spent on characterisation experiments, the requirement of battery domain knowledge
 and the computational cost of parameter estimation. `PyBOP` reduces the entry barrier and ongoing
