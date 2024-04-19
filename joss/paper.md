@@ -86,8 +86,8 @@ smaller groups of parameters from a variety of different datasets.
 
 Once a battery model has been parameterised, design optimisation can be performed in order to
 guide future development of the battery design by identifying parameter variations which may unlock
-improvements in battery performance. Battery performance is typically quantified via metrics such a
-the 1C discharge capacity.
+improvements in battery performance. Battery performance is typically quantified via metrics such as
+a 1C discharge capacity.
 
 # Acknowledgements
 
