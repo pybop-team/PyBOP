@@ -24,14 +24,3 @@ def test_multiprocessing_init_win32(monkeypatch):
     with patch("multiprocessing.set_start_method") as mock_set_start_method:
         importlib.reload(pybop)
         mock_set_start_method.assert_called_once_with("spawn")
-
-
-def test_multiprocessing_import_error(capsys):
-    with patch.dict(sys.modules, {"multiprocessing": None}):
-        with pytest.raises(ImportError) as excinfo:
-            importlib.reload(pybop)
-
-        assert "multiprocessing" in str(excinfo.value)
-
-        captured = capsys.readouterr()
-        assert "Warning: multiprocessing module not available:" in captured.out

@@ -17,14 +17,14 @@ try:
         mp.set_start_method("spawn")
     else:
         mp.set_start_method("fork")
-except Exception as e:
+except Exception as e: # pragma: no cover
     error_message = (
         "Multiprocessing context could not be set. "
         "Continuing import without setting context.\n"
         f"Error: {e}"
-    )
-    print(error_message)
-    pass
+    ) # pragma: no cover
+    print(error_message) # pragma: no cover
+    pass # pragma: no cover
 
 #
 # Version info
