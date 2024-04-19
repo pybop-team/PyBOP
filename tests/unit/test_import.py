@@ -23,7 +23,6 @@ def test_multiprocessing_init_win32(monkeypatch):
     monkeypatch.setattr(sys, "platform", "win32")
     with patch("multiprocessing.set_start_method") as mock_set_start_method:
         importlib.reload(pybop)
-        # import pybop.__init__ as init
         mock_set_start_method.assert_called_once_with("spawn")
 
 

@@ -17,8 +17,13 @@ try:
         mp.set_start_method("spawn")
     else:
         mp.set_start_method("fork")
-except ImportError as e:
-    print(f"Warning: multiprocessing module not available: {e}")
+except Exception as e:
+    error_message = (
+        "Multiprocessing context could not be set. "
+        "Continuing import without setting context.\n"
+        f"Error: {e}"
+    )
+    print(error_message)
     pass
 
 #
