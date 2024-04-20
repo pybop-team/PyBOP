@@ -39,9 +39,9 @@ class EChemBaseModel(BaseModel):
         if solver is None:
             self.solver = self.pybamm_model.default_solver
             self.solver.mode = "fast with events"
+            self.solver.max_step_decrease_count = 1
         else:
             self.solver = solver
-        self.solver.max_step_decrease_count = 1
 
         # Internal attributes for the built model are initialized but not set
         self._model_with_set_params = None
