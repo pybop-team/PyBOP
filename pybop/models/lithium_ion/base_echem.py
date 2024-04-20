@@ -36,7 +36,11 @@ class EChemBaseModel(BaseModel):
         self.spatial_methods = (
             spatial_methods or self.pybamm_model.default_spatial_methods
         )
-        self.solver = solver or self.pybamm_model.default_solver
+        if solver is None:
+            self.solver = self.pybamm_model.default_solver
+            self.solver.mode = "fast with events"
+        else:
+            self.solver = solver
         self.solver.max_step_decrease_count = 1
 
         # Internal attributes for the built model are initialized but not set
