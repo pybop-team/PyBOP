@@ -5,7 +5,6 @@
 # This file is adapted from Pints
 # (see https://github.com/pints-team/pints)
 #
-from __future__ import annotations
 import sys
 from os import path
 
@@ -32,7 +31,9 @@ from ._utils import is_numeric
 # Cost class
 # Problem class
 #
-from ._problem import BaseProblem, FittingProblem, DesignProblem
+from .problems.base_problem import BaseProblem
+from .problems.fitting_problem import FittingProblem
+from .problems.design_problem import DesignProblem
 
 #
 # Cost function class
@@ -42,6 +43,7 @@ from .costs.fitting_costs import (
     RootMeanSquaredError,
     SumSquaredError,
     ObserverCost,
+    MAP,
 )
 from .costs.design_costs import (
     DesignCost,

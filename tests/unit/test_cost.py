@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import numpy as np
 import pytest
 
@@ -73,12 +71,15 @@ class TestCosts:
             pybop.RootMeanSquaredError,
             pybop.SumSquaredError,
             pybop.ObserverCost,
+            pybop.MAP,
         ]
     )
     def cost(self, problem, request):
         cls = request.param
         if cls in [pybop.SumSquaredError, pybop.RootMeanSquaredError]:
             return cls(problem)
+        elif cls in [pybop.MAP]:
+            return cls(problem, pybop.GaussianLogLikelihoodKnownSigma)
         elif cls in [pybop.ObserverCost]:
             inputs = {p.name: problem.x0[i] for i, p in enumerate(problem.parameters)}
             state = problem._model.reinit(inputs)
@@ -120,9 +121,23 @@ class TestCosts:
             design_cost([0.5])
 
     @pytest.mark.unit
+    def test_MAP(self, problem):
+        # Incorrect likelihood
+        with pytest.raises(ValueError):
+            pybop.MAP(problem, pybop.SumSquaredError)
+
+        # Incorrect construction of likelihood
+        with pytest.raises(ValueError):
+            pybop.MAP(problem, pybop.GaussianLogLikelihoodKnownSigma, sigma="string")
+
+    @pytest.mark.unit
     def test_costs(self, cost):
-        higher_cost = cost([0.55])
-        lower_cost = cost([0.52])
+        if isinstance(cost, pybop.BaseLikelihood):
+            higher_cost = cost([0.52])
+            lower_cost = cost([0.55])
+        else:
+            higher_cost = cost([0.55])
+            lower_cost = cost([0.52])
         assert higher_cost > lower_cost or (
             higher_cost == lower_cost and higher_cost == np.inf
         )

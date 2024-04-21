@@ -70,10 +70,10 @@ class TestProblem:
     def test_base_problem(self, parameters, model, dataset):
         # Test incorrect number of initial parameter values
         with pytest.raises(ValueError):
-            pybop._problem.BaseProblem(parameters, model=model, x0=np.array([]))
+            pybop.BaseProblem(parameters, model=model, x0=np.array([]))
 
         # Construct Problem
-        problem = pybop._problem.BaseProblem(parameters, model=model)
+        problem = pybop.BaseProblem(parameters, model=model)
 
         assert problem._model == model
 
@@ -83,12 +83,12 @@ class TestProblem:
             problem.evaluateS1([1e-5, 1e-5])
 
         with pytest.raises(ValueError):
-            pybop._problem.BaseProblem(parameters, model=model, signal=[1e-5, 1e-5])
+            pybop.BaseProblem(parameters, model=model, signal=[1e-5, 1e-5])
 
         # Test without bounds
         for param in parameters:
             param.bounds = None
-        problem = pybop._problem.BaseProblem(parameters, model=model)
+        problem = pybop.BaseProblem(parameters, model=model)
         assert problem.bounds is None
 
         # Incorrect set target

@@ -1,4 +1,4 @@
-name: PyBOP
+name: Pull Request
 
 on:
   workflow_dispatch:
@@ -59,7 +59,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
         exclude: # We run the coverage tests on Ubuntu with Python 3.12
           - os: ubuntu-latest
             python-version: "3.12"
@@ -139,6 +139,8 @@ jobs:
         run: nox -s coverage
 
       - name: Upload coverage report
-        uses: codecov/codecov-action@v3
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: true
+          verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
