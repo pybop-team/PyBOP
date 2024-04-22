@@ -17,7 +17,7 @@ class Optimisation:
     """
     A base class for defining optimisation methods.
 
-    This class serves as a template for creating optimisers. It provides a basic structure for
+    This class serves as a base class for creating optimisers. It provides a basic structure for
     an optimisation algorithm, including the initial setup and a method stub for performing the
     optimisation process. Child classes should override update_options and the_run method with
     a specific algorithm.
