@@ -81,9 +81,7 @@ class TestOptimisation:
     @pytest.mark.integration
     def test_optimisation_f_guessed(self, f_guessed, spm_costs):
         # Test each optimiser
-        parameterisation = pybop.Optimisation(
-            cost=spm_costs, optimiser=pybop.XNES, sigma0=0.05
-        )
+        parameterisation = pybop.XNES(cost=spm_costs, sigma0=0.05)
         parameterisation.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
         parameterisation.set_max_iterations(125)
         parameterisation.set_f_guessed_tracking(f_guessed)

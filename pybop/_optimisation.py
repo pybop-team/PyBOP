@@ -97,9 +97,7 @@ class Optimisation:
 
         # Throw an error if any arguments remain
         if optimiser_kwargs:
-            raise ValueError(
-                f"Unrecognised keyword arguments were not used: {optimiser_kwargs}"
-            )
+            raise ValueError(f"Unrecognised keyword arguments: {optimiser_kwargs}")
 
     def _set_options(self, **optimiser_kwargs):
         """
