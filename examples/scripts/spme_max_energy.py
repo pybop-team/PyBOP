@@ -47,9 +47,7 @@ problem = pybop.DesignProblem(
 
 # Generate cost function and optimisation class:
 cost = pybop.GravimetricEnergyDensity(problem)
-optim = pybop.Optimisation(
-    cost, optimiser=pybop.PSO, verbose=True, allow_infeasible_solutions=False
-)
+optim = pybop.PSO(cost, verbose=True, allow_infeasible_solutions=False)
 
 # Run optimisation
 x, final_cost = optim.run(max_iterations=15)

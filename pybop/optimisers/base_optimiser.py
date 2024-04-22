@@ -1,111 +1,402 @@
-class BaseOptimiser:
+import numpy as np
+import pints
+
+from pybop import Optimisation
+
+DEFAULT_PINTS_OPTIMISER_OPTIONS = dict(
+    _boundaries=None,
+    _x0=None,
+    _transformation=None,  # PyBOP doesn't currently support the PINTS transformation class
+    _use_f_guessed=None,
+    _parallel=False,
+    _n_workers=1,
+    _callback=None,
+    _min_iterations=2,
+    _unchanged_threshold=1e-5,  # smallest significant f change
+    _unchanged_max_iterations=15,
+    _max_evaluations=None,
+    _threshold=None,
+    _evaluations=None,
+    _iterations=None,
+)
+
+
+class BasePintsOptimiser(Optimisation):
     """
-    A base class for defining optimisation methods.
+    A base class for defining optimisation methods from the PINTS library.
 
-    This class serves as a template for creating optimisers. It provides a basic structure for
-    an optimisation algorithm, including the initial setup and a method stub for performing the
-    optimisation process. Child classes should override update_options and the_run method with
-    a specific algorithm.
+    Parameters
+    ----------
+    x0 : array_like
+        Initial position from which optimization will start.
+    sigma0 : float, optional
+        Initial step size or standard deviation depending on the optimiser (default is 0.1).
+    bounds : dict, optional
+        A dictionary with 'lower' and 'upper' keys containing arrays for lower and upper
+        bounds on the parameters.
+    **optimiser_kwargs : optional
+        Valid PINTS option keys and their values.
     """
 
-    def __init__(self, x0=None, sigma0=None, bounds=None):
-        """
-        Initialises the BaseOptimiser.
+    def __init__(self, cost, pints_method, **optimiser_kwargs):
+        self.__dict__.update(DEFAULT_PINTS_OPTIMISER_OPTIONS)
+        super().__init__(cost, **optimiser_kwargs)
 
-        Parameters
-        ----------
-        x0 : array_like
-            Initial position from which optimisation will start.
-        sigma0 : float, optional
-            Initial step size or standard deviation depending on the optimiser.
-        bounds : sequence or Bounds, optional
-            Bounds on the parameters (default: None).
-        """
-        self._cost_function = None
-        self.x0 = x0
-        self.sigma0 = sigma0
-        self.bounds = bounds
+        # Create an instance of the PINTS optimiser class
+        self.method = pints_method(self.x0, self.sigma0, self._boundaries)
 
-        self.log = []
-        self._max_iterations = None
-        self.set_max_iterations()
+        # Check if sensitivities are required
+        self._needs_sensitivities = self.method.needs_sensitivities()
 
-    def update_options(self, **optimiser_kwargs):
+    def _update_options(self, **optimiser_kwargs):
         """
-        Update the optimiser options, to be overwritten by child classes.
+        Update the optimiser options and remove the corresponding entries from the
+        optimiser_kwargs dictionary in advance of passing to the parent class.
 
         Parameters
         ----------
         **optimiser_kwargs : optional
-            Valid option keys and their values.
+            Valid PINTS option keys and their values.
+
+        Returns
+        -------
+        optimiser_kwargs : dict
+            Remaining option keys and their values.
         """
-        pass
+        key_list = list(optimiser_kwargs.keys())
+        for key in key_list:
+            if key == "x0":
+                self.x0 = optimiser_kwargs.pop(key)
+                # Convert x0 to PINTS vector
+                self._x0 = pints.vector(self.x0)
+            elif key == "bounds":
+                # Convert bounds to PINTS boundaries
+                self.bounds = optimiser_kwargs.pop(key)
+                if self.bounds is not None:
+                    self._boundaries = pints.RectangularBoundaries(
+                        self.bounds["lower"], self.bounds["upper"]
+                    )
+                else:
+                    self._boundaries = None
+            elif key == "use_f_guessed":
+                self.set_f_guessed_tracking(optimiser_kwargs.pop(key))
+            elif key == "parallel":
+                self.set_parallel(optimiser_kwargs.pop(key))
+            elif key == "maxiter" or key == "max_iterations":
+                self.set_max_iterations(optimiser_kwargs.pop(key))
+            elif key == "min_iterations":
+                self.set_min_iterations(optimiser_kwargs.pop(key))
+            elif key == "max_unchanged_iterations":
+                if "threshold" in optimiser_kwargs.keys():
+                    self.set_max_unchanged_iterations(
+                        optimiser_kwargs.pop(key),
+                        optimiser_kwargs["threshold"],
+                    )
+                else:
+                    self.set_max_unchanged_iterations(optimiser_kwargs.pop(key))
+            elif key == "threshold":
+                pass  # only used with unchanged_max_iterations
+            elif key == "max_evaluations":
+                self.set_max_evaluations(optimiser_kwargs.pop(key))
+
+        return optimiser_kwargs
 
     def name(self):
         """
-        Returns the name of the optimiser, to be overwritten by child classes.
+        Provides the name of the optimisation strategy.
 
         Returns
         -------
         str
-            The name of the optimiser, which is "BaseOptimiser" for this base class.
+            The name given by PINTS.
         """
-        return "BaseOptimiser"
+        return self.method.name()
 
-    def run(self, x0=None, **optimiser_kwargs):
+    def _run(self):
         """
-        Initiates the optimisation process.
-
-        Parameters
-        ----------
-        x0 : ndarray, optional
-            Initial guess for the parameters (default: None).
-        **optimiser_kwargs : optional
-            Valid option keys and their values.
+        Internal method to run the optimization using a PINTS optimiser.
 
         Returns
         -------
-        The result of the optimisation process. The specific type of this result will depend on the child implementation.
+        x : numpy.ndarray
+            The best parameter set found by the optimization.
+        final_cost : float
+            The final cost associated with the best parameters.
+
+        See Also
+        --------
+        This method is heavily based on the run method in the PINTS.OptimisationController class.
         """
-        if x0 is not None:
-            self.x0 = x0
+        # Check stopping criteria
+        has_stopping_criterion = False
+        has_stopping_criterion |= self._max_iterations is not None
+        has_stopping_criterion |= self._unchanged_max_iterations is not None
+        has_stopping_criterion |= self._max_evaluations is not None
+        has_stopping_criterion |= self._threshold is not None
+        if not has_stopping_criterion:
+            raise ValueError("At least one stopping criterion must be set.")
 
-        # Run optimisation
-        result = self._run(**optimiser_kwargs)
+        # Iterations and function evaluations
+        iteration = 0
+        evaluations = 0
 
-        return result
+        # Unchanged iterations counter
+        unchanged_iterations = 0
 
-    def _run(self, **optimiser_kwargs):
+        # Choose method to evaluate
+        f = self.cost
+        if self._needs_sensitivities:
+            f = f.evaluateS1
+
+        # Create evaluator object
+        if self._parallel:
+            # Get number of workers
+            n_workers = self._n_workers
+
+            # For population based optimisers, don't use more workers than
+            # particles!
+            if isinstance(self.method, pints.PopulationBasedOptimiser):
+                n_workers = min(n_workers, self.method.population_size())
+            evaluator = pints.ParallelEvaluator(f, n_workers=n_workers)
+        else:
+            evaluator = pints.SequentialEvaluator(f)
+
+        # Keep track of current best and best-guess scores.
+        fb = fg = np.inf
+
+        # Internally we always minimise! Keep a 2nd value to show the user.
+        fg_user = (fb, fg) if self._minimising else (-fb, -fg)
+
+        # Keep track of the last significant change
+        f_sig = np.inf
+
+        # Run the ask-and-tell loop
+        running = True
+        try:
+            while running:
+                # Ask optimiser for new points
+                xs = self.method.ask()
+
+                # Evaluate points
+                fs = evaluator.evaluate(xs)
+
+                # Tell optimiser about function values
+                self.method.tell(fs)
+
+                # Update the scores
+                fb = self.method.f_best()
+                fg = self.method.f_guessed()
+                fg_user = (fb, fg) if self._minimising else (-fb, -fg)
+
+                # Check for significant changes
+                f_new = fg if self._use_f_guessed else fb
+                if np.abs(f_new - f_sig) >= self._unchanged_threshold:
+                    unchanged_iterations = 0
+                    f_sig = f_new
+                else:
+                    unchanged_iterations += 1
+
+                # Update counts
+                evaluations += len(fs)
+                iteration += 1
+                self.log.append(xs)
+
+                # Check stopping criteria:
+                # Maximum number of iterations
+                if (
+                    self._max_iterations is not None
+                    and iteration >= self._max_iterations
+                ):
+                    running = False
+                    halt_message = (
+                        "Maximum number of iterations (" + str(iteration) + ") reached."
+                    )
+
+                # Maximum number of iterations without significant change
+                halt = (
+                    self._unchanged_max_iterations is not None
+                    and unchanged_iterations >= self._unchanged_max_iterations
+                    and iteration >= self._min_iterations
+                )
+                if running and halt:
+                    running = False
+                    halt_message = (
+                        "No significant change for "
+                        + str(unchanged_iterations)
+                        + " iterations."
+                    )
+
+                # Maximum number of evaluations
+                if (
+                    self._max_evaluations is not None
+                    and evaluations >= self._max_evaluations
+                ):
+                    running = False
+                    halt_message = (
+                        "Maximum number of evaluations ("
+                        + str(self._max_evaluations)
+                        + ") reached."
+                    )
+
+                # Threshold value
+                halt = self._threshold is not None and f_new < self._threshold
+                if running and halt:
+                    running = False
+                    halt_message = (
+                        "Objective function crossed threshold: "
+                        + str(self._threshold)
+                        + "."
+                    )
+
+                # Error in optimiser
+                error = self.method.stop()
+                if error:
+                    running = False
+                    halt_message = str(error)
+
+                elif self._callback is not None:
+                    self._callback(iteration - 1, self)
+
+        except (Exception, SystemExit, KeyboardInterrupt):
+            # Show last result and exit
+            print("\n" + "-" * 40)
+            print("Unexpected termination.")
+            print("Current score: " + str(fg_user))
+            print("Current position:")
+
+            # Show current parameters
+            x_user = self.method.x_guessed()
+            if self._transformation is not None:
+                x_user = self._transformation.to_model(x_user)
+            for p in x_user:
+                print(pints.strfloat(p))
+            print("-" * 40)
+            raise
+
+        if self.verbose:
+            print("Halt: " + halt_message)
+
+        # Save post-run statistics
+        self._evaluations = evaluations
+        self._iterations = iteration
+
+        # Get best parameters
+        if self._use_f_guessed:
+            x = self.method.x_guessed()
+            f = self.method.f_guessed()
+        else:
+            x = self.method.x_best()
+            f = self.method.f_best()
+
+        # Inverse transform search parameters
+        if self._transformation is not None:
+            x = self._transformation.to_model(x)
+
+        # Return best position and the score used internally,
+        # i.e the negative log-likelihood in the case of
+        # self._minimising = False
+        return x, f
+
+    def f_guessed_tracking(self):
         """
-        Contains the logic for the optimisation algorithm.
+        Check if f_guessed instead of f_best is being tracked.
+        Credit: PINTS
 
-        This method should be implemented by child classes to perform the actual optimisation.
-
-        Parameters
-        ----------
-        **optimiser_kwargs : optional
-            Valid option keys and their values.
-
-        Raises
-        ------
-        NotImplementedError
-            If the method has not been implemented by the subclass.
+        Returns
+        -------
+        bool
+            True if f_guessed is being tracked, False otherwise.
         """
-        raise NotImplementedError
+        return self._use_f_guessed
 
-    def set_max_iterations(self, iterations=1000):
+    def set_f_guessed_tracking(self, use_f_guessed=False):
         """
-        Set the maximum number of iterations as a stopping criterion.
+        Set the method used to track the optimiser progress.
         Credit: PINTS
 
         Parameters
         ----------
+        use_f_guessed : bool, optional
+            If True, track f_guessed; otherwise, track f_best (default: False).
+        """
+        self._use_f_guessed = bool(use_f_guessed)
+
+    def set_parallel(self, parallel=False):
+        """
+        Enable or disable parallel evaluation.
+        Credit: PINTS
+
+        Parameters
+        ----------
+        parallel : bool or int, optional
+            If True, use as many worker processes as there are CPU cores. If an integer, use that many workers.
+            If False or 0, disable parallelism (default: False).
+        """
+        if parallel is True:
+            self._parallel = True
+            self._n_workers = pints.ParallelEvaluator.cpu_count()
+        elif parallel >= 1:
+            self._parallel = True
+            self._n_workers = int(parallel)
+        else:
+            self._parallel = False
+            self._n_workers = 1
+
+    def set_min_iterations(self, iterations=2):
+        """
+        Set the minimum number of iterations as a stopping criterion.
+
+        Parameters
+        ----------
         iterations : int, optional
-            The maximum number of iterations to run (default: 1000).
+            The minimum number of iterations to run (default: 2).
             Set to `None` to remove this stopping criterion.
         """
         if iterations is not None:
             iterations = int(iterations)
             if iterations < 0:
+                raise ValueError("Minimum number of iterations cannot be negative.")
+        self._min_iterations = iterations
+
+    def set_max_unchanged_iterations(self, iterations=15, threshold=1e-5):
+        """
+        Set the maximum number of iterations without significant change as a stopping criterion.
+        Credit: PINTS
+
+        Parameters
+        ----------
+        iterations : int, optional
+            The maximum number of unchanged iterations to run (default: 15).
+            Set to `None` to remove this stopping criterion.
+        threshold : float, optional
+            The minimum significant change in the objective function value that resets the
+            unchanged iteration counter (default: 1e-5).
+        """
+        if iterations is not None:
+            iterations = int(iterations)
+            if iterations < 0:
                 raise ValueError("Maximum number of iterations cannot be negative.")
-        self._max_iterations = iterations
+
+        threshold = float(threshold)
+        if threshold < 0:
+            raise ValueError("Minimum significant change cannot be negative.")
+
+        self._unchanged_max_iterations = iterations
+        self._unchanged_threshold = threshold
+
+    def set_max_evaluations(self, evaluations=None):
+        """
+        Set a maximum number of evaluations stopping criterion.
+        Credit: PINTS
+
+        Parameters
+        ----------
+        evaluations : int, optional
+            The maximum number of evaluations after which to stop the optimisation
+            (default: None).
+        """
+        if evaluations is not None:
+            evaluations = int(evaluations)
+            if evaluations < 0:
+                raise ValueError("Maximum number of evaluations cannot be negative.")
+        self._max_evaluations = evaluations

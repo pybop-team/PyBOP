@@ -36,9 +36,8 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.Optimisation(
+optim = pybop.GradientDescent(
     cost,
-    optimiser=pybop.GradientDescent,
     sigma0=0.022,
     verbose=True,
     max_iterations=125,

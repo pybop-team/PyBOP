@@ -94,21 +94,17 @@ from .models.base_model import Inputs
 from ._experiment import Experiment
 
 #
-# Main optimisation class
-#
-from ._optimisation import Optimisation
-
-#
 # Optimiser class
 #
-from .optimisers.base_optimiser import BaseOptimiser
+from ._optimisation import Optimisation
+from .optimisers.base_optimiser import BasePintsOptimiser
 from .optimisers.scipy_optimisers import (
     BaseSciPyOptimiser,
     SciPyMinimize,
     SciPyDifferentialEvolution
 )
 from .optimisers.pints_optimisers import (
-    BasePintsOptimiser,
+    DefaultOptimiser,
     GradientDescent,
     Adam,
     CMAES,

@@ -2,17 +2,30 @@ import warnings
 
 import pybop
 
+DEFAULT_OPTIMISER_OPTIONS = dict(
+    x0=None,
+    bounds=None,
+    sigma0=0.1,
+    verbose=False,
+    physical_viability=True,
+    allow_infeasible_solutions=True,
+    _max_iterations=None,
+)
+
 
 class Optimisation:
     """
-    A class for conducting optimisation using PyBOP or PINTS optimisers.
+    A base class for defining optimisation methods.
+
+    This class serves as a template for creating optimisers. It provides a basic structure for
+    an optimisation algorithm, including the initial setup and a method stub for performing the
+    optimisation process. Child classes should override update_options and the_run method with
+    a specific algorithm.
 
     Parameters
     ----------
     cost : pybop.BaseCost or pints.ErrorMeasure
         An objective function to be optimised, which can be either a pybop.Cost or PINTS error measure
-    optimiser : pybop.Optimiser or subclass of pybop.BaseOptimiser, optional
-        An optimiser from either the PINTS or PyBOP framework to perform the optimisation (default: None).
     sigma0 : float or sequence, optional
         Initial step size or standard deviation for the optimiser (default: None).
     verbose : bool, optional
@@ -39,58 +52,83 @@ class Optimisation:
     def __init__(
         self,
         cost,
-        x0=None,
-        optimiser=None,
-        sigma0=None,
-        verbose=False,
-        physical_viability=True,
-        allow_infeasible_solutions=True,
         **optimiser_kwargs,
     ):
         self.cost = cost
-        self.x0 = x0 or cost.x0
-        self.optimiser = optimiser or pybop.XNES
-        self.verbose = verbose
-        self.bounds = cost.bounds
-        self.sigma0 = sigma0 or cost.sigma0
-        self._n_parameters = cost._n_parameters
-        self.physical_viability = physical_viability
-        self.allow_infeasible_solutions = allow_infeasible_solutions
-
-        # Check optimiser
-        if not issubclass(self.optimiser, pybop.BaseOptimiser):
-            raise ValueError("Unknown optimiser type")
-
-        # Set whether to allow infeasible locations
-        if self.cost.problem is not None and hasattr(self.cost.problem, "_model"):
-            self.cost.problem._model.allow_infeasible_solutions = (
-                self.allow_infeasible_solutions
-            )
-        else:
-            # Turn off this feature as there is no model
-            self.physical_viability = False
-            self.allow_infeasible_solutions = False
-
-        # Construct Optimiser
-        self.optimiser = self.optimiser(
-            self.x0, self.sigma0, self.bounds, **optimiser_kwargs
-        )
-
-        # Pass cost and settings to optimiser
-        self.optimiser._cost_function = self.cost
-        self.optimiser.verbose = self.verbose
+        self.__dict__.update(DEFAULT_OPTIMISER_OPTIONS)
+        if isinstance(cost, pybop.BaseCost):
+            self.x0 = cost.x0
+            self.bounds = cost.bounds
+            self.sigma0 = cost.sigma0
+            self._n_parameters = cost._n_parameters
+        self.log = []
+        self.set_max_iterations()
+        self.set_allow_infeasible_solutions()
+        self.update_options(**optimiser_kwargs)
 
         # Check if minimising or maximising
         if isinstance(self.cost, pybop.BaseLikelihood):
             self.cost._minimising = False
-        self.optimiser._minimising = self.cost._minimising
+        self._minimising = self.cost._minimising
 
-    def run(self, **optimiser_kwargs):
+    def update_options(self, **optimiser_kwargs):
+        """
+        Update the optimiser options and check that all have been applied.
+
+        Parameters
+        ----------
+        **optimiser_kwargs : optional
+            Valid option keys and their values.
+        """
+        # Update and remove optimiser options from the optimiser_kwargs dictionary
+        # in the child class first and then in this base class
+        optimiser_kwargs = self._update_options(**optimiser_kwargs)
+
+        key_list = list(optimiser_kwargs.keys())
+        for key in key_list:
+            if key in ["x0", "bounds", "sigma0", "verbose"]:
+                self.__dict__.update({key: optimiser_kwargs.pop(key)})
+            elif key == "allow_infeasible_solutions":
+                self.allow_infeasible_solutions = self.set_allow_infeasible_solutions(
+                    optimiser_kwargs.pop(key)
+                )
+            elif key == "parallel":
+                self.set_parallel(optimiser_kwargs.pop(key))
+
+        # Throw an error if any arguments remain
+        if optimiser_kwargs:
+            raise ValueError(
+                f"Unrecognised keyword arguments were not used: {optimiser_kwargs}"
+            )
+
+    def _update_options(self, **optimiser_kwargs):
+        """
+        Update the optimiser options and remove the corresponding entries from the
+        optimiser_kwargs dictionary in advance of passing to the parent class
+        - this function is to be overwritten by child classes.
+
+        Parameters
+        ----------
+        **optimiser_kwargs : optional
+            Valid option keys and their values.
+
+        Returns
+        -------
+        optimiser_kwargs : dict
+            Remaining option keys and their values.
+        """
+        return optimiser_kwargs
+
+    def run(self, x0=None, **optimiser_kwargs):
         """
         Run the optimisation and return the optimised parameters and final cost.
 
+        Parameters
+        ----------
+        x0 : ndarray, optional
+            Initial guess for the parameters (default: None).
         **optimiser_kwargs : optional
-            Valid SciPy option keys and their values.
+            Valid option keys and their values.
 
         Returns
         -------
@@ -99,21 +137,38 @@ class Optimisation:
         final_cost : float
             The final cost associated with the best parameters.
         """
+        self.update_options(**optimiser_kwargs)
 
-        x, final_cost = self.optimiser.run(**optimiser_kwargs)
+        if x0 is not None:
+            self.x0 = x0
+
+        x, final_cost = self._run()
 
         # Store the optimised parameters
         if self.cost.problem is not None:
             self.store_optimised_parameters(x)
 
         # Store the log
-        self.log = self.optimiser.log
+        self.log = self.log
 
         # Check if parameters are viable
         if self.physical_viability:
             self.check_optimal_parameters(x)
 
         return x, final_cost
+
+    def _run(self):
+        """
+        Contains the logic for the optimisation algorithm.
+
+        This method should be implemented by child classes to perform the actual optimisation.
+
+        Raises
+        ------
+        NotImplementedError
+            If the method has not been implemented by the subclass.
+        """
+        raise NotImplementedError
 
     def store_optimised_parameters(self, x):
         """
@@ -145,3 +200,53 @@ class Optimisation:
                 UserWarning,
                 stacklevel=2,
             )
+
+    def name(self):
+        """
+        Returns the name of the optimiser, to be overwritten by child classes.
+
+        Returns
+        -------
+        str
+            The name of the optimiser, which is "Optimisation" for this base class.
+        """
+        return "Optimisation"
+
+    def set_max_iterations(self, iterations=1000):
+        """
+        Set the maximum number of iterations as a stopping criterion.
+        Credit: PINTS
+
+        Parameters
+        ----------
+        iterations : int, optional
+            The maximum number of iterations to run.
+            Set to `None` to remove this stopping criterion.
+        """
+        if iterations is not None:
+            iterations = int(iterations)
+            if iterations < 0:
+                raise ValueError("Maximum number of iterations cannot be negative.")
+        self._max_iterations = iterations
+
+    def set_allow_infeasible_solutions(self, allow=True):
+        """
+        Set whether to allow infeasible solutions or not.
+
+        Parameters
+        ----------
+        iterations : bool, optional
+            Whether to allow infeasible solutions.
+        """
+        # Set whether to allow infeasible locations
+        self.physical_viability = allow
+        self.allow_infeasible_solutions = allow
+
+        if self.cost.problem is not None and hasattr(self.cost.problem, "_model"):
+            self.cost.problem._model.allow_infeasible_solutions = (
+                self.allow_infeasible_solutions
+            )
+        else:
+            # Turn off this feature as there is no model
+            self.physical_viability = False
+            self.allow_infeasible_solutions = False

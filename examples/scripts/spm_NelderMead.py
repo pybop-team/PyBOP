@@ -54,9 +54,8 @@ problem = pybop.FittingProblem(
     model, parameters, dataset, signal=signal, init_soc=init_soc
 )
 cost = pybop.RootMeanSquaredError(problem)
-optim = pybop.Optimisation(
+optim = pybop.NelderMead(
     cost,
-    optimiser=pybop.NelderMead,
     verbose=True,
     allow_infeasible_solutions=True,
     sigma0=0.05,

@@ -69,7 +69,7 @@ class TestOptimisation:
         return pybop.SumSquaredError(problem)
 
     @pytest.mark.parametrize(
-        "optimiser_class, expected_name",
+        "optimiser, expected_name",
         [
             (pybop.SciPyMinimize, "SciPyMinimize"),
             (pybop.SciPyDifferentialEvolution, "SciPyDifferentialEvolution"),
@@ -84,73 +84,73 @@ class TestOptimisation:
         ],
     )
     @pytest.mark.unit
-    def test_optimiser_classes(self, two_param_cost, optimiser_class, expected_name):
+    def test_optimiser_classes(self, two_param_cost, optimiser, expected_name):
         # Test class construction
         cost = two_param_cost
-        optim = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
+        optim = optimiser(cost=cost)
 
-        assert optim.optimiser is not None
-        assert optim.optimiser.name() == expected_name
+        assert optim.cost is not None
+        assert optim.name() == expected_name
 
         # Test construction without bounds
         bounds = cost.bounds
         cost.bounds = None
-        optim = pybop.Optimisation(cost=cost, optimiser=optimiser_class)
-        assert optim.optimiser.bounds is None
-        if issubclass(optimiser_class, pybop.BasePintsOptimiser):
-            assert optim.optimiser._boundaries is None
+        optim = optimiser(cost=cost)
+        assert optim.bounds is None
+        if issubclass(optimiser, pybop.BasePintsOptimiser):
+            assert optim._boundaries is None
 
         # Reset
         cost.bounds = bounds
 
     @pytest.mark.parametrize(
-        "optimiser_class",
+        "optimiser",
         [pybop.XNES, pybop.SciPyMinimize, pybop.SciPyDifferentialEvolution],
     )
     @pytest.mark.unit
-    def test_optimiser_kwargs(self, cost, optimiser_class):
-        optim = pybop.Optimisation(cost=cost, optimiser=optimiser_class, maxiter=1)
+    def test_optimiser_kwargs(self, cost, optimiser):
+        optim = optimiser(cost=cost, maxiter=1)
 
         # Check and update maximum iterations
         optim.run()
-        assert optim.optimiser._max_iterations == 1
-        assert optim.optimiser._iterations == 1
+        assert optim._max_iterations == 1
+        assert optim._iterations == 1
         optim.run(max_iterations=10)
-        assert optim.optimiser._max_iterations == 10
-        assert optim.optimiser._iterations <= 10
+        assert optim._max_iterations == 10
+        assert optim._iterations <= 10
 
-        if issubclass(optimiser_class, pybop.BasePintsOptimiser):
+        if issubclass(optimiser, pybop.BasePintsOptimiser):
             # PINTS method
             with pytest.raises(
                 ValueError,
-                match="Unrecognised or invalid keyword argument: tol",
+                match="Unrecognised keyword arguments",
             ):
-                optim = pybop.Optimisation(cost=cost, tol=1e-3)
+                optim = optimiser(cost=cost, tol=1e-3)
         else:
             # Check and update bounds
-            assert optim.optimiser.bounds == cost.bounds
+            assert optim.bounds == cost.bounds
             bounds = {"upper": [0.61], "lower": [0.59]}
             optim.run(bounds=bounds)
-            assert optim.optimiser.bounds == bounds
+            assert optim.bounds == bounds
             bounds = [
                 (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
             ]
             optim.run(bounds=bounds)
-            assert optim.optimiser.bounds == bounds
+            assert optim.bounds == bounds
 
             # Update tol
             optim.run(tol=1e-2)
-            assert optim.optimiser.options["tol"] == 1e-2
+            assert optim.tol == 1e-2
 
-        if optimiser_class in [pybop.SciPyDifferentialEvolution]:
+        if optimiser in [pybop.SciPyDifferentialEvolution]:
             # Check and update population size
             with pytest.raises(ValueError):
-                optim.optimiser.set_population_size(-5)
-            optim.optimiser.set_population_size(10)
-            assert optim.optimiser.options["popsize"] == 10
+                optim.set_population_size(-5)
+            optim.set_population_size(10)
+            assert optim.popsize == 10
             optim.run(popsize=5)
-            assert optim.optimiser.options["popsize"] == 5
-        elif optimiser_class in [pybop.SciPyMinimize]:
+            assert optim.popsize == 5
+        elif optimiser in [pybop.SciPyMinimize]:
             # Check a method that uses gradient information
             optim.run(method="L-BFGS-B", jac=True)
             with pytest.raises(
@@ -167,12 +167,12 @@ class TestOptimisation:
             ValueError,
             match=r"requires optimisation of >= 2 parameters at once.",
         ):
-            pybop.Optimisation(cost=cost, optimiser=pybop.CMAES)
+            pybop.CMAES(cost=cost)
 
     @pytest.mark.unit
     def test_default_optimiser(self, cost):
-        optim = pybop.Optimisation(cost=cost)
-        assert optim.optimiser.name() == "Exponential Natural Evolution Strategy (xNES)"
+        optim = pybop.DefaultOptimiser(cost=cost)
+        assert optim.name() == "Exponential Natural Evolution Strategy (xNES)"
 
     @pytest.mark.unit
     def test_incorrect_optimiser_class(self, cost):
@@ -180,9 +180,9 @@ class TestOptimisation:
             pass
 
         with pytest.raises(ValueError):
-            pybop.Optimisation(cost=cost, optimiser=RandomClass)
+            pybop.BasePintsOptimiser(cost=cost, pints_method=RandomClass)
 
-        optim = pybop.Optimisation(cost=cost, optimiser=pybop.BaseOptimiser)
+        optim = pybop.Optimisation(cost=cost)
         with pytest.raises(NotImplementedError):
             optim.run()
 
@@ -197,42 +197,40 @@ class TestOptimisation:
     @pytest.mark.unit
     def test_halting(self, cost):
         # Test max evalutions
-        optim = pybop.Optimisation(cost=cost, optimiser=pybop.GradientDescent)
-        optim.optimiser.set_max_evaluations(1)
+        optim = pybop.GradientDescent(cost=cost)
+        optim.set_max_evaluations(1)
         x, __ = optim.run()
-        assert optim.optimiser._iterations == 1
+        assert optim._iterations == 1
 
         # Test max unchanged iterations
-        optim = pybop.Optimisation(cost=cost, optimiser=pybop.GradientDescent)
-        optim.optimiser.set_max_unchanged_iterations(1)
-        optim.optimiser.set_min_iterations(1)
+        optim = pybop.GradientDescent(cost=cost)
+        optim.set_max_unchanged_iterations(1)
+        optim.set_min_iterations(1)
         x, __ = optim.run()
-        assert optim.optimiser._iterations == 2
+        assert optim._iterations == 2
 
         # Test guessed values
-        optim.optimiser.set_f_guessed_tracking(True)
-        assert optim.optimiser._use_f_guessed is True
+        optim.set_f_guessed_tracking(True)
+        assert optim._use_f_guessed is True
 
         # Test invalid values
         with pytest.raises(ValueError):
-            optim.optimiser.set_max_evaluations(-1)
+            optim.set_max_evaluations(-1)
         with pytest.raises(ValueError):
-            optim.optimiser.set_min_iterations(-1)
+            optim.set_min_iterations(-1)
         with pytest.raises(ValueError):
-            optim.optimiser.set_max_unchanged_iterations(-1)
+            optim.set_max_unchanged_iterations(-1)
         with pytest.raises(ValueError):
-            optim.optimiser.set_max_unchanged_iterations(1, threshold=-1)
+            optim.set_max_unchanged_iterations(1, threshold=-1)
 
     @pytest.mark.unit
     def test_infeasible_solutions(self, cost):
         # Test infeasible solutions
         for optimiser in [pybop.SciPyMinimize, pybop.GradientDescent]:
-            optim = pybop.Optimisation(
-                cost=cost, optimiser=optimiser, allow_infeasible_solutions=False
-            )
-            optim.optimiser.set_max_iterations(1)
+            optim = optimiser(cost=cost, allow_infeasible_solutions=False)
+            optim.set_max_iterations(1)
             optim.run()
-            assert optim.optimiser._iterations == 1
+            assert optim._iterations == 1
 
     @pytest.mark.unit
     def test_unphysical_result(self, cost):

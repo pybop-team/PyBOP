@@ -17,7 +17,7 @@ codesigned binaries and source distributions via `sigstore-python`.
 
 ## Bug Fixes
 
-- [#236](https://github.com/pybop-team/PyBOP/issues/236) - Allows passing of keyword arguments to optimisers and fixes setting of max_iterations.
+- [#236](https://github.com/pybop-team/PyBOP/issues/236) - Restructures the optimiser classes to allow the passing of keyword arguments and fixes the setting of max_iterations.
 - [#299](https://github.com/pybop-team/PyBOP/pull/299) - Bugfix multiprocessing support for Linux, MacOS, Windows (WSL) and improves coverage.
 - [#270](https://github.com/pybop-team/PyBOP/pull/270) - Updates PR template.
 - [#91](https://github.com/pybop-team/PyBOP/issues/91) - Adds a check on the number of parameters for CMAES and makes XNES the default optimiser.

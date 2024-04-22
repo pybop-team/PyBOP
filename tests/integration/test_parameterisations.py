@@ -107,14 +107,10 @@ class TestModelParameterisation:
             spm_costs.bounds = bounds
 
         # Test each optimiser
-        parameterisation = pybop.Optimisation(
-            cost=spm_costs, optimiser=optimiser, sigma0=0.05
-        )
+        parameterisation = optimiser(cost=spm_costs, sigma0=0.05)
         if issubclass(optimiser, pybop.BasePintsOptimiser):
-            parameterisation.optimiser.set_max_unchanged_iterations(
-                iterations=35, threshold=1e-5
-            )
-        parameterisation.optimiser.set_max_iterations(125)
+            parameterisation.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
+        parameterisation.set_max_iterations(125)
 
         initial_cost = parameterisation.cost(spm_costs.x0)
 
@@ -122,9 +118,9 @@ class TestModelParameterisation:
             if isinstance(
                 spm_costs, (pybop.GaussianLogLikelihoodKnownSigma, pybop.MAP)
             ):
-                parameterisation.optimiser.set_learning_rate(1.8e-5)
+                parameterisation.set_learning_rate(1.8e-5)
             else:
-                parameterisation.optimiser.set_learning_rate(0.02)
+                parameterisation.set_learning_rate(0.02)
             x, final_cost = parameterisation.run()
 
         elif optimiser in [pybop.SciPyMinimize]:
@@ -192,14 +188,10 @@ class TestModelParameterisation:
             spm_two_signal_cost.bounds = bounds
 
         # Test each optimiser
-        parameterisation = pybop.Optimisation(
-            cost=spm_two_signal_cost, optimiser=multi_optimiser, sigma0=0.03
-        )
+        parameterisation = multi_optimiser(cost=spm_two_signal_cost, sigma0=0.03)
         if issubclass(multi_optimiser, pybop.BasePintsOptimiser):
-            parameterisation.optimiser.set_max_unchanged_iterations(
-                iterations=35, threshold=5e-4
-            )
-        parameterisation.optimiser.set_max_iterations(125)
+            parameterisation.set_max_unchanged_iterations(iterations=35, threshold=5e-4)
+        parameterisation.set_max_iterations(125)
 
         initial_cost = parameterisation.cost(spm_two_signal_cost.x0)
         x, final_cost = parameterisation.run()
@@ -234,7 +226,7 @@ class TestModelParameterisation:
         optimiser = pybop.CMAES
 
         # Build the optimisation problem
-        parameterisation = pybop.Optimisation(cost=cost, optimiser=optimiser)
+        parameterisation = optimiser(cost=cost)
 
         # Run the optimisation problem
         x, final_cost = parameterisation.run()

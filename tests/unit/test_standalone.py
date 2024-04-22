@@ -15,10 +15,10 @@ class TestStandalone:
     def test_standalone(self):
         # Build an Optimisation problem with a StandaloneCost
         cost = StandaloneCost()
-        opt = pybop.Optimisation(cost=cost, optimiser=pybop.SciPyDifferentialEvolution)
-        x, final_cost = opt.run()
+        optim = pybop.DefaultOptimiser(cost=cost)
+        x, final_cost = optim.run()
 
-        assert len(opt.x0) == opt._n_parameters
+        assert len(optim.x0) == optim._n_parameters
         np.testing.assert_allclose(x, 0, atol=1e-2)
         np.testing.assert_allclose(final_cost, 42, atol=1e-2)
 
