@@ -49,7 +49,7 @@ class GradientDescent(BasePintsOptimiser):
         x0 : array_like
             Initial position from which optimization will start.
         sigma0 : float
-            Initial step size.
+            Initial step size (default: 0.02).
         learning_rate : float
             The learning rate, as a float greater than zero.
 
@@ -62,8 +62,10 @@ class GradientDescent(BasePintsOptimiser):
         if optimiser_kwargs.pop("bounds", None) is not None:
             print("NOTE: Boundaries ignored by Gradient Descent")
         bounds = None  # Bounds ignored in pints.GradientDescent
-        if optimiser_kwargs.pop("learning_rate", None) is not None:
-            self.set_learning_rate(optimiser_kwargs["learning_rate"])
+        if "learning_rate" in optimiser_kwargs.keys():
+            self.set_learning_rate(optimiser_kwargs.pop("learning_rate"))
+        if "sigma0" not in optimiser_kwargs.keys():
+            optimiser_kwargs["sigma0"] = 0.02  # set default initial step size
         super().__init__(cost, pints.GradientDescent, bounds=bounds, **optimiser_kwargs)
 
     def set_learning_rate(self, eta):
