@@ -60,7 +60,7 @@ optim = pybop.NelderMead(
     allow_infeasible_solutions=True,
     sigma0=0.05,
     max_iterations=100,
-    max_unchanged_iterations=45,
+    max_unchanged_iterations=20,
 )
 
 # Run optimisation
