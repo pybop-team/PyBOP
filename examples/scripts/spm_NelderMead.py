@@ -24,8 +24,8 @@ sigma = 0.003
 experiment = pybop.Experiment(
     [
         (
-            "Discharge at 0.5C for 3 minutes (1 second period)",
-            "Charge at 0.5C for 3 minutes (1 second period)",
+            "Discharge at 0.5C for 3 minutes (2 second period)",
+            "Charge at 0.5C for 3 minutes (2 second period)",
         ),
     ]
     * 2
