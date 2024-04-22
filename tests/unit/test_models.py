@@ -267,7 +267,7 @@ class TestModels:
 
         problem = pybop.FittingProblem(model, parameters=parameters, dataset=dataset)
         res = problem.evaluate([-0.2, -0.2])
-        res_grad = problem.evaluateS1([-0.2, -0.2])
+        _, res_grad = problem.evaluateS1([-0.2, -0.2])
 
         assert np.isinf(res).any()
         assert np.isinf(res_grad).any()
