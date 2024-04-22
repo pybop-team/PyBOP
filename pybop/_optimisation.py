@@ -234,8 +234,8 @@ class Optimisation:
 
             # For population based optimisers, don't use more workers than
             # particles!
-            if isinstance(self._optimiser, pints.PopulationBasedOptimiser):
-                n_workers = min(n_workers, self._optimiser.population_size())
+            if isinstance(self.optimiser, pints.PopulationBasedOptimiser):
+                n_workers = min(n_workers, self.optimiser.population_size())
             evaluator = pints.ParallelEvaluator(f, n_workers=n_workers)
         else:
             evaluator = pints.SequentialEvaluator(f)
