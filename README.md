@@ -49,7 +49,7 @@ To install a previous version of PyBOP, use the following template and replace t
 pip install pybop==v24.3
 ```
 
-To check that PyBOP is installed correctly, run one of the examples in the following section. For a development installation, see the [Contribution Guide](https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md#Installation). More installation information is available in our [documentation](https://pybop-docs.readthedocs.io/en/latest/installation.html).
+To check that PyBOP is installed correctly, run one of the examples in the following section. For a development installation, see the [Contribution Guide](https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md#Installation). More installation information is available in our [documentation](https://pybop-docs.readthedocs.io/en/latest/installation.html) and the [extended installation instructions](https://docs.pybamm.org/en/latest/source/user_guide/installation/gnu-linux-mac.html) for PyBaMM.
 
 ## Using PyBOP
 PyBOP has two intended uses:
@@ -77,7 +77,7 @@ Additional script-based examples can be found in the [examples directory](https:
 - [Gradient based parameter identification of a SPM](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_adam.py)
 
 ### Supported Methods
-The table below lists the currently supported [models](https://github.com/pybop-team/PyBOP/tree/develop/pybop/models), [optimisers](https://github.com/pybop-team/PyBOP/tree/develop/pybop/models), and [cost functions](https://github.com/pybop-team/PyBOP/tree/develop/pybop/models) in PyBOP.
+The table below lists the currently supported [models](https://github.com/pybop-team/PyBOP/tree/develop/pybop/models), [optimisers](https://github.com/pybop-team/PyBOP/tree/develop/pybop/optimisers), and [cost functions](https://github.com/pybop-team/PyBOP/tree/develop/pybop/costs) in PyBOP.
 
 <p align="center">
 
