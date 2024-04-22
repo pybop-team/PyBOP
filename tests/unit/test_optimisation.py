@@ -210,8 +210,8 @@ class TestOptimisation:
         assert optim.optimiser._iterations == 2
 
         # Test guessed values
-        optim.set_f_guessed_tracking(True)
-        assert optim._use_f_guessed is True
+        optim.optimiser.set_f_guessed_tracking(True)
+        assert optim.optimiser._use_f_guessed is True
 
         # Test invalid values
         with pytest.raises(ValueError):

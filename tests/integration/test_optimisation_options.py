@@ -82,9 +82,9 @@ class TestOptimisation:
         parameterisation = pybop.Optimisation(
             cost=spm_costs, optimiser=pybop.XNES, sigma0=0.05
         )
-        parameterisation.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
-        parameterisation.set_max_iterations(125)
-        parameterisation.set_f_guessed_tracking(f_guessed)
+        parameterisation.optimiser.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
+        parameterisation.optimiser.set_max_iterations(125)
+        parameterisation.optimiser.set_f_guessed_tracking(f_guessed)
 
         initial_cost = parameterisation.cost(spm_costs.x0)
         x, final_cost = parameterisation.run()
