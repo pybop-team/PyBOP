@@ -144,6 +144,8 @@ class TestOptimisation:
 
         if optimiser_class in [pybop.SciPyDifferentialEvolution]:
             # Check and update population size
+            with pytest.raises(ValueError):
+                optim.optimiser.set_population_size(-5)
             optim.optimiser.set_population_size(10)
             assert optim.optimiser.options["popsize"] == 10
             optim.run(popsize=5)
@@ -206,6 +208,10 @@ class TestOptimisation:
         optim.optimiser.set_min_iterations(1)
         x, __ = optim.run()
         assert optim.optimiser._iterations == 2
+
+        # Test guessed values
+        optim.set_f_guessed_tracking(True)
+        assert optim._use_f_guessed is True
 
         # Test invalid values
         with pytest.raises(ValueError):
