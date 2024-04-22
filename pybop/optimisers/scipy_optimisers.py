@@ -38,7 +38,7 @@ class BaseSciPyOptimiser(Optimisation):
     def __init__(self, cost, **optimiser_kwargs):
         super().__init__(cost, **optimiser_kwargs)
 
-    def _update_options(self, **optimiser_kwargs):
+    def _set_options(self, **optimiser_kwargs):
         """
         Update the optimiser options and remove the corresponding entries from the
         optimiser_kwargs dictionary in advance of passing to the parent class.

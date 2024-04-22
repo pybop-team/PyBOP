@@ -43,12 +43,15 @@ class BasePintsOptimiser(Optimisation):
         super().__init__(cost, **optimiser_kwargs)
 
         # Create an instance of the PINTS optimiser class
-        self.method = pints_method(self.x0, self.sigma0, self._boundaries)
+        if issubclass(pints_method, pints.Optimiser):
+            self.method = pints_method(self.x0, self.sigma0, self._boundaries)
+        else:
+            raise ValueError("The pints_method is not recognised as a PINTS optimiser.")
 
         # Check if sensitivities are required
         self._needs_sensitivities = self.method.needs_sensitivities()
 
-    def _update_options(self, **optimiser_kwargs):
+    def _set_options(self, **optimiser_kwargs):
         """
         Update the optimiser options and remove the corresponding entries from the
         optimiser_kwargs dictionary in advance of passing to the parent class.

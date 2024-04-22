@@ -19,8 +19,8 @@ class Optimisation:
 
     This class serves as a base class for creating optimisers. It provides a basic structure for
     an optimisation algorithm, including the initial setup and a method stub for performing the
-    optimisation process. Child classes should override update_options and the_run method with
-    a specific algorithm.
+    optimisation process. Child classes should override set_options and the _run method with a
+    specific algorithm.
 
     Parameters
     ----------
@@ -64,14 +64,14 @@ class Optimisation:
         self.log = []
         self.set_max_iterations()
         self.set_allow_infeasible_solutions()
-        self.update_options(**optimiser_kwargs)
+        self.set_options(**optimiser_kwargs)
 
         # Check if minimising or maximising
         if isinstance(self.cost, pybop.BaseLikelihood):
             self.cost._minimising = False
         self._minimising = self.cost._minimising
 
-    def update_options(self, **optimiser_kwargs):
+    def set_options(self, **optimiser_kwargs):
         """
         Update the optimiser options and check that all have been applied.
 
@@ -82,7 +82,7 @@ class Optimisation:
         """
         # Update and remove optimiser options from the optimiser_kwargs dictionary
         # in the child class first and then in this base class
-        optimiser_kwargs = self._update_options(**optimiser_kwargs)
+        optimiser_kwargs = self._set_options(**optimiser_kwargs)
 
         key_list = list(optimiser_kwargs.keys())
         for key in key_list:
@@ -101,7 +101,7 @@ class Optimisation:
                 f"Unrecognised keyword arguments were not used: {optimiser_kwargs}"
             )
 
-    def _update_options(self, **optimiser_kwargs):
+    def _set_options(self, **optimiser_kwargs):
         """
         Update the optimiser options and remove the corresponding entries from the
         optimiser_kwargs dictionary in advance of passing to the parent class
@@ -137,7 +137,7 @@ class Optimisation:
         final_cost : float
             The final cost associated with the best parameters.
         """
-        self.update_options(**optimiser_kwargs)
+        self.set_options(**optimiser_kwargs)
 
         if x0 is not None:
             self.x0 = x0
