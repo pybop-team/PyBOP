@@ -51,7 +51,7 @@ docs = [
     "myst-parser",
 ]
 dev = [
-    "nox",
+    "nox[uv]",
     "nbmake",
     "pre-commit",
     "pytest>=6",
