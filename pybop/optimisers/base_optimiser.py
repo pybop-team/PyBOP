@@ -27,15 +27,15 @@ class BasePintsOptimiser(Optimisation):
 
     Parameters
     ----------
-    x0 : array_like
-        Initial position from which optimization will start.
-    sigma0 : float, optional
-        Initial step size or standard deviation depending on the optimiser (default is 0.1).
-    bounds : dict, optional
-        A dictionary with 'lower' and 'upper' keys containing arrays for lower and upper
-        bounds on the parameters.
     **optimiser_kwargs : optional
-        Valid PINTS option keys and their values.
+        Valid PINTS option keys and their values, for example:
+        x0 : array_like
+            Initial position from which optimization will start.
+        sigma0 : float
+            Initial step size or standard deviation depending on the optimiser.
+        bounds : dict
+            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
+            upper bounds on the parameters.
     """
 
     def __init__(self, cost, pints_method, **optimiser_kwargs):
@@ -162,6 +162,9 @@ class BasePintsOptimiser(Optimisation):
         # Iterations and function evaluations
         iteration = 0
         evaluations = 0
+
+        # Empty result
+        self.result = Result()
 
         # Unchanged iterations counter
         unchanged_iterations = 0
@@ -315,6 +318,11 @@ class BasePintsOptimiser(Optimisation):
         if self._transformation is not None:
             x = self._transformation.to_model(x)
 
+        # Store result
+        self.result.x = x
+        self.result.final_cost = f
+        self.result.nit = self._iterations
+
         # Return best position and the score used internally,
         # i.e the negative log-likelihood in the case of
         # self._minimising = False
@@ -423,3 +431,24 @@ class BasePintsOptimiser(Optimisation):
             if evaluations < 0:
                 raise ValueError("Maximum number of evaluations cannot be negative.")
         self._max_evaluations = evaluations
+
+
+class Result:
+    """
+    Stores the result of the optimisation.
+
+    Attributes
+    ----------
+    x : ndarray
+        The solution of the optimisation.
+    final_cost : float
+        The cost associated with the solution x.
+    nit : int
+        Number of iterations performed by the optimiser.
+
+    """
+
+    def __init__(self):
+        self.x = None
+        self.final_cost = None
+        self.nit = None

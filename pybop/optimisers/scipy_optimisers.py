@@ -87,9 +87,11 @@ class BaseSciPyOptimiser(Optimisation):
             The final cost associated with the best parameters.
         """
         self.result = self._run_optimiser()
+
+        self.result.final_cost = self.cost(self.result.x)
         self._iterations = self.result.nit
 
-        return self.result.x, self.cost(self.result.x)
+        return self.result.x, self.result.final_cost
 
     def set_max_unchanged_iterations(self, *args, **kwargs):
         """
