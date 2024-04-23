@@ -55,9 +55,9 @@ class BaseSciPyOptimiser(Optimisation):
         """
         # Unpack nested values from SciPy options dictionary
         if "options" in optimiser_kwargs.keys():
-            options_list = list(optimiser_kwargs.keys())
+            options_list = list(optimiser_kwargs["options"].keys())
             for key in options_list:
-                if key not in optimiser_kwargs:
+                if key not in optimiser_kwargs.keys():
                     optimiser_kwargs[key] = optimiser_kwargs["options"].pop(key)
                 else:
                     optimiser_kwargs["options"].pop(key)  # remove entry

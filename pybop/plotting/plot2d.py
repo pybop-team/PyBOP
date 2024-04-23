@@ -128,22 +128,23 @@ def plot2d(
         )
 
         # Plot the initial guess
-        fig.add_trace(
-            go.Scatter(
-                x=[optim.x0[0]],
-                y=[optim.x0[1]],
-                mode="markers",
-                marker_symbol="circle",
-                marker=dict(
-                    color="mediumspringgreen",
-                    line_color="mediumspringgreen",
-                    line_width=1,
-                    size=14,
-                    showscale=False,
-                ),
-                showlegend=False,
+        if optim.x0 is not None:
+            fig.add_trace(
+                go.Scatter(
+                    x=[optim.x0[0]],
+                    y=[optim.x0[1]],
+                    mode="markers",
+                    marker_symbol="circle",
+                    marker=dict(
+                        color="mediumspringgreen",
+                        line_color="mediumspringgreen",
+                        line_width=1,
+                        size=14,
+                        showscale=False,
+                    ),
+                    showlegend=False,
+                )
             )
-        )
 
     # Update the layout and display the figure
     fig.update_layout(**layout_kwargs)

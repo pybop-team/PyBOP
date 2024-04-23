@@ -117,16 +117,16 @@ class Optimisation:
         """
         return optimiser_kwargs
 
-    def run(self, x0=None, **optimiser_kwargs):
+    def run(self, **optimiser_kwargs):
         """
         Run the optimisation and return the optimised parameters and final cost.
 
         Parameters
         ----------
-        x0 : ndarray, optional
-            Initial guess for the parameters (default: None).
         **optimiser_kwargs : optional
-            Valid option keys and their values.
+            Valid option keys and their values, for example:
+            x0 : ndarray
+                Initial guess for the parameters.
 
         Returns
         -------
@@ -136,9 +136,6 @@ class Optimisation:
             The final cost associated with the best parameters.
         """
         self.set_options(**optimiser_kwargs)
-
-        if x0 is not None:
-            self.x0 = x0
 
         x, final_cost = self._run()
 

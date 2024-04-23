@@ -119,19 +119,28 @@ class TestOptimisation:
         assert optim._max_iterations == 10
         assert optim._iterations <= 10
 
+        # Check and update bounds
+        assert optim.bounds == cost.bounds
+        bounds = {"upper": [0.61], "lower": [0.59]}
+        optim.run(bounds=bounds)
+        assert optim.bounds == bounds
+
         if issubclass(optimiser, pybop.BasePintsOptimiser):
-            # PINTS method
+            optim.run(
+                use_f_guessed=True,
+                parallel=True,
+                min_iterations=3,
+                max_unchanged_iterations=5,
+                threshold=1e-2,
+                max_evaluations=20,
+            )
             with pytest.raises(
                 ValueError,
                 match="Unrecognised keyword arguments",
             ):
                 optim = optimiser(cost=cost, tol=1e-3)
         else:
-            # Check and update bounds
-            assert optim.bounds == cost.bounds
-            bounds = {"upper": [0.61], "lower": [0.59]}
-            optim.run(bounds=bounds)
-            assert optim.bounds == bounds
+            # Check bounds in list format
             bounds = [
                 (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
             ]
@@ -142,6 +151,10 @@ class TestOptimisation:
             optim.run(tol=1e-2)
             assert optim.tol == 1e-2
 
+            # Pass nested options
+            options = dict(maxiter=10)
+            optim.run(options=options)
+
         if optimiser in [pybop.SciPyDifferentialEvolution]:
             # Check and update population size
             with pytest.raises(ValueError):
@@ -150,7 +163,14 @@ class TestOptimisation:
             assert optim.popsize == 10
             optim.run(popsize=5)
             assert optim.popsize == 5
-        elif optimiser in [pybop.SciPyMinimize]:
+        else:
+            # Check and update initial values
+            assert optim.x0 == cost.x0
+            x0_new = cost.x0 * 1.01
+            optim.run(x0=x0_new)
+            assert optim.x0 == x0_new
+
+        if optimiser in [pybop.SciPyMinimize]:
             # Check a method that uses gradient information
             optim.run(method="L-BFGS-B", jac=True)
             with pytest.raises(
