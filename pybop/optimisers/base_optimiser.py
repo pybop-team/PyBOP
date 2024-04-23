@@ -40,11 +40,12 @@ class BasePintsOptimiser(Optimisation):
 
     def __init__(self, cost, pints_method, **optimiser_kwargs):
         self.__dict__.update(DEFAULT_PINTS_OPTIMISER_OPTIONS)
+        self.pints_method = pints_method
         super().__init__(cost, **optimiser_kwargs)
 
         # Create an instance of the PINTS optimiser class
         if issubclass(pints_method, pints.Optimiser):
-            self.method = pints_method(self.x0, self.sigma0, self._boundaries)
+            self.method = self.pints_method(self.x0, self.sigma0, self._boundaries)
         else:
             raise ValueError("The pints_method is not recognised as a PINTS optimiser.")
 
@@ -66,12 +67,18 @@ class BasePintsOptimiser(Optimisation):
         optimiser_kwargs : dict
             Remaining option keys and their values.
         """
+        reinit_required = False
+
         key_list = list(optimiser_kwargs.keys())
         for key in key_list:
             if key == "x0":
                 self.x0 = optimiser_kwargs.pop(key)
                 # Convert x0 to PINTS vector
                 self._x0 = pints.vector(self.x0)
+                reinit_required = True
+            elif key == "sigma0":
+                self.sigma0 = optimiser_kwargs.pop(key)
+                reinit_required = True
             elif key == "bounds":
                 # Convert bounds to PINTS boundaries
                 self.bounds = optimiser_kwargs.pop(key)
@@ -81,6 +88,7 @@ class BasePintsOptimiser(Optimisation):
                     )
                 else:
                     self._boundaries = None
+                reinit_required = True
             elif key == "use_f_guessed":
                 self.set_f_guessed_tracking(optimiser_kwargs.pop(key))
             elif key == "parallel":
@@ -101,6 +109,9 @@ class BasePintsOptimiser(Optimisation):
                 pass  # only used with unchanged_max_iterations
             elif key == "max_evaluations":
                 self.set_max_evaluations(optimiser_kwargs.pop(key))
+
+        if reinit_required:
+            self.method = self.pints_method(self.x0, self.sigma0, self._boundaries)
 
         return optimiser_kwargs
 
