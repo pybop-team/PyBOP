@@ -121,7 +121,7 @@ class TestOptimisation:
 
         # Check and update bounds
         assert optim.bounds == cost.bounds
-        bounds = {"upper": [0.61], "lower": [0.59]}
+        bounds = {"upper": [0.63], "lower": [0.57]}
         optim.run(bounds=bounds)
         assert optim.bounds == bounds
 
