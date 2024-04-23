@@ -57,12 +57,9 @@ class GradientDescent(BasePintsOptimiser):
     """
 
     def __init__(self, cost, **optimiser_kwargs):
-        if optimiser_kwargs.pop("bounds", None) is not None:
-            print("NOTE: Boundaries ignored by Gradient Descent")
-        bounds = None  # Bounds ignored in pints.GradientDescent
         if "sigma0" not in optimiser_kwargs.keys():
             optimiser_kwargs["sigma0"] = 0.02  # set default
-        super().__init__(cost, pints.GradientDescent, bounds=bounds, **optimiser_kwargs)
+        super().__init__(cost, pints.GradientDescent, **optimiser_kwargs)
 
 
 class Adam(BasePintsOptimiser):
@@ -88,10 +85,7 @@ class Adam(BasePintsOptimiser):
     """
 
     def __init__(self, cost, **optimiser_kwargs):
-        if optimiser_kwargs.pop("bounds", None) is not None:
-            print("NOTE: Boundaries ignored by Adam")
-        bounds = None  # Bounds ignored in pints.Adam
-        super().__init__(cost, pints.Adam, bounds=bounds, **optimiser_kwargs)
+        super().__init__(cost, pints.Adam, **optimiser_kwargs)
 
 
 class IRPropMin(BasePintsOptimiser):
@@ -246,10 +240,7 @@ class NelderMead(BasePintsOptimiser):
     """
 
     def __init__(self, cost, **optimiser_kwargs):
-        if optimiser_kwargs.pop("bounds", None) is not None:
-            print("NOTE: Boundaries ignored by NelderMead")
-        bounds = None  # Bounds ignored in pints.NelderMead
-        super().__init__(cost, pints.NelderMead, bounds=bounds, **optimiser_kwargs)
+        super().__init__(cost, pints.NelderMead, **optimiser_kwargs)
 
 
 class CMAES(BasePintsOptimiser):

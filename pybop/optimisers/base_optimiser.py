@@ -43,14 +43,8 @@ class BasePintsOptimiser(Optimisation):
         self.pints_method = pints_method
         super().__init__(cost, **optimiser_kwargs)
 
-        # Create an instance of the PINTS optimiser class
-        if issubclass(pints_method, pints.Optimiser):
-            self.method = self.pints_method(self.x0, self.sigma0, self._boundaries)
-        else:
-            raise ValueError("The pints_method is not recognised as a PINTS optimiser.")
-
-        # Check if sensitivities are required
-        self._needs_sensitivities = self.method.needs_sensitivities()
+        # Create  an instance of the PINTS optimiser class
+        self.initialise_method()
 
     def _set_options(self, **optimiser_kwargs):
         """
@@ -71,23 +65,8 @@ class BasePintsOptimiser(Optimisation):
 
         key_list = list(optimiser_kwargs.keys())
         for key in key_list:
-            if key == "x0":
-                self.x0 = optimiser_kwargs.pop(key)
-                # Convert x0 to PINTS vector
-                self._x0 = pints.vector(self.x0)
-                reinit_required = True
-            elif key == "sigma0":
-                self.sigma0 = optimiser_kwargs.pop(key)
-                reinit_required = True
-            elif key == "bounds":
-                # Convert bounds to PINTS boundaries
-                self.bounds = optimiser_kwargs.pop(key)
-                if self.bounds is not None:
-                    self._boundaries = pints.RectangularBoundaries(
-                        self.bounds["lower"], self.bounds["upper"]
-                    )
-                else:
-                    self._boundaries = None
+            if key in ["x0", "sigma0", "bounds"]:
+                self.__dict__.update({key: optimiser_kwargs.pop(key)})
                 reinit_required = True
             elif key == "use_f_guessed":
                 self.set_f_guessed_tracking(optimiser_kwargs.pop(key))
@@ -111,9 +90,39 @@ class BasePintsOptimiser(Optimisation):
                 self.set_max_evaluations(optimiser_kwargs.pop(key))
 
         if reinit_required:
-            self.method = self.pints_method(self.x0, self.sigma0, self._boundaries)
+            self.initialise_method()
 
         return optimiser_kwargs
+
+    def initialise_method(self):
+        """
+        Creates an instance of the PINTS optimiser class.
+        """
+        if issubclass(self.pints_method, pints.Optimiser):
+            self.method = self.pints_method(self.x0, self.sigma0, self._boundaries)
+        else:
+            raise ValueError("The pints_method is not recognised as a PINTS optimiser.")
+
+        # Convert x0 to PINTS vector
+        self._x0 = pints.vector(self.x0)
+
+        # Convert bounds to PINTS boundaries
+        if self.bounds is not None:
+            if issubclass(
+                self.pints_method, (pints.GradientDescent, pints.Adam, pints.NelderMead)
+            ):
+                print(f"NOTE: Boundaries ignored by {self.pints_method}")
+                self.bounds = None
+                self._boundaries = None
+            else:
+                self._boundaries = pints.RectangularBoundaries(
+                    self.bounds["lower"], self.bounds["upper"]
+                )
+        else:
+            self._boundaries = None
+
+        # Check if sensitivities are required
+        self._needs_sensitivities = self.method.needs_sensitivities()
 
     def name(self):
         """

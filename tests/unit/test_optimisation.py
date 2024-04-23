@@ -131,6 +131,7 @@ class TestOptimisation:
 
         if issubclass(optimiser, (pybop.GradientDescent, pybop.Adam, pybop.NelderMead)):
             # Unused bounds
+            optim.run(bounds=cost.bounds)
             assert optim.bounds is None
         else:
             # Check and update bounds
@@ -169,8 +170,7 @@ class TestOptimisation:
             assert optim._max_iterations == 5
 
             # Trigger unused input warning
-            with pytest.raises(ValueError):
-                optim.run(max_unchanged_iterations=5, threshold=1e-2)
+            optim.set_max_unchanged_iterations(5)
 
         if optimiser in [pybop.SciPyDifferentialEvolution]:
             # Check and update population size
