@@ -91,7 +91,7 @@ class BaseSciPyOptimiser(Optimisation):
 
         return result.x, self.cost(result.x)
 
-    def set_max_unchanged_iterations(self, **kwargs):
+    def set_max_unchanged_iterations(self, *args, **kwargs):
         """
         Raise a warning that this stopping criterion is not used by this optimiser.
         """
