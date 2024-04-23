@@ -128,7 +128,7 @@ class TestOptimisation:
         if issubclass(optimiser, pybop.BasePintsOptimiser):
             optim.run(
                 use_f_guessed=True,
-                parallel=True,
+                parallel=False,
                 min_iterations=3,
                 max_unchanged_iterations=5,
                 threshold=1e-2,
