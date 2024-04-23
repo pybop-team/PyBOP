@@ -269,5 +269,6 @@ class TestModels:
         res = problem.evaluate([-0.2, -0.2])
         _, res_grad = problem.evaluateS1([-0.2, -0.2])
 
-        assert np.isinf(res).any()
+        for key in problem.signal:
+            assert np.isinf(res.get(key, [])).any()
         assert np.isinf(res_grad).any()
