@@ -166,7 +166,7 @@ class TestOptimisation:
         else:
             # Check and update initial values
             assert optim.x0 == cost.x0
-            x0_new = cost.x0 * 1.01
+            x0_new = np.array([0.6])
             optim.run(x0=x0_new)
             assert optim.x0 == x0_new
 
