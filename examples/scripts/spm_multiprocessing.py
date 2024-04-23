@@ -77,18 +77,18 @@ fig = go.Figure(
         go.Scatter(
             x=population_size,
             y=times_multi_mean,
-            mode="markers",
+            mode="lines",
             showlegend=True,
             name="Multiprocessing",
-            marker=dict(size=5, color="blue"),
+            # marker=dict(size=5, color="blue"),
         ),
         go.Scatter(
             x=population_size,
             y=times_single_mean,
-            mode="markers",
+            mode="lines",
             showlegend=True,
             name="Single Processing",
-            marker=dict(size=5, color="red"),
+            # marker=dict(size=5, color="red"),
         ),
     ],
     layout=go.Layout(
@@ -103,4 +103,5 @@ fig = go.Figure(
 )
 
 # fig.show()
+fig.write_image("multiprocessing.pdf")
 fig.write_image("multiprocessing.pdf")
