@@ -1,4 +1,3 @@
-import numpy as np
 import pints
 
 from pybop import BasePintsOptimiser
@@ -143,18 +142,6 @@ class PSO(BasePintsOptimiser):
     """
 
     def __init__(self, cost, **optimiser_kwargs):
-        if (
-            "bounds" in optimiser_kwargs.keys()
-            and optimiser_kwargs["bounds"] is not None
-        ):
-            if not all(
-                np.isfinite(value)
-                for sublist in optimiser_kwargs["bounds"].values()
-                for value in sublist
-            ):
-                raise ValueError(
-                    "Either all bounds or no bounds must be set for Pints PSO."
-                )
         super().__init__(cost, pints.PSO, **optimiser_kwargs)
 
 

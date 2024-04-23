@@ -133,6 +133,17 @@ class TestOptimisation:
             # Unused bounds
             optim.run(bounds=cost.bounds)
             assert optim.bounds is None
+        elif issubclass(optimiser, pybop.PSO):
+            assert optim.bounds == cost.bounds
+            # Cannot accept infinite bounds
+            bounds = {"upper": [np.inf], "lower": [0.57]}
+            with pytest.raises(
+                ValueError,
+                match="Either all bounds or no bounds must be set",
+            ):
+                optim.run(bounds=bounds)
+            # Reset
+            optim.set_options(bounds=cost.bounds)
         else:
             # Check and update bounds
             assert optim.bounds == cost.bounds
@@ -180,6 +191,15 @@ class TestOptimisation:
             assert optim.popsize == 10
             optim.run(popsize=5)
             assert optim.popsize == 5
+
+            # Test invalid bounds
+            with pytest.raises(ValueError):
+                optim.run(bounds=None)
+            with pytest.raises(ValueError):
+                optim.run(bounds=[(0, np.inf)])
+            with pytest.raises(ValueError):
+                optim.run(bounds={"upper": [np.inf], "lower": [0.57]})
+
         else:
             # Check and update initial values
             assert optim.x0 == cost.x0
