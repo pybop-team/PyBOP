@@ -13,6 +13,7 @@ Before you mark your PR as ready for review, please ensure that you've considere
 ## Type of change
 - [ ] New Feature: A non-breaking change that adds new functionality.
 - [ ] Optimization: A code change that improves performance.
+- [ ] Examples: A change to existing or additional examples.
 - [ ] Bug Fix: A non-breaking change that addresses an issue.
 - [ ] Documentation: Updates to documentation or new documentation for new features.
 - [ ] Refactoring: Non-functional changes that improve the codebase.
@@ -24,7 +25,7 @@ Before you mark your PR as ready for review, please ensure that you've considere
 
 - [ ] No style issues: `$ pre-commit run` (or `$ nox -s pre-commit`) (see [CONTRIBUTING.md](https://github.com/pybop-team/PyBOP/blob/develop/CONTRIBUTING.md#installing-and-using-pre-commit) for how to set this up to run automatically when committing locally, in just two lines of code)
 - [ ] All unit tests pass: `$ nox -s tests`
-- [ ] The documentation builds: `$ nox -s docs`
+- [ ] The documentation builds: `$ nox -s doctest`
 
 You can run integration tests, unit tests, and doctests together at once, using `$ nox -s quick`.
 

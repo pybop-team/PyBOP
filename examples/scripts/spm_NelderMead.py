@@ -19,27 +19,50 @@ parameters = [
 ]
 
 # Generate data
-sigma = 0.001
-t_eval = np.arange(0, 900, 2)
-values = model.predict(t_eval=t_eval)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
+init_soc = 0.5
+sigma = 0.003
+experiment = pybop.Experiment(
+    [
+        (
+            "Discharge at 0.5C for 3 minutes (1 second period)",
+            "Charge at 0.5C for 3 minutes (1 second period)",
+        ),
+    ]
+    * 2
+)
+values = model.predict(init_soc=init_soc, experiment=experiment)
+
+
+def noise(sigma):
+    return np.random.normal(0, sigma, len(values["Voltage [V]"].data))
+
 
 # Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": t_eval,
+        "Time [s]": values["Time [s]"].data,
         "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": corrupt_values,
+        "Voltage [V]": values["Voltage [V]"].data + noise(sigma),
+        "Bulk open-circuit voltage [V]": values["Bulk open-circuit voltage [V]"].data
+        + noise(sigma),
     }
 )
 
+signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 # Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.SumSquaredError(problem)
-optim = pybop.Optimisation(
-    cost, optimiser=pybop.GradientDescent, sigma0=0.022, verbose=True
+problem = pybop.FittingProblem(
+    model, parameters, dataset, signal=signal, init_soc=init_soc
 )
-optim.set_max_iterations(125)
+cost = pybop.RootMeanSquaredError(problem)
+optim = pybop.Optimisation(
+    cost,
+    optimiser=pybop.NelderMead,
+    verbose=True,
+    allow_infeasible_solutions=True,
+    sigma0=0.05,
+)
+optim.set_max_iterations(100)
+optim.set_max_unchanged_iterations(45)
 
 # Run optimisation
 x, final_cost = optim.run()

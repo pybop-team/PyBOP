@@ -4,7 +4,8 @@ import nox
 
 # nox options
 nox.options.reuse_existing_virtualenvs = True
-nox.options.venv_backend = "virtualenv"
+nox.options.force_venv_backend = "uv"
+nox.needs_version = ">=2024.4.15"
 
 # Environment variables to control CI behaviour for nox sessions
 PYBOP_SCHEDULED = int(os.environ.get("PYBOP_SCHEDULED", 0))
@@ -22,6 +23,7 @@ def unit(session):
 @nox.session
 def coverage(session):
     session.install("-e", ".[all,dev]", silent=False)
+    session.install("pip")
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
     session.run("pytest", "--unit", "--cov", "--cov-append", "--cov-report=xml")
@@ -40,6 +42,7 @@ def coverage(session):
 @nox.session
 def plots(session):
     session.install("-e", ".[plot,dev]", silent=False)
+    session.install("pip")
     session.run("pytest", "--plots", "-n", "0")
 
 
@@ -51,13 +54,15 @@ def integration(session):
 
 @nox.session
 def examples(session):
+    """Run the examples and notebooks"""
     session.install("-e", ".[all,dev]", silent=False)
     session.run("pytest", "--examples")
+    notebooks(session)
 
 
 @nox.session
 def notebooks(session):
-    """Run the examples tests for Jupyter notebooks."""
+    """Run the Jupyter notebooks."""
     session.install("-e", ".[all,dev]", silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
@@ -65,6 +70,7 @@ def notebooks(session):
         "pytest",
         "--notebooks",
         "--nbmake",
+        "--nbmake-timeout=1000",
         "examples/",
     )
 

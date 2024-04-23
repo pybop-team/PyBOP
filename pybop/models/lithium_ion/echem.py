@@ -1,6 +1,6 @@
 import pybamm
 
-from .echem_base import EChemBaseModel
+from .base_echem import EChemBaseModel
 
 DEFAULT_ECHEM_MODEL_KWARGS = dict(
     build=False,
@@ -47,39 +47,22 @@ class SPM(EChemBaseModel):
         solver=None,
         **pybamm_kwargs,
     ):
-        super().__init__()
         model_options = DEFAULT_ECHEM_MODEL_KWARGS
         for key, value in pybamm_kwargs.items():
             model_options[key] = value
         self.pybamm_model = pybamm.lithium_ion.SPM(**model_options)
         self._unprocessed_model = self.pybamm_model
-        self.name = name
 
-        # Set parameters, using either the provided ones or the default
-        self.default_parameter_values = self.pybamm_model.default_parameter_values
-        self._parameter_set = (
-            parameter_set or self.pybamm_model.default_parameter_values
+        super().__init__(
+            model=self.pybamm_model,
+            name=name,
+            parameter_set=parameter_set,
+            geometry=geometry,
+            submesh_types=submesh_types,
+            var_pts=var_pts,
+            spatial_methods=spatial_methods,
+            solver=solver,
         )
-        self._unprocessed_parameter_set = self._parameter_set
-
-        # Define model geometry and discretization
-        self.geometry = geometry or self.pybamm_model.default_geometry
-        self.submesh_types = submesh_types or self.pybamm_model.default_submesh_types
-        self.var_pts = var_pts or self.pybamm_model.default_var_pts
-        self.spatial_methods = (
-            spatial_methods or self.pybamm_model.default_spatial_methods
-        )
-        self.solver = solver or self.pybamm_model.default_solver
-
-        # Internal attributes for the built model are initialized but not set
-        self._model_with_set_params = None
-        self._built_model = None
-        self._built_initial_soc = None
-        self._mesh = None
-        self._disc = None
-
-        self._electrode_soh = pybamm.lithium_ion.electrode_soh
-        self.rebuild_parameters = self.set_rebuild_parameters()
 
 
 class SPMe(EChemBaseModel):
@@ -123,36 +106,180 @@ class SPMe(EChemBaseModel):
         solver=None,
         **pybamm_kwargs,
     ):
-        super().__init__()
         model_options = DEFAULT_ECHEM_MODEL_KWARGS
         for key, value in pybamm_kwargs.items():
             model_options[key] = value
         self.pybamm_model = pybamm.lithium_ion.SPMe(**model_options)
         self._unprocessed_model = self.pybamm_model
-        self.name = name
 
-        # Set parameters, using either the provided ones or the default
-        self.default_parameter_values = self.pybamm_model.default_parameter_values
-        self._parameter_set = (
-            parameter_set or self.pybamm_model.default_parameter_values
+        super().__init__(
+            model=self.pybamm_model,
+            name=name,
+            parameter_set=parameter_set,
+            geometry=geometry,
+            submesh_types=submesh_types,
+            var_pts=var_pts,
+            spatial_methods=spatial_methods,
+            solver=solver,
         )
-        self._unprocessed_parameter_set = self._parameter_set
 
-        # Define model geometry and discretization
-        self.geometry = geometry or self.pybamm_model.default_geometry
-        self.submesh_types = submesh_types or self.pybamm_model.default_submesh_types
-        self.var_pts = var_pts or self.pybamm_model.default_var_pts
-        self.spatial_methods = (
-            spatial_methods or self.pybamm_model.default_spatial_methods
+
+class DFN(EChemBaseModel):
+    """
+    Wraps the Doyle-Fuller-Newman (DFN) model for simulating lithium-ion batteries, as implemented in PyBaMM.
+
+    The DFN represents lithium-ion battery dynamics using multiple spherical particles
+    to simulate the behavior of the negative and positive electrodes. This model includes
+    electrolyte dynamics, solid-phase diffusion, and Butler-Volmer kinetics. This model
+    is the full-order representation used to reduce to the SPM, and SPMe models.
+
+    Parameters
+    ----------
+    name : str, optional
+        The name for the model instance, defaulting to "Doyle-Fuller-Newman".
+    parameter_set : pybamm.ParameterValues or dict, optional
+        The parameters for the model. If None, default parameters provided by PyBaMM are used.
+    geometry : dict, optional
+        The geometry definitions for the model. If None, default geometry from PyBaMM is used.
+    submesh_types : dict, optional
+        The types of submeshes to use. If None, default submesh types from PyBaMM are used.
+    var_pts : dict, optional
+        The discretization points for each variable in the model. If None, default points from PyBaMM are used.
+    spatial_methods : dict, optional
+        The spatial methods used for discretization. If None, default spatial methods from PyBaMM are used.
+    solver : pybamm.Solver, optional
+        The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
+    options : dict, optional
+        A dictionary of options to customize the behavior of the PyBaMM model.
+    """
+
+    def __init__(
+        self,
+        name="Doyle-Fuller-Newman",
+        parameter_set=None,
+        geometry=None,
+        submesh_types=None,
+        var_pts=None,
+        spatial_methods=None,
+        solver=None,
+        options=None,
+    ):
+        self.pybamm_model = pybamm.lithium_ion.DFN(options=options)
+        self._unprocessed_model = self.pybamm_model
+
+        super().__init__(
+            model=self.pybamm_model,
+            name=name,
+            parameter_set=parameter_set,
+            geometry=geometry,
+            submesh_types=submesh_types,
+            var_pts=var_pts,
+            spatial_methods=spatial_methods,
+            solver=solver,
         )
-        self.solver = solver or self.pybamm_model.default_solver
 
-        # Internal attributes for the built model are initialized but not set
-        self._model_with_set_params = None
-        self._built_model = None
-        self._built_initial_soc = None
-        self._mesh = None
-        self._disc = None
 
-        self._electrode_soh = pybamm.lithium_ion.electrode_soh
-        self.rebuild_parameters = self.set_rebuild_parameters()
+class MPM(EChemBaseModel):
+    """
+    Wraps the Multi-Particle-Model (MPM) model for simulating lithium-ion batteries, as implemented in PyBaMM.
+
+    The MPM represents lithium-ion battery dynamics using a distribution of spherical particles
+    for each electrode. This model inherits the SPM class.
+
+    Parameters
+    ----------
+    name : str, optional
+        The name for the model instance, defaulting to "Many Particle Model".
+    parameter_set : pybamm.ParameterValues or dict, optional
+        The parameters for the model. If None, default parameters provided by PyBaMM are used.
+    geometry : dict, optional
+        The geometry definitions for the model. If None, default geometry from PyBaMM is used.
+    submesh_types : dict, optional
+        The types of submeshes to use. If None, default submesh types from PyBaMM are used.
+    var_pts : dict, optional
+        The discretization points for each variable in the model. If None, default points from PyBaMM are used.
+    spatial_methods : dict, optional
+        The spatial methods used for discretization. If None, default spatial methods from PyBaMM are used.
+    solver : pybamm.Solver, optional
+        The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
+    options : dict, optional
+        A dictionary of options to customize the behavior of the PyBaMM model.
+    """
+
+    def __init__(
+        self,
+        name="Many Particle Model",
+        parameter_set=None,
+        geometry=None,
+        submesh_types=None,
+        var_pts=None,
+        spatial_methods=None,
+        solver=None,
+        options=None,
+    ):
+        self.pybamm_model = pybamm.lithium_ion.MPM(options=options)
+        self._unprocessed_model = self.pybamm_model
+
+        super().__init__(
+            model=self.pybamm_model,
+            name=name,
+            parameter_set=parameter_set,
+            geometry=geometry,
+            submesh_types=submesh_types,
+            var_pts=var_pts,
+            spatial_methods=spatial_methods,
+            solver=solver,
+        )
+
+
+class MSMR(EChemBaseModel):
+    """
+    Wraps the Multi-Species-Multi-Reactions (MSMR) model for simulating lithium-ion batteries, as implemented in PyBaMM.
+
+    The MSMR represents lithium-ion battery dynamics using a distribution of spherical particles for each electrode.
+    This model inherits the DFN class.
+
+    Parameters
+    ----------
+    name : str, optional
+        The name for the model instance, defaulting to "Multi Species Multi Reactions Model".
+    parameter_set : pybamm.ParameterValues or dict, optional
+        The parameters for the model. If None, default parameters provided by PyBaMM are used.
+    geometry : dict, optional
+        The geometry definitions for the model. If None, default geometry from PyBaMM is used.
+    submesh_types : dict, optional
+        The types of submeshes to use. If None, default submesh types from PyBaMM are used.
+    var_pts : dict, optional
+        The discretization points for each variable in the model. If None, default points from PyBaMM are used.
+    spatial_methods : dict, optional
+        The spatial methods used for discretization. If None, default spatial methods from PyBaMM are used.
+    solver : pybamm.Solver, optional
+        The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
+    options : dict, optional
+        A dictionary of options to customize the behavior of the PyBaMM model.
+    """
+
+    def __init__(
+        self,
+        name="Multi Species Multi Reactions Model",
+        parameter_set=None,
+        geometry=None,
+        submesh_types=None,
+        var_pts=None,
+        spatial_methods=None,
+        solver=None,
+        options=None,
+    ):
+        self.pybamm_model = pybamm.lithium_ion.MSMR(options=options)
+        self._unprocessed_model = self.pybamm_model
+
+        super().__init__(
+            model=self.pybamm_model,
+            name=name,
+            parameter_set=parameter_set,
+            geometry=geometry,
+            submesh_types=submesh_types,
+            var_pts=var_pts,
+            spatial_methods=spatial_methods,
+            solver=solver,
+        )

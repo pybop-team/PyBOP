@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import copy
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
@@ -14,7 +12,7 @@ Inputs = Dict[str, float]
 @dataclass
 class TimeSeriesState(object):
     """
-    The current state of a time series model that is a pybamm model
+    The current state of a time series model that is a pybamm model.
     """
 
     sol: pybamm.Solution
@@ -46,7 +44,7 @@ class BaseModel:
 
     """
 
-    def __init__(self, name="Base Model"):
+    def __init__(self, name="Base Model", parameter_set=None):
         """
         Initialize the BaseModel with an optional name.
 
@@ -56,6 +54,15 @@ class BaseModel:
             The name given to the model instance.
         """
         self.name = name
+        if parameter_set is None:
+            self._parameter_set = None
+        elif isinstance(parameter_set, dict):
+            self._parameter_set = pybamm.ParameterValues(parameter_set)
+        elif isinstance(parameter_set, pybamm.ParameterValues):
+            self._parameter_set = parameter_set
+        else:  # a pybop parameter set
+            self._parameter_set = pybamm.ParameterValues(parameter_set.params)
+
         self.pybamm_model = None
         self.parameters = None
         self.dataset = None
@@ -348,9 +355,13 @@ class BaseModel:
                     inputs=inputs,
                     allow_infeasible_solutions=self.allow_infeasible_solutions,
                 ):
-                    sol = self.solver.solve(
-                        self.built_model, inputs=inputs, t_eval=t_eval
-                    )
+                    try:
+                        sol = self.solver.solve(
+                            self.built_model, inputs=inputs, t_eval=t_eval
+                        )
+                    except Exception as e:
+                        print(f"Error: {e}")
+                        return [np.inf]
                 else:
                     return {signal: [np.inf] for signal in self.signal}
 
@@ -400,25 +411,37 @@ class BaseModel:
                 inputs=inputs,
                 allow_infeasible_solutions=self.allow_infeasible_solutions,
             ):
-                sol = self._solver.solve(
-                    self.built_model,
-                    inputs=inputs,
-                    t_eval=t_eval,
-                    calculate_sensitivities=True,
-                )
-                y = {signal: sol[signal].data for signal in self.signal}
+                try:
+                    sol = self._solver.solve(
+                        self.built_model,
+                        inputs=inputs,
+                        t_eval=t_eval,
+                        calculate_sensitivities=True,
+                    )
+                    y = {signal: sol[signal].data for signal in self.signal}
 
-                dy = np.asarray(
-                    [
-                        sol[signal].sensitivities[key].toarray()
-                        for signal in self.signal
-                        for key in self.fit_keys
-                    ]
-                ).reshape(
-                    self.n_parameters, sol[self.signal[0]].data.shape[0], self.n_outputs
-                )
+                    # Extract the sensitivities and stack them along a new axis for each signal
+                    dy = np.empty(
+                        (
+                            sol[self.signal[0]].data.shape[0],
+                            self.n_outputs,
+                            self.n_parameters,
+                        )
+                    )
 
-                return y, dy
+                    for i, signal in enumerate(self.signal):
+                        dy[:, i, :] = np.stack(
+                            [
+                                sol[signal].sensitivities[key].toarray()[:, 0]
+                                for key in self.fit_keys
+                            ],
+                            axis=-1,
+                        )
+
+                    return y, dy
+                except Exception as e:
+                    print(f"Error: {e}")
+                    return {signal: [np.inf] for signal in self.signal}, [np.inf]
 
             else:
                 return {signal: [np.inf] for signal in self.signal}, [np.inf]

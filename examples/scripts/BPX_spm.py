@@ -2,19 +2,26 @@ import numpy as np
 
 import pybop
 
-# Parameter set and model definition
-parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+# Define model
+bpx_parameters = pybop.ParameterSet(
+    json_path="examples/scripts/parameters/example_BPX.json"
+)
+parameter_set = bpx_parameters.import_from_bpx()
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = [
     pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.68, 0.05),
+        "Negative particle radius [m]",
+        prior=pybop.Gaussian(6e-06, 0.1e-6),
+        bounds=[1e-6, 9e-6],
+        true_value=parameter_set["Negative particle radius [m]"],
     ),
     pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.58, 0.05),
+        "Positive particle radius [m]",
+        prior=pybop.Gaussian(4.5e-07, 0.1e-6),
+        bounds=[1e-7, 9e-7],
+        true_value=parameter_set["Positive particle radius [m]"],
     ),
 ]
 
@@ -36,13 +43,18 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.Optimisation(
-    cost, optimiser=pybop.GradientDescent, sigma0=0.022, verbose=True
-)
-optim.set_max_iterations(125)
+optim = pybop.Optimisation(cost, optimiser=pybop.CMAES)
+optim.set_max_iterations(100)
 
-# Run optimisation
+# Run the optimisation
 x, final_cost = optim.run()
+print(
+    "True parameters:",
+    [
+        parameters[0].true_value,
+        parameters[1].true_value,
+    ],
+)
 print("Estimated parameters:", x)
 
 # Plot the timeseries output
@@ -54,6 +66,5 @@ pybop.plot_convergence(optim)
 # Plot the parameter traces
 pybop.plot_parameters(optim)
 
-# Plot the cost landscape with optimisation path
-bounds = np.array([[0.5, 0.8], [0.4, 0.7]])
-pybop.plot2d(optim, bounds=bounds, steps=15)
+# Plot the cost landscape with optimisation path and updated bounds
+pybop.plot2d(optim, steps=15)

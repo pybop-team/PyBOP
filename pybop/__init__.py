@@ -5,9 +5,26 @@
 # This file is adapted from Pints
 # (see https://github.com/pints-team/pints)
 #
-from __future__ import annotations
 import sys
 from os import path
+
+#
+# Multiprocessing
+#
+try:
+    import multiprocessing as mp
+    if sys.platform == "win32":
+        mp.set_start_method("spawn")
+    else:
+        mp.set_start_method("fork")
+except Exception as e: # pragma: no cover
+    error_message = (
+        "Multiprocessing context could not be set. "
+        "Continuing import without setting context.\n"
+        f"Error: {e}"
+    ) # pragma: no cover
+    print(error_message) # pragma: no cover
+    pass # pragma: no cover
 
 #
 # Version info
@@ -32,7 +49,9 @@ from ._utils import is_numeric
 # Cost class
 # Problem class
 #
-from ._problem import BaseProblem, FittingProblem, DesignProblem
+from .problems.base_problem import BaseProblem
+from .problems.fitting_problem import FittingProblem
+from .problems.design_problem import DesignProblem
 
 #
 # Cost function class
@@ -42,6 +61,7 @@ from .costs.fitting_costs import (
     RootMeanSquaredError,
     SumSquaredError,
     ObserverCost,
+    MAP,
 )
 from .costs.design_costs import (
     DesignCost,
@@ -88,6 +108,7 @@ from .optimisers.pints_optimisers import (
     Adam,
     CMAES,
     IRPropMin,
+    NelderMead,
     PSO,
     SNES,
     XNES,

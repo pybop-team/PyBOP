@@ -1,5 +1,6 @@
 import numpy as np
 
+from pybop.costs._likelihoods import BaseLikelihood
 from pybop.costs.base_cost import BaseCost
 from pybop.observers.observer import Observer
 
@@ -87,23 +88,14 @@ class RootMeanSquaredError(BaseCost):
                 return e, de
 
         r = np.array([y[signal] - self._target[signal] for signal in self.signal])
+        e = np.sqrt(np.mean(r**2, axis=1))
+        de = np.mean((r * dy.T), axis=2) / (
+            np.sqrt(np.mean((r * dy.T) ** 2, axis=2)) + np.finfo(float).eps
+        )
 
         if self.n_outputs == 1:
-            r = r.reshape(self.problem.n_time_data)
-            dy = dy.reshape(self.n_parameters, self.problem.n_time_data)
-            e = np.sqrt(np.mean(r**2))
-            de = np.mean((r * dy), axis=1) / (
-                np.sqrt(np.mean((r * dy) ** 2, axis=1) + np.finfo(float).eps)
-            )
             return e.item(), de.flatten()
-
         else:
-            r = r.reshape(self.n_outputs, self.problem.n_time_data)
-            e = np.sqrt(np.mean(r**2, axis=1))
-            de = np.mean((r[:, :, np.newaxis] * dy), axis=1) / (
-                np.sqrt(np.mean((r[:, :, np.newaxis] * dy) ** 2, axis=1))
-                + np.finfo(float).eps
-            )
             return np.sum(e), np.sum(de, axis=1)
 
     def set_fail_gradient(self, de):
@@ -208,19 +200,10 @@ class SumSquaredError(BaseCost):
                 return e, de
 
         r = np.array([y[signal] - self._target[signal] for signal in self.signal])
+        e = np.sum(np.sum(r**2, axis=0), axis=0)
+        de = 2 * np.sum(np.sum((r * dy.T), axis=2), axis=1)
 
-        if self.n_outputs == 1:
-            r = r.reshape(self.problem.n_time_data)
-            dy = dy.reshape(self.n_parameters, self.problem.n_time_data)
-            e = np.sum(r**2, axis=0)
-            de = 2 * np.sum((r * dy), axis=1)
-            return e.item(), de
-
-        else:
-            r = r.reshape(self.n_outputs, self.problem.n_time_data)
-            e = np.sum(r**2, axis=1)
-            de = 2 * np.sum((r[:, :, np.newaxis] * dy), axis=1)
-            return np.sum(e), np.sum(de, axis=1)
+        return e, de
 
     def set_fail_gradient(self, de):
         """
@@ -297,3 +280,89 @@ class ObserverCost(BaseCost):
             If an error occurs during the calculation of the cost or gradient.
         """
         raise NotImplementedError
+
+
+class MAP(BaseLikelihood):
+    """
+    Maximum a posteriori cost function.
+
+    Computes the maximum a posteriori cost function, which is the sum of the
+    negative log likelihood and the log prior.
+
+    Inherits all parameters and attributes from ``BaseLikelihood``.
+
+    """
+
+    def __init__(self, problem, likelihood, sigma=None):
+        super(MAP, self).__init__(problem)
+        self.sigma0 = sigma
+        if self.sigma0 is None:
+            self.sigma0 = []
+            for param in self.problem.parameters:
+                self.sigma0.append(param.prior.sigma)
+
+        try:
+            self.likelihood = likelihood(problem=self.problem, sigma=self.sigma0)
+        except Exception as e:
+            raise ValueError(
+                f"An error occurred when constructing the Likelihood class: {e}"
+            )
+
+        if hasattr(self, "likelihood") and not isinstance(
+            self.likelihood, BaseLikelihood
+        ):
+            raise ValueError(f"{self.likelihood} must be a subclass of BaseLikelihood")
+
+    def _evaluate(self, x, grad=None):
+        """
+        Calculate the maximum a posteriori cost for a given set of parameters.
+
+        Parameters
+        ----------
+        x : array-like
+            The parameters for which to evaluate the cost.
+        grad : array-like, optional
+            An array to store the gradient of the cost function with respect
+            to the parameters.
+
+        Returns
+        -------
+        float
+            The maximum a posteriori cost.
+        """
+        log_likelihood = self.likelihood.evaluate(x)
+        log_prior = sum(
+            param.prior.logpdf(x_i) for x_i, param in zip(x, self.problem.parameters)
+        )
+
+        posterior = log_likelihood + log_prior
+        return posterior
+
+    def _evaluateS1(self, x):
+        """
+        Compute the maximum a posteriori with respect to the parameters.
+        The method passes the likelihood gradient to the optimiser without modification.
+
+        Parameters
+        ----------
+        x : array-like
+            The parameters for which to compute the cost and gradient.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the cost and the gradient. The cost is a float,
+            and the gradient is an array-like of the same length as `x`.
+
+        Raises
+        ------
+        ValueError
+            If an error occurs during the calculation of the cost or gradient.
+        """
+        log_likelihood, dl = self.likelihood.evaluateS1(x)
+        log_prior = sum(
+            param.prior.logpdf(x_i) for x_i, param in zip(x, self.problem.parameters)
+        )
+
+        posterior = log_likelihood + log_prior
+        return posterior, dl
