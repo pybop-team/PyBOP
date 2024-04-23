@@ -3,36 +3,6 @@ import pints
 from pybop import BasePintsOptimiser
 
 
-class DefaultOptimiser(BasePintsOptimiser):
-    """
-    Provides a default option for new users, selected to be the Exponential Natural
-    Evolution Strategy (XNES) optimiser from PINTS.
-
-    XNES is an evolutionary algorithm that samples from a multivariate normal
-    distribution, which is updated iteratively to fit the distribution of successful
-    solutions.
-
-    Parameters
-    ----------
-    **optimiser_kwargs : optional
-        Valid PINTS option keys and their values, for example:
-        x0 : array_like
-            The initial parameter vector to optimize.
-        sigma0 : float
-            Initial standard deviation of the sampling distribution.
-        bounds : dict
-            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
-            upper bounds on the parameters. If ``None``, no bounds are enforced.
-
-    See Also
-    --------
-    pybop.XNES : PINTS implementation of XNES algorithm.
-    """
-
-    def __init__(self, cost, **optimiser_kwargs):
-        super().__init__(cost, pints.XNES, **optimiser_kwargs)
-
-
 class GradientDescent(BasePintsOptimiser):
     """
     Implements a simple gradient descent optimization algorithm.
@@ -263,3 +233,10 @@ class CMAES(BasePintsOptimiser):
                 + "Please choose another optimiser."
             )
         super().__init__(cost, pints.CMAES, **optimiser_kwargs)
+
+
+class DefaultOptimiser(XNES):
+    """
+    Provides a default option for new users, selected to be the Exponential Natural
+    Evolution Strategy (XNES) optimiser from PINTS.
+    """
