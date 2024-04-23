@@ -118,9 +118,9 @@ class TestModelParameterisation:
             if isinstance(
                 spm_costs, (pybop.GaussianLogLikelihoodKnownSigma, pybop.MAP)
             ):
-                parameterisation.set_learning_rate(1.8e-5)
+                parameterisation.method.set_learning_rate(1.8e-5)
             else:
-                parameterisation.set_learning_rate(0.02)
+                parameterisation.method.set_learning_rate(0.02)
             x, final_cost = parameterisation.run()
 
         elif optimiser in [pybop.SciPyMinimize]:
