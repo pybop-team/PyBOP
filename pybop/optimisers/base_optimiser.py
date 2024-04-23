@@ -93,7 +93,7 @@ class BasePintsOptimiser(Optimisation):
                 if "threshold" in optimiser_kwargs.keys():
                     self.set_max_unchanged_iterations(
                         optimiser_kwargs.pop(key),
-                        optimiser_kwargs["threshold"],
+                        optimiser_kwargs.pop("threshold"),
                     )
                 else:
                     self.set_max_unchanged_iterations(optimiser_kwargs.pop(key))
