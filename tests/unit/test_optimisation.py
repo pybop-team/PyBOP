@@ -105,7 +105,17 @@ class TestOptimisation:
 
     @pytest.mark.parametrize(
         "optimiser",
-        [pybop.XNES, pybop.SciPyMinimize, pybop.SciPyDifferentialEvolution],
+        [
+            pybop.SciPyMinimize,
+            pybop.SciPyDifferentialEvolution,
+            pybop.GradientDescent,
+            pybop.Adam,
+            pybop.SNES,
+            pybop.XNES,
+            pybop.PSO,
+            pybop.IRPropMin,
+            pybop.NelderMead,
+        ],
     )
     @pytest.mark.unit
     def test_optimiser_kwargs(self, cost, optimiser):
@@ -119,11 +129,15 @@ class TestOptimisation:
         assert optim._max_iterations == 10
         assert optim._iterations <= 10
 
-        # Check and update bounds
-        assert optim.bounds == cost.bounds
-        bounds = {"upper": [0.63], "lower": [0.57]}
-        optim.run(bounds=bounds)
-        assert optim.bounds == bounds
+        if issubclass(optimiser, (pybop.GradientDescent, pybop.Adam, pybop.NelderMead)):
+            # Unused bounds
+            assert optim.bounds is None
+        else:
+            # Check and update bounds
+            assert optim.bounds == cost.bounds
+            bounds = {"upper": [0.63], "lower": [0.57]}
+            optim.run(bounds=bounds)
+            assert optim.bounds == bounds
 
         if issubclass(optimiser, pybop.BasePintsOptimiser):
             optim.run(
@@ -140,20 +154,23 @@ class TestOptimisation:
             ):
                 optim = optimiser(cost=cost, tol=1e-3)
         else:
-            # Check bounds in list format
+            # Check bounds in list format and update tol
             bounds = [
                 (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
             ]
-            optim.run(bounds=bounds)
+            optim.run(bounds=bounds, tol=1e-2)
             assert optim.bounds == bounds
-
-            # Update tol
-            optim.run(tol=1e-2)
             assert optim.tol == 1e-2
 
             # Pass nested options
             options = dict(maxiter=10)
             optim.run(options=options)
+            optim.run(maxiter=5, options=options)
+            assert optim._max_iterations == 5
+
+            # Trigger unused input warning
+            with pytest.raises(ValueError):
+                optim.run(max_unchanged_iterations=5, threshold=1e-2)
 
         if optimiser in [pybop.SciPyDifferentialEvolution]:
             # Check and update population size
