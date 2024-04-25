@@ -317,7 +317,7 @@ class BaseModel:
         )
         return TimeSeriesState(sol=new_sol, inputs=state.inputs, t=time)
 
-    def simulate(self, inputs, t_eval) -> np.ndarray[np.float64]:
+    def simulate(self, inputs, t_eval) -> dict[str, np.ndarray[np.float64]]:
         """
         Execute the forward model simulation and return the result.
 
@@ -331,8 +331,10 @@ class BaseModel:
 
         Returns
         -------
-        array-like
-            The simulation result corresponding to the specified signal.
+        dict
+            Dictionary mapping from the signal name (str) to the
+            simulation result corresponding to the specified signal
+            (np.ndarray).
 
         Raises
         ------
