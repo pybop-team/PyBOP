@@ -72,12 +72,21 @@ In general, battery models can be written in the form of a differential-algebrai
 \frac{\mathrm{d} \mathbf{x}}{\mathrm{d} t} = f(t,\mathbf{x},\mathbf{y},\mathbf{u}(t),\mathbf{\theta})
 \end{equation}
 \begin{equation}
-\mathbf{y}(t) = g(t,\mathbf{x},\mathbf{y},\mathbf{u}(t),\theta)
+\mathbf{y}(t) = g(t,\mathbf{x},\mathbf{y},\mathbf{u}(t),\mathbf{\theta})
 \end{equation}
 
-Here, $t$ is time, $x(t)$ are the (discretised) states, $y(t)$ are the outputs (for example the
-terminal voltage), $u(t)$ are the inputs (for example the applied current) and $\theta$ are the
+Here, $t$ is time, $\mathbf{x}(t)$ are the (discretised) states, $\mathbf{y}(t)$ are the outputs (for example the
+terminal voltage), $\mathbf{u}(t)$ are the inputs (e.g. the applied current) and $\mathbf{\theta}$ are the
 parameters.
+
+Common battery models include various types of equivalent circuit model (e.g. the Thévenin model),
+the Doyle–Fuller–Newman (DFN) model [@Doyle:1993; @Fuller:1994] based on porous electrode theory and its reduced-order
+variants including the single particle model (SPM) [@Planella:2022], as well as the multi-scale, multi-reaction
+(MSMR) model [@Verbrugge:2017].
+
+Simplified models that retain good prediction capabilities at a lower computational cost are widely used, for
+example within battery management systems, while physics-based models are required to understand the impact of
+design parameters on battery performance.
 
 # Examples
 
