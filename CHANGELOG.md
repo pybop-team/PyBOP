@@ -2,7 +2,7 @@
 
 ## Features
 
-
+- [#236](https://github.com/pybop-team/PyBOP/issues/236) - Adds an additional optimisation API through direct construction of the pybop.optimiser class. Updates `pybop.BaseOptimiser` class, and adds `pybop.BasePintsOptimiser`, pybop.BaseSciPyOptimiser class. Enables passing of keyword arguments to all pybop.optimisers and fixes the setting of max_iterations.
 - [#251](https://github.com/pybop-team/PyBOP/pull/251) - Increment PyBaMM > v23.5, remove redundant tests within integration tests, increment citation version, fix examples with incorrect model definitions.
 - [#285](https://github.com/pybop-team/PyBOP/pull/285) - Drop support for Python 3.8.
 - [#275](https://github.com/pybop-team/PyBOP/pull/275) - Adds Maximum a Posteriori (MAP) cost function with corresponding tests.
@@ -17,7 +17,6 @@ codesigned binaries and source distributions via `sigstore-python`.
 
 ## Bug Fixes
 
-- [#236](https://github.com/pybop-team/PyBOP/issues/236) - Restructures the optimiser classes to allow the passing of keyword arguments and fixes the setting of max_iterations.
 - [#299](https://github.com/pybop-team/PyBOP/pull/299) - Bugfix multiprocessing support for Linux, MacOS, Windows (WSL) and improves coverage.
 - [#270](https://github.com/pybop-team/PyBOP/pull/270) - Updates PR template.
 - [#91](https://github.com/pybop-team/PyBOP/issues/91) - Adds a check on the number of parameters for CMAES and makes XNES the default optimiser.

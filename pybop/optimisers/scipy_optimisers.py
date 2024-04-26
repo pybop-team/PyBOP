@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 from scipy.optimize import differential_evolution, minimize
 
-from pybop import Optimisation
+from pybop import BaseOptimiser
 
 DEFAULT_SCIPY_MINIMIZE_OPTIONS = dict(
     method="Nelder-Mead",
@@ -19,7 +19,7 @@ DEFAULT_SCIPY_DIFFERENTIAL_EVOLUTION_OPTIONS = dict(
 )
 
 
-class BaseSciPyOptimiser(Optimisation):
+class BaseSciPyOptimiser(BaseOptimiser):
     """
     A base class for defining optimisation methods from the SciPy library.
 

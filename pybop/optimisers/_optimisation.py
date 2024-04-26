@@ -13,7 +13,7 @@ DEFAULT_OPTIMISER_OPTIONS = dict(
 )
 
 
-class Optimisation:
+class BaseOptimiser:
     """
     A base class for defining optimisation methods.
 
@@ -25,7 +25,7 @@ class Optimisation:
     Parameters
     ----------
     cost : pybop.BaseCost or pints.ErrorMeasure
-        An objective function to be optimised, which can be either a pybop.Cost or PINTS error measure
+        An objective function to be optimised, which can be either a pybop.Cost
     sigma0 : float or sequence, optional
         Initial step size or standard deviation for the optimiser (default: None).
     verbose : bool, optional
@@ -245,3 +245,51 @@ class Optimisation:
             # Turn off this feature as there is no model
             self.physical_viability = False
             self.allow_infeasible_solutions = False
+
+
+class Optimisation:
+    """
+    A high-level class for optimisation using PyBOP or PINTS optimisers.
+
+    This class provides an alternative API to the `PyBOP.Optimiser()` API,
+    specifically allowing for single user-friendly interface for the
+    optimisation process.The class can be used with either PyBOP or PINTS
+    optimisers.
+
+    Parameters
+    ----------
+    cost : pybop.BaseCost or pints.ErrorMeasure
+        An objective function to be optimized, which can be either a pybop.Cost
+    optimiser : pybop.Optimiser or subclass of pybop.BaseOptimiser, optional
+        An optimiser from either the PINTS or PyBOP framework to perform the optimization (default: None).
+    sigma0 : float or sequence, optional
+        Initial step size or standard deviation for the optimiser (default: None).
+    verbose : bool, optional
+        If True, the optimization progress is printed (default: False).
+    physical_viability : bool, optional
+        If True, the feasibility of the optimised parameters is checked (default: True).
+    allow_infeasible_solutions : bool, optional
+        If True, infeasible parameter values will be allowed in the optimisation (default: True).
+
+    Attributes
+    ----------
+    All attributes from the pybop.optimiser() class
+
+    """
+
+    def __init__(self, cost, optimiser=None, **optimiser_kwargs):
+        if optimiser is None:
+            self.optimiser = pybop.DefaultOptimiser(cost, **optimiser_kwargs)
+        elif issubclass(optimiser, pybop.BasePintsOptimiser):
+            self.optimiser = optimiser(cost, **optimiser_kwargs)
+        elif issubclass(optimiser, pybop.BaseSciPyOptimiser):
+            self.optimiser = optimiser(cost, **optimiser_kwargs)
+        else:
+            raise ValueError("Unknown optimiser type")
+
+    def run(self):
+        return self.optimiser.run()
+
+    def __getattr__(self, attr):
+        # Delegate the attribute lookup to `self.optimiser`
+        return getattr(self.optimiser, attr)

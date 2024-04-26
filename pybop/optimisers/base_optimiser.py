@@ -1,7 +1,7 @@
 import numpy as np
 import pints
 
-from pybop import Optimisation
+from pybop import BaseOptimiser
 
 DEFAULT_PINTS_OPTIMISER_OPTIONS = dict(
     _boundaries=None,
@@ -21,7 +21,7 @@ DEFAULT_PINTS_OPTIMISER_OPTIONS = dict(
 )
 
 
-class BasePintsOptimiser(Optimisation):
+class BasePintsOptimiser(BaseOptimiser):
     """
     A base class for defining optimisation methods from the PINTS library.
 

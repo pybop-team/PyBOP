@@ -239,7 +239,7 @@ class TestOptimisation:
         with pytest.raises(ValueError):
             pybop.BasePintsOptimiser(cost=cost, pints_method=RandomClass)
 
-        optim = pybop.Optimisation(cost=cost)
+        optim = pybop.BaseOptimiser(cost=cost)
         with pytest.raises(NotImplementedError):
             optim.run()
 
