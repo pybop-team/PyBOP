@@ -359,7 +359,7 @@ class BaseModel:
                         )
                     except Exception as e:
                         print(f"Error: {e}")
-                        return [np.inf]
+                        return {signal: [np.inf] for signal in self.signal}
                 else:
                     return {signal: [np.inf] for signal in self.signal}
 
