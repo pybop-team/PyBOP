@@ -26,13 +26,13 @@ affiliations:
    index: 2
  - name: Head of Research Software Engineering, University of Oxford, Oxford, UK
    index: 3
-date: 19 April 2024
+date: 26 April 2024
 bibliography: paper.bib
 ---
 
 # Summary
 
-`PyBOP` offers a range of tools for the parameterisation and optimisation of battery models, using
+`PyBOP` provides a range of tools for the parameterisation and optimisation of battery models, offering
 both Bayesian and frequentist approaches with example workflows to assist the user. `PyBOP` can be
 used to parameterise various battery models, including the electrochemical and equivalent circuit
 models provided by the complementary open-source package `PyBaMM` [@Sulzer:2021].
@@ -40,7 +40,7 @@ models provided by the complementary open-source package `PyBaMM` [@Sulzer:2021]
 # Statement of need
 
 `PyBOP` is designed to provide a user-friendly, object-oriented interface for the optimisation of
-battery models implemented in existing battery modelling software, e.g. `PyBaMM` [@Sulzer:2021].
+battery models which have been implemented in existing battery modelling software, e.g. `PyBaMM` [@Sulzer:2021].
 This software package is intended to serve a broad audience of students and researchers in both
 academia and the battery industry. `PyBOP` prioritises clear and informative diagnostics for both
 new and experienced users, while also leveraging advanced optimisation algorithms provided by `SciPy`
@@ -49,17 +49,20 @@ new and experienced users, while also leveraging advanced optimisation algorithm
 `PyBOP` supports the Battery Parameter eXchange (BPX) standard [@BPX:2023] for sharing battery 
 parameter sets. These parameter sets are costly to obtain due to a number of factors: the equipment
 cost and time spent on characterisation experiments, the requirement of battery domain knowledge
-and the computational cost of parameter estimation. `PyBOP` reduces the entry barrier and ongoing
+and the computational cost of parameter estimation. `PyBOP` reduces the barrier to entry and ongoing
 costs by providing an accessible workflow that efficiently connects battery models with numerical
 optimisers, as well as explanatory examples of battery parameterisaton and design optimisation.
 
-<!-- # Figures
+# Architecture
 
-Figures can be included like this:
-![Caption for example figure.\label{fig:example}](figure.png){ width=80% }
-and referenced from text using \autoref{fig:example}. -->
+The PyBOP framework consists of 4 main classes of Python object, namely the Model, Problem, Cost,
+and Optimiser classes, as shown in \autoref{fig:objects}. Each of these objects has a base class
+and example subclasses that combine to form a flexible and extensible codebase. The typical workflow
+would be to define an optimisation problem by constructing the objects in sequence.
 
-# Mathematical background
+![The main PyBOP classes and how they interact.\label{fig:objects}](PyBOP_components.drawio.png){ width=80% }
+
+# Background
 
 ## Battery models
 
@@ -75,6 +78,8 @@ In general, battery models can be written in the form of a differential-algebrai
 Here, $t$ is time, $x(t)$ are the (discretised) states, $y(t)$ are the outputs (for example the
 terminal voltage), $u(t)$ are the inputs (for example the applied current) and $\theta$ are the
 parameters.
+
+# Examples
 
 ## Parameterisation
 
