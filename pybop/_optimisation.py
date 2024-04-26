@@ -180,15 +180,15 @@ class Optimisation:
         final_cost : float
             The final cost associated with the best parameters.
         """
-        result = self.optimiser.optimise(
+        self.result = self.optimiser.optimise(
             cost_function=self.cost,
             x0=self.x0,
             maxiter=self._max_iterations,
         )
         self.log = self.optimiser.log
-        self._iterations = result.nit
+        self._iterations = self.result.nit
 
-        return result.x, self.cost(result.x)
+        return self.result.x, self.cost(self.result.x)
 
     def _run_pints(self):
         """
@@ -234,8 +234,8 @@ class Optimisation:
 
             # For population based optimisers, don't use more workers than
             # particles!
-            if isinstance(self._optimiser, pints.PopulationBasedOptimiser):
-                n_workers = min(n_workers, self._optimiser.population_size())
+            if isinstance(self.optimiser, pints.PopulationBasedOptimiser):
+                n_workers = min(n_workers, self.optimiser.population_size())
             evaluator = pints.ParallelEvaluator(f, n_workers=n_workers)
         else:
             evaluator = pints.SequentialEvaluator(f)

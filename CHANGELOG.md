@@ -2,6 +2,9 @@
 
 ## Features
 
+
+- [#301](https://github.com/pybop-team/PyBOP/pull/301) - Updates default echem solver to "fast with events" mode.
+- [#251](https://github.com/pybop-team/PyBOP/pull/251) - Increment PyBaMM > v23.5, remove redundant tests within integration tests, increment citation version, fix examples with incorrect model definitions.
 - [#285](https://github.com/pybop-team/PyBOP/pull/285) - Drop support for Python 3.8.
 - [#275](https://github.com/pybop-team/PyBOP/pull/275) - Adds Maximum a Posteriori (MAP) cost function with corresponding tests.
 - [#273](https://github.com/pybop-team/PyBOP/pull/273) - Adds notebooks to nox examples session and updates CI workflows for change.
@@ -15,6 +18,7 @@ codesigned binaries and source distributions via `sigstore-python`.
 
 ## Bug Fixes
 
+- [#299](https://github.com/pybop-team/PyBOP/pull/299) - Bugfix multiprocessing support for Linux, MacOS, Windows (WSL) and improves coverage.
 - [#270](https://github.com/pybop-team/PyBOP/pull/270) - Updates PR template.
 - [#91](https://github.com/pybop-team/PyBOP/issues/91) - Adds a check on the number of parameters for CMAES and makes XNES the default optimiser.
 
