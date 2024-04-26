@@ -54,8 +54,8 @@ class TestModelAndExperimentChanges:
             )
 
         # The datasets are not corrupted so the costs should be zero
-        np.testing.assert_almost_equal(cost_1, 0, decimal=5)
-        np.testing.assert_almost_equal(cost_2, 0, decimal=5)
+        np.testing.assert_allclose(cost_1, 0, atol=1e-5)
+        np.testing.assert_allclose(cost_2, 0, atol=1e-5)
 
     @pytest.mark.integration
     def test_changing_model(self, parameter):
@@ -81,8 +81,8 @@ class TestModelAndExperimentChanges:
             )
 
         # The datasets are not corrupted so the costs should be zero
-        np.testing.assert_almost_equal(cost_1, 0, decimal=5)
-        np.testing.assert_almost_equal(cost_2, 0, decimal=5)
+        np.testing.assert_allclose(cost_1, 0, atol=1e-5)
+        np.testing.assert_allclose(cost_2, 0, atol=1e-5)
 
     def final_cost(self, solution, model, parameters, init_soc):
         # Compute the cost corresponding to a particular solution
