@@ -46,7 +46,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip nox
+          python -m pip install --upgrade pip "nox[uv]"
 
       - name: Integration tests
         run: |
@@ -82,7 +82,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip nox
+          python -m pip install --upgrade pip nox[uv]
 
       - name: Unit tests
         run: |
@@ -107,7 +107,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip nox
+          python -m pip install --upgrade pip nox[uv]
 
       - name: Run examples
         run: |
@@ -134,7 +134,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip nox
+          python -m pip install --upgrade pip "nox[uv]"
       - name: Run coverage tests for Ubuntu with Python 3.12 and generate report
         run: nox -s coverage
 
