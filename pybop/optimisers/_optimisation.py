@@ -287,8 +287,8 @@ class Optimisation:
         else:
             raise ValueError("Unknown optimiser type")
 
-    def run(self):
-        return self.optimiser.run()
+    def run(self, **optimiser_kwargs):
+        return self.optimiser.run(**optimiser_kwargs)
 
     def __getattr__(self, attr):
         # Delegate the attribute lookup to `self.optimiser`
