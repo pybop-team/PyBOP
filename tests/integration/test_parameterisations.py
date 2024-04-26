@@ -107,7 +107,12 @@ class TestModelParameterisation:
             spm_costs.bounds = bounds
 
         # Test each optimiser
-        parameterisation = optimiser(cost=spm_costs, sigma0=0.05)
+        if optimiser in [pybop.PSO]:
+            parameterisation = pybop.Optimisation(
+                cost=spm_costs, optimiser=optimiser, sigma0=0.05
+            )
+        else:
+            parameterisation = optimiser(cost=spm_costs, sigma0=0.05)
         if issubclass(optimiser, pybop.BasePintsOptimiser):
             parameterisation.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
         parameterisation.set_max_iterations(125)

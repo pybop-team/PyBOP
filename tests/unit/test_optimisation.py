@@ -92,6 +92,12 @@ class TestOptimisation:
         assert optim.cost is not None
         assert optim.name() == expected_name
 
+        # Test pybop.Optimisation construction
+        optim = pybop.Optimisation(cost=cost, optimiser=optimiser)
+
+        assert optim.cost is not None
+        assert optim.name() == expected_name
+
         # Test construction without bounds
         bounds = cost.bounds
         cost.bounds = None
@@ -242,6 +248,9 @@ class TestOptimisation:
         optim = pybop.BaseOptimiser(cost=cost)
         with pytest.raises(NotImplementedError):
             optim.run()
+
+        with pytest.raises(ValueError):
+            pybop.Optimisation(cost=cost, optimiser=RandomClass)
 
     @pytest.mark.unit
     def test_prior_sampling(self, cost):
