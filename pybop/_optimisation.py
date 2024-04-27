@@ -101,7 +101,9 @@ class Optimisation:
                 raise ValueError("Unknown optimiser type")
 
         if self.pints:
-            self.optimiser = self.optimiser(self.x0, self.sigma0, self.bounds)
+            self.optimiser = self.optimiser(
+                self.x0, sigma0=self.sigma0, boundaries=self.bounds
+            )
 
         # Check if sensitivities are required
         self._needs_sensitivities = self.optimiser.needs_sensitivities()

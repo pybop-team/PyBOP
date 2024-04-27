@@ -95,6 +95,7 @@ from .optimisers.pints_optimisers import (
     SNES,
     XNES,
 )
+from .optimisers.AdamW import AdamW
 
 #
 # Parameter classes
