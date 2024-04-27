@@ -68,8 +68,8 @@ class BaseModel:
         self.dataset = None
         self.signal = None
         self.additional_variables = []
-        self.matched_parameters = {}
-        self.non_matched_parameters = {}
+        self.rebuild_parameters = {}
+        self.standard_parameters = {}
         self.fit_keys = []
         self.param_check_counter = 0
         self.allow_infeasible_solutions = True
@@ -167,10 +167,10 @@ class BaseModel:
             return
 
         # Mark any simulation inputs in the parameter set
-        for key in self.non_matched_parameters.keys():
+        for key in self.standard_parameters.keys():
             self._parameter_set[key] = "[input]"
 
-        if self.dataset is not None and (not self.matched_parameters or not rebuild):
+        if self.dataset is not None and (not self.rebuild_parameters or not rebuild):
             if "Current function [A]" not in self.fit_keys:
                 self._parameter_set["Current function [A]"] = pybamm.Interpolant(
                     self.dataset["Time [s]"],
@@ -240,8 +240,8 @@ class BaseModel:
     def classify_and_update_parameters(self, parameters):
         """
         Update the parameter values according to their classification as either
-        'matched_parameters' which require a model rebuild and
-        'non_matched_parameters' which are standard inputs.
+        'rebuild_parameters' which require a model rebuild and
+        'standard_parameters' which do not.
 
         Parameters
         ----------
@@ -249,22 +249,23 @@ class BaseModel:
 
         """
         parameter_dictionary = {param.name: param.value for param in parameters}
-        matched_parameters = {
+        rebuild_parameters = {
             param: parameter_dictionary[param]
             for param in parameter_dictionary
-            if param in self.rebuild_parameters
+            if param in self.geometric_parameters
         }
-        non_matched_parameters = {
+        standard_parameters = {
             param: parameter_dictionary[param]
             for param in parameter_dictionary
-            if param not in self.rebuild_parameters
+            if param not in self.geometric_parameters
         }
 
-        self.matched_parameters.update(matched_parameters)
-        self.non_matched_parameters.update(non_matched_parameters)
+        self.rebuild_parameters.update(rebuild_parameters)
+        self.standard_parameters.update(standard_parameters)
 
-        if self.matched_parameters:
-            self._parameter_set.update(self.matched_parameters)
+        # Update the parameter set and geometry for rebuild parameters
+        if self.rebuild_parameters:
+            self._parameter_set.update(self.rebuild_parameters)
             self._unprocessed_parameter_set = self._parameter_set
             self.geometry = self.pybamm_model.default_geometry
 
@@ -317,7 +318,7 @@ class BaseModel:
         )
         return TimeSeriesState(sol=new_sol, inputs=state.inputs, t=time)
 
-    def simulate(self, inputs, t_eval) -> np.ndarray[np.float64]:
+    def simulate(self, inputs, t_eval) -> Dict[str, np.ndarray[np.float64]]:
         """
         Execute the forward model simulation and return the result.
 
@@ -342,7 +343,7 @@ class BaseModel:
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
         else:
-            if self.matched_parameters and not self.non_matched_parameters:
+            if self.rebuild_parameters and not self.standard_parameters:
                 sol = self.solver.solve(self.built_model, t_eval=t_eval)
 
             else:
@@ -397,7 +398,7 @@ class BaseModel:
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
         else:
-            if self.matched_parameters:
+            if self.rebuild_parameters:
                 raise ValueError(
                     "Cannot use sensitivies for parameters which require a model rebuild"
                 )

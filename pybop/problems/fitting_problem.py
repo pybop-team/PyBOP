@@ -92,7 +92,7 @@ class FittingProblem(BaseProblem):
         y : np.ndarray
             The model output y(t) simulated with inputs x.
         """
-        if np.any(x != self.x) and self._model.matched_parameters:
+        if np.any(x != self.x) and self._model.rebuild_parameters:
             for i, param in enumerate(self.parameters):
                 param.update(value=x[i])
 
@@ -118,7 +118,7 @@ class FittingProblem(BaseProblem):
             A tuple containing the simulation result y(t) and the sensitivities dy/dx(t) evaluated
             with given inputs x.
         """
-        if self._model.matched_parameters:
+        if self._model.rebuild_parameters:
             raise RuntimeError(
                 "Gradient not available when using geometric parameters."
             )

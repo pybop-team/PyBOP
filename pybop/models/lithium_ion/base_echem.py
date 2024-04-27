@@ -51,7 +51,7 @@ class EChemBaseModel(BaseModel):
         self._disc = None
 
         self._electrode_soh = pybamm.lithium_ion.electrode_soh
-        self.rebuild_parameters = self.set_rebuild_parameters()
+        self.geometric_parameters = self.set_geometric_parameters()
 
     def _check_params(
         self, inputs=None, parameter_set=None, allow_infeasible_solutions=True
@@ -279,7 +279,7 @@ class EChemBaseModel(BaseModel):
             {"Nominal cell capacity [A.h]": theoretical_capacity}
         )
 
-    def set_rebuild_parameters(self):
+    def set_geometric_parameters(self):
         """
         Sets the parameters that can be changed when rebuilding the model.
 
@@ -289,7 +289,7 @@ class EChemBaseModel(BaseModel):
             A dictionary of parameters that can be changed when rebuilding the model.
 
         """
-        rebuild_parameters = dict.fromkeys(
+        geometric_parameters = dict.fromkeys(
             [
                 "Negative particle radius [m]",
                 "Negative electrode porosity",
@@ -302,4 +302,4 @@ class EChemBaseModel(BaseModel):
             ]
         )
 
-        return rebuild_parameters
+        return geometric_parameters
