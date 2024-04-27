@@ -114,8 +114,6 @@ class SciPyMinimize(BaseSciPyOptimiser):
         Valid SciPy Minimize option keys and their values, For example:
         x0 : array_like
             Initial position from which optimisation will start.
-        sigma0 : float
-            Initial step size or standard deviation depending on the optimiser.
         bounds : dict, sequence or scipy.optimize.Bounds
             Bounds for variables as supported by the selected method.
         method : str
@@ -251,7 +249,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             print(
                 "Ignoring x0. Initial conditions are not used for differential_evolution."
             )
-        self.x0 = None
+            self.x0 = None
 
         # Add callback storing history of parameter values
         def callback(x, convergence):
