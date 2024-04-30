@@ -77,7 +77,7 @@ from .costs._likelihoods import (
 #
 # Dataset class
 #
-from ._dataset import Dataset
+from ._dataset import Dataset, DatasetCollection
 
 #
 # Model classes
