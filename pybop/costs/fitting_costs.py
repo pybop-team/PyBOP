@@ -17,8 +17,8 @@ class RootMeanSquaredError(BaseCost):
 
     """
 
-    def __init__(self, problem):
-        super(RootMeanSquaredError, self).__init__(problem)
+    def __init__(self, problem, weights=None):
+        super(RootMeanSquaredError, self).__init__(problem, weights=weights)
 
         # Default fail gradient
         self._de = 1.0
@@ -41,62 +41,61 @@ class RootMeanSquaredError(BaseCost):
             The root mean square error.
 
         """
-        prediction = self.problem.evaluate(x)
+        predictions = self.problem.evaluate(x)
+        errors = np.zeros(len(predictions))
+        # For each dataset...
+        for i, (prediction, target) in enumerate(zip(predictions, self._target)):
+            for key in self.signal:
+                if len(prediction.get(key, [])) != len(target.get(key, [])):
+                    return np.float64(np.inf)  # prediction doesn't match target
 
-        for key in self.signal:
-            if len(prediction.get(key, [])) != len(self._target.get(key, [])):
-                return np.float64(np.inf)  # prediction doesn't match target
+            # Calculate the root mean square error
+            e = np.array(
+                [
+                    np.sqrt(np.mean((prediction[signal] - target[signal]) ** 2))
+                    for signal in self.signal
+                ]
+            )
+            if self.n_outputs == 1:
+                errors[i] = e.item()
+            else:
+                errors[i] = np.sum(e)
 
-        e = np.array(
-            [
-                np.sqrt(np.mean((prediction[signal] - self._target[signal]) ** 2))
-                for signal in self.signal
-            ]
-        )
-
-        if self.n_outputs == 1:
-            return e.item()
-        else:
-            return np.sum(e)
+        # Weight errors and return
+        if self.weights is None:
+            return errors.sum()
+        return np.inner(self.weights, errors)
 
     def _evaluateS1(self, x):
-        """
-        Compute the cost and its gradient with respect to the parameters.
+        ys, dys = self.problem.evaluateS1(x)
 
-        Parameters
-        ----------
-        x : array-like
-            The parameters for which to compute the cost and gradient.
+        errors, gradients = [], []
+        for i, (prediction, dy, target) in enumerate(zip(ys, dys, self._target)):
+            for key in self.signal:
+                if len(prediction.get(key, [])) != len(target.get(key, [])):
+                    e = np.float64(np.inf)
+                    de = self._de * np.ones(self.n_parameters)
+                    return e, de
 
-        Returns
-        -------
-        tuple
-            A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `x`.
+            r = np.array(
+                [prediction[signal] - target[signal] for signal in self.signal]
+            )
+            errors.append(np.sqrt(np.mean(r**2, axis=1)))
+            gradients.append(
+                np.mean((r * dy.T), axis=2)
+                / (np.sqrt(np.mean((r * dy.T) ** 2, axis=2)) + np.finfo(float).eps)
+            )
 
-        Raises
-        ------
-        ValueError
-            If an error occurs during the calculation of the cost or gradient.
-        """
-        y, dy = self.problem.evaluateS1(x)
+        errors = np.array(errors)
+        gradients = np.array(gradients)
+        if self.weights is None:
+            return errors.sum(), gradients.sum(axis=1)
 
-        for key in self.signal:
-            if len(y.get(key, [])) != len(self._target.get(key, [])):
-                e = np.float64(np.inf)
-                de = self._de * np.ones(self.n_parameters)
-                return e, de
-
-        r = np.array([y[signal] - self._target[signal] for signal in self.signal])
-        e = np.sqrt(np.mean(r**2, axis=1))
-        de = np.mean((r * dy.T), axis=2) / (
-            np.sqrt(np.mean((r * dy.T) ** 2, axis=2)) + np.finfo(float).eps
+        # Weight and return
+        weighted_gradients = np.inner(self.weights.reshape((1, 1, -1)), gradients).sum(
+            axis=1
         )
-
-        if self.n_outputs == 1:
-            return e.item(), de.flatten()
-        else:
-            return np.sum(e), np.sum(de, axis=1)
+        return np.inner(self.weights, errors), weighted_gradients
 
     def set_fail_gradient(self, de):
         """
@@ -155,22 +154,29 @@ class SumSquaredError(BaseCost):
         float
             The sum of squared errors.
         """
-        prediction = self.problem.evaluate(x)
+        predictions = self.problem.evaluate(x)
+        errors = np.zeros(len(predictions))
+        # For each dataset...
+        for i, (prediction, target) in enumerate(zip(predictions, self._target)):
+            for key in self.signal:
+                if len(prediction.get(key, [])) != len(target.get(key, [])):
+                    return np.float64(np.inf)  # prediction doesn't match target
 
-        for key in self.signal:
-            if len(prediction.get(key, [])) != len(self._target.get(key, [])):
-                return np.float64(np.inf)  # prediction doesn't match target
+            e = np.array(
+                [
+                    np.sum(((prediction[signal] - target[signal]) ** 2))
+                    for signal in self.signal
+                ]
+            )
+            if self.n_outputs == 1:
+                errors[i] = e.item()
+            else:
+                errors[i] = np.sum(e)
 
-        e = np.array(
-            [
-                np.sum(((prediction[signal] - self._target[signal]) ** 2))
-                for signal in self.signal
-            ]
-        )
-        if self.n_outputs == 1:
-            return e.item()
-        else:
-            return np.sum(e)
+        # Weight errors and return
+        if self.weights is None:
+            return errors.sum()
+        return np.inner(self.weights, errors)
 
     def _evaluateS1(self, x):
         """
@@ -192,18 +198,29 @@ class SumSquaredError(BaseCost):
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        y, dy = self.problem.evaluateS1(x)
-        for key in self.signal:
-            if len(y.get(key, [])) != len(self._target.get(key, [])):
-                e = np.float64(np.inf)
-                de = self._de * np.ones(self.n_parameters)
-                return e, de
+        ys, dys = self.problem.evaluateS1(x)
 
-        r = np.array([y[signal] - self._target[signal] for signal in self.signal])
-        e = np.sum(np.sum(r**2, axis=0), axis=0)
-        de = 2 * np.sum(np.sum((r * dy.T), axis=2), axis=1)
+        errors, gradients = [], []
+        for i, (prediction, dy, target) in enumerate(zip(ys, dys, self._target)):
+            for key in self.signal:
+                if len(prediction.get(key, [])) != len(target.get(key, [])):
+                    e = np.float64(np.inf)
+                    de = self._de * np.ones(self.n_parameters)
+                    return e, de
 
-        return e, de
+            r = np.array(
+                [prediction[signal] - target[signal] for signal in self.signal]
+            )
+            errors.append(np.sum(np.sum(r**2, axis=0), axis=0))
+            gradients.append(2 * np.sum(np.sum((r * dy.T), axis=2), axis=1))
+
+        errors = np.array(errors)
+        gradients = np.array(gradients)
+        if self.weights is None:
+            return errors, gradients
+        return np.inner(self.weights, errors), np.inner(self.weights, gradients)
+
+
 
     def set_fail_gradient(self, de):
         """

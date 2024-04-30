@@ -22,7 +22,7 @@ class Optimisation:
         If True, the optimization progress is printed (default: False).
     physical_viability : bool, optional
         If True, the feasibility of the optimised parameters is checked (default: True).
-    allow_infeasible_solutions : bool, optional
+    allow_infeasible_solutions : bool or list[bool], optional
         If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
     Attributes
@@ -65,9 +65,14 @@ class Optimisation:
 
         # Set whether to allow infeasible locations
         if self.cost.problem is not None and hasattr(self.cost.problem, "_model"):
-            self.cost.problem._model.allow_infeasible_solutions = (
-                self.allow_infeasible_solutions
-            )
+            try:
+                for model, allow_infeasible in zip(
+                    self.cost.problem._model, self.allow_infeasible_solutions
+                ):
+                    model.allow_infeasible_solutions = allow_infeasible
+            except TypeError:
+                for model in self.cost.problem._model:
+                    model.allow_infeasible_solutions = self.allow_infeasible_solutions
         else:
             # Turn off this feature as there is no model
             self.physical_viability = False
@@ -517,13 +522,16 @@ class Optimisation:
         Check if the optimised parameters are physically viable.
         """
 
-        if self.cost.problem._model.check_params(
-            inputs=x, allow_infeasible_solutions=False
+        if all(
+            [
+                model.check_params(inputs=x, allow_infeasible_solutions=False)
+                for model in self.cost.problem._model
+            ]
         ):
             return
         else:
             warnings.warn(
-                "Optimised parameters are not physically viable! \nConsider retrying the optimisation"
+                "One or more optimised parameters are not physically viable! \nConsider retrying the optimisation"
                 + " with a non-gradient-based optimiser and the option allow_infeasible_solutions=False",
                 UserWarning,
                 stacklevel=2,
