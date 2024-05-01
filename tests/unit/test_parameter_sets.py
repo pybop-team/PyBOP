@@ -56,9 +56,7 @@ class TestParameterSets:
                 "Cell-jig heat transfer coefficient [W/K]": 10,
                 "Jig thermal mass [J/K]": 500,
                 "Jig-air heat transfer coefficient [W/K]": 10,
-                "Open-circuit voltage [V]": pybop.empirical.Thevenin().default_parameter_values[
-                    "Open-circuit voltage [V]"
-                ],
+                "Open-circuit voltage [V]": "default",
                 "R0 [Ohm]": 0.001,
                 "Element-1 initial overpotential [V]": 0,
                 "Element-2 initial overpotential [V]": 0,

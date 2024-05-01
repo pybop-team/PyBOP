@@ -4,7 +4,7 @@ import textwrap
 
 import numpy as np
 
-import pybop
+from pybop import PlotlyManager
 
 DEFAULT_LAYOUT_OPTIONS = dict(
     title=None,
@@ -109,7 +109,7 @@ class StandardPlot:
             )
 
         # Attempt to import plotly when an instance is created
-        self.go = pybop.PlotlyManager().go
+        self.go = PlotlyManager().go
 
         # Create layout
         if self.layout is None:
@@ -273,7 +273,7 @@ class StandardSubplot(StandardPlot):
                 self.subplot_options[arg] = value
 
         # Attempt to import plotly when an instance is created
-        self.make_subplots = pybop.PlotlyManager().make_subplots
+        self.make_subplots = PlotlyManager().make_subplots
 
     def __call__(self, show):
         """
@@ -330,7 +330,7 @@ def plot_trajectories(x, y, trace_names=None, show=True, **layout_kwargs):
         The Plotly figure object for the scatter plot.
     """
     # Create a plotting dictionary
-    plot_dict = pybop.StandardPlot(
+    plot_dict = StandardPlot(
         x=x,
         y=y,
         trace_names=trace_names,

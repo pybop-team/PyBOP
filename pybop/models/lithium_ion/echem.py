@@ -1,6 +1,6 @@
 import pybamm
 
-from .base_echem import EChemBaseModel
+from pybop.models.lithium_ion.base_echem import EChemBaseModel
 
 
 class SPM(EChemBaseModel):

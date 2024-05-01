@@ -3,8 +3,6 @@ import types
 
 import pybamm
 
-import pybop
-
 
 class ParameterSet:
     """
@@ -29,6 +27,12 @@ class ParameterSet:
 
     def __call__(self):
         return self.params
+
+    def __setitem__(self, key, value):
+        self.params[key] = value
+
+    def __getitem__(self, key):
+        return self.params[key]
 
     def import_parameters(self, json_path=None):
         """
@@ -58,7 +62,7 @@ class ParameterSet:
         if not self.params and self.json_path:
             with open(self.json_path, "r") as file:
                 self.params = json.load(file)
-                self._handle_special_cases()
+                # self._handle_special_cases()
         else:
             raise ValueError(
                 "Parameter set already constructed, or path to json file not provided."
@@ -100,21 +104,6 @@ class ParameterSet:
                 "Parameter set already constructed, or path to bpx file not provided."
             )
         return self.params
-
-    def _handle_special_cases(self):
-        """
-        Processes special cases for parameter values that require custom handling.
-
-        For example, if the open-circuit voltage is specified as 'default', it will
-        fetch the default value from the PyBaMM empirical Thevenin model.
-        """
-        if (
-            "Open-circuit voltage [V]" in self.params
-            and self.params["Open-circuit voltage [V]"] == "default"
-        ):
-            self.params["Open-circuit voltage [V]"] = (
-                pybop.empirical.Thevenin().default_parameter_values["Open-circuit voltage [V]"]
-            )
 
     def export_parameters(self, output_json_path, fit_params=None):
         """

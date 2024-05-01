@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 import pints
 
-import pybop
+from pybop import XNES, BaseLikelihood, SciPyDifferentialEvolution, SciPyMinimize
 
 
 class Optimisation:
@@ -77,7 +77,7 @@ class Optimisation:
         self._transformation = None
 
         # Check if minimising or maximising
-        if isinstance(cost, pybop.BaseLikelihood):
+        if isinstance(cost, BaseLikelihood):
             self.cost._minimising = False
         self._minimising = self.cost._minimising
         self._function = self.cost
@@ -86,15 +86,13 @@ class Optimisation:
         self.pints = True
 
         if self.optimiser is None:
-            self.optimiser = pybop.XNES
+            self.optimiser = XNES
         elif issubclass(self.optimiser, pints.Optimiser):
             pass
         else:
             self.pints = False
 
-            if issubclass(
-                self.optimiser, (pybop.SciPyMinimize, pybop.SciPyDifferentialEvolution)
-            ):
+            if issubclass(self.optimiser, (SciPyMinimize, SciPyDifferentialEvolution)):
                 self.optimiser = self.optimiser(bounds=self.bounds)
 
             else:

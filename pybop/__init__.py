@@ -46,7 +46,32 @@ script_path = path.dirname(__file__)
 from ._utils import is_numeric
 
 #
-# Cost class
+# Experiment class
+#
+from ._experiment import Experiment
+
+#
+# Dataset class
+#
+from ._dataset import Dataset
+
+#
+# Parameter classes
+#
+from .parameters.parameter import Parameter
+from .parameters.parameter_set import ParameterSet
+from .parameters.priors import Gaussian, Uniform, Exponential
+
+#
+# Model classes
+#
+from .models.base_model import BaseModel
+from .models import lithium_ion
+from .models import empirical
+from .models.base_model import TimeSeriesState
+from .models.base_model import Inputs
+
+#
 # Problem class
 #
 from .problems.base_problem import BaseProblem
@@ -75,30 +100,6 @@ from .costs._likelihoods import (
 )
 
 #
-# Dataset class
-#
-from ._dataset import Dataset
-
-#
-# Model classes
-#
-from .models.base_model import BaseModel
-from .models import lithium_ion
-from .models import empirical
-from .models.base_model import TimeSeriesState
-from .models.base_model import Inputs
-
-#
-# Experiment class
-#
-from ._experiment import Experiment
-
-#
-# Main optimisation class
-#
-from ._optimisation import Optimisation
-
-#
 # Optimiser class
 #
 from .optimisers.base_optimiser import BaseOptimiser
@@ -115,12 +116,9 @@ from .optimisers.pints_optimisers import (
 )
 
 #
-# Parameter classes
+# Main optimisation class
 #
-from .parameters.parameter import Parameter
-from .parameters.parameter_set import ParameterSet
-from .parameters.priors import Gaussian, Uniform, Exponential
-
+from ._optimisation import Optimisation
 
 #
 # Observer classes

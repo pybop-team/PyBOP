@@ -6,6 +6,8 @@ import casadi
 import numpy as np
 import pybamm
 
+from pybop import Dataset, Experiment, ParameterSet
+
 Inputs = Dict[str, float]
 
 
@@ -63,7 +65,7 @@ class BaseModel:
         else:  # a pybop parameter set
             self._parameter_set = pybamm.ParameterValues(parameter_set.params)
 
-        self.pybamm_model = None
+        # self.pybamm_model = None
         self.parameters = None
         self.dataset = None
         self.signal = None
@@ -76,11 +78,11 @@ class BaseModel:
 
     def build(
         self,
-        dataset=None,
-        parameters=None,
-        check_model=True,
-        init_soc=None,
-    ):
+        dataset: Dataset = None,
+        parameters: Dict = None,
+        check_model: bool = True,
+        init_soc: float = None,
+    ) -> None:
         """
         Construct the PyBaMM model if not already built, and set parameters.
 
@@ -131,7 +133,7 @@ class BaseModel:
 
         self.n_states = self._built_model.len_rhs_and_alg  # len_rhs + len_alg
 
-    def set_init_soc(self, init_soc):
+    def set_init_soc(self, init_soc: float):
         """
         Set the initial state of charge for the battery model.
 
@@ -189,12 +191,12 @@ class BaseModel:
 
     def rebuild(
         self,
-        dataset=None,
-        parameters=None,
-        parameter_set=None,
-        check_model=True,
-        init_soc=None,
-    ):
+        dataset: Dataset = None,
+        parameters: Dict = None,
+        parameter_set: ParameterSet = None,
+        check_model: bool = True,
+        init_soc: float = None,
+    ) -> None:
         """
         Rebuild the PyBaMM model for a given parameter set.
 
@@ -237,7 +239,7 @@ class BaseModel:
         # Clear solver and setup model
         self._solver._model_set_up = {}
 
-    def classify_and_update_parameters(self, parameters):
+    def classify_and_update_parameters(self, parameters: ParameterSet):
         """
         Update the parameter values according to their classification as either
         'rebuild_parameters' which require a model rebuild and
@@ -318,7 +320,9 @@ class BaseModel:
         )
         return TimeSeriesState(sol=new_sol, inputs=state.inputs, t=time)
 
-    def simulate(self, inputs, t_eval) -> Dict[str, np.ndarray[np.float64]]:
+    def simulate(
+        self, inputs: Inputs, t_eval: np.array
+    ) -> Dict[str, np.ndarray[np.float64]]:
         """
         Execute the forward model simulation and return the result.
 
@@ -371,7 +375,7 @@ class BaseModel:
 
             return y
 
-    def simulateS1(self, inputs, t_eval):
+    def simulateS1(self, inputs: Inputs, t_eval: np.array):
         """
         Perform the forward model simulation with sensitivities.
 
@@ -447,12 +451,12 @@ class BaseModel:
 
     def predict(
         self,
-        inputs=None,
-        t_eval=None,
-        parameter_set=None,
-        experiment=None,
-        init_soc=None,
-    ):
+        inputs: Inputs = None,
+        t_eval: np.array = None,
+        parameter_set: ParameterSet = None,
+        experiment: Experiment = None,
+        init_soc: float = None,
+    ) -> Dict[str, np.ndarray[np.float64]]:
         """
         Solve the model using PyBaMM's simulation framework and return the solution.
 
@@ -523,7 +527,10 @@ class BaseModel:
             return [np.inf]
 
     def check_params(
-        self, inputs=None, parameter_set=None, allow_infeasible_solutions=True
+        self,
+        inputs: Inputs = None,
+        parameter_set: ParameterSet = None,
+        allow_infeasible_solutions: bool = True,
     ):
         """
         Check compatibility of the model parameters.
@@ -557,7 +564,9 @@ class BaseModel:
             inputs=inputs, allow_infeasible_solutions=allow_infeasible_solutions
         )
 
-    def _check_params(self, inputs=None, allow_infeasible_solutions=True):
+    def _check_params(
+        self, inputs: Inputs = None, allow_infeasible_solutions: bool = True
+    ):
         """
         A compatibility check for the model parameters which can be implemented by subclasses
         if required, otherwise it returns True by default.
@@ -587,7 +596,7 @@ class BaseModel:
         """
         return copy.copy(self)
 
-    def cell_mass(self, parameter_set=None):
+    def cell_mass(self, parameter_set: ParameterSet = None):
         """
         Calculate the cell mass in kilograms.
 
@@ -606,7 +615,7 @@ class BaseModel:
         """
         raise NotImplementedError
 
-    def cell_volume(self, parameter_set=None):
+    def cell_volume(self, parameter_set: ParameterSet = None):
         """
         Calculate the cell volume in m3.
 

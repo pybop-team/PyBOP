@@ -1,6 +1,6 @@
 import numpy as np
 
-import pybop
+from pybop import BaseModel, Dataset
 
 
 class BaseProblem:
@@ -50,7 +50,7 @@ class BaseProblem:
         self._time_data = None
         self._target = None
 
-        if isinstance(model, pybop.BaseModel):
+        if isinstance(model, BaseModel):
             self.additional_variables = additional_variables
         else:
             self.additional_variables = []
@@ -158,7 +158,7 @@ class BaseProblem:
         """
         if self.signal is None:
             raise ValueError("Signal must be defined to set target.")
-        if not isinstance(dataset, pybop.Dataset):
+        if not isinstance(dataset, Dataset):
             raise ValueError("Dataset must be a pybop Dataset object.")
 
         self._target = {signal: dataset[signal] for signal in self.signal}

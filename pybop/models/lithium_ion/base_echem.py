@@ -2,7 +2,7 @@ import warnings
 
 import pybamm
 
-from ..base_model import BaseModel
+from pybop.models.base_model import BaseModel
 
 
 class EChemBaseModel(BaseModel):

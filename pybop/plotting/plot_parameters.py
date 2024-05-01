@@ -1,6 +1,6 @@
 import sys
 
-import pybop
+from pybop import StandardSubplot
 
 
 def plot_parameters(optim, show=True, **layout_kwargs):
@@ -61,7 +61,7 @@ def plot_parameters(optim, show=True, **layout_kwargs):
     )
 
     # Create a plotting dictionary
-    plot_dict = pybop.StandardSubplot(
+    plot_dict = StandardSubplot(
         x=x,
         y=y,
         axis_titles=axis_titles,

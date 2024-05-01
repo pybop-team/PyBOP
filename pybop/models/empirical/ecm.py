@@ -1,6 +1,6 @@
 import pybamm
 
-from .base_ecm import ECircuitModel
+from pybop.models.empirical.base_ecm import ECircuitModel
 
 
 class Thevenin(ECircuitModel):
@@ -45,11 +45,12 @@ class Thevenin(ECircuitModel):
         options=None,
         **kwargs,
     ):
-        super().__init__(name, parameter_set)
+        # Set the PyBaMM model
         self.pybamm_model = pybamm.equivalent_circuit.Thevenin(
             options=options, **kwargs
         )
         self._unprocessed_model = self.pybamm_model
+        super().__init__(name, parameter_set)
 
         # Set parameters, using either the provided ones or the default
         if isinstance(self._parameter_set, dict):

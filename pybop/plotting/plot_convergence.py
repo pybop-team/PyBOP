@@ -2,7 +2,7 @@ import sys
 
 import numpy as np
 
-import pybop
+from pybop import StandardPlot
 
 
 def plot_convergence(optim, show=True, **layout_kwargs):
@@ -40,7 +40,7 @@ def plot_convergence(optim, show=True, **layout_kwargs):
     iteration_numbers = list(range(1, len(min_cost_per_iteration) + 1))
 
     # Create a plotting dictionary
-    plot_dict = pybop.StandardPlot(
+    plot_dict = StandardPlot(
         x=iteration_numbers,
         y=min_cost_per_iteration,
         layout_options=dict(

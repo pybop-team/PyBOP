@@ -2,7 +2,7 @@ import sys
 
 import numpy as np
 
-import pybop
+from pybop import Optimisation, PlotlyManager
 
 
 def plot2d(
@@ -45,7 +45,7 @@ def plot2d(
     """
 
     # Assign input as a cost or optimisation object
-    if isinstance(cost_or_optim, pybop.Optimisation):
+    if isinstance(cost_or_optim, Optimisation):
         optim = cost_or_optim
         plot_optim = True
         cost = optim.cost
@@ -89,7 +89,7 @@ def plot2d(
         grad_parameter_costs.extend(grads)
 
     # Import plotly only when needed
-    go = pybop.PlotlyManager().go
+    go = PlotlyManager().go
 
     # Set default layout properties
     layout_options = dict(
