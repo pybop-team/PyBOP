@@ -127,8 +127,9 @@ design parameters on battery performance.
 ## Parameterisation
 
 Battery model parameterisation is difficult due to the high ratio of the number of parameters to
-measurable outputs. A complete parameterisation often requires a step-by-step identification of
-smaller groups of parameters from a variety of different datasets.
+measurable outputs [@Miguel:2021; @Wang:2022; @Andersson:2022]. A complete parameterisation often requires
+a step-by-step identification of smaller groups of parameters from a variety of different datasets
+[@Chu:2019; @Chen:2020; @Kirk:2023].
 
 ## Design optimisation
 
