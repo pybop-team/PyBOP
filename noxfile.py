@@ -4,7 +4,7 @@ import nox
 
 # nox options
 nox.options.reuse_existing_virtualenvs = True
-nox.options.force_venv_backend = "uv"
+nox.options.force_venv_backend = "uv|virtualenv"
 nox.needs_version = ">=2024.4.15"
 
 # Environment variables to control CI behaviour for nox sessions
