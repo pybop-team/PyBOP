@@ -26,7 +26,7 @@ affiliations:
    index: 2
  - name: Head of Research Software Engineering, University of Oxford, Oxford, UK
    index: 3
-date: 26 April 2024
+date: 1 May 2024
 bibliography: paper.bib
 ---
 
@@ -35,7 +35,7 @@ bibliography: paper.bib
 `PyBOP` provides a range of tools for the parameterisation and optimisation of battery models, offering
 both Bayesian and frequentist approaches with example workflows to assist the user. `PyBOP` can be
 used to parameterise various battery models, including the electrochemical and equivalent circuit
-models provided by the complementary open-source package `PyBaMM` [@Sulzer:2021].
+models provided by the popular open-source package `PyBaMM` [@Sulzer:2021].
 
 # Statement of need
 
@@ -53,6 +53,9 @@ and the computational cost of parameter estimation. `PyBOP` reduces the barrier 
 costs by providing an accessible workflow that efficiently connects battery models with numerical
 optimisers, as well as explanatory examples of battery parameterisaton and design optimisation.
 
+This package complements other tools in the field of lithium-ion battery modelling built around
+`PyBaMM` such as `liionpack` for simulating battery packs [@Tranter2022].
+
 # Architecture
 
 The PyBOP framework consists of 4 main classes of Python object, namely the Model, Problem, Cost,
@@ -60,7 +63,29 @@ and Optimiser classes, as shown in \autoref{fig:objects}. Each of these objects 
 and example subclasses that combine to form a flexible and extensible codebase. The typical workflow
 would be to define an optimisation problem by constructing the objects in sequence.
 
-![The main PyBOP classes and how they interact.\label{fig:objects}](PyBOP_components.drawio.png){ width=80% }
+![The main PyBOP classes and how they interact.\label{fig:objects}](PyBOP_components.drawio.png){ width=100% }
+
+The current options for each class are listed below, in which evolution strategy is abbreviated to ES.
+
+: List of current, preset subclasses for each PyBOP class. []{label=”subclasses”}
+
+| Battery Models                      | Problem Types   | Cost Functions                 | Optimisation Algorithms                      |
+| :---------------------------------- | :-------------- | :----------------------------- | :------------------------------------------- |
+| Single Particle Model (SPM)         | Fitting Problem | Sum of Squared Errors (SSE)    | Covariance Matrix Adaptation ES (CMA-ES)     |
+| SPM with Electrolyte (SPMe)         |                 | Root Mean Squared Error (RMSE) | Particle Swarm Optimization (PSO)            |
+| Doyle-Fuller-Newman (DFN)           |                 | Maximum Likelihood (MLE)       | Adaptive Moment Estimation (Adam)            |
+| Many Particle Model (MPM)           |                 | Maximum a Posteriori (MAP)     | Improved Resilient Backpropagation (iRProp-) |
+| Multi-Species Multi-Reaction (MSMR) |                 |                                | Exponential Natural ES (xNES)                |
+| Equivalent Circuit Models (ECM)     | Observer        | Unscented Kalman Filter (UKF)  | Separable Natural ES (sNES)                  |
+|                                     |                 |                                | Gradient Descent                             |
+|                                     | Design Problem  | Gravimetric Energy Density     | Nelder-Mead                                  |
+|                                     |                 | Volumetric Energy Density      | SciPy Minimize                               |
+|                                     |                 |                                | SciPy Differential Evolution                 |
+|                                     |                 |                                | (pending) AdamW                              |
+|                                     |                 |                                | (pending) Cuckoo Search                      |
+
+The cost functions are grouped by problem type, while each of the models and optimisers may be selected for any problem-cost
+combination.
 
 # Background
 
