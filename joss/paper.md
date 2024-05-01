@@ -65,9 +65,9 @@ would be to define an optimisation problem by constructing the objects in sequen
 
 ![The main PyBOP classes and how they interact.\label{fig:objects}](PyBOP_components.drawio.png){ width=100% }
 
-The current options for each class are listed in Tables \autoref{subclasses} and \autoref{optimisers}.
+The current options for each class are listed in Tables \autoref{tab:subclasses} and \autoref{tab:optimisers}.
 
-: List of preset subclasses for the Model, Problem and Cost classes. []{label=”subclasses”}
+: List of preset subclasses for the Model, Problem and Cost classes. \label{tab:subclasses}
 
 | Battery Models                      | Problem Types   | Cost Functions                 |
 | :---------------------------------- | :-------------- | :----------------------------- |
@@ -81,7 +81,7 @@ The current options for each class are listed in Tables \autoref{subclasses} and
 |                                     | Design Problem  | Gravimetric Energy Density     |
 |                                     |                 | Volumetric Energy Density      |
 
-: List of available optimisers. (*) Note that Scipy Minimize provides both gradient and non-gradient-based methods. []{label=”optimisers”}
+: List of available optimisers. (*) Note that Scipy Minimize provides both gradient and non-gradient-based methods. \label{tab:optimisers}
 
 | Gradient-based Optimisation Algorithms       | Non-gradient-based Optimisation Algorithms               |
 | :------------------------------------------- | :------------------------------------------------------- |
@@ -162,11 +162,11 @@ a 1C discharge capacity.
 Design optimisation can be written in the form of a constrained optimisation problem as:
 
 \begin{equation}
-\min_{\mathbf{\theta} \in \mathbf{\Omega}} ~ L(\mathbf{\theta}) ~~~
+\min_{\mathbf{\theta} \in \Omega} ~ L(\mathbf{\theta}) ~~~
 \textrm{subject to equations (\ref{dynamics})\textrm{-}(\ref{initial_conditions})}
 \end{equation}
 in which $L : \mathbf{\theta} \mapsto [0,\infty)$ is a cost function that quantifies the desirability
-of the design and $\mathbf{\Omega}$ is the set of allowable parameter values.
+of the design and $\Omega$ is the set of allowable parameter values.
 
 As an example, let us consider the target of maximising gravimetric energy density subject to
 constraints on the geometric electrode parameters [@Couto:2023].
