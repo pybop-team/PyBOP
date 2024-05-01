@@ -65,27 +65,36 @@ would be to define an optimisation problem by constructing the objects in sequen
 
 ![The main PyBOP classes and how they interact.\label{fig:objects}](PyBOP_components.drawio.png){ width=100% }
 
-The current options for each class are listed below, in which evolution strategy is abbreviated to ES.
+The current options for each class are listed in Tables \autoref{subclasses} and \autoref{optimisers}.
 
-: List of current, preset subclasses for each PyBOP class. []{label=”subclasses”}
+: List of preset subclasses for the Model, Problem and Cost classes. []{label=”subclasses”}
 
-| Battery Models                      | Problem Types   | Cost Functions                 | Optimisation Algorithms                      |
-| :---------------------------------- | :-------------- | :----------------------------- | :------------------------------------------- |
-| Single Particle Model (SPM)         | Fitting Problem | Sum of Squared Errors (SSE)    | Covariance Matrix Adaptation ES (CMA-ES)     |
-| SPM with Electrolyte (SPMe)         |                 | Root Mean Squared Error (RMSE) | Particle Swarm Optimization (PSO)            |
-| Doyle-Fuller-Newman (DFN)           |                 | Maximum Likelihood (MLE)       | Adaptive Moment Estimation (Adam)            |
-| Many Particle Model (MPM)           |                 | Maximum a Posteriori (MAP)     | Improved Resilient Backpropagation (iRProp-) |
-| Multi-Species Multi-Reaction (MSMR) |                 |                                | Exponential Natural ES (xNES)                |
-| Equivalent Circuit Models (ECM)     | Observer        | Unscented Kalman Filter (UKF)  | Separable Natural ES (sNES)                  |
-|                                     |                 |                                | Gradient Descent                             |
-|                                     | Design Problem  | Gravimetric Energy Density     | Nelder-Mead                                  |
-|                                     |                 | Volumetric Energy Density      | SciPy Minimize                               |
-|                                     |                 |                                | SciPy Differential Evolution                 |
-|                                     |                 |                                | (pending) AdamW                              |
-|                                     |                 |                                | (pending) Cuckoo Search                      |
+| Battery Models                      | Problem Types   | Cost Functions                 |
+| :---------------------------------- | :-------------- | :----------------------------- |
+| Single Particle Model (SPM)         | Fitting Problem | Sum of Squared Errors (SSE)    |
+| SPM with Electrolyte (SPMe)         |                 | Root Mean Squared Error (RMSE) |
+| Doyle-Fuller-Newman (DFN)           |                 | Maximum Likelihood (MLE)       |
+| Many Particle Model (MPM)           |                 | Maximum a Posteriori (MAP)     |
+| Multi-Species Multi-Reaction (MSMR) |                 |                                |
+| Equivalent Circuit Models (ECM)     | Observer        | Unscented Kalman Filter (UKF)  |
+|                                     |                 |                                |
+|                                     | Design Problem  | Gravimetric Energy Density     |
+|                                     |                 | Volumetric Energy Density      |
 
-The cost functions are grouped by problem type, while each of the models and optimisers may be selected for any problem-cost
-combination.
+: List of available optimisers. (*) Note that Scipy Minimize provides both gradient and non-gradient-based methods. []{label=”optimisers”}
+
+| Gradient-based Optimisation Algorithms       | Non-gradient-based Optimisation Algorithms               |
+| :------------------------------------------- | :------------------------------------------------------- |
+| Adaptive Moment Estimation (Adam)            | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) |
+| Improved Resilient Backpropagation (iRProp-) | Exponential Natural Evolution Strategy (xNES)            |
+| Gradient Descent                             | Nelder-Mead                                              |
+| SciPy Minimize(*)                            | Particle Swarm Optimization (PSO)                        |
+| (pending) AdamW                              | SciPy Differential Evolution                             |
+|                                              | Separable Natural Evolution Strategy (sNES)              |
+|                                              | (pending) Cuckoo Search                                  |
+
+The cost functions are grouped by problem type, while each of the models and optimisers may be selected in combination with
+any problem-cost pair.
 
 # Background
 
