@@ -169,7 +169,7 @@ in which $L : \mathbf{\theta} \mapsto [0,\infty)$ is a cost function that quanti
 of the design and $\mathbf{\Omega}$ is the set of allowable parameter values.
 
 As an example, let us consider the target of maximising gravimetric energy density subject to
-constraints on the geometric electrode parameters.
+constraints on the geometric electrode parameters [@Couto:2023].
 
 # Acknowledgements
 
