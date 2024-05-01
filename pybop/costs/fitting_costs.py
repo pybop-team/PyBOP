@@ -220,8 +220,6 @@ class SumSquaredError(BaseCost):
             return errors, gradients
         return np.inner(self.weights, errors), np.inner(self.weights, gradients)
 
-
-
     def set_fail_gradient(self, de):
         """
         Set the fail gradient to a specified value.

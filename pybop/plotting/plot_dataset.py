@@ -33,7 +33,7 @@ def plot_dataset(
     # Get data dictionary
     dataset.check(signal)
 
-    if not hasattr(dataset, '__len__'):
+    if not hasattr(dataset, "__len__"):
         dataset = [dataset]
 
     for data in dataset:

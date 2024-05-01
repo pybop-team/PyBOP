@@ -2,7 +2,6 @@ import numpy as np
 
 import pybop
 
-
 """
 TODO:
 1. Allow multiple datasets, one model
@@ -75,9 +74,7 @@ class FittingProblem(pybop.BaseProblem):
         if model is not None:
             for thismodel, thisdataset in zip(self._model, self._dataset):
                 thismodel.signal = self.signal
-                thismodel.additional_variables = (
-                    self.additional_variables
-                )
+                thismodel.additional_variables = self.additional_variables
                 # TODO generalise to allow different numbers of parameters, outputs
                 thismodel.n_parameters = self.n_parameters
                 thismodel.n_outputs = self.n_outputs
