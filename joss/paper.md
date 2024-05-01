@@ -65,7 +65,7 @@ would be to define an optimisation problem by constructing the objects in sequen
 
 ![The main PyBOP classes and how they interact.\label{fig:objects}](PyBOP_components.drawio.png){ width=100% }
 
-The current options for each class are listed in Tables \autoref{tab:subclasses} and \autoref{tab:optimisers}.
+The current options for each class are listed in \autoref{tab:subclasses} and \autoref{tab:optimisers}.
 
 : List of preset subclasses for the Model, Problem and Cost classes. \label{tab:subclasses}
 
@@ -101,7 +101,6 @@ any problem-cost pair.
 ## Battery models
 
 In general, battery models can be written in the form of a differential-algebraic system of equations:
-
 \begin{equation}
 \frac{\mathrm{d} \mathbf{x}}{\mathrm{d} t} = f(t,\mathbf{x},\mathbf{y},\mathbf{u}(t),\mathbf{\theta}),
 \label{dynamics}
@@ -136,10 +135,9 @@ design parameters on battery performance.
 Battery model parameterisation is difficult due to the high ratio of the number of parameters to
 measurable outputs [@Miguel:2021; @Wang:2022; @Andersson:2022]. A complete parameterisation often requires
 a step-by-step identification of smaller groups of parameters from a variety of different datasets
-[@Chu:2019; @Chen:2020; @Kirk:2023].
+[@Chu:2019; @Chen:2020; @Kirk:2022].
 
 A generic data fitting optimisation problem may be formulated as:
-
 \begin{equation}
 \min_{\mathbf{\theta}} ~ L_{(\mathbf{\hat{y}}_i)}(\mathbf{\theta}) ~~~
 \textrm{subject to equations (\ref{dynamics})\textrm{-}(\ref{initial_conditions})}
@@ -160,7 +158,6 @@ improvements in battery performance. Battery performance is typically quantified
 a 1C discharge capacity.
 
 Design optimisation can be written in the form of a constrained optimisation problem as:
-
 \begin{equation}
 \min_{\mathbf{\theta} \in \Omega} ~ L(\mathbf{\theta}) ~~~
 \textrm{subject to equations (\ref{dynamics})\textrm{-}(\ref{initial_conditions})}
