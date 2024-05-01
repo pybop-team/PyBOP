@@ -64,7 +64,7 @@ jobs:
         shell: python
 
   build:
-    needs: [create_pybamm_matrix, filter_pybamm_matrix]
+    needs: [create_pybamm_matrix]
     name: Build (${{ matrix.os }}, Python ${{ matrix.python_version }}, PyBaMM ${{ matrix.pybamm_version }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -92,6 +92,8 @@ jobs:
 
   # M-series Mac Mini
   build-apple-mseries:
+    # This job filters the matrix JSON created in build_matrix.sh to provide
+    # a matrix of only macOS-14 (arm64) entries
     needs: [filter_pybamm_matrix]
     name: Build (MacOS M-series, Python ${{ matrix.python_version }}, PyBaMM ${{ matrix.pybamm_version }})
     runs-on: [self-hosted, macOS, ARM64]
