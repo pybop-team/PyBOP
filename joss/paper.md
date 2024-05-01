@@ -103,15 +103,22 @@ any problem-cost pair.
 In general, battery models can be written in the form of a differential-algebraic system of equations:
 
 \begin{equation}
-\frac{\mathrm{d} \mathbf{x}}{\mathrm{d} t} = f(t,\mathbf{x},\mathbf{y},\mathbf{u}(t),\mathbf{\theta})
+\frac{\mathrm{d} \mathbf{x}}{\mathrm{d} t} = f(t,\mathbf{x},\mathbf{y},\mathbf{u}(t),\mathbf{\theta}),
+\label{dynamics}
 \end{equation}
 \begin{equation}
-\mathbf{y}(t) = g(t,\mathbf{x},\mathbf{y},\mathbf{u}(t),\mathbf{\theta})
+\mathbf{y}(t) = g(t,\mathbf{x},\mathbf{y},\mathbf{u}(t),\mathbf{\theta}),
+\label{output}
+\end{equation}
+with initial conditions
+\begin{equation}
+\mathbf{x}(0) = \mathbf{x}_0(\mathbf{\theta}).
+\label{initial_conditions}
 \end{equation}
 
 Here, $t$ is time, $\mathbf{x}(t)$ are the (discretised) states, $\mathbf{y}(t)$ are the outputs (for example the
 terminal voltage), $\mathbf{u}(t)$ are the inputs (e.g. the applied current) and $\mathbf{\theta}$ are the
-parameters.
+uncertain parameters.
 
 Common battery models include various types of equivalent circuit model (e.g. the Thévenin model),
 the Doyle–Fuller–Newman (DFN) model [@Doyle:1993; @Fuller:1994] based on porous electrode theory and its reduced-order
@@ -131,12 +138,38 @@ measurable outputs [@Miguel:2021; @Wang:2022; @Andersson:2022]. A complete param
 a step-by-step identification of smaller groups of parameters from a variety of different datasets
 [@Chu:2019; @Chen:2020; @Kirk:2023].
 
+A generic data fitting optimisation problem may be formulated as:
+
+\begin{equation}
+\min_{\mathbf{\theta}} ~ L_{(\mathbf{\hat{y}}_i)}(\mathbf{\theta}) ~~~
+\textrm{subject to equations (\ref{dynamics})\textrm{-}(\ref{initial_conditions})}
+\end{equation}
+in which $L : \mathbf{\theta} \mapsto [0,\infty)$ is a cost (or likelihood) function that quantifies the
+agreement between the model and a sequence of data points $(\mathbf{\hat{y}}_i)$ measured at times $t_i$.
+For gradient-based optimisers, the gradient refers to the Jacobian of the cost function with respect to the
+uncertain parameters, $\mathbf{\theta}$.
+
+By way of example, we next demonstrate the fitting of some synthetic data for which we know the
+true parameter values.
+
 ## Design optimisation
 
 Once a battery model has been parameterised, design optimisation can be performed in order to
 guide future development of the battery design by identifying parameter variations which may unlock
 improvements in battery performance. Battery performance is typically quantified via metrics such as
 a 1C discharge capacity.
+
+Design optimisation can be written in the form of a constrained optimisation problem as:
+
+\begin{equation}
+\min_{\mathbf{\theta} \in \mathbf{\Omega}} ~ L(\mathbf{\theta}) ~~~
+\textrm{subject to equations (\ref{dynamics})\textrm{-}(\ref{initial_conditions})}
+\end{equation}
+in which $L : \mathbf{\theta} \mapsto [0,\infty)$ is a cost function that quantifies the desirability
+of the design and $\mathbf{\Omega}$ is the set of allowable parameter values.
+
+As an example, let us consider the target of maximising gravimetric energy density subject to
+constraints on the geometric electrode parameters.
 
 # Acknowledgements
 
