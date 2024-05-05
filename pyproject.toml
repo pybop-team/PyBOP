@@ -26,7 +26,9 @@ classifiers = [
 ]
 requires-python = ">=3.9, <3.13"
 dependencies = [
-  "pybamm>=23.9",
+  # "pybamm>=23.9",
+  # "pybamm @ git+https://github.com/pybamm-team/PyBaMM@develop",
+  "pybamm @ git+https://github.com/BradyPlanden/PyBaMM@fix-electrode-diffusion-rename",
   "numpy>=1.16",
   "scipy>=1.3",
   "pints>=0.5",
