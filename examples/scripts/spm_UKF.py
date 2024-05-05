@@ -22,7 +22,7 @@ parameters = [
 
 # Make a prediction with measurement noise
 sigma = 0.001
-t_eval = np.arange(0, 300, 2)
+t_eval = np.arange(0, 900, 0.5)
 values = model.predict(t_eval=t_eval)
 corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
 
@@ -42,8 +42,8 @@ model.build(dataset=dataset.data, parameters=parameters)
 signal = ["Voltage [V]"]
 n_states = model.n_states
 n_signals = len(signal)
-covariance = np.diag([0] * 19 + [sigma**2] + [0] * 19 + [sigma**2])
-process_noise = np.diag([0] * 19 + [1e-6] + [0] * 19 + [1e-6])
+covariance = np.diag([0] * 20 + [sigma**2] + [0] * 20 + [sigma**2])
+process_noise = np.diag([0] * 20 + [1e-6] + [0] * 20 + [1e-6])
 measurement_noise = np.diag([sigma**2])
 observer = pybop.UnscentedKalmanFilterObserver(
     parameters,
