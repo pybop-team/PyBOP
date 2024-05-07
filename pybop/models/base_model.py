@@ -65,7 +65,6 @@ class BaseModel:
         else:  # a pybop parameter set
             self._parameter_set = pybamm.ParameterValues(parameter_set.params)
 
-        # self.pybamm_model = None
         self.parameters = None
         self.dataset = None
         self.signal = None

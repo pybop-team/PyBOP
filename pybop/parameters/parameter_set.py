@@ -62,7 +62,6 @@ class ParameterSet:
         if not self.params and self.json_path:
             with open(self.json_path, "r") as file:
                 self.params = json.load(file)
-                # self._handle_special_cases()
         else:
             raise ValueError(
                 "Parameter set already constructed, or path to json file not provided."
