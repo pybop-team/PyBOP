@@ -35,10 +35,12 @@ jobs:
     outputs:
       pybop_matrix: ${{ steps.set-matrix.outputs.matrix }}
 
-  # filter the matrix to only include the macOS-latest entries
+  # Filter the matrix to only include Python and PyBaMM versions. This job
+  # is used for the self-hosted macOS-14 (arm64) runner at this time.
   filter_pybamm_matrix:
-    name: Filter the matrix for macOS-latest entries
+    name: Filter the matrix for OS and Python version
     needs: [create_pybamm_matrix]
+    if: github.repository == 'pybop-team/PyBOP'
     runs-on: ubuntu-latest
     outputs:
       filtered_pybop_matrix: ${{ steps.set-matrix.outputs.matrix }}
@@ -53,8 +55,12 @@ jobs:
           matrix_json = '${{ needs.create_pybamm_matrix.outputs.pybop_matrix }}'
           matrix = json.loads(matrix_json)
 
-          # Filter the matrix for macOS-latest entries only
-          filtered_entries = [entry for entry in matrix['include'] if entry['os'] == 'macos-latest']
+          # Filter the matrix to include just the Python version and PyBaMM version
+          # First filter the matrix to only include macOS-14 entries
+          filtered_entries = [entry for entry in matrix['include'] if entry['os'] == 'macos-14']
+          # Then remove the os key from the entries
+          for entry in filtered_entries:
+              entry.pop('os')
           filtered_matrix = {'include': filtered_entries}
 
           # Set the output variable for other jobs to use
@@ -64,7 +70,7 @@ jobs:
         shell: python
 
   build:
-    needs: [create_pybamm_matrix, filter_pybamm_matrix]
+    needs: [create_pybamm_matrix]
     name: Build (${{ matrix.os }}, Python ${{ matrix.python_version }}, PyBaMM ${{ matrix.pybamm_version }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -92,6 +98,8 @@ jobs:
 
   # M-series Mac Mini
   build-apple-mseries:
+    # This job filters the matrix JSON created in build_matrix.sh to provide
+    # a matrix of only macOS-14 (arm64) entries
     needs: [filter_pybamm_matrix]
     name: Build (MacOS M-series, Python ${{ matrix.python_version }}, PyBaMM ${{ matrix.pybamm_version }})
     runs-on: [self-hosted, macOS, ARM64]
