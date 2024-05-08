@@ -2,14 +2,14 @@
 
 ## Features
 
+- [#301](https://github.com/pybop-team/PyBOP/pull/301) - Updates default echem solver to "fast with events" mode.
 - [#251](https://github.com/pybop-team/PyBOP/pull/251) - Increment PyBaMM > v23.5, remove redundant tests within integration tests, increment citation version, fix examples with incorrect model definitions.
 - [#285](https://github.com/pybop-team/PyBOP/pull/285) - Drop support for Python 3.8.
 - [#275](https://github.com/pybop-team/PyBOP/pull/275) - Adds Maximum a Posteriori (MAP) cost function with corresponding tests.
 - [#273](https://github.com/pybop-team/PyBOP/pull/273) - Adds notebooks to nox examples session and updates CI workflows for change.
 - [#250](https://github.com/pybop-team/PyBOP/pull/250) - Adds DFN, MPM, MSMR models and moves multiple construction variables to BaseEChem. Adds exception catch on simulate & simulateS1.
 - [#241](https://github.com/pybop-team/PyBOP/pull/241) - Adds experimental circuit model fitting notebook with LG M50 data.
-- [#268](https://github.com/pybop-team/PyBOP/pull/268) - Fixes the GitHub Release artifact uploads, allowing verification of
-codesigned binaries and source distributions via `sigstore-python`.
+- [#268](https://github.com/pybop-team/PyBOP/pull/268) - Fixes the GitHub Release artifact uploads, allowing verification of codesigned binaries and source distributions via `sigstore-python`.
 - [#79](https://github.com/pybop-team/PyBOP/issues/79) - Adds BPX as a dependency and imports BPX support from PyBaMM.
 - [#267](https://github.com/pybop-team/PyBOP/pull/267) - Add classifiers to pyproject.toml, update project.urls.
 - [#195](https://github.com/pybop-team/PyBOP/issues/195) - Adds the Nelder-Mead optimiser from PINTS as another option.
@@ -17,6 +17,7 @@ codesigned binaries and source distributions via `sigstore-python`.
 ## Bug Fixes
 
 - [#231](https://github.com/pybop-team/PyBOP/issues/231) - Allows passing of keyword arguments to PyBaMM models and disables build on initialisation.
+- [#308](https://github.com/pybop-team/PyBOP/pull/308) - Enables testing on both macOS Intel and macOS ARM (Silicon) runners and fixes the scheduled tests.
 - [#299](https://github.com/pybop-team/PyBOP/pull/299) - Bugfix multiprocessing support for Linux, MacOS, Windows (WSL) and improves coverage.
 - [#270](https://github.com/pybop-team/PyBOP/pull/270) - Updates PR template.
 - [#91](https://github.com/pybop-team/PyBOP/issues/91) - Adds a check on the number of parameters for CMAES and makes XNES the default optimiser.
