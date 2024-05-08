@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import pytest
 
@@ -85,6 +87,10 @@ class TestOptimisation:
         parameterisation.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
         parameterisation.set_max_iterations(125)
         parameterisation.set_f_guessed_tracking(f_guessed)
+
+        # Set parallelisation if not on Windows
+        if sys.platform != "win32":
+            parameterisation.set_parallel(True)
 
         initial_cost = parameterisation.cost(spm_costs.x0)
         x, final_cost = parameterisation.run()
