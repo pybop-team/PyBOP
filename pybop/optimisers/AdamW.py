@@ -53,8 +53,12 @@ class AdamW(PintsOptimiser):
            https://doi.org/10.48550/arXiv.1711.05101
     """
 
-    def __init__(self, x0, sigma0=0.015, boundaries=None):
-        super().__init__(x0, sigma0, boundaries)
+    def __init__(self, x0, sigma0=0.015, bounds=None):
+        if bounds is not None:
+            print("NOTE: Boundaries ignored by AdamW")
+
+        self.boundaries = None  # Bounds ignored in pints.Adam
+        super().__init__(x0, sigma0, self.boundaries)
 
         # Set optimiser state
         self._running = False

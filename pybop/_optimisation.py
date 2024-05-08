@@ -102,7 +102,7 @@ class Optimisation:
 
         if self.pints:
             self.optimiser = self.optimiser(
-                self.x0, sigma0=self.sigma0, boundaries=self.bounds
+                self.x0, sigma0=self.sigma0, bounds=self.bounds
             )
 
         # Check if sensitivities are required
