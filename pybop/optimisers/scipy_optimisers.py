@@ -160,7 +160,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
             self.log.append([x])
 
         # Scale the cost function and eliminate nan values
-        self._cost0 = self.cost(self.x0, minimising=self._minimising)
+        self._cost0 = np.abs(self.cost(self.x0))
         self.inf_count = 0
         if np.isinf(self._cost0):
             raise Exception("The initial parameter values return an infinite cost.")
