@@ -53,7 +53,7 @@ class BasePintsOptimiser(Optimisation):
 
         # Create an instance of the PINTS optimiser class
         if issubclass(self.pints_optimiser, pints.Optimiser):
-            self.method = self.pints_optimiser(self.x0, self.sigma0, self._boundaries)
+            self.method = self.pints_optimiser(self.x0, sigma0=self.sigma0, boundaries=self._boundaries)
         else:
             raise ValueError(
                 "The pints_optimiser is not a recognised PINTS optimiser class."
@@ -181,9 +181,6 @@ class BasePintsOptimiser(Optimisation):
         # Iterations and function evaluations
         iteration = 0
         evaluations = 0
-
-        # Empty result
-        self.result = Result()
 
         # Unchanged iterations counter
         unchanged_iterations = 0
@@ -343,10 +340,8 @@ class BasePintsOptimiser(Optimisation):
             x = self._transformation.to_model(x)
 
         # Store result
-        self.result.x = x
         final_cost = self.cost(x)
-        self.result.final_cost = final_cost
-        self.result.nit = self._iterations
+        self.result = Result(x=x, final_cost=final_cost, nit=self._iterations)
 
         # Return best position and the score,
         # i.e the negative log-likelihood in the case of self._minimising = False
@@ -491,7 +486,7 @@ class Result:
 
     """
 
-    def __init__(self):
-        self.x = None
-        self.final_cost = None
-        self.nit = None
+    def __init__(self, x = None, final_cost = None, nit = None):
+        self.x = x
+        self.final_cost = final_cost
+        self.nit = nit
