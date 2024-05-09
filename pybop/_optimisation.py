@@ -1,5 +1,7 @@
 import warnings
 
+import numpy as np
+
 from pybop import BaseCost
 
 
@@ -63,20 +65,22 @@ class Optimisation:
             self.set_allow_infeasible_solutions()
         else:
             try:
-                cost(optimiser_kwargs.get("x0", []))
+                cost_test = cost(optimiser_kwargs.get("x0", []))
                 warnings.warn(
-                    "The cost is not an instance of pybop.BaseCost, but let's "
-                    + "continue assuming that it is a callable function.",
+                    "The cost is not an instance of pybop.BaseCost, but let's continue "
+                    + "assuming that it is a callable function to be minimised.",
                     UserWarning,
                 )
-                self.cost = BaseCost()
-            except:
+                self.cost = cost
+                self._minimising = True
+
+            except Exception:
                 raise Exception("The cost is not a recognised cost object or function.")
 
-            def cost_evaluate(x, grad=None):
-                return cost(x)
-
-            self.cost._evaluate = cost_evaluate
+            if not np.isscalar(cost_test) or not np.isreal(cost_test):
+                raise TypeError(
+                    f"Cost returned {type(cost_test)}, not a scalar numeric value."
+                )
 
         self.unset_options = optimiser_kwargs
         self.set_base_options()
