@@ -53,7 +53,9 @@ class BasePintsOptimiser(Optimisation):
 
         # Create an instance of the PINTS optimiser class
         if issubclass(self.pints_optimiser, pints.Optimiser):
-            self.method = self.pints_optimiser(self.x0, sigma0=self.sigma0, boundaries=self._boundaries)
+            self.method = self.pints_optimiser(
+                self.x0, sigma0=self.sigma0, boundaries=self._boundaries
+            )
         else:
             raise ValueError(
                 "The pints_optimiser is not a recognised PINTS optimiser class."
@@ -486,7 +488,7 @@ class Result:
 
     """
 
-    def __init__(self, x = None, final_cost = None, nit = None):
+    def __init__(self, x=None, final_cost=None, nit=None):
         self.x = x
         self.final_cost = final_cost
         self.nit = nit
