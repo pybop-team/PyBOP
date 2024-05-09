@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-14]
+        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
         python-version: ["3.12"]
 
     name: Integration tests (${{ matrix.os }} / Python ${{ matrix.python-version }})
@@ -86,7 +86,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest, macos-14]
+        os: [ubuntu-latest, windows-latest, macos-13, macos-14]
         python-version: ["3.12"]
 
     name: Test examples (${{ matrix.os }} / Python ${{ matrix.python-version }})
