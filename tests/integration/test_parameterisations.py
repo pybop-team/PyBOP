@@ -120,7 +120,7 @@ class TestModelParameterisation:
             ):
                 parameterisation.method.set_learning_rate(1.8e-5)
             else:
-                parameterisation.method.set_learning_rate(0.02)
+                parameterisation.method.set_learning_rate(0.015)
             x, final_cost = parameterisation.run()
 
         elif optimiser in [pybop.SciPyMinimize]:
@@ -246,8 +246,8 @@ class TestModelParameterisation:
         experiment = pybop.Experiment(
             [
                 (
-                    "Discharge at 0.5C for 3 minutes (1 second period)",
-                    "Charge at 0.5C for 3 minutes (1 second period)",
+                    "Discharge at 0.5C for 3 minutes (2 second period)",
+                    "Charge at 0.5C for 3 minutes (2 second period)",
                 ),
             ]
             * 2
