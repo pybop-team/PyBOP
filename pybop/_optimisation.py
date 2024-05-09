@@ -123,9 +123,6 @@ class Optimisation:
         if hasattr(self.cost, "parameters"):
             self.store_optimised_parameters(x)
 
-        # Store the log
-        self.log = self.log
-
         # Check if parameters are viable
         if self.physical_viability:
             self.check_optimal_parameters(x)

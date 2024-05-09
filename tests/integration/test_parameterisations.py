@@ -120,14 +120,11 @@ class TestModelParameterisation:
                 parameterisation.method.set_learning_rate(1.8e-5)
             else:
                 parameterisation.method.set_learning_rate(0.015)
-            x, final_cost = parameterisation.run()
 
         elif optimiser in [pybop.SciPyMinimize]:
             parameterisation.cost.problem.model.allow_infeasible_solutions = False
-            x, final_cost = parameterisation.run()
 
-        else:
-            x, final_cost = parameterisation.run()
+        x, final_cost = parameterisation.run()
 
         # Assertions
         if parameterisation._minimising:
