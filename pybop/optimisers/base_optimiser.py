@@ -3,23 +3,6 @@ import pints
 
 from pybop import Optimisation
 
-DEFAULT_PINTS_OPTIMISER_OPTIONS = dict(
-    _boundaries=None,
-    _x0=None,
-    _transformation=None,  # PyBOP doesn't currently support the PINTS transformation class
-    _use_f_guessed=None,
-    _parallel=False,
-    _n_workers=1,
-    _callback=None,
-    _min_iterations=2,
-    _unchanged_threshold=1e-5,  # smallest significant f change
-    _unchanged_max_iterations=15,
-    _max_evaluations=None,
-    _threshold=None,
-    _evaluations=None,
-    _iterations=None,
-)
-
 
 class BasePintsOptimiser(Optimisation):
     """
@@ -38,83 +21,115 @@ class BasePintsOptimiser(Optimisation):
             upper bounds on the parameters.
     """
 
-    def __init__(self, cost, pints_method, **optimiser_kwargs):
-        self.__dict__.update(DEFAULT_PINTS_OPTIMISER_OPTIONS)
-        self.pints_method = pints_method
+    def __init__(self, cost, pints_optimiser, **optimiser_kwargs):
+        # First set attributes to default values
+        self._boundaries = None
+        self._needs_sensitivities = None
+        self._use_f_guessed = None
+        self._parallel = False
+        self._n_workers = 1
+        self._callback = None
+        self._max_iterations = None
+        self._min_iterations = 2
+        self._unchanged_threshold = 1e-5  # smallest significant f change
+        self._unchanged_max_iterations = 15
+        self._max_evaluations = None
+        self._threshold = None
+        self._evaluations = None
+        self._iterations = None
+
+        # PyBOP doesn't currently support the PINTS transformation class
+        self._transformation = None
+
+        self.pints_optimiser = pints_optimiser
         super().__init__(cost, **optimiser_kwargs)
 
-        # Create  an instance of the PINTS optimiser class
-        self.initialise_method()
-
-    def _set_options(self, **optimiser_kwargs):
+    def _set_up_optimiser(self):
         """
-        Update the optimiser options and remove the corresponding entries from the
-        optimiser_kwargs dictionary in advance of passing to the parent class.
-
-        Parameters
-        ----------
-        **optimiser_kwargs : optional
-            Valid PINTS option keys and their values.
-
-        Returns
-        -------
-        optimiser_kwargs : dict
-            Remaining option keys and their values.
+        Parse optimiser options and create an instance of the PINTS optimiser.
         """
-        reinit_required = False
+        # Check and remove any duplicate keywords in self.unset_options
+        self._sanitise_inputs()
 
-        key_list = list(optimiser_kwargs.keys())
+        # Create an instance of the PINTS optimiser class
+        if issubclass(self.pints_optimiser, pints.Optimiser):
+            self.method = self.pints_optimiser(self.x0, self.sigma0, self._boundaries)
+        else:
+            raise ValueError(
+                "The pints_optimiser is not a recognised PINTS optimiser class."
+            )
+
+        # Check if sensitivities are required
+        self._needs_sensitivities = self.method.needs_sensitivities()
+
+        # Apply default maxiter
+        self.set_max_iterations()
+
+        # Apply additional options and remove them from options
+        key_list = list(self.unset_options.keys())
         for key in key_list:
-            if key in ["x0", "sigma0", "bounds"]:
-                self.__dict__.update({key: optimiser_kwargs.pop(key)})
-                reinit_required = True
-            elif key == "use_f_guessed":
-                self.set_f_guessed_tracking(optimiser_kwargs.pop(key))
+            if key == "use_f_guessed":
+                self.set_f_guessed_tracking(self.unset_options.pop(key))
             elif key == "parallel":
-                self.set_parallel(optimiser_kwargs.pop(key))
-            elif key == "maxiter" or key == "max_iterations":
-                self.set_max_iterations(optimiser_kwargs.pop(key))
+                self.set_parallel(self.unset_options.pop(key))
+            elif key == "max_iterations":
+                self.set_max_iterations(self.unset_options.pop(key))
             elif key == "min_iterations":
-                self.set_min_iterations(optimiser_kwargs.pop(key))
+                self.set_min_iterations(self.unset_options.pop(key))
             elif key == "max_unchanged_iterations":
-                if "threshold" in optimiser_kwargs.keys():
+                if "threshold" in self.unset_options.keys():
                     self.set_max_unchanged_iterations(
-                        optimiser_kwargs.pop(key),
-                        optimiser_kwargs.pop("threshold"),
+                        self.unset_options.pop(key),
+                        self.unset_options.pop("threshold"),
                     )
                 else:
-                    self.set_max_unchanged_iterations(optimiser_kwargs.pop(key))
+                    self.set_max_unchanged_iterations(self.unset_options.pop(key))
             elif key == "threshold":
                 pass  # only used with unchanged_max_iterations
             elif key == "max_evaluations":
-                self.set_max_evaluations(optimiser_kwargs.pop(key))
+                self.set_max_evaluations(self.unset_options.pop(key))
 
-        if reinit_required:
-            self.initialise_method()
-
-        return optimiser_kwargs
-
-    def initialise_method(self):
+    def _sanitise_inputs(self):
         """
-        Creates an instance of the PINTS optimiser class.
+        Check and remove any duplicate optimiser options.
         """
-        if issubclass(self.pints_method, pints.Optimiser):
-            self.method = self.pints_method(self.x0, self.sigma0, self._boundaries)
-        else:
-            raise ValueError("The pints_method is not recognised as a PINTS optimiser.")
+        # Unpack values from any nested options dictionary
+        if "options" in self.unset_options.keys():
+            key_list = list(self.unset_options["options"].keys())
+            for key in key_list:
+                if key not in self.unset_options.keys():
+                    self.unset_options[key] = self.unset_options["options"].pop(key)
+                else:
+                    raise Exception(
+                        f"A duplicate {key} option was found in the options dictionary."
+                    )
+            self.unset_options.pop("options")
 
-        # Convert x0 to PINTS vector
-        self._x0 = pints.vector(self.x0)
+        # Check for duplicate keywords
+        expected_keys = [
+            "max_iterations",
+            "popsize",
+            "threshold",
+        ]
+        alternative_keys = ["maxiter", "population_size", "tol"]
+        for exp_key, alt_key in zip(expected_keys, alternative_keys):
+            if alt_key in self.unset_options.keys():
+                if exp_key in self.unset_options.keys():
+                    raise Exception(
+                        "The alternative {alt_key} option was passed in addition to the expected {exp_key} option."
+                    )
+                else:  # rename
+                    self.unset_options[exp_key] = self.unset_options.pop(alt_key)
 
         # Convert bounds to PINTS boundaries
         if self.bounds is not None:
             if issubclass(
-                self.pints_method, (pints.GradientDescent, pints.Adam, pints.NelderMead)
+                self.pints_optimiser,
+                (pints.GradientDescent, pints.Adam, pints.NelderMead),
             ):
-                print(f"NOTE: Boundaries ignored by {self.pints_method}")
+                print(f"NOTE: Boundaries ignored by {self.pints_optimiser}")
                 self.bounds = None
-                self._boundaries = None
-            elif issubclass(self.pints_method, pints.PSO):
+            elif issubclass(self.pints_optimiser, pints.PSO):
                 if not all(
                     np.isfinite(value)
                     for sublist in self.bounds.values()
@@ -127,11 +142,6 @@ class BasePintsOptimiser(Optimisation):
                 self._boundaries = pints.RectangularBoundaries(
                     self.bounds["lower"], self.bounds["upper"]
                 )
-        else:
-            self._boundaries = None
-
-        # Check if sensitivities are required
-        self._needs_sensitivities = self.method.needs_sensitivities()
 
     def name(self):
         """
@@ -179,9 +189,14 @@ class BasePintsOptimiser(Optimisation):
         unchanged_iterations = 0
 
         # Choose method to evaluate
-        f = self.cost
         if self._needs_sensitivities:
-            f = f.evaluateS1
+
+            def f(x):
+                return self.cost.evaluateS1(x, minimising=self._minimising)
+        else:
+
+            def f(x, grad=None):
+                return self.cost(x, grad, minimising=self._minimising)
 
         # Create evaluator object
         if self._parallel:
@@ -329,13 +344,13 @@ class BasePintsOptimiser(Optimisation):
 
         # Store result
         self.result.x = x
-        self.result.final_cost = f
+        final_cost = self.cost(x)
+        self.result.final_cost = final_cost
         self.result.nit = self._iterations
 
-        # Return best position and the score used internally,
-        # i.e the negative log-likelihood in the case of
-        # self._minimising = False
-        return x, f
+        # Return best position and the score,
+        # i.e the negative log-likelihood in the case of self._minimising = False
+        return x, final_cost
 
     def f_guessed_tracking(self):
         """
@@ -381,6 +396,25 @@ class BasePintsOptimiser(Optimisation):
         else:
             self._parallel = False
             self._n_workers = 1
+
+    def set_max_iterations(self, iterations="default"):
+        """
+        Set the maximum number of iterations as a stopping criterion.
+        Credit: PINTS
+
+        Parameters
+        ----------
+        iterations : int, optional
+            The maximum number of iterations to run.
+            Set to `None` to remove this stopping criterion.
+        """
+        if iterations == "default":
+            iterations = self.default_max_iterations
+        if iterations is not None:
+            iterations = int(iterations)
+            if iterations < 0:
+                raise ValueError("Maximum number of iterations cannot be negative.")
+        self._max_iterations = iterations
 
     def set_min_iterations(self, iterations=2):
         """

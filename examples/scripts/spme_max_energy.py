@@ -23,12 +23,12 @@ model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 parameters = [
     pybop.Parameter(
         "Positive electrode thickness [m]",
-        prior=pybop.Gaussian(7.56e-05, 0.05e-05),
+        prior=pybop.Gaussian(7.56e-05, 0.1e-05),
         bounds=[65e-06, 10e-05],
     ),
     pybop.Parameter(
         "Positive particle radius [m]",
-        prior=pybop.Gaussian(5.22e-06, 0.05e-06),
+        prior=pybop.Gaussian(5.22e-06, 0.1e-06),
         bounds=[2e-06, 9e-06],
     ),
 ]
@@ -47,13 +47,15 @@ problem = pybop.DesignProblem(
 
 # Generate cost function and optimisation class:
 cost = pybop.GravimetricEnergyDensity(problem)
-optim = pybop.PSO(cost, verbose=True, allow_infeasible_solutions=False)
+optim = pybop.PSO(
+    cost, verbose=True, allow_infeasible_solutions=False, max_iterations=15
+)
 
 # Run optimisation
-x, final_cost = optim.run(max_iterations=15)
+x, final_cost = optim.run()
 print("Estimated parameters:", x)
-print(f"Initial gravimetric energy density: {-cost(cost.x0):.2f} Wh.kg-1")
-print(f"Optimised gravimetric energy density: {-final_cost:.2f} Wh.kg-1")
+print(f"Initial gravimetric energy density: {cost(cost.x0):.2f} Wh.kg-1")
+print(f"Optimised gravimetric energy density: {final_cost:.2f} Wh.kg-1")
 
 # Plot the timeseries output
 if cost.update_capacity:

@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#236](https://github.com/pybop-team/PyBOP/issues/236) - Restructures the optimiser classes to allow the passing of keyword arguments and fixes the setting of max_iterations and minimising.
 - [#304](https://github.com/pybop-team/PyBOP/pull/304) - Decreases the testing suite completion time.
 - [#301](https://github.com/pybop-team/PyBOP/pull/301) - Updates default echem solver to "fast with events" mode.
 - [#251](https://github.com/pybop-team/PyBOP/pull/251) - Increment PyBaMM > v23.5, remove redundant tests within integration tests, increment citation version, fix examples with incorrect model definitions.
@@ -18,7 +19,6 @@ codesigned binaries and source distributions via `sigstore-python`.
 
 ## Bug Fixes
 
-- [#236](https://github.com/pybop-team/PyBOP/issues/236) - Restructures the optimiser classes to allow the passing of keyword arguments and fixes the setting of max_iterations.
 - [#317](https://github.com/pybop-team/PyBOP/pull/317) - Installs seed packages into `nox` sessions, ensuring that scheduled tests can pass.
 - [#308](https://github.com/pybop-team/PyBOP/pull/308) - Enables testing on both macOS Intel and macOS ARM (Silicon) runners and fixes the scheduled tests.
 - [#299](https://github.com/pybop-team/PyBOP/pull/299) - Bugfix multiprocessing support for Linux, MacOS, Windows (WSL) and improves coverage.
