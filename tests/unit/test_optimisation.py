@@ -76,6 +76,7 @@ class TestOptimisation:
             (pybop.GradientDescent, "Gradient descent"),
             (pybop.Adam, "Adam"),
             (pybop.CMAES, "Covariance Matrix Adaptation Evolution Strategy (CMA-ES)"),
+            (pybop.CuckooSearch, "Cuckoo Search"),
             (pybop.SNES, "Seperable Natural Evolution Strategy (SNES)"),
             (pybop.XNES, "Exponential Natural Evolution Strategy (xNES)"),
             (pybop.PSO, "Particle Swarm Optimisation (PSO)"),

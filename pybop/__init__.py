@@ -113,6 +113,7 @@ from .optimisers.pints_optimisers import (
     SNES,
     XNES,
 )
+from .optimisers._cuckoo import CuckooSearch
 
 #
 # Parameter classes
