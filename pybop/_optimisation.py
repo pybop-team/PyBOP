@@ -62,12 +62,16 @@ class Optimisation:
             self._minimising = cost._minimising
             self.set_allow_infeasible_solutions()
         else:
-            warnings.warn(
-                "The cost is not an instance of pybop.BaseCost. Continuing "
-                + "under the assumption that it is a callable function.",
-                UserWarning,
-            )
-            self.cost = BaseCost()
+            try:
+                cost(optimiser_kwargs.get("x0", []))
+                warnings.warn(
+                    "The cost is not an instance of pybop.BaseCost, but let's "
+                    + "continue assuming that it is a callable function.",
+                    UserWarning,
+                )
+                self.cost = BaseCost()
+            except:
+                raise Exception("The cost is not a recognised cost object or function.")
 
             def cost_evaluate(x, grad=None):
                 return cost(x)
@@ -86,12 +90,14 @@ class Optimisation:
         """
         Update the base optimiser options and remove them from the options dictionary.
         """
-        key_list = list(self.unset_options.keys())
-        for key in key_list:
-            if key in ["x0", "bounds", "sigma0", "verbose"]:
-                self.__dict__.update({key: self.unset_options.pop(key)})
-            elif key == "allow_infeasible_solutions":
-                self.set_allow_infeasible_solutions(self.unset_options.pop(key))
+        self.x0 = self.unset_options.pop("x0", self.x0)
+        self.bounds = self.unset_options.pop("bounds", self.bounds)
+        self.sigma0 = self.unset_options.pop("sigma0", self.sigma0)
+        self.verbose = self.unset_options.pop("verbose", self.verbose)
+        if "allow_infeasible_solutions" in self.unset_options.keys():
+            self.set_allow_infeasible_solutions(
+                self.unset_options.pop("allow_infeasible_solutions")
+            )
 
     def _set_up_optimiser(self):
         """

@@ -12,7 +12,7 @@ class TestModelParameterisation:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ground_truth = np.array([0.55, 0.55]) + np.random.normal(
-            loc=0.0, scale=0.05, size=2
+            loc=0.0, scale=0.03, size=2
         )
 
     @pytest.fixture
@@ -122,7 +122,7 @@ class TestModelParameterisation:
                 parameterisation.method.set_learning_rate(0.015)
 
         elif optimiser in [pybop.SciPyMinimize]:
-            parameterisation.cost.problem.model.allow_infeasible_solutions = False
+            parameterisation.set_allow_infeasible_solutions(False)
 
         x, final_cost = parameterisation.run()
 

@@ -209,6 +209,15 @@ class TestOptimisation:
             pybop.CMAES(cost=cost)
 
     @pytest.mark.unit
+    def test_invalid_cost(self):
+        # Test without valid cost
+        with pytest.raises(
+            Exception,
+            match="The cost is not a recognised cost object or function.",
+        ):
+            pybop.DefaultOptimiser(cost="Invalid string")
+
+    @pytest.mark.unit
     def test_default_optimiser(self, cost):
         optim = pybop.DefaultOptimiser(cost=cost)
         assert optim.name() == "Exponential Natural Evolution Strategy (xNES)"
