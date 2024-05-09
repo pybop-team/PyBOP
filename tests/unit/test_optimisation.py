@@ -167,7 +167,7 @@ class TestOptimisation:
         if optimiser in [
             pybop.SciPyMinimize,
             pybop.SciPyDifferentialEvolution,
-            pybop.CMAES,
+            pybop.XNES,
         ]:
             # Pass nested options
             optim = optimiser(cost=cost, options=dict(maxiter=10))
@@ -310,6 +310,15 @@ class TestOptimisation:
         optim._threshold = np.inf
         optim.run()
         optim.set_max_unchanged_iterations()
+
+        # Test callback and halting output
+        def callback_error(iteration, s):
+            raise Exception("Callback error message")
+
+        optim._callback = callback_error
+        with pytest.raises(Exception, match="Callback error message"):
+            optim.run()
+        optim._callback = None
 
         # Trigger optimiser error
         def optimiser_error():

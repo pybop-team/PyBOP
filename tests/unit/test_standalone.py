@@ -15,8 +15,16 @@ class TestStandalone:
     @pytest.mark.unit
     def test_standalone_optimiser(self):
         optim = StandaloneOptimiser()
-        x, final_cost = optim.run()
+        assert optim.name() == "StandaloneOptimiser"
 
+        x, final_cost = optim.run()
+        assert optim.cost(optim.x0) > final_cost
+        np.testing.assert_allclose(x, [2, 4], atol=1e-2)
+
+        # Test with bounds
+        optim = StandaloneOptimiser(bounds=dict(upper=[5, 6], lower=[1, 2]))
+
+        x, final_cost = optim.run()
         assert optim.cost(optim.x0) > final_cost
         np.testing.assert_allclose(x, [2, 4], atol=1e-2)
 
