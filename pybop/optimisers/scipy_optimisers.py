@@ -139,10 +139,6 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 # Nest this option within an options dictionary for SciPy minimize
                 self._options["options"]["maxiter"] = self.unset_options.pop(key)
 
-        # Throw an error if any options remain
-        if self.unset_options:
-            raise ValueError(f"Unrecognised keyword arguments: {self.unset_options}")
-
     def _run_optimiser(self):
         """
         Executes the optimisation process using SciPy's minimize function.

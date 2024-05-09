@@ -121,11 +121,11 @@ class TestOptimisation:
         optim.run()
         assert optim._iterations == 1
 
-        if issubclass(optimiser, (pybop.GradientDescent, pybop.Adam, pybop.NelderMead)):
+        if optimiser in [pybop.GradientDescent, pybop.Adam, pybop.NelderMead]:
             # Ignored bounds
             optim = optimiser(cost=cost, bounds=cost.bounds)
             assert optim.bounds is None
-        elif issubclass(optimiser, pybop.PSO):
+        elif optimiser in [pybop.PSO]:
             assert optim.bounds == cost.bounds
             # Cannot accept infinite bounds
             bounds = {"upper": [np.inf], "lower": [0.57]}
@@ -164,6 +164,11 @@ class TestOptimisation:
             optim = optimiser(cost=cost, bounds=bounds, tol=1e-2)
             assert optim.bounds == bounds
 
+        if optimiser in [
+            pybop.SciPyMinimize,
+            pybop.SciPyDifferentialEvolution,
+            pybop.CMAES,
+        ]:
             # Pass nested options
             optim = optimiser(cost=cost, options=dict(maxiter=10))
             with pytest.raises(
@@ -172,14 +177,29 @@ class TestOptimisation:
             ):
                 optimiser(cost=cost, maxiter=5, options=dict(maxiter=10))
 
+            # Pass similar keywords
+            with pytest.raises(
+                Exception,
+                match="option was passed in addition to the expected",
+            ):
+                optimiser(cost=cost, maxiter=5, max_iterations=10)
+
         if optimiser in [pybop.SciPyDifferentialEvolution]:
             # Update population size
             optimiser(cost=cost, popsize=5)
 
             # Test invalid bounds
-            with pytest.raises(ValueError):
+            with pytest.raises(
+                ValueError, match="Bounds must be specified for differential_evolution."
+            ):
+                optimiser(cost=cost, bounds=None)
+            with pytest.raises(
+                ValueError, match="Bounds must be specified for differential_evolution."
+            ):
                 optimiser(cost=cost, bounds=[(0, np.inf)])
-            with pytest.raises(ValueError):
+            with pytest.raises(
+                ValueError, match="Bounds must be specified for differential_evolution."
+            ):
                 optimiser(cost=cost, bounds={"upper": [np.inf], "lower": [0.57]})
 
         else:
@@ -192,6 +212,7 @@ class TestOptimisation:
         if optimiser in [pybop.SciPyMinimize]:
             # Check a method that uses gradient information
             optimiser(cost=cost, method="L-BFGS-B", jac=True)
+            optim.run()
             with pytest.raises(
                 ValueError,
                 match="Expected the jac option to be either True, False or None.",
@@ -256,23 +277,24 @@ class TestOptimisation:
     @pytest.mark.unit
     def test_halting(self, cost):
         # Test max evalutions
-        optim = pybop.GradientDescent(cost=cost)
-        optim.set_max_evaluations(1)
+        optim = pybop.GradientDescent(cost=cost, max_evaluations=1, verbose=True)
         x, __ = optim.run()
         assert optim._iterations == 1
 
         # Test max unchanged iterations
-        optim = pybop.GradientDescent(cost=cost)
-        optim.set_max_unchanged_iterations(1)
-        optim.set_min_iterations(1)
+        optim = pybop.GradientDescent(
+            cost=cost, max_unchanged_iterations=1, min_iterations=1
+        )
         x, __ = optim.run()
         assert optim._iterations == 2
 
         # Test guessed values
         optim.set_f_guessed_tracking(True)
-        assert optim._use_f_guessed is True
+        assert optim.f_guessed_tracking() is True
 
         # Test invalid values
+        with pytest.raises(ValueError):
+            optim.set_max_iterations(-1)
         with pytest.raises(ValueError):
             optim.set_max_evaluations(-1)
         with pytest.raises(ValueError):
@@ -281,6 +303,30 @@ class TestOptimisation:
             optim.set_max_unchanged_iterations(-1)
         with pytest.raises(ValueError):
             optim.set_max_unchanged_iterations(1, threshold=-1)
+
+        optim = pybop.DefaultOptimiser(cost=cost)
+
+        # Trigger threshold
+        optim._threshold = np.inf
+        optim.run()
+        optim.set_max_unchanged_iterations()
+
+        # Trigger optimiser error
+        def optimiser_error():
+            return "Optimiser error message"
+
+        optim.method.stop = optimiser_error
+        optim.run()
+
+        # Test no stopping condition
+        with pytest.raises(
+            ValueError, match="At least one stopping criterion must be set."
+        ):
+            optim._max_iterations = None
+            optim._unchanged_max_iterations = None
+            optim._max_evaluations = None
+            optim._threshold = None
+            optim.run()
 
     @pytest.mark.unit
     def test_infeasible_solutions(self, cost):
