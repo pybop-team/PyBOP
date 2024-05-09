@@ -97,7 +97,7 @@ from ._experiment import Experiment
 # Optimiser class
 #
 from ._optimisation import Optimisation
-from .optimisers.base_optimiser import BasePintsOptimiser
+from .optimisers.base_pints_optimiser import BasePintsOptimiser
 from .optimisers.scipy_optimisers import (
     BaseSciPyOptimiser,
     SciPyMinimize,
