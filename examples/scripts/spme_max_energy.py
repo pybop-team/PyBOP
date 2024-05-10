@@ -20,18 +20,20 @@ parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
 # Fitting parameters
-parameters = [
-    pybop.Parameter(
-        "Positive electrode thickness [m]",
-        prior=pybop.Gaussian(7.56e-05, 0.05e-05),
-        bounds=[65e-06, 10e-05],
-    ),
-    pybop.Parameter(
-        "Positive particle radius [m]",
-        prior=pybop.Gaussian(5.22e-06, 0.05e-06),
-        bounds=[2e-06, 9e-06],
-    ),
-]
+parameters = pybop.Parameters(
+    [
+        pybop.Parameter(
+            "Positive electrode thickness [m]",
+            prior=pybop.Gaussian(7.56e-05, 0.05e-05),
+            bounds=[65e-06, 10e-05],
+        ),
+        pybop.Parameter(
+            "Positive particle radius [m]",
+            prior=pybop.Gaussian(5.22e-06, 0.05e-06),
+            bounds=[2e-06, 9e-06],
+        ),
+    ]
+)
 
 # Define test protocol
 experiment = pybop.Experiment(

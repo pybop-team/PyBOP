@@ -10,18 +10,20 @@ model = ExponentialDecay(parameter_set=parameter_set, n_states=1)
 x0 = np.array([0.1, 1.0])
 
 # Fitting parameters
-parameters = [
-    pybop.Parameter(
-        "k",
-        prior=pybop.Gaussian(0.1, 0.05),
-        bounds=[0, 1],
-    ),
-    pybop.Parameter(
-        "y0",
-        prior=pybop.Gaussian(1, 0.05),
-        bounds=[0, 3],
-    ),
-]
+parameters = pybop.Parameters(
+    [
+        pybop.Parameter(
+            "k",
+            prior=pybop.Gaussian(0.1, 0.05),
+            bounds=[0, 1],
+        ),
+        pybop.Parameter(
+            "y0",
+            prior=pybop.Gaussian(1, 0.05),
+            bounds=[0, 3],
+        ),
+    ]
+)
 
 # Verification: save fixed inputs for testing
 inputs = dict()
