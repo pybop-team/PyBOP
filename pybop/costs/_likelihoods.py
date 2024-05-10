@@ -11,6 +11,7 @@ class BaseLikelihood(BaseCost):
     def __init__(self, problem, sigma=None):
         super(BaseLikelihood, self).__init__(problem, sigma)
         self.n_time_data = problem.n_time_data
+        self._minimising = False
 
     def set_sigma(self, sigma):
         """

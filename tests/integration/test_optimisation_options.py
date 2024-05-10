@@ -81,9 +81,8 @@ class TestOptimisation:
     @pytest.mark.integration
     def test_optimisation_f_guessed(self, f_guessed, spm_costs):
         # Test each optimiser
-        parameterisation = pybop.XNES(cost=spm_costs, sigma0=0.05)
+        parameterisation = pybop.XNES(cost=spm_costs, sigma0=0.05, max_iterations=125)
         parameterisation.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
-        parameterisation.set_max_iterations(125)
         parameterisation.set_f_guessed_tracking(f_guessed)
 
         # Set parallelisation if not on Windows
@@ -94,7 +93,10 @@ class TestOptimisation:
         x, final_cost = parameterisation.run()
 
         # Assertions
-        assert initial_cost > final_cost
+        if parameterisation._minimising:
+            assert initial_cost > final_cost
+        else:
+            assert initial_cost < final_cost
         np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
 
     def getdata(self, model, x, init_soc):
@@ -107,8 +109,8 @@ class TestOptimisation:
         experiment = pybop.Experiment(
             [
                 (
-                    "Discharge at 0.5C for 3 minutes (1 second period)",
-                    "Charge at 0.5C for 3 minutes (1 second period)",
+                    "Discharge at 0.5C for 3 minutes (5 second period)",
+                    "Charge at 0.5C for 3 minutes (5 second period)",
                 ),
             ]
             * 2

@@ -16,7 +16,7 @@ class GradientDescent(BasePintsOptimiser):
     **optimiser_kwargs : optional
         Valid PINTS option keys and their values, for example:
         x0 : array_like
-            Initial position from which optimization will start.
+            Initial position from which optimisation will start.
         sigma0 : float
             The learning rate / Initial step size (default: 0.02).
 
@@ -44,7 +44,7 @@ class Adam(BasePintsOptimiser):
     **optimiser_kwargs : optional
         Valid PINTS option keys and their values, for example:
         x0 : array_like
-            Initial position from which optimization will start.
+            Initial position from which optimisation will start.
         sigma0 : float
             Initial step size.
 
@@ -70,7 +70,7 @@ class IRPropMin(BasePintsOptimiser):
     **optimiser_kwargs : optional
         Valid PINTS option keys and their values, for example:
         x0 : array_like
-            Initial position from which optimization will start.
+            Initial position from which optimisation will start.
         sigma0 : float
             Initial step size.
         bounds : dict
@@ -99,7 +99,7 @@ class PSO(BasePintsOptimiser):
     **optimiser_kwargs : optional
         Valid PINTS option keys and their values, for example:
         x0 : array_like
-            Initial positions of particles, which the optimization will use.
+            Initial positions of particles, which the optimisation will use.
         sigma0 : float
             Spread of the initial particle positions.
         bounds : dict
@@ -128,7 +128,7 @@ class SNES(BasePintsOptimiser):
     **optimiser_kwargs : optional
         Valid PINTS option keys and their values, for example:
         x0 : array_like
-            Initial position from which optimization will start.
+            Initial position from which optimisation will start.
         sigma0 : float
             Initial standard deviation of the sampling distribution.
         bounds : dict
@@ -157,7 +157,7 @@ class XNES(BasePintsOptimiser):
     **optimiser_kwargs : optional
         Valid PINTS option keys and their values, for example:
         x0 : array_like
-            The initial parameter vector to optimize.
+            The initial parameter vector to optimise.
         sigma0 : float
             Initial standard deviation of the sampling distribution.
         bounds : dict
@@ -186,7 +186,7 @@ class NelderMead(BasePintsOptimiser):
     **optimiser_kwargs : optional
         Valid PINTS option keys and their values, for example:
         x0 : array_like
-            The initial parameter vector to optimize.
+            The initial parameter vector to optimise.
         sigma0 : float
             Initial standard deviation of the sampling distribution.
             Does not appear to be used.
@@ -213,7 +213,7 @@ class CMAES(BasePintsOptimiser):
     **optimiser_kwargs : optional
         Valid PINTS option keys and their values, for example:
         x0 : array_like
-            The initial parameter vector to optimize.
+            The initial parameter vector to optimise.
         sigma0 : float
             Initial standard deviation of the sampling distribution.
         bounds : dict

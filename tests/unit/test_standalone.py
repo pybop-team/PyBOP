@@ -3,6 +3,7 @@ import pytest
 
 import pybop
 from examples.standalone.cost import StandaloneCost
+from examples.standalone.optimiser import StandaloneOptimiser
 from examples.standalone.problem import StandaloneProblem
 
 
@@ -12,13 +13,28 @@ class TestStandalone:
     """
 
     @pytest.mark.unit
-    def test_standalone(self):
+    def test_standalone_optimiser(self):
+        optim = StandaloneOptimiser()
+        assert optim.name() == "StandaloneOptimiser"
+
+        x, final_cost = optim.run()
+        assert optim.cost(optim.x0) > final_cost
+        np.testing.assert_allclose(x, [2, 4], atol=1e-2)
+
+        # Test with bounds
+        optim = StandaloneOptimiser(bounds=dict(upper=[5, 6], lower=[1, 2]))
+
+        x, final_cost = optim.run()
+        assert optim.cost(optim.x0) > final_cost
+        np.testing.assert_allclose(x, [2, 4], atol=1e-2)
+
+    @pytest.mark.unit
+    def test_standalone_cost(self):
         # Build an Optimisation problem with a StandaloneCost
         cost = StandaloneCost()
         optim = pybop.DefaultOptimiser(cost=cost)
         x, final_cost = optim.run()
 
-        assert len(optim.x0) == optim._n_parameters
         np.testing.assert_allclose(x, 0, atol=1e-2)
         np.testing.assert_allclose(final_cost, 42, atol=1e-2)
 

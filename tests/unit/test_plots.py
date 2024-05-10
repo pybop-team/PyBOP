@@ -116,6 +116,8 @@ class TestPlots:
     def test_optim_plots(self, optim):
         # Plot convergence
         pybop.plot_convergence(optim)
+        optim._minimising = False
+        pybop.plot_convergence(optim)
 
         # Plot the parameter traces
         pybop.plot_parameters(optim)
