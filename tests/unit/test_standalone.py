@@ -25,18 +25,20 @@ class TestStandalone:
     @pytest.mark.unit
     def test_standalone_problem(self):
         # Define parameters to estimate
-        parameters = [
-            pybop.Parameter(
-                "Gradient",
-                prior=pybop.Gaussian(4.2, 0.02),
-                bounds=[-1, 10],
-            ),
-            pybop.Parameter(
-                "Intercept",
-                prior=pybop.Gaussian(3.3, 0.02),
-                bounds=[-1, 10],
-            ),
-        ]
+        parameters = pybop.Parameters(
+            [
+                pybop.Parameter(
+                    "Gradient",
+                    prior=pybop.Gaussian(4.2, 0.02),
+                    bounds=[-1, 10],
+                ),
+                pybop.Parameter(
+                    "Intercept",
+                    prior=pybop.Gaussian(3.3, 0.02),
+                    bounds=[-1, 10],
+                ),
+            ]
+        )
 
         # Define target data
         t_eval = np.linspace(0, 1, 100)

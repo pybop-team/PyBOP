@@ -15,13 +15,13 @@ class TestLikelihoods:
 
     @pytest.fixture
     def parameters(self):
-        return [
+        return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.01),
                 bounds=[0.375, 0.625],
             ),
-        ]
+        )
 
     @pytest.fixture
     def experiment(self):

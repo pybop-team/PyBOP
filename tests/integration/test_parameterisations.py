@@ -22,18 +22,20 @@ class TestModelParameterisation:
 
     @pytest.fixture
     def parameters(self):
-        return [
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.55, 0.05),
-                bounds=[0.375, 0.75],
-            ),
-            pybop.Parameter(
-                "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.55, 0.05),
-                # no bounds
-            ),
-        ]
+        return pybop.Parameters(
+            [
+                pybop.Parameter(
+                    "Negative electrode active material volume fraction",
+                    prior=pybop.Gaussian(0.55, 0.05),
+                    bounds=[0.375, 0.75],
+                ),
+                pybop.Parameter(
+                    "Positive electrode active material volume fraction",
+                    prior=pybop.Gaussian(0.55, 0.05),
+                    # no bounds
+                ),
+            ]
+        )
 
     @pytest.fixture(params=[0.4, 0.7])
     def init_soc(self, request):
@@ -96,13 +98,10 @@ class TestModelParameterisation:
     def test_spm_optimisers(self, optimiser, spm_costs):
         # Some optimisers require a complete set of bounds
         if optimiser in [pybop.SciPyDifferentialEvolution, pybop.PSO]:
-            spm_costs.problem.parameters[1].set_bounds(
-                [0.3, 0.8]
-            )  # Large range to ensure IC within bounds
-            bounds = {"lower": [], "upper": []}
-            for param in spm_costs.problem.parameters:
-                bounds["lower"].append(param.bounds[0])
-                bounds["upper"].append(param.bounds[1])
+            spm_costs.problem.parameters[
+                "Positive electrode active material volume fraction"
+            ].set_bounds([0.3, 0.8])  # Large range to ensure IC within bounds
+            bounds = spm_costs.problem.parameters.update_bounds()
             spm_costs.problem.bounds = bounds
             spm_costs.bounds = bounds
 
@@ -178,13 +177,10 @@ class TestModelParameterisation:
     def test_multiple_signals(self, multi_optimiser, spm_two_signal_cost):
         # Some optimisers require a complete set of bounds
         if multi_optimiser in [pybop.SciPyDifferentialEvolution]:
-            spm_two_signal_cost.problem.parameters[1].set_bounds(
-                [0.3, 0.8]
-            )  # Large range to ensure IC within bounds
-            bounds = {"lower": [], "upper": []}
-            for param in spm_two_signal_cost.problem.parameters:
-                bounds["lower"].append(param.bounds[0])
-                bounds["upper"].append(param.bounds[1])
+            spm_two_signal_cost.problem.parameters[
+                "Positive electrode active material volume fraction"
+            ].set_bounds([0.3, 0.8])  # Large range to ensure IC within bounds
+            bounds = spm_two_signal_cost.problem.parameters.update_bounds()
             spm_two_signal_cost.problem.bounds = bounds
             spm_two_signal_cost.bounds = bounds
 

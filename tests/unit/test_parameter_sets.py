@@ -74,20 +74,22 @@ class TestParameterSets:
         assert params() == params.params
 
         # Test exporting a json file
-        parameters = [
-            pybop.Parameter(
-                "R0 [Ohm]",
-                prior=pybop.Gaussian(0.0002, 0.0001),
-                bounds=[1e-4, 1e-2],
-                initial_value=0.001,
-            ),
-            pybop.Parameter(
-                "R1 [Ohm]",
-                prior=pybop.Gaussian(0.0001, 0.0001),
-                bounds=[1e-5, 1e-2],
-                initial_value=0.0002,
-            ),
-        ]
+        parameters = pybop.Parameters(
+            [
+                pybop.Parameter(
+                    "R0 [Ohm]",
+                    prior=pybop.Gaussian(0.0002, 0.0001),
+                    bounds=[1e-4, 1e-2],
+                    initial_value=0.001,
+                ),
+                pybop.Parameter(
+                    "R1 [Ohm]",
+                    prior=pybop.Gaussian(0.0001, 0.0001),
+                    bounds=[1e-5, 1e-2],
+                    initial_value=0.0002,
+                ),
+            ]
+        )
         params.export_parameters(
             "examples/scripts/parameters/fit_ecm_parameters.json", fit_params=parameters
         )
