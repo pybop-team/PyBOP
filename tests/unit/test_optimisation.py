@@ -258,6 +258,13 @@ class TestOptimisation:
         optim = pybop.Optimisation(cost=cost)
         assert optim.name() == "Exponential Natural Evolution Strategy (xNES)"
 
+        # Test incorrect setting attribute
+        with pytest.raises(
+            AttributeError,
+            match="'Optimisation' object has no attribute 'not_a_valid_attribute'",
+        ):
+            optim.not_a_valid_attribute
+
     @pytest.mark.unit
     def test_incorrect_optimiser_class(self, cost):
         class RandomClass:
