@@ -122,7 +122,7 @@ class TestModelParameterisation:
                 parameterisation = pybop.Optimisation(
                     cost=spm_costs, optimiser=optimiser, sigma0=0.02
                 )
-        elif optimiser in [pybop.SciPyMinimize]:
+        elif optimiser in [pybop.Adam] and spm_costs in [pybop.SumSquaredError]:
             parameterisation = pybop.Optimisation(
                 cost=spm_costs,
                 optimiser=optimiser,
