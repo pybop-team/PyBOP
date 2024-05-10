@@ -140,7 +140,10 @@ class TestModelParameterisation:
 
         # Assertions
         assert initial_cost > final_cost
-        np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
+        if optimiser in [pybop.SciPyMinimize]:
+            np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
+        else:
+            np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, cost_class):
