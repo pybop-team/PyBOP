@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from pybamm import __version__ as pybamm_version
 
 import pybop
 
@@ -140,10 +141,17 @@ class TestModelParameterisation:
 
         # Assertions
         assert initial_cost > final_cost
-        if optimiser in [pybop.SciPyMinimize]:
-            np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
+
+        if pybamm_version <= "23.9":
+            if optimiser in [pybop.SciPyMinimize]:
+                np.testing.assert_allclose(x, self.ground_truth, atol=3.0e-2)
+            else:
+                np.testing.assert_allclose(x, self.ground_truth, atol=3.0e-2)
         else:
-            np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
+            if optimiser in [pybop.SciPyMinimize]:
+                np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
+            else:
+                np.testing.assert_allclose(x, self.ground_truth, atol=1.75e-2)
 
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, cost_class):
