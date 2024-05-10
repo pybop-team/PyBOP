@@ -1,5 +1,3 @@
-import numpy as np
-
 import pybop
 
 
@@ -9,8 +7,8 @@ class BaseProblem:
 
     Parameters
     ----------
-    parameters : list
-        List of parameters for the problem.
+    parameters : pybop.Parameter or pybop.Parameters
+        An object or list of the parameters for the problem.
     model : object, optional
         The model to be used for the problem (default: None).
     check_model : bool, optional
@@ -35,6 +33,15 @@ class BaseProblem:
         init_soc=None,
         x0=None,
     ):
+        if isinstance(parameters, list) and isinstance(parameters[0], pybop.Parameter):
+            parameters = pybop.Parameters(parameters)
+        elif isinstance(parameters, pybop.Parameter):
+            parameters = pybop.Parameters(parameters)
+        elif not isinstance(parameters, pybop.Parameters):
+            raise TypeError(
+                "The input parameters must be a pybop Parameter or Parameters object."
+            )
+
         self.parameters = parameters
         self._model = model
         self.check_model = check_model
@@ -45,7 +52,7 @@ class BaseProblem:
         self.signal = signal
         self.init_soc = init_soc
         self.x0 = x0
-        self.n_parameters = len(self.parameters)
+        self.n_parameters = len(self.parameters.keys())
         self.n_outputs = len(self.signal)
         self._time_data = None
         self._target = None
@@ -56,35 +63,14 @@ class BaseProblem:
             self.additional_variables = []
 
         # Set bounds (for all or no parameters)
-        all_unbounded = True  # assumption
-        self.bounds = {"lower": [], "upper": []}
-        for param in self.parameters:
-            if param.bounds is not None:
-                self.bounds["lower"].append(param.bounds[0])
-                self.bounds["upper"].append(param.bounds[1])
-                all_unbounded = False
-            else:
-                self.bounds["lower"].append(-np.inf)
-                self.bounds["upper"].append(np.inf)
-        if all_unbounded:
-            self.bounds = None
+        self.bounds = self.parameters.update_bounds()
 
         # Set initial standard deviation (for all or no parameters)
-        all_have_sigma = True  # assumption
-        self.sigma0 = []
-        for param in self.parameters:
-            if hasattr(param.prior, "sigma"):
-                self.sigma0.append(param.prior.sigma)
-            else:
-                all_have_sigma = False
-        if not all_have_sigma:
-            self.sigma0 = None
+        self.sigma0 = self.parameters.get_sigma0()
 
         # Sample from prior for x0
         if x0 is None:
-            self.x0 = np.zeros(self.n_parameters)
-            for i, param in enumerate(self.parameters):
-                self.x0[i] = param.rvs(1)
+            self.x0 = self.parameters.rvs(1)
         elif len(x0) != self.n_parameters:
             raise ValueError("x0 dimensions do not match number of parameters")
 

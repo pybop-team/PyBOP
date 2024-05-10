@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import numpy as np
 
 
@@ -143,3 +145,226 @@ class Parameter:
                 self.upper_bound = bounds[1]
 
         self.bounds = bounds
+
+
+class Parameters:
+    """
+    Represents a set of uncertain parameters within the PyBOP framework.
+
+    This class encapsulates the definition of a parameter, including its name, prior
+    distribution, initial value, bounds, and a margin to ensure the parameter stays
+    within feasible limits during optimisation or sampling.
+
+    Parameters
+    ----------
+    parameter_list : pybop.Parameter or list
+    """
+
+    def __init__(self, parameter_list):
+        self.param = OrderedDict()
+        self.bounds = None
+        parameter_list = (
+            parameter_list if isinstance(parameter_list, list) else [parameter_list]
+        )
+        for param in parameter_list:
+            self.add_parameter(param)
+
+    def __getitem__(self, key):
+        """
+        Return the parameter dictionary corresponding to a particular key.
+
+        Parameters
+        ----------
+        key : str
+            The name of a parameter.
+
+        Returns
+        -------
+        list or np.ndarray
+            The dictionary to the key.
+
+        Raises
+        ------
+        ValueError
+            The key must be the name of one of the parameters.
+        """
+        if key not in self.param.keys():
+            raise ValueError(f"The key {key} is not the name of a parameter.")
+
+        return self.param[key]
+
+    def keys(self):
+        """
+        A list of parameter names
+        """
+        return list(self.param.keys())
+
+    def __iter__(self):
+        self.index = 0
+        return self
+
+    def __next__(self):
+        parameter_names = self.keys()
+        if self.index == len(parameter_names):
+            raise StopIteration
+        name = parameter_names[self.index]
+        self.index = self.index + 1
+        return self.param[name]
+
+    def add_parameter(self, parameter):
+        """
+        Construct the parameter class with a name, initial value, prior, and bounds.
+        """
+        if isinstance(parameter, Parameter):
+            if parameter.name in self.param.keys():
+                raise ValueError(
+                    f"There is already a parameter with the name {parameter.name} "
+                    + "in the Parameters object. Please remove the duplicate entry."
+                )
+            self.param[parameter.name] = parameter
+        elif isinstance(parameter, dict):
+            if "name" not in parameter.keys():
+                raise Exception("Parameter requires a name.")
+            name = parameter["name"]
+            if name in self.param.keys():
+                raise ValueError(
+                    f"There is already a parameter with the name {name} "
+                    + "in the Parameters object. Please remove the duplicate entry."
+                )
+            self.param[name] = Parameter(**parameter)
+        else:
+            raise TypeError("Each parameter input must be a Parameter or a dictionary.")
+
+        self.update_bounds()
+
+    def remove_parameter(self, parameter_name):
+        """
+        Construct the parameter class with a name, initial value, prior, and bounds.
+        """
+        if not isinstance(parameter_name, str):
+            raise ValueError("The input parameter_name is not a string.")
+        if parameter_name not in self.param.keys():
+            raise Exception("This parameter does not exist in the Parameters object.")
+
+        # Remove the parameter
+        self.param.pop(parameter_name)
+
+        self.update_bounds()
+
+    def update_bounds(self):
+        """
+        Set bounds, for either all or no parameters.
+        """
+        all_unbounded = True  # assumption
+        self.bounds = {"lower": [], "upper": []}
+
+        for param in self.param.values():
+            if param.bounds is not None:
+                self.bounds["lower"].append(param.bounds[0])
+                self.bounds["upper"].append(param.bounds[1])
+                all_unbounded = False
+            else:
+                self.bounds["lower"].append(-np.inf)
+                self.bounds["upper"].append(np.inf)
+        if all_unbounded:
+            self.bounds = None
+
+        return self.bounds
+
+    def rvs(self, n_samples):
+        """
+        Draw random samples from each parameter's prior distribution.
+
+        The samples are constrained to be within the parameter's bounds, excluding
+        a predefined margin at the boundaries.
+
+        Parameters
+        ----------
+        n_samples : int
+            The number of samples to draw.
+
+        Returns
+        -------
+        array-like
+            An array of samples drawn from the prior distribution within each parameter's bounds.
+        """
+        all_samples = np.zeros(len(self.keys()))
+
+        for i, param in enumerate(self.param.values()):
+            samples = param.prior.rvs(n_samples)
+
+            # Constrain samples to be within bounds
+            if param.bounds is not None:
+                offset = param.margin * (param.upper_bound - param.lower_bound)
+                samples = np.clip(
+                    samples, param.lower_bound + offset, param.upper_bound - offset
+                )
+
+            all_samples[i] = samples
+
+        return all_samples
+
+    def get_sigma0(self):
+        """
+        Set initial standard deviation, for either all or no parameters.
+        """
+        all_have_sigma = True  # assumption
+        sigma0 = []
+
+        for param in self.param.values():
+            if hasattr(param.prior, "sigma"):
+                sigma0.append(param.prior.sigma)
+            else:
+                all_have_sigma = False
+        if not all_have_sigma:
+            sigma0 = None
+
+        return sigma0
+
+    def true_value(self):
+        """
+        Return the true value if each parameter.
+        """
+        true_values = []
+
+        for param in self.param.values():
+            true_values.append(param.true_value)
+
+        return true_values
+
+    def get_bounds_for_plotly(self):
+        """
+        Retrieve parameter bounds in the format expected by Plotly.
+
+        Returns
+        -------
+        bounds : numpy.ndarray
+            An array of shape (n_parameters, 2) containing the bounds for each parameter.
+        """
+        bounds = np.empty((len(self.keys()), 2))
+
+        for i, param in enumerate(self.param.values()):
+            if param.bounds is not None:
+                bounds[i] = param.bounds
+            else:
+                raise ValueError("All parameters require bounds for plotting.")
+
+        return bounds
+
+    def get_bounds_for_scipy(self):
+        """
+        Retrieve parameter bounds in the format expected by SciPy.
+
+        Returns
+        -------
+        bounds : sequence
+            Sequence of (min, max) pairs for each element in x. None is used to specify no bound.
+        """
+        self.update_bounds()
+
+        bounds = [
+            (lower, upper)
+            for lower, upper in zip(self.bounds["lower"], self.bounds["upper"])
+        ]
+
+        return bounds

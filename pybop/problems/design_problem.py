@@ -13,8 +13,8 @@ class DesignProblem(BaseProblem):
     ----------
     model : object
         The model to apply the design to.
-    parameters : list
-        List of parameters for the problem.
+    parameters : pybop.Parameter or pybop.Parameters
+        An object or list of the parameters for the problem.
     experiment : object
         The experimental setup to apply the model to.
     check_model : bool, optional

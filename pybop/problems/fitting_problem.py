@@ -13,8 +13,8 @@ class FittingProblem(BaseProblem):
     ----------
     model : object
         The model to fit.
-    parameters : list
-        List of parameters for the problem.
+    parameters : pybop.Parameter or pybop.Parameters
+        An object or list of the parameters for the problem.
     dataset : Dataset
         Dataset object containing the data to fit the model to.
     signal : str, optional
