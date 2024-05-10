@@ -249,8 +249,11 @@ class Optimisation:
     """
 
     def __init__(self, cost, optimiser=None, **optimiser_kwargs):
+        self.__dict__["optimiser"] = (
+            None  # Pre-define optimiser to avoid recursion during initialisation
+        )
         if optimiser is None:
-            self.optimiser = pybop.DefaultOptimiser(cost, **optimiser_kwargs)
+            self.optimiser = pybop.XNES(cost, **optimiser_kwargs)
         elif issubclass(optimiser, pybop.BasePintsOptimiser):
             self.optimiser = optimiser(cost, **optimiser_kwargs)
         elif issubclass(optimiser, pybop.BaseSciPyOptimiser):
@@ -262,5 +265,18 @@ class Optimisation:
         return self.optimiser.run(**optimiser_kwargs)
 
     def __getattr__(self, attr):
-        # Delegate the attribute lookup to `self.optimiser`
-        return getattr(self.optimiser, attr)
+        if "optimiser" in self.__dict__ and hasattr(self.optimiser, attr):
+            return getattr(self.optimiser, attr)
+        raise AttributeError(
+            f"'{self.__class__.__name__}' object has no attribute '{attr}'"
+        )
+
+    def __setattr__(self, name: str, value) -> None:
+        if (
+            name in self.__dict__
+            or "optimiser" not in self.__dict__
+            or not hasattr(self.optimiser, name)
+        ):
+            object.__setattr__(self, name, value)
+        else:
+            setattr(self.optimiser, name, value)

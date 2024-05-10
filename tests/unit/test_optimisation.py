@@ -242,7 +242,7 @@ class TestOptimisation:
             Exception,
             match="The cost is not a recognised cost object or function.",
         ):
-            pybop.DefaultOptimiser(cost="Invalid string")
+            pybop.Optimisation(cost="Invalid string")
 
         def invalid_cost(x):
             return [1, 2]
@@ -251,11 +251,11 @@ class TestOptimisation:
             Exception,
             match="not a scalar numeric value.",
         ):
-            pybop.DefaultOptimiser(cost=invalid_cost)
+            pybop.Optimisation(cost=invalid_cost)
 
     @pytest.mark.unit
     def test_default_optimiser(self, cost):
-        optim = pybop.DefaultOptimiser(cost=cost)
+        optim = pybop.Optimisation(cost=cost)
         assert optim.name() == "Exponential Natural Evolution Strategy (xNES)"
 
     @pytest.mark.unit
@@ -279,7 +279,7 @@ class TestOptimisation:
     def test_prior_sampling(self, cost):
         # Tests prior sampling
         for i in range(50):
-            optim = pybop.DefaultOptimiser(cost=cost)
+            optim = pybop.Optimisation(cost=cost)
 
             assert optim.x0 <= 0.62 and optim.x0 >= 0.58
 
@@ -313,7 +313,7 @@ class TestOptimisation:
         with pytest.raises(ValueError):
             optim.set_max_unchanged_iterations(1, threshold=-1)
 
-        optim = pybop.DefaultOptimiser(cost=cost)
+        optim = pybop.Optimisation(cost=cost)
 
         # Trigger threshold
         optim._threshold = np.inf
@@ -357,5 +357,5 @@ class TestOptimisation:
     @pytest.mark.unit
     def test_unphysical_result(self, cost):
         # Trigger parameters not physically viable warning
-        optim = pybop.DefaultOptimiser(cost=cost)
+        optim = pybop.Optimisation(cost=cost)
         optim.check_optimal_parameters(np.array([2]))

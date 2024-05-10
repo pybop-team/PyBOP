@@ -104,7 +104,6 @@ from .optimisers.scipy_optimisers import (
     SciPyDifferentialEvolution
 )
 from .optimisers.pints_optimisers import (
-    DefaultOptimiser,
     GradientDescent,
     Adam,
     CMAES,
