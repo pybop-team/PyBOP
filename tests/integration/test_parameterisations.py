@@ -25,12 +25,12 @@ class TestModelParameterisation:
         return [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.55, 0.05),
+                prior=pybop.Uniform(0.35, 0.75),
                 bounds=[0.375, 0.75],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.55, 0.05),
+                prior=pybop.Uniform(0.35, 0.75),
                 # no bounds
             ),
         ]
@@ -95,7 +95,10 @@ class TestModelParameterisation:
     @pytest.mark.integration
     def test_spm_optimisers(self, optimiser, spm_costs):
         # Some optimisers require a complete set of bounds
-        if optimiser in [pybop.SciPyDifferentialEvolution, pybop.PSO]:
+        if optimiser in [
+            pybop.SciPyDifferentialEvolution,
+            pybop.PSO,
+        ]:
             spm_costs.problem.parameters[1].set_bounds(
                 [0.3, 0.8]
             )  # Large range to ensure IC within bounds
@@ -107,29 +110,33 @@ class TestModelParameterisation:
             spm_costs.bounds = bounds
 
         # Test each optimiser
-        parameterisation = pybop.Optimisation(
-            cost=spm_costs, optimiser=optimiser, sigma0=0.05
-        )
-        parameterisation.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
-        parameterisation.set_max_iterations(125)
-
-        initial_cost = parameterisation.cost(spm_costs.x0)
-
         if optimiser in [pybop.GradientDescent]:
             if isinstance(
                 spm_costs, (pybop.GaussianLogLikelihoodKnownSigma, pybop.MAP)
             ):
-                parameterisation.optimiser.set_learning_rate(1.8e-5)
+                parameterisation = pybop.Optimisation(
+                    cost=spm_costs, optimiser=optimiser, sigma0=5e-5
+                )
             else:
-                parameterisation.optimiser.set_learning_rate(0.015)
-            x, final_cost = parameterisation.run()
-
+                parameterisation = pybop.Optimisation(
+                    cost=spm_costs, optimiser=optimiser, sigma0=0.02
+                )
         elif optimiser in [pybop.SciPyMinimize]:
-            parameterisation.cost.problem.model.allow_infeasible_solutions = False
-            x, final_cost = parameterisation.run()
-
+            parameterisation = pybop.Optimisation(
+                cost=spm_costs,
+                optimiser=optimiser,
+                sigma0=0.05,
+                allow_infeasible_solutions=False,
+            )
         else:
-            x, final_cost = parameterisation.run()
+            parameterisation = pybop.Optimisation(
+                cost=spm_costs, optimiser=optimiser, sigma0=0.05
+            )
+
+        parameterisation.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
+        parameterisation.set_max_iterations(125)
+        initial_cost = parameterisation.cost(spm_costs.x0)
+        x, final_cost = parameterisation.run()
 
         # Assertions
         assert initial_cost > final_cost
@@ -248,8 +255,8 @@ class TestModelParameterisation:
         experiment = pybop.Experiment(
             [
                 (
-                    "Discharge at 0.5C for 3 minutes (2 second period)",
-                    "Charge at 0.5C for 3 minutes (2 second period)",
+                    "Discharge at 0.5C for 6 minutes (4 second period)",
+                    "Charge at 0.5C for 6 minutes (4 second period)",
                 ),
             ]
             * 2
