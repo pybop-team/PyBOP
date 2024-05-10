@@ -226,7 +226,7 @@ class AdamW(PintsOptimiser):
         try:
             lambda_ = float(lambda_)  # Ensure b1 is a floatable
         except Exception:
-            raise ("lambda_ must be numeric, floatable value.")
+            raise TypeError("lambda_ must be numeric, floatable value.")
 
         if not 0 < lambda_ <= 1:
             print("lambda_ must a positive value between 0 and 1")
@@ -241,7 +241,7 @@ class AdamW(PintsOptimiser):
         try:
             b1 = float(b1)  # Ensure b1 is a floatable
         except Exception:
-            raise ("b1 must be numeric, floatable value.")
+            raise TypeError("b1 must be numeric, floatable value.")
 
         if not 0 < b1 <= 1:
             print("b1 must a positive value between 0 and 1")
@@ -256,7 +256,7 @@ class AdamW(PintsOptimiser):
         try:
             b2 = float(b2)  # Ensure b2 is a floatable
         except Exception:
-            raise ("b2 must be numeric, floatable value.")
+            raise TypeError("b2 must be numeric, floatable value.")
 
         if not 0 < b2 <= 1:
             print("b2 must a positive value between 0 and 1")

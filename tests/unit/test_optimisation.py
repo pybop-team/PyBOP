@@ -113,6 +113,24 @@ class TestOptimisation:
             # Correct value
             opt.optimiser.set_population_size(5)
 
+        # Test AdamW hyperparameters
+        if optimiser_class in [pybop.AdamW]:
+            opt.optimiser.set_b1(0.9)
+            opt.optimiser.set_b2(0.9)
+            opt.optimiser.set_lambda(0.1)
+
+            assert opt.optimiser._b1 == 0.9
+            assert opt.optimiser._b2 == 0.9
+            assert opt.optimiser._lambda == 0.1
+
+            # Incorrect values
+            with pytest.raises(TypeError):
+                opt.optimiser.set_b1("Value")
+            with pytest.raises(TypeError):
+                opt.optimiser.set_b2("Value")
+            with pytest.raises(TypeError):
+                opt.optimiser.set_lambda("Value")
+
     @pytest.mark.unit
     def test_single_parameter(self, cost):
         # Test catch for optimisers that can only run with multiple parameters
