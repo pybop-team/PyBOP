@@ -82,7 +82,6 @@ class TestModelParameterisation:
         [
             pybop.SciPyMinimize,
             pybop.SciPyDifferentialEvolution,
-            pybop.Adam,
             pybop.AdamW,
             pybop.CMAES,
             pybop.GradientDescent,

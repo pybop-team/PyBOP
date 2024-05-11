@@ -105,7 +105,6 @@ from .optimisers.base_optimiser import BaseOptimiser
 from .optimisers.scipy_optimisers import SciPyMinimize, SciPyDifferentialEvolution
 from .optimisers.pints_optimisers import (
     GradientDescent,
-    Adam,
     CMAES,
     IRPropMin,
     NelderMead,
