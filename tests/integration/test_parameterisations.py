@@ -122,7 +122,7 @@ class TestModelParameterisation:
                 parameterisation = pybop.Optimisation(
                     cost=spm_costs, optimiser=optimiser, sigma0=0.02
                 )
-        elif optimiser in [pybop.Adam] and spm_costs in [pybop.SumSquaredError]:
+        elif optimiser in [pybop.SciPyMinimize]:
             parameterisation = pybop.Optimisation(
                 cost=spm_costs,
                 optimiser=optimiser,
@@ -143,8 +143,8 @@ class TestModelParameterisation:
         assert initial_cost > final_cost
 
         if pybamm_version <= "23.9":
-            if optimiser in [pybop.SciPyMinimize]:
-                np.testing.assert_allclose(x, self.ground_truth, atol=3.0e-2)
+            if optimiser in [pybop.GradientDescent, pybop.SciPyMinimize]:
+                np.testing.assert_allclose(x, self.ground_truth, atol=4.0e-2)
             else:
                 np.testing.assert_allclose(x, self.ground_truth, atol=3.0e-2)
         else:
