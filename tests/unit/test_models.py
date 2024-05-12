@@ -257,6 +257,21 @@ class TestModels:
             base.approximate_capacity(x)
 
     @pytest.mark.unit
+    def test_thevenin_model(self):
+        parameter_set = pybop.ParameterSet(
+            json_path="examples/scripts/parameters/initial_ecm_parameters.json"
+        )
+        parameter_set.import_parameters()
+        assert parameter_set["Open-circuit voltage [V]"] == "default"
+        model = pybop.empirical.Thevenin(
+            parameter_set=parameter_set, options={"number of rc elements": 2}
+        )
+        assert (
+            parameter_set["Open-circuit voltage [V]"]
+            == model.pybamm_model.default_parameter_values["Open-circuit voltage [V]"]
+        )
+
+    @pytest.mark.unit
     def test_non_converged_solution(self):
         model = pybop.lithium_ion.DFN()
         parameters = [

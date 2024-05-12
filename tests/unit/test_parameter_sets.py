@@ -20,6 +20,12 @@ class TestParameterSets:
             parameter_test["Negative electrode active material volume fraction"], 0.75
         )
 
+        # Test getting and setting parameters
+        parameter_test["Negative electrode active material volume fraction"] = 0.8
+        assert (
+            parameter_test["Negative electrode active material volume fraction"] == 0.8
+        )
+
     @pytest.mark.unit
     def test_ecm_parameter_sets(self):
         # Test importing a json file
