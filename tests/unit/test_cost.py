@@ -117,6 +117,15 @@ class TestCosts:
             base_cost.evaluateS1([0.5])
 
     @pytest.mark.unit
+    def test_bounds(self, problem, parameters):
+        # Test without bounds
+        for param in parameters:
+            param.set_bounds(None)
+        parameters.update_bounds()
+        cost = pybop.BaseCost(problem)
+        assert cost.bounds is None
+
+    @pytest.mark.unit
     def test_design_base(self, problem):
         design_cost = pybop.DesignCost(problem)
         with pytest.raises(NotImplementedError):

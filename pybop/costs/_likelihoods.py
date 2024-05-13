@@ -34,12 +34,6 @@ class BaseLikelihood(BaseCost):
         """
         return self.sigma0
 
-    def get_n_parameters(self):
-        """
-        Returns the number of parameters
-        """
-        return self._n_parameters
-
 
 class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
     """
@@ -58,7 +52,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi / self.sigma0)
         self._multip = -1 / (2.0 * self.sigma0**2)
         self.sigma2 = self.sigma0**-2
-        self._dl = np.ones(self._n_parameters)
+        self._dl = np.ones(self.n_parameters)
 
     def _evaluate(self, x, grad=None):
         """
@@ -118,7 +112,7 @@ class GaussianLogLikelihood(BaseLikelihood):
     def __init__(self, problem):
         super(GaussianLogLikelihood, self).__init__(problem)
         self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
-        self._dl = np.ones(self._n_parameters + self.n_outputs)
+        self._dl = np.ones(self.n_parameters + self.n_outputs)
 
     def _evaluate(self, x, grad=None):
         """

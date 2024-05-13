@@ -87,13 +87,6 @@ class TestProblem:
         with pytest.raises(ValueError):
             pybop.BaseProblem(parameters, model=model, signal=[1e-5, 1e-5])
 
-        # Test without bounds
-        for param in parameters:
-            param.set_bounds(None)
-        parameters.update_bounds()
-        problem = pybop.BaseProblem(parameters, model=model)
-        assert problem.bounds is None
-
         # Incorrect set target
         with pytest.raises(ValueError, match="Dataset must be a pybop Dataset object."):
             problem.set_target("This is not a dataset")

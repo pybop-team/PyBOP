@@ -52,7 +52,6 @@ class BaseProblem:
         self.signal = signal
         self.init_soc = init_soc
         self.x0 = x0
-        self.n_parameters = len(self.parameters)
         self.n_outputs = len(self.signal)
         self._time_data = None
         self._target = None
@@ -61,12 +60,6 @@ class BaseProblem:
             self.additional_variables = additional_variables
         else:
             self.additional_variables = []
-
-        # Set bounds (for all or no parameters)
-        self.bounds = self.parameters.update_bounds()
-
-        # Set initial standard deviation (for all or no parameters)
-        self.sigma0 = self.parameters.get_sigma0()
 
         # Sample from prior for x0
         if x0 is None:
@@ -77,6 +70,10 @@ class BaseProblem:
         # Add the initial values to the parameter definitions
         for i, param in enumerate(self.parameters):
             param.update(initial_value=self.x0[i])
+
+    @property
+    def n_parameters(self):
+        return len(self.parameters)
 
     def evaluate(self, x):
         """

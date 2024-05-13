@@ -423,7 +423,7 @@ class BaseModel:
                         (
                             sol[self.signal[0]].data.shape[0],
                             self.n_outputs,
-                            self.n_parameters,
+                            self._n_parameters,
                         )
                     )
 

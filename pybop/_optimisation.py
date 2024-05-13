@@ -55,7 +55,7 @@ class Optimisation:
         self.verbose = verbose
         self.bounds = cost.bounds
         self.sigma0 = sigma0 or cost.sigma0
-        self._n_parameters = cost._n_parameters
+        self._n_parameters = cost.n_parameters
         self.physical_viability = physical_viability
         self.allow_infeasible_solutions = allow_infeasible_solutions
         self.log = []

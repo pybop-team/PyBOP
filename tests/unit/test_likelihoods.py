@@ -79,8 +79,7 @@ class TestLikelihoods:
         assert likelihood.n_time_data == problem.n_time_data
         assert np.array_equal(likelihood.get_sigma(), np.array([0.2]))
         assert likelihood.x0 == problem.x0
-        assert likelihood.bounds == problem.bounds
-        assert likelihood._n_parameters == 1
+        assert likelihood.n_parameters == 1
         assert np.array_equal(likelihood._target, problem._target)
         with pytest.raises(ValueError):
             likelihood.set_sigma("Test")
@@ -106,11 +105,6 @@ class TestLikelihoods:
         likelihood = pybop.BaseLikelihood(one_signal_problem)
         with pytest.raises(ValueError):
             likelihood.set_sigma(np.array([-0.2]))
-
-    @pytest.mark.unit
-    def test_base_likelihood_get_n_parameters(self, one_signal_problem):
-        likelihood = pybop.BaseLikelihood(one_signal_problem)
-        assert likelihood.get_n_parameters() == 1
 
     @pytest.mark.unit
     def test_base_likelihood_n_parameters_property(self, one_signal_problem):

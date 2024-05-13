@@ -325,9 +325,20 @@ class Parameters:
 
         return sigma0
 
+    def initial_value(self):
+        """
+        Return the true value of each parameter.
+        """
+        initial_values = []
+
+        for param in self.param.values():
+            initial_values.append(param.initial_value)
+
+        return initial_values
+    
     def true_value(self):
         """
-        Return the true value if each parameter.
+        Return the true value of each parameter.
         """
         true_values = []
 
