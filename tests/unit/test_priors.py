@@ -22,6 +22,11 @@ class TestPriors:
         return pybop.Exponential(scale=1)
 
     @pytest.mark.unit
+    def test_base_prior(self):
+        base = pybop.BasePrior()
+        assert isinstance(base, pybop.BasePrior)
+
+    @pytest.mark.unit
     def test_priors(self, Gaussian, Uniform, Exponential):
         # Test pdf
         np.testing.assert_allclose(Gaussian.pdf(0.5), 0.3989422804014327, atol=1e-4)
@@ -48,6 +53,13 @@ class TestPriors:
         std = np.std(samples)
         assert abs(mean - 0.5) < 0.2
         assert abs(std - 1) < 0.2
+
+    @pytest.mark.unit
+    def test_incorrect_rvs(self, Gaussian):
+        with pytest.raises(ValueError):
+            Gaussian.rvs(size="a")
+        with pytest.raises(ValueError):
+            Gaussian.rvs(size=(1, 2, -1))
 
     @pytest.mark.unit
     def test_uniform_rvs(self, Uniform):

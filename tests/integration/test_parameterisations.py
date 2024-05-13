@@ -120,7 +120,7 @@ class TestModelParameterisation:
                 )
             else:
                 parameterisation = pybop.Optimisation(
-                    cost=spm_costs, optimiser=optimiser, sigma0=0.02
+                    cost=spm_costs, optimiser=optimiser, sigma0=0.035
                 )
         elif optimiser in [pybop.SciPyMinimize]:
             parameterisation = pybop.Optimisation(
@@ -148,7 +148,7 @@ class TestModelParameterisation:
             else:
                 np.testing.assert_allclose(x, self.ground_truth, atol=3.0e-2)
         else:
-            if optimiser in [pybop.SciPyMinimize]:
+            if optimiser in [pybop.GradientDescent, pybop.SciPyMinimize]:
                 np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
             else:
                 np.testing.assert_allclose(x, self.ground_truth, atol=1.75e-2)

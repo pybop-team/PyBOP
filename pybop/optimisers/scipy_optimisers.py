@@ -66,7 +66,9 @@ class SciPyMinimize(BaseOptimiser):
                 if not np.isinf(self.cost0):
                     break
             if np.isinf(self.cost0):
-                raise Exception("The initial parameter values return an infinite cost.")
+                raise ValueError(
+                    "The initial parameter values return an infinite cost."
+                )
 
         # Scale the cost function and eliminate nan values
         self.inf_count = 0
