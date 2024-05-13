@@ -134,7 +134,7 @@ class TestModelParameterisation:
                 cost=spm_costs, optimiser=optimiser, sigma0=0.05
             )
 
-        parameterisation.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
+        parameterisation.set_max_unchanged_iterations(iterations=55, threshold=1e-5)
         parameterisation.set_max_iterations(125)
         initial_cost = parameterisation.cost(spm_costs.x0)
         x, final_cost = parameterisation.run()
