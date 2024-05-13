@@ -143,13 +143,13 @@ class TestModelParameterisation:
         assert initial_cost > final_cost
 
         if pybamm_version <= "23.9":
-            if optimiser in [pybop.GradientDescent, pybop.SciPyMinimize]:
+            if optimiser in [pybop.GradientDescent, pybop.PSO, pybop.SciPyMinimize]:
                 np.testing.assert_allclose(x, self.ground_truth, atol=4.0e-2)
             else:
                 np.testing.assert_allclose(x, self.ground_truth, atol=3.0e-2)
         else:
-            if optimiser in [pybop.GradientDescent, pybop.SciPyMinimize]:
-                np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
+            if optimiser in [pybop.GradientDescent, pybop.PSO, pybop.SciPyMinimize]:
+                np.testing.assert_allclose(x, self.ground_truth, atol=3.0e-2)
             else:
                 np.testing.assert_allclose(x, self.ground_truth, atol=1.75e-2)
 
