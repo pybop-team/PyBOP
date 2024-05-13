@@ -335,7 +335,7 @@ class Parameters:
             initial_values.append(param.initial_value)
 
         return initial_values
-    
+
     def true_value(self):
         """
         Return the true value of each parameter.
