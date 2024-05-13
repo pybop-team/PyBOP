@@ -52,7 +52,7 @@ class BaseProblem:
         self.signal = signal
         self.init_soc = init_soc
         self.x0 = x0
-        self.n_parameters = len(self.parameters.keys())
+        self.n_parameters = len(self.parameters)
         self.n_outputs = len(self.signal)
         self._time_data = None
         self._target = None

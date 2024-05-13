@@ -160,14 +160,15 @@ class Parameters:
     parameter_list : pybop.Parameter or list
     """
 
-    def __init__(self, parameter_list):
+    def __init__(self, parameter_list=None):
         self.param = OrderedDict()
         self.bounds = None
-        parameter_list = (
-            parameter_list if isinstance(parameter_list, list) else [parameter_list]
-        )
-        for param in parameter_list:
-            self.add_parameter(param)
+        if parameter_list is not None:
+            parameter_list = (
+                parameter_list if isinstance(parameter_list, list) else [parameter_list]
+            )
+            for param in parameter_list:
+                self.add_parameter(param)
 
     def __getitem__(self, key):
         """
@@ -192,6 +193,9 @@ class Parameters:
             raise ValueError(f"The key {key} is not the name of a parameter.")
 
         return self.param[key]
+
+    def __len__(self):
+        return len(self.param)
 
     def keys(self):
         """
@@ -242,9 +246,9 @@ class Parameters:
         Construct the parameter class with a name, initial value, prior, and bounds.
         """
         if not isinstance(parameter_name, str):
-            raise ValueError("The input parameter_name is not a string.")
+            raise TypeError("The input parameter_name is not a string.")
         if parameter_name not in self.param.keys():
-            raise Exception("This parameter does not exist in the Parameters object.")
+            raise ValueError("This parameter does not exist in the Parameters object.")
 
         # Remove the parameter
         self.param.pop(parameter_name)
@@ -288,7 +292,7 @@ class Parameters:
         array-like
             An array of samples drawn from the prior distribution within each parameter's bounds.
         """
-        all_samples = np.zeros(len(self.keys()))
+        all_samples = np.zeros(len(self))
 
         for i, param in enumerate(self.param.values()):
             samples = param.prior.rvs(n_samples)
@@ -341,7 +345,7 @@ class Parameters:
         bounds : numpy.ndarray
             An array of shape (n_parameters, 2) containing the bounds for each parameter.
         """
-        bounds = np.empty((len(self.keys()), 2))
+        bounds = np.empty((len(self), 2))
 
         for i, param in enumerate(self.param.values()):
             if param.bounds is not None:

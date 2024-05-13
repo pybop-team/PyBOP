@@ -103,6 +103,16 @@ class TestProblem:
         with pytest.raises(ValueError, match="Signal must be defined to set target."):
             problem.set_target(dataset)
 
+        # Different types of parameters
+        parameter_list = list(parameters.param.values())
+        problem = pybop.BaseProblem(parameters=parameter_list)
+        problem = pybop.BaseProblem(parameters=parameter_list[0])
+        with pytest.raises(
+            TypeError,
+            match="The input parameters must be a pybop Parameter or Parameters object.",
+        ):
+            problem = pybop.BaseProblem(parameters="Invalid string")
+
     @pytest.mark.unit
     def test_fitting_problem(self, parameters, dataset, model, signal):
         # Test incorrect number of initial parameter values
