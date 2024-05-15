@@ -57,7 +57,7 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
 
         r_particle = pybamm.Parameter("Positive particle radius [m]")
 
-        a = pybamm.Parameter("Positive electrode surface area to volume ratio [m-1]")
+        a = 3 * (epsilon / r_particle)
 
         l_w = self.param.p.L
 
