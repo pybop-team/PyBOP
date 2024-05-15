@@ -170,7 +170,10 @@ class TestOptimisation:
 
         # If small sigma, expect a ValueError due inability to resample a non np.inf cost
         if expect_exception:
-            with pytest.raises(ValueError):
+            with pytest.raises(
+                ValueError,
+                match="The initial parameter values return an infinite cost.",
+            ):
                 opt.run()
         else:
             opt.run()

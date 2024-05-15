@@ -26,7 +26,7 @@ class BasePrior:
 
     def pdf(self, x):
         """
-        Calculates the probability density function (PDF) of the Gaussian distribution at x.
+        Calculates the probability density function (PDF) of the distribution at x.
 
         Parameters
         ----------
@@ -42,7 +42,7 @@ class BasePrior:
 
     def logpdf(self, x):
         """
-        Calculates the logarithm of the probability density function of the Gaussian distribution at x.
+        Calculates the logarithm of the probability density function of the distribution at x.
 
         Parameters
         ----------
@@ -58,17 +58,19 @@ class BasePrior:
 
     def rvs(self, size=1, random_state=None):
         """
-        Generates random variates from the Gaussian distribution.
+        Generates random variates from the distribution.
 
         Parameters
         ----------
         size : int
             The number of random variates to generate.
+        random_state : int, optional
+            The random state seed for reproducibility. Default is None.
 
         Returns
         -------
         array_like
-            An array of random variates from the Gaussian distribution.
+            An array of random variates from the distribution.
 
         Raises
         ------
@@ -90,7 +92,7 @@ class BasePrior:
 
     def __repr__(self):
         """
-        Returns a string representation of the Gaussian object.
+        Returns a string representation of the object.
         """
         return f"{self.__class__.__name__}, loc: {self.loc}, scale: {self.scale}"
 
