@@ -6,7 +6,7 @@ import pybamm
 
 
 class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
-    """WeppnerHuggins Model for GITT.
+    """WeppnerHuggins Model for GITT. Credit: pybamm-param team.
 
     Parameters
     ----------
