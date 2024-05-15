@@ -38,6 +38,18 @@ class TestModels:
             model.simulateS1(None, None)
 
     @pytest.mark.unit
+    def test_non_default_solver(self):
+        solver = pybamm.CasadiSolver(
+            mode="fast",
+            atol=1e-6,
+            rtol=1e-6,
+        )
+        model = pybop.lithium_ion.SPM(solver=solver)
+        assert model.solver.mode == "fast"
+        assert model.solver.atol == 1e-6
+        assert model.solver.rtol == 1e-6
+
+    @pytest.mark.unit
     def test_predict_without_pybamm(self, model):
         model._unprocessed_model = None
 
@@ -267,7 +279,8 @@ class TestModels:
 
         problem = pybop.FittingProblem(model, parameters=parameters, dataset=dataset)
         res = problem.evaluate([-0.2, -0.2])
-        res_grad = problem.evaluateS1([-0.2, -0.2])
+        _, res_grad = problem.evaluateS1([-0.2, -0.2])
 
-        assert np.isinf(res).any()
+        for key in problem.signal:
+            assert np.isinf(res.get(key, [])).any()
         assert np.isinf(res_grad).any()

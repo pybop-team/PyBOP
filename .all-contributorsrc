@@ -61,13 +61,14 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/28443643?v=4",
       "profile": "https://www.brosaplanella.xyz",
       "contributions": [
-        "review"
+        "review",
+        "code"
       ]
     },
     {
       "login": "FaradayInstitution",
       "name": "Faraday Institution",
-      "avatar_url": "/assets/UKRI.svg",
+      "avatar_url": "/assets/faraday-logo.jpg",
       "profile": "https://faraday.ac.uk",
       "contributions": [
         "financial"
@@ -89,7 +90,8 @@
       "profile": "https://github.com/agriyakhetarpal",
       "contributions": [
         "code",
-        "infra"
+        "infra",
+        "review"
       ]
     }
   ],
