@@ -2,7 +2,7 @@
 
 ## Features
 
-- [#236](https://github.com/pybop-team/PyBOP/issues/236) - Adds an additional optimisation API through direct construction of the pybop.optimiser class. Updates `pybop.BaseOptimiser` class, and adds `pybop.BasePintsOptimiser`, pybop.BaseSciPyOptimiser class. Enables passing of keyword arguments to all pybop.optimisers and fixes the setting of max_iterations.
+- [#236](https://github.com/pybop-team/PyBOP/issues/236) - Restructures the optimiser classes, adds a new optimisation API through direct construction and keyword arguments, and fixes the setting of `max_iterations`, and `_minimising`. Introduces `pybop.BaseOptimiser`, `pybop.BasePintsOptimiser`, and `pybop.BaseSciPyOptimiser` classes.
 - [#304](https://github.com/pybop-team/PyBOP/pull/304) - Decreases the testing suite completion time.
 - [#301](https://github.com/pybop-team/PyBOP/pull/301) - Updates default echem solver to "fast with events" mode.
 - [#251](https://github.com/pybop-team/PyBOP/pull/251) - Increment PyBaMM > v23.5, remove redundant tests within integration tests, increment citation version, fix examples with incorrect model definitions.

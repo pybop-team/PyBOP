@@ -44,8 +44,8 @@ class Optimisation:
         else:
             raise ValueError("Unknown optimiser type")
 
-    def run(self, **optimiser_kwargs):
-        return self.optimiser.run(**optimiser_kwargs)
+    def run(self):
+        return self.optimiser.run()
 
     def __getattr__(self, attr):
         if "optimiser" in self.__dict__ and hasattr(self.optimiser, attr):
