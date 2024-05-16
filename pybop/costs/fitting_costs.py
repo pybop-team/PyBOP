@@ -41,15 +41,19 @@ class RootMeanSquaredError(BaseCost):
             The root mean square error.
 
         """
-        prediction = self.problem.evaluate(x)
-
         for key in self.signal:
-            if len(prediction.get(key, [])) != len(self._target.get(key, [])):
+            if len(self._current_prediction.get(key, [])) != len(
+                self._target.get(key, [])
+            ):
                 return np.float64(np.inf)  # prediction doesn't match target
 
         e = np.array(
             [
-                np.sqrt(np.mean((prediction[signal] - self._target[signal]) ** 2))
+                np.sqrt(
+                    np.mean(
+                        (self._current_prediction[signal] - self._target[signal]) ** 2
+                    )
+                )
                 for signal in self.signal
             ]
         )
@@ -79,18 +83,24 @@ class RootMeanSquaredError(BaseCost):
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        y, dy = self.problem.evaluateS1(x)
-
         for key in self.signal:
-            if len(y.get(key, [])) != len(self._target.get(key, [])):
+            if len(self._current_prediction.get(key, [])) != len(
+                self._target.get(key, [])
+            ):
                 e = np.float64(np.inf)
                 de = self._de * np.ones(self.n_parameters)
                 return e, de
 
-        r = np.array([y[signal] - self._target[signal] for signal in self.signal])
+        r = np.array(
+            [
+                self._current_prediction[signal] - self._target[signal]
+                for signal in self.signal
+            ]
+        )
         e = np.sqrt(np.mean(r**2, axis=1))
-        de = np.mean((r * dy.T), axis=2) / (
-            np.sqrt(np.mean((r * dy.T) ** 2, axis=2)) + np.finfo(float).eps
+        de = np.mean((r * self._current_sensitivities.T), axis=2) / (
+            np.sqrt(np.mean((r * self._current_sensitivities.T) ** 2, axis=2))
+            + np.finfo(float).eps
         )
 
         if self.n_outputs == 1:
@@ -155,15 +165,15 @@ class SumSquaredError(BaseCost):
         float
             The sum of squared errors.
         """
-        prediction = self.problem.evaluate(x)
-
         for key in self.signal:
-            if len(prediction.get(key, [])) != len(self._target.get(key, [])):
+            if len(self._current_prediction.get(key, [])) != len(
+                self._target.get(key, [])
+            ):
                 return np.float64(np.inf)  # prediction doesn't match target
 
         e = np.array(
             [
-                np.sum(((prediction[signal] - self._target[signal]) ** 2))
+                np.sum(((self._current_prediction[signal] - self._target[signal]) ** 2))
                 for signal in self.signal
             ]
         )
@@ -192,16 +202,22 @@ class SumSquaredError(BaseCost):
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        y, dy = self.problem.evaluateS1(x)
         for key in self.signal:
-            if len(y.get(key, [])) != len(self._target.get(key, [])):
+            if len(self._current_prediction.get(key, [])) != len(
+                self._target.get(key, [])
+            ):
                 e = np.float64(np.inf)
                 de = self._de * np.ones(self.n_parameters)
                 return e, de
 
-        r = np.array([y[signal] - self._target[signal] for signal in self.signal])
+        r = np.array(
+            [
+                self._current_prediction[signal] - self._target[signal]
+                for signal in self.signal
+            ]
+        )
         e = np.sum(np.sum(r**2, axis=0), axis=0)
-        de = 2 * np.sum(np.sum((r * dy.T), axis=2), axis=1)
+        de = 2 * np.sum(np.sum((r * self._current_sensitivities.T), axis=2), axis=1)
 
         return e, de
 
@@ -235,6 +251,7 @@ class ObserverCost(BaseCost):
     def __init__(self, observer: Observer):
         super().__init__(problem=observer)
         self._observer = observer
+        self._fixed_problem = False  # keep problem evaluation within _evaluate
 
     def _evaluate(self, x, grad=None):
         """
