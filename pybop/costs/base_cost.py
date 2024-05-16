@@ -221,9 +221,9 @@ class WeightedCost(BaseCost):
 
         if not self._different_problems:
             super(WeightedCost, self).__init__(self.cost_list[0].problem)
-            self._fixed_problem = False
         else:
             super(WeightedCost, self).__init__()
+            self._fixed_problem = False
 
     def _evaluate(self, x, grad=None):
         """
