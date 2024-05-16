@@ -93,6 +93,15 @@
         "infra",
         "review"
       ]
+    },
+    {
+      "login": "muhammedsogut",
+      "name": "Muhammed Nedim Sogut",
+      "avatar_url": "https://avatars.githubusercontent.com/u/34511375?v=4",
+      "profile": "https://www.linkedin.com/in/muhammedsogut/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
