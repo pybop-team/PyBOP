@@ -1,3 +1,5 @@
+from copy import copy
+
 import numpy as np
 import pytest
 
@@ -227,3 +229,51 @@ class TestCosts:
         # Compute after updating nominal capacity
         cost = cost_class(problem, update_capacity=True)
         cost([0.4])
+
+    @pytest.mark.unit
+    def test_weighted_cost(self, problem, x0):
+        cost1 = pybop.SumSquaredError(problem)
+        cost2 = pybop.RootMeanSquaredError(problem)
+
+        # Test with and without weights
+        weighted_cost = pybop.WeightedCost(cost_list=[cost1, cost2])
+        np.testing.assert_array_equal(weighted_cost.weights, np.ones(2))
+        weighted_cost = pybop.WeightedCost(cost_list=[cost1, cost2], weights=[1, 1])
+        np.testing.assert_array_equal(weighted_cost.weights, np.ones(2))
+        weighted_cost = pybop.WeightedCost(
+            cost_list=[cost1, cost2], weights=np.array([1, 1])
+        )
+        np.testing.assert_array_equal(weighted_cost.weights, np.ones(2))
+        with pytest.raises(
+            TypeError,
+            match="Expected a list or array of weights the same length as cost_list.",
+        ):
+            weighted_cost = pybop.WeightedCost(
+                cost_list=[cost1, cost2], weights="Invalid string"
+            )
+        with pytest.raises(
+            ValueError,
+            match="Expected a list or array of weights the same length as cost_list.",
+        ):
+            weighted_cost = pybop.WeightedCost(cost_list=[cost1, cost2], weights=[1])
+
+        # Test with and without different problems
+        weighted_cost_2 = pybop.WeightedCost(cost_list=[cost1, cost2], weights=[1, 100])
+        assert weighted_cost_2._different_problems is False
+        assert weighted_cost_2.problem is problem
+        assert weighted_cost_2(x0) >= 0
+
+        cost3 = pybop.RootMeanSquaredError(copy(problem))
+        weighted_cost_3 = pybop.WeightedCost(cost_list=[cost1, cost3], weights=[1, 100])
+        assert weighted_cost_3._different_problems is True
+        assert weighted_cost_3.problem is None
+        assert weighted_cost_3(x0) >= 0
+
+        np.testing.assert_allclose(
+            weighted_cost_2._evaluate(x0), weighted_cost_3._evaluate(x0), atol=1e-5
+        )
+        weighted_cost_3.parameters = problem.parameters
+        errors_2, sensitivities_2 = weighted_cost_2._evaluateS1(x0)
+        errors_3, sensitivities_3 = weighted_cost_3._evaluateS1(x0)
+        np.testing.assert_allclose(errors_2, errors_3, atol=1e-5)
+        np.testing.assert_allclose(sensitivities_2, sensitivities_3, atol=1e-5)
