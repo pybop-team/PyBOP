@@ -83,7 +83,7 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
     @property
     def default_geometry(self):
         return {}
-    
+
     @property
     def default_parameter_values(self):
         parameter_values = pybamm.ParameterValues("Xu2019")

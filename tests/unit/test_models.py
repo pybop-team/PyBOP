@@ -65,7 +65,7 @@ class TestModels:
             if model.pybamm_model.options["working electrode"] == "positive":
                 inputs = {
                     "Positive electrode active material volume fraction": 0.63,
-                }                
+                }
             else:
                 inputs = {
                     "Negative electrode active material volume fraction": 0.52,
