@@ -18,6 +18,7 @@ class TestModels:
             pybop.lithium_ion.DFN(),
             pybop.lithium_ion.MPM(),
             pybop.lithium_ion.MSMR(options={"number of MSMR reactions": ("6", "4")}),
+            pybop.lithium_ion.WeppnerHuggins(),
             pybop.empirical.Thevenin(),
         ]
     )
@@ -61,10 +62,15 @@ class TestModels:
         # Define inputs
         t_eval = np.linspace(0, 10, 100)
         if isinstance(model, (pybop.lithium_ion.EChemBaseModel)):
-            inputs = {
-                "Negative electrode active material volume fraction": 0.52,
-                "Positive electrode active material volume fraction": 0.63,
-            }
+            if model.pybamm_model.options["working electrode"] == "positive":
+                inputs = {
+                    "Positive electrode active material volume fraction": 0.63,
+                }                
+            else:
+                inputs = {
+                    "Negative electrode active material volume fraction": 0.52,
+                    "Positive electrode active material volume fraction": 0.63,
+                }
         elif isinstance(model, (pybop.empirical.Thevenin)):
             inputs = {
                 "R0 [Ohm]": 0.0002,

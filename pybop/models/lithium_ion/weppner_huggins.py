@@ -35,6 +35,7 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
         # this model. These are purely symbolic at this stage, and will be set by the
         # `ParameterValues` class when the model is processed.
         self.options["working electrode"] = "positive"
+        self._summary_variables = []
 
         t = pybamm.t
         ######################
@@ -82,6 +83,18 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
     @property
     def default_geometry(self):
         return {}
+    
+    @property
+    def default_parameter_values(self):
+        parameter_values = pybamm.ParameterValues("Xu2019")
+        parameter_values.update(
+            {
+                "Reference OCP [V]": 4.1821,
+                "Derivative of the OCP wrt stoichiometry [V]": -1.38636,
+            },
+            check_already_exists=False,
+        )
+        return parameter_values
 
     @property
     def default_submesh_types(self):
