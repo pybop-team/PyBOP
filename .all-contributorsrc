@@ -66,24 +66,6 @@
       ]
     },
     {
-      "login": "FaradayInstitution",
-      "name": "Faraday Institution",
-      "avatar_url": "/assets/faraday-logo.jpg",
-      "profile": "https://faraday.ac.uk",
-      "contributions": [
-        "financial"
-      ]
-    },
-    {
-      "login": "UKRI",
-      "name": "UK Research and Innovation",
-      "avatar_url": "/assets/UKRI.svg",
-      "profile": "https://www.ukri.org/",
-      "contributions": [
-        "financial"
-      ]
-    },
-    {
       "login": "agriyakhetarpal",
       "name": "Agriya Khetarpal",
       "avatar_url": "https://avatars.githubusercontent.com/u/74401230?v=4",
@@ -92,6 +74,24 @@
         "code",
         "infra",
         "review"
+      ]
+    },
+    {
+      "login": "FaradayInstitution",
+      "name": "Faraday Institution",
+      "avatar_url": "assets/faraday-logo.jpg",
+      "profile": "https://faraday.ac.uk",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
+      "login": "UKRI",
+      "name": "UK Research and Innovation",
+      "avatar_url": "assets/UKRI.png",
+      "profile": "https://www.ukri.org/",
+      "contributions": [
+        "financial"
       ]
     },
     {
