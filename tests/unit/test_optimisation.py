@@ -206,6 +206,7 @@ class TestOptimisation:
             x0_new = np.array([0.6])
             optim = optimiser(cost=cost, x0=x0_new)
             assert optim.x0 == x0_new
+            assert optim.x0 != cost.x0
 
         if optimiser in [pybop.SciPyMinimize]:
             # Check a method that uses gradient information
