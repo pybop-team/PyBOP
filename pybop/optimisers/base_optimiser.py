@@ -189,13 +189,9 @@ class BasePintsOptimiser(Optimisation):
 
         # Choose method to evaluate
         if self._needs_sensitivities:
-
-            def f(x):
-                return self.cost.evaluateS1(x, minimising=self._minimising)
+            f = lambda x: self.cost.evaluateS1(x, minimising=self._minimising)
         else:
-
-            def f(x, grad=None):
-                return self.cost(x, grad, minimising=self._minimising)
+            f = lambda x, grad=None: self.cost(x, grad, minimising=self._minimising)
 
         # Create evaluator object
         if self._parallel:
