@@ -3,6 +3,8 @@
 ## Features
 
 - [#236](https://github.com/pybop-team/PyBOP/issues/236) - Restructures the optimiser classes to allow the passing of keyword arguments and fixes the setting of max_iterations and minimising.
+- [#321](https://github.com/pybop-team/PyBOP/pull/321) - Updates Prior classes with BaseClass, adds a `problem.sample_initial_conditions` method to improve stability of SciPy.Minimize optimiser.
+- [#249](https://github.com/pybop-team/PyBOP/pull/249) - Add WeppnerHuggins model and GITT example.
 - [#304](https://github.com/pybop-team/PyBOP/pull/304) - Decreases the testing suite completion time.
 - [#301](https://github.com/pybop-team/PyBOP/pull/301) - Updates default echem solver to "fast with events" mode.
 - [#251](https://github.com/pybop-team/PyBOP/pull/251) - Increment PyBaMM > v23.5, remove redundant tests within integration tests, increment citation version, fix examples with incorrect model definitions.
@@ -19,6 +21,8 @@ codesigned binaries and source distributions via `sigstore-python`.
 
 ## Bug Fixes
 
+- [#321](https://github.com/pybop-team/PyBOP/pull/321) - Improves `integration/test_spm_parameterisation.py` stability, adds flakly pytest plugin, and `test_thevenin_parameterisation.py` integration test.
+- [#330](https://github.com/pybop-team/PyBOP/issues/330) - Fixes implementation of default plotting options.
 - [#317](https://github.com/pybop-team/PyBOP/pull/317) - Installs seed packages into `nox` sessions, ensuring that scheduled tests can pass.
 - [#308](https://github.com/pybop-team/PyBOP/pull/308) - Enables testing on both macOS Intel and macOS ARM (Silicon) runners and fixes the scheduled tests.
 - [#299](https://github.com/pybop-team/PyBOP/pull/299) - Bugfix multiprocessing support for Linux, MacOS, Windows (WSL) and improves coverage.

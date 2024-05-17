@@ -20,6 +20,7 @@ class BaseSciPyOptimiser(Optimisation):
 
     def __init__(self, cost, **optimiser_kwargs):
         super().__init__(cost, **optimiser_kwargs)
+        self.num_resamples = 40
 
     def _sanitise_inputs(self):
         """
@@ -155,11 +156,21 @@ class SciPyMinimize(BaseSciPyOptimiser):
         def callback(x):
             self.log.append([x])
 
+        # Check x0 and resample if required
+        self.cost0 = np.abs(self.cost(self.x0))
+        if np.isinf(self.cost0):
+            for i in range(1, self.num_resamples):
+                x0 = self.cost.problem.sample_initial_conditions(seed=i)
+                self.cost0 = np.abs(self.cost(x0))
+                if not np.isinf(self.cost0):
+                    break
+            if np.isinf(self.cost0):
+                raise ValueError(
+                    "The initial parameter values return an infinite cost."
+                )
+
         # Scale the cost function and eliminate nan values
-        self._cost0 = np.abs(self.cost(self.x0))
         self.inf_count = 0
-        if np.isinf(self._cost0):
-            raise Exception("The initial parameter values return an infinite cost.")
 
         if not self._options["jac"]:
 
