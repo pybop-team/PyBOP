@@ -2,7 +2,7 @@ import warnings
 
 import numpy as np
 
-from pybop import BaseCost
+from pybop import BaseCost, BaseLikelihood, DesignCost
 
 
 class Optimisation:
@@ -31,6 +31,9 @@ class Optimisation:
         Initial step size or standard deviation for the optimiser.
     verbose : bool, optional
         If True, the optimisation progress is printed (default: False).
+    minimising : bool, optional
+        If True, the target is to minimise the cost, else target is to maximise by minimising
+        the negative cost (default: True).
     physical_viability : bool, optional
         If True, the feasibility of the optimised parameters is checked (default: True).
     allow_infeasible_solutions : bool, optional
@@ -50,7 +53,7 @@ class Optimisation:
         self.sigma0 = 0.1
         self.verbose = False
         self.log = []
-        self._minimising = True
+        self.minimising = True
         self.physical_viability = False
         self.allow_infeasible_solutions = False
         self.default_max_iterations = 1000
@@ -61,8 +64,9 @@ class Optimisation:
             self.x0 = cost.x0
             self.bounds = cost.bounds
             self.sigma0 = cost.sigma0
-            self._minimising = cost._minimising
             self.set_allow_infeasible_solutions()
+            if isinstance(cost, (BaseLikelihood, DesignCost)):
+                self.minimising = False
         else:
             try:
                 cost_test = cost(optimiser_kwargs.get("x0", []))
@@ -72,7 +76,7 @@ class Optimisation:
                     UserWarning,
                 )
                 self.cost = cost
-                self._minimising = True
+                self.minimising = True
 
             except Exception:
                 raise Exception("The cost is not a recognised cost object or function.")
@@ -98,6 +102,7 @@ class Optimisation:
         self.bounds = self.unset_options.pop("bounds", self.bounds)
         self.sigma0 = self.unset_options.pop("sigma0", self.sigma0)
         self.verbose = self.unset_options.pop("verbose", self.verbose)
+        self.minimising = self.unset_options.pop("minimising", self.minimising)
         if "allow_infeasible_solutions" in self.unset_options.keys():
             self.set_allow_infeasible_solutions(
                 self.unset_options.pop("allow_infeasible_solutions")

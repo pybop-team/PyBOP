@@ -33,7 +33,7 @@ def plot_convergence(optim, show=True, **layout_kwargs):
     # Find the best cost from each iteration
     best_cost_per_iteration = [
         min((cost(solution) for solution in log_entry), default=np.inf)
-        if optim._minimising
+        if optim.minimising
         else max((cost(solution) for solution in log_entry), default=-np.inf)
         for log_entry in log
     ]

@@ -119,7 +119,7 @@ class Test_SPM_Parameterisation:
 
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
-            if parameterisation._minimising:
+            if parameterisation.minimising:
                 assert initial_cost > final_cost
             else:
                 assert initial_cost < final_cost
@@ -194,7 +194,7 @@ class Test_SPM_Parameterisation:
 
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
-            if parameterisation._minimising:
+            if parameterisation.minimising:
                 assert initial_cost > final_cost
             else:
                 assert initial_cost < final_cost

@@ -191,11 +191,12 @@ class BasePintsOptimiser(Optimisation):
         if self._needs_sensitivities:
 
             def f(x):
-                return self.cost.evaluateS1(x, minimising=self._minimising)
+                L, dl = self.cost.evaluateS1(x)
+                return (L, dl) if self.minimising else (-L, -dl)
         else:
 
             def f(x, grad=None):
-                return self.cost(x, grad, minimising=self._minimising)
+                return self.cost(x, grad) if self.minimising else -self.cost(x, grad)
 
         # Create evaluator object
         if self._parallel:
@@ -214,7 +215,7 @@ class BasePintsOptimiser(Optimisation):
         fb = fg = np.inf
 
         # Internally we always minimise! Keep a 2nd value to show the user.
-        fg_user = (fb, fg) if self._minimising else (-fb, -fg)
+        fg_user = (fb, fg) if self.minimising else (-fb, -fg)
 
         # Keep track of the last significant change
         f_sig = np.inf
@@ -235,7 +236,7 @@ class BasePintsOptimiser(Optimisation):
                 # Update the scores
                 fb = self.method.f_best()
                 fg = self.method.f_guessed()
-                fg_user = (fb, fg) if self._minimising else (-fb, -fg)
+                fg_user = (fb, fg) if self.minimising else (-fb, -fg)
 
                 # Check for significant changes
                 f_new = fg if self._use_f_guessed else fb
@@ -342,11 +343,10 @@ class BasePintsOptimiser(Optimisation):
             x = self._transformation.to_model(x)
 
         # Store result
-        final_cost = self.cost(x)
+        final_cost = f if self.minimising else -f
         self.result = Result(x=x, final_cost=final_cost, nit=self._iterations)
 
-        # Return best position and the score,
-        # i.e the negative log-likelihood in the case of self._minimising = False
+        # Return best position and its cost
         return x, final_cost
 
     def f_guessed_tracking(self):

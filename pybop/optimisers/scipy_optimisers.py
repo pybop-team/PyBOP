@@ -180,15 +180,16 @@ class SciPyMinimize(BaseSciPyOptimiser):
         if not self._options["jac"]:
 
             def cost_wrapper(x):
-                cost = self.cost(x, minimising=self._minimising) / self._cost0
+                cost = self.cost(x) / self._cost0
                 if np.isinf(cost):
                     self.inf_count += 1
                     cost = 1 + 0.9**self.inf_count  # for fake finite gradient
-                return cost
+                return cost if self.minimising else -cost
         elif self._options["jac"] is True:
 
             def cost_wrapper(x):
-                return self.cost.evaluateS1(x, minimising=self._minimising)
+                L, dl = self.cost.evaluateS1(x)
+                return L, dl if self.minimising else -L, -dl
 
         result = minimize(
             cost_wrapper,
@@ -307,7 +308,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             self.log.append([x])
 
         def cost_wrapper(x):
-            return self.cost(x, minimising=self._minimising)
+            return self.cost(x) if self.minimising else -self.cost(x)
 
         result = differential_evolution(
             cost_wrapper,

@@ -98,7 +98,7 @@ class TestOptimisation:
         x, final_cost = parameterisation.run()
 
         # Assertions
-        if parameterisation._minimising:
+        if parameterisation.minimising:
             assert initial_cost > final_cost
         else:
             assert initial_cost < final_cost
