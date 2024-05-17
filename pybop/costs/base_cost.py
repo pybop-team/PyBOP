@@ -17,6 +17,9 @@ class BaseCost:
     problem : object
         A problem instance containing the data and functions necessary for
         evaluating the cost function.
+    weights : np.ndarray
+        Weights for operating one cost function over multiple
+        datasets. combined_cost = np.inner(weights, individual_costs)
     _target : array-like
         An array containing the target data to fit.
     x0 : array-like
@@ -33,8 +36,9 @@ class BaseCost:
         The number of outputs in the model.
     """
 
-    def __init__(self, problem=None, sigma=None):
+    def __init__(self, problem=None, sigma=None, weights=None):
         self.problem = problem
+        self.weights = weights
         self.x0 = None
         self.bounds = None
         self.sigma0 = sigma
