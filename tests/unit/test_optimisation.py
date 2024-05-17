@@ -216,7 +216,6 @@ class TestOptimisation:
                 match="Expected the jac option to be either True, False or None.",
             ):
                 optim = optimiser(cost=cost, jac="Invalid string")
-                optim.run()
 
     @pytest.mark.unit
     def test_single_parameter(self, cost):

@@ -129,12 +129,17 @@ class SciPyMinimize(BaseSciPyOptimiser):
         for key in key_list:
             if key in [
                 "method",
-                "jac",
                 "hess",
                 "hessp",
                 "constraints",
                 "tol",
             ]:
+                self._options.update({key: self.unset_options.pop(key)})
+            elif key == "jac":
+                if self.unset_options["jac"] not in [True, False, None]:
+                    raise ValueError(
+                        f"Expected the jac option to be either True, False or None. Received: {self.unset_options[key]}"
+                    )
                 self._options.update({key: self.unset_options.pop(key)})
             elif key == "maxiter":
                 # Nest this option within an options dictionary for SciPy minimize
@@ -184,10 +189,6 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
             def cost_wrapper(x):
                 return self.cost.evaluateS1(x, minimising=self._minimising)
-        else:
-            raise ValueError(
-                "Expected the jac option to be either True, False or None."
-            )
 
         result = minimize(
             cost_wrapper,
