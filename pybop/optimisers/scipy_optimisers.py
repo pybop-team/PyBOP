@@ -61,7 +61,7 @@ class SciPyMinimize(BaseOptimiser):
         self.cost0 = cost_function(x0)
         if np.isinf(self.cost0):
             for i in range(1, self.num_resamples):
-                x0 = cost_function.problem.sample_initial_conditions(seed=i)
+                x0 = cost_function.parameters.rvs(1)
                 self.cost0 = cost_function(x0)
                 if not np.isinf(self.cost0):
                     break
