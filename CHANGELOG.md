@@ -21,6 +21,7 @@ codesigned binaries and source distributions via `sigstore-python`.
 ## Bug Fixes
 
 - [#321](https://github.com/pybop-team/PyBOP/pull/321) - Improves `integration/test_parameterisation` stability.
+- [#330](https://github.com/pybop-team/PyBOP/issues/330) - Fixes implementation of default plotting options.
 - [#317](https://github.com/pybop-team/PyBOP/pull/317) - Installs seed packages into `nox` sessions, ensuring that scheduled tests can pass.
 - [#308](https://github.com/pybop-team/PyBOP/pull/308) - Enables testing on both macOS Intel and macOS ARM (Silicon) runners and fixes the scheduled tests.
 - [#299](https://github.com/pybop-team/PyBOP/pull/299) - Bugfix multiprocessing support for Linux, MacOS, Windows (WSL) and improves coverage.
