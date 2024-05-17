@@ -61,10 +61,10 @@ class BaseProblem:
         else:
             self.additional_variables = []
 
-        # Sample from prior for x0
-        if x0 is None:
+        # Set initial conditions
+        if self.x0 is None:
             self.x0 = self.parameters.rvs(1)
-        elif len(x0) != self.n_parameters:
+        elif len(self.x0) != self.n_parameters:
             raise ValueError("x0 dimensions do not match number of parameters")
 
         # Add the initial values to the parameter definitions

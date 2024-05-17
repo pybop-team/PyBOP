@@ -44,7 +44,7 @@ class Parameter:
         self.set_bounds(bounds)
         self.margin = 1e-4
 
-    def rvs(self, n_samples):
+    def rvs(self, n_samples, random_state=None):
         """
         Draw random samples from the parameter's prior distribution.
 
@@ -61,7 +61,7 @@ class Parameter:
         array-like
             An array of samples drawn from the prior distribution within the parameter's bounds.
         """
-        samples = self.prior.rvs(n_samples)
+        samples = self.prior.rvs(n_samples, random_state=random_state)
 
         # Constrain samples to be within bounds
         if self.bounds is not None:

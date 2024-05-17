@@ -31,7 +31,7 @@ class TestParameter:
     def test_parameter_repr(self, parameter):
         assert (
             repr(parameter)
-            == "Parameter: Negative electrode active material volume fraction \n Prior: Gaussian, mean: 0.6, sigma: 0.02 \n Bounds: [0.375, 0.7] \n Value: 0.6"
+            == "Parameter: Negative electrode active material volume fraction \n Prior: Gaussian, loc: 0.6, scale: 0.02 \n Bounds: [0.375, 0.7] \n Value: 0.6"
         )
 
     @pytest.mark.unit

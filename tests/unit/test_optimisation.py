@@ -58,7 +58,6 @@ class TestOptimisation:
             model,
             one_parameter,
             dataset,
-            signal=["Voltage [V]"],
         )
         return pybop.SumSquaredError(problem)
 
@@ -68,7 +67,6 @@ class TestOptimisation:
             model,
             two_parameters,
             dataset,
-            signal=["Voltage [V]"],
         )
         return pybop.SumSquaredError(problem)
 
@@ -145,6 +143,44 @@ class TestOptimisation:
             opt = pybop.Optimisation(cost=cost)
 
             assert opt.x0 <= 0.62 and opt.x0 >= 0.58
+
+    @pytest.mark.unit
+    @pytest.mark.parametrize(
+        "mean, sigma, expect_exception",
+        [
+            (0.85, 0.2, False),
+            (0.85, 0.001, True),
+        ],
+    )
+    def test_scipy_prior_resampling(
+        self, model, dataset, mean, sigma, expect_exception
+    ):
+        # Set up the parameter with a Gaussian prior
+        parameter = pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            prior=pybop.Gaussian(mean, sigma),
+            bounds=[0.55, 0.95],
+        )
+
+        # Define the problem and cost
+        problem = pybop.FittingProblem(model, [parameter], dataset)
+        cost = pybop.SumSquaredError(problem)
+
+        # Create the optimisation class with infeasible solutions disabled
+        opt = pybop.Optimisation(
+            cost=cost, optimiser=pybop.SciPyMinimize, allow_infeasible_solutions=False
+        )
+        opt.set_max_iterations(1)
+
+        # If small sigma, expect a ValueError due inability to resample a non np.inf cost
+        if expect_exception:
+            with pytest.raises(
+                ValueError,
+                match="The initial parameter values return an infinite cost.",
+            ):
+                opt.run()
+        else:
+            opt.run()
 
     @pytest.mark.unit
     def test_halting(self, cost):

@@ -46,8 +46,7 @@ script_path = path.dirname(__file__)
 from ._utils import is_numeric
 
 #
-# Cost class
-# Problem class
+# Problem classes
 #
 from .problems.base_problem import BaseProblem
 from .problems.fitting_problem import FittingProblem
@@ -119,7 +118,7 @@ from .optimisers.pints_optimisers import (
 #
 from .parameters.parameter import Parameter, Parameters
 from .parameters.parameter_set import ParameterSet
-from .parameters.priors import Gaussian, Uniform, Exponential
+from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential
 
 
 #
