@@ -156,7 +156,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         def callback(x):
             self.log.append([x])
 
-        # Check x0 and resample if required
+        # Compute the absolute initial cost and resample if required
         self._cost0 = np.abs(self.cost(self.x0))
         if np.isinf(self._cost0):
             for i in range(1, self.num_resamples):
@@ -169,7 +169,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
                     "The initial parameter values return an infinite cost."
                 )
 
-        # Scale the cost function and eliminate nan values
+        # Scale the cost function, preserving the sign convention, and eliminate nan values
         self.inf_count = 0
 
         if not self._options["jac"]:
