@@ -14,7 +14,7 @@ class Test_SPM_Parameterisation:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ground_truth = np.array([0.55, 0.55]) + np.random.normal(
-            loc=0.0, scale=0.03, size=2
+            loc=0.0, scale=0.05, size=2
         )
 
     @pytest.fixture
