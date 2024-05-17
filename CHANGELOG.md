@@ -20,7 +20,7 @@ codesigned binaries and source distributions via `sigstore-python`.
 
 ## Bug Fixes
 
-- [#321](https://github.com/pybop-team/PyBOP/pull/321) - Improves `integration/test_parameterisation` stability.
+- [#321](https://github.com/pybop-team/PyBOP/pull/321) - Improves `integration/test_spm_parameterisation.py` stability, adds flakly pytest plugin, and `test_thevenin_parameterisation.py` integration test.
 - [#330](https://github.com/pybop-team/PyBOP/issues/330) - Fixes implementation of default plotting options.
 - [#317](https://github.com/pybop-team/PyBOP/pull/317) - Installs seed packages into `nox` sessions, ensuring that scheduled tests can pass.
 - [#308](https://github.com/pybop-team/PyBOP/pull/308) - Enables testing on both macOS Intel and macOS ARM (Silicon) runners and fixes the scheduled tests.

@@ -6,7 +6,7 @@ from pybamm import __version__ as pybamm_version
 import pybop
 
 
-class TestParameterisation:
+class Test_SPM_Parameterisation:
     """
     A class to test the model parameterisation methods.
     """
@@ -14,7 +14,7 @@ class TestParameterisation:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ground_truth = np.array([0.55, 0.55]) + np.random.normal(
-            loc=0.0, scale=0.04, size=2
+            loc=0.0, scale=0.05, size=2
         )
 
     @pytest.fixture
