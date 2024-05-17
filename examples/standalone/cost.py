@@ -70,4 +70,4 @@ class StandaloneCost(pybop.BaseCost):
             The calculated cost value for the given parameter.
         """
 
-        return x[0] ** 2 + 42
+        return 100 * x[0] ** 2 + 42
