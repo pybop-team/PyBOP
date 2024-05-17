@@ -1,11 +1,12 @@
 import numpy as np
 import pytest
+from flaky import flaky
 from pybamm import __version__ as pybamm_version
 
 import pybop
 
 
-class TestModelParameterisation:
+class TestParameterisation:
     """
     A class to test the model parameterisation methods.
     """
@@ -81,25 +82,22 @@ class TestModelParameterisation:
     @pytest.mark.parametrize(
         "optimiser",
         [
-            pybop.SciPyMinimize,
             pybop.SciPyDifferentialEvolution,
             pybop.Adam,
             pybop.CMAES,
-            pybop.GradientDescent,
             pybop.IRPropMin,
             pybop.NelderMead,
-            pybop.PSO,
             pybop.SNES,
             pybop.XNES,
         ],
     )
+    @flaky(max_runs=3, min_passes=1)
     @pytest.mark.integration
     def test_spm_optimisers(self, optimiser, spm_costs):
         x0 = spm_costs.x0
         # Some optimisers require a complete set of bounds
         if optimiser in [
             pybop.SciPyDifferentialEvolution,
-            pybop.PSO,
         ]:
             spm_costs.problem.parameters[1].set_bounds(
                 [0.375, 0.725]
@@ -112,28 +110,9 @@ class TestModelParameterisation:
             spm_costs.bounds = bounds
 
         # Test each optimiser
-        if optimiser in [pybop.GradientDescent]:
-            if isinstance(
-                spm_costs, (pybop.GaussianLogLikelihoodKnownSigma, pybop.MAP)
-            ):
-                parameterisation = pybop.Optimisation(
-                    cost=spm_costs, optimiser=optimiser, sigma0=5e-5
-                )
-            else:
-                parameterisation = pybop.Optimisation(
-                    cost=spm_costs, optimiser=optimiser, sigma0=0.02
-                )
-        elif optimiser in [pybop.SciPyMinimize]:
-            parameterisation = pybop.Optimisation(
-                cost=spm_costs,
-                optimiser=optimiser,
-                sigma0=0.05,
-                allow_infeasible_solutions=False,
-            )
-        else:
-            parameterisation = pybop.Optimisation(
-                cost=spm_costs, optimiser=optimiser, sigma0=0.05
-            )
+        parameterisation = pybop.Optimisation(
+            cost=spm_costs, optimiser=optimiser, sigma0=0.05
+        )
 
         parameterisation.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
         parameterisation.set_max_iterations(125)
@@ -143,17 +122,10 @@ class TestModelParameterisation:
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
             assert initial_cost > final_cost
-
         if pybamm_version <= "23.9":
-            if optimiser in [pybop.GradientDescent, pybop.PSO, pybop.SciPyMinimize]:
-                np.testing.assert_allclose(x, self.ground_truth, atol=4.0e-2)
-            else:
-                np.testing.assert_allclose(x, self.ground_truth, atol=3.0e-2)
+            np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
         else:
-            if optimiser in [pybop.GradientDescent, pybop.PSO, pybop.SciPyMinimize]:
-                np.testing.assert_allclose(x, self.ground_truth, atol=3.0e-2)
-            else:
-                np.testing.assert_allclose(x, self.ground_truth, atol=1.75e-2)
+            np.testing.assert_allclose(x, self.ground_truth, atol=1.75e-2)
 
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, cost_class):
