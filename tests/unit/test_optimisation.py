@@ -211,6 +211,7 @@ class TestOptimisation:
             # Check a method that uses gradient information
             optimiser(cost=cost, method="L-BFGS-B", jac=True)
             optim.run()
+            assert optim._iterations > 0
             with pytest.raises(
                 ValueError,
                 match="Expected the jac option to be either True, False or None.",
@@ -362,6 +363,7 @@ class TestOptimisation:
 
         optim.method.stop = optimiser_error
         optim.run()
+        assert optim._iterations == 1
 
         # Test no stopping condition
         with pytest.raises(
