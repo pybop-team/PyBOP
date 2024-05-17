@@ -157,14 +157,14 @@ class SciPyMinimize(BaseSciPyOptimiser):
             self.log.append([x])
 
         # Check x0 and resample if required
-        self.cost0 = np.abs(self.cost(self.x0))
-        if np.isinf(self.cost0):
+        self._cost0 = np.abs(self.cost(self.x0))
+        if np.isinf(self._cost0):
             for i in range(1, self.num_resamples):
                 x0 = self.cost.problem.sample_initial_conditions(seed=i)
-                self.cost0 = np.abs(self.cost(x0))
-                if not np.isinf(self.cost0):
+                self._cost0 = np.abs(self.cost(x0))
+                if not np.isinf(self._cost0):
                     break
-            if np.isinf(self.cost0):
+            if np.isinf(self._cost0):
                 raise ValueError(
                     "The initial parameter values return an infinite cost."
                 )

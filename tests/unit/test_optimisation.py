@@ -295,10 +295,11 @@ class TestOptimisation:
         cost = pybop.SumSquaredError(problem)
 
         # Create the optimisation class with infeasible solutions disabled
-        opt = pybop.Optimisation(
-            cost=cost, optimiser=pybop.SciPyMinimize, allow_infeasible_solutions=False
+        opt = pybop.SciPyMinimize(
+            cost=cost,
+            allow_infeasible_solutions=False,
+            max_iterations=1,
         )
-        opt.set_max_iterations(1)
 
         # If small sigma, expect a ValueError due inability to resample a non np.inf cost
         if expect_exception:
