@@ -25,6 +25,7 @@ class SciPyMinimize(BaseOptimiser):
         super().__init__()
         self.method = method
         self.bounds = bounds
+        self.num_resamples = 40
         self.tol = tol
         self.options = {}
         self._max_iterations = maxiter
@@ -56,11 +57,21 @@ class SciPyMinimize(BaseOptimiser):
         def callback(x):
             self.log.append([x])
 
-        # Scale the cost function and eliminate nan values
+        # Check x0 and resample if required
         self.cost0 = cost_function(x0)
-        self.inf_count = 0
         if np.isinf(self.cost0):
-            raise Exception("The initial parameter values return an infinite cost.")
+            for i in range(1, self.num_resamples):
+                x0 = cost_function.problem.sample_initial_conditions(seed=i)
+                self.cost0 = cost_function(x0)
+                if not np.isinf(self.cost0):
+                    break
+            if np.isinf(self.cost0):
+                raise ValueError(
+                    "The initial parameter values return an infinite cost."
+                )
+
+        # Scale the cost function and eliminate nan values
+        self.inf_count = 0
 
         def cost_wrapper(x):
             cost = cost_function(x) / self.cost0

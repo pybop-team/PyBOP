@@ -69,8 +69,10 @@ jobs:
               output_stream.write(f"matrix={json.dumps(filtered_matrix)}\n")
         shell: python
 
+  # This job is dependent on filter_pybamm_matrix so that the self-hosted runner starts
+  # as soon as the matrix is filtered (i.e. the runners don't get tied up with build below).
   build:
-    needs: [create_pybamm_matrix]
+    needs: [create_pybamm_matrix, filter_pybamm_matrix]
     name: Build (${{ matrix.os }}, Python ${{ matrix.python_version }}, PyBaMM ${{ matrix.pybamm_version }})
     runs-on: ${{ matrix.os }}
     strategy:
