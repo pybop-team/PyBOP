@@ -44,20 +44,20 @@ class DesignCost(BaseCost):
         warnings.warn(nominal_capacity_warning, UserWarning)
         self.update_capacity = update_capacity
         self.parameter_set = problem.model.parameter_set
-        self.update_simulation_data(problem.x0)
+        self.update_simulation_data(self.x0)
 
-    def update_simulation_data(self, initial_conditions):
+    def update_simulation_data(self, x0):
         """
-        Updates the simulation data based on the initial conditions.
+        Updates the simulation data based on the initial parameter values.
 
         Parameters
         ----------
-        initial_conditions : array
-            The initial conditions for the simulation.
+        x0 : array
+            The initial parameter values for the simulation.
         """
         if self.update_capacity:
-            self.problem.model.approximate_capacity(self.problem.x0)
-        solution = self.problem.evaluate(initial_conditions)
+            self.problem.model.approximate_capacity(x0)
+        solution = self.problem.evaluate(x0)
 
         if "Time [s]" not in solution:
             raise ValueError("The solution does not contain time data.")

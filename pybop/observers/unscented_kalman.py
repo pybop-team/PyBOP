@@ -35,8 +35,6 @@ class UnscentedKalmanFilterObserver(Observer):
         The signal to observe.
     init_soc : float, optional
         Initial state of charge (default: None).
-    x0 : np.ndarray, optional
-        Initial parameter values (default: None).
     """
 
     Covariance = np.ndarray
@@ -53,10 +51,9 @@ class UnscentedKalmanFilterObserver(Observer):
         signal=["Voltage [V]"],
         additional_variables=[],
         init_soc=None,
-        x0=None,
     ) -> None:
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc, x0
+            parameters, model, check_model, signal, additional_variables, init_soc
         )
         if dataset is not None:
             self._dataset = dataset.data

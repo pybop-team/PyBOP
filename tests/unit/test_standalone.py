@@ -69,10 +69,6 @@ class TestStandalone:
         np.testing.assert_allclose(x[0], 934.006734006734, atol=1e-2)
         np.testing.assert_allclose(x[1], [-334.006734, 0.0], atol=1e-2)
 
-        # Test incorrect number of initial parameter values
-        with pytest.raises(ValueError):
-            StandaloneProblem(parameters, dataset, signal=signal, x0=np.array([]))
-
         # Test problem construction errors
         for bad_dataset in [
             pybop.Dataset({"Time [s]": np.array([0])}),

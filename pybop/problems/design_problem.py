@@ -25,8 +25,6 @@ class DesignProblem(BaseProblem):
         Additional variables to observe and store in the solution (default additions are: ["Time [s]", "Current [A]"]).
     init_soc : float, optional
         Initial state of charge (default: None).
-    x0 : np.ndarray, optional
-        Initial parameter values (default: None).
     """
 
     def __init__(
@@ -38,14 +36,18 @@ class DesignProblem(BaseProblem):
         signal=["Voltage [V]"],
         additional_variables=[],
         init_soc=None,
-        x0=None,
     ):
         # Add time and current and remove duplicates
         additional_variables.extend(["Time [s]", "Current [A]"])
         additional_variables = list(set(additional_variables))
 
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc, x0
+            parameters,
+            model,
+            check_model,
+            signal,
+            additional_variables,
+            init_soc,
         )
         self.experiment = experiment
 

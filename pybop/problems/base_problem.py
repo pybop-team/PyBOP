@@ -19,8 +19,6 @@ class BaseProblem:
         Additional variables to observe and store in the solution (default: []).
     init_soc : float, optional
         Initial state of charge (default: None).
-    x0 : np.ndarray, optional
-        Initial parameter values (default: None).
     """
 
     def __init__(
@@ -31,7 +29,6 @@ class BaseProblem:
         signal=["Voltage [V]"],
         additional_variables=[],
         init_soc=None,
-        x0=None,
     ):
         if isinstance(parameters, list) and isinstance(parameters[0], pybop.Parameter):
             parameters = pybop.Parameters(parameters)
@@ -51,7 +48,6 @@ class BaseProblem:
             raise ValueError("Signal should be either a string or list of strings.")
         self.signal = signal
         self.init_soc = init_soc
-        self.x0 = x0
         self.n_outputs = len(self.signal)
         self._time_data = None
         self._target = None
@@ -62,14 +58,7 @@ class BaseProblem:
             self.additional_variables = []
 
         # Set initial conditions
-        if self.x0 is None:
-            self.x0 = self.parameters.rvs(1)
-        elif len(self.x0) != self.n_parameters:
-            raise ValueError("x0 dimensions do not match number of parameters")
-
-        # Add the initial values to the parameter definitions
-        for i, param in enumerate(self.parameters):
-            param.update(initial_value=self.x0[i])
+        self.x0 = self.parameters.initial_value()
 
     @property
     def n_parameters(self):

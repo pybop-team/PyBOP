@@ -84,6 +84,7 @@ class Parameter:
         if value is not None:
             self.value = value
         elif initial_value is not None:
+            self.initial_value = initial_value
             self.value = initial_value
         else:
             raise ValueError("No value provided to update parameter")
@@ -295,7 +296,7 @@ class Parameters:
         all_samples = np.zeros(len(self))
 
         for i, param in enumerate(self.param.values()):
-            samples = param.prior.rvs(n_samples)
+            samples = param.rvs(n_samples)
 
             # Constrain samples to be within bounds
             if param.bounds is not None:
@@ -332,6 +333,9 @@ class Parameters:
         initial_values = []
 
         for param in self.param.values():
+            if param.initial_value is None:
+                initial_value = param.rvs(1)
+                param.update(initial_value=initial_value[0])
             initial_values.append(param.initial_value)
 
         return initial_values

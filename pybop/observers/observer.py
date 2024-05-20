@@ -28,8 +28,6 @@ class Observer(BaseProblem):
         Additional variables to observe and store in the solution (default: []).
     init_soc : float, optional
         Initial state of charge (default: None).
-    x0 : np.ndarray, optional
-        Initial parameter values (default: None).
     """
 
     # define a subtype for covariance matrices for use by derived classes
@@ -43,10 +41,9 @@ class Observer(BaseProblem):
         signal=["Voltage [V]"],
         additional_variables=[],
         init_soc=None,
-        x0=None,
     ) -> None:
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc, x0
+            parameters, model, check_model, signal, additional_variables, init_soc
         )
         if model._built_model is None:
             raise ValueError("Only built models can be used in Observers")

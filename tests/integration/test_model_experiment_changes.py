@@ -17,6 +17,7 @@ class TestModelAndExperimentChanges:
                     prior=pybop.Gaussian(6e-06, 0.1e-6),
                     bounds=[1e-6, 9e-6],
                     true_value=5.86e-6,
+                    initial_value=5.86e-6,
                 )
             ),
             pybop.Parameters(
@@ -25,6 +26,7 @@ class TestModelAndExperimentChanges:
                     prior=pybop.Gaussian(3.43e-15, 1e-15),
                     bounds=[1e-15, 5e-15],
                     true_value=4e-15,
+                    initial_value=4e-15,
                 )
             ),
         ]
@@ -88,7 +90,6 @@ class TestModelAndExperimentChanges:
 
     def final_cost(self, solution, model, parameters, init_soc):
         # Compute the cost corresponding to a particular solution
-        x0 = np.array(parameters.true_value())
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -98,7 +99,7 @@ class TestModelAndExperimentChanges:
         )
         signal = ["Voltage [V]"]
         problem = pybop.FittingProblem(
-            model, parameters, dataset, signal=signal, x0=x0, init_soc=init_soc
+            model, parameters, dataset, signal=signal, init_soc=init_soc
         )
         cost = pybop.RootMeanSquaredError(problem)
         optim = pybop.Optimisation(cost, optimiser=pybop.PSO)

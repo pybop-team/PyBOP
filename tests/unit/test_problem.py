@@ -70,10 +70,6 @@ class TestProblem:
 
     @pytest.mark.unit
     def test_base_problem(self, parameters, model, dataset):
-        # Test incorrect number of initial parameter values
-        with pytest.raises(ValueError):
-            pybop.BaseProblem(parameters, model=model, x0=np.array([]))
-
         # Construct Problem
         problem = pybop.BaseProblem(parameters, model=model)
 
@@ -108,12 +104,6 @@ class TestProblem:
 
     @pytest.mark.unit
     def test_fitting_problem(self, parameters, dataset, model, signal):
-        # Test incorrect number of initial parameter values
-        with pytest.raises(ValueError):
-            pybop.FittingProblem(
-                model, parameters, dataset, signal=signal, x0=np.array([])
-            )
-
         # Construct Problem
         problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 
@@ -169,10 +159,6 @@ class TestProblem:
 
     @pytest.mark.unit
     def test_design_problem(self, parameters, experiment, model):
-        # Test incorrect number of initial parameter values
-        with pytest.raises(ValueError):
-            pybop.DesignProblem(model, parameters, experiment, x0=np.array([]))
-
         # Construct Problem
         problem = pybop.DesignProblem(model, parameters, experiment)
 

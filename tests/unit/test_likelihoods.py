@@ -14,12 +14,17 @@ class TestLikelihoods:
         return pybop.lithium_ion.SPM()
 
     @pytest.fixture
-    def parameters(self):
+    def ground_truth(self):
+        return 0.52
+
+    @pytest.fixture
+    def parameters(self, ground_truth):
         return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.01),
                 bounds=[0.375, 0.625],
+                initial_value=ground_truth,
             ),
         )
 
@@ -32,15 +37,11 @@ class TestLikelihoods:
         )
 
     @pytest.fixture
-    def x0(self):
-        return np.array([0.52])
-
-    @pytest.fixture
-    def dataset(self, model, experiment, x0):
+    def dataset(self, model, experiment, ground_truth):
         model.parameter_set = model.pybamm_model.default_parameter_values
         model.parameter_set.update(
             {
-                "Negative electrode active material volume fraction": x0[0],
+                "Negative electrode active material volume fraction": ground_truth,
             }
         )
         solution = model.predict(experiment=experiment)
@@ -53,17 +54,17 @@ class TestLikelihoods:
         )
 
     @pytest.fixture
-    def one_signal_problem(self, model, parameters, dataset, x0):
+    def one_signal_problem(self, model, parameters, dataset):
         signal = ["Voltage [V]"]
         return pybop.FittingProblem(
-            model, parameters, dataset, signal=signal, x0=x0, init_soc=1.0
+            model, parameters, dataset, signal=signal, init_soc=1.0
         )
 
     @pytest.fixture
-    def two_signal_problem(self, model, parameters, dataset, x0):
+    def two_signal_problem(self, model, parameters, dataset):
         signal = ["Time [s]", "Voltage [V]"]
         return pybop.FittingProblem(
-            model, parameters, dataset, signal=signal, x0=x0, init_soc=1.0
+            model, parameters, dataset, signal=signal, init_soc=1.0
         )
 
     @pytest.mark.parametrize(
