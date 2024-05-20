@@ -6,15 +6,21 @@ import pybamm
 
 
 class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
-    """WeppnerHuggins Model for GITT. Credit: pybamm-param team.
+    """
+    WeppnerHuggins Model for GITT. Credit: pybamm-param team.
+
+    This model can be used with PyBOP through the pybop.WeppnerHuggins wrapper class.
 
     Parameters
     ----------
     name : str, optional
         The name of the model.
+    **model_kwargs : optional
+        Valid PyBaMM model option keys and their values.
     """
 
-    def __init__(self, name="Weppner & Huggins model"):
+    def __init__(self, name="Weppner & Huggins model", **model_kwargs):
+        # Model kwargs (build, options) are not implemented, keeping here for consistent interface
         super().__init__({}, name)
 
         pybamm.citations.register("""
@@ -79,6 +85,8 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
             "Voltage [V]": V,
             "Time [s]": t,
         }
+
+        self._built = True
 
     @property
     def default_geometry(self):
