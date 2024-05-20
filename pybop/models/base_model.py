@@ -40,7 +40,7 @@ class BaseModel:
     This class serves as a foundation for building specific models in PyBaMM.
     It provides methods to set up the model, define parameters, and perform
     simulations. The class is designed to be subclassed for creating models
-    with custom behavior.
+    with custom behaviour.
 
     """
 
