@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from flaky import flaky
 from pybamm import __version__ as pybamm_version
 
 import pybop
@@ -93,7 +92,6 @@ class Test_SPM_Parameterisation:
             pybop.XNES,
         ],
     )
-    @flaky(max_runs=3, min_passes=1)
     @pytest.mark.integration
     def test_spm_optimisers(self, optimiser, spm_costs):
         x0 = spm_costs.x0

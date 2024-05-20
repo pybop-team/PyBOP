@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from flaky import flaky
 
 import pybop
 
@@ -67,7 +66,6 @@ class TestTheveninParameterisation:
         "optimiser",
         [pybop.SciPyMinimize, pybop.GradientDescent, pybop.PSO],
     )
-    @flaky(max_runs=8, min_passes=1)  # These can be very flaky
     @pytest.mark.integration
     def test_optimisers_on_simple_model(self, optimiser, cost):
         x0 = cost.x0
@@ -99,7 +97,10 @@ class TestTheveninParameterisation:
         )
         experiment = pybop.Experiment(
             [
-                ("Discharge at 0.5C for 2 minutes (1 second period)",),
+                (
+                    "Discharge at 0.5C for 2 minutes (4 seconds period)",
+                    "Charge at 0.5C for 2 minutes (4 seconds period)",
+                ),
             ]
         )
         sim = model.predict(experiment=experiment)
