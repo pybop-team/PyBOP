@@ -55,11 +55,8 @@ class ECircuitModel(BaseModel):
         self._unprocessed_model = self.pybamm_model
 
         # Set parameters, using either the provided ones or the default
-        if isinstance(self._parameter_set, dict):
-            self.default_parameter_values = self._parameter_set
-        else:
-            self.default_parameter_values = self.pybamm_model.default_parameter_values
-            self._parameter_set = self.default_parameter_values
+        self.default_parameter_values = self.pybamm_model.default_parameter_values
+        self._parameter_set = self._parameter_set or self.default_parameter_values
         self._unprocessed_parameter_set = self._parameter_set
 
         # Define model geometry and discretization
