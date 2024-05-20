@@ -1,3 +1,5 @@
+from warnings import warn
+
 import numpy as np
 import pints
 
@@ -62,6 +64,41 @@ class IRPropMin(pints.IRPropMin):
             )
         else:
             self.boundaries = None
+        super().__init__(x0, sigma0, self.boundaries)
+
+
+class Adam(pints.Adam):
+    """
+    Implements the Adam optimization algorithm.
+
+    This class extends the Adam optimiser from the PINTS library, which combines
+    ideas from RMSProp and Stochastic Gradient Descent with momentum. Note that
+    this optimiser does not support boundary constraints.
+
+    Parameters
+    ----------
+    x0 : array_like
+        Initial position from which optimization will start.
+    sigma0 : float, optional
+        Initial step size (default is 0.1).
+    bounds : dict, optional
+        Ignored by this optimiser, provided for API consistency.
+
+    See Also
+    --------
+    pints.Adam : The PINTS implementation this class is based on.
+    """
+
+    def __init__(self, x0, sigma0=0.1, bounds=None):
+        warn(
+            "Adam is deprecated and will be removed in a future release. Please use AdamW instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if bounds is not None:
+            print("NOTE: Boundaries ignored by AdamW")
+
+        self.boundaries = None  # Bounds ignored in pints.Adam
         super().__init__(x0, sigma0, self.boundaries)
 
 

@@ -74,6 +74,7 @@ class TestOptimisation:
             (pybop.SciPyMinimize, "SciPyMinimize"),
             (pybop.SciPyDifferentialEvolution, "SciPyDifferentialEvolution"),
             (pybop.GradientDescent, "Gradient descent"),
+            (pybop.Adam, "Adam"),
             (pybop.AdamW, "AdamW"),
             (pybop.CMAES, "Covariance Matrix Adaptation Evolution Strategy (CMA-ES)"),
             (pybop.SNES, "Seperable Natural Evolution Strategy (SNES)"),

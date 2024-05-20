@@ -56,7 +56,7 @@ problem = pybop.FittingProblem(
 cost = pybop.RootMeanSquaredError(problem)
 optim = pybop.Optimisation(
     cost,
-    optimiser=pybop.AdamW,
+    optimiser=pybop.Adam,
     verbose=True,
     allow_infeasible_solutions=True,
     sigma0=0.05,
