@@ -86,6 +86,7 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
             "Time [s]": t,
         }
 
+        # Set the built property on creation to prevent unnecessary model rebuilds
         self._built = True
 
     @property
