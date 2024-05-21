@@ -57,7 +57,7 @@ class BaseProblem:
         else:
             self.additional_variables = []
 
-        # Set initial conditions
+        # Set initial values
         self.x0 = self.parameters.initial_value()
 
     @property
