@@ -74,6 +74,10 @@ class BaseModel:
         self.param_check_counter = 0
         self.allow_infeasible_solutions = True
 
+    @property
+    def n_parameters(self):
+        return len(self.parameters)
+
     def build(
         self,
         dataset=None,
@@ -423,7 +427,7 @@ class BaseModel:
                         (
                             sol[self.signal[0]].data.shape[0],
                             self.n_outputs,
-                            self._n_parameters,
+                            self.n_parameters,
                         )
                     )
 

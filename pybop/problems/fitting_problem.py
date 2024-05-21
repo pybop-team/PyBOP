@@ -57,7 +57,6 @@ class FittingProblem(BaseProblem):
         if model is not None:
             self._model.signal = self.signal
             self._model.additional_variables = self.additional_variables
-            self._model._n_parameters = len(self.parameters)
             self._model.n_outputs = self.n_outputs
             self._model.n_time_data = self.n_time_data
 
