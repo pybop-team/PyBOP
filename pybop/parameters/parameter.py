@@ -275,7 +275,7 @@ class Parameters:
             self.bounds = None
 
         return self.bounds
-    
+
     def update(self, values):
         """
         Set value of each parameter.
