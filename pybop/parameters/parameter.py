@@ -347,6 +347,17 @@ class Parameters:
 
         return initial_values
 
+    def current_value(self):
+        """
+        Return the current value of each parameter.
+        """
+        current_values = []
+
+        for param in self.param.values():
+            current_values.append(param.value)
+
+        return current_values
+
     def true_value(self):
         """
         Return the true value of each parameter.
@@ -395,5 +406,7 @@ class Parameters:
 
         return bounds
 
-    def as_dict(self):
-        return {param.name: param.value for param in self.param.values()}
+    def as_dict(self, values=None):
+        if values is None:
+            values = self.current_value()
+        return {key: values[i] for i, key in enumerate(self.param.keys())}

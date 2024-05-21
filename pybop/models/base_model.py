@@ -77,12 +77,6 @@ class BaseModel:
     def n_parameters(self):
         return len(self.parameters)
 
-    @property
-    def fit_keys(self):
-        if self.parameters is None:
-            return []
-        return self.parameters.keys()
-
     def build(
         self,
         dataset=None,
@@ -177,7 +171,7 @@ class BaseModel:
             self._parameter_set[key] = "[input]"
 
         if self.dataset is not None and (not self.matched_parameters or not rebuild):
-            if "Current function [A]" not in self.fit_keys:
+            if "Current function [A]" not in self.parameters.keys():
                 self._parameter_set["Current function [A]"] = pybamm.Interpolant(
                     self.dataset["Time [s]"],
                     self.dataset["Current function [A]"],
@@ -284,7 +278,7 @@ class BaseModel:
             raise ValueError("Model must be built before calling reinit")
 
         if not isinstance(inputs, dict):
-            inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+            inputs = self.parameters.as_dict(inputs)
 
         self._solver.set_up(self._built_model, inputs=inputs)
 
@@ -353,7 +347,7 @@ class BaseModel:
 
             else:
                 if not isinstance(inputs, dict):
-                    inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+                    inputs = self.parameters.as_dict(inputs)
 
                 if self.check_params(
                     inputs=inputs,
@@ -409,7 +403,7 @@ class BaseModel:
                 )
 
             if not isinstance(inputs, dict):
-                inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+                inputs = self.parameters.as_dict(inputs)
 
             if self.check_params(
                 inputs=inputs,
@@ -437,7 +431,7 @@ class BaseModel:
                         dy[:, i, :] = np.stack(
                             [
                                 sol[signal].sensitivities[key].toarray()[:, 0]
-                                for key in self.fit_keys
+                                for key in self.parameters.keys()
                             ],
                             axis=-1,
                         )
@@ -499,7 +493,7 @@ class BaseModel:
         parameter_set = parameter_set or self._unprocessed_parameter_set
         if inputs is not None:
             if not isinstance(inputs, dict):
-                inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+                inputs = self.parameters.as_dict(inputs)
             parameter_set.update(inputs)
 
         if self.check_params(
@@ -556,7 +550,7 @@ class BaseModel:
                                 + f" or None, but received a list with type: {type(inputs)}"
                             )
                 else:
-                    inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+                    inputs = self.parameters.as_dict(inputs)
 
         return self._check_params(
             inputs=inputs, allow_infeasible_solutions=allow_infeasible_solutions

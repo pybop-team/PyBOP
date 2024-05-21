@@ -176,6 +176,7 @@ class TestProblem:
         self, parameters, model, dataset, signal
     ):
         # Construct model and predict
+        model.parameters = parameters
         out = model.predict(inputs=[1e-5, 1e-5], t_eval=np.linspace(0, 10, 100))
 
         problem = pybop.FittingProblem(
@@ -190,5 +191,5 @@ class TestProblem:
             assert_allclose(
                 out["Voltage [V]"].data,
                 problem_output["Voltage [V]"],
-                atol=1e-5,
+                atol=1e-6,
             )

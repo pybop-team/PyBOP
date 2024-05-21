@@ -227,11 +227,14 @@ class TestModels:
         state = model.reinit(inputs={})
         np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
 
-        state = model.reinit(inputs=[])
+        model.parameters = pybop.Parameters(pybop.Parameter("y0"))
+        state = model.reinit(inputs=[1])
         np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
 
         model = ExponentialDecay(pybamm.ParameterValues({"k": k, "y0": y0}))
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError, match="Model must be built before calling reinit"
+        ):
             model.reinit(inputs={})
 
     @pytest.mark.unit
