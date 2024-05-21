@@ -90,9 +90,7 @@ class FittingProblem(BaseProblem):
             The model output y(t) simulated with inputs x.
         """
         if np.any(x != self.x) and self._model.matched_parameters:
-            for i, param in enumerate(self.parameters):
-                param.update(value=x[i])
-
+            self.parameters.update(values=x)
             self._model.rebuild(parameters=self.parameters)
             self.x = x
 

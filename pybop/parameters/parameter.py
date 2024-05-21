@@ -275,6 +275,13 @@ class Parameters:
             self.bounds = None
 
         return self.bounds
+    
+    def update(self, values):
+        """
+        Set value of each parameter.
+        """
+        for i, param in enumerate(self.param.values()):
+            param.update(value=values[i])
 
     def rvs(self, n_samples):
         """
