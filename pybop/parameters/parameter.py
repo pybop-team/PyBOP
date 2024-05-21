@@ -394,3 +394,6 @@ class Parameters:
         ]
 
         return bounds
+
+    def as_dict(self):
+        return {param.name: param.value for param in self.param.values()}

@@ -254,7 +254,7 @@ class BaseModel:
         parameters : pybop.ParameterSet
 
         """
-        parameter_dictionary = {param.name: param.value for param in parameters}
+        parameter_dictionary = parameters.as_dict()
         matched_parameters = {
             param: parameter_dictionary[param]
             for param in parameter_dictionary
