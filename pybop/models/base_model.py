@@ -70,13 +70,18 @@ class BaseModel:
         self.additional_variables = []
         self.matched_parameters = {}
         self.non_matched_parameters = {}
-        self.fit_keys = []
         self.param_check_counter = 0
         self.allow_infeasible_solutions = True
 
     @property
     def n_parameters(self):
         return len(self.parameters)
+
+    @property
+    def fit_keys(self):
+        if self.parameters is None:
+            return []
+        return self.parameters.keys()
 
     def build(
         self,
@@ -107,9 +112,6 @@ class BaseModel:
         self.parameters = parameters
         if self.parameters is not None:
             self.classify_and_update_parameters(self.parameters)
-            self.fit_keys = [param.name for param in self.parameters]
-        else:
-            self.fit_keys = []
 
         if init_soc is not None:
             self.set_init_soc(init_soc)

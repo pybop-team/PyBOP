@@ -55,8 +55,6 @@ class DesignProblem(BaseProblem):
         if experiment is not None:
             # Leave the build until later to apply the experiment
             self._model.parameters = self.parameters
-            if self.parameters is not None:
-                self._model.fit_keys = [param.name for param in self.parameters]
 
         elif self._model._built_model is None:
             self._model.build(
@@ -86,7 +84,6 @@ class DesignProblem(BaseProblem):
         y : np.ndarray
             The model output y(t) simulated with inputs x.
         """
-
         sol = self._model.predict(
             inputs=x,
             experiment=self.experiment,
