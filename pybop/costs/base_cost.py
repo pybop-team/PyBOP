@@ -38,7 +38,6 @@ class BaseCost:
         self.x0 = None
         self.bounds = None
         self.sigma0 = sigma
-        self._minimising = True
         if isinstance(self.problem, BaseProblem):
             self._target = problem._target
             self.parameters = problem.parameters
@@ -53,13 +52,13 @@ class BaseCost:
     def n_parameters(self):
         return self._n_parameters
 
-    def __call__(self, x, grad=None, minimising=True):
+    def __call__(self, x, grad=None):
         """
         Call the evaluate function for a given set of parameters.
         """
-        return self.evaluate(x, grad, minimising)
+        return self.evaluate(x, grad)
 
-    def evaluate(self, x, grad=None, minimising=True):
+    def evaluate(self, x, grad=None):
         """
         Call the evaluate function for a given set of parameters.
 
@@ -82,10 +81,7 @@ class BaseCost:
             If an error occurs during the calculation of the cost.
         """
         try:
-            if minimising:
-                return self._evaluate(x, grad)
-            else:  # minimise the negative cost
-                return -self._evaluate(x, grad)
+            return self._evaluate(x, grad)
 
         except NotImplementedError as e:
             raise e
@@ -119,7 +115,7 @@ class BaseCost:
         """
         raise NotImplementedError
 
-    def evaluateS1(self, x, minimising=True):
+    def evaluateS1(self, x):
         """
         Call _evaluateS1 for a given set of parameters.
 
@@ -140,11 +136,7 @@ class BaseCost:
             If an error occurs during the calculation of the cost or gradient.
         """
         try:
-            if minimising:
-                return self._evaluateS1(x)
-            else:  # minimise the negative cost
-                L, dl = self._evaluateS1(x)
-                return -L, -dl
+            return self._evaluateS1(x)
 
         except NotImplementedError as e:
             raise e

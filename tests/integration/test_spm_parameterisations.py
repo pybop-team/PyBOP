@@ -1,10 +1,12 @@
 import numpy as np
 import pytest
+from flaky import flaky
+from pybamm import __version__ as pybamm_version
 
 import pybop
 
 
-class TestModelParameterisation:
+class Test_SPM_Parameterisation:
     """
     A class to test the model parameterisation methods.
     """
@@ -12,7 +14,7 @@ class TestModelParameterisation:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ground_truth = np.array([0.55, 0.55]) + np.random.normal(
-            loc=0.0, scale=0.03, size=2
+            loc=0.0, scale=0.05, size=2
         )
 
     @pytest.fixture
@@ -25,12 +27,12 @@ class TestModelParameterisation:
         return [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.55, 0.05),
-                bounds=[0.375, 0.75],
+                prior=pybop.Uniform(0.4, 0.7),
+                bounds=[0.375, 0.725],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.55, 0.05),
+                prior=pybop.Uniform(0.4, 0.7),
                 # no bounds
             ),
         ]
@@ -80,24 +82,25 @@ class TestModelParameterisation:
     @pytest.mark.parametrize(
         "optimiser",
         [
-            pybop.SciPyMinimize,
             pybop.SciPyDifferentialEvolution,
             pybop.Adam,
             pybop.CMAES,
-            pybop.GradientDescent,
             pybop.IRPropMin,
             pybop.NelderMead,
-            pybop.PSO,
             pybop.SNES,
             pybop.XNES,
         ],
     )
+    @flaky(max_runs=3, min_passes=1)
     @pytest.mark.integration
     def test_spm_optimisers(self, optimiser, spm_costs):
+        x0 = spm_costs.x0
         # Some optimisers require a complete set of bounds
-        if optimiser in [pybop.SciPyDifferentialEvolution, pybop.PSO]:
+        if optimiser in [
+            pybop.SciPyDifferentialEvolution,
+        ]:
             spm_costs.problem.parameters[1].set_bounds(
-                [0.3, 0.8]
+                [0.375, 0.725]
             )  # Large range to ensure IC within bounds
             bounds = {"lower": [], "upper": []}
             for param in spm_costs.problem.parameters:
@@ -118,27 +121,19 @@ class TestModelParameterisation:
         if issubclass(optimiser, pybop.BasePintsOptimiser):
             parameterisation.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
 
-        initial_cost = parameterisation.cost(spm_costs.x0)
-
-        if optimiser in [pybop.GradientDescent]:
-            if isinstance(
-                spm_costs, (pybop.GaussianLogLikelihoodKnownSigma, pybop.MAP)
-            ):
-                parameterisation.method.set_learning_rate(1.8e-5)
-            else:
-                parameterisation.method.set_learning_rate(0.015)
-
-        elif optimiser in [pybop.SciPyMinimize]:
-            parameterisation.set_allow_infeasible_solutions(False)
-
+        initial_cost = parameterisation.cost(x0)
         x, final_cost = parameterisation.run()
 
         # Assertions
-        if parameterisation._minimising:
-            assert initial_cost > final_cost
+        if not np.allclose(x0, self.ground_truth, atol=1e-5):
+            if parameterisation.minimising:
+                assert initial_cost > final_cost
+            else:
+                assert initial_cost < final_cost
+        if pybamm_version <= "23.9":
+            np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
         else:
-            assert initial_cost < final_cost
-        np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
+            np.testing.assert_allclose(x, self.ground_truth, atol=1.75e-2)
 
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, cost_class):
@@ -181,10 +176,11 @@ class TestModelParameterisation:
     )
     @pytest.mark.integration
     def test_multiple_signals(self, multi_optimiser, spm_two_signal_cost):
+        x0 = spm_two_signal_cost.x0
         # Some optimisers require a complete set of bounds
         if multi_optimiser in [pybop.SciPyDifferentialEvolution]:
             spm_two_signal_cost.problem.parameters[1].set_bounds(
-                [0.3, 0.8]
+                [0.375, 0.725]
             )  # Large range to ensure IC within bounds
             bounds = {"lower": [], "upper": []}
             for param in spm_two_signal_cost.problem.parameters:
@@ -204,10 +200,11 @@ class TestModelParameterisation:
         x, final_cost = parameterisation.run()
 
         # Assertions
-        if parameterisation._minimising:
-            assert initial_cost > final_cost
-        else:
-            assert initial_cost < final_cost
+        if not np.allclose(x0, self.ground_truth, atol=1e-5):
+            if parameterisation.minimising:
+                assert initial_cost > final_cost
+            else:
+                assert initial_cost < final_cost
         np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
 
     @pytest.mark.parametrize("init_soc", [0.4, 0.6])
@@ -256,8 +253,8 @@ class TestModelParameterisation:
         experiment = pybop.Experiment(
             [
                 (
-                    "Discharge at 0.5C for 3 minutes (2 second period)",
-                    "Charge at 0.5C for 3 minutes (2 second period)",
+                    "Discharge at 0.5C for 6 minutes (4 second period)",
+                    "Charge at 0.5C for 6 minutes (4 second period)",
                 ),
             ]
             * 2

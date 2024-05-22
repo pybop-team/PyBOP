@@ -90,14 +90,14 @@ class GravimetricEnergyDensity(DesignCost):
     """
     Represents the gravimetric energy density of a battery cell, calculated based
     on a normalised discharge from upper to lower voltage limits. The goal is to
-    maximise the energy density, which is achieved by setting _minimising = False.
+    maximise the energy density, which is achieved by setting minimising = False
+    in the optimiser settings.
 
     Inherits all parameters and attributes from ``DesignCost``.
     """
 
     def __init__(self, problem, update_capacity=False):
         super(GravimetricEnergyDensity, self).__init__(problem, update_capacity)
-        self._minimising = False
 
     def _evaluate(self, x, grad=None):
         """
@@ -149,14 +149,14 @@ class VolumetricEnergyDensity(DesignCost):
     """
     Represents the volumetric energy density of a battery cell, calculated based
     on a normalised discharge from upper to lower voltage limits. The goal is to
-    maximise the energy density, which is achieved by setting _minimising = False.
+    maximise the energy density, which is achieved by setting minimising = False
+    in the optimiser settings.
 
     Inherits all parameters and attributes from ``DesignCost``.
     """
 
     def __init__(self, problem, update_capacity=False):
         super(VolumetricEnergyDensity, self).__init__(problem, update_capacity)
-        self._minimising = False
 
     def _evaluate(self, x, grad=None):
         """

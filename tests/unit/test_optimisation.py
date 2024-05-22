@@ -54,7 +54,6 @@ class TestOptimisation:
             model,
             one_parameter,
             dataset,
-            signal=["Voltage [V]"],
         )
         return pybop.SumSquaredError(problem)
 
@@ -64,7 +63,6 @@ class TestOptimisation:
             model,
             two_parameters,
             dataset,
-            signal=["Voltage [V]"],
         )
         return pybop.SumSquaredError(problem)
 
@@ -214,17 +212,18 @@ class TestOptimisation:
             x0_new = np.array([0.6])
             optim = optimiser(cost=cost, x0=x0_new)
             assert optim.x0 == x0_new
+            assert optim.x0 != cost.x0
 
         if optimiser in [pybop.SciPyMinimize]:
             # Check a method that uses gradient information
-            optimiser(cost=cost, method="L-BFGS-B", jac=True)
+            optimiser(cost=cost, method="L-BFGS-B", jac=True, maxiter=10)
             optim.run()
+            assert optim._iterations > 0
             with pytest.raises(
                 ValueError,
                 match="Expected the jac option to be either True, False or None.",
             ):
                 optim = optimiser(cost=cost, jac="Invalid string")
-                optim.run()
 
     @pytest.mark.unit
     def test_single_parameter(self, cost):
@@ -291,6 +290,45 @@ class TestOptimisation:
             assert optim.x0 <= 0.62 and optim.x0 >= 0.58
 
     @pytest.mark.unit
+    @pytest.mark.parametrize(
+        "mean, sigma, expect_exception",
+        [
+            (0.85, 0.2, False),
+            (0.85, 0.001, True),
+        ],
+    )
+    def test_scipy_prior_resampling(
+        self, model, dataset, mean, sigma, expect_exception
+    ):
+        # Set up the parameter with a Gaussian prior
+        parameter = pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            prior=pybop.Gaussian(mean, sigma),
+            bounds=[0.55, 0.95],
+        )
+
+        # Define the problem and cost
+        problem = pybop.FittingProblem(model, [parameter], dataset)
+        cost = pybop.SumSquaredError(problem)
+
+        # Create the optimisation class with infeasible solutions disabled
+        opt = pybop.SciPyMinimize(
+            cost=cost,
+            allow_infeasible_solutions=False,
+            max_iterations=1,
+        )
+
+        # If small sigma, expect a ValueError due inability to resample a non np.inf cost
+        if expect_exception:
+            with pytest.raises(
+                ValueError,
+                match="The initial parameter values return an infinite cost.",
+            ):
+                opt.run()
+        else:
+            opt.run()
+
+    @pytest.mark.unit
     def test_halting(self, cost):
         # Test max evalutions
         optim = pybop.GradientDescent(cost=cost, max_evaluations=1, verbose=True)
@@ -342,6 +380,7 @@ class TestOptimisation:
 
         optim.method.stop = optimiser_error
         optim.run()
+        assert optim._iterations == 1
 
         # Test no stopping condition
         with pytest.raises(

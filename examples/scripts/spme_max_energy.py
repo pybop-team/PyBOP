@@ -12,8 +12,8 @@ import pybop
 # NOTE: This script can be easily adjusted to consider the volumetric
 # (instead of gravimetric) energy density by changing the line which
 # defines the cost and changing the output to:
-# print(f"Initial volumetric energy density: {-cost(cost.x0):.2f} Wh.m-3")
-# print(f"Optimised volumetric energy density: {-final_cost:.2f} Wh.m-3")
+# print(f"Initial volumetric energy density: {cost(cost.x0):.2f} Wh.m-3")
+# print(f"Optimised volumetric energy density: {final_cost:.2f} Wh.m-3")
 
 # Define parameter set and model
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")

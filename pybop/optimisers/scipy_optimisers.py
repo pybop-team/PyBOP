@@ -20,6 +20,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
 
     def __init__(self, cost, **optimiser_kwargs):
         super().__init__(cost, **optimiser_kwargs)
+        self.num_resamples = 40
 
     def _sanitise_inputs(self):
         """
@@ -128,12 +129,17 @@ class SciPyMinimize(BaseSciPyOptimiser):
         for key in key_list:
             if key in [
                 "method",
-                "jac",
                 "hess",
                 "hessp",
                 "constraints",
                 "tol",
             ]:
+                self._options.update({key: self.unset_options.pop(key)})
+            elif key == "jac":
+                if self.unset_options["jac"] not in [True, False, None]:
+                    raise ValueError(
+                        f"Expected the jac option to be either True, False or None. Received: {self.unset_options[key]}"
+                    )
                 self._options.update({key: self.unset_options.pop(key)})
             elif key == "maxiter":
                 # Nest this option within an options dictionary for SciPy minimize
@@ -155,28 +161,35 @@ class SciPyMinimize(BaseSciPyOptimiser):
         def callback(x):
             self.log.append([x])
 
-        # Scale the cost function and eliminate nan values
+        # Compute the absolute initial cost and resample if required
         self._cost0 = np.abs(self.cost(self.x0))
-        self.inf_count = 0
         if np.isinf(self._cost0):
-            raise Exception("The initial parameter values return an infinite cost.")
+            for i in range(1, self.num_resamples):
+                x0 = self.cost.problem.sample_initial_conditions(seed=i)
+                self._cost0 = np.abs(self.cost(x0))
+                if not np.isinf(self._cost0):
+                    break
+            if np.isinf(self._cost0):
+                raise ValueError(
+                    "The initial parameter values return an infinite cost."
+                )
+
+        # Scale the cost function, preserving the sign convention, and eliminate nan values
+        self.inf_count = 0
 
         if not self._options["jac"]:
 
             def cost_wrapper(x):
-                cost = self.cost(x, minimising=self._minimising) / self._cost0
+                cost = self.cost(x) / self._cost0
                 if np.isinf(cost):
                     self.inf_count += 1
                     cost = 1 + 0.9**self.inf_count  # for fake finite gradient
-                return cost
+                return cost if self.minimising else -cost
         elif self._options["jac"] is True:
 
             def cost_wrapper(x):
-                return self.cost.evaluateS1(x, minimising=self._minimising)
-        else:
-            raise ValueError(
-                "Expected the jac option to be either True, False or None."
-            )
+                L, dl = self.cost.evaluateS1(x)
+                return L, dl if self.minimising else -L, -dl
 
         result = minimize(
             cost_wrapper,
@@ -295,7 +308,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             self.log.append([x])
 
         def cost_wrapper(x):
-            return self.cost(x, minimising=self._minimising)
+            return self.cost(x) if self.minimising else -self.cost(x)
 
         result = differential_evolution(
             cost_wrapper,

@@ -32,7 +32,7 @@ class TestStandalone:
     def test_optimisation_on_standalone_cost(self):
         # Build an Optimisation problem with a StandaloneCost
         cost = StandaloneCost()
-        optim = pybop.Optimisation(cost=cost)
+        optim = pybop.SciPyDifferentialEvolution(cost=cost)
         x, final_cost = optim.run()
 
         initial_cost = optim.cost(cost.x0)

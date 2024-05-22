@@ -15,7 +15,7 @@ class StandaloneOptimiser(BaseOptimiser):
             x1, x2 = x
             return (x1 - 2) ** 2 + (x2 - 4) ** 4
 
-        # Set cost function, initial values and 0ther options
+        # Set initial values and other options
         optimiser_options = dict(
             x0=np.array([0, 0]),
             bounds=None,
