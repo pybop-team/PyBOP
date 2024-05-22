@@ -6,7 +6,7 @@ import pybop
 
 class TestTheveninParameterisation:
     """
-    A class to test the flaky optimisers on a simple model.
+    A class to test a subset of optimisers on a simple model.
     """
 
     @pytest.fixture(autouse=True)
@@ -31,13 +31,13 @@ class TestTheveninParameterisation:
             [
                 pybop.Parameter(
                     "R0 [Ohm]",
-                    prior=pybop.Gaussian(0.05, 0.01),
-                    bounds=[0.01, 0.1],
+                    prior=pybop.Gaussian(0.03, 0.01),
+                    bounds=[0, 0.06],
                 ),
                 pybop.Parameter(
                     "R1 [Ohm]",
-                    prior=pybop.Gaussian(0.05, 0.01),
-                    bounds=[0.01, 0.1],
+                    prior=pybop.Gaussian(0.03, 0.01),
+                    bounds=[0, 0.06],
                 ),
             ]
         )
