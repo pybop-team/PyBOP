@@ -108,13 +108,15 @@ class TestPlots:
     @pytest.fixture
     def optim(self, cost):
         # Define and run an example optimisation
-        optim = pybop.Optimisation(cost, optimiser=pybop.CMAES)
+        optim = pybop.Optimisation(cost)
         optim.run()
         return optim
 
     @pytest.mark.unit
     def test_optim_plots(self, optim):
         # Plot convergence
+        pybop.plot_convergence(optim)
+        optim._minimising = False
         pybop.plot_convergence(optim)
 
         # Plot the parameter traces

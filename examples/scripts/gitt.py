@@ -54,7 +54,7 @@ problem = pybop.FittingProblem(
 cost = pybop.RootMeanSquaredError(problem)
 
 # Build the optimisation problem
-optim = pybop.Optimisation(cost=cost, optimiser=pybop.PSO, verbose=True)
+optim = pybop.PSO(cost=cost, verbose=True)
 
 # Run the optimisation problem
 x, final_cost = optim.run()
