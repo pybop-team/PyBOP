@@ -70,26 +70,26 @@ class TestTheveninParameterisation:
     def test_optimisers_on_simple_model(self, optimiser, cost):
         x0 = cost.x0
         if optimiser in [pybop.GradientDescent]:
-            parameterisation = optimiser(
+            optim = optimiser(
                 cost=cost,
                 sigma0=2.5e-4,
                 max_iterations=250,
             )
         else:
-            parameterisation = optimiser(
+            optim = optimiser(
                 cost=cost,
                 sigma0=0.03,
                 max_iterations=250,
             )
         if isinstance(optimiser, pybop.BasePintsOptimiser):
-            parameterisation.set_max_unchanged_iterations(iterations=55, threshold=1e-5)
+            optim.set_max_unchanged_iterations(iterations=55, threshold=1e-5)
 
-        initial_cost = parameterisation.cost(x0)
-        x, final_cost = parameterisation.run()
+        initial_cost = optim.cost(x0)
+        x, final_cost = optim.run()
 
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
-            if parameterisation.minimising:
+            if optim.minimising:
                 assert initial_cost > final_cost
             else:
                 assert initial_cost < final_cost
