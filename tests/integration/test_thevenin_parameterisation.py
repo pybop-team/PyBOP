@@ -49,7 +49,7 @@ class TestTheveninParameterisation:
     @pytest.fixture
     def cost(self, model, parameters, cost_class):
         # Form dataset
-        solution = self.getdata(model, self.ground_truth)
+        solution = self.get_data(model, parameters, self.ground_truth)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -88,13 +88,8 @@ class TestTheveninParameterisation:
             assert initial_cost > final_cost
         np.testing.assert_allclose(x, self.ground_truth, atol=1e-2)
 
-    def getdata(self, model, x):
-        model.parameter_set.update(
-            {
-                "R0 [Ohm]": x[0],
-                "R1 [Ohm]": x[1],
-            }
-        )
+    def get_data(self, model, parameters, x):
+        model.parameters = parameters
         experiment = pybop.Experiment(
             [
                 (
@@ -103,5 +98,5 @@ class TestTheveninParameterisation:
                 ),
             ]
         )
-        sim = model.predict(experiment=experiment)
+        sim = model.predict(experiment=experiment, inputs=x)
         return sim

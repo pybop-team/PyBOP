@@ -56,7 +56,7 @@ class TestOptimisation:
     def spm_costs(self, model, parameters, cost_class):
         # Form dataset
         init_soc = 0.5
-        solution = self.getdata(model, self.ground_truth, init_soc)
+        solution = self.get_data(model, parameters, self.ground_truth, init_soc)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -99,15 +99,10 @@ class TestOptimisation:
 
         # Assertions
         assert initial_cost > final_cost
-        np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
+        np.testing.assert_allclose(x, self.ground_truth, atol=1e-2)
 
-    def getdata(self, model, x, init_soc):
-        model.parameter_set.update(
-            {
-                "Negative electrode active material volume fraction": x[0],
-                "Positive electrode active material volume fraction": x[1],
-            }
-        )
+    def get_data(self, model, parameters, x, init_soc):
+        model.parameters = parameters
         experiment = pybop.Experiment(
             [
                 (
@@ -117,5 +112,5 @@ class TestOptimisation:
             ]
             * 2
         )
-        sim = model.predict(init_soc=init_soc, experiment=experiment)
+        sim = model.predict(init_soc=init_soc, experiment=experiment, inputs=x)
         return sim

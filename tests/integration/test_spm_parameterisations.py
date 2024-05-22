@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from pybamm import __version__ as pybamm_version
 
 import pybop
 
@@ -59,7 +58,7 @@ class Test_SPM_Parameterisation:
     @pytest.fixture
     def spm_costs(self, model, parameters, cost_class, init_soc):
         # Form dataset
-        solution = self.getdata(model, self.ground_truth, init_soc)
+        solution = self.get_data(model, parameters, self.ground_truth, init_soc)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -119,16 +118,13 @@ class Test_SPM_Parameterisation:
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
             assert initial_cost > final_cost
-        if pybamm_version <= "23.9":
-            np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
-        else:
-            np.testing.assert_allclose(x, self.ground_truth, atol=1.75e-2)
+        np.testing.assert_allclose(x, self.ground_truth, atol=1e-2)
 
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, cost_class):
         # Form dataset
         init_soc = 0.5
-        solution = self.getdata(model, self.ground_truth, init_soc)
+        solution = self.get_data(model, parameters, self.ground_truth, init_soc)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -188,7 +184,7 @@ class Test_SPM_Parameterisation:
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
             assert initial_cost > final_cost
-        np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
+        np.testing.assert_allclose(x, self.ground_truth, atol=1e-2)
 
     @pytest.mark.parametrize("init_soc", [0.4, 0.6])
     @pytest.mark.integration
@@ -199,7 +195,7 @@ class Test_SPM_Parameterisation:
         second_model = pybop.lithium_ion.SPMe(parameter_set=second_parameter_set)
 
         # Form dataset
-        solution = self.getdata(second_model, self.ground_truth, init_soc)
+        solution = self.get_data(second_model, parameters, self.ground_truth, init_soc)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -226,13 +222,8 @@ class Test_SPM_Parameterisation:
             np.testing.assert_allclose(final_cost, 0, atol=1e-2)
             np.testing.assert_allclose(x, self.ground_truth, atol=2e-2)
 
-    def getdata(self, model, x, init_soc):
-        model.parameter_set.update(
-            {
-                "Negative electrode active material volume fraction": x[0],
-                "Positive electrode active material volume fraction": x[1],
-            }
-        )
+    def get_data(self, model, parameters, x, init_soc):
+        model.parameters = parameters
         experiment = pybop.Experiment(
             [
                 (
@@ -242,5 +233,5 @@ class Test_SPM_Parameterisation:
             ]
             * 2
         )
-        sim = model.predict(init_soc=init_soc, experiment=experiment)
+        sim = model.predict(init_soc=init_soc, experiment=experiment, inputs=x)
         return sim
