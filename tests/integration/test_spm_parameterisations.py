@@ -110,18 +110,24 @@ class Test_SPM_Parameterisation:
             spm_costs.bounds = bounds
 
         # Test each optimiser
-        parameterisation = pybop.Optimisation(
-            cost=spm_costs, optimiser=optimiser, sigma0=0.05
-        )
+        if optimiser in [pybop.PSO]:
+            optim = pybop.Optimisation(
+                cost=spm_costs, optimiser=optimiser, sigma0=0.05, max_iterations=125
+            )
+        else:
+            optim = optimiser(cost=spm_costs, sigma0=0.05, max_iterations=125)
+        if issubclass(optimiser, pybop.BasePintsOptimiser):
+            optim.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
 
-        parameterisation.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
-        parameterisation.set_max_iterations(125)
-        initial_cost = parameterisation.cost(x0)
-        x, final_cost = parameterisation.run()
+        initial_cost = optim.cost(x0)
+        x, final_cost = optim.run()
 
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
-            assert initial_cost > final_cost
+            if optim.minimising:
+                assert initial_cost > final_cost
+            else:
+                assert initial_cost < final_cost
         if pybamm_version <= "23.9":
             np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
         else:
@@ -182,18 +188,21 @@ class Test_SPM_Parameterisation:
             spm_two_signal_cost.bounds = bounds
 
         # Test each optimiser
-        parameterisation = pybop.Optimisation(
-            cost=spm_two_signal_cost, optimiser=multi_optimiser, sigma0=0.03
+        optim = multi_optimiser(
+            cost=spm_two_signal_cost, sigma0=0.03, max_iterations=125
         )
-        parameterisation.set_max_unchanged_iterations(iterations=35, threshold=5e-4)
-        parameterisation.set_max_iterations(125)
+        if issubclass(multi_optimiser, pybop.BasePintsOptimiser):
+            optim.set_max_unchanged_iterations(iterations=35, threshold=5e-4)
 
-        initial_cost = parameterisation.cost(spm_two_signal_cost.x0)
-        x, final_cost = parameterisation.run()
+        initial_cost = optim.cost(spm_two_signal_cost.x0)
+        x, final_cost = optim.run()
 
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
-            assert initial_cost > final_cost
+            if optim.minimising:
+                assert initial_cost > final_cost
+            else:
+                assert initial_cost < final_cost
         np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
 
     @pytest.mark.parametrize("init_soc", [0.4, 0.6])
@@ -222,14 +231,17 @@ class Test_SPM_Parameterisation:
         optimiser = pybop.CMAES
 
         # Build the optimisation problem
-        parameterisation = pybop.Optimisation(cost=cost, optimiser=optimiser)
+        parameterisation = optimiser(cost=cost)
 
         # Run the optimisation problem
         x, final_cost = parameterisation.run()
 
-        # Assertions
+        # Assertion for final_cost
         with np.testing.assert_raises(AssertionError):
             np.testing.assert_allclose(final_cost, 0, atol=1e-2)
+
+        # Assertion for x
+        with np.testing.assert_raises(AssertionError):
             np.testing.assert_allclose(x, self.ground_truth, atol=2e-2)
 
     def getdata(self, model, x, init_soc):

@@ -54,15 +54,14 @@ problem = pybop.FittingProblem(
     model, parameters, dataset, signal=signal, init_soc=init_soc
 )
 cost = pybop.RootMeanSquaredError(problem)
-optim = pybop.Optimisation(
+optim = pybop.Adam(
     cost,
-    optimiser=pybop.Adam,
     verbose=True,
     allow_infeasible_solutions=True,
     sigma0=0.05,
+    max_iterations=100,
+    max_unchanged_iterations=20,
 )
-optim.set_max_iterations(100)
-optim.set_max_unchanged_iterations(45)
 
 # Run optimisation
 x, final_cost = optim.run()

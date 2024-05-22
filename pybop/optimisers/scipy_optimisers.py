@@ -1,114 +1,205 @@
 import numpy as np
 from scipy.optimize import differential_evolution, minimize
 
-from .base_optimiser import BaseOptimiser
+from pybop import BaseOptimiser
 
 
-class SciPyMinimize(BaseOptimiser):
+class BaseSciPyOptimiser(BaseOptimiser):
     """
-    Adapts SciPy's minimize function for use as an optimization strategy.
-
-    This class provides an interface to various scalar minimization algorithms implemented in SciPy, allowing fine-tuning of the optimization process through method selection and option configuration.
+    A base class for defining optimisation methods from the SciPy library.
 
     Parameters
     ----------
-    method : str, optional
-        The type of solver to use. If not specified, defaults to 'Nelder-Mead'.
-        Options: 'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'L-BFGS-B', 'TNC', 'COBYLA', 'SLSQP', 'trust-constr', 'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov'.
-    bounds : sequence or ``Bounds``, optional
+    x0 : array_like
+        Initial position from which optimisation will start.
+    bounds : dict, sequence or scipy.optimize.Bounds, optional
         Bounds for variables as supported by the selected method.
-    maxiter : int, optional
-        Maximum number of iterations to perform.
+    **optimiser_kwargs : optional
+        Valid SciPy option keys and their values.
     """
 
-    def __init__(self, method=None, bounds=None, maxiter=None, tol=1e-5):
-        super().__init__()
-        self.method = method
-        self.bounds = bounds
+    def __init__(self, cost, **optimiser_kwargs):
+        super().__init__(cost, **optimiser_kwargs)
         self.num_resamples = 40
-        self.tol = tol
-        self.options = {}
-        self._max_iterations = maxiter
 
-        if self.method is None:
-            self.method = "Nelder-Mead"
-
-    def _runoptimise(self, cost_function, x0):
+    def _sanitise_inputs(self):
         """
-        Executes the optimization process using SciPy's minimize function.
+        Check and remove any duplicate optimiser options.
+        """
+        # Unpack values from any nested options dictionary
+        if "options" in self.unset_options.keys():
+            key_list = list(self.unset_options["options"].keys())
+            for key in key_list:
+                if key not in self.unset_options.keys():
+                    self.unset_options[key] = self.unset_options["options"].pop(key)
+                else:
+                    raise Exception(
+                        f"A duplicate {key} option was found in the options dictionary."
+                    )
+            self.unset_options.pop("options")
 
-        Parameters
-        ----------
-        cost_function : callable
-            The objective function to minimize.
+        # Check for duplicate keywords
+        expected_keys = ["maxiter", "popsize", "tol"]
+        alternative_keys = [
+            "max_iterations",
+            "population_size",
+            "threshold",
+        ]
+        for exp_key, alt_key in zip(expected_keys, alternative_keys):
+            if alt_key in self.unset_options.keys():
+                if exp_key in self.unset_options.keys():
+                    raise Exception(
+                        "The alternative {alt_key} option was passed in addition to the expected {exp_key} option."
+                    )
+                else:  # rename
+                    self.unset_options[exp_key] = self.unset_options.pop(alt_key)
+
+        # Convert bounds to SciPy format
+        if isinstance(self.bounds, dict):
+            self._scipy_bounds = [
+                (lower, upper)
+                for lower, upper in zip(self.bounds["lower"], self.bounds["upper"])
+            ]
+        else:
+            self._scipy_bounds = self.bounds
+
+    def _run(self):
+        """
+        Internal method to run the optimization using a PyBOP optimiser.
+
+        Returns
+        -------
+        x : numpy.ndarray
+            The best parameter set found by the optimization.
+        final_cost : float
+            The final cost associated with the best parameters.
+        """
+        self.result = self._run_optimiser()
+
+        self.result.final_cost = self.cost(self.result.x)
+        self._iterations = self.result.nit
+
+        return self.result.x, self.result.final_cost
+
+
+class SciPyMinimize(BaseSciPyOptimiser):
+    """
+    Adapts SciPy's minimize function for use as an optimization strategy.
+
+    This class provides an interface to various scalar minimization algorithms implemented in SciPy,
+    allowing fine-tuning of the optimization process through method selection and option configuration.
+
+    Parameters
+    ----------
+    **optimiser_kwargs : optional
+        Valid SciPy Minimize option keys and their values, For example:
         x0 : array_like
-            Initial guess for the parameters.
+            Initial position from which optimisation will start.
+        bounds : dict, sequence or scipy.optimize.Bounds
+            Bounds for variables as supported by the selected method.
+        method : str
+            The optimisation method, options include:
+            'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'L-BFGS-B', 'TNC', 'COBYLA',
+            'SLSQP', 'trust-constr', 'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov'.
+
+    See Also
+    --------
+    scipy.optimize.minimize : The SciPy method this class is based on.
+    """
+
+    def __init__(self, cost, **optimiser_kwargs):
+        optimiser_options = dict(method="Nelder-Mead", jac=False)
+        optimiser_options.update(**optimiser_kwargs)
+        super().__init__(cost, **optimiser_options)
+
+    def _set_up_optimiser(self):
+        """
+        Parse optimiser options.
+        """
+        # Check and remove any duplicate keywords in self.unset_options
+        self._sanitise_inputs()
+
+        # Apply default maxiter
+        self._options = dict()
+        self._options["options"] = dict()
+        self._options["options"]["maxiter"] = self.default_max_iterations
+
+        # Apply additional options and remove them from the options dictionary
+        key_list = list(self.unset_options.keys())
+        for key in key_list:
+            if key in [
+                "method",
+                "hess",
+                "hessp",
+                "constraints",
+                "tol",
+            ]:
+                self._options.update({key: self.unset_options.pop(key)})
+            elif key == "jac":
+                if self.unset_options["jac"] not in [True, False, None]:
+                    raise ValueError(
+                        f"Expected the jac option to be either True, False or None. Received: {self.unset_options[key]}"
+                    )
+                self._options.update({key: self.unset_options.pop(key)})
+            elif key == "maxiter":
+                # Nest this option within an options dictionary for SciPy minimize
+                self._options["options"]["maxiter"] = self.unset_options.pop(key)
+
+    def _run_optimiser(self):
+        """
+        Executes the optimisation process using SciPy's minimize function.
 
         Returns
         -------
         tuple
-            A tuple (x, final_cost) containing the optimized parameters and the value of `cost_function` at the optimum.
+            A tuple (x, final_cost) containing the optimized parameters and the value of `cost_function`
+            at the optimum.
         """
-
-        self.log = [[x0]]
-        self.options = {"maxiter": self._max_iterations}
+        self.log = [[self.x0]]
 
         # Add callback storing history of parameter values
         def callback(x):
             self.log.append([x])
 
-        # Check x0 and resample if required
-        self.cost0 = cost_function(x0)
-        if np.isinf(self.cost0):
+        # Compute the absolute initial cost and resample if required
+        self._cost0 = np.abs(self.cost(self.x0))
+        if np.isinf(self._cost0):
             for i in range(1, self.num_resamples):
-                x0 = cost_function.problem.sample_initial_conditions(seed=i)
-                self.cost0 = cost_function(x0)
-                if not np.isinf(self.cost0):
+                x0 = self.cost.problem.sample_initial_conditions(seed=i)
+                self._cost0 = np.abs(self.cost(x0))
+                if not np.isinf(self._cost0):
                     break
-            if np.isinf(self.cost0):
+            if np.isinf(self._cost0):
                 raise ValueError(
                     "The initial parameter values return an infinite cost."
                 )
 
-        # Scale the cost function and eliminate nan values
+        # Scale the cost function, preserving the sign convention, and eliminate nan values
         self.inf_count = 0
 
-        def cost_wrapper(x):
-            cost = cost_function(x) / self.cost0
-            if np.isinf(cost):
-                self.inf_count += 1
-                cost = 1 + 0.9**self.inf_count  # for fake finite gradient
-            return cost
+        if not self._options["jac"]:
 
-        # Reformat bounds
-        if self.bounds is not None:
-            bounds = (
-                (lower, upper)
-                for lower, upper in zip(self.bounds["lower"], self.bounds["upper"])
-            )
+            def cost_wrapper(x):
+                cost = self.cost(x) / self._cost0
+                if np.isinf(cost):
+                    self.inf_count += 1
+                    cost = 1 + 0.9**self.inf_count  # for fake finite gradient
+                return cost if self.minimising else -cost
+        elif self._options["jac"] is True:
+
+            def cost_wrapper(x):
+                L, dl = self.cost.evaluateS1(x)
+                return L, dl if self.minimising else -L, -dl
 
         result = minimize(
             cost_wrapper,
-            x0,
-            method=self.method,
-            bounds=bounds,
-            tol=self.tol,
-            options=self.options,
+            self.x0,
+            bounds=self._scipy_bounds,
             callback=callback,
+            **self._options,
         )
 
         return result
-
-    def needs_sensitivities(self):
-        """
-        Determines if the optimization algorithm requires gradient information.
-
-        Returns
-        -------
-        bool
-            False, indicating that gradient information is not required.
-        """
-        return False
 
     def name(self):
         """
@@ -122,108 +213,111 @@ class SciPyMinimize(BaseOptimiser):
         return "SciPyMinimize"
 
 
-class SciPyDifferentialEvolution(BaseOptimiser):
+class SciPyDifferentialEvolution(BaseSciPyOptimiser):
     """
     Adapts SciPy's differential_evolution function for global optimization.
 
-    This class provides a global optimization strategy based on differential evolution, useful for problems involving continuous parameters and potentially multiple local minima.
+    This class provides a global optimization strategy based on differential evolution, useful for
+    problems involving continuous parameters and potentially multiple local minima.
 
     Parameters
     ----------
-    bounds : sequence or ``Bounds``
+    bounds : dict, sequence or scipy.optimize.Bounds
         Bounds for variables. Must be provided as it is essential for differential evolution.
-    strategy : str, optional
-        The differential evolution strategy to use. Defaults to 'best1bin'.
-    maxiter : int, optional
-        Maximum number of iterations to perform. Defaults to 1000.
-    popsize : int, optional
-        The number of individuals in the population. Defaults to 15.
+    **optimiser_kwargs : optional
+        Valid SciPy option keys and their values, for example:
+        strategy : str
+            The differential evolution strategy to use.
+        maxiter : int
+            Maximum number of iterations to perform.
+        popsize : int
+            The number of individuals in the population.
+
+    See Also
+    --------
+    scipy.optimize.differential_evolution : The SciPy method this class is based on.
     """
 
-    def __init__(
-        self, bounds=None, strategy="best1bin", maxiter=1000, popsize=15, tol=1e-5
-    ):
-        super().__init__()
-        self.tol = tol
-        self.strategy = strategy
-        self._max_iterations = maxiter
-        self._population_size = popsize
+    def __init__(self, cost, **optimiser_kwargs):
+        optimiser_options = dict(strategy="best1bin", popsize=15)
+        optimiser_options.update(**optimiser_kwargs)
+        super().__init__(cost, **optimiser_options)
 
-        if bounds is None:
-            raise ValueError("Bounds must be specified for differential_evolution.")
-        elif not all(
-            np.isfinite(value) for sublist in bounds.values() for value in sublist
-        ):
-            raise ValueError("Bounds must be specified for differential_evolution.")
-        elif isinstance(bounds, dict):
-            bounds = [
-                (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
-            ]
-        self.bounds = bounds
+    def _set_up_optimiser(self):
+        """
+        Parse optimiser options.
+        """
+        # Check and remove any duplicate keywords in self.unset_options
+        self._sanitise_inputs()
 
-    def _runoptimise(self, cost_function, x0=None):
+        # Check bounds
+        if self._scipy_bounds is None:
+            raise ValueError("Bounds must be specified for differential_evolution.")
+        else:
+            if not all(
+                np.isfinite(value) for pair in self._scipy_bounds for value in pair
+            ):
+                raise ValueError("Bounds must be specified for differential_evolution.")
+
+        # Apply default maxiter
+        self._options = dict()
+        self._options["maxiter"] = self.default_max_iterations
+
+        # Apply additional options and remove them from the options dictionary
+        key_list = list(self.unset_options.keys())
+        for key in key_list:
+            if key in [
+                "strategy",
+                "maxiter",
+                "popsize",
+                "tol",
+                "mutation",
+                "recombination",
+                "seed",
+                "disp",
+                "polish",
+                "init",
+                "atol",
+                "updating",
+                "workers",
+                "constraints",
+                "tol",
+                "integrality",
+                "vectorized",
+            ]:
+                self._options.update({key: self.unset_options.pop(key)})
+
+    def _run_optimiser(self):
         """
         Executes the optimization process using SciPy's differential_evolution function.
-
-        Parameters
-        ----------
-        cost_function : callable
-            The objective function to minimize.
-        x0 : array_like, optional
-            Ignored parameter, provided for API consistency.
 
         Returns
         -------
         tuple
-            A tuple (x, final_cost) containing the optimized parameters and the value of ``cost_function`` at the optimum.
+            A tuple (x, final_cost) containing the optimized parameters and the value of
+            the cost function at the optimum.
         """
-
-        self.log = []
-
-        if x0 is not None:
+        if self.x0 is not None:
             print(
                 "Ignoring x0. Initial conditions are not used for differential_evolution."
             )
+            self.x0 = None
 
         # Add callback storing history of parameter values
         def callback(x, convergence):
             self.log.append([x])
 
+        def cost_wrapper(x):
+            return self.cost(x) if self.minimising else -self.cost(x)
+
         result = differential_evolution(
-            cost_function,
-            self.bounds,
-            strategy=self.strategy,
-            maxiter=self._max_iterations,
-            popsize=self._population_size,
-            tol=self.tol,
+            cost_wrapper,
+            self._scipy_bounds,
             callback=callback,
+            **self._options,
         )
 
         return result
-
-    def set_population_size(self, population_size=None):
-        """
-        Sets a population size to use in this optimisation.
-        Credit: PINTS
-
-        """
-        # Check population size or set using heuristic
-        if population_size is not None:
-            population_size = int(population_size)
-            if population_size < 1:
-                raise ValueError("Population size must be at least 1.")
-            self._population_size = population_size
-
-    def needs_sensitivities(self):
-        """
-        Determines if the optimization algorithm requires gradient information.
-
-        Returns
-        -------
-        bool
-            False, indicating that gradient information is not required for differential evolution.
-        """
-        return False
 
     def name(self):
         """
