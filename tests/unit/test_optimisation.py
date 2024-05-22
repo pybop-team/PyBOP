@@ -378,7 +378,7 @@ class TestOptimisation:
         def optimiser_error():
             return "Optimiser error message"
 
-        optim.method.stop = optimiser_error
+        optim.optimiser.stop = optimiser_error
         optim.run()
         assert optim._iterations == 1
 

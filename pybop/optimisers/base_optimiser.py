@@ -53,7 +53,7 @@ class BasePintsOptimiser(BaseOptimiser):
 
         # Create an instance of the PINTS optimiser class
         if issubclass(self.pints_optimiser, pints.Optimiser):
-            self.method = self.pints_optimiser(
+            self.optimiser = self.pints_optimiser(
                 self.x0, sigma0=self.sigma0, boundaries=self._boundaries
             )
         else:
@@ -62,7 +62,7 @@ class BasePintsOptimiser(BaseOptimiser):
             )
 
         # Check if sensitivities are required
-        self._needs_sensitivities = self.method.needs_sensitivities()
+        self._needs_sensitivities = self.optimiser.needs_sensitivities()
 
         # Apply default maxiter
         self.set_max_iterations()
@@ -154,7 +154,7 @@ class BasePintsOptimiser(BaseOptimiser):
         str
             The name given by PINTS.
         """
-        return self.method.name()
+        return self.optimiser.name()
 
     def _run(self):
         """
@@ -205,8 +205,8 @@ class BasePintsOptimiser(BaseOptimiser):
 
             # For population based optimisers, don't use more workers than
             # particles!
-            if isinstance(self.method, pints.PopulationBasedOptimiser):
-                n_workers = min(n_workers, self.method.population_size())
+            if isinstance(self.optimiser, pints.PopulationBasedOptimiser):
+                n_workers = min(n_workers, self.optimiser.population_size())
             evaluator = pints.ParallelEvaluator(f, n_workers=n_workers)
         else:
             evaluator = pints.SequentialEvaluator(f)
@@ -225,17 +225,17 @@ class BasePintsOptimiser(BaseOptimiser):
         try:
             while running:
                 # Ask optimiser for new points
-                xs = self.method.ask()
+                xs = self.optimiser.ask()
 
                 # Evaluate points
                 fs = evaluator.evaluate(xs)
 
                 # Tell optimiser about function values
-                self.method.tell(fs)
+                self.optimiser.tell(fs)
 
                 # Update the scores
-                fb = self.method.f_best()
-                fg = self.method.f_guessed()
+                fb = self.optimiser.f_best()
+                fg = self.optimiser.f_guessed()
                 fg_user = (fb, fg) if self.minimising else (-fb, -fg)
 
                 # Check for significant changes
@@ -299,7 +299,7 @@ class BasePintsOptimiser(BaseOptimiser):
                     )
 
                 # Error in optimiser
-                error = self.method.stop()
+                error = self.optimiser.stop()
                 if error:
                     running = False
                     halt_message = str(error)
@@ -315,7 +315,7 @@ class BasePintsOptimiser(BaseOptimiser):
             print("Current position:")
 
             # Show current parameters
-            x_user = self.method.x_guessed()
+            x_user = self.optimiser.x_guessed()
             if self._transformation is not None:
                 x_user = self._transformation.to_model(x_user)
             for p in x_user:
@@ -332,11 +332,11 @@ class BasePintsOptimiser(BaseOptimiser):
 
         # Get best parameters
         if self._use_f_guessed:
-            x = self.method.x_guessed()
-            f = self.method.f_guessed()
+            x = self.optimiser.x_guessed()
+            f = self.optimiser.f_guessed()
         else:
-            x = self.method.x_best()
-            f = self.method.f_best()
+            x = self.optimiser.x_best()
+            f = self.optimiser.f_best()
 
         # Inverse transform search parameters
         if self._transformation is not None:
