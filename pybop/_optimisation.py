@@ -267,9 +267,12 @@ class Optimisation:
                 fg = self.optimiser.f_guessed()
                 fg_user = (fb, fg) if self._minimising else (-fb, -fg)
 
-                # Check for significant changes
+                # Check for significant changes using stricter of absolute and relative tolerance
                 f_new = fg if self._use_f_guessed else fb
-                if np.abs(f_new - f_sig) >= self._unchanged_threshold:
+                f_scale = np.maximum(np.abs(f_sig), self._unchanged_threshold)
+                if np.abs(f_new - f_sig) >= self._unchanged_threshold * np.minimum(
+                    1, f_scale
+                ):
                     unchanged_iterations = 0
                     f_sig = f_new
                 else:
