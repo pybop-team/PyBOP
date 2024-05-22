@@ -13,7 +13,7 @@ class TestTheveninParameterisation:
     def setup(self):
         # Set random seed for reproducibility
         np.random.seed(0)
-        self.ground_truth = np.array([0.05, 0.05]) + np.random.normal(
+        self.ground_truth = np.array([0.03, 0.03]) + np.random.normal(
             loc=0.0, scale=0.01, size=2
         )
 
