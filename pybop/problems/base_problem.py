@@ -80,17 +80,46 @@ class BaseProblem:
         if not all_have_sigma:
             self.sigma0 = None
 
-        # Sample from prior for x0
-        if x0 is None:
-            self.x0 = np.zeros(self.n_parameters)
-            for i, param in enumerate(self.parameters):
-                self.x0[i] = param.rvs(1)
-        elif len(x0) != self.n_parameters:
+        # Set initial conditions
+        if self.x0 is None:
+            self.x0 = self.sample_initial_conditions()
+        elif len(self.x0) != self.n_parameters:
             raise ValueError("x0 dimensions do not match number of parameters")
 
         # Add the initial values to the parameter definitions
         for i, param in enumerate(self.parameters):
             param.update(initial_value=self.x0[i])
+
+    def sample_initial_conditions(
+        self, num_samples: int = 1, seed: int = None
+    ) -> np.ndarray:
+        """
+        Sample initial conditions for the problem.
+
+        Parameters
+        ----------
+        num_samples : int, optional
+            The number of initial condition samples to generate (default is 1).
+        seed : int, optional
+            The seed value for the random number generator (default is None).
+
+        Returns
+        -------
+        np.ndarray
+            An array of initial conditions for the problem. Each row corresponds to a sample.
+        """
+        # Create a local random generator
+        rng = np.random.default_rng(seed)
+
+        # Initialize
+        x0 = np.zeros((num_samples, self.n_parameters))
+
+        # Vectorized sampling from the parameters
+        for j, param in enumerate(self.parameters):
+            x0[:, j] = param.rvs(num_samples, random_state=rng)
+
+        # Return a flattened array if only one sample, otherwise return the 2D array
+        return x0[0] if num_samples == 1 else x0
 
     def evaluate(self, x):
         """
