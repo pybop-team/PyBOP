@@ -102,6 +102,6 @@ class TestModelAndExperimentChanges:
             model, parameters, dataset, signal=signal, init_soc=init_soc
         )
         cost = pybop.RootMeanSquaredError(problem)
-        optim = pybop.Optimisation(cost, optimiser=pybop.PSO)
+        optim = pybop.PSO(cost)
         x, final_cost = optim.run()
         return final_cost

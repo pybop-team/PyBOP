@@ -90,8 +90,8 @@ class GravimetricEnergyDensity(DesignCost):
     """
     Represents the gravimetric energy density of a battery cell, calculated based
     on a normalised discharge from upper to lower voltage limits. The goal is to
-    maximise the energy density, which is achieved by minimizing the negative energy
-    density reported by this class.
+    maximise the energy density, which is achieved by setting minimising = False
+    in the optimiser settings.
 
     Inherits all parameters and attributes from ``DesignCost``.
     """
@@ -113,7 +113,7 @@ class GravimetricEnergyDensity(DesignCost):
         Returns
         -------
         float
-            The negative gravimetric energy density or infinity in case of infeasible parameters.
+            The gravimetric energy density or -infinity in case of infeasible parameters.
         """
         if not all(is_numeric(i) for i in x):
             raise ValueError("Input must be a numeric array.")
@@ -128,29 +128,29 @@ class GravimetricEnergyDensity(DesignCost):
                 solution = self.problem.evaluate(x)
 
                 voltage, current = solution["Voltage [V]"], solution["Current [A]"]
-                negative_energy_density = -np.trapz(voltage * current, dx=self.dt) / (
+                energy_density = np.trapz(voltage * current, dx=self.dt) / (
                     3600 * self.problem.model.cell_mass(self.parameter_set)
                 )
 
-                return negative_energy_density
+                return energy_density
 
         # Catch infeasible solutions and return infinity
         except UserWarning as e:
             print(f"Ignoring this sample due to: {e}")
-            return np.inf
+            return -np.inf
 
         # Catch any other exception and return infinity
         except Exception as e:
             print(f"An error occurred during the evaluation: {e}")
-            return np.inf
+            return -np.inf
 
 
 class VolumetricEnergyDensity(DesignCost):
     """
     Represents the volumetric energy density of a battery cell, calculated based
     on a normalised discharge from upper to lower voltage limits. The goal is to
-    maximise the energy density, which is achieved by minimizing the negative energy
-    density reported by this class.
+    maximise the energy density, which is achieved by setting minimising = False
+    in the optimiser settings.
 
     Inherits all parameters and attributes from ``DesignCost``.
     """
@@ -172,7 +172,7 @@ class VolumetricEnergyDensity(DesignCost):
         Returns
         -------
         float
-            The negative volumetric energy density or infinity in case of infeasible parameters.
+            The volumetric energy density or -infinity in case of infeasible parameters.
         """
         if not all(is_numeric(i) for i in x):
             raise ValueError("Input must be a numeric array.")
@@ -186,18 +186,18 @@ class VolumetricEnergyDensity(DesignCost):
                 solution = self.problem.evaluate(x)
 
                 voltage, current = solution["Voltage [V]"], solution["Current [A]"]
-                negative_energy_density = -np.trapz(voltage * current, dx=self.dt) / (
+                energy_density = np.trapz(voltage * current, dx=self.dt) / (
                     3600 * self.problem.model.cell_volume(self.parameter_set)
                 )
 
-                return negative_energy_density
+                return energy_density
 
         # Catch infeasible solutions and return infinity
         except UserWarning as e:
             print(f"Ignoring this sample due to: {e}")
-            return np.inf
+            return -np.inf
 
         # Catch any other exception and return infinity
         except Exception as e:
             print(f"An error occurred during the evaluation: {e}")
-            return np.inf
+            return -np.inf

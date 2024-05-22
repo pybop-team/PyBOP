@@ -44,7 +44,7 @@ class StandaloneCost(pybop.BaseCost):
         self.x0 = self.parameters.initial_value()
         self.bounds = self.parameters.update_bounds()
 
-    def __call__(self, x, grad=None):
+    def _evaluate(self, x, grad=None):
         """
         Calculate the cost for a given parameter value.
 

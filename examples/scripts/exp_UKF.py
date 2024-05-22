@@ -97,7 +97,7 @@ fig.show()
 
 # Generate problem, cost function, and optimisation class
 cost = pybop.ObserverCost(observer)
-optim = pybop.Optimisation(cost, optimiser=pybop.CMAES, verbose=True)
+optim = pybop.CMAES(cost, verbose=True)
 
 # Run optimisation
 x, final_cost = optim.run()
