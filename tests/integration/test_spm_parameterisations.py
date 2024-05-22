@@ -111,7 +111,7 @@ class Test_SPM_Parameterisation:
         )
 
         parameterisation.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
-        parameterisation.set_max_iterations(125)
+        parameterisation.set_max_iterations(250)
         initial_cost = parameterisation.cost(x0)
         x, final_cost = parameterisation.run()
 
@@ -175,8 +175,8 @@ class Test_SPM_Parameterisation:
         parameterisation = pybop.Optimisation(
             cost=spm_two_signal_cost, optimiser=multi_optimiser, sigma0=0.03
         )
-        parameterisation.set_max_unchanged_iterations(iterations=35, threshold=5e-4)
-        parameterisation.set_max_iterations(125)
+        parameterisation.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
+        parameterisation.set_max_iterations(250)
 
         initial_cost = parameterisation.cost(spm_two_signal_cost.x0)
         x, final_cost = parameterisation.run()

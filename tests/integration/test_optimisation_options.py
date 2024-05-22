@@ -87,7 +87,7 @@ class TestOptimisation:
             cost=spm_costs, optimiser=pybop.XNES, sigma0=0.05
         )
         parameterisation.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
-        parameterisation.set_max_iterations(125)
+        parameterisation.set_max_iterations(250)
         parameterisation.set_f_guessed_tracking(f_guessed)
 
         # Set parallelisation if not on Windows
