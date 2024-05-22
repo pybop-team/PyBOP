@@ -78,8 +78,8 @@ class TestTheveninParameterisation:
                 cost=cost, optimiser=optimiser, sigma0=0.03
             )
 
-        parameterisation.set_max_unchanged_iterations(iterations=55, threshold=1e-5)
-        parameterisation.set_max_iterations(250)
+        parameterisation.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
+        parameterisation.set_max_iterations(375)
         initial_cost = parameterisation.cost(x0)
         x, final_cost = parameterisation.run()
 
