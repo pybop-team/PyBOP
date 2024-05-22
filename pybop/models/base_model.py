@@ -171,7 +171,10 @@ class BaseModel:
             self._parameter_set[key] = "[input]"
 
         if self.dataset is not None and (not self.matched_parameters or not rebuild):
-            if "Current function [A]" not in self.parameters.keys():
+            if (
+                self.parameters is None
+                or "Current function [A]" not in self.parameters.keys()
+            ):
                 self._parameter_set["Current function [A]"] = pybamm.Interpolant(
                     self.dataset["Time [s]"],
                     self.dataset["Current function [A]"],
@@ -217,8 +220,8 @@ class BaseModel:
             The initial state of charge to be used in simulations.
         """
         self.dataset = dataset
-        self.parameters = parameters
         if parameters is not None:
+            self.parameters = parameters
             self.classify_and_update_parameters(parameters)
 
         if init_soc is not None:
