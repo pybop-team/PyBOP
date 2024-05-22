@@ -233,10 +233,3 @@ class CMAES(BasePintsOptimiser):
                 + "Please choose another optimiser."
             )
         super().__init__(cost, pints.CMAES, **optimiser_kwargs)
-
-
-class DefaultOptimiser(XNES):
-    """
-    Provides a default option for new users, selected to be the Exponential Natural
-    Evolution Strategy (XNES) optimiser from PINTS.
-    """

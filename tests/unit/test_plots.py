@@ -108,7 +108,7 @@ class TestPlots:
     @pytest.fixture
     def optim(self, cost):
         # Define and run an example optimisation
-        optim = pybop.DefaultOptimiser(cost)
+        optim = pybop.Optimisation(cost)
         optim.run()
         return optim
 

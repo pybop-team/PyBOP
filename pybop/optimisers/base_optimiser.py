@@ -1,10 +1,10 @@
 import numpy as np
 import pints
 
-from pybop import Optimisation
+from pybop import BaseOptimiser
 
 
-class BasePintsOptimiser(Optimisation):
+class BasePintsOptimiser(BaseOptimiser):
     """
     A base class for defining optimisation methods from the PINTS library.
 

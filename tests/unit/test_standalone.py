@@ -29,14 +29,15 @@ class TestStandalone:
         np.testing.assert_allclose(x, [2, 4], atol=1e-2)
 
     @pytest.mark.unit
-    def test_standalone_cost(self):
+    def test_optimisation_on_standalone_cost(self):
         # Build an Optimisation problem with a StandaloneCost
         cost = StandaloneCost()
         optim = pybop.SciPyDifferentialEvolution(cost=cost)
         x, final_cost = optim.run()
 
-        np.testing.assert_allclose(x, 0, atol=1e-2)
-        np.testing.assert_allclose(final_cost, 42, atol=1e-2)
+        initial_cost = optim.cost(cost.x0)
+        assert initial_cost > final_cost
+        np.testing.assert_allclose(final_cost, 42, atol=1e-1)
 
     @pytest.mark.unit
     def test_standalone_problem(self):

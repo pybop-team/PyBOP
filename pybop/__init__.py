@@ -95,7 +95,7 @@ from ._experiment import Experiment
 #
 # Optimiser class
 #
-from ._optimisation import Optimisation
+from .optimisers._optimisation import BaseOptimiser
 from .optimisers.base_optimiser import BasePintsOptimiser
 from .optimisers.scipy_optimisers import (
     BaseSciPyOptimiser,
@@ -103,7 +103,6 @@ from .optimisers.scipy_optimisers import (
     SciPyDifferentialEvolution
 )
 from .optimisers.pints_optimisers import (
-    DefaultOptimiser,
     GradientDescent,
     Adam,
     CMAES,
@@ -113,6 +112,7 @@ from .optimisers.pints_optimisers import (
     SNES,
     XNES,
 )
+from .optimisers.optimisation import Optimisation
 
 #
 # Parameter classes

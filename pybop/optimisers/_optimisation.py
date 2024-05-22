@@ -5,7 +5,7 @@ import numpy as np
 from pybop import BaseCost, BaseLikelihood, DesignCost
 
 
-class Optimisation:
+class BaseOptimiser:
     """
     A base class for defining optimisation methods.
 

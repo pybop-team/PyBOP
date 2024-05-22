@@ -45,7 +45,7 @@ def plot2d(
     """
 
     # Assign input as a cost or optimisation object
-    if isinstance(cost_or_optim, pybop.Optimisation):
+    if isinstance(cost_or_optim, (pybop.BaseOptimiser, pybop.Optimisation)):
         optim = cost_or_optim
         plot_optim = True
         cost = optim.cost

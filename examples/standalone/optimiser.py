@@ -1,10 +1,10 @@
 import numpy as np
 from scipy.optimize import minimize
 
-from pybop import Optimisation
+from pybop import BaseOptimiser
 
 
-class StandaloneOptimiser(Optimisation):
+class StandaloneOptimiser(BaseOptimiser):
     """
     Defines an example standalone optimiser without a Cost.
     """

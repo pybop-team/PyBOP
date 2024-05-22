@@ -1,10 +1,10 @@
 import numpy as np
 from scipy.optimize import differential_evolution, minimize
 
-from pybop import Optimisation
+from pybop import BaseOptimiser
 
 
-class BaseSciPyOptimiser(Optimisation):
+class BaseSciPyOptimiser(BaseOptimiser):
     """
     A base class for defining optimisation methods from the SciPy library.
 
