@@ -13,7 +13,7 @@ class TestTheveninParameterisation:
     def setup(self):
         # Set random seed for reproducibility
         np.random.seed(0)
-        self.ground_truth = np.array([0.03, 0.03]) + np.random.normal(
+        self.ground_truth = np.array([0.05, 0.05]) + np.random.normal(
             loc=0.0, scale=0.01, size=2
         )
 
@@ -23,6 +23,7 @@ class TestTheveninParameterisation:
             json_path="examples/scripts/parameters/initial_ecm_parameters.json"
         )
         parameter_set.import_parameters()
+        parameter_set.params.update({"C1 [F]": 1000})
         return pybop.empirical.Thevenin(parameter_set=parameter_set)
 
     @pytest.fixture
@@ -31,13 +32,13 @@ class TestTheveninParameterisation:
             [
                 pybop.Parameter(
                     "R0 [Ohm]",
-                    prior=pybop.Gaussian(0.03, 0.01),
-                    bounds=[0, 0.06],
+                    prior=pybop.Gaussian(0.05, 0.01),
+                    bounds=[0, 0.1],
                 ),
                 pybop.Parameter(
                     "R1 [Ohm]",
-                    prior=pybop.Gaussian(0.03, 0.01),
-                    bounds=[0, 0.06],
+                    prior=pybop.Gaussian(0.05, 0.01),
+                    bounds=[0, 0.1],
                 ),
             ]
         )
@@ -79,7 +80,7 @@ class TestTheveninParameterisation:
             )
 
         parameterisation.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
-        parameterisation.set_max_iterations(375)
+        parameterisation.set_max_iterations(250)
         initial_cost = parameterisation.cost(x0)
         x, final_cost = parameterisation.run()
 
