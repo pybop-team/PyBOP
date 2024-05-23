@@ -259,9 +259,10 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             ):
                 raise ValueError("Bounds must be specified for differential_evolution.")
 
-        # Apply default maxiter
+        # Apply default maxiter and tolerance
         self._options = dict()
         self._options["maxiter"] = self.default_max_iterations
+        self._options["tol"] = 1e-5
 
         # Apply additional options and remove them from the options dictionary
         key_list = list(self.unset_options.keys())
