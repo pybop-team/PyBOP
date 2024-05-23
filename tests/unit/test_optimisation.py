@@ -124,6 +124,7 @@ class TestOptimisation:
     @pytest.mark.unit
     def test_optimiser_kwargs(self, cost, optimiser):
         optim = optimiser(cost=cost, maxiter=1)
+        cost_bounds = cost.parameters.bounds
 
         # Check maximum iterations
         optim.run()
@@ -131,10 +132,10 @@ class TestOptimisation:
 
         if optimiser in [pybop.GradientDescent, pybop.Adam, pybop.NelderMead]:
             # Ignored bounds
-            optim = optimiser(cost=cost, bounds=cost.bounds)
+            optim = optimiser(cost=cost, bounds=cost_bounds)
             assert optim.bounds is None
         elif optimiser in [pybop.PSO]:
-            assert optim.bounds == cost.bounds
+            assert optim.bounds == cost_bounds
             # Cannot accept infinite bounds
             bounds = {"upper": [np.inf], "lower": [0.57]}
             with pytest.raises(
@@ -144,7 +145,7 @@ class TestOptimisation:
                 optim = optimiser(cost=cost, bounds=bounds)
         else:
             # Check and update bounds
-            assert optim.bounds == cost.bounds
+            assert optim.bounds == cost_bounds
             bounds = {"upper": [0.63], "lower": [0.57]}
             optim = optimiser(cost=cost, bounds=bounds)
             assert optim.bounds == bounds

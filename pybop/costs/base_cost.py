@@ -1,5 +1,3 @@
-import numpy as np
-
 from pybop import BaseProblem
 
 
@@ -21,35 +19,20 @@ class BaseCost:
         An array containing the target data to fit.
     x0 : array-like
         The initial guess for the model parameters.
-    bounds : tuple
-        The bounds for the model parameters.
-    sigma0 : scalar or array
-        Initial standard deviation around ``x0``. Either a scalar value (one
-        standard deviation for all coordinates) or an array with one entry
-        per dimension. Not all methods will use this information.
     n_outputs : int
         The number of outputs in the model.
     """
 
-    def __init__(self, problem=None, sigma=None):
+    def __init__(self, problem=None):
         self.parameters = None
         self.problem = problem
         self.x0 = None
-        self.bounds = None
-        self.sigma0 = sigma
         if isinstance(self.problem, BaseProblem):
             self._target = self.problem._target
             self.parameters = self.problem.parameters
             self.x0 = self.problem.x0
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
-
-            # Set bounds (for all or no parameters)
-            self.bounds = self.parameters.update_bounds()
-
-            # Set initial standard deviation (for all or no parameters)
-            sigma0 = sigma or self.parameters.get_sigma0()
-            self.sigma0 = sigma0 or np.zeros(len(problem.parameters))
 
     @property
     def n_parameters(self):

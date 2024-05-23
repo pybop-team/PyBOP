@@ -8,31 +8,9 @@ class BaseLikelihood(BaseCost):
     Base class for likelihoods
     """
 
-    def __init__(self, problem, sigma=None):
-        super(BaseLikelihood, self).__init__(problem, sigma)
+    def __init__(self, problem):
+        super(BaseLikelihood, self).__init__(problem)
         self.n_time_data = problem.n_time_data
-
-    def set_sigma(self, sigma):
-        """
-        Setter for sigma parameter
-        """
-
-        if not isinstance(sigma, np.ndarray):
-            sigma = np.array(sigma)
-
-        if not np.issubdtype(sigma.dtype, np.number):
-            raise ValueError("Sigma must contain only numeric values")
-
-        if np.any(sigma <= 0):
-            raise ValueError("Sigma must not be negative")
-        else:
-            self.sigma0 = sigma
-
-    def get_sigma(self):
-        """
-        Getter for sigma parameter
-        """
-        return self.sigma0
 
 
 class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
@@ -41,18 +19,44 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
     which assumes that the data follows a Gaussian distribution and computes
     the log-likelihood of observed data under this assumption.
 
-    Attributes:
-        _logpi (float): Precomputed offset value for the log-likelihood function.
+    Parameters
+    ----------
+    sigma : scalar or array
+        Initial standard deviation around ``x0``. Either a scalar value (one
+        standard deviation for all coordinates) or an array with one entry
+        per dimension. Not all methods will use this information.
     """
 
     def __init__(self, problem, sigma):
-        super(GaussianLogLikelihoodKnownSigma, self).__init__(problem, sigma)
+        super(GaussianLogLikelihoodKnownSigma, self).__init__(problem)
+        self.sigma = None
         if sigma is not None:
             self.set_sigma(sigma)
-        self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi / self.sigma0)
-        self._multip = -1 / (2.0 * self.sigma0**2)
-        self.sigma2 = self.sigma0**-2
+        self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi / self.sigma)
+        self._multip = -1 / (2.0 * self.sigma**2)
+        self.sigma2 = self.sigma**-2
         self._dl = np.ones(self.n_parameters)
+
+    def set_sigma(self, sigma):
+        """
+        Setter for sigma parameter
+        """
+        if not isinstance(sigma, np.ndarray):
+            sigma = np.array(sigma)
+
+        if not np.issubdtype(sigma.dtype, np.number):
+            raise ValueError("Sigma must contain only numeric values")
+
+        if np.any(sigma <= 0):
+            raise ValueError("Sigma must be positive")
+        else:
+            self.sigma = sigma
+
+    def get_sigma(self):
+        """
+        Getter for sigma parameter
+        """
+        return self.sigma
 
     def _evaluate(self, x, grad=None):
         """
@@ -105,8 +109,10 @@ class GaussianLogLikelihood(BaseLikelihood):
     data follows a Gaussian distribution and computes the log-likelihood of
     observed data under this assumption.
 
-    Attributes:
-        _logpi (float): Precomputed offset value for the log-likelihood function.
+    Attributes
+    ----------
+    _logpi : float
+        Precomputed offset value for the log-likelihood function.
     """
 
     def __init__(self, problem):

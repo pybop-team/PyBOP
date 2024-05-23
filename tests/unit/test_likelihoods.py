@@ -74,16 +74,13 @@ class TestLikelihoods:
     @pytest.mark.unit
     def test_base_likelihood_init(self, problem_name, n_outputs, request):
         problem = request.getfixturevalue(problem_name)
-        likelihood = pybop.BaseLikelihood(problem, sigma=np.array([0.2]))
+        likelihood = pybop.BaseLikelihood(problem)
         assert likelihood.problem == problem
         assert likelihood.n_outputs == n_outputs
         assert likelihood.n_time_data == problem.n_time_data
-        assert np.array_equal(likelihood.get_sigma(), np.array([0.2]))
         assert likelihood.x0 == problem.x0
         assert likelihood.n_parameters == 1
         assert np.array_equal(likelihood._target, problem._target)
-        with pytest.raises(ValueError):
-            likelihood.set_sigma("Test")
 
     @pytest.mark.unit
     def test_base_likelihood_call_raises_not_implemented_error(
@@ -94,16 +91,14 @@ class TestLikelihoods:
             likelihood(np.array([0.5, 0.5]))
 
     @pytest.mark.unit
-    def test_base_likelihood_set_get_sigma(self, one_signal_problem):
-        likelihood = pybop.BaseLikelihood(one_signal_problem)
+    def test_set_get_sigma(self, one_signal_problem):
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, 0.1)
         likelihood.set_sigma(np.array([0.3]))
         assert np.array_equal(likelihood.get_sigma(), np.array([0.3]))
 
     @pytest.mark.unit
-    def test_base_likelihood_set_sigma_raises_value_error_for_negative_sigma(
-        self, one_signal_problem
-    ):
-        likelihood = pybop.BaseLikelihood(one_signal_problem)
+    def test_set_sigma_raises_value_error_for_negative_sigma(self, one_signal_problem):
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, 0.1)
         with pytest.raises(ValueError):
             likelihood.set_sigma(np.array([-0.2]))
 
