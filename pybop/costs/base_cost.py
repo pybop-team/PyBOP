@@ -38,7 +38,7 @@ class BaseCost:
         self.x0 = None
         self.bounds = None
         self.sigma0 = sigma
-        self._fixed_problem = True
+        self._fixed_problem = False
         if isinstance(self.problem, BaseProblem):
             self._target = problem._target
             self.parameters = problem.parameters
@@ -48,6 +48,7 @@ class BaseCost:
             self.signal = problem.signal
             self._n_parameters = problem.n_parameters
             self.sigma0 = sigma or problem.sigma0 or np.zeros(self._n_parameters)
+            self._fixed_problem = True
 
     @property
     def n_parameters(self):
