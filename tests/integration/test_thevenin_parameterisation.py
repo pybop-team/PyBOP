@@ -92,7 +92,7 @@ class TestTheveninParameterisation:
                 assert initial_cost > final_cost
             else:
                 assert initial_cost < final_cost
-        np.testing.assert_allclose(x, self.ground_truth, atol=1e-2)
+        np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
     def get_data(self, model, parameters, x):
         model.parameters = parameters

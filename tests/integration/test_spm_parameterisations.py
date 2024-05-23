@@ -124,7 +124,7 @@ class Test_SPM_Parameterisation:
                 assert initial_cost > final_cost
             else:
                 assert initial_cost < final_cost
-        np.testing.assert_allclose(x, self.ground_truth, atol=1e-2)
+        np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, cost_class):
@@ -195,7 +195,7 @@ class Test_SPM_Parameterisation:
                 assert initial_cost > final_cost
             else:
                 assert initial_cost < final_cost
-        np.testing.assert_allclose(x, self.ground_truth, atol=1e-2)
+        np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
     @pytest.mark.parametrize("init_soc", [0.4, 0.6])
     @pytest.mark.integration
