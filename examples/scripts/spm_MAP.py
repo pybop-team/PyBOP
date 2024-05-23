@@ -45,10 +45,12 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.MAP(problem, pybop.GaussianLogLikelihoodKnownSigma)
-optim = pybop.Optimisation(cost, optimiser=pybop.CMAES)
-optim.set_max_unchanged_iterations(20)
-optim.set_min_iterations(20)
-optim.set_max_iterations(100)
+optim = pybop.CMAES(
+    cost,
+    max_unchanged_iterations=20,
+    min_iterations=20,
+    max_iterations=100,
+)
 
 # Run the optimisation
 x, final_cost = optim.run()

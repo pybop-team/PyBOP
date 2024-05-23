@@ -211,14 +211,14 @@ class TestCosts:
 
         # Test type of returned value
         assert np.isscalar(cost([0.5]))
-        assert cost([0.4]) <= 0  # Should be a viable design
-        assert cost([0.8]) == np.inf  # Should exceed active material + porosity < 1
-        assert cost([1.4]) == np.inf  # Definitely not viable
-        assert cost([-0.1]) == np.inf  # Should not be a viable design
+        assert cost([0.4]) >= 0  # Should be a viable design
+        assert cost([0.8]) == -np.inf  # Should exceed active material + porosity < 1
+        assert cost([1.4]) == -np.inf  # Definitely not viable
+        assert cost([-0.1]) == -np.inf  # Should not be a viable design
 
         # Test infeasible locations
         cost.problem._model.allow_infeasible_solutions = False
-        assert cost([1.1]) == np.inf
+        assert cost([1.1]) == -np.inf
 
         # Test exception for non-numeric inputs
         with pytest.raises(ValueError):

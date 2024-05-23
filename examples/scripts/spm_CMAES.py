@@ -42,8 +42,7 @@ signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.Optimisation(cost, optimiser=pybop.CMAES)
-optim.set_max_iterations(100)
+optim = pybop.CMAES(cost, max_iterations=100)
 
 # Run the optimisation
 x, final_cost = optim.run()

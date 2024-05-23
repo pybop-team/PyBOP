@@ -46,8 +46,7 @@ script_path = path.dirname(__file__)
 from ._utils import is_numeric
 
 #
-# Cost class
-# Problem class
+# Problem classes
 #
 from .problems.base_problem import BaseProblem
 from .problems.fitting_problem import FittingProblem
@@ -94,15 +93,15 @@ from .models.base_model import Inputs
 from ._experiment import Experiment
 
 #
-# Main optimisation class
-#
-from ._optimisation import Optimisation
-
-#
 # Optimiser class
 #
 from .optimisers.base_optimiser import BaseOptimiser
-from .optimisers.scipy_optimisers import SciPyMinimize, SciPyDifferentialEvolution
+from .optimisers.base_pints_optimiser import BasePintsOptimiser
+from .optimisers.scipy_optimisers import (
+    BaseSciPyOptimiser,
+    SciPyMinimize,
+    SciPyDifferentialEvolution
+)
 from .optimisers.pints_optimisers import (
     GradientDescent,
     Adam,
@@ -114,13 +113,14 @@ from .optimisers.pints_optimisers import (
     XNES,
 )
 from .optimisers._cuckoo import CuckooSearch
+from .optimisers.optimisation import Optimisation
 
 #
 # Parameter classes
 #
 from .parameters.parameter import Parameter
 from .parameters.parameter_set import ParameterSet
-from .parameters.priors import Gaussian, Uniform, Exponential
+from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential
 
 
 #

@@ -30,23 +30,25 @@ def plot_convergence(optim, show=True, **layout_kwargs):
     cost = optim.cost
     log = optim.log
 
-    # Compute the minimum cost for each iteration
-    min_cost_per_iteration = [
+    # Find the best cost from each iteration
+    best_cost_per_iteration = [
         min((cost(solution) for solution in log_entry), default=np.inf)
+        if optim.minimising
+        else max((cost(solution) for solution in log_entry), default=-np.inf)
         for log_entry in log
     ]
 
     # Generate a list of iteration numbers
-    iteration_numbers = list(range(1, len(min_cost_per_iteration) + 1))
+    iteration_numbers = list(range(1, len(best_cost_per_iteration) + 1))
 
     # Create a plotting dictionary
     plot_dict = pybop.StandardPlot(
         x=iteration_numbers,
-        y=min_cost_per_iteration,
+        y=best_cost_per_iteration,
         layout_options=dict(
             xaxis_title="Iteration", yaxis_title="Cost", title="Convergence"
         ),
-        trace_names=optim.optimiser.name(),
+        trace_names=optim.name(),
     )
 
     # Generate and display the figure
