@@ -103,7 +103,12 @@ from .costs._likelihoods import (
 # Optimiser class
 #
 from .optimisers.base_optimiser import BaseOptimiser
-from .optimisers.scipy_optimisers import SciPyMinimize, SciPyDifferentialEvolution
+from .optimisers.base_pints_optimiser import BasePintsOptimiser
+from .optimisers.scipy_optimisers import (
+    BaseSciPyOptimiser,
+    SciPyMinimize,
+    SciPyDifferentialEvolution
+)
 from .optimisers.pints_optimisers import (
     GradientDescent,
     Adam,
@@ -114,11 +119,15 @@ from .optimisers.pints_optimisers import (
     SNES,
     XNES,
 )
+from .optimisers.optimisation import Optimisation
 
 #
 # Main optimisation class
 #
-from ._optimisation import Optimisation
+from .parameters.parameter import Parameter
+from .parameters.parameter_set import ParameterSet
+from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential
+
 
 #
 # Observer classes

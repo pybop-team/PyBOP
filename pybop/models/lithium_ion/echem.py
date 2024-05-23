@@ -1,6 +1,8 @@
-import pybamm
+from pybamm import lithium_ion as pybamm_lithium_ion
 
 from pybop.models.lithium_ion.base_echem import EChemBaseModel
+
+from .weppner_huggins import BaseWeppnerHuggins
 
 
 class SPM(EChemBaseModel):
@@ -41,7 +43,7 @@ class SPM(EChemBaseModel):
         solver=None,
         options=None,
     ):
-        self.pybamm_model = pybamm.lithium_ion.SPM(options=options)
+        self.pybamm_model = pybamm_lithium_ion.SPM(options=options)
         self._unprocessed_model = self.pybamm_model
 
         super().__init__(
@@ -96,7 +98,7 @@ class SPMe(EChemBaseModel):
         solver=None,
         options=None,
     ):
-        self.pybamm_model = pybamm.lithium_ion.SPMe(options=options)
+        self.pybamm_model = pybamm_lithium_ion.SPMe(options=options)
         self._unprocessed_model = self.pybamm_model
 
         super().__init__(
@@ -151,7 +153,7 @@ class DFN(EChemBaseModel):
         solver=None,
         options=None,
     ):
-        self.pybamm_model = pybamm.lithium_ion.DFN(options=options)
+        self.pybamm_model = pybamm_lithium_ion.DFN(options=options)
         self._unprocessed_model = self.pybamm_model
 
         super().__init__(
@@ -204,7 +206,7 @@ class MPM(EChemBaseModel):
         solver=None,
         options=None,
     ):
-        self.pybamm_model = pybamm.lithium_ion.MPM(options=options)
+        self.pybamm_model = pybamm_lithium_ion.MPM(options=options)
         self._unprocessed_model = self.pybamm_model
 
         super().__init__(
@@ -257,7 +259,54 @@ class MSMR(EChemBaseModel):
         solver=None,
         options=None,
     ):
-        self.pybamm_model = pybamm.lithium_ion.MSMR(options=options)
+        self.pybamm_model = pybamm_lithium_ion.MSMR(options=options)
+        self._unprocessed_model = self.pybamm_model
+
+        super().__init__(
+            model=self.pybamm_model,
+            name=name,
+            parameter_set=parameter_set,
+            geometry=geometry,
+            submesh_types=submesh_types,
+            var_pts=var_pts,
+            spatial_methods=spatial_methods,
+            solver=solver,
+        )
+
+
+class WeppnerHuggins(EChemBaseModel):
+    """
+    Represents the Weppner & Huggins model to fit diffusion coefficients to GITT data.
+
+    Parameters
+    ----------
+    name: str, optional
+        A name for the model instance, defaults to "Weppner & Huggins model".
+    parameter_set: pybamm.ParameterValues or dict, optional
+        A dictionary or a ParameterValues object containing the parameters for the model. If None, the default parameters are used.
+    geometry: dict, optional
+        A dictionary defining the model's geometry. If None, the default geometry is used.
+    submesh_types: dict, optional
+        A dictionary defining the types of submeshes to use. If None, the default submesh types are used.
+    var_pts: dict, optional
+        A dictionary specifying the number of points for each variable for discretization. If None, the default variable points are used.
+    spatial_methods: dict, optional
+        A dictionary specifying the spatial methods for discretization. If None, the default spatial methods are used.
+    solver: pybamm.Solver, optional
+        The solver to use for simulating the model. If None, the default solver is used.
+    """
+
+    def __init__(
+        self,
+        name="Weppner & Huggins model",
+        parameter_set=None,
+        geometry=None,
+        submesh_types=None,
+        var_pts=None,
+        spatial_methods=None,
+        solver=None,
+    ):
+        self.pybamm_model = BaseWeppnerHuggins()
         self._unprocessed_model = self.pybamm_model
 
         super().__init__(

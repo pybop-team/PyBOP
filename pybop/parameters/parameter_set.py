@@ -1,7 +1,7 @@
 import json
 import types
 
-import pybamm
+from pybamm import ParameterValues, parameter_sets
 
 
 class ParameterSet:
@@ -97,7 +97,7 @@ class ParameterSet:
 
         # Read JSON file
         if not self.params and self.json_path:
-            self.params = pybamm.ParameterValues.create_from_bpx(self.json_path)
+            self.params = ParameterValues.create_from_bpx(self.json_path)
         else:
             raise ValueError(
                 "Parameter set already constructed, or path to bpx file not provided."
@@ -182,9 +182,9 @@ class ParameterSet:
             A PyBaMM parameter set corresponding to the provided name.
         """
 
-        msg = f"Parameter set '{name}' is not a valid PyBaMM parameter set. Available parameter sets are: {list(pybamm.parameter_sets)}"
+        msg = f"Parameter set '{name}' is not a valid PyBaMM parameter set. Available parameter sets are: {list(parameter_sets)}"
 
-        if name not in list(pybamm.parameter_sets):
+        if name not in list(parameter_sets):
             raise ValueError(msg)
 
-        return pybamm.ParameterValues(name).copy()
+        return ParameterValues(name).copy()

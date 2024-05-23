@@ -1,6 +1,6 @@
 import warnings
 
-import pybamm
+from pybamm import lithium_ion as pybamm_lithium_ion
 
 from pybop.models.base_model import BaseModel
 
@@ -50,7 +50,7 @@ class EChemBaseModel(BaseModel):
         self._mesh = None
         self._disc = None
 
-        self._electrode_soh = pybamm.lithium_ion.electrode_soh
+        self._electrode_soh = pybamm_lithium_ion.electrode_soh
         self.geometric_parameters = self.set_geometric_parameters()
 
     def _check_params(
@@ -73,16 +73,24 @@ class EChemBaseModel(BaseModel):
         """
         parameter_set = parameter_set or self._parameter_set
 
-        electrode_params = [
-            (
-                "Negative electrode active material volume fraction",
-                "Negative electrode porosity",
-            ),
-            (
-                "Positive electrode active material volume fraction",
-                "Positive electrode porosity",
-            ),
-        ]
+        if self.pybamm_model.options["working electrode"] == "positive":
+            electrode_params = [
+                (
+                    "Positive electrode active material volume fraction",
+                    "Positive electrode porosity",
+                ),
+            ]
+        else:
+            electrode_params = [
+                (
+                    "Negative electrode active material volume fraction",
+                    "Negative electrode porosity",
+                ),
+                (
+                    "Positive electrode active material volume fraction",
+                    "Positive electrode porosity",
+                ),
+            ]
 
         related_parameters = {
             key: inputs.get(key) if inputs and key in inputs else parameter_set[key]
