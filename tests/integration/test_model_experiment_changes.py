@@ -11,19 +11,23 @@ class TestModelAndExperimentChanges:
 
     @pytest.fixture(
         params=[
-            pybop.Parameter(  # geometric parameter
-                "Negative particle radius [m]",
-                prior=pybop.Gaussian(6e-06, 0.1e-6),
-                bounds=[1e-6, 9e-6],
-                true_value=5.86e-6,
-                initial_value=5.86e-6,
+            pybop.Parameters(
+                    pybop.Parameter(  # geometric parameter
+                    "Negative particle radius [m]",
+                    prior=pybop.Gaussian(6e-06, 0.1e-6),
+                    bounds=[1e-6, 9e-6],
+                    true_value=5.86e-6,
+                    initial_value=5.86e-6,
+                ),
             ),
-            pybop.Parameter(  # non-geometric parameter
-                "Positive electrode diffusivity [m2.s-1]",
-                prior=pybop.Gaussian(3.43e-15, 1e-15),
-                bounds=[1e-15, 5e-15],
-                true_value=4e-15,
-                initial_value=4e-15,
+            pybop.Parameters(
+                pybop.Parameter(  # non-geometric parameter
+                    "Positive electrode diffusivity [m2.s-1]",
+                    prior=pybop.Gaussian(3.43e-15, 1e-15),
+                    bounds=[1e-15, 5e-15],
+                    true_value=4e-15,
+                    initial_value=4e-15,
+                ),
             ),
         ]
     )
