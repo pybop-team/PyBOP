@@ -12,7 +12,7 @@ class TestModelAndExperimentChanges:
     @pytest.fixture(
         params=[
             pybop.Parameters(
-                    pybop.Parameter(  # geometric parameter
+                pybop.Parameter(  # geometric parameter
                     "Negative particle radius [m]",
                     prior=pybop.Gaussian(6e-06, 0.1e-6),
                     bounds=[1e-6, 9e-6],
