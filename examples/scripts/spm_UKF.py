@@ -57,7 +57,7 @@ observer = pybop.UnscentedKalmanFilterObserver(
 
 # Generate problem, cost function, and optimisation class
 cost = pybop.ObserverCost(observer)
-optim = pybop.Optimisation(cost, optimiser=pybop.PSO, verbose=True)
+optim = pybop.PSO(cost, verbose=True)
 
 # Parameter identification using the current observer implementation is very slow
 # so let's restrict the number of iterations and reduce the number of plots

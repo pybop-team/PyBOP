@@ -38,7 +38,6 @@ class BaseCost:
         self.x0 = None
         self.bounds = None
         self.sigma0 = sigma
-        self._minimising = True
         self._fixed_problem = True
         if isinstance(self.problem, BaseProblem):
             self._target = problem._target
@@ -86,10 +85,7 @@ class BaseCost:
             if self._fixed_problem:
                 self._current_prediction = self.problem.evaluate(x)
 
-            if self._minimising:
-                return self._evaluate(x, grad)
-            else:  # minimise the negative cost
-                return -self._evaluate(x, grad)
+            return self._evaluate(x, grad)
 
         except NotImplementedError as e:
             raise e
@@ -149,11 +145,7 @@ class BaseCost:
                     self.problem.evaluateS1(x)
                 )
 
-            if self._minimising:
-                return self._evaluateS1(x)
-            else:  # minimise the negative cost
-                L, dl = self._evaluateS1(x)
-                return -L, -dl
+            return self._evaluateS1(x)
 
         except NotImplementedError as e:
             raise e

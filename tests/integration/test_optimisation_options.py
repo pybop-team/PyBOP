@@ -80,23 +80,30 @@ class TestOptimisation:
     )
     @pytest.mark.integration
     def test_optimisation_f_guessed(self, f_guessed, spm_costs):
+        x0 = spm_costs.x0
         # Test each optimiser
-        parameterisation = pybop.Optimisation(
-            cost=spm_costs, optimiser=pybop.XNES, sigma0=0.05
+        optim = pybop.XNES(
+            cost=spm_costs,
+            sigma0=0.05,
+            max_iterations=125,
+            max_unchanged_iterations=35,
+            threshold=1e-5,
+            use_f_guessed=f_guessed,
         )
-        parameterisation.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
-        parameterisation.set_max_iterations(125)
-        parameterisation.set_f_guessed_tracking(f_guessed)
 
         # Set parallelisation if not on Windows
         if sys.platform != "win32":
-            parameterisation.set_parallel(True)
+            optim.set_parallel(True)
 
-        initial_cost = parameterisation.cost(spm_costs.x0)
-        x, final_cost = parameterisation.run()
+        initial_cost = optim.cost(x0)
+        x, final_cost = optim.run()
 
         # Assertions
-        assert initial_cost > final_cost
+        if not np.allclose(x0, self.ground_truth, atol=1e-5):
+            if optim.minimising:
+                assert initial_cost > final_cost
+            else:
+                assert initial_cost < final_cost
         np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
 
     def getdata(self, model, x, init_soc):
