@@ -157,20 +157,18 @@ class TestModels:
     def test_rebuild_geometric_parameters(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
         parameters = pybop.Parameters(
-            [
-                pybop.Parameter(
-                    "Positive particle radius [m]",
-                    prior=pybop.Gaussian(4.8e-06, 0.05e-06),
-                    bounds=[4e-06, 6e-06],
-                    initial_value=4.8e-06,
-                ),
-                pybop.Parameter(
-                    "Negative electrode thickness [m]",
-                    prior=pybop.Gaussian(40e-06, 1e-06),
-                    bounds=[30e-06, 50e-06],
-                    initial_value=48e-06,
-                ),
-            ]
+            pybop.Parameter(
+                "Positive particle radius [m]",
+                prior=pybop.Gaussian(4.8e-06, 0.05e-06),
+                bounds=[4e-06, 6e-06],
+                initial_value=4.8e-06,
+            ),
+            pybop.Parameter(
+                "Negative electrode thickness [m]",
+                prior=pybop.Gaussian(40e-06, 1e-06),
+                bounds=[30e-06, 50e-06],
+                initial_value=48e-06,
+            ),
         )
 
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
@@ -271,16 +269,14 @@ class TestModels:
     def test_non_converged_solution(self):
         model = pybop.lithium_ion.DFN()
         parameters = pybop.Parameters(
-            [
-                pybop.Parameter(
-                    "Negative electrode active material volume fraction",
-                    prior=pybop.Gaussian(0.2, 0.01),
-                ),
-                pybop.Parameter(
-                    "Positive electrode active material volume fraction",
-                    prior=pybop.Gaussian(0.2, 0.01),
-                ),
-            ]
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.2, 0.01),
+            ),
+            pybop.Parameter(
+                "Positive electrode active material volume fraction",
+                prior=pybop.Gaussian(0.2, 0.01),
+            ),
         )
         dataset = pybop.Dataset(
             {

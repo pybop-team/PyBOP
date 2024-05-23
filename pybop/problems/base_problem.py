@@ -31,7 +31,7 @@ class BaseProblem:
         init_soc=None,
     ):
         if isinstance(parameters, list) and isinstance(parameters[0], pybop.Parameter):
-            parameters = pybop.Parameters(parameters)
+            parameters = pybop.Parameters(*parameters)
         elif isinstance(parameters, pybop.Parameter):
             parameters = pybop.Parameters(parameters)
         elif not isinstance(parameters, pybop.Parameters):

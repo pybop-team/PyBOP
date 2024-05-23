@@ -23,20 +23,18 @@ class TestObserver:
     @pytest.fixture
     def parameters(self):
         return pybop.Parameters(
-            [
-                pybop.Parameter(
-                    "k",
-                    prior=pybop.Gaussian(0.1, 0.05),
-                    bounds=[0, 1],
-                    initial_value=0.1,
-                ),
-                pybop.Parameter(
-                    "y0",
-                    prior=pybop.Gaussian(1, 0.05),
-                    bounds=[0, 3],
-                    initial_value=1.0,
-                ),
-            ]
+            pybop.Parameter(
+                "k",
+                prior=pybop.Gaussian(0.1, 0.05),
+                bounds=[0, 1],
+                initial_value=0.1,
+            ),
+            pybop.Parameter(
+                "y0",
+                prior=pybop.Gaussian(1, 0.05),
+                bounds=[0, 3],
+                initial_value=1.0,
+            ),
         )
 
     @pytest.mark.unit

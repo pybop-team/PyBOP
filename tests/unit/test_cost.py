@@ -19,15 +19,11 @@ class TestCosts:
 
     @pytest.fixture
     def parameters(self, ground_truth):
-        return pybop.Parameters(
-            [
-                pybop.Parameter(
-                    "Negative electrode active material volume fraction",
-                    prior=pybop.Gaussian(0.5, 0.01),
-                    bounds=[0.375, 0.625],
-                    initial_value=ground_truth,
-                ),
-            ]
+        return pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            prior=pybop.Gaussian(0.5, 0.01),
+            bounds=[0.375, 0.625],
+            initial_value=ground_truth,
         )
 
     @pytest.fixture

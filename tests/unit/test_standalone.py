@@ -43,18 +43,16 @@ class TestStandalone:
     def test_standalone_problem(self):
         # Define parameters to estimate
         parameters = pybop.Parameters(
-            [
-                pybop.Parameter(
-                    "Gradient",
-                    prior=pybop.Gaussian(4.2, 0.02),
-                    bounds=[-1, 10],
-                ),
-                pybop.Parameter(
-                    "Intercept",
-                    prior=pybop.Gaussian(3.3, 0.02),
-                    bounds=[-1, 10],
-                ),
-            ]
+            pybop.Parameter(
+                "Gradient",
+                prior=pybop.Gaussian(4.2, 0.02),
+                bounds=[-1, 10],
+            ),
+            pybop.Parameter(
+                "Intercept",
+                prior=pybop.Gaussian(3.3, 0.02),
+                bounds=[-1, 10],
+            ),
         )
 
         # Define target data

@@ -23,18 +23,16 @@ class Test_SPM_Parameterisation:
     @pytest.fixture
     def parameters(self):
         return pybop.Parameters(
-            [
-                pybop.Parameter(
-                    "Negative electrode active material volume fraction",
-                    prior=pybop.Uniform(0.4, 0.7),
-                    bounds=[0.375, 0.725],
-                ),
-                pybop.Parameter(
-                    "Positive electrode active material volume fraction",
-                    prior=pybop.Uniform(0.4, 0.7),
-                    # no bounds
-                ),
-            ]
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Uniform(0.4, 0.7),
+                bounds=[0.375, 0.725],
+            ),
+            pybop.Parameter(
+                "Positive electrode active material volume fraction",
+                prior=pybop.Uniform(0.4, 0.7),
+                # no bounds
+            ),
         )
 
     @pytest.fixture(params=[0.4, 0.7])

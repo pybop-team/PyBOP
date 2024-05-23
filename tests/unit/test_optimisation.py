@@ -21,31 +21,25 @@ class TestOptimisation:
 
     @pytest.fixture
     def one_parameter(self):
-        return pybop.Parameters(
-            [
-                pybop.Parameter(
-                    "Negative electrode active material volume fraction",
-                    prior=pybop.Gaussian(0.6, 0.2),
-                    bounds=[0.58, 0.62],
-                )
-            ]
+        return pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            prior=pybop.Gaussian(0.6, 0.2),
+            bounds=[0.58, 0.62],
         )
 
     @pytest.fixture
     def two_parameters(self):
         return pybop.Parameters(
-            [
-                pybop.Parameter(
-                    "Negative electrode active material volume fraction",
-                    prior=pybop.Gaussian(0.6, 0.2),
-                    bounds=[0.58, 0.62],
-                ),
-                pybop.Parameter(
-                    "Positive electrode active material volume fraction",
-                    prior=pybop.Gaussian(0.55, 0.05),
-                    bounds=[0.53, 0.57],
-                ),
-            ]
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.6, 0.2),
+                bounds=[0.58, 0.62],
+            ),
+            pybop.Parameter(
+                "Positive electrode active material volume fraction",
+                prior=pybop.Gaussian(0.55, 0.05),
+                bounds=[0.53, 0.57],
+            ),
         )
 
     @pytest.fixture
@@ -312,7 +306,7 @@ class TestOptimisation:
         )
 
         # Define the problem and cost
-        problem = pybop.FittingProblem(model, [parameter], dataset)
+        problem = pybop.FittingProblem(model, parameter, dataset)
         cost = pybop.SumSquaredError(problem)
 
         # Create the optimisation class with infeasible solutions disabled

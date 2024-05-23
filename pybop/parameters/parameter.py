@@ -161,15 +161,11 @@ class Parameters:
     parameter_list : pybop.Parameter or list
     """
 
-    def __init__(self, parameter_list=None):
+    def __init__(self, *args):
         self.param = OrderedDict()
         self.bounds = None
-        if parameter_list is not None:
-            parameter_list = (
-                parameter_list if isinstance(parameter_list, list) else [parameter_list]
-            )
-            for param in parameter_list:
-                self.add_parameter(param)
+        for param in args:
+            self.add_parameter(param)
 
     def __getitem__(self, key):
         """

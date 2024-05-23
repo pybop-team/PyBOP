@@ -29,18 +29,16 @@ class TestPlots:
     @pytest.fixture
     def parameters(self):
         return pybop.Parameters(
-            [
-                pybop.Parameter(
-                    "Negative electrode active material volume fraction",
-                    prior=pybop.Gaussian(0.68, 0.05),
-                    bounds=[0.5, 0.8],
-                ),
-                pybop.Parameter(
-                    "Positive electrode active material volume fraction",
-                    prior=pybop.Gaussian(0.58, 0.05),
-                    bounds=[0.4, 0.7],
-                ),
-            ]
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.68, 0.05),
+                bounds=[0.5, 0.8],
+            ),
+            pybop.Parameter(
+                "Positive electrode active material volume fraction",
+                prior=pybop.Gaussian(0.58, 0.05),
+                bounds=[0.4, 0.7],
+            ),
         )
 
     @pytest.fixture

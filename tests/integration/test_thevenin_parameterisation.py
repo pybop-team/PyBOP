@@ -27,18 +27,16 @@ class TestTheveninParameterisation:
     @pytest.fixture
     def parameters(self):
         return pybop.Parameters(
-            [
-                pybop.Parameter(
-                    "R0 [Ohm]",
-                    prior=pybop.Gaussian(0.05, 0.01),
-                    bounds=[0, 0.1],
-                ),
-                pybop.Parameter(
-                    "R1 [Ohm]",
-                    prior=pybop.Gaussian(0.05, 0.01),
-                    bounds=[0, 0.1],
-                ),
-            ]
+            pybop.Parameter(
+                "R0 [Ohm]",
+                prior=pybop.Gaussian(0.05, 0.01),
+                bounds=[0, 0.1],
+            ),
+            pybop.Parameter(
+                "R1 [Ohm]",
+                prior=pybop.Gaussian(0.05, 0.01),
+                bounds=[0, 0.1],
+            ),
         )
 
     @pytest.fixture(params=[pybop.RootMeanSquaredError, pybop.SumSquaredError])
