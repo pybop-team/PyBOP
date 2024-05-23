@@ -132,9 +132,10 @@ class BaseOptimiser:
         final_cost : float
             The final cost associated with the best parameters.
         """
-        x, final_cost = self._run()
+        self.result = self._run()
 
         # Store the optimised parameters
+        x = self.result.x
         if hasattr(self.cost, "parameters"):
             self.store_optimised_parameters(x)
 
@@ -142,7 +143,7 @@ class BaseOptimiser:
         if self.physical_viability:
             self.check_optimal_parameters(x)
 
-        return x, final_cost
+        return x, self.result.final_cost
 
     def _run(self):
         """
@@ -220,3 +221,26 @@ class BaseOptimiser:
             # Turn off this feature as there is no model
             self.physical_viability = False
             self.allow_infeasible_solutions = False
+
+
+class Result:
+    """
+    Stores the result of the optimisation.
+
+    Attributes
+    ----------
+    x : ndarray
+        The solution of the optimisation.
+    final_cost : float
+        The cost associated with the solution x.
+    nit : int
+        Number of iterations performed by the optimiser.
+    scipy_result : scipy.optimize.OptimizeResult, optional
+        The result obtained from a SciPy optimiser.
+    """
+
+    def __init__(self, x=None, final_cost=None, nit=None, scipy_result=None):
+        self.x = x
+        self.final_cost = final_cost
+        self.nit = nit
+        self.scipy_result = scipy_result

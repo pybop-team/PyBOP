@@ -1,7 +1,7 @@
 import numpy as np
 import pints
 
-from pybop import BaseOptimiser
+from pybop.optimisers.base_optimiser import BaseOptimiser, Result
 
 
 class BasePintsOptimiser(BaseOptimiser):
@@ -162,10 +162,8 @@ class BasePintsOptimiser(BaseOptimiser):
 
         Returns
         -------
-        x : numpy.ndarray
-            The best parameter set found by the optimization.
-        final_cost : float
-            The final cost associated with the best parameters.
+        result : pybop.Result
+            The result of the optimisation including the optimised parameter values and cost.
 
         See Also
         --------
@@ -342,12 +340,9 @@ class BasePintsOptimiser(BaseOptimiser):
         if self._transformation is not None:
             x = self._transformation.to_model(x)
 
-        # Store result
-        final_cost = f if self.minimising else -f
-        self.result = Result(x=x, final_cost=final_cost, nit=self._iterations)
-
-        # Return best position and its cost
-        return x, final_cost
+        return Result(
+            x=x, final_cost=f if self.minimising else -f, nit=self._iterations
+        )
 
     def f_guessed_tracking(self):
         """
@@ -471,24 +466,3 @@ class BasePintsOptimiser(BaseOptimiser):
             if evaluations < 0:
                 raise ValueError("Maximum number of evaluations cannot be negative.")
         self._max_evaluations = evaluations
-
-
-class Result:
-    """
-    Stores the result of the optimisation.
-
-    Attributes
-    ----------
-    x : ndarray
-        The solution of the optimisation.
-    final_cost : float
-        The cost associated with the solution x.
-    nit : int
-        Number of iterations performed by the optimiser.
-
-    """
-
-    def __init__(self, x=None, final_cost=None, nit=None):
-        self.x = x
-        self.final_cost = final_cost
-        self.nit = nit
