@@ -388,24 +388,6 @@ class Parameters:
 
         return bounds
 
-    def get_bounds_for_scipy(self):
-        """
-        Retrieve parameter bounds in the format expected by SciPy.
-
-        Returns
-        -------
-        bounds : sequence
-            Sequence of (min, max) pairs for each element in x. None is used to specify no bound.
-        """
-        self.update_bounds()
-
-        bounds = [
-            (lower, upper)
-            for lower, upper in zip(self.bounds["lower"], self.bounds["upper"])
-        ]
-
-        return bounds
-
     def as_dict(self, values=None):
         if values is None:
             values = self.current_value()
