@@ -95,6 +95,15 @@
       ]
     },
     {
+      "login": "IntelLiGent",
+      "name": "Horizon Europe IntelLiGent Consortium",
+      "avatar_url": "assets/logo-farger.pdf",
+      "profile": "https://heuintelligent.eu/",
+      "contributions": [
+        "financial"
+      ]
+    },
+    {
       "login": "muhammedsogut",
       "name": "Muhammed Nedim Sogut",
       "avatar_url": "https://avatars.githubusercontent.com/u/34511375?v=4",
