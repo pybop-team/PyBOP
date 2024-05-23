@@ -1,9 +1,9 @@
 import numpy as np
-import pints
+from pints import PopulationBasedOptimiser
 from scipy.special import gamma
 
 
-class CuckooSearch(pints.PopulationBasedOptimiser):
+class _CuckooSearch(PopulationBasedOptimiser):
     """
     Cuckoo Search (CS) optimization algorithm, inspired by the brood parasitism
     of some cuckoo species. This algorithm was introduced by Yang and Deb in 2009.
@@ -47,20 +47,8 @@ class CuckooSearch(pints.PopulationBasedOptimiser):
       https://doi.org/10.1016/j.chaos.2011.06.004.
     """
 
-    def __init__(self, x0, sigma0=0.01, bounds=None, pa=0.25):
-        if bounds is None:
-            self.boundaries = None
-        elif not all(
-            np.isfinite(value) for sublist in bounds.values() for value in sublist
-        ):
-            raise ValueError(
-                "Either all bounds or no bounds must be set for Cuckoo Search."
-            )
-        else:
-            self.boundaries = pints.RectangularBoundaries(
-                bounds["lower"], bounds["upper"]
-            )
-        super().__init__(x0, sigma0, self.boundaries)
+    def __init__(self, x0, sigma0=0.01, boundaries=None, pa=0.25):
+        super().__init__(x0, sigma0, boundaries=boundaries)
 
         # Problem dimensionality
         self._dim = len(x0)

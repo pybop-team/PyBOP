@@ -1,7 +1,7 @@
 import numpy as np
 import pints
 
-from pybop import BaseOptimiser
+from pybop import BaseOptimiser, _CuckooSearch
 
 
 class BasePintsOptimiser(BaseOptimiser):
@@ -131,16 +131,16 @@ class BasePintsOptimiser(BaseOptimiser):
             ):
                 print(f"NOTE: Boundaries ignored by {self.pints_optimiser}")
                 self.bounds = None
-            elif issubclass(self.pints_optimiser, pints.PSO):
-                if not all(
-                    np.isfinite(value)
-                    for sublist in self.bounds.values()
-                    for value in sublist
-                ):
-                    raise ValueError(
-                        "Either all bounds or no bounds must be set for Pints PSO."
-                    )
             else:
+                if issubclass(self.pints_optimiser, (pints.PSO, _CuckooSearch)):
+                    if not all(
+                        np.isfinite(value)
+                        for sublist in self.bounds.values()
+                        for value in sublist
+                    ):
+                        raise ValueError(
+                            f"Either all bounds or no bounds must be set for {self.pints_optimiser.__name__}."
+                        )
                 self._boundaries = pints.RectangularBoundaries(
                     self.bounds["lower"], self.bounds["upper"]
                 )
