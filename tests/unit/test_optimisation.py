@@ -214,16 +214,18 @@ class TestOptimisation:
             assert optim.x0 == x0_new
             assert optim.x0 != cost.x0
 
-        if optimiser in [pybop.SciPyMinimize]:
-            # Check a method that uses gradient information
-            optimiser(cost=cost, method="L-BFGS-B", jac=True, maxiter=10)
-            optim.run()
-            assert optim._iterations > 0
-            with pytest.raises(
-                ValueError,
-                match="Expected the jac option to be either True, False or None.",
-            ):
-                optim = optimiser(cost=cost, jac="Invalid string")
+    @pytest.mark.unit
+    def test_scipy_minimize_with_jac(self, cost):
+        # Check a method that uses gradient information
+        optim = pybop.SciPyMinimize(cost=cost, method="L-BFGS-B", jac=True, maxiter=10)
+        optim.run()
+        assert optim.result.scipy_result.success is True
+
+        with pytest.raises(
+            ValueError,
+            match="Expected the jac option to be either True, False or None.",
+        ):
+            optim = pybop.SciPyMinimize(cost=cost, jac="Invalid string")
 
     @pytest.mark.unit
     def test_single_parameter(self, cost):
