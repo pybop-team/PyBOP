@@ -34,7 +34,8 @@ class BaseLikelihood(BaseCost):
         """
         return self.sigma0
 
-    def get_n_parameters(self):
+    @property
+    def n_parameters(self):
         """
         Returns the number of parameters
         """
@@ -182,3 +183,113 @@ class GaussianLogLikelihood(BaseLikelihood):
         dsigma = -self.n_time_data / sigma + sigma**-(3.0) * np.sum(r**2, axis=1)
         dl = np.concatenate((dl.flatten(), dsigma))
         return likelihood, dl
+
+
+class LogPosterior(BaseCost):
+    """
+    The Log Posterior for a given problem.
+
+    Computes the log posterior which is the sum of the log
+    likelihood and the log prior.
+
+    Inherits all parameters and attributes from ``BaseCost``.
+    """
+
+    def __init__(self, log_likelihood, log_prior=None, sigma=None):
+        super(LogPosterior, self).__init__(problem=log_likelihood.problem, sigma=sigma)
+        if self.sigma0 is None:
+            self.sigma0 = []
+            for param in self.problem.parameters:  # Update for parameters class
+                self.sigma0.append(param.prior.sigma)
+
+        # Store the likelihood and prior
+        self._log_likelihood = log_likelihood
+        self._prior = log_prior
+        if self._prior is None:
+            try:
+                self._prior = [
+                    param.prior
+                    for i, param in enumerate(
+                        log_likelihood.problem.parameters
+                    )  # Update for parameters class
+                ]
+            except Exception as e:
+                raise ValueError(
+                    f"An error occurred when constructing the Prior class: {e}"
+                )
+
+        try:  # This is a patch, the n_parameters val needs to be updated across the codebase
+            self._n_parameters = self._prior.n_parameters
+        except AttributeError:
+            self._n_parameters = len(self._prior)
+
+    def _evaluate(self, x, grad=None):
+        """
+        Calculate the posterior cost for a given set of parameters.
+
+        Parameters
+        ----------
+        x : array-like
+            The parameters for which to evaluate the cost.
+        grad : array-like, optional
+            An array to store the gradient of the cost function with respect
+            to the parameters.
+
+        Returns
+        -------
+        float
+            The posterior cost.
+        """
+        prior = self._prior(x)
+        if prior == np.inf:
+            return prior
+        return prior + self._log_likelihood.evaluate(x)
+
+    def _evaluateS1(self, x):
+        """
+        Compute the posterior with respect to the parameters.
+        The method passes the likelihood gradient to the optimiser without modification.
+
+        Parameters
+        ----------
+        x : array-like
+            The parameters for which to compute the cost and gradient.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the cost and the gradient. The cost is a float,
+            and the gradient is an array-like of the same length as `x`.
+
+        Raises
+        ------
+        ValueError
+            If an error occurs during the calculation of the cost or gradient.
+        """
+        prior, dp = self._prior.evaluateS1(x)
+        if prior == np.inf:
+            return prior
+        likelihood, dl = self._log_likelihood.evaluateS1(x)
+        return prior + likelihood, dp + dl
+
+    def prior(self):
+        """
+        Return the prior object.
+
+        Returns
+        -------
+        object
+            The prior object.
+        """
+        return self._prior
+
+    def likelihood(self):
+        """
+        Returns the likelihood.
+
+        Returns
+        -------
+        object
+            The likelihood object.
+        """
+        return self._log_likelihood

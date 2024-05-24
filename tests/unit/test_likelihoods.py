@@ -108,11 +108,6 @@ class TestLikelihoods:
             likelihood.set_sigma(np.array([-0.2]))
 
     @pytest.mark.unit
-    def test_base_likelihood_get_n_parameters(self, one_signal_problem):
-        likelihood = pybop.BaseLikelihood(one_signal_problem)
-        assert likelihood.get_n_parameters() == 1
-
-    @pytest.mark.unit
     def test_base_likelihood_n_parameters_property(self, one_signal_problem):
         likelihood = pybop.BaseLikelihood(one_signal_problem)
         assert likelihood.n_parameters == 1
