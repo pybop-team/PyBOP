@@ -21,6 +21,7 @@ codesigned binaries and source distributions via `sigstore-python`.
 
 ## Bug Fixes
 
+- [#165](https://github.com/pybop-team/PyBOP/issues/165) - Stores the attempted and best parameter values and the best cost for each iteration in the log attribute of the optimiser and updates the associated plots.
 - [#321](https://github.com/pybop-team/PyBOP/pull/321) - Improves `integration/test_spm_parameterisation.py` stability, adds flakly pytest plugin, and `test_thevenin_parameterisation.py` integration test.
 - [#330](https://github.com/pybop-team/PyBOP/issues/330) - Fixes implementation of default plotting options.
 - [#317](https://github.com/pybop-team/PyBOP/pull/317) - Installs seed packages into `nox` sessions, ensuring that scheduled tests can pass.
