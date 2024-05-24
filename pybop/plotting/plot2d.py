@@ -25,7 +25,7 @@ def plot2d(
     bounds : numpy.ndarray, optional
         A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses `get_param_bounds`.
     steps : int, optional
-        The number of intervals to divide the parameter space into along each dimension (default is 10).
+        The number of grid points to divide the parameter space into along each dimension (default is 10).
     show : bool, optional
         If True, the figure is shown upon creation (default: True).
     **layout_kwargs : optional
@@ -71,6 +71,21 @@ def plot2d(
         for j, yj in enumerate(y):
             costs[j, i] = cost(np.array([xi, yj]))
 
+    if plot_optim:
+        # Include optimisation data in the cost matrix
+        parameter_log = np.array(optim.log["x_best"])
+        trace_length = np.shape(parameter_log)[0] - 1
+        all_costs = np.zeros((len(y) + trace_length, len(x) + trace_length))
+        all_costs[0 : len(y), 0 : len(x)] = costs
+        for i in range(0, trace_length):
+            for j in range(0, trace_length):
+                all_costs[len(y) + j, len(x) + i] = (
+                    optim.log["cost"][j] if j == i else None
+                )
+        x = np.hstack((x, parameter_log[:, 0]))
+        y = np.hstack((y, parameter_log[:, 1]))
+        cost = all_costs
+
     if gradient:
         grad_parameter_costs = []
 
@@ -107,7 +122,9 @@ def plot2d(
     layout = go.Layout(layout_options)
 
     # Create contour plot and update the layout
-    fig = go.Figure(data=[go.Contour(x=x, y=y, z=costs)], layout=layout)
+    fig = go.Figure(
+        data=[go.Contour(x=x, y=y, z=costs, connectgaps=True)], layout=layout
+    )
 
     if plot_optim:
         # Plot the optimisation trace
