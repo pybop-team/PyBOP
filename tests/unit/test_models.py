@@ -25,7 +25,10 @@ class TestModels:
     )
     @pytest.mark.unit
     def test_model_classes(self, model_class, expected_name):
-        model = model_class()
+        options = None
+        if model_class is pybop.lithium_ion.MSMR:
+            options = {"number of MSMR reactions": ("6", "4")}
+        model = model_class(options=options)
 
         assert model.pybamm_model is not None
         assert model.name == expected_name
@@ -34,7 +37,7 @@ class TestModels:
         parameter_set = pybop.ParameterSet(
             params_dict={"Nominal cell capacity [A.h]": 5}
         )
-        model = model_class(build=True, parameter_set=parameter_set)
+        model = model_class(options=options, build=True, parameter_set=parameter_set)
 
     @pytest.fixture(
         params=[
