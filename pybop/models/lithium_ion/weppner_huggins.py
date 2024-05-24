@@ -1,20 +1,41 @@
-#
-# Weppner Huggins Model
-#
+import warnings
+
 import numpy as np
 import pybamm
 
 
 class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
-    """WeppnerHuggins Model for GITT. Credit: pybamm-param team.
+    """
+    WeppnerHuggins Model for GITT. Credit: pybamm-param team.
+
+    This model can be used with PyBOP through the `pybop.WeppnerHuggins` class.
 
     Parameters
     ----------
     name : str, optional
         The name of the model.
+    **model_kwargs : optional
+        Valid PyBaMM model option keys and their values, for example:
+        parameter_set : pybamm.ParameterValues or dict, optional
+            The parameters for the model. If None, default parameters provided by PyBaMM are used.
+        geometry : dict, optional
+            The geometry definitions for the model. If None, default geometry from PyBaMM is used.
+        submesh_types : dict, optional
+            The types of submeshes to use. If None, default submesh types from PyBaMM are used.
+        var_pts : dict, optional
+            The discretization points for each variable in the model. If None, default points from PyBaMM are used.
+        spatial_methods : dict, optional
+            The spatial methods used for discretization. If None, default spatial methods from PyBaMM are used.
+        solver : pybamm.Solver, optional
+            The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
     """
 
-    def __init__(self, name="Weppner & Huggins model"):
+    def __init__(self, name="Weppner & Huggins model", **model_kwargs):
+        # Model kwargs (build, options) are not implemented, keeping here for consistent interface
+        if model_kwargs is not dict(build=True):
+            unused_kwargs_warning = "The input model_kwargs are not currently used by the Weppner & Huggins model."
+            warnings.warn(unused_kwargs_warning, UserWarning)
+
         super().__init__({}, name)
 
         pybamm.citations.register("""
@@ -79,6 +100,9 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
             "Voltage [V]": V,
             "Time [s]": t,
         }
+
+        # Set the built property on creation to prevent unnecessary model rebuilds
+        self._built = True
 
     @property
     def default_geometry(self):

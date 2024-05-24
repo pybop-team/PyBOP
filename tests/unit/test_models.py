@@ -11,6 +11,34 @@ class TestModels:
     A class to test the models.
     """
 
+    @pytest.mark.parametrize(
+        "model_class, expected_name",
+        [
+            (pybop.lithium_ion.SPM, "Single Particle Model"),
+            (pybop.lithium_ion.SPMe, "Single Particle Model with Electrolyte"),
+            (pybop.lithium_ion.DFN, "Doyle-Fuller-Newman"),
+            (pybop.lithium_ion.MPM, "Many Particle Model"),
+            (pybop.lithium_ion.MSMR, "Multi Species Multi Reactions Model"),
+            (pybop.lithium_ion.WeppnerHuggins, "Weppner & Huggins model"),
+            (pybop.empirical.Thevenin, "Equivalent Circuit Thevenin Model"),
+        ],
+    )
+    @pytest.mark.unit
+    def test_model_classes(self, model_class, expected_name):
+        options = None
+        if model_class is pybop.lithium_ion.MSMR:
+            options = {"number of MSMR reactions": ("6", "4")}
+        model = model_class(options=options)
+
+        assert model.pybamm_model is not None
+        assert model.name == expected_name
+
+        # Test initialisation with kwargs
+        parameter_set = pybop.ParameterSet(
+            params_dict={"Nominal cell capacity [A.h]": 5}
+        )
+        model = model_class(options=options, build=True, parameter_set=parameter_set)
+
     @pytest.fixture(
         params=[
             pybop.lithium_ion.SPM(),
@@ -261,6 +289,15 @@ class TestModels:
 
         with pytest.raises(NotImplementedError):
             base.approximate_capacity(x)
+
+    @pytest.mark.unit
+    def test_check_params(self):
+        base = pybop.BaseModel()
+        assert base.check_params()
+        assert base.check_params(inputs={"a": 1})
+        assert base.check_params(inputs=[1])
+        with pytest.raises(ValueError, match="Expecting inputs in the form of"):
+            base.check_params(inputs=["unexpected_string"])
 
     @pytest.mark.unit
     def test_non_converged_solution(self):
