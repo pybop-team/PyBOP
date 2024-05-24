@@ -155,11 +155,10 @@ class SciPyMinimize(BaseSciPyOptimiser):
             A tuple (x, final_cost) containing the optimized parameters and the value of `cost_function`
             at the optimum.
         """
-        self.log["x"] = [[self.x0]]
 
         # Add callback storing history of parameter values
         def callback(intermediate_result: OptimizeResult):
-            self.log["x"].append([intermediate_result.x])
+            self.log["x_best"].append(intermediate_result.x)
             self.log["cost"].append(
                 intermediate_result.fun if self.minimising else -intermediate_result.fun
             )
@@ -183,6 +182,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         if not self._options["jac"]:
 
             def cost_wrapper(x):
+                self.log["x"].append([x])
                 cost = self.cost(x) / self._cost0
                 if np.isinf(cost):
                     self.inf_count += 1
@@ -191,6 +191,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         elif self._options["jac"] is True:
 
             def cost_wrapper(x):
+                self.log["x"].append([x])
                 L, dl = self.cost.evaluateS1(x)
                 return L, dl if self.minimising else -L, -dl
 
@@ -308,12 +309,13 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
         # Add callback storing history of parameter values
         def callback(intermediate_result: OptimizeResult):
-            self.log["x"].append([intermediate_result.x])
+            self.log["x_best"].append(intermediate_result.x)
             self.log["cost"].append(
                 intermediate_result.fun if self.minimising else -intermediate_result.fun
             )
 
         def cost_wrapper(x):
+            self.log["x"].append([x])
             return self.cost(x) if self.minimising else -self.cost(x)
 
         result = differential_evolution(

@@ -52,7 +52,7 @@ class BaseOptimiser:
         self.bounds = None
         self.sigma0 = 0.1
         self.verbose = False
-        self.log = dict(x=[], cost=[])
+        self.log = dict(x=[], x_best=[], cost=[])
         self.minimising = True
         self.physical_viability = False
         self.allow_infeasible_solutions = False

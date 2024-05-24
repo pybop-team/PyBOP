@@ -29,7 +29,7 @@ def plot_parameters(optim, show=True, **layout_kwargs):
     log = optim.log["x"]
 
     # Create a list of sequential integers for the x-axis
-    x = list(range(len(log[0]) * len(log)))
+    x = list(range(1, len(log[0]) * len(log) + 1))
 
     # Determine the number of elements in the smallest arrays
     num_elements = len(log[0][0])
