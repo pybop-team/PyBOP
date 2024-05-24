@@ -26,7 +26,7 @@ def plot_parameters(optim, show=True, **layout_kwargs):
 
     # Extract parameters and log from the optimisation object
     parameters = optim.cost.parameters
-    log = optim.log
+    log = optim.log["x"]
 
     # Create a list of sequential integers for the x-axis
     x = list(range(len(log[0]) * len(log)))

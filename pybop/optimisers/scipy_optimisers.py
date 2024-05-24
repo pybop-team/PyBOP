@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.optimize import differential_evolution, minimize
+from scipy.optimize import OptimizeResult, differential_evolution, minimize
 
 from pybop import BaseOptimiser
 
@@ -155,11 +155,14 @@ class SciPyMinimize(BaseSciPyOptimiser):
             A tuple (x, final_cost) containing the optimized parameters and the value of `cost_function`
             at the optimum.
         """
-        self.log = [[self.x0]]
+        self.log["x"] = [[self.x0]]
 
         # Add callback storing history of parameter values
-        def callback(x):
-            self.log.append([x])
+        def callback(intermediate_result: OptimizeResult):
+            self.log["x"].append([intermediate_result.x])
+            self.log["cost"].append(
+                intermediate_result.fun if self.minimising else -intermediate_result.fun
+            )
 
         # Compute the absolute initial cost and resample if required
         self._cost0 = np.abs(self.cost(self.x0))
@@ -304,8 +307,11 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             self.x0 = None
 
         # Add callback storing history of parameter values
-        def callback(x, convergence):
-            self.log.append([x])
+        def callback(intermediate_result: OptimizeResult):
+            self.log["x"].append([intermediate_result.x])
+            self.log["cost"].append(
+                intermediate_result.fun if self.minimising else -intermediate_result.fun
+            )
 
         def cost_wrapper(x):
             return self.cost(x) if self.minimising else -self.cost(x)

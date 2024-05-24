@@ -249,7 +249,8 @@ class BasePintsOptimiser(BaseOptimiser):
                 # Update counts
                 evaluations += len(fs)
                 iteration += 1
-                self.log.append(xs)
+                self.log["x"].append(xs)
+                self.log["cost"].append(f_new if self.minimising else -f_new)
 
                 # Check stopping criteria:
                 # Maximum number of iterations
