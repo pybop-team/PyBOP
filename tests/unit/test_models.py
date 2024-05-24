@@ -16,6 +16,10 @@ class TestModels:
         [
             (pybop.lithium_ion.SPM, "Single Particle Model"),
             (pybop.lithium_ion.SPMe, "Single Particle Model with Electrolyte"),
+            (pybop.lithium_ion.DFN, "Doyle-Fuller-Newman"),
+            (pybop.lithium_ion.MPM, "Many Particle Model"),
+            (pybop.lithium_ion.MSMR, "Multi Species Multi Reactions Model"),
+            (pybop.lithium_ion.WeppnerHuggins, "Weppner & Huggins model"),
             (pybop.empirical.Thevenin, "Equivalent Circuit Thevenin Model"),
         ],
     )

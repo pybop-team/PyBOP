@@ -10,7 +10,7 @@ class ECircuitModel(BaseModel):
     pybamm_model : pybamm.BaseModel
         A subclass of the pybamm Base Model.
     name : str, optional
-        The name for the model instance, defaulting to "Electrochemical Base Model".
+        The name for the model instance, defaulting to "Empirical Base Model".
     parameter_set : pybamm.ParameterValues or dict, optional
         The parameters for the model. If None, default parameters provided by PyBaMM are used.
     geometry : dict, optional
@@ -34,7 +34,7 @@ class ECircuitModel(BaseModel):
     def __init__(
         self,
         pybamm_model,
-        name,
+        name="Empirical Base Model",
         parameter_set=None,
         geometry=None,
         submesh_types=None,
@@ -45,10 +45,7 @@ class ECircuitModel(BaseModel):
     ):
         super().__init__(name=name, parameter_set=parameter_set)
 
-        model_options = dict(
-            build=False,
-            options=None,
-        )
+        model_options = dict(build=False)
         for key, value in model_kwargs.items():
             model_options[key] = value
         self.pybamm_model = pybamm_model(**model_options)

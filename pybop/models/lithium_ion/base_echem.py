@@ -52,10 +52,7 @@ class EChemBaseModel(BaseModel):
             parameter_set=parameter_set,
         )
 
-        model_options = dict(
-            build=False,
-            options=None,
-        )
+        model_options = dict(build=False)
         for key, value in model_kwargs.items():
             model_options[key] = value
         self.pybamm_model = pybamm_model(**model_options)
