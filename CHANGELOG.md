@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#6](https://github.com/pybop-team/PyBOP/issues/6) - Adds Monte Carlo functionality, with methods based on Pints' algorithms. A base class is added `BaseSampler`, in addition to `PintsBaseSampler`.
 - [#321](https://github.com/pybop-team/PyBOP/pull/321) - Updates Prior classes with BaseClass, adds a `problem.sample_initial_conditions` method to improve stability of SciPy.Minimize optimiser.
 - [#249](https://github.com/pybop-team/PyBOP/pull/249) - Add WeppnerHuggins model and GITT example.
 - [#304](https://github.com/pybop-team/PyBOP/pull/304) - Decreases the testing suite completion time.

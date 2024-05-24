@@ -120,6 +120,10 @@ class BasePrior:
         """
         return self.scale
 
+    @property
+    def n_parameters(self):
+        return self._n_parameters
+
 
 class Gaussian(BasePrior):
     """
@@ -199,3 +203,160 @@ class Exponential(BasePrior):
         self.loc = loc
         self.scale = scale
         self.prior = stats.expon
+
+
+class GaussianLogPrior(BasePrior):
+    """
+    Represents a log-normal distribution with a given mean and standard deviation.
+
+    This class provides methods to calculate the probability density function (pdf),
+    the logarithm of the pdf, and to generate random variates (rvs) from the distribution.
+
+    Parameters
+    ----------
+    mean : float
+        The mean of the log-normal distribution.
+    sigma : float
+        The standard deviation of the log-normal distribution.
+    """
+
+    def __init__(self, mean, sigma, random_state=None):
+        self.name = "Gaussian Log Prior"
+        self.loc = mean
+        self.scale = sigma
+        self.prior = stats.norm
+        self._offset = -0.5 * np.log(2 * np.pi * self.scale**2)
+        self.sigma2 = self.scale**2
+        self._multip = -1 / (2.0 * self.sigma2)
+        self._n_parameters = 1
+
+    def __call__(self, x):
+        """
+        Evaluates the gaussian (log) distribution at x.
+
+        Parameters
+        ----------
+        x : float
+            The point(s) at which to evaluate the distribution.
+
+        Returns
+        -------
+        float
+            The value(s) of the distribution at x.
+        """
+        x = np.asarray(x)
+        return self._offset + self._multip * (x[0] - self.loc) ** 2
+
+    def evaluateS1(self, x):
+        """
+        Evaluates the first derivative of the gaussian (log) distribution at x.
+
+        Parameters
+        ----------
+        x : float
+            The point(s) at which to evaluate the first derivative.
+
+        Returns
+        -------
+        float
+            The value(s) of the first derivative at x.
+        """
+        if not isinstance(x, np.ndarray):
+            x = np.asarray(x)
+        return self(x), -(x - self.loc) * self._multip
+
+    def icdf(self, q):
+        """
+        Calculates the inverse cumulative distribution function (CDF) of the distribution at q.
+
+        Parameters
+        ----------
+        q : float
+            The point(s) at which to evaluate the inverse CDF.
+
+        Returns
+        -------
+        float
+            The inverse cumulative distribution function value at q.
+        """
+        return self.prior.ppf(q, s=self.scale, loc=self.loc)
+
+    def cdf(self, x):
+        """
+        Calculates the cumulative distribution function (CDF) of the distribution at x.
+
+        Parameters
+        ----------
+        x : float
+            The point(s) at which to evaluate the CDF.
+
+        Returns
+        -------
+        float
+            The cumulative distribution function value at x.
+        """
+        return self.prior.cdf(x, s=self.scale, loc=self.loc)
+
+
+class ComposedLogPrior(BasePrior):
+    """
+    Represents a composition of multiple prior distributions.
+    """
+
+    def __init__(self, *priors):
+        self._priors = priors
+        for prior in priors:
+            if not isinstance(prior, BasePrior):
+                raise ValueError("All priors must be instances of BasePrior")
+
+        self._n_parameters = len(priors)  # Needs to be updated
+
+    def __call__(self, x):
+        """
+        Evaluates the composed prior distribution at x.
+
+        Parameters
+        ----------
+        x : float
+            The point(s) at which to evaluate the distribution.
+
+        Returns
+        -------
+        float
+            The value(s) of the distribution at x.
+        """
+        if not isinstance(x, np.ndarray):
+            x = np.asarray(x)
+        return sum(prior(x) for prior in self._priors)
+
+    def evaluateS1(self, x):
+        """
+        Evaluates the first derivative of the composed prior distribution at x.
+        Inspired by PINTS implementation.
+
+        *This method only works if the underlying :class:`LogPrior` classes all
+        implement the optional method :class:`LogPDF.evaluateS1().`.*
+
+        Parameters
+        ----------
+        x : float
+            The point(s) at which to evaluate the first derivative.
+
+        Returns
+        -------
+        float
+            The value(s) of the first derivative at x.
+        """
+        output = 0
+        doutput = np.zeros(self.n_parameters)
+        index = 0
+
+        for prior in self._priors:
+            num_params = prior.n_parameters
+            x_subset = x[index : index + num_params]
+            p, dp = prior.evaluateS1(x_subset)
+            output += p
+            doutput[index : index + num_params] = dp
+            index += num_params
+
+        return output, doutput
