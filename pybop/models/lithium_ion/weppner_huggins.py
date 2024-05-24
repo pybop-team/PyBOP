@@ -9,7 +9,7 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
     """
     WeppnerHuggins Model for GITT. Credit: pybamm-param team.
 
-    This model can be used with PyBOP through the pybop.WeppnerHuggins wrapper class.
+    This model can be used with PyBOP through the `pybop.WeppnerHuggins` class.
 
     Parameters
     ----------
