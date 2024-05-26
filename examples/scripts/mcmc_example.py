@@ -76,19 +76,9 @@ optim = pybop.DifferentialEvolutionMCMC(
 )
 result = optim.run()
 
-# Create a histogram
-fig = go.Figure()
-for _i, data in enumerate(result):
-    fig.add_trace(go.Histogram(x=data[:, 0], name="Neg", opacity=0.75))
-    fig.add_trace(go.Histogram(x=data[:, 1], name="Pos", opacity=0.75))
-
-# Update layout for better visualization
-fig.update_layout(
-    title="Posterior distribution of volume fractions",
-    xaxis_title="Value",
-    yaxis_title="Count",
-    barmode="overlay",
-)
-
-# Show the plot
-fig.show()
+# Summary statistics
+posterior_summary = pybop.PosteriorSummary(result)
+print(posterior_summary.get_summary_statistics())
+posterior_summary.plot_trace()
+posterior_summary.summary_table()
+posterior_summary.plot_posterior()
