@@ -190,7 +190,7 @@ class TestCosts:
         ],
     )
     @pytest.mark.unit
-    def test_energy_density_costs(
+    def test_design_costs(
         self,
         cost_class,
         model,

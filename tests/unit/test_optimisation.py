@@ -285,7 +285,7 @@ class TestOptimisation:
         # Tests prior sampling
         for i in range(50):
             optim = pybop.Optimisation(cost=cost)
-            assert optim.x0[0] <= 0.62 and optim.x0[0] >= 0.58
+            assert optim.x0[0] < 0.62 and optim.x0[0] > 0.58
 
     @pytest.mark.unit
     @pytest.mark.parametrize(
