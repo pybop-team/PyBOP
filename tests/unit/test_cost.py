@@ -213,7 +213,9 @@ class TestCosts:
             # Test type of returned value
             assert np.isscalar(cost([0.5]))
             assert cost([0.4]) >= 0  # Should be a viable design
-            assert cost([0.8]) == -np.inf # Should exceed active material + porosity < 1
+            assert (
+                cost([0.8]) == -np.inf
+            )  # Should exceed active material + porosity < 1
             assert cost([1.4]) == -np.inf  # Definitely not viable
             assert cost([-0.1]) == -np.inf  # Should not be a viable design
 
