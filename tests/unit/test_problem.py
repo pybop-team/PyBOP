@@ -96,7 +96,7 @@ class TestProblem:
         problem = pybop.BaseProblem(parameters=parameter_list[0])
         with pytest.raises(
             TypeError,
-            match="The input parameters must be a pybop Parameter or Parameters object.",
+            match="The input parameters must be a pybop Parameter, a list of pybop.Parameter objects, or a pybop Parameters object.",
         ):
             problem = pybop.BaseProblem(parameters="Invalid string")
 
