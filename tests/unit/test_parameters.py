@@ -101,7 +101,7 @@ class TestParameters:
 
         # Test parameter addition via Parameter class
         params = pybop.Parameters()  # empty
-        params.add_parameter(parameter)
+        params.add(parameter)
         assert parameter.name in params.param.keys()
         assert parameter in params.param.values()
 
@@ -111,12 +111,12 @@ class TestParameters:
             + "Negative electrode active material volume fraction"
             + " in the Parameters object. Please remove the duplicate entry.",
         ):
-            params.add_parameter(parameter)
+            params.add(parameter)
 
         params.remove_parameter(parameter_name=parameter.name)
 
         # Test parameter addition via dict
-        params.add_parameter(
+        params.add(
             dict(
                 name="Negative electrode active material volume fraction",
                 initial_value=0.6,
@@ -128,7 +128,7 @@ class TestParameters:
             + "Negative electrode active material volume fraction"
             + " in the Parameters object. Please remove the duplicate entry.",
         ):
-            params.add_parameter(
+            params.add(
                 dict(
                     name="Negative electrode active material volume fraction",
                     initial_value=0.6,
@@ -144,7 +144,7 @@ class TestParameters:
         with pytest.raises(
             TypeError, match="Each parameter input must be a Parameter or a dictionary."
         ):
-            params.add_parameter(parameter="Invalid string")
+            params.add(parameter="Invalid string")
         with pytest.raises(
             TypeError, match="The input parameter_name is not a string."
         ):

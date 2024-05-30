@@ -165,7 +165,7 @@ class Parameters:
         self.param = OrderedDict()
         self.bounds = None
         for param in args:
-            self.add_parameter(param)
+            self.add(param)
 
     def __getitem__(self, key):
         """
@@ -212,7 +212,7 @@ class Parameters:
         self.index = self.index + 1
         return self.param[name]
 
-    def add_parameter(self, parameter):
+    def add(self, parameter):
         """
         Construct the parameter class with a name, initial value, prior, and bounds.
         """
