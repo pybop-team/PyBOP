@@ -158,7 +158,7 @@ class Parameters:
 
     Parameters
     ----------
-    parameter_list : pybop.Parameter or list
+    parameter_list : pybop.Parameter or Dict
     """
 
     def __init__(self, *args):
@@ -240,7 +240,7 @@ class Parameters:
 
     def remove_parameter(self, parameter_name):
         """
-        Construct the parameter class with a name, initial value, prior, and bounds.
+        Remove the `Parameter` object from the `Parameters` dictionary.
         """
         if not isinstance(parameter_name, str):
             raise TypeError("The input parameter_name is not a string.")
@@ -296,7 +296,7 @@ class Parameters:
         array-like
             An array of samples drawn from the prior distribution within each parameter's bounds.
         """
-        all_samples = np.zeros(len(self))
+        all_samples = np.empty(len(self))
 
         for i, param in enumerate(self.param.values()):
             samples = param.rvs(n_samples)
@@ -314,7 +314,7 @@ class Parameters:
 
     def get_sigma0(self):
         """
-        Set initial standard deviation, for either all or no parameters.
+        get the standard deviation, for either all or no parameters.
         """
         all_have_sigma = True  # assumption
         sigma0 = []
@@ -331,7 +331,7 @@ class Parameters:
 
     def initial_value(self):
         """
-        Return the true value of each parameter.
+        Return the initial value of each parameter.
         """
         initial_values = []
 

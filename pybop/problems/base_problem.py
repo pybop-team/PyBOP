@@ -30,13 +30,21 @@ class BaseProblem:
         additional_variables=[],
         init_soc=None,
     ):
-        if isinstance(parameters, list) and isinstance(parameters[0], pybop.Parameter):
-            parameters = pybop.Parameters(*parameters)
+        # Check if parameters is a list of pybop.Parameter objects
+        if isinstance(parameters, list):
+            if all(isinstance(param, pybop.Parameter) for param in parameters):
+                parameters = pybop.Parameters(*parameters)
+            else:
+                raise TypeError(
+                    "All elements in the list must be pybop.Parameter objects."
+                )
+        # Check if parameters is a single pybop.Parameter object
         elif isinstance(parameters, pybop.Parameter):
             parameters = pybop.Parameters(parameters)
+        # Check if parameters is already a pybop.Parameters object
         elif not isinstance(parameters, pybop.Parameters):
             raise TypeError(
-                "The input parameters must be a pybop Parameter or Parameters object."
+                "The input parameters must be a pybop Parameter, a list of pybop.Parameter objects, or a pybop Parameters object."
             )
 
         self.parameters = parameters
