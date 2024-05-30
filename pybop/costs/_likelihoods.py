@@ -32,6 +32,11 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         self.sigma = None
         if sigma is not None:
             self.set_sigma(sigma)
+        else:
+            raise ValueError(
+                "The GaussianLogLikelihoodKnownSigma cost requires sigma to be "
+                + "either a scalar value or an array with one entry per dimension."
+            )
         self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi / self.sigma)
         self._multip = -1 / (2.0 * self.sigma**2)
         self.sigma2 = self.sigma**-2

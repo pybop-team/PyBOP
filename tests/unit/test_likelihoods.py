@@ -94,8 +94,13 @@ class TestLikelihoods:
         likelihood.set_sigma(np.array([0.3]))
         assert np.array_equal(likelihood.get_sigma(), np.array([0.3]))
 
-    @pytest.mark.unit
-    def test_set_sigma_raises_value_error_for_negative_sigma(self, one_signal_problem):
+        with pytest.raises(
+            ValueError,
+            match="The GaussianLogLikelihoodKnownSigma cost requires sigma to be "
+            + "either a scalar value or an array with one entry per dimension.",
+        ):
+            pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, sigma=None)
+
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, 0.1)
         with pytest.raises(ValueError):
             likelihood.set_sigma(np.array([-0.2]))
