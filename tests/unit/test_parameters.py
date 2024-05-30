@@ -113,7 +113,7 @@ class TestParameters:
         ):
             params.add(parameter)
 
-        params.remove_parameter(parameter_name=parameter.name)
+        params.remove(parameter_name=parameter.name)
 
         # Test parameter addition via dict
         params.add(
@@ -135,11 +135,11 @@ class TestParameters:
                 )
             )
 
-        params.remove_parameter(parameter_name=parameter.name)
+        params.remove(parameter_name=parameter.name)
         with pytest.raises(
             ValueError, match="This parameter does not exist in the Parameters object."
         ):
-            params.remove_parameter(parameter_name=parameter.name)
+            params.remove(parameter_name=parameter.name)
 
         with pytest.raises(
             TypeError, match="Each parameter input must be a Parameter or a dictionary."
@@ -148,7 +148,7 @@ class TestParameters:
         with pytest.raises(
             TypeError, match="The input parameter_name is not a string."
         ):
-            params.remove_parameter(parameter_name=parameter)
+            params.remove(parameter_name=parameter)
 
     @pytest.mark.unit
     def test_get_sigma(self, parameter):

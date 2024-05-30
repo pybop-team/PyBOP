@@ -238,7 +238,7 @@ class Parameters:
 
         self.update_bounds()
 
-    def remove_parameter(self, parameter_name):
+    def remove(self, parameter_name):
         """
         Construct the parameter class with a name, initial value, prior, and bounds.
         """
