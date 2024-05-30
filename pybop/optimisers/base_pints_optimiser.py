@@ -1,7 +1,7 @@
 import numpy as np
 import pints
 
-from pybop import BaseOptimiser
+from pybop import BaseLikelihood, BaseOptimiser, Transformation
 
 
 class BasePintsOptimiser(BaseOptimiser):
@@ -38,11 +38,11 @@ class BasePintsOptimiser(BaseOptimiser):
         self._evaluations = None
         self._iterations = None
 
-        # PyBOP doesn't currently support the PINTS transformation class
-        self._transformation = None
-
         self.pints_optimiser = pints_optimiser
         super().__init__(cost, **optimiser_kwargs)
+        self.f = self.cost
+        if self.transformation is not None:
+            self.set_transformation(self.transformation)
 
     def _set_up_optimiser(self):
         """
@@ -145,6 +145,39 @@ class BasePintsOptimiser(BaseOptimiser):
                     self.bounds["lower"], self.bounds["upper"]
                 )
 
+    def set_transformation(self, transformation: Transformation):
+        """
+        Apply the given transformation to the optimizer's settings.
+
+        Initial credit: Pints team
+
+        Parameters
+        ----------
+        transformation : pybop.Transformation
+            The transformation object to be applied.
+        """
+        # Convert cost or log pdf
+        if isinstance(self.cost, BaseLikelihood):
+            self.f = transformation.convert_log_pdf(self.cost)
+        else:
+            self.f = transformation.convert_cost(self.cost)
+
+        # Convert initial position
+        self.x0 = transformation.to_search(self.x0)
+
+        # Convert sigma0, if provided
+        if self.sigma0 is not None:
+            self.sigma0 = transformation.convert_standard_deviation(
+                self.sigma0, self.x0
+            )
+
+        # Convert boundaries, if provided
+        if self._boundaries:
+            self._boundaries = transformation.convert_boundaries(self._boundaries)
+
+        # Store the transformation for later detransformation
+        self.transformation = transformation
+
     def name(self):
         """
         Provides the name of the optimisation strategy.
@@ -191,12 +224,12 @@ class BasePintsOptimiser(BaseOptimiser):
         if self._needs_sensitivities:
 
             def f(x):
-                L, dl = self.cost.evaluateS1(x)
+                L, dl = self.f.evaluateS1(x)
                 return (L, dl) if self.minimising else (-L, -dl)
         else:
 
-            def f(x, grad=None):
-                return self.cost(x, grad) if self.minimising else -self.cost(x, grad)
+            def f(x):
+                return self.f(x) if self.minimising else -self.f(x)
 
         # Create evaluator object
         if self._parallel:
@@ -316,8 +349,8 @@ class BasePintsOptimiser(BaseOptimiser):
 
             # Show current parameters
             x_user = self.pints_optimiser.x_guessed()
-            if self._transformation is not None:
-                x_user = self._transformation.to_model(x_user)
+            if self.transformation is not None:
+                x_user = self.transformation.to_model(x_user)
             for p in x_user:
                 print(pints.strfloat(p))
             print("-" * 40)
@@ -339,8 +372,8 @@ class BasePintsOptimiser(BaseOptimiser):
             f = self.pints_optimiser.f_best()
 
         # Inverse transform search parameters
-        if self._transformation is not None:
-            x = self._transformation.to_model(x)
+        if self.transformation is not None:
+            x = self.transformation.to_model(x)
 
         # Store result
         final_cost = f if self.minimising else -f

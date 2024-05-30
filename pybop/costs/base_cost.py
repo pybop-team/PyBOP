@@ -52,13 +52,13 @@ class BaseCost:
     def n_parameters(self):
         return self._n_parameters
 
-    def __call__(self, x, grad=None):
+    def __call__(self, x):
         """
         Call the evaluate function for a given set of parameters.
         """
-        return self.evaluate(x, grad)
+        return self.evaluate(x)
 
-    def evaluate(self, x, grad=None):
+    def evaluate(self, x):
         """
         Call the evaluate function for a given set of parameters.
 
@@ -66,9 +66,6 @@ class BaseCost:
         ----------
         x : array-like
             The parameters for which to evaluate the cost.
-        grad : array-like, optional
-            An array to store the gradient of the cost function with respect
-            to the parameters.
 
         Returns
         -------
@@ -81,7 +78,7 @@ class BaseCost:
             If an error occurs during the calculation of the cost.
         """
         try:
-            return self._evaluate(x, grad)
+            return self._evaluate(x)
 
         except NotImplementedError as e:
             raise e
@@ -89,7 +86,7 @@ class BaseCost:
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}")
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, x):
         """
         Calculate the cost function value for a given set of parameters.
 
@@ -99,9 +96,6 @@ class BaseCost:
         ----------
         x : array-like
             The parameters for which to evaluate the cost.
-        grad : array-like, optional
-            An array to store the gradient of the cost function with respect
-            to the parameters.
 
         Returns
         -------

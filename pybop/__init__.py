@@ -74,6 +74,12 @@ from .costs._likelihoods import (
 )
 
 #
+# Transformation classes
+#
+from .transformations import Transformation
+from .transformations._transformations import IdentityTransformation
+
+#
 # Dataset class
 #
 from ._dataset import Dataset

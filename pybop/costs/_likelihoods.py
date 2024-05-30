@@ -60,7 +60,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         self.sigma2 = self.sigma0**-2
         self._dl = np.ones(self._n_parameters)
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, x):
         """
         Calls the problem.evaluate method and calculates
         the log-likelihood
@@ -86,7 +86,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         else:
             return np.sum(e)
 
-    def _evaluateS1(self, x, grad=None):
+    def _evaluateS1(self, x):
         """
         Calls the problem.evaluateS1 method and calculates
         the log-likelihood
@@ -120,7 +120,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
         self._dl = np.ones(self._n_parameters + self.n_outputs)
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, x):
         """
         Evaluates the Gaussian log-likelihood for the given parameters.
 
@@ -159,7 +159,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         else:
             return np.sum(e)
 
-    def _evaluateS1(self, x, grad=None):
+    def _evaluateS1(self, x):
         """
         Calls the problem.evaluateS1 method and calculates
         the log-likelihood

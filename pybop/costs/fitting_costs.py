@@ -23,7 +23,7 @@ class RootMeanSquaredError(BaseCost):
         # Default fail gradient
         self._de = 1.0
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, x):
         """
         Calculate the root mean square error for a given set of parameters.
 
@@ -138,7 +138,7 @@ class SumSquaredError(BaseCost):
         # Default fail gradient
         self._de = 1.0
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, x):
         """
         Calculate the sum of squared errors for a given set of parameters.
 
@@ -146,9 +146,6 @@ class SumSquaredError(BaseCost):
         ----------
         x : array-like
             The parameters for which to evaluate the cost.
-        grad : array-like, optional
-            An array to store the gradient of the cost function with respect
-            to the parameters.
 
         Returns
         -------
@@ -236,7 +233,7 @@ class ObserverCost(BaseCost):
         super().__init__(problem=observer)
         self._observer = observer
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, x):
         """
         Calculate the observer cost for a given set of parameters.
 
@@ -314,7 +311,7 @@ class MAP(BaseLikelihood):
         ):
             raise ValueError(f"{self.likelihood} must be a subclass of BaseLikelihood")
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, x):
         """
         Calculate the maximum a posteriori cost for a given set of parameters.
 
