@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from typing import Dict, List
 
 import numpy as np
 
@@ -163,11 +164,10 @@ class Parameters:
 
     def __init__(self, *args):
         self.param = OrderedDict()
-        self.bounds = None
         for param in args:
             self.add(param)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str):
         """
         Return the parameter dictionary corresponding to a particular key.
 
@@ -178,8 +178,8 @@ class Parameters:
 
         Returns
         -------
-        list or np.ndarray
-            The dictionary to the key.
+        pybop.Parameter
+            The Parameter object.
 
         Raises
         ------
@@ -191,10 +191,10 @@ class Parameters:
 
         return self.param[key]
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.param)
 
-    def keys(self):
+    def keys(self) -> List:
         """
         A list of parameter names
         """
@@ -236,8 +236,6 @@ class Parameters:
         else:
             raise TypeError("Each parameter input must be a Parameter or a dictionary.")
 
-        self.set_bounds()
-
     def remove(self, parameter_name):
         """
         Remove the `Parameter` object from the `Parameters` dictionary.
@@ -250,27 +248,25 @@ class Parameters:
         # Remove the parameter
         self.param.pop(parameter_name)
 
-        self.set_bounds()
-
-    def set_bounds(self):
+    def get_bounds(self) -> Dict:
         """
-        Set bounds, for either all or no parameters.
+        Get bounds, for either all or no parameters.
         """
         all_unbounded = True  # assumption
-        self.bounds = {"lower": [], "upper": []}
+        bounds = {"lower": [], "upper": []}
 
         for param in self.param.values():
             if param.bounds is not None:
-                self.bounds["lower"].append(param.bounds[0])
-                self.bounds["upper"].append(param.bounds[1])
+                bounds["lower"].append(param.bounds[0])
+                bounds["upper"].append(param.bounds[1])
                 all_unbounded = False
             else:
-                self.bounds["lower"].append(-np.inf)
-                self.bounds["upper"].append(np.inf)
+                bounds["lower"].append(-np.inf)
+                bounds["upper"].append(np.inf)
         if all_unbounded:
-            self.bounds = None
+            bounds = None
 
-        return self.bounds
+        return bounds
 
     def update(self, values):
         """
@@ -279,7 +275,7 @@ class Parameters:
         for i, param in enumerate(self.param.values()):
             param.update(value=values[i])
 
-    def rvs(self, n_samples):
+    def rvs(self, n_samples: int) -> List:
         """
         Draw random samples from each parameter's prior distribution.
 
@@ -312,9 +308,9 @@ class Parameters:
 
         return all_samples
 
-    def get_sigma0(self):
+    def get_sigma0(self) -> List:
         """
-        get the standard deviation, for either all or no parameters.
+        Get the standard deviation, for either all or no parameters.
         """
         all_have_sigma = True  # assumption
         sigma0 = []
@@ -329,7 +325,7 @@ class Parameters:
 
         return sigma0
 
-    def initial_value(self):
+    def initial_value(self) -> List:
         """
         Return the initial value of each parameter.
         """
@@ -343,7 +339,7 @@ class Parameters:
 
         return initial_values
 
-    def current_value(self):
+    def current_value(self) -> List:
         """
         Return the current value of each parameter.
         """
@@ -354,7 +350,7 @@ class Parameters:
 
         return current_values
 
-    def true_value(self):
+    def true_value(self) -> List:
         """
         Return the true value of each parameter.
         """
@@ -384,7 +380,7 @@ class Parameters:
 
         return bounds
 
-    def as_dict(self, values=None):
+    def as_dict(self, values=None) -> Dict:
         if values is None:
             values = self.current_value()
         return {key: values[i] for i, key in enumerate(self.param.keys())}

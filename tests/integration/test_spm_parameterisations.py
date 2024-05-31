@@ -99,7 +99,7 @@ class Test_SPM_Parameterisation:
             spm_costs.problem.parameters[
                 "Positive electrode active material volume fraction"
             ].set_bounds([0.375, 0.725])  # Large range to ensure IC within bounds
-            bounds = spm_costs.problem.parameters.set_bounds()
+            bounds = spm_costs.problem.parameters.get_bounds()
             spm_costs.problem.bounds = bounds
             spm_costs.bounds = bounds
 
@@ -171,7 +171,7 @@ class Test_SPM_Parameterisation:
             spm_two_signal_cost.problem.parameters[
                 "Positive electrode active material volume fraction"
             ].set_bounds([0.375, 0.725])  # Large range to ensure IC within bounds
-            bounds = spm_two_signal_cost.problem.parameters.set_bounds()
+            bounds = spm_two_signal_cost.problem.parameters.get_bounds()
             spm_two_signal_cost.problem.bounds = bounds
             spm_two_signal_cost.bounds = bounds
 

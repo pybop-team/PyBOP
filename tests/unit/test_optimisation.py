@@ -118,7 +118,7 @@ class TestOptimisation:
     @pytest.mark.unit
     def test_optimiser_kwargs(self, cost, optimiser):
         optim = optimiser(cost=cost, maxiter=1)
-        cost_bounds = cost.parameters.bounds
+        cost_bounds = cost.parameters.get_bounds()
 
         # Check maximum iterations
         optim.run()
