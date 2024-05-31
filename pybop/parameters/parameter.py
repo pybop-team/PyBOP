@@ -296,9 +296,9 @@ class Parameters:
         array-like
             An array of samples drawn from the prior distribution within each parameter's bounds.
         """
-        all_samples = np.empty(len(self))
+        all_samples = []
 
-        for i, param in enumerate(self.param.values()):
+        for param in self.param.values():
             samples = param.rvs(n_samples)
 
             # Constrain samples to be within bounds
@@ -308,7 +308,7 @@ class Parameters:
                     samples, param.lower_bound + offset, param.upper_bound - offset
                 )
 
-            all_samples[i] = samples
+            all_samples.append(samples)
 
         return all_samples
 
