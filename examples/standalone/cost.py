@@ -42,7 +42,6 @@ class StandaloneCost(pybop.BaseCost):
             ),
         )
         self.x0 = self.parameters.initial_value()
-        self.bounds = self.parameters.update_bounds()
 
     def _evaluate(self, x, grad=None):
         """

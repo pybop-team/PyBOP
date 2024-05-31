@@ -236,7 +236,7 @@ class Parameters:
         else:
             raise TypeError("Each parameter input must be a Parameter or a dictionary.")
 
-        self.update_bounds()
+        self.set_bounds()
 
     def remove(self, parameter_name):
         """
@@ -250,9 +250,9 @@ class Parameters:
         # Remove the parameter
         self.param.pop(parameter_name)
 
-        self.update_bounds()
+        self.set_bounds()
 
-    def update_bounds(self):
+    def set_bounds(self):
         """
         Set bounds, for either all or no parameters.
         """
