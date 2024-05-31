@@ -231,14 +231,14 @@ class Test_SPM_Parameterisation:
         optimiser = pybop.CMAES
 
         # Build the optimisation problem
-        parameterisation = optimiser(cost=cost)
+        optim = optimiser(cost=cost)
+        initial_cost = optim.cost(cost.x0)
 
         # Run the optimisation problem
-        x, final_cost = parameterisation.run()
+        x, final_cost = optim.run()
 
         # Assertion for final_cost
-        with np.testing.assert_raises(AssertionError):
-            np.testing.assert_allclose(final_cost, 0, atol=1e-2)
+        assert initial_cost > final_cost
 
         # Assertion for x
         with np.testing.assert_raises(AssertionError):
