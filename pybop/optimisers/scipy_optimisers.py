@@ -39,12 +39,8 @@ class BaseSciPyOptimiser(BaseOptimiser):
             self.unset_options.pop("options")
 
         # Check for duplicate keywords
-        expected_keys = ["maxiter", "popsize", "tol"]
-        alternative_keys = [
-            "max_iterations",
-            "population_size",
-            "threshold",
-        ]
+        expected_keys = ["maxiter", "popsize"]
+        alternative_keys = ["max_iterations", "population_size"]
         for exp_key, alt_key in zip(expected_keys, alternative_keys):
             if alt_key in self.unset_options.keys():
                 if exp_key in self.unset_options.keys():

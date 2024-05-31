@@ -79,7 +79,7 @@ class TestTheveninParameterisation:
                 max_iterations=250,
             )
         if isinstance(optimiser, pybop.BasePintsOptimiser):
-            optim.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
+            optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
 
         initial_cost = optim.cost(x0)
         x, final_cost = optim.run()

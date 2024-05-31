@@ -151,8 +151,10 @@ class TestOptimisation:
                 parallel=False,
                 min_iterations=3,
                 max_unchanged_iterations=5,
-                threshold=1e-2,
+                absolute_tolerance=1e-2,
+                relative_tolerance=1e-4,
                 max_evaluations=20,
+                threshold=1e-4,
             )
             with pytest.raises(
                 ValueError,
@@ -348,18 +350,20 @@ class TestOptimisation:
         with pytest.raises(ValueError):
             optim.set_max_iterations(-1)
         with pytest.raises(ValueError):
-            optim.set_max_evaluations(-1)
-        with pytest.raises(ValueError):
             optim.set_min_iterations(-1)
         with pytest.raises(ValueError):
             optim.set_max_unchanged_iterations(-1)
         with pytest.raises(ValueError):
-            optim.set_max_unchanged_iterations(1, threshold=-1)
+            optim.set_max_unchanged_iterations(1, absolute_tolerance=-1)
+        with pytest.raises(ValueError):
+            optim.set_max_unchanged_iterations(1, relative_tolerance=-1)
+        with pytest.raises(ValueError):
+            optim.set_max_evaluations(-1)
 
         optim = pybop.Optimisation(cost=cost)
 
         # Trigger threshold
-        optim._threshold = np.inf
+        optim.set_threshold(np.inf)
         optim.run()
         optim.set_max_unchanged_iterations()
 

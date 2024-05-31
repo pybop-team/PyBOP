@@ -111,7 +111,7 @@ class Test_SPM_Parameterisation:
         else:
             optim = optimiser(cost=spm_costs, sigma0=0.05, max_iterations=250)
         if issubclass(optimiser, pybop.BasePintsOptimiser):
-            optim.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
+            optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
 
         initial_cost = optim.cost(x0)
         x, final_cost = optim.run()
@@ -182,7 +182,7 @@ class Test_SPM_Parameterisation:
             max_iterations=250,
         )
         if issubclass(multi_optimiser, pybop.BasePintsOptimiser):
-            optim.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
+            optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
 
         initial_cost = optim.cost(spm_two_signal_cost.x0)
         x, final_cost = optim.run()

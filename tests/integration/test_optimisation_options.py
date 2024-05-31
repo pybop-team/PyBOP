@@ -87,7 +87,7 @@ class TestOptimisation:
             sigma0=0.05,
             max_iterations=250,
             max_unchanged_iterations=35,
-            threshold=1e-5,
+            absolute_tolerance=1e-5,
             use_f_guessed=f_guessed,
         )
 
