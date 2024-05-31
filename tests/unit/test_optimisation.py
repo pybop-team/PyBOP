@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import pytest
 
@@ -155,11 +157,12 @@ class TestOptimisation:
                 threshold=1e-2,
                 max_evaluations=20,
             )
-            with pytest.raises(
-                ValueError,
-                match="Unrecognised keyword arguments",
+            with pytest.warns(
+                UserWarning,
+                match="Unrecognised keyword arguments: {'unrecognised': 10} will not be used.",
             ):
-                optim = optimiser(cost=cost, tol=1e-3)
+                warnings.simplefilter("always")
+                optim = optimiser(cost=cost, unrecognised=10)
         else:
             # Check bounds in list format and update tol
             bounds = [
