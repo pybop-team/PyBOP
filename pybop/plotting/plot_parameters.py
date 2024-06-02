@@ -52,6 +52,10 @@ def plot_parameters(optim, show=True, **layout_kwargs):
         axis_titles.append(("Function Call", param.name))
         trace_names.append(param.name)
 
+    if isinstance(optim.cost, pybop.GaussianLogLikelihood):
+        axis_titles.append(("Function Call", "Sigma"))
+        trace_names.append("Sigma")
+
     # Set subplot layout options
     layout_options = dict(
         title="Parameter Convergence",

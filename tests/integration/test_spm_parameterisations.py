@@ -44,6 +44,7 @@ class Test_SPM_Parameterisation:
     @pytest.fixture(
         params=[
             pybop.GaussianLogLikelihoodKnownSigma,
+            pybop.GaussianLogLikelihood,
             pybop.RootMeanSquaredError,
             pybop.SumSquaredError,
             pybop.MAP,
@@ -72,6 +73,8 @@ class Test_SPM_Parameterisation:
         problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
             return cost_class(problem, sigma=[0.03, 0.03])
+        elif cost_class in [pybop.GaussianLogLikelihood]:
+            return cost_class(problem, sigma0=0.001, x0=0.003)
         elif cost_class in [pybop.MAP]:
             return cost_class(
                 problem, pybop.GaussianLogLikelihoodKnownSigma, sigma=[0.03, 0.03]
@@ -96,23 +99,12 @@ class Test_SPM_Parameterisation:
     def test_spm_optimisers(self, optimiser, spm_costs):
         x0 = spm_costs.x0
         # Some optimisers require a complete set of bounds
-        if optimiser in [
-            pybop.SciPyDifferentialEvolution,
-        ]:
-            spm_costs.problem.parameters[1].set_bounds(
-                [0.375, 0.725]
-            )  # Large range to ensure IC within bounds
-            bounds = {"lower": [], "upper": []}
-            for param in spm_costs.problem.parameters:
-                bounds["lower"].append(param.bounds[0])
-                bounds["upper"].append(param.bounds[1])
-            spm_costs.problem.bounds = bounds
-            spm_costs.bounds = bounds
 
         # Test each optimiser
-        if optimiser in [pybop.PSO]:
-            optim = pybop.Optimisation(
-                cost=spm_costs, optimiser=optimiser, sigma0=0.05, max_iterations=125
+        if isinstance(spm_costs, pybop.GaussianLogLikelihood):
+            optim = optimiser(
+                cost=spm_costs,
+                max_iterations=125,
             )
         else:
             optim = optimiser(cost=spm_costs, sigma0=0.05, max_iterations=125)
@@ -123,15 +115,19 @@ class Test_SPM_Parameterisation:
         x, final_cost = optim.run()
 
         # Assertions
-        if not np.allclose(x0, self.ground_truth, atol=1e-5):
-            if optim.minimising:
-                assert initial_cost > final_cost
+        if not isinstance(spm_costs, pybop.GaussianLogLikelihood):
+            if not np.allclose(x0, self.ground_truth, atol=1e-5):
+                if optim.minimising:
+                    assert initial_cost > final_cost
+                else:
+                    assert initial_cost < final_cost
+
+            if pybamm_version <= "23.9":
+                np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
             else:
-                assert initial_cost < final_cost
-        if pybamm_version <= "23.9":
-            np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
+                np.testing.assert_allclose(x, self.ground_truth, atol=1.75e-2)
         else:
-            np.testing.assert_allclose(x, self.ground_truth, atol=1.75e-2)
+            np.testing.assert_allclose(x[:-1], self.ground_truth, atol=2.5e-2)
 
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, cost_class):
@@ -175,21 +171,12 @@ class Test_SPM_Parameterisation:
     @pytest.mark.integration
     def test_multiple_signals(self, multi_optimiser, spm_two_signal_cost):
         x0 = spm_two_signal_cost.x0
-        # Some optimisers require a complete set of bounds
-        if multi_optimiser in [pybop.SciPyDifferentialEvolution]:
-            spm_two_signal_cost.problem.parameters[1].set_bounds(
-                [0.375, 0.725]
-            )  # Large range to ensure IC within bounds
-            bounds = {"lower": [], "upper": []}
-            for param in spm_two_signal_cost.problem.parameters:
-                bounds["lower"].append(param.bounds[0])
-                bounds["upper"].append(param.bounds[1])
-            spm_two_signal_cost.problem.bounds = bounds
-            spm_two_signal_cost.bounds = bounds
 
         # Test each optimiser
         optim = multi_optimiser(
-            cost=spm_two_signal_cost, sigma0=0.03, max_iterations=125
+            cost=spm_two_signal_cost,
+            sigma0=0.03,
+            max_iterations=125,
         )
         if issubclass(multi_optimiser, pybop.BasePintsOptimiser):
             optim.set_max_unchanged_iterations(iterations=35, threshold=5e-4)
@@ -198,12 +185,15 @@ class Test_SPM_Parameterisation:
         x, final_cost = optim.run()
 
         # Assertions
-        if not np.allclose(x0, self.ground_truth, atol=1e-5):
-            if optim.minimising:
-                assert initial_cost > final_cost
-            else:
-                assert initial_cost < final_cost
-        np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
+        if not isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood):
+            if not np.allclose(x0, self.ground_truth, atol=1e-5):
+                if optim.minimising:
+                    assert initial_cost > final_cost
+                else:
+                    assert initial_cost < final_cost
+            np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
+        else:
+            np.testing.assert_allclose(x[:-2], self.ground_truth, atol=2.5e-2)
 
     @pytest.mark.parametrize("init_soc", [0.4, 0.6])
     @pytest.mark.integration

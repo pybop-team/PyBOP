@@ -141,5 +141,9 @@ class Parameter:
             else:
                 self.lower_bound = bounds[0]
                 self.upper_bound = bounds[1]
+        elif self.prior is not None:
+            self.lower_bound = self.prior.mean - 6 * self.prior.sigma
+            self.upper_bound = self.prior.mean + 6 * self.prior.sigma
+            bounds = [self.lower_bound, self.upper_bound]
 
         self.bounds = bounds
