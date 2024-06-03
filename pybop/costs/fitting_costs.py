@@ -287,7 +287,8 @@ class MAP(BaseLikelihood):
     Maximum a posteriori cost function.
 
     Computes the maximum a posteriori cost function, which is the sum of the
-    negative log likelihood and the log prior.
+    log likelihood and the log prior. The goal of maximising is achieved by
+    setting minimising = False in the optimiser settings.
 
     Inherits all parameters and attributes from ``BaseLikelihood``.
 

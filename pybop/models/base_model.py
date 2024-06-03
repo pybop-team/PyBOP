@@ -40,7 +40,7 @@ class BaseModel:
     This class serves as a foundation for building specific models in PyBaMM.
     It provides methods to set up the model, define parameters, and perform
     simulations. The class is designed to be subclassed for creating models
-    with custom behavior.
+    with custom behaviour.
 
     """
 
@@ -118,6 +118,8 @@ class BaseModel:
             self._built_model = self.pybamm_model
 
         else:
+            if not self.pybamm_model._built:
+                self.pybamm_model.build_model()
             self.set_params()
 
             self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
@@ -490,6 +492,9 @@ class BaseModel:
             if PyBaMM models are not supported by the current simulation method.
 
         """
+        if not self.pybamm_model._built:
+            self.pybamm_model.build_model()
+
         parameter_set = parameter_set or self._unprocessed_parameter_set
         if inputs is not None:
             if not isinstance(inputs, dict):

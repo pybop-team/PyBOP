@@ -1,8 +1,9 @@
-import numpy as np
 import pints
 
+from pybop import BasePintsOptimiser
 
-class GradientDescent(pints.GradientDescent):
+
+class GradientDescent(BasePintsOptimiser):
     """
     Implements a simple gradient descent optimization algorithm.
 
@@ -12,27 +13,25 @@ class GradientDescent(pints.GradientDescent):
 
     Parameters
     ----------
-    x0 : array_like
-        Initial position from which optimization will start.
-    sigma0 : float, optional
-        Initial step size (default is 0.1).
-    bounds : dict, optional
-        Ignored by this optimiser, provided for API consistency.
+    **optimiser_kwargs : optional
+        Valid PINTS option keys and their values, for example:
+        x0 : array_like
+            Initial position from which optimisation will start.
+        sigma0 : float
+            The learning rate / Initial step size (default: 0.02).
 
     See Also
     --------
     pints.GradientDescent : The PINTS implementation this class is based on.
     """
 
-    def __init__(self, x0, sigma0=0.1, bounds=None):
-        if bounds is not None:
-            print("NOTE: Boundaries ignored by Gradient Descent")
-
-        self.boundaries = None  # Bounds ignored in pints.GradDesc
-        super().__init__(x0, sigma0, self.boundaries)
+    def __init__(self, cost, **optimiser_kwargs):
+        if "sigma0" not in optimiser_kwargs.keys():
+            optimiser_kwargs["sigma0"] = 0.02  # set default
+        super().__init__(cost, pints.GradientDescent, **optimiser_kwargs)
 
 
-class Adam(pints.Adam):
+class Adam(BasePintsOptimiser):
     """
     Implements the Adam optimization algorithm.
 
@@ -42,27 +41,23 @@ class Adam(pints.Adam):
 
     Parameters
     ----------
-    x0 : array_like
-        Initial position from which optimization will start.
-    sigma0 : float, optional
-        Initial step size (default is 0.1).
-    bounds : dict, optional
-        Ignored by this optimiser, provided for API consistency.
+    **optimiser_kwargs : optional
+        Valid PINTS option keys and their values, for example:
+        x0 : array_like
+            Initial position from which optimisation will start.
+        sigma0 : float
+            Initial step size.
 
     See Also
     --------
     pints.Adam : The PINTS implementation this class is based on.
     """
 
-    def __init__(self, x0, sigma0=0.1, bounds=None):
-        if bounds is not None:
-            print("NOTE: Boundaries ignored by Adam")
-
-        self.boundaries = None  # Bounds ignored in pints.Adam
-        super().__init__(x0, sigma0, self.boundaries)
+    def __init__(self, cost, **optimiser_kwargs):
+        super().__init__(cost, pints.Adam, **optimiser_kwargs)
 
 
-class IRPropMin(pints.IRPropMin):
+class IRPropMin(BasePintsOptimiser):
     """
     Implements the iRpropMin optimization algorithm.
 
@@ -72,30 +67,26 @@ class IRPropMin(pints.IRPropMin):
 
     Parameters
     ----------
-    x0 : array_like
-        Initial position from which optimization will start.
-    sigma0 : float, optional
-        Initial step size (default is 0.1).
-    bounds : dict, optional
-        A dictionary with 'lower' and 'upper' keys containing arrays for lower and upper
-        bounds on the parameters.
+    **optimiser_kwargs : optional
+        Valid PINTS option keys and their values, for example:
+        x0 : array_like
+            Initial position from which optimisation will start.
+        sigma0 : float
+            Initial step size.
+        bounds : dict
+            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
+            upper bounds on the parameters.
 
     See Also
     --------
     pints.IRPropMin : The PINTS implementation this class is based on.
     """
 
-    def __init__(self, x0, sigma0=0.1, bounds=None):
-        if bounds is not None:
-            self.boundaries = pints.RectangularBoundaries(
-                bounds["lower"], bounds["upper"]
-            )
-        else:
-            self.boundaries = None
-        super().__init__(x0, sigma0, self.boundaries)
+    def __init__(self, cost, **optimiser_kwargs):
+        super().__init__(cost, pints.IRPropMin, **optimiser_kwargs)
 
 
-class PSO(pints.PSO):
+class PSO(BasePintsOptimiser):
     """
     Implements a particle swarm optimization (PSO) algorithm.
 
@@ -105,36 +96,26 @@ class PSO(pints.PSO):
 
     Parameters
     ----------
-    x0 : array_like
-        Initial positions of particles, which the optimization will use.
-    sigma0 : float, optional
-        Spread of the initial particle positions (default is 0.1).
-    bounds : dict, optional
-        A dictionary with 'lower' and 'upper' keys containing arrays for lower and upper
-        bounds on the parameters.
+    **optimiser_kwargs : optional
+        Valid PINTS option keys and their values, for example:
+        x0 : array_like
+            Initial positions of particles, which the optimisation will use.
+        sigma0 : float
+            Spread of the initial particle positions.
+        bounds : dict
+            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
+            upper bounds on the parameters.
 
     See Also
     --------
     pints.PSO : The PINTS implementation this class is based on.
     """
 
-    def __init__(self, x0, sigma0=0.1, bounds=None):
-        if bounds is None:
-            self.boundaries = None
-        elif not all(
-            np.isfinite(value) for sublist in bounds.values() for value in sublist
-        ):
-            raise ValueError(
-                "Either all bounds or no bounds must be set for Pints PSO."
-            )
-        else:
-            self.boundaries = pints.RectangularBoundaries(
-                bounds["lower"], bounds["upper"]
-            )
-        super().__init__(x0, sigma0, self.boundaries)
+    def __init__(self, cost, **optimiser_kwargs):
+        super().__init__(cost, pints.PSO, **optimiser_kwargs)
 
 
-class SNES(pints.SNES):
+class SNES(BasePintsOptimiser):
     """
     Implements the stochastic natural evolution strategy (SNES) optimization algorithm.
 
@@ -144,30 +125,26 @@ class SNES(pints.SNES):
 
     Parameters
     ----------
-    x0 : array_like
-        Initial position from which optimization will start.
-    sigma0 : float, optional
-        Initial standard deviation of the sampling distribution, defaults to 0.1.
-    bounds : dict, optional
-        A dictionary with 'lower' and 'upper' keys containing arrays for lower and upper
-        bounds on the parameters.
+    **optimiser_kwargs : optional
+        Valid PINTS option keys and their values, for example:
+        x0 : array_like
+            Initial position from which optimisation will start.
+        sigma0 : float
+            Initial standard deviation of the sampling distribution.
+        bounds : dict
+            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
+            upper bounds on the parameters.
 
     See Also
     --------
     pints.SNES : The PINTS implementation this class is based on.
     """
 
-    def __init__(self, x0, sigma0=0.1, bounds=None):
-        if bounds is not None:
-            self.boundaries = pints.RectangularBoundaries(
-                bounds["lower"], bounds["upper"]
-            )
-        else:
-            self.boundaries = None
-        super().__init__(x0, sigma0, self.boundaries)
+    def __init__(self, cost, **optimiser_kwargs):
+        super().__init__(cost, pints.SNES, **optimiser_kwargs)
 
 
-class XNES(pints.XNES):
+class XNES(BasePintsOptimiser):
     """
     Implements the Exponential Natural Evolution Strategy (XNES) optimiser from PINTS.
 
@@ -177,30 +154,26 @@ class XNES(pints.XNES):
 
     Parameters
     ----------
-    x0 : array_like
-        The initial parameter vector to optimize.
-    sigma0 : float, optional
-        Initial standard deviation of the sampling distribution, defaults to 0.1.
-    bounds : dict, optional
-        A dictionary with 'lower' and 'upper' keys containing arrays for lower and upper
-        bounds on the parameters. If ``None``, no bounds are enforced.
+    **optimiser_kwargs : optional
+        Valid PINTS option keys and their values, for example:
+        x0 : array_like
+            The initial parameter vector to optimise.
+        sigma0 : float
+            Initial standard deviation of the sampling distribution.
+        bounds : dict
+            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
+            upperbounds on the parameters. If ``None``, no bounds are enforced.
 
     See Also
     --------
     pints.XNES : PINTS implementation of XNES algorithm.
     """
 
-    def __init__(self, x0, sigma0=0.1, bounds=None):
-        if bounds is not None:
-            self.boundaries = pints.RectangularBoundaries(
-                bounds["lower"], bounds["upper"]
-            )
-        else:
-            self.boundaries = None
-        super().__init__(x0, sigma0, self.boundaries)
+    def __init__(self, cost, **optimiser_kwargs):
+        super().__init__(cost, pints.XNES, **optimiser_kwargs)
 
 
-class NelderMead(pints.NelderMead):
+class NelderMead(BasePintsOptimiser):
     """
     Implements the Nelder-Mead downhill simplex method from PINTS.
 
@@ -210,28 +183,24 @@ class NelderMead(pints.NelderMead):
 
     Parameters
     ----------
-    x0 : array_like
-        The initial parameter vector to optimize.
-    sigma0 : float, optional
-        Initial standard deviation of the sampling distribution, defaults to 0.1.
-        Does not appear to be used.
-    bounds : dict, optional
-        Ignored by this optimiser, provided for API consistency.
+    **optimiser_kwargs : optional
+        Valid PINTS option keys and their values, for example:
+        x0 : array_like
+            The initial parameter vector to optimise.
+        sigma0 : float
+            Initial standard deviation of the sampling distribution.
+            Does not appear to be used.
 
     See Also
     --------
     pints.NelderMead : PINTS implementation of Nelder-Mead algorithm.
     """
 
-    def __init__(self, x0, sigma0=0.1, bounds=None):
-        if bounds is not None:
-            print("NOTE: Boundaries ignored by NelderMead")
-
-        self.boundaries = None  # Bounds ignored in pints.NelderMead
-        super().__init__(x0, sigma0, self.boundaries)
+    def __init__(self, cost, **optimiser_kwargs):
+        super().__init__(cost, pints.NelderMead, **optimiser_kwargs)
 
 
-class CMAES(pints.CMAES):
+class CMAES(BasePintsOptimiser):
     """
     Adapter for the Covariance Matrix Adaptation Evolution Strategy (CMA-ES) optimiser in PINTS.
 
@@ -241,30 +210,26 @@ class CMAES(pints.CMAES):
 
     Parameters
     ----------
-    x0 : array_like
-        The initial parameter vector to optimize.
-    sigma0 : float, optional
-        Initial standard deviation of the sampling distribution, defaults to 0.1.
-    bounds : dict, optional
-        A dictionary with 'lower' and 'upper' keys containing arrays for lower and upper
-        bounds on the parameters. If ``None``, no bounds are enforced.
+    **optimiser_kwargs : optional
+        Valid PINTS option keys and their values, for example:
+        x0 : array_like
+            The initial parameter vector to optimise.
+        sigma0 : float
+            Initial standard deviation of the sampling distribution.
+        bounds : dict
+            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
+            upper bounds on the parameters. If ``None``, no bounds are enforced.
 
     See Also
     --------
     pints.CMAES : PINTS implementation of CMA-ES algorithm.
     """
 
-    def __init__(self, x0, sigma0=0.1, bounds=None):
-        if len(x0) == 1:
+    def __init__(self, cost, **optimiser_kwargs):
+        x0 = optimiser_kwargs.pop("x0", cost.x0)
+        if x0 is not None and len(x0) == 1:
             raise ValueError(
                 "CMAES requires optimisation of >= 2 parameters at once. "
                 + "Please choose another optimiser."
             )
-        if bounds is not None:
-            self.boundaries = pints.RectangularBoundaries(
-                bounds["lower"], bounds["upper"]
-            )
-        else:
-            self.boundaries = None
-
-        super().__init__(x0, sigma0, self.boundaries)
+        super().__init__(cost, pints.CMAES, **optimiser_kwargs)
