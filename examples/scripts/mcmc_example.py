@@ -11,11 +11,11 @@ model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        prior=pybop.GaussianLogPrior(0.68, 0.05),
+        prior=pybop.Gaussian(0.68, 0.05),
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        prior=pybop.GaussianLogPrior(0.58, 0.05),
+        prior=pybop.Gaussian(0.58, 0.05),
     ),
 ]
 
@@ -56,8 +56,8 @@ problem = pybop.FittingProblem(
     model, parameters, dataset, signal=signal, init_soc=init_soc
 )
 likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma=[0.02, 0.02])
-prior1 = pybop.GaussianLogPrior(0.7, 0.02)
-prior2 = pybop.GaussianLogPrior(0.6, 0.02)
+prior1 = pybop.Gaussian(0.7, 0.02)
+prior2 = pybop.Gaussian(0.6, 0.02)
 composed_prior = pybop.ComposedLogPrior(prior1, prior2)
 posterior = pybop.LogPosterior(likelihood, composed_prior)
 x0 = [[0.68, 0.58], [0.68, 0.58], [0.68, 0.58]]

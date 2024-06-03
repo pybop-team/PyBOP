@@ -38,6 +38,36 @@ class TestPriors:
         np.testing.assert_allclose(Uniform.logpdf(0.5), 0, atol=1e-4)
         np.testing.assert_allclose(Exponential.logpdf(1), -1, atol=1e-4)
 
+        # Test icdf
+        np.testing.assert_allclose(Gaussian.icdf(0.5), 0.5, atol=1e-4)
+        np.testing.assert_allclose(Uniform.icdf(0.5), 0.5, atol=1e-4)
+        np.testing.assert_allclose(Exponential.icdf(0.5), 0.6931471805599453, atol=1e-4)
+
+        # Test cdf
+        np.testing.assert_allclose(Gaussian.cdf(0.5), 0.5, atol=1e-4)
+        np.testing.assert_allclose(Uniform.cdf(0.5), 0.5, atol=1e-4)
+        np.testing.assert_allclose(Exponential.cdf(1), 0.6321205588285577, atol=1e-4)
+
+        # Test evaluate
+        assert Gaussian(0.5) == Gaussian.logpdf(0.5)
+        assert Uniform(0.5) == Uniform.logpdf(0.5)
+        assert Exponential(1) == Exponential.logpdf(1)
+
+        # Test Gaussian.evaluateS1
+        p, dp = Gaussian.evaluateS1(0.5)
+        assert p == Gaussian.logpdf(0.5)
+        assert dp == 0.0
+
+        # Test Uniform.evaluateS1
+        p, dp = Uniform.evaluateS1(0.5)
+        assert p == Uniform.logpdf(0.5)
+        assert dp == 0.0
+
+        # Test Exponential.evaluateS1
+        p, dp = Exponential.evaluateS1(1)
+        assert p == Exponential.logpdf(1)
+        assert dp == Exponential.logpdf(1)
+
         # Test properties
         assert Uniform.mean == (Uniform.upper - Uniform.lower) / 2
         np.testing.assert_allclose(

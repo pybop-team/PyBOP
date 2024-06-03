@@ -77,8 +77,8 @@ class TestPintsSamplers:
             dataset,
         )
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma=[0.02, 0.02])
-        prior1 = pybop.GaussianLogPrior(0.7, 0.02)
-        prior2 = pybop.GaussianLogPrior(0.6, 0.02)
+        prior1 = pybop.Gaussian(0.7, 0.02)
+        prior2 = pybop.Gaussian(0.6, 0.02)
         composed_prior = pybop.ComposedLogPrior(prior1, prior2)
         log_posterior = pybop.LogPosterior(likelihood, composed_prior)
 
@@ -117,7 +117,9 @@ class TestPintsSamplers:
     )
     @pytest.mark.unit
     def test_initialization_and_run(self, log_posterior, x0, chains, MCMC):
-        sampler = MCMC(log_pdf=log_posterior, chains=chains, x0=x0, max_iterations=1)
+        sampler = pybop.MCMCSampler(
+            log_pdf=log_posterior, chains=chains, sampler=MCMC, x0=x0, max_iterations=1
+        )
         assert sampler._n_chains == chains
         assert sampler._log_pdf == log_posterior
         assert (sampler._samplers[0]._x0 == x0[0]).all()
@@ -170,11 +172,39 @@ class TestPintsSamplers:
     @pytest.mark.unit
     def test_check_stopping_criteria(self, log_posterior, x0, chains):
         sampler = AdaptiveCovarianceMCMC(
-            log_pdf=log_posterior, chains=chains, x0=x0, max_iterations=10
+            log_pdf=log_posterior,
+            chains=chains,
+            x0=x0,
         )
+        # Set stopping criteria
+        sampler.set_max_iterations(10)
+        assert sampler._max_iterations == 10
 
+        # Remove stopping criteria
         sampler._max_iterations = None
         with pytest.raises(
             ValueError, match="At least one stopping criterion must be set."
         ):
             sampler._check_stopping_criteria()
+
+    @pytest.mark.unit
+    def test_set_parallel(self, log_posterior, x0, chains):
+        sampler = AdaptiveCovarianceMCMC(
+            log_pdf=log_posterior,
+            chains=chains,
+            x0=x0,
+        )
+
+        # Disable parallelism
+        sampler.set_parallel(False)
+        assert sampler._parallel is False
+        assert sampler._n_workers == 1
+
+        # Enable parallelism
+        sampler.set_parallel(True)
+        assert sampler._parallel is True
+
+        # Enable parallelism with number of workers
+        sampler.set_parallel(2)
+        assert sampler._parallel is True
+        assert sampler._n_workers == 2

@@ -268,7 +268,7 @@ class LogPosterior(BaseCost):
         """
         prior, dp = self._prior.evaluateS1(x)
         if prior == np.inf:
-            return prior
+            return prior, dp
         likelihood, dl = self._log_likelihood.evaluateS1(x)
         return prior + likelihood, dp + dl
 
