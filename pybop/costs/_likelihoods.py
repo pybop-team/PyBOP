@@ -11,26 +11,27 @@ class BaseLikelihood(BaseCost):
     Base class for likelihoods
     """
 
-    def __init__(self, problem: BaseProblem, sigma: Union[None, np.ndarray] = None):
-        super(BaseLikelihood, self).__init__(problem, sigma)
+    def __init__(self, problem: BaseProblem, sigma0: Union[None, np.ndarray] = None):
+        super(BaseLikelihood, self).__init__(problem, sigma0)
         self.n_time_data = problem.n_time_data
 
-    def set_sigma(self, sigma: Union[np.ndarray, List[float]]):
+    def set_sigma0(self, sigma0: Union[np.ndarray, List[float]]):
         """
-        Setter for sigma parameter
+        Setter for sigma0 parameter
         """
-        sigma = np.asarray(sigma, dtype=float)
-        if not np.all(sigma > 0):
+        sigma0 = np.asarray(sigma0, dtype=float)
+        if not np.all(sigma0 > 0):
             raise ValueError("Sigma must be positive")
-        self.sigma0 = sigma
+        self.sigma0 = sigma0
 
-    def get_sigma(self) -> np.ndarray:
+    def get_sigma0(self) -> np.ndarray:
         """
-        Getter for sigma parameter
+        Getter for sigma0 parameter
         """
         return self.sigma0
 
-    def get_n_parameters(self) -> int:
+    @property
+    def n_parameters(self) -> int:
         """
         Returns the number of parameters
         """
@@ -47,9 +48,9 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         _logpi (float): Precomputed offset value for the log-likelihood function.
     """
 
-    def __init__(self, problem: BaseProblem, sigma: List[float]):
-        super(GaussianLogLikelihoodKnownSigma, self).__init__(problem, sigma)
-        self.set_sigma(sigma)
+    def __init__(self, problem: BaseProblem, sigma0: List[float]):
+        super(GaussianLogLikelihoodKnownSigma, self).__init__(problem, sigma0)
+        self.set_sigma0(sigma0)
         self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi / self.sigma0)
         self._multip = -1 / (2.0 * self.sigma0**2)
         self.sigma2 = self.sigma0**-2
@@ -103,15 +104,18 @@ class GaussianLogLikelihood(BaseLikelihood):
         _logpi (float): Precomputed offset value for the log-likelihood function.
     """
 
-    def __init__(self, problem: BaseProblem, sigma0=0.001, x0=0.005):
+    def __init__(
+        self, problem: BaseProblem, sigma0=0.001, x0=0.005, sigma_bounds_std=6
+    ):
         super(GaussianLogLikelihood, self).__init__(problem)
         self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
         self._dl = np.inf * np.ones(self._n_parameters + self.n_outputs)
         self._dsigma_scale = 1e2
+        self.sigma_bounds_std = sigma_bounds_std
 
         # Set the bounds for the sigma parameters
-        self.lower_bound = max((x0 - 6 * sigma0), 1e-4)
-        self.upper_bound = x0 + 6 * sigma0
+        self.lower_bound = max((x0 - self.sigma_bounds_std * sigma0), 1e-5)
+        self.upper_bound = x0 + self.sigma_bounds_std * sigma0
         self._validate_and_correct_length(sigma0, x0)
 
     @property
@@ -214,3 +218,90 @@ class GaussianLogLikelihood(BaseLikelihood):
         dl = np.concatenate((dl.flatten(), dsigma))
 
         return likelihood, dl
+
+
+class MAP(BaseLikelihood):
+    """
+    Maximum a posteriori cost function.
+
+    Computes the maximum a posteriori cost function, which is the sum of the
+    log likelihood and the log prior. The goal of maximising is achieved by
+    setting minimising = False in the optimiser settings.
+
+    Inherits all parameters and attributes from ``BaseLikelihood``.
+
+    """
+
+    def __init__(self, problem, likelihood, sigma0=None):
+        super(MAP, self).__init__(problem)
+        self.sigma0 = sigma0
+        if self.sigma0 is None:
+            self.sigma0 = []
+            for param in self.problem.parameters:
+                self.sigma0.append(param.prior.sigma)
+
+        try:
+            self.likelihood = likelihood(problem=self.problem, sigma0=self.sigma0)
+        except Exception as e:
+            raise ValueError(
+                f"An error occurred when constructing the Likelihood class: {e}"
+            )
+
+        if hasattr(self, "likelihood") and not isinstance(
+            self.likelihood, BaseLikelihood
+        ):
+            raise ValueError(f"{self.likelihood} must be a subclass of BaseLikelihood")
+
+    def _evaluate(self, x, grad=None):
+        """
+        Calculate the maximum a posteriori cost for a given set of parameters.
+
+        Parameters
+        ----------
+        x : array-like
+            The parameters for which to evaluate the cost.
+        grad : array-like, optional
+            An array to store the gradient of the cost function with respect
+            to the parameters.
+
+        Returns
+        -------
+        float
+            The maximum a posteriori cost.
+        """
+        log_likelihood = self.likelihood.evaluate(x)
+        log_prior = sum(
+            param.prior.logpdf(x_i) for x_i, param in zip(x, self.problem.parameters)
+        )
+
+        posterior = log_likelihood + log_prior
+        return posterior
+
+    def _evaluateS1(self, x):
+        """
+        Compute the maximum a posteriori with respect to the parameters.
+        The method passes the likelihood gradient to the optimiser without modification.
+
+        Parameters
+        ----------
+        x : array-like
+            The parameters for which to compute the cost and gradient.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the cost and the gradient. The cost is a float,
+            and the gradient is an array-like of the same length as `x`.
+
+        Raises
+        ------
+        ValueError
+            If an error occurs during the calculation of the cost or gradient.
+        """
+        log_likelihood, dl = self.likelihood.evaluateS1(x)
+        log_prior = sum(
+            param.prior.logpdf(x_i) for x_i, param in zip(x, self.problem.parameters)
+        )
+
+        posterior = log_likelihood + log_prior
+        return posterior, dl

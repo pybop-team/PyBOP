@@ -60,7 +60,6 @@ from .costs.fitting_costs import (
     RootMeanSquaredError,
     SumSquaredError,
     ObserverCost,
-    MAP,
 )
 from .costs.design_costs import (
     DesignCost,
@@ -71,6 +70,7 @@ from .costs._likelihoods import (
     BaseLikelihood,
     GaussianLogLikelihood,
     GaussianLogLikelihoodKnownSigma,
+    MAP,
 )
 
 #

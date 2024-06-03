@@ -128,7 +128,7 @@ class TestCosts:
 
         # Incorrect construction of likelihood
         with pytest.raises(ValueError):
-            pybop.MAP(problem, pybop.GaussianLogLikelihoodKnownSigma, sigma="string")
+            pybop.MAP(problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0="string")
 
     @pytest.mark.unit
     def test_costs(self, cost):

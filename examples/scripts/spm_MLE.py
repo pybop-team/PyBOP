@@ -44,7 +44,7 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 likelihood = pybop.GaussianLogLikelihood(problem)
-optim = pybop.IRPropMin(
+optim = pybop.CMAES(
     likelihood,
     max_unchanged_iterations=40,
     min_iterations=40,
