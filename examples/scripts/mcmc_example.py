@@ -68,7 +68,7 @@ optim = pybop.DREAM(
     x0=x0,
     max_iterations=400,
     initial_phase_iterations=250,
-    parallel=True,
+    # parallel=True, # uncomment to enable parallelisation (MacOS/Linux only)
 )
 result = optim.run()
 
