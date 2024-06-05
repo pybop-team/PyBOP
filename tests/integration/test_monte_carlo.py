@@ -111,8 +111,8 @@ class Test_Sampling_SPM:
     @pytest.mark.integration
     def test_sampling_spm(self, quick_sampler, spm_likelihood):
         x0 = spm_likelihood.x0
-        prior1 = pybop.Gaussian(0.55, 0.05)
-        prior2 = pybop.Gaussian(0.55, 0.05)
+        prior1 = pybop.Uniform(0.4, 0.7)
+        prior2 = pybop.Uniform(0.4, 0.7)
         composed_prior = pybop.ComposedLogPrior(prior1, prior2)
         posterior = pybop.LogPosterior(spm_likelihood, composed_prior)
         x0 = [[0.55, 0.55], [0.55, 0.55], [0.55, 0.55]]

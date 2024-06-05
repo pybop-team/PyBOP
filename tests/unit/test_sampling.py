@@ -1,3 +1,4 @@
+import copy
 from unittest.mock import MagicMock, patch
 
 import numpy as np
@@ -138,6 +139,8 @@ class TestPintsSamplers:
         # Test __setattr__
         sampler.__setattr__("test", 1)
         assert sampler.test == 1
+        sampler.verbose = True
+        assert sampler.verbose is True
 
         # Run the sampler
         samples = sampler.run()
@@ -150,7 +153,7 @@ class TestPintsSamplers:
         sampler = pybop.MCMCSampler(
             log_pdf=multi_log_posterior,
             chains=chains,
-            sampler=HaarioBardenetACMC,
+            sampler=HamiltonianMCMC,
             x0=x0,
             max_iterations=1,
         )
@@ -161,6 +164,33 @@ class TestPintsSamplers:
         samples = sampler.run()
         assert samples is not None
         assert samples.shape == (chains, 1, 2)
+
+        # Test incorrect multi log pdf
+        incorrect_multi_log_posterior = [log_posterior, log_posterior, chains]
+        with pytest.raises(
+            ValueError, match="All log pdf's must be instances of BaseCost"
+        ):
+            sampler = pybop.MCMCSampler(
+                log_pdf=incorrect_multi_log_posterior,
+                chains=chains,
+                sampler=HaarioBardenetACMC,
+                x0=x0,
+                max_iterations=1,
+            )
+
+        # Test incorrect number of parameters
+        new_multi_log_posterior = copy.copy(log_posterior)
+        new_multi_log_posterior._n_parameters = 10
+        with pytest.raises(
+            ValueError, match="All log pdf's must have the same number of parameters"
+        ):
+            sampler = pybop.MCMCSampler(
+                log_pdf=[log_posterior, log_posterior, new_multi_log_posterior],
+                chains=chains,
+                sampler=HaarioBardenetACMC,
+                x0=x0,
+                max_iterations=1,
+            )
 
     @pytest.mark.unit
     def test_invalid_initialization(self, log_posterior, x0):
@@ -179,6 +209,21 @@ class TestPintsSamplers:
                 chains=2,
                 x0=x0,
             )
+
+    @pytest.mark.unit
+    def test_no_chains_in_memory(self, log_posterior, x0, chains):
+        sampler = AdaptiveCovarianceMCMC(
+            log_pdf=log_posterior,
+            chains=chains,
+            x0=x0,
+            max_iterations=1,
+            chains_in_memory=False,
+        )
+        assert sampler._chains_in_memory is False
+
+        # Run the sampler
+        samples = sampler.run()
+        assert samples is None
 
     @pytest.mark.unit
     def test_apply_transformation(self, log_posterior, x0, chains):

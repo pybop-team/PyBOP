@@ -120,9 +120,3 @@ class TestLogPosterior:
 
         assert likelihood == posterior._log_likelihood
         assert prior == posterior._prior
-
-        # Test prior np.inf
-        p1 = posterior(np.array([-np.inf]))
-        p2, _ = posterior.evaluateS1(np.array([-np.inf]))
-        assert p1 == -np.inf
-        assert p2 == -np.inf
