@@ -89,21 +89,20 @@ class TestLikelihoods:
             likelihood(np.array([0.5, 0.5]))
 
     @pytest.mark.unit
-    def test_set_get_sigma(self, one_signal_problem):
-        likelihood = pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, 0.1)
-        likelihood.set_sigma(np.array([0.3]))
-        assert np.array_equal(likelihood.get_sigma(), np.array([0.3]))
-
+    def test_likelihood_set_get_sigma0(self, one_signal_problem):
         with pytest.raises(
             ValueError,
-            match="The GaussianLogLikelihoodKnownSigma cost requires sigma to be "
-            + "either a scalar value or an array with one entry per dimension.",
+            match="Sigma must be positive",
         ):
-            pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, sigma=None)
+            pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, sigma0=None)
 
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, 0.1)
         with pytest.raises(ValueError):
             likelihood.set_sigma0(np.array([-0.2]))
+
+        # Test setting and getting sigma0
+        likelihood.set_sigma0(np.array([0.2]))
+        np.testing.assert_allclose(likelihood.get_sigma0(), np.array([0.2]))
 
     @pytest.mark.unit
     def test_base_likelihood_n_parameters_property(self, one_signal_problem):

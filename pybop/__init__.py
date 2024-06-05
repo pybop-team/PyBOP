@@ -46,6 +46,13 @@ script_path = path.dirname(__file__)
 from ._utils import is_numeric
 
 #
+# Parameter classes
+#
+from .parameters.parameter import Parameter, Parameters
+from .parameters.parameter_set import ParameterSet
+from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential
+
+#
 # Problem classes
 #
 from .problems.base_problem import BaseProblem
@@ -113,14 +120,6 @@ from .optimisers.pints_optimisers import (
     XNES,
 )
 from .optimisers.optimisation import Optimisation
-
-#
-# Parameter classes
-#
-from .parameters.parameter import Parameter, Parameters
-from .parameters.parameter_set import ParameterSet
-from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential
-
 
 #
 # Observer classes

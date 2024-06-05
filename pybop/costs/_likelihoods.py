@@ -15,21 +15,6 @@ class BaseLikelihood(BaseCost):
         super(BaseLikelihood, self).__init__(problem)
         self.n_time_data = problem.n_time_data
 
-    def set_sigma0(self, sigma0: Union[np.ndarray, List[float]]):
-        """
-        Setter for sigma0 parameter
-        """
-        sigma0 = np.asarray(sigma0, dtype=float)
-        if not np.all(sigma0 > 0):
-            raise ValueError("Sigma must be positive")
-        self.sigma0 = sigma0
-
-    def get_sigma0(self) -> np.ndarray:
-        """
-        Getter for sigma0 parameter
-        """
-        return self.sigma0
-
 
 class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
     """
@@ -89,6 +74,21 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         likelihood = self._evaluate(x)
         dl = np.sum((self.sigma2 * np.sum((r * dy.T), axis=2)), axis=1)
         return likelihood, dl
+
+    def set_sigma0(self, sigma0: Union[np.ndarray, List[float]]):
+        """
+        Setter for sigma0 parameter
+        """
+        sigma0 = np.asarray(sigma0, dtype=float)
+        if not np.all(sigma0 > 0):
+            raise ValueError("Sigma must be positive")
+        self.sigma0 = sigma0
+
+    def get_sigma0(self) -> np.ndarray:
+        """
+        Getter for sigma0 parameter
+        """
+        return self.sigma0
 
 
 class GaussianLogLikelihood(BaseLikelihood):
