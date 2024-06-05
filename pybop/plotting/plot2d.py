@@ -23,7 +23,8 @@ def plot2d(
     gradient : bool, optional
         If True, the gradient is shown (default: False).
     bounds : numpy.ndarray, optional
-        A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses `get_param_bounds`.
+        A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
+        `cost.parameters.get_bounds_for_plotly`.
     steps : int, optional
         The number of intervals to divide the parameter space into along each dimension (default is 10).
     show : bool, optional
