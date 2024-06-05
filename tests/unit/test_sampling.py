@@ -137,8 +137,8 @@ class TestPintsSamplers:
             sampler.__getattr__("test")
 
         # Test __setattr__
-        sampler.__setattr__("test", 1)
-        assert sampler.test == 1
+        sampler.some_attribute = 1
+        assert sampler.some_attribute == 1
         sampler.verbose = True
         assert sampler.verbose is True
 

@@ -241,7 +241,7 @@ class LogPosterior(BaseCost):
             The posterior cost.
         """
         prior = self._prior(x)
-        if prior == np.inf:
+        if not np.isfinite(prior):
             return prior
         return prior + self._log_likelihood.evaluate(x)
 
@@ -267,7 +267,7 @@ class LogPosterior(BaseCost):
             If an error occurs during the calculation of the cost or gradient.
         """
         prior, dp = self._prior.evaluateS1(x)
-        if prior == np.inf:
+        if not np.isfinite(prior):
             return prior, dp
         likelihood, dl = self._log_likelihood.evaluateS1(x)
         return prior + likelihood, dp + dl

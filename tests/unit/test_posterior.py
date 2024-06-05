@@ -120,3 +120,15 @@ class TestLogPosterior:
 
         assert likelihood == posterior._log_likelihood
         assert prior == posterior._prior
+
+    @pytest.fixture
+    def posterior_uniform_prior(self, likelihood):
+        return pybop.LogPosterior(likelihood, pybop.Uniform(0.45, 0.55))
+
+    @pytest.mark.unit
+    def test_log_posterior_inf(self, posterior_uniform_prior):
+        # Test prior np.inf
+        p1 = posterior_uniform_prior([1])
+        p2, _ = posterior_uniform_prior.evaluateS1([1])
+        assert p1 == -np.inf
+        assert p2 == -np.inf
