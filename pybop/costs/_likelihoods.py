@@ -30,13 +30,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
     def __init__(self, problem, sigma):
         super(GaussianLogLikelihoodKnownSigma, self).__init__(problem)
         self.sigma = None
-        if sigma is not None:
-            self.set_sigma(sigma)
-        else:
-            raise ValueError(
-                "The GaussianLogLikelihoodKnownSigma cost requires sigma to be "
-                + "either a scalar value or an array with one entry per dimension."
-            )
+        self.set_sigma(sigma)
         self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi / self.sigma)
         self._multip = -1 / (2.0 * self.sigma**2)
         self.sigma2 = self.sigma**-2
@@ -46,6 +40,12 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         """
         Setter for sigma parameter
         """
+        if sigma is None:
+            raise ValueError(
+                "The GaussianLogLikelihoodKnownSigma cost requires sigma to be "
+                + "either a scalar value or an array with one entry per dimension."
+            )
+
         if not isinstance(sigma, np.ndarray):
             sigma = np.array(sigma)
 
