@@ -13,8 +13,8 @@ class DesignProblem(BaseProblem):
     ----------
     model : object
         The model to apply the design to.
-    parameters : list
-        List of parameters for the problem.
+    parameters : pybop.Parameter or pybop.Parameters
+        An object or list of the parameters for the problem.
     experiment : object
         The experimental setup to apply the model to.
     check_model : bool, optional
@@ -25,8 +25,6 @@ class DesignProblem(BaseProblem):
         Additional variables to observe and store in the solution (default additions are: ["Time [s]", "Current [A]"]).
     init_soc : float, optional
         Initial state of charge (default: None).
-    x0 : np.ndarray, optional
-        Initial parameter values (default: None).
     """
 
     def __init__(
@@ -38,14 +36,18 @@ class DesignProblem(BaseProblem):
         signal=["Voltage [V]"],
         additional_variables=[],
         init_soc=None,
-        x0=None,
     ):
         # Add time and current and remove duplicates
         additional_variables.extend(["Time [s]", "Current [A]"])
         additional_variables = list(set(additional_variables))
 
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc, x0
+            parameters,
+            model,
+            check_model,
+            signal,
+            additional_variables,
+            init_soc,
         )
         self.experiment = experiment
 
@@ -53,8 +55,6 @@ class DesignProblem(BaseProblem):
         if experiment is not None:
             # Leave the build until later to apply the experiment
             self._model.parameters = self.parameters
-            if self.parameters is not None:
-                self._model.fit_keys = [param.name for param in self.parameters]
 
         elif self._model._built_model is None:
             self._model.build(
@@ -84,7 +84,6 @@ class DesignProblem(BaseProblem):
         y : np.ndarray
             The model output y(t) simulated with inputs x.
         """
-
         sol = self._model.predict(
             inputs=x,
             experiment=self.experiment,
