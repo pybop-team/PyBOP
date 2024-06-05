@@ -11,8 +11,8 @@ class BaseLikelihood(BaseCost):
     Base class for likelihoods
     """
 
-    def __init__(self, problem: BaseProblem, sigma0: Union[None, np.ndarray] = None):
-        super(BaseLikelihood, self).__init__(problem, sigma0)
+    def __init__(self, problem: BaseProblem):
+        super(BaseLikelihood, self).__init__(problem)
         self.n_time_data = problem.n_time_data
 
     def set_sigma0(self, sigma0: Union[np.ndarray, List[float]]):
@@ -30,13 +30,6 @@ class BaseLikelihood(BaseCost):
         """
         return self.sigma0
 
-    @property
-    def n_parameters(self) -> int:
-        """
-        Returns the number of parameters
-        """
-        return self._n_parameters
-
 
 class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
     """
@@ -44,17 +37,21 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
     which assumes that the data follows a Gaussian distribution and computes
     the log-likelihood of observed data under this assumption.
 
-    Attributes:
-        _logpi (float): Precomputed offset value for the log-likelihood function.
+    Parameters
+    ----------
+    sigma : scalar or array
+        Initial standard deviation around ``x0``. Either a scalar value (one
+        standard deviation for all coordinates) or an array with one entry
+        per dimension. Not all methods will use this information.
     """
 
     def __init__(self, problem: BaseProblem, sigma0: List[float]):
-        super(GaussianLogLikelihoodKnownSigma, self).__init__(problem, sigma0)
+        super(GaussianLogLikelihoodKnownSigma, self).__init__(problem)
         self.set_sigma0(sigma0)
         self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi / self.sigma0)
         self._multip = -1 / (2.0 * self.sigma0**2)
         self.sigma2 = self.sigma0**-2
-        self._dl = np.ones(self._n_parameters)
+        self._dl = np.ones(self.n_parameters)
 
     def _evaluate(self, x: np.ndarray, grad: Union[None, np.ndarray] = None) -> float:
         """
@@ -100,8 +97,10 @@ class GaussianLogLikelihood(BaseLikelihood):
     data follows a Gaussian distribution and computes the log-likelihood of
     observed data under this assumption.
 
-    Attributes:
-        _logpi (float): Precomputed offset value for the log-likelihood function.
+    Attributes
+    ----------
+    _logpi : float
+        Precomputed offset value for the log-likelihood function.
     """
 
     def __init__(
@@ -109,7 +108,7 @@ class GaussianLogLikelihood(BaseLikelihood):
     ):
         super(GaussianLogLikelihood, self).__init__(problem)
         self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
-        self._dl = np.inf * np.ones(self._n_parameters + self.n_outputs)
+        self._dl = np.inf * np.ones(self.n_parameters + self.n_outputs)
         self._dsigma_scale = 1e2
         self.sigma_bounds_std = sigma_bounds_std
 

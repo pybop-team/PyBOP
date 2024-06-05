@@ -23,7 +23,8 @@ def plot2d(
     gradient : bool, optional
         If True, the gradient is shown (default: False).
     bounds : numpy.ndarray, optional
-        A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses `get_param_bounds`.
+        A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
+        `cost.parameters.get_bounds_for_plotly`.
     steps : int, optional
         The number of intervals to divide the parameter space into along each dimension (default is 10).
     show : bool, optional
@@ -55,9 +56,7 @@ def plot2d(
 
     # Set up parameter bounds
     if bounds is None:
-        bounds = get_param_bounds(cost)
-    else:
-        bounds = bounds
+        bounds = cost.parameters.get_bounds_for_plotly()
 
     # Generate grid
     x = np.linspace(bounds[0, 0], bounds[0, 1], steps)
@@ -102,8 +101,9 @@ def plot2d(
         yaxis=dict(range=bounds[1]),
     )
     if hasattr(cost, "parameters"):
-        layout_options["xaxis_title"] = cost.parameters[0].name
-        layout_options["yaxis_title"] = cost.parameters[1].name
+        name = cost.parameters.keys()
+        layout_options["xaxis_title"] = name[0]
+        layout_options["yaxis_title"] = name[1]
     layout = go.Layout(layout_options)
 
     # Create contour plot and update the layout
@@ -180,27 +180,3 @@ def plot2d(
         return fig, grad_figs
 
     return fig
-
-
-def get_param_bounds(cost):
-    """
-    Retrieve parameter bounds from a cost object's associated problem parameters.
-
-    Parameters
-    ----------
-    cost : object
-        The cost object with an associated 'problem' attribute containing 'parameters'.
-
-    Returns
-    -------
-    bounds : numpy.ndarray
-        An array of shape (n_parameters, 2) containing the bounds for each parameter.
-    """
-    bounds = np.empty((len(cost.parameters), 2))
-    for i, param in enumerate(cost.parameters):
-        if param.bounds is not None:
-            bounds[i] = param.bounds
-        else:
-            raise ValueError("plot2d could not find bounds required for plotting")
-
-    return bounds

@@ -47,10 +47,9 @@ def plot_parameters(optim, show=True, **layout_kwargs):
 
     # Create lists of axis titles and trace names
     axis_titles = []
-    trace_names = []
-    for param in parameters:
-        axis_titles.append(("Function Call", param.name))
-        trace_names.append(param.name)
+    trace_names = parameters.keys()
+    for name in trace_names:
+        axis_titles.append(("Function Call", name))
 
     if isinstance(optim.cost, pybop.GaussianLogLikelihood):
         axis_titles.append(("Function Call", "Sigma"))

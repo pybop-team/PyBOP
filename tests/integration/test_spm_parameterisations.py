@@ -1,7 +1,5 @@
 import numpy as np
 import pytest
-from flaky import flaky
-from pybamm import __version__ as pybamm_version
 
 import pybop
 
@@ -24,7 +22,7 @@ class Test_SPM_Parameterisation:
 
     @pytest.fixture
     def parameters(self):
-        return [
+        return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Uniform(0.4, 0.7),
@@ -35,7 +33,7 @@ class Test_SPM_Parameterisation:
                 prior=pybop.Uniform(0.4, 0.7),
                 # no bounds
             ),
-        ]
+        )
 
     @pytest.fixture(params=[0.4, 0.7])
     def init_soc(self, request):
@@ -59,7 +57,7 @@ class Test_SPM_Parameterisation:
     @pytest.fixture
     def spm_costs(self, model, parameters, cost_class, init_soc):
         # Form dataset
-        solution = self.getdata(model, self.ground_truth, init_soc)
+        solution = self.get_data(model, parameters, self.ground_truth, init_soc)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -94,7 +92,6 @@ class Test_SPM_Parameterisation:
             pybop.XNES,
         ],
     )
-    @flaky(max_runs=3, min_passes=1)
     @pytest.mark.integration
     def test_spm_optimisers(self, optimiser, spm_costs):
         x0 = spm_costs.x0
@@ -107,9 +104,9 @@ class Test_SPM_Parameterisation:
                 max_iterations=125,
             )
         else:
-            optim = optimiser(cost=spm_costs, sigma0=0.05, max_iterations=125)
+            optim = optimiser(cost=spm_costs, sigma0=0.05, max_iterations=250)
         if issubclass(optimiser, pybop.BasePintsOptimiser):
-            optim.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
+            optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
 
         initial_cost = optim.cost(x0)
         x, final_cost = optim.run()
@@ -122,18 +119,15 @@ class Test_SPM_Parameterisation:
                 else:
                     assert initial_cost < final_cost
 
-            if pybamm_version <= "23.9":
-                np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
-            else:
-                np.testing.assert_allclose(x, self.ground_truth, atol=1.75e-2)
+            np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
         else:
-            np.testing.assert_allclose(x[:-1], self.ground_truth, atol=2.5e-2)
+            np.testing.assert_allclose(x[:-1], self.ground_truth, atol=1.5e-2)
 
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, cost_class):
         # Form dataset
         init_soc = 0.5
-        solution = self.getdata(model, self.ground_truth, init_soc)
+        solution = self.get_data(model, parameters, self.ground_truth, init_soc)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -176,10 +170,10 @@ class Test_SPM_Parameterisation:
         optim = multi_optimiser(
             cost=spm_two_signal_cost,
             sigma0=0.03,
-            max_iterations=125,
+            max_iterations=250,
         )
         if issubclass(multi_optimiser, pybop.BasePintsOptimiser):
-            optim.set_max_unchanged_iterations(iterations=35, threshold=5e-4)
+            optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
 
         initial_cost = optim.cost(spm_two_signal_cost.x0)
         x, final_cost = optim.run()
@@ -191,9 +185,9 @@ class Test_SPM_Parameterisation:
                     assert initial_cost > final_cost
                 else:
                     assert initial_cost < final_cost
-            np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
+            np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
         else:
-            np.testing.assert_allclose(x[:-2], self.ground_truth, atol=2.5e-2)
+            np.testing.assert_allclose(x[:-2], self.ground_truth, atol=1.5e-2)
 
     @pytest.mark.parametrize("init_soc", [0.4, 0.6])
     @pytest.mark.integration
@@ -204,7 +198,7 @@ class Test_SPM_Parameterisation:
         second_model = pybop.lithium_ion.SPMe(parameter_set=second_parameter_set)
 
         # Form dataset
-        solution = self.getdata(second_model, self.ground_truth, init_soc)
+        solution = self.get_data(second_model, parameters, self.ground_truth, init_soc)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -234,13 +228,8 @@ class Test_SPM_Parameterisation:
         with np.testing.assert_raises(AssertionError):
             np.testing.assert_allclose(x, self.ground_truth, atol=2e-2)
 
-    def getdata(self, model, x, init_soc):
-        model.parameter_set.update(
-            {
-                "Negative electrode active material volume fraction": x[0],
-                "Positive electrode active material volume fraction": x[1],
-            }
-        )
+    def get_data(self, model, parameters, x, init_soc):
+        model.parameters = parameters
         experiment = pybop.Experiment(
             [
                 (
@@ -250,5 +239,5 @@ class Test_SPM_Parameterisation:
             ]
             * 2
         )
-        sim = model.predict(init_soc=init_soc, experiment=experiment)
+        sim = model.predict(init_soc=init_soc, experiment=experiment, inputs=x)
         return sim

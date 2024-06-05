@@ -28,7 +28,9 @@ class BaseOptimiser:
     bounds : dict
         Dictionary containing the parameter bounds with keys 'lower' and 'upper'.
     sigma0 : float or sequence
-        Initial step size or standard deviation for the optimiser.
+        Initial step size or standard deviation around ``x0``. Either a scalar value (one
+        standard deviation for all coordinates) or an array with one entry per dimension.
+        Not all methods will use this information.
     verbose : bool, optional
         If True, the optimisation progress is printed (default: False).
     minimising : bool, optional
@@ -62,11 +64,16 @@ class BaseOptimiser:
         if isinstance(cost, BaseCost):
             self.cost = cost
             self.x0 = cost.x0
-            self.bounds = cost.bounds
-            self.sigma0 = cost.sigma0
             self.set_allow_infeasible_solutions()
             if isinstance(cost, (BaseLikelihood, DesignCost)):
                 self.minimising = False
+
+            # Set default bounds (for all or no parameters)
+            self.bounds = cost.parameters.get_bounds()
+
+            # Set default initial standard deviation (for all or no parameters)
+            self.sigma0 = cost.parameters.get_sigma0() or self.sigma0
+
         else:
             try:
                 cost_test = cost(optimiser_kwargs.get("x0", []))
