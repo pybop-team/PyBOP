@@ -157,3 +157,14 @@ class TestPriors:
             Uniform.rvs(-1)
         with pytest.raises(ValueError):
             Exponential.rvs(-1)
+
+    @pytest.mark.unit
+    def test_incorrect_composed_priors(self, Gaussian, Uniform):
+        with pytest.raises(
+            ValueError, match="All priors must be instances of BasePrior"
+        ):
+            pybop.ComposedLogPrior(Gaussian, Uniform, "string")
+        with pytest.raises(
+            ValueError, match="All priors must be instances of BasePrior"
+        ):
+            pybop.ComposedLogPrior(Gaussian, Uniform, 0.5)

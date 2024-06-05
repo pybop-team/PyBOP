@@ -70,11 +70,11 @@ class BasePintsSampler(BaseSampler):
             if len(log_pdf) != chains:
                 raise ValueError("Number of log pdf's must match number of chains")
 
-            first_pdf_parameters = log_pdf[0].n_parameters()
+            first_pdf_parameters = log_pdf[0]._n_parameters
             for pdf in log_pdf:
                 if not isinstance(pdf, BaseCost):
                     raise ValueError("All log pdf's must be instances of BaseCost")
-                if pdf.n_parameters() != first_pdf_parameters:
+                if pdf._n_parameters != first_pdf_parameters:
                     raise ValueError(
                         "All log pdf's must have the same number of parameters"
                     )

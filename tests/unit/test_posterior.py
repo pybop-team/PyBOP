@@ -76,6 +76,19 @@ class TestLogPosterior:
         assert posterior._log_likelihood == likelihood
         assert posterior._prior == prior
 
+        # Test log posterior construction without sigma
+        likelihood.sigma0 = None
+        likelihood.problem.sigma0 = None
+        posterior = pybop.LogPosterior(likelihood, prior, sigma=None)
+        assert posterior.sigma0 is not None
+
+        # Test log posterior construction without parameters
+        likelihood.problem.parameters = None
+        with pytest.raises(
+            ValueError, match="An error occurred when constructing the Prior class:"
+        ):
+            pybop.LogPosterior(likelihood, log_prior=None)
+
     @pytest.mark.unit
     def test_log_posterior_construction_no_prior(self, likelihood):
         # Test log posterior construction without prior

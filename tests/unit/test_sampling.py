@@ -118,11 +118,44 @@ class TestPintsSamplers:
     @pytest.mark.unit
     def test_initialization_and_run(self, log_posterior, x0, chains, MCMC):
         sampler = pybop.MCMCSampler(
-            log_pdf=log_posterior, chains=chains, sampler=MCMC, x0=x0, max_iterations=1
+            log_pdf=log_posterior,
+            chains=chains,
+            sampler=MCMC,
+            x0=x0,
+            max_iterations=1,
+            verbose=True,
         )
         assert sampler._n_chains == chains
         assert sampler._log_pdf == log_posterior
         assert (sampler._samplers[0]._x0 == x0[0]).all()
+
+        # Test incorrect __getattr__
+        with pytest.raises(
+            AttributeError, match="'MCMCSampler' object has no attribute 'test'"
+        ):
+            sampler.__getattr__("test")
+
+        # Test __setattr__
+        sampler.__setattr__("test", 1)
+        assert sampler.test == 1
+
+        # Run the sampler
+        samples = sampler.run()
+        assert samples is not None
+        assert samples.shape == (chains, 1, 2)
+
+    @pytest.mark.unit
+    def test_multi_log_pdf(self, log_posterior, x0, chains):
+        multi_log_posterior = [log_posterior, log_posterior, log_posterior]
+        sampler = pybop.MCMCSampler(
+            log_pdf=multi_log_posterior,
+            chains=chains,
+            sampler=HaarioBardenetACMC,
+            x0=x0,
+            max_iterations=1,
+        )
+        assert sampler._n_chains == chains
+        assert sampler._log_pdf == multi_log_posterior
 
         # Run the sampler
         samples = sampler.run()
@@ -187,6 +220,12 @@ class TestPintsSamplers:
         ):
             sampler._check_stopping_criteria()
 
+        # Incorrect stopping criteria
+        with pytest.raises(
+            ValueError, match="Number of iterations must be greater than 0"
+        ):
+            sampler.set_max_iterations(-1)
+
     @pytest.mark.unit
     def test_set_parallel(self, log_posterior, x0, chains):
         sampler = AdaptiveCovarianceMCMC(
@@ -208,3 +247,18 @@ class TestPintsSamplers:
         sampler.set_parallel(2)
         assert sampler._parallel is True
         assert sampler._n_workers == 2
+
+    @pytest.mark.unit
+    def test_base_sampler(self, x0):
+        sampler = pybop.BaseSampler(x0=x0, sigma0=0.1)
+        with pytest.raises(NotImplementedError):
+            sampler.run()
+
+    @pytest.mark.unit
+    def test_MCMC_sampler(self, log_posterior, x0, chains):
+        with pytest.raises(ValueError):
+            pybop.MCMCSampler(
+                log_pdf=log_posterior,
+                chains=chains,
+                sampler=log_posterior,  # Incorrect sampler
+            )
