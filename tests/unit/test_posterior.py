@@ -102,11 +102,11 @@ class TestLogPosterior:
         assert np.allclose(dp, -1736.05, atol=2e-2)
 
         # Get log likelihood and log prior
-        likelihood = posterior.likelihood
-        prior = posterior.prior
+        likelihood = posterior.likelihood()
+        prior = posterior.prior()
 
-        assert likelihood is not None
-        assert prior is not None
+        assert likelihood == posterior._log_likelihood
+        assert prior == posterior._prior
 
         # Test prior np.inf
         p1 = posterior(np.array([-np.inf]))

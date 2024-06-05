@@ -196,18 +196,7 @@ class Gaussian(BasePrior):
         float
             The value(s) of the distribution at x.
         """
-        # Convert scalar to array
-        x = np.asarray(x)
-        if x.ndim == 0:  # Scalar case
-            x = np.array([x])
-
-        # Compute the distribution value(s)
-        values = self._offset + self._multip * (x - self.loc) ** 2
-
-        # Return a scalar if the input was a scalar
-        if values.size == 1:
-            return values.item()
-        return values
+        return self.logpdf(x)
 
     def evaluateS1(self, x):
         """
@@ -250,6 +239,7 @@ class Uniform(BasePrior):
         self.loc = lower
         self.scale = upper - lower
         self.prior = stats.uniform
+        self._n_parameters = 1
 
     def __call__(self, x):
         """
@@ -318,6 +308,7 @@ class Exponential(BasePrior):
         self.loc = loc
         self.scale = scale
         self.prior = stats.expon
+        self._n_parameters = 1
 
     def __call__(self, x):
         """
@@ -416,3 +407,6 @@ class ComposedLogPrior(BasePrior):
             index += num_params
 
         return output, doutput
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}, priors: {self._priors}"
