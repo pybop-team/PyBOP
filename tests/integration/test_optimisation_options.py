@@ -24,7 +24,7 @@ class TestOptimisation:
 
     @pytest.fixture
     def parameters(self):
-        return [
+        return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.55, 0.05),
@@ -35,7 +35,7 @@ class TestOptimisation:
                 prior=pybop.Gaussian(0.55, 0.05),
                 # no bounds
             ),
-        ]
+        )
 
     @pytest.fixture(
         params=[
@@ -54,7 +54,7 @@ class TestOptimisation:
     def spm_costs(self, model, parameters, cost_class):
         # Form dataset
         init_soc = 0.5
-        solution = self.getdata(model, self.ground_truth, init_soc)
+        solution = self.get_data(model, parameters, self.ground_truth, init_soc)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -85,9 +85,9 @@ class TestOptimisation:
         optim = pybop.XNES(
             cost=spm_costs,
             sigma0=0.05,
-            max_iterations=125,
+            max_iterations=250,
             max_unchanged_iterations=35,
-            threshold=1e-5,
+            absolute_tolerance=1e-5,
             use_f_guessed=f_guessed,
         )
 
@@ -104,15 +104,10 @@ class TestOptimisation:
                 assert initial_cost > final_cost
             else:
                 assert initial_cost < final_cost
-        np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
+        np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
-    def getdata(self, model, x, init_soc):
-        model.parameter_set.update(
-            {
-                "Negative electrode active material volume fraction": x[0],
-                "Positive electrode active material volume fraction": x[1],
-            }
-        )
+    def get_data(self, model, parameters, x, init_soc):
+        model.parameters = parameters
         experiment = pybop.Experiment(
             [
                 (
@@ -122,5 +117,5 @@ class TestOptimisation:
             ]
             * 2
         )
-        sim = model.predict(init_soc=init_soc, experiment=experiment)
+        sim = model.predict(init_soc=init_soc, experiment=experiment, inputs=x)
         return sim
