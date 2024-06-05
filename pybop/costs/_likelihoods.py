@@ -197,10 +197,6 @@ class LogPosterior(BaseCost):
 
     def __init__(self, log_likelihood, log_prior=None, sigma=None):
         super(LogPosterior, self).__init__(problem=log_likelihood.problem, sigma=sigma)
-        if self.sigma0 is None:
-            self.sigma0 = []
-            for param in self.problem.parameters:  # Update for parameters class
-                self.sigma0.append(param.prior.sigma)
 
         # Store the likelihood and prior
         self._log_likelihood = log_likelihood
