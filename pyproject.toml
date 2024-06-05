@@ -58,7 +58,6 @@ dev = [
     "pytest-cov",
     "pytest-mock",
     "pytest-xdist",
-    "flaky",
     "ruff",
     ]
 scifem = [

@@ -117,7 +117,7 @@ from .optimisers.optimisation import Optimisation
 #
 # Parameter classes
 #
-from .parameters.parameter import Parameter
+from .parameters.parameter import Parameter, Parameters
 from .parameters.parameter_set import ParameterSet
 from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential
 

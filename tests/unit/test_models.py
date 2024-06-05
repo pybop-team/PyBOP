@@ -11,6 +11,34 @@ class TestModels:
     A class to test the models.
     """
 
+    @pytest.mark.parametrize(
+        "model_class, expected_name",
+        [
+            (pybop.lithium_ion.SPM, "Single Particle Model"),
+            (pybop.lithium_ion.SPMe, "Single Particle Model with Electrolyte"),
+            (pybop.lithium_ion.DFN, "Doyle-Fuller-Newman"),
+            (pybop.lithium_ion.MPM, "Many Particle Model"),
+            (pybop.lithium_ion.MSMR, "Multi Species Multi Reactions Model"),
+            (pybop.lithium_ion.WeppnerHuggins, "Weppner & Huggins model"),
+            (pybop.empirical.Thevenin, "Equivalent Circuit Thevenin Model"),
+        ],
+    )
+    @pytest.mark.unit
+    def test_model_classes(self, model_class, expected_name):
+        options = None
+        if model_class is pybop.lithium_ion.MSMR:
+            options = {"number of MSMR reactions": ("6", "4")}
+        model = model_class(options=options)
+
+        assert model.pybamm_model is not None
+        assert model.name == expected_name
+
+        # Test initialisation with kwargs
+        parameter_set = pybop.ParameterSet(
+            params_dict={"Nominal cell capacity [A.h]": 5}
+        )
+        model = model_class(options=options, build=True, parameter_set=parameter_set)
+
     @pytest.fixture(
         params=[
             pybop.lithium_ion.SPM(),
@@ -156,7 +184,7 @@ class TestModels:
     @pytest.mark.unit
     def test_rebuild_geometric_parameters(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-        parameters = [
+        parameters = pybop.Parameters(
             pybop.Parameter(
                 "Positive particle radius [m]",
                 prior=pybop.Gaussian(4.8e-06, 0.05e-06),
@@ -169,7 +197,7 @@ class TestModels:
                 bounds=[30e-06, 50e-06],
                 initial_value=48e-06,
             ),
-        ]
+        )
 
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
         model.build(parameters=parameters)
@@ -181,8 +209,8 @@ class TestModels:
         out_init = initial_built_model.predict(t_eval=t_eval)
 
         # Test that the model can be rebuilt with different geometric parameters
-        parameters[0].update(5e-06)
-        parameters[1].update(45e-06)
+        parameters["Positive particle radius [m]"].update(5e-06)
+        parameters["Negative electrode thickness [m]"].update(45e-06)
         model.rebuild(parameters=parameters)
         rebuilt_model = model
         assert rebuilt_model._built_model is not None
@@ -225,11 +253,14 @@ class TestModels:
         state = model.reinit(inputs={})
         np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
 
-        state = model.reinit(inputs=[])
+        model.parameters = pybop.Parameters(pybop.Parameter("y0"))
+        state = model.reinit(inputs=[1])
         np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
 
         model = ExponentialDecay(pybamm.ParameterValues({"k": k, "y0": y0}))
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError, match="Model must be built before calling reinit"
+        ):
             model.reinit(inputs={})
 
     @pytest.mark.unit
@@ -263,9 +294,18 @@ class TestModels:
             base.approximate_capacity(x)
 
     @pytest.mark.unit
+    def test_check_params(self):
+        base = pybop.BaseModel()
+        assert base.check_params()
+        assert base.check_params(inputs={"a": 1})
+        assert base.check_params(inputs=[1])
+        with pytest.raises(ValueError, match="Expecting inputs in the form of"):
+            base.check_params(inputs=["unexpected_string"])
+
+    @pytest.mark.unit
     def test_non_converged_solution(self):
         model = pybop.lithium_ion.DFN()
-        parameters = [
+        parameters = pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.2, 0.01),
@@ -274,7 +314,7 @@ class TestModels:
                 "Positive electrode active material volume fraction",
                 prior=pybop.Gaussian(0.2, 0.01),
             ),
-        ]
+        )
         dataset = pybop.Dataset(
             {
                 "Time [s]": np.linspace(0, 100, 100),
