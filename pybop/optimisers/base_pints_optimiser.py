@@ -1,7 +1,7 @@
 import numpy as np
 import pints
 
-from pybop.optimisers.base_optimiser import BaseOptimiser, Result
+from pybop.optimisers.base_optimiser import BaseOptimiser
 
 
 class BasePintsOptimiser(BaseOptimiser):
