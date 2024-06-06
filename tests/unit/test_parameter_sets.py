@@ -20,6 +20,12 @@ class TestParameterSets:
             parameter_test["Negative electrode active material volume fraction"], 0.75
         )
 
+        # Test getting and setting parameters
+        parameter_test["Negative electrode active material volume fraction"] = 0.8
+        assert (
+            parameter_test["Negative electrode active material volume fraction"] == 0.8
+        )
+
     @pytest.mark.unit
     def test_ecm_parameter_sets(self):
         # Test importing a json file
@@ -56,9 +62,7 @@ class TestParameterSets:
                 "Cell-jig heat transfer coefficient [W/K]": 10,
                 "Jig thermal mass [J/K]": 500,
                 "Jig-air heat transfer coefficient [W/K]": 10,
-                "Open-circuit voltage [V]": pybop.empirical.Thevenin().default_parameter_values[
-                    "Open-circuit voltage [V]"
-                ],
+                "Open-circuit voltage [V]": "default",
                 "R0 [Ohm]": 0.001,
                 "Element-1 initial overpotential [V]": 0,
                 "Element-2 initial overpotential [V]": 0,

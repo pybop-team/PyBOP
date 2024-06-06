@@ -1,5 +1,14 @@
 import numpy as np
-import pints
+from pints import PSO as PintsPSO
+from pints import Adam as PintsAdam
+from pints import GradientDescent as PintsGradientDescent
+from pints import NelderMead as PintsNelderMead
+from pints import Optimiser as PintsOptimiser
+from pints import ParallelEvaluator as PintsParallelEvaluator
+from pints import PopulationBasedOptimiser as PintsPopulationBasedOptimiser
+from pints import RectangularBoundaries as PintsRectangularBoundaries
+from pints import SequentialEvaluator as PintsSequentialEvaluator
+from pints import strfloat as PintsStrFloat
 
 from pybop import BaseOptimiser
 
@@ -53,7 +62,7 @@ class BasePintsOptimiser(BaseOptimiser):
         self._sanitise_inputs()
 
         # Create an instance of the PINTS optimiser class
-        if issubclass(self.pints_optimiser, pints.Optimiser):
+        if issubclass(self.pints_optimiser, PintsOptimiser):
             self.pints_optimiser = self.pints_optimiser(
                 self.x0, sigma0=self.sigma0, boundaries=self._boundaries
             )
@@ -127,11 +136,11 @@ class BasePintsOptimiser(BaseOptimiser):
         if self.bounds is not None:
             if issubclass(
                 self.pints_optimiser,
-                (pints.GradientDescent, pints.Adam, pints.NelderMead),
+                (PintsGradientDescent, PintsAdam, PintsNelderMead),
             ):
                 print(f"NOTE: Boundaries ignored by {self.pints_optimiser}")
                 self.bounds = None
-            elif issubclass(self.pints_optimiser, pints.PSO):
+            elif issubclass(self.pints_optimiser, PintsPSO):
                 if not all(
                     np.isfinite(value)
                     for sublist in self.bounds.values()
@@ -141,7 +150,7 @@ class BasePintsOptimiser(BaseOptimiser):
                         "Either all bounds or no bounds must be set for Pints PSO."
                     )
             else:
-                self._boundaries = pints.RectangularBoundaries(
+                self._boundaries = PintsRectangularBoundaries(
                     self.bounds["lower"], self.bounds["upper"]
                 )
 
@@ -205,11 +214,11 @@ class BasePintsOptimiser(BaseOptimiser):
 
             # For population based optimisers, don't use more workers than
             # particles!
-            if isinstance(self.pints_optimiser, pints.PopulationBasedOptimiser):
+            if isinstance(self.pints_optimiser, PintsPopulationBasedOptimiser):
                 n_workers = min(n_workers, self.pints_optimiser.population_size())
-            evaluator = pints.ParallelEvaluator(f, n_workers=n_workers)
+            evaluator = PintsParallelEvaluator(f, n_workers=n_workers)
         else:
-            evaluator = pints.SequentialEvaluator(f)
+            evaluator = PintsSequentialEvaluator(f)
 
         # Keep track of current best and best-guess scores.
         fb = fg = np.inf
@@ -321,7 +330,7 @@ class BasePintsOptimiser(BaseOptimiser):
             if self._transformation is not None:
                 x_user = self._transformation.to_model(x_user)
             for p in x_user:
-                print(pints.strfloat(p))
+                print(PintsStrFloat(p))
             print("-" * 40)
             raise
 
@@ -388,7 +397,7 @@ class BasePintsOptimiser(BaseOptimiser):
         """
         if parallel is True:
             self._parallel = True
-            self._n_workers = pints.ParallelEvaluator.cpu_count()
+            self._n_workers = PintsParallelEvaluator.cpu_count()
         elif parallel >= 1:
             self._parallel = True
             self._n_workers = int(parallel)
