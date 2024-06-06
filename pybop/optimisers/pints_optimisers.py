@@ -1,4 +1,11 @@
-import pints
+from pints import CMAES as PintsCMAES
+from pints import PSO as PintsPSO
+from pints import SNES as PintsSNES
+from pints import XNES as PintsXNES
+from pints import Adam as PintsAdam
+from pints import GradientDescent as PintsGradientDescent
+from pints import IRPropMin as PintsIRPropMin
+from pints import NelderMead as PintsNelderMead
 
 from pybop import BasePintsOptimiser
 
@@ -28,7 +35,7 @@ class GradientDescent(BasePintsOptimiser):
     def __init__(self, cost, **optimiser_kwargs):
         if "sigma0" not in optimiser_kwargs.keys():
             optimiser_kwargs["sigma0"] = 0.02  # set default
-        super().__init__(cost, pints.GradientDescent, **optimiser_kwargs)
+        super().__init__(cost, PintsGradientDescent, **optimiser_kwargs)
 
 
 class Adam(BasePintsOptimiser):
@@ -54,7 +61,7 @@ class Adam(BasePintsOptimiser):
     """
 
     def __init__(self, cost, **optimiser_kwargs):
-        super().__init__(cost, pints.Adam, **optimiser_kwargs)
+        super().__init__(cost, PintsAdam, **optimiser_kwargs)
 
 
 class IRPropMin(BasePintsOptimiser):
@@ -83,7 +90,7 @@ class IRPropMin(BasePintsOptimiser):
     """
 
     def __init__(self, cost, **optimiser_kwargs):
-        super().__init__(cost, pints.IRPropMin, **optimiser_kwargs)
+        super().__init__(cost, PintsIRPropMin, **optimiser_kwargs)
 
 
 class PSO(BasePintsOptimiser):
@@ -112,7 +119,7 @@ class PSO(BasePintsOptimiser):
     """
 
     def __init__(self, cost, **optimiser_kwargs):
-        super().__init__(cost, pints.PSO, **optimiser_kwargs)
+        super().__init__(cost, PintsPSO, **optimiser_kwargs)
 
 
 class SNES(BasePintsOptimiser):
@@ -141,7 +148,7 @@ class SNES(BasePintsOptimiser):
     """
 
     def __init__(self, cost, **optimiser_kwargs):
-        super().__init__(cost, pints.SNES, **optimiser_kwargs)
+        super().__init__(cost, PintsSNES, **optimiser_kwargs)
 
 
 class XNES(BasePintsOptimiser):
@@ -170,7 +177,7 @@ class XNES(BasePintsOptimiser):
     """
 
     def __init__(self, cost, **optimiser_kwargs):
-        super().__init__(cost, pints.XNES, **optimiser_kwargs)
+        super().__init__(cost, PintsXNES, **optimiser_kwargs)
 
 
 class NelderMead(BasePintsOptimiser):
@@ -197,7 +204,7 @@ class NelderMead(BasePintsOptimiser):
     """
 
     def __init__(self, cost, **optimiser_kwargs):
-        super().__init__(cost, pints.NelderMead, **optimiser_kwargs)
+        super().__init__(cost, PintsNelderMead, **optimiser_kwargs)
 
 
 class CMAES(BasePintsOptimiser):
@@ -232,4 +239,4 @@ class CMAES(BasePintsOptimiser):
                 "CMAES requires optimisation of >= 2 parameters at once. "
                 + "Please choose another optimiser."
             )
-        super().__init__(cost, pints.CMAES, **optimiser_kwargs)
+        super().__init__(cost, PintsCMAES, **optimiser_kwargs)
