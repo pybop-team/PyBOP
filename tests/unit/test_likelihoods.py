@@ -132,6 +132,12 @@ class TestLikelihoods:
         assert isinstance(result, float)
         np.testing.assert_allclose(result, grad_result, atol=1e-5)
         assert np.all(grad_likelihood <= 0)
+        likelihood.dsigma_scale = 1e3
+        assert likelihood.dsigma_scale == 1e3
+
+        # Test incorrect sigma scale
+        with pytest.raises(ValueError):
+            likelihood.dsigma_scale = -1e3
 
     @pytest.mark.unit
     def test_gaussian_log_likelihood_returns_negative_inf(self, one_signal_problem):

@@ -135,3 +135,13 @@ class TestPlots:
         pybop.plot_convergence(optim)
         pybop.plot_parameters(optim)
         pybop.plot2d(optim, steps=5)
+
+    @pytest.mark.unit
+    def test_gaussianlogliklihood_plots(self, fitting_problem):
+        # Test plotting of GaussianLogLikelihood
+        likelihood = pybop.GaussianLogLikelihood(fitting_problem)
+        optim = pybop.CMAES(likelihood, max_iterations=5)
+        optim.run()
+
+        # Plot parameters
+        pybop.plot_parameters(optim)
