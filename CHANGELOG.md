@@ -21,6 +21,7 @@
 
 ## Bug Fixes
 
+- [#337](https://github.com/pybop-team/PyBOP/issues/337) - Restores benchmarks, relaxes CI schedule for benchmarks and scheduled tests.
 - [#231](https://github.com/pybop-team/PyBOP/issues/231) - Allows passing of keyword arguments to PyBaMM models and disables build on initialisation.
 - [#321](https://github.com/pybop-team/PyBOP/pull/321) - Improves `integration/test_spm_parameterisation.py` stability, adds flakly pytest plugin, and `test_thevenin_parameterisation.py` integration test.
 - [#330](https://github.com/pybop-team/PyBOP/issues/330) - Fixes implementation of default plotting options.

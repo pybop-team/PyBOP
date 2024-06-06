@@ -58,9 +58,9 @@ from ._dataset import Dataset
 #
 # Parameter classes
 #
-from .parameters.parameter import Parameter
+from .parameters.parameter import Parameter, Parameters
 from .parameters.parameter_set import ParameterSet
-from .parameters.priors import Gaussian, Uniform, Exponential
+from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential
 
 #
 # Model classes
@@ -120,14 +120,6 @@ from .optimisers.pints_optimisers import (
     XNES,
 )
 from .optimisers.optimisation import Optimisation
-
-#
-# Main optimisation class
-#
-from .parameters.parameter import Parameter
-from .parameters.parameter_set import ParameterSet
-from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential
-
 
 #
 # Observer classes

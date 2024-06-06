@@ -7,42 +7,41 @@ from examples.standalone.model import ExponentialDecay
 # Parameter set and model definition
 parameter_set = pybamm.ParameterValues({"k": "[input]", "y0": "[input]"})
 model = ExponentialDecay(parameter_set=parameter_set, n_states=1)
-x0 = np.array([0.1, 1.0])
 
 # Fitting parameters
-parameters = [
+parameters = pybop.Parameters(
     pybop.Parameter(
         "k",
         prior=pybop.Gaussian(0.1, 0.05),
         bounds=[0, 1],
+        true_value=0.1,
     ),
     pybop.Parameter(
         "y0",
         prior=pybop.Gaussian(1, 0.05),
         bounds=[0, 3],
+        true_value=1.0,
     ),
-]
-
-# Verification: save fixed inputs for testing
-inputs = dict()
-for i, param in enumerate(parameters):
-    inputs[param.name] = x0[i]
+)
 
 # Make a prediction with measurement noise
 sigma = 1e-2
 t_eval = np.linspace(0, 20, 10)
-values = model.predict(t_eval=t_eval, inputs=inputs)
+model.parameters = parameters
+values = model.predict(t_eval=t_eval, inputs=parameters.true_value())
 values = values["2y"].data
 corrupt_values = values + np.random.normal(0, sigma, len(t_eval))
 
 # Verification step: compute the analytical solution for 2y
-expected_values = 2 * inputs["y0"] * np.exp(-inputs["k"] * t_eval)
+expected_values = (
+    2 * parameters["y0"].true_value * np.exp(-parameters["k"].true_value * t_eval)
+)
 
 # Verification step: make another prediction using the Observer class
 model.build(parameters=parameters)
-simulator = pybop.Observer(parameters, model, signal=["2y"], x0=x0)
+simulator = pybop.Observer(parameters, model, signal=["2y"])
 simulator._time_data = t_eval
-measurements = simulator.evaluate(x0)
+measurements = simulator.evaluate(parameters.true_value())
 
 # Verification step: Compare by plotting
 go = pybop.PlotlyManager().go
@@ -82,11 +81,10 @@ observer = pybop.UnscentedKalmanFilterObserver(
     measurement_noise,
     dataset,
     signal=signal,
-    x0=x0,
 )
 
 # Verification step: Find the maximum likelihood estimate given the true parameters
-estimation = observer.evaluate(x0)
+estimation = observer.evaluate(parameters.true_value())
 
 # Verification step: Add the estimate to the plot
 line4 = go.Scatter(

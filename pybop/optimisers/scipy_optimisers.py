@@ -39,12 +39,8 @@ class BaseSciPyOptimiser(BaseOptimiser):
             self.unset_options.pop("options")
 
         # Check for duplicate keywords
-        expected_keys = ["maxiter", "popsize", "tol"]
-        alternative_keys = [
-            "max_iterations",
-            "population_size",
-            "threshold",
-        ]
+        expected_keys = ["maxiter", "popsize"]
+        alternative_keys = ["max_iterations", "population_size"]
         for exp_key, alt_key in zip(expected_keys, alternative_keys):
             if alt_key in self.unset_options.keys():
                 if exp_key in self.unset_options.keys():
@@ -165,7 +161,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         self._cost0 = np.abs(self.cost(self.x0))
         if np.isinf(self._cost0):
             for i in range(1, self.num_resamples):
-                x0 = self.cost.problem.sample_initial_conditions(seed=i)
+                x0 = self.cost.parameters.rvs(1)
                 self._cost0 = np.abs(self.cost(x0))
                 if not np.isinf(self._cost0):
                     break
@@ -259,9 +255,10 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             ):
                 raise ValueError("Bounds must be specified for differential_evolution.")
 
-        # Apply default maxiter
+        # Apply default maxiter and tolerance
         self._options = dict()
         self._options["maxiter"] = self.default_max_iterations
+        self._options["tol"] = 1e-5
 
         # Apply additional options and remove them from the options dictionary
         key_list = list(self.unset_options.keys())
