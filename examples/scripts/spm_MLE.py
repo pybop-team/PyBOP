@@ -43,11 +43,11 @@ dataset = pybop.Dataset(
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
-likelihood = pybop.GaussianLogLikelihood(problem)
+likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.005)
 optim = pybop.CMAES(
     likelihood,
-    max_unchanged_iterations=40,
-    min_iterations=40,
+    max_unchanged_iterations=20,
+    min_iterations=20,
     max_iterations=100,
 )
 
@@ -63,3 +63,10 @@ pybop.plot_convergence(optim)
 
 # Plot the parameter traces
 pybop.plot_parameters(optim)
+
+# Plot the cost landscape
+pybop.plot2d(likelihood, steps=15)
+
+# Plot the cost landscape with optimisation path
+bounds = np.array([[0.55, 0.77], [0.48, 0.68]])
+pybop.plot2d(optim, bounds=bounds, steps=15)

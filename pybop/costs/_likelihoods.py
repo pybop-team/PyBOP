@@ -1,4 +1,4 @@
-from typing import List, Tuple, Union
+from typing import Tuple, Union
 
 import numpy as np
 
@@ -30,12 +30,12 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         per dimension. Not all methods will use this information.
     """
 
-    def __init__(self, problem: BaseProblem, sigma0: List[float]):
+    def __init__(self, problem: BaseProblem, sigma0: float):
         super(GaussianLogLikelihoodKnownSigma, self).__init__(problem)
-        self.set_sigma0(sigma0)
-        self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi / self.sigma0)
-        self._multip = -1 / (2.0 * self.sigma0**2)
-        self.sigma2 = self.sigma0**-2
+        sigma0 = self.check_sigma0(sigma0)
+        self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi / sigma0)
+        self._multip = -1 / (2.0 * sigma0**2)
+        self.sigma2 = sigma0**-2
         self._dl = np.ones(self.n_parameters)
 
     def _evaluate(self, x: np.ndarray, grad: Union[None, np.ndarray] = None) -> float:
@@ -75,20 +75,14 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         dl = np.sum((self.sigma2 * np.sum((r * dy.T), axis=2)), axis=1)
         return likelihood, dl
 
-    def set_sigma0(self, sigma0: Union[np.ndarray, List[float]]):
+    def check_sigma0(self, sigma0: Union[np.ndarray, float]):
         """
         Setter for sigma0 parameter
         """
         sigma0 = np.asarray(sigma0, dtype=float)
         if not np.all(sigma0 > 0):
             raise ValueError("Sigma must be positive")
-        self.sigma0 = sigma0
-
-    def get_sigma0(self) -> np.ndarray:
-        """
-        Getter for sigma0 parameter
-        """
-        return self.sigma0
+        return sigma0
 
 
 class GaussianLogLikelihood(BaseLikelihood):
@@ -104,12 +98,17 @@ class GaussianLogLikelihood(BaseLikelihood):
     """
 
     def __init__(
-        self, problem: BaseProblem, sigma0=0.001, x0=0.005, sigma_bounds_std=6
+        self,
+        problem: BaseProblem,
+        sigma0=0.001,
+        x0=0.005,
+        sigma_bounds_std=6,
+        dsigma_scale=1,
     ):
         super(GaussianLogLikelihood, self).__init__(problem)
         self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
         self._dl = np.inf * np.ones(self.n_parameters + self.n_outputs)
-        self._dsigma_scale = 1e2
+        self._dsigma_scale = dsigma_scale
         self.sigma_bounds_std = sigma_bounds_std
 
         # Set the bounds for the sigma parameters
