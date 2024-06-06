@@ -12,24 +12,24 @@ class TestModels:
     """
 
     @pytest.mark.parametrize(
-        "model_class, expected_name",
+        "model_class, expected_name, options",
         [
-            (pybop.lithium_ion.SPM, "Single Particle Model"),
-            (pybop.lithium_ion.SPMe, "Single Particle Model with Electrolyte"),
-            (pybop.lithium_ion.DFN, "Doyle-Fuller-Newman"),
-            (pybop.lithium_ion.MPM, "Many Particle Model"),
-            (pybop.lithium_ion.MSMR, "Multi Species Multi Reactions Model"),
-            (pybop.lithium_ion.WeppnerHuggins, "Weppner & Huggins model"),
-            (pybop.empirical.Thevenin, "Equivalent Circuit Thevenin Model"),
+            (pybop.lithium_ion.SPM, "Single Particle Model", None),
+            (pybop.lithium_ion.SPMe, "Single Particle Model with Electrolyte", None),
+            (pybop.lithium_ion.DFN, "Doyle-Fuller-Newman", None),
+            (pybop.lithium_ion.MPM, "Many Particle Model", None),
+            (
+                pybop.lithium_ion.MSMR,
+                "Multi Species Multi Reactions Model",
+                {"number of MSMR reactions": ("6", "4")},
+            ),
+            (pybop.lithium_ion.WeppnerHuggins, "Weppner & Huggins model", None),
+            (pybop.empirical.Thevenin, "Equivalent Circuit Thevenin Model", None),
         ],
     )
     @pytest.mark.unit
-    def test_model_classes(self, model_class, expected_name):
-        options = None
-        if model_class is pybop.lithium_ion.MSMR:
-            options = {"number of MSMR reactions": ("6", "4")}
+    def test_model_classes(self, model_class, expected_name, options):
         model = model_class(options=options)
-
         assert model.pybamm_model is not None
         assert model.name == expected_name
 
