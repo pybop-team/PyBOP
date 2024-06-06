@@ -1,6 +1,6 @@
 import sys
 
-import pybop
+from pybop import StandardPlot, plot_trajectories
 
 
 def plot_dataset(
@@ -42,10 +42,10 @@ def plot_dataset(
     else:
         yaxis_title = "Output"
         if trace_names is None:
-            trace_names = pybop.StandardPlot.remove_brackets(signal)
+            trace_names = StandardPlot.remove_brackets(signal)
 
     # Create the figure
-    fig = pybop.plot_trajectories(
+    fig = plot_trajectories(
         x=dataset["Time [s]"],
         y=y,
         trace_names=trace_names,

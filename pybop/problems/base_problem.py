@@ -1,4 +1,4 @@
-import pybop
+from pybop import BaseModel, Dataset, Parameter, Parameters
 
 
 class BaseProblem:
@@ -32,17 +32,17 @@ class BaseProblem:
     ):
         # Check if parameters is a list of pybop.Parameter objects
         if isinstance(parameters, list):
-            if all(isinstance(param, pybop.Parameter) for param in parameters):
-                parameters = pybop.Parameters(*parameters)
+            if all(isinstance(param, Parameter) for param in parameters):
+                parameters = Parameters(*parameters)
             else:
                 raise TypeError(
                     "All elements in the list must be pybop.Parameter objects."
                 )
         # Check if parameters is a single pybop.Parameter object
-        elif isinstance(parameters, pybop.Parameter):
-            parameters = pybop.Parameters(parameters)
+        elif isinstance(parameters, Parameter):
+            parameters = Parameters(parameters)
         # Check if parameters is already a pybop.Parameters object
-        elif not isinstance(parameters, pybop.Parameters):
+        elif not isinstance(parameters, Parameters):
             raise TypeError(
                 "The input parameters must be a pybop Parameter, a list of pybop.Parameter objects, or a pybop Parameters object."
             )
@@ -60,7 +60,7 @@ class BaseProblem:
         self._time_data = None
         self._target = None
 
-        if isinstance(model, pybop.BaseModel):
+        if isinstance(model, BaseModel):
             self.additional_variables = additional_variables
         else:
             self.additional_variables = []
@@ -138,7 +138,7 @@ class BaseProblem:
         """
         if self.signal is None:
             raise ValueError("Signal must be defined to set target.")
-        if not isinstance(dataset, pybop.Dataset):
+        if not isinstance(dataset, Dataset):
             raise ValueError("Dataset must be a pybop Dataset object.")
 
         self._target = {signal: dataset[signal] for signal in self.signal}

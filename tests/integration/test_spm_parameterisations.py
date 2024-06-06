@@ -107,10 +107,10 @@ class Test_SPM_Parameterisation:
             optim = optimiser(cost=spm_costs, sigma0=0.05, max_iterations=250)
         if issubclass(optimiser, pybop.BasePintsOptimiser):
             optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
-            if issubclass(optimiser, pybop.Adam) and isinstance(
-                spm_costs, pybop.GaussianLogLikelihood
-            ):
-                return  # Skips the test as it requires specific hyperparameter tuning
+        if issubclass(optimiser, pybop.Adam) and isinstance(
+            spm_costs, pybop.GaussianLogLikelihood
+        ):
+            optim.set_min_iterations(50)
 
         initial_cost = optim.cost(x0)
         x, final_cost = optim.run()
@@ -237,11 +237,10 @@ class Test_SPM_Parameterisation:
         experiment = pybop.Experiment(
             [
                 (
-                    "Discharge at 0.5C for 6 minutes (4 second period)",
-                    "Charge at 0.5C for 6 minutes (4 second period)",
+                    "Discharge at 0.5C for 3 minutes (4 second period)",
+                    "Charge at 0.5C for 3 minutes (4 second period)",
                 ),
             ]
-            * 2
         )
         sim = model.predict(init_soc=init_soc, experiment=experiment, inputs=x)
         return sim
