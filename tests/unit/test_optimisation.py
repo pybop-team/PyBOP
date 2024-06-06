@@ -366,6 +366,7 @@ class TestOptimisation:
         optim = pybop.Optimisation(cost=cost)
 
         # Trigger threshold
+        optim.set_threshold(None)
         optim.set_threshold(np.inf)
         optim.run()
         optim.set_max_unchanged_iterations()
