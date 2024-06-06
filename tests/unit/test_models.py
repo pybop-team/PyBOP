@@ -34,6 +34,9 @@ class TestModels:
         assert model.name == expected_name
 
         # Test initialisation with kwargs
+        if model_class is pybop.lithium_ion.MSMR:
+            # Reset the options to cope with a bug in PyBaMM v23.9 msmr.py:23 which is fixed in v24.1
+            options = {"number of MSMR reactions": ("6", "4")}
         parameter_set = pybop.ParameterSet(
             params_dict={"Nominal cell capacity [A.h]": 5}
         )
