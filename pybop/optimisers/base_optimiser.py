@@ -250,8 +250,14 @@ class Result:
         The result obtained from a SciPy optimiser.
     """
 
-    def __init__(self, x=None, final_cost=None, nit=None, scipy_result=None):
+    def __init__(
+        self,
+        x: np.ndarray = None,
+        final_cost: float = None,
+        n_iterations: int = None,
+        scipy_result=None,
+    ):
         self.x = x
         self.final_cost = final_cost
-        self.nit = nit
+        self.n_iterations = n_iterations
         self.scipy_result = scipy_result

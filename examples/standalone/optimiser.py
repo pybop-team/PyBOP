@@ -1,7 +1,8 @@
 import numpy as np
 from scipy.optimize import minimize
 
-from pybop.optimisers.base_optimiser import BaseOptimiser, Result
+from pybop import Result
+from pybop.optimisers.base_optimiser import BaseOptimiser
 
 
 class StandaloneOptimiser(BaseOptimiser):
@@ -76,7 +77,7 @@ class StandaloneOptimiser(BaseOptimiser):
         return Result(
             x=result.x,
             final_cost=self.cost(result.x),
-            nit=result.nit,
+            n_iterations=result.nit,
             scipy_result=result,
         )
 

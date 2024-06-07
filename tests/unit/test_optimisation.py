@@ -124,7 +124,7 @@ class TestOptimisation:
 
         # Check maximum iterations
         optim.run()
-        assert optim._iterations == 1
+        assert optim.result.n_iterations == 1
 
         if optimiser in [pybop.GradientDescent, pybop.Adam, pybop.NelderMead]:
             # Ignored bounds
@@ -338,14 +338,14 @@ class TestOptimisation:
         # Test max evalutions
         optim = pybop.GradientDescent(cost=cost, max_evaluations=1, verbose=True)
         x, __ = optim.run()
-        assert optim._iterations == 1
+        assert optim.result.n_iterations == 1
 
         # Test max unchanged iterations
         optim = pybop.GradientDescent(
             cost=cost, max_unchanged_iterations=1, min_iterations=1
         )
         x, __ = optim.run()
-        assert optim._iterations == 2
+        assert optim.result.n_iterations == 2
 
         # Test guessed values
         optim.set_f_guessed_tracking(True)
@@ -387,7 +387,7 @@ class TestOptimisation:
 
         optim.pints_optimiser.stop = optimiser_error
         optim.run()
-        assert optim._iterations == 1
+        assert optim.result.n_iterations == 1
 
         # Test no stopping condition
         with pytest.raises(
@@ -405,7 +405,7 @@ class TestOptimisation:
         for optimiser in [pybop.SciPyMinimize, pybop.GradientDescent]:
             optim = optimiser(cost=cost, allow_infeasible_solutions=False, maxiter=1)
             optim.run()
-            assert optim._iterations == 1
+            assert optim.result.n_iterations == 1
 
     @pytest.mark.unit
     def test_unphysical_result(self, cost):

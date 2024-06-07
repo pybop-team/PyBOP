@@ -10,6 +10,7 @@ from pints import RectangularBoundaries as PintsRectangularBoundaries
 from pints import SequentialEvaluator as PintsSequentialEvaluator
 from pints import strfloat as PintsStrFloat
 
+from pybop import Result
 from pybop.optimisers.base_optimiser import BaseOptimiser
 
 
@@ -352,7 +353,7 @@ class BasePintsOptimiser(BaseOptimiser):
             x = self._transformation.to_model(x)
 
         return Result(
-            x=x, final_cost=f if self.minimising else -f, nit=self._iterations
+            x=x, final_cost=f if self.minimising else -f, n_iterations=self._iterations
         )
 
     def f_guessed_tracking(self):
@@ -508,24 +509,3 @@ class BasePintsOptimiser(BaseOptimiser):
             self._threshold = None
         else:
             self._threshold = float(threshold)
-
-
-class Result:
-    """
-    Stores the result of the optimisation.
-
-    Attributes
-    ----------
-    x : ndarray
-        The solution of the optimisation.
-    final_cost : float
-        The cost associated with the solution x.
-    nit : int
-        Number of iterations performed by the optimiser.
-
-    """
-
-    def __init__(self, x=None, final_cost=None, nit=None):
-        self.x = x
-        self.final_cost = final_cost
-        self.nit = nit
