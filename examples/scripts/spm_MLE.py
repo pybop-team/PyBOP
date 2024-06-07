@@ -16,7 +16,6 @@ parameters = pybop.Parameters(
     pybop.Parameter(
         "Positive electrode active material volume fraction",
         prior=pybop.Gaussian(0.48, 0.05),
-        bounds=[0.4, 0.7],
     ),
 )
 
@@ -44,7 +43,7 @@ dataset = pybop.Dataset(
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
-likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma=[0.03, 0.03])
+likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=sigma)
 optim = pybop.CMAES(
     likelihood,
     max_unchanged_iterations=20,

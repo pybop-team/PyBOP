@@ -42,6 +42,7 @@ class Test_SPM_Parameterisation:
     @pytest.fixture(
         params=[
             pybop.GaussianLogLikelihoodKnownSigma,
+            pybop.GaussianLogLikelihood,
             pybop.RootMeanSquaredError,
             pybop.SumSquaredError,
             pybop.MAP,
@@ -69,10 +70,12 @@ class Test_SPM_Parameterisation:
         # Define the cost to optimise
         problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
-            return cost_class(problem, sigma=[0.03, 0.03])
+            return cost_class(problem, sigma0=0.002)
+        elif cost_class in [pybop.GaussianLogLikelihood]:
+            return cost_class(problem)
         elif cost_class in [pybop.MAP]:
             return cost_class(
-                problem, pybop.GaussianLogLikelihoodKnownSigma, sigma=[0.03, 0.03]
+                problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=0.002
             )
         else:
             return cost_class(problem)
@@ -94,32 +97,36 @@ class Test_SPM_Parameterisation:
     def test_spm_optimisers(self, optimiser, spm_costs):
         x0 = spm_costs.x0
         # Some optimisers require a complete set of bounds
-        if optimiser in [
-            pybop.SciPyDifferentialEvolution,
-            pybop.CuckooSearch,
-        ]:
-            spm_costs.problem.parameters[
-                "Positive electrode active material volume fraction"
-            ].set_bounds([0.375, 0.725])  # Large range to ensure IC within bounds
-            bounds = spm_costs.problem.parameters.get_bounds()
-            spm_costs.problem.bounds = bounds
-            spm_costs.bounds = bounds
 
         # Test each optimiser
-        optim = optimiser(cost=spm_costs, sigma0=0.05, max_iterations=250)
+        if isinstance(spm_costs, pybop.GaussianLogLikelihood):
+            optim = optimiser(
+                cost=spm_costs,
+                max_iterations=125,
+            )
+        else:
+            optim = optimiser(cost=spm_costs, sigma0=0.05, max_iterations=250)
         if issubclass(optimiser, pybop.BasePintsOptimiser):
             optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
+        if issubclass(optimiser, pybop.Adam) and isinstance(
+            spm_costs, pybop.GaussianLogLikelihood
+        ):
+            optim.set_min_iterations(50)
 
         initial_cost = optim.cost(x0)
         x, final_cost = optim.run()
 
         # Assertions
-        if not np.allclose(x0, self.ground_truth, atol=1e-5):
-            if optim.minimising:
-                assert initial_cost > final_cost
-            else:
-                assert initial_cost < final_cost
-        np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
+        if not isinstance(spm_costs, pybop.GaussianLogLikelihood):
+            if not np.allclose(x0, self.ground_truth, atol=1e-5):
+                if optim.minimising:
+                    assert initial_cost > final_cost
+                else:
+                    assert initial_cost < final_cost
+
+            np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
+        else:
+            np.testing.assert_allclose(x[:-1], self.ground_truth, atol=1.5e-2)
 
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, cost_class):
@@ -146,7 +153,7 @@ class Test_SPM_Parameterisation:
         )
 
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
-            return cost_class(problem, sigma=[0.05, 0.05])
+            return cost_class(problem, sigma0=0.002)
         elif cost_class in [pybop.MAP]:
             return cost_class(problem, pybop.GaussianLogLikelihoodKnownSigma)
         else:
@@ -163,14 +170,6 @@ class Test_SPM_Parameterisation:
     @pytest.mark.integration
     def test_multiple_signals(self, multi_optimiser, spm_two_signal_cost):
         x0 = spm_two_signal_cost.x0
-        # Some optimisers require a complete set of bounds
-        if multi_optimiser in [pybop.SciPyDifferentialEvolution]:
-            spm_two_signal_cost.problem.parameters[
-                "Positive electrode active material volume fraction"
-            ].set_bounds([0.375, 0.725])  # Large range to ensure IC within bounds
-            bounds = spm_two_signal_cost.problem.parameters.get_bounds()
-            spm_two_signal_cost.problem.bounds = bounds
-            spm_two_signal_cost.bounds = bounds
 
         # Test each optimiser
         optim = multi_optimiser(
@@ -185,12 +184,15 @@ class Test_SPM_Parameterisation:
         x, final_cost = optim.run()
 
         # Assertions
-        if not np.allclose(x0, self.ground_truth, atol=1e-5):
-            if optim.minimising:
-                assert initial_cost > final_cost
-            else:
-                assert initial_cost < final_cost
-        np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
+        if not isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood):
+            if not np.allclose(x0, self.ground_truth, atol=1e-5):
+                if optim.minimising:
+                    assert initial_cost > final_cost
+                else:
+                    assert initial_cost < final_cost
+            np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
+        else:
+            np.testing.assert_allclose(x[:-2], self.ground_truth, atol=1.5e-2)
 
     @pytest.mark.parametrize("init_soc", [0.4, 0.6])
     @pytest.mark.integration
@@ -236,11 +238,10 @@ class Test_SPM_Parameterisation:
         experiment = pybop.Experiment(
             [
                 (
-                    "Discharge at 0.5C for 6 minutes (4 second period)",
-                    "Charge at 0.5C for 6 minutes (4 second period)",
+                    "Discharge at 0.5C for 3 minutes (4 second period)",
+                    "Charge at 0.5C for 3 minutes (4 second period)",
                 ),
             ]
-            * 2
         )
         sim = model.predict(init_soc=init_soc, experiment=experiment, inputs=x)
         return sim

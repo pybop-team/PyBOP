@@ -44,7 +44,7 @@ dataset = pybop.Dataset(
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.MAP(problem, pybop.GaussianLogLikelihoodKnownSigma)
+cost = pybop.MAP(problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=sigma)
 optim = pybop.CMAES(
     cost,
     max_unchanged_iterations=20,

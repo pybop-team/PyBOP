@@ -21,6 +21,7 @@
 
 ## Bug Fixes
 
+- [#338](https://github.com/pybop-team/PyBOP/pull/338) - Fixes GaussianLogLikelihood class, adds integration tests, updates non-bounded parameter implementation and bugfix to CMAES construction.
 - [#347](https://github.com/pybop-team/PyBOP/issues/347) - Resets options between MSMR tests to cope with a bug in PyBaMM v23.9 which is fixed in PyBaMM v24.1.
 - [#337](https://github.com/pybop-team/PyBOP/issues/337) - Restores benchmarks, relaxes CI schedule for benchmarks and scheduled tests.
 - [#231](https://github.com/pybop-team/PyBOP/issues/231) - Allows passing of keyword arguments to PyBaMM models and disables build on initialisation.

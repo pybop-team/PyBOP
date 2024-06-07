@@ -123,7 +123,7 @@ class Parameter:
 
         self.margin = margin
 
-    def set_bounds(self, bounds=None):
+    def set_bounds(self, bounds=None, boundary_multiplier=6):
         """
         Set the upper and lower bounds.
 
@@ -145,6 +145,10 @@ class Parameter:
             else:
                 self.lower_bound = bounds[0]
                 self.upper_bound = bounds[1]
+        elif self.prior is not None:
+            self.lower_bound = self.prior.mean - boundary_multiplier * self.prior.sigma
+            self.upper_bound = self.prior.mean + boundary_multiplier * self.prior.sigma
+            bounds = [self.lower_bound, self.upper_bound]
 
         self.bounds = bounds
 
