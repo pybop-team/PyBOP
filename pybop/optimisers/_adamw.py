@@ -1,5 +1,5 @@
 #
-# Reimplements the Pints' Adam Class with a Weight Decay addition
+# Extends the Pints' Adam Class with a Weight Decay addition
 #
 
 import numpy as np
@@ -10,8 +10,8 @@ class AdamWImpl(PintsOptimiser):
     """
     AdamW optimiser (adaptive moment estimation with weight decay), as described in [1]_.
 
-    This method is an extension of the Adam optimizer that introduces weight decay,
-    which helps to regularize the weights and prevent overfitting.
+    This method is an extension of the Adam optimiser that introduces weight decay,
+    which helps to regularise the weights and prevent overfitting.
 
     This class reimplements the Pints' Adam Optimiser, but with the weight decay
     functionality mentioned above. Original creation and credit is attributed to Pints.
@@ -33,7 +33,7 @@ class AdamWImpl(PintsOptimiser):
     ``beta1 = 0.9`` and ``beta2 = 0.999``.
 
     The terms ``m_j'`` and ``v_j'`` are "initialisation bias corrected"
-    versions of ``m_j`` and ``v_j`` (see section 3 of the paper).
+    versions of ``m_j`` and ``v_j`` (see section 2 of the paper).
 
     The parameter ``alpha`` is a step size, which is set as ``min(sigma0)`` in
     this implementation.

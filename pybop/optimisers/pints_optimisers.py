@@ -74,7 +74,7 @@ class Adam(BasePintsOptimiser):
 
 class AdamW(BasePintsOptimiser):
     """
-    Implements the AdamW optimization algorithm in PyBOP.
+    Implements the AdamW optimisation algorithm in PyBOP.
 
     This class extends the AdamW optimiser, which is a variant of the Adam
     optimiser that incorporates weight decay. AdamW is designed to be more
@@ -86,7 +86,7 @@ class AdamW(BasePintsOptimiser):
     **optimiser_kwargs : optional
         Valid PyBOP option keys and their values, for example:
         x0 : array_like
-            Initial position from which optimization will start.
+            Initial position from which optimisation will start.
         sigma0 : float
             Initial step size.
 
