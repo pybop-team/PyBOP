@@ -1,5 +1,3 @@
-import numpy as np
-
 from pybop import BaseProblem
 
 
@@ -29,16 +27,12 @@ class BaseCost:
         self.parameters = None
         self.problem = problem
         self.x0 = None
-        self.bounds = None
-        self.sigma0 = None
         if isinstance(self.problem, BaseProblem):
             self._target = self.problem._target
             self.parameters = self.problem.parameters
             self.x0 = self.problem.x0
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
-            self.bounds = self.parameters.get_bounds()
-            self.sigma0 = self.parameters.get_sigma0() or np.zeros(self.n_parameters)
 
     @property
     def n_parameters(self):

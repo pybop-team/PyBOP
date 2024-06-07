@@ -54,7 +54,7 @@ class DesignProblem(BaseProblem):
         # Build the model if required
         if experiment is not None:
             # Leave the build until later to apply the experiment
-            self._model.parameters = self.parameters
+            self._model.classify_and_update_parameters(self.parameters)
 
         elif self._model._built_model is None:
             self._model.build(

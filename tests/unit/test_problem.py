@@ -174,7 +174,7 @@ class TestProblem:
         self, parameters, model, dataset, signal
     ):
         # Construct model and predict
-        model.parameters = parameters
+        model.classify_and_update_parameters(parameters)
         out = model.predict(inputs=[1e-5, 1e-5], t_eval=np.linspace(0, 10, 100))
 
         problem = pybop.FittingProblem(

@@ -132,6 +132,9 @@ class Parameter:
         bounds : tuple, optional
             A tuple defining the lower and upper bounds for the parameter.
             Defaults to None.
+        boundary_multiplier : float, optional
+            Used to define the bounds when no bounds are passed but the parameter has
+            a prior distribution (default: 6).
 
         Raises
         ------
@@ -384,7 +387,9 @@ class Parameters:
 
         return bounds
 
-    def as_dict(self, values=None) -> Dict:
+    def as_dict(self, keys: List[str] = None, values: np.array = None) -> Dict:
+        if keys is None:
+            keys = self.param.keys()
         if values is None:
             values = self.current_value()
-        return {key: values[i] for i, key in enumerate(self.param.keys())}
+        return {key: values[i] for i, key in enumerate(keys)}

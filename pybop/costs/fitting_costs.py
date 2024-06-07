@@ -252,7 +252,7 @@ class ObserverCost(BaseCost):
         float
             The observer cost (negative of the log likelihood).
         """
-        inputs = self._observer.parameters.as_dict(x)
+        inputs = self._observer.parameters.as_dict(values=x)
         log_likelihood = self._observer.log_likelihood(
             self._target, self._observer.time_data(), inputs
         )

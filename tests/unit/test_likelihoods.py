@@ -92,7 +92,7 @@ class TestLikelihoods:
     def test_likelihood_check_sigma0(self, one_signal_problem):
         with pytest.raises(
             ValueError,
-            match="Sigma must be positive",
+            match="Sigma0 must be positive",
         ):
             pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, sigma0=None)
 

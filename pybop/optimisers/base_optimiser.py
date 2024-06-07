@@ -69,11 +69,10 @@ class BaseOptimiser:
                 self.minimising = False
 
             # Set default bounds (for all or no parameters)
-            self.bounds = cost.bounds or cost.parameters.get_bounds()
+            self.bounds = cost.parameters.get_bounds()
 
             # Set default initial standard deviation (for all or no parameters)
-            if cost.sigma0 is not None:
-                self.sigma0 = cost.sigma0
+            self.sigma0 = cost.parameters.get_sigma0() or self.sigma0
 
         else:
             try:
