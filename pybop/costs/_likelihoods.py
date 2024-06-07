@@ -119,8 +119,8 @@ class GaussianLogLikelihood(BaseLikelihood):
         if len(sigma0) != self.n_outputs:
             sigma0 = np.pad(
                 sigma0,
-                (0, max(0, self.n_outputs - len(self.sigma0))),
-                constant_values=sigma0,
+                (0, max(0, self.n_outputs - len(sigma0))),
+                constant_values=sigma0[-1],
             )
         for i, s0 in enumerate(sigma0):
             if isinstance(s0, Parameter):
