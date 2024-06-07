@@ -11,7 +11,7 @@ class BaseLikelihood(BaseCost):
     Base class for likelihoods
     """
 
-    def __init__(self, problem: BaseProblem):
+    def __init__(self, problem: BaseProblem, sigma0: Union[List[float], float] = None):
         super(BaseLikelihood, self).__init__(problem)
         self.n_time_data = problem.n_time_data
 

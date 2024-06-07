@@ -9,6 +9,11 @@ class TestCosts:
     Class for tests cost functions
     """
 
+    # Define an invalid likelihood class for MAP tests
+    class InvalidLikelihood:
+        def __init__(self, problem, sigma0):
+            pass
+
     @pytest.fixture
     def model(self):
         return pybop.lithium_ion.SPM()
@@ -116,12 +121,22 @@ class TestCosts:
     @pytest.mark.unit
     def test_MAP(self, problem):
         # Incorrect likelihood
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match="An error occurred when constructing the Likelihood class:",
+        ):
             pybop.MAP(problem, pybop.SumSquaredError)
 
         # Incorrect construction of likelihood
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match="An error occurred when constructing the Likelihood class: could not convert string to float: 'string'",
+        ):
             pybop.MAP(problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0="string")
+
+        # Incorrect likelihood
+        with pytest.raises(ValueError, match="must be a subclass of BaseLikelihood"):
+            pybop.MAP(problem, self.InvalidLikelihood, sigma0=0.1)
 
     @pytest.mark.unit
     def test_costs(self, cost):
