@@ -100,7 +100,9 @@ class BaseModel:
             The initial state of charge to be used in simulations.
         """
         self.dataset = dataset
-        self.classify_and_update_parameters(parameters)
+
+        if parameters is not None:
+            self.classify_and_update_parameters(parameters)
 
         if init_soc is not None:
             self.set_init_soc(init_soc)
@@ -214,7 +216,9 @@ class BaseModel:
             The initial state of charge to be used in simulations.
         """
         self.dataset = dataset
-        self.classify_and_update_parameters(parameters)
+
+        if parameters is not None:
+            self.classify_and_update_parameters(parameters)
 
         if init_soc is not None:
             self.set_init_soc(init_soc)
@@ -245,29 +249,29 @@ class BaseModel:
         """
         self.parameters = parameters
 
+        parameter_dictionary = self.parameters.as_dict()
+        rebuild_parameters = {
+            param: parameter_dictionary[param]
+            for param in parameter_dictionary
+            if param in self.geometric_parameters
+        }
+        standard_parameters = {
+            param: parameter_dictionary[param]
+            for param in parameter_dictionary
+            if param not in self.geometric_parameters
+        }
+
+        self.rebuild_parameters.update(rebuild_parameters)
+        self.standard_parameters.update(standard_parameters)
+
+        # Update the parameter set and geometry for rebuild parameters
+        if self.rebuild_parameters:
+            self._parameter_set.update(self.rebuild_parameters)
+            self._unprocessed_parameter_set = self._parameter_set
+            self.geometry = self.pybamm_model.default_geometry
+
+        # Update the list of parameter names and number of parameters
         if self.parameters is not None:
-            parameter_dictionary = parameters.as_dict()
-            rebuild_parameters = {
-                param: parameter_dictionary[param]
-                for param in parameter_dictionary
-                if param in self.geometric_parameters
-            }
-            standard_parameters = {
-                param: parameter_dictionary[param]
-                for param in parameter_dictionary
-                if param not in self.geometric_parameters
-            }
-
-            self.rebuild_parameters.update(rebuild_parameters)
-            self.standard_parameters.update(standard_parameters)
-
-            # Update the parameter set and geometry for rebuild parameters
-            if self.rebuild_parameters:
-                self._parameter_set.update(self.rebuild_parameters)
-                self._unprocessed_parameter_set = self._parameter_set
-                self.geometry = self.pybamm_model.default_geometry
-
-            # Update the list of parameter names and number of parameters
             self._fit_keys = self.parameters.keys()
             self._n_parameters = len(self.parameters)
         else:

@@ -256,7 +256,7 @@ class TestModels:
         state = model.reinit(inputs={})
         np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
 
-        model.parameters = pybop.Parameters(pybop.Parameter("y0"))
+        model.classify_and_update_parameters(pybop.Parameters(pybop.Parameter("y0")))
         state = model.reinit(inputs=[1])
         np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
 
