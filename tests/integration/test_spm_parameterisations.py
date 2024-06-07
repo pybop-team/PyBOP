@@ -86,6 +86,7 @@ class Test_SPM_Parameterisation:
             pybop.SciPyDifferentialEvolution,
             pybop.Adam,
             pybop.CMAES,
+            pybop.CuckooSearch,
             pybop.IRPropMin,
             pybop.NelderMead,
             pybop.SNES,

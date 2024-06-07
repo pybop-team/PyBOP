@@ -102,6 +102,7 @@ from .costs._likelihoods import (
 #
 # Optimiser class
 #
+from .optimisers._cuckoo import CuckooSearchImpl
 from .optimisers.base_optimiser import BaseOptimiser
 from .optimisers.base_pints_optimiser import BasePintsOptimiser
 from .optimisers.scipy_optimisers import (
@@ -118,6 +119,7 @@ from .optimisers.pints_optimisers import (
     PSO,
     SNES,
     XNES,
+    CuckooSearch,
 )
 from .optimisers.optimisation import Optimisation
 

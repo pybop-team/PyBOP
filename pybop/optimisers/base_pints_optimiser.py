@@ -140,16 +140,16 @@ class BasePintsOptimiser(BaseOptimiser):
             ):
                 print(f"NOTE: Boundaries ignored by {self.pints_optimiser}")
                 self.bounds = None
-            elif issubclass(self.pints_optimiser, PintsPSO):
-                if not all(
-                    np.isfinite(value)
-                    for sublist in self.bounds.values()
-                    for value in sublist
-                ):
-                    raise ValueError(
-                        "Either all bounds or no bounds must be set for Pints PSO."
-                    )
             else:
+                if issubclass(self.pints_optimiser, PintsPSO):
+                    if not all(
+                        np.isfinite(value)
+                        for sublist in self.bounds.values()
+                        for value in sublist
+                    ):
+                        raise ValueError(
+                            f"Either all bounds or no bounds must be set for {self.pints_optimiser.__name__}."
+                        )
                 self._boundaries = PintsRectangularBoundaries(
                     self.bounds["lower"], self.bounds["upper"]
                 )
