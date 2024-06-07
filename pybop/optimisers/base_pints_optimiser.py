@@ -10,8 +10,7 @@ from pints import RectangularBoundaries as PintsRectangularBoundaries
 from pints import SequentialEvaluator as PintsSequentialEvaluator
 from pints import strfloat as PintsStrFloat
 
-from pybop import Result
-from pybop.optimisers.base_optimiser import BaseOptimiser
+from pybop import BaseOptimiser, Result
 
 
 class BasePintsOptimiser(BaseOptimiser):

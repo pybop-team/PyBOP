@@ -1,8 +1,7 @@
 import numpy as np
 from scipy.optimize import minimize
 
-from pybop import Result
-from pybop.optimisers.base_optimiser import BaseOptimiser
+from pybop import BaseOptimiser, Result
 
 
 class StandaloneOptimiser(BaseOptimiser):
