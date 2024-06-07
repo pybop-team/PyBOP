@@ -27,7 +27,7 @@ parameters = pybop.Parameters(
 # Make a prediction with measurement noise
 sigma = 1e-2
 t_eval = np.linspace(0, 20, 10)
-model.parameters = parameters
+model.classify_and_update_parameters(parameters)
 values = model.predict(t_eval=t_eval, inputs=parameters.true_value())
 values = values["2y"].data
 corrupt_values = values + np.random.normal(0, sigma, len(t_eval))
