@@ -75,10 +75,10 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
             return -np.inf, -self._dl
 
         likelihood = self._evaluate(x)
-        
+
         r = np.array([self._target[signal] - y[signal] for signal in self.signal])
         dl = np.sum((np.sum((r * dy.T), axis=2) / self.sigma2), axis=1)
-        
+
         return likelihood, dl
 
     def check_sigma0(self, sigma0: Union[np.ndarray, float]):
