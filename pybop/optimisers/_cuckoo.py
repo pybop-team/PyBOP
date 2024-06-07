@@ -144,7 +144,7 @@ class _CuckooSearch(PopulationBasedOptimiser):
 
     def abandon_nests(self, idx):
         """
-        Updates the nests to abandon the worst performers and reinitialise. 
+        Updates the nests to abandon the worst performers and reinitialise.
         """
         if self._boundaries is not None:
             self._nests[idx] = np.random.uniform(
