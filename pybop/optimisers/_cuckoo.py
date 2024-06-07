@@ -120,15 +120,7 @@ class _CuckooSearch(PopulationBasedOptimiser):
         n_abandon = int(self._pa * self._n)
         worst_nests = np.argsort(self._fitness)[-n_abandon:]
         for idx in worst_nests:
-            if self._boundaries is not None:
-                self._nests[idx] = np.random.uniform(
-                    low=self._boundaries.lower(),
-                    high=self._boundaries.upper(),
-                    size=self._dim,
-                )
-            else:
-                self._nests[idx] = np.random.normal(self._x0, self._sigma0)
-
+            self.abandon_nests(idx)
             self._fitness[idx] = np.inf  # reset fitness
 
     def levy_flight(self, alpha, size):
@@ -150,11 +142,25 @@ class _CuckooSearch(PopulationBasedOptimiser):
 
         return step
 
+    def abandon_nests(self, idx):
+        """
+        Set the boundaries for the parameter space.
+        """
+        if self._boundaries is not None:
+            self._nests[idx] = np.random.uniform(
+                low=self._boundaries.lower(),
+                high=self._boundaries.upper(),
+            )
+        else:
+            self._nests[idx] = np.random.normal(self._x0, self._sigma0)
+
     def clip_nests(self, x):
         """
         Clip the input array to the boundaries.
         """
-        return np.clip(x, self._boundaries.lower(), self._boundaries.upper())
+        if self._boundaries is not None:
+            x = np.clip(x, self._boundaries.lower(), self._boundaries.upper())
+        return x
 
     def _suggested_population_size(self):
         """

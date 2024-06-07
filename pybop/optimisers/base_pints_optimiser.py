@@ -150,9 +150,9 @@ class BasePintsOptimiser(BaseOptimiser):
                         raise ValueError(
                             "Either all bounds or no bounds must be set for {self.pints_optimiser.__name__}."
                         )
-                    self._boundaries = PintsRectangularBoundaries(
-                        self.bounds["lower"], self.bounds["upper"]
-                    )
+                self._boundaries = PintsRectangularBoundaries(
+                    self.bounds["lower"], self.bounds["upper"]
+                )
 
     def name(self):
         """
