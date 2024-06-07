@@ -82,12 +82,26 @@ class BenchmarkParameterisation:
         # Create cost function
         cost = pybop.SumSquaredError(problem=problem)
 
-        # Create optimization instance
-        self.optim = pybop.Optimisation(cost, optimiser=optimiser)
+        # Create optimization instance and set options for consistent benchmarking
         if optimiser in [pybop.GradientDescent]:
-            self.optim.optimiser.set_learning_rate(
-                0.008
-            )  # Compromise between stability & performance
+            self.optim = pybop.Optimisation(
+                cost,
+                optimiser=optimiser,
+                max_iterations=250,
+                max_unchanged_iterations=25,
+                threshold=1e-5,
+                min_iterations=2,
+                learning_rate=0.008,  # Compromise between stability & performance
+            )
+        else:
+            self.optim = pybop.Optimisation(
+                cost,
+                optimiser=optimiser,
+                max_iterations=250,
+                max_unchanged_iterations=25,
+                threshold=1e-5,
+                min_iterations=2,
+            )
 
     def time_parameterisation(self, model, parameter_set, optimiser):
         """
@@ -99,10 +113,6 @@ class BenchmarkParameterisation:
             parameter_set (str): The name of the parameter set being used (unused).
             optimiser (pybop.Optimiser): The optimizer class being used (unused).
         """
-        # Set optimizer options for consistent benchmarking
-        self.optim.set_max_unchanged_iterations(iterations=25, threshold=1e-5)
-        self.optim.set_max_iterations(250)
-        self.optim.set_min_iterations(2)
         self.optim.run()
 
     def time_optimiser_ask(self, model, parameter_set, optimiser):
@@ -115,4 +125,4 @@ class BenchmarkParameterisation:
             optimiser (pybop.Optimiser): The optimizer class being used.
         """
         if optimiser not in [pybop.SciPyMinimize, pybop.SciPyDifferentialEvolution]:
-            self.optim.optimiser.ask()
+            self.optim.pints_optimiser.ask()

@@ -28,7 +28,7 @@ class TestPlots:
 
     @pytest.fixture
     def parameters(self):
-        return [
+        return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.68, 0.05),
@@ -39,7 +39,7 @@ class TestPlots:
                 prior=pybop.Gaussian(0.58, 0.05),
                 bounds=[0.4, 0.7],
             ),
-        ]
+        )
 
     @pytest.fixture
     def dataset(self, model):
@@ -108,13 +108,15 @@ class TestPlots:
     @pytest.fixture
     def optim(self, cost):
         # Define and run an example optimisation
-        optim = pybop.Optimisation(cost, optimiser=pybop.CMAES)
+        optim = pybop.Optimisation(cost)
         optim.run()
         return optim
 
     @pytest.mark.unit
     def test_optim_plots(self, optim):
         # Plot convergence
+        pybop.plot_convergence(optim)
+        optim._minimising = False
         pybop.plot_convergence(optim)
 
         # Plot the parameter traces

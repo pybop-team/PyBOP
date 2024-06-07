@@ -6,7 +6,7 @@ import numpy as np
 from pints import Optimiser as PintsOptimiser
 
 
-class AdamW(PintsOptimiser):
+class _AdamW(PintsOptimiser):
     """
     AdamW optimiser (adaptive moment estimation with weight decay), as described in [1]_.
 
@@ -53,11 +53,11 @@ class AdamW(PintsOptimiser):
            https://doi.org/10.48550/arXiv.1711.05101
     """
 
-    def __init__(self, x0, sigma0=0.015, bounds=None):
-        if bounds is not None:
+    def __init__(self, x0, sigma0=0.015, boundaries=None):
+        if boundaries is not None:
             print("NOTE: Boundaries ignored by AdamW")
 
-        self.boundaries = None  # Bounds ignored in pints.Adam
+        self.boundaries = None
         super().__init__(x0, sigma0, self.boundaries)
 
         # Set optimiser state

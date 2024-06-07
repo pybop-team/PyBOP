@@ -7,7 +7,7 @@ parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
-parameters = [
+parameters = pybop.Parameters(
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         prior=pybop.Gaussian(0.68, 0.05),
@@ -16,7 +16,7 @@ parameters = [
         "Positive electrode active material volume fraction",
         prior=pybop.Gaussian(0.58, 0.05),
     ),
-]
+)
 
 # Generate data
 sigma = 0.001
@@ -36,10 +36,12 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.Optimisation(
-    cost, optimiser=pybop.GradientDescent, sigma0=0.022, verbose=True
+optim = pybop.GradientDescent(
+    cost,
+    sigma0=0.011,
+    verbose=True,
+    max_iterations=125,
 )
-optim.set_max_iterations(125)
 
 # Run optimisation
 x, final_cost = optim.run()

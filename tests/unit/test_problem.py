@@ -16,7 +16,7 @@ class TestProblem:
 
     @pytest.fixture
     def parameters(self):
-        return [
+        return pybop.Parameters(
             pybop.Parameter(
                 "Negative particle radius [m]",
                 prior=pybop.Gaussian(2e-05, 0.1e-5),
@@ -27,7 +27,7 @@ class TestProblem:
                 prior=pybop.Gaussian(0.5e-05, 0.1e-5),
                 bounds=[1e-6, 5e-5],
             ),
-        ]
+        )
 
     @pytest.fixture
     def experiment(self):
@@ -68,10 +68,6 @@ class TestProblem:
 
     @pytest.mark.unit
     def test_base_problem(self, parameters, model, dataset):
-        # Test incorrect number of initial parameter values
-        with pytest.raises(ValueError):
-            pybop.BaseProblem(parameters, model=model, x0=np.array([]))
-
         # Construct Problem
         problem = pybop.BaseProblem(parameters, model=model)
 
@@ -85,12 +81,6 @@ class TestProblem:
         with pytest.raises(ValueError):
             pybop.BaseProblem(parameters, model=model, signal=[1e-5, 1e-5])
 
-        # Test without bounds
-        for param in parameters:
-            param.bounds = None
-        problem = pybop.BaseProblem(parameters, model=model)
-        assert problem.bounds is None
-
         # Incorrect set target
         with pytest.raises(ValueError, match="Dataset must be a pybop Dataset object."):
             problem.set_target("This is not a dataset")
@@ -100,14 +90,18 @@ class TestProblem:
         with pytest.raises(ValueError, match="Signal must be defined to set target."):
             problem.set_target(dataset)
 
+        # Different types of parameters
+        parameter_list = list(parameters.param.values())
+        problem = pybop.BaseProblem(parameters=parameter_list)
+        problem = pybop.BaseProblem(parameters=parameter_list[0])
+        with pytest.raises(
+            TypeError,
+            match="The input parameters must be a pybop Parameter, a list of pybop.Parameter objects, or a pybop Parameters object.",
+        ):
+            problem = pybop.BaseProblem(parameters="Invalid string")
+
     @pytest.mark.unit
     def test_fitting_problem(self, parameters, dataset, model, signal):
-        # Test incorrect number of initial parameter values
-        with pytest.raises(ValueError):
-            pybop.FittingProblem(
-                model, parameters, dataset, signal=signal, x0=np.array([])
-            )
-
         # Construct Problem
         problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 
@@ -163,10 +157,6 @@ class TestProblem:
 
     @pytest.mark.unit
     def test_design_problem(self, parameters, experiment, model):
-        # Test incorrect number of initial parameter values
-        with pytest.raises(ValueError):
-            pybop.DesignProblem(model, parameters, experiment, x0=np.array([]))
-
         # Construct Problem
         problem = pybop.DesignProblem(model, parameters, experiment)
 
@@ -184,6 +174,7 @@ class TestProblem:
         self, parameters, model, dataset, signal
     ):
         # Construct model and predict
+        model.parameters = parameters
         out = model.predict(inputs=[1e-5, 1e-5], t_eval=np.linspace(0, 10, 100))
 
         problem = pybop.FittingProblem(
@@ -198,5 +189,5 @@ class TestProblem:
             assert_allclose(
                 out["Voltage [V]"].data,
                 problem_output["Voltage [V]"],
-                atol=1e-5,
+                atol=1e-6,
             )

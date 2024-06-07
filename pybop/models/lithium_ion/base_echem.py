@@ -1,18 +1,43 @@
 import warnings
 
-import pybamm
+from pybamm import lithium_ion as pybamm_lithium_ion
 
-from ..base_model import BaseModel
+from pybop.models.base_model import BaseModel
 
 
 class EChemBaseModel(BaseModel):
     """
     Overwrites and extends `BaseModel` class for electrochemical PyBaMM models.
+
+    Parameters
+    ----------
+    pybamm_model : pybamm.BaseModel
+        A subclass of the pybamm Base Model.
+    name : str, optional
+        The name for the model instance, defaulting to "Electrochemical Base Model".
+    parameter_set : pybamm.ParameterValues or dict, optional
+        The parameters for the model. If None, default parameters provided by PyBaMM are used.
+    geometry : dict, optional
+        The geometry definitions for the model. If None, default geometry from PyBaMM is used.
+    submesh_types : dict, optional
+        The types of submeshes to use. If None, default submesh types from PyBaMM are used.
+    var_pts : dict, optional
+        The discretization points for each variable in the model. If None, default points from PyBaMM are used.
+    spatial_methods : dict, optional
+        The spatial methods used for discretization. If None, default spatial methods from PyBaMM are used.
+    solver : pybamm.Solver, optional
+        The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
+    **model_kwargs : optional
+        Valid PyBaMM model option keys and their values. For example,
+        build : bool, optional
+            If True, the model is built upon creation (default: False).
+        options : dict, optional
+            A dictionary of options to customise the behaviour of the PyBaMM model.
     """
 
     def __init__(
         self,
-        model,
+        pybamm_model,
         name="Electrochemical Base Model",
         parameter_set=None,
         geometry=None,
@@ -20,9 +45,18 @@ class EChemBaseModel(BaseModel):
         var_pts=None,
         spatial_methods=None,
         solver=None,
+        **model_kwargs,
     ):
-        super().__init__(name=name, parameter_set=parameter_set)
-        self.pybamm_model = model
+        super().__init__(
+            name=name,
+            parameter_set=parameter_set,
+        )
+
+        model_options = dict(build=False)
+        for key, value in model_kwargs.items():
+            model_options[key] = value
+        self.pybamm_model = pybamm_model(**model_options)
+        self._unprocessed_model = self.pybamm_model
 
         # Set parameters, using either the provided ones or the default
         self.default_parameter_values = self.pybamm_model.default_parameter_values
@@ -50,8 +84,8 @@ class EChemBaseModel(BaseModel):
         self._mesh = None
         self._disc = None
 
-        self._electrode_soh = pybamm.lithium_ion.electrode_soh
-        self.rebuild_parameters = self.set_rebuild_parameters()
+        self._electrode_soh = pybamm_lithium_ion.electrode_soh
+        self.geometric_parameters = self.set_geometric_parameters()
 
     def _check_params(
         self, inputs=None, parameter_set=None, allow_infeasible_solutions=True
@@ -287,7 +321,7 @@ class EChemBaseModel(BaseModel):
             {"Nominal cell capacity [A.h]": theoretical_capacity}
         )
 
-    def set_rebuild_parameters(self):
+    def set_geometric_parameters(self):
         """
         Sets the parameters that can be changed when rebuilding the model.
 
@@ -297,7 +331,7 @@ class EChemBaseModel(BaseModel):
             A dictionary of parameters that can be changed when rebuilding the model.
 
         """
-        rebuild_parameters = dict.fromkeys(
+        geometric_parameters = dict.fromkeys(
             [
                 "Negative particle radius [m]",
                 "Negative electrode porosity",
@@ -310,4 +344,4 @@ class EChemBaseModel(BaseModel):
             ]
         )
 
-        return rebuild_parameters
+        return geometric_parameters

@@ -1,23 +1,46 @@
-#
-# Weppner Huggins Model
-#
+import warnings
+
 import numpy as np
-import pybamm
+from pybamm import DummySolver, Parameter, ParameterValues, citations
+from pybamm import lithium_ion as pybamm_lithium_ion
+from pybamm import t as pybamm_t
 
 
-class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
-    """WeppnerHuggins Model for GITT. Credit: pybamm-param team.
+class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
+    """
+    WeppnerHuggins Model for GITT. Credit: pybamm-param team.
+
+    This model can be used with PyBOP through the `pybop.WeppnerHuggins` class.
 
     Parameters
     ----------
     name : str, optional
         The name of the model.
+    **model_kwargs : optional
+        Valid PyBaMM model option keys and their values, for example:
+        parameter_set : pybamm.ParameterValues or dict, optional
+            The parameters for the model. If None, default parameters provided by PyBaMM are used.
+        geometry : dict, optional
+            The geometry definitions for the model. If None, default geometry from PyBaMM is used.
+        submesh_types : dict, optional
+            The types of submeshes to use. If None, default submesh types from PyBaMM are used.
+        var_pts : dict, optional
+            The discretization points for each variable in the model. If None, default points from PyBaMM are used.
+        spatial_methods : dict, optional
+            The spatial methods used for discretization. If None, default spatial methods from PyBaMM are used.
+        solver : pybamm.Solver, optional
+            The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
     """
 
-    def __init__(self, name="Weppner & Huggins model"):
+    def __init__(self, name="Weppner & Huggins model", **model_kwargs):
+        # Model kwargs (build, options) are not implemented, keeping here for consistent interface
+        if model_kwargs is not dict(build=True):
+            unused_kwargs_warning = "The input model_kwargs are not currently used by the Weppner & Huggins model."
+            warnings.warn(unused_kwargs_warning, UserWarning)
+
         super().__init__({}, name)
 
-        pybamm.citations.register("""
+        citations.register("""
             @article{Weppner1977,
             title={{Determination of the kinetic parameters
             of mixed-conducting electrodes and application to the system Li3Sb}},
@@ -37,26 +60,24 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
         self.options["working electrode"] = "positive"
         self._summary_variables = []
 
-        t = pybamm.t
+        t = pybamm_t
         ######################
         # Parameters
         ######################
 
-        d_s = pybamm.Parameter("Positive electrode diffusivity [m2.s-1]")
+        d_s = Parameter("Positive electrode diffusivity [m2.s-1]")
 
-        c_s_max = pybamm.Parameter(
-            "Maximum concentration in positive electrode [mol.m-3]"
-        )
+        c_s_max = Parameter("Maximum concentration in positive electrode [mol.m-3]")
 
         i_app = self.param.current_density_with_time
 
-        U = pybamm.Parameter("Reference OCP [V]")
+        U = Parameter("Reference OCP [V]")
 
-        U_prime = pybamm.Parameter("Derivative of the OCP wrt stoichiometry [V]")
+        U_prime = Parameter("Derivative of the OCP wrt stoichiometry [V]")
 
-        epsilon = pybamm.Parameter("Positive electrode active material volume fraction")
+        epsilon = Parameter("Positive electrode active material volume fraction")
 
-        r_particle = pybamm.Parameter("Positive particle radius [m]")
+        r_particle = Parameter("Positive particle radius [m]")
 
         a = 3 * (epsilon / r_particle)
 
@@ -80,13 +101,16 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
             "Time [s]": t,
         }
 
+        # Set the built property on creation to prevent unnecessary model rebuilds
+        self._built = True
+
     @property
     def default_geometry(self):
         return {}
 
     @property
     def default_parameter_values(self):
-        parameter_values = pybamm.ParameterValues("Xu2019")
+        parameter_values = ParameterValues("Xu2019")
         parameter_values.update(
             {
                 "Reference OCP [V]": 4.1821,
@@ -110,4 +134,4 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
 
     @property
     def default_solver(self):
-        return pybamm.DummySolver()
+        return DummySolver()
