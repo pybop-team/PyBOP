@@ -243,18 +243,18 @@ class TestOptimisation:
             assert optim.pints_optimiser._lambda == 0.1
 
             # Incorrect values
-            for i, match in zip(
-                ("Value", -1),
-                (
-                    "must be numeric, floatable value.",
-                    "must a positive value between 0 and 1",
-                ),
-            ):
-                with pytest.raises(Exception, match=match):
+            for i, match in (("Value", -1),):
+                with pytest.raises(
+                    Exception, match="must be a numeric value between 0 and 1."
+                ):
                     optim.pints_optimiser.set_b1(i)
-                with pytest.raises(Exception, match=match):
+                with pytest.raises(
+                    Exception, match="must be a numeric value between 0 and 1."
+                ):
                     optim.pints_optimiser.set_b2(i)
-                with pytest.raises(Exception, match=match):
+                with pytest.raises(
+                    Exception, match="must be a numeric value between 0 and 1."
+                ):
                     optim.pints_optimiser.set_lambda(i)
 
             # Check defaults

@@ -6,7 +6,7 @@ import numpy as np
 from pints import Optimiser as PintsOptimiser
 
 
-class _AdamW(PintsOptimiser):
+class AdamWImpl(PintsOptimiser):
     """
     AdamW optimiser (adaptive moment estimation with weight decay), as described in [1]_.
 
@@ -206,48 +206,30 @@ class _AdamW(PintsOptimiser):
         """
         return self._current
 
-    def set_lambda(self, lambda_=0.01):
+    def set_lambda(self, lambda_: float = 0.01) -> None:
         """
         Sets the lambda_ decay constant. This is the weight decay rate
         that helps in finding the optimal solution.
         """
-        try:
-            lambda_ = float(lambda_)  # Ensure b1 is a floatable
-        except Exception:
-            raise TypeError("lambda_ must be numeric, floatable value.")
+        if not isinstance(lambda_, (int, float)) or not 0 < lambda_ <= 1:
+            raise ValueError("lambda_ must be a numeric value between 0 and 1.")
 
-        if not 0 < lambda_ <= 1:
-            raise ValueError("lambda_ must a positive value between 0 and 1")
+        self._lambda = float(lambda_)
 
-        self._lambda = lambda_
-        return
-
-    def set_b1(self, b1):
+    def set_b1(self, b1: float) -> None:
         """
         Sets the b1 momentum decay constant.
         """
-        try:
-            b1 = float(b1)  # Ensure b1 is a floatable
-        except Exception:
-            raise TypeError("b1 must be numeric, floatable value.")
+        if not isinstance(b1, (int, float)) or not 0 < b1 <= 1:
+            raise ValueError("b1 must be a numeric value between 0 and 1.")
 
-        if not 0 < b1 <= 1:
-            raise ValueError("b1 must a positive value between 0 and 1")
+        self._b1 = float(b1)
 
-        self._b1 = b1
-        return
-
-    def set_b2(self, b2):
+    def set_b2(self, b2: float) -> None:
         """
         Sets the b2 momentum decay constant.
         """
-        try:
-            b2 = float(b2)  # Ensure b2 is a floatable
-        except Exception:
-            raise TypeError("b2 must be numeric, floatable value.")
+        if not isinstance(b2, (int, float)) or not 0 < b2 <= 1:
+            raise ValueError("b2 must be a numeric value between 0 and 1.")
 
-        if not 0 < b2 <= 1:
-            raise ValueError("b2 must a positive value between 0 and 1")
-
-        self._b2 = b2
-        return
+        self._b2 = float(b2)

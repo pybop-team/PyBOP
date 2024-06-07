@@ -9,7 +9,7 @@ from pints import GradientDescent as PintsGradientDescent
 from pints import IRPropMin as PintsIRPropMin
 from pints import NelderMead as PintsNelderMead
 
-from pybop import BasePintsOptimiser, _AdamW
+from pybop import AdamWImpl, BasePintsOptimiser
 
 
 class GradientDescent(BasePintsOptimiser):
@@ -74,27 +74,29 @@ class Adam(BasePintsOptimiser):
 
 class AdamW(BasePintsOptimiser):
     """
-    Adapter for the Cuckoo Search optimiser in PyBOP.
-    Cuckoo Search is a population-based optimisation algorithm inspired by the brood parasitism of some cuckoo species.
-    It is designed to be simple, efficient, and robust, and is suitable for global optimisation problems.
+    Implements the AdamW optimization algorithm in PyBOP.
+
+    This class extends the AdamW optimiser, which is a variant of the Adam
+    optimiser that incorporates weight decay. AdamW is designed to be more
+    robust and stable for training deep neural networks, particularly when
+    using larger learning rates.
+
     Parameters
     ----------
     **optimiser_kwargs : optional
         Valid PyBOP option keys and their values, for example:
         x0 : array_like
-            Initial parameter values.
+            Initial position from which optimization will start.
         sigma0 : float
             Initial step size.
-        bounds : dict
-            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
-            upper bounds on the parameters.
+
     See Also
     --------
-    pybop.CuckooSearch : PyBOP implementation of Cuckoo Search algorithm.
+    pybop.AdamWImpl : The PyBOP implementation this class is based on.
     """
 
     def __init__(self, cost, **optimiser_kwargs):
-        super().__init__(cost, _AdamW, **optimiser_kwargs)
+        super().__init__(cost, AdamWImpl, **optimiser_kwargs)
 
 
 class IRPropMin(BasePintsOptimiser):
