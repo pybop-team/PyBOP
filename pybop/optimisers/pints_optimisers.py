@@ -246,15 +246,15 @@ class CuckooSearch(BasePintsOptimiser):
     """
     Adapter for the Cuckoo Search optimiser in PyBOP.
 
-    Cuckoo Search is a population-based optimization algorithm inspired by the brood parasitism of some cuckoo species.
-    It is designed to be simple, efficient, and robust, and is suitable for global optimization problems.
+    Cuckoo Search is a population-based optimisation algorithm inspired by the brood parasitism of some cuckoo species.
+    It is designed to be simple, efficient, and robust, and is suitable for global optimisation problems.
 
     Parameters
     ----------
     **optimiser_kwargs : optional
         Valid PyBOP option keys and their values, for example:
         x0 : array_like
-            Initial
+            Initial parameter values.
         sigma0 : float
             Initial step size.
         bounds : dict

@@ -5,18 +5,18 @@ from scipy.special import gamma
 
 class _CuckooSearch(PopulationBasedOptimiser):
     """
-    Cuckoo Search (CS) optimization algorithm, inspired by the brood parasitism
+    Cuckoo Search (CS) optimisation algorithm, inspired by the brood parasitism
     of some cuckoo species. This algorithm was introduced by Yang and Deb in 2009.
 
     The algorithm uses a population of host nests (solutions), where each cuckoo
     (new solution) tries to replace a worse nest in the population. The quality
-    or fitness of the nests is determined by the objective function. A fraction
+    or fitness of the nests is determined by the cost function. A fraction
     of the worst nests is abandoned at each generation, and new ones are built
     randomly.
 
     The pseudo-code for the Cuckoo Search is as follows:
 
-    1. Initialize population of n host nests
+    1. Initialise population of n host nests
     2. While (t < max_generations):
         a. Get a cuckoo randomly by Lévy flights
         b. Evaluate its quality/fitness F
@@ -144,7 +144,7 @@ class _CuckooSearch(PopulationBasedOptimiser):
 
     def abandon_nests(self, idx):
         """
-        Set the boundaries for the parameter space.
+        Updates the nests to abandon the worst performers and reinitialise. 
         """
         if self._boundaries is not None:
             self._nests[idx] = np.random.uniform(
@@ -156,7 +156,7 @@ class _CuckooSearch(PopulationBasedOptimiser):
 
     def clip_nests(self, x):
         """
-        Clip the input array to the boundaries.
+        Clip the input array to the boundaries if available.
         """
         if self._boundaries is not None:
             x = np.clip(x, self._boundaries.lower(), self._boundaries.upper())
