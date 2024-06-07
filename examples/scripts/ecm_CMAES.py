@@ -45,7 +45,7 @@ model = pybop.empirical.Thevenin(
 )
 
 # Fitting parameters
-parameters = [
+parameters = pybop.Parameters(
     pybop.Parameter(
         "R0 [Ohm]",
         prior=pybop.Gaussian(0.0002, 0.0001),
@@ -56,7 +56,7 @@ parameters = [
         prior=pybop.Gaussian(0.0001, 0.0001),
         bounds=[1e-5, 1e-2],
     ),
-]
+)
 
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)

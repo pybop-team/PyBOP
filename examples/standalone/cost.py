@@ -1,5 +1,3 @@
-import numpy as np
-
 import pybop
 
 
@@ -17,13 +15,9 @@ class StandaloneCost(pybop.BaseCost):
         A dummy problem instance used to initialize the superclass. This is not
         used in the current class but is accepted for compatibility with the
         BaseCost interface.
-    x0 : array-like
-        The initial guess for the optimization problem, set to [4.2].
-    _n_parameters : int
-        The number of parameters in the model, which is 1 in this case.
-    bounds : dict
-        A dictionary containing the lower and upper bounds for the parameter,
-        set to [-1] and [10], respectively.
+    parameters : pybop.Parameters
+        A pybop.Parameters object storing a dictionary of parameters and their
+        properties, for example their initial value and bounds.
 
     Methods
     -------
@@ -33,20 +27,21 @@ class StandaloneCost(pybop.BaseCost):
 
     def __init__(self, problem=None):
         """
-        Initialize the StandaloneCost class with optional problem instance.
+        Initialise the StandaloneCost class with optional problem instance.
 
-        The problem parameter is not utilized in this subclass. The initial guess,
-        number of parameters, and bounds are predefined for the standalone cost function.
+        The problem object is not utilised in this subclass. The parameters, including
+        their initial value and bounds, are defined within this standalone cost object.
         """
         super().__init__(problem)
 
-        self.x0 = np.array([4.2])
-        self._n_parameters = len(self.x0)
-
-        self.bounds = dict(
-            lower=[-1],
-            upper=[10],
+        self.parameters = pybop.Parameters(
+            pybop.Parameter(
+                "x",
+                initial_value=4.2,
+                bounds=[-1, 10],
+            ),
         )
+        self.x0 = self.parameters.initial_value()
 
     def _evaluate(self, x, grad=None):
         """

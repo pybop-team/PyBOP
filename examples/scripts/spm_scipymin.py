@@ -19,7 +19,7 @@ model = pybop.models.lithium_ion.SPM(
 )
 
 # Fitting parameters
-parameters = [
+parameters = pybop.Parameters(
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         prior=pybop.Gaussian(0.6, 0.05),
@@ -30,7 +30,7 @@ parameters = [
         prior=pybop.Gaussian(0.48, 0.05),
         bounds=[0.4, 0.7],
     ),
-]
+)
 
 # Define the cost to optimise
 signal = ["Voltage [V]"]

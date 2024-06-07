@@ -46,6 +46,32 @@ script_path = path.dirname(__file__)
 from ._utils import is_numeric
 
 #
+# Experiment class
+#
+from ._experiment import Experiment
+
+#
+# Dataset class
+#
+from ._dataset import Dataset
+
+#
+# Parameter classes
+#
+from .parameters.parameter import Parameter, Parameters
+from .parameters.parameter_set import ParameterSet
+from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, ComposedLogPrior
+
+#
+# Model classes
+#
+from .models.base_model import BaseModel
+from .models import lithium_ion
+from .models import empirical
+from .models.base_model import TimeSeriesState
+from .models.base_model import Inputs
+
+#
 # Problem classes
 #
 from .problems.base_problem import BaseProblem
@@ -53,7 +79,7 @@ from .problems.fitting_problem import FittingProblem
 from .problems.design_problem import DesignProblem
 
 #
-# Cost function class
+# Cost classes
 #
 from .costs.base_cost import BaseCost
 from .costs.fitting_costs import (
@@ -75,28 +101,9 @@ from .costs._likelihoods import (
 )
 
 #
-# Dataset class
+# Optimiser classes
 #
-from ._dataset import Dataset
-
-#
-# Model classes
-#
-from .models.base_model import BaseModel
-from .models import lithium_ion
-from .models import empirical
-from .models.base_model import TimeSeriesState
-from .models.base_model import Inputs
-
-#
-# Experiment class
-#
-from ._experiment import Experiment
-
-#
-# Optimiser class
-#
-from .optimisers.base_optimiser import BaseOptimiser
+from .optimisers.base_optimiser import BaseOptimiser, Result
 from .optimisers.base_pints_optimiser import BasePintsOptimiser
 from .optimisers.scipy_optimisers import (
     BaseSciPyOptimiser,
@@ -134,20 +141,13 @@ from .samplers.pints_samplers import (
 from .samplers.mcmc_sampler import MCMCSampler
 
 #
-# Parameter classes
-#
-from .parameters.parameter import Parameter
-from .parameters.parameter_set import ParameterSet
-from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, ComposedLogPrior
-
-#
 # Observer classes
 #
 from .observers.unscented_kalman import UnscentedKalmanFilterObserver
 from .observers.observer import Observer
 
 #
-# Plotting class
+# Plotting classes
 #
 from .plotting.plotly_manager import PlotlyManager
 from .plotting.quick_plot import StandardPlot, StandardSubplot, plot_trajectories

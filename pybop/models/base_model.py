@@ -1,10 +1,12 @@
 import copy
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 import casadi
 import numpy as np
 import pybamm
+
+from pybop import Dataset, Experiment, Parameters, ParameterSet
 
 Inputs = Dict[str, float]
 
@@ -63,24 +65,26 @@ class BaseModel:
         else:  # a pybop parameter set
             self._parameter_set = pybamm.ParameterValues(parameter_set.params)
 
-        self.pybamm_model = None
         self.parameters = None
         self.dataset = None
         self.signal = None
         self.additional_variables = []
-        self.matched_parameters = {}
-        self.non_matched_parameters = {}
-        self.fit_keys = []
+        self.rebuild_parameters = {}
+        self.standard_parameters = {}
         self.param_check_counter = 0
         self.allow_infeasible_solutions = True
 
+    @property
+    def n_parameters(self):
+        return len(self.parameters)
+
     def build(
         self,
-        dataset=None,
-        parameters=None,
-        check_model=True,
-        init_soc=None,
-    ):
+        dataset: Dataset = None,
+        parameters: Union[Parameters, Dict] = None,
+        check_model: bool = True,
+        init_soc: float = None,
+    ) -> None:
         """
         Construct the PyBaMM model if not already built, and set parameters.
 
@@ -92,8 +96,8 @@ class BaseModel:
         ----------
         dataset : pybamm.Dataset, optional
             The dataset to be used in the model construction.
-        parameters : dict, optional
-            A dictionary containing parameter values to apply to the model.
+        parameters : pybop.Parameters or Dict, optional
+            A pybop Parameters class or dictionary containing parameter values to apply to the model.
         check_model : bool, optional
             If True, the model will be checked for correctness after construction.
         init_soc : float, optional
@@ -103,9 +107,6 @@ class BaseModel:
         self.parameters = parameters
         if self.parameters is not None:
             self.classify_and_update_parameters(self.parameters)
-            self.fit_keys = [param.name for param in self.parameters]
-        else:
-            self.fit_keys = []
 
         if init_soc is not None:
             self.set_init_soc(init_soc)
@@ -133,7 +134,7 @@ class BaseModel:
 
         self.n_states = self._built_model.len_rhs_and_alg  # len_rhs + len_alg
 
-    def set_init_soc(self, init_soc):
+    def set_init_soc(self, init_soc: float):
         """
         Set the initial state of charge for the battery model.
 
@@ -169,11 +170,14 @@ class BaseModel:
             return
 
         # Mark any simulation inputs in the parameter set
-        for key in self.non_matched_parameters.keys():
+        for key in self.standard_parameters.keys():
             self._parameter_set[key] = "[input]"
 
-        if self.dataset is not None and (not self.matched_parameters or not rebuild):
-            if "Current function [A]" not in self.fit_keys:
+        if self.dataset is not None and (not self.rebuild_parameters or not rebuild):
+            if (
+                self.parameters is None
+                or "Current function [A]" not in self.parameters.keys()
+            ):
                 self._parameter_set["Current function [A]"] = pybamm.Interpolant(
                     self.dataset["Time [s]"],
                     self.dataset["Current function [A]"],
@@ -191,12 +195,12 @@ class BaseModel:
 
     def rebuild(
         self,
-        dataset=None,
-        parameters=None,
-        parameter_set=None,
-        check_model=True,
-        init_soc=None,
-    ):
+        dataset: Dataset = None,
+        parameters: Union[Parameters, Dict] = None,
+        parameter_set: ParameterSet = None,
+        check_model: bool = True,
+        init_soc: float = None,
+    ) -> None:
         """
         Rebuild the PyBaMM model for a given parameter set.
 
@@ -209,8 +213,8 @@ class BaseModel:
         ----------
         dataset : pybamm.Dataset, optional
             The dataset to be used in the model construction.
-        parameters : dict, optional
-            A dictionary containing parameter values to apply to the model.
+        parameters : pybop.Parameters or Dict, optional
+            A pybop Parameters class or dictionary containing parameter values to apply to the model.
         parameter_set : pybop.parameter_set, optional
             A PyBOP parameter set object or a dictionary containing the parameter values
         check_model : bool, optional
@@ -219,8 +223,8 @@ class BaseModel:
             The initial state of charge to be used in simulations.
         """
         self.dataset = dataset
-        self.parameters = parameters
         if parameters is not None:
+            self.parameters = parameters
             self.classify_and_update_parameters(parameters)
 
         if init_soc is not None:
@@ -239,34 +243,35 @@ class BaseModel:
         # Clear solver and setup model
         self._solver._model_set_up = {}
 
-    def classify_and_update_parameters(self, parameters):
+    def classify_and_update_parameters(self, parameters: Union[Parameters, Dict]):
         """
         Update the parameter values according to their classification as either
-        'matched_parameters' which require a model rebuild and
-        'non_matched_parameters' which are standard inputs.
+        'rebuild_parameters' which require a model rebuild and
+        'standard_parameters' which do not.
 
         Parameters
         ----------
         parameters : pybop.ParameterSet
 
         """
-        parameter_dictionary = {param.name: param.value for param in parameters}
-        matched_parameters = {
+        parameter_dictionary = parameters.as_dict()
+        rebuild_parameters = {
             param: parameter_dictionary[param]
             for param in parameter_dictionary
-            if param in self.rebuild_parameters
+            if param in self.geometric_parameters
         }
-        non_matched_parameters = {
+        standard_parameters = {
             param: parameter_dictionary[param]
             for param in parameter_dictionary
-            if param not in self.rebuild_parameters
+            if param not in self.geometric_parameters
         }
 
-        self.matched_parameters.update(matched_parameters)
-        self.non_matched_parameters.update(non_matched_parameters)
+        self.rebuild_parameters.update(rebuild_parameters)
+        self.standard_parameters.update(standard_parameters)
 
-        if self.matched_parameters:
-            self._parameter_set.update(self.matched_parameters)
+        # Update the parameter set and geometry for rebuild parameters
+        if self.rebuild_parameters:
+            self._parameter_set.update(self.rebuild_parameters)
             self._unprocessed_parameter_set = self._parameter_set
             self.geometry = self.pybamm_model.default_geometry
 
@@ -280,7 +285,7 @@ class BaseModel:
             raise ValueError("Model must be built before calling reinit")
 
         if not isinstance(inputs, dict):
-            inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+            inputs = self.parameters.as_dict(inputs)
 
         self._solver.set_up(self._built_model, inputs=inputs)
 
@@ -319,7 +324,9 @@ class BaseModel:
         )
         return TimeSeriesState(sol=new_sol, inputs=state.inputs, t=time)
 
-    def simulate(self, inputs, t_eval) -> np.ndarray[np.float64]:
+    def simulate(
+        self, inputs: Inputs, t_eval: np.array
+    ) -> Dict[str, np.ndarray[np.float64]]:
         """
         Execute the forward model simulation and return the result.
 
@@ -344,12 +351,12 @@ class BaseModel:
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
         else:
-            if self.matched_parameters and not self.non_matched_parameters:
+            if self.rebuild_parameters and not self.standard_parameters:
                 sol = self.solver.solve(self.built_model, t_eval=t_eval)
 
             else:
                 if not isinstance(inputs, dict):
-                    inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+                    inputs = self.parameters.as_dict(inputs)
 
                 if self.check_params(
                     inputs=inputs,
@@ -372,7 +379,7 @@ class BaseModel:
 
             return y
 
-    def simulateS1(self, inputs, t_eval):
+    def simulateS1(self, inputs: Inputs, t_eval: np.array):
         """
         Perform the forward model simulation with sensitivities.
 
@@ -399,13 +406,13 @@ class BaseModel:
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
         else:
-            if self.matched_parameters:
+            if self.rebuild_parameters:
                 raise ValueError(
                     "Cannot use sensitivies for parameters which require a model rebuild"
                 )
 
             if not isinstance(inputs, dict):
-                inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+                inputs = self.parameters.as_dict(inputs)
 
             if self.check_params(
                 inputs=inputs,
@@ -433,7 +440,7 @@ class BaseModel:
                         dy[:, i, :] = np.stack(
                             [
                                 sol[signal].sensitivities[key].toarray()[:, 0]
-                                for key in self.fit_keys
+                                for key in self.parameters.keys()
                             ],
                             axis=-1,
                         )
@@ -448,12 +455,12 @@ class BaseModel:
 
     def predict(
         self,
-        inputs=None,
-        t_eval=None,
-        parameter_set=None,
-        experiment=None,
-        init_soc=None,
-    ):
+        inputs: Inputs = None,
+        t_eval: np.array = None,
+        parameter_set: ParameterSet = None,
+        experiment: Experiment = None,
+        init_soc: float = None,
+    ) -> Dict[str, np.ndarray[np.float64]]:
         """
         Solve the model using PyBaMM's simulation framework and return the solution.
 
@@ -498,7 +505,7 @@ class BaseModel:
         parameter_set = parameter_set or self._unprocessed_parameter_set
         if inputs is not None:
             if not isinstance(inputs, dict):
-                inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+                inputs = self.parameters.as_dict(inputs)
             parameter_set.update(inputs)
 
         if self.check_params(
@@ -527,7 +534,10 @@ class BaseModel:
             return [np.inf]
 
     def check_params(
-        self, inputs=None, parameter_set=None, allow_infeasible_solutions=True
+        self,
+        inputs: Inputs = None,
+        parameter_set: ParameterSet = None,
+        allow_infeasible_solutions: bool = True,
     ):
         """
         Check compatibility of the model parameters.
@@ -555,13 +565,15 @@ class BaseModel:
                                 + f" or None, but received a list with type: {type(inputs)}"
                             )
                 else:
-                    inputs = {key: inputs[i] for i, key in enumerate(self.fit_keys)}
+                    inputs = self.parameters.as_dict(inputs)
 
         return self._check_params(
             inputs=inputs, allow_infeasible_solutions=allow_infeasible_solutions
         )
 
-    def _check_params(self, inputs=None, allow_infeasible_solutions=True):
+    def _check_params(
+        self, inputs: Inputs = None, allow_infeasible_solutions: bool = True
+    ):
         """
         A compatibility check for the model parameters which can be implemented by subclasses
         if required, otherwise it returns True by default.
@@ -591,7 +603,7 @@ class BaseModel:
         """
         return copy.copy(self)
 
-    def cell_mass(self, parameter_set=None):
+    def cell_mass(self, parameter_set: ParameterSet = None):
         """
         Calculate the cell mass in kilograms.
 
@@ -610,7 +622,7 @@ class BaseModel:
         """
         raise NotImplementedError
 
-    def cell_volume(self, parameter_set=None):
+    def cell_volume(self, parameter_set: ParameterSet = None):
         """
         Calculate the cell volume in m3.
 

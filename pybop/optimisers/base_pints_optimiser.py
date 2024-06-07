@@ -1,7 +1,16 @@
 import numpy as np
-import pints
+from pints import PSO as PintsPSO
+from pints import Adam as PintsAdam
+from pints import GradientDescent as PintsGradientDescent
+from pints import NelderMead as PintsNelderMead
+from pints import Optimiser as PintsOptimiser
+from pints import ParallelEvaluator as PintsParallelEvaluator
+from pints import PopulationBasedOptimiser as PintsPopulationBasedOptimiser
+from pints import RectangularBoundaries as PintsRectangularBoundaries
+from pints import SequentialEvaluator as PintsSequentialEvaluator
+from pints import strfloat as PintsStrFloat
 
-from pybop import BaseOptimiser
+from pybop import BaseOptimiser, Result
 
 
 class BasePintsOptimiser(BaseOptimiser):
@@ -31,8 +40,9 @@ class BasePintsOptimiser(BaseOptimiser):
         self._callback = None
         self._max_iterations = None
         self._min_iterations = 2
-        self._unchanged_threshold = 1e-5  # smallest significant f change
         self._unchanged_max_iterations = 15
+        self._absolute_tolerance = 1e-5
+        self._relative_tolerance = 1e-2
         self._max_evaluations = None
         self._threshold = None
         self._evaluations = None
@@ -52,7 +62,7 @@ class BasePintsOptimiser(BaseOptimiser):
         self._sanitise_inputs()
 
         # Create an instance of the PINTS optimiser class
-        if issubclass(self.pints_optimiser, pints.Optimiser):
+        if issubclass(self.pints_optimiser, PintsOptimiser):
             self.pints_optimiser = self.pints_optimiser(
                 self.x0, sigma0=self.sigma0, boundaries=self._boundaries
             )
@@ -79,17 +89,20 @@ class BasePintsOptimiser(BaseOptimiser):
             elif key == "min_iterations":
                 self.set_min_iterations(self.unset_options.pop(key))
             elif key == "max_unchanged_iterations":
-                if "threshold" in self.unset_options.keys():
-                    self.set_max_unchanged_iterations(
-                        self.unset_options.pop(key),
-                        self.unset_options.pop("threshold"),
+                max_unchanged_kwargs = {"iterations": self.unset_options.pop(key)}
+                if "absolute_tolerance" in self.unset_options.keys():
+                    max_unchanged_kwargs["absolute_tolerance"] = self.unset_options.pop(
+                        "absolute_tolerance"
                     )
-                else:
-                    self.set_max_unchanged_iterations(self.unset_options.pop(key))
-            elif key == "threshold":
-                pass  # only used with unchanged_max_iterations
+                if "relative_tolerance" in self.unset_options.keys():
+                    max_unchanged_kwargs["relative_tolerance"] = self.unset_options.pop(
+                        "relative_tolerance"
+                    )
+                self.set_max_unchanged_iterations(**max_unchanged_kwargs)
             elif key == "max_evaluations":
                 self.set_max_evaluations(self.unset_options.pop(key))
+            elif key == "threshold":
+                self.set_threshold(self.unset_options.pop(key))
 
     def _sanitise_inputs(self):
         """
@@ -108,12 +121,8 @@ class BasePintsOptimiser(BaseOptimiser):
             self.unset_options.pop("options")
 
         # Check for duplicate keywords
-        expected_keys = [
-            "max_iterations",
-            "popsize",
-            "threshold",
-        ]
-        alternative_keys = ["maxiter", "population_size", "tol"]
+        expected_keys = ["max_iterations", "popsize"]
+        alternative_keys = ["maxiter", "population_size"]
         for exp_key, alt_key in zip(expected_keys, alternative_keys):
             if alt_key in self.unset_options.keys():
                 if exp_key in self.unset_options.keys():
@@ -127,11 +136,11 @@ class BasePintsOptimiser(BaseOptimiser):
         if self.bounds is not None:
             if issubclass(
                 self.pints_optimiser,
-                (pints.GradientDescent, pints.Adam, pints.NelderMead),
+                (PintsGradientDescent, PintsAdam, PintsNelderMead),
             ):
                 print(f"NOTE: Boundaries ignored by {self.pints_optimiser}")
                 self.bounds = None
-            elif issubclass(self.pints_optimiser, pints.PSO):
+            elif issubclass(self.pints_optimiser, PintsPSO):
                 if not all(
                     np.isfinite(value)
                     for sublist in self.bounds.values()
@@ -141,7 +150,7 @@ class BasePintsOptimiser(BaseOptimiser):
                         "Either all bounds or no bounds must be set for Pints PSO."
                     )
             else:
-                self._boundaries = pints.RectangularBoundaries(
+                self._boundaries = PintsRectangularBoundaries(
                     self.bounds["lower"], self.bounds["upper"]
                 )
 
@@ -162,10 +171,8 @@ class BasePintsOptimiser(BaseOptimiser):
 
         Returns
         -------
-        x : numpy.ndarray
-            The best parameter set found by the optimization.
-        final_cost : float
-            The final cost associated with the best parameters.
+        result : pybop.Result
+            The result of the optimisation including the optimised parameter values and cost.
 
         See Also
         --------
@@ -205,11 +212,11 @@ class BasePintsOptimiser(BaseOptimiser):
 
             # For population based optimisers, don't use more workers than
             # particles!
-            if isinstance(self.pints_optimiser, pints.PopulationBasedOptimiser):
+            if isinstance(self.pints_optimiser, PintsPopulationBasedOptimiser):
                 n_workers = min(n_workers, self.pints_optimiser.population_size())
-            evaluator = pints.ParallelEvaluator(f, n_workers=n_workers)
+            evaluator = PintsParallelEvaluator(f, n_workers=n_workers)
         else:
-            evaluator = pints.SequentialEvaluator(f)
+            evaluator = PintsSequentialEvaluator(f)
 
         # Keep track of current best and best-guess scores.
         fb = fg = np.inf
@@ -238,9 +245,11 @@ class BasePintsOptimiser(BaseOptimiser):
                 fg = self.pints_optimiser.f_guessed()
                 fg_user = (fb, fg) if self.minimising else (-fb, -fg)
 
-                # Check for significant changes
+                # Check for significant changes against the absolute and relative tolerance
                 f_new = fg if self._use_f_guessed else fb
-                if np.abs(f_new - f_sig) >= self._unchanged_threshold:
+                if np.abs(f_new - f_sig) >= np.maximum(
+                    self._absolute_tolerance, self._relative_tolerance * np.abs(f_sig)
+                ):
                     unchanged_iterations = 0
                     f_sig = f_new
                 else:
@@ -319,7 +328,7 @@ class BasePintsOptimiser(BaseOptimiser):
             if self._transformation is not None:
                 x_user = self._transformation.to_model(x_user)
             for p in x_user:
-                print(pints.strfloat(p))
+                print(PintsStrFloat(p))
             print("-" * 40)
             raise
 
@@ -342,12 +351,9 @@ class BasePintsOptimiser(BaseOptimiser):
         if self._transformation is not None:
             x = self._transformation.to_model(x)
 
-        # Store result
-        final_cost = f if self.minimising else -f
-        self.result = Result(x=x, final_cost=final_cost, nit=self._iterations)
-
-        # Return best position and its cost
-        return x, final_cost
+        return Result(
+            x=x, final_cost=f if self.minimising else -f, n_iterations=self._iterations
+        )
 
     def f_guessed_tracking(self):
         """
@@ -386,7 +392,7 @@ class BasePintsOptimiser(BaseOptimiser):
         """
         if parallel is True:
             self._parallel = True
-            self._n_workers = pints.ParallelEvaluator.cpu_count()
+            self._n_workers = PintsParallelEvaluator.cpu_count()
         elif parallel >= 1:
             self._parallel = True
             self._n_workers = int(parallel)
@@ -429,7 +435,9 @@ class BasePintsOptimiser(BaseOptimiser):
                 raise ValueError("Minimum number of iterations cannot be negative.")
         self._min_iterations = iterations
 
-    def set_max_unchanged_iterations(self, iterations=15, threshold=1e-5):
+    def set_max_unchanged_iterations(
+        self, iterations=15, absolute_tolerance=1e-5, relative_tolerance=1e-2
+    ):
         """
         Set the maximum number of iterations without significant change as a stopping criterion.
         Credit: PINTS
@@ -439,21 +447,29 @@ class BasePintsOptimiser(BaseOptimiser):
         iterations : int, optional
             The maximum number of unchanged iterations to run (default: 15).
             Set to `None` to remove this stopping criterion.
-        threshold : float, optional
-            The minimum significant change in the objective function value that resets the
-            unchanged iteration counter (default: 1e-5).
+        absolute_tolerance : float, optional
+            The minimum significant change (absolute tolerance) in the objective function value
+            that resets the unchanged iteration counter (default: 1e-5).
+        relative_tolerance : float, optional
+            The minimum significant proportional change (relative tolerance) in the objective function
+            value that resets the unchanged iteration counter (default: 1e-2).
         """
         if iterations is not None:
             iterations = int(iterations)
             if iterations < 0:
                 raise ValueError("Maximum number of iterations cannot be negative.")
 
-        threshold = float(threshold)
-        if threshold < 0:
-            raise ValueError("Minimum significant change cannot be negative.")
+        absolute_tolerance = float(absolute_tolerance)
+        if absolute_tolerance < 0:
+            raise ValueError("Absolute tolerance cannot be negative.")
+
+        relative_tolerance = float(relative_tolerance)
+        if relative_tolerance < 0:
+            raise ValueError("Relative tolerance cannot be negative.")
 
         self._unchanged_max_iterations = iterations
-        self._unchanged_threshold = threshold
+        self._absolute_tolerance = absolute_tolerance
+        self._relative_tolerance = relative_tolerance
 
     def set_max_evaluations(self, evaluations=None):
         """
@@ -472,23 +488,23 @@ class BasePintsOptimiser(BaseOptimiser):
                 raise ValueError("Maximum number of evaluations cannot be negative.")
         self._max_evaluations = evaluations
 
+    def set_threshold(self, threshold=None):
+        """
+        Adds a stopping criterion, allowing the routine to halt once the
+        objective function goes below a set ``threshold``.
 
-class Result:
-    """
-    Stores the result of the optimisation.
+        This criterion is disabled by default, but can be enabled by calling
+        this method with a valid ``threshold``. To disable it, use
+        ``set_threshold(None)``.
+        Credit: PINTS
 
-    Attributes
-    ----------
-    x : ndarray
-        The solution of the optimisation.
-    final_cost : float
-        The cost associated with the solution x.
-    nit : int
-        Number of iterations performed by the optimiser.
-
-    """
-
-    def __init__(self, x=None, final_cost=None, nit=None):
-        self.x = x
-        self.final_cost = final_cost
-        self.nit = nit
+        Parameters
+        ----------
+        threshold : float, optional
+            The threshold below which the objective function value is considered optimal
+            (default: None).
+        """
+        if threshold is None:
+            self._threshold = None
+        else:
+            self._threshold = float(threshold)

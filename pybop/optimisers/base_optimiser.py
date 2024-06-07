@@ -28,7 +28,9 @@ class BaseOptimiser:
     bounds : dict
         Dictionary containing the parameter bounds with keys 'lower' and 'upper'.
     sigma0 : float or sequence
-        Initial step size or standard deviation for the optimiser.
+        Initial step size or standard deviation around ``x0``. Either a scalar value (one
+        standard deviation for all coordinates) or an array with one entry per dimension.
+        Not all methods will use this information.
     verbose : bool, optional
         If True, the optimisation progress is printed (default: False).
     minimising : bool, optional
@@ -62,11 +64,16 @@ class BaseOptimiser:
         if isinstance(cost, BaseCost):
             self.cost = cost
             self.x0 = cost.x0
-            self.bounds = cost.bounds
-            self.sigma0 = cost.sigma0
             self.set_allow_infeasible_solutions()
             if isinstance(cost, (BaseLikelihood, DesignCost)):
                 self.minimising = False
+
+            # Set default bounds (for all or no parameters)
+            self.bounds = cost.parameters.get_bounds()
+
+            # Set default initial standard deviation (for all or no parameters)
+            self.sigma0 = cost.parameters.get_sigma0() or self.sigma0
+
         else:
             try:
                 cost_test = cost(optimiser_kwargs.get("x0", []))
@@ -136,9 +143,10 @@ class BaseOptimiser:
         final_cost : float
             The final cost associated with the best parameters.
         """
-        x, final_cost = self._run()
+        self.result = self._run()
 
         # Store the optimised parameters
+        x = self.result.x
         if hasattr(self.cost, "parameters"):
             self.store_optimised_parameters(x)
 
@@ -146,7 +154,7 @@ class BaseOptimiser:
         if self.physical_viability:
             self.check_optimal_parameters(x)
 
-        return x, final_cost
+        return x, self.result.final_cost
 
     def _run(self):
         """
@@ -224,3 +232,32 @@ class BaseOptimiser:
             # Turn off this feature as there is no model
             self.physical_viability = False
             self.allow_infeasible_solutions = False
+
+
+class Result:
+    """
+    Stores the result of the optimisation.
+
+    Attributes
+    ----------
+    x : ndarray
+        The solution of the optimisation.
+    final_cost : float
+        The cost associated with the solution x.
+    nit : int
+        Number of iterations performed by the optimiser.
+    scipy_result : scipy.optimize.OptimizeResult, optional
+        The result obtained from a SciPy optimiser.
+    """
+
+    def __init__(
+        self,
+        x: np.ndarray = None,
+        final_cost: float = None,
+        n_iterations: int = None,
+        scipy_result=None,
+    ):
+        self.x = x
+        self.final_cost = final_cost
+        self.n_iterations = n_iterations
+        self.scipy_result = scipy_result
