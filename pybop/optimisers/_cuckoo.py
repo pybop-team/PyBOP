@@ -3,7 +3,7 @@ from pints import PopulationBasedOptimiser
 from scipy.special import gamma
 
 
-class _CuckooSearch(PopulationBasedOptimiser):
+class CuckooSearchImpl(PopulationBasedOptimiser):
     """
     Cuckoo Search (CS) optimisation algorithm, inspired by the brood parasitism
     of some cuckoo species. This algorithm was introduced by Yang and Deb in 2009.

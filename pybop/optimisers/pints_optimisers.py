@@ -7,7 +7,7 @@ from pints import GradientDescent as PintsGradientDescent
 from pints import IRPropMin as PintsIRPropMin
 from pints import NelderMead as PintsNelderMead
 
-from pybop import BasePintsOptimiser, _CuckooSearch
+from pybop import BasePintsOptimiser, CuckooSearchImpl
 
 
 class GradientDescent(BasePintsOptimiser):
@@ -267,4 +267,4 @@ class CuckooSearch(BasePintsOptimiser):
     """
 
     def __init__(self, cost, **optimiser_kwargs):
-        super().__init__(cost, _CuckooSearch, **optimiser_kwargs)
+        super().__init__(cost, CuckooSearchImpl, **optimiser_kwargs)
