@@ -72,7 +72,7 @@ class Test_SPM_Parameterisation:
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
             return cost_class(problem, sigma0=0.002)
         elif cost_class in [pybop.GaussianLogLikelihood]:
-            return cost_class(problem)
+            return cost_class(problem, sigma0=0.002 * 3)
         elif cost_class in [pybop.MAP]:
             return cost_class(
                 problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=0.002

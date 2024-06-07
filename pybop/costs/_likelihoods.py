@@ -112,7 +112,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         self,
         problem: BaseProblem,
         sigma0=0.002,
-        dsigma_scale=1,
+        dsigma_scale=None,
     ):
         super(GaussianLogLikelihood, self).__init__(problem)
 
@@ -133,7 +133,9 @@ class GaussianLogLikelihood(BaseLikelihood):
             elif isinstance(s0, float):
                 self.parameters.add(
                     Parameter(
-                        f"sigma{i+1}", initial_value=s0, prior=Uniform(0, 3 * s0)
+                        f"Sigma for output {i+1}",
+                        initial_value=s0,
+                        prior=Uniform(0.5 * s0, 1.5 * s0),
                     ),
                 )
             else:
@@ -142,8 +144,14 @@ class GaussianLogLikelihood(BaseLikelihood):
                     + f"Received {type(s0)}"
                 )
 
-        self.x0 = [*self.x0, *sigma0]
-        self._dsigma_scale = dsigma_scale
+        # Add the sigma values to the set of initial parameter values
+        self.x0 = np.asarray([*self.x0, *sigma0])
+
+        if dsigma_scale is None:
+            self._dsigma_scale = sigma0
+        else:
+            self._dsigma_scale = dsigma_scale
+
         self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
         self._dl = np.ones(self.n_parameters)
 
@@ -226,11 +234,12 @@ class GaussianLogLikelihood(BaseLikelihood):
         ):
             return -np.inf, -self._dl
 
-        r = np.array([self._target[signal] - y[signal] for signal in self.signal])
         likelihood = self._evaluate(x)
-        dl = np.sum((sigma ** (-2.0) * np.sum((r * dy.T), axis=2)), axis=1)
+
+        r = np.array([self._target[signal] - y[signal] for signal in self.signal])
+        dl = np.sum((np.sum((r * dy.T), axis=2) / (sigma**2)), axis=1)
         dsigma = (
-            -self.n_time_data / sigma + sigma ** (-3.0) * np.sum(r**2, axis=1)
+            -self.n_time_data / sigma + np.sum(r**2, axis=1) / (sigma**3)
         ) / self._dsigma_scale
         dl = np.concatenate((dl.flatten(), dsigma))
 
