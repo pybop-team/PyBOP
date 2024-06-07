@@ -30,7 +30,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         per dimension. Not all methods will use this information.
     """
 
-    def __init__(self, problem: BaseProblem, sigma0: float):
+    def __init__(self, problem: BaseProblem, sigma0: Union[List[float], float]):
         super(GaussianLogLikelihoodKnownSigma, self).__init__(problem)
         sigma0 = self.check_sigma0(sigma0)
         self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi / sigma0)
@@ -46,7 +46,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         if any(
             len(y.get(key, [])) != len(self._target.get(key, [])) for key in self.signal
         ):
-            return -np.inf  # prediction doesn't match target
+            return -np.inf  # prediction length doesn't match target
 
         e = np.sum(
             [
@@ -68,7 +68,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         if any(
             len(y.get(key, [])) != len(self._target.get(key, [])) for key in self.signal
         ):
-            return -np.inf, -self._dl * np.ones(self.n_parameters)
+            return -np.inf, -self._dl
 
         r = np.array([self._target[signal] - y[signal] for signal in self.signal])
         likelihood = self._evaluate(x)
@@ -77,7 +77,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
 
     def check_sigma0(self, sigma0: Union[np.ndarray, float]):
         """
-        Setter for sigma0 parameter
+        Check and set sigma0 variable.
         """
         sigma0 = np.asarray(sigma0, dtype=float)
         if not np.all(sigma0 > 0):
@@ -100,14 +100,14 @@ class GaussianLogLikelihood(BaseLikelihood):
     def __init__(
         self,
         problem: BaseProblem,
-        sigma0=0.001,
+        sigma0=0.002,
         x0=0.005,
         sigma_bounds_std=6,
         dsigma_scale=1,
     ):
         super(GaussianLogLikelihood, self).__init__(problem)
         self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
-        self._dl = np.inf * np.ones(self.n_parameters + self.n_outputs)
+        self._dl = np.ones(self.n_parameters + self.n_outputs)
         self._dsigma_scale = dsigma_scale
         self.sigma_bounds_std = sigma_bounds_std
 
@@ -169,7 +169,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         if any(
             len(y.get(key, [])) != len(self._target.get(key, [])) for key in self.signal
         ):
-            return -np.inf  # prediction doesn't match target
+            return -np.inf  # prediction length doesn't match target
 
         e = np.sum(
             [
