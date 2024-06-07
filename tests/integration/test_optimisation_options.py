@@ -107,7 +107,7 @@ class TestOptimisation:
         np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
     def get_data(self, model, parameters, x, init_soc):
-        model.parameters = parameters
+        model.classify_and_update_parameters(parameters)
         experiment = pybop.Experiment(
             [
                 (
