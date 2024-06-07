@@ -56,10 +56,10 @@ class BasePintsSampler(BaseSampler):
         self._evaluation_files = kwargs.get("evaluation_files", None)
         self._parallel = kwargs.get("parallel", False)
         self._verbose = kwargs.get("verbose", False)
-        self._n_parameters = (
-            log_pdf[0]._n_parameters
+        self.n_parameters = (
+            log_pdf[0].n_parameters
             if isinstance(log_pdf, list)
-            else log_pdf._n_parameters
+            else log_pdf.n_parameters
         )
         self._transformation = transformation
 
@@ -70,11 +70,11 @@ class BasePintsSampler(BaseSampler):
             if len(log_pdf) != chains:
                 raise ValueError("Number of log pdf's must match number of chains")
 
-            first_pdf_parameters = log_pdf[0]._n_parameters
+            first_pdf_parameters = log_pdf[0].n_parameters
             for pdf in log_pdf:
                 if not isinstance(pdf, BaseCost):
                     raise ValueError("All log pdf's must be instances of BaseCost")
-                if pdf._n_parameters != first_pdf_parameters:
+                if pdf.n_parameters != first_pdf_parameters:
                     raise ValueError(
                         "All log pdf's must have the same number of parameters"
                     )
@@ -332,7 +332,7 @@ class BasePintsSampler(BaseSampler):
 
         # Pre-allocate arrays for chain storage
         self._samples = np.zeros(
-            (self._n_chains, self._max_iterations, self._n_parameters)
+            (self._n_chains, self._max_iterations, self.n_parameters)
         )
 
         # Pre-allocate arrays for evaluation storage

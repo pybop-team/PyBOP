@@ -180,7 +180,11 @@ class TestPintsSamplers:
 
         # Test incorrect number of parameters
         new_multi_log_posterior = copy.copy(log_posterior)
-        new_multi_log_posterior._n_parameters = 10
+        new_multi_log_posterior.parameters = [
+            new_multi_log_posterior.parameters[
+                "Positive electrode active material volume fraction"
+            ]
+        ]
         with pytest.raises(
             ValueError, match="All log pdf's must have the same number of parameters"
         ):

@@ -212,10 +212,6 @@ class LogPosterior(BaseCost):
                 raise ValueError(
                     f"An error occurred when constructing the Prior class: {e}"
                 )
-        try:  # This is a patch, the n_parameters val needs to be updated across the codebase
-            self._n_parameters = self._prior.n_parameters
-        except AttributeError:
-            self._n_parameters = len(self._prior)
 
     def _evaluate(self, x, grad=None):
         """
