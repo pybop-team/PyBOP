@@ -36,9 +36,9 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
     def __init__(self, problem: BaseProblem, sigma0: Union[List[float], float]):
         super(GaussianLogLikelihoodKnownSigma, self).__init__(problem)
         sigma0 = self.check_sigma0(sigma0)
-        self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi / sigma0)
-        self._multip = -1 / (2.0 * sigma0**2)
-        self.sigma2 = sigma0**-2
+        self.sigma2 = sigma0**2
+        self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi / self.sigma2)
+        self._multip = -1 / (2.0 * self.sigma2)
         self._dl = np.ones(self.n_parameters)
 
     def _evaluate(self, x: np.ndarray, grad: Union[None, np.ndarray] = None) -> float:
@@ -68,14 +68,17 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         Calls the problem.evaluateS1 method and calculates the log-likelihood and gradient.
         """
         y, dy = self.problem.evaluateS1(x)
+
         if any(
             len(y.get(key, [])) != len(self._target.get(key, [])) for key in self.signal
         ):
             return -np.inf, -self._dl
 
-        r = np.array([self._target[signal] - y[signal] for signal in self.signal])
         likelihood = self._evaluate(x)
-        dl = np.sum((self.sigma2 * np.sum((r * dy.T), axis=2)), axis=1)
+        
+        r = np.array([self._target[signal] - y[signal] for signal in self.signal])
+        dl = np.sum((np.sum((r * dy.T), axis=2) / self.sigma2), axis=1)
+        
         return likelihood, dl
 
     def check_sigma0(self, sigma0: Union[np.ndarray, float]):
