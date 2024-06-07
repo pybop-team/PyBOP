@@ -123,18 +123,6 @@ class _AdamW(PintsOptimiser):
         """
         return self._current_f
 
-    def _log_init(self, logger):
-        """See :meth:`Loggable._log_init()`."""
-        logger.add_float("b1")
-        logger.add_float("b2")
-        logger.add_float("lambda")
-
-    def _log_write(self, logger):
-        """See :meth:`Loggable._log_write()`."""
-        logger.log(self._b1t)
-        logger.log(self._b2t)
-        logger.log(self._lambda)
-
     def name(self):
         """
         Returns the name of the optimiser.
@@ -152,7 +140,7 @@ class _AdamW(PintsOptimiser):
         """
         The number of hyper-parameters used by this optimiser.
         """
-        return 1
+        return 5
 
     def running(self):
         """
@@ -229,7 +217,7 @@ class _AdamW(PintsOptimiser):
             raise TypeError("lambda_ must be numeric, floatable value.")
 
         if not 0 < lambda_ <= 1:
-            print("lambda_ must a positive value between 0 and 1")
+            raise ValueError("lambda_ must a positive value between 0 and 1")
 
         self._lambda = lambda_
         return
@@ -244,7 +232,7 @@ class _AdamW(PintsOptimiser):
             raise TypeError("b1 must be numeric, floatable value.")
 
         if not 0 < b1 <= 1:
-            print("b1 must a positive value between 0 and 1")
+            raise ValueError("b1 must a positive value between 0 and 1")
 
         self._b1 = b1
         return
@@ -259,7 +247,7 @@ class _AdamW(PintsOptimiser):
             raise TypeError("b2 must be numeric, floatable value.")
 
         if not 0 < b2 <= 1:
-            print("b2 must a positive value between 0 and 1")
+            raise ValueError("b2 must a positive value between 0 and 1")
 
         self._b2 = b2
         return

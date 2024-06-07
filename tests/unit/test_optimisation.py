@@ -111,6 +111,7 @@ class TestOptimisation:
             pybop.SciPyDifferentialEvolution,
             pybop.GradientDescent,
             pybop.Adam,
+            pybop.AdamW,
             pybop.SNES,
             pybop.XNES,
             pybop.PSO,
@@ -232,21 +233,36 @@ class TestOptimisation:
 
         # Test AdamW hyperparameters
         if optimiser in [pybop.AdamW]:
-            optimiser.set_b1(0.9)
-            optimiser.set_b2(0.9)
-            optimiser.set_lambda(0.1)
+            optim = optimiser(cost=cost, b1=0.9, b2=0.999, lambda_=0.1)
+            optim.pints_optimiser.set_b1(0.9)
+            optim.pints_optimiser.set_b2(0.9)
+            optim.pints_optimiser.set_lambda(0.1)
 
-            assert optimiser._b1 == 0.9
-            assert optimiser._b2 == 0.9
-            assert optimiser._lambda == 0.1
+            assert optim.pints_optimiser._b1 == 0.9
+            assert optim.pints_optimiser._b2 == 0.9
+            assert optim.pints_optimiser._lambda == 0.1
 
             # Incorrect values
-            with pytest.raises(TypeError):
-                optimiser.set_b1("Value")
-            with pytest.raises(TypeError):
-                optimiser.set_b2("Value")
-            with pytest.raises(TypeError):
-                optimiser.set_lambda("Value")
+            for i, match in zip(
+                ("Value", -1),
+                (
+                    "must be numeric, floatable value.",
+                    "must a positive value between 0 and 1",
+                ),
+            ):
+                with pytest.raises(Exception, match=match):
+                    optim.pints_optimiser.set_b1(i)
+                with pytest.raises(Exception, match=match):
+                    optim.pints_optimiser.set_b2(i)
+                with pytest.raises(Exception, match=match):
+                    optim.pints_optimiser.set_lambda(i)
+
+            # Check defaults
+            assert optim.pints_optimiser.n_hyper_parameters() == 5
+            assert not optim.pints_optimiser.running()
+            assert optim.pints_optimiser.x_guessed() == optim.pints_optimiser._x0
+            with pytest.raises(Exception):
+                optim.pints_optimiser.tell([0.1])
 
     @pytest.mark.unit
     def test_single_parameter(self, cost):
