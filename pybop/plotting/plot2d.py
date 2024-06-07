@@ -1,4 +1,5 @@
 import sys
+import warnings
 
 import numpy as np
 
@@ -53,6 +54,17 @@ def plot2d(
     else:
         cost = cost_or_optim
         plot_optim = False
+
+    if len(cost.parameters) < 2:
+        warnings.warn(
+            "This cost function requires fewer than 2 parameters.", UserWarning
+        )
+        return None
+    if len(cost.parameters) > 2:
+        warnings.warn(
+            "This cost function requires more than 2 parameters.", UserWarning
+        )
+        return None
 
     # Set up parameter bounds
     if bounds is None:
