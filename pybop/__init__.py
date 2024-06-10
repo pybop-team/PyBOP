@@ -102,7 +102,9 @@ from .costs._likelihoods import (
 #
 # Optimiser class
 #
-from .optimisers.base_optimiser import BaseOptimiser
+
+from .optimisers._adamw import AdamWImpl
+from .optimisers.base_optimiser import BaseOptimiser, Result
 from .optimisers.base_pints_optimiser import BasePintsOptimiser
 from .optimisers.scipy_optimisers import (
     BaseSciPyOptimiser,
@@ -118,6 +120,7 @@ from .optimisers.pints_optimisers import (
     PSO,
     SNES,
     XNES,
+    AdamW,
 )
 from .optimisers.optimisation import Optimisation
 

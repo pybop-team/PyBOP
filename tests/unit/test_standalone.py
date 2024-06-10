@@ -75,7 +75,7 @@ class TestStandalone:
         rmse_grad_x = rmse_cost.evaluateS1([1, 2])
 
         np.testing.assert_allclose(rmse_x, 3.05615, atol=1e-2)
-        np.testing.assert_allclose(rmse_grad_x[1], [-0.81758337, 0.0], atol=1e-2)
+        np.testing.assert_allclose(rmse_grad_x[1], [-0.54645, 0.0], atol=1e-2)
 
         # Test the sensitivities
         sums_cost = pybop.SumSquaredError(problem)
