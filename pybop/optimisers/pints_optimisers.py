@@ -1,3 +1,5 @@
+from warnings import warn
+
 from pints import CMAES as PintsCMAES
 from pints import PSO as PintsPSO
 from pints import SNES as PintsSNES
@@ -7,7 +9,7 @@ from pints import GradientDescent as PintsGradientDescent
 from pints import IRPropMin as PintsIRPropMin
 from pints import NelderMead as PintsNelderMead
 
-from pybop import BasePintsOptimiser
+from pybop import AdamWImpl, BasePintsOptimiser
 
 
 class GradientDescent(BasePintsOptimiser):
@@ -60,8 +62,41 @@ class Adam(BasePintsOptimiser):
     pints.Adam : The PINTS implementation this class is based on.
     """
 
+    warn(
+        "Adam is deprecated and will be removed in a future release. Please use AdamW instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     def __init__(self, cost, **optimiser_kwargs):
         super().__init__(cost, PintsAdam, **optimiser_kwargs)
+
+
+class AdamW(BasePintsOptimiser):
+    """
+    Implements the AdamW optimisation algorithm in PyBOP.
+
+    This class extends the AdamW optimiser, which is a variant of the Adam
+    optimiser that incorporates weight decay. AdamW is designed to be more
+    robust and stable for training deep neural networks, particularly when
+    using larger learning rates.
+
+    Parameters
+    ----------
+    **optimiser_kwargs : optional
+        Valid PyBOP option keys and their values, for example:
+        x0 : array_like
+            Initial position from which optimisation will start.
+        sigma0 : float
+            Initial step size.
+
+    See Also
+    --------
+    pybop.AdamWImpl : The PyBOP implementation this class is based on.
+    """
+
+    def __init__(self, cost, **optimiser_kwargs):
+        super().__init__(cost, AdamWImpl, **optimiser_kwargs)
 
 
 class IRPropMin(BasePintsOptimiser):

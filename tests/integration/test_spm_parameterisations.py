@@ -84,7 +84,7 @@ class Test_SPM_Parameterisation:
         "optimiser",
         [
             pybop.SciPyDifferentialEvolution,
-            pybop.Adam,
+            pybop.AdamW,
             pybop.CMAES,
             pybop.IRPropMin,
             pybop.NelderMead,
