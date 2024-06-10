@@ -330,5 +330,16 @@ class MAP(BaseLikelihood):
             param.prior.logpdf(x_i) for x_i, param in zip(x, self.problem.parameters)
         )
 
+        # Compute a finite difference approximation of the gradient of the log prior
+        delta = 1e-3
+        dl_prior_approx = [
+            (
+                param.prior.logpdf(x_i * (1 + delta))
+                - param.prior.logpdf(x_i * (1 - delta))
+            )
+            / (2 * delta * x_i + np.finfo(float).eps)
+            for x_i, param in zip(x, self.problem.parameters)
+        ]
+
         posterior = log_likelihood + log_prior
-        return posterior, dl
+        return posterior, dl + dl_prior_approx
