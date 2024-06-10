@@ -134,17 +134,19 @@ class TestLikelihoods:
         assert isinstance(result, float)
         np.testing.assert_allclose(result, grad_result, atol=1e-5)
         assert np.all(grad_likelihood <= 0)
-        
+
         # Test construction with sigma as a Parameter
-        sigma = pybop.Parameter("sigma", prior=pybop.Uniform(0.4,0.6))
+        sigma = pybop.Parameter("sigma", prior=pybop.Uniform(0.4, 0.6))
         likelihood = pybop.GaussianLogLikelihood(one_signal_problem, sigma0=sigma)
 
         # Test invalid sigma
         with pytest.raises(
             TypeError,
-            match=r"Expected sigma0 to contain Parameter objects or numeric values."
+            match=r"Expected sigma0 to contain Parameter objects or numeric values.",
         ):
-            likelihood = pybop.GaussianLogLikelihood(one_signal_problem, sigma0="Invalid string")
+            likelihood = pybop.GaussianLogLikelihood(
+                one_signal_problem, sigma0="Invalid string"
+            )
 
     @pytest.mark.unit
     def test_gaussian_log_likelihood_dsigma_scale(self, one_signal_problem):

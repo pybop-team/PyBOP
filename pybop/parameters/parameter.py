@@ -162,7 +162,7 @@ class Parameter:
         if self.initial_value is None:
             sample = self.rvs(1)
             self.update(initial_value=sample[0])
-        
+
         return self.initial_value
 
 
