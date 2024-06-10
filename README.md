@@ -85,13 +85,13 @@ The table below lists the currently supported [models](https://github.com/pybop-
 |-----------------------------------------------|-------------------------------------------------------------|------------------------------------------|
 | Single Particle Model (SPM) | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) | Sum of Squared Errors (SSE) <tr></tr> |
 | Single Particle Model with Electrolyte (SPMe) | Particle Swarm Optimization (PSO) | Root Mean Squared Error (RMSE) <tr></tr> |
-| Doyle-Fuller-Newman (DFN) | Adaptive Moment Estimation (Adam) | Maximum Likelihood Estimation (MLE) <tr></tr> |
-| Many Particle Model (MPM) | Improved Resilient Backpropagation (iRProp-) | Maximum a Posteriori (MAP) <tr></tr> |
-| Multi-Species Multi-Reactants (MSMR) | Exponential Natural Evolution Strategy (xNES) | Unscented Kalman Filter (UKF) <tr></tr> |
-| Equivalent Circuit Models (ECM) | Separable Natural Evolution Strategy (sNES) | Gravimetric Energy Density <tr></tr> |
-| | Gradient Descent | Volumetric Energy Density <tr></tr> |
+| Doyle-Fuller-Newman (DFN) | Exponential Natural Evolution Strategy (xNES)  | Gaussian Log Likelihood <tr></tr> |
+| Many Particle Model (MPM) | Separable Natural Evolution Strategy (sNES) | Gaussian Log Likelihood w/ known variance <tr></tr> |
+| Multi-Species Multi-Reactants (MSMR) | Adaptive Moment Estimation with Weight Decay (AdamW) | Maximum a Posteriori (MAP) <tr></tr> |
+| Equivalent Circuit Models (ECM) | Improved Resilient Backpropagation (iRProp-) | Unscented Kalman Filter (UKF) <tr></tr> |
+| | SciPy Minimize & Differential Evolution | Gravimetric Energy Density <tr></tr> |
+| | Gradient Descent| Volumetric Energy Density<tr></tr> |
 | | Nelder-Mead | <tr></tr> |
-| | SciPy Minimize & Differential Evolution | <tr></tr> |
 
 </p>
 
