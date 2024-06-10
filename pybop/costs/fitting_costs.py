@@ -98,7 +98,9 @@ class RootMeanSquaredError(BaseCost):
             ]
         )
         e = np.sqrt(np.mean(r**2, axis=1))
-        de = np.mean((r * self._current_sensitivities.T), axis=2) / (e + np.finfo(float).eps)
+        de = np.mean((r * self._current_sensitivities.T), axis=2) / (
+            e + np.finfo(float).eps
+        )
 
         if self.n_outputs == 1:
             return e.item(), de.flatten()
