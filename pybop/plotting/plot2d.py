@@ -56,15 +56,22 @@ def plot2d(
         plot_optim = False
 
     if len(cost.parameters) < 2:
-        warnings.warn(
-            "This cost function requires fewer than 2 parameters.", UserWarning
-        )
-        return None
+        raise ValueError("This cost function takes fewer than 2 parameters.")
+
+    additional_values = []
     if len(cost.parameters) > 2:
         warnings.warn(
-            "This cost function requires more than 2 parameters.", UserWarning
+            "This cost function requires more than 2 parameters. "
+            + "Plotting in 2d with fixed values for the additional parameters.",
+            UserWarning,
         )
-        return None
+        for (
+            i,
+            param,
+        ) in enumerate(cost.parameters):
+            if i > 1:
+                additional_values.append(param.value)
+                print(f"Fixed {param.name}:", param.value)
 
     # Set up parameter bounds
     if bounds is None:
@@ -80,19 +87,23 @@ def plot2d(
     # Populate cost matrix
     for i, xi in enumerate(x):
         for j, yj in enumerate(y):
-            costs[j, i] = cost(np.array([xi, yj]))
+            costs[j, i] = cost(np.array([xi, yj] + additional_values))
 
     if gradient:
         grad_parameter_costs = []
 
         # Determine the number of gradient outputs from cost.evaluateS1
-        num_gradients = len(cost.evaluateS1(np.array([x[0], y[0]]))[1])
+        num_gradients = len(
+            cost.evaluateS1(np.array([x[0], y[0]] + additional_values))[1]
+        )
 
         # Create an array to hold each gradient output & populate
         grads = [np.zeros((len(y), len(x))) for _ in range(num_gradients)]
         for i, xi in enumerate(x):
             for j, yj in enumerate(y):
-                (*current_grads,) = cost.evaluateS1(np.array([xi, yj]))[1]
+                (*current_grads,) = cost.evaluateS1(
+                    np.array([xi, yj] + additional_values)
+                )[1]
                 for k, grad_output in enumerate(current_grads):
                     grads[k][j, i] = grad_output
 

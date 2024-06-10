@@ -145,3 +145,42 @@ class TestPlots:
 
         # Plot parameters
         pybop.plot_parameters(optim)
+
+    @pytest.mark.unit
+    def test_plot2d_incorrect_number_of_parameters(self, model, dataset):
+        # Test with less than two paramters
+        parameters = pybop.Parameters(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.68, 0.05),
+                bounds=[0.5, 0.8],
+            ),
+        )
+        fitting_problem = pybop.FittingProblem(model, parameters, dataset)
+        cost = pybop.SumSquaredError(fitting_problem)
+        with pytest.raises(
+            ValueError, match="This cost function takes fewer than 2 parameters."
+        ):
+            pybop.plot2d(cost)
+
+        # Test with more than two paramters
+        parameters = pybop.Parameters(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.68, 0.05),
+                bounds=[0.5, 0.8],
+            ),
+            pybop.Parameter(
+                "Positive electrode active material volume fraction",
+                prior=pybop.Gaussian(0.58, 0.05),
+                bounds=[0.4, 0.7],
+            ),
+            pybop.Parameter(
+                "Positive particle radius [m]",
+                prior=pybop.Gaussian(4.8e-06, 0.05e-06),
+                bounds=[4e-06, 6e-06],
+            ),
+        )
+        fitting_problem = pybop.FittingProblem(model, parameters, dataset)
+        cost = pybop.SumSquaredError(fitting_problem)
+        pybop.plot2d(cost)
