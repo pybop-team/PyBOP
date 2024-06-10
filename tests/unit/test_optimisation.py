@@ -212,27 +212,6 @@ class TestOptimisation:
             ):
                 optimiser(cost=cost, bounds={"upper": [np.inf], "lower": [0.57]})
 
-        else:
-            # Check and update initial values
-            assert optim.x0 == cost.x0
-            x0_new = np.array([0.6])
-            optim = optimiser(cost=cost, x0=x0_new)
-            assert optim.x0 == x0_new
-            assert optim.x0 != cost.x0
-
-    @pytest.mark.unit
-    def test_scipy_minimize_with_jac(self, cost):
-        # Check a method that uses gradient information
-        optim = pybop.SciPyMinimize(cost=cost, method="L-BFGS-B", jac=True, maxiter=10)
-        optim.run()
-        assert optim.result.scipy_result.success is True
-
-        with pytest.raises(
-            ValueError,
-            match="Expected the jac option to be either True, False or None.",
-        ):
-            optim = pybop.SciPyMinimize(cost=cost, jac="Invalid string")
-
         # Test AdamW hyperparameters
         if optimiser in [pybop.AdamW]:
             optim = optimiser(cost=cost, b1=0.9, b2=0.999, lambda_=0.1)
@@ -265,6 +244,27 @@ class TestOptimisation:
             assert optim.pints_optimiser.x_guessed() == optim.pints_optimiser._x0
             with pytest.raises(Exception):
                 optim.pints_optimiser.tell([0.1])
+
+        else:
+            # Check and update initial values
+            assert optim.x0 == cost.x0
+            x0_new = np.array([0.6])
+            optim = optimiser(cost=cost, x0=x0_new)
+            assert optim.x0 == x0_new
+            assert optim.x0 != cost.x0
+
+    @pytest.mark.unit
+    def test_scipy_minimize_with_jac(self, cost):
+        # Check a method that uses gradient information
+        optim = pybop.SciPyMinimize(cost=cost, method="L-BFGS-B", jac=True, maxiter=10)
+        optim.run()
+        assert optim.result.scipy_result.success is True
+
+        with pytest.raises(
+            ValueError,
+            match="Expected the jac option to be either True, False or None.",
+        ):
+            optim = pybop.SciPyMinimize(cost=cost, jac="Invalid string")
 
     @pytest.mark.unit
     def test_single_parameter(self, cost):
