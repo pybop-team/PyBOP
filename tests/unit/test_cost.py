@@ -273,7 +273,9 @@ class TestCosts:
         assert weighted_cost_3([0.5]) >= 0
 
         np.testing.assert_allclose(
-            weighted_cost_2._evaluate([0.5]), weighted_cost_3._evaluate([0.5]), atol=1e-5
+            weighted_cost_2._evaluate([0.5]),
+            weighted_cost_3._evaluate([0.5]),
+            atol=1e-5,
         )
         weighted_cost_3.parameters = problem.parameters
         errors_2, sensitivities_2 = weighted_cost_2._evaluateS1([0.5])
