@@ -6,10 +6,9 @@ on:
     branches:
       - main
 
-  # runs every day at 09:00 and 15:00 UTC
+  # runs every day at 09:00 UTC
   schedule:
     - cron: '0 9 * * *'
-    - cron: '0 15 * * *'
 
 # Check noxfile.py for associated environment variables
 env:

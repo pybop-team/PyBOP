@@ -1,6 +1,4 @@
-import numpy as np
-
-import pybop
+from pybop import BaseModel, Dataset, Parameter, Parameters
 
 
 class BaseProblem:
@@ -9,8 +7,8 @@ class BaseProblem:
 
     Parameters
     ----------
-    parameters : list
-        List of parameters for the problem.
+    parameters : pybop.Parameter or pybop.Parameters
+        An object or list of the parameters for the problem.
     model : object, optional
         The model to be used for the problem (default: None).
     check_model : bool, optional
@@ -21,8 +19,6 @@ class BaseProblem:
         Additional variables to observe and store in the solution (default: []).
     init_soc : float, optional
         Initial state of charge (default: None).
-    x0 : np.ndarray, optional
-        Initial parameter values (default: None).
     """
 
     def __init__(
@@ -33,8 +29,24 @@ class BaseProblem:
         signal=["Voltage [V]"],
         additional_variables=[],
         init_soc=None,
-        x0=None,
     ):
+        # Check if parameters is a list of pybop.Parameter objects
+        if isinstance(parameters, list):
+            if all(isinstance(param, Parameter) for param in parameters):
+                parameters = Parameters(*parameters)
+            else:
+                raise TypeError(
+                    "All elements in the list must be pybop.Parameter objects."
+                )
+        # Check if parameters is a single pybop.Parameter object
+        elif isinstance(parameters, Parameter):
+            parameters = Parameters(parameters)
+        # Check if parameters is already a pybop.Parameters object
+        elif not isinstance(parameters, Parameters):
+            raise TypeError(
+                "The input parameters must be a pybop Parameter, a list of pybop.Parameter objects, or a pybop Parameters object."
+            )
+
         self.parameters = parameters
         self._model = model
         self.check_model = check_model
@@ -44,82 +56,21 @@ class BaseProblem:
             raise ValueError("Signal should be either a string or list of strings.")
         self.signal = signal
         self.init_soc = init_soc
-        self.x0 = x0
-        self.n_parameters = len(self.parameters)
         self.n_outputs = len(self.signal)
         self._time_data = None
         self._target = None
 
-        if isinstance(model, pybop.BaseModel):
+        if isinstance(model, BaseModel):
             self.additional_variables = additional_variables
         else:
             self.additional_variables = []
 
-        # Set bounds (for all or no parameters)
-        all_unbounded = True  # assumption
-        self.bounds = {"lower": [], "upper": []}
-        for param in self.parameters:
-            if param.bounds is not None:
-                self.bounds["lower"].append(param.bounds[0])
-                self.bounds["upper"].append(param.bounds[1])
-                all_unbounded = False
-            else:
-                self.bounds["lower"].append(-np.inf)
-                self.bounds["upper"].append(np.inf)
-        if all_unbounded:
-            self.bounds = None
+        # Set initial values
+        self.x0 = self.parameters.initial_value()
 
-        # Set initial standard deviation (for all or no parameters)
-        all_have_sigma = True  # assumption
-        self.sigma0 = []
-        for param in self.parameters:
-            if hasattr(param.prior, "sigma"):
-                self.sigma0.append(param.prior.sigma)
-            else:
-                all_have_sigma = False
-        if not all_have_sigma:
-            self.sigma0 = None
-
-        # Set initial conditions
-        if self.x0 is None:
-            self.x0 = self.sample_initial_conditions()
-        elif len(self.x0) != self.n_parameters:
-            raise ValueError("x0 dimensions do not match number of parameters")
-
-        # Add the initial values to the parameter definitions
-        for i, param in enumerate(self.parameters):
-            param.update(initial_value=self.x0[i])
-
-    def sample_initial_conditions(
-        self, num_samples: int = 1, seed: int = None
-    ) -> np.ndarray:
-        """
-        Sample initial conditions for the problem.
-
-        Parameters
-        ----------
-        num_samples : int, optional
-            The number of initial condition samples to generate (default is 1).
-        seed : int, optional
-            The seed value for the random number generator (default is None).
-
-        Returns
-        -------
-        np.ndarray
-            An array of initial conditions for the problem. Each row corresponds to a sample.
-        """
-        # Create a local random generator
-        rng = np.random.default_rng(seed)
-
-        # Initialize
-        x0 = np.zeros((num_samples, self.n_parameters))
-
-        # Vectorized sampling from the parameters
-        for j, param in enumerate(self.parameters):
-            x0[:, j] = param.rvs(num_samples, random_state=rng)
-
-        # Return a flattened array if only one sample, otherwise return the 2D array
-        return x0[0] if num_samples == 1 else x0
+    @property
+    def n_parameters(self):
+        return len(self.parameters)
 
     def evaluate(self, x):
         """
@@ -187,7 +138,7 @@ class BaseProblem:
         """
         if self.signal is None:
             raise ValueError("Signal must be defined to set target.")
-        if not isinstance(dataset, pybop.Dataset):
+        if not isinstance(dataset, Dataset):
             raise ValueError("Dataset must be a pybop Dataset object.")
 
         self._target = {signal: dataset[signal] for signal in self.signal}
