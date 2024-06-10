@@ -66,8 +66,8 @@ def run_optims(multi, cores, iters, num_runs):
 
 population_size = [2, 4, 8, 12]
 times_multi = []
-times_multi = run_optims(True, population_size, 1000, 1)
-times_single = run_optims(False, population_size, 1000, 1)
+times_multi = run_optims(True, population_size, 10, 3)
+times_single = run_optims(False, population_size, 10, 3)
 
 times_multi_mean = np.mean(times_multi, axis=1)
 times_single_mean = np.mean(times_single, axis=1)
@@ -102,6 +102,5 @@ fig = go.Figure(
     ),
 )
 
-# fig.show()
-fig.write_image("multiprocessing.pdf")
+fig.show()
 fig.write_image("multiprocessing.pdf")
