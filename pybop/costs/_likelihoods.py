@@ -125,11 +125,12 @@ class GaussianLogLikelihood(BaseLikelihood):
                 (0, max(0, self.n_outputs - len(sigma0))),
                 constant_values=sigma0[-1],
             )
+
         for i, s0 in enumerate(sigma0):
             if isinstance(s0, Parameter):
                 self.parameters.add(s0)
                 # Replace parameter by a single value in the list of sigma0
-                sigma0[i] = s0.rvs(1)
+                sigma0[i] = s0.get_initial_value()
             elif isinstance(s0, float):
                 self.parameters.add(
                     Parameter(
@@ -145,7 +146,7 @@ class GaussianLogLikelihood(BaseLikelihood):
                 )
 
         # Add the sigma values to the set of initial parameter values
-        self.x0 = np.asarray([*self.x0, *sigma0])
+        self.x0 = np.hstack((self.x0, *sigma0))
 
         if dsigma_scale is None:
             self._dsigma_scale = sigma0
