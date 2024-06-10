@@ -236,7 +236,7 @@ class BaseModel:
         # Clear solver and setup model
         self._solver._model_set_up = {}
 
-    def classify_and_update_parameters(self, parameters: Union[Parameters, Dict]):
+    def classify_and_update_parameters(self, parameters: Parameters):
         """
         Update the parameter values according to their classification as either
         'rebuild_parameters' which require a model rebuild and
@@ -244,12 +244,16 @@ class BaseModel:
 
         Parameters
         ----------
-        parameters : pybop.ParameterSet
+        parameters : pybop.Parameters
 
         """
         self.parameters = parameters
 
-        parameter_dictionary = self.parameters.as_dict()
+        if self.parameters is None:
+            parameter_dictionary = {}
+        else:
+            parameter_dictionary = self.parameters.as_dict()
+
         rebuild_parameters = {
             param: parameter_dictionary[param]
             for param in parameter_dictionary
