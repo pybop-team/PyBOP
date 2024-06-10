@@ -155,6 +155,16 @@ class Parameter:
 
         self.bounds = bounds
 
+    def get_initial_value(self) -> float:
+        """
+        Return the initial value of each parameter.
+        """
+        if self.initial_value is None:
+            sample = self.rvs(1)
+            self.update(initial_value=sample[0])
+        
+        return self.initial_value
+
 
 class Parameters:
     """
@@ -339,10 +349,8 @@ class Parameters:
         initial_values = []
 
         for param in self.param.values():
-            if param.initial_value is None:
-                initial_value = param.rvs(1)
-                param.update(initial_value=initial_value[0])
-            initial_values.append(param.initial_value)
+            initial_value = param.get_initial_value()
+            initial_values.append(initial_value)
 
         return initial_values
 
