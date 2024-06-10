@@ -37,7 +37,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         super(GaussianLogLikelihoodKnownSigma, self).__init__(problem)
         sigma0 = self.check_sigma0(sigma0)
         self.sigma2 = sigma0**2
-        self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi / self.sigma2)
+        self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi * self.sigma2)
         self._multip = -1 / (2.0 * self.sigma2)
         self._dl = np.ones(self.n_parameters)
 
