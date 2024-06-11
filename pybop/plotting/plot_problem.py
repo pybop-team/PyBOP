@@ -1,4 +1,5 @@
 import sys
+from typing import Dict
 
 import numpy as np
 
@@ -32,6 +33,8 @@ def quick_plot(problem, parameter_values=None, show=True, **layout_kwargs):
     """
     if parameter_values is None:
         parameter_values = problem.parameters.initial_value()
+    if not isinstance(parameter_values, Dict):
+        parameter_values = problem.parameters.as_dict(parameter_values)
 
     # Extract the time data and evaluate the model's output and target values
     xaxis_data = problem.time_data()

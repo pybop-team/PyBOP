@@ -50,10 +50,7 @@ class Observer(BaseProblem):
         if model.signal is None:
             model.signal = self.signal
 
-        inputs = dict()
-        for param in self.parameters:
-            inputs[param.name] = param.value
-
+        inputs = self.parameters.initial_value()
         self._state = model.reinit(inputs)
         self._model = model
         self._signal = self.signal
@@ -142,27 +139,20 @@ class Observer(BaseProblem):
         """
         return self._state.t
 
-    def evaluate(self, x):
+    def evaluate(self, inputs):
         """
         Evaluate the model with the given parameters and return the signal.
 
         Parameters
         ----------
-        x : np.ndarray
-            Parameter values to evaluate the model at.
+        inputs : Dict
+            Parameters for evaluation of the model.
 
         Returns
         -------
         y : np.ndarray
-            The model output y(t) simulated with inputs x.
+            The model output y(t) simulated with given inputs.
         """
-        inputs = dict()
-        if isinstance(x, Parameters):
-            for param in x:
-                inputs[param.name] = param.value
-        else:  # x is an array of parameter values
-            for i, param in enumerate(self.parameters):
-                inputs[param.name] = x[i]
         self.reset(inputs)
 
         output = {}

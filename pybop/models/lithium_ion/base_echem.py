@@ -267,7 +267,7 @@ class EChemBaseModel(BaseModel):
         )
         return cross_sectional_area * total_area_density
 
-    def approximate_capacity(self, x):
+    def approximate_capacity(self, inputs):
         """
         Calculate and update an estimate for the nominal cell capacity based on the theoretical
         energy density and an average voltage.
@@ -277,8 +277,8 @@ class EChemBaseModel(BaseModel):
 
         Parameters
         ----------
-        x : array-like
-            An array of values representing the model inputs.
+        inputs : Dict
+            The parameters that are the inputs of the model.
 
         Returns
         -------
@@ -295,9 +295,6 @@ class EChemBaseModel(BaseModel):
         mean_sto_neg = (min_sto_neg + max_sto_neg) / 2
         mean_sto_pos = (min_sto_pos + max_sto_pos) / 2
 
-        inputs = {
-            key: x[i] for i, key in enumerate([param.name for param in self.parameters])
-        }
         self._parameter_set.update(inputs)
 
         # Calculate theoretical energy density

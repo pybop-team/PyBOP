@@ -1,4 +1,4 @@
-from pybop import BaseProblem
+from pybop import BaseProblem, is_numeric
 
 
 class BaseCost:
@@ -62,8 +62,11 @@ class BaseCost:
         ValueError
             If an error occurs during the calculation of the cost.
         """
+        if not all(is_numeric(i) for i in list(x)):
+            raise TypeError("Input values must be numeric.")
         try:
-            return self._evaluate(x, grad)
+            inputs = self.parameters.as_dict(x)
+            return self._evaluate(inputs, grad)
 
         except NotImplementedError as e:
             raise e
@@ -71,7 +74,7 @@ class BaseCost:
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}")
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs, grad=None):
         """
         Calculate the cost function value for a given set of parameters.
 
@@ -79,7 +82,7 @@ class BaseCost:
 
         Parameters
         ----------
-        x : array-like
+        inputs : Dict
             The parameters for which to evaluate the cost.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
@@ -117,8 +120,11 @@ class BaseCost:
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
+        if not all(is_numeric(i) for i in list(x)):
+            raise TypeError("Input values must be numeric.")
         try:
-            return self._evaluateS1(x)
+            inputs = self.parameters.as_dict(x)
+            return self._evaluateS1(inputs)
 
         except NotImplementedError as e:
             raise e
@@ -126,13 +132,13 @@ class BaseCost:
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}")
 
-    def _evaluateS1(self, x):
+    def _evaluateS1(self, inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Dict
             The parameters for which to compute the cost and gradient.
 
         Returns

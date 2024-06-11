@@ -14,15 +14,6 @@ class TestUKF:
 
     measure_noise = 1e-4
 
-    @pytest.fixture(params=[1, 2, 3])
-    def model(self, request):
-        model = ExponentialDecay(
-            parameter_set=pybamm.ParameterValues({"k": "[input]", "y0": "[input]"}),
-            n_states=request.param,
-        )
-        model.build()
-        return model
-
     @pytest.fixture
     def parameters(self):
         return pybop.Parameters(
@@ -39,6 +30,15 @@ class TestUKF:
                 initial_value=1.0,
             ),
         )
+
+    @pytest.fixture(params=[1, 2, 3])
+    def model(self, parameters, request):
+        model = ExponentialDecay(
+            parameter_set=pybamm.ParameterValues({"k": "[input]", "y0": "[input]"}),
+            n_states=request.param,
+        )
+        model.build(parameters=parameters)
+        return model
 
     @pytest.fixture
     def dataset(self, model: pybop.BaseModel, parameters):

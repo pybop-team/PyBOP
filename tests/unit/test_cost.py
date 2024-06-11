@@ -158,7 +158,7 @@ class TestCosts:
             assert type(de) == np.ndarray
 
             # Test exception for non-numeric inputs
-            with pytest.raises(ValueError):
+            with pytest.raises(TypeError, match="Input values must be numeric."):
                 cost.evaluateS1(["StringInputShouldNotWork"])
 
             with pytest.warns(UserWarning) as record:
@@ -175,7 +175,7 @@ class TestCosts:
             assert cost.evaluateS1([0.01]) == (np.inf, cost._de)
 
         # Test exception for non-numeric inputs
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError, match="Input values must be numeric."):
             cost(["StringInputShouldNotWork"])
 
         # Test treatment of simulations that terminated early
@@ -224,7 +224,7 @@ class TestCosts:
             assert cost([1.1]) == -np.inf
 
             # Test exception for non-numeric inputs
-            with pytest.raises(ValueError):
+            with pytest.raises(TypeError, match="Input values must be numeric."):
                 cost(["StringInputShouldNotWork"])
 
             # Compute after updating nominal capacity

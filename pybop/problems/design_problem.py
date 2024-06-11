@@ -70,22 +70,22 @@ class DesignProblem(BaseProblem):
         self._target = {key: sol[key] for key in self.signal}
         self._dataset = None
 
-    def evaluate(self, x):
+    def evaluate(self, inputs):
         """
         Evaluate the model with the given parameters and return the signal.
 
         Parameters
         ----------
-        x : np.ndarray
-            Parameter values to evaluate the model at.
+        inputs : Dict
+            Parameters for evaluation of the model.
 
         Returns
         -------
         y : np.ndarray
-            The model output y(t) simulated with inputs x.
+            The model output y(t) simulated with inputs.
         """
         sol = self._model.predict(
-            inputs=x,
+            inputs=inputs,
             experiment=self.experiment,
             init_soc=self.init_soc,
         )

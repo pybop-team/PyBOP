@@ -74,43 +74,44 @@ class FittingProblem(BaseProblem):
                 init_soc=self.init_soc,
             )
 
-    def evaluate(self, x):
+    def evaluate(self, inputs):
         """
         Evaluate the model with the given parameters and return the signal.
 
         Parameters
         ----------
-        x : np.ndarray
-            Parameter values to evaluate the model at.
+        inputs : Dict
+            Parameters for evaluation of the model.
 
         Returns
         -------
         y : np.ndarray
-            The model output y(t) simulated with inputs x.
+            The model output y(t) simulated with given inputs.
         """
+        x = list(inputs.values())
         if np.any(x != self.x) and self._model.rebuild_parameters:
             self.parameters.update(values=x)
             self._model.rebuild(parameters=self.parameters)
             self.x = x
 
-        y = self._model.simulate(inputs=x, t_eval=self._time_data)
+        y = self._model.simulate(inputs=inputs, t_eval=self._time_data)
 
         return y
 
-    def evaluateS1(self, x):
+    def evaluateS1(self, inputs):
         """
         Evaluate the model with the given parameters and return the signal and its derivatives.
 
         Parameters
         ----------
-        x : np.ndarray
-            Parameter values to evaluate the model at.
+        inputs : Dict
+            Parameters for evaluation of the model.
 
         Returns
         -------
         tuple
             A tuple containing the simulation result y(t) and the sensitivities dy/dx(t) evaluated
-            with given inputs x.
+            with given inputs.
         """
         if self._model.rebuild_parameters:
             raise RuntimeError(
@@ -118,7 +119,7 @@ class FittingProblem(BaseProblem):
             )
 
         y, dy = self._model.simulateS1(
-            inputs=x,
+            inputs=inputs,
             t_eval=self._time_data,
         )
 

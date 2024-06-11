@@ -73,7 +73,7 @@ class Parameter:
 
         return samples
 
-    def update(self, value=None, initial_value=None):
+    def update(self, initial_value=None, value=None):
         """
         Update the parameter's current value.
 
@@ -82,12 +82,12 @@ class Parameter:
         value : float
             The new value to be assigned to the parameter.
         """
-        if value is not None:
-            self.value = value
-        elif initial_value is not None:
+        if initial_value is not None:
             self.initial_value = initial_value
             self.value = initial_value
-        else:
+        if value is not None:
+            self.value = value
+        if initial_value is None and value is None:
             raise ValueError("No value provided to update parameter")
 
     def __repr__(self):
@@ -200,6 +200,12 @@ class Parameters:
         """
         return list(self.param.keys())
 
+    def values(self) -> List:
+        """
+        A list of parameter values
+        """
+        return self.current_value()
+
     def __iter__(self):
         self.index = 0
         return self
@@ -282,15 +288,15 @@ class Parameters:
 
         return bounds
 
-    def update(self, values=None, initial_values=None, bounds=None):
+    def update(self, initial_values=None, values=None, bounds=None):
         """
         Set value of each parameter.
         """
         for i, param in enumerate(self.param.values()):
-            if values is not None:
-                param.update(value=values[i])
             if initial_values is not None:
                 param.update(initial_value=initial_values[i])
+            if values is not None:
+                param.update(value=values[i])
             if bounds is not None:
                 if isinstance(bounds, Dict):
                     param.set_bounds(bounds=[bounds["lower"][i], bounds["upper"][i]])

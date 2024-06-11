@@ -69,14 +69,14 @@ class BaseProblem:
     def n_parameters(self):
         return len(self.parameters)
 
-    def evaluate(self, x):
+    def evaluate(self, inputs):
         """
         Evaluate the model with the given parameters and return the signal.
 
         Parameters
         ----------
-        x : np.ndarray
-            Parameter values to evaluate the model at.
+        inputs : Dict
+            Parameters for evaluation of the mmodel.
 
         Raises
         ------
@@ -85,15 +85,15 @@ class BaseProblem:
         """
         raise NotImplementedError
 
-    def evaluateS1(self, x):
+    def evaluateS1(self, inputs):
         """
         Evaluate the model with the given parameters and return the signal and
         its derivatives.
 
         Parameters
         ----------
-        x : np.ndarray
-            Parameter values to evaluate the model at.
+        inputs : Dict
+             Parameters for evaluation of the mmodel.
 
         Raises
         ------

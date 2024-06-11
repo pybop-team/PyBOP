@@ -641,7 +641,7 @@ class BaseModel:
         """
         raise NotImplementedError
 
-    def approximate_capacity(self, x):
+    def approximate_capacity(self, inputs):
         """
         Calculate a new estimate for the nominal capacity based on the theoretical energy density
         and an average voltage.
@@ -650,8 +650,8 @@ class BaseModel:
 
         Parameters
         ----------
-        x : array-like
-            An array of values representing the model inputs.
+        inputs : Dict
+            The parameters that are the inputs of the model.
 
         Raises
         ------
