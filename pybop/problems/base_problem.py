@@ -65,9 +65,6 @@ class BaseProblem:
         else:
             self.additional_variables = []
 
-        # Set initial values
-        self.x0 = self.parameters.initial_value()
-
     @property
     def n_parameters(self):
         return len(self.parameters)

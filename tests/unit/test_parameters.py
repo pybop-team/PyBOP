@@ -105,6 +105,18 @@ class TestParameters:
         assert parameter.name in params.param.keys()
         assert parameter in params.param.values()
 
+        params.join(
+            pybop.Parameters(
+                parameter,
+                pybop.Parameter(
+                    "Positive electrode active material volume fraction",
+                    prior=pybop.Gaussian(0.6, 0.02),
+                    bounds=[0.375, 0.7],
+                    initial_value=0.6,
+                ),
+            )
+        )
+
         with pytest.raises(
             ValueError,
             match="There is already a parameter with the name "

@@ -65,7 +65,7 @@ class DesignProblem(BaseProblem):
             )
 
         # Add an example dataset for plotting comparison
-        sol = self.evaluate(self.x0)
+        sol = self.evaluate(self.parameters.initial_value())
         self._time_data = sol["Time [s]"]
         self._target = {key: sol[key] for key in self.signal}
         self._dataset = None

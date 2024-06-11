@@ -17,8 +17,6 @@ class BaseCost:
         evaluating the cost function.
     _target : array-like
         An array containing the target data to fit.
-    x0 : array-like
-        The initial guess for the model parameters.
     n_outputs : int
         The number of outputs in the model.
     """
@@ -26,11 +24,9 @@ class BaseCost:
     def __init__(self, problem=None):
         self.parameters = None
         self.problem = problem
-        self.x0 = None
         if isinstance(self.problem, BaseProblem):
             self._target = self.problem._target
             self.parameters = self.problem.parameters
-            self.x0 = self.problem.x0
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
 

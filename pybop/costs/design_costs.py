@@ -44,7 +44,7 @@ class DesignCost(BaseCost):
         warnings.warn(nominal_capacity_warning, UserWarning)
         self.update_capacity = update_capacity
         self.parameter_set = problem.model.parameter_set
-        self.update_simulation_data(self.x0)
+        self.update_simulation_data(self.parameters.initial_value())
 
     def update_simulation_data(self, x0):
         """
