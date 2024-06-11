@@ -179,7 +179,9 @@ class WeightedCost(BaseCost):
         self._different_problems = False
 
         if not isinstance(self.cost_list, list):
-            raise TypeError("Expected a list of costs.")
+            raise TypeError(
+                f"Expected a list of costs. Received {type(self.cost_list)}"
+            )
         if self.weights is None:
             self.weights = np.ones(len(cost_list))
         elif isinstance(self.weights, list):

@@ -249,6 +249,11 @@ class TestCosts:
         np.testing.assert_array_equal(weighted_cost.weights, np.ones(2))
         with pytest.raises(
             TypeError,
+            match=r"Expected a list of costs.",
+        ):
+            weighted_cost = pybop.WeightedCost(cost_list="Invalid string")
+        with pytest.raises(
+            TypeError,
             match="Expected a list or array of weights the same length as cost_list.",
         ):
             weighted_cost = pybop.WeightedCost(
