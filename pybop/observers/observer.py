@@ -50,7 +50,7 @@ class Observer(BaseProblem):
         if model.signal is None:
             model.signal = self.signal
 
-        inputs = self.parameters.as_dict(self.parameters.initial_value())
+        inputs = self.parameters.as_dict("initial")
         self._state = model.reinit(inputs)
         self._model = model
         self._signal = self.signal

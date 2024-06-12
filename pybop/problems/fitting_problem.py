@@ -44,7 +44,7 @@ class FittingProblem(BaseProblem):
             parameters, model, check_model, signal, additional_variables, init_soc
         )
         self._dataset = dataset.data
-        self.x = self.parameters.initial_value()
+        self.parameters.initial_value()
 
         # Check that the dataset contains time and current
         dataset.check(self.signal + ["Current function [A]"])

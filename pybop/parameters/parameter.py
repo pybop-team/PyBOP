@@ -403,6 +403,23 @@ class Parameters:
         return bounds
 
     def as_dict(self, values=None) -> Dict:
+        """
+        Parameters
+        ----------
+        values : list or str, optional
+            A list of parameter values or one of the strings "initial" or "true" which can be used
+            to obtain a dictionary of parameters.
+
+        Returns
+        -------
+        Inputs
+            A parameters dictionary.
+        """
         if values is None:
             values = self.current_value()
+        elif isinstance(values, str):
+            if values == "initial":
+                values = self.initial_value()
+            elif values == "true":
+                values = self.true_value()
         return {key: values[i] for i, key in enumerate(self.param.keys())}

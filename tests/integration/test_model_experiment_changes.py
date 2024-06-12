@@ -50,7 +50,7 @@ class TestModelAndExperimentChanges:
         solution_2 = model.predict(
             init_soc=init_soc,
             experiment=experiment,
-            inputs=parameters.as_dict(parameters.true_value()),
+            inputs=parameters.as_dict("true"),
         )
         cost_2 = self.final_cost(solution_2, model, parameters, init_soc)
 

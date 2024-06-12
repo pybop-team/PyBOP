@@ -28,7 +28,7 @@ parameters = pybop.Parameters(
 sigma = 1e-2
 t_eval = np.linspace(0, 20, 10)
 model.parameters = parameters
-true_inputs = parameters.as_dict(parameters.true_value())
+true_inputs = parameters.as_dict("true")
 values = model.predict(t_eval=t_eval, inputs=true_inputs)
 values = values["2y"].data
 corrupt_values = values + np.random.normal(0, sigma, len(t_eval))
