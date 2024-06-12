@@ -76,7 +76,7 @@ def plot2d(
         trace_length = parameter_log.shape[0] - 1
         all_costs = np.zeros((len(y) + trace_length, len(x) + trace_length))
         # Copy existing costs and fill optimisation
-        all_costs[:len(y), :len(x)] = costs
+        all_costs[: len(y), : len(x)] = costs
         cost_log = optim.log["cost"]
         for i in range(trace_length):
             all_costs[len(y) + i, len(x) + i] = cost_log[i]
