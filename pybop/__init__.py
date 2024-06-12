@@ -46,7 +46,33 @@ script_path = path.dirname(__file__)
 from ._utils import is_numeric
 
 #
-# Problem classes
+# Experiment class
+#
+from ._experiment import Experiment
+
+#
+# Dataset class
+#
+from ._dataset import Dataset
+
+#
+# Parameter classes
+#
+from .parameters.parameter import Parameter, Parameters
+from .parameters.parameter_set import ParameterSet
+from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential
+
+#
+# Model classes
+#
+from .models.base_model import BaseModel
+from .models import lithium_ion
+from .models import empirical
+from .models.base_model import TimeSeriesState
+from .models.base_model import Inputs
+
+#
+# Problem class
 #
 from .problems.base_problem import BaseProblem
 from .problems.fitting_problem import FittingProblem
@@ -80,28 +106,11 @@ from .transformations import Transformation
 from .transformations._transformations import IdentityTransformation
 
 #
-# Dataset class
-#
-from ._dataset import Dataset
-
-#
-# Model classes
-#
-from .models.base_model import BaseModel
-from .models import lithium_ion
-from .models import empirical
-from .models.base_model import TimeSeriesState
-from .models.base_model import Inputs
-
-#
-# Experiment class
-#
-from ._experiment import Experiment
-
-#
 # Optimiser class
 #
-from .optimisers.base_optimiser import BaseOptimiser
+
+from .optimisers._adamw import AdamWImpl
+from .optimisers.base_optimiser import BaseOptimiser, Result
 from .optimisers.base_pints_optimiser import BasePintsOptimiser
 from .optimisers.scipy_optimisers import (
     BaseSciPyOptimiser,
@@ -117,16 +126,9 @@ from .optimisers.pints_optimisers import (
     PSO,
     SNES,
     XNES,
+    AdamW,
 )
 from .optimisers.optimisation import Optimisation
-
-#
-# Parameter classes
-#
-from .parameters.parameter import Parameter
-from .parameters.parameter_set import ParameterSet
-from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential
-
 
 #
 # Observer classes

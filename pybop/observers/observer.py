@@ -1,10 +1,10 @@
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 
 from pybop import BaseProblem
 from pybop.models.base_model import BaseModel, Inputs, TimeSeriesState
-from pybop.parameters.parameter import Parameter
+from pybop.parameters.parameter import Parameters
 
 
 class Observer(BaseProblem):
@@ -16,8 +16,8 @@ class Observer(BaseProblem):
 
     Parameters
     ----------
-    parameters : list
-        List of parameters for the problem.
+    parameters : pybop.Parameter or pybop.Parameters
+        An object or list of the parameters for the problem.
     model : BaseModel
       The model to observe.
     check_model : bool, optional
@@ -28,8 +28,6 @@ class Observer(BaseProblem):
         Additional variables to observe and store in the solution (default: []).
     init_soc : float, optional
         Initial state of charge (default: None).
-    x0 : np.ndarray, optional
-        Initial parameter values (default: None).
     """
 
     # define a subtype for covariance matrices for use by derived classes
@@ -37,16 +35,15 @@ class Observer(BaseProblem):
 
     def __init__(
         self,
-        parameters: List[Parameter],
+        parameters: Parameters,
         model: BaseModel,
         check_model=True,
         signal=["Voltage [V]"],
         additional_variables=[],
         init_soc=None,
-        x0=None,
     ) -> None:
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc, x0
+            parameters, model, check_model, signal, additional_variables, init_soc
         )
         if model._built_model is None:
             raise ValueError("Only built models can be used in Observers")
@@ -160,7 +157,7 @@ class Observer(BaseProblem):
             The model output y(t) simulated with inputs x.
         """
         inputs = dict()
-        if isinstance(x[0], Parameter):
+        if isinstance(x, Parameters):
             for param in x:
                 inputs[param.name] = param.value
         else:  # x is an array of parameter values

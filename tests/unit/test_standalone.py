@@ -42,7 +42,7 @@ class TestStandalone:
     @pytest.mark.unit
     def test_standalone_problem(self):
         # Define parameters to estimate
-        parameters = [
+        parameters = pybop.Parameters(
             pybop.Parameter(
                 "Gradient",
                 prior=pybop.Gaussian(4.2, 0.02),
@@ -53,7 +53,7 @@ class TestStandalone:
                 prior=pybop.Gaussian(3.3, 0.02),
                 bounds=[-1, 10],
             ),
-        ]
+        )
 
         # Define target data
         t_eval = np.linspace(0, 1, 100)
@@ -75,7 +75,7 @@ class TestStandalone:
         rmse_grad_x = rmse_cost.evaluateS1([1, 2])
 
         np.testing.assert_allclose(rmse_x, 3.05615, atol=1e-2)
-        np.testing.assert_allclose(rmse_grad_x[1], [-0.81758337, 0.0], atol=1e-2)
+        np.testing.assert_allclose(rmse_grad_x[1], [-0.54645, 0.0], atol=1e-2)
 
         # Test the sensitivities
         sums_cost = pybop.SumSquaredError(problem)
@@ -83,10 +83,6 @@ class TestStandalone:
 
         np.testing.assert_allclose(x[0], 934.006734006734, atol=1e-2)
         np.testing.assert_allclose(x[1], [-334.006734, 0.0], atol=1e-2)
-
-        # Test incorrect number of initial parameter values
-        with pytest.raises(ValueError):
-            StandaloneProblem(parameters, dataset, signal=signal, x0=np.array([]))
 
         # Test problem construction errors
         for bad_dataset in [

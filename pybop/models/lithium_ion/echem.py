@@ -1,6 +1,7 @@
-import pybamm
+from pybamm import lithium_ion as pybamm_lithium_ion
 
-from .base_echem import EChemBaseModel
+from pybop.models.lithium_ion.base_echem import EChemBaseModel
+
 from .weppner_huggins import BaseWeppnerHuggins
 
 
@@ -41,7 +42,7 @@ class SPM(EChemBaseModel):
         **model_kwargs,
     ):
         super().__init__(
-            pybamm_model=pybamm.lithium_ion.SPM,
+            pybamm_model=pybamm_lithium_ion.SPM,
             name=name,
             **model_kwargs,
         )
@@ -86,7 +87,7 @@ class SPMe(EChemBaseModel):
         **model_kwargs,
     ):
         super().__init__(
-            pybamm_model=pybamm.lithium_ion.SPMe, name=name, **model_kwargs
+            pybamm_model=pybamm_lithium_ion.SPMe, name=name, **model_kwargs
         )
 
 
@@ -128,7 +129,7 @@ class DFN(EChemBaseModel):
         name="Doyle-Fuller-Newman",
         **model_kwargs,
     ):
-        super().__init__(pybamm_model=pybamm.lithium_ion.DFN, name=name, **model_kwargs)
+        super().__init__(pybamm_model=pybamm_lithium_ion.DFN, name=name, **model_kwargs)
 
 
 class MPM(EChemBaseModel):
@@ -168,7 +169,7 @@ class MPM(EChemBaseModel):
         **model_kwargs,
     ):
         super().__init__(
-            pybamm_model=pybamm.lithium_ion.MPM,
+            pybamm_model=pybamm_lithium_ion.MPM,
             name=name,
             **model_kwargs,
         )
@@ -211,7 +212,7 @@ class MSMR(EChemBaseModel):
         **model_kwargs,
     ):
         super().__init__(
-            pybamm_model=pybamm.lithium_ion.MSMR,
+            pybamm_model=pybamm_lithium_ion.MSMR,
             name=name,
             **model_kwargs,
         )

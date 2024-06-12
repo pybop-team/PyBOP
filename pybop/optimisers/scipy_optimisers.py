@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.optimize import differential_evolution, minimize
 
-from pybop import BaseOptimiser
+from pybop import BaseOptimiser, Result
 
 
 class BaseSciPyOptimiser(BaseOptimiser):
@@ -39,12 +39,8 @@ class BaseSciPyOptimiser(BaseOptimiser):
             self.unset_options.pop("options")
 
         # Check for duplicate keywords
-        expected_keys = ["maxiter", "popsize", "tol"]
-        alternative_keys = [
-            "max_iterations",
-            "population_size",
-            "threshold",
-        ]
+        expected_keys = ["maxiter", "popsize"]
+        alternative_keys = ["max_iterations", "population_size"]
         for exp_key, alt_key in zip(expected_keys, alternative_keys):
             if alt_key in self.unset_options.keys():
                 if exp_key in self.unset_options.keys():
@@ -69,17 +65,17 @@ class BaseSciPyOptimiser(BaseOptimiser):
 
         Returns
         -------
-        x : numpy.ndarray
-            The best parameter set found by the optimization.
-        final_cost : float
-            The final cost associated with the best parameters.
+        result : pybop.Result
+            The result of the optimisation including the optimised parameter values and cost.
         """
-        self.result = self._run_optimiser()
+        result = self._run_optimiser()
 
-        self.result.final_cost = self.cost(self.result.x)
-        self._iterations = self.result.nit
-
-        return self.result.x, self.result.final_cost
+        return Result(
+            x=result.x,
+            final_cost=self.cost(result.x),
+            n_iterations=result.nit,
+            scipy_result=result,
+        )
 
 
 class SciPyMinimize(BaseSciPyOptimiser):
@@ -151,9 +147,8 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
         Returns
         -------
-        tuple
-            A tuple (x, final_cost) containing the optimized parameters and the value of `cost_function`
-            at the optimum.
+        result : scipy.optimize.OptimizeResult
+            The result of the optimisation including the optimised parameter values and cost.
         """
         self.log = [[self.x0]]
 
@@ -165,7 +160,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         self._cost0 = np.abs(self.cost(self.x0))
         if np.isinf(self._cost0):
             for i in range(1, self.num_resamples):
-                x0 = self.cost.problem.sample_initial_conditions(seed=i)
+                x0 = self.cost.parameters.rvs(1)
                 self._cost0 = np.abs(self.cost(x0))
                 if not np.isinf(self._cost0):
                     break
@@ -191,15 +186,13 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 L, dl = self.cost.evaluateS1(x)
                 return L, dl if self.minimising else -L, -dl
 
-        result = minimize(
+        return minimize(
             cost_wrapper,
             self.x0,
             bounds=self._scipy_bounds,
             callback=callback,
             **self._options,
         )
-
-        return result
 
     def name(self):
         """
@@ -259,9 +252,10 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             ):
                 raise ValueError("Bounds must be specified for differential_evolution.")
 
-        # Apply default maxiter
+        # Apply default maxiter and tolerance
         self._options = dict()
         self._options["maxiter"] = self.default_max_iterations
+        self._options["tol"] = 1e-5
 
         # Apply additional options and remove them from the options dictionary
         key_list = list(self.unset_options.keys())
@@ -293,9 +287,8 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
         Returns
         -------
-        tuple
-            A tuple (x, final_cost) containing the optimized parameters and the value of
-            the cost function at the optimum.
+        result : scipy.optimize.OptimizeResult
+            The result of the optimisation including the optimised parameter values and cost.
         """
         if self.x0 is not None:
             print(
@@ -310,14 +303,12 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         def cost_wrapper(x):
             return self.cost(x) if self.minimising else -self.cost(x)
 
-        result = differential_evolution(
+        return differential_evolution(
             cost_wrapper,
             self._scipy_bounds,
             callback=callback,
             **self._options,
         )
-
-        return result
 
     def name(self):
         """
