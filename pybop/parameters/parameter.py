@@ -200,12 +200,6 @@ class Parameters:
         """
         return list(self.param.keys())
 
-    def values(self) -> List:
-        """
-        A list of parameter values
-        """
-        return self.current_value()
-
     def __iter__(self):
         self.index = 0
         return self

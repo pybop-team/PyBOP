@@ -332,9 +332,8 @@ class BaseModel:
 
         Parameters
         ----------
-        inputs : dict or array-like
-            The input parameters for the simulation. If array-like, it will be
-            converted to a dictionary using the model's fit keys.
+        inputs : Inputs
+            The input parameters for the simulation.
         t_eval : array-like
             An array of time points at which to evaluate the solution.
 
@@ -355,9 +354,6 @@ class BaseModel:
                 sol = self.solver.solve(self.built_model, t_eval=t_eval)
 
             else:
-                if not isinstance(inputs, dict):
-                    inputs = self.parameters.as_dict(inputs)
-
                 if self.check_params(
                     inputs=inputs,
                     allow_infeasible_solutions=self.allow_infeasible_solutions,
@@ -385,9 +381,8 @@ class BaseModel:
 
         Parameters
         ----------
-        inputs : dict or array-like
-            The input parameters for the simulation. If array-like, it will be
-            converted to a dictionary using the model's fit keys.
+        inputs : Inputs
+            The input parameters for the simulation.
         t_eval : array-like
             An array of time points at which to evaluate the solution and its
             sensitivities.
@@ -410,9 +405,6 @@ class BaseModel:
                 raise ValueError(
                     "Cannot use sensitivies for parameters which require a model rebuild"
                 )
-
-            if not isinstance(inputs, dict):
-                inputs = self.parameters.as_dict(inputs)
 
             if self.check_params(
                 inputs=inputs,
@@ -470,10 +462,9 @@ class BaseModel:
 
         Parameters
         ----------
-        inputs : dict or array-like, optional
-            Input parameters for the simulation. If the input is array-like, it is converted
-            to a dictionary using the model's fitting keys. Defaults to None, indicating
-            that the default parameters should be used.
+        inputs : Inputse, optional
+            Input parameters for the simulation. Defaults to None, indicating that the
+            default parameters should be used.
         t_eval : array-like, optional
             An array of time points at which to evaluate the solution. Defaults to None,
             which means the time points need to be specified within experiment or elsewhere.
@@ -504,8 +495,6 @@ class BaseModel:
 
         parameter_set = parameter_set or self._unprocessed_parameter_set
         if inputs is not None:
-            if not isinstance(inputs, dict):
-                inputs = self.parameters.as_dict(inputs)
             parameter_set.update(inputs)
 
         if self.check_params(
@@ -544,7 +533,7 @@ class BaseModel:
 
         Parameters
         ----------
-        inputs : dict
+        inputs : Inputs
             The input parameters for the simulation.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
@@ -555,17 +544,11 @@ class BaseModel:
             A boolean which signifies whether the parameters are compatible.
 
         """
-        if inputs is not None:
-            if not isinstance(inputs, dict):
-                if isinstance(inputs, list):
-                    for entry in inputs:
-                        if not isinstance(entry, (int, float)):
-                            raise ValueError(
-                                "Expecting inputs in the form of a dictionary, numeric list"
-                                + f" or None, but received a list with type: {type(inputs)}"
-                            )
-                else:
-                    inputs = self.parameters.as_dict(inputs)
+        if inputs is not None and not isinstance(inputs, (Dict, Parameters)):
+            raise ValueError(
+                "Expecting inputs in the form of an Inputs dictionary. "
+                + f"Received type: {type(inputs)}"
+            )
 
         return self._check_params(
             inputs=inputs, allow_infeasible_solutions=allow_infeasible_solutions
@@ -580,7 +563,7 @@ class BaseModel:
 
         Parameters
         ----------
-        inputs : dict
+        inputs : Inputs
             The input parameters for the simulation.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
@@ -641,7 +624,7 @@ class BaseModel:
         """
         raise NotImplementedError
 
-    def approximate_capacity(self, inputs):
+    def approximate_capacity(self, inputs: Inputs):
         """
         Calculate a new estimate for the nominal capacity based on the theoretical energy density
         and an average voltage.
@@ -650,7 +633,7 @@ class BaseModel:
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             The parameters that are the inputs of the model.
 
         Raises

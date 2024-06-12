@@ -2,6 +2,7 @@ import numpy as np
 
 from pybop.costs._likelihoods import BaseLikelihood
 from pybop.costs.base_cost import BaseCost
+from pybop.models.base_model import Inputs
 from pybop.observers.observer import Observer
 
 
@@ -23,13 +24,13 @@ class RootMeanSquaredError(BaseCost):
         # Default fail gradient
         self._de = 1.0
 
-    def _evaluate(self, inputs, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calculate the root mean square error for a given set of parameters.
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             The parameters for which to evaluate the cost.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
@@ -59,13 +60,13 @@ class RootMeanSquaredError(BaseCost):
         else:
             return np.sum(e)
 
-    def _evaluateS1(self, inputs):
+    def _evaluateS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns
@@ -136,13 +137,13 @@ class SumSquaredError(BaseCost):
         # Default fail gradient
         self._de = 1.0
 
-    def _evaluate(self, inputs, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calculate the sum of squared errors for a given set of parameters.
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             The parameters for which to evaluate the cost.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
@@ -170,13 +171,13 @@ class SumSquaredError(BaseCost):
         else:
             return np.sum(e)
 
-    def _evaluateS1(self, inputs):
+    def _evaluateS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns
@@ -234,13 +235,13 @@ class ObserverCost(BaseCost):
         super().__init__(problem=observer)
         self._observer = observer
 
-    def _evaluate(self, inputs, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calculate the observer cost for a given set of parameters.
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             The parameters for which to evaluate the cost.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
@@ -256,13 +257,13 @@ class ObserverCost(BaseCost):
         )
         return -log_likelihood
 
-    def evaluateS1(self, inputs):
+    def evaluateS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns
@@ -311,13 +312,13 @@ class MAP(BaseLikelihood):
         ):
             raise ValueError(f"{self.likelihood} must be a subclass of BaseLikelihood")
 
-    def _evaluate(self, inputs, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calculate the maximum a posteriori cost for a given set of parameters.
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             The parameters for which to evaluate the cost.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
@@ -330,21 +331,20 @@ class MAP(BaseLikelihood):
         """
         log_likelihood = self.likelihood._evaluate(inputs)
         log_prior = sum(
-            param.prior.logpdf(x_i)
-            for x_i, param in zip(inputs.values(), self.problem.parameters)
+            self.parameters[key].prior.logpdf(inputs[key]) for key in inputs.keys()
         )
 
         posterior = log_likelihood + log_prior
         return posterior
 
-    def _evaluateS1(self, inputs):
+    def _evaluateS1(self, inputs: Inputs):
         """
         Compute the maximum a posteriori with respect to the parameters.
         The method passes the likelihood gradient to the optimiser without modification.
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns
@@ -360,8 +360,7 @@ class MAP(BaseLikelihood):
         """
         log_likelihood, dl = self.likelihood._evaluateS1(inputs)
         log_prior = sum(
-            param.prior.logpdf(x_i)
-            for x_i, param in zip(inputs.values(), self.problem.parameters)
+            self.parameters[key].prior.logpdf(inputs[key]) for key in inputs.keys()
         )
 
         posterior = log_likelihood + log_prior

@@ -50,7 +50,7 @@ class Observer(BaseProblem):
         if model.signal is None:
             model.signal = self.signal
 
-        inputs = self.parameters.initial_value()
+        inputs = self.parameters.as_dict(self.parameters.initial_value())
         self._state = model.reinit(inputs)
         self._model = model
         self._signal = self.signal
@@ -139,13 +139,13 @@ class Observer(BaseProblem):
         """
         return self._state.t
 
-    def evaluate(self, inputs):
+    def evaluate(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal.
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             Parameters for evaluation of the model.
 
         Returns

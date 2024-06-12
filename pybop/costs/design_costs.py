@@ -2,8 +2,8 @@ import warnings
 
 import numpy as np
 
-from pybop import is_numeric
 from pybop.costs.base_cost import BaseCost
+from pybop.models.base_model import Inputs
 
 
 class DesignCost(BaseCost):
@@ -48,13 +48,13 @@ class DesignCost(BaseCost):
             self.parameters.as_dict(self.parameters.initial_value())
         )
 
-    def update_simulation_data(self, inputs):
+    def update_simulation_data(self, inputs: Inputs):
         """
         Updates the simulation data based on the initial parameter values.
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             The initial parameter values for the simulation.
         """
         if self.update_capacity:
@@ -67,7 +67,7 @@ class DesignCost(BaseCost):
         self.problem._target = {key: solution[key] for key in self.problem.signal}
         self.dt = solution["Time [s]"][1] - solution["Time [s]"][0]
 
-    def _evaluate(self, inputs, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Computes the value of the cost function.
 
@@ -75,7 +75,7 @@ class DesignCost(BaseCost):
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             The parameters for which to compute the cost.
         grad : array, optional
             Gradient information, not used in this method.
@@ -101,13 +101,13 @@ class GravimetricEnergyDensity(DesignCost):
     def __init__(self, problem, update_capacity=False):
         super(GravimetricEnergyDensity, self).__init__(problem, update_capacity)
 
-    def _evaluate(self, inputs, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Computes the cost function for the energy density.
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             The parameters for which to compute the cost.
         grad : array, optional
             Gradient information, not used in this method.
@@ -157,13 +157,13 @@ class VolumetricEnergyDensity(DesignCost):
     def __init__(self, problem, update_capacity=False):
         super(VolumetricEnergyDensity, self).__init__(problem, update_capacity)
 
-    def _evaluate(self, inputs, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Computes the cost function for the energy density.
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             The parameters for which to compute the cost.
         grad : array, optional
             Gradient information, not used in this method.
@@ -173,8 +173,6 @@ class VolumetricEnergyDensity(DesignCost):
         float
             The volumetric energy density or -infinity in case of infeasible parameters.
         """
-        if not all(is_numeric(i) for i in list(inputs.values())):
-            raise TypeError("Input values must be numeric.")
         try:
             with warnings.catch_warnings():
                 # Convert UserWarning to an exception

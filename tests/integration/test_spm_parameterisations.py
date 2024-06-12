@@ -245,5 +245,7 @@ class Test_SPM_Parameterisation:
             ]
             * 2
         )
-        sim = model.predict(init_soc=init_soc, experiment=experiment, inputs=x)
+        sim = model.predict(
+            init_soc=init_soc, experiment=experiment, inputs=parameters.as_dict(x)
+        )
         return sim

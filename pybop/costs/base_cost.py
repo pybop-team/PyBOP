@@ -1,4 +1,5 @@
 from pybop import BaseProblem, is_numeric
+from pybop.models.base_model import Inputs
 
 
 class BaseCost:
@@ -64,8 +65,9 @@ class BaseCost:
         """
         if not all(is_numeric(i) for i in list(x)):
             raise TypeError("Input values must be numeric.")
+        inputs = self.parameters.as_dict(x)
+
         try:
-            inputs = self.parameters.as_dict(x)
             return self._evaluate(inputs, grad)
 
         except NotImplementedError as e:
@@ -74,7 +76,7 @@ class BaseCost:
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}")
 
-    def _evaluate(self, inputs, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calculate the cost function value for a given set of parameters.
 
@@ -82,7 +84,7 @@ class BaseCost:
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             The parameters for which to evaluate the cost.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
@@ -122,8 +124,9 @@ class BaseCost:
         """
         if not all(is_numeric(i) for i in list(x)):
             raise TypeError("Input values must be numeric.")
+        inputs = self.parameters.as_dict(x)
+
         try:
-            inputs = self.parameters.as_dict(x)
             return self._evaluateS1(inputs)
 
         except NotImplementedError as e:
@@ -132,13 +135,13 @@ class BaseCost:
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}")
 
-    def _evaluateS1(self, inputs):
+    def _evaluateS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns

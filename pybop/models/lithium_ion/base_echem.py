@@ -1,8 +1,11 @@
 import warnings
+from typing import Dict
 
 from pybamm import lithium_ion as pybamm_lithium_ion
 
 from pybop.models.base_model import BaseModel
+
+Inputs = Dict[str, float]
 
 
 class EChemBaseModel(BaseModel):
@@ -88,14 +91,14 @@ class EChemBaseModel(BaseModel):
         self.geometric_parameters = self.set_geometric_parameters()
 
     def _check_params(
-        self, inputs=None, parameter_set=None, allow_infeasible_solutions=True
+        self, inputs: Inputs = None, parameter_set=None, allow_infeasible_solutions=True
     ):
         """
         Check compatibility of the model parameters.
 
         Parameters
         ----------
-        inputs : dict
+        inputs : Inputs
             The input parameters for the simulation.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
@@ -267,7 +270,7 @@ class EChemBaseModel(BaseModel):
         )
         return cross_sectional_area * total_area_density
 
-    def approximate_capacity(self, inputs):
+    def approximate_capacity(self, inputs: Inputs):
         """
         Calculate and update an estimate for the nominal cell capacity based on the theoretical
         energy density and an average voltage.
@@ -277,7 +280,7 @@ class EChemBaseModel(BaseModel):
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             The parameters that are the inputs of the model.
 
         Returns

@@ -200,9 +200,10 @@ class BaseOptimiser:
         """
         Check if the optimised parameters are physically viable.
         """
+        inputs = self.parameters.as_dict(x)
 
         if self.cost.problem._model.check_params(
-            inputs=x, allow_infeasible_solutions=False
+            inputs=inputs, allow_infeasible_solutions=False
         ):
             return
         else:

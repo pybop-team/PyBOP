@@ -1,6 +1,7 @@
 import numpy as np
 
 from pybop import BaseProblem
+from pybop.models.base_model import Inputs
 
 
 class FittingProblem(BaseProblem):
@@ -74,13 +75,13 @@ class FittingProblem(BaseProblem):
                 init_soc=self.init_soc,
             )
 
-    def evaluate(self, inputs):
+    def evaluate(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal.
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             Parameters for evaluation of the model.
 
         Returns
@@ -88,23 +89,28 @@ class FittingProblem(BaseProblem):
         y : np.ndarray
             The model output y(t) simulated with given inputs.
         """
-        x = list(inputs.values())
-        if np.any(x != self.x) and self._model.rebuild_parameters:
-            self.parameters.update(values=x)
+        requires_rebuild = False
+        for key in inputs.keys():
+            if (
+                key in self._model.rebuild_parameters
+                and inputs[key] != self.parameters[key].value
+            ):
+                self.parameters[key].update(value=inputs[key])
+                requires_rebuild = True
+        if requires_rebuild:
             self._model.rebuild(parameters=self.parameters)
-            self.x = x
 
         y = self._model.simulate(inputs=inputs, t_eval=self._time_data)
 
         return y
 
-    def evaluateS1(self, inputs):
+    def evaluateS1(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal and its derivatives.
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             Parameters for evaluation of the model.
 
         Returns

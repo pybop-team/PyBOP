@@ -166,8 +166,8 @@ class TestProblem:
         )  # building postponed with input experiment
 
         # Test model.predict
-        model.predict(inputs=[1e-5, 1e-5], experiment=experiment)
-        model.predict(inputs=[3e-5, 3e-5], experiment=experiment)
+        model.predict(inputs=parameters.as_dict([1e-5, 1e-5]), experiment=experiment)
+        model.predict(inputs=parameters.as_dict([3e-5, 3e-5]), experiment=experiment)
 
     @pytest.mark.unit
     def test_problem_construct_with_model_predict(

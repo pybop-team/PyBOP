@@ -1,6 +1,7 @@
 import numpy as np
 
 from pybop.costs.base_cost import BaseCost
+from pybop.models.base_model import Inputs
 
 
 class BaseLikelihood(BaseCost):
@@ -63,7 +64,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         """
         return self.sigma
 
-    def _evaluate(self, inputs, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calls the problem.evaluate method and calculates
         the log-likelihood
@@ -89,7 +90,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         else:
             return np.sum(e)
 
-    def _evaluateS1(self, inputs, grad=None):
+    def _evaluateS1(self, inputs: Inputs, grad=None):
         """
         Calls the problem.evaluateS1 method and calculates
         the log-likelihood
@@ -125,15 +126,14 @@ class GaussianLogLikelihood(BaseLikelihood):
         self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
         self._dl = np.ones(self.n_parameters + self.n_outputs)
 
-    def _evaluate(self, inputs, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Evaluates the Gaussian log-likelihood for the given parameters.
 
         Parameters
         ----------
-        inputs : Dict
-            The parameters for which to evaluate the log-likelihood.
-            The last `self.n_outputs` elements are assumed to be the
+        inputs : Inputs
+            The parameters for which to evaluate the log-likelihood, including the `n_outputs`
             standard deviations of the Gaussian distributions.
 
         Returns:
@@ -166,7 +166,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         else:
             return np.sum(e)
 
-    def _evaluateS1(self, inputs, grad=None):
+    def _evaluateS1(self, inputs: Inputs, grad=None):
         """
         Calls the problem.evaluateS1 method and calculates
         the log-likelihood

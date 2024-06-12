@@ -1,6 +1,7 @@
 import numpy as np
 
 from pybop import BaseProblem
+from pybop.models.base_model import Inputs
 
 
 class DesignProblem(BaseProblem):
@@ -65,18 +66,18 @@ class DesignProblem(BaseProblem):
             )
 
         # Add an example dataset for plotting comparison
-        sol = self.evaluate(self.parameters.initial_value())
+        sol = self.evaluate(self.parameters.as_dict(self.parameters.initial_value()))
         self._time_data = sol["Time [s]"]
         self._target = {key: sol[key] for key in self.signal}
         self._dataset = None
 
-    def evaluate(self, inputs):
+    def evaluate(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal.
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             Parameters for evaluation of the model.
 
         Returns

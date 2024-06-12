@@ -1,4 +1,5 @@
 from pybop import BaseModel, Dataset, Parameter, Parameters
+from pybop.models.base_model import Inputs
 
 
 class BaseProblem:
@@ -69,13 +70,13 @@ class BaseProblem:
     def n_parameters(self):
         return len(self.parameters)
 
-    def evaluate(self, inputs):
+    def evaluate(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal.
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             Parameters for evaluation of the mmodel.
 
         Raises
@@ -85,14 +86,14 @@ class BaseProblem:
         """
         raise NotImplementedError
 
-    def evaluateS1(self, inputs):
+    def evaluateS1(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal and
         its derivatives.
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
              Parameters for evaluation of the mmodel.
 
         Raises
