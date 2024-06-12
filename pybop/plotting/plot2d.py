@@ -73,14 +73,13 @@ def plot2d(
     if plot_optim:
         # Include optimisation data in the cost matrix
         parameter_log = np.array(optim.log["x_best"])
-        trace_length = np.shape(parameter_log)[0] - 1
+        trace_length = parameter_log.shape[0] - 1
         all_costs = np.zeros((len(y) + trace_length, len(x) + trace_length))
-        all_costs[0 : len(y), 0 : len(x)] = costs
-        for i in range(0, trace_length):
-            for j in range(0, trace_length):
-                all_costs[len(y) + j, len(x) + i] = (
-                    optim.log["cost"][j] if j == i else None
-                )
+        # Copy existing costs and fill optimisation
+        all_costs[:len(y), :len(x)] = costs
+        cost_log = optim.log["cost"]
+        for i in range(trace_length):
+            all_costs[len(y) + i, len(x) + i] = cost_log[i]
         x = np.hstack((x, parameter_log[:, 0]))
         y = np.hstack((y, parameter_log[:, 1]))
         cost = all_costs
