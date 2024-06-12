@@ -103,7 +103,7 @@ x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
 # Plot the timeseries output (requires model that returns Voltage)
-pybop.quick_plot(observer, parameter_values=x, title="Optimised Comparison")
+pybop.quick_plot(observer, inputs=x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)
