@@ -254,10 +254,7 @@ class BaseModel:
         else:
             self.parameters = parameters
 
-        if self.parameters is None:
-            parameter_dictionary = {}
-        else:
-            parameter_dictionary = self.parameters.as_dict()
+        parameter_dictionary = self.parameters.as_dict()
 
         rebuild_parameters = {
             param: parameter_dictionary[param]
