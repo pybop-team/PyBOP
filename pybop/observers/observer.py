@@ -57,6 +57,8 @@ class Observer(BaseProblem):
         self._n_outputs = len(self._signal)
 
     def reset(self, inputs: Inputs) -> None:
+        inputs = self.parameters.verify(inputs)
+
         self._state = self._model.reinit(inputs)
 
     def observe(self, time: float, value: Optional[np.ndarray] = None) -> float:
@@ -93,6 +95,8 @@ class Observer(BaseProblem):
         inputs : Inputs
             The inputs to the model.
         """
+        inputs = self.parameters.verify(inputs)
+
         if self._n_outputs == 1:
             signal = self._signal[0]
             if len(values[signal]) != len(times):

@@ -65,7 +65,7 @@ class BaseModel:
         else:  # a pybop parameter set
             self._parameter_set = pybamm.ParameterValues(parameter_set.params)
 
-        self.parameters = None
+        self.parameters = Parameters()
         self.dataset = None
         self.signal = None
         self.additional_variables = []
@@ -104,8 +104,7 @@ class BaseModel:
             The initial state of charge to be used in simulations.
         """
         self.dataset = dataset
-        self.parameters = parameters
-        if self.parameters is not None:
+        if parameters is not None:
             self.classify_and_update_parameters(self.parameters)
 
         if init_soc is not None:
@@ -284,8 +283,7 @@ class BaseModel:
         if self._built_model is None:
             raise ValueError("Model must be built before calling reinit")
 
-        if not isinstance(inputs, dict):
-            inputs = self.parameters.as_dict(inputs)
+        inputs = self.parameters.verify(inputs)
 
         self._solver.set_up(self._built_model, inputs=inputs)
 
@@ -347,6 +345,8 @@ class BaseModel:
         ValueError
             If the model has not been built before simulation.
         """
+        inputs = self.parameters.verify(inputs)
+
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
         else:
@@ -397,6 +397,7 @@ class BaseModel:
         ValueError
             If the model has not been built before simulation.
         """
+        inputs = self.parameters.verify(inputs)
 
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
@@ -490,6 +491,8 @@ class BaseModel:
             if PyBaMM models are not supported by the current simulation method.
 
         """
+        inputs = self.parameters.verify(inputs)
+
         if not self.pybamm_model._built:
             self.pybamm_model.build_model()
 
@@ -544,11 +547,7 @@ class BaseModel:
             A boolean which signifies whether the parameters are compatible.
 
         """
-        if inputs is not None and not isinstance(inputs, (Dict, Parameters)):
-            raise ValueError(
-                "Expecting inputs in the form of an Inputs dictionary. "
-                + f"Received type: {type(inputs)}"
-            )
+        inputs = self.parameters.verify(inputs)
 
         return self._check_params(
             inputs=inputs, allow_infeasible_solutions=allow_infeasible_solutions

@@ -316,13 +316,8 @@ class TestModels:
         base = pybop.BaseModel()
         assert base.check_params()
         assert base.check_params(inputs={"a": 1})
-        with pytest.raises(
-            ValueError, match="Expecting inputs in the form of an Inputs dictionary."
-        ):
-            base.check_params(inputs=[1])
-        with pytest.raises(
-            ValueError, match="Expecting inputs in the form of an Inputs dictionary."
-        ):
+        assert base.check_params(inputs=[1])
+        with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
             base.check_params(inputs=["unexpected_string"])
 
     @pytest.mark.unit

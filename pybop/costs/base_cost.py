@@ -1,5 +1,6 @@
-from pybop import BaseProblem, is_numeric
+from pybop import BaseProblem
 from pybop.models.base_model import Inputs
+from pybop.parameters.parameter import Parameters
 
 
 class BaseCost:
@@ -23,7 +24,7 @@ class BaseCost:
     """
 
     def __init__(self, problem=None):
-        self.parameters = None
+        self.parameters = Parameters()
         self.problem = problem
         if isinstance(self.problem, BaseProblem):
             self._target = self.problem._target
@@ -63,9 +64,7 @@ class BaseCost:
         ValueError
             If an error occurs during the calculation of the cost.
         """
-        if not all(is_numeric(i) for i in list(x)):
-            raise TypeError("Input values must be numeric.")
-        inputs = self.parameters.as_dict(x)
+        inputs = self.parameters.verify(x)
 
         try:
             return self._evaluate(inputs, grad)
@@ -122,9 +121,7 @@ class BaseCost:
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        if not all(is_numeric(i) for i in list(x)):
-            raise TypeError("Input values must be numeric.")
-        inputs = self.parameters.as_dict(x)
+        inputs = self.parameters.verify(x)
 
         try:
             return self._evaluateS1(inputs)

@@ -288,6 +288,8 @@ class EChemBaseModel(BaseModel):
         None
             The nominal cell capacity is updated directly in the model's parameter set.
         """
+        inputs = self.parameters.verify(inputs)
+
         # Extract stoichiometries and compute mean values
         (
             min_sto_neg,

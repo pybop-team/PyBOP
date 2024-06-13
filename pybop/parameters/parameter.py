@@ -3,6 +3,8 @@ from typing import Dict, List
 
 import numpy as np
 
+from pybop._utils import is_numeric
+
 
 class Parameter:
     """
@@ -250,7 +252,7 @@ class Parameters:
 
     def join(self, parameters=None):
         """
-        Join two Parameters objects into one.
+        Join two Parameters objects into the first by copying across each Parameter.
 
         Parameters
         ----------
@@ -423,3 +425,23 @@ class Parameters:
             elif values == "true":
                 values = self.true_value()
         return {key: values[i] for i, key in enumerate(self.param.keys())}
+
+    def verify(self, inputs=None):
+        """
+        Verify that the inputs are an Inputs dictionary or numeric values
+        which can be used to construct an Inputs dictionary
+
+        Parameters
+        ----------
+        inputs : Inputs or numeric
+        """
+        if inputs is None or isinstance(inputs, Dict):
+            return inputs
+        elif (isinstance(inputs, list) and all(is_numeric(x) for x in inputs)) or all(
+            is_numeric(x) for x in list(inputs)
+        ):
+            return self.as_dict(inputs)
+        else:
+            raise TypeError(
+                f"Inputs must be a dictionary or numeric. Received {type(inputs)}"
+            )

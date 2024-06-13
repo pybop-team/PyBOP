@@ -85,6 +85,8 @@ class DesignProblem(BaseProblem):
         y : np.ndarray
             The model output y(t) simulated with inputs.
         """
+        inputs = self.parameters.verify(inputs)
+
         sol = self._model.predict(
             inputs=inputs,
             experiment=self.experiment,

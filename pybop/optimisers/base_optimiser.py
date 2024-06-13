@@ -199,11 +199,14 @@ class BaseOptimiser:
     def check_optimal_parameters(self, x):
         """
         Check if the optimised parameters are physically viable.
-        """
-        inputs = self.parameters.as_dict(x)
 
+        Parameters
+        ----------
+        x : array-like
+            Optimised parameter values.
+        """
         if self.cost.problem._model.check_params(
-            inputs=inputs, allow_infeasible_solutions=False
+            inputs=x, allow_infeasible_solutions=False
         ):
             return
         else:
