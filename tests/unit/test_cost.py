@@ -114,6 +114,21 @@ class TestCosts:
             base_cost.evaluateS1([0.5])
 
     @pytest.mark.unit
+    def test_error_in_cost_calculation(self, problem):
+        class RaiseErrorCost(pybop.BaseCost):
+            def _evaluate(self, inputs, grad=None):
+                raise ValueError("Error test.")
+
+            def _evaluateS1(self, inputs):
+                raise ValueError("Error test.")
+
+        cost = RaiseErrorCost(problem)
+        with pytest.raises(ValueError, match="Error in cost calculation: Error test."):
+            cost([0.5])
+        with pytest.raises(ValueError, match="Error in cost calculation: Error test."):
+            cost.evaluateS1([0.5])
+
+    @pytest.mark.unit
     def test_MAP(self, problem):
         # Incorrect likelihood
         with pytest.raises(ValueError):
