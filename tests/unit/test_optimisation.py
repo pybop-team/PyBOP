@@ -104,6 +104,15 @@ class TestOptimisation:
             if issubclass(optimiser, pybop.BasePintsOptimiser):
                 assert optim._boundaries is None
 
+    @pytest.mark.unit
+    def test_no_optimisation_parameters(self, model, dataset):
+        problem = pybop.FittingProblem(
+            model=model, parameters=pybop.Parameters(), dataset=dataset
+        )
+        cost = pybop.RootMeanSquaredError(problem)
+        with pytest.raises(ValueError, match="There are no parameters to optimise."):
+            pybop.Optimisation(cost=cost)
+
     @pytest.mark.parametrize(
         "optimiser",
         [
