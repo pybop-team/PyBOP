@@ -1,6 +1,7 @@
 import numpy as np
 
 from pybop.costs.base_cost import BaseCost
+from pybop.models.base_model import Inputs
 from pybop.observers.observer import Observer
 
 
@@ -22,13 +23,13 @@ class RootMeanSquaredError(BaseCost):
         # Default fail gradient
         self._de = 1.0
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calculate the root mean square error for a given set of parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to evaluate the cost.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
@@ -40,7 +41,7 @@ class RootMeanSquaredError(BaseCost):
             The root mean square error.
 
         """
-        prediction = self.problem.evaluate(x)
+        prediction = self.problem.evaluate(inputs)
 
         for key in self.signal:
             if len(prediction.get(key, [])) != len(self._target.get(key, [])):
@@ -58,13 +59,13 @@ class RootMeanSquaredError(BaseCost):
         else:
             return np.sum(e)
 
-    def _evaluateS1(self, x):
+    def _evaluateS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns
@@ -78,7 +79,7 @@ class RootMeanSquaredError(BaseCost):
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        y, dy = self.problem.evaluateS1(x)
+        y, dy = self.problem.evaluateS1(inputs)
 
         for key in self.signal:
             if len(y.get(key, [])) != len(self._target.get(key, [])):
@@ -88,9 +89,7 @@ class RootMeanSquaredError(BaseCost):
 
         r = np.array([y[signal] - self._target[signal] for signal in self.signal])
         e = np.sqrt(np.mean(r**2, axis=1))
-        de = np.mean((r * dy.T), axis=2) / (
-            np.sqrt(np.mean((r * dy.T) ** 2, axis=2)) + np.finfo(float).eps
-        )
+        de = np.mean((r * dy.T), axis=2) / (e + np.finfo(float).eps)
 
         if self.n_outputs == 1:
             return e.item(), de.flatten()
@@ -137,13 +136,13 @@ class SumSquaredError(BaseCost):
         # Default fail gradient
         self._de = 1.0
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calculate the sum of squared errors for a given set of parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to evaluate the cost.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
@@ -154,7 +153,7 @@ class SumSquaredError(BaseCost):
         float
             The sum of squared errors.
         """
-        prediction = self.problem.evaluate(x)
+        prediction = self.problem.evaluate(inputs)
 
         for key in self.signal:
             if len(prediction.get(key, [])) != len(self._target.get(key, [])):
@@ -171,13 +170,13 @@ class SumSquaredError(BaseCost):
         else:
             return np.sum(e)
 
-    def _evaluateS1(self, x):
+    def _evaluateS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns
@@ -191,7 +190,7 @@ class SumSquaredError(BaseCost):
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        y, dy = self.problem.evaluateS1(x)
+        y, dy = self.problem.evaluateS1(inputs)
         for key in self.signal:
             if len(y.get(key, [])) != len(self._target.get(key, [])):
                 e = np.float64(np.inf)
@@ -235,13 +234,13 @@ class ObserverCost(BaseCost):
         super().__init__(problem=observer)
         self._observer = observer
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calculate the observer cost for a given set of parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to evaluate the cost.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
@@ -252,19 +251,18 @@ class ObserverCost(BaseCost):
         float
             The observer cost (negative of the log likelihood).
         """
-        inputs = self._observer.parameters.as_dict(values=x)
         log_likelihood = self._observer.log_likelihood(
             self._target, self._observer.time_data(), inputs
         )
         return -log_likelihood
 
-    def evaluateS1(self, x):
+    def evaluateS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns

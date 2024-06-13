@@ -3,6 +3,7 @@ from typing import List, Tuple, Union
 import numpy as np
 
 from pybop.costs.base_cost import BaseCost
+from pybop.models.base_model import Inputs
 from pybop.parameters.parameter import Parameter
 from pybop.parameters.priors import Uniform
 from pybop.problems.base_problem import BaseProblem
@@ -41,11 +42,11 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         self._multip = -1 / (2.0 * self.sigma2)
         self._dl = np.ones(self.n_parameters)
 
-    def _evaluate(self, x: np.ndarray, grad: Union[None, np.ndarray] = None) -> float:
+    def _evaluate(self, inputs: Inputs, grad: Union[None, np.ndarray] = None) -> float:
         """
         Evaluates the Gaussian log-likelihood for the given parameters with known sigma.
         """
-        y = self.problem.evaluate(x)
+        y = self.problem.evaluate(inputs)
         if any(
             len(y.get(key, [])) != len(self._target.get(key, [])) for key in self.signal
         ):
@@ -63,18 +64,18 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
 
         return e if self.n_outputs != 1 else e.item()
 
-    def _evaluateS1(self, x, grad=None):
+    def _evaluateS1(self, inputs: Inputs) -> Tuple[float, np.ndarray]:
         """
         Calls the problem.evaluateS1 method and calculates the log-likelihood and gradient.
         """
-        y, dy = self.problem.evaluateS1(x)
+        y, dy = self.problem.evaluateS1(inputs)
 
         if any(
             len(y.get(key, [])) != len(self._target.get(key, [])) for key in self.signal
         ):
             return -np.inf, -self._dl
 
-        likelihood = self._evaluate(x)
+        likelihood = self._evaluate(inputs)
 
         r = np.array([self._target[signal] - y[signal] for signal in self.signal])
         dl = np.sum((np.sum((r * dy.T), axis=2) / self.sigma2), axis=1)
@@ -145,9 +146,6 @@ class GaussianLogLikelihood(BaseLikelihood):
                     + f"Received {type(s0)}"
                 )
 
-        # Add the sigma values to the set of initial parameter values
-        self.x0 = np.hstack((self.x0, *sigma0))
-
         if dsigma_scale is None:
             self._dsigma_scale = sigma0
         else:
@@ -169,21 +167,22 @@ class GaussianLogLikelihood(BaseLikelihood):
             raise ValueError("dsigma_scale must be non-negative")
         self._dsigma_scale = new_value
 
-    def _evaluate(self, x: np.ndarray, grad: Union[None, np.ndarray] = None) -> float:
+    def _evaluate(self, inputs: Inputs, grad: Union[None, np.ndarray] = None) -> float:
         """
         Evaluates the Gaussian log-likelihood for the given parameters.
 
         Parameters
         ----------
-        x : np.ndarray
-            The parameters for which to evaluate the log-likelihood. The last `self.n_outputs`
-            elements are assumed to be the standard deviations of the Gaussian distributions.
+        inputs : Inputs
+            The parameters for which to evaluate the log-likelihood, including the `n_outputs`
+            standard deviations of the Gaussian distributions.
 
         Returns
         -------
         float
             The log-likelihood value, or -inf if the standard deviations are non-positive.
         """
+        x = list(inputs.values())
         sigma = np.asarray(x[-self.n_outputs :])
         if np.any(sigma <= 0):
             return -np.inf
@@ -207,25 +206,23 @@ class GaussianLogLikelihood(BaseLikelihood):
 
         return e if self.n_outputs != 1 else e.item()
 
-    def _evaluateS1(
-        self, x: np.ndarray, grad: Union[None, np.ndarray] = None
-    ) -> Tuple[float, np.ndarray]:
+    def _evaluateS1(self, inputs: Inputs) -> Tuple[float, np.ndarray]:
         """
         Calls the problem.evaluateS1 method and calculates the log-likelihood.
 
         Parameters
         ----------
-        x : np.ndarray
+        inputs : Inputs
             The parameters for which to evaluate the log-likelihood.
-        grad : Union[None, np.ndarray]), optional
-            The gradient (optional).
 
         Returns
         -------
         Tuple[float, np.ndarray]
             The log-likelihood and its gradient.
         """
+        x = list(inputs.values())
         sigma = np.asarray(x[-self.n_outputs :])
+
         if np.any(sigma <= 0):
             return -np.inf, -self._dl
 
@@ -235,7 +232,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         ):
             return -np.inf, -self._dl
 
-        likelihood = self._evaluate(x)
+        likelihood = self._evaluate(inputs)
 
         r = np.array([self._target[signal] - y[signal] for signal in self.signal])
         dl = np.sum((np.sum((r * dy.T), axis=2) / (sigma**2)), axis=1)
@@ -279,13 +276,13 @@ class MAP(BaseLikelihood):
         ):
             raise ValueError(f"{self.likelihood} must be a subclass of BaseLikelihood")
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None) -> float:
         """
         Calculate the maximum a posteriori cost for a given set of parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to evaluate the cost.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
@@ -296,6 +293,7 @@ class MAP(BaseLikelihood):
         float
             The maximum a posteriori cost.
         """
+        x = list(inputs.values())
         log_likelihood = self.likelihood.evaluate(x)
         log_prior = sum(
             param.prior.logpdf(x_i) for x_i, param in zip(x, self.problem.parameters)
@@ -304,14 +302,14 @@ class MAP(BaseLikelihood):
         posterior = log_likelihood + log_prior
         return posterior
 
-    def _evaluateS1(self, x):
+    def _evaluateS1(self, inputs: Inputs) -> Tuple[float, np.ndarray]:
         """
         Compute the maximum a posteriori with respect to the parameters.
         The method passes the likelihood gradient to the optimiser without modification.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns
@@ -325,6 +323,7 @@ class MAP(BaseLikelihood):
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
+        x = list(inputs.values())
         log_likelihood, dl = self.likelihood.evaluateS1(x)
         log_prior = sum(
             param.prior.logpdf(x_i) for x_i, param in zip(x, self.problem.parameters)

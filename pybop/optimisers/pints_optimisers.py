@@ -268,7 +268,7 @@ class CMAES(BasePintsOptimiser):
     """
 
     def __init__(self, cost, **optimiser_kwargs):
-        x0 = optimiser_kwargs.get("x0", cost.x0)
+        x0 = optimiser_kwargs.get("x0", cost.parameters.initial_value())
         if len(x0) == 1 or len(cost.parameters) == 1:
             raise ValueError(
                 "CMAES requires optimisation of >= 2 parameters at once. "
