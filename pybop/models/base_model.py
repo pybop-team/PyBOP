@@ -169,7 +169,10 @@ class BaseModel:
             self._parameter_set[key] = "[input]"
 
         if self.dataset is not None and (not self.rebuild_parameters or not rebuild):
-            if self.parameters is None or "Current function [A]" not in self._fit_keys:
+            if (
+                self.parameters is None
+                or "Current function [A]" not in self.parameters.keys()
+            ):
                 self._parameter_set["Current function [A]"] = pybamm.Interpolant(
                     self.dataset["Time [s]"],
                     self.dataset["Current function [A]"],
@@ -246,7 +249,10 @@ class BaseModel:
         parameters : pybop.Parameters
 
         """
-        self.parameters = parameters
+        if parameters is None:
+            self.parameters = Parameters()
+        else:
+            self.parameters = parameters
 
         if self.parameters is None:
             parameter_dictionary = {}
@@ -274,12 +280,7 @@ class BaseModel:
             self.geometry = self.pybamm_model.default_geometry
 
         # Update the list of parameter names and number of parameters
-        if self.parameters is not None:
-            self._fit_keys = self.parameters.keys()
-            self._n_parameters = len(self.parameters)
-        else:
-            self._fit_keys = []
-            self._n_parameters = 0
+        self._n_parameters = len(self.parameters)
 
     def reinit(
         self, inputs: Inputs, t: float = 0.0, x: Optional[np.ndarray] = None
@@ -440,7 +441,7 @@ class BaseModel:
                         dy[:, i, :] = np.stack(
                             [
                                 sol[signal].sensitivities[key].toarray()[:, 0]
-                                for key in self._fit_keys
+                                for key in self.parameters.keys()
                             ],
                             axis=-1,
                         )

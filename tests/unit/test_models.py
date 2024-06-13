@@ -312,7 +312,6 @@ class TestModels:
             base.approximate_capacity(x)
 
         base.classify_and_update_parameters(parameters=None)
-        assert base._fit_keys == []
         assert base._n_parameters == 0
 
     @pytest.mark.unit
