@@ -104,7 +104,10 @@ class BaseModel:
             The initial state of charge to be used in simulations.
         """
         self.dataset = dataset
-        if parameters is not None:
+        if parameters is None:
+            self.parameters = Parameters()
+        else:
+            self.parameters = parameters
             self.classify_and_update_parameters(self.parameters)
 
         if init_soc is not None:
