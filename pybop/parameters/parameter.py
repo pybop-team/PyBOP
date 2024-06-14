@@ -366,7 +366,7 @@ class Parameters:
 
         return sigma0
 
-    def initial_value(self) -> List:
+    def initial_value(self) -> np.ndarray:
         """
         Return the initial value of each parameter.
         """
@@ -378,9 +378,9 @@ class Parameters:
                 param.update(initial_value=initial_value)
             initial_values.append(param.initial_value)
 
-        return initial_values
+        return np.asarray(initial_values)
 
-    def current_value(self) -> List:
+    def current_value(self) -> np.ndarray:
         """
         Return the current value of each parameter.
         """
@@ -389,9 +389,9 @@ class Parameters:
         for param in self.param.values():
             current_values.append(param.value)
 
-        return current_values
+        return np.asarray(current_values)
 
-    def true_value(self) -> List:
+    def true_value(self) -> np.ndarray:
         """
         Return the true value of each parameter.
         """
@@ -400,7 +400,7 @@ class Parameters:
         for param in self.param.values():
             true_values.append(param.true_value)
 
-        return true_values
+        return np.asarray(true_values)
 
     def get_bounds_for_plotly(self):
         """
