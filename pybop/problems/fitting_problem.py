@@ -1,7 +1,9 @@
 import numpy as np
 
 from pybop import BaseProblem
+from pybop._dataset import Dataset
 from pybop.models.base_model import Inputs
+from pybop.parameters.parameter import Parameters
 
 
 class FittingProblem(BaseProblem):
@@ -134,3 +136,116 @@ class FittingProblem(BaseProblem):
         )
 
         return (y, np.asarray(dy))
+
+
+class MultiFittingProblem(BaseProblem):
+    """
+    Problem class for joining mulitple fitting problems.
+
+    Extends `FittingProblem` to multiple fitting problems.
+    """
+
+    def __init__(self, problem_list, weights=None):
+        self.problem_list = problem_list
+        self.weights = weights
+
+        # Compile the set of parameters, ignoring duplicates
+        combined_parameters = Parameters()
+        for problem in self.problem_list:
+            combined_parameters.join(problem.parameters)
+
+        # Combine the target datasets
+        combined_dataset = Dataset(
+            {"Time [s]": np.asarray([]), "Combined signal": np.asarray([])}
+        )
+        for problem in self.problem_list:
+            for signal in problem.signal:
+                combined_dataset["Time [s]"] = np.concatenate(
+                    (combined_dataset["Time [s]"], problem._time_data)
+                )
+                combined_dataset["Combined signal"] = np.concatenate(
+                    (combined_dataset["Combined signal"], problem._target[signal])
+                )
+
+        super().__init__(
+            parameters=combined_parameters,
+            model=None,
+            signal=["Combined signal"],
+        )
+        self._dataset = combined_dataset.data
+        self.parameters.initial_value()
+
+        # Unpack time and target data
+        self._time_data = self._dataset["Time [s]"]
+        self.n_time_data = len(self._time_data)
+        self.set_target(combined_dataset)
+
+    @property
+    def n_problems(self):
+        return len(self.problem_list)
+
+    def evaluate(self, inputs: Inputs):
+        """
+        Evaluate the model with the given parameters and return the signal.
+
+        Parameters
+        ----------
+        inputs : Inputs
+            Parameters for evaluation of the model.
+
+        Returns
+        -------
+        y : np.ndarray
+            The model output y(t) simulated with given inputs.
+        """
+        inputs = self.parameters.verify(inputs)
+        self.parameters.update(values=list(inputs.values()))
+
+        y = {"Combined signal": np.asarray([])}
+        for problem in self.problem_list:
+            problem_inputs = problem.parameters.as_dict()
+            for signal in problem.signal:
+                yi = problem.evaluate(problem_inputs)
+                y["Combined signal"] = np.concatenate(
+                    (y["Combined signal"], yi[signal])
+                )
+
+        return y
+
+    def evaluateS1(self, inputs: Inputs):
+        """
+        Evaluate the model with the given parameters and return the signal and its derivatives.
+
+        Parameters
+        ----------
+        inputs : Inputs
+            Parameters for evaluation of the model.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the simulation result y(t) and the sensitivities dy/dx(t) evaluated
+            with given inputs.
+        """
+
+        inputs = self.parameters.verify(inputs)
+        self.parameters.update(values=list(inputs.values()))
+
+        # y = np.empty((self._target_length))
+        # dy = np.empty((self._target_length, self.n_parameters))
+
+        y = {"Combined signal": np.asarray([])}
+        dy = None
+        for problem in self.problem_list:
+            problem_inputs = problem.parameters.as_dict()
+            for signal in problem.signal:
+                yi, dyi = problem.evaluateS1(problem_inputs)
+                y["Combined signal"] = np.concatenate(
+                    (y["Combined signal"], yi[signal])
+                )
+                if dy is None:
+                    dy = dyi
+                else:
+                    dy = np.concatenate((dy, dyi))
+
+        return (y, dy)
