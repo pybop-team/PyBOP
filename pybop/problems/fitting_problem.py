@@ -180,10 +180,6 @@ class MultiFittingProblem(BaseProblem):
         self.n_time_data = len(self._time_data)
         self.set_target(combined_dataset)
 
-    @property
-    def n_problems(self):
-        return len(self.problem_list)
-
     def evaluate(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal.
