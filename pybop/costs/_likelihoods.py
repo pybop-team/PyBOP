@@ -4,7 +4,7 @@ import numpy as np
 
 from pybop.costs.base_cost import BaseCost
 from pybop.models.base_model import Inputs
-from pybop.parameters.parameter import Parameter
+from pybop.parameters.parameter import Parameter, Parameters
 from pybop.parameters.priors import Uniform
 from pybop.problems.base_problem import BaseProblem
 
@@ -127,13 +127,12 @@ class GaussianLogLikelihood(BaseLikelihood):
                 constant_values=sigma0[-1],
             )
 
+        self.sigma = Parameters()
         for i, s0 in enumerate(sigma0):
             if isinstance(s0, Parameter):
-                self.parameters.add(s0)
-                # Replace parameter by a single value in the list of sigma0
-                sigma0[i] = s0.get_initial_value()
+                self.sigma.add(s0)
             elif isinstance(s0, float):
-                self.parameters.add(
+                self.sigma.add(
                     Parameter(
                         f"Sigma for output {i+1}",
                         initial_value=s0,
@@ -145,6 +144,7 @@ class GaussianLogLikelihood(BaseLikelihood):
                     "Expected sigma0 to contain Parameter objects or numeric values. "
                     + f"Received {type(s0)}"
                 )
+        self.parameters.join(self.sigma)
 
         if dsigma_scale is None:
             self._dsigma_scale = sigma0
@@ -182,12 +182,14 @@ class GaussianLogLikelihood(BaseLikelihood):
         float
             The log-likelihood value, or -inf if the standard deviations are non-positive.
         """
-        x = list(inputs.values())
-        sigma = np.asarray(x[-self.n_outputs :])
+        self.parameters.update(values=list(inputs.values()))
+
+        sigma = self.sigma.current_value()
         if np.any(sigma <= 0):
             return -np.inf
 
-        y = self.problem.evaluate(x[: -self.n_outputs])
+        problem_inputs = self.problem.parameters.as_dict()
+        y = self.problem.evaluate(problem_inputs)
         if any(
             len(y.get(key, [])) != len(self._target.get(key, [])) for key in self.signal
         ):
@@ -220,13 +222,14 @@ class GaussianLogLikelihood(BaseLikelihood):
         Tuple[float, np.ndarray]
             The log-likelihood and its gradient.
         """
-        x = list(inputs.values())
-        sigma = np.asarray(x[-self.n_outputs :])
+        self.parameters.update(values=list(inputs.values()))
 
+        sigma = self.sigma.current_value()
         if np.any(sigma <= 0):
             return -np.inf, -self._dl
 
-        y, dy = self.problem.evaluateS1(x[: -self.n_outputs])
+        problem_inputs = self.problem.parameters.as_dict()
+        y, dy = self.problem.evaluateS1(problem_inputs)
         if any(
             len(y.get(key, [])) != len(self._target.get(key, [])) for key in self.signal
         ):
@@ -293,10 +296,9 @@ class MAP(BaseLikelihood):
         float
             The maximum a posteriori cost.
         """
-        x = list(inputs.values())
-        log_likelihood = self.likelihood.evaluate(x)
+        log_likelihood = self.likelihood.evaluate(inputs)
         log_prior = sum(
-            param.prior.logpdf(x_i) for x_i, param in zip(x, self.problem.parameters)
+            param.prior.logpdf(inputs[param.name]) for param in self.problem.parameters
         )
 
         posterior = log_likelihood + log_prior
@@ -323,21 +325,20 @@ class MAP(BaseLikelihood):
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        x = list(inputs.values())
-        log_likelihood, dl = self.likelihood.evaluateS1(x)
+        log_likelihood, dl = self.likelihood.evaluateS1(inputs)
         log_prior = sum(
-            param.prior.logpdf(x_i) for x_i, param in zip(x, self.problem.parameters)
+            param.prior.logpdf(inputs[param.name]) for param in self.problem.parameters
         )
 
         # Compute a finite difference approximation of the gradient of the log prior
         delta = 1e-3
         dl_prior_approx = [
             (
-                param.prior.logpdf(x_i * (1 + delta))
-                - param.prior.logpdf(x_i * (1 - delta))
+                param.prior.logpdf(inputs[param.name] * (1 + delta))
+                - param.prior.logpdf(inputs[param.name] * (1 - delta))
             )
-            / (2 * delta * x_i + np.finfo(float).eps)
-            for x_i, param in zip(x, self.problem.parameters)
+            / (2 * delta * inputs[param.name] + np.finfo(float).eps)
+            for param in self.problem.parameters
         ]
 
         posterior = log_likelihood + log_prior
