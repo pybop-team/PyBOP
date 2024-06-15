@@ -26,6 +26,7 @@ class BasePintsSampler(BaseSampler):
         log_pdf: Union[BaseCost, List[BaseCost]],
         chains: int,
         sampler,
+        burn_in=None,
         x0=None,
         sigma0=None,
         transformation=None,
@@ -56,6 +57,7 @@ class BasePintsSampler(BaseSampler):
         self._evaluation_files = kwargs.get("evaluation_files", None)
         self._parallel = kwargs.get("parallel", False)
         self._verbose = kwargs.get("verbose", False)
+        self.burn_in = burn_in
         self.n_parameters = (
             log_pdf[0].n_parameters
             if isinstance(log_pdf, list)
@@ -201,6 +203,9 @@ class BasePintsSampler(BaseSampler):
                 running = False
 
         self._finalise_logging()
+
+        if self.burn_in:
+            self._samples = self._samples[:, self.burn_in :, :]
 
         return self._samples if self._chains_in_memory else None
 

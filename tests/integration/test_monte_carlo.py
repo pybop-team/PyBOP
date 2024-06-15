@@ -116,22 +116,13 @@ class Test_Sampling_SPM:
         composed_prior = pybop.ComposedLogPrior(prior1, prior2)
         posterior = pybop.LogPosterior(spm_likelihood, composed_prior)
         x0 = [[0.55, 0.55], [0.55, 0.55], [0.55, 0.55]]
-        if quick_sampler in [DramACMC]:
-            sampler = quick_sampler(
-                posterior,
-                chains=3,
-                x0=x0,
-                max_iterations=800,
-                initial_phase_iterations=150,
-            )
-        else:
-            sampler = quick_sampler(
-                posterior,
-                chains=3,
-                x0=x0,
-                max_iterations=400,
-                initial_phase_iterations=150,
-            )
+        sampler = quick_sampler(
+            posterior,
+            chains=3,
+            x0=x0,
+            burn_in=50,
+            max_iterations=400,
+        )
         results = sampler.run()
         x = np.mean(results, axis=1)
 
