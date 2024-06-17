@@ -158,8 +158,12 @@ class SciPyMinimize(BaseSciPyOptimiser):
         self.log = [[self.x0]]
 
         # Add callback storing history of parameter values
-        def callback(x):
-            self.log.append([x])
+        if self._options["method"] == "trust-constr":
+            def callback(x, soln_obj):
+                self.log.append([x])
+        else:
+            def callback(x):
+                self.log.append([x])
 
         # Compute the absolute initial cost and resample if required
         self._cost0 = np.abs(self.cost(self.x0))
