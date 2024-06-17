@@ -221,6 +221,9 @@ class TestOptimisation:
             # Check a method that uses gradient information
             optimiser(cost=cost, method="L-BFGS-B", jac=True, maxiter=10)
             optim.run()
+            # Check trust-constr, which has a different callback
+            optimiser(cost=cost, method="trust-constr", maxiter=10)
+            optim.run()
             assert optim._iterations > 0
             with pytest.raises(
                 ValueError,
