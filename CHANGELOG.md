@@ -5,6 +5,15 @@
 
 ## Bug Fixes
 
+# [v24.3.1](https://github.com/pybop-team/PyBOP/tree/v24.3.1) - 2024-06-17
+
+## Features
+
+
+## Bug Fixes
+
+- [#369](https://github.com/pybop-team/PyBOP/pull/369) - Upper pins Numpy < 2.0 due to breaking Pints' functionality.
+
 # [v24.3](https://github.com/pybop-team/PyBOP/tree/v24.3) - 2024-03-25
 
 ## Features
