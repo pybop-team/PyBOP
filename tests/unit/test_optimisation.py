@@ -73,6 +73,7 @@ class TestOptimisation:
             (pybop.SciPyDifferentialEvolution, "SciPyDifferentialEvolution"),
             (pybop.GradientDescent, "Gradient descent"),
             (pybop.Adam, "Adam"),
+            (pybop.AdamW, "AdamW"),
             (pybop.CMAES, "Covariance Matrix Adaptation Evolution Strategy (CMA-ES)"),
             (pybop.SNES, "Seperable Natural Evolution Strategy (SNES)"),
             (pybop.XNES, "Exponential Natural Evolution Strategy (xNES)"),
@@ -110,6 +111,7 @@ class TestOptimisation:
             pybop.SciPyDifferentialEvolution,
             pybop.GradientDescent,
             pybop.Adam,
+            pybop.AdamW,
             pybop.SNES,
             pybop.XNES,
             pybop.PSO,
@@ -209,6 +211,39 @@ class TestOptimisation:
                 ValueError, match="Bounds must be specified for differential_evolution."
             ):
                 optimiser(cost=cost, bounds={"upper": [np.inf], "lower": [0.57]})
+
+        # Test AdamW hyperparameters
+        if optimiser in [pybop.AdamW]:
+            optim = optimiser(cost=cost, b1=0.9, b2=0.999, lambda_=0.1)
+            optim.pints_optimiser.set_b1(0.9)
+            optim.pints_optimiser.set_b2(0.9)
+            optim.pints_optimiser.set_lambda(0.1)
+
+            assert optim.pints_optimiser._b1 == 0.9
+            assert optim.pints_optimiser._b2 == 0.9
+            assert optim.pints_optimiser._lambda == 0.1
+
+            # Incorrect values
+            for i, match in (("Value", -1),):
+                with pytest.raises(
+                    Exception, match="must be a numeric value between 0 and 1."
+                ):
+                    optim.pints_optimiser.set_b1(i)
+                with pytest.raises(
+                    Exception, match="must be a numeric value between 0 and 1."
+                ):
+                    optim.pints_optimiser.set_b2(i)
+                with pytest.raises(
+                    Exception, match="must be a numeric value between 0 and 1."
+                ):
+                    optim.pints_optimiser.set_lambda(i)
+
+            # Check defaults
+            assert optim.pints_optimiser.n_hyper_parameters() == 5
+            assert not optim.pints_optimiser.running()
+            assert optim.pints_optimiser.x_guessed() == optim.pints_optimiser._x0
+            with pytest.raises(Exception):
+                optim.pints_optimiser.tell([0.1])
 
         else:
             # Check and update initial values

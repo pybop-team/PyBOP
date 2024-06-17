@@ -89,9 +89,7 @@ class RootMeanSquaredError(BaseCost):
 
         r = np.array([y[signal] - self._target[signal] for signal in self.signal])
         e = np.sqrt(np.mean(r**2, axis=1))
-        de = np.mean((r * dy.T), axis=2) / (
-            np.sqrt(np.mean((r * dy.T) ** 2, axis=2)) + np.finfo(float).eps
-        )
+        de = np.mean((r * dy.T), axis=2) / (e + np.finfo(float).eps)
 
         if self.n_outputs == 1:
             return e.item(), de.flatten()
