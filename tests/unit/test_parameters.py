@@ -113,6 +113,12 @@ class TestParameters:
         ):
             params.add(parameter)
 
+        with pytest.raises(
+            Exception,
+            match="Parameter requires a name.",
+        ):
+            params.add(dict(value=2))
+
         params.remove(parameter_name=parameter.name)
 
         # Test parameter addition via dict
