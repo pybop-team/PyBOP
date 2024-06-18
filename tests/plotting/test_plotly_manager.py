@@ -1,6 +1,6 @@
 import subprocess
-from distutils.spawn import find_executable
 from importlib.metadata import distributions
+from shutil import which
 
 import numpy as np
 import plotly
@@ -10,7 +10,7 @@ import pybop
 from pybop import PlotlyManager
 
 # Find the Python executable
-python_executable = find_executable("python")
+python_executable = which("python")
 
 
 @pytest.fixture(scope="session")

@@ -2,7 +2,6 @@
 
 ## Features
 
-
 - [#316](https://github.com/pybop-team/PyBOP/pull/316) - Adds Adam with weight decay (AdamW) optimiser, adds depreciation warning for pints.Adam implementation.
 - [#271](https://github.com/pybop-team/PyBOP/issues/271) - Aligns the output of the optimisers via a generalisation of Result class.
 - [#315](https://github.com/pybop-team/PyBOP/pull/315) - Updates __init__ structure to remove circular import issues and minimises dependancy imports across codebase for faster PyBOP module import. Adds type-hints to BaseModel and refactors rebuild parameter variables.
@@ -37,6 +36,15 @@
 - [#299](https://github.com/pybop-team/PyBOP/pull/299) - Bugfix multiprocessing support for Linux, MacOS, Windows (WSL) and improves coverage.
 - [#270](https://github.com/pybop-team/PyBOP/pull/270) - Updates PR template.
 - [#91](https://github.com/pybop-team/PyBOP/issues/91) - Adds a check on the number of parameters for CMAES and makes XNES the default optimiser.
+
+# [v24.3.1](https://github.com/pybop-team/PyBOP/tree/v24.3.1) - 2024-06-17
+
+## Features
+
+
+## Bug Fixes
+
+- [#369](https://github.com/pybop-team/PyBOP/pull/369) - Upper pins Numpy < 2.0 due to breaking Pints' functionality.
 
 # [v24.3](https://github.com/pybop-team/PyBOP/tree/v24.3) - 2024-03-25
 
