@@ -45,7 +45,7 @@ model = pybop.empirical.Thevenin(
 )
 
 # Fitting parameters
-parameters = [
+parameters = pybop.Parameters(
     pybop.Parameter(
         "R0 [Ohm]",
         prior=pybop.Gaussian(0.0002, 0.0001),
@@ -56,10 +56,10 @@ parameters = [
         prior=pybop.Gaussian(0.0001, 0.0001),
         bounds=[1e-5, 1e-2],
     ),
-]
+)
 
 sigma = 0.001
-t_eval = np.arange(0, 900, 2)
+t_eval = np.arange(0, 900, 3)
 values = model.predict(t_eval=t_eval)
 corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
 
@@ -75,8 +75,7 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.Optimisation(cost, optimiser=pybop.CMAES)
-optim.set_max_iterations(100)
+optim = pybop.CMAES(cost, max_iterations=100)
 
 x, final_cost = optim.run()
 print("Estimated parameters:", x)

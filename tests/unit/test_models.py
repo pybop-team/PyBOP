@@ -11,6 +11,37 @@ class TestModels:
     A class to test the models.
     """
 
+    @pytest.mark.parametrize(
+        "model_class, expected_name, options",
+        [
+            (pybop.lithium_ion.SPM, "Single Particle Model", None),
+            (pybop.lithium_ion.SPMe, "Single Particle Model with Electrolyte", None),
+            (pybop.lithium_ion.DFN, "Doyle-Fuller-Newman", None),
+            (pybop.lithium_ion.MPM, "Many Particle Model", None),
+            (
+                pybop.lithium_ion.MSMR,
+                "Multi Species Multi Reactions Model",
+                {"number of MSMR reactions": ("6", "4")},
+            ),
+            (pybop.lithium_ion.WeppnerHuggins, "Weppner & Huggins model", None),
+            (pybop.empirical.Thevenin, "Equivalent Circuit Thevenin Model", None),
+        ],
+    )
+    @pytest.mark.unit
+    def test_model_classes(self, model_class, expected_name, options):
+        model = model_class(options=options)
+        assert model.pybamm_model is not None
+        assert model.name == expected_name
+
+        # Test initialisation with kwargs
+        if model_class is pybop.lithium_ion.MSMR:
+            # Reset the options to cope with a bug in PyBaMM v23.9 msmr.py:23 which is fixed in v24.1
+            options = {"number of MSMR reactions": ("6", "4")}
+        parameter_set = pybop.ParameterSet(
+            params_dict={"Nominal cell capacity [A.h]": 5}
+        )
+        model = model_class(options=options, build=True, parameter_set=parameter_set)
+
     @pytest.fixture(
         params=[
             pybop.lithium_ion.SPM(),
@@ -18,6 +49,7 @@ class TestModels:
             pybop.lithium_ion.DFN(),
             pybop.lithium_ion.MPM(),
             pybop.lithium_ion.MSMR(options={"number of MSMR reactions": ("6", "4")}),
+            pybop.lithium_ion.WeppnerHuggins(),
             pybop.empirical.Thevenin(),
         ]
     )
@@ -38,6 +70,18 @@ class TestModels:
             model.simulateS1(None, None)
 
     @pytest.mark.unit
+    def test_non_default_solver(self):
+        solver = pybamm.CasadiSolver(
+            mode="fast",
+            atol=1e-6,
+            rtol=1e-6,
+        )
+        model = pybop.lithium_ion.SPM(solver=solver)
+        assert model.solver.mode == "fast"
+        assert model.solver.atol == 1e-6
+        assert model.solver.rtol == 1e-6
+
+    @pytest.mark.unit
     def test_predict_without_pybamm(self, model):
         model._unprocessed_model = None
 
@@ -49,10 +93,15 @@ class TestModels:
         # Define inputs
         t_eval = np.linspace(0, 10, 100)
         if isinstance(model, (pybop.lithium_ion.EChemBaseModel)):
-            inputs = {
-                "Negative electrode active material volume fraction": 0.52,
-                "Positive electrode active material volume fraction": 0.63,
-            }
+            if model.pybamm_model.options["working electrode"] == "positive":
+                inputs = {
+                    "Positive electrode active material volume fraction": 0.63,
+                }
+            else:
+                inputs = {
+                    "Negative electrode active material volume fraction": 0.52,
+                    "Positive electrode active material volume fraction": 0.63,
+                }
         elif isinstance(model, (pybop.empirical.Thevenin)):
             inputs = {
                 "R0 [Ohm]": 0.0002,
@@ -138,7 +187,7 @@ class TestModels:
     @pytest.mark.unit
     def test_rebuild_geometric_parameters(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-        parameters = [
+        parameters = pybop.Parameters(
             pybop.Parameter(
                 "Positive particle radius [m]",
                 prior=pybop.Gaussian(4.8e-06, 0.05e-06),
@@ -151,7 +200,7 @@ class TestModels:
                 bounds=[30e-06, 50e-06],
                 initial_value=48e-06,
             ),
-        ]
+        )
 
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
         model.build(parameters=parameters)
@@ -163,8 +212,8 @@ class TestModels:
         out_init = initial_built_model.predict(t_eval=t_eval)
 
         # Test that the model can be rebuilt with different geometric parameters
-        parameters[0].update(5e-06)
-        parameters[1].update(45e-06)
+        parameters["Positive particle radius [m]"].update(5e-06)
+        parameters["Negative electrode thickness [m]"].update(45e-06)
         model.rebuild(parameters=parameters)
         rebuilt_model = model
         assert rebuilt_model._built_model is not None
@@ -207,11 +256,14 @@ class TestModels:
         state = model.reinit(inputs={})
         np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
 
-        state = model.reinit(inputs=[])
+        model.parameters = pybop.Parameters(pybop.Parameter("y0"))
+        state = model.reinit(inputs=[1])
         np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
 
         model = ExponentialDecay(pybamm.ParameterValues({"k": k, "y0": y0}))
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError, match="Model must be built before calling reinit"
+        ):
             model.reinit(inputs={})
 
     @pytest.mark.unit
@@ -245,9 +297,33 @@ class TestModels:
             base.approximate_capacity(x)
 
     @pytest.mark.unit
+    def test_thevenin_model(self):
+        parameter_set = pybop.ParameterSet(
+            json_path="examples/scripts/parameters/initial_ecm_parameters.json"
+        )
+        parameter_set.import_parameters()
+        assert parameter_set["Open-circuit voltage [V]"] == "default"
+        model = pybop.empirical.Thevenin(
+            parameter_set=parameter_set, options={"number of rc elements": 2}
+        )
+        assert (
+            parameter_set["Open-circuit voltage [V]"]
+            == model.pybamm_model.default_parameter_values["Open-circuit voltage [V]"]
+        )
+
+    @pytest.mark.unit
+    def test_check_params(self):
+        base = pybop.BaseModel()
+        assert base.check_params()
+        assert base.check_params(inputs={"a": 1})
+        assert base.check_params(inputs=[1])
+        with pytest.raises(ValueError, match="Expecting inputs in the form of"):
+            base.check_params(inputs=["unexpected_string"])
+
+    @pytest.mark.unit
     def test_non_converged_solution(self):
         model = pybop.lithium_ion.DFN()
-        parameters = [
+        parameters = pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.2, 0.01),
@@ -256,7 +332,7 @@ class TestModels:
                 "Positive electrode active material volume fraction",
                 prior=pybop.Gaussian(0.2, 0.01),
             ),
-        ]
+        )
         dataset = pybop.Dataset(
             {
                 "Time [s]": np.linspace(0, 100, 100),
@@ -267,7 +343,8 @@ class TestModels:
 
         problem = pybop.FittingProblem(model, parameters=parameters, dataset=dataset)
         res = problem.evaluate([-0.2, -0.2])
-        res_grad = problem.evaluateS1([-0.2, -0.2])
+        _, res_grad = problem.evaluateS1([-0.2, -0.2])
 
-        assert np.isinf(res).any()
+        for key in problem.signal:
+            assert np.isinf(res.get(key, [])).any()
         assert np.isinf(res_grad).any()

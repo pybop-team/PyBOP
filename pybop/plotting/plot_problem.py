@@ -2,7 +2,7 @@ import sys
 
 import numpy as np
 
-import pybop
+from pybop import DesignProblem, FittingProblem, StandardPlot
 
 
 def quick_plot(problem, parameter_values=None, show=True, **layout_kwargs):
@@ -44,18 +44,18 @@ def quick_plot(problem, parameter_values=None, show=True, **layout_kwargs):
         default_layout_options = dict(
             title="Scatter Plot",
             xaxis_title="Time / s",
-            yaxis_title=pybop.StandardPlot.remove_brackets(i),
+            yaxis_title=StandardPlot.remove_brackets(i),
         )
 
         # Create a plotting dictionary
-        if isinstance(problem, pybop.DesignProblem):
+        if isinstance(problem, DesignProblem):
             trace_name = "Optimised"
             opt_time_data = model_output["Time [s]"]
         else:
             trace_name = "Model"
             opt_time_data = xaxis_data
 
-        plot_dict = pybop.StandardPlot(
+        plot_dict = StandardPlot(
             x=opt_time_data,
             y=model_output[i],
             layout_options=default_layout_options,
@@ -71,7 +71,7 @@ def quick_plot(problem, parameter_values=None, show=True, **layout_kwargs):
         )
         plot_dict.traces.append(target_trace)
 
-        if isinstance(problem, pybop.FittingProblem):
+        if isinstance(problem, FittingProblem):
             # Compute the standard deviation as proxy for uncertainty
             plot_dict.sigma = np.std(model_output[i] - target_output[i])
 

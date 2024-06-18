@@ -9,6 +9,24 @@ import sys
 from os import path
 
 #
+# Multiprocessing
+#
+try:
+    import multiprocessing as mp
+    if sys.platform == "win32":
+        mp.set_start_method("spawn")
+    else:
+        mp.set_start_method("fork")
+except Exception as e: # pragma: no cover
+    error_message = (
+        "Multiprocessing context could not be set. "
+        "Continuing import without setting context.\n"
+        f"Error: {e}"
+    ) # pragma: no cover
+    print(error_message) # pragma: no cover
+    pass # pragma: no cover
+
+#
 # Version info
 #
 from pybop._version import __version__
@@ -28,7 +46,32 @@ script_path = path.dirname(__file__)
 from ._utils import is_numeric
 
 #
-# Cost class
+# Experiment class
+#
+from ._experiment import Experiment
+
+#
+# Dataset class
+#
+from ._dataset import Dataset
+
+#
+# Parameter classes
+#
+from .parameters.parameter import Parameter, Parameters
+from .parameters.parameter_set import ParameterSet
+from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential
+
+#
+# Model classes
+#
+from .models.base_model import BaseModel
+from .models import lithium_ion
+from .models import empirical
+from .models.base_model import TimeSeriesState
+from .models.base_model import Inputs
+
+#
 # Problem class
 #
 from .problems.base_problem import BaseProblem
@@ -57,34 +100,17 @@ from .costs._likelihoods import (
 )
 
 #
-# Dataset class
-#
-from ._dataset import Dataset
-
-#
-# Model classes
-#
-from .models.base_model import BaseModel
-from .models import lithium_ion
-from .models import empirical
-from .models.base_model import TimeSeriesState
-from .models.base_model import Inputs
-
-#
-# Experiment class
-#
-from ._experiment import Experiment
-
-#
-# Main optimisation class
-#
-from ._optimisation import Optimisation
-
-#
 # Optimiser class
 #
-from .optimisers.base_optimiser import BaseOptimiser
-from .optimisers.scipy_optimisers import SciPyMinimize, SciPyDifferentialEvolution
+
+from .optimisers._adamw import AdamWImpl
+from .optimisers.base_optimiser import BaseOptimiser, Result
+from .optimisers.base_pints_optimiser import BasePintsOptimiser
+from .optimisers.scipy_optimisers import (
+    BaseSciPyOptimiser,
+    SciPyMinimize,
+    SciPyDifferentialEvolution
+)
 from .optimisers.pints_optimisers import (
     GradientDescent,
     Adam,
@@ -94,15 +120,9 @@ from .optimisers.pints_optimisers import (
     PSO,
     SNES,
     XNES,
+    AdamW,
 )
-
-#
-# Parameter classes
-#
-from .parameters.parameter import Parameter
-from .parameters.parameter_set import ParameterSet
-from .parameters.priors import Gaussian, Uniform, Exponential
-
+from .optimisers.optimisation import Optimisation
 
 #
 # Observer classes

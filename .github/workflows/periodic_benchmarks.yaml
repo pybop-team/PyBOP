@@ -10,9 +10,9 @@
 # - Publish website
 name: Benchmarks
 on:
-  # Everyday at 12 pm UTC
+  # Every Monday and Thursday at 12 pm UTC
   schedule:
-    - cron: "0 12 * * *"
+    - cron: "0 12 * * 1,4"
   # Make it possible to trigger the
   # workflow manually
   workflow_dispatch:

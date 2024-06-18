@@ -14,14 +14,17 @@ class TestLikelihoods:
         return pybop.lithium_ion.SPM()
 
     @pytest.fixture
-    def parameters(self):
-        return [
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.5, 0.01),
-                bounds=[0.375, 0.625],
-            ),
-        ]
+    def ground_truth(self):
+        return 0.52
+
+    @pytest.fixture
+    def parameters(self, ground_truth):
+        return pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            prior=pybop.Gaussian(0.5, 0.01),
+            bounds=[0.375, 0.625],
+            initial_value=ground_truth,
+        )
 
     @pytest.fixture
     def experiment(self):
@@ -32,15 +35,11 @@ class TestLikelihoods:
         )
 
     @pytest.fixture
-    def x0(self):
-        return np.array([0.52])
-
-    @pytest.fixture
-    def dataset(self, model, experiment, x0):
+    def dataset(self, model, experiment, ground_truth):
         model.parameter_set = model.pybamm_model.default_parameter_values
         model.parameter_set.update(
             {
-                "Negative electrode active material volume fraction": x0[0],
+                "Negative electrode active material volume fraction": ground_truth,
             }
         )
         solution = model.predict(experiment=experiment)
@@ -53,17 +52,17 @@ class TestLikelihoods:
         )
 
     @pytest.fixture
-    def one_signal_problem(self, model, parameters, dataset, x0):
+    def one_signal_problem(self, model, parameters, dataset):
         signal = ["Voltage [V]"]
         return pybop.FittingProblem(
-            model, parameters, dataset, signal=signal, x0=x0, init_soc=1.0
+            model, parameters, dataset, signal=signal, init_soc=1.0
         )
 
     @pytest.fixture
-    def two_signal_problem(self, model, parameters, dataset, x0):
+    def two_signal_problem(self, model, parameters, dataset):
         signal = ["Time [s]", "Voltage [V]"]
         return pybop.FittingProblem(
-            model, parameters, dataset, signal=signal, x0=x0, init_soc=1.0
+            model, parameters, dataset, signal=signal, init_soc=1.0
         )
 
     @pytest.mark.parametrize(
@@ -73,17 +72,13 @@ class TestLikelihoods:
     @pytest.mark.unit
     def test_base_likelihood_init(self, problem_name, n_outputs, request):
         problem = request.getfixturevalue(problem_name)
-        likelihood = pybop.BaseLikelihood(problem, sigma=np.array([0.2]))
+        likelihood = pybop.BaseLikelihood(problem)
         assert likelihood.problem == problem
         assert likelihood.n_outputs == n_outputs
         assert likelihood.n_time_data == problem.n_time_data
-        assert np.array_equal(likelihood.get_sigma(), np.array([0.2]))
         assert likelihood.x0 == problem.x0
-        assert likelihood.bounds == problem.bounds
-        assert likelihood._n_parameters == 1
+        assert likelihood.n_parameters == 1
         assert np.array_equal(likelihood._target, problem._target)
-        with pytest.raises(ValueError):
-            likelihood.set_sigma("Test")
 
     @pytest.mark.unit
     def test_base_likelihood_call_raises_not_implemented_error(
@@ -94,23 +89,21 @@ class TestLikelihoods:
             likelihood(np.array([0.5, 0.5]))
 
     @pytest.mark.unit
-    def test_base_likelihood_set_get_sigma(self, one_signal_problem):
-        likelihood = pybop.BaseLikelihood(one_signal_problem)
+    def test_set_get_sigma(self, one_signal_problem):
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, 0.1)
         likelihood.set_sigma(np.array([0.3]))
         assert np.array_equal(likelihood.get_sigma(), np.array([0.3]))
 
-    @pytest.mark.unit
-    def test_base_likelihood_set_sigma_raises_value_error_for_negative_sigma(
-        self, one_signal_problem
-    ):
-        likelihood = pybop.BaseLikelihood(one_signal_problem)
+        with pytest.raises(
+            ValueError,
+            match="The GaussianLogLikelihoodKnownSigma cost requires sigma to be "
+            + "either a scalar value or an array with one entry per dimension.",
+        ):
+            pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, sigma=None)
+
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, 0.1)
         with pytest.raises(ValueError):
             likelihood.set_sigma(np.array([-0.2]))
-
-    @pytest.mark.unit
-    def test_base_likelihood_get_n_parameters(self, one_signal_problem):
-        likelihood = pybop.BaseLikelihood(one_signal_problem)
-        assert likelihood.get_n_parameters() == 1
 
     @pytest.mark.unit
     def test_base_likelihood_n_parameters_property(self, one_signal_problem):
