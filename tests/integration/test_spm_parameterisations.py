@@ -160,7 +160,7 @@ class Test_SPM_Parameterisation:
         [
             pybop.SciPyDifferentialEvolution,
             pybop.IRPropMin,
-            pybop.CMAES,
+            pybop.XNES,
         ],
     )
     @pytest.mark.integration
@@ -218,7 +218,7 @@ class Test_SPM_Parameterisation:
         cost = pybop.RootMeanSquaredError(problem)
 
         # Select optimiser
-        optimiser = pybop.CMAES
+        optimiser = pybop.XNES
 
         # Build the optimisation problem
         optim = optimiser(cost=cost)
