@@ -81,7 +81,7 @@ from .problems.design_problem import DesignProblem
 #
 # Cost function class
 #
-from .costs.base_cost import BaseCost
+from .costs.base_cost import BaseCost, WeightedCost
 from .costs.fitting_costs import (
     RootMeanSquaredError,
     SumSquaredError,

@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#327](https://github.com/pybop-team/PyBOP/issues/327) - Adds the `WeightedCost` subclass, defines when to evaluate a problem and adds the `spm_weighted_cost` example script.
 - [#174](https://github.com/pybop-team/PyBOP/issues/174) - Adds new logo and updates Readme for accessibility.
 - [#316](https://github.com/pybop-team/PyBOP/pull/316) - Adds Adam with weight decay (AdamW) optimiser, adds depreciation warning for pints.Adam implementation.
 - [#271](https://github.com/pybop-team/PyBOP/issues/271) - Aligns the output of the optimisers via a generalisation of Result class.
