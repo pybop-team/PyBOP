@@ -1,8 +1,7 @@
 import numpy as np
+import scipy.optimize
 
 import pybop
-
-import scipy.optimize
 
 # Import the ECM parameter set from JSON
 # parameter_set = pybop.ParameterSet(
@@ -66,9 +65,7 @@ parameters = [
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
 values = model.predict(t_eval=t_eval)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(
-    0, sigma, len(t_eval)
-)
+corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
 
 # Form dataset
 dataset = pybop.Dataset(
@@ -79,15 +76,15 @@ dataset = pybop.Dataset(
     }
 )
 
-tau_constraint = scipy.optimize.NonlinearConstraint(
-    lambda x: x[1] * x[2], 0, 10
-)
+tau_constraint = scipy.optimize.NonlinearConstraint(lambda x: x[1] * x[2], 0, 10)
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
 optim = pybop.SciPyMinimize(
-    cost, method="trust-constr", constraints=[tau_constraint],
+    cost,
+    method="trust-constr",
+    constraints=[tau_constraint],
 )
 
 x, final_cost = optim.run()

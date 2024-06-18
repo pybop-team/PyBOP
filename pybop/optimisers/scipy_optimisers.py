@@ -159,9 +159,11 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
         # Add callback storing history of parameter values
         if self._options["method"] == "trust-constr":
+
             def callback(x, soln_obj):
                 self.log.append([x])
         else:
+
             def callback(x):
                 self.log.append([x])
 
