@@ -1,6 +1,7 @@
 <div align="center">
 
-  ![logo](https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/Temp_Logo.png)
+  <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/logo/PyBOP_logo_flat.png" alt="logo.svg" width="700" />
+
   # Python Battery Optimisation and Parameterisation
 
 
@@ -25,8 +26,7 @@ PyBOP provides a complete set of tools for parameterisation and optimisation of 
 The diagram below shows the conceptual framework of PyBOP. This package is currently under development, so users can expect the API to evolve with future releases.
 
 <p align="center">
-    <!-- <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/pybop_architecture.svg" alt="pybop_arch.svg" width="600" /> -->
-    <img src="assets/PyBOP-high-level.svg" alt="pybop_arch.svg" width="700" />
+    <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/PyBOP-high-level.svg" alt="pybop_arch.svg" width="700" />
 </p>
 
 ## Installation
