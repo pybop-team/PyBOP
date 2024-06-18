@@ -10,7 +10,10 @@ from pints import RectangularBoundaries as PintsRectangularBoundaries
 from pints import SequentialEvaluator as PintsSequentialEvaluator
 from pints import strfloat as PintsStrFloat
 
-from pybop import BaseLikelihood, BaseOptimiser, Result, Transformation
+from pybop import (
+    BaseOptimiser,
+    Result,
+)
 
 
 class BasePintsOptimiser(BaseOptimiser):
@@ -51,8 +54,6 @@ class BasePintsOptimiser(BaseOptimiser):
         self.pints_optimiser = pints_optimiser
         super().__init__(cost, **optimiser_kwargs)
         self.f = self.cost
-        if self.transformation is not None:
-            self.set_transformation(self.transformation)
 
     def _set_up_optimiser(self):
         """
@@ -153,39 +154,6 @@ class BasePintsOptimiser(BaseOptimiser):
                 self._boundaries = PintsRectangularBoundaries(
                     self.bounds["lower"], self.bounds["upper"]
                 )
-
-    def set_transformation(self, transformation: Transformation):
-        """
-        Apply the given transformation to the optimizer's settings.
-
-        Initial credit: Pints team
-
-        Parameters
-        ----------
-        transformation : pybop.Transformation
-            The transformation object to be applied.
-        """
-        # Convert cost or log pdf
-        if isinstance(self.cost, BaseLikelihood):
-            self.f = transformation.convert_log_pdf(self.cost)
-        else:
-            self.f = transformation.convert_cost(self.cost)
-
-        # Convert initial position
-        self.x0 = transformation.to_search(self.x0)
-
-        # Convert sigma0, if provided
-        if self.sigma0 is not None:
-            self.sigma0 = transformation.convert_standard_deviation(
-                self.sigma0, self.x0
-            )
-
-        # Convert boundaries, if provided
-        if self._boundaries:
-            self._boundaries = transformation.convert_boundaries(self._boundaries)
-
-        # Store the transformation for later detransformation
-        self.transformation = transformation
 
     def name(self):
         """

@@ -1,4 +1,4 @@
-from pybop import BaseProblem
+from pybop import BaseProblem, ComposedTransformation, IdentityTransformation
 
 
 class BaseCost:
@@ -25,6 +25,7 @@ class BaseCost:
 
     def __init__(self, problem=None):
         self.parameters = None
+        self.transformation = None
         self.problem = problem
         self.x0 = None
         if isinstance(self.problem, BaseProblem):
@@ -34,6 +35,13 @@ class BaseCost:
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
 
+            # Construct ComposedTransformation from list of transformations
+            self.transformations = [
+                t if t is not None else IdentityTransformation()
+                for t in self.parameters.get_transformations()
+            ]
+            self.transformation = ComposedTransformation(self.transformations)
+
     @property
     def n_parameters(self):
         return len(self.parameters)
@@ -42,7 +50,11 @@ class BaseCost:
         """
         Call the evaluate function for a given set of parameters.
         """
-        return self.evaluate(x)
+        if self.transformation:
+            p = self.transformation.to_model(x)
+            return self.evaluate(p)
+        else:
+            return self.evaluate(x)
 
     def evaluate(self, x):
         """
@@ -116,7 +128,11 @@ class BaseCost:
             If an error occurs during the calculation of the cost or gradient.
         """
         try:
-            return self._evaluateS1(x)
+            if self.transformation:
+                p = self.transformation.to_model(x)
+                return self._evaluateS1(p)
+            else:
+                return self._evaluateS1(x)
 
         except NotImplementedError as e:
             raise e

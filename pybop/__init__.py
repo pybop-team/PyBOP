@@ -79,6 +79,17 @@ from .problems.fitting_problem import FittingProblem
 from .problems.design_problem import DesignProblem
 
 #
+# Transformation classes
+#
+from .transformations import Transformation
+from .transformations._transformations import (
+    IdentityTransformation,
+    ScaledTransformation,
+    LogTransformation,
+    ComposedTransformation,
+)
+
+#
 # Cost function class
 #
 from .costs.base_cost import BaseCost
@@ -98,12 +109,6 @@ from .costs._likelihoods import (
     GaussianLogLikelihood,
     GaussianLogLikelihoodKnownSigma,
 )
-
-#
-# Transformation classes
-#
-from .transformations import Transformation
-from .transformations._transformations import IdentityTransformation
 
 #
 # Optimiser class

@@ -32,7 +32,13 @@ class Parameter:
     """
 
     def __init__(
-        self, name, initial_value=None, true_value=None, prior=None, bounds=None
+        self,
+        name,
+        initial_value=None,
+        true_value=None,
+        prior=None,
+        bounds=None,
+        transformation=None,
     ):
         """
         Construct the parameter class with a name, initial value, prior, and bounds.
@@ -42,8 +48,9 @@ class Parameter:
         self.true_value = true_value
         self.initial_value = initial_value
         self.value = initial_value
-        self.set_bounds(bounds)
+        self.transformation = transformation
         self.margin = 1e-4
+        self.set_bounds(bounds)
 
     def rvs(self, n_samples, random_state=None):
         """
@@ -63,6 +70,9 @@ class Parameter:
             An array of samples drawn from the prior distribution within the parameter's bounds.
         """
         samples = self.prior.rvs(n_samples, random_state=random_state)
+
+        if self.transformation is not None:
+            samples = self.transformation.to_search(samples)
 
         # Constrain samples to be within bounds
         if self.bounds is not None:
@@ -142,11 +152,19 @@ class Parameter:
         if bounds is not None:
             if bounds[0] >= bounds[1]:
                 raise ValueError("Lower bound must be less than upper bound")
+            elif self.transformation is not None:
+                self.lower_bound = np.ndarray.item(
+                    self.transformation.to_search(bounds[0])
+                )
+                self.upper_bound = np.ndarray.item(
+                    self.transformation.to_search(bounds[1])
+                )
             else:
                 self.lower_bound = bounds[0]
                 self.upper_bound = bounds[1]
-
-        self.bounds = bounds
+            self.bounds = [self.lower_bound, self.upper_bound]
+        else:
+            self.bounds = bounds
 
 
 class Parameters:
@@ -166,6 +184,7 @@ class Parameters:
         self.param = OrderedDict()
         for param in args:
             self.add(param)
+        self.initial_value()
 
     def __getitem__(self, key: str) -> Parameter:
         """
@@ -309,12 +328,20 @@ class Parameters:
 
         for param in self.param.values():
             if hasattr(param.prior, "sigma"):
-                sigma0.append(param.prior.sigma)
+                if param.transformation is None:
+                    sigma0.append(param.prior.sigma)
+                else:
+                    sigma0.append(
+                        np.ndarray.item(
+                            param.transformation.convert_standard_deviation(
+                                param.prior.sigma, param.initial_value
+                            )
+                        )
+                    )
             else:
                 all_have_sigma = False
         if not all_have_sigma:
             sigma0 = None
-
         return sigma0
 
     def initial_value(self) -> List:
@@ -324,7 +351,7 @@ class Parameters:
         initial_values = []
 
         for param in self.param.values():
-            if param.initial_value is None:
+            if param.initial_value is None and param.prior is not None:
                 initial_value = param.rvs(1)
                 param.update(initial_value=initial_value[0])
             initial_values.append(param.initial_value)
@@ -352,6 +379,17 @@ class Parameters:
             true_values.append(param.true_value)
 
         return true_values
+
+    def get_transformations(self):
+        """
+        Get the transformations for each parameter.
+        """
+        transformations = []
+
+        for param in self.param.values():
+            transformations.append(param.transformation)
+
+        return transformations
 
     def get_bounds_for_plotly(self):
         """

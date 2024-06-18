@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Tuple, Union, Sequence
 import numpy as np
+from pints import TransformedBoundaries as PintsTransformedBoundaries
 
-from pybop import BaseCost
 
 class Transformation(ABC):
     """
@@ -22,17 +22,9 @@ class Transformation(ABC):
     .. [2] Kaare Brandt Petersen and Michael Syskind Pedersen. "The Matrix Cookbook." 2012.
     """
 
-    def convert_log_pdf(self, log_pdf):
-        """Returns a transformed log-PDF class."""
-        return TransformedLogPDF(log_pdf, self)
-
     def convert_log_prior(self, log_prior):
         """Returns a transformed log-prior class."""
         return TransformedLogPrior(log_prior, self)
-
-    def convert_cost(self, cost):
-        """Returns a transformed cost class."""
-        return TransformedCost(cost, self)
 
     def convert_boundaries(self, boundaries):
         """Returns a transformed boundaries class."""
@@ -51,6 +43,8 @@ class Transformation(ABC):
         Converts standard deviation `std`, either a scalar or a vector, from the model space
         to the search space around a parameter vector `q` in the search space.
         """
+        if isinstance(q, (int, float)):
+            q = np.asarray([q])
         jac_inv = np.linalg.pinv(self.jacobian(q))
         cov = jac_inv @ jac_inv.T
         return std * np.sqrt(np.diagonal(cov))
@@ -64,7 +58,7 @@ class Transformation(ABC):
         """
         Computes the Jacobian matrix and its partial derivatives at the parameter vector `q`.
 
-        Returns a tuple `(jacobian, jacobian_derivatives)`.
+        Returns a tuple `(jacobian, hessian)`.
         """
         raise NotImplementedError("jacobian_S1 method must be implemented if used.")
 
@@ -80,9 +74,9 @@ class Transformation(ABC):
         Computes the logarithm of the absolute value of the determinant of the Jacobian,
         and returns it along with its partial derivatives.
         """
-        jacobian, jacobian_derivatives = self.jacobian_S1(q)
+        jacobian, hessian = self.jacobian_S1(q)
         jacobian_inv = np.linalg.pinv(jacobian)
-        derivatives = np.array([np.trace(jacobian_inv @ djac) for djac in jacobian_derivatives])
+        derivatives = np.array([np.trace(jacobian_inv @ djac) for djac in hessian])
         return self.log_jacobian_det(q), derivatives
 
     @abstractmethod
@@ -90,14 +84,20 @@ class Transformation(ABC):
         """Returns the dimension of the parameter space this transformation is defined over."""
         pass
 
-    @abstractmethod
     def to_model(self, q: np.ndarray) -> np.ndarray:
         """Transforms a parameter vector `q` from the search space to the model space."""
-        pass
+        return self._transform(q, method="to_model")
 
-    @abstractmethod
     def to_search(self, p: np.ndarray) -> np.ndarray:
         """Transforms a parameter vector `p` from the model space to the search space."""
+        return self._transform(p, method="to_search")
+
+    @abstractmethod
+    def _transform(self, x: np.ndarray, method: str) -> np.ndarray:
+        """
+        Transforms a parameter vector `x` from the search space to the model space if `method`
+        is "to_model", or from the model space to the search space if `method` is "to_search".
+        """
         pass
 
     def is_elementwise(self) -> bool:
@@ -107,51 +107,39 @@ class Transformation(ABC):
         """
         raise NotImplementedError("is_elementwise method must be implemented if used.")
 
-class TransformedLogPDF(BaseCost):
-    """Transformed log-PDF class."""
-    def __init__(self, log_pdf, transformation):
-        self._log_pdf = log_pdf
-        self._transformation = transformation
-
-    def __call__(self, q):
-        p = self._transformation.to_model(q)
-        log_pdf = self._log_pdf(p)
-
-        # Calculate the PDF using change of variable
-        # Wikipedia: https://w.wiki/UsJ
-        log_jacobian_det = self._transformation.log_jacobian_det(q)
-        return log_pdf + log_jacobian_det
-
-    def _evaluateS1(self, x):
-        p = self._transformation.to_model(x)
-        log_pdf, log_pdf_derivatives = self._log_pdf._evaluateS1(p)
-        log_jacobian_det, log_jacobian_det_derivatives = self._transformation.log_jacobian_det_S1(x)
-        return log_pdf + log_jacobian_det, log_pdf_derivatives + log_jacobian_det_derivatives
-
-class TransformedLogPrior:
-    """Transformed log-prior class."""
-    def __init__(self, log_prior, transformation):
-        self._log_prior = log_prior
-        self._transformation = transformation
-
-    def __call__(self, q):
-        return self
-
-class TransformedCost(BaseCost):
-    """Transformed cost class."""
-    def __init__(self, cost, transformation):
-        self._cost = cost
-        self._transformation = transformation
-
-    def __call__(self, q ):
-        p = self._transformation.to_model(q)
-        return self._cost(p)
-
-    def _evaluateS1(self, x):
-        p = self._transformation.to_model(x)
-        return self._cost._evaluateS1(x)
-
-class TransformedBoundaries:
-    """Transformed boundaries class."""
+class TransformedBoundaries(PintsTransformedBoundaries):
+    """Transformed boundaries class inherited from Pints TransformedBoundaries."""
     def __init__(self, boundaries, transformation):
-        self._boundaries = boundaries
+        super().__init__(boundaries, transformation)
+
+
+# ---- To be implemented with Monte Carlo PR ------ #
+# class TransformedLogPDF(BaseCost):
+#     """Transformed log-PDF class."""
+#     def __init__(self, log_pdf, transformation):
+#         self._log_pdf = log_pdf
+#         self._transformation = transformation
+
+#     def __call__(self, q):
+#         p = self._transformation.to_model(q)
+#         log_pdf = self._log_pdf(p)
+
+#         # Calculate the PDF using change of variable
+#         # Wikipedia: https://w.wiki/UsJ
+#         log_jacobian_det = self._transformation.log_jacobian_det(q)
+#         return log_pdf + log_jacobian_det
+
+#     def _evaluateS1(self, x):
+#         p = self._transformation.to_model(x)
+#         log_pdf, log_pdf_derivatives = self._log_pdf._evaluateS1(p)
+#         log_jacobian_det, log_jacobian_det_derivatives = self._transformation.log_jacobian_det_S1(x)
+#         return log_pdf + log_jacobian_det, log_pdf_derivatives + log_jacobian_det_derivatives
+
+# class TransformedLogPrior:
+#     """Transformed log-prior class."""
+#     def __init__(self, log_prior, transformation):
+#         self._log_prior = log_prior
+#         self._transformation = transformation
+
+#     def __call__(self, q):
+#         return self

@@ -75,6 +75,9 @@ class BaseOptimiser:
             # Set default initial standard deviation (for all or no parameters)
             self.sigma0 = cost.parameters.get_sigma0() or self.sigma0
 
+            # Set transformation
+            self.transformation = cost.transformation
+
         else:
             try:
                 cost_test = cost(optimiser_kwargs.get("x0", []))
