@@ -7,7 +7,7 @@ parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
-parameters = [
+parameters = pybop.Parameters(
     pybop.Parameter(
         "Negative particle radius [m]",
         prior=pybop.Gaussian(6e-06, 0.1e-6),
@@ -20,7 +20,7 @@ parameters = [
         bounds=[1e-6, 9e-6],
         true_value=parameter_set["Positive particle radius [m]"],
     ),
-]
+)
 
 # Generate data
 sigma = 0.001
@@ -46,13 +46,7 @@ optim = pybop.CMAES(cost, max_iterations=100)
 
 # Run the optimisation
 x, final_cost = optim.run()
-print(
-    "True parameters:",
-    [
-        parameters[0].true_value,
-        parameters[1].true_value,
-    ],
-)
+print("True parameters:", parameters.true_value())
 print("Estimated parameters:", x)
 
 # Plot the time series

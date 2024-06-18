@@ -22,29 +22,29 @@ class TestObserver:
 
     @pytest.fixture
     def parameters(self):
-        return [
+        return pybop.Parameters(
             pybop.Parameter(
                 "k",
                 prior=pybop.Gaussian(0.1, 0.05),
                 bounds=[0, 1],
+                initial_value=0.1,
             ),
             pybop.Parameter(
                 "y0",
                 prior=pybop.Gaussian(1, 0.05),
                 bounds=[0, 3],
+                initial_value=1.0,
             ),
-        ]
-
-    @pytest.fixture
-    def x0(self):
-        return np.array([0.1, 1.0])
+        )
 
     @pytest.mark.unit
-    def test_observer(self, model, parameters, x0):
+    def test_observer(self, model, parameters):
         n = model.n_states
-        observer = pybop.Observer(parameters, model, signal=["2y"], x0=x0)
+        observer = pybop.Observer(parameters, model, signal=["2y"])
         t_eval = np.linspace(0, 1, 100)
-        expected = x0[1] * np.exp(-x0[0] * t_eval)
+        expected = parameters["y0"].initial_value * np.exp(
+            -parameters["k"].initial_value * t_eval
+        )
         for y, t in zip(expected, t_eval):
             observer.observe(t)
             np.testing.assert_array_almost_equal(
@@ -72,7 +72,7 @@ class TestObserver:
 
         # Test evaluate with different inputs
         observer._time_data = t_eval
-        observer.evaluate(x0)
+        observer.evaluate(parameters.initial_value())
         observer.evaluate(parameters)
 
         # Test evaluate with dataset
@@ -83,7 +83,7 @@ class TestObserver:
             }
         )
         observer._target = {"2y": expected}
-        observer.evaluate(x0)
+        observer.evaluate(parameters.initial_value())
 
     @pytest.mark.unit
     def test_unbuilt_model(self, parameters):
