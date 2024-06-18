@@ -38,7 +38,7 @@ class NUTS(BasePintsSampler):
         The number of chains to run.
     x0 : ndarray, optional
         Initial positions for the chains.
-    sigma0 : ndarray, optional
+    cov0 : ndarray, optional
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the NUTS sampler.
@@ -53,12 +53,12 @@ class NUTS(BasePintsSampler):
         The NUTS sampler class from PINTS.
     x0 : ndarray
         The initial positions of the chains.
-    sigma0 : ndarray
+    cov0 : ndarray
         The initial covariance matrix.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, sigma0=None, **kwargs):
-        super().__init__(log_pdf, chains, NoUTurnMCMC, x0=x0, sigma0=sigma0, **kwargs)
+    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
+        super().__init__(log_pdf, chains, NoUTurnMCMC, x0=x0, cov0=cov0, **kwargs)
 
 
 class DREAM(BasePintsSampler):
@@ -79,7 +79,7 @@ class DREAM(BasePintsSampler):
         The number of chains to run.
     x0 : ndarray, optional
         Initial positions for the chains.
-    sigma0 : ndarray, optional
+    cov0 : ndarray, optional
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the DREAM sampler.
@@ -94,12 +94,12 @@ class DREAM(BasePintsSampler):
         The DREAM sampler class from PINTS.
     x0 : ndarray
         The initial positions of the chains.
-    sigma0 : ndarray
+    cov0 : ndarray
         The initial covariance matrix.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, sigma0=None, **kwargs):
-        super().__init__(log_pdf, chains, PintsDREAM, x0=x0, sigma0=sigma0, **kwargs)
+    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
+        super().__init__(log_pdf, chains, PintsDREAM, x0=x0, cov0=cov0, **kwargs)
 
 
 class AdaptiveCovarianceMCMC(BasePintsSampler):
@@ -118,7 +118,7 @@ class AdaptiveCovarianceMCMC(BasePintsSampler):
         The number of chains to run.
     x0 : ndarray, optional
         Initial positions for the chains.
-    sigma0 : ndarray, optional
+    cov0 : ndarray, optional
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Adaptive Covariance MCMC sampler.
@@ -133,17 +133,17 @@ class AdaptiveCovarianceMCMC(BasePintsSampler):
         The Adaptive Covariance MCMC sampler class from PINTS.
     x0 : ndarray
         The initial positions of the chains.
-    sigma0 : ndarray
+    cov0 : ndarray
         The initial covariance matrix.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, sigma0=None, **kwargs):
+    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
             chains,
             PintsAdaptiveCovarianceMCMC,
             x0=x0,
-            sigma0=sigma0,
+            cov0=cov0,
             **kwargs,
         )
 
@@ -164,7 +164,7 @@ class DifferentialEvolutionMCMC(BasePintsSampler):
         The number of chains to run.
     x0 : ndarray, optional
         Initial positions for the chains.
-    sigma0 : ndarray, optional
+    cov0 : ndarray, optional
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Differential Evolution MCMC sampler.
@@ -179,17 +179,17 @@ class DifferentialEvolutionMCMC(BasePintsSampler):
         The Differential Evolution MCMC sampler class from PINTS.
     x0 : ndarray
         The initial positions of the chains.
-    sigma0 : ndarray
+    cov0 : ndarray
         The initial covariance matrix.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, sigma0=None, **kwargs):
+    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
             chains,
             PintsDifferentialEvolutionMCMC,
             x0=x0,
-            sigma0=sigma0,
+            cov0=cov0,
             **kwargs,
         )
 
@@ -210,7 +210,7 @@ class DramACMC(BasePintsSampler):
         The number of chains to run.
     x0 : ndarray, optional
         Initial positions for the chains.
-    sigma0 : ndarray, optional
+    cov0 : ndarray, optional
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the DRAM Adaptive Covariance MCMC sampler.
@@ -225,17 +225,17 @@ class DramACMC(BasePintsSampler):
         The DRAM Adaptive Covariance MCMC sampler class from PINTS.
     x0 : ndarray
         The initial positions of the chains.
-    sigma0 : ndarray
+    cov0 : ndarray
         The initial covariance matrix.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, sigma0=None, **kwargs):
+    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
             chains,
             PintsDramACMC,
             x0=x0,
-            sigma0=sigma0,
+            cov0=cov0,
             **kwargs,
         )
 
@@ -256,7 +256,7 @@ class EmceeHammerMCMC(BasePintsSampler):
         The number of chains to run.
     x0 : ndarray, optional
         Initial positions for the chains.
-    sigma0 : ndarray, optional
+    cov0 : ndarray, optional
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Emcee Hammer MCMC sampler.
@@ -271,17 +271,17 @@ class EmceeHammerMCMC(BasePintsSampler):
         The Emcee Hammer MCMC sampler class from PINTS.
     x0 : ndarray
         The initial positions of the chains.
-    sigma0 : ndarray
+    cov0 : ndarray
         The initial covariance matrix.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, sigma0=None, **kwargs):
+    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
             chains,
             PintsEmceeHammerMCMC,
             x0=x0,
-            sigma0=sigma0,
+            cov0=cov0,
             **kwargs,
         )
 
@@ -302,7 +302,7 @@ class HaarioACMC(BasePintsSampler):
         The number of chains to run.
     x0 : ndarray, optional
         Initial positions for the chains.
-    sigma0 : ndarray, optional
+    cov0 : ndarray, optional
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Haario Adaptive Covariance MCMC sampler.
@@ -317,17 +317,17 @@ class HaarioACMC(BasePintsSampler):
         The Haario Adaptive Covariance MCMC sampler class from PINTS.
     x0 : ndarray
         The initial positions of the chains.
-    sigma0 : ndarray
+    cov0 : ndarray
         The initial covariance matrix.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, sigma0=None, **kwargs):
+    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
             chains,
             PintsHaarioACMC,
             x0=x0,
-            sigma0=sigma0,
+            cov0=cov0,
             **kwargs,
         )
 
@@ -348,7 +348,7 @@ class HaarioBardenetACMC(BasePintsSampler):
         The number of chains to run.
     x0 : ndarray, optional
         Initial positions for the chains.
-    sigma0 : ndarray, optional
+    cov0 : ndarray, optional
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Haario-Bardenet Adaptive Covariance MCMC sampler.
@@ -363,17 +363,17 @@ class HaarioBardenetACMC(BasePintsSampler):
         The Haario-Bardenet Adaptive Covariance MCMC sampler class from PINTS.
     x0 : ndarray
         The initial positions of the chains.
-    sigma0 : ndarray
+    cov0 : ndarray
         The initial covariance matrix.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, sigma0=None, **kwargs):
+    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
             chains,
             PintsHaarioBardenetACMC,
             x0=x0,
-            sigma0=sigma0,
+            cov0=cov0,
             **kwargs,
         )
 
@@ -394,7 +394,7 @@ class HamiltonianMCMC(BasePintsSampler):
         The number of chains to run.
     x0 : ndarray, optional
         Initial positions for the chains.
-    sigma0 : ndarray, optional
+    cov0 : ndarray, optional
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Hamiltonian MCMC sampler.
@@ -409,17 +409,17 @@ class HamiltonianMCMC(BasePintsSampler):
         The Hamiltonian MCMC sampler class from PINTS.
     x0 : ndarray
         The initial positions of the chains.
-    sigma0 : ndarray
+    cov0 : ndarray
         The initial covariance matrix.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, sigma0=None, **kwargs):
+    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
             chains,
             PintsHamiltonianMCMC,
             x0=x0,
-            sigma0=sigma0,
+            cov0=cov0,
             **kwargs,
         )
 
@@ -440,7 +440,7 @@ class MALAMCMC(BasePintsSampler):
         The number of chains to run.
     x0 : ndarray, optional
         Initial positions for the chains.
-    sigma0 : ndarray, optional
+    cov0 : ndarray, optional
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the MALA MCMC sampler.
@@ -455,17 +455,17 @@ class MALAMCMC(BasePintsSampler):
         The MALA MCMC sampler class from PINTS.
     x0 : ndarray
         The initial positions of the chains.
-    sigma0 : ndarray
+    cov0 : ndarray
         The initial covariance matrix.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, sigma0=None, **kwargs):
+    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
             chains,
             PintsMALAMCMC,
             x0=x0,
-            sigma0=sigma0,
+            cov0=cov0,
             **kwargs,
         )
 
@@ -486,7 +486,7 @@ class MetropolisRandomWalkMCMC(BasePintsSampler):
         The number of chains to run.
     x0 : ndarray, optional
         Initial positions for the chains.
-    sigma0 : ndarray, optional
+    cov0 : ndarray, optional
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Metropolis Random Walk MCMC sampler.
@@ -501,17 +501,17 @@ class MetropolisRandomWalkMCMC(BasePintsSampler):
         The Metropolis Random Walk MCMC sampler class from PINTS.
     x0 : ndarray
         The initial positions of the chains.
-    sigma0 : ndarray
+    cov0 : ndarray
         The initial covariance matrix.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, sigma0=None, **kwargs):
+    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
             chains,
             PintsMetropolisRandomWalkMCMC,
             x0=x0,
-            sigma0=sigma0,
+            cov0=cov0,
             **kwargs,
         )
 
@@ -532,7 +532,7 @@ class MonomialGammaHamiltonianMCMC(BasePintsSampler):
         The number of chains to run.
     x0 : ndarray, optional
         Initial positions for the chains.
-    sigma0 : ndarray, optional
+    cov0 : ndarray, optional
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Monomial Gamma Hamiltonian MCMC sampler.
@@ -547,17 +547,17 @@ class MonomialGammaHamiltonianMCMC(BasePintsSampler):
         The Monomial Gamma Hamiltonian MCMC sampler class from PINTS.
     x0 : ndarray
         The initial positions of the chains.
-    sigma0 : ndarray
+    cov0 : ndarray
         The initial covariance matrix.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, sigma0=None, **kwargs):
+    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
             chains,
             PintsMonomialGammaHamiltonianMCMC,
             x0=x0,
-            sigma0=sigma0,
+            cov0=cov0,
             **kwargs,
         )
 
@@ -578,7 +578,7 @@ class PopulationMCMC(BasePintsSampler):
         The number of chains to run.
     x0 : ndarray, optional
         Initial positions for the chains.
-    sigma0 : ndarray, optional
+    cov0 : ndarray, optional
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Population MCMC sampler.
@@ -593,17 +593,17 @@ class PopulationMCMC(BasePintsSampler):
         The Population MCMC sampler class from PINTS.
     x0 : ndarray
         The initial positions of the chains.
-    sigma0 : ndarray
+    cov0 : ndarray
         The initial covariance matrix.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, sigma0=None, **kwargs):
+    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
             chains,
             PintsPopulationMCMC,
             x0=x0,
-            sigma0=sigma0,
+            cov0=cov0,
             **kwargs,
         )
 
@@ -624,7 +624,7 @@ class RaoBlackwellACMC(BasePintsSampler):
         The number of chains to run.
     x0 : ndarray, optional
         Initial positions for the chains.
-    sigma0 : ndarray, optional
+    cov0 : ndarray, optional
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Rao-Blackwell Adaptive Covariance MCMC sampler.
@@ -639,17 +639,17 @@ class RaoBlackwellACMC(BasePintsSampler):
         The Rao-Blackwell Adaptive Covariance MCMC sampler class from PINTS.
     x0 : ndarray
         The initial positions of the chains.
-    sigma0 : ndarray
+    cov0 : ndarray
         The initial covariance matrix.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, sigma0=None, **kwargs):
+    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
             chains,
             PintsRaoBlackwellACMC,
             x0=x0,
-            sigma0=sigma0,
+            cov0=cov0,
             **kwargs,
         )
 
@@ -670,7 +670,7 @@ class RelativisticMCMC(BasePintsSampler):
         The number of chains to run.
     x0 : ndarray, optional
         Initial positions for the chains.
-    sigma0 : ndarray, optional
+    cov0 : ndarray, optional
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Relativistic MCMC sampler.
@@ -685,17 +685,17 @@ class RelativisticMCMC(BasePintsSampler):
         The Relativistic MCMC sampler class from PINTS.
     x0 : ndarray
         The initial positions of the chains.
-    sigma0 : ndarray
+    cov0 : ndarray
         The initial covariance matrix.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, sigma0=None, **kwargs):
+    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
             chains,
             PintsRelativisticMCMC,
             x0=x0,
-            sigma0=sigma0,
+            cov0=cov0,
             **kwargs,
         )
 
@@ -716,7 +716,7 @@ class SliceDoublingMCMC(BasePintsSampler):
         The number of chains to run.
     x0 : ndarray, optional
         Initial positions for the chains.
-    sigma0 : ndarray, optional
+    cov0 : ndarray, optional
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Slice Doubling MCMC sampler.
@@ -731,17 +731,17 @@ class SliceDoublingMCMC(BasePintsSampler):
         The Slice Doubling MCMC sampler class from PINTS.
     x0 : ndarray
         The initial positions of the chains.
-    sigma0 : ndarray
+    cov0 : ndarray
         The initial covariance matrix.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, sigma0=None, **kwargs):
+    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
             chains,
             PintsSliceDoublingMCMC,
             x0=x0,
-            sigma0=sigma0,
+            cov0=cov0,
             **kwargs,
         )
 
@@ -762,7 +762,7 @@ class SliceRankShrinkingMCMC(BasePintsSampler):
         The number of chains to run.
     x0 : ndarray, optional
         Initial positions for the chains.
-    sigma0 : ndarray, optional
+    cov0 : ndarray, optional
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Slice Rank Shrinking MCMC sampler.
@@ -777,17 +777,17 @@ class SliceRankShrinkingMCMC(BasePintsSampler):
         The Slice Rank Shrinking MCMC sampler class from PINTS.
     x0 : ndarray
         The initial positions of the chains.
-    sigma0 : ndarray
+    cov0 : ndarray
         The initial covariance matrix.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, sigma0=None, **kwargs):
+    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
             chains,
             PintsSliceRankShrinkingMCMC,
             x0=x0,
-            sigma0=sigma0,
+            cov0=cov0,
             **kwargs,
         )
 
@@ -808,7 +808,7 @@ class SliceStepoutMCMC(BasePintsSampler):
         The number of chains to run.
     x0 : ndarray, optional
         Initial positions for the chains.
-    sigma0 : ndarray, optional
+    cov0 : ndarray, optional
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Slice Stepout MCMC sampler.
@@ -823,16 +823,16 @@ class SliceStepoutMCMC(BasePintsSampler):
         The Slice Stepout MCMC sampler class from PINTS.
     x0 : ndarray
         The initial positions of the chains.
-    sigma0 : ndarray
+    cov0 : ndarray
         The initial covariance matrix.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, sigma0=None, **kwargs):
+    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
             chains,
             PintsSliceStepoutMCMC,
             x0=x0,
-            sigma0=sigma0,
+            cov0=cov0,
             **kwargs,
         )

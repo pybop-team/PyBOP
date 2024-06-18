@@ -5,7 +5,7 @@ import pybop
 
 # Parameter set and model definition
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+synth_model = pybop.lithium_ion.DFN(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = [
@@ -20,18 +20,18 @@ parameters = [
 ]
 
 # Generate data
-init_soc = 0.5
+init_soc = 1.0
 sigma = 0.001
 experiment = pybop.Experiment(
     [
         (
-            "Discharge at 0.5C for 3 minutes (2 second period)",
-            "Charge at 0.5C for 3 minutes (2 second period)",
+            "Discharge at 0.5C until 2.5V (10 second period)",
+            "Charge at 0.5C until 4.2V (10 second period)",
         ),
     ]
-    * 2
+    # * 2
 )
-values = model.predict(init_soc=init_soc, experiment=experiment)
+values = synth_model.predict(init_soc=init_soc, experiment=experiment)
 
 
 def noise(sigma):
@@ -49,29 +49,33 @@ dataset = pybop.Dataset(
     }
 )
 
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 
-# Generate problem, cost function, and optimisation class
+# Generate problem, likelihood, and sampler
 problem = pybop.FittingProblem(
     model, parameters, dataset, signal=signal, init_soc=init_soc
 )
-likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma=[0.02, 0.02])
-prior1 = pybop.Gaussian(0.7, 0.02)
-prior2 = pybop.Gaussian(0.6, 0.02)
+likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma=[0.002, 0.002])
+prior1 = pybop.Gaussian(0.7, 0.1)
+prior2 = pybop.Gaussian(0.6, 0.1)
 composed_prior = pybop.ComposedLogPrior(prior1, prior2)
 posterior = pybop.LogPosterior(likelihood, composed_prior)
-x0 = [[0.68, 0.58], [0.68, 0.58], [0.68, 0.58]]
+
+x0 = []
+n_chains = 10
+for i in range(n_chains):
+    x0.append(np.array([0.68, 0.58]))
 
 optim = pybop.DREAM(
     posterior,
-    chains=3,
+    chains=n_chains,
     x0=x0,
-    max_iterations=400,
-    burn_in=50,
-    # parallel=True, # uncomment to enable parallelisation (MacOS/Linux only)
+    max_iterations=1000,
+    burn_in=250,
+    parallel=True,  # uncomment to enable parallelisation (MacOS/Linux only)
 )
 result = optim.run()
-
 
 # Create a histogram
 fig = go.Figure()

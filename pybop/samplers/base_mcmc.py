@@ -28,7 +28,7 @@ class BasePintsSampler(BaseSampler):
         sampler,
         burn_in=None,
         x0=None,
-        sigma0=None,
+        cov0=None,
         transformation=None,
         **kwargs,
     ):
@@ -40,17 +40,16 @@ class BasePintsSampler(BaseSampler):
             chains (int): Number of chains to be used.
             sampler: The sampler class to be used.
             x0 (list): Initial states for the chains.
-            sigma0: Initial standard deviation for the chains.
+            cov0: Initial standard deviation for the chains.
             transformation: Transformation to be applied to the samples.
             kwargs: Additional keyword arguments.
         """
-        super().__init__(x0, sigma0)
+        super().__init__(x0, cov0)
 
         # Set kwargs
         self._max_iterations = kwargs.get("max_iterations", 500)
         self._log_to_screen = kwargs.get("log_to_screen", True)
         self._log_filename = kwargs.get("log_filename", None)
-        self._num_warmup = kwargs.get("num_warmup", 250)
         self._initial_phase_iterations = kwargs.get("initial_phase_iterations", 250)
         self._chains_in_memory = kwargs.get("chains_in_memory", True)
         self._chain_files = kwargs.get("chain_files", None)
@@ -104,10 +103,10 @@ class BasePintsSampler(BaseSampler):
         try:
             if self._single_chain:
                 self._n_samplers = self._n_chains
-                self._samplers = [sampler(x0, sigma0=self._sigma0) for x0 in self._x0]
+                self._samplers = [sampler(x0, sigma0=self._cov0) for x0 in self._x0]
             else:
                 self._n_samplers = 1
-                self._samplers = [sampler(self._n_chains, self._x0, self._sigma0)]
+                self._samplers = [sampler(self._n_chains, self._x0, self._cov0)]
         except Exception as e:
             raise ValueError(f"Error constructing samplers: {e}")
 

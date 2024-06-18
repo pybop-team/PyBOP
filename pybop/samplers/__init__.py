@@ -6,7 +6,7 @@ class BaseSampler:
     """
     Base class for Monte Carlo samplers.
     """
-    def __init__(self, x0, sigma0):
+    def __init__(self, x0, cov0):
         """
         Initialise the base sampler.
 
@@ -14,7 +14,7 @@ class BaseSampler:
             cost (pybop.cost): The cost to be sampled.
         """
         self._x0 = x0
-        self._sigma0 = sigma0
+        self._cov0 = cov0
 
     def run(self) -> np.ndarray:
         """

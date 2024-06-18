@@ -16,7 +16,7 @@ class MCMCSampler:
         chains,
         sampler=AdaptiveCovarianceMCMC,
         x0=None,
-        sigma0=None,
+        cov0=None,
         **kwargs,
     ):
         """
@@ -32,7 +32,7 @@ class MCMCSampler:
             The MCMC sampler class to be used. Defaults to `pybop.MCMC`.
         x0 : np.ndarray, optional
             Initial positions for the MCMC chains. Defaults to None.
-        sigma0 : np.ndarray, optional
+        cov0 : np.ndarray, optional
             Initial step sizes for the MCMC chains. Defaults to None.
         **kwargs : dict
             Additional keyword arguments to pass to the sampler.
@@ -44,7 +44,7 @@ class MCMCSampler:
         """
 
         try:
-            self.sampler = sampler(log_pdf, chains, x0=x0, sigma0=sigma0, **kwargs)
+            self.sampler = sampler(log_pdf, chains, x0=x0, sigma0=cov0, **kwargs)
         except Exception as e:
             raise ValueError(
                 f"Sampler could not be constructed, raised an exception: {e}"
