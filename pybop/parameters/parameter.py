@@ -317,6 +317,12 @@ class Parameters:
 
         return sigma0
 
+    def priors(self) -> List:
+        """
+        Return the prior distribution of each parameter.
+        """
+        return [param.prior for param in self.param.values()]
+
     def initial_value(self) -> List:
         """
         Return the initial value of each parameter.
