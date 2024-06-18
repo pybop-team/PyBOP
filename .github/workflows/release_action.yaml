@@ -16,14 +16,8 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: "3.12"
-    - name: Install pypa/build
-      run: >-
-        python3 -m
-        pip install
-        build
-        --user
-    - name: Build a binary wheel and a source tarball
-      run: python -m build
+    - name: Build a source tarball and a wheel from it
+      run: pipx run build
     - name: Store the distribution packages
       uses: actions/upload-artifact@v3
       with:
@@ -77,20 +71,17 @@ jobs:
         inputs: >-
           ./dist/*.tar.gz
           ./dist/*.whl
-    - name: Upload artifact signatures to GitHub Release
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-      # Upload to GitHub Release using the `gh` CLI.
-      # `dist/` contains the built packages, and the
-      # sigstore-produced signatures and certificates.
-      run: >-
-        gh release upload
-        '${{ github.ref_name }}' dist/**
-        --repo '${{ github.repository }}'
+    - name: Publish artifacts and signatures to GitHub Releases
+      uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564  # v2.0.4
+      with:
+        # `dist/` contains the built packages, and the
+        # sigstore-produced signatures and certificates.
+        files: dist/*
 
   publish-to-testpypi:
     name: Publish Python 🐍 distribution 📦 to TestPyPI
-    if: contains(github.ref, 'rc') && github.repository == github.event.repository  # only publish to TestPyPI for rc tags
+    # only publish to TestPyPI for rc tags
+    if: contains(github.ref, 'rc') && github.repository == 'pybop-team/PyBOP'
     needs:
     - build
     runs-on: ubuntu-latest

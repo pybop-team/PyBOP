@@ -4,15 +4,15 @@
 # scheduled/nightly builds for PyBOP, i.e., in scheduled_tests.yaml
 # It generates a matrix of all combinations of the following variables:
 # - python_version: 3.X
-# - os: ubuntu-latest, windows-latest, macos-latest
+# - os: ubuntu-latest, windows-latest, macos-13 (amd64), macos-14 (arm64)
 # - pybamm_version: the last X versions of PyBaMM from PyPI, excluding release candidates
 
 # To update the matrix, the variables below can be modified as needed.
 
-python_version=("3.8" "3.9" "3.10" "3.11" "3.12")
-os=("ubuntu-latest" "windows-latest" "macos-latest")
-# This command fetches the last three PyBaMM versions excluding release candidates from PyPI
-pybamm_version=($(curl -s https://pypi.org/pypi/pybamm/json | jq -r '.releases | keys[]' | grep -v rc | tail -n 3 | paste -sd " " -))
+python_version=("3.9" "3.10" "3.11" "3.12")
+os=("ubuntu-latest" "windows-latest" "macos-13" "macos-14")
+# This command fetches the last two PyBaMM versions excluding release candidates from PyPI
+pybamm_version=($(curl -s https://pypi.org/pypi/pybamm/json | jq -r '.releases | keys[]' | grep -v rc | tail -n 2 | paste -sd " " -))
 
 # open dict
 json='{
@@ -41,7 +41,6 @@ json+='
 }'
 
 # Filter out incompatible combinations
-json=$(echo "$json" | jq -c 'del(.include[] | select(.pybamm_version == "23.5" and .python_version == "3.12"))')
 json=$(echo "$json" | jq -c 'del(.include[] | select(.pybamm_version == "23.9" and .python_version == "3.12"))')
 
 echo "$json" | jq -c .

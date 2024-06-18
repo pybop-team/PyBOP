@@ -4,7 +4,8 @@ import nox
 
 # nox options
 nox.options.reuse_existing_virtualenvs = True
-nox.options.venv_backend = "virtualenv"
+nox.options.force_venv_backend = "uv|virtualenv"
+nox.needs_version = ">=2024.4.15"
 
 # Environment variables to control CI behaviour for nox sessions
 PYBOP_SCHEDULED = int(os.environ.get("PYBOP_SCHEDULED", 0))
@@ -13,6 +14,7 @@ PYBAMM_VERSION = os.environ.get("PYBAMM_VERSION", None)
 
 @nox.session
 def unit(session):
+    session.install("setuptools", "wheel")
     session.install("-e", ".[all,dev]", silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
@@ -21,7 +23,9 @@ def unit(session):
 
 @nox.session
 def coverage(session):
+    session.install("setuptools", "wheel")
     session.install("-e", ".[all,dev]", silent=False)
+    session.install("pip")
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
     session.run("pytest", "--unit", "--cov", "--cov-append", "--cov-report=xml")
@@ -39,25 +43,34 @@ def coverage(session):
 
 @nox.session
 def plots(session):
+    """Run the tests that generate plots."""
+    session.install("setuptools", "wheel")
     session.install("-e", ".[plot,dev]", silent=False)
+    session.install("pip")
     session.run("pytest", "--plots", "-n", "0")
 
 
 @nox.session
 def integration(session):
+    """Run the integration tests."""
+    session.install("setuptools", "wheel")
     session.install("-e", ".[all,dev]", silent=False)
     session.run("pytest", "--integration")
 
 
 @nox.session
 def examples(session):
+    """Run the examples and notebooks"""
+    session.install("setuptools", "wheel")
     session.install("-e", ".[all,dev]", silent=False)
     session.run("pytest", "--examples")
+    notebooks(session)
 
 
 @nox.session
 def notebooks(session):
-    """Run the examples tests for Jupyter notebooks."""
+    """Run the Jupyter notebooks."""
+    session.install("setuptools", "wheel")
     session.install("-e", ".[all,dev]", silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
@@ -65,6 +78,7 @@ def notebooks(session):
         "pytest",
         "--notebooks",
         "--nbmake",
+        "--nbmake-timeout=1000",
         "examples/",
     )
 
@@ -86,6 +100,7 @@ def run_doc_tests(session):
     Checks if the documentation can be built, runs any doctests (currently not
     used).
     """
+    session.install("setuptools", "wheel")
     session.install("-e", ".[plot,docs,dev]", silent=False)
     session.run("pytest", "--docs", "-n", "0")
 
@@ -97,6 +112,7 @@ def lint(session):
 
     Credit: PyBaMM Team
     """
+    session.install("setuptools", "wheel")
     session.install("pre-commit", silent=False)
     session.run("pre-commit", "run", "--all-files")
 
@@ -115,6 +131,7 @@ def run_quick(session):
 @nox.session
 def benchmarks(session):
     """Run the benchmarks."""
+    session.install("setuptools", "wheel")
     session.install("-e", ".[all,dev]", silent=False)
     session.install("asv[virtualenv]")
     session.run("asv", "run", "--show-stderr", "--python=same")
@@ -126,6 +143,7 @@ def docs(session):
     Build the documentation and load it in a browser tab, rebuilding on changes.
     Credit: PyBaMM Team
     """
+    session.install("setuptools", "wheel")
     envbindir = session.bin
     session.install("-e", ".[all,docs]", silent=False)
     session.chdir("docs")

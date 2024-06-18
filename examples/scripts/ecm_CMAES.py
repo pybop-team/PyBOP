@@ -3,13 +3,14 @@ import numpy as np
 import pybop
 
 # Import the ECM parameter set from JSON
-params = pybop.ParameterSet(
+parameter_set = pybop.ParameterSet(
     json_path="examples/scripts/parameters/initial_ecm_parameters.json"
 )
+parameter_set.import_parameters()
 
 # Alternatively, define the initial parameter set with a dictionary
 # Add definitions for R's, C's, and initial overpotentials for any additional RC elements
-# params = pybop.ParameterSet(
+# parameter_set = pybop.ParameterSet(
 #     params_dict={
 #         "chemistry": "ecm",
 #         "Initial SoC": 0.5,
@@ -40,11 +41,11 @@ params = pybop.ParameterSet(
 
 # Define the model
 model = pybop.empirical.Thevenin(
-    parameter_set=params.import_parameters(), options={"number of rc elements": 2}
+    parameter_set=parameter_set, options={"number of rc elements": 2}
 )
 
 # Fitting parameters
-parameters = [
+parameters = pybop.Parameters(
     pybop.Parameter(
         "R0 [Ohm]",
         prior=pybop.Gaussian(0.0002, 0.0001),
@@ -55,10 +56,10 @@ parameters = [
         prior=pybop.Gaussian(0.0001, 0.0001),
         bounds=[1e-5, 1e-2],
     ),
-]
+)
 
 sigma = 0.001
-t_eval = np.arange(0, 900, 2)
+t_eval = np.arange(0, 900, 3)
 values = model.predict(t_eval=t_eval)
 corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
 
@@ -74,14 +75,13 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.Optimisation(cost, optimiser=pybop.CMAES)
-optim.set_max_iterations(100)
+optim = pybop.CMAES(cost, max_iterations=100)
 
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
 # Export the parameters to JSON
-params.export_parameters(
+parameter_set.export_parameters(
     "examples/scripts/parameters/fit_ecm_parameters.json", fit_params=parameters
 )
 

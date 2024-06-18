@@ -1,6 +1,6 @@
 import numpy as np
 
-from pybop._problem import BaseProblem
+from pybop import BaseProblem
 
 
 class StandaloneProblem(BaseProblem):
@@ -17,10 +17,9 @@ class StandaloneProblem(BaseProblem):
         signal=None,
         additional_variables=None,
         init_soc=None,
-        x0=None,
     ):
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc, x0
+            parameters, model, check_model, signal, additional_variables, init_soc
         )
         self._dataset = dataset.data
 
