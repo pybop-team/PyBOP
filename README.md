@@ -1,6 +1,6 @@
 <div align="center">
 
-  ![logo](https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/Temp_Logo.png)
+  ![logo](https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/logo/PyBOP_logo_flat.png)
   # Python Battery Optimisation and Parameterisation
 
 
