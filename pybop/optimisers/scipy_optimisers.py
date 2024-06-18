@@ -152,20 +152,19 @@ class SciPyMinimize(BaseSciPyOptimiser):
         """
 
         # Add callback storing history of parameter values
-        
+
         def base_callback(intermediate_result: OptimizeResult):
-                    self.log["x_best"].append(intermediate_result.x)
-                    self.log["cost"].append(
-                        intermediate_result.fun if self.minimising else -intermediate_result.fun
-                    )
-        
+            self.log["x_best"].append(intermediate_result.x)
+            self.log["cost"].append(
+                intermediate_result.fun if self.minimising else -intermediate_result.fun
+            )
+
         if self._options["method"] == "trust-constr":
 
             def callback(x: np.ndarray, intermediate_result: OptimizeResult):
                 base_callback(intermediate_result)
         else:
             callback = base_callback
-
 
         # Compute the absolute initial cost and resample if required
         self._cost0 = np.abs(self.cost(self.x0))
