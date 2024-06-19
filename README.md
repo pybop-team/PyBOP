@@ -1,6 +1,7 @@
 <div align="center">
 
-  ![logo](https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/Temp_Logo.png)
+  <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/logo/PyBOP_logo_flat.png" alt="logo.svg" width="700" />
+
   # Python Battery Optimisation and Parameterisation
 
 
@@ -25,8 +26,7 @@ PyBOP provides a complete set of tools for parameterisation and optimisation of 
 The diagram below shows the conceptual framework of PyBOP. This package is currently under development, so users can expect the API to evolve with future releases.
 
 <p align="center">
-    <!-- <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/pybop_architecture.svg" alt="pybop_arch.svg" width="600" /> -->
-    <img src="assets/PyBOP-high-level.svg" alt="pybop_arch.svg" width="700" />
+    <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/PyBOP-high-level.svg" alt="pybop_arch.svg" width="700" />
 </p>
 
 ## Installation
@@ -85,13 +85,13 @@ The table below lists the currently supported [models](https://github.com/pybop-
 |-----------------------------------------------|-------------------------------------------------------------|------------------------------------------|
 | Single Particle Model (SPM) | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) | Sum of Squared Errors (SSE) <tr></tr> |
 | Single Particle Model with Electrolyte (SPMe) | Particle Swarm Optimization (PSO) | Root Mean Squared Error (RMSE) <tr></tr> |
-| Doyle-Fuller-Newman (DFN) | Adaptive Moment Estimation (Adam) | Maximum Likelihood Estimation (MLE) <tr></tr> |
-| Many Particle Model (MPM) | Improved Resilient Backpropagation (iRProp-) | Maximum a Posteriori (MAP) <tr></tr> |
-| Multi-Species Multi-Reactants (MSMR) | Exponential Natural Evolution Strategy (xNES) | Unscented Kalman Filter (UKF) <tr></tr> |
-| Equivalent Circuit Models (ECM) | Separable Natural Evolution Strategy (sNES) | Gravimetric Energy Density <tr></tr> |
-| | Gradient Descent | Volumetric Energy Density <tr></tr> |
+| Doyle-Fuller-Newman (DFN) | Exponential Natural Evolution Strategy (xNES)  | Gaussian Log Likelihood <tr></tr> |
+| Many Particle Model (MPM) | Separable Natural Evolution Strategy (sNES) | Gaussian Log Likelihood w/ known variance <tr></tr> |
+| Multi-Species Multi-Reactants (MSMR) | Adaptive Moment Estimation with Weight Decay (AdamW) | Maximum a Posteriori (MAP) <tr></tr> |
+| Equivalent Circuit Models (ECM) | Improved Resilient Backpropagation (iRProp-) | Unscented Kalman Filter (UKF) <tr></tr> |
+| | SciPy Minimize & Differential Evolution | Gravimetric Energy Density <tr></tr> |
+| | Gradient Descent| Volumetric Energy Density<tr></tr> |
 | | Nelder-Mead | <tr></tr> |
-| | SciPy Minimize & Differential Evolution | <tr></tr> |
 
 </p>
 

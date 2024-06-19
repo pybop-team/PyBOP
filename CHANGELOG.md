@@ -2,6 +2,10 @@
 
 ## Features
 
+- [#174](https://github.com/pybop-team/PyBOP/issues/174) - Adds new logo and updates Readme for accessibility.
+- [#316](https://github.com/pybop-team/PyBOP/pull/316) - Adds Adam with weight decay (AdamW) optimiser, adds depreciation warning for pints.Adam implementation.
+- [#271](https://github.com/pybop-team/PyBOP/issues/271) - Aligns the output of the optimisers via a generalisation of Result class.
+- [#315](https://github.com/pybop-team/PyBOP/pull/315) - Updates __init__ structure to remove circular import issues and minimises dependancy imports across codebase for faster PyBOP module import. Adds type-hints to BaseModel and refactors rebuild parameter variables.
 - [#236](https://github.com/pybop-team/PyBOP/issues/236) - Restructures the optimiser classes, adds a new optimisation API through direct construction and keyword arguments, and fixes the setting of `max_iterations`, and `_minimising`. Introduces `pybop.BaseOptimiser`, `pybop.BasePintsOptimiser`, and `pybop.BaseSciPyOptimiser` classes.
 - [#321](https://github.com/pybop-team/PyBOP/pull/321) - Updates Prior classes with BaseClass, adds a `problem.sample_initial_conditions` method to improve stability of SciPy.Minimize optimiser.
 - [#249](https://github.com/pybop-team/PyBOP/pull/249) - Add WeppnerHuggins model and GITT example.
@@ -20,6 +24,10 @@
 
 ## Bug Fixes
 
+
+- [#165](https://github.com/pybop-team/PyBOP/issues/165) - Stores the attempted and best parameter values and the best cost for each iteration in the log attribute of the optimiser and updates the associated plots.
+- [#354](https://github.com/pybop-team/PyBOP/issues/354) - Fixes the calculation of the gradient in the `RootMeanSquaredError` cost.
+- [#347](https://github.com/pybop-team/PyBOP/issues/347) - Resets options between MSMR tests to cope with a bug in PyBaMM v23.9 which is fixed in PyBaMM v24.1.
 - [#337](https://github.com/pybop-team/PyBOP/issues/337) - Restores benchmarks, relaxes CI schedule for benchmarks and scheduled tests.
 - [#231](https://github.com/pybop-team/PyBOP/issues/231) - Allows passing of keyword arguments to PyBaMM models and disables build on initialisation.
 - [#321](https://github.com/pybop-team/PyBOP/pull/321) - Improves `integration/test_spm_parameterisation.py` stability, adds flakly pytest plugin, and `test_thevenin_parameterisation.py` integration test.
@@ -29,6 +37,15 @@
 - [#299](https://github.com/pybop-team/PyBOP/pull/299) - Bugfix multiprocessing support for Linux, MacOS, Windows (WSL) and improves coverage.
 - [#270](https://github.com/pybop-team/PyBOP/pull/270) - Updates PR template.
 - [#91](https://github.com/pybop-team/PyBOP/issues/91) - Adds a check on the number of parameters for CMAES and makes XNES the default optimiser.
+
+# [v24.3.1](https://github.com/pybop-team/PyBOP/tree/v24.3.1) - 2024-06-17
+
+## Features
+
+
+## Bug Fixes
+
+- [#369](https://github.com/pybop-team/PyBOP/pull/369) - Upper pins Numpy < 2.0 due to breaking Pints' functionality.
 
 # [v24.3](https://github.com/pybop-team/PyBOP/tree/v24.3) - 2024-03-25
 

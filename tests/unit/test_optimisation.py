@@ -23,17 +23,15 @@ class TestOptimisation:
 
     @pytest.fixture
     def one_parameter(self):
-        return [
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.6, 0.2),
-                bounds=[0.58, 0.62],
-            )
-        ]
+        return pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            prior=pybop.Gaussian(0.6, 0.2),
+            bounds=[0.58, 0.62],
+        )
 
     @pytest.fixture
     def two_parameters(self):
-        return [
+        return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.6, 0.2),
@@ -44,7 +42,7 @@ class TestOptimisation:
                 prior=pybop.Gaussian(0.55, 0.05),
                 bounds=[0.53, 0.57],
             ),
-        ]
+        )
 
     @pytest.fixture
     def model(self):
@@ -75,6 +73,7 @@ class TestOptimisation:
             (pybop.SciPyDifferentialEvolution, "SciPyDifferentialEvolution"),
             (pybop.GradientDescent, "Gradient descent"),
             (pybop.Adam, "Adam"),
+            (pybop.AdamW, "AdamW"),
             (pybop.CMAES, "Covariance Matrix Adaptation Evolution Strategy (CMA-ES)"),
             (pybop.SNES, "Seperable Natural Evolution Strategy (SNES)"),
             (pybop.XNES, "Exponential Natural Evolution Strategy (xNES)"),
@@ -112,6 +111,7 @@ class TestOptimisation:
             pybop.SciPyDifferentialEvolution,
             pybop.GradientDescent,
             pybop.Adam,
+            pybop.AdamW,
             pybop.SNES,
             pybop.XNES,
             pybop.PSO,
@@ -122,17 +122,18 @@ class TestOptimisation:
     @pytest.mark.unit
     def test_optimiser_kwargs(self, cost, optimiser):
         optim = optimiser(cost=cost, maxiter=1)
+        cost_bounds = cost.parameters.get_bounds()
 
         # Check maximum iterations
         optim.run()
-        assert optim._iterations == 1
+        assert optim.result.n_iterations == 1
 
         if optimiser in [pybop.GradientDescent, pybop.Adam, pybop.NelderMead]:
             # Ignored bounds
-            optim = optimiser(cost=cost, bounds=cost.bounds)
+            optim = optimiser(cost=cost, bounds=cost_bounds)
             assert optim.bounds is None
         elif optimiser in [pybop.PSO]:
-            assert optim.bounds == cost.bounds
+            assert optim.bounds == cost_bounds
             # Cannot accept infinite bounds
             bounds = {"upper": [np.inf], "lower": [0.57]}
             with pytest.raises(
@@ -142,7 +143,7 @@ class TestOptimisation:
                 optim = optimiser(cost=cost, bounds=bounds)
         else:
             # Check and update bounds
-            assert optim.bounds == cost.bounds
+            assert optim.bounds == cost_bounds
             bounds = {"upper": [0.63], "lower": [0.57]}
             optim = optimiser(cost=cost, bounds=bounds)
             assert optim.bounds == bounds
@@ -154,8 +155,10 @@ class TestOptimisation:
                 parallel=False,
                 min_iterations=3,
                 max_unchanged_iterations=5,
-                threshold=1e-2,
+                absolute_tolerance=1e-2,
+                relative_tolerance=1e-4,
                 max_evaluations=20,
+                threshold=1e-4,
             )
             with pytest.warns(
                 UserWarning,
@@ -209,6 +212,39 @@ class TestOptimisation:
             ):
                 optimiser(cost=cost, bounds={"upper": [np.inf], "lower": [0.57]})
 
+        # Test AdamW hyperparameters
+        if optimiser in [pybop.AdamW]:
+            optim = optimiser(cost=cost, b1=0.9, b2=0.999, lambda_=0.1)
+            optim.pints_optimiser.set_b1(0.9)
+            optim.pints_optimiser.set_b2(0.9)
+            optim.pints_optimiser.set_lambda(0.1)
+
+            assert optim.pints_optimiser._b1 == 0.9
+            assert optim.pints_optimiser._b2 == 0.9
+            assert optim.pints_optimiser._lambda == 0.1
+
+            # Incorrect values
+            for i, match in (("Value", -1),):
+                with pytest.raises(
+                    Exception, match="must be a numeric value between 0 and 1."
+                ):
+                    optim.pints_optimiser.set_b1(i)
+                with pytest.raises(
+                    Exception, match="must be a numeric value between 0 and 1."
+                ):
+                    optim.pints_optimiser.set_b2(i)
+                with pytest.raises(
+                    Exception, match="must be a numeric value between 0 and 1."
+                ):
+                    optim.pints_optimiser.set_lambda(i)
+
+            # Check defaults
+            assert optim.pints_optimiser.n_hyper_parameters() == 5
+            assert not optim.pints_optimiser.running()
+            assert optim.pints_optimiser.x_guessed() == optim.pints_optimiser._x0
+            with pytest.raises(Exception):
+                optim.pints_optimiser.tell([0.1])
+
         else:
             # Check and update initial values
             assert optim.x0 == cost.x0
@@ -217,16 +253,18 @@ class TestOptimisation:
             assert optim.x0 == x0_new
             assert optim.x0 != cost.x0
 
-        if optimiser in [pybop.SciPyMinimize]:
-            # Check a method that uses gradient information
-            optimiser(cost=cost, method="L-BFGS-B", jac=True, maxiter=10)
-            optim.run()
-            assert optim._iterations > 0
-            with pytest.raises(
-                ValueError,
-                match="Expected the jac option to be either True, False or None.",
-            ):
-                optim = optimiser(cost=cost, jac="Invalid string")
+    @pytest.mark.unit
+    def test_scipy_minimize_with_jac(self, cost):
+        # Check a method that uses gradient information
+        optim = pybop.SciPyMinimize(cost=cost, method="L-BFGS-B", jac=True, maxiter=10)
+        optim.run()
+        assert optim.result.scipy_result.success is True
+
+        with pytest.raises(
+            ValueError,
+            match="Expected the jac option to be either True, False or None.",
+        ):
+            optim = pybop.SciPyMinimize(cost=cost, jac="Invalid string")
 
     @pytest.mark.unit
     def test_single_parameter(self, cost):
@@ -289,8 +327,7 @@ class TestOptimisation:
         # Tests prior sampling
         for i in range(50):
             optim = pybop.Optimisation(cost=cost)
-
-            assert optim.x0 <= 0.62 and optim.x0 >= 0.58
+            assert optim.x0[0] < 0.62 and optim.x0[0] > 0.58
 
     @pytest.mark.unit
     @pytest.mark.parametrize(
@@ -311,7 +348,7 @@ class TestOptimisation:
         )
 
         # Define the problem and cost
-        problem = pybop.FittingProblem(model, [parameter], dataset)
+        problem = pybop.FittingProblem(model, parameter, dataset)
         cost = pybop.SumSquaredError(problem)
 
         # Create the optimisation class with infeasible solutions disabled
@@ -336,14 +373,14 @@ class TestOptimisation:
         # Test max evalutions
         optim = pybop.GradientDescent(cost=cost, max_evaluations=1, verbose=True)
         x, __ = optim.run()
-        assert optim._iterations == 1
+        assert optim.result.n_iterations == 1
 
         # Test max unchanged iterations
         optim = pybop.GradientDescent(
             cost=cost, max_unchanged_iterations=1, min_iterations=1
         )
         x, __ = optim.run()
-        assert optim._iterations == 2
+        assert optim.result.n_iterations == 2
 
         # Test guessed values
         optim.set_f_guessed_tracking(True)
@@ -353,18 +390,20 @@ class TestOptimisation:
         with pytest.raises(ValueError):
             optim.set_max_iterations(-1)
         with pytest.raises(ValueError):
-            optim.set_max_evaluations(-1)
-        with pytest.raises(ValueError):
             optim.set_min_iterations(-1)
         with pytest.raises(ValueError):
             optim.set_max_unchanged_iterations(-1)
         with pytest.raises(ValueError):
-            optim.set_max_unchanged_iterations(1, threshold=-1)
+            optim.set_max_unchanged_iterations(1, absolute_tolerance=-1)
+        with pytest.raises(ValueError):
+            optim.set_max_unchanged_iterations(1, relative_tolerance=-1)
+        with pytest.raises(ValueError):
+            optim.set_max_evaluations(-1)
 
         optim = pybop.Optimisation(cost=cost)
 
         # Trigger threshold
-        optim._threshold = np.inf
+        optim.set_threshold(np.inf)
         optim.run()
         optim.set_max_unchanged_iterations()
 
@@ -383,7 +422,7 @@ class TestOptimisation:
 
         optim.pints_optimiser.stop = optimiser_error
         optim.run()
-        assert optim._iterations == 1
+        assert optim.result.n_iterations == 1
 
         # Test no stopping condition
         with pytest.raises(
@@ -401,7 +440,7 @@ class TestOptimisation:
         for optimiser in [pybop.SciPyMinimize, pybop.GradientDescent]:
             optim = optimiser(cost=cost, allow_infeasible_solutions=False, maxiter=1)
             optim.run()
-            assert optim._iterations == 1
+            assert optim.result.n_iterations == 1
 
     @pytest.mark.unit
     def test_unphysical_result(self, cost):

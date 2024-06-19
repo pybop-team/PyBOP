@@ -1,10 +1,12 @@
 import warnings
 
 import numpy as np
-import pybamm
+from pybamm import DummySolver, Parameter, ParameterValues, citations
+from pybamm import lithium_ion as pybamm_lithium_ion
+from pybamm import t as pybamm_t
 
 
-class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
+class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
     """
     WeppnerHuggins Model for GITT. Credit: pybamm-param team.
 
@@ -38,7 +40,7 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
 
         super().__init__({}, name)
 
-        pybamm.citations.register("""
+        citations.register("""
             @article{Weppner1977,
             title={{Determination of the kinetic parameters
             of mixed-conducting electrodes and application to the system Li3Sb}},
@@ -58,26 +60,24 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
         self.options["working electrode"] = "positive"
         self._summary_variables = []
 
-        t = pybamm.t
+        t = pybamm_t
         ######################
         # Parameters
         ######################
 
-        d_s = pybamm.Parameter("Positive electrode diffusivity [m2.s-1]")
+        d_s = Parameter("Positive electrode diffusivity [m2.s-1]")
 
-        c_s_max = pybamm.Parameter(
-            "Maximum concentration in positive electrode [mol.m-3]"
-        )
+        c_s_max = Parameter("Maximum concentration in positive electrode [mol.m-3]")
 
         i_app = self.param.current_density_with_time
 
-        U = pybamm.Parameter("Reference OCP [V]")
+        U = Parameter("Reference OCP [V]")
 
-        U_prime = pybamm.Parameter("Derivative of the OCP wrt stoichiometry [V]")
+        U_prime = Parameter("Derivative of the OCP wrt stoichiometry [V]")
 
-        epsilon = pybamm.Parameter("Positive electrode active material volume fraction")
+        epsilon = Parameter("Positive electrode active material volume fraction")
 
-        r_particle = pybamm.Parameter("Positive particle radius [m]")
+        r_particle = Parameter("Positive particle radius [m]")
 
         a = 3 * (epsilon / r_particle)
 
@@ -110,7 +110,7 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
 
     @property
     def default_parameter_values(self):
-        parameter_values = pybamm.ParameterValues("Xu2019")
+        parameter_values = ParameterValues("Xu2019")
         parameter_values.update(
             {
                 "Reference OCP [V]": 4.1821,
@@ -134,4 +134,4 @@ class BaseWeppnerHuggins(pybamm.lithium_ion.BaseModel):
 
     @property
     def default_solver(self):
-        return pybamm.DummySolver()
+        return DummySolver()

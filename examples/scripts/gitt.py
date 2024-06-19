@@ -35,14 +35,12 @@ parameter_set.update(
 # Define the cost to optimise
 model = pybop.lithium_ion.WeppnerHuggins(parameter_set=parameter_set)
 
-parameters = [
-    pybop.Parameter(
-        "Positive electrode diffusivity [m2.s-1]",
-        prior=pybop.Gaussian(5e-14, 1e-13),
-        bounds=[1e-16, 1e-11],
-        true_value=parameter_set["Positive electrode diffusivity [m2.s-1]"],
-    ),
-]
+parameters = pybop.Parameter(
+    "Positive electrode diffusivity [m2.s-1]",
+    prior=pybop.Gaussian(5e-14, 1e-13),
+    bounds=[1e-16, 1e-11],
+    true_value=parameter_set["Positive electrode diffusivity [m2.s-1]"],
+)
 
 problem = pybop.FittingProblem(
     model,

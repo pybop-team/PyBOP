@@ -1,4 +1,4 @@
-from ..base_model import BaseModel
+from pybop.models.base_model import BaseModel
 
 
 class ECircuitModel(BaseModel):
@@ -43,13 +43,25 @@ class ECircuitModel(BaseModel):
         solver=None,
         **model_kwargs,
     ):
-        super().__init__(name=name, parameter_set=parameter_set)
-
         model_options = dict(build=False)
         for key, value in model_kwargs.items():
             model_options[key] = value
         self.pybamm_model = pybamm_model(**model_options)
         self._unprocessed_model = self.pybamm_model
+
+        # Correct OCP if set to default
+        if (
+            parameter_set is not None
+            and "Open-circuit voltage [V]" in parameter_set.params
+        ):
+            default_ocp = self.pybamm_model.default_parameter_values[
+                "Open-circuit voltage [V]"
+            ]
+            if parameter_set.params["Open-circuit voltage [V]"] == "default":
+                print("Setting open-circuit voltage to default function")
+                parameter_set.params["Open-circuit voltage [V]"] = default_ocp
+
+        super().__init__(name=name, parameter_set=parameter_set)
 
         # Set parameters, using either the provided ones or the default
         self.default_parameter_values = self.pybamm_model.default_parameter_values
@@ -71,7 +83,7 @@ class ECircuitModel(BaseModel):
         self._built_initial_soc = None
         self._mesh = None
         self._disc = None
-        self.rebuild_parameters = {}
+        self.geometric_parameters = {}
 
     def _check_params(self, inputs=None, allow_infeasible_solutions=True):
         """

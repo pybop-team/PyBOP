@@ -56,4 +56,4 @@ class ExponentialDecay(BaseModel):
         self._built_initial_soc = None
         self._mesh = None
         self._disc = None
-        self.rebuild_parameters = {}
+        self.geometric_parameters = {}

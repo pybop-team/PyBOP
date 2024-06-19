@@ -1,6 +1,6 @@
-import pybamm
+from pybamm import equivalent_circuit as pybamm_equivalent_circuit
 
-from .base_ecm import ECircuitModel
+from pybop.models.empirical.base_ecm import ECircuitModel
 
 
 class Thevenin(ECircuitModel):
@@ -41,7 +41,7 @@ class Thevenin(ECircuitModel):
         **model_kwargs,
     ):
         super().__init__(
-            pybamm_model=pybamm.equivalent_circuit.Thevenin, name=name, **model_kwargs
+            pybamm_model=pybamm_equivalent_circuit.Thevenin, name=name, **model_kwargs
         )
 
     def _check_params(self, inputs=None, allow_infeasible_solutions=True):

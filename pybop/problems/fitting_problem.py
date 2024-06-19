@@ -13,8 +13,8 @@ class FittingProblem(BaseProblem):
     ----------
     model : object
         The model to fit.
-    parameters : list
-        List of parameters for the problem.
+    parameters : pybop.Parameter or pybop.Parameters
+        An object or list of the parameters for the problem.
     dataset : Dataset
         Dataset object containing the data to fit the model to.
     signal : str, optional
@@ -23,8 +23,6 @@ class FittingProblem(BaseProblem):
         Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
     init_soc : float, optional
         Initial state of charge (default: None).
-    x0 : np.ndarray, optional
-        Initial parameter values (default: None).
     """
 
     def __init__(
@@ -36,14 +34,13 @@ class FittingProblem(BaseProblem):
         signal=["Voltage [V]"],
         additional_variables=[],
         init_soc=None,
-        x0=None,
     ):
         # Add time and remove duplicates
         additional_variables.extend(["Time [s]"])
         additional_variables = list(set(additional_variables))
 
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc, x0
+            parameters, model, check_model, signal, additional_variables, init_soc
         )
         self._dataset = dataset.data
         self.x = self.x0
@@ -60,7 +57,6 @@ class FittingProblem(BaseProblem):
         if model is not None:
             self._model.signal = self.signal
             self._model.additional_variables = self.additional_variables
-            self._model.n_parameters = self.n_parameters
             self._model.n_outputs = self.n_outputs
             self._model.n_time_data = self.n_time_data
 
@@ -92,10 +88,8 @@ class FittingProblem(BaseProblem):
         y : np.ndarray
             The model output y(t) simulated with inputs x.
         """
-        if np.any(x != self.x) and self._model.matched_parameters:
-            for i, param in enumerate(self.parameters):
-                param.update(value=x[i])
-
+        if np.any(x != self.x) and self._model.rebuild_parameters:
+            self.parameters.update(values=x)
             self._model.rebuild(parameters=self.parameters)
             self.x = x
 
@@ -118,7 +112,7 @@ class FittingProblem(BaseProblem):
             A tuple containing the simulation result y(t) and the sensitivities dy/dx(t) evaluated
             with given inputs x.
         """
-        if self._model.matched_parameters:
+        if self._model.rebuild_parameters:
             raise RuntimeError(
                 "Gradient not available when using geometric parameters."
             )
