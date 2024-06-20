@@ -1,5 +1,6 @@
 import numpy as np
-import pybamm
+from pybamm import Interpolant, solvers
+from pybamm import t as pybamm_t
 
 
 class Dataset:
@@ -20,10 +21,10 @@ class Dataset:
         Initialize a Dataset instance with data and a set of names.
         """
 
-        if isinstance(data_dictionary, pybamm.solvers.solution.Solution):
+        if isinstance(data_dictionary, solvers.solution.Solution):
             data_dictionary = data_dictionary.get_data_dict()
         if not isinstance(data_dictionary, dict):
-            raise ValueError("The input to pybop.Dataset must be a dictionary.")
+            raise TypeError("The input to pybop.Dataset must be a dictionary.")
         self.data = data_dictionary
         self.names = self.data.keys()
 
@@ -64,7 +65,7 @@ class Dataset:
         Returns
         -------
         list or np.ndarray
-            The data series corresonding to the key.
+            The data series corresponding to the key.
 
         Raises
         ------
@@ -91,7 +92,7 @@ class Dataset:
         """
 
         if self.variable == "time":
-            self.Interpolant = pybamm.Interpolant(self.x, self.y, pybamm.t)
+            self.Interpolant = Interpolant(self.x, self.y, pybamm_t)
         else:
             NotImplementedError("Only time interpolation is supported")
 
