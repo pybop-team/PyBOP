@@ -1,5 +1,4 @@
 import numpy as np
-import scipy.optimize
 
 import pybop
 
@@ -44,13 +43,8 @@ class ConstrainedThevenin(pybop.empirical.Thevenin):
     def __init__(self, tau_limits: list | np.ndarray, **model_kwargs):
         super().__init__(**model_kwargs)
         if tau_limits is None:
-            tau_limits = [np.inf] * self.pybamm_model.options[
-                "number of rc elements"
-            ]
-        elif (
-            len(tau_limits)
-            != self.pybamm_model.options["number of rc elements"]
-        ):
+            tau_limits = [np.inf] * self.pybamm_model.options["number of rc elements"]
+        elif len(tau_limits) != self.pybamm_model.options["number of rc elements"]:
             raise ValueError(
                 "Length of tau constraints must match number of rc elements"
             )
@@ -107,9 +101,7 @@ parameters = [
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
 values = model.predict(t_eval=t_eval)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(
-    0, sigma, len(t_eval)
-)
+corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
 
 # Form dataset
 dataset = pybop.Dataset(

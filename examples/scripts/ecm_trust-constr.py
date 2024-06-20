@@ -10,7 +10,6 @@ import pybop
 # parameter_set.import_parameters()
 
 
-
 # Alternatively, define the initial parameter set with a dictionary
 # Add definitions for R's, C's, and initial overpotentials for any additional RC elements
 parameter_set = {
