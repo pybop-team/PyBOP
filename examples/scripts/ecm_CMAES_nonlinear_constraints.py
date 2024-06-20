@@ -9,6 +9,8 @@ import pybop
 # )
 # parameter_set.import_parameters()
 
+
+
 # Alternatively, define the initial parameter set with a dictionary
 # Add definitions for R's, C's, and initial overpotentials for any additional RC elements
 parameter_set = {
@@ -37,6 +39,7 @@ parameter_set = {
     "C2 [F]": 5000,
     "Entropic change [V/K]": 0.0004,
 }
+
 
 # Define the model
 model = pybop.empirical.Thevenin(
@@ -76,7 +79,8 @@ dataset = pybop.Dataset(
     }
 )
 
-tau_constraint = scipy.optimize.NonlinearConstraint(lambda x: x[1] * x[2], 0, 10)
+# Could pass in a list for further constraints
+tau_constraint = scipy.optimize.NonlinearConstraint(lambda x: x[1] * x[2], 0, 0.5)
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
@@ -84,12 +88,11 @@ cost = pybop.SumSquaredError(problem)
 optim = pybop.SciPyMinimize(
     cost,
     method="trust-constr",
-    constraints=[tau_constraint],
+    constraints=tau_constraint,
 )
 
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
-
 
 # Plot the time series
 pybop.plot_dataset(dataset)
