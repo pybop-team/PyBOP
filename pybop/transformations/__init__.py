@@ -9,9 +9,9 @@ class Transformation(ABC):
     Abstract base class for transformations between two parameter spaces: the model
     parameter space and a search space.
 
-    If `trans` is an instance of a `Transformation` class, you can apply the
+    If `transform` is an instance of a `Transformation` class, you can apply the
     transformation of a parameter vector from the model space `p` to the search
-    space `q` using `q = trans.to_search(p)` and the inverse using `p = trans.to_model(q)`.
+    space `q` using `q = transform.to_search(p)` and the inverse using `p = transform.to_model(q)`.
 
     Based on pints.transformation method.
 
@@ -21,14 +21,14 @@ class Transformation(ABC):
            http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.47.9023
     .. [2] Kaare Brandt Petersen and Michael Syskind Pedersen. "The Matrix Cookbook." 2012.
     """
-
-    def convert_log_prior(self, log_prior):
-        """Returns a transformed log-prior class."""
-        return TransformedLogPrior(log_prior, self)
+    # ---- To be implemented with Monte Carlo PR ------ #
+    # def convert_log_prior(self, log_prior):
+    #     """Returns a transformed log-prior class."""
+    #     return TransformedLogPrior(log_prior, self)
 
     def convert_boundaries(self, boundaries):
         """Returns a transformed boundaries class."""
-        return TransformedBoundaries(boundaries, self)
+        return PintsTransformedBoundaries(boundaries, self)
 
     def convert_covariance_matrix(self, covariance: np.ndarray, q: np.ndarray) -> np.ndarray:
         """
@@ -106,12 +106,6 @@ class Transformation(ABC):
         element-by-element independently.
         """
         raise NotImplementedError("is_elementwise method must be implemented if used.")
-
-class TransformedBoundaries(PintsTransformedBoundaries):
-    """Transformed boundaries class inherited from Pints TransformedBoundaries."""
-    def __init__(self, boundaries, transformation):
-        super().__init__(boundaries, transformation)
-
 
 # ---- To be implemented with Monte Carlo PR ------ #
 # class TransformedLogPDF(BaseCost):

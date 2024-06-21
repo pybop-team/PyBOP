@@ -122,6 +122,8 @@ class Test_SPM_Parameterisation:
                 assert initial_cost > final_cost
             else:
                 assert initial_cost < final_cost
+        else:
+            raise ValueError("Initial value is the same as the ground truth value.")
         np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
     @pytest.fixture

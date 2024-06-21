@@ -59,7 +59,7 @@ class ScaledTransformation(Transformation):
         n_parameters: int = 1,
     ):
         self._translate = translate
-        self._scale = np.asarray([scale])
+        self._scale = np.asarray([float(scale)])
         self._inverse_scale = np.reciprocal(self._scale)
         self._n_parameters = n_parameters
 
