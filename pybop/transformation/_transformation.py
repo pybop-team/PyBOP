@@ -7,9 +7,29 @@ from pybop import Transformation
 
 class IdentityTransformation(Transformation):
     """
-    Identity transformation between two parameter spaces: the model parameter space and a search space.
+    This class implements a trivial transformation where the model parameter space
+    and the search space are identical. It extends the base Transformation class.
 
-    Based on pints.IdentityTransformation method.
+    The transformation is defined as:
+    - to_search: y = x
+    - to_model: x = y
+
+    Key properties:
+    1. Jacobian: Identity matrix
+    2. Log determinant of Jacobian: Always 0
+    3. Elementwise: True (each output dimension depends only on the corresponding input dimension)
+
+    Use cases:
+    1. When no transformation is needed between spaces
+    2. As a placeholder in composite transformations
+    3. For testing and benchmarking other transformations
+
+    Note: While this transformation doesn't change the parameters, it still provides
+    all the methods required by the Transformation interface, making it useful in
+    scenarios where a transformation object is expected but no actual transformation
+    is needed.
+
+    Initially based on pints.IdentityTransformation method.
     """
 
     def __init__(self, n_parameters: int = 1):
@@ -43,21 +63,36 @@ class IdentityTransformation(Transformation):
 
 class ScaledTransformation(Transformation):
     """
-    Scaled transformation between two parameter spaces: the model parameter space and a search space.
+    This class implements a linear transformation between the model parameter space
+    and a search space, using a coefficient (scale factor) and an intercept (offset).
+    It extends the base Transformation class.
 
-    Based on pints.ScaledTransformation method.
+    The transformation is defined as:
+    - to_search: y = coefficient * (x + intercept)
+    - to_model: x = y / coefficient - intercept
+
+    Where:
+    - x is in the model parameter space
+    - y is in the search space
+    - coefficient is the scaling factor
+    - intercept is the offset
+
+    This transformation is useful for scaling and shifting parameters to a more
+    suitable range for optimisation algorithms.
+
+    Based on pints.ScaledTransformation class.
     """
 
     def __init__(
         self,
-        scale: Union[list, float, np.ndarray],
-        translate: Union[list, float, np.ndarray] = 0,
+        coefficient: Union[list, float, np.ndarray],
+        intercept: Union[list, float, np.ndarray] = 0,
         n_parameters: int = 1,
     ):
         self._n_parameters = n_parameters
-        self._translate = self._verify_input(translate)
-        self._scale = self._verify_input(scale)
-        self._inverse_scale = np.reciprocal(self._scale)
+        self._intercept = self._verify_input(intercept)
+        self._coefficient = self._verify_input(coefficient)
+        self._inverse_coeff = np.reciprocal(self._coefficient)
 
     def is_elementwise(self) -> bool:
         """See :meth:`Transformation.is_elementwise()`."""
@@ -65,7 +100,7 @@ class ScaledTransformation(Transformation):
 
     def jacobian(self, q: np.ndarray) -> np.ndarray:
         """See :meth:`Transformation.jacobian()`."""
-        return np.diag(self._inverse_scale)
+        return np.diag(self._inverse_coeff)
 
     def jacobian_S1(self, q: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         """See :meth:`Transformation.jacobian_S1()`."""
@@ -74,7 +109,7 @@ class ScaledTransformation(Transformation):
 
     def log_jacobian_det(self, q: np.ndarray) -> float:
         """See :meth:`Transformation.log_jacobian_det()`."""
-        return np.sum(np.log(np.abs(self._scale)))
+        return np.sum(np.log(np.abs(self._coefficient)))
 
     def log_jacobian_det_S1(self, q: np.ndarray) -> Tuple[float, np.ndarray]:
         """See :meth:`Transformation.log_jacobian_det_S1()`."""
@@ -84,18 +119,38 @@ class ScaledTransformation(Transformation):
         """See :meth:`Transformation._transform`."""
         x = self._verify_input(x)
         if method == "to_model":
-            return x * self._inverse_scale - self._translate
+            return x * self._inverse_coeff - self._intercept
         elif method == "to_search":
-            return self._scale * (x + self._translate)
+            return self._coefficient * (x + self._intercept)
         else:
             raise ValueError(f"Unknown method: {method}")
 
 
 class LogTransformation(Transformation):
     """
-    Log transformation between two parameter spaces: the model parameter space and a search space.
+    This class implements a logarithmic transformation between the model parameter space
+    and a search space. It extends the base Transformation class.
 
-    Based on pints.LogTransformation method.
+    The transformation is defined as:
+    - to_search: y = log(x)
+    - to_model: x = exp(y)
+
+    Where:
+    - x is in the model parameter space (strictly positive)
+    - y is in the search space (can be any real number)
+
+    This transformation is particularly useful for:
+    1. Parameters that are strictly positive and may span several orders of magnitude.
+    2. Converting multiplicative processes to additive ones in the search space.
+    3. Ensuring positivity constraints without explicit bounds in optimisation.
+
+    Note: Care should be taken when using this transformation, as it can introduce
+    bias in the parameter estimates if not accounted for properly in the likelihood
+    or cost function. Simply, E[log(x)] <= log(E[x]) as per to Jensen's inequality.
+    For more information, see Jensen's inequality:
+    https://en.wikipedia.org/w/index.php?title=Jensen%27s_inequality&oldid=1212437916#Probabilistic_form
+
+    Initially based on pints.LogTransformation class.
     """
 
     def __init__(self, n_parameters: int = 1):
@@ -137,10 +192,14 @@ class ComposedTransformation(Transformation):
     N-dimensional Transformation composed of one or more other N_i-dimensional
     sub-transformations, where the sum of N_i equals N.
 
+    This class allows for the composition of multiple transformations, each potentially
+    operating on a different number of dimensions. The total dimensionality of the
+    composed transformation is the sum of the dimensionalities of its components.
+
     The dimensionality of the individual transformations does not have to be
     the same, i.e., N_i != N_j is allowed.
 
-    Extends pybop.Transformation. Based on pints.ComposedTransformation method.
+    Extends pybop.Transformation. Initially based on pints.ComposedTransformation class.
     """
 
     def __init__(self, transformations: List[Transformation]):
@@ -154,6 +213,19 @@ class ComposedTransformation(Transformation):
         self._update_methods()
 
     def _append_transformation(self, transformation: Transformation):
+        """
+        Append a transformation to the internal list of transformations.
+
+        Parameters
+        ----------
+        transformation : Transformation
+            Transformation to append.
+
+        Raises
+        ------
+        ValueError
+            If the appended object is not a Transformation.
+        """
         if not isinstance(transformation, Transformation):
             raise ValueError("The appended object must be a Transformation.")
         self._transformations.append(transformation)
@@ -161,6 +233,9 @@ class ComposedTransformation(Transformation):
         self._is_elementwise = self._is_elementwise and transformation.is_elementwise()
 
     def _update_methods(self):
+        """
+        Update the internal methods based on whether the transformation is elementwise.
+        """
         if self._is_elementwise:
             self._jacobian = self._elementwise_jacobian
             self._log_jacobian_det = self._elementwise_log_jacobian_det
@@ -174,19 +249,24 @@ class ComposedTransformation(Transformation):
         """
         Append a new transformation to the existing composition.
 
-        Args:
-            transformation (Transformation): The transformation to append.
+        Parameters
+        ----------
+        transformation : Transformation
+            The transformation to append.
         """
         self._append_transformation(transformation)
         self._update_methods()
 
     def is_elementwise(self) -> bool:
+        """See :meth:`Transformation.is_elementwise()`."""
         return self._is_elementwise
 
     def jacobian(self, q: np.ndarray) -> np.ndarray:
+        """See :meth:`Transformation.jacobian()`."""
         return self._jacobian(q)
 
     def jacobian_S1(self, q: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """See :meth:`Transformation.jacobian_S1()`."""
         q = self._verify_input(q)
         output_S1 = np.zeros(
             (self._n_parameters, self._n_parameters, self._n_parameters)
@@ -207,9 +287,11 @@ class ComposedTransformation(Transformation):
         return self._log_jacobian_det(q)
 
     def log_jacobian_det_S1(self, q: np.ndarray) -> Tuple[float, np.ndarray]:
+        """See :meth:`Transformation.log_jacobian_det_S1()`."""
         return self._log_jacobian_det_S1(q)
 
     def _transform(self, data: np.ndarray, method: str) -> np.ndarray:
+        """See :meth:`Transformation._transform`."""
         data = self._verify_input(data)
         output = np.zeros_like(data)
         lo = 0
@@ -222,6 +304,19 @@ class ComposedTransformation(Transformation):
         return output
 
     def _elementwise_jacobian(self, q: np.ndarray) -> np.ndarray:
+        """
+        Compute the elementwise Jacobian of the composed transformation.
+
+        Parameters
+        ----------
+        q : np.ndarray
+            Input array.
+
+        Returns
+        -------
+        np.ndarray
+            Diagonal matrix representing the elementwise Jacobian.
+        """
         q = self._verify_input(q)
         diag = np.zeros(self._n_parameters)
         lo = 0
@@ -234,6 +329,19 @@ class ComposedTransformation(Transformation):
         return np.diag(diag)
 
     def _elementwise_log_jacobian_det(self, q: np.ndarray) -> float:
+        """
+        Compute the elementwise logarithm of the determinant of the Jacobian.
+
+        Parameters
+        ----------
+        q : np.ndarray
+            Input array.
+
+        Returns
+        -------
+        float
+            Sum of log determinants of individual transformations.
+        """
         q = self._verify_input(q)
         return sum(
             transformation.log_jacobian_det(q[lo : lo + transformation.n_parameters()])
@@ -243,6 +351,19 @@ class ComposedTransformation(Transformation):
     def _elementwise_log_jacobian_det_S1(
         self, q: np.ndarray
     ) -> Tuple[float, np.ndarray]:
+        """
+        Compute the elementwise logarithm of the determinant of the Jacobian and its first-order sensitivities.
+
+        Parameters
+        ----------
+        q : np.ndarray
+            Input array.
+
+        Returns
+        -------
+        Tuple[float, np.ndarray]
+            Tuple of sum of log determinants and concatenated first-order sensitivities.
+        """
         q = self._verify_input(q)
         output = 0.0
         output_S1 = np.zeros(self._n_parameters)
@@ -258,6 +379,19 @@ class ComposedTransformation(Transformation):
         return output, output_S1
 
     def _general_jacobian(self, q: np.ndarray) -> np.ndarray:
+        """
+        Compute the general Jacobian of the composed transformation.
+
+        Parameters
+        ----------
+        q : np.ndarray
+            Input array.
+
+        Returns
+        -------
+        np.ndarray
+            Block diagonal matrix of the Jacobian of each transformation.
+        """
         q = self._verify_input(q)
         jacobian_blocks = []
         lo = 0
@@ -278,9 +412,35 @@ class ComposedTransformation(Transformation):
         )
 
     def _general_log_jacobian_det(self, q: np.ndarray) -> float:
+        """
+        Compute the general logarithm of the determinant of the Jacobian.
+
+        Parameters
+        ----------
+        q : np.ndarray
+            Input array.
+
+        Returns
+        -------
+        float
+            Logarithm of the absolute value of the determinant of the Jacobian.
+        """
         return np.log(np.abs(np.linalg.det(self.jacobian(q))))
 
     def _general_log_jacobian_det_S1(self, q: np.ndarray) -> Tuple[float, np.ndarray]:
+        """
+        Compute the general logarithm of the determinant of the Jacobian and its first-order sensitivities.
+
+        Parameters
+        ----------
+        q : np.ndarray
+            Input array.
+
+        Returns
+        -------
+        Tuple[float, np.ndarray]
+            Tuple of log determinant and its first-order sensitivities.
+        """
         q = self._verify_input(q)
         jac, jac_S1 = self.jacobian_S1(q)
         out_S1 = np.zeros(self._n_parameters)
@@ -291,11 +451,15 @@ class ComposedTransformation(Transformation):
         return self.log_jacobian_det(q), out_S1
 
     def _iter_transformations(self):
+        """
+        Iterate over the transformations in the composition.
+
+        Yields
+        ------
+        Tuple[int, Transformation]
+            Tuple of starting index and transformation object for each sub-transformation.
+        """
         lo = 0
         for transformation in self._transformations:
             yield lo, transformation
             lo += transformation.n_parameters
-
-
-# TODO: Implement the following classes:
-# class LogitTransformation(Transformation):
