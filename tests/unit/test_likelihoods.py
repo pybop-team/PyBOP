@@ -86,7 +86,7 @@ class TestLikelihoods:
     ):
         likelihood = pybop.BaseLikelihood(one_signal_problem)
         with pytest.raises(NotImplementedError):
-            likelihood(np.array([0.5, 0.5]))
+            likelihood(np.array([0.5]))
 
     @pytest.mark.unit
     def test_set_get_sigma(self, one_signal_problem):
@@ -128,8 +128,8 @@ class TestLikelihoods:
     @pytest.mark.unit
     def test_gaussian_log_likelihood(self, one_signal_problem):
         likelihood = pybop.GaussianLogLikelihood(one_signal_problem)
-        result = likelihood(np.array([0.5, 0.5]))
-        grad_result, grad_likelihood = likelihood.evaluateS1(np.array([0.5, 0.5]))
+        result = likelihood(np.array([0.8, 0.2]))
+        grad_result, grad_likelihood = likelihood.evaluateS1(np.array([0.8, 0.2]))
         assert isinstance(result, float)
         np.testing.assert_allclose(result, grad_result, atol=1e-5)
         assert np.all(grad_likelihood <= 0)

@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Tuple, Union, Sequence
+from typing import Tuple, Union, Sequence, List
 import numpy as np
-from pints import TransformedBoundaries as PintsTransformedBoundaries
 
 
 class Transformation(ABC):
@@ -26,17 +25,13 @@ class Transformation(ABC):
     #     """Returns a transformed log-prior class."""
     #     return TransformedLogPrior(log_prior, self)
 
-    def convert_boundaries(self, boundaries):
-        """Returns a transformed boundaries class."""
-        return PintsTransformedBoundaries(boundaries, self)
-
-    def convert_covariance_matrix(self, covariance: np.ndarray, q: np.ndarray) -> np.ndarray:
+    def convert_covariance_matrix(self, cov: np.ndarray, q: np.ndarray) -> np.ndarray:
         """
         Converts a covariance matrix `covariance` from the model space to the search space
         around a parameter vector `q` in the search space.
         """
         jac_inv = np.linalg.pinv(self.jacobian(q))
-        return jac_inv @ covariance @ jac_inv.T
+        return jac_inv @ cov @ jac_inv.T
 
     def convert_standard_deviation(self, std: Union[float, np.ndarray], q: np.ndarray) -> np.ndarray:
         """
@@ -67,22 +62,18 @@ class Transformation(ABC):
         Returns the logarithm of the absolute value of the determinant of the Jacobian matrix
         at the parameter vector `q`.
         """
-        return np.log(np.abs(np.linalg.det(self.jacobian(q))))
+        raise NotImplementedError("log_jacobian_det method must be implemented if used.")
 
     def log_jacobian_det_S1(self, q: np.ndarray) -> Tuple[float, np.ndarray]:
         """
         Computes the logarithm of the absolute value of the determinant of the Jacobian,
         and returns it along with its partial derivatives.
         """
-        jacobian, hessian = self.jacobian_S1(q)
-        jacobian_inv = np.linalg.pinv(jacobian)
-        derivatives = np.array([np.trace(jacobian_inv @ djac) for djac in hessian])
-        return self.log_jacobian_det(q), derivatives
+        raise NotImplementedError("log_jacobian_det_S1 method must be implemented if used.")
 
-    @abstractmethod
-    def n_parameters(self) -> int:
-        """Returns the dimension of the parameter space this transformation is defined over."""
-        pass
+    @property
+    def n_parameters(self):
+        return self._n_parameters
 
     def to_model(self, q: np.ndarray) -> np.ndarray:
         """Transforms a parameter vector `q` from the search space to the model space."""
@@ -106,6 +97,19 @@ class Transformation(ABC):
         element-by-element independently.
         """
         raise NotImplementedError("is_elementwise method must be implemented if used.")
+
+    def _verify_input(self, input: Union[List[float], float, np.ndarray]) -> None:
+        """Set and validate the translate parameter."""
+        if isinstance(input, (float, int)):
+            input = np.full(self._n_parameters, float(input))
+        elif isinstance(input, (list, np.ndarray)):
+            if len(input) != self._n_parameters:
+                raise ValueError(f"Translate must have {self._n_parameters} elements")
+            input = np.asarray(input, dtype=float)
+        else:
+            raise TypeError("Translate must be a float, list, or numpy array")
+
+        return input
 
 # ---- To be implemented with Monte Carlo PR ------ #
 # class TransformedLogPDF(BaseCost):

@@ -81,8 +81,8 @@ from .problems.design_problem import DesignProblem
 #
 # Transformation classes
 #
-from .transformations import Transformation
-from .transformations._transformations import (
+from .transformation import Transformation
+from .transformation._transformation import (
     IdentityTransformation,
     ScaledTransformation,
     LogTransformation,
