@@ -125,9 +125,10 @@ class GaussianLogLikelihood(BaseLikelihood):
         super(GaussianLogLikelihood, self).__init__(problem)
         self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
         self._dl = np.ones(self.n_parameters + self.n_outputs)
-        self.transformation.append(
-            IdentityTransformation()
-        )  # Temporary fix, ahead of #338
+        if self.transformation:
+            self.transformation.append(
+                IdentityTransformation()
+            )  # Temporary fix, ahead of #338
 
     def _evaluate(self, x):
         """

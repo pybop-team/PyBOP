@@ -34,17 +34,20 @@ class BaseCost:
             self.x0 = self.problem.x0
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
+            self.transformation = self.construct_transformation()
 
-            # Construct ComposedTransformation from list of transformations
-            self.transformations = [
-                t if t is not None else IdentityTransformation()
-                for t in self.parameters.get_transformations()
-            ]
-            self.transformation = ComposedTransformation(self.transformations)
+    def construct_transformation(self):
+        """
+        Create a ComposedTransformation object from the individual parameters transformations.
+        """
+        transformations = self.parameters.get_transformations()
+        if not transformations or all(t is None for t in transformations):
+            return None
 
-    @property
-    def n_parameters(self):
-        return len(self.parameters)
+        valid_transformations = [
+            t if t is not None else IdentityTransformation() for t in transformations
+        ]
+        return ComposedTransformation(valid_transformations)
 
     def __call__(self, x):
         """
@@ -161,3 +164,7 @@ class BaseCost:
             If the method has not been implemented by the subclass.
         """
         raise NotImplementedError
+
+    @property
+    def n_parameters(self):
+        return len(self.parameters)

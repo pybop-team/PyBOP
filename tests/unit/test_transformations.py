@@ -20,7 +20,7 @@ class TestTransformation:
             ),
             pybop.Parameter(
                 "Scaled",
-                transformation=pybop.ScaledTransformation(scale=2.0, translate=1),
+                transformation=pybop.ScaledTransformation(coefficient=2.0, intercept=1),
             ),
             pybop.Parameter(
                 "Log",
@@ -68,7 +68,7 @@ class TestTransformation:
         # Test covariance transformation
         cov = np.array([[0.5]])
         cov_transformed = transformation.convert_covariance_matrix(cov, q)
-        assert np.array_equal(cov_transformed, cov * transformation._scale**2)
+        assert np.array_equal(cov_transformed, cov * transformation._coefficient**2)
 
     @pytest.mark.unit
     def test_log_transformation(self, parameters):
