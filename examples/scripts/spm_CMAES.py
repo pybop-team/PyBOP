@@ -13,7 +13,7 @@ parameters = pybop.Parameters(
         prior=pybop.Gaussian(6e-06, 0.1e-6),
         bounds=[1e-6, 9e-6],
         true_value=parameter_set["Negative particle radius [m]"],
-        transformation=pybop.ScaledTransformation(scale=2.0),
+        transformation=pybop.ScaledTransformation(coefficient=2.0),
     ),
     pybop.Parameter(
         "Positive particle radius [m]",
