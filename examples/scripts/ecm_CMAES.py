@@ -45,7 +45,7 @@ model = pybop.empirical.Thevenin(
 )
 
 # Fitting parameters
-parameters = [
+parameters = pybop.Parameters(
     pybop.Parameter(
         "R0 [Ohm]",
         prior=pybop.Gaussian(0.0002, 0.0001),
@@ -56,7 +56,7 @@ parameters = [
         prior=pybop.Gaussian(0.0001, 0.0001),
         bounds=[1e-5, 1e-2],
     ),
-]
+)
 
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
@@ -75,8 +75,7 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.Optimisation(cost, optimiser=pybop.CMAES)
-optim.set_max_iterations(100)
+optim = pybop.CMAES(cost, max_iterations=100)
 
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
@@ -102,5 +101,5 @@ pybop.plot_parameters(optim)
 pybop.plot2d(cost, steps=15)
 
 # Plot the cost landscape with optimisation path and updated bounds
-bounds = np.array([[1e-4, 1e-2], [1e-5, 1e-2]])
+bounds = np.asarray([[1e-4, 1e-2], [1e-5, 1e-2]])
 pybop.plot2d(optim, bounds=bounds, steps=15)

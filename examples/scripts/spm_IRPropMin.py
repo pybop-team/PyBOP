@@ -7,7 +7,7 @@ parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
-parameters = [
+parameters = pybop.Parameters(
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         prior=pybop.Gaussian(0.6, 0.05),
@@ -16,7 +16,7 @@ parameters = [
         "Positive electrode active material volume fraction",
         prior=pybop.Gaussian(0.48, 0.05),
     ),
-]
+)
 
 # Generate data
 sigma = 0.001
@@ -36,8 +36,7 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.Optimisation(cost, optimiser=pybop.IRPropMin)
-optim.set_max_iterations(100)
+optim = pybop.IRPropMin(cost, max_iterations=100)
 
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
@@ -52,5 +51,5 @@ pybop.plot_convergence(optim)
 pybop.plot_parameters(optim)
 
 # Plot the cost landscape with optimisation path
-bounds = np.array([[0.5, 0.8], [0.4, 0.7]])
+bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
 pybop.plot2d(optim, bounds=bounds, steps=15)

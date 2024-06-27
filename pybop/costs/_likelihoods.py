@@ -8,37 +8,9 @@ class BaseLikelihood(BaseCost):
     Base class for likelihoods
     """
 
-    def __init__(self, problem, sigma=None):
-        super(BaseLikelihood, self).__init__(problem, sigma)
+    def __init__(self, problem):
+        super(BaseLikelihood, self).__init__(problem)
         self.n_time_data = problem.n_time_data
-
-    def set_sigma(self, sigma):
-        """
-        Setter for sigma parameter
-        """
-
-        if not isinstance(sigma, np.ndarray):
-            sigma = np.array(sigma)
-
-        if not np.issubdtype(sigma.dtype, np.number):
-            raise ValueError("Sigma must contain only numeric values")
-
-        if np.any(sigma <= 0):
-            raise ValueError("Sigma must not be negative")
-        else:
-            self.sigma0 = sigma
-
-    def get_sigma(self):
-        """
-        Getter for sigma parameter
-        """
-        return self.sigma0
-
-    def get_n_parameters(self):
-        """
-        Returns the number of parameters
-        """
-        return self._n_parameters
 
 
 class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
@@ -47,18 +19,49 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
     which assumes that the data follows a Gaussian distribution and computes
     the log-likelihood of observed data under this assumption.
 
-    Attributes:
-        _logpi (float): Precomputed offset value for the log-likelihood function.
+    Parameters
+    ----------
+    sigma : scalar or array
+        Initial standard deviation around ``x0``. Either a scalar value (one
+        standard deviation for all coordinates) or an array with one entry
+        per dimension. Not all methods will use this information.
     """
 
     def __init__(self, problem, sigma):
-        super(GaussianLogLikelihoodKnownSigma, self).__init__(problem, sigma)
-        if sigma is not None:
-            self.set_sigma(sigma)
-        self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi / self.sigma0)
-        self._multip = -1 / (2.0 * self.sigma0**2)
-        self.sigma2 = self.sigma0**-2
-        self._dl = np.ones(self._n_parameters)
+        super(GaussianLogLikelihoodKnownSigma, self).__init__(problem)
+        self.sigma = None
+        self.set_sigma(sigma)
+        self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi / self.sigma)
+        self._multip = -1 / (2.0 * self.sigma**2)
+        self.sigma2 = self.sigma**-2
+        self._dl = np.ones(self.n_parameters)
+
+    def set_sigma(self, sigma):
+        """
+        Setter for sigma parameter
+        """
+        if sigma is None:
+            raise ValueError(
+                "The GaussianLogLikelihoodKnownSigma cost requires sigma to be "
+                + "either a scalar value or an array with one entry per dimension."
+            )
+
+        if not isinstance(sigma, np.ndarray):
+            sigma = np.asarray(sigma)
+
+        if not np.issubdtype(sigma.dtype, np.number):
+            raise ValueError("Sigma must contain only numeric values")
+
+        if np.any(sigma <= 0):
+            raise ValueError("Sigma must be positive")
+        else:
+            self.sigma = sigma
+
+    def get_sigma(self):
+        """
+        Getter for sigma parameter
+        """
+        return self.sigma
 
     def _evaluate(self, x, grad=None):
         """
@@ -71,7 +74,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
             if len(y.get(key, [])) != len(self._target.get(key, [])):
                 return -np.float64(np.inf)  # prediction doesn't match target
 
-        e = np.array(
+        e = np.asarray(
             [
                 np.sum(
                     self._offset
@@ -99,7 +102,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
                 dl = self._dl * np.ones(self.n_parameters)
                 return -likelihood, -dl
 
-        r = np.array([self._target[signal] - y[signal] for signal in self.signal])
+        r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
         likelihood = self._evaluate(x)
         dl = np.sum((self.sigma2 * np.sum((r * dy.T), axis=2)), axis=1)
         return likelihood, dl
@@ -111,14 +114,16 @@ class GaussianLogLikelihood(BaseLikelihood):
     data follows a Gaussian distribution and computes the log-likelihood of
     observed data under this assumption.
 
-    Attributes:
-        _logpi (float): Precomputed offset value for the log-likelihood function.
+    Attributes
+    ----------
+    _logpi : float
+        Precomputed offset value for the log-likelihood function.
     """
 
     def __init__(self, problem):
         super(GaussianLogLikelihood, self).__init__(problem)
         self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
-        self._dl = np.ones(self._n_parameters + self.n_outputs)
+        self._dl = np.ones(self.n_parameters + self.n_outputs)
 
     def _evaluate(self, x, grad=None):
         """
@@ -143,7 +148,7 @@ class GaussianLogLikelihood(BaseLikelihood):
             if len(y.get(key, [])) != len(self._target.get(key, [])):
                 return -np.float64(np.inf)  # prediction doesn't match target
 
-        e = np.array(
+        e = np.asarray(
             [
                 np.sum(
                     self._logpi
@@ -176,7 +181,7 @@ class GaussianLogLikelihood(BaseLikelihood):
                 dl = self._dl * np.ones(self.n_parameters)
                 return -likelihood, -dl
 
-        r = np.array([self._target[signal] - y[signal] for signal in self.signal])
+        r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
         likelihood = self._evaluate(x)
         dl = sigma ** (-2.0) * np.sum((r * dy.T), axis=2)
         dsigma = -self.n_time_data / sigma + sigma**-(3.0) * np.sum(r**2, axis=1)

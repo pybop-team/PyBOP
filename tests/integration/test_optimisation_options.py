@@ -13,7 +13,7 @@ class TestOptimisation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ground_truth = np.array([0.55, 0.55]) + np.random.normal(
+        self.ground_truth = np.asarray([0.55, 0.55]) + np.random.normal(
             loc=0.0, scale=0.05, size=2
         )
 
@@ -24,7 +24,7 @@ class TestOptimisation:
 
     @pytest.fixture
     def parameters(self):
-        return [
+        return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.55, 0.05),
@@ -35,7 +35,7 @@ class TestOptimisation:
                 prior=pybop.Gaussian(0.55, 0.05),
                 # no bounds
             ),
-        ]
+        )
 
     @pytest.fixture(
         params=[
@@ -54,7 +54,7 @@ class TestOptimisation:
     def spm_costs(self, model, parameters, cost_class):
         # Form dataset
         init_soc = 0.5
-        solution = self.getdata(model, self.ground_truth, init_soc)
+        solution = self.get_data(model, parameters, self.ground_truth, init_soc)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -80,32 +80,34 @@ class TestOptimisation:
     )
     @pytest.mark.integration
     def test_optimisation_f_guessed(self, f_guessed, spm_costs):
+        x0 = spm_costs.x0
         # Test each optimiser
-        parameterisation = pybop.Optimisation(
-            cost=spm_costs, optimiser=pybop.XNES, sigma0=0.05
+        optim = pybop.XNES(
+            cost=spm_costs,
+            sigma0=0.05,
+            max_iterations=250,
+            max_unchanged_iterations=35,
+            absolute_tolerance=1e-5,
+            use_f_guessed=f_guessed,
         )
-        parameterisation.set_max_unchanged_iterations(iterations=35, threshold=1e-5)
-        parameterisation.set_max_iterations(125)
-        parameterisation.set_f_guessed_tracking(f_guessed)
 
         # Set parallelisation if not on Windows
         if sys.platform != "win32":
-            parameterisation.set_parallel(True)
+            optim.set_parallel(True)
 
-        initial_cost = parameterisation.cost(spm_costs.x0)
-        x, final_cost = parameterisation.run()
+        initial_cost = optim.cost(x0)
+        x, final_cost = optim.run()
 
         # Assertions
-        assert initial_cost > final_cost
-        np.testing.assert_allclose(x, self.ground_truth, atol=2.5e-2)
+        if not np.allclose(x0, self.ground_truth, atol=1e-5):
+            if optim.minimising:
+                assert initial_cost > final_cost
+            else:
+                assert initial_cost < final_cost
+        np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
-    def getdata(self, model, x, init_soc):
-        model.parameter_set.update(
-            {
-                "Negative electrode active material volume fraction": x[0],
-                "Positive electrode active material volume fraction": x[1],
-            }
-        )
+    def get_data(self, model, parameters, x, init_soc):
+        model.parameters = parameters
         experiment = pybop.Experiment(
             [
                 (
@@ -115,5 +117,5 @@ class TestOptimisation:
             ]
             * 2
         )
-        sim = model.predict(init_soc=init_soc, experiment=experiment)
+        sim = model.predict(init_soc=init_soc, experiment=experiment, inputs=x)
         return sim

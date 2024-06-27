@@ -47,7 +47,7 @@ class RootMeanSquaredError(BaseCost):
             if len(prediction.get(key, [])) != len(self._target.get(key, [])):
                 return np.float64(np.inf)  # prediction doesn't match target
 
-        e = np.array(
+        e = np.asarray(
             [
                 np.sqrt(np.mean((prediction[signal] - self._target[signal]) ** 2))
                 for signal in self.signal
@@ -87,11 +87,9 @@ class RootMeanSquaredError(BaseCost):
                 de = self._de * np.ones(self.n_parameters)
                 return e, de
 
-        r = np.array([y[signal] - self._target[signal] for signal in self.signal])
+        r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
         e = np.sqrt(np.mean(r**2, axis=1))
-        de = np.mean((r * dy.T), axis=2) / (
-            np.sqrt(np.mean((r * dy.T) ** 2, axis=2)) + np.finfo(float).eps
-        )
+        de = np.mean((r * dy.T), axis=2) / (e + np.finfo(float).eps)
 
         if self.n_outputs == 1:
             return e.item(), de.flatten()
@@ -161,7 +159,7 @@ class SumSquaredError(BaseCost):
             if len(prediction.get(key, [])) != len(self._target.get(key, [])):
                 return np.float64(np.inf)  # prediction doesn't match target
 
-        e = np.array(
+        e = np.asarray(
             [
                 np.sum(((prediction[signal] - self._target[signal]) ** 2))
                 for signal in self.signal
@@ -199,7 +197,7 @@ class SumSquaredError(BaseCost):
                 de = self._de * np.ones(self.n_parameters)
                 return e, de
 
-        r = np.array([y[signal] - self._target[signal] for signal in self.signal])
+        r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
         e = np.sum(np.sum(r**2, axis=0), axis=0)
         de = 2 * np.sum(np.sum((r * dy.T), axis=2), axis=1)
 
@@ -253,7 +251,7 @@ class ObserverCost(BaseCost):
         float
             The observer cost (negative of the log likelihood).
         """
-        inputs = {key: x[i] for i, key in enumerate(self._observer._model.fit_keys)}
+        inputs = self._observer.parameters.as_dict(x)
         log_likelihood = self._observer.log_likelihood(
             self._target, self._observer.time_data(), inputs
         )
@@ -287,7 +285,8 @@ class MAP(BaseLikelihood):
     Maximum a posteriori cost function.
 
     Computes the maximum a posteriori cost function, which is the sum of the
-    negative log likelihood and the log prior.
+    log likelihood and the log prior. The goal of maximising is achieved by
+    setting minimising = False in the optimiser settings.
 
     Inherits all parameters and attributes from ``BaseLikelihood``.
 
