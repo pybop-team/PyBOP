@@ -256,9 +256,10 @@ class MAP(BaseLikelihood):
 
     """
 
-    def __init__(self, problem, likelihood, sigma0=None):
+    def __init__(self, problem, likelihood, sigma0=None, gradient_step=1e-3):
         super(MAP, self).__init__(problem)
         self.sigma0 = sigma0
+        self.gradient_step = gradient_step
         if self.sigma0 is None:
             self.sigma0 = []
             for param in self.problem.parameters:
@@ -328,14 +329,15 @@ class MAP(BaseLikelihood):
         )
 
         # Compute a finite difference approximation of the gradient of the log prior
-        delta = 1e-3
+        delta = self.parameters.initial_value() * self.gradient_step
+
         dl_prior_approx = [
             (
-                param.prior.logpdf(inputs[param.name] * (1 + delta))
-                - param.prior.logpdf(inputs[param.name] * (1 - delta))
+                param.prior.logpdf(inputs[param.name] * (1 + delta_i))
+                - param.prior.logpdf(inputs[param.name] * (1 - delta_i))
             )
-            / (2 * delta * inputs[param.name] + np.finfo(float).eps)
-            for param in self.problem.parameters
+            / (2 * delta_i * inputs[param.name] + np.finfo(float).eps)
+            for param, delta_i in zip(self.problem.parameters, delta)
         ]
 
         posterior = log_likelihood + log_prior
