@@ -37,7 +37,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
     def __init__(self, problem: BaseProblem, sigma0: Union[List[float], float]):
         super(GaussianLogLikelihoodKnownSigma, self).__init__(problem)
         sigma0 = self.check_sigma0(sigma0)
-        self.sigma2 = sigma0**2
+        self.sigma2 = sigma0**2.0
         self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi * self.sigma2)
         self._multip = -1 / (2.0 * self.sigma2)
         self._dl = np.ones(self.n_parameters)
@@ -56,7 +56,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
             [
                 np.sum(
                     self._offset
-                    + self._multip * np.sum((self._target[signal] - y[signal]) ** 2)
+                    + self._multip * np.sum((self._target[signal] - y[signal]) ** 2.0)
                 )
                 for signal in self.signal
             ]
@@ -147,7 +147,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         self.parameters.join(self.sigma)
 
         if dsigma_scale is None:
-            self._dsigma_scale = sigma0
+            self._dsigma_scale = 1.0
         else:
             self._dsigma_scale = dsigma_scale
 
@@ -200,7 +200,8 @@ class GaussianLogLikelihood(BaseLikelihood):
                 np.sum(
                     self._logpi
                     - self.n_time_data * np.log(sigma)
-                    - np.sum((self._target[signal] - y[signal]) ** 2) / (2.0 * sigma**2)
+                    - np.sum((self._target[signal] - y[signal]) ** 2.0)
+                    / (2.0 * sigma**2.0)
                 )
                 for signal in self.signal
             ]
@@ -238,9 +239,9 @@ class GaussianLogLikelihood(BaseLikelihood):
         likelihood = self._evaluate(inputs)
 
         r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
-        dl = np.sum((np.sum((r * dy.T), axis=2) / (sigma**2)), axis=1)
+        dl = np.sum((np.sum((r * dy.T), axis=2) / (sigma**2.0)), axis=1)
         dsigma = (
-            -self.n_time_data / sigma + np.sum(r**2, axis=1) / (sigma**3)
+            -self.n_time_data / sigma + np.sum(r**2.0, axis=1) / (sigma**3.0)
         ) / self._dsigma_scale
         dl = np.concatenate((dl.flatten(), dsigma))
 

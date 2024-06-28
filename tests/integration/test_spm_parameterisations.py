@@ -72,7 +72,7 @@ class Test_SPM_Parameterisation:
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
             return cost_class(problem, sigma0=0.002)
         elif cost_class in [pybop.GaussianLogLikelihood]:
-            return cost_class(problem, sigma0=0.002 * 3)
+            return cost_class(problem, sigma0=0.002 * 3)  # Initial sigma0 guess
         elif cost_class in [pybop.MAP]:
             return cost_class(
                 problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=0.002
@@ -95,7 +95,6 @@ class Test_SPM_Parameterisation:
     @pytest.mark.integration
     def test_spm_optimisers(self, optimiser, spm_costs):
         x0 = spm_costs.parameters.initial_value()
-        # Some optimisers require a complete set of bounds
 
         # Test each optimiser
         if isinstance(spm_costs, pybop.GaussianLogLikelihood):
@@ -107,10 +106,12 @@ class Test_SPM_Parameterisation:
             optim = optimiser(cost=spm_costs, sigma0=0.05, max_iterations=250)
         if issubclass(optimiser, pybop.BasePintsOptimiser):
             optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
-        if issubclass(optimiser, pybop.Adam) and isinstance(
+
+        # AdamW will use lowest sigma0 for LR, so allow more iterations
+        if issubclass(optimiser, pybop.AdamW) and isinstance(
             spm_costs, pybop.GaussianLogLikelihood
         ):
-            optim.set_min_iterations(50)
+            optim.set_min_iterations(75)
 
         initial_cost = optim.cost(x0)
         x, final_cost = optim.run()
@@ -154,7 +155,9 @@ class Test_SPM_Parameterisation:
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
             return cost_class(problem, sigma0=0.002)
         elif cost_class in [pybop.MAP]:
-            return cost_class(problem, pybop.GaussianLogLikelihoodKnownSigma)
+            return cost_class(
+                problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=0.002
+            )
         else:
             return cost_class(problem)
 
@@ -163,7 +166,7 @@ class Test_SPM_Parameterisation:
         [
             pybop.SciPyDifferentialEvolution,
             pybop.IRPropMin,
-            pybop.XNES,
+            pybop.CMAES,
         ],
     )
     @pytest.mark.integration
