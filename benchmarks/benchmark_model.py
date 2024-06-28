@@ -84,7 +84,7 @@ class BenchmarkModel:
 
     def time_model_simulateS1(self, model, parameter_set):
         """
-        Benchmark the simulate method of the model.
+        Benchmark the simulateS1 method of the model.
 
         Args:
             model (pybop.Model): The model class being benchmarked.
