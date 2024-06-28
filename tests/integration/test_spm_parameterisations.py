@@ -11,7 +11,7 @@ class Test_SPM_Parameterisation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ground_truth = np.array([0.55, 0.55]) + np.random.normal(
+        self.ground_truth = np.asarray([0.55, 0.55]) + np.random.normal(
             loc=0.0, scale=0.05, size=2
         )
 
@@ -163,7 +163,7 @@ class Test_SPM_Parameterisation:
         [
             pybop.SciPyDifferentialEvolution,
             pybop.IRPropMin,
-            pybop.CMAES,
+            pybop.XNES,
         ],
     )
     @pytest.mark.integration
@@ -216,7 +216,7 @@ class Test_SPM_Parameterisation:
         cost = pybop.RootMeanSquaredError(problem)
 
         # Select optimiser
-        optimiser = pybop.CMAES
+        optimiser = pybop.XNES
 
         # Build the optimisation problem
         optim = optimiser(cost=cost)

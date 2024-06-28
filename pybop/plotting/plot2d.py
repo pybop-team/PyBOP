@@ -96,14 +96,14 @@ def plot2d(
     # Populate cost matrix
     for i, xi in enumerate(x):
         for j, yj in enumerate(y):
-            costs[j, i] = cost(np.array([xi, yj] + additional_values))
+            costs[j, i] = cost(np.asarray([xi, yj] + additional_values))
 
     if gradient:
         grad_parameter_costs = []
 
         # Determine the number of gradient outputs from cost.evaluateS1
         num_gradients = len(
-            cost.evaluateS1(np.array([x[0], y[0]] + additional_values))[1]
+            cost.evaluateS1(np.asarray([x[0], y[0]] + additional_values))[1]
         )
 
         # Create an array to hold each gradient output & populate
@@ -111,7 +111,7 @@ def plot2d(
         for i, xi in enumerate(x):
             for j, yj in enumerate(y):
                 (*current_grads,) = cost.evaluateS1(
-                    np.array([xi, yj] + additional_values)
+                    np.asarray([xi, yj] + additional_values)
                 )[1]
                 for k, grad_output in enumerate(current_grads):
                     grads[k][j, i] = grad_output
@@ -126,7 +126,7 @@ def plot2d(
         flat_costs = costs.flatten()
 
         # Append the optimisation trace to the data
-        parameter_log = np.array(optim.log["x_best"])
+        parameter_log = np.asarray(optim.log["x_best"])
         flat_x = np.concatenate((flat_x, parameter_log[:, 0]))
         flat_y = np.concatenate((flat_y, parameter_log[:, 1]))
         flat_costs = np.concatenate((flat_costs, optim.log["cost"]))
@@ -163,7 +163,7 @@ def plot2d(
 
     if plot_optim:
         # Plot the optimisation trace
-        optim_trace = np.array(
+        optim_trace = np.asarray(
             [item[:2] for sublist in optim.log["x"] for item in sublist]
         )
         optim_trace = optim_trace.reshape(-1, 2)

@@ -77,7 +77,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
 
         likelihood = self._evaluate(inputs)
 
-        r = np.array([self._target[signal] - y[signal] for signal in self.signal])
+        r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
         dl = np.sum((np.sum((r * dy.T), axis=2) / self.sigma2), axis=1)
 
         return likelihood, dl
@@ -237,7 +237,7 @@ class GaussianLogLikelihood(BaseLikelihood):
 
         likelihood = self._evaluate(inputs)
 
-        r = np.array([self._target[signal] - y[signal] for signal in self.signal])
+        r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
         dl = np.sum((np.sum((r * dy.T), axis=2) / (sigma**2)), axis=1)
         dsigma = (
             -self.n_time_data / sigma + np.sum(r**2, axis=1) / (sigma**3)
