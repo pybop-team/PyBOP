@@ -349,5 +349,5 @@ class TestModels:
 
         for key in problem.signal:
             assert np.allclose(output.get(key, [])[0], output.get(key, []))
-            assert np.isinf(output_S1.get(key, [])).any()
+            assert np.allclose(output_S1.get(key, [])[0], output_S1.get(key, []))
         assert np.isinf(res_grad).any()
