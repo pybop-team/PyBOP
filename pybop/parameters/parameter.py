@@ -3,6 +3,8 @@ from typing import Dict, List
 
 import numpy as np
 
+from pybop._utils import is_numeric
+
 
 class Parameter:
     """
@@ -73,7 +75,7 @@ class Parameter:
 
         return samples
 
-    def update(self, value=None, initial_value=None):
+    def update(self, initial_value=None, value=None):
         """
         Update the parameter's current value.
 
@@ -82,12 +84,12 @@ class Parameter:
         value : float
             The new value to be assigned to the parameter.
         """
-        if value is not None:
-            self.value = value
-        elif initial_value is not None:
+        if initial_value is not None:
             self.initial_value = initial_value
             self.value = initial_value
-        else:
+        if value is not None:
+            self.value = value
+        if initial_value is None and value is None:
             raise ValueError("No value provided to update parameter")
 
     def __repr__(self):
@@ -132,6 +134,9 @@ class Parameter:
         bounds : tuple, optional
             A tuple defining the lower and upper bounds for the parameter.
             Defaults to None.
+        boundary_multiplier : float, optional
+            Used to define the bounds when no bounds are passed but the parameter has
+            a prior distribution (default: 6).
 
         Raises
         ------
@@ -151,6 +156,16 @@ class Parameter:
             bounds = [self.lower_bound, self.upper_bound]
 
         self.bounds = bounds
+
+    def get_initial_value(self) -> float:
+        """
+        Return the initial value of each parameter.
+        """
+        if self.initial_value is None:
+            sample = self.rvs(1)
+            self.update(initial_value=sample[0])
+
+        return self.initial_value
 
 
 class Parameters:
@@ -185,6 +200,9 @@ class Parameters:
         pybop.Parameter
             The Parameter object.
         """
+        if key not in self.param.keys():
+            raise ValueError(f"The key {key} is not the name of a parameter.")
+
         return self.param[key]
 
     def __len__(self) -> int:
@@ -244,6 +262,20 @@ class Parameters:
         # Remove the parameter
         self.param.pop(parameter_name)
 
+    def join(self, parameters=None):
+        """
+        Join two Parameters objects into the first by copying across each Parameter.
+
+        Parameters
+        ----------
+        parameters : pybop.Parameters
+        """
+        for param in parameters:
+            if param not in self.param.values():
+                self.add(param)
+            else:
+                print(f"Discarding duplicate {param.name}.")
+
     def get_bounds(self) -> Dict:
         """
         Get bounds, for either all or no parameters.
@@ -264,12 +296,20 @@ class Parameters:
 
         return bounds
 
-    def update(self, values):
+    def update(self, initial_values=None, values=None, bounds=None):
         """
         Set value of each parameter.
         """
         for i, param in enumerate(self.param.values()):
-            param.update(value=values[i])
+            if initial_values is not None:
+                param.update(initial_value=initial_values[i])
+            if values is not None:
+                param.update(value=values[i])
+            if bounds is not None:
+                if isinstance(bounds, Dict):
+                    param.set_bounds(bounds=[bounds["lower"][i], bounds["upper"][i]])
+                else:
+                    param.set_bounds(bounds=bounds[i])
 
     def rvs(self, n_samples: int) -> List:
         """
@@ -321,7 +361,7 @@ class Parameters:
 
         return sigma0
 
-    def initial_value(self) -> List:
+    def initial_value(self) -> np.ndarray:
         """
         Return the initial value of each parameter.
         """
@@ -329,13 +369,13 @@ class Parameters:
 
         for param in self.param.values():
             if param.initial_value is None:
-                initial_value = param.rvs(1)
-                param.update(initial_value=initial_value[0])
+                initial_value = param.rvs(1)[0]
+                param.update(initial_value=initial_value)
             initial_values.append(param.initial_value)
 
-        return initial_values
+        return np.asarray(initial_values)
 
-    def current_value(self) -> List:
+    def current_value(self) -> np.ndarray:
         """
         Return the current value of each parameter.
         """
@@ -344,9 +384,9 @@ class Parameters:
         for param in self.param.values():
             current_values.append(param.value)
 
-        return current_values
+        return np.asarray(current_values)
 
-    def true_value(self) -> List:
+    def true_value(self) -> np.ndarray:
         """
         Return the true value of each parameter.
         """
@@ -355,7 +395,7 @@ class Parameters:
         for param in self.param.values():
             true_values.append(param.true_value)
 
-        return true_values
+        return np.asarray(true_values)
 
     def get_bounds_for_plotly(self):
         """
@@ -377,6 +417,43 @@ class Parameters:
         return bounds
 
     def as_dict(self, values=None) -> Dict:
+        """
+        Parameters
+        ----------
+        values : list or str, optional
+            A list of parameter values or one of the strings "initial" or "true" which can be used
+            to obtain a dictionary of parameters.
+
+        Returns
+        -------
+        Inputs
+            A parameters dictionary.
+        """
         if values is None:
             values = self.current_value()
+        elif isinstance(values, str):
+            if values == "initial":
+                values = self.initial_value()
+            elif values == "true":
+                values = self.true_value()
         return {key: values[i] for i, key in enumerate(self.param.keys())}
+
+    def verify(self, inputs=None):
+        """
+        Verify that the inputs are an Inputs dictionary or numeric values
+        which can be used to construct an Inputs dictionary
+
+        Parameters
+        ----------
+        inputs : Inputs or numeric
+        """
+        if inputs is None or isinstance(inputs, Dict):
+            return inputs
+        elif (isinstance(inputs, list) and all(is_numeric(x) for x in inputs)) or all(
+            is_numeric(x) for x in list(inputs)
+        ):
+            return self.as_dict(inputs)
+        else:
+            raise TypeError(
+                f"Inputs must be a dictionary or numeric. Received {type(inputs)}"
+            )

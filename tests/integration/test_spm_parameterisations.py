@@ -72,7 +72,7 @@ class Test_SPM_Parameterisation:
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
             return cost_class(problem, sigma0=0.002)
         elif cost_class in [pybop.GaussianLogLikelihood]:
-            return cost_class(problem)
+            return cost_class(problem, sigma0=0.002 * 3)
         elif cost_class in [pybop.MAP]:
             return cost_class(
                 problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=0.002
@@ -94,7 +94,7 @@ class Test_SPM_Parameterisation:
     )
     @pytest.mark.integration
     def test_spm_optimisers(self, optimiser, spm_costs):
-        x0 = spm_costs.x0
+        x0 = spm_costs.parameters.initial_value()
         # Some optimisers require a complete set of bounds
 
         # Test each optimiser
@@ -168,7 +168,7 @@ class Test_SPM_Parameterisation:
     )
     @pytest.mark.integration
     def test_multiple_signals(self, multi_optimiser, spm_two_signal_cost):
-        x0 = spm_two_signal_cost.x0
+        x0 = spm_two_signal_cost.parameters.initial_value()
 
         # Test each optimiser
         optim = multi_optimiser(
@@ -179,7 +179,7 @@ class Test_SPM_Parameterisation:
         if issubclass(multi_optimiser, pybop.BasePintsOptimiser):
             optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
 
-        initial_cost = optim.cost(spm_two_signal_cost.x0)
+        initial_cost = optim.cost(optim.parameters.initial_value())
         x, final_cost = optim.run()
 
         # Assertions
@@ -220,7 +220,7 @@ class Test_SPM_Parameterisation:
 
         # Build the optimisation problem
         optim = optimiser(cost=cost)
-        initial_cost = optim.cost(cost.x0)
+        initial_cost = optim.cost(optim.x0)
 
         # Run the optimisation problem
         x, final_cost = optim.run()
@@ -233,7 +233,7 @@ class Test_SPM_Parameterisation:
             np.testing.assert_allclose(x, self.ground_truth, atol=2e-2)
 
     def get_data(self, model, parameters, x, init_soc):
-        model.parameters = parameters
+        model.classify_and_update_parameters(parameters)
         experiment = pybop.Experiment(
             [
                 (
@@ -242,5 +242,7 @@ class Test_SPM_Parameterisation:
                 ),
             ]
         )
-        sim = model.predict(init_soc=init_soc, experiment=experiment, inputs=x)
+        sim = model.predict(
+            init_soc=init_soc, experiment=experiment, inputs=parameters.as_dict(x)
+        )
         return sim

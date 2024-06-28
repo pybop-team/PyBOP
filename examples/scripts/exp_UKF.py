@@ -27,8 +27,9 @@ parameters = pybop.Parameters(
 # Make a prediction with measurement noise
 sigma = 1e-2
 t_eval = np.linspace(0, 20, 10)
-model.parameters = parameters
-values = model.predict(t_eval=t_eval, inputs=parameters.true_value())
+model.classify_and_update_parameters(parameters)
+true_inputs = parameters.as_dict("true")
+values = model.predict(t_eval=t_eval, inputs=true_inputs)
 values = values["2y"].data
 corrupt_values = values + np.random.normal(0, sigma, len(t_eval))
 
@@ -41,7 +42,7 @@ expected_values = (
 model.build(parameters=parameters)
 simulator = pybop.Observer(parameters, model, signal=["2y"])
 simulator._time_data = t_eval
-measurements = simulator.evaluate(parameters.true_value())
+measurements = simulator.evaluate(true_inputs)
 
 # Verification step: Compare by plotting
 go = pybop.PlotlyManager().go
@@ -84,7 +85,7 @@ observer = pybop.UnscentedKalmanFilterObserver(
 )
 
 # Verification step: Find the maximum likelihood estimate given the true parameters
-estimation = observer.evaluate(parameters.true_value())
+estimation = observer.evaluate(true_inputs)
 
 # Verification step: Add the estimate to the plot
 line4 = go.Scatter(
@@ -102,7 +103,7 @@ x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
 # Plot the timeseries output (requires model that returns Voltage)
-pybop.quick_plot(observer, parameter_values=x, title="Optimised Comparison")
+pybop.quick_plot(observer, inputs=x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)

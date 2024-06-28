@@ -80,7 +80,7 @@ class TestOptimisation:
     )
     @pytest.mark.integration
     def test_optimisation_f_guessed(self, f_guessed, spm_costs):
-        x0 = spm_costs.x0
+        x0 = spm_costs.parameters.initial_value()
         # Test each optimiser
         optim = pybop.XNES(
             cost=spm_costs,
@@ -107,7 +107,7 @@ class TestOptimisation:
         np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
     def get_data(self, model, parameters, x, init_soc):
-        model.parameters = parameters
+        model.classify_and_update_parameters(parameters)
         experiment = pybop.Experiment(
             [
                 (
@@ -117,5 +117,7 @@ class TestOptimisation:
             ]
             * 2
         )
-        sim = model.predict(init_soc=init_soc, experiment=experiment, inputs=x)
+        sim = model.predict(
+            init_soc=init_soc, experiment=experiment, inputs=parameters.as_dict(x)
+        )
         return sim
