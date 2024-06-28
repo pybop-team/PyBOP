@@ -112,8 +112,8 @@ class GaussianLogLikelihood(BaseLikelihood):
     def __init__(
         self,
         problem: BaseProblem,
-        sigma0=0.002,
-        dsigma_scale=None,
+        sigma0: Union[float, List[float], List[Parameter]] = 0.002,
+        dsigma_scale: float = 1.0,
     ):
         super(GaussianLogLikelihood, self).__init__(problem)
 
@@ -128,29 +128,25 @@ class GaussianLogLikelihood(BaseLikelihood):
             )
 
         self.sigma = Parameters()
-        for i, s0 in enumerate(sigma0):
-            if isinstance(s0, Parameter):
-                self.sigma.add(s0)
-            elif isinstance(s0, float):
+        for i, value in enumerate(sigma0):
+            if isinstance(value, Parameter):
+                self.sigma.add(value)
+            elif isinstance(value, (int, float)):
                 self.sigma.add(
                     Parameter(
                         f"Sigma for output {i+1}",
-                        initial_value=s0,
-                        prior=Uniform(0.5 * s0, 1.5 * s0),
+                        initial_value=value,
+                        prior=Uniform(0.5 * value, 1.5 * value),
                     ),
                 )
             else:
                 raise TypeError(
-                    "Expected sigma0 to contain Parameter objects or numeric values. "
-                    + f"Received {type(s0)}"
+                    f"Expected sigma0 to contain Parameter objects or numeric values. "
+                    f"Received {type(value)}"
                 )
+
         self.parameters.join(self.sigma)
-
-        if dsigma_scale is None:
-            self._dsigma_scale = 1.0
-        else:
-            self._dsigma_scale = dsigma_scale
-
+        self._dsigma_scale = dsigma_scale
         self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
         self._dl = np.ones(self.n_parameters)
 
