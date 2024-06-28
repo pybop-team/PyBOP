@@ -107,6 +107,8 @@ class GaussianLogLikelihood(BaseLikelihood):
     ----------
     _logpi : float
         Precomputed offset value for the log-likelihood function.
+    _dsigma_scale : float
+        Scale factor for derivative of standard deviation.
     """
 
     def __init__(
@@ -184,8 +186,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         if np.any(sigma <= 0):
             return -np.inf
 
-        problem_inputs = self.problem.parameters.as_dict()
-        y = self.problem.evaluate(problem_inputs)
+        y = self.problem.evaluate(self.problem.parameters.as_dict())
         if any(
             len(y.get(key, [])) != len(self._target.get(key, [])) for key in self.signal
         ):
@@ -225,8 +226,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         if np.any(sigma <= 0):
             return -np.inf, -self._dl
 
-        problem_inputs = self.problem.parameters.as_dict()
-        y, dy = self.problem.evaluateS1(problem_inputs)
+        y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
         if any(
             len(y.get(key, [])) != len(self._target.get(key, [])) for key in self.signal
         ):
@@ -256,7 +256,7 @@ class MAP(BaseLikelihood):
 
     """
 
-    def __init__(self, problem, likelihood, sigma0=None, gradient_step=1e-3):
+    def __init__(self, problem, likelihood, sigma0=None, gradient_step=1e-2):
         super(MAP, self).__init__(problem)
         self.sigma0 = sigma0
         self.gradient_step = gradient_step
@@ -330,15 +330,20 @@ class MAP(BaseLikelihood):
 
         # Compute a finite difference approximation of the gradient of the log prior
         delta = self.parameters.initial_value() * self.gradient_step
+        prior_gradient = []
 
-        dl_prior_approx = [
-            (
-                param.prior.logpdf(inputs[param.name] * (1 + delta_i))
-                - param.prior.logpdf(inputs[param.name] * (1 - delta_i))
+        for parameter, step_size in zip(self.problem.parameters, delta):
+            param_value = inputs[parameter.name]
+
+            log_prior_upper = parameter.prior.logpdf(param_value * (1 + step_size))
+            log_prior_lower = parameter.prior.logpdf(param_value * (1 - step_size))
+
+            gradient = (log_prior_upper - log_prior_lower) / (
+                2 * step_size * param_value + np.finfo(float).eps
             )
-            / (2 * delta_i * inputs[param.name] + np.finfo(float).eps)
-            for param, delta_i in zip(self.problem.parameters, delta)
-        ]
+            prior_gradient.append(gradient)
 
         posterior = log_likelihood + log_prior
-        return posterior, dl + dl_prior_approx
+        total_gradient = dl + prior_gradient
+
+        return posterior, total_gradient
