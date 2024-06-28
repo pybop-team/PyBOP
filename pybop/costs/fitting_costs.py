@@ -48,7 +48,7 @@ class RootMeanSquaredError(BaseCost):
             if len(prediction.get(key, [])) != len(self._target.get(key, [])):
                 return np.float64(np.inf)  # prediction doesn't match target
 
-        e = np.array(
+        e = np.asarray(
             [
                 np.sqrt(np.mean((prediction[signal] - self._target[signal]) ** 2))
                 for signal in self.signal
@@ -88,7 +88,7 @@ class RootMeanSquaredError(BaseCost):
                 de = self._de * np.ones(self.n_parameters)
                 return e, de
 
-        r = np.array([y[signal] - self._target[signal] for signal in self.signal])
+        r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
         e = np.sqrt(np.mean(r**2, axis=1))
         de = np.mean((r * dy.T), axis=2) / (e + np.finfo(float).eps)
 
@@ -160,7 +160,7 @@ class SumSquaredError(BaseCost):
             if len(prediction.get(key, [])) != len(self._target.get(key, [])):
                 return np.float64(np.inf)  # prediction doesn't match target
 
-        e = np.array(
+        e = np.asarray(
             [
                 np.sum(((prediction[signal] - self._target[signal]) ** 2))
                 for signal in self.signal
@@ -198,7 +198,7 @@ class SumSquaredError(BaseCost):
                 de = self._de * np.ones(self.n_parameters)
                 return e, de
 
-        r = np.array([y[signal] - self._target[signal] for signal in self.signal])
+        r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
         e = np.sum(np.sum(r**2, axis=0), axis=0)
         de = 2 * np.sum(np.sum((r * dy.T), axis=2), axis=1)
 

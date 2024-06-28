@@ -48,7 +48,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
             )
 
         if not isinstance(sigma, np.ndarray):
-            sigma = np.array(sigma)
+            sigma = np.asarray(sigma)
 
         if not np.issubdtype(sigma.dtype, np.number):
             raise ValueError("Sigma must contain only numeric values")
@@ -75,7 +75,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
             if len(y.get(key, [])) != len(self._target.get(key, [])):
                 return -np.float64(np.inf)  # prediction doesn't match target
 
-        e = np.array(
+        e = np.asarray(
             [
                 np.sum(
                     self._offset
@@ -103,7 +103,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
                 dl = self._dl * np.ones(self.n_parameters)
                 return -likelihood, -dl
 
-        r = np.array([self._target[signal] - y[signal] for signal in self.signal])
+        r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
         likelihood = self._evaluate(inputs)
         dl = np.sum((self.sigma2 * np.sum((r * dy.T), axis=2)), axis=1)
         return likelihood, dl
@@ -150,7 +150,7 @@ class GaussianLogLikelihood(BaseLikelihood):
             if len(y.get(key, [])) != len(self._target.get(key, [])):
                 return -np.float64(np.inf)  # prediction doesn't match target
 
-        e = np.array(
+        e = np.asarray(
             [
                 np.sum(
                     self._logpi
@@ -183,7 +183,7 @@ class GaussianLogLikelihood(BaseLikelihood):
                 dl = self._dl * np.ones(self.n_parameters)
                 return -likelihood, -dl
 
-        r = np.array([self._target[signal] - y[signal] for signal in self.signal])
+        r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
         likelihood = self._evaluate(inputs)
         dl = sigma ** (-2.0) * np.sum((r * dy.T), axis=2)
         dsigma = -self.n_time_data / sigma + sigma**-(3.0) * np.sum(r**2, axis=1)

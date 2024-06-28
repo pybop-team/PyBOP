@@ -135,7 +135,7 @@ class Observer(BaseProblem):
 
     def get_measure(self, x: TimeSeriesState) -> np.ndarray:
         measures = [x.sol[s].data[-1] for s in self._signal]
-        return np.array([[m] for m in measures])
+        return np.asarray([[m] for m in measures])
 
     def get_current_time(self) -> float:
         """

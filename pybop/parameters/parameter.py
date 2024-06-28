@@ -169,7 +169,7 @@ class Parameters:
         for param in args:
             self.add(param)
 
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str) -> Parameter:
         """
         Return the parameter dictionary corresponding to a particular key.
 
@@ -182,15 +182,7 @@ class Parameters:
         -------
         pybop.Parameter
             The Parameter object.
-
-        Raises
-        ------
-        ValueError
-            The key must be the name of one of the parameters.
         """
-        if key not in self.param.keys():
-            raise ValueError(f"The key {key} is not the name of a parameter.")
-
         return self.param[key]
 
     def __len__(self) -> int:

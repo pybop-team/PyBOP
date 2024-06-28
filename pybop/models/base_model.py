@@ -293,7 +293,7 @@ class BaseModel:
         if x is None:
             x = self._built_model.y0
 
-        sol = pybamm.Solution([np.array([t])], [x], self._built_model, inputs)
+        sol = pybamm.Solution([np.asarray([t])], [x], self._built_model, inputs)
 
         return TimeSeriesState(sol=sol, inputs=inputs, t=t)
 
@@ -304,7 +304,7 @@ class BaseModel:
         if self._built_model is None:
             raise ValueError("Model must be built before calling get_state")
 
-        sol = pybamm.Solution([np.array([t])], [x], self._built_model, inputs)
+        sol = pybamm.Solution([np.asarray([t])], [x], self._built_model, inputs)
 
         return TimeSeriesState(sol=sol, inputs=inputs, t=t)
 
