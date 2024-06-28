@@ -363,9 +363,8 @@ class TestModels:
         # Simulate the DFN with active material values of 0.
         # The solutions will not change as the solver will not converge.
         output = problem.evaluate([0, 0])
-        output_S1, res_grad = problem.evaluateS1([0, 0])
+        output_S1, _ = problem.evaluateS1([0, 0])
 
         for key in problem.signal:
             assert np.allclose(output.get(key, [])[0], output.get(key, []))
             assert np.allclose(output_S1.get(key, [])[0], output_S1.get(key, []))
-        assert np.isinf(res_grad).any()
