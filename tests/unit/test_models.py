@@ -342,12 +342,11 @@ class TestModels:
         )
         problem = pybop.FittingProblem(model, parameters=parameters, dataset=dataset)
 
-        # Simulate the DFN with active material values of 0
-        # This should not converge, and as such, the
-        # solution from model.simulate should be inf
-        res = problem.evaluate([0, 0])
-        _, res_grad = problem.evaluateS1([0, 0])
+        # Simulate the DFN with active material values of 0.
+        # The solution from model.simulateS1 should be inf
+        # and the gradient should be inf.
+        output_S1, res_grad = problem.evaluateS1([0, 0])
 
         for key in problem.signal:
-            assert np.isinf(res.get(key, [])).any()
+            assert np.isinf(output_S1.get(key, [])).any()
         assert np.isinf(res_grad).any()
