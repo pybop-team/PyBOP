@@ -11,6 +11,7 @@ class Test_SPM_Parameterisation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
+        self.sigma0 = 0.002
         self.ground_truth = np.asarray([0.55, 0.55]) + np.random.normal(
             loc=0.0, scale=0.05, size=2
         )
@@ -63,19 +64,19 @@ class Test_SPM_Parameterisation:
                 "Time [s]": solution["Time [s]"].data,
                 "Current function [A]": solution["Current [A]"].data,
                 "Voltage [V]": solution["Voltage [V]"].data
-                + self.noise(0.002, len(solution["Time [s]"].data)),
+                + self.noise(self.sigma0, len(solution["Time [s]"].data)),
             }
         )
 
         # Define the cost to optimise
         problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
-            return cost_class(problem, sigma0=0.002)
+            return cost_class(problem, sigma0=self.sigma0)
         elif cost_class in [pybop.GaussianLogLikelihood]:
-            return cost_class(problem, sigma0=0.002 * 3)  # Initial sigma0 guess
+            return cost_class(problem, sigma0=self.sigma0 * 2)  # Initial sigma0 guess
         elif cost_class in [pybop.MAP]:
             return cost_class(
-                problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=0.002
+                problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=self.sigma0
             )
         else:
             return cost_class(problem)
@@ -95,38 +96,50 @@ class Test_SPM_Parameterisation:
     @pytest.mark.integration
     def test_spm_optimisers(self, optimiser, spm_costs):
         x0 = spm_costs.parameters.initial_value()
+        common_args = {
+            "cost": spm_costs,
+            "max_iterations": 125
+            if isinstance(spm_costs, pybop.GaussianLogLikelihood)
+            else 250,
+        }
 
-        # Test each optimiser
+        # Add sigma0 to ground truth for GaussianLogLikelihood
         if isinstance(spm_costs, pybop.GaussianLogLikelihood):
-            optim = optimiser(
-                cost=spm_costs,
-                max_iterations=125,
+            self.ground_truth = np.concatenate(
+                (self.ground_truth, np.asarray([self.sigma0]))
             )
-        else:
-            optim = optimiser(cost=spm_costs, sigma0=0.05, max_iterations=250)
+
+        # Set sigma0 and create optimiser
+        sigma0 = 0.01 if isinstance(spm_costs, pybop.GaussianLogLikelihood) else 0.05
+        optim = optimiser(sigma0=sigma0, **common_args)
+
+        # Set max unchanged iterations for BasePintsOptimisers
         if issubclass(optimiser, pybop.BasePintsOptimiser):
             optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
 
-        # AdamW will use lowest sigma0 for LR, so allow more iterations
+        # AdamW will use lowest sigma0 for learning rate, so allow more iterations
         if issubclass(optimiser, pybop.AdamW) and isinstance(
             spm_costs, pybop.GaussianLogLikelihood
         ):
-            optim.set_min_iterations(75)
+            optim = optimiser(sigma0=0.003, max_unchanged_iterations=65, **common_args)
 
         initial_cost = optim.cost(x0)
         x, final_cost = optim.run()
 
         # Assertions
-        if not isinstance(spm_costs, pybop.GaussianLogLikelihood):
-            if not np.allclose(x0, self.ground_truth, atol=1e-5):
-                if optim.minimising:
-                    assert initial_cost > final_cost
-                else:
-                    assert initial_cost < final_cost
+        if np.allclose(x0, self.ground_truth, atol=1e-5):
+            raise AssertionError("Initial guess is too close to ground truth")
 
+        if isinstance(spm_costs, pybop.GaussianLogLikelihood):
             np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
+            np.testing.assert_allclose(x[-1], self.sigma0, atol=5e-4)
         else:
-            np.testing.assert_allclose(x[:-1], self.ground_truth, atol=1.5e-2)
+            assert (
+                (initial_cost > final_cost)
+                if optim.minimising
+                else (initial_cost < final_cost)
+            )
+            np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, cost_class):
@@ -138,11 +151,11 @@ class Test_SPM_Parameterisation:
                 "Time [s]": solution["Time [s]"].data,
                 "Current function [A]": solution["Current [A]"].data,
                 "Voltage [V]": solution["Voltage [V]"].data
-                + self.noise(0.002, len(solution["Time [s]"].data)),
+                + self.noise(self.sigma0, len(solution["Time [s]"].data)),
                 "Bulk open-circuit voltage [V]": solution[
                     "Bulk open-circuit voltage [V]"
                 ].data
-                + self.noise(0.002, len(solution["Time [s]"].data)),
+                + self.noise(self.sigma0, len(solution["Time [s]"].data)),
             }
         )
 
@@ -153,10 +166,10 @@ class Test_SPM_Parameterisation:
         )
 
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
-            return cost_class(problem, sigma0=0.002)
+            return cost_class(problem, sigma0=self.sigma0)
         elif cost_class in [pybop.MAP]:
             return cost_class(
-                problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=0.002
+                problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=self.sigma0
             )
         else:
             return cost_class(problem)
@@ -172,6 +185,7 @@ class Test_SPM_Parameterisation:
     @pytest.mark.integration
     def test_multiple_signals(self, multi_optimiser, spm_two_signal_cost):
         x0 = spm_two_signal_cost.parameters.initial_value()
+        combined_sigma0 = np.asarray([self.sigma0, self.sigma0])
 
         # Test each optimiser
         optim = multi_optimiser(
@@ -179,6 +193,11 @@ class Test_SPM_Parameterisation:
             sigma0=0.03,
             max_iterations=250,
         )
+
+        # Add sigma0 to ground truth for GaussianLogLikelihood
+        if isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood):
+            self.ground_truth = np.concatenate((self.ground_truth, combined_sigma0))
+
         if issubclass(multi_optimiser, pybop.BasePintsOptimiser):
             optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
 
@@ -186,15 +205,19 @@ class Test_SPM_Parameterisation:
         x, final_cost = optim.run()
 
         # Assertions
-        if not isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood):
-            if not np.allclose(x0, self.ground_truth, atol=1e-5):
-                if optim.minimising:
-                    assert initial_cost > final_cost
-                else:
-                    assert initial_cost < final_cost
+        if np.allclose(x0, self.ground_truth, atol=1e-5):
+            raise AssertionError("Initial guess is too close to ground truth")
+
+        if isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood):
             np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
+            np.testing.assert_allclose(x[-2:], combined_sigma0, atol=5e-4)
         else:
-            np.testing.assert_allclose(x[:-2], self.ground_truth, atol=1.5e-2)
+            assert (
+                (initial_cost > final_cost)
+                if optim.minimising
+                else (initial_cost < final_cost)
+            )
+            np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
     @pytest.mark.parametrize("init_soc", [0.4, 0.6])
     @pytest.mark.integration
