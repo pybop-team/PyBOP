@@ -69,6 +69,7 @@ class TestCosts:
         params=[
             pybop.RootMeanSquaredError,
             pybop.SumSquaredError,
+            pybop.Minkowski,
             pybop.ObserverCost,
             pybop.MAP,
         ]
@@ -79,6 +80,8 @@ class TestCosts:
             return cls(problem)
         elif cls in [pybop.MAP]:
             return cls(problem, pybop.GaussianLogLikelihoodKnownSigma)
+        elif cls in [pybop.Minkowski]:
+            return cls(problem, p=2)
         elif cls in [pybop.ObserverCost]:
             inputs = problem.parameters.initial_value()
             state = problem._model.reinit(inputs)
@@ -151,7 +154,7 @@ class TestCosts:
             # Test option setting
             cost.set_fail_gradient(1)
 
-        if isinstance(cost, pybop.SumSquaredError):
+        if not isinstance(cost, (pybop.ObserverCost, pybop.MAP)):
             e, de = cost.evaluateS1([0.5])
 
             assert np.isscalar(e)

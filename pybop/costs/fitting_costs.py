@@ -20,9 +20,6 @@ class RootMeanSquaredError(BaseCost):
     def __init__(self, problem):
         super(RootMeanSquaredError, self).__init__(problem)
 
-        # Default fail gradient
-        self._de = 1.0
-
     def _evaluate(self, x, grad=None):
         """
         Calculate the root mean square error for a given set of parameters.
@@ -43,9 +40,8 @@ class RootMeanSquaredError(BaseCost):
         """
         prediction = self.problem.evaluate(x)
 
-        for key in self.signal:
-            if len(prediction.get(key, [])) != len(self._target.get(key, [])):
-                return np.float64(np.inf)  # prediction doesn't match target
+        if not self.verify_prediction(prediction):
+            return np.inf
 
         e = np.asarray(
             [
@@ -54,10 +50,7 @@ class RootMeanSquaredError(BaseCost):
             ]
         )
 
-        if self.n_outputs == 1:
-            return e.item()
-        else:
-            return np.sum(e)
+        return float(e) if self.n_outputs == 1 else np.sum(e)
 
     def _evaluateS1(self, x):
         """
@@ -80,12 +73,8 @@ class RootMeanSquaredError(BaseCost):
             If an error occurs during the calculation of the cost or gradient.
         """
         y, dy = self.problem.evaluateS1(x)
-
-        for key in self.signal:
-            if len(y.get(key, [])) != len(self._target.get(key, [])):
-                e = np.float64(np.inf)
-                de = self._de * np.ones(self.n_parameters)
-                return e, de
+        if not self.verify_prediction(y):
+            return np.inf, self._de * np.ones(self.n_parameters)
 
         r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
         e = np.sqrt(np.mean(r**2, axis=1))
@@ -95,21 +84,6 @@ class RootMeanSquaredError(BaseCost):
             return e.item(), de.flatten()
         else:
             return np.sum(e), np.sum(de, axis=1)
-
-    def set_fail_gradient(self, de):
-        """
-        Set the fail gradient to a specified value.
-
-        The fail gradient is used if an error occurs during the calculation
-        of the gradient. This method allows updating the default gradient value.
-
-        Parameters
-        ----------
-        de : float
-            The new fail gradient value to be used.
-        """
-        de = float(de)
-        self._de = de
 
 
 class SumSquaredError(BaseCost):
@@ -133,9 +107,6 @@ class SumSquaredError(BaseCost):
     def __init__(self, problem):
         super(SumSquaredError, self).__init__(problem)
 
-        # Default fail gradient
-        self._de = 1.0
-
     def _evaluate(self, x, grad=None):
         """
         Calculate the sum of squared errors for a given set of parameters.
@@ -155,9 +126,8 @@ class SumSquaredError(BaseCost):
         """
         prediction = self.problem.evaluate(x)
 
-        for key in self.signal:
-            if len(prediction.get(key, [])) != len(self._target.get(key, [])):
-                return np.float64(np.inf)  # prediction doesn't match target
+        if not self.verify_prediction(prediction):
+            return np.inf
 
         e = np.asarray(
             [
@@ -165,10 +135,8 @@ class SumSquaredError(BaseCost):
                 for signal in self.signal
             ]
         )
-        if self.n_outputs == 1:
-            return e.item()
-        else:
-            return np.sum(e)
+
+        return float(e) if self.n_outputs == 1 else np.sum(e)
 
     def _evaluateS1(self, x):
         """
@@ -191,11 +159,8 @@ class SumSquaredError(BaseCost):
             If an error occurs during the calculation of the cost or gradient.
         """
         y, dy = self.problem.evaluateS1(x)
-        for key in self.signal:
-            if len(y.get(key, [])) != len(self._target.get(key, [])):
-                e = np.float64(np.inf)
-                de = self._de * np.ones(self.n_parameters)
-                return e, de
+        if not self.verify_prediction(y):
+            return np.inf, self._de * np.ones(self.n_parameters)
 
         r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
         e = np.sum(np.sum(r**2, axis=0), axis=0)
@@ -203,20 +168,93 @@ class SumSquaredError(BaseCost):
 
         return e, de
 
-    def set_fail_gradient(self, de):
-        """
-        Set the fail gradient to a specified value.
 
-        The fail gradient is used if an error occurs during the calculation
-        of the gradient. This method allows updating the default gradient value.
+class Minkowski(BaseCost):
+    """
+    The Minkowski distance is a generalisation of several distance metrics,
+    including Euclidean and Manhattan distances. It is defined as:
+
+    .. math::
+        L_p(x, y) = (\sum_i |x_i - y_i|^p)^{1/p}
+
+    where p ≥ 1 is the order of the Minkowski metric.
+
+    Special cases:
+    - p = 1: Manhattan distance
+    - p = 2: Euclidean distance
+    - p → ∞: Chebyshev distance
+
+    This class implements the Minkowski distance as a cost function for
+    optimisation problems, allowing for flexible distance-based optimisation
+    across various problem domains.
+
+    Attributes:
+        p (float): The order of the Minkowski metric.
+
+    Note:
+        The cost calculation does not include the p-th root as it doesn't
+        affect the optimisation process and saves computational effort.
+    """
+
+    def __init__(self, problem, p: float = 2.0):
+        super(Minkowski, self).__init__(problem)
+        self.p = p
+
+    def _evaluate(self, x, grad=None):
+        """
+        Calculate the Minkowski cost for a given set of parameters.
 
         Parameters
         ----------
-        de : float
-            The new fail gradient value to be used.
+        x : array-like
+            The parameters for which to evaluate the cost.
+        Returns
+        -------
+        float
+            The Minkowski cost.
         """
-        de = float(de)
-        self._de = de
+        prediction = self.problem.evaluate(x)
+        if not self.verify_prediction(prediction):
+            return np.inf
+
+        e = np.asarray(
+            [
+                np.sum(np.abs(prediction[signal] - self._target[signal]) ** self.p)
+                for signal in self.signal
+            ]
+        )
+
+        return float(e) if self.n_outputs == 1 else np.sum(e)
+
+    def _evaluateS1(self, x):
+        """
+        Compute the cost and its gradient with respect to the parameters.
+
+        Parameters
+        ----------
+        x : array-like
+            The parameters for which to compute the cost and gradient.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the cost and the gradient. The cost is a float,
+            and the gradient is an array-like of the same length as `x`.
+
+        Raises
+        ------
+        ValueError
+            If an error occurs during the calculation of the cost or gradient.
+        """
+        y, dy = self.problem.evaluateS1(x)
+        if not self.verify_prediction(y):
+            return np.inf, self._de * np.ones(self.n_parameters)
+
+        r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
+        e = np.sum(np.sum(np.abs(r) ** self.p))
+        de = self.p * np.sum(np.sum(r ** (self.p - 1) * dy.T, axis=2), axis=1)
+
+        return e, de
 
 
 class ObserverCost(BaseCost):
@@ -329,7 +367,10 @@ class MAP(BaseLikelihood):
         float
             The maximum a posteriori cost.
         """
-        log_likelihood = self.likelihood.evaluate(x)
+        log_likelihood = self.likelihood._evaluate(x)
+        if not np.isfinite(log_likelihood):
+            return -np.inf
+
         log_prior = sum(
             param.prior.logpdf(x_i) for x_i, param in zip(x, self.problem.parameters)
         )
@@ -358,10 +399,12 @@ class MAP(BaseLikelihood):
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        log_likelihood, dl = self.likelihood.evaluateS1(x)
+        log_likelihood, dl = self.likelihood._evaluateS1(x)
+        if not np.isfinite(log_likelihood):
+            return -np.inf, dl
+
         log_prior = sum(
             param.prior.logpdf(x_i) for x_i, param in zip(x, self.problem.parameters)
         )
-
         posterior = log_likelihood + log_prior
         return posterior, dl
