@@ -26,7 +26,7 @@ affiliations:
    index: 2
  - name: Head of Research Software Engineering, University of Oxford, Oxford, UK
    index: 3
-date: 1 May 2024
+date: 30 June 2024
 bibliography: paper.bib
 ---
 
@@ -35,18 +35,21 @@ bibliography: paper.bib
 `PyBOP` provides a range of tools for the parameterisation and optimisation of battery models, offering
 both Bayesian and frequentist approaches with example workflows to assist the user. `PyBOP` can be
 used to parameterise various battery models, including the electrochemical and equivalent circuit
-models provided by the popular open-source package `PyBaMM` [@Sulzer:2021].
+models provided by the popular open-source package `PyBaMM` [@Sulzer:2021]. Likewise, PyBOP can be used for design optimisation for a given parameter set under predefined operating conditions. PyBOP allows users to parameterise battery models through a variety of methods, providing diagnostics into the convergence of the optimisation task. These identified parameter sets can then be used for design optimisation to support development of improved battery configurations.
+
+- PyBOP incorporates a PDE solver, and parameterisation/optimisation workflows into a single package.
+- PyBOP provide identifiablity estimates for the identified parameter set (Hessian approximation, fisher information?, Posterior variance, CI upper/lower)
 
 # Statement of need
 
 `PyBOP` is designed to provide a user-friendly, object-oriented interface for the optimisation of
 battery models which have been implemented in existing battery modelling software, e.g. `PyBaMM` [@Sulzer:2021].
-This software package is intended to serve a broad audience of students and researchers in both
+This software package is intended to serve a broad audience of students, engineers, and researchers in both
 academia and the battery industry. `PyBOP` prioritises clear and informative diagnostics for both
 new and experienced users, while also leveraging advanced optimisation algorithms provided by `SciPy`
-[@SciPy:2020] and `PINTS` [@Clerx:2019].
+[@SciPy:2020], `PINTS` [@Clerx:2019], and internal implementations.
 
-`PyBOP` supports the Battery Parameter eXchange (BPX) standard [@BPX:2023] for sharing battery 
+`PyBOP` supports the Battery Parameter eXchange (BPX) standard [@BPX:2023] for sharing battery
 parameter sets. These parameter sets are costly to obtain due to a number of factors: the equipment
 cost and time spent on characterisation experiments, the requirement of battery domain knowledge
 and the computational cost of parameter estimation. `PyBOP` reduces the barrier to entry and ongoing
@@ -58,38 +61,37 @@ This package complements other tools in the field of lithium-ion battery modelli
 
 # Architecture
 
+PyBOP is a Python package provided through PyPI, currently available for Python versions 3.9 to 3.12. The package composes the popular battery modelling package, PyBaMM for battery model numerical solutions, while providing the parameterisation and optimisation workflows. These workflows are constructed through a mixture of internal algorithms, as well as popular optimisation packages such as Pints and SciPy.
 The PyBOP framework consists of 4 main classes of Python object, namely the Model, Problem, Cost,
 and Optimiser classes, as shown in \autoref{fig:objects}. Each of these objects has a base class
 and example subclasses that combine to form a flexible and extensible codebase. The typical workflow
 would be to define an optimisation problem by constructing the objects in sequence.
 
-![The main PyBOP classes and how they interact.\label{fig:objects}](PyBOP_components.drawio.png){ width=100% }
+![The core PyBOP classes and how they interact.\label{fig:objects}](PyBOP_components.drawio.png){ width=100% }
 
-The current options for each class are listed in \autoref{tab:subclasses} and \autoref{tab:optimisers}.
+The current instances for each class are listed in \autoref{tab:subclasses} and \autoref{tab:optimisers}.
 
-: List of preset subclasses for the Model, Problem and Cost classes. \label{tab:subclasses}
+: List of preset subclasses for the model, problem and cost classes. \label{tab:subclasses}
 
 | Battery Models                      | Problem Types   | Cost Functions                 |
 | :---------------------------------- | :-------------- | :----------------------------- |
 | Single Particle Model (SPM)         | Fitting Problem | Sum of Squared Errors (SSE)    |
-| SPM with Electrolyte (SPMe)         |                 | Root Mean Squared Error (RMSE) |
-| Doyle-Fuller-Newman (DFN)           |                 | Maximum Likelihood (MLE)       |
+| SPM with Electrolyte (SPMe)         | Observer        | Root Mean Squared Error (RMSE) |
+| Doyle-Fuller-Newman (DFN)           | Design Problem  | Gaussian Log Likelihood            |
 | Many Particle Model (MPM)           |                 | Maximum a Posteriori (MAP)     |
-| Multi-Species Multi-Reaction (MSMR) |                 |                                |
-| Equivalent Circuit Models (ECM)     | Observer        | Unscented Kalman Filter (UKF)  |
-|                                     |                 |                                |
-|                                     | Design Problem  | Gravimetric Energy Density     |
+| Multi-Species Multi-Reaction (MSMR) |                 | Unscented Kalman Filter (UKF)  |
+| Equivalent Circuit Models (ECM)     |                 | Gravimetric Energy Density     |
 |                                     |                 | Volumetric Energy Density      |
 
 : List of available optimisers. (*) Note that Scipy Minimize provides both gradient and non-gradient-based methods. \label{tab:optimisers}
 
-| Gradient-based Optimisation Algorithms       | Non-gradient-based Optimisation Algorithms               |
+| Gradient-based algorithms       | Non-gradient-based algorithms               |
 | :------------------------------------------- | :------------------------------------------------------- |
-| Adaptive Moment Estimation (Adam)            | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) |
+| Adaptive Moment Estimation with Weigth Decay (AdamW) | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) |
 | Improved Resilient Backpropagation (iRProp-) | Exponential Natural Evolution Strategy (xNES)            |
 | Gradient Descent                             | Nelder-Mead                                              |
-| SciPy Minimize(*)                            | Particle Swarm Optimization (PSO)                        |
-| (pending) AdamW                              | SciPy Differential Evolution                             |
+| SciPy Minimize (*)                           | Particle Swarm Optimization (PSO)                        |
+|                                              | SciPy Differential Evolution                             |
 |                                              | Separable Natural Evolution Strategy (sNES)              |
 |                                              | (pending) Cuckoo Search                                  |
 
@@ -170,7 +172,7 @@ constraints on the geometric electrode parameters [@Couto:2023].
 
 # Acknowledgements
 
-We gratefully acknowledge all [contributors](https://github.com/pybop-team/PyBOP) to this
+We gratefully acknowledge all [contributors](https://github.com/pybop-team/PyBOP?tab=readme-ov-file#contributors-) to this
 package. This work was supported by the Faraday Institution Multiscale Modelling (MSM)
 project (grant number FIRG059) and the EU IntelLiGent project.
 
