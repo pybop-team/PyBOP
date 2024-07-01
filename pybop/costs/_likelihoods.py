@@ -103,6 +103,9 @@ class GaussianLogLikelihood(BaseLikelihood):
     data follows a Gaussian distribution and computes the log-likelihood of
     observed data under this assumption.
 
+    This class estimates the standard deviation of the Gaussian distribution
+    alongside the parameters of the model.
+
     Attributes
     ----------
     _logpi : float
@@ -118,39 +121,46 @@ class GaussianLogLikelihood(BaseLikelihood):
         dsigma_scale: float = 1.0,
     ):
         super(GaussianLogLikelihood, self).__init__(problem)
-
-        # Add the standard deviation(s) to the parameters object
-        if not isinstance(sigma0, List):
-            sigma0 = [sigma0]
-        if len(sigma0) != self.n_outputs:
-            sigma0 = np.pad(
-                sigma0,
-                (0, max(0, self.n_outputs - len(sigma0))),
-                constant_values=sigma0[-1],
-            )
-
-        self.sigma = Parameters()
-        for i, value in enumerate(sigma0):
-            if isinstance(value, Parameter):
-                self.sigma.add(value)
-            elif isinstance(value, (int, float)):
-                self.sigma.add(
-                    Parameter(
-                        f"Sigma for output {i+1}",
-                        initial_value=value,
-                        prior=Uniform(0.5 * value, 1.5 * value),
-                    ),
-                )
-            else:
-                raise TypeError(
-                    f"Expected sigma0 to contain Parameter objects or numeric values. "
-                    f"Received {type(value)}"
-                )
-
-        self.parameters.join(self.sigma)
         self._dsigma_scale = dsigma_scale
         self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
         self._dl = np.ones(self.n_parameters)
+
+        self.sigma = Parameters()
+        self._add_sigma_parameters(sigma0)
+        self.parameters.join(self.sigma)
+
+    def _add_sigma_parameters(self, sigma0):
+        sigma0 = [sigma0] if not isinstance(sigma0, List) else sigma0
+        sigma0 = self._pad_sigma0(sigma0)
+
+        for i, value in enumerate(sigma0):
+            self._add_single_sigma(i, value)
+
+    def _pad_sigma0(self, sigma0):
+        if len(sigma0) < self.n_outputs:
+            return np.pad(
+                sigma0,
+                (0, self.n_outputs - len(sigma0)),
+                constant_values=sigma0[-1],
+            )
+        return sigma0
+
+    def _add_single_sigma(self, index, value):
+        if isinstance(value, Parameter):
+            self.sigma.add(value)
+        elif isinstance(value, (int, float)):
+            self.sigma.add(
+                Parameter(
+                    f"Sigma for output {index+1}",
+                    initial_value=value,
+                    prior=Uniform(0.5 * value, 1.5 * value),
+                )
+            )
+        else:
+            raise TypeError(
+                f"Expected sigma0 to contain Parameter objects or numeric values. "
+                f"Received {type(value)}"
+            )
 
     @property
     def dsigma_scale(self):
