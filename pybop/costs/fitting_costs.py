@@ -198,6 +198,10 @@ class Minkowski(BaseCost):
 
     def __init__(self, problem, p: float = 2.0):
         super(Minkowski, self).__init__(problem)
+        if p < 0:
+            raise ValueError(
+                "The order of the Minkowski metric must be greater than 0."
+            )
         self.p = p
 
     def _evaluate(self, x, grad=None):
