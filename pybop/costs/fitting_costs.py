@@ -175,7 +175,7 @@ class Minkowski(BaseCost):
     including Euclidean and Manhattan distances. It is defined as:
 
     .. math::
-        L_p(x, y) = (\sum_i |x_i - y_i|^p)^{1/p}
+        L_p(x, y) = (\sum_i |x_i - y_i|^p)
 
     where p ≥ 1 is the order of the Minkowski metric.
 
@@ -191,9 +191,6 @@ class Minkowski(BaseCost):
     Attributes:
         p (float): The order of the Minkowski metric.
 
-    Note:
-        The cost calculation does not include the p-th root as it doesn't
-        affect the optimisation process and saves computational effort.
     """
 
     def __init__(self, problem, p: float = 2.0):
