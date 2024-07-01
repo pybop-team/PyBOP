@@ -267,7 +267,7 @@ class Parameters:
         for i, param in enumerate(self.param.values()):
             param.update(value=values[i])
 
-    def rvs(self, n_samples: int) -> List:
+    def rvs(self, n_samples: int = 1) -> List:
         """
         Draw random samples from each parameter's prior distribution.
 
@@ -298,7 +298,7 @@ class Parameters:
 
             all_samples.append(samples)
 
-        return all_samples
+        return np.concatenate(all_samples)
 
     def get_sigma0(self) -> List:
         """
