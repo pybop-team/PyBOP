@@ -125,7 +125,7 @@ class Parameter:
 
         self.margin = margin
 
-    def set_bounds(self, bounds=None):
+    def set_bounds(self, bounds=None, boundary_multiplier=6):
         """
         Set the upper and lower bounds.
 
@@ -134,6 +134,9 @@ class Parameter:
         bounds : tuple, optional
             A tuple defining the lower and upper bounds for the parameter.
             Defaults to None.
+        boundary_multiplier : float, optional
+            Used to define the bounds when no bounds are passed but the parameter has
+            a prior distribution (default: 6).
 
         Raises
         ------
@@ -147,8 +150,22 @@ class Parameter:
             else:
                 self.lower_bound = bounds[0]
                 self.upper_bound = bounds[1]
+        elif self.prior is not None:
+            self.lower_bound = self.prior.mean - boundary_multiplier * self.prior.sigma
+            self.upper_bound = self.prior.mean + boundary_multiplier * self.prior.sigma
+            bounds = [self.lower_bound, self.upper_bound]
 
         self.bounds = bounds
+
+    def get_initial_value(self) -> float:
+        """
+        Return the initial value of each parameter.
+        """
+        if self.initial_value is None:
+            sample = self.rvs(1)
+            self.update(initial_value=sample[0])
+
+        return self.initial_value
 
 
 class Parameters:
@@ -349,7 +366,7 @@ class Parameters:
 
         return sigma0
 
-    def initial_value(self) -> List:
+    def initial_value(self) -> np.ndarray:
         """
         Return the initial value of each parameter.
         """
@@ -361,9 +378,9 @@ class Parameters:
                 param.update(initial_value=initial_value)
             initial_values.append(param.initial_value)
 
-        return initial_values
+        return np.asarray(initial_values)
 
-    def current_value(self) -> List:
+    def current_value(self) -> np.ndarray:
         """
         Return the current value of each parameter.
         """
@@ -372,9 +389,9 @@ class Parameters:
         for param in self.param.values():
             current_values.append(param.value)
 
-        return current_values
+        return np.asarray(current_values)
 
-    def true_value(self) -> List:
+    def true_value(self) -> np.ndarray:
         """
         Return the true value of each parameter.
         """
@@ -383,7 +400,7 @@ class Parameters:
         for param in self.param.values():
             true_values.append(param.true_value)
 
-        return true_values
+        return np.asarray(true_values)
 
     def get_bounds_for_plotly(self):
         """

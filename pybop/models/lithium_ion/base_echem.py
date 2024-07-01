@@ -1,11 +1,8 @@
 import warnings
-from typing import Dict
 
 from pybamm import lithium_ion as pybamm_lithium_ion
 
-from pybop.models.base_model import BaseModel
-
-Inputs = Dict[str, float]
+from pybop.models.base_model import BaseModel, Inputs
 
 
 class EChemBaseModel(BaseModel):

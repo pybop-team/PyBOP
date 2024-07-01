@@ -78,6 +78,16 @@ class TestParameter:
         ):
             pybop.Parameter("Name", bounds=[0.7, 0.3])
 
+    @pytest.mark.unit
+    def test_sample_initial_values(self):
+        parameter = pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            prior=pybop.Gaussian(0.6, 0.02),
+            bounds=[0.375, 0.7],
+        )
+        sample = parameter.get_initial_value()
+        assert (sample >= 0.375) and (sample <= 0.7)
+
 
 class TestParameters:
     """

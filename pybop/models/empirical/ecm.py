@@ -51,7 +51,7 @@ class Thevenin(ECircuitModel):
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             The input parameters for the simulation.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
