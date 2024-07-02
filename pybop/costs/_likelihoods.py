@@ -1,5 +1,6 @@
 import numpy as np
 
+from pybop import IdentityTransformation
 from pybop.costs.base_cost import BaseCost
 
 
@@ -63,7 +64,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         """
         return self.sigma
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, x):
         """
         Calls the problem.evaluate method and calculates
         the log-likelihood
@@ -89,7 +90,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         else:
             return np.sum(e)
 
-    def _evaluateS1(self, x, grad=None):
+    def _evaluateS1(self, x):
         """
         Calls the problem.evaluateS1 method and calculates
         the log-likelihood
@@ -124,8 +125,12 @@ class GaussianLogLikelihood(BaseLikelihood):
         super(GaussianLogLikelihood, self).__init__(problem)
         self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
         self._dl = np.ones(self.n_parameters + self.n_outputs)
+        if self.transformation:
+            self.transformation.append(
+                IdentityTransformation()
+            )  # Temporary fix, ahead of #338
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, x):
         """
         Evaluates the Gaussian log-likelihood for the given parameters.
 
@@ -164,7 +169,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         else:
             return np.sum(e)
 
-    def _evaluateS1(self, x, grad=None):
+    def _evaluateS1(self, x):
         """
         Calls the problem.evaluateS1 method and calculates
         the log-likelihood

@@ -21,7 +21,7 @@ class StandaloneCost(pybop.BaseCost):
 
     Methods
     -------
-    __call__(x, grad=None)
+    __call__(x)
         Calculate the cost for a given parameter value.
     """
 
@@ -43,7 +43,7 @@ class StandaloneCost(pybop.BaseCost):
         )
         self.x0 = self.parameters.initial_value()
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, x):
         """
         Calculate the cost for a given parameter value.
 

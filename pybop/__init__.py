@@ -79,6 +79,17 @@ from .problems.fitting_problem import FittingProblem
 from .problems.design_problem import DesignProblem
 
 #
+# Transformation classes
+#
+from .transformation import Transformation
+from .transformation._transformation import (
+    IdentityTransformation,
+    ScaledTransformation,
+    LogTransformation,
+    ComposedTransformation,
+)
+
+#
 # Cost function class
 #
 from .costs.base_cost import BaseCost

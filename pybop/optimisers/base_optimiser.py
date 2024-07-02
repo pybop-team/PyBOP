@@ -56,6 +56,7 @@ class BaseOptimiser:
         self.verbose = False
         self.log = dict(x=[], x_best=[], cost=[])
         self.minimising = True
+        self.transformation = None
         self.physical_viability = False
         self.allow_infeasible_solutions = False
         self.default_max_iterations = 1000
@@ -73,6 +74,9 @@ class BaseOptimiser:
 
             # Set default initial standard deviation (for all or no parameters)
             self.sigma0 = cost.parameters.get_sigma0() or self.sigma0
+
+            # Set transformation
+            self.transformation = cost.transformation
 
         else:
             try:
@@ -114,6 +118,9 @@ class BaseOptimiser:
         self.sigma0 = self.unset_options.pop("sigma0", self.sigma0)
         self.verbose = self.unset_options.pop("verbose", self.verbose)
         self.minimising = self.unset_options.pop("minimising", self.minimising)
+        self.transformation = self.unset_options.pop(
+            "transformation", self.transformation
+        )
         if "allow_infeasible_solutions" in self.unset_options.keys():
             self.set_allow_infeasible_solutions(
                 self.unset_options.pop("allow_infeasible_solutions")

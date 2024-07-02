@@ -10,7 +10,10 @@ from pints import RectangularBoundaries as PintsRectangularBoundaries
 from pints import SequentialEvaluator as PintsSequentialEvaluator
 from pints import strfloat as PintsStrFloat
 
-from pybop import BaseOptimiser, Result
+from pybop import (
+    BaseOptimiser,
+    Result,
+)
 
 
 class BasePintsOptimiser(BaseOptimiser):
@@ -48,11 +51,9 @@ class BasePintsOptimiser(BaseOptimiser):
         self._evaluations = None
         self._iterations = None
 
-        # PyBOP doesn't currently support the PINTS transformation class
-        self._transformation = None
-
         self.pints_optimiser = pints_optimiser
         super().__init__(cost, **optimiser_kwargs)
+        self.f = self.cost
 
     def _set_up_optimiser(self):
         """
@@ -198,12 +199,12 @@ class BasePintsOptimiser(BaseOptimiser):
         if self._needs_sensitivities:
 
             def f(x):
-                L, dl = self.cost.evaluateS1(x)
+                L, dl = self.f.evaluateS1(x)
                 return (L, dl) if self.minimising else (-L, -dl)
         else:
 
-            def f(x, grad=None):
-                return self.cost(x, grad) if self.minimising else -self.cost(x, grad)
+            def f(x):
+                return self.f(x) if self.minimising else -self.f(x)
 
         # Create evaluator object
         if self._parallel:
@@ -327,8 +328,8 @@ class BasePintsOptimiser(BaseOptimiser):
 
             # Show current parameters
             x_user = self.pints_optimiser.x_guessed()
-            if self._transformation is not None:
-                x_user = self._transformation.to_model(x_user)
+            if self.transformation is not None:
+                x_user = self.transformation.to_model(x_user)
             for p in x_user:
                 print(PintsStrFloat(p))
             print("-" * 40)
@@ -350,8 +351,8 @@ class BasePintsOptimiser(BaseOptimiser):
             f = self.pints_optimiser.f_best()
 
         # Inverse transform search parameters
-        if self._transformation is not None:
-            x = self._transformation.to_model(x)
+        if self.transformation is not None:
+            x = self.transformation.to_model(x)
 
         return Result(
             x=x, final_cost=f if self.minimising else -f, n_iterations=self._iterations
