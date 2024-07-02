@@ -259,6 +259,10 @@ class TestOptimisation:
         optim = pybop.SciPyMinimize(cost=cost, method="L-BFGS-B", jac=True, maxiter=10)
         optim.run()
         assert optim.result.scipy_result.success is True
+        # Check trust-constr, which has a different callback
+        optim = pybop.SciPyMinimize(cost=cost, method="trust-constr", maxiter=10)
+        optim.run()
+        assert optim.result.scipy_result.success is True
 
         with pytest.raises(
             ValueError,
