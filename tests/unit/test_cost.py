@@ -149,7 +149,8 @@ class TestCosts:
                 cost([1.1])
 
             # Test option setting
-            cost.set_fail_gradient(1)
+            cost.set_fail_gradient(10)
+            assert cost._de == 10
 
         if isinstance(cost, pybop.SumSquaredError):
             e, de = cost.evaluateS1([0.5])
@@ -229,4 +230,4 @@ class TestCosts:
 
             # Compute after updating nominal capacity
             cost = cost_class(problem, update_capacity=True)
-            cost([0.4])
+            assert np.isfinite(cost([0.4]))
