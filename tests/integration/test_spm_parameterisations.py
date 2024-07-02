@@ -69,10 +69,10 @@ class Test_SPM_Parameterisation:
         # Define the cost to optimise
         problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
-            return cost_class(problem, sigma=[0.03, 0.03])
+            return cost_class(problem, sigma=0.002)
         elif cost_class in [pybop.MAP]:
             return cost_class(
-                problem, pybop.GaussianLogLikelihoodKnownSigma, sigma=[0.03, 0.03]
+                problem, pybop.GaussianLogLikelihoodKnownSigma, sigma=0.002
             )
         else:
             return cost_class(problem)
