@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#393](https://github.com/pybop-team/PyBOP/pull/383) - Adds Minkowski cost class, with example and tests
 - [#379](https://github.com/pybop-team/PyBOP/pull/379) - Adds model.simulateS1 to weekly benchmarks.
 - [#174](https://github.com/pybop-team/PyBOP/issues/174) - Adds new logo and updates Readme for accessibility.
 - [#316](https://github.com/pybop-team/PyBOP/pull/316) - Adds Adam with weight decay (AdamW) optimiser, adds depreciation warning for pints.Adam implementation.

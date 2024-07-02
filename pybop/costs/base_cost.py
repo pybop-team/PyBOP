@@ -27,6 +27,7 @@ class BaseCost:
         self.parameters = None
         self.problem = problem
         self.x0 = None
+        self.set_fail_gradient()
         if isinstance(self.problem, BaseProblem):
             self._target = self.problem._target
             self.parameters = self.problem.parameters
@@ -151,3 +152,40 @@ class BaseCost:
             If the method has not been implemented by the subclass.
         """
         raise NotImplementedError
+
+    def set_fail_gradient(self, de: float = 1.0):
+        """
+        Set the fail gradient to a specified value.
+
+        The fail gradient is used if an error occurs during the calculation
+        of the gradient. This method allows updating the default gradient value.
+
+        Parameters
+        ----------
+        de : float
+            The new fail gradient value to be used.
+        """
+        if not isinstance(de, float):
+            de = float(de)
+        self._de = de
+
+    def verify_prediction(self, y):
+        """
+        Verify that the prediction matches the target data.
+
+        Parameters
+        ----------
+        y : dict
+            The model predictions.
+
+        Returns
+        -------
+        bool
+            True if the prediction matches the target data, otherwise False.
+        """
+        if any(
+            len(y.get(key, [])) != len(self._target.get(key, [])) for key in self.signal
+        ):
+            return False
+
+        return True

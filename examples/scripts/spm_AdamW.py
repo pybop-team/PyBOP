@@ -53,7 +53,7 @@ signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 problem = pybop.FittingProblem(
     model, parameters, dataset, signal=signal, init_soc=init_soc
 )
-cost = pybop.RootMeanSquaredError(problem)
+cost = pybop.Minkowski(problem, p=2)
 optim = pybop.AdamW(
     cost,
     verbose=True,
