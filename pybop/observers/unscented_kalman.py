@@ -15,8 +15,8 @@ class UnscentedKalmanFilterObserver(Observer):
 
     Parameters
     ----------
-    parameters: List[Parameters]
-        The inputs to the model.
+    parameters: Parameters
+        The parameters for the model.
     model : BaseModel
         The model to observe.
     sigma0 : np.ndarray | float
