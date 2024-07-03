@@ -86,8 +86,8 @@ class BaseOptimiser:
                 self.cost = cost
                 self.minimising = True
 
-            except Exception:
-                raise Exception("The cost is not a recognised cost object or function.")
+            except Exception as e:
+                raise Exception("The cost is not a recognised cost object or function.") from e
 
             if not np.isscalar(cost_test) or not np.isreal(cost_test):
                 raise TypeError(

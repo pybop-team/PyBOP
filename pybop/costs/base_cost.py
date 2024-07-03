@@ -73,7 +73,7 @@ class BaseCost:
             raise e
 
         except Exception as e:
-            raise ValueError(f"Error in cost calculation: {e}")
+            raise ValueError(f"Error in cost calculation: {e}") from e
 
     def _evaluate(self, x, grad=None):
         """
@@ -128,7 +128,7 @@ class BaseCost:
             raise e
 
         except Exception as e:
-            raise ValueError(f"Error in cost calculation: {e}")
+            raise ValueError(f"Error in cost calculation: {e}") from e
 
     def _evaluateS1(self, x):
         """

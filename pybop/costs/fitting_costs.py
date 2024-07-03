@@ -305,7 +305,7 @@ class MAP(BaseLikelihood):
         except Exception as e:
             raise ValueError(
                 f"An error occurred when constructing the Likelihood class: {e}"
-            )
+            ) from e
 
         if hasattr(self, "likelihood") and not isinstance(
             self.likelihood, BaseLikelihood

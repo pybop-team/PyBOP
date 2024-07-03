@@ -313,7 +313,7 @@ class EChemBaseModel(BaseModel):
                 mean_sto_pos
             ) - negative_electrode_ocp(mean_sto_neg)
         except Exception as e:
-            raise ValueError(f"Error in average voltage calculation: {e}")
+            raise ValueError(f"Error in average voltage calculation: {e}") from e
 
         # Calculate and update nominal capacity
         theoretical_capacity = theoretical_energy / average_voltage
