@@ -1,5 +1,5 @@
 from pybop import BaseModel, Dataset, Parameter, Parameters
-from pybop.models.base_model import Inputs
+from pybop.parameters.parameter import Inputs
 
 
 class BaseProblem:

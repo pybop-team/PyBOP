@@ -7,8 +7,7 @@ import numpy as np
 import pybamm
 
 from pybop import Dataset, Experiment, Parameters, ParameterSet
-
-Inputs = Dict[str, float]
+from pybop.parameters.parameter import Inputs
 
 
 @dataclass

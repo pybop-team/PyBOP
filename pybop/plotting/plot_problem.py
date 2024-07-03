@@ -3,7 +3,7 @@ import sys
 import numpy as np
 
 from pybop import DesignProblem, FittingProblem, StandardPlot
-from pybop.models.base_model import Inputs
+from pybop.parameters.parameter import Inputs
 
 
 def quick_plot(problem, inputs: Inputs = None, show=True, **layout_kwargs):

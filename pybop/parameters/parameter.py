@@ -4,7 +4,8 @@ from typing import Dict, List, Union
 import numpy as np
 
 from pybop._utils import is_numeric
-from pybop.models.base_model import Inputs
+
+Inputs = Dict[str, float]
 
 
 class Parameter:
