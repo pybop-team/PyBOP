@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from typing import Dict, List
 
 import numpy as np
 
@@ -186,7 +185,7 @@ class Parameters:
     def __len__(self) -> int:
         return len(self.param)
 
-    def keys(self) -> List:
+    def keys(self) -> list:
         """
         A list of parameter names
         """
@@ -240,7 +239,7 @@ class Parameters:
         # Remove the parameter
         self.param.pop(parameter_name)
 
-    def get_bounds(self) -> Dict:
+    def get_bounds(self) -> dict:
         """
         Get bounds, for either all or no parameters.
         """
@@ -267,7 +266,7 @@ class Parameters:
         for i, param in enumerate(self.param.values()):
             param.update(value=values[i])
 
-    def rvs(self, n_samples: int) -> List:
+    def rvs(self, n_samples: int) -> list:
         """
         Draw random samples from each parameter's prior distribution.
 
@@ -300,7 +299,7 @@ class Parameters:
 
         return all_samples
 
-    def get_sigma0(self) -> List:
+    def get_sigma0(self) -> list:
         """
         Get the standard deviation, for either all or no parameters.
         """
@@ -317,7 +316,7 @@ class Parameters:
 
         return sigma0
 
-    def initial_value(self) -> List:
+    def initial_value(self) -> list:
         """
         Return the initial value of each parameter.
         """
@@ -331,7 +330,7 @@ class Parameters:
 
         return initial_values
 
-    def current_value(self) -> List:
+    def current_value(self) -> list:
         """
         Return the current value of each parameter.
         """
@@ -342,7 +341,7 @@ class Parameters:
 
         return current_values
 
-    def true_value(self) -> List:
+    def true_value(self) -> list:
         """
         Return the true value of each parameter.
         """
@@ -372,7 +371,7 @@ class Parameters:
 
         return bounds
 
-    def as_dict(self, values=None) -> Dict:
+    def as_dict(self, values=None) -> dict:
         if values is None:
             values = self.current_value()
         return {key: values[i] for i, key in enumerate(self.param.keys())}

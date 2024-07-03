@@ -31,7 +31,7 @@ class DesignCost(BaseCost):
         problem : object
             The problem instance containing the model and data.
         """
-        super(DesignCost, self).__init__(problem)
+        super().__init__(problem)
         self.problem = problem
         if update_capacity is True:
             nominal_capacity_warning = (
@@ -97,7 +97,7 @@ class GravimetricEnergyDensity(DesignCost):
     """
 
     def __init__(self, problem, update_capacity=False):
-        super(GravimetricEnergyDensity, self).__init__(problem, update_capacity)
+        super().__init__(problem, update_capacity)
 
     def _evaluate(self, x, grad=None):
         """
@@ -156,7 +156,7 @@ class VolumetricEnergyDensity(DesignCost):
     """
 
     def __init__(self, problem, update_capacity=False):
-        super(VolumetricEnergyDensity, self).__init__(problem, update_capacity)
+        super().__init__(problem, update_capacity)
 
     def _evaluate(self, x, grad=None):
         """

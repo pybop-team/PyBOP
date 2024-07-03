@@ -24,7 +24,7 @@ class StandaloneProblem(BaseProblem):
         self._dataset = dataset.data
 
         # Check that the dataset contains time and current
-        for name in ["Time [s]"] + self.signal:
+        for name in ["Time [s]", *self.signal]:
             if name not in self._dataset:
                 raise ValueError(f"expected {name} in list of dataset")
 

@@ -132,7 +132,7 @@ class ParameterSet:
 
         # Update parameter set
         if fit_params is not None:
-            for i, param in enumerate(fit_params):
+            for _i, param in enumerate(fit_params):
                 exportable_params.update({param.name: param.value})
 
         # Replace non-serializable values

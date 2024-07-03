@@ -224,7 +224,7 @@ class TestOptimisation:
             assert optim.pints_optimiser._lambda == 0.1
 
             # Incorrect values
-            for i, match in (("Value", -1),):
+            for i, _match in (("Value", -1),):
                 with pytest.raises(
                     Exception, match="must be a numeric value between 0 and 1."
                 ):
@@ -325,7 +325,7 @@ class TestOptimisation:
     @pytest.mark.unit
     def test_prior_sampling(self, cost):
         # Tests prior sampling
-        for i in range(50):
+        for _i in range(50):
             optim = pybop.Optimisation(cost=cost)
             assert optim.x0[0] < 0.62 and optim.x0[0] > 0.58
 

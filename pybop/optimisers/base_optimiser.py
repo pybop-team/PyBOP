@@ -1,4 +1,5 @@
 import warnings
+from typing import Optional
 
 import numpy as np
 
@@ -253,8 +254,8 @@ class Result:
     def __init__(
         self,
         x: np.ndarray = None,
-        final_cost: float = None,
-        n_iterations: int = None,
+        final_cost: Optional[float] = None,
+        n_iterations: Optional[int] = None,
         scipy_result=None,
     ):
         self.x = x

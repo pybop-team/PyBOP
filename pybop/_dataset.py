@@ -96,7 +96,7 @@ class Dataset:
         else:
             NotImplementedError("Only time interpolation is supported")
 
-    def check(self, signal=["Voltage [V]"]):
+    def check(self, signal=None):
         """
         Check the consistency of a PyBOP Dataset against the expected format.
 
@@ -110,11 +110,13 @@ class Dataset:
         ValueError
             If the time series and the data series are not consistent.
         """
+        if signal is None:
+            signal = ["Voltage [V]"]
         if isinstance(signal, str):
             signal = [signal]
 
         # Check that the dataset contains time and chosen signal
-        for name in ["Time [s]"] + signal:
+        for name in ["Time [s]", *signal]:
             if name not in self.names:
                 raise ValueError(f"expected {name} in list of dataset")
 

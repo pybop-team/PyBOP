@@ -18,7 +18,7 @@ class RootMeanSquaredError(BaseCost):
     """
 
     def __init__(self, problem):
-        super(RootMeanSquaredError, self).__init__(problem)
+        super().__init__(problem)
 
         # Default fail gradient
         self._de = 1.0
@@ -131,7 +131,7 @@ class SumSquaredError(BaseCost):
     """
 
     def __init__(self, problem):
-        super(SumSquaredError, self).__init__(problem)
+        super().__init__(problem)
 
         # Default fail gradient
         self._de = 1.0
@@ -293,7 +293,7 @@ class MAP(BaseLikelihood):
     """
 
     def __init__(self, problem, likelihood, sigma=None):
-        super(MAP, self).__init__(problem)
+        super().__init__(problem)
         self.sigma0 = sigma
         if self.sigma0 is None:
             self.sigma0 = []

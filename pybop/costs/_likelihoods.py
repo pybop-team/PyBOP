@@ -9,7 +9,7 @@ class BaseLikelihood(BaseCost):
     """
 
     def __init__(self, problem):
-        super(BaseLikelihood, self).__init__(problem)
+        super().__init__(problem)
         self.n_time_data = problem.n_time_data
 
 
@@ -28,7 +28,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
     """
 
     def __init__(self, problem, sigma):
-        super(GaussianLogLikelihoodKnownSigma, self).__init__(problem)
+        super().__init__(problem)
         self.sigma = None
         self.set_sigma(sigma)
         self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi / self.sigma)
@@ -121,7 +121,7 @@ class GaussianLogLikelihood(BaseLikelihood):
     """
 
     def __init__(self, problem):
-        super(GaussianLogLikelihood, self).__init__(problem)
+        super().__init__(problem)
         self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
         self._dl = np.ones(self.n_parameters + self.n_outputs)
 
