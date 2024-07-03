@@ -84,15 +84,15 @@ extend-exclude = ["__init__.py"]
 
 [tool.ruff.lint]
 select = [
-    "A",  # Pyflake attribute and variable clashes with builtins
-    "B",  # bugbear: security warnings
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # pyflakes
-    "I",  # import order
-    "ISC", # implicit string concatenation
-    "TID", # tidy-imports
-    "UP",  # Better syntax is available in your python version
+    "A",    # flake8-builtins: Check for Python builtins being used as variables or parameters
+    "B",    # flake8-bugbear: Find likely bugs and design problems in your program
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes: Detect various errors by parsing the source file
+    "I",    # isort: Check and enforce import ordering
+    "ISC",  # flake8-implicit-str-concat: Check for implicit string concatenation
+    "TID",  # flake8-tidy-imports: Validate import hygiene
+    "UP",   # pyupgrade: Automatically upgrade syntax for newer versions of Python
 ]
 
 ignore = ["E501","E741"]
@@ -100,6 +100,3 @@ per-file-ignores = {"**.ipynb" = ["E402", "E703"]}
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
-
-[tool.ruff.lint.pydocstyle]
-convention = "google"
