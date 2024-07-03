@@ -30,12 +30,13 @@ class TestTransformation:
 
     @pytest.mark.unit
     def test_identity_transformation(self, parameters):
-        q = np.array([5.0])
+        q = np.asarray([5.0])
         transformation = parameters["Identity"].transformation
         assert np.array_equal(transformation.to_model(q), q)
         assert np.array_equal(transformation.to_search(q), q)
         assert transformation.log_jacobian_det(q) == 0.0
         assert transformation.n_parameters == 1
+        assert transformation.is_elementwise()
 
         jac, jac_S1 = transformation.jacobian_S1(q)
         assert np.array_equal(jac, np.eye(1))
@@ -49,11 +50,12 @@ class TestTransformation:
 
     @pytest.mark.unit
     def test_scaled_transformation(self, parameters):
-        q = np.array([2.5])
+        q = np.asarray([2.5])
         transformation = parameters["Scaled"].transformation
         p = transformation.to_model(q)
         assert np.allclose(p, (q / 2.0) - 1.0)
         assert transformation.n_parameters == 1
+        assert transformation.is_elementwise()
 
         q_transformed = transformation.to_search(p)
         assert np.allclose(q_transformed, q)
@@ -72,7 +74,7 @@ class TestTransformation:
 
     @pytest.mark.unit
     def test_log_transformation(self, parameters):
-        q = np.array([10])
+        q = np.asarray([10])
         transformation = parameters["Log"].transformation
         p = transformation.to_model(q)
         assert np.allclose(p, np.exp(q))
@@ -90,6 +92,29 @@ class TestTransformation:
         cov = np.array([[0.5]])
         cov_transformed = transformation.convert_covariance_matrix(cov, q)
         assert np.array_equal(cov_transformed, cov * q**2)
+
+    @pytest.mark.unit
+    def test_composed_transformation(self, parameters):
+        q = np.asarray([5.0, 2.5])
+        transformation = pybop.ComposedTransformation(
+            [parameters["Identity"].transformation, parameters["Scaled"].transformation]
+        )
+        p = transformation.to_model(q)
+        np.testing.assert_allclose(p, np.asarray([5.0, ((q[1] / 2.0) - 1.0)]))
+        jac = transformation.jacobian(q)
+        jac_S1 = transformation.jacobian_S1(q)
+        np.testing.assert_allclose(jac, np.asarray([[1, 0], [0, 0.5]]))
+        np.testing.assert_allclose(jac_S1[0], jac)
+        np.testing.assert_allclose(
+            jac_S1[1], np.asarray([[[0, 0], [0, 0]], [[0, 0], [0, 0]]])
+        )
+
+        transformation.append(parameters["Log"].transformation)
+        q = np.asarray([5.0, 2.5, 10])
+        p = transformation.to_model(q)
+        np.testing.assert_allclose(
+            p, np.asarray([5.0, ((q[1] / 2.0) - 1.0), np.exp(q[2])])
+        )
 
 
 class TestBaseTransformation:
