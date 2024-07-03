@@ -1,8 +1,7 @@
 from pybamm import lithium_ion as pybamm_lithium_ion
 
 from pybop.models.lithium_ion.base_echem import EChemBaseModel
-
-from .weppner_huggins import BaseWeppnerHuggins
+from pybop.models.lithium_ion.weppner_huggins import BaseWeppnerHuggins
 
 
 class SPM(EChemBaseModel):
