@@ -113,6 +113,11 @@ jobs:
       matrix: ${{fromJson(needs.filter_pybamm_matrix.outputs.filtered_pybop_matrix)}}
 
     steps:
+      - name: Cleanup build folder
+        run: |
+          rm -rf ./* || true
+          rm -rf ./.??* || true
+
       - uses: actions/checkout@v4
       - name: Install python & create virtualenv
         shell: bash
