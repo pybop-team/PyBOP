@@ -152,7 +152,7 @@ class UnscentedKalmanFilterObserver(Observer):
 
 
 @dataclass
-class SigmaPoint(object):
+class SigmaPoint:
     """
     A sigma point is a point in the state space that is used to estimate the mean and covariance of a random variable.
     """
@@ -162,7 +162,7 @@ class SigmaPoint(object):
     w_c: float
 
 
-class SquareRootUKF(object):
+class SquareRootUKF:
     """
     van der Menve, R., & Wan, E. A. (2001). THE SQUARE-ROOT UNSCENTED KALMAN FILTER FOR STATE AND PARAMETER-ESTIMATION.
     https://doi.org/10.1109/ICASSP.2001.940586

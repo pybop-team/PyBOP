@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 sys.path.append(str(Path(".").resolve()))
-from pybop._version import __version__  # noqa: E402
+from pybop._version import __version__
 
 # -- Project information -----------------------------------------------------
 project = "PyBOP"

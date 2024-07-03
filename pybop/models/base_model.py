@@ -12,7 +12,7 @@ Inputs = Dict[str, float]
 
 
 @dataclass
-class TimeSeriesState(object):
+class TimeSeriesState:
     """
     The current state of a time series model that is a pybamm model.
     """

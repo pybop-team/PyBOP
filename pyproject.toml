@@ -83,8 +83,26 @@ extend-include = ["*.ipynb"]
 extend-exclude = ["__init__.py"]
 
 [tool.ruff.lint]
-extend-select = ["I"]
-ignore = ["E501","E741"]
+select = [
+    "A",  # Pyflake attribute and variable clashes with builtins
+    "B",  # bugbear: security warnings
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # import order
+    "ISC",  # implicit string concatenation
+    "UP",  # Better syntax is available in your python version
+    "RUF",  # the ruff developer's own rules
+]
 
-[tool.ruff.lint.per-file-ignores]
-"**.ipynb" = ["E402", "E703"]
+ignore = ["E501","E741"]
+per-file-ignores = {"**.ipynb" = ["E402", "E703"]}
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
