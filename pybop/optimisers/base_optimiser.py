@@ -80,7 +80,7 @@ class BaseOptimiser:
                 cost_test = cost(optimiser_kwargs.get("x0", []))
                 warnings.warn(
                     "The cost is not an instance of pybop.BaseCost, but let's continue "
-                    + "assuming that it is a callable function to be minimised.",
+                    "assuming that it is a callable function to be minimised.",
                     UserWarning,
                 )
                 self.cost = cost
@@ -196,7 +196,7 @@ class BaseOptimiser:
         else:
             warnings.warn(
                 "Optimised parameters are not physically viable! \nConsider retrying the optimisation"
-                + " with a non-gradient-based optimiser and the option allow_infeasible_solutions=False",
+                " with a non-gradient-based optimiser and the option allow_infeasible_solutions=False",
                 UserWarning,
                 stacklevel=2,
             )

@@ -97,7 +97,7 @@ class TestLikelihoods:
         with pytest.raises(
             ValueError,
             match="The GaussianLogLikelihoodKnownSigma cost requires sigma to be "
-            + "either a scalar value or an array with one entry per dimension.",
+            "either a scalar value or an array with one entry per dimension.",
         ):
             pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, sigma=None)
 

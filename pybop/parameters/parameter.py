@@ -211,7 +211,7 @@ class Parameters:
             if parameter.name in self.param.keys():
                 raise ValueError(
                     f"There is already a parameter with the name {parameter.name} "
-                    + "in the Parameters object. Please remove the duplicate entry."
+                    "in the Parameters object. Please remove the duplicate entry."
                 )
             self.param[parameter.name] = parameter
         elif isinstance(parameter, dict):
@@ -221,7 +221,7 @@ class Parameters:
             if name in self.param.keys():
                 raise ValueError(
                     f"There is already a parameter with the name {name} "
-                    + "in the Parameters object. Please remove the duplicate entry."
+                    "in the Parameters object. Please remove the duplicate entry."
                 )
             self.param[name] = Parameter(**parameter)
         else:

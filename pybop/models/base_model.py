@@ -561,8 +561,8 @@ class BaseModel:
                     for entry in inputs:
                         if not isinstance(entry, (int, float)):
                             raise ValueError(
-                                "Expecting inputs in the form of a dictionary, numeric list"
-                                + f" or None, but received a list with type: {type(inputs)}"
+                                f"Expecting inputs in the form of a dictionary, numeric list"
+                                f" or None, but received a list with type: {type(inputs)}"
                             )
                 else:
                     inputs = self.parameters.as_dict(inputs)

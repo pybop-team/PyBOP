@@ -43,7 +43,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         if sigma is None:
             raise ValueError(
                 "The GaussianLogLikelihoodKnownSigma cost requires sigma to be "
-                + "either a scalar value or an array with one entry per dimension."
+                "either a scalar value or an array with one entry per dimension."
             )
 
         if not isinstance(sigma, np.ndarray):

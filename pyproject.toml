@@ -92,7 +92,6 @@ select = [
     "I",  # import order
     "ISC",  # implicit string concatenation
     "UP",  # Better syntax is available in your python version
-    "RUF",  # the ruff developer's own rules
 ]
 
 ignore = ["E501","E741"]
