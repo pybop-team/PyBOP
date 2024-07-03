@@ -1,6 +1,5 @@
 import numpy as np
-from pybamm import Interpolant, solvers
-from pybamm import t as pybamm_t
+from pybamm import solvers
 
 
 class Dataset:
@@ -76,25 +75,6 @@ class Dataset:
             raise ValueError(f"The key {key} does not exist in this dataset.")
 
         return self.data[key]
-
-    def Interpolant(self):
-        """
-        Create an interpolation function of the dataset based on the independent variable.
-
-        Currently, only time-based interpolation is supported. This method modifies
-        the instance's Interpolant attribute to be an interpolation function that
-        can be evaluated at different points in time.
-
-        Raises
-        ------
-        NotImplementedError
-            If the independent variable for interpolation is not supported.
-        """
-
-        if self.variable == "time":
-            self.Interpolant = Interpolant(self.x, self.y, pybamm_t)
-        else:
-            NotImplementedError("Only time interpolation is supported")
 
     def check(self, signal=None):
         """

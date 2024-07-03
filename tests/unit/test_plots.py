@@ -64,7 +64,7 @@ class TestPlots:
             dataset["Voltage [V]"],
             trace_names=["Time [s]", "Voltage [V]"],
         )
-        pybop.plot_dataset(dataset, signal=["Voltage [V]"])
+        pybop.plot_dataset(dataset)
 
     @pytest.fixture
     def fitting_problem(self, model, parameters, dataset):
