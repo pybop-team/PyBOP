@@ -182,9 +182,7 @@ class TestProblem:
     ):
         # Construct model and predict
         model.parameters = parameters
-        out = model.predict(
-            inputs=[1e-5, 1e-5], t_eval=np.linspace(0, 10, 100)
-        )
+        out = model.predict(inputs=[1e-5, 1e-5], t_eval=np.linspace(0, 10, 100))
 
         problem = pybop.FittingProblem(
             model, parameters, dataset=dataset, signal=signal

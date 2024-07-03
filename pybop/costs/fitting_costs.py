@@ -332,7 +332,6 @@ class MAP(BaseLikelihood):
         log_likelihood = self.likelihood._evaluate(inputs)
         log_prior = sum(
             self.parameters[key].prior.logpdf(value) for key, value in inputs.items()
-
         )
 
         posterior = log_likelihood + log_prior
