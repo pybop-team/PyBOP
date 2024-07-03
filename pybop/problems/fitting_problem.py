@@ -92,14 +92,15 @@ class FittingProblem(BaseProblem):
         inputs = self.parameters.verify(inputs)
 
         requires_rebuild = False
-        for key in inputs.keys():
-            if (
-                key in self._model.rebuild_parameters
-                and inputs[key] != self.parameters[key].value
-            ):
-                self.parameters[key].update(value=inputs[key])
-                requires_rebuild = True
+        for key, value in inputs.items():
+            if key in self._model.rebuild_parameters:
+                current_value = self.parameters[key].value
+                if value != current_value:
+                    self.parameters[key].update(value=value)
+                    requires_rebuild = True
+        
         if requires_rebuild:
+            self._model.rebuild(parameters=self.parameters)
             self._model.rebuild(parameters=self.parameters)
 
         y = self._model.simulate(inputs=inputs, t_eval=self._time_data)
