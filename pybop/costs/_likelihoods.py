@@ -139,7 +139,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         Returns:
             float: The log-likelihood value, or -inf if the standard deviations are received as non-positive.
         """
-        sigma = np.asarray([0.002])  # TEMPORARY WORKAROUND
+        sigma = np.asarray([0.002])  # TEMPORARY WORKAROUND (replace in #338)
 
         if np.any(sigma <= 0):
             return -np.inf
@@ -171,7 +171,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         Calls the problem.evaluateS1 method and calculates
         the log-likelihood
         """
-        sigma = np.asarray([0.002])  # TEMPORARY WORKAROUND
+        sigma = np.asarray([0.002])  # TEMPORARY WORKAROUND (replace in #338)
 
         if np.any(sigma <= 0):
             return -np.float64(np.inf), -self._dl * np.ones(self.n_parameters)

@@ -104,9 +104,7 @@ class BaseModel:
             The initial state of charge to be used in simulations.
         """
         self.dataset = dataset
-        if parameters is None:
-            self.parameters = Parameters()
-        else:
+        if parameters is not None:
             self.parameters = parameters
             self.classify_and_update_parameters(self.parameters)
 
@@ -466,7 +464,7 @@ class BaseModel:
 
         Parameters
         ----------
-        inputs : Inputse, optional
+        inputs : Inputs, optional
             Input parameters for the simulation. Defaults to None, indicating that the
             default parameters should be used.
         t_eval : array-like, optional

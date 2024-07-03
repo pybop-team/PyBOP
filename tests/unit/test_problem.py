@@ -173,8 +173,8 @@ class TestProblem:
         )  # building postponed with input experiment
 
         # Test model.predict
-        model.predict(inputs=parameters.as_dict([1e-5, 1e-5]), experiment=experiment)
-        model.predict(inputs=parameters.as_dict([3e-5, 3e-5]), experiment=experiment)
+        model.predict(inputs=[1e-5, 1e-5], experiment=experiment)
+        model.predict(inputs=[3e-5, 3e-5], experiment=experiment)
 
     @pytest.mark.unit
     def test_problem_construct_with_model_predict(
@@ -183,7 +183,7 @@ class TestProblem:
         # Construct model and predict
         model.parameters = parameters
         out = model.predict(
-            inputs=parameters.as_dict([1e-5, 1e-5]), t_eval=np.linspace(0, 10, 100)
+            inputs=[1e-5, 1e-5], t_eval=np.linspace(0, 10, 100)
         )
 
         problem = pybop.FittingProblem(
@@ -191,7 +191,7 @@ class TestProblem:
         )
 
         # Test problem evaluate
-        problem_output = problem.evaluate(parameters.as_dict([2e-5, 2e-5]))
+        problem_output = problem.evaluate([2e-5, 2e-5])
 
         assert problem._model._built_model is not None
         with pytest.raises(AssertionError):

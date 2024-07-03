@@ -77,7 +77,7 @@ class BaseProblem:
         Parameters
         ----------
         inputs : Inputs
-            Parameters for evaluation of the mmodel.
+            Parameters for evaluation of the model.
 
         Raises
         ------
@@ -94,7 +94,7 @@ class BaseProblem:
         Parameters
         ----------
         inputs : Inputs
-             Parameters for evaluation of the mmodel.
+             Parameters for evaluation of the model.
 
         Raises
         ------

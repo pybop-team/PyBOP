@@ -18,14 +18,14 @@ class TestStandalone:
         assert optim.name() == "StandaloneOptimiser"
 
         x, final_cost = optim.run()
-        assert optim.cost(optim.parameters.initial_value()) > final_cost
+        assert optim.cost(optim.x0) > final_cost
         np.testing.assert_allclose(x, [2, 4], atol=1e-2)
 
         # Test with bounds
         optim = StandaloneOptimiser(bounds=dict(upper=[5, 6], lower=[1, 2]))
 
         x, final_cost = optim.run()
-        assert optim.cost(optim.parameters.initial_value()) > final_cost
+        assert optim.cost(optim.x0) > final_cost
         np.testing.assert_allclose(x, [2, 4], atol=1e-2)
 
     @pytest.mark.unit
@@ -35,7 +35,7 @@ class TestStandalone:
         optim = pybop.SciPyDifferentialEvolution(cost=cost)
         x, final_cost = optim.run()
 
-        initial_cost = optim.cost(optim.parameters.initial_value())
+        initial_cost = optim.cost(optim.x0)
         assert initial_cost > final_cost
         np.testing.assert_allclose(final_cost, 42, atol=1e-1)
 
