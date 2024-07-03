@@ -141,6 +141,19 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 # Nest this option within an options dictionary for SciPy minimize
                 self._options["options"]["maxiter"] = self.unset_options.pop(key)
 
+    def cost_wrapper(self, x):
+        self.log["x"].append([x])
+
+        if not self._options["jac"]:
+            cost = self.cost(x) / self._cost0
+            if np.isinf(cost):
+                self.inf_count += 1
+                cost = 1 + 0.9**self.inf_count  # for fake finite gradient
+            return cost if self.minimising else -cost
+
+        L, dl = self.cost.evaluateS1(x)
+        return (L, dl) if self.minimising else (-L, -dl)
+
     def _run_optimiser(self):
         """
         Executes the optimisation process using SciPy's minimize function.
@@ -174,24 +187,8 @@ class SciPyMinimize(BaseSciPyOptimiser):
         # Scale the cost function, preserving the sign convention, and eliminate nan values
         self.inf_count = 0
 
-        if not self._options["jac"]:
-
-            def cost_wrapper(x):
-                self.log["x"].append([x])
-                cost = self.cost(x) / self._cost0
-                if np.isinf(cost):
-                    self.inf_count += 1
-                    cost = 1 + 0.9**self.inf_count  # for fake finite gradient
-                return cost if self.minimising else -cost
-        elif self._options["jac"] is True:
-
-            def cost_wrapper(x):
-                self.log["x"].append([x])
-                L, dl = self.cost.evaluateS1(x)
-                return L, dl if self.minimising else -L, -dl
-
         return minimize(
-            cost_wrapper,
+            self.cost_wrapper,
             self.x0,
             bounds=self._scipy_bounds,
             callback=callback,

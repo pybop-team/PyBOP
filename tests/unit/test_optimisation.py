@@ -335,6 +335,7 @@ class TestOptimisation:
         [
             (0.85, 0.2, False),
             (0.85, 0.001, True),
+            (1.0, 0.5, False),
         ],
     )
     def test_scipy_prior_resampling(
@@ -367,6 +368,13 @@ class TestOptimisation:
                 opt.run()
         else:
             opt.run()
+
+            # Test cost_wrapper inf return
+            cost = opt.cost_wrapper(np.array([0.9]))
+            assert cost in (
+                pytest.approx(1.729, abs=0.001),
+                pytest.approx(1.9, abs=0.001),
+            )
 
     @pytest.mark.unit
     def test_halting(self, cost):
