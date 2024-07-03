@@ -1,9 +1,10 @@
 from collections import OrderedDict
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import numpy as np
 
 from pybop._utils import is_numeric
+from pybop.models.base_model import Inputs
 
 
 class Parameter:
