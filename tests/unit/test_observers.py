@@ -73,6 +73,7 @@ class TestObserver:
         # Test evaluate with different inputs
         observer._time_data = t_eval
         observer.evaluate(parameters.as_dict())
+        observer.evaluate(parameters.current_value())
 
         # Test evaluate with dataset
         observer._dataset = pybop.Dataset(
