@@ -47,10 +47,7 @@ class EChemBaseModel(BaseModel):
         solver=None,
         **model_kwargs,
     ):
-        super().__init__(
-            name=name,
-            parameter_set=parameter_set,
-        )
+        super().__init__(name=name, parameter_set=parameter_set)
 
         model_options = dict(build=False)
         for key, value in model_kwargs.items():
