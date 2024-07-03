@@ -98,7 +98,7 @@ class FittingProblem(BaseProblem):
                 if value != current_value:
                     self.parameters[key].update(value=value)
                     requires_rebuild = True
-        
+
         if requires_rebuild:
             self._model.rebuild(parameters=self.parameters)
             self._model.rebuild(parameters=self.parameters)
