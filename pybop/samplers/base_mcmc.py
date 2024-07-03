@@ -9,7 +9,7 @@ from pints import (
     SingleChainMCMC,
 )
 
-from pybop import BaseCost, BaseSampler, LogPosterior
+from pybop import BaseCost, BaseSampler
 
 
 class BasePintsSampler(BaseSampler):
@@ -26,7 +26,7 @@ class BasePintsSampler(BaseSampler):
         log_pdf: Union[BaseCost, List[BaseCost]],
         chains: int,
         sampler,
-        burn_in=None,
+        warm_up=None,
         x0=None,
         cov0=None,
         transformation=None,
@@ -56,7 +56,7 @@ class BasePintsSampler(BaseSampler):
         self._evaluation_files = kwargs.get("evaluation_files", None)
         self._parallel = kwargs.get("parallel", False)
         self._verbose = kwargs.get("verbose", False)
-        self.burn_in = burn_in
+        self.warm_up = warm_up
         self.n_parameters = (
             log_pdf[0].n_parameters
             if isinstance(log_pdf, list)
@@ -203,8 +203,8 @@ class BasePintsSampler(BaseSampler):
 
         self._finalise_logging()
 
-        if self.burn_in:
-            self._samples = self._samples[:, self.burn_in :, :]
+        if self.warm_up:
+            self._samples = self._samples[:, self.warm_up :, :]
 
         return self._samples if self._chains_in_memory else None
 
@@ -271,25 +271,6 @@ class BasePintsSampler(BaseSampler):
             for i, e in enumerate(es):
                 self._evaluations[i, self._iteration] = e
 
-    def _initialise_logging(self):
-        logging.basicConfig(format="%(message)s", level=logging.INFO)
-
-        if self._log_to_screen:
-            logging.info("Using " + str(self._samplers[0].name()))
-            logging.info("Generating " + str(self._n_chains) + " chains.")
-            if self._parallel:
-                logging.info(
-                    f"Running in parallel with {self._n_workers} worker processes."
-                )
-            else:
-                logging.info("Running in sequential mode.")
-            if self._chain_files:
-                logging.info("Writing chains to " + self._chain_files[0] + " etc.")
-            if self._evaluation_files:
-                logging.info(
-                    "Writing evaluations to " + self._evaluation_files[0] + " etc."
-                )
-
     def _check_stopping_criteria(self):
         has_stopping_criterion = False
         has_stopping_criterion |= self._max_iterations is not None
@@ -314,63 +295,4 @@ class BasePintsSampler(BaseSampler):
                 SequentialEvaluator(f)
                 if not self._multi_log_pdf
                 else MultiSequentialEvaluator(f)
-            )
-
-    def _check_initial_phase(self):
-        # Set initial phase if needed
-        if self._initial_phase:
-            for sampler in self._samplers:
-                sampler.set_initial_phase(True)
-
-    def _inverse_transform(self, y):
-        return self._transformation.to_model(y) if self._transformation else y
-
-    def _initialise_storage(self):
-        self._prior = None
-        if isinstance(self._log_pdf, LogPosterior):
-            self._prior = self._log_pdf.prior()
-
-        # Storage of the received samples
-        self._sampled_logpdf = np.zeros(self._n_chains)
-        self._sampled_prior = np.zeros(self._n_chains)
-
-        # Pre-allocate arrays for chain storage
-        self._samples = np.zeros(
-            (self._n_chains, self._max_iterations, self.n_parameters)
-        )
-
-        # Pre-allocate arrays for evaluation storage
-        if self._prior:
-            # Store posterior, likelihood, prior
-            self._evaluations = np.zeros((self._n_chains, self._max_iterations, 3))
-        else:
-            # Store pdf
-            self._evaluations = np.zeros((self._n_chains, self._max_iterations))
-
-        # From PINTS:
-        # Some samplers need intermediate steps, where `None` is returned instead
-        # of a sample. But samplers can run asynchronously, so that one can return
-        # `None` while another returns a sample. To deal with this, we maintain a
-        # list of 'active' samplers that have not reached `max_iterations`,
-        # and store the number of samples so far in each chain.
-        if self._single_chain:
-            self._active = list(range(self._n_chains))
-            self._n_samples = [0] * self._n_chains
-
-    def _end_initial_phase(self):
-        for sampler in self._samplers:
-            sampler.set_initial_phase(False)
-        if self._log_to_screen:
-            logging.info("Initial phase completed.")
-
-    def _ask_for_samples(self):
-        if self._single_chain:
-            return [self._samplers[i].ask() for i in self._active]
-        else:
-            return self._samplers[0].ask()
-
-    def _finalise_logging(self):
-        if self._log_to_screen:
-            logging.info(
-                f"Halting: Maximum number of iterations ({self._iteration}) reached."
             )

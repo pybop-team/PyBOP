@@ -95,6 +95,7 @@ class Test_Sampling_SPM:
         ],
     )
     # Samplers that either have along runtime, or converge slowly
+    # Need to assess how to perform integration tests with these samplers
     # @pytest.mark.parametrize(
     #     "long_sampler",
     #     [
@@ -120,7 +121,7 @@ class Test_Sampling_SPM:
             posterior,
             chains=3,
             x0=x0,
-            burn_in=50,
+            warm_up=50,
             max_iterations=400,
         )
         results = sampler.run()
