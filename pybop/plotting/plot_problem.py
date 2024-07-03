@@ -6,7 +6,7 @@ from pybop import DesignProblem, FittingProblem, StandardPlot
 from pybop.parameters.parameter import Inputs
 
 
-def quick_plot(problem, inputs: Inputs = None, show=True, **layout_kwargs):
+def quick_plot(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
     """
     Quickly plot the target dataset against optimised model output.
 
@@ -17,7 +17,7 @@ def quick_plot(problem, inputs: Inputs = None, show=True, **layout_kwargs):
     ----------
     problem : object
         Problem object with dataset and signal attributes.
-    inputs : Inputs
+    problem_inputs : Inputs
         Optimised (or example) parameter values.
     show : bool, optional
         If True, the figure is shown upon creation (default: True).
@@ -31,14 +31,14 @@ def quick_plot(problem, inputs: Inputs = None, show=True, **layout_kwargs):
     plotly.graph_objs.Figure
         The Plotly figure object for the scatter plot.
     """
-    if inputs is None:
-        inputs = problem.parameters.as_dict()
+    if problem_inputs is None:
+        problem_inputs = problem.parameters.as_dict()
     else:
-        inputs = problem.parameters.verify(inputs)
+        problem_inputs = problem.parameters.verify(problem_inputs)
 
     # Extract the time data and evaluate the model's output and target values
     xaxis_data = problem.time_data()
-    model_output = problem.evaluate(inputs)
+    model_output = problem.evaluate(problem_inputs)
     target_output = problem.get_target()
 
     # Create a plot for each output
