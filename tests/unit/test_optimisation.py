@@ -242,7 +242,7 @@ class TestOptimisation:
             assert optim.pints_optimiser.n_hyper_parameters() == 5
             assert not optim.pints_optimiser.running()
             assert optim.pints_optimiser.x_guessed() == optim.pints_optimiser._x0
-            with pytest.raises(Exception):
+            with pytest.raises(RuntimeError):
                 optim.pints_optimiser.tell([0.1])
 
         else:
