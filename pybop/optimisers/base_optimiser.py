@@ -82,6 +82,7 @@ class BaseOptimiser:
                     "The cost is not an instance of pybop.BaseCost, but let's continue "
                     "assuming that it is a callable function to be minimised.",
                     UserWarning,
+                    stacklevel=2,
                 )
                 self.cost = cost
                 self.minimising = True

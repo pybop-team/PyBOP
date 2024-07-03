@@ -139,7 +139,7 @@ class EChemBaseModel(BaseModel):
             ):
                 if self.param_check_counter <= len(electrode_params):
                     infeasibility_warning = "Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
-                    warnings.warn(infeasibility_warning, UserWarning)
+                    warnings.warn(infeasibility_warning, UserWarning, stacklevel=2)
                 self.param_check_counter += 1
                 return allow_infeasible_solutions
 

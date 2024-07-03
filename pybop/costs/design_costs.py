@@ -41,7 +41,7 @@ class DesignCost(BaseCost):
             nominal_capacity_warning = (
                 "The nominal capacity is fixed at the initial model value."
             )
-        warnings.warn(nominal_capacity_warning, UserWarning)
+        warnings.warn(nominal_capacity_warning, UserWarning, stacklevel=2)
         self.update_capacity = update_capacity
         self.parameter_set = problem.model.parameter_set
         self.update_simulation_data(self.x0)
