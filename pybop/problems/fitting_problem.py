@@ -101,7 +101,6 @@ class FittingProblem(BaseProblem):
 
         if requires_rebuild:
             self._model.rebuild(parameters=self.parameters)
-            self._model.rebuild(parameters=self.parameters)
 
         y = self._model.simulate(inputs=inputs, t_eval=self._time_data)
 
