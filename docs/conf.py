@@ -11,7 +11,7 @@ from pybop._version import __version__
 
 # -- Project information -----------------------------------------------------
 project = "PyBOP"
-copyright = "2023, The PyBOP Team" # noqa A001
+copyright = "2023, The PyBOP Team"  # noqa A001
 author = "The PyBOP Team"
 release = f"v{__version__}"
 
