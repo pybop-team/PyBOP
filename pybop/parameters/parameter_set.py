@@ -1,5 +1,6 @@
 import json
 import types
+from typing import List
 
 from pybamm import LithiumIonParameters, ParameterValues, parameter_sets
 
@@ -33,6 +34,12 @@ class ParameterSet:
 
     def __getitem__(self, key):
         return self.params[key]
+
+    def keys(self) -> List:
+        """
+        A list of parameter names
+        """
+        return list(self.params.keys())
 
     def import_parameters(self, json_path=None):
         """
