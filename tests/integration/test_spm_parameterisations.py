@@ -91,7 +91,7 @@ class Test_SPM_Parameterisation:
     )
     @pytest.mark.integration
     def test_spm_optimisers(self, optimiser, spm_costs):
-        x0 = spm_costs.x0
+        x0 = spm_costs.parameters.initial_value()
         # Some optimisers require a complete set of bounds
         if optimiser in [
             pybop.SciPyDifferentialEvolution,
@@ -165,7 +165,7 @@ class Test_SPM_Parameterisation:
     )
     @pytest.mark.integration
     def test_multiple_signals(self, multi_optimiser, spm_two_signal_cost):
-        x0 = spm_two_signal_cost.x0
+        x0 = spm_two_signal_cost.parameters.initial_value()
         # Some optimisers require a complete set of bounds
         if multi_optimiser in [pybop.SciPyDifferentialEvolution]:
             spm_two_signal_cost.problem.parameters[
@@ -184,7 +184,7 @@ class Test_SPM_Parameterisation:
         if issubclass(multi_optimiser, pybop.BasePintsOptimiser):
             optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
 
-        initial_cost = optim.cost(spm_two_signal_cost.x0)
+        initial_cost = optim.cost(optim.parameters.initial_value())
         x, final_cost = optim.run()
 
         # Assertions
@@ -222,7 +222,7 @@ class Test_SPM_Parameterisation:
 
         # Build the optimisation problem
         optim = optimiser(cost=cost)
-        initial_cost = optim.cost(cost.x0)
+        initial_cost = optim.cost(optim.x0)
 
         # Run the optimisation problem
         x, final_cost = optim.run()

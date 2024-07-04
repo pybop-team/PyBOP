@@ -1,6 +1,7 @@
 import numpy as np
 
 from pybop.costs.base_cost import BaseCost
+from pybop.parameters.parameter import Inputs
 
 
 class BaseLikelihood(BaseCost):
@@ -63,12 +64,12 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         """
         return self.sigma
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calls the problem.evaluate method and calculates
         the log-likelihood
         """
-        y = self.problem.evaluate(x)
+        y = self.problem.evaluate(inputs)
 
         for key in self.signal:
             if len(y.get(key, [])) != len(self._target.get(key, [])):
@@ -89,12 +90,12 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         else:
             return np.sum(e)
 
-    def _evaluateS1(self, x, grad=None):
+    def _evaluateS1(self, inputs: Inputs, grad=None):
         """
         Calls the problem.evaluateS1 method and calculates
         the log-likelihood
         """
-        y, dy = self.problem.evaluateS1(x)
+        y, dy = self.problem.evaluateS1(inputs)
 
         for key in self.signal:
             if len(y.get(key, [])) != len(self._target.get(key, [])):
@@ -103,7 +104,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
                 return -likelihood, -dl
 
         r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
-        likelihood = self._evaluate(x)
+        likelihood = self._evaluate(inputs)
         dl = np.sum((self.sigma2 * np.sum((r * dy.T), axis=2)), axis=1)
         return likelihood, dl
 
@@ -125,24 +126,25 @@ class GaussianLogLikelihood(BaseLikelihood):
         self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
         self._dl = np.ones(self.n_parameters + self.n_outputs)
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Evaluates the Gaussian log-likelihood for the given parameters.
 
-        Args:
-            x (array_like): The parameters for which to evaluate the log-likelihood.
-                             The last `self.n_outputs` elements are assumed to be the
-                             standard deviations of the Gaussian distributions.
+        Parameters
+        ----------
+        inputs : Inputs
+            The parameters for which to evaluate the log-likelihood, including the `n_outputs`
+            standard deviations of the Gaussian distributions.
 
         Returns:
             float: The log-likelihood value, or -inf if the standard deviations are received as non-positive.
         """
-        sigma = np.asarray(x[-self.n_outputs :])
+        sigma = np.asarray([0.002])  # TEMPORARY WORKAROUND (replace in #338)
 
         if np.any(sigma <= 0):
             return -np.inf
 
-        y = self.problem.evaluate(x[: -self.n_outputs])
+        y = self.problem.evaluate(inputs)
 
         for key in self.signal:
             if len(y.get(key, [])) != len(self._target.get(key, [])):
@@ -164,17 +166,17 @@ class GaussianLogLikelihood(BaseLikelihood):
         else:
             return np.sum(e)
 
-    def _evaluateS1(self, x, grad=None):
+    def _evaluateS1(self, inputs: Inputs, grad=None):
         """
         Calls the problem.evaluateS1 method and calculates
         the log-likelihood
         """
-        sigma = np.asarray(x[-self.n_outputs :])
+        sigma = np.asarray([0.002])  # TEMPORARY WORKAROUND (replace in #338)
 
         if np.any(sigma <= 0):
             return -np.float64(np.inf), -self._dl * np.ones(self.n_parameters)
 
-        y, dy = self.problem.evaluateS1(x[: -self.n_outputs])
+        y, dy = self.problem.evaluateS1(inputs)
         for key in self.signal:
             if len(y.get(key, [])) != len(self._target.get(key, [])):
                 likelihood = np.float64(np.inf)
@@ -182,7 +184,7 @@ class GaussianLogLikelihood(BaseLikelihood):
                 return -likelihood, -dl
 
         r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
-        likelihood = self._evaluate(x)
+        likelihood = self._evaluate(inputs)
         dl = sigma ** (-2.0) * np.sum((r * dy.T), axis=2)
         dsigma = -self.n_time_data / sigma + sigma**-(3.0) * np.sum(r**2, axis=1)
         dl = np.concatenate((dl.flatten(), dsigma))
