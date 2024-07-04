@@ -3,8 +3,7 @@ from typing import List, Tuple, Union
 import numpy as np
 
 from pybop.costs.base_cost import BaseCost
-from pybop.models.base_model import Inputs
-from pybop.parameters.parameter import Parameter, Parameters
+from pybop.parameters.parameter import Inputs, Parameter, Parameters
 from pybop.parameters.priors import Uniform
 from pybop.problems.base_problem import BaseProblem
 

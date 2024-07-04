@@ -117,7 +117,5 @@ class TestOptimisation:
             ]
             * 2
         )
-        sim = model.predict(
-            init_soc=init_soc, experiment=experiment, inputs=parameters.as_dict(x)
-        )
+        sim = model.predict(init_soc=init_soc, experiment=experiment, inputs=x)
         return sim

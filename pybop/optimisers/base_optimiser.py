@@ -112,7 +112,7 @@ class BaseOptimiser:
         """
         Update the base optimiser options and remove them from the options dictionary.
         """
-        # Set initial values
+        # Set initial values, if x0 is None, initial values are unmodified.
         self.parameters.update(initial_values=self.unset_options.pop("x0", None))
         self.x0 = self.parameters.initial_value()
 

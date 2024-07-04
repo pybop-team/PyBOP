@@ -1,8 +1,8 @@
 import numpy as np
 
 from pybop.costs.base_cost import BaseCost
-from pybop.models.base_model import Inputs
 from pybop.observers.observer import Observer
+from pybop.parameters.parameter import Inputs
 
 
 class RootMeanSquaredError(BaseCost):

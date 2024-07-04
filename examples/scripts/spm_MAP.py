@@ -61,7 +61,7 @@ print("True parameters:", parameters.true_value())
 print("Estimated parameters:", x)
 
 # Plot the timeseries output
-pybop.quick_plot(problem, inputs=x[0:2], title="Optimised Comparison")
+pybop.quick_plot(problem, problem_inputs=x[0:2], title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)

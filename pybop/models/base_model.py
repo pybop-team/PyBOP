@@ -7,8 +7,7 @@ import numpy as np
 import pybamm
 
 from pybop import Dataset, Experiment, Parameters, ParameterSet
-
-Inputs = Dict[str, float]
+from pybop.parameters.parameter import Inputs
 
 
 @dataclass
@@ -101,7 +100,8 @@ class BaseModel:
         """
         self.dataset = dataset
         if parameters is not None:
-            self.classify_and_update_parameters(parameters)
+            self.parameters = parameters
+            self.classify_and_update_parameters(self.parameters)
 
         if init_soc is not None:
             self.set_init_soc(init_soc)
@@ -468,7 +468,7 @@ class BaseModel:
 
         Parameters
         ----------
-        inputs : Inputse, optional
+        inputs : Inputs, optional
             Input parameters for the simulation. Defaults to None, indicating that the
             default parameters should be used.
         t_eval : array-like, optional

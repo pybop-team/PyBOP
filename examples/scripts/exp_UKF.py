@@ -1,11 +1,10 @@
 import numpy as np
-import pybamm
 
 import pybop
 from examples.standalone.model import ExponentialDecay
 
 # Parameter set and model definition
-parameter_set = pybamm.ParameterValues({"k": "[input]", "y0": "[input]"})
+parameter_set = {"k": "[input]", "y0": "[input]"}
 model = ExponentialDecay(parameter_set=parameter_set, n_states=1)
 
 # Fitting parameters
@@ -103,7 +102,7 @@ x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
 # Plot the timeseries output (requires model that returns Voltage)
-pybop.quick_plot(observer, inputs=x, title="Optimised Comparison")
+pybop.quick_plot(observer, problem_inputs=x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)

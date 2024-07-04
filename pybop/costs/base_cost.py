@@ -1,6 +1,5 @@
 from pybop import BaseProblem
-from pybop.models.base_model import Inputs
-from pybop.parameters.parameter import Parameters
+from pybop.parameters.parameter import Inputs, Parameters
 
 
 class BaseCost:

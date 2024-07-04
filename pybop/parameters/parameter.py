@@ -1,9 +1,11 @@
 from collections import OrderedDict
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import numpy as np
 
 from pybop._utils import is_numeric
+
+Inputs = Dict[str, float]
 
 
 class Parameter:
@@ -443,7 +445,7 @@ class Parameters:
                 values = self.true_value()
         return {key: values[i] for i, key in enumerate(self.param.keys())}
 
-    def verify(self, inputs=None):
+    def verify(self, inputs: Union[Inputs, None] = None):
         """
         Verify that the inputs are an Inputs dictionary or numeric values
         which can be used to construct an Inputs dictionary

@@ -102,5 +102,5 @@ class TestTheveninParameterisation:
                 ),
             ]
         )
-        sim = model.predict(experiment=experiment, inputs=parameters.as_dict(x))
+        sim = model.predict(experiment=experiment, inputs=x)
         return sim

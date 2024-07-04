@@ -89,7 +89,7 @@ class TestPlots:
         pybop.quick_plot(design_problem)
 
         # Test conversion of values into inputs
-        pybop.quick_plot(fitting_problem, inputs=[0.6, 0.6])
+        pybop.quick_plot(fitting_problem, problem_inputs=[0.6, 0.6])
 
     @pytest.fixture
     def cost(self, fitting_problem):
