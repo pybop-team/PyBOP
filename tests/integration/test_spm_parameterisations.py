@@ -73,7 +73,7 @@ class Test_SPM_Parameterisation:
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
             return cost_class(problem, sigma0=self.sigma0)
         elif cost_class in [pybop.GaussianLogLikelihood]:
-            return cost_class(problem, sigma0=self.sigma0 * 2)  # Initial sigma0 guess
+            return cost_class(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
         elif cost_class in [pybop.MAP]:
             return cost_class(
                 problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=self.sigma0
@@ -98,9 +98,7 @@ class Test_SPM_Parameterisation:
         x0 = spm_costs.parameters.initial_value()
         common_args = {
             "cost": spm_costs,
-            "max_iterations": 125
-            if isinstance(spm_costs, pybop.GaussianLogLikelihood)
-            else 250,
+            "max_iterations": 250,
         }
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
@@ -118,10 +116,10 @@ class Test_SPM_Parameterisation:
             optim.set_max_unchanged_iterations(iterations=45, absolute_tolerance=1e-5)
 
         # AdamW will use lowest sigma0 for learning rate, so allow more iterations
-        if issubclass(optimiser, pybop.AdamW) and isinstance(
+        if issubclass(optimiser, (pybop.AdamW, pybop.IRPropMin)) and isinstance(
             spm_costs, pybop.GaussianLogLikelihood
         ):
-            optim = optimiser(sigma0=0.0025, max_unchanged_iterations=75, **common_args)
+            optim = optimiser(max_unchanged_iterations=75, **common_args)
 
         initial_cost = optim.cost(x0)
         x, final_cost = optim.run()
