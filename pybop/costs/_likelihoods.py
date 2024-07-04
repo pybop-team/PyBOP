@@ -122,11 +122,11 @@ class GaussianLogLikelihood(BaseLikelihood):
         super(GaussianLogLikelihood, self).__init__(problem)
         self._dsigma_scale = dsigma_scale
         self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
-        self._dl = np.ones(self.n_parameters)
 
         self.sigma = Parameters()
         self._add_sigma_parameters(sigma0)
         self.parameters.join(self.sigma)
+        self._dl = np.ones(self.n_parameters)
 
     def _add_sigma_parameters(self, sigma0):
         sigma0 = [sigma0] if not isinstance(sigma0, List) else sigma0
@@ -303,9 +303,9 @@ class MAP(BaseLikelihood):
         float
             The maximum a posteriori cost.
         """
-        log_likelihood = self.likelihood.evaluate(inputs)
+        log_likelihood = self.likelihood._evaluate(inputs)
         log_prior = sum(
-            param.prior.logpdf(inputs[param.name]) for param in self.problem.parameters
+            self.parameters[key].prior.logpdf(value) for key, value in inputs.items()
         )
 
         posterior = log_likelihood + log_prior
@@ -332,9 +332,9 @@ class MAP(BaseLikelihood):
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        log_likelihood, dl = self.likelihood.evaluateS1(inputs)
+        log_likelihood, dl = self.likelihood._evaluateS1(inputs)
         log_prior = sum(
-            param.prior.logpdf(inputs[param.name]) for param in self.problem.parameters
+            self.parameters[key].prior.logpdf(value) for key, value in inputs.items()
         )
 
         # Compute a finite difference approximation of the gradient of the log prior

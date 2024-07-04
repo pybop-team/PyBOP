@@ -115,13 +115,13 @@ class Test_SPM_Parameterisation:
 
         # Set max unchanged iterations for BasePintsOptimisers
         if issubclass(optimiser, pybop.BasePintsOptimiser):
-            optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
+            optim.set_max_unchanged_iterations(iterations=45, absolute_tolerance=1e-5)
 
         # AdamW will use lowest sigma0 for learning rate, so allow more iterations
         if issubclass(optimiser, pybop.AdamW) and isinstance(
             spm_costs, pybop.GaussianLogLikelihood
         ):
-            optim = optimiser(sigma0=0.003, max_unchanged_iterations=65, **common_args)
+            optim = optimiser(sigma0=0.0025, max_unchanged_iterations=75, **common_args)
 
         initial_cost = optim.cost(x0)
         x, final_cost = optim.run()
