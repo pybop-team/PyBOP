@@ -174,7 +174,7 @@ class ParameterSet:
             return False
 
     @classmethod
-    def pybamm(cls, name):
+    def pybamm(cls, name, formation_concentrations=False):
         """
         Retrieves a PyBaMM parameter set by name.
 
@@ -182,6 +182,8 @@ class ParameterSet:
         ----------
         name : str
             The name of the PyBaMM parameter set to retrieve.
+        set_formation_concentrations : bool, optional
+            If True, re-calculates the initial concentrations of lithium in the active material (default: False).
 
         Returns
         -------
@@ -194,7 +196,12 @@ class ParameterSet:
         if name not in list(parameter_sets):
             raise ValueError(msg)
 
-        return ParameterValues(name).copy()
+        parameter_set = ParameterValues(name).copy()
+
+        if formation_concentrations:
+            set_formation_concentrations(parameter_set)
+
+        return parameter_set
 
 
 def set_formation_concentrations(parameter_set):

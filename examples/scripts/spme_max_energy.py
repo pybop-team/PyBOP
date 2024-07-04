@@ -1,5 +1,4 @@
 import pybop
-from pybop.parameters.parameter_set import set_formation_concentrations
 
 # A design optimisation example loosely based on work by L.D. Couto
 # available at https://doi.org/10.1016/j.energy.2022.125966.
@@ -17,8 +16,7 @@ from pybop.parameters.parameter_set import set_formation_concentrations
 # print(f"Optimised volumetric energy density: {final_cost:.2f} Wh.m-3")
 
 # Define parameter set and model
-parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-set_formation_concentrations(parameter_set)
+parameter_set = pybop.ParameterSet.pybamm("Chen2020", formation_concentrations=True)
 model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
 # Fitting parameters

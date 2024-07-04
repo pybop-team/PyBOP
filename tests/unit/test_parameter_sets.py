@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 
 import pybop
-from pybop.parameters.parameter_set import set_formation_concentrations
 
 
 class TestParameterSets:
@@ -127,8 +126,9 @@ class TestParameterSets:
 
     @pytest.mark.unit
     def test_set_formation_concentrations(self):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-        set_formation_concentrations(parameter_set)
+        parameter_set = pybop.ParameterSet.pybamm(
+            "Chen2020", formation_concentrations=True
+        )
 
         assert (
             parameter_set["Initial concentration in negative electrode [mol.m-3]"] == 0
