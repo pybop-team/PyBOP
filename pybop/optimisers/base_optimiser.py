@@ -40,8 +40,8 @@ class BaseOptimiser:
         If True, the feasibility of the optimised parameters is checked (default: True).
     allow_infeasible_solutions : bool, optional
         If True, infeasible parameter values will be allowed in the optimisation (default: True).
-    log : list
-        A log of the parameter values tried during the optimisation.
+    log : dict
+        A log of the parameter values tried during the optimisation and associated costs.
     """
 
     def __init__(
@@ -55,7 +55,7 @@ class BaseOptimiser:
         self.bounds = None
         self.sigma0 = 0.1
         self.verbose = False
-        self.log = []
+        self.log = dict(x=[], x_best=[], cost=[])
         self.minimising = True
         self.physical_viability = False
         self.allow_infeasible_solutions = False
@@ -112,7 +112,7 @@ class BaseOptimiser:
         """
         Update the base optimiser options and remove them from the options dictionary.
         """
-        # Set initial values
+        # Set initial values, if x0 is None, initial values are unmodified.
         self.parameters.update(initial_values=self.unset_options.pop("x0", None))
         self.x0 = self.parameters.initial_value()
 

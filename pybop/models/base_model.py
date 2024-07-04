@@ -7,8 +7,7 @@ import numpy as np
 import pybamm
 
 from pybop import Dataset, Experiment, Parameters, ParameterSet
-
-Inputs = Dict[str, float]
+from pybop.parameters.parameter import Inputs
 
 
 @dataclass
@@ -104,9 +103,7 @@ class BaseModel:
             The initial state of charge to be used in simulations.
         """
         self.dataset = dataset
-        if parameters is None:
-            self.parameters = Parameters()
-        else:
+        if parameters is not None:
             self.parameters = parameters
             self.classify_and_update_parameters(self.parameters)
 
@@ -293,7 +290,7 @@ class BaseModel:
         if x is None:
             x = self._built_model.y0
 
-        sol = pybamm.Solution([np.array([t])], [x], self._built_model, inputs)
+        sol = pybamm.Solution([np.asarray([t])], [x], self._built_model, inputs)
 
         return TimeSeriesState(sol=sol, inputs=inputs, t=t)
 
@@ -304,7 +301,7 @@ class BaseModel:
         if self._built_model is None:
             raise ValueError("Model must be built before calling get_state")
 
-        sol = pybamm.Solution([np.array([t])], [x], self._built_model, inputs)
+        sol = pybamm.Solution([np.asarray([t])], [x], self._built_model, inputs)
 
         return TimeSeriesState(sol=sol, inputs=inputs, t=t)
 
@@ -466,7 +463,7 @@ class BaseModel:
 
         Parameters
         ----------
-        inputs : Inputse, optional
+        inputs : Inputs, optional
             Input parameters for the simulation. Defaults to None, indicating that the
             default parameters should be used.
         t_eval : array-like, optional

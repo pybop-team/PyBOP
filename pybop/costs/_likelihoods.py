@@ -1,7 +1,7 @@
 import numpy as np
 
 from pybop.costs.base_cost import BaseCost
-from pybop.models.base_model import Inputs
+from pybop.parameters.parameter import Inputs
 
 
 class BaseLikelihood(BaseCost):
@@ -48,7 +48,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
             )
 
         if not isinstance(sigma, np.ndarray):
-            sigma = np.array(sigma)
+            sigma = np.asarray(sigma)
 
         if not np.issubdtype(sigma.dtype, np.number):
             raise ValueError("Sigma must contain only numeric values")
@@ -75,7 +75,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
             if len(y.get(key, [])) != len(self._target.get(key, [])):
                 return -np.float64(np.inf)  # prediction doesn't match target
 
-        e = np.array(
+        e = np.asarray(
             [
                 np.sum(
                     self._offset
@@ -103,7 +103,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
                 dl = self._dl * np.ones(self.n_parameters)
                 return -likelihood, -dl
 
-        r = np.array([self._target[signal] - y[signal] for signal in self.signal])
+        r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
         likelihood = self._evaluate(inputs)
         dl = np.sum((self.sigma2 * np.sum((r * dy.T), axis=2)), axis=1)
         return likelihood, dl
@@ -139,7 +139,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         Returns:
             float: The log-likelihood value, or -inf if the standard deviations are received as non-positive.
         """
-        sigma = np.asarray([0.002])  # TEMPORARY WORKAROUND
+        sigma = np.asarray([0.002])  # TEMPORARY WORKAROUND (replace in #338)
 
         if np.any(sigma <= 0):
             return -np.inf
@@ -150,7 +150,7 @@ class GaussianLogLikelihood(BaseLikelihood):
             if len(y.get(key, [])) != len(self._target.get(key, [])):
                 return -np.float64(np.inf)  # prediction doesn't match target
 
-        e = np.array(
+        e = np.asarray(
             [
                 np.sum(
                     self._logpi
@@ -171,7 +171,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         Calls the problem.evaluateS1 method and calculates
         the log-likelihood
         """
-        sigma = np.asarray([0.002])  # TEMPORARY WORKAROUND
+        sigma = np.asarray([0.002])  # TEMPORARY WORKAROUND (replace in #338)
 
         if np.any(sigma <= 0):
             return -np.float64(np.inf), -self._dl * np.ones(self.n_parameters)
@@ -183,7 +183,7 @@ class GaussianLogLikelihood(BaseLikelihood):
                 dl = self._dl * np.ones(self.n_parameters)
                 return -likelihood, -dl
 
-        r = np.array([self._target[signal] - y[signal] for signal in self.signal])
+        r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
         likelihood = self._evaluate(inputs)
         dl = sigma ** (-2.0) * np.sum((r * dy.T), axis=2)
         dsigma = -self.n_time_data / sigma + sigma**-(3.0) * np.sum(r**2, axis=1)

@@ -11,7 +11,7 @@ class TestTheveninParameterisation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ground_truth = np.array([0.05, 0.05]) + np.random.normal(
+        self.ground_truth = np.asarray([0.05, 0.05]) + np.random.normal(
             loc=0.0, scale=0.01, size=2
         )
 
@@ -102,5 +102,5 @@ class TestTheveninParameterisation:
                 ),
             ]
         )
-        sim = model.predict(experiment=experiment, inputs=parameters.as_dict(x))
+        sim = model.predict(experiment=experiment, inputs=x)
         return sim

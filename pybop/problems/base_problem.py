@@ -1,5 +1,5 @@
 from pybop import BaseModel, Dataset, Parameter, Parameters
-from pybop.models.base_model import Inputs
+from pybop.parameters.parameter import Inputs
 
 
 class BaseProblem:
@@ -78,7 +78,7 @@ class BaseProblem:
         Parameters
         ----------
         inputs : Inputs
-            Parameters for evaluation of the mmodel.
+            Parameters for evaluation of the model.
 
         Raises
         ------
@@ -95,7 +95,7 @@ class BaseProblem:
         Parameters
         ----------
         inputs : Inputs
-             Parameters for evaluation of the mmodel.
+             Parameters for evaluation of the model.
 
         Raises
         ------

@@ -13,7 +13,7 @@ class TestOptimisation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ground_truth = np.array([0.55, 0.55]) + np.random.normal(
+        self.ground_truth = np.asarray([0.55, 0.55]) + np.random.normal(
             loc=0.0, scale=0.05, size=2
         )
 
@@ -117,7 +117,5 @@ class TestOptimisation:
             ]
             * 2
         )
-        sim = model.predict(
-            init_soc=init_soc, experiment=experiment, inputs=parameters.as_dict(x)
-        )
+        sim = model.predict(init_soc=init_soc, experiment=experiment, inputs=x)
         return sim

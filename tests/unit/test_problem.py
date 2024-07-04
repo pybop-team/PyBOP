@@ -99,6 +99,13 @@ class TestProblem:
             match="The input parameters must be a pybop Parameter, a list of pybop.Parameter objects, or a pybop Parameters object.",
         ):
             problem = pybop.BaseProblem(parameters="Invalid string")
+        with pytest.raises(
+            TypeError,
+            match="All elements in the list must be pybop.Parameter objects.",
+        ):
+            problem = pybop.BaseProblem(
+                parameters=[parameter_list[0], "Invalid string"]
+            )
 
     @pytest.mark.unit
     def test_fitting_problem(self, parameters, dataset, model, signal):
@@ -166,8 +173,8 @@ class TestProblem:
         )  # building postponed with input experiment
 
         # Test model.predict
-        model.predict(inputs=parameters.as_dict([1e-5, 1e-5]), experiment=experiment)
-        model.predict(inputs=parameters.as_dict([3e-5, 3e-5]), experiment=experiment)
+        model.predict(inputs=[1e-5, 1e-5], experiment=experiment)
+        model.predict(inputs=[3e-5, 3e-5], experiment=experiment)
 
     @pytest.mark.unit
     def test_problem_construct_with_model_predict(
@@ -175,16 +182,14 @@ class TestProblem:
     ):
         # Construct model and predict
         model.parameters = parameters
-        out = model.predict(
-            inputs=parameters.as_dict([1e-5, 1e-5]), t_eval=np.linspace(0, 10, 100)
-        )
+        out = model.predict(inputs=[1e-5, 1e-5], t_eval=np.linspace(0, 10, 100))
 
         problem = pybop.FittingProblem(
             model, parameters, dataset=dataset, signal=signal
         )
 
         # Test problem evaluate
-        problem_output = problem.evaluate(parameters.as_dict([2e-5, 2e-5]))
+        problem_output = problem.evaluate([2e-5, 2e-5])
 
         assert problem._model._built_model is not None
         with pytest.raises(AssertionError):
