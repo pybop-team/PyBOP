@@ -45,7 +45,7 @@ x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
 # Plot the timeseries output
-pybop.quick_plot(problem, parameter_values=x, title="Optimised Comparison")
+pybop.quick_plot(problem, problem_inputs=x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)

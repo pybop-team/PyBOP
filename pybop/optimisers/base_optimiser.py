@@ -2,7 +2,7 @@ import warnings
 
 import numpy as np
 
-from pybop import BaseCost, BaseLikelihood, DesignCost
+from pybop import BaseCost, BaseLikelihood, DesignCost, Parameter, Parameters
 
 
 class BaseOptimiser:
@@ -50,6 +50,7 @@ class BaseOptimiser:
         **optimiser_kwargs,
     ):
         # First set attributes to default values
+        self.parameters = Parameters()
         self.x0 = None
         self.bounds = None
         self.sigma0 = 0.1
@@ -63,26 +64,25 @@ class BaseOptimiser:
 
         if isinstance(cost, BaseCost):
             self.cost = cost
-            self.x0 = cost.x0
+            self.parameters.join(cost.parameters)
             self.set_allow_infeasible_solutions()
             if isinstance(cost, (BaseLikelihood, DesignCost)):
                 self.minimising = False
 
-            # Set default bounds (for all or no parameters)
-            self.bounds = cost.parameters.get_bounds()
-
-            # Set default initial standard deviation (for all or no parameters)
-            self.sigma0 = cost.parameters.get_sigma0() or self.sigma0
-
         else:
             try:
-                cost_test = cost(optimiser_kwargs.get("x0", []))
+                self.x0 = optimiser_kwargs.get("x0", [])
+                cost_test = cost(self.x0)
                 warnings.warn(
                     "The cost is not an instance of pybop.BaseCost, but let's continue "
                     + "assuming that it is a callable function to be minimised.",
                     UserWarning,
                 )
                 self.cost = cost
+                for i, value in enumerate(self.x0):
+                    self.parameters.add(
+                        Parameter(name=f"Parameter {i}", initial_value=value)
+                    )
                 self.minimising = True
 
             except Exception:
@@ -92,6 +92,9 @@ class BaseOptimiser:
                 raise TypeError(
                     f"Cost returned {type(cost_test)}, not a scalar numeric value."
                 )
+
+        if len(self.parameters) == 0:
+            raise ValueError("There are no parameters to optimise.")
 
         self.unset_options = optimiser_kwargs
         self.set_base_options()
@@ -109,9 +112,19 @@ class BaseOptimiser:
         """
         Update the base optimiser options and remove them from the options dictionary.
         """
-        self.x0 = self.unset_options.pop("x0", self.x0)
-        self.bounds = self.unset_options.pop("bounds", self.bounds)
-        self.sigma0 = self.unset_options.pop("sigma0", self.sigma0)
+        # Set initial values, if x0 is None, initial values are unmodified.
+        self.parameters.update(initial_values=self.unset_options.pop("x0", None))
+        self.x0 = self.parameters.initial_value()
+
+        # Set default bounds (for all or no parameters)
+        self.bounds = self.unset_options.pop("bounds", self.parameters.get_bounds())
+
+        # Set default initial standard deviation (for all or no parameters)
+        self.sigma0 = self.unset_options.pop(
+            "sigma0", self.parameters.get_sigma0() or self.sigma0
+        )
+
+        # Set other options
         self.verbose = self.unset_options.pop("verbose", self.verbose)
         self.minimising = self.unset_options.pop("minimising", self.minimising)
         if "allow_infeasible_solutions" in self.unset_options.keys():
@@ -186,8 +199,12 @@ class BaseOptimiser:
     def check_optimal_parameters(self, x):
         """
         Check if the optimised parameters are physically viable.
-        """
 
+        Parameters
+        ----------
+        x : array-like
+            Optimised parameter values.
+        """
         if self.cost.problem._model.check_params(
             inputs=x, allow_infeasible_solutions=False
         ):

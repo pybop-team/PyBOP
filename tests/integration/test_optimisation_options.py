@@ -80,7 +80,7 @@ class TestOptimisation:
     )
     @pytest.mark.integration
     def test_optimisation_f_guessed(self, f_guessed, spm_costs):
-        x0 = spm_costs.x0
+        x0 = spm_costs.parameters.initial_value()
         # Test each optimiser
         optim = pybop.XNES(
             cost=spm_costs,
