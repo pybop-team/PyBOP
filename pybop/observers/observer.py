@@ -50,16 +50,15 @@ class Observer(BaseProblem):
         if model.signal is None:
             model.signal = self.signal
 
-        inputs = dict()
-        for param in self.parameters:
-            inputs[param.name] = param.value
-
+        inputs = self.parameters.as_dict("initial")
         self._state = model.reinit(inputs)
         self._model = model
         self._signal = self.signal
         self._n_outputs = len(self._signal)
 
     def reset(self, inputs: Inputs) -> None:
+        inputs = self.parameters.verify(inputs)
+
         self._state = self._model.reinit(inputs)
 
     def observe(self, time: float, value: Optional[np.ndarray] = None) -> float:
@@ -96,6 +95,8 @@ class Observer(BaseProblem):
         inputs : Inputs
             The inputs to the model.
         """
+        inputs = self.parameters.verify(inputs)
+
         if self._n_outputs == 1:
             signal = self._signal[0]
             if len(values[signal]) != len(times):
@@ -134,7 +135,7 @@ class Observer(BaseProblem):
 
     def get_measure(self, x: TimeSeriesState) -> np.ndarray:
         measures = [x.sol[s].data[-1] for s in self._signal]
-        return np.array([[m] for m in measures])
+        return np.asarray([[m] for m in measures])
 
     def get_current_time(self) -> float:
         """
@@ -142,27 +143,20 @@ class Observer(BaseProblem):
         """
         return self._state.t
 
-    def evaluate(self, x):
+    def evaluate(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal.
 
         Parameters
         ----------
-        x : np.ndarray
-            Parameter values to evaluate the model at.
+        inputs : Inputs
+            Parameters for evaluation of the model.
 
         Returns
         -------
         y : np.ndarray
-            The model output y(t) simulated with inputs x.
+            The model output y(t) simulated with given inputs.
         """
-        inputs = dict()
-        if isinstance(x, Parameters):
-            for param in x:
-                inputs[param.name] = param.value
-        else:  # x is an array of parameter values
-            for i, param in enumerate(self.parameters):
-                inputs[param.name] = x[i]
         self.reset(inputs)
 
         output = {}

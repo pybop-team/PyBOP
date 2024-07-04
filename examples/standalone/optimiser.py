@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.optimize import minimize
 
-from pybop import BaseOptimiser
+from pybop import BaseOptimiser, Result
 
 
 class StandaloneOptimiser(BaseOptimiser):
@@ -65,7 +65,7 @@ class StandaloneOptimiser(BaseOptimiser):
             self.log.append([x])
 
         # Run optimiser
-        self.result = minimize(
+        result = minimize(
             self.cost,
             self.x0,
             bounds=self._scipy_bounds,
@@ -73,10 +73,12 @@ class StandaloneOptimiser(BaseOptimiser):
             **self._options,
         )
 
-        self.result.final_cost = self.cost(self.result.x)
-        self._iterations = self.result.nit
-
-        return self.result.x, self.result.final_cost
+        return Result(
+            x=result.x,
+            final_cost=self.cost(result.x),
+            n_iterations=result.nit,
+            scipy_result=result,
+        )
 
     def name(self):
         """

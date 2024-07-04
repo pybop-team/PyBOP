@@ -1,7 +1,7 @@
 import numpy as np
-from scipy.optimize import differential_evolution, minimize
+from scipy.optimize import OptimizeResult, differential_evolution, minimize
 
-from pybop import BaseOptimiser
+from pybop import BaseOptimiser, Result
 
 
 class BaseSciPyOptimiser(BaseOptimiser):
@@ -65,17 +65,17 @@ class BaseSciPyOptimiser(BaseOptimiser):
 
         Returns
         -------
-        x : numpy.ndarray
-            The best parameter set found by the optimization.
-        final_cost : float
-            The final cost associated with the best parameters.
+        result : pybop.Result
+            The result of the optimisation including the optimised parameter values and cost.
         """
-        self.result = self._run_optimiser()
+        result = self._run_optimiser()
 
-        self.result.final_cost = self.cost(self.result.x)
-        self._iterations = self.result.nit
-
-        return self.result.x, self.result.final_cost
+        return Result(
+            x=result.x,
+            final_cost=self.cost(result.x),
+            n_iterations=result.nit,
+            scipy_result=result,
+        )
 
 
 class SciPyMinimize(BaseSciPyOptimiser):
@@ -147,22 +147,23 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
         Returns
         -------
-        tuple
-            A tuple (x, final_cost) containing the optimized parameters and the value of `cost_function`
-            at the optimum.
+        result : scipy.optimize.OptimizeResult
+            The result of the optimisation including the optimised parameter values and cost.
         """
-        self.log = [[self.x0]]
 
         # Add callback storing history of parameter values
-        def callback(x):
-            self.log.append([x])
+        def callback(intermediate_result: OptimizeResult):
+            self.log["x_best"].append(intermediate_result.x)
+            self.log["cost"].append(
+                intermediate_result.fun if self.minimising else -intermediate_result.fun
+            )
 
         # Compute the absolute initial cost and resample if required
         self._cost0 = np.abs(self.cost(self.x0))
         if np.isinf(self._cost0):
             for i in range(1, self.num_resamples):
-                x0 = self.cost.parameters.rvs(1)
-                self._cost0 = np.abs(self.cost(x0))
+                self.x0 = self.parameters.rvs(1)[0]
+                self._cost0 = np.abs(self.cost(self.x0))
                 if not np.isinf(self._cost0):
                     break
             if np.isinf(self._cost0):
@@ -176,6 +177,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         if not self._options["jac"]:
 
             def cost_wrapper(x):
+                self.log["x"].append([x])
                 cost = self.cost(x) / self._cost0
                 if np.isinf(cost):
                     self.inf_count += 1
@@ -184,18 +186,17 @@ class SciPyMinimize(BaseSciPyOptimiser):
         elif self._options["jac"] is True:
 
             def cost_wrapper(x):
+                self.log["x"].append([x])
                 L, dl = self.cost.evaluateS1(x)
                 return L, dl if self.minimising else -L, -dl
 
-        result = minimize(
+        return minimize(
             cost_wrapper,
             self.x0,
             bounds=self._scipy_bounds,
             callback=callback,
             **self._options,
         )
-
-        return result
 
     def name(self):
         """
@@ -290,9 +291,8 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
         Returns
         -------
-        tuple
-            A tuple (x, final_cost) containing the optimized parameters and the value of
-            the cost function at the optimum.
+        result : scipy.optimize.OptimizeResult
+            The result of the optimisation including the optimised parameter values and cost.
         """
         if self.x0 is not None:
             print(
@@ -301,20 +301,22 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             self.x0 = None
 
         # Add callback storing history of parameter values
-        def callback(x, convergence):
-            self.log.append([x])
+        def callback(intermediate_result: OptimizeResult):
+            self.log["x_best"].append(intermediate_result.x)
+            self.log["cost"].append(
+                intermediate_result.fun if self.minimising else -intermediate_result.fun
+            )
 
         def cost_wrapper(x):
+            self.log["x"].append([x])
             return self.cost(x) if self.minimising else -self.cost(x)
 
-        result = differential_evolution(
+        return differential_evolution(
             cost_wrapper,
             self._scipy_bounds,
             callback=callback,
             **self._options,
         )
-
-        return result
 
     def name(self):
         """

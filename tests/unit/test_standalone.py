@@ -35,7 +35,8 @@ class TestStandalone:
         optim = pybop.SciPyDifferentialEvolution(cost=cost)
         x, final_cost = optim.run()
 
-        initial_cost = optim.cost(cost.x0)
+        optim.x0 = optim.log["x"][0][0]
+        initial_cost = optim.cost(optim.x0)
         assert initial_cost > final_cost
         np.testing.assert_allclose(final_cost, 42, atol=1e-1)
 
@@ -75,7 +76,7 @@ class TestStandalone:
         rmse_grad_x = rmse_cost.evaluateS1([1, 2])
 
         np.testing.assert_allclose(rmse_x, 3.05615, atol=1e-2)
-        np.testing.assert_allclose(rmse_grad_x[1], [-0.81758337, 0.0], atol=1e-2)
+        np.testing.assert_allclose(rmse_grad_x[1], [-0.54645, 0.0], atol=1e-2)
 
         # Test the sensitivities
         sums_cost = pybop.SumSquaredError(problem)

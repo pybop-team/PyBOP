@@ -1,3 +1,5 @@
+from warnings import warn
+
 from pints import CMAES as PintsCMAES
 from pints import PSO as PintsPSO
 from pints import SNES as PintsSNES
@@ -7,7 +9,7 @@ from pints import GradientDescent as PintsGradientDescent
 from pints import IRPropMin as PintsIRPropMin
 from pints import NelderMead as PintsNelderMead
 
-from pybop import BasePintsOptimiser, CuckooSearchImpl
+from pybop import AdamWImpl, BasePintsOptimiser, CuckooSearchImpl
 
 
 class GradientDescent(BasePintsOptimiser):
@@ -60,8 +62,41 @@ class Adam(BasePintsOptimiser):
     pints.Adam : The PINTS implementation this class is based on.
     """
 
+    warn(
+        "Adam is deprecated and will be removed in a future release. Please use AdamW instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     def __init__(self, cost, **optimiser_kwargs):
         super().__init__(cost, PintsAdam, **optimiser_kwargs)
+
+
+class AdamW(BasePintsOptimiser):
+    """
+    Implements the AdamW optimisation algorithm in PyBOP.
+
+    This class extends the AdamW optimiser, which is a variant of the Adam
+    optimiser that incorporates weight decay. AdamW is designed to be more
+    robust and stable for training deep neural networks, particularly when
+    using larger learning rates.
+
+    Parameters
+    ----------
+    **optimiser_kwargs : optional
+        Valid PyBOP option keys and their values, for example:
+        x0 : array_like
+            Initial position from which optimisation will start.
+        sigma0 : float
+            Initial step size.
+
+    See Also
+    --------
+    pybop.AdamWImpl : The PyBOP implementation this class is based on.
+    """
+
+    def __init__(self, cost, **optimiser_kwargs):
+        super().__init__(cost, AdamWImpl, **optimiser_kwargs)
 
 
 class IRPropMin(BasePintsOptimiser):
@@ -233,8 +268,8 @@ class CMAES(BasePintsOptimiser):
     """
 
     def __init__(self, cost, **optimiser_kwargs):
-        x0 = optimiser_kwargs.get("x0", cost.x0)
-        if x0 is not None and len(x0) == 1:
+        x0 = optimiser_kwargs.get("x0", cost.parameters.initial_value())
+        if len(x0) == 1 or len(cost.parameters) == 1:
             raise ValueError(
                 "CMAES requires optimisation of >= 2 parameters at once. "
                 + "Please choose another optimiser."

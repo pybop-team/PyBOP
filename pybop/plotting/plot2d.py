@@ -1,12 +1,20 @@
 import sys
+import warnings
 
 import numpy as np
+from scipy.interpolate import griddata
 
 from pybop import BaseOptimiser, Optimisation, PlotlyManager
 
 
 def plot2d(
-    cost_or_optim, gradient=False, bounds=None, steps=10, show=True, **layout_kwargs
+    cost_or_optim,
+    gradient: bool = False,
+    bounds: np.ndarray = None,
+    steps: int = 10,
+    show: bool = True,
+    use_optim_log: bool = False,
+    **layout_kwargs,
 ):
     """
     Plot a 2D visualisation of a cost landscape using Plotly.
@@ -26,9 +34,11 @@ def plot2d(
         A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
         `cost.parameters.get_bounds_for_plotly`.
     steps : int, optional
-        The number of intervals to divide the parameter space into along each dimension (default is 10).
+        The number of grid points to divide the parameter space into along each dimension (default: 10).
     show : bool, optional
         If True, the figure is shown upon creation (default: True).
+    use_optim_log : bool, optional
+        If True, the optimisation log is used to shape the cost landscape (default: False).
     **layout_kwargs : optional
         Valid Plotly layout keys and their values,
         e.g. `xaxis_title="Time [s]"` or
@@ -54,6 +64,24 @@ def plot2d(
         cost = cost_or_optim
         plot_optim = False
 
+    if len(cost.parameters) < 2:
+        raise ValueError("This cost function takes fewer than 2 parameters.")
+
+    additional_values = []
+    if len(cost.parameters) > 2:
+        warnings.warn(
+            "This cost function requires more than 2 parameters. "
+            + "Plotting in 2d with fixed values for the additional parameters.",
+            UserWarning,
+        )
+        for (
+            i,
+            param,
+        ) in enumerate(cost.parameters):
+            if i > 1:
+                additional_values.append(param.value)
+                print(f"Fixed {param.name}:", param.value)
+
     # Set up parameter bounds
     if bounds is None:
         bounds = cost.parameters.get_bounds_for_plotly()
@@ -68,24 +96,46 @@ def plot2d(
     # Populate cost matrix
     for i, xi in enumerate(x):
         for j, yj in enumerate(y):
-            costs[j, i] = cost(np.array([xi, yj]))
+            costs[j, i] = cost(np.asarray([xi, yj] + additional_values))
 
     if gradient:
         grad_parameter_costs = []
 
         # Determine the number of gradient outputs from cost.evaluateS1
-        num_gradients = len(cost.evaluateS1(np.array([x[0], y[0]]))[1])
+        num_gradients = len(
+            cost.evaluateS1(np.asarray([x[0], y[0]] + additional_values))[1]
+        )
 
         # Create an array to hold each gradient output & populate
         grads = [np.zeros((len(y), len(x))) for _ in range(num_gradients)]
         for i, xi in enumerate(x):
             for j, yj in enumerate(y):
-                (*current_grads,) = cost.evaluateS1(np.array([xi, yj]))[1]
+                (*current_grads,) = cost.evaluateS1(
+                    np.asarray([xi, yj] + additional_values)
+                )[1]
                 for k, grad_output in enumerate(current_grads):
                     grads[k][j, i] = grad_output
 
         # Append the arrays to the grad_parameter_costs list
         grad_parameter_costs.extend(grads)
+
+    elif plot_optim and use_optim_log:
+        # Flatten the cost matrix and parameter values
+        flat_x = np.tile(x, len(y))
+        flat_y = np.repeat(y, len(x))
+        flat_costs = costs.flatten()
+
+        # Append the optimisation trace to the data
+        parameter_log = np.asarray(optim.log["x_best"])
+        flat_x = np.concatenate((flat_x, parameter_log[:, 0]))
+        flat_y = np.concatenate((flat_y, parameter_log[:, 1]))
+        flat_costs = np.concatenate((flat_costs, optim.log["cost"]))
+
+        # Order the parameter values and estimate the cost using interpolation
+        x = np.unique(flat_x)
+        y = np.unique(flat_y)
+        xf, yf = np.meshgrid(x, y)
+        costs = griddata((flat_x, flat_y), flat_costs, (xf, yf), method="linear")
 
     # Import plotly only when needed
     go = PlotlyManager().go
@@ -107,11 +157,15 @@ def plot2d(
     layout = go.Layout(layout_options)
 
     # Create contour plot and update the layout
-    fig = go.Figure(data=[go.Contour(x=x, y=y, z=costs)], layout=layout)
+    fig = go.Figure(
+        data=[go.Contour(x=x, y=y, z=costs, connectgaps=True)], layout=layout
+    )
 
     if plot_optim:
         # Plot the optimisation trace
-        optim_trace = np.array([item for sublist in optim.log for item in sublist])
+        optim_trace = np.asarray(
+            [item[:2] for sublist in optim.log["x"] for item in sublist]
+        )
         optim_trace = optim_trace.reshape(-1, 2)
         fig.add_trace(
             go.Scatter(
