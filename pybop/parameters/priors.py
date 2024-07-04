@@ -243,7 +243,7 @@ class Uniform(BasePrior):
 
     def __call__(self, x):
         """
-        Evaluates the gaussian (log) distribution at x.
+        Evaluates the uniform distribution at x.
 
         Parameters
         ----------
@@ -312,7 +312,7 @@ class Exponential(BasePrior):
 
     def __call__(self, x):
         """
-        Evaluates the gaussian (log) distribution at x.
+        Evaluates the exponential (log) distribution at x.
 
         Parameters
         ----------

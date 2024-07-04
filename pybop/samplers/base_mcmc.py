@@ -123,7 +123,7 @@ class BasePintsSampler(BaseSampler):
         self.set_parallel(self._parallel)
 
     def _apply_transformation(self, transformation):
-        # TODO: Implement transformation logic
+        # TODO: Implement transformation logic (alongside #357)
         pass
 
     def run(self) -> Optional[np.ndarray]:
