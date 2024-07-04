@@ -288,16 +288,6 @@ class EChemBaseModel(BaseModel):
         inputs = self.parameters.verify(inputs)
         self._parameter_set.update(inputs)
 
-        # Extract stoichiometries and compute mean values
-        (
-            min_sto_neg,
-            max_sto_neg,
-            min_sto_pos,
-            max_sto_pos,
-        ) = self._electrode_soh.get_min_max_stoichiometries(self._parameter_set)
-        mean_sto_neg = (min_sto_neg + max_sto_neg) / 2
-        mean_sto_pos = (min_sto_pos + max_sto_pos) / 2
-
         # Calculate theoretical energy density
         theoretical_energy = self._electrode_soh.calculate_theoretical_energy(
             self._parameter_set
