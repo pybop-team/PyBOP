@@ -16,7 +16,7 @@ import pybop
 # print(f"Optimised volumetric energy density: {final_cost:.2f} Wh.m-3")
 
 # Define parameter set and model
-parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+parameter_set = pybop.ParameterSet.pybamm("Chen2020", formation_concentrations=True)
 model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
 # Fitting parameters

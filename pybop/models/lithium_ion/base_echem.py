@@ -282,16 +282,6 @@ class EChemBaseModel(BaseModel):
         None
             The nominal cell capacity is updated directly in the model's parameter set.
         """
-        # Extract stoichiometries and compute mean values
-        (
-            min_sto_neg,
-            max_sto_neg,
-            min_sto_pos,
-            max_sto_pos,
-        ) = self._electrode_soh.get_min_max_stoichiometries(self._parameter_set)
-        mean_sto_neg = (min_sto_neg + max_sto_neg) / 2
-        mean_sto_pos = (min_sto_pos + max_sto_pos) / 2
-
         inputs = {
             key: x[i] for i, key in enumerate([param.name for param in self.parameters])
         }
@@ -301,6 +291,16 @@ class EChemBaseModel(BaseModel):
         theoretical_energy = self._electrode_soh.calculate_theoretical_energy(
             self._parameter_set
         )
+
+        # Extract stoichiometries and compute mean values
+        (
+            min_sto_neg,
+            max_sto_neg,
+            min_sto_pos,
+            max_sto_pos,
+        ) = self._electrode_soh.get_min_max_stoichiometries(self._parameter_set)
+        mean_sto_neg = (min_sto_neg + max_sto_neg) / 2
+        mean_sto_pos = (min_sto_pos + max_sto_pos) / 2
 
         # Calculate average voltage
         positive_electrode_ocp = self._parameter_set["Positive electrode OCP [V]"]
