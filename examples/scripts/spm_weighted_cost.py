@@ -52,7 +52,7 @@ for cost in [weighted_cost, cost1, cost2]:
     print("Estimated parameters:", x)
 
     # Plot the timeseries output
-    pybop.quick_plot(problem, parameter_values=x, title="Optimised Comparison")
+    pybop.quick_plot(problem, problem_inputs=x, title="Optimised Comparison")
 
     # Plot convergence
     pybop.plot_convergence(optim)
