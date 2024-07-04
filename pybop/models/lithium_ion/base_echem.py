@@ -50,10 +50,7 @@ class EChemBaseModel(BaseModel):
         solver=None,
         **model_kwargs,
     ):
-        super().__init__(
-            name=name,
-            parameter_set=parameter_set,
-        )
+        super().__init__(name=name, parameter_set=parameter_set)
 
         model_options = dict(build=False)
         for key, value in model_kwargs.items():
@@ -289,6 +286,7 @@ class EChemBaseModel(BaseModel):
             The nominal cell capacity is updated directly in the model's parameter set.
         """
         inputs = self.parameters.verify(inputs)
+        self._parameter_set.update(inputs)
 
         # Extract stoichiometries and compute mean values
         (
@@ -300,12 +298,20 @@ class EChemBaseModel(BaseModel):
         mean_sto_neg = (min_sto_neg + max_sto_neg) / 2
         mean_sto_pos = (min_sto_pos + max_sto_pos) / 2
 
-        self._parameter_set.update(inputs)
-
         # Calculate theoretical energy density
         theoretical_energy = self._electrode_soh.calculate_theoretical_energy(
             self._parameter_set
         )
+
+        # Extract stoichiometries and compute mean values
+        (
+            min_sto_neg,
+            max_sto_neg,
+            min_sto_pos,
+            max_sto_pos,
+        ) = self._electrode_soh.get_min_max_stoichiometries(self._parameter_set)
+        mean_sto_neg = (min_sto_neg + max_sto_neg) / 2
+        mean_sto_pos = (min_sto_pos + max_sto_pos) / 2
 
         # Calculate average voltage
         positive_electrode_ocp = self._parameter_set["Positive electrode OCP [V]"]

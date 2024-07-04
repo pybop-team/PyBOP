@@ -52,14 +52,14 @@ class ECircuitModel(BaseModel):
         # Correct OCP if set to default
         if (
             parameter_set is not None
-            and "Open-circuit voltage [V]" in parameter_set.params
+            and "Open-circuit voltage [V]" in parameter_set.keys()
         ):
             default_ocp = self.pybamm_model.default_parameter_values[
                 "Open-circuit voltage [V]"
             ]
-            if parameter_set.params["Open-circuit voltage [V]"] == "default":
+            if parameter_set["Open-circuit voltage [V]"] == "default":
                 print("Setting open-circuit voltage to default function")
-                parameter_set.params["Open-circuit voltage [V]"] = default_ocp
+                parameter_set["Open-circuit voltage [V]"] = default_ocp
 
         super().__init__(name=name, parameter_set=parameter_set)
 

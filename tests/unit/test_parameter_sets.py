@@ -123,3 +123,16 @@ class TestParameterSets:
             match="Parameter set already constructed, or path to bpx file not provided.",
         ):
             bpx_parameters.import_from_bpx()
+
+    @pytest.mark.unit
+    def test_set_formation_concentrations(self):
+        parameter_set = pybop.ParameterSet.pybamm(
+            "Chen2020", formation_concentrations=True
+        )
+
+        assert (
+            parameter_set["Initial concentration in negative electrode [mol.m-3]"] == 0
+        )
+        assert (
+            parameter_set["Initial concentration in positive electrode [mol.m-3]"] > 0
+        )
