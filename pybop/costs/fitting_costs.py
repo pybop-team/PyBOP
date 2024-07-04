@@ -47,7 +47,7 @@ class RootMeanSquaredError(BaseCost):
             ):
                 return np.float64(np.inf)  # prediction doesn't match target
 
-        e = np.array(
+        e = np.asarray(
             [
                 np.sqrt(
                     np.mean(
@@ -91,7 +91,7 @@ class RootMeanSquaredError(BaseCost):
                 de = self._de * np.ones(self.n_parameters)
                 return e, de
 
-        r = np.array(
+        r = np.asarray(
             [
                 self._current_prediction[signal] - self._target[signal]
                 for signal in self.signal
@@ -170,7 +170,7 @@ class SumSquaredError(BaseCost):
             ):
                 return np.float64(np.inf)  # prediction doesn't match target
 
-        e = np.array(
+        e = np.asarray(
             [
                 np.sum(((self._current_prediction[signal] - self._target[signal]) ** 2))
                 for signal in self.signal
@@ -209,7 +209,7 @@ class SumSquaredError(BaseCost):
                 de = self._de * np.ones(self.n_parameters)
                 return e, de
 
-        r = np.array(
+        r = np.asarray(
             [
                 self._current_prediction[signal] - self._target[signal]
                 for signal in self.signal
