@@ -420,8 +420,9 @@ class Parameters:
 
         for i, param in enumerate(self.param.values()):
             if param.applied_prior_bounds:
-                raise ValueError(
-                    "Bounds were created from prior distributions. Please provide bounds for plotting."
+                print(
+                    "Bounds were created from prior distributions."
+                    "Please provide bounds for better plotting results."
                 )
             elif param.bounds is not None:
                 bounds[i] = param.bounds
