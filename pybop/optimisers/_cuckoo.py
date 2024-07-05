@@ -82,7 +82,7 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
         self._f_best = np.inf
 
         # Set iteration count
-        self._iterations = 1
+        self._iterations = 0
 
     def ask(self):
         """
@@ -94,7 +94,7 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
         self._running = True
 
         # Generate new solutions (cuckoos) by Lévy flights
-        self.step_size = self._sigma0 / np.sqrt(self._iterations)
+        self.step_size = self._sigma0 / max(1, np.sqrt(self._iterations))
         step = self.levy_flight(self.beta, self._dim) * self.step_size
         self.cuckoos = self._nests + step
         return self.clip_nests(self.cuckoos)
