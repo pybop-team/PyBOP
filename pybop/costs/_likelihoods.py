@@ -289,7 +289,7 @@ class MAP(BaseLikelihood):
 
     """
 
-    def __init__(self, problem, likelihood, sigma0=None, gradient_step=1e-2):
+    def __init__(self, problem, likelihood, sigma0=None, gradient_step=1e-3):
         super(MAP, self).__init__(problem)
         self.sigma0 = sigma0
         self.gradient_step = gradient_step
