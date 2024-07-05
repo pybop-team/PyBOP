@@ -16,7 +16,6 @@ class BaseLikelihood(BaseCost):
     def __init__(self, problem: BaseProblem):
         super(BaseLikelihood, self).__init__(problem)
         self.n_time_data = problem.n_time_data
-        self.n_outputs = self.n_outputs or None
 
 
 class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
