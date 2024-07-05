@@ -3,6 +3,7 @@ import numpy as np
 from pybop.costs._likelihoods import BaseLikelihood
 from pybop.costs.base_cost import BaseCost
 from pybop.observers.observer import Observer
+from pybop.parameters.parameter import Inputs
 
 
 class RootMeanSquaredError(BaseCost):
@@ -20,13 +21,13 @@ class RootMeanSquaredError(BaseCost):
     def __init__(self, problem):
         super(RootMeanSquaredError, self).__init__(problem)
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calculate the root mean square error for a given set of parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to evaluate the cost.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
@@ -38,7 +39,7 @@ class RootMeanSquaredError(BaseCost):
             The root mean square error.
 
         """
-        prediction = self.problem.evaluate(x)
+        prediction = self.problem.evaluate(inputs)
 
         if not self.verify_prediction(prediction):
             return np.inf
@@ -52,27 +53,27 @@ class RootMeanSquaredError(BaseCost):
 
         return float(e) if self.n_outputs == 1 else np.sum(e)
 
-    def _evaluateS1(self, x):
+    def _evaluateS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns
         -------
         tuple
             A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `x`.
+            and the gradient is an array-like of the same length as `inputs`.
 
         Raises
         ------
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        y, dy = self.problem.evaluateS1(x)
+        y, dy = self.problem.evaluateS1(inputs)
         if not self.verify_prediction(y):
             return np.inf, self._de * np.ones(self.n_parameters)
 
@@ -107,13 +108,13 @@ class SumSquaredError(BaseCost):
     def __init__(self, problem):
         super(SumSquaredError, self).__init__(problem)
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calculate the sum of squared errors for a given set of parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to evaluate the cost.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
@@ -124,7 +125,7 @@ class SumSquaredError(BaseCost):
         float
             The sum of squared errors.
         """
-        prediction = self.problem.evaluate(x)
+        prediction = self.problem.evaluate(inputs)
 
         if not self.verify_prediction(prediction):
             return np.inf
@@ -138,27 +139,27 @@ class SumSquaredError(BaseCost):
 
         return float(e) if self.n_outputs == 1 else np.sum(e)
 
-    def _evaluateS1(self, x):
+    def _evaluateS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns
         -------
         tuple
             A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `x`.
+            and the gradient is an array-like of the same length as `inputs`.
 
         Raises
         ------
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        y, dy = self.problem.evaluateS1(x)
+        y, dy = self.problem.evaluateS1(inputs)
         if not self.verify_prediction(y):
             return np.inf, self._de * np.ones(self.n_parameters)
 
@@ -201,20 +202,21 @@ class Minkowski(BaseCost):
             )
         self.p = p
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calculate the Minkowski cost for a given set of parameters.
 
         Parameters
         ----------
-        x : array-like
-            The parameters for which to evaluate the cost.
+        inputs : Inputs
+            The parameters for which to compute the cost and gradient.
+
         Returns
         -------
         float
             The Minkowski cost.
         """
-        prediction = self.problem.evaluate(x)
+        prediction = self.problem.evaluate(inputs)
         if not self.verify_prediction(prediction):
             return np.inf
 
@@ -227,27 +229,27 @@ class Minkowski(BaseCost):
 
         return float(e) if self.n_outputs == 1 else np.sum(e)
 
-    def _evaluateS1(self, x):
+    def _evaluateS1(self, inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns
         -------
         tuple
             A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `x`.
+            and the gradient is an array-like of the same length as `inputs`.
 
         Raises
         ------
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        y, dy = self.problem.evaluateS1(x)
+        y, dy = self.problem.evaluateS1(inputs)
         if not self.verify_prediction(y):
             return np.inf, self._de * np.ones(self.n_parameters)
 
@@ -273,13 +275,13 @@ class ObserverCost(BaseCost):
         super().__init__(problem=observer)
         self._observer = observer
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calculate the observer cost for a given set of parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to evaluate the cost.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
@@ -290,26 +292,25 @@ class ObserverCost(BaseCost):
         float
             The observer cost (negative of the log likelihood).
         """
-        inputs = self._observer.parameters.as_dict(x)
         log_likelihood = self._observer.log_likelihood(
             self._target, self._observer.time_data(), inputs
         )
         return -log_likelihood
 
-    def evaluateS1(self, x):
+    def evaluateS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns
         -------
         tuple
             A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `x`.
+            and the gradient is an array-like of the same length as `inputs`.
 
         Raises
         ------
@@ -351,13 +352,13 @@ class MAP(BaseLikelihood):
         ):
             raise ValueError(f"{self.likelihood} must be a subclass of BaseLikelihood")
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calculate the maximum a posteriori cost for a given set of parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to evaluate the cost.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
@@ -368,44 +369,44 @@ class MAP(BaseLikelihood):
         float
             The maximum a posteriori cost.
         """
-        log_likelihood = self.likelihood._evaluate(x)
+        log_likelihood = self.likelihood._evaluate(inputs)
         if not np.isfinite(log_likelihood):
             return -np.inf
 
         log_prior = sum(
-            param.prior.logpdf(x_i) for x_i, param in zip(x, self.problem.parameters)
+            self.parameters[key].prior.logpdf(value) for key, value in inputs.items()
         )
 
         posterior = log_likelihood + log_prior
         return posterior
 
-    def _evaluateS1(self, x):
+    def _evaluateS1(self, inputs: Inputs):
         """
         Compute the maximum a posteriori with respect to the parameters.
         The method passes the likelihood gradient to the optimiser without modification.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns
         -------
         tuple
             A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `x`.
+            and the gradient is an array-like of the same length as `inputs`.
 
         Raises
         ------
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        log_likelihood, dl = self.likelihood._evaluateS1(x)
+        log_likelihood, dl = self.likelihood._evaluateS1(inputs)
         if not np.isfinite(log_likelihood):
-            return -np.inf, dl
+            return -np.inf, -dl
 
         log_prior = sum(
-            param.prior.logpdf(x_i) for x_i, param in zip(x, self.problem.parameters)
+            self.parameters[key].prior.logpdf(inputs[key]) for key in inputs.keys()
         )
         posterior = log_likelihood + log_prior
         return posterior, dl

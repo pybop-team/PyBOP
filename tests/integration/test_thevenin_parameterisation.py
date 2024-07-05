@@ -65,7 +65,7 @@ class TestTheveninParameterisation:
     )
     @pytest.mark.integration
     def test_optimisers_on_simple_model(self, optimiser, cost):
-        x0 = cost.x0
+        x0 = cost.parameters.initial_value()
         if optimiser in [pybop.GradientDescent]:
             optim = optimiser(
                 cost=cost,
@@ -81,7 +81,7 @@ class TestTheveninParameterisation:
         if isinstance(optimiser, pybop.BasePintsOptimiser):
             optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
 
-        initial_cost = optim.cost(x0)
+        initial_cost = optim.cost(optim.parameters.initial_value())
         x, final_cost = optim.run()
 
         # Assertions

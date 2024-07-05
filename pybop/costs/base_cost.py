@@ -1,4 +1,5 @@
 from pybop import BaseProblem
+from pybop.parameters.parameter import Inputs, Parameters
 
 
 class BaseCost:
@@ -17,21 +18,17 @@ class BaseCost:
         evaluating the cost function.
     _target : array-like
         An array containing the target data to fit.
-    x0 : array-like
-        The initial guess for the model parameters.
     n_outputs : int
         The number of outputs in the model.
     """
 
     def __init__(self, problem=None):
-        self.parameters = None
+        self.parameters = Parameters()
         self.problem = problem
-        self.x0 = None
         self.set_fail_gradient()
         if isinstance(self.problem, BaseProblem):
             self._target = self.problem._target
             self.parameters = self.problem.parameters
-            self.x0 = self.problem.x0
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
 
@@ -39,20 +36,20 @@ class BaseCost:
     def n_parameters(self):
         return len(self.parameters)
 
-    def __call__(self, x, grad=None):
+    def __call__(self, inputs: Inputs, grad=None):
         """
         Call the evaluate function for a given set of parameters.
         """
-        return self.evaluate(x, grad)
+        return self.evaluate(inputs, grad)
 
-    def evaluate(self, x, grad=None):
+    def evaluate(self, inputs: Inputs, grad=None):
         """
         Call the evaluate function for a given set of parameters.
 
         Parameters
         ----------
-        x : array-like
-            The parameters for which to evaluate the cost.
+        inputs : Inputs
+            The parameters for which to compute the cost and gradient.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
             to the parameters.
@@ -67,8 +64,10 @@ class BaseCost:
         ValueError
             If an error occurs during the calculation of the cost.
         """
+        inputs = self.parameters.verify(inputs)
+
         try:
-            return self._evaluate(x, grad)
+            return self._evaluate(inputs, grad)
 
         except NotImplementedError as e:
             raise e
@@ -76,7 +75,7 @@ class BaseCost:
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}")
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calculate the cost function value for a given set of parameters.
 
@@ -84,7 +83,7 @@ class BaseCost:
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to evaluate the cost.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
@@ -102,28 +101,30 @@ class BaseCost:
         """
         raise NotImplementedError
 
-    def evaluateS1(self, x):
+    def evaluateS1(self, inputs: Inputs):
         """
         Call _evaluateS1 for a given set of parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns
         -------
         tuple
             A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `x`.
+            and the gradient is an array-like of the same length as `inputs`.
 
         Raises
         ------
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
+        inputs = self.parameters.verify(inputs)
+
         try:
-            return self._evaluateS1(x)
+            return self._evaluateS1(inputs)
 
         except NotImplementedError as e:
             raise e
@@ -131,20 +132,20 @@ class BaseCost:
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}")
 
-    def _evaluateS1(self, x):
+    def _evaluateS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns
         -------
         tuple
             A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `x`.
+            and the gradient is an array-like of the same length as `inputs`.
 
         Raises
         ------

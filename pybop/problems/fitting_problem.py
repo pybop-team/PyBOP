@@ -1,6 +1,7 @@
 import numpy as np
 
 from pybop import BaseProblem
+from pybop.parameters.parameter import Inputs
 
 
 class FittingProblem(BaseProblem):
@@ -43,7 +44,7 @@ class FittingProblem(BaseProblem):
             parameters, model, check_model, signal, additional_variables, init_soc
         )
         self._dataset = dataset.data
-        self.x = self.x0
+        self.parameters.initial_value()
 
         # Check that the dataset contains time and current
         dataset.check(self.signal + ["Current function [A]"])
@@ -74,51 +75,61 @@ class FittingProblem(BaseProblem):
                 init_soc=self.init_soc,
             )
 
-    def evaluate(self, x):
+    def evaluate(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal.
 
         Parameters
         ----------
-        x : np.ndarray
-            Parameter values to evaluate the model at.
+        inputs : Inputs
+            Parameters for evaluation of the model.
 
         Returns
         -------
         y : np.ndarray
-            The model output y(t) simulated with inputs x.
+            The model output y(t) simulated with given inputs.
         """
-        if np.any(x != self.x) and self._model.rebuild_parameters:
-            self.parameters.update(values=x)
-            self._model.rebuild(parameters=self.parameters)
-            self.x = x
+        inputs = self.parameters.verify(inputs)
 
-        y = self._model.simulate(inputs=x, t_eval=self._time_data)
+        requires_rebuild = False
+        for key, value in inputs.items():
+            if key in self._model.rebuild_parameters:
+                current_value = self.parameters[key].value
+                if value != current_value:
+                    self.parameters[key].update(value=value)
+                    requires_rebuild = True
+
+        if requires_rebuild:
+            self._model.rebuild(parameters=self.parameters)
+
+        y = self._model.simulate(inputs=inputs, t_eval=self._time_data)
 
         return y
 
-    def evaluateS1(self, x):
+    def evaluateS1(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal and its derivatives.
 
         Parameters
         ----------
-        x : np.ndarray
-            Parameter values to evaluate the model at.
+        inputs : Inputs
+            Parameters for evaluation of the model.
 
         Returns
         -------
         tuple
             A tuple containing the simulation result y(t) and the sensitivities dy/dx(t) evaluated
-            with given inputs x.
+            with given inputs.
         """
+        inputs = self.parameters.verify(inputs)
+
         if self._model.rebuild_parameters:
             raise RuntimeError(
                 "Gradient not available when using geometric parameters."
             )
 
         y, dy = self._model.simulateS1(
-            inputs=x,
+            inputs=inputs,
             t_eval=self._time_data,
         )
 
