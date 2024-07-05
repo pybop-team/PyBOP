@@ -156,6 +156,7 @@ class Parameter:
             self.lower_bound = self.prior.mean - boundary_multiplier * self.prior.sigma
             self.upper_bound = self.prior.mean + boundary_multiplier * self.prior.sigma
             bounds = [self.lower_bound, self.upper_bound]
+            print("Default bounds applied based on prior distribution.")
 
         self.bounds = bounds
 

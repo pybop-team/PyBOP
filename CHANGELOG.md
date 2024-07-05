@@ -25,7 +25,7 @@
 
 ## Bug Fixes
 
-- [#338](https://github.com/pybop-team/PyBOP/pull/338) - Fixes GaussianLogLikelihood class, adds integration tests, updates non-bounded parameter implementation and bugfix to CMAES construction.
+- [#338](https://github.com/pybop-team/PyBOP/pull/338) - Fixes GaussianLogLikelihood class, adds integration tests, updates non-bounded parameter implementation by applying bounds from priors and `boundary_multiplier` argument. Bugfixes to CMAES construction.
 - [#339](https://github.com/pybop-team/PyBOP/issues/339) - Updates the calculation of the cyclable lithium capacity in the spme_max_energy example.
 - [#387](https://github.com/pybop-team/PyBOP/issues/387) - Adds keys to ParameterSet and updates ECM OCV check.
 - [#380](https://github.com/pybop-team/PyBOP/pull/380) - Restore self._boundaries construction for `pybop.PSO`
