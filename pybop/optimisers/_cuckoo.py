@@ -64,7 +64,7 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
         self._ready_for_tell = False
 
         # Initialise nests
-        if self._boundaries is not None:
+        if self._boundaries:
             self._nests = np.random.uniform(
                 low=self._boundaries.lower(),
                 high=self._boundaries.upper(),
@@ -146,7 +146,7 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
         """
         Updates the nests to abandon the worst performers and reinitialise.
         """
-        if self._boundaries is not None:
+        if self._boundaries:
             self._nests[idx] = np.random.uniform(
                 low=self._boundaries.lower(),
                 high=self._boundaries.upper(),
@@ -158,7 +158,7 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
         """
         Clip the input array to the boundaries if available.
         """
-        if self._boundaries is not None:
+        if self._boundaries:
             x = np.clip(x, self._boundaries.lower(), self._boundaries.upper())
         return x
 
