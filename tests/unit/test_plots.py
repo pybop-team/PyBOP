@@ -193,3 +193,22 @@ class TestPlots:
         fitting_problem = pybop.FittingProblem(model, parameters, dataset)
         cost = pybop.SumSquaredError(fitting_problem)
         pybop.plot2d(cost)
+
+        # Test with applied prior bounds
+        parameters = pybop.Parameters(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.68, 0.05),
+            ),
+            pybop.Parameter(
+                "Positive electrode active material volume fraction",
+                prior=pybop.Gaussian(0.58, 0.05),
+                bounds=[0.4, 0.7],
+            ),
+        )
+        fitting_problem = pybop.FittingProblem(model, parameters, dataset)
+        cost = pybop.SumSquaredError(fitting_problem)
+        with pytest.raises(
+            ValueError, match="Bounds were created from prior distributions"
+        ):
+            pybop.plot2d(cost)

@@ -46,6 +46,7 @@ class Parameter:
         self.true_value = true_value
         self.initial_value = initial_value
         self.value = initial_value
+        self.applied_prior_bounds = False
         self.set_bounds(bounds)
         self.margin = 1e-4
 
@@ -153,6 +154,7 @@ class Parameter:
                 self.lower_bound = bounds[0]
                 self.upper_bound = bounds[1]
         elif self.prior is not None:
+            self.applied_prior_bounds = True
             self.lower_bound = self.prior.mean - boundary_multiplier * self.prior.sigma
             self.upper_bound = self.prior.mean + boundary_multiplier * self.prior.sigma
             bounds = [self.lower_bound, self.upper_bound]
@@ -417,7 +419,11 @@ class Parameters:
         bounds = np.empty((len(self), 2))
 
         for i, param in enumerate(self.param.values()):
-            if param.bounds is not None:
+            if param.applied_prior_bounds:
+                raise ValueError(
+                    "Bounds were created from prior distributions. Please provide bounds for plotting."
+                )
+            elif param.bounds is not None:
                 bounds[i] = param.bounds
             else:
                 raise ValueError("All parameters require bounds for plotting.")
