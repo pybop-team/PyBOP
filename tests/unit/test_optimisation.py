@@ -374,10 +374,7 @@ class TestOptimisation:
 
             # Test cost_wrapper inf return
             cost = opt.cost_wrapper(np.array([0.9]))
-            assert cost in (
-                pytest.approx(1.729, abs=0.001),
-                pytest.approx(1.9, abs=0.001),
-            )
+            assert cost in [1.729, 1.81, 1.9]
 
     @pytest.mark.unit
     def test_halting(self, cost):

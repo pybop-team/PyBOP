@@ -142,6 +142,9 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 self._options["options"]["maxiter"] = self.unset_options.pop(key)
 
     def cost_wrapper(self, x):
+        """
+        Scale the cost function, preserving the sign convention, and eliminate nan values
+        """
         self.log["x"].append([x])
 
         if not self._options["jac"]:
@@ -163,6 +166,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         result : scipy.optimize.OptimizeResult
             The result of the optimisation including the optimised parameter values and cost.
         """
+        self.inf_count = 0
 
         # Add callback storing history of parameter values
         def callback(intermediate_result: OptimizeResult):
@@ -183,9 +187,6 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 raise ValueError(
                     "The initial parameter values return an infinite cost."
                 )
-
-        # Scale the cost function, preserving the sign convention, and eliminate nan values
-        self.inf_count = 0
 
         return minimize(
             self.cost_wrapper,
