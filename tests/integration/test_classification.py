@@ -96,7 +96,7 @@ class TestClassification:
             raise Exception("Please add a check for these values.")
 
         if np.all(x == np.asarray([0.05, 0.05])):
-            cost = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma=0.002)
+            cost = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002)
             optim = pybop.XNES(cost=cost)
 
             message = classify_using_Hessian(optim, x)
