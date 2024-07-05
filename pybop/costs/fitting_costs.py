@@ -380,7 +380,10 @@ class MAP(BaseLikelihood):
             If an error occurs during the calculation of the cost or gradient.
         """
         if self._fixed_problem:
-            self.likelihood._current_prediction = self._current_prediction
+            (
+                self.likelihood._current_prediction,
+                self.likelihood._current_sensitivities,
+            ) = self._current_prediction, self._current_sensitivities
 
         log_likelihood, dl = self.likelihood._evaluateS1(inputs)
         log_prior = sum(
