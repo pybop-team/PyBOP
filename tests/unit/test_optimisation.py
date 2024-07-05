@@ -75,6 +75,7 @@ class TestOptimisation:
             (pybop.Adam, "Adam"),
             (pybop.AdamW, "AdamW"),
             (pybop.CMAES, "Covariance Matrix Adaptation Evolution Strategy (CMA-ES)"),
+            (pybop.CuckooSearch, "Cuckoo Search"),
             (pybop.SNES, "Seperable Natural Evolution Strategy (SNES)"),
             (pybop.XNES, "Exponential Natural Evolution Strategy (xNES)"),
             (pybop.PSO, "Particle Swarm Optimisation (PSO)"),
@@ -126,6 +127,7 @@ class TestOptimisation:
             pybop.PSO,
             pybop.IRPropMin,
             pybop.NelderMead,
+            pybop.CuckooSearch,
         ],
     )
     @pytest.mark.unit
@@ -175,6 +177,7 @@ class TestOptimisation:
             ):
                 warnings.simplefilter("always")
                 optim = optimiser(cost=cost, unrecognised=10)
+            assert not optim.pints_optimiser.running()
         else:
             # Check bounds in list format and update tol
             bounds = [
@@ -249,7 +252,6 @@ class TestOptimisation:
 
             # Check defaults
             assert optim.pints_optimiser.n_hyper_parameters() == 5
-            assert not optim.pints_optimiser.running()
             assert optim.pints_optimiser.x_guessed() == optim.pints_optimiser._x0
             with pytest.raises(Exception):
                 optim.pints_optimiser.tell([0.1])
@@ -262,6 +264,12 @@ class TestOptimisation:
             optim = optimiser(cost=cost, x0=x0_new)
             assert optim.x0 == x0_new
             assert optim.x0 != x0
+
+    @pytest.mark.unit
+    def test_cuckoo_no_bounds(self, dataset, cost, model):
+        optim = pybop.CuckooSearch(cost=cost, bounds=None, max_iterations=1)
+        optim.run()
+        assert optim.pints_optimiser._boundaries is None
 
     @pytest.mark.unit
     def test_scipy_minimize_with_jac(self, cost):
