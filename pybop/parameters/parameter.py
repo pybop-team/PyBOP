@@ -1,3 +1,4 @@
+import warnings
 from collections import OrderedDict
 from typing import Dict, List, Union
 
@@ -420,9 +421,11 @@ class Parameters:
 
         for i, param in enumerate(self.param.values()):
             if param.applied_prior_bounds:
-                print(
-                    "Bounds were created from prior distributions."
-                    "Please provide bounds for better plotting results."
+                warnings.warn(
+                    "Bounds were created from prior distributions. "
+                    "Please provide bounds for better plotting results.",
+                    UserWarning,
+                    stacklevel=2,
                 )
             elif param.bounds is not None:
                 bounds[i] = param.bounds
