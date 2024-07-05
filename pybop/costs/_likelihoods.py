@@ -45,7 +45,8 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         Evaluates the Gaussian log-likelihood for the given parameters with known sigma.
         """
         if any(
-            len(self._current_prediction.get(key, [])) != len(self._target.get(key, [])) for key in self.signal
+            len(self._current_prediction.get(key, [])) != len(self._target.get(key, []))
+            for key in self.signal
         ):
             return -np.inf  # prediction length doesn't match target
 
@@ -53,7 +54,10 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
             [
                 np.sum(
                     self._offset
-                    + self._multip * np.sum((self._target[signal] - self._current_prediction[signal]) ** 2.0)
+                    + self._multip
+                    * np.sum(
+                        (self._target[signal] - self._current_prediction[signal]) ** 2.0
+                    )
                 )
                 for signal in self.signal
             ]
@@ -66,14 +70,22 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         Calculates the log-likelihood and gradient.
         """
         if any(
-            len(self._current_prediction.get(key, [])) != len(self._target.get(key, [])) for key in self.signal
+            len(self._current_prediction.get(key, [])) != len(self._target.get(key, []))
+            for key in self.signal
         ):
             return -np.inf, -self._dl
 
         likelihood = self._evaluate(inputs)
 
-        r = np.asarray([self._target[signal] - self._current_prediction[signal] for signal in self.signal])
-        dl = np.sum((np.sum((r * self._current_sensitivities.T), axis=2) / self.sigma2), axis=1)
+        r = np.asarray(
+            [
+                self._target[signal] - self._current_prediction[signal]
+                for signal in self.signal
+            ]
+        )
+        dl = np.sum(
+            (np.sum((r * self._current_sensitivities.T), axis=2) / self.sigma2), axis=1
+        )
 
         return likelihood, dl
 
@@ -193,7 +205,8 @@ class GaussianLogLikelihood(BaseLikelihood):
             return -np.inf
 
         if any(
-            len(self._current_prediction.get(key, [])) != len(self._target.get(key, [])) for key in self.signal
+            len(self._current_prediction.get(key, [])) != len(self._target.get(key, []))
+            for key in self.signal
         ):
             return -np.inf  # prediction length doesn't match target
 
@@ -202,7 +215,9 @@ class GaussianLogLikelihood(BaseLikelihood):
                 np.sum(
                     self._logpi
                     - self.n_time_data * np.log(sigma)
-                    - np.sum((self._target[signal] - self._current_prediction[signal]) ** 2.0)
+                    - np.sum(
+                        (self._target[signal] - self._current_prediction[signal]) ** 2.0
+                    )
                     / (2.0 * sigma**2.0)
                 )
                 for signal in self.signal
@@ -232,14 +247,22 @@ class GaussianLogLikelihood(BaseLikelihood):
             return -np.inf, -self._dl
 
         if any(
-            len(self._current_prediction.get(key, [])) != len(self._target.get(key, [])) for key in self.signal
+            len(self._current_prediction.get(key, [])) != len(self._target.get(key, []))
+            for key in self.signal
         ):
             return -np.inf, -self._dl
 
         likelihood = self._evaluate(inputs)
 
-        r = np.asarray([self._target[signal] - self._current_prediction[signal] for signal in self.signal])
-        dl = np.sum((np.sum((r * self._current_sensitivities.T), axis=2) / (sigma**2.0)), axis=1)
+        r = np.asarray(
+            [
+                self._target[signal] - self._current_prediction[signal]
+                for signal in self.signal
+            ]
+        )
+        dl = np.sum(
+            (np.sum((r * self._current_sensitivities.T), axis=2) / (sigma**2.0)), axis=1
+        )
         dsigma = (
             -self.n_time_data / sigma + np.sum(r**2.0, axis=1) / (sigma**3.0)
         ) / self._dsigma_scale
