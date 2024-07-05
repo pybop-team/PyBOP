@@ -16,7 +16,6 @@ parameters = pybop.Parameters(
     pybop.Parameter(
         "Positive electrode active material volume fraction",
         prior=pybop.Gaussian(0.48, 0.05),
-        bounds=[0.4, 0.7],
     ),
 )
 
@@ -44,8 +43,8 @@ dataset = pybop.Dataset(
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
-likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma=[0.03, 0.03])
-optim = pybop.CMAES(
+likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=sigma)
+optim = pybop.IRPropMin(
     likelihood,
     max_unchanged_iterations=20,
     min_iterations=20,
@@ -57,7 +56,7 @@ x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
 # Plot the timeseries output
-pybop.quick_plot(problem, problem_inputs=x[0:2], title="Optimised Comparison")
+pybop.quick_plot(problem, problem_inputs=x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)

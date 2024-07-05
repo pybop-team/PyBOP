@@ -160,8 +160,7 @@ class BaseOptimiser:
 
         # Store the optimised parameters
         x = self.result.x
-        if hasattr(self.cost, "parameters"):
-            self.store_optimised_parameters(x)
+        self.parameters.update(values=x)
 
         # Check if parameters are viable
         if self.physical_viability:
