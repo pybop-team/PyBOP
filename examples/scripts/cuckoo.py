@@ -55,9 +55,7 @@ problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
 cost = pybop.GaussianLogLikelihood(problem, sigma0=sigma * 4)
 optim = pybop.Optimisation(
     cost,
-    sigma0=None,
     optimiser=pybop.CuckooSearch,
-    max_unchanged_iterations=55,
     max_iterations=100,
 )
 
