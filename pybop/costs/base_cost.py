@@ -198,13 +198,15 @@ class WeightedCost(BaseCost):
 
         # Check if all costs depend on the same problem
         for cost in self.cost_list:
-            if hasattr(cost, "problem") and (
-                not cost._fixed_problem or cost.problem is not self.cost_list[0].problem
+            if (
+                hasattr(cost, "problem")
+                and cost.problem is not self.cost_list[0].problem
             ):
                 self._different_problems = True
 
         if not self._different_problems:
             super(WeightedCost, self).__init__(self.cost_list[0].problem)
+            self._fixed_problem = self.cost_list[0]._fixed_problem
         else:
             super(WeightedCost, self).__init__()
             self._fixed_problem = False

@@ -200,6 +200,12 @@ class TestCosts:
         # Test treatment of simulations that terminated early
         # by variation of the cut-off voltage.
 
+    @pytest.fixture
+    def design_problem(self, model, parameters, experiment, signal):
+        return pybop.DesignProblem(
+            model, parameters, experiment, signal=signal, init_soc=0.5
+        )
+
     @pytest.mark.parametrize(
         "cost_class",
         [
@@ -209,21 +215,9 @@ class TestCosts:
         ],
     )
     @pytest.mark.unit
-    def test_design_costs(
-        self,
-        cost_class,
-        model,
-        parameters,
-        experiment,
-        signal,
-    ):
-        # Construct Problem
-        problem = pybop.DesignProblem(
-            model, parameters, experiment, signal=signal, init_soc=0.5
-        )
-
+    def test_design_costs(self, cost_class, design_problem):
         # Construct Cost
-        cost = cost_class(problem)
+        cost = cost_class(design_problem)
 
         if cost_class in [pybop.DesignCost]:
             with pytest.raises(NotImplementedError):
@@ -249,11 +243,11 @@ class TestCosts:
                 cost(["StringInputShouldNotWork"])
 
             # Compute after updating nominal capacity
-            cost = cost_class(problem, update_capacity=True)
+            cost = cost_class(design_problem, update_capacity=True)
             cost([0.4])
 
     @pytest.mark.unit
-    def test_weighted_cost(self, problem):
+    def test_weighted_fitting_cost(self, problem):
         cost1 = pybop.SumSquaredError(problem)
         cost2 = pybop.RootMeanSquaredError(problem)
 
@@ -317,3 +311,20 @@ class TestCosts:
         errors_3, sensitivities_3 = weighted_cost_3.evaluateS1([0.5])
         np.testing.assert_allclose(errors_2, errors_3, atol=1e-5)
         np.testing.assert_allclose(sensitivities_2, sensitivities_3, atol=1e-5)
+
+    @pytest.mark.unit
+    def test_weighted_design_cost(self, design_problem):
+        cost1 = pybop.GravimetricEnergyDensity(design_problem)
+        cost2 = pybop.RootMeanSquaredError(design_problem)
+
+        # Test with and without weights
+        weighted_cost = pybop.WeightedCost(cost_list=[cost1, cost2])
+        assert weighted_cost._different_problems is False
+        assert weighted_cost._fixed_problem is False
+        assert weighted_cost.problem is design_problem
+        assert weighted_cost([0.5]) >= 0
+        np.testing.assert_allclose(
+            weighted_cost.evaluate([0.6]),
+            cost1([0.6]) + cost2([0.6]),
+            atol=1e-5,
+        )
