@@ -71,7 +71,9 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
                 size=(self._n, self._dim),
             )
         else:
-            self._nests = np.random.normal(self._x0, self._sigma0)
+            self._nests = np.random.normal(
+                self._x0, self._sigma0, size=(self._n, self._dim)
+            )
 
         self._fitness = np.full(self._n, np.inf)
 

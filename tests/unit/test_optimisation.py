@@ -127,6 +127,7 @@ class TestOptimisation:
             pybop.PSO,
             pybop.IRPropMin,
             pybop.NelderMead,
+            pybop.CuckooSearch,
         ],
     )
     @pytest.mark.unit
@@ -265,17 +266,10 @@ class TestOptimisation:
             assert optim.x0 != x0
 
     @pytest.mark.unit
-    def test_cuckoo_no_bounds(self, dataset, model):
-        parameter = pybop.Parameter(
-            "Negative electrode active material volume fraction",
-            prior=pybop.Gaussian(0.6, 0.2),
-        )
-
-        cost_no_bounds = pybop.SumSquaredError(
-            pybop.FittingProblem(model, parameter, dataset)
-        )
-        optim = pybop.CuckooSearch(cost=cost_no_bounds, max_iterations=1)
+    def test_cuckoo_no_bounds(self, dataset, cost, model):
+        optim = pybop.CuckooSearch(cost=cost, bounds=None, max_iterations=1)
         optim.run()
+        assert optim.pints_optimiser._boundaries is None
 
     @pytest.mark.unit
     def test_scipy_minimize_with_jac(self, cost):
