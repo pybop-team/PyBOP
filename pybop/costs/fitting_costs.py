@@ -371,7 +371,7 @@ class MAP(BaseLikelihood):
         """
         log_likelihood = self.likelihood._evaluate(inputs)
         if not np.isfinite(log_likelihood):
-            return -np.inf
+            return log_likelihood
 
         log_prior = sum(
             self.parameters[key].prior.logpdf(value) for key, value in inputs.items()
@@ -403,7 +403,7 @@ class MAP(BaseLikelihood):
         """
         log_likelihood, dl = self.likelihood._evaluateS1(inputs)
         if not np.isfinite(log_likelihood):
-            return -np.inf, -dl
+            return log_likelihood, dl
 
         log_prior = sum(
             self.parameters[key].prior.logpdf(inputs[key]) for key in inputs.keys()

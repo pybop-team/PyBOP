@@ -94,7 +94,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
 
         if not self.verify_prediction(y):
             dl = self._de * np.ones(self.n_parameters)
-            return -np.inf, dl
+            return -np.inf, -dl
 
         r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
         likelihood = self._evaluate(inputs)
