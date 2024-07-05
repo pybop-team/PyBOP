@@ -277,6 +277,16 @@ class TestOptimisation:
             optim = pybop.SciPyMinimize(cost=cost, jac="Invalid string")
 
     @pytest.mark.unit
+    def test_scipy_minimize_invalid_x0(self, cost):
+        # Check a starting point that returns an infinite cost
+        invalid_x0 = np.array([1.1])
+        optim = pybop.SciPyMinimize(
+            cost=cost, x0=invalid_x0, maxiter=10, allow_infeasible_solutions=False
+        )
+        optim.run()
+        assert abs(optim._cost0) != np.inf
+
+    @pytest.mark.unit
     def test_single_parameter(self, cost):
         # Test catch for optimisers that can only run with multiple parameters
         with pytest.raises(

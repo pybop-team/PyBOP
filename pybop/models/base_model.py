@@ -73,10 +73,6 @@ class BaseModel:
         self.param_check_counter = 0
         self.allow_infeasible_solutions = True
 
-    @property
-    def n_parameters(self):
-        return len(self.parameters)
-
     def build(
         self,
         dataset: Dataset = None,
@@ -222,8 +218,8 @@ class BaseModel:
             The initial state of charge to be used in simulations.
         """
         self.dataset = dataset
+
         if parameters is not None:
-            self.parameters = parameters
             self.classify_and_update_parameters(parameters)
 
         if init_soc is not None:
@@ -242,7 +238,7 @@ class BaseModel:
         # Clear solver and setup model
         self._solver._model_set_up = {}
 
-    def classify_and_update_parameters(self, parameters: Union[Parameters, Dict]):
+    def classify_and_update_parameters(self, parameters: Parameters):
         """
         Update the parameter values according to their classification as either
         'rebuild_parameters' which require a model rebuild and
@@ -250,10 +246,16 @@ class BaseModel:
 
         Parameters
         ----------
-        parameters : pybop.ParameterSet
+        parameters : pybop.Parameters
 
         """
-        parameter_dictionary = parameters.as_dict()
+        if parameters is None:
+            self.parameters = Parameters()
+        else:
+            self.parameters = parameters
+
+        parameter_dictionary = self.parameters.as_dict()
+
         rebuild_parameters = {
             param: parameter_dictionary[param]
             for param in parameter_dictionary
@@ -273,6 +275,9 @@ class BaseModel:
             self._parameter_set.update(self.rebuild_parameters)
             self._unprocessed_parameter_set = self._parameter_set
             self.geometry = self.pybamm_model.default_geometry
+
+        # Update the list of parameter names and number of parameters
+        self._n_parameters = len(self.parameters)
 
     def reinit(
         self, inputs: Inputs, t: float = 0.0, x: Optional[np.ndarray] = None
@@ -425,7 +430,7 @@ class BaseModel:
                         (
                             sol[self.signal[0]].data.shape[0],
                             self.n_outputs,
-                            self.n_parameters,
+                            self._n_parameters,
                         )
                     )
 
