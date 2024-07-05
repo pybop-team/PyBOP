@@ -89,7 +89,7 @@ parameter_set.export_parameters(
 pybop.plot_dataset(dataset)
 
 # Plot the timeseries output
-pybop.quick_plot(problem, parameter_values=x, title="Optimised Comparison")
+pybop.quick_plot(problem, problem_inputs=x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)
@@ -101,5 +101,5 @@ pybop.plot_parameters(optim)
 pybop.plot2d(cost, steps=15)
 
 # Plot the cost landscape with optimisation path and updated bounds
-bounds = np.array([[1e-4, 1e-2], [1e-5, 1e-2]])
+bounds = np.asarray([[1e-4, 1e-2], [1e-5, 1e-2]])
 pybop.plot2d(optim, bounds=bounds, steps=15)

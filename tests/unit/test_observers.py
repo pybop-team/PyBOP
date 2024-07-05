@@ -11,15 +11,6 @@ class TestObserver:
     A class to test the observer class.
     """
 
-    @pytest.fixture(params=[1, 2])
-    def model(self, request):
-        model = ExponentialDecay(
-            parameter_set=pybamm.ParameterValues({"k": "[input]", "y0": "[input]"}),
-            n_states=request.param,
-        )
-        model.build()
-        return model
-
     @pytest.fixture
     def parameters(self):
         return pybop.Parameters(
@@ -36,6 +27,15 @@ class TestObserver:
                 initial_value=1.0,
             ),
         )
+
+    @pytest.fixture(params=[1, 2])
+    def model(self, parameters, request):
+        model = ExponentialDecay(
+            parameter_set=pybamm.ParameterValues({"k": "[input]", "y0": "[input]"}),
+            n_states=request.param,
+        )
+        model.build(parameters=parameters)
+        return model
 
     @pytest.mark.unit
     def test_observer(self, model, parameters):
@@ -72,8 +72,8 @@ class TestObserver:
 
         # Test evaluate with different inputs
         observer._time_data = t_eval
-        observer.evaluate(parameters.initial_value())
-        observer.evaluate(parameters)
+        observer.evaluate(parameters.as_dict())
+        observer.evaluate(parameters.current_value())
 
         # Test evaluate with dataset
         observer._dataset = pybop.Dataset(
@@ -83,7 +83,7 @@ class TestObserver:
             }
         )
         observer._target = {"2y": expected}
-        observer.evaluate(parameters.initial_value())
+        observer.evaluate(parameters.as_dict())
 
     @pytest.mark.unit
     def test_unbuilt_model(self, parameters):

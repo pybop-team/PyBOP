@@ -1,6 +1,6 @@
 import sys
 
-from pybop import StandardSubplot
+from pybop import GaussianLogLikelihood, StandardSubplot
 
 
 def plot_parameters(optim, show=True, **layout_kwargs):
@@ -26,10 +26,10 @@ def plot_parameters(optim, show=True, **layout_kwargs):
 
     # Extract parameters and log from the optimisation object
     parameters = optim.cost.parameters
-    log = optim.log
+    log = optim.log["x"]
 
     # Create a list of sequential integers for the x-axis
-    x = list(range(len(log[0]) * len(log)))
+    x = list(range(1, len(log[0]) * len(log) + 1))
 
     # Determine the number of elements in the smallest arrays
     num_elements = len(log[0][0])
@@ -50,6 +50,10 @@ def plot_parameters(optim, show=True, **layout_kwargs):
     trace_names = parameters.keys()
     for name in trace_names:
         axis_titles.append(("Function Call", name))
+
+    if isinstance(optim.cost, GaussianLogLikelihood):
+        axis_titles.append(("Function Call", "Sigma"))
+        trace_names.append("Sigma")
 
     # Set subplot layout options
     layout_options = dict(
