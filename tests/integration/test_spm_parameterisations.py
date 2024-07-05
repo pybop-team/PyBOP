@@ -87,6 +87,7 @@ class Test_SPM_Parameterisation:
             pybop.SciPyDifferentialEvolution,
             pybop.AdamW,
             pybop.CMAES,
+            pybop.CuckooSearch,
             pybop.IRPropMin,
             pybop.NelderMead,
             pybop.SNES,
@@ -108,7 +109,7 @@ class Test_SPM_Parameterisation:
             )
 
         # Set sigma0 and create optimiser
-        sigma0 = 0.01 if isinstance(spm_costs, pybop.GaussianLogLikelihood) else 0.05
+        sigma0 = 0.006 if isinstance(spm_costs, pybop.MAP) else None
         optim = optimiser(sigma0=sigma0, **common_args)
 
         # Set max unchanged iterations for BasePintsOptimisers
