@@ -30,7 +30,7 @@ class BaseCost:
         self._fixed_problem = False
         if isinstance(self.problem, BaseProblem):
             self._target = self.problem._target
-            self.parameters = self.problem.parameters
+            self.parameters.join(self.problem.parameters)
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
             self._fixed_problem = True

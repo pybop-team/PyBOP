@@ -67,7 +67,7 @@ class TestOptimisation:
         # Define the cost to optimise
         problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
-            return cost_class(problem, sigma=[0.03, 0.03])
+            return cost_class(problem, sigma0=0.002)
         else:
             return cost_class(problem)
 
@@ -107,7 +107,7 @@ class TestOptimisation:
         np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
     def get_data(self, model, parameters, x, init_soc):
-        model.parameters = parameters
+        model.classify_and_update_parameters(parameters)
         experiment = pybop.Experiment(
             [
                 (
