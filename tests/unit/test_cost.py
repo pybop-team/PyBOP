@@ -285,24 +285,35 @@ class TestCosts:
             weighted_cost = pybop.WeightedCost(cost_list=[cost1, cost2], weights=[1])
 
         # Test with and without different problems
-        weighted_cost_2 = pybop.WeightedCost(cost_list=[cost1, cost2], weights=[1, 100])
+        weight = 100
+        weighted_cost_2 = pybop.WeightedCost(
+            cost_list=[cost1, cost2], weights=[1, weight]
+        )
         assert weighted_cost_2._different_problems is False
+        assert weighted_cost_2._fixed_problem is True
         assert weighted_cost_2.problem is problem
         assert weighted_cost_2([0.5]) >= 0
-
-        cost3 = pybop.RootMeanSquaredError(copy(problem))
-        weighted_cost_3 = pybop.WeightedCost(cost_list=[cost1, cost3], weights=[1, 100])
-        assert weighted_cost_3._different_problems is True
-        assert weighted_cost_3.problem is None
-        assert weighted_cost_3([0.5]) >= 0
-
         np.testing.assert_allclose(
-            weighted_cost_2._evaluate([0.5]),
-            weighted_cost_3._evaluate([0.5]),
+            weighted_cost_2.evaluate([0.6]),
+            cost1([0.6]) + weight * cost2([0.6]),
             atol=1e-5,
         )
-        weighted_cost_3.parameters = problem.parameters
-        errors_2, sensitivities_2 = weighted_cost_2._evaluateS1([0.5])
-        errors_3, sensitivities_3 = weighted_cost_3._evaluateS1([0.5])
+
+        cost3 = pybop.RootMeanSquaredError(copy(problem))
+        weighted_cost_3 = pybop.WeightedCost(
+            cost_list=[cost1, cost3], weights=[1, weight]
+        )
+        assert weighted_cost_3._different_problems is True
+        assert weighted_cost_3._fixed_problem is False
+        assert weighted_cost_3.problem is None
+        assert weighted_cost_3([0.5]) >= 0
+        np.testing.assert_allclose(
+            weighted_cost_3.evaluate([0.6]),
+            cost1([0.6]) + weight * cost3([0.6]),
+            atol=1e-5,
+        )
+
+        errors_2, sensitivities_2 = weighted_cost_2.evaluateS1([0.5])
+        errors_3, sensitivities_3 = weighted_cost_3.evaluateS1([0.5])
         np.testing.assert_allclose(errors_2, errors_3, atol=1e-5)
         np.testing.assert_allclose(sensitivities_2, sensitivities_3, atol=1e-5)

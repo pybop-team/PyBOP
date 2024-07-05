@@ -275,7 +275,7 @@ class ObserverCost(BaseCost):
         )
         return -log_likelihood
 
-    def evaluateS1(self, inputs: Inputs):
+    def _evaluateS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
 
@@ -347,6 +347,9 @@ class MAP(BaseLikelihood):
         float
             The maximum a posteriori cost.
         """
+        if self._fixed_problem:
+            self.likelihood._current_prediction = self._current_prediction
+
         log_likelihood = self.likelihood._evaluate(inputs)
         log_prior = sum(
             self.parameters[key].prior.logpdf(value) for key, value in inputs.items()
@@ -376,6 +379,9 @@ class MAP(BaseLikelihood):
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
+        if self._fixed_problem:
+            self.likelihood._current_prediction = self._current_prediction
+
         log_likelihood, dl = self.likelihood._evaluateS1(inputs)
         log_prior = sum(
             self.parameters[key].prior.logpdf(inputs[key]) for key in inputs.keys()

@@ -208,46 +208,80 @@ class WeightedCost(BaseCost):
         else:
             super(WeightedCost, self).__init__()
             self._fixed_problem = False
+            for cost in self.cost_list:
+                self.parameters.join(cost.parameters)
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calculate the weighted cost for a given set of parameters.
+
+        Parameters
+        ----------
+        inputs : Inputs
+            The parameters for which to compute the cost.
+        grad : array-like, optional
+            An array to store the gradient of the cost function with respect
+            to the parameters.
+
+        Returns
+        -------
+        float
+            The weighted cost value.
         """
         e = np.empty_like(self.cost_list)
 
-        if not self._different_problems:
-            current_prediction = self.problem.evaluate(x)
+        if not self._fixed_problem and self._different_problems:
+            self.parameters.update(values=list(inputs.values()))
+        elif not self._fixed_problem:
+            self._current_prediction = self.problem.evaluate(inputs)
 
         for i, cost in enumerate(self.cost_list):
-            if self._different_problems:
-                cost._current_prediction = cost.problem.evaluate(x)
+            if not self._fixed_problem and self._different_problems:
+                inputs = cost.parameters.as_dict()
+                cost._current_prediction = cost.problem.evaluate(inputs)
             else:
-                cost._current_prediction = current_prediction
-            e[i] = cost._evaluate(x, grad)
+                cost._current_prediction = self._current_prediction
+            e[i] = cost._evaluate(inputs, grad)
 
         return np.dot(e, self.weights)
 
-    def _evaluateS1(self, x):
+    def _evaluateS1(self, inputs: Inputs):
         """
-        Compute the cost and its gradient with respect to the parameters.
+        Compute the weighted cost and its gradient with respect to the parameters.
+
+        Parameters
+        ----------
+        inputs : Inputs
+            The parameters for which to compute the cost and gradient.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the cost and the gradient. The cost is a float,
+            and the gradient is an array-like of the same length as `x`.
         """
         e = np.empty_like(self.cost_list)
         de = np.empty((len(self.parameters), len(self.cost_list)))
 
-        if not self._different_problems:
-            current_prediction, current_sensitivities = self.problem.evaluateS1(x)
+        if not self._fixed_problem and self._different_problems:
+            self.parameters.update(values=list(inputs.values()))
+        elif not self._fixed_problem:
+            self._current_prediction, self._current_sensitivities = (
+                self.problem.evaluateS1(inputs)
+            )
 
         for i, cost in enumerate(self.cost_list):
-            if self._different_problems:
+            if not self._fixed_problem and self._different_problems:
+                inputs = cost.parameters.as_dict()
                 cost._current_prediction, cost._current_sensitivities = (
-                    cost.problem.evaluateS1(x)
+                    cost.problem.evaluateS1(inputs)
                 )
             else:
                 cost._current_prediction, cost._current_sensitivities = (
-                    current_prediction,
-                    current_sensitivities,
+                    self._current_prediction,
+                    self._current_sensitivities,
                 )
-            e[i], de[:, i] = cost._evaluateS1(x)
+            e[i], de[:, i] = cost._evaluateS1(inputs)
 
         e = np.dot(e, self.weights)
         de = np.dot(de, self.weights)
