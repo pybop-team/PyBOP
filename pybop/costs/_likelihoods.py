@@ -204,6 +204,9 @@ class GaussianLogLikelihood(BaseLikelihood):
         if np.any(sigma <= 0):
             return -np.inf
 
+        self._current_prediction = self.problem.evaluate(
+            self.problem.parameters.as_dict()
+        )
         if any(
             len(self._current_prediction.get(key, [])) != len(self._target.get(key, []))
             for key in self.signal
@@ -246,6 +249,9 @@ class GaussianLogLikelihood(BaseLikelihood):
         if np.any(sigma <= 0):
             return -np.inf, -self._dl
 
+        self._current_prediction, self._current_sensitivities = self.problem.evaluateS1(
+            self.problem.parameters.as_dict()
+        )
         if any(
             len(self._current_prediction.get(key, [])) != len(self._target.get(key, []))
             for key in self.signal
