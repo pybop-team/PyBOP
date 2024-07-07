@@ -81,6 +81,7 @@ addopts = "--showlocals -v -n auto"
 [tool.ruff]
 extend-include = ["*.ipynb"]
 extend-exclude = ["__init__.py"]
+fix = true
 
 [tool.ruff.lint]
 select = [
