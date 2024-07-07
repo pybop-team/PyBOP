@@ -43,7 +43,7 @@ script_path = path.dirname(__file__)
 #
 # Utilities
 #
-from ._utils import is_numeric
+from ._utils import is_numeric, SymbolReplacer
 
 #
 # Experiment class
