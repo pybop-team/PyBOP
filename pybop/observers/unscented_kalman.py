@@ -63,7 +63,7 @@ class UnscentedKalmanFilterObserver(Observer):
             self._dataset = dataset.data
 
             # Check that the dataset contains time and current
-            dataset.check([*self.signal, "Current function [A]"])
+            dataset.check(signal=[*self.signal, "Current function [A]"])
 
             self._time_data = self._dataset["Time [s]"]
             self.n_time_data = len(self._time_data)

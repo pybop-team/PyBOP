@@ -472,12 +472,9 @@ class BaseModel:
                 inputs=inputs,
                 allow_infeasible_solutions=self.allow_infeasible_solutions,
             ):
-                model = self.built_model
-                inputs = (
-                    casadi.vertcat(*[x for x in inputs.values()])
-                    if model.convert_to_format == "casadi"
-                    else inputs
-                )
+                # try:
+                # Set up model
+                # self.set_up_for_eis(self.model)
 
                 # Set up the solver for new inputs
                 self._solver.set_up(self._built_model, inputs=inputs)
@@ -517,7 +514,9 @@ class BaseModel:
             else:
                 return {"Impedence": [np.inf]}
 
-            return {"Impedence": zs}
+            y = {"Impedence": zs}
+
+            return y
 
     def simulateS1(self, inputs: Inputs, t_eval: np.array):
         """

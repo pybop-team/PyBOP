@@ -4,7 +4,7 @@ from pybop import BaseProblem
 from pybop.parameters.parameter import Inputs
 
 
-class FittingProblem(BaseProblem):
+class EISProblem(BaseProblem):
     """
     Problem class for fitting (parameter estimation) problems.
 
@@ -36,12 +36,10 @@ class FittingProblem(BaseProblem):
         additional_variables=None,
         init_soc=None,
     ):
-        # Add time and remove duplicates
         if additional_variables is None:
             additional_variables = []
         if signal is None:
-            signal = ["Voltage [V]"]
-        additional_variables.extend(["Time [s]"])
+            signal = ["Impedance"]
         additional_variables = list(set(additional_variables))
 
         super().__init__(
@@ -50,20 +48,22 @@ class FittingProblem(BaseProblem):
         self._dataset = dataset.data
         self.parameters.initial_value()
 
-        # Check that the dataset contains time and current
-        dataset.check(signal=[*self.signal, "Current function [A]"])
+        # Check that the dataset and current
+        dataset.check(
+            domain="Frequency [Hz]", signal=[*self.signal, "Current function [A]"]
+        )
 
-        # Unpack time and target data
-        self._time_data = self._dataset["Time [s]"]
-        self.n_time_data = len(self._time_data)
+        # Unpack frequency and target data
+        self._frequency_data = self._dataset["Frequency [Hz]"]
+        self.n_frequency = len(self._frequency_data)
         self.set_target(dataset)
 
-        # Add useful parameters to model
+        # Add useful attributes to model
         if model is not None:
             self._model.signal = self.signal
             self._model.additional_variables = self.additional_variables
             self._model.n_outputs = self.n_outputs
-            self._model.n_time_data = self.n_time_data
+            self._model.n_frequency = self.n_frequency
 
             # Build the model from scratch
             if self._model._built_model is not None:
@@ -77,6 +77,7 @@ class FittingProblem(BaseProblem):
                 parameters=self.parameters,
                 check_model=self.check_model,
                 init_soc=self.init_soc,
+                eis=True,
             )
 
     def evaluate(self, inputs: Inputs):
@@ -104,9 +105,9 @@ class FittingProblem(BaseProblem):
                     requires_rebuild = True
 
         if requires_rebuild:
-            self._model.rebuild(parameters=self.parameters)
+            self._model.rebuild(parameters=self.parameters)  # Add EIS flag here
 
-        y = self._model.simulate(inputs=inputs, t_eval=self._time_data)
+        y = self._model.simulateEIS(inputs=inputs, f_eval=self._frequency_data)
 
         return y
 
@@ -132,9 +133,9 @@ class FittingProblem(BaseProblem):
                 "Gradient not available when using geometric parameters."
             )
 
-        y, dy = self._model.simulateS1(
+        y, dy = self._model.simulateEISS1(
             inputs=inputs,
-            t_eval=self._time_data,
+            f_eval=self._frequency_data,
         )
 
         return (y, np.asarray(dy))
