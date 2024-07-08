@@ -72,7 +72,7 @@ jobs:
           ./dist/*.tar.gz
           ./dist/*.whl
     - name: Publish artifacts and signatures to GitHub Releases
-      uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564  # v2.0.4
+      uses: softprops/action-gh-release@v2
       with:
         # `dist/` contains the built packages, and the
         # sigstore-produced signatures and certificates.
