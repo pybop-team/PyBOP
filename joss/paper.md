@@ -75,41 +75,25 @@ The currently implemented subclasses for the model, problem, and cost classes ar
 
 Likewise, the current optimisation algorithms available for usage in optimisation tasks in presented in \autoref{tab:optimisers}. The cost functions in \autoref{tab:subclasses} are grouped by problem type, while the model and optimiser classes can be selected in combination with any problem-cost pair.
 
-: List of available optimisers. (*) Scipy Minimize provides gradient and non-gradient methods. \label{tab:optimisers}
+: The currently supported optimisation algorithms classifed by candidate solution type, inclusive of gradient information. (*) Scipy Minimize has gradient and non-gradient methods. \label{tab:optimisers}
 
-| Gradient-based       | Non-gradient-based          |
-| :------------------------------------------- | :------------------------------------------------------- |
-| Adaptive moment estimation with weight decay (AdamW) | Covariance matrix adaptation evolution strategy (CMA-ES) |
-| Improved resilient backpropagation (iRProp-) | Exponential natural evolution strategy (xNES)    |
-| Gradient descent                             | Separable natural evolution strategy (sNES)                       |
-| SciPy minimize (*)                           | Particle swarm optimization (PSO)            |
-|                                              | SciPy differential evolution     |
-|                                              | Nelder-Mead  |
-|                                              | Cuckoo search         |
+| Gradient-based | Evolutionary Strategies | Swarm Intelligence | Direct Search |
+|:----------------------------|:------------------------|:-------------------|:--------------|
+| Adaptive moment estimation with weight decay (AdamW) | Covariance matrix adaptation (CMA-ES) | Particle swarm (PSO) | Nelder-Mead |
+| Improved resilient backpropagation (iRProp-) | Exponential natural (xNES) | Cuckoo search | |
+| Gradient descent | Separable natural (sNES) | | |
+| SciPy minimize (*) | SciPy differential evolution | | |
 
- As previously discussed, PyBOP offers Bayesian inference methods such as Maximum a Posteriori (MAP) presented alongside the frequentist methods in \autoref{tab:optimisers}. A full Bayesian framework is available from a Markov-chain Monte Carlo implemented within PyBOP, capable of providing uncertainty on the inferred parameters. These samplers are currently composed within PyBOP from the Pints' library, with a base class implemented for interopability and direct application to the PyBOP model, problem, and likelihood classes. The currently support MCMC samplers is shown in Table \autoref{tab:samplers}.
+ As discussed above, `PyBOP` offers Bayesian inference methods such as Maximum a Posteriori (MAP) presented alongside the frequentist methods in \autoref{tab:optimisers}; however, for a full Bayesian framework, monte carlo sampling is implemented within `PyBOP`. These methods construct a posterior distribution of the unknown parameters which can used for uncertainty and practical identifiability diagnostics. The individual sampler classes are currently composed within `PyBOP` from the `Pints` library, with a base sampling class implemented for interopability and direct integration to the `PyBOP` model, problem, and likelihood classes. The currently support samplers are presented in \autoref{tab:samplers}.
 
-: List of available Monte Carlo samplers. \label{tab:samplers}
+: PyBOP's monte carlo sampling methods separated based on candidate suggestion method. \label{tab:samplers}
 
-| Gradient-based       | Non-gradient-based              |
-| :------------------------------------------- | :------------------------------------------------------- |
-| Adaptive Moment Estimation with Weight Decay (AdamW) | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) |
-| Improved Resilient Backpropagation (iRProp-) | Exponential Natural Evolution Strategy (xNES)    |
-| Gradient Descent                             | Separable Natural Evolution Strategy (sNES)                       |
-| SciPy Minimize (*)                           | Particle Swarm Optimization (PSO)            |
-|                                              | SciPy Differential Evolution     |
-|                                              | Nelder-Mead  |
-|                                              | Cuckoo Search         |
-
-- Performance (multiprocessing)
-- Construction of PyBaMM models (geometric and non-geometric identification)
-- Feasability checks on identified parameters
-- Spatial identification methods?
-- Documentation supported at X
-- Benchmarks provided at X
-- Plotting available via Plotly (cost landscapes, gradient landscapes)
-- Test suite provided by pytest (~98% coverage)
-- Standalone implementations (Bring your own model)
+| Hamiltonian-based    | Adaptive                               | Slice Sampling         | Evolutionary           | Other                        |
+|:---------------------|:---------------------------------------|:-----------------------|:-----------------------|:----------------------------|
+|  Monomial Gamma    |   Delayed Rejection Adaptive     | Slice Doubling         | Differential Evolution | Metropolis Random Walk      |
+| No-U-Turn   | Haario Bardenet    | Slice Rank Shrinking   |         |    Emcee Hammer         |
+| Hamiltonian   | Rao Blackwell    | Slice Stepout          |     |  |
+| Relativistic   |  Haario  |              |           | Metropolis Adjusted Langevin |
 
 # Background
 
@@ -185,5 +169,16 @@ constraints on the geometric electrode parameters [@Couto:2023].
 We gratefully acknowledge all [contributors](https://github.com/pybop-team/PyBOP?tab=readme-ov-file#contributors-) to this
 package. This work was supported by the Faraday Institution Multiscale Modelling (MSM)
 project (ref. FIRG059), UKRI's Horizon Europe Guarantee (ref. 10038031), and EU IntelLiGent project (ref. 101069765).
+
+# Discussion Points
+- Performance (multiprocessing)
+- ~~Construction of PyBaMM models (geometric and non-geometric identification)~~
+- Feasability checks on identified parameters
+- Spatial identification methods?
+- Documentation supported at https://pybop-docs.readthedocs.io/en/latest/
+- Benchmarks provided at https://pybop-team.github.io/pybop-bench/
+- Plotting classes via Plotly (cost landscapes, gradient landscapes)
+- Test suite provided by pytest (~98% coverage)
+- Standalone implementations (Bring your own model)
 
 # References
