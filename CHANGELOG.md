@@ -2,6 +2,16 @@
 
 ## Features
 
+
+## Bug Fixes
+
+
+## Breaking Changes
+
+# [v24.6](https://github.com/pybop-team/PyBOP/tree/v24.6) - 2024-07-08
+
+## Features
+
 - [#319](https://github.com/pybop-team/PyBOP/pull/319/) - Adds `CuckooSearch` optimiser with corresponding tests.
 - [#359](https://github.com/pybop-team/PyBOP/pull/359/) - Aligning Inputs between problem, observer and model.
 - [#379](https://github.com/pybop-team/PyBOP/pull/379) - Adds model.simulateS1 to weekly benchmarks.
