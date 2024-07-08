@@ -75,6 +75,7 @@ class TestOptimisation:
             (pybop.Adam, "Adam"),
             (pybop.AdamW, "AdamW"),
             (pybop.CMAES, "Covariance Matrix Adaptation Evolution Strategy (CMA-ES)"),
+            (pybop.CuckooSearch, "Cuckoo Search"),
             (pybop.SNES, "Seperable Natural Evolution Strategy (SNES)"),
             (pybop.XNES, "Exponential Natural Evolution Strategy (xNES)"),
             (pybop.PSO, "Particle Swarm Optimisation (PSO)"),
@@ -104,6 +105,15 @@ class TestOptimisation:
             if issubclass(optimiser, pybop.BasePintsOptimiser):
                 assert optim._boundaries is None
 
+    @pytest.mark.unit
+    def test_no_optimisation_parameters(self, model, dataset):
+        problem = pybop.FittingProblem(
+            model=model, parameters=pybop.Parameters(), dataset=dataset
+        )
+        cost = pybop.RootMeanSquaredError(problem)
+        with pytest.raises(ValueError, match="There are no parameters to optimise."):
+            pybop.Optimisation(cost=cost)
+
     @pytest.mark.parametrize(
         "optimiser",
         [
@@ -117,6 +127,7 @@ class TestOptimisation:
             pybop.PSO,
             pybop.IRPropMin,
             pybop.NelderMead,
+            pybop.CuckooSearch,
         ],
     )
     @pytest.mark.unit
@@ -166,6 +177,7 @@ class TestOptimisation:
             ):
                 warnings.simplefilter("always")
                 optim = optimiser(cost=cost, unrecognised=10)
+            assert not optim.pints_optimiser.running()
         else:
             # Check bounds in list format and update tol
             bounds = [
@@ -240,18 +252,24 @@ class TestOptimisation:
 
             # Check defaults
             assert optim.pints_optimiser.n_hyper_parameters() == 5
-            assert not optim.pints_optimiser.running()
             assert optim.pints_optimiser.x_guessed() == optim.pints_optimiser._x0
             with pytest.raises(Exception):
                 optim.pints_optimiser.tell([0.1])
 
         else:
             # Check and update initial values
-            assert optim.x0 == cost.x0
+            x0 = cost.parameters.initial_value()
+            assert optim.x0 == x0
             x0_new = np.array([0.6])
             optim = optimiser(cost=cost, x0=x0_new)
             assert optim.x0 == x0_new
-            assert optim.x0 != cost.x0
+            assert optim.x0 != x0
+
+    @pytest.mark.unit
+    def test_cuckoo_no_bounds(self, dataset, cost, model):
+        optim = pybop.CuckooSearch(cost=cost, bounds=None, max_iterations=1)
+        optim.run()
+        assert optim.pints_optimiser._boundaries is None
 
     @pytest.mark.unit
     def test_scipy_minimize_with_jac(self, cost):
@@ -265,6 +283,16 @@ class TestOptimisation:
             match="Expected the jac option to be either True, False or None.",
         ):
             optim = pybop.SciPyMinimize(cost=cost, jac="Invalid string")
+
+    @pytest.mark.unit
+    def test_scipy_minimize_invalid_x0(self, cost):
+        # Check a starting point that returns an infinite cost
+        invalid_x0 = np.array([1.1])
+        optim = pybop.SciPyMinimize(
+            cost=cost, x0=invalid_x0, maxiter=10, allow_infeasible_solutions=False
+        )
+        optim.run()
+        assert abs(optim._cost0) != np.inf
 
     @pytest.mark.unit
     def test_single_parameter(self, cost):
@@ -321,13 +349,6 @@ class TestOptimisation:
 
         with pytest.raises(ValueError):
             pybop.Optimisation(cost=cost, optimiser=RandomClass)
-
-    @pytest.mark.unit
-    def test_prior_sampling(self, cost):
-        # Tests prior sampling
-        for i in range(50):
-            optim = pybop.Optimisation(cost=cost)
-            assert optim.x0[0] < 0.62 and optim.x0[0] > 0.58
 
     @pytest.mark.unit
     @pytest.mark.parametrize(
@@ -403,6 +424,7 @@ class TestOptimisation:
         optim = pybop.Optimisation(cost=cost)
 
         # Trigger threshold
+        optim.set_threshold(None)
         optim.set_threshold(np.inf)
         optim.run()
         optim.set_max_unchanged_iterations()

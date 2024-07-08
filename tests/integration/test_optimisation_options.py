@@ -13,7 +13,7 @@ class TestOptimisation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ground_truth = np.array([0.55, 0.55]) + np.random.normal(
+        self.ground_truth = np.asarray([0.55, 0.55]) + np.random.normal(
             loc=0.0, scale=0.05, size=2
         )
 
@@ -67,7 +67,7 @@ class TestOptimisation:
         # Define the cost to optimise
         problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
-            return cost_class(problem, sigma=[0.03, 0.03])
+            return cost_class(problem, sigma0=0.002)
         else:
             return cost_class(problem)
 
@@ -80,7 +80,7 @@ class TestOptimisation:
     )
     @pytest.mark.integration
     def test_optimisation_f_guessed(self, f_guessed, spm_costs):
-        x0 = spm_costs.x0
+        x0 = spm_costs.parameters.initial_value()
         # Test each optimiser
         optim = pybop.XNES(
             cost=spm_costs,
@@ -107,7 +107,7 @@ class TestOptimisation:
         np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
     def get_data(self, model, parameters, x, init_soc):
-        model.parameters = parameters
+        model.classify_and_update_parameters(parameters)
         experiment = pybop.Experiment(
             [
                 (
