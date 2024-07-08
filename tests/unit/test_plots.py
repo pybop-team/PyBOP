@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import pytest
 from packaging import version
@@ -193,3 +195,25 @@ class TestPlots:
         fitting_problem = pybop.FittingProblem(model, parameters, dataset)
         cost = pybop.SumSquaredError(fitting_problem)
         pybop.plot2d(cost)
+
+    @pytest.mark.unit
+    def test_plot2d_prior_bounds(self, model, dataset):
+        # Test with prior bounds
+        parameters = pybop.Parameters(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.68, 0.01),
+            ),
+            pybop.Parameter(
+                "Positive electrode active material volume fraction",
+                prior=pybop.Gaussian(0.58, 0.01),
+            ),
+        )
+        fitting_problem = pybop.FittingProblem(model, parameters, dataset)
+        cost = pybop.SumSquaredError(fitting_problem)
+        with pytest.warns(
+            UserWarning,
+            match="Bounds were created from prior distributions.",
+        ):
+            warnings.simplefilter("always")
+            pybop.plot2d(cost)

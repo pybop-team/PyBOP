@@ -11,5 +11,5 @@ authors:
     family-names: Courtier
   - given-names: David
     family-names: Howey
-version: "24.3.1" # Update this when you release a new version
+version: "24.6" # Update this when you release a new version
 repository-code: 'https://www.github.com/pybop-team/pybop'
