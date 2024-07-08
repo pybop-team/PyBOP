@@ -68,4 +68,4 @@ Next Steps
 After installing PyBOP, you might want to:
 
 * Explore the `Quick Start Guide <quick_start.html>`_ to begin using PyBOP.
-* Check out the `API Reference <../api/index.html>`_ for detailed information on PyBOP's programming interface.
+* Check out the `API Reference <api/index.html>`_ for detailed information on PyBOP's programming interface.
