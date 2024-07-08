@@ -3,7 +3,7 @@
 Installation
 *****************************
 
-PyBOP is a versatile Python package designed for optimization and parameterization of battery models. Follow the instructions below to install PyBOP and set up your environment to begin utilizing its capabilities.
+PyBOP is a versatile Python package designed for optimisation and parameterisation of battery models. Follow the instructions below to install PyBOP and set up your environment to begin utilising its capabilities.
 
 Installing PyBOP with pip
 -------------------------
