@@ -8,7 +8,8 @@ tags:
   - design optimisation
 authors:
   - name: Brady Planden
-    corresponding: true # (This is how to denote the corresponding author)
+    corresponding: true
+    orcid: 0000-0002-1082-9125
     affiliation: 1
   - name: Nicola E. Courtier
     affiliation: "1, 2"
@@ -16,6 +17,9 @@ authors:
   - name: Martin Robinson
     orcid: 0000-0002-1572-6782
     affiliation: 3
+  - name: Ferran Brosa Planella
+    affiliation: 4
+    orcid: 0000-0001-6363-2812
   - name: David A. Howey
     affiliation: "1, 2"
     orcid: 0000-0002-0620-3955
@@ -24,48 +28,34 @@ affiliations:
    index: 1
  - name: The Faraday Institution, Harwell Campus, Didcot, UK
    index: 2
- - name: Head of Research Software Engineering, University of Oxford, Oxford, UK
+ - name: Research Software Engineering Group, University of Oxford, Oxford, UK
    index: 3
+ - name:  Mathematics Institute, University of Warwick, Coventry, UK
+   index: 4
 date: 30 June 2024
 bibliography: paper.bib
 ---
 
 # Summary
 
-`PyBOP` provides a range of tools for the parameterisation and optimisation of battery models, offering
-both Bayesian and frequentist approaches with example workflows to assist the user. `PyBOP` can be
-used to parameterise various battery models, including the electrochemical and equivalent circuit
-models provided by the popular open-source package `PyBaMM` [@Sulzer:2021]. Likewise, PyBOP can be used for design optimisation for a given parameter set under predefined operating conditions. PyBOP allows users to parameterise battery models through a variety of methods, providing diagnostics into the convergence of the optimisation task. These identified parameter sets can then be used for design optimisation to support development of improved battery configurations.
-
-- PyBOP incorporates a PDE solver, and parameterisation/optimisation workflows into a single package.
-- PyBOP provide identifiablity estimates for the identified parameter set (Hessian approximation, fisher information?, Posterior variance, CI upper/lower)
+The Python Battery Optimisation and Parameterisation (`PyBOP`) package provides a set of methods for the parameterisation and optimisation of battery models, offering both Bayesian and frequentist approaches with example workflows to assist the user. `PyBOP` can be used for parameter identification of various models, including the electrochemical and equivalent circuit models provided by the popular open-source package `PyBaMM` [@Sulzer:2021]. Similarly, `PyBOP` can be used for design optimisation under user-defined operating conditions for a given parameter. `PyBOP` allows the user to parameterise battery models using a variety of methods and provides diagnostics on the performance and convergence of the optimisation. The identified parameters can be used for prediction, on-line control and design optimisation, all of which support improved battery utilisation and development.
 
 # Statement of need
 
-`PyBOP` is designed to provide a user-friendly, object-oriented interface for the optimisation of
-battery models which have been implemented in existing battery modelling software, e.g. `PyBaMM` [@Sulzer:2021].
-This software package is intended to serve a broad audience of students, engineers, and researchers in both
-academia and the battery industry. `PyBOP` prioritises clear and informative diagnostics for both
-new and experienced users, while also leveraging advanced optimisation algorithms provided by `SciPy`
-[@SciPy:2020], `PINTS` [@Clerx:2019], and internal implementations.
+`PyBOP` is designed to provide a user-friendly, object-oriented interface for the optimisation of battery models which have been implemented in existing battery modelling software, e.g. `PyBaMM` [@Sulzer:2021]. `PyBOP` is intended to serve a broad audience of students, engineers, and researchers in both academia and the battery industry. `PyBOP` prioritises clear and informative diagnostics and workflows for both new and experienced users, while also leveraging advanced optimisation algorithms provided by `SciPy` [@SciPy:2020], `PINTS` [@Clerx:2019], and internal implementations such as the adaptive moment estimation with weight decay (AdamW), as well as Cuckoo search.
 
 `PyBOP` supports the Battery Parameter eXchange (BPX) standard [@BPX:2023] for sharing battery
-parameter sets. These parameter sets are costly to obtain due to a number of factors: the equipment
-cost and time spent on characterisation experiments, the requirement of battery domain knowledge
-and the computational cost of parameter estimation. `PyBOP` reduces the barrier to entry and ongoing
-costs by providing an accessible workflow that efficiently connects battery models with numerical
-optimisers, as well as explanatory examples of battery parameterisaton and design optimisation.
+parameter sets. These parameter sets are costly to obtain due to a number of factors: the equipment cost and time spent on characterisation experiments, the requirement of battery domain knowledge, and the computational cost of parameter estimation. `PyBOP` reduces the barrier to entry and ongoing costs by providing an accessible workflows' that efficiently connects battery models with numerical optimisers, as well as explanatory examples of battery parameterisaton and design optimisation.
 
-This package complements other tools in the field of lithium-ion battery modelling built around
-`PyBaMM` such as `liionpack` for simulating battery packs [@Tranter2022].
+This package complements other tools in the field of lithium-ion battery modelling built around `PyBaMM`, such as `liionpack` for simulating battery packs [@Tranter2022] as the identified parameters are easily exportable from `PyBOP` into such packages aimed at predictive forward modelling.
+
+- `PyBOP` incorporates a PDE solver, and parameterisation/optimisation workflows into a single package.
+- `PyBOP` provide identifiablity estimates for the identified parameter set (Hessian approximation, fisher information?, Posterior variance, CI upper/lower)
 
 # Architecture
 
-PyBOP is a Python package provided through PyPI, currently available for Python versions 3.9 to 3.12. The package composes the popular battery modelling package, PyBaMM for battery model numerical solutions, while providing the parameterisation and optimisation workflows. These workflows are constructed through a mixture of internal algorithms, as well as popular optimisation packages such as Pints and SciPy.
-The PyBOP framework consists of 4 main classes of Python object, namely the Model, Problem, Cost,
-and Optimiser classes, as shown in \autoref{fig:objects}. Each of these objects has a base class
-and example subclasses that combine to form a flexible and extensible codebase. The typical workflow
-would be to define an optimisation problem by constructing the objects in sequence.
+`PyBOP` is a Python package provided through PyPI, currently available for Python versions 3.9 to 3.12. The package composes the popular battery modelling package `PyBaMM` for forward modelling, while providing classes for parameterisation and optimisation. These workflows are constructed through a mixture of internal algorithms, as well as popular optimisation packages such as Pints and SciPy.
+The `PyBOP` design architecture consists of four main classes, namely the model, problem, cost, and optimiser or sampler, as shown in \autoref{fig:objects}. Each of these objects has a base class and example subclasses that combine to form a flexible and extensible codebase. The typical workflow would be to define an optimisation problem by constructing the objects in sequence.
 
 ![The core PyBOP classes and how they interact.\label{fig:objects}](PyBOP_components.drawio.png){ width=100% }
 
@@ -73,30 +63,52 @@ The current instances for each class are listed in \autoref{tab:subclasses} and 
 
 : List of preset subclasses for the model, problem and cost classes. \label{tab:subclasses}
 
-| Battery Models                      | Problem Types   | Cost Functions                 |
+| Battery Models                      | Problem Types   | Cost / Likelihood Functions         |
 | :---------------------------------- | :-------------- | :----------------------------- |
-| Single Particle Model (SPM)         | Fitting Problem | Sum of Squared Errors (SSE)    |
-| SPM with Electrolyte (SPMe)         | Observer        | Root Mean Squared Error (RMSE) |
-| Doyle-Fuller-Newman (DFN)           | Design Problem  | Gaussian Log Likelihood            |
-| Many Particle Model (MPM)           |                 | Maximum a Posteriori (MAP)     |
-| Multi-Species Multi-Reaction (MSMR) |                 | Unscented Kalman Filter (UKF)  |
-| Equivalent Circuit Models (ECM)     |                 | Gravimetric Energy Density     |
-|                                     |                 | Volumetric Energy Density      |
+| Single particle model (SPM)         | Fitting Problem | Sum of Squared Error    |
+| SPM with electrolyte (SPMe)         | Design Problem  | Root Mean Squared Error  |
+| Doyle-Fuller-Newman (DFN)           | Observer        | Gaussian Log Likelihood            |
+| Many particle model (MPM)           |                 | Maximum a Posteriori     |
+| Multi-species multi-reaction (MSMR) |                 | Unscented Kalman Filter   |
+| Weppner Huggins                     |                 | Gravimetric Energy Density   |
+| Equivalent circuit model (ECM)      |                 | Volumetric Energy Density     |
 
-: List of available optimisers. (*) Note that Scipy Minimize provides both gradient and non-gradient-based methods. \label{tab:optimisers}
 
-| Gradient-based algorithms       | Non-gradient-based algorithms               |
+: List of available optimisers. (*) Scipy Minimize provides gradient and non-gradient methods. \label{tab:optimisers}
+
+| Gradient-based       | Non-gradient-based          |
 | :------------------------------------------- | :------------------------------------------------------- |
-| Adaptive Moment Estimation with Weigth Decay (AdamW) | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) |
-| Improved Resilient Backpropagation (iRProp-) | Exponential Natural Evolution Strategy (xNES)            |
-| Gradient Descent                             | Nelder-Mead                                              |
-| SciPy Minimize (*)                           | Particle Swarm Optimization (PSO)                        |
-|                                              | SciPy Differential Evolution                             |
-|                                              | Separable Natural Evolution Strategy (sNES)              |
-|                                              | (pending) Cuckoo Search                                  |
+| Adaptive Moment Estimation with Weight Decay (AdamW) | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) |
+| Improved Resilient Backpropagation (iRProp-) | Exponential Natural Evolution Strategy (xNES)    |
+| Gradient Descent                             | Separable Natural Evolution Strategy (sNES)                       |
+| SciPy Minimize (*)                           | Particle Swarm Optimization (PSO)            |
+|                                              | SciPy Differential Evolution     |
+|                                              | Nelder-Mead  |
+|                                              | Cuckoo Search         |
 
-The cost functions are grouped by problem type, while each of the models and optimisers may be selected in combination with
-any problem-cost pair.
+The cost functions are grouped by problem type, while each of the models and optimisers may be selected in combination with any problem-cost pair. As previously discussed, PyBOP offers Bayesian inference methods such as Maximum a Posteriori (MAP) presented alongside the frequentist methods in \autoref{tab:optimisers}. A full Bayesian framework is available from a Markov-chain Monte Carlo implemented within PyBOP, capable of providing uncertainty on the inferred parameters. These samplers are currently composed within PyBOP from the Pints' library, with a base class implemented for interopability and direct application to the PyBOP model, problem, and likelihood classes. The currently support MCMC samplers is shown in Table \autoref{tab:samplers}.
+
+: List of available Monte Carlo samplers. \label{tab:samplers}
+
+| Gradient-based       | Non-gradient-based              |
+| :------------------------------------------- | :------------------------------------------------------- |
+| Adaptive Moment Estimation with Weight Decay (AdamW) | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) |
+| Improved Resilient Backpropagation (iRProp-) | Exponential Natural Evolution Strategy (xNES)    |
+| Gradient Descent                             | Separable Natural Evolution Strategy (sNES)                       |
+| SciPy Minimize (*)                           | Particle Swarm Optimization (PSO)            |
+|                                              | SciPy Differential Evolution     |
+|                                              | Nelder-Mead  |
+|                                              | Cuckoo Search         |
+
+- Performance (multiprocessing)
+- Construction of PyBaMM models (geometric and non-geometric identification)
+- Feasability checks on identified parameters
+- Spatial identification methods?
+- Documentation supported at X
+- Benchmarks provided at X
+- Plotting available via Plotly (cost landscapes, gradient landscapes)
+- Test suite provided by pytest (~98% coverage)
+- Standalone implementations (Bring your own model)
 
 # Background
 
@@ -117,9 +129,8 @@ with initial conditions
 \label{initial_conditions}
 \end{equation}
 
-Here, $t$ is time, $\mathbf{x}(t)$ are the (discretised) states, $\mathbf{y}(t)$ are the outputs (for example the
-terminal voltage), $\mathbf{u}(t)$ are the inputs (e.g. the applied current) and $\mathbf{\theta}$ are the
-uncertain parameters.
+Here, $t$ is time, $\mathbf{x}(t)$ are the spatially (discretised) states, $\mathbf{y}(t)$ are the outputs (for example the
+terminal voltage), $\mathbf{u}(t)$ are the inputs (e.g. the applied current) and $\mathbf{\theta}$ are the unknown parameters.
 
 Common battery models include various types of equivalent circuit model (e.g. the Thévenin model),
 the Doyle–Fuller–Newman (DFN) model [@Doyle:1993; @Fuller:1994] based on porous electrode theory and its reduced-order
@@ -141,13 +152,10 @@ a step-by-step identification of smaller groups of parameters from a variety of 
 
 A generic data fitting optimisation problem may be formulated as:
 \begin{equation}
-\min_{\mathbf{\theta}} ~ L_{(\mathbf{\hat{y}}_i)}(\mathbf{\theta}) ~~~
+\min_{\mathbf{\theta}} ~ \mathcal{L}_{(\mathbf{y}_i)}(\mathbf{\theta}) ~~~
 \textrm{subject to equations (\ref{dynamics})\textrm{-}(\ref{initial_conditions})}
 \end{equation}
-in which $L : \mathbf{\theta} \mapsto [0,\infty)$ is a cost (or likelihood) function that quantifies the
-agreement between the model and a sequence of data points $(\mathbf{\hat{y}}_i)$ measured at times $t_i$.
-For gradient-based optimisers, the gradient refers to the Jacobian of the cost function with respect to the
-uncertain parameters, $\mathbf{\theta}$.
+in which $\mathcal{L} : \mathbf{\theta} \mapsto [0,\infty)$ is a cost (or likelihood) function that quantifies the agreement between the model and a sequence of data points $(\mathbf{y}_i)$ measured at times $t_i$. For gradient-based optimisers, the Jacobian of the cost function with respect to the unknown parameters, $(\frac{\partial L}{\partial \theta})$ is used as a directional metric for the algorithm when exploring the parameter space.
 
 By way of example, we next demonstrate the fitting of some synthetic data for which we know the
 true parameter values.
@@ -174,6 +182,6 @@ constraints on the geometric electrode parameters [@Couto:2023].
 
 We gratefully acknowledge all [contributors](https://github.com/pybop-team/PyBOP?tab=readme-ov-file#contributors-) to this
 package. This work was supported by the Faraday Institution Multiscale Modelling (MSM)
-project (grant number FIRG059) and the EU IntelLiGent project.
+project (ref. FIRG059), UKRI's Horizon Europe Guarantee (ref. 10038031), and EU IntelLiGent project (ref. 101069765).
 
 # References
