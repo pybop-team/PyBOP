@@ -55,4 +55,4 @@ If you encounter any issues or have questions as you start using PyBOP, don't he
 
 - **GitHub Issues**: Report bugs or request new features by opening an `Issue <https://github.com/pybop-team/PyBOP/issues>`_
 - **GitHub Discussions**: Post your questions or feedback on our `GitHub Discussions <https://github.com/pybop-team/PyBOP/discussions>`_
-- **Contributions**: Interested in contributing to PyBOP? Check out our `Contributing Guide <../Contributing.html>`_ for guidelines.
+- **Contributions**: Interested in contributing to PyBOP? Check out our `Contributing Guide <Contributing.html>`_ for guidelines.

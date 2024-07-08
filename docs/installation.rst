@@ -55,7 +55,7 @@ To verify that PyBOP has been installed successfully, try running one of the pro
 For Developers
 --------------
 
-If you are installing PyBOP for development purposes, such as contributing to the project, please ensure that you follow the guidelines outlined in the `Contributing Guide <../Contributing.html>`_. It includes additional steps that might be necessary for setting up a development environment, including the installation of dependencies and setup of pre-commit hooks.
+If you are installing PyBOP for development purposes, such as contributing to the project, please ensure that you follow the guidelines outlined in the `Contributing Guide <Contributing.html>`_. It includes additional steps that might be necessary for setting up a development environment, including the installation of dependencies and setup of pre-commit hooks.
 
 Further Assistance
 ------------------
