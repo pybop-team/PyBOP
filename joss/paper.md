@@ -54,10 +54,14 @@ This package complements other tools in the field of lithium-ion battery modelli
 
 # Architecture
 
-`PyBOP` is a Python package provided through PyPI, currently available for Python versions 3.9 to 3.12. The package composes the popular battery modelling package `PyBaMM` for forward modelling, while providing classes for parameterisation and optimisation. These workflows are constructed through a mixture of internal algorithms, as well as popular optimisation packages such as Pints and SciPy.
-The `PyBOP` design architecture consists of four main classes, namely the model, problem, cost, and optimiser or sampler, as shown in \autoref{fig:objects}. Each of these objects has a base class and example subclasses that combine to form a flexible and extensible codebase. The typical workflow would be to define an optimisation problem by constructing the objects in sequence.
+`PyBOP` is a Python package provided through PyPI, currently available for Python versions 3.9 to 3.12. The package composes the popular battery modelling package `PyBaMM` for forward modelling, while providing classes for parameterisation and optimisation \autoref{fig:high-level}. These workflows are constructed through a mixture of internal algorithms, as well as popular optimisation packages such as Pints and SciPy.
+`PyBOP` formulates the optimisation workflow through four main classes, namely the model, problem, cost, and optimiser or sampler, as shown in \autoref{fig:objects}. Each of these objects has a base class and example subclasses that combine to form a flexible and extensible codebase. The typical workflow would be to define an optimisation problem by constructing the objects in sequence.
 
-![The core PyBOP classes and how they interact.\label{fig:objects}](PyBOP_components.drawio.png){ width=100% }
+![PyBOP's high level interface. \label{fig:high-level}](../assets/PyBOP-high-level.pdf){width=80%}
+
+Furthermore, to construct this workflow, the following classes represent the process required.
+
+![The core PyBOP classes and how they interact. \label{fig:objects}](PyBOP_components.drawio.png){ width=80% }
 
 The current instances for each class are listed in \autoref{tab:subclasses} and \autoref{tab:optimisers}.
 
@@ -162,17 +166,16 @@ true parameter values.
 
 ## Design optimisation
 
-Once a battery model has been parameterised, design optimisation can be performed in order to
+Design optimisation is supported within `PyBOP` to
 guide future development of the battery design by identifying parameter variations which may unlock
-improvements in battery performance. Battery performance is typically quantified via metrics such as
-a 1C discharge capacity.
+improvements in battery performance. This optimisation task can be viewed similarly to the parameterisation workflows described above, however, with the aim of increasing the distance metric instead of minimising it. In the case of design optimisation for maximising gravimetric energy density, `PyBOP` minimises the negative of the cost function, where the cost metric is no longer a distance between two time-series vectors, instead it is the integrated energy from the vector normalised with the corresponding cell mass. This is typically quantified for operational conditions such as a 1C (the applied current required to discharge the cell in one hour) capacity.
 
 Design optimisation can be written in the form of a constrained optimisation problem as:
 \begin{equation}
-\min_{\mathbf{\theta} \in \Omega} ~ L(\mathbf{\theta}) ~~~
+\min_{\mathbf{\theta} \in \Omega} ~ \mathcal{L}(\mathbf{\theta}) ~~~
 \textrm{subject to equations (\ref{dynamics})\textrm{-}(\ref{initial_conditions})}
 \end{equation}
-in which $L : \mathbf{\theta} \mapsto [0,\infty)$ is a cost function that quantifies the desirability
+in which $\mathcal{L} : \mathbf{\theta} \mapsto [0,\infty)$ is a cost function that quantifies the desirability
 of the design and $\Omega$ is the set of allowable parameter values.
 
 As an example, let us consider the target of maximising gravimetric energy density subject to
