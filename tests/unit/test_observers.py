@@ -11,40 +11,40 @@ class TestObserver:
     A class to test the observer class.
     """
 
-    @pytest.fixture(params=[1, 2])
-    def model(self, request):
-        model = ExponentialDecay(
-            parameter_set=pybamm.ParameterValues({"k": "[input]", "y0": "[input]"}),
-            n_states=request.param,
-        )
-        model.build()
-        return model
-
     @pytest.fixture
     def parameters(self):
-        return [
+        return pybop.Parameters(
             pybop.Parameter(
                 "k",
                 prior=pybop.Gaussian(0.1, 0.05),
                 bounds=[0, 1],
+                initial_value=0.1,
             ),
             pybop.Parameter(
                 "y0",
                 prior=pybop.Gaussian(1, 0.05),
                 bounds=[0, 3],
+                initial_value=1.0,
             ),
-        ]
+        )
 
-    @pytest.fixture
-    def x0(self):
-        return np.array([0.1, 1.0])
+    @pytest.fixture(params=[1, 2])
+    def model(self, parameters, request):
+        model = ExponentialDecay(
+            parameter_set=pybamm.ParameterValues({"k": "[input]", "y0": "[input]"}),
+            n_states=request.param,
+        )
+        model.build(parameters=parameters)
+        return model
 
     @pytest.mark.unit
-    def test_observer(self, model, parameters, x0):
+    def test_observer(self, model, parameters):
         n = model.n_states
-        observer = pybop.Observer(parameters, model, signal=["2y"], x0=x0)
+        observer = pybop.Observer(parameters, model, signal=["2y"])
         t_eval = np.linspace(0, 1, 100)
-        expected = x0[1] * np.exp(-x0[0] * t_eval)
+        expected = parameters["y0"].initial_value * np.exp(
+            -parameters["k"].initial_value * t_eval
+        )
         for y, t in zip(expected, t_eval):
             observer.observe(t)
             np.testing.assert_array_almost_equal(
@@ -72,8 +72,8 @@ class TestObserver:
 
         # Test evaluate with different inputs
         observer._time_data = t_eval
-        observer.evaluate(x0)
-        observer.evaluate(parameters)
+        observer.evaluate(parameters.as_dict())
+        observer.evaluate(parameters.current_value())
 
         # Test evaluate with dataset
         observer._dataset = pybop.Dataset(
@@ -83,7 +83,7 @@ class TestObserver:
             }
         )
         observer._target = {"2y": expected}
-        observer.evaluate(x0)
+        observer.evaluate(parameters.as_dict())
 
     @pytest.mark.unit
     def test_unbuilt_model(self, parameters):

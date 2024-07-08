@@ -1,10 +1,10 @@
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 
-from pybop._problem import BaseProblem
+from pybop import BaseProblem
 from pybop.models.base_model import BaseModel, Inputs, TimeSeriesState
-from pybop.parameters.parameter import Parameter
+from pybop.parameters.parameter import Parameters
 
 
 class Observer(BaseProblem):
@@ -16,8 +16,8 @@ class Observer(BaseProblem):
 
     Parameters
     ----------
-    parameters : list
-        List of parameters for the problem.
+    parameters : pybop.Parameter or pybop.Parameters
+        An object or list of the parameters for the problem.
     model : BaseModel
       The model to observe.
     check_model : bool, optional
@@ -28,8 +28,6 @@ class Observer(BaseProblem):
         Additional variables to observe and store in the solution (default: []).
     init_soc : float, optional
         Initial state of charge (default: None).
-    x0 : np.ndarray, optional
-        Initial parameter values (default: None).
     """
 
     # define a subtype for covariance matrices for use by derived classes
@@ -37,32 +35,30 @@ class Observer(BaseProblem):
 
     def __init__(
         self,
-        parameters: List[Parameter],
+        parameters: Parameters,
         model: BaseModel,
         check_model=True,
         signal=["Voltage [V]"],
         additional_variables=[],
         init_soc=None,
-        x0=None,
     ) -> None:
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc, x0
+            parameters, model, check_model, signal, additional_variables, init_soc
         )
         if model._built_model is None:
             raise ValueError("Only built models can be used in Observers")
         if model.signal is None:
             model.signal = self.signal
 
-        inputs = dict()
-        for param in self.parameters:
-            inputs[param.name] = param.value
-
+        inputs = self.parameters.as_dict("initial")
         self._state = model.reinit(inputs)
         self._model = model
         self._signal = self.signal
         self._n_outputs = len(self._signal)
 
     def reset(self, inputs: Inputs) -> None:
+        inputs = self.parameters.verify(inputs)
+
         self._state = self._model.reinit(inputs)
 
     def observe(self, time: float, value: Optional[np.ndarray] = None) -> float:
@@ -99,6 +95,8 @@ class Observer(BaseProblem):
         inputs : Inputs
             The inputs to the model.
         """
+        inputs = self.parameters.verify(inputs)
+
         if self._n_outputs == 1:
             signal = self._signal[0]
             if len(values[signal]) != len(times):
@@ -137,7 +135,7 @@ class Observer(BaseProblem):
 
     def get_measure(self, x: TimeSeriesState) -> np.ndarray:
         measures = [x.sol[s].data[-1] for s in self._signal]
-        return np.array([[m] for m in measures])
+        return np.asarray([[m] for m in measures])
 
     def get_current_time(self) -> float:
         """
@@ -145,27 +143,20 @@ class Observer(BaseProblem):
         """
         return self._state.t
 
-    def evaluate(self, x):
+    def evaluate(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal.
 
         Parameters
         ----------
-        x : np.ndarray
-            Parameter values to evaluate the model at.
+        inputs : Inputs
+            Parameters for evaluation of the model.
 
         Returns
         -------
         y : np.ndarray
-            The model output y(t) simulated with inputs x.
+            The model output y(t) simulated with given inputs.
         """
-        inputs = dict()
-        if isinstance(x[0], Parameter):
-            for param in x:
-                inputs[param.name] = param.value
-        else:  # x is an array of parameter values
-            for i, param in enumerate(self.parameters):
-                inputs[param.name] = x[i]
         self.reset(inputs)
 
         output = {}

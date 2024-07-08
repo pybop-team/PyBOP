@@ -1,6 +1,5 @@
-import numpy as np
-
 from pybop import BaseProblem
+from pybop.parameters.parameter import Inputs, Parameters
 
 
 class BaseCost:
@@ -19,39 +18,22 @@ class BaseCost:
         evaluating the cost function.
     _target : array-like
         An array containing the target data to fit.
-    x0 : array-like
-        The initial guess for the model parameters.
-    bounds : tuple
-        The bounds for the model parameters.
-    sigma0 : scalar or array
-        Initial standard deviation around ``x0``. Either a scalar value (one
-        standard deviation for all coordinates) or an array with one entry
-        per dimension. Not all methods will use this information.
-    _n_parameters : int
-        The number of parameters in the model.
     n_outputs : int
         The number of outputs in the model.
     """
 
-    def __init__(self, problem=None, sigma=None):
+    def __init__(self, problem=None):
+        self.parameters = Parameters()
         self.problem = problem
-        self.x0 = None
-        self.bounds = None
-        self.sigma0 = sigma
-        self._minimising = True
         if isinstance(self.problem, BaseProblem):
-            self._target = problem._target
-            self.parameters = problem.parameters
-            self.x0 = problem.x0
-            self.bounds = problem.bounds
-            self.n_outputs = problem.n_outputs
-            self.signal = problem.signal
-            self._n_parameters = problem.n_parameters
-            self.sigma0 = sigma or problem.sigma0 or np.zeros(self._n_parameters)
+            self._target = self.problem._target
+            self.parameters.join(self.problem.parameters)
+            self.n_outputs = self.problem.n_outputs
+            self.signal = self.problem.signal
 
     @property
     def n_parameters(self):
-        return self._n_parameters
+        return len(self.parameters)
 
     def __call__(self, x, grad=None):
         """
@@ -81,11 +63,10 @@ class BaseCost:
         ValueError
             If an error occurs during the calculation of the cost.
         """
+        inputs = self.parameters.verify(x)
+
         try:
-            if self._minimising:
-                return self._evaluate(x, grad)
-            else:  # minimise the negative cost
-                return -self._evaluate(x, grad)
+            return self._evaluate(inputs, grad)
 
         except NotImplementedError as e:
             raise e
@@ -93,7 +74,7 @@ class BaseCost:
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}")
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calculate the cost function value for a given set of parameters.
 
@@ -101,7 +82,7 @@ class BaseCost:
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to evaluate the cost.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
@@ -139,12 +120,10 @@ class BaseCost:
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
+        inputs = self.parameters.verify(x)
+
         try:
-            if self._minimising:
-                return self._evaluateS1(x)
-            else:  # minimise the negative cost
-                L, dl = self._evaluateS1(x)
-                return -L, -dl
+            return self._evaluateS1(inputs)
 
         except NotImplementedError as e:
             raise e
@@ -152,13 +131,13 @@ class BaseCost:
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}")
 
-    def _evaluateS1(self, x):
+    def _evaluateS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns

@@ -3,6 +3,7 @@ import pytest
 
 import pybop
 from examples.standalone.cost import StandaloneCost
+from examples.standalone.optimiser import StandaloneOptimiser
 from examples.standalone.problem import StandaloneProblem
 
 
@@ -12,20 +13,37 @@ class TestStandalone:
     """
 
     @pytest.mark.unit
-    def test_standalone(self):
+    def test_standalone_optimiser(self):
+        optim = StandaloneOptimiser()
+        assert optim.name() == "StandaloneOptimiser"
+
+        x, final_cost = optim.run()
+        assert optim.cost(optim.x0) > final_cost
+        np.testing.assert_allclose(x, [2, 4], atol=1e-2)
+
+        # Test with bounds
+        optim = StandaloneOptimiser(bounds=dict(upper=[5, 6], lower=[1, 2]))
+
+        x, final_cost = optim.run()
+        assert optim.cost(optim.x0) > final_cost
+        np.testing.assert_allclose(x, [2, 4], atol=1e-2)
+
+    @pytest.mark.unit
+    def test_optimisation_on_standalone_cost(self):
         # Build an Optimisation problem with a StandaloneCost
         cost = StandaloneCost()
-        opt = pybop.Optimisation(cost=cost, optimiser=pybop.SciPyDifferentialEvolution)
-        x, final_cost = opt.run()
+        optim = pybop.SciPyDifferentialEvolution(cost=cost)
+        x, final_cost = optim.run()
 
-        assert len(opt.x0) == opt._n_parameters
-        np.testing.assert_allclose(x, 0, atol=1e-2)
-        np.testing.assert_allclose(final_cost, 42, atol=1e-2)
+        optim.x0 = optim.log["x"][0][0]
+        initial_cost = optim.cost(optim.x0)
+        assert initial_cost > final_cost
+        np.testing.assert_allclose(final_cost, 42, atol=1e-1)
 
     @pytest.mark.unit
     def test_standalone_problem(self):
         # Define parameters to estimate
-        parameters = [
+        parameters = pybop.Parameters(
             pybop.Parameter(
                 "Gradient",
                 prior=pybop.Gaussian(4.2, 0.02),
@@ -36,7 +54,7 @@ class TestStandalone:
                 prior=pybop.Gaussian(3.3, 0.02),
                 bounds=[-1, 10],
             ),
-        ]
+        )
 
         # Define target data
         t_eval = np.linspace(0, 1, 100)
@@ -58,7 +76,7 @@ class TestStandalone:
         rmse_grad_x = rmse_cost.evaluateS1([1, 2])
 
         np.testing.assert_allclose(rmse_x, 3.05615, atol=1e-2)
-        np.testing.assert_allclose(rmse_grad_x[1], [-0.81758337, 0.0], atol=1e-2)
+        np.testing.assert_allclose(rmse_grad_x[1], [-0.54645, 0.0], atol=1e-2)
 
         # Test the sensitivities
         sums_cost = pybop.SumSquaredError(problem)
@@ -66,10 +84,6 @@ class TestStandalone:
 
         np.testing.assert_allclose(x[0], 934.006734006734, atol=1e-2)
         np.testing.assert_allclose(x[1], [-334.006734, 0.0], atol=1e-2)
-
-        # Test incorrect number of initial parameter values
-        with pytest.raises(ValueError):
-            StandaloneProblem(parameters, dataset, signal=signal, x0=np.array([]))
 
         # Test problem construction errors
         for bad_dataset in [

@@ -20,13 +20,32 @@ class TestParameterSets:
             parameter_test["Negative electrode active material volume fraction"], 0.75
         )
 
+        # Test getting and setting parameters
+        parameter_test["Negative electrode active material volume fraction"] = 0.8
+        assert (
+            parameter_test["Negative electrode active material volume fraction"] == 0.8
+        )
+
     @pytest.mark.unit
     def test_ecm_parameter_sets(self):
         # Test importing a json file
+        json_params = pybop.ParameterSet()
+        with pytest.raises(
+            ValueError,
+            match="Parameter set already constructed, or path to json file not provided.",
+        ):
+            json_params.import_parameters()
+
         json_params = pybop.ParameterSet(
             json_path="examples/scripts/parameters/initial_ecm_parameters.json"
         )
         json_params.import_parameters()
+
+        with pytest.raises(
+            ValueError,
+            match="Parameter set already constructed, or path to json file not provided.",
+        ):
+            json_params.import_parameters()
 
         params = pybop.ParameterSet(
             params_dict={
@@ -43,9 +62,7 @@ class TestParameterSets:
                 "Cell-jig heat transfer coefficient [W/K]": 10,
                 "Jig thermal mass [J/K]": 500,
                 "Jig-air heat transfer coefficient [W/K]": 10,
-                "Open-circuit voltage [V]": pybop.empirical.Thevenin().default_parameter_values[
-                    "Open-circuit voltage [V]"
-                ],
+                "Open-circuit voltage [V]": "default",
                 "R0 [Ohm]": 0.001,
                 "Element-1 initial overpotential [V]": 0,
                 "Element-2 initial overpotential [V]": 0,
@@ -56,12 +73,12 @@ class TestParameterSets:
                 "Entropic change [V/K]": 0.0004,
             }
         )
-        params.import_parameters()
 
         assert json_params.params == params.params
+        assert params() == params.params
 
         # Test exporting a json file
-        parameters = [
+        parameters = pybop.Parameters(
             pybop.Parameter(
                 "R0 [Ohm]",
                 prior=pybop.Gaussian(0.0002, 0.0001),
@@ -74,7 +91,7 @@ class TestParameterSets:
                 bounds=[1e-5, 1e-2],
                 initial_value=0.0002,
             ),
-        ]
+        )
         params.export_parameters(
             "examples/scripts/parameters/fit_ecm_parameters.json", fit_params=parameters
         )
@@ -85,3 +102,37 @@ class TestParameterSets:
             empty_params.export_parameters(
                 "examples/scripts/parameters/fit_ecm_parameters.json"
             )
+
+    @pytest.mark.unit
+    def test_bpx_parameter_sets(self):
+        # Test importing a BPX json file
+        bpx_parameters = pybop.ParameterSet()
+        with pytest.raises(
+            ValueError,
+            match="Parameter set already constructed, or path to bpx file not provided.",
+        ):
+            bpx_parameters.import_from_bpx()
+
+        bpx_parameters = pybop.ParameterSet(
+            json_path="examples/scripts/parameters/example_BPX.json"
+        )
+        bpx_parameters.import_from_bpx()
+
+        with pytest.raises(
+            ValueError,
+            match="Parameter set already constructed, or path to bpx file not provided.",
+        ):
+            bpx_parameters.import_from_bpx()
+
+    @pytest.mark.unit
+    def test_set_formation_concentrations(self):
+        parameter_set = pybop.ParameterSet.pybamm(
+            "Chen2020", formation_concentrations=True
+        )
+
+        assert (
+            parameter_set["Initial concentration in negative electrode [mol.m-3]"] == 0
+        )
+        assert (
+            parameter_set["Initial concentration in positive electrode [mol.m-3]"] > 0
+        )

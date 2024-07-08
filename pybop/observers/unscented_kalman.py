@@ -15,8 +15,8 @@ class UnscentedKalmanFilterObserver(Observer):
 
     Parameters
     ----------
-    parameters: List[Parameters]
-        The inputs to the model.
+    parameters: Parameters
+        The parameters for the model.
     model : BaseModel
         The model to observe.
     sigma0 : np.ndarray | float
@@ -35,8 +35,6 @@ class UnscentedKalmanFilterObserver(Observer):
         The signal to observe.
     init_soc : float, optional
         Initial state of charge (default: None).
-    x0 : np.ndarray, optional
-        Initial parameter values (default: None).
     """
 
     Covariance = np.ndarray
@@ -53,10 +51,9 @@ class UnscentedKalmanFilterObserver(Observer):
         signal=["Voltage [V]"],
         additional_variables=[],
         init_soc=None,
-        x0=None,
     ) -> None:
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc, x0
+            parameters, model, check_model, signal, additional_variables, init_soc
         )
         if dataset is not None:
             self._dataset = dataset.data
@@ -121,7 +118,7 @@ class UnscentedKalmanFilterObserver(Observer):
         if value is None:
             raise ValueError("Measurement must be provided.")
         elif isinstance(value, np.floating):
-            value = np.array([value])
+            value = np.asarray([value])
 
         dt = time - self.get_current_time()
         if dt < 0:
@@ -204,7 +201,7 @@ class SquareRootUKF(object):
         zero_cols = np.logical_and(np.all(P0 == 0, axis=1), np.all(Rp == 0, axis=1))
         zeros = np.logical_and(zero_rows, zero_cols)
         ones = np.logical_not(zeros)
-        states = np.array(range(len(x0)))[ones]
+        states = np.asarray(range(len(x0)))[ones]
         bool_mask = np.ix_(ones, ones)
 
         S_filtered = linalg.cholesky(P0[ones, :][:, ones])
@@ -279,11 +276,11 @@ class SquareRootUKF(object):
 
         # Define the weights of the sigma points
         w_m0 = sigma / (L + sigma)
-        w_m = np.array([w_m0] + [1 / (2 * (L + sigma))] * (2 * L))
+        w_m = np.asarray([w_m0] + [1 / (2 * (L + sigma))] * (2 * L))
 
         # Define the weights of the covariance of the sigma points
         w_c0 = w_m0 + (1 - alpha**2 + beta)
-        w_c = np.array([w_c0] + [1 / (2 * (L + sigma))] * (2 * L))
+        w_c = np.asarray([w_c0] + [1 / (2 * (L + sigma))] * (2 * L))
 
         return (points, w_m, w_c)
 

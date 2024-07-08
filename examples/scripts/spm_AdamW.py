@@ -4,10 +4,10 @@ import pybop
 
 # Parameter set and model definition
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
-parameters = [
+parameters = pybop.Parameters(
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         prior=pybop.Gaussian(0.68, 0.05),
@@ -16,7 +16,7 @@ parameters = [
         "Positive electrode active material volume fraction",
         prior=pybop.Gaussian(0.58, 0.05),
     ),
-]
+)
 
 # Generate data
 init_soc = 0.5
@@ -24,8 +24,8 @@ sigma = 0.003
 experiment = pybop.Experiment(
     [
         (
-            "Discharge at 0.5C for 3 minutes (1 second period)",
-            "Charge at 0.5C for 3 minutes (1 second period)",
+            "Discharge at 0.5C for 3 minutes (3 second period)",
+            "Charge at 0.5C for 3 minutes (3 second period)",
         ),
     ]
     * 2
@@ -54,22 +54,21 @@ problem = pybop.FittingProblem(
     model, parameters, dataset, signal=signal, init_soc=init_soc
 )
 cost = pybop.RootMeanSquaredError(problem)
-optim = pybop.Optimisation(
+optim = pybop.AdamW(
     cost,
-    optimiser=pybop.Adam,
     verbose=True,
     allow_infeasible_solutions=True,
     sigma0=0.05,
+    max_iterations=100,
+    max_unchanged_iterations=20,
 )
-optim.set_max_iterations(100)
-optim.set_max_unchanged_iterations(45)
 
 # Run optimisation
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
 # Plot the timeseries output
-pybop.quick_plot(problem, parameter_values=x, title="Optimised Comparison")
+pybop.quick_plot(problem, problem_inputs=x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)
@@ -78,5 +77,5 @@ pybop.plot_convergence(optim)
 pybop.plot_parameters(optim)
 
 # Plot the cost landscape with optimisation path
-bounds = np.array([[0.5, 0.8], [0.4, 0.7]])
+bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
 pybop.plot2d(optim, bounds=bounds, steps=15)

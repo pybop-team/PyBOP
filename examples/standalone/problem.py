@@ -1,6 +1,6 @@
 import numpy as np
 
-from pybop._problem import BaseProblem
+from pybop import BaseProblem
 
 
 class StandaloneProblem(BaseProblem):
@@ -17,10 +17,9 @@ class StandaloneProblem(BaseProblem):
         signal=None,
         additional_variables=None,
         init_soc=None,
-        x0=None,
     ):
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc, x0
+            parameters, model, check_model, signal, additional_variables, init_soc
         )
         self._dataset = dataset.data
 
@@ -43,31 +42,34 @@ class StandaloneProblem(BaseProblem):
                 )
         self._target = {signal: self._dataset[signal] for signal in self.signal}
 
-    def evaluate(self, x):
+    def evaluate(self, inputs):
         """
         Evaluate the model with the given parameters and return the signal.
 
         Parameters
         ----------
-        x : np.ndarray
-            Parameter values to evaluate the model at.
+        inputs : Dict
+            Parameters for evaluation of the model.
 
         Returns
         -------
         y : np.ndarray
-            The model output y(t) simulated with inputs x.
+            The model output y(t) simulated with given inputs.
         """
 
-        return {signal: x[0] * self._time_data + x[1] for signal in self.signal}
+        return {
+            signal: inputs["Gradient"] * self._time_data + inputs["Intercept"]
+            for signal in self.signal
+        }
 
-    def evaluateS1(self, x):
+    def evaluateS1(self, inputs):
         """
         Evaluate the model with the given parameters and return the signal and its derivatives.
 
         Parameters
         ----------
-        x : np.ndarray
-            Parameter values to evaluate the model at.
+        inputs : Dict
+            Parameters for evaluation of the model.
 
         Returns
         -------
@@ -76,7 +78,7 @@ class StandaloneProblem(BaseProblem):
             with given inputs x.
         """
 
-        y = {signal: x[0] * self._time_data + x[1] for signal in self.signal}
+        y = self.evaluate(inputs)
 
         dy = np.zeros((self.n_time_data, self.n_outputs, self.n_parameters))
         dy[:, 0, 0] = self._time_data

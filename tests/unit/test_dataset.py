@@ -32,17 +32,25 @@ class TestDataset:
         assert np.all(dataset["Time [s]"] == solution["Time [s]"].data)
 
         # Test exception for non-dictionary inputs
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            TypeError, match="The input to pybop.Dataset must be a dictionary."
+        ):
             pybop.Dataset(["StringInputShouldNotWork"])
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            TypeError, match="The input to pybop.Dataset must be a dictionary."
+        ):
             pybop.Dataset(solution["Time [s]"].data)
 
         # Test conversion of pybamm solution into dictionary
         assert dataset.data == pybop.Dataset(solution).data
         assert dataset.names == pybop.Dataset(solution).names
 
-        # Test getitem and missing key
-        dataset["Time [s]"]
+        # Test set and get item
+        test_current = solution["Current [A]"].data + np.ones_like(
+            solution["Current [A]"].data
+        )
+        dataset["Current [A]"] = test_current
+        assert np.all(dataset["Current [A]"] == test_current)
         with pytest.raises(ValueError):
             dataset["Time"]
 

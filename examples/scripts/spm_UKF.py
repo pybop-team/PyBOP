@@ -7,7 +7,7 @@ parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
-parameters = [
+parameters = pybop.Parameters(
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         prior=pybop.Gaussian(0.6, 0.05),
@@ -18,7 +18,7 @@ parameters = [
         prior=pybop.Gaussian(0.48, 0.05),
         bounds=[0.4, 0.7],
     ),
-]
+)
 
 # Make a prediction with measurement noise
 sigma = 0.001
@@ -57,7 +57,7 @@ observer = pybop.UnscentedKalmanFilterObserver(
 
 # Generate problem, cost function, and optimisation class
 cost = pybop.ObserverCost(observer)
-optim = pybop.Optimisation(cost, optimiser=pybop.PSO, verbose=True)
+optim = pybop.PSO(cost, verbose=True)
 
 # Parameter identification using the current observer implementation is very slow
 # so let's restrict the number of iterations and reduce the number of plots
@@ -68,7 +68,7 @@ x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
 # Plot the timeseries output (requires model that returns Voltage)
-pybop.quick_plot(observer, parameter_values=x, title="Optimised Comparison")
+pybop.quick_plot(observer, problem_inputs=x, title="Optimised Comparison")
 
 # # Plot convergence
 # pybop.plot_convergence(optim)

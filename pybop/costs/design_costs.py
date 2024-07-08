@@ -2,8 +2,8 @@ import warnings
 
 import numpy as np
 
-from pybop import is_numeric
 from pybop.costs.base_cost import BaseCost
+from pybop.parameters.parameter import Inputs
 
 
 class DesignCost(BaseCost):
@@ -44,20 +44,20 @@ class DesignCost(BaseCost):
         warnings.warn(nominal_capacity_warning, UserWarning)
         self.update_capacity = update_capacity
         self.parameter_set = problem.model.parameter_set
-        self.update_simulation_data(problem.x0)
+        self.update_simulation_data(self.parameters.as_dict("initial"))
 
-    def update_simulation_data(self, initial_conditions):
+    def update_simulation_data(self, inputs: Inputs):
         """
-        Updates the simulation data based on the initial conditions.
+        Updates the simulation data based on the initial parameter values.
 
         Parameters
         ----------
-        initial_conditions : array
-            The initial conditions for the simulation.
+        inputs : Inputs
+            The initial parameter values for the simulation.
         """
         if self.update_capacity:
-            self.problem.model.approximate_capacity(self.problem.x0)
-        solution = self.problem.evaluate(initial_conditions)
+            self.problem.model.approximate_capacity(inputs)
+        solution = self.problem.evaluate(inputs)
 
         if "Time [s]" not in solution:
             raise ValueError("The solution does not contain time data.")
@@ -65,7 +65,7 @@ class DesignCost(BaseCost):
         self.problem._target = {key: solution[key] for key in self.problem.signal}
         self.dt = solution["Time [s]"][1] - solution["Time [s]"][0]
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Computes the value of the cost function.
 
@@ -73,8 +73,8 @@ class DesignCost(BaseCost):
 
         Parameters
         ----------
-        x : array
-            The parameter set for which to compute the cost.
+        inputs : Inputs
+            The parameters for which to compute the cost.
         grad : array, optional
             Gradient information, not used in this method.
 
@@ -90,8 +90,8 @@ class GravimetricEnergyDensity(DesignCost):
     """
     Represents the gravimetric energy density of a battery cell, calculated based
     on a normalised discharge from upper to lower voltage limits. The goal is to
-    maximise the energy density, which is achieved by minimizing the negative energy
-    density reported by this class.
+    maximise the energy density, which is achieved by setting minimising = False
+    in the optimiser settings.
 
     Inherits all parameters and attributes from ``DesignCost``.
     """
@@ -99,58 +99,55 @@ class GravimetricEnergyDensity(DesignCost):
     def __init__(self, problem, update_capacity=False):
         super(GravimetricEnergyDensity, self).__init__(problem, update_capacity)
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Computes the cost function for the energy density.
 
         Parameters
         ----------
-        x : array
-            The parameter set for which to compute the cost.
+        inputs : Inputs
+            The parameters for which to compute the cost.
         grad : array, optional
             Gradient information, not used in this method.
 
         Returns
         -------
         float
-            The negative gravimetric energy density or infinity in case of infeasible parameters.
+            The gravimetric energy density or -infinity in case of infeasible parameters.
         """
-        if not all(is_numeric(i) for i in x):
-            raise ValueError("Input must be a numeric array.")
-
         try:
             with warnings.catch_warnings():
                 # Convert UserWarning to an exception
                 warnings.filterwarnings("error", category=UserWarning)
 
                 if self.update_capacity:
-                    self.problem.model.approximate_capacity(x)
-                solution = self.problem.evaluate(x)
+                    self.problem.model.approximate_capacity(inputs)
+                solution = self.problem.evaluate(inputs)
 
                 voltage, current = solution["Voltage [V]"], solution["Current [A]"]
-                negative_energy_density = -np.trapz(voltage * current, dx=self.dt) / (
+                energy_density = np.trapz(voltage * current, dx=self.dt) / (
                     3600 * self.problem.model.cell_mass(self.parameter_set)
                 )
 
-                return negative_energy_density
+                return energy_density
 
         # Catch infeasible solutions and return infinity
         except UserWarning as e:
             print(f"Ignoring this sample due to: {e}")
-            return np.inf
+            return -np.inf
 
         # Catch any other exception and return infinity
         except Exception as e:
             print(f"An error occurred during the evaluation: {e}")
-            return np.inf
+            return -np.inf
 
 
 class VolumetricEnergyDensity(DesignCost):
     """
     Represents the volumetric energy density of a battery cell, calculated based
     on a normalised discharge from upper to lower voltage limits. The goal is to
-    maximise the energy density, which is achieved by minimizing the negative energy
-    density reported by this class.
+    maximise the energy density, which is achieved by setting minimising = False
+    in the optimiser settings.
 
     Inherits all parameters and attributes from ``DesignCost``.
     """
@@ -158,46 +155,44 @@ class VolumetricEnergyDensity(DesignCost):
     def __init__(self, problem, update_capacity=False):
         super(VolumetricEnergyDensity, self).__init__(problem, update_capacity)
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Computes the cost function for the energy density.
 
         Parameters
         ----------
-        x : array
-            The parameter set for which to compute the cost.
+        inputs : Inputs
+            The parameters for which to compute the cost.
         grad : array, optional
             Gradient information, not used in this method.
 
         Returns
         -------
         float
-            The negative volumetric energy density or infinity in case of infeasible parameters.
+            The volumetric energy density or -infinity in case of infeasible parameters.
         """
-        if not all(is_numeric(i) for i in x):
-            raise ValueError("Input must be a numeric array.")
         try:
             with warnings.catch_warnings():
                 # Convert UserWarning to an exception
                 warnings.filterwarnings("error", category=UserWarning)
 
                 if self.update_capacity:
-                    self.problem.model.approximate_capacity(x)
-                solution = self.problem.evaluate(x)
+                    self.problem.model.approximate_capacity(inputs)
+                solution = self.problem.evaluate(inputs)
 
                 voltage, current = solution["Voltage [V]"], solution["Current [A]"]
-                negative_energy_density = -np.trapz(voltage * current, dx=self.dt) / (
+                energy_density = np.trapz(voltage * current, dx=self.dt) / (
                     3600 * self.problem.model.cell_volume(self.parameter_set)
                 )
 
-                return negative_energy_density
+                return energy_density
 
         # Catch infeasible solutions and return infinity
         except UserWarning as e:
             print(f"Ignoring this sample due to: {e}")
-            return np.inf
+            return -np.inf
 
         # Catch any other exception and return infinity
         except Exception as e:
             print(f"An error occurred during the evaluation: {e}")
-            return np.inf
+            return -np.inf

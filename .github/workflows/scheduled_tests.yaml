@@ -6,10 +6,9 @@ on:
     branches:
       - main
 
-  # runs every day at 09:00 and 15:00 UTC
+  # runs every day at 09:00 UTC
   schedule:
     - cron: '0 9 * * *'
-    - cron: '0 15 * * *'
 
 # Check noxfile.py for associated environment variables
 env:
@@ -35,10 +34,12 @@ jobs:
     outputs:
       pybop_matrix: ${{ steps.set-matrix.outputs.matrix }}
 
-  # filter the matrix to only include the macOS-latest entries
+  # Filter the matrix to only include Python and PyBaMM versions. This job
+  # is used for the self-hosted macOS-14 (arm64) runner at this time.
   filter_pybamm_matrix:
-    name: Filter the matrix for macOS-latest entries
+    name: Filter the matrix for OS and Python version
     needs: [create_pybamm_matrix]
+    if: github.repository == 'pybop-team/PyBOP'
     runs-on: ubuntu-latest
     outputs:
       filtered_pybop_matrix: ${{ steps.set-matrix.outputs.matrix }}
@@ -53,8 +54,12 @@ jobs:
           matrix_json = '${{ needs.create_pybamm_matrix.outputs.pybop_matrix }}'
           matrix = json.loads(matrix_json)
 
-          # Filter the matrix for macOS-latest entries only
-          filtered_entries = [entry for entry in matrix['include'] if entry['os'] == 'macos-latest']
+          # Filter the matrix to include just the Python version and PyBaMM version
+          # First filter the matrix to only include macOS-14 entries
+          filtered_entries = [entry for entry in matrix['include'] if entry['os'] == 'macos-14']
+          # Then remove the os key from the entries
+          for entry in filtered_entries:
+              entry.pop('os')
           filtered_matrix = {'include': filtered_entries}
 
           # Set the output variable for other jobs to use
@@ -63,6 +68,8 @@ jobs:
               output_stream.write(f"matrix={json.dumps(filtered_matrix)}\n")
         shell: python
 
+  # This job is dependent on filter_pybamm_matrix so that the self-hosted runner starts
+  # as soon as the matrix is filtered (i.e. the runners don't get tied up with build below).
   build:
     needs: [create_pybamm_matrix, filter_pybamm_matrix]
     name: Build (${{ matrix.os }}, Python ${{ matrix.python_version }}, PyBaMM ${{ matrix.pybamm_version }})
@@ -82,16 +89,18 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip nox
+          python -m pip install --upgrade pip nox[uv]
 
       - name: Unit tests with nox
         run: python -m nox -s coverage
 
-      - name: Run notebooks with nox
-        run: python -m nox -s notebooks
+      - name: Run examples with nox
+        run: python -m nox -s examples
 
   # M-series Mac Mini
   build-apple-mseries:
+    # This job filters the matrix JSON created in build_matrix.sh to provide
+    # a matrix of only macOS-14 (arm64) entries
     needs: [filter_pybamm_matrix]
     name: Build (MacOS M-series, Python ${{ matrix.python_version }}, PyBaMM ${{ matrix.pybamm_version }})
     runs-on: [self-hosted, macOS, ARM64]
@@ -104,6 +113,11 @@ jobs:
       matrix: ${{fromJson(needs.filter_pybamm_matrix.outputs.filtered_pybop_matrix)}}
 
     steps:
+      - name: Cleanup build folder
+        run: |
+          rm -rf ./* || true
+          rm -rf ./.??* || true
+
       - uses: actions/checkout@v4
       - name: Install python & create virtualenv
         shell: bash
@@ -112,14 +126,14 @@ jobs:
           pyenv install ${{ matrix.python_version }} -s
           pyenv virtualenv ${{ matrix.python_version }} pybop-${{ matrix.python_version }}-${{ matrix.pybamm_version }}
 
-      - name: Install dependencies & run unit + notebook tests
+      - name: Install dependencies & run tests
         shell: bash
         run: |
           eval "$(pyenv init -)"
           pyenv activate pybop-${{ matrix.python_version }}-${{ matrix.pybamm_version }}
-          python -m pip install --upgrade pip nox
+          python -m pip install --upgrade pip nox[uv]
           python -m nox -s coverage
-          python -m nox -s notebooks
+          python -m nox -s examples
 
       - name: Uninstall pyenv-virtualenv & python
         if: always()

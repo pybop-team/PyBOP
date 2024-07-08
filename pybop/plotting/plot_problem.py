@@ -2,10 +2,11 @@ import sys
 
 import numpy as np
 
-import pybop
+from pybop import DesignProblem, FittingProblem, StandardPlot
+from pybop.parameters.parameter import Inputs
 
 
-def quick_plot(problem, parameter_values=None, show=True, **layout_kwargs):
+def quick_plot(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
     """
     Quickly plot the target dataset against optimised model output.
 
@@ -16,7 +17,7 @@ def quick_plot(problem, parameter_values=None, show=True, **layout_kwargs):
     ----------
     problem : object
         Problem object with dataset and signal attributes.
-    parameter_values : array-like
+    problem_inputs : Inputs
         Optimised (or example) parameter values.
     show : bool, optional
         If True, the figure is shown upon creation (default: True).
@@ -30,13 +31,15 @@ def quick_plot(problem, parameter_values=None, show=True, **layout_kwargs):
     plotly.graph_objs.Figure
         The Plotly figure object for the scatter plot.
     """
-    if parameter_values is None:
-        parameter_values = problem.x0
+    if problem_inputs is None:
+        problem_inputs = problem.parameters.as_dict()
+    else:
+        problem_inputs = problem.parameters.verify(problem_inputs)
 
     # Extract the time data and evaluate the model's output and target values
     xaxis_data = problem.time_data()
-    model_output = problem.evaluate(parameter_values)
-    target_output = problem.target()
+    model_output = problem.evaluate(problem_inputs)
+    target_output = problem.get_target()
 
     # Create a plot for each output
     figure_list = []
@@ -44,18 +47,18 @@ def quick_plot(problem, parameter_values=None, show=True, **layout_kwargs):
         default_layout_options = dict(
             title="Scatter Plot",
             xaxis_title="Time / s",
-            yaxis_title=pybop.StandardPlot.remove_brackets(i),
+            yaxis_title=StandardPlot.remove_brackets(i),
         )
 
         # Create a plotting dictionary
-        if isinstance(problem, pybop.DesignProblem):
+        if isinstance(problem, DesignProblem):
             trace_name = "Optimised"
             opt_time_data = model_output["Time [s]"]
         else:
             trace_name = "Model"
             opt_time_data = xaxis_data
 
-        plot_dict = pybop.StandardPlot(
+        plot_dict = StandardPlot(
             x=opt_time_data,
             y=model_output[i],
             layout_options=default_layout_options,
@@ -71,7 +74,7 @@ def quick_plot(problem, parameter_values=None, show=True, **layout_kwargs):
         )
         plot_dict.traces.append(target_trace)
 
-        if isinstance(problem, pybop.FittingProblem):
+        if isinstance(problem, FittingProblem):
             # Compute the standard deviation as proxy for uncertainty
             plot_dict.sigma = np.std(model_output[i] - target_output[i])
 
