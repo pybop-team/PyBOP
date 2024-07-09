@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#403](https://github.com/pybop-team/PyBOP/pull/403/) - Adds lychee link checking action.
 
 ## Bug Fixes
 
