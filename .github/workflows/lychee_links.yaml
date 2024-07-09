@@ -38,11 +38,12 @@ jobs:
             --accept 200,429
             --exclude "https://tiles.stadiamaps.com/*|https://b.tile.openstreetmap.org/*"
             --exclude "https://cartodb-basemaps-c.global.ssl.fastly.net/*"
-            --exclude "https://events.mapbox.com/*|https://api.mapbox.cn/*"
+            --exclude "https://events.mapbox.com/*|https://events.mapbox.cn/*|https://api.mapbox.cn/*"
             --exclude "https://github.com/mikolalysenko/glsl-read-float/*"
             --exclude "https://fonts.openmaptiles.org/*"
             --exclude "https://a.tile.openstreetmap.org/*"
             --exclude "https://cdn.plot.ly/*"
+            --exclude "https://doi.org/*"
             --exclude-path ./CHANGELOG.md
             --exclude-path asv.conf.json
             --exclude-path docs/conf.py
