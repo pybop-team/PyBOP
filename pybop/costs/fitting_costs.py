@@ -50,7 +50,7 @@ class RootMeanSquaredError(BaseCost):
             ]
         )
 
-        return float(e) if self.n_outputs == 1 else np.sum(e)
+        return e.item() if self.n_outputs == 1 else np.sum(e)
 
     def _evaluateS1(self, inputs: Inputs):
         """
@@ -136,7 +136,7 @@ class SumSquaredError(BaseCost):
             ]
         )
 
-        return float(e) if self.n_outputs == 1 else np.sum(e)
+        return e.item() if self.n_outputs == 1 else np.sum(e)
 
     def _evaluateS1(self, inputs: Inputs):
         """
@@ -226,7 +226,7 @@ class Minkowski(BaseCost):
             ]
         )
 
-        return float(e) if self.n_outputs == 1 else np.sum(e)
+        return e.item() if self.n_outputs == 1 else np.sum(e)
 
     def _evaluateS1(self, inputs):
         """

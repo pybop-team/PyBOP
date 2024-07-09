@@ -62,7 +62,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
             ]
         )
 
-        return float(e) if self.n_outputs == 1 else np.sum(e)
+        return e.item() if self.n_outputs == 1 else np.sum(e)
 
     def _evaluateS1(self, inputs: Inputs) -> Tuple[float, np.ndarray]:
         """
@@ -215,7 +215,7 @@ class GaussianLogLikelihood(BaseLikelihood):
             ]
         )
 
-        return float(e) if self.n_outputs == 1 else np.sum(e)
+        return e.item() if self.n_outputs == 1 else np.sum(e)
 
     def _evaluateS1(self, inputs: Inputs) -> Tuple[float, np.ndarray]:
         """
