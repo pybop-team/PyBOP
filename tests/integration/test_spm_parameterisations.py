@@ -112,7 +112,7 @@ class Test_SPM_Parameterisation:
         if isinstance(spm_costs, pybop.MAP):
             for i in spm_costs.parameters.keys():
                 spm_costs.parameters[i].prior = pybop.Uniform(
-                    0.4, 2.0
+                    0.2, 2.0
                 )  # Increase range to avoid prior == np.inf
         # Set sigma0 and create optimiser
         sigma0 = 0.05 if isinstance(spm_costs, pybop.MAP) else None
