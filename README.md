@@ -9,7 +9,7 @@
   [![Contributors](https://img.shields.io/github/contributors/pybop-team/PyBOP)](https://github.com/pybop-team/PyBOP/graphs/contributors)
   [![Last Commit](https://img.shields.io/github/last-commit/pybop-team/PyBOP/develop?color=purple)](https://github.com/pybop-team/PyBOP/commits/develop)
   [![Python Versions from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fpybop-team%2FPyBOP%2Fdevelop%2Fpyproject.toml&label=Python)](https://pypi.org/project/pybop/)
-  [![Forks](https://img.shields.io/github/forks/pybop-team/PyBOP?style=flat)](https://github.com/pybop-team/PyBOPe/network/members)
+  [![Forks](https://img.shields.io/github/forks/pybop-team/PyBOP?style=flat)](https://github.com/pybop-team/PyBOP/network/members)
   [![Stars](https://img.shields.io/github/stars/pybop-team/PyBOP?style=flat&color=gold)](https://github.com/pybop-team/PyBOP/stargazers)
   [![Codecov](https://codecov.io/gh/pybop-team/PyBOP/branch/develop/graph/badge.svg)](https://codecov.io/gh/pybop-team/PyBOP)
   [![Open Issues](https://img.shields.io/github/issues/pybop-team/PyBOP)](https://github.com/pybop-team/PyBOP/issues/)
