@@ -74,7 +74,7 @@ Additional script-based examples can be found in the [examples directory](https:
 - [Unscented Kalman filter parameter identification of a SPM](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_UKF.py)
 - [Import and export parameters using Faraday's BPX format](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/BPX_spm.py)
 - [Maximum a posteriori parameter identification of a SPM](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/BPX_spm.py)
-- [Gradient based parameter identification of a SPM](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_adam.py)
+- [Gradient based parameter identification of a SPM](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_AdamW.py)
 
 ### Supported Methods
 The table below lists the currently supported [models](https://github.com/pybop-team/PyBOP/tree/develop/pybop/models), [optimisers](https://github.com/pybop-team/PyBOP/tree/develop/pybop/optimisers), and [cost functions](https://github.com/pybop-team/PyBOP/tree/develop/pybop/costs) in PyBOP.
