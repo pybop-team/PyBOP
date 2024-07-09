@@ -70,7 +70,7 @@ You now have everything you need to start making changes!
 ### C. Merging your changes with PyBOP
 
 10. [Test your code!](#testing)
-12. If you added a major new feature, perhaps it should be showcased in an [example notebook](#example-notebooks).
+12. If you added a major new feature, perhaps it should be showcased in an [example notebook](https://github.com/pybop-team/PyBOP/tree/develop/examples/notebooks).
 13. If you've added new functionality, please add additional tests to ensure ample code coverage in PyBOP.
 13. When you feel your code is finished, or at least warrants serious discussion, create a [pull request](https://help.github.com/articles/about-pull-requests/) (PR) on [PyBOP's GitHub page](https://github.com/pybop-team/PyBOP).
 14. Once a PR has been created, it will be reviewed by any member of the community. Changes might be suggested which you can make by simply adding new commits to the branch. When everything's finished, someone with the right GitHub permissions will merge your changes into PyBOP main repository.
@@ -313,8 +313,6 @@ Configuration files:
 ```
 pyproject.toml
 ```
-
-Note that this file must be kept in sync with the version number in [pybop/**init**.py](https://github.com/pybop-team/PyBOP/blob/develop/pybop/__init__.py).
 
 ### Continuous Integration using GitHub actions
 

@@ -1,4 +1,5 @@
 from pybop import BaseProblem, ComposedTransformation, IdentityTransformation
+from pybop.parameters.parameter import Inputs, Parameters
 
 
 class BaseCost:
@@ -17,21 +18,17 @@ class BaseCost:
         evaluating the cost function.
     _target : array-like
         An array containing the target data to fit.
-    x0 : array-like
-        The initial guess for the model parameters.
     n_outputs : int
         The number of outputs in the model.
     """
 
     def __init__(self, problem=None):
-        self.parameters = None
+        self.parameters = Parameters()
         self.transformation = None
         self.problem = problem
-        self.x0 = None
         if isinstance(self.problem, BaseProblem):
             self._target = self.problem._target
-            self.parameters = self.problem.parameters
-            self.x0 = self.problem.x0
+            self.parameters.join(self.problem.parameters)
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
             self.transformation = self.construct_transformation()
@@ -78,8 +75,10 @@ class BaseCost:
         ValueError
             If an error occurs during the calculation of the cost.
         """
+        inputs = self.parameters.verify(x)
+
         try:
-            return self._evaluate(x)
+            return self._evaluate(inputs)
 
         except NotImplementedError as e:
             raise e
@@ -87,7 +86,7 @@ class BaseCost:
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}")
 
-    def _evaluate(self, x):
+    def _evaluate(self, inputs: Inputs):
         """
         Calculate the cost function value for a given set of parameters.
 
@@ -95,7 +94,7 @@ class BaseCost:
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to evaluate the cost.
 
         Returns
@@ -130,12 +129,14 @@ class BaseCost:
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
+        inputs = self.parameters.verify(x)
+
         try:
             if self.transformation:
-                p = self.transformation.to_model(x)
+                p = self.transformation.to_model(inputs)
                 return self._evaluateS1(p)
             else:
-                return self._evaluateS1(x)
+                return self._evaluateS1(inputs)
 
         except NotImplementedError as e:
             raise e
@@ -143,13 +144,13 @@ class BaseCost:
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}")
 
-    def _evaluateS1(self, x):
+    def _evaluateS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns

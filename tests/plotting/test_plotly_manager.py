@@ -95,7 +95,7 @@ def test_cancel_installation(mocker, uninstall_plotly_if_installed):
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         PlotlyManager().prompt_for_plotly_installation()
 
-    assert pytest_wrapped_e.type == SystemExit
+    assert pytest_wrapped_e.type is SystemExit
     assert pytest_wrapped_e.value.code == 1
     assert not is_package_installed("plotly")
 

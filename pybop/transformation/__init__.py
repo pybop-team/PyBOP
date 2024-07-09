@@ -102,6 +102,10 @@ class Transformation(ABC):
         """Set and validate the translate parameter."""
         if isinstance(input, (float, int)):
             input = np.full(self._n_parameters, float(input))
+        if isinstance(input, dict):
+            if len(input) != self._n_parameters:
+                raise ValueError(f"Translate must have {self._n_parameters} elements")
+            input = np.asarray([k for k in input.values()], dtype=float)
         elif isinstance(input, (list, np.ndarray)):
             if len(input) != self._n_parameters:
                 raise ValueError(f"Translate must have {self._n_parameters} elements")

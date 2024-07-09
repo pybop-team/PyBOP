@@ -13,7 +13,7 @@ parameters = pybop.Parameters(
         prior=pybop.Gaussian(6e-06, 0.1e-6),
         bounds=[1e-6, 9e-6],
         true_value=parameter_set["Negative particle radius [m]"],
-        transformation=pybop.ScaledTransformation(coefficient=2.0),
+        transformation=pybop.LogTransformation(),
     ),
     pybop.Parameter(
         "Positive particle radius [m]",
@@ -55,7 +55,7 @@ print("Estimated parameters:", x)
 pybop.plot_dataset(dataset)
 
 # Plot the timeseries output
-pybop.quick_plot(problem, parameter_values=x, title="Optimised Comparison")
+pybop.quick_plot(problem, problem_inputs=x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)
