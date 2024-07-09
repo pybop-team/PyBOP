@@ -71,8 +71,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         y, dy = self.problem.evaluateS1(inputs)
 
         if not self.verify_prediction(y):
-            dl = self._de * np.ones(self.n_parameters)
-            return -np.inf, -dl
+            return -np.inf, -self._de * np.ones(self.n_parameters)
 
         likelihood = self._evaluate(inputs)
 
@@ -126,7 +125,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         self.sigma = Parameters()
         self._add_sigma_parameters(sigma0)
         self.parameters.join(self.sigma)
-        self._dl = np.ones(self.n_parameters)
+        self._dl = self._de * np.ones(self.n_parameters)
 
     def _add_sigma_parameters(self, sigma0):
         sigma0 = [sigma0] if not isinstance(sigma0, List) else sigma0
@@ -240,8 +239,7 @@ class GaussianLogLikelihood(BaseLikelihood):
 
         y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
         if not self.verify_prediction(y):
-            dl = self._dl * np.ones(self.n_parameters)
-            return -np.inf, -dl
+            return -np.inf, -self._dl
 
         likelihood = self._evaluate(inputs)
 
@@ -341,7 +339,7 @@ class MAP(BaseLikelihood):
             self.parameters[key].prior.logpdf(value) for key, value in inputs.items()
         )
         if not np.isfinite(log_prior).any():
-            return log_prior, self._de
+            return log_prior, -self._de * np.ones(self.n_parameters)
 
         log_likelihood, dl = self.likelihood._evaluateS1(inputs)
 
