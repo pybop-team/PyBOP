@@ -173,7 +173,7 @@ class GaussianLogLikelihood(BaseLikelihood):
             raise ValueError("dsigma_scale must be non-negative")
         self._dsigma_scale = new_value
 
-    def _evaluate(self, inputs: Inputs, grad: Union[None, np.ndarray] = None) -> float:
+    def _evaluate(self, inputs: Inputs) -> float:
         """
         Evaluates the Gaussian log-likelihood for the given parameters.
 
@@ -293,9 +293,6 @@ class MAP(BaseLikelihood):
         ----------
         inputs : Inputs
             The parameters for which to evaluate the cost.
-        grad : array-like, optional
-            An array to store the gradient of the cost function with respect
-            to the parameters.
 
         Returns
         -------
