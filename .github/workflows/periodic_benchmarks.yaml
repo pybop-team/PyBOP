@@ -22,6 +22,11 @@ jobs:
     runs-on: [self-hosted, macOS, ARM64]
     if: github.repository == 'pybop-team/PyBOP'
     steps:
+      - name: Cleanup build folder
+        run: |
+          rm -rf ./* || true
+          rm -rf ./.??* || true
+
       - uses: actions/checkout@v4
 
       - name: Install python & create virtualenv

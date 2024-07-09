@@ -2,11 +2,25 @@
 
 ## Features
 
+
+## Bug Fixes
+
+
+## Breaking Changes
+
+# [v24.6](https://github.com/pybop-team/PyBOP/tree/v24.6) - 2024-07-08
+
+## Features
+
+- [#319](https://github.com/pybop-team/PyBOP/pull/319/) - Adds `CuckooSearch` optimiser with corresponding tests.
+- [#359](https://github.com/pybop-team/PyBOP/pull/359/) - Aligning Inputs between problem, observer and model.
+- [#379](https://github.com/pybop-team/PyBOP/pull/379) - Adds model.simulateS1 to weekly benchmarks.
 - [#174](https://github.com/pybop-team/PyBOP/issues/174) - Adds new logo and updates Readme for accessibility.
 - [#316](https://github.com/pybop-team/PyBOP/pull/316) - Adds Adam with weight decay (AdamW) optimiser, adds depreciation warning for pints.Adam implementation.
 - [#271](https://github.com/pybop-team/PyBOP/issues/271) - Aligns the output of the optimisers via a generalisation of Result class.
 - [#315](https://github.com/pybop-team/PyBOP/pull/315) - Updates __init__ structure to remove circular import issues and minimises dependancy imports across codebase for faster PyBOP module import. Adds type-hints to BaseModel and refactors rebuild parameter variables.
 - [#236](https://github.com/pybop-team/PyBOP/issues/236) - Restructures the optimiser classes, adds a new optimisation API through direct construction and keyword arguments, and fixes the setting of `max_iterations`, and `_minimising`. Introduces `pybop.BaseOptimiser`, `pybop.BasePintsOptimiser`, and `pybop.BaseSciPyOptimiser` classes.
+- [#322](https://github.com/pybop-team/PyBOP/pull/322) - Add `Parameters` class to store and access multiple parameters in one object.
 - [#321](https://github.com/pybop-team/PyBOP/pull/321) - Updates Prior classes with BaseClass, adds a `problem.sample_initial_conditions` method to improve stability of SciPy.Minimize optimiser.
 - [#249](https://github.com/pybop-team/PyBOP/pull/249) - Add WeppnerHuggins model and GITT example.
 - [#304](https://github.com/pybop-team/PyBOP/pull/304) - Decreases the testing suite completion time.
@@ -24,6 +38,11 @@
 
 ## Bug Fixes
 
+- [#393](https://github.com/pybop-team/PyBOP/pull/393) - General integration test fixes. Adds UserWarning when using Plot2d with prior generated bounds.
+- [#338](https://github.com/pybop-team/PyBOP/pull/338) - Fixes GaussianLogLikelihood class, adds integration tests, updates non-bounded parameter implementation by applying bounds from priors and `boundary_multiplier` argument. Bugfixes to CMAES construction.
+- [#339](https://github.com/pybop-team/PyBOP/issues/339) - Updates the calculation of the cyclable lithium capacity in the spme_max_energy example.
+- [#387](https://github.com/pybop-team/PyBOP/issues/387) - Adds keys to ParameterSet and updates ECM OCV check.
+- [#380](https://github.com/pybop-team/PyBOP/pull/380) - Restore self._boundaries construction for `pybop.PSO`
 - [#372](https://github.com/pybop-team/PyBOP/pull/372) - Converts `np.array` to `np.asarray` for Numpy v2.0 support.
 - [#165](https://github.com/pybop-team/PyBOP/issues/165) - Stores the attempted and best parameter values and the best cost for each iteration in the log attribute of the optimiser and updates the associated plots.
 - [#354](https://github.com/pybop-team/PyBOP/issues/354) - Fixes the calculation of the gradient in the `RootMeanSquaredError` cost.
@@ -37,6 +56,13 @@
 - [#299](https://github.com/pybop-team/PyBOP/pull/299) - Bugfix multiprocessing support for Linux, MacOS, Windows (WSL) and improves coverage.
 - [#270](https://github.com/pybop-team/PyBOP/pull/270) - Updates PR template.
 - [#91](https://github.com/pybop-team/PyBOP/issues/91) - Adds a check on the number of parameters for CMAES and makes XNES the default optimiser.
+
+## Breaking Changes
+
+- [#322](https://github.com/pybop-team/PyBOP/pull/322) - Add `Parameters` class to store and access multiple parameters in one object (API change).
+- [#285](https://github.com/pybop-team/PyBOP/pull/285) - Drop support for Python 3.8.
+- [#251](https://github.com/pybop-team/PyBOP/pull/251) - Drop support for PyBaMM v23.5
+- [#236](https://github.com/pybop-team/PyBOP/issues/236) - Restructures the optimiser classes (API change).
 
 # [v24.3.1](https://github.com/pybop-team/PyBOP/tree/v24.3.1) - 2024-06-17
 

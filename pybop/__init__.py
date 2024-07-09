@@ -86,7 +86,6 @@ from .costs.fitting_costs import (
     RootMeanSquaredError,
     SumSquaredError,
     ObserverCost,
-    MAP,
 )
 from .costs.design_costs import (
     DesignCost,
@@ -97,12 +96,14 @@ from .costs._likelihoods import (
     BaseLikelihood,
     GaussianLogLikelihood,
     GaussianLogLikelihoodKnownSigma,
+    MAP,
 )
 
 #
 # Optimiser class
 #
 
+from .optimisers._cuckoo import CuckooSearchImpl
 from .optimisers._adamw import AdamWImpl
 from .optimisers.base_optimiser import BaseOptimiser, Result
 from .optimisers.base_pints_optimiser import BasePintsOptimiser
@@ -120,6 +121,7 @@ from .optimisers.pints_optimisers import (
     PSO,
     SNES,
     XNES,
+    CuckooSearch,
     AdamW,
 )
 from .optimisers.optimisation import Optimisation

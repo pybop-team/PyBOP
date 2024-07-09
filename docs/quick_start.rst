@@ -6,7 +6,7 @@ Welcome to the Quick Start Guide for PyBOP. This guide will help you get up and 
 Getting Started with PyBOP
 --------------------------
 
-PyBOP is equipped with a series of robust tools that can help you optimize various parameters within your battery models to better match empirical data or to explore the effects of different parameters on battery behavior.
+PyBOP is equipped with a series of robust tools that can help you optimise various parameters within your battery models to better match empirical data or to explore the effects of different parameters on battery behavior.
 
 To begin using PyBOP:
 
@@ -24,14 +24,14 @@ To begin using PyBOP:
 
        import pybop
 
-   Now you're ready to utilize PyBOP's functionality in your projects!
+   Now you're ready to utilise PyBOP's functionality in your projects!
 
 Exploring Examples
 ------------------
 
 To help you get acquainted with PyBOP's capabilities, we provide a collection of examples that demonstrate common use cases and features of the package:
 
-- **Jupyter Notebooks**: Interactive notebooks that include detailed explanations alongside the live code, visualizations, and results. These are an excellent resource for learning and can be easily modified and executed to suit your needs.
+- **Jupyter Notebooks**: Interactive notebooks that include detailed explanations alongside the live code, visualisations, and results. These are an excellent resource for learning and can be easily modified and executed to suit your needs.
 
 - **Python Scripts**: For those who prefer working in a text editor, IDE, or for integrating into larger projects, we provide equivalent examples in plain Python script format.
 
@@ -55,4 +55,4 @@ If you encounter any issues or have questions as you start using PyBOP, don't he
 
 - **GitHub Issues**: Report bugs or request new features by opening an `Issue <https://github.com/pybop-team/PyBOP/issues>`_
 - **GitHub Discussions**: Post your questions or feedback on our `GitHub Discussions <https://github.com/pybop-team/PyBOP/discussions>`_
-- **Contributions**: Interested in contributing to PyBOP? Check out our `Contributing Guide <../Contributing.html>`_ for guidelines.
+- **Contributions**: Interested in contributing to PyBOP? Check out our `Contributing Guide <Contributing.html>`_ for guidelines.

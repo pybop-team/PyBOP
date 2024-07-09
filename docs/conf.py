@@ -39,7 +39,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # -- Options for autoapi -------------------------------------------------------
 autoapi_type = "python"
 autoapi_dirs = ["../pybop"]
-autoapi_keep_files = True
+autoapi_keep_files = False
 autoapi_root = "api"
 autoapi_member_order = "groupwise"
 

@@ -12,11 +12,11 @@ import pybop
 # NOTE: This script can be easily adjusted to consider the volumetric
 # (instead of gravimetric) energy density by changing the line which
 # defines the cost and changing the output to:
-# print(f"Initial volumetric energy density: {cost(cost.x0):.2f} Wh.m-3")
+# print(f"Initial volumetric energy density: {cost(optim.x0):.2f} Wh.m-3")
 # print(f"Optimised volumetric energy density: {final_cost:.2f} Wh.m-3")
 
 # Define parameter set and model
-parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+parameter_set = pybop.ParameterSet.pybamm("Chen2020", formation_concentrations=True)
 model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
 # Fitting parameters
@@ -54,13 +54,13 @@ optim = pybop.PSO(
 # Run optimisation
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
-print(f"Initial gravimetric energy density: {cost(cost.x0):.2f} Wh.kg-1")
+print(f"Initial gravimetric energy density: {cost(optim.x0):.2f} Wh.kg-1")
 print(f"Optimised gravimetric energy density: {final_cost:.2f} Wh.kg-1")
 
 # Plot the timeseries output
 if cost.update_capacity:
     problem._model.approximate_capacity(x)
-pybop.quick_plot(problem, parameter_values=x, title="Optimised Comparison")
+pybop.quick_plot(problem, problem_inputs=x, title="Optimised Comparison")
 
 # Plot the cost landscape with optimisation path
 if len(x) == 2:

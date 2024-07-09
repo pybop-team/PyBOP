@@ -137,9 +137,18 @@ class TestModels:
 
     @pytest.mark.unit
     def test_rebuild(self, model):
+        # Test rebuild before build
+        with pytest.raises(
+            ValueError, match="Model must be built before calling rebuild"
+        ):
+            model.rebuild()
+
         model.build()
         initial_built_model = model._built_model
         assert model._built_model is not None
+
+        model.set_params()
+        assert model.model_with_set_params is not None
 
         # Test that the model can be built again
         model.rebuild()
@@ -252,11 +261,17 @@ class TestModels:
         k = 0.1
         y0 = 1
         model = ExponentialDecay(pybamm.ParameterValues({"k": k, "y0": y0}))
+
+        with pytest.raises(
+            ValueError, match="Model must be built before calling get_state"
+        ):
+            model.get_state({"k": k, "y0": y0}, 0, np.array([0]))
+
         model.build()
         state = model.reinit(inputs={})
         np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
 
-        model.parameters = pybop.Parameters(pybop.Parameter("y0"))
+        model.classify_and_update_parameters(pybop.Parameters(pybop.Parameter("y0")))
         state = model.reinit(inputs=[1])
         np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
 
@@ -296,6 +311,9 @@ class TestModels:
         with pytest.raises(NotImplementedError):
             base.approximate_capacity(x)
 
+        base.classify_and_update_parameters(parameters=None)
+        assert base._n_parameters == 0
+
     @pytest.mark.unit
     def test_thevenin_model(self):
         parameter_set = pybop.ParameterSet(
@@ -317,7 +335,7 @@ class TestModels:
         assert base.check_params()
         assert base.check_params(inputs={"a": 1})
         assert base.check_params(inputs=[1])
-        with pytest.raises(ValueError, match="Expecting inputs in the form of"):
+        with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
             base.check_params(inputs=["unexpected_string"])
 
     @pytest.mark.unit
