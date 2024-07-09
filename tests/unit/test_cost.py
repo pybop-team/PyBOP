@@ -9,6 +9,11 @@ class TestCosts:
     Class for tests cost functions
     """
 
+    # Define an invalid likelihood class for MAP tests
+    class InvalidLikelihood:
+        def __init__(self, problem, sigma0):
+            pass
+
     @pytest.fixture
     def model(self):
         return pybop.lithium_ion.SPM()
@@ -134,12 +139,36 @@ class TestCosts:
     @pytest.mark.unit
     def test_MAP(self, problem):
         # Incorrect likelihood
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match="An error occurred when constructing the Likelihood class:",
+        ):
             pybop.MAP(problem, pybop.SumSquaredError)
 
         # Incorrect construction of likelihood
-        with pytest.raises(ValueError):
-            pybop.MAP(problem, pybop.GaussianLogLikelihoodKnownSigma, sigma="string")
+        with pytest.raises(
+            ValueError,
+            match="An error occurred when constructing the Likelihood class: could not convert string to float: 'string'",
+        ):
+            pybop.MAP(problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0="string")
+
+        # Incorrect likelihood
+        with pytest.raises(ValueError, match="must be a subclass of BaseLikelihood"):
+            pybop.MAP(problem, self.InvalidLikelihood, sigma0=0.1)
+
+        # Non finite prior
+        parameter = pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            prior=pybop.Uniform(0.55, 0.6),
+        )
+        problem_non_finite = pybop.FittingProblem(
+            problem.model, parameter, problem.dataset, signal=problem.signal
+        )
+        likelihood = pybop.MAP(
+            problem_non_finite, pybop.GaussianLogLikelihoodKnownSigma, sigma0=0.01
+        )
+        assert not np.isfinite(likelihood([0.7]))
+        assert not np.isfinite(likelihood.evaluateS1([0.7])[0])
 
     @pytest.mark.unit
     def test_costs(self, cost):
