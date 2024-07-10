@@ -10,10 +10,7 @@ from pints import RectangularBoundaries as PintsRectangularBoundaries
 from pints import SequentialEvaluator as PintsSequentialEvaluator
 from pints import strfloat as PintsStrFloat
 
-from pybop import (
-    BaseOptimiser,
-    Result,
-)
+from pybop import BaseOptimiser, Result
 
 
 class BasePintsOptimiser(BaseOptimiser):
@@ -53,7 +50,6 @@ class BasePintsOptimiser(BaseOptimiser):
 
         self.pints_optimiser = pints_optimiser
         super().__init__(cost, **optimiser_kwargs)
-        self.f = self.cost
 
     def _set_up_optimiser(self):
         """
@@ -197,12 +193,12 @@ class BasePintsOptimiser(BaseOptimiser):
         if self._needs_sensitivities:
 
             def f(x):
-                L, dl = self.f.evaluateS1(x)
+                L, dl = self.cost.evaluateS1(x)
                 return (L, dl) if self.minimising else (-L, -dl)
         else:
 
             def f(x):
-                return self.f(x) if self.minimising else -self.f(x)
+                return self.cost(x) if self.minimising else -self.cost(x)
 
         # Create evaluator object
         if self._parallel:
