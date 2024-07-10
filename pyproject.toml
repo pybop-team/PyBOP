@@ -73,7 +73,7 @@ Homepage = "https://github.com/pybop-team/PyBOP"
 Documentation = "https://pybop-docs.readthedocs.io"
 Repository = "https://github.com/pybop-team/PyBOP"
 Releases = "https://github.com/pybop-team/PyBOP/releases"
-Changelog = "https://github.com/pybop-team/PyBOP/CHANGELOG.md"
+Changelog = "https://github.com/pybop-team/PyBOP/blob/develop/CHANGELOG.md"
 
 [tool.pytest.ini_options]
 addopts = "--showlocals -v -n auto"
