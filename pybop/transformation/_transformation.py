@@ -210,7 +210,6 @@ class ComposedTransformation(Transformation):
         self._is_elementwise = True
         for transformation in transformations:
             self._append_transformation(transformation)
-        self._update_methods()
 
     def _append_transformation(self, transformation: Transformation):
         """
@@ -232,22 +231,6 @@ class ComposedTransformation(Transformation):
         self._n_parameters += transformation.n_parameters
         self._is_elementwise = self._is_elementwise and transformation.is_elementwise()
 
-    def _update_methods(self, elementwise: bool = None):
-        """
-        Update the internal methods based on whether the transformation is elementwise.
-        """
-        if elementwise is not None:
-            self._is_elementwise = elementwise
-
-        if self._is_elementwise:
-            self._jacobian = self._elementwise_jacobian
-            self._log_jacobian_det = self._elementwise_log_jacobian_det
-            self._log_jacobian_det_S1 = self._elementwise_log_jacobian_det_S1
-        else:
-            self._jacobian = self._general_jacobian
-            self._log_jacobian_det = self._general_log_jacobian_det
-            self._log_jacobian_det_S1 = self._general_log_jacobian_det_S1
-
     def append(self, transformation: Transformation):
         """
         Append a new transformation to the existing composition.
@@ -258,55 +241,12 @@ class ComposedTransformation(Transformation):
             The transformation to append.
         """
         self._append_transformation(transformation)
-        self._update_methods()
 
     def is_elementwise(self) -> bool:
         """See :meth:`Transformation.is_elementwise()`."""
         return self._is_elementwise
 
     def jacobian(self, q: np.ndarray) -> np.ndarray:
-        """See :meth:`Transformation.jacobian()`."""
-        return self._jacobian(q)
-
-    def jacobian_S1(self, q: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        """See :meth:`Transformation.jacobian_S1()`."""
-        q = self._verify_input(q)
-        output_S1 = np.zeros(
-            (self._n_parameters, self._n_parameters, self._n_parameters)
-        )
-        lo = 0
-
-        for transformation in self._transformations:
-            hi = lo + transformation.n_parameters
-            _, jac_S1 = transformation.jacobian_S1(q[lo:hi])
-            for i, jac_S1_i in enumerate(jac_S1):
-                output_S1[lo + i, lo:hi, lo:hi] = jac_S1_i
-            lo = hi
-
-        return self.jacobian(q), output_S1
-
-    def log_jacobian_det(self, q: np.ndarray) -> float:
-        """See :meth:`Transformation.log_jacobian_det()`."""
-        return self._log_jacobian_det(q)
-
-    def log_jacobian_det_S1(self, q: np.ndarray) -> Tuple[float, np.ndarray]:
-        """See :meth:`Transformation.log_jacobian_det_S1()`."""
-        return self._log_jacobian_det_S1(q)
-
-    def _transform(self, data: np.ndarray, method: str) -> np.ndarray:
-        """See :meth:`Transformation._transform`."""
-        data = self._verify_input(data)
-        output = np.zeros_like(data)
-        lo = 0
-
-        for transformation in self._transformations:
-            hi = lo + transformation.n_parameters
-            output[lo:hi] = getattr(transformation, method)(data[lo:hi])
-            lo = hi
-
-        return output
-
-    def _elementwise_jacobian(self, q: np.ndarray) -> np.ndarray:
         """
         Compute the elementwise Jacobian of the composed transformation.
 
@@ -331,7 +271,24 @@ class ComposedTransformation(Transformation):
 
         return np.diag(diag)
 
-    def _elementwise_log_jacobian_det(self, q: np.ndarray) -> float:
+    def jacobian_S1(self, q: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        """See :meth:`Transformation.jacobian_S1()`."""
+        q = self._verify_input(q)
+        output_S1 = np.zeros(
+            (self._n_parameters, self._n_parameters, self._n_parameters)
+        )
+        lo = 0
+
+        for transformation in self._transformations:
+            hi = lo + transformation.n_parameters
+            _, jac_S1 = transformation.jacobian_S1(q[lo:hi])
+            for i, jac_S1_i in enumerate(jac_S1):
+                output_S1[lo + i, lo:hi, lo:hi] = jac_S1_i
+            lo = hi
+
+        return self.jacobian(q), output_S1
+
+    def log_jacobian_det(self, q: np.ndarray) -> float:
         """
         Compute the elementwise logarithm of the determinant of the Jacobian.
 
@@ -351,9 +308,7 @@ class ComposedTransformation(Transformation):
             for lo, transformation in self._iter_transformations()
         )
 
-    def _elementwise_log_jacobian_det_S1(
-        self, q: np.ndarray
-    ) -> Tuple[float, np.ndarray]:
+    def log_jacobian_det_S1(self, q: np.ndarray) -> Tuple[float, np.ndarray]:
         """
         Compute the elementwise logarithm of the determinant of the Jacobian and its first-order sensitivities.
 
@@ -381,77 +336,18 @@ class ComposedTransformation(Transformation):
 
         return output, output_S1
 
-    def _general_jacobian(self, q: np.ndarray) -> np.ndarray:
-        """
-        Compute the general Jacobian of the composed transformation.
-
-        Parameters
-        ----------
-        q : np.ndarray
-            Input array.
-
-        Returns
-        -------
-        np.ndarray
-            Block diagonal matrix of the Jacobian of each transformation.
-        """
-        q = self._verify_input(q)
-        jacobian_blocks = []
+    def _transform(self, data: np.ndarray, method: str) -> np.ndarray:
+        """See :meth:`Transformation._transform`."""
+        data = self._verify_input(data)
+        output = np.zeros_like(data)
         lo = 0
 
         for transformation in self._transformations:
             hi = lo + transformation.n_parameters
-            jacobian_blocks.append(transformation.jacobian(q[lo:hi]))
+            output[lo:hi] = getattr(transformation, method)(data[lo:hi])
             lo = hi
 
-        return np.block(
-            [
-                [
-                    b if i == j else np.zeros_like(b)
-                    for j, b in enumerate(jacobian_blocks)
-                ]
-                for i, _ in enumerate(jacobian_blocks)
-            ]
-        )
-
-    def _general_log_jacobian_det(self, q: np.ndarray) -> float:
-        """
-        Compute the general logarithm of the determinant of the Jacobian.
-
-        Parameters
-        ----------
-        q : np.ndarray
-            Input array.
-
-        Returns
-        -------
-        float
-            Logarithm of the absolute value of the determinant of the Jacobian.
-        """
-        return np.log(np.abs(np.linalg.det(self.jacobian(q))))
-
-    def _general_log_jacobian_det_S1(self, q: np.ndarray) -> Tuple[float, np.ndarray]:
-        """
-        Compute the general logarithm of the determinant of the Jacobian and its first-order sensitivities.
-
-        Parameters
-        ----------
-        q : np.ndarray
-            Input array.
-
-        Returns
-        -------
-        Tuple[float, np.ndarray]
-            Tuple of log determinant and its first-order sensitivities.
-        """
-        q = self._verify_input(q)
-        jac, jac_S1 = self.jacobian_S1(q)
-        out_S1 = np.zeros(self._n_parameters)
-
-        for i, jac_S1_i in enumerate(jac_S1):
-            out_S1[i] = np.trace(np.matmul(np.linalg.pinv(jac), jac_S1_i))
-
-        return self.log_jacobian_det(q), out_S1
+        return output
 
     def _iter_transformations(self):
         """

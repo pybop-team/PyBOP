@@ -115,11 +115,33 @@ class TestTransformation:
         transformation = pybop.ComposedTransformation(
             [parameters["Identity"].transformation, parameters["Scaled"].transformation]
         )
-        self._test_elementwise_transformations(transformation)
-
-        # Test appending a non-elementwise transformation
+        # Test appending transformations
         transformation.append(parameters["Log"].transformation)
-        self._test_non_elementwise_transformations(transformation)
+        assert transformation.is_elementwise() is True
+
+        q = np.asarray([5.0, 2.5, 10])
+        p = transformation.to_model(q)
+        np.testing.assert_allclose(
+            p, np.asarray([5.0, ((q[1] / 2.0) - 1.0), np.exp(q[2])])
+        )
+        jac = transformation.jacobian(q)
+        jac_S1 = transformation.jacobian_S1(q)
+        np.testing.assert_allclose(
+            jac, np.asarray([[1, 0.0, 0.0], [0.0, 0.5, 0.0], [0.0, 0.0, 0.1]])
+        )
+        np.testing.assert_allclose(jac_S1[0], jac)
+        assert jac_S1[1].shape == (3, 3, 3)
+        assert jac_S1[1][2, 2, 2] == -0.01
+        np.testing.assert_allclose(jac_S1[1][0, :, :], np.zeros((3, 3)))
+        np.testing.assert_allclose(jac_S1[1][1, :, :], np.zeros((3, 3)))
+
+        correct_output = np.sum(np.log(np.abs(2.0))) + np.sum(-np.log(10))
+        log_jac_det = transformation.log_jacobian_det(q)
+        assert log_jac_det == correct_output
+
+        log_jac_det_S1 = transformation.log_jacobian_det_S1(q)
+        assert log_jac_det_S1[0] == correct_output
+        np.testing.assert_allclose(log_jac_det_S1[1], np.asarray([0.0, 0.0, -0.1]))
 
         # Test composed with no transformations
         with pytest.raises(
@@ -134,54 +156,6 @@ class TestTransformation:
             pybop.ComposedTransformation(
                 [parameters["Identity"].transformation, "string"]
             )
-
-    def _test_elementwise_transformations(self, transformation):
-        q = np.asarray([5.0, 2.5])
-        p = transformation.to_model(q)
-        np.testing.assert_allclose(p, np.asarray([5.0, ((q[1] / 2.0) - 1.0)]))
-        jac = transformation.jacobian(q)
-        jac_S1 = transformation.jacobian_S1(q)
-        np.testing.assert_allclose(jac, np.asarray([[1, 0], [0, 0.5]]))
-        np.testing.assert_allclose(jac_S1[0], jac)
-        np.testing.assert_allclose(
-            jac_S1[1], np.asarray([[[0, 0], [0, 0]], [[0, 0], [0, 0]]])
-        )
-        assert transformation.is_elementwise() is True
-
-    def _test_non_elementwise_transformations(self, transformation):
-        q = np.asarray([5.0, 2.5, 10])
-        p = transformation.to_model(q)
-        np.testing.assert_allclose(
-            p, np.asarray([5.0, ((q[1] / 2.0) - 1.0), np.exp(q[2])])
-        )
-
-        assert_log_jac_det = np.sum(np.log(np.abs(2.0))) + np.sum(-np.log(10))
-
-        log_jac_det = transformation.log_jacobian_det(q)
-        assert log_jac_det == assert_log_jac_det
-
-        log_jac_det_S1 = transformation.log_jacobian_det_S1(q)
-        assert log_jac_det_S1[0] == assert_log_jac_det
-        np.testing.assert_allclose(log_jac_det_S1[1], np.asarray([0.0, 0.0, -0.1]))
-
-        # Test general transformation
-        transformation._update_methods(elementwise=False)
-        assert transformation.is_elementwise() is False
-
-        jac_general = transformation.jacobian(q)
-        assert np.array_equal(jac_general, np.diag([1, 0.5, 1 / 10]))
-
-        assert_log_jac_det_general = -np.sum(np.log(np.abs(2.0))) + np.sum(-np.log(10))
-        log_jac_det_general = transformation.log_jacobian_det(q)
-        np.testing.assert_almost_equal(log_jac_det_general, assert_log_jac_det_general)
-
-        log_jac_det_S1_general = transformation.log_jacobian_det_S1(q)
-        np.testing.assert_almost_equal(
-            log_jac_det_S1_general[0], assert_log_jac_det_general
-        )
-        np.testing.assert_allclose(
-            log_jac_det_S1_general[1], np.asarray([0.0, 0.0, -0.1])
-        )
 
     @pytest.mark.unit
     def test_verify_input(self, parameters):
