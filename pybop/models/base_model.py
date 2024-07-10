@@ -123,9 +123,13 @@ class BaseModel:
             self.set_params()
 
             self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
-            self._disc = pybamm.Discretisation(self.mesh, self.spatial_methods)
+            self._disc = pybamm.Discretisation(
+                mesh=self.mesh,
+                spatial_methods=self.spatial_methods,
+                check_model=check_model,
+            )
             self._built_model = self._disc.process_model(
-                self._model_with_set_params, inplace=False, check_model=check_model
+                self._model_with_set_params, inplace=False
             )
 
             # Clear solver and setup model
@@ -283,9 +287,13 @@ class BaseModel:
 
         self.set_params(rebuild=True)
         self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
-        self._disc = pybamm.Discretisation(self.mesh, self.spatial_methods)
+        self._disc = pybamm.Discretisation(
+            mesh=self.mesh,
+            spatial_methods=self.spatial_methods,
+            check_model=check_model,
+        )
         self._built_model = self._disc.process_model(
-            self._model_with_set_params, inplace=False, check_model=check_model
+            self._model_with_set_params, inplace=False
         )
 
         # Clear solver and setup model
@@ -511,9 +519,6 @@ class BaseModel:
                     # Calculate and store the impedance
                     z = -x[-2][0] / x[-1][0]
                     zs.append(z)
-                # except Exception as e:
-                #     print(f"Error: {e}")
-                #     return [np.inf]
             else:
                 return {"Impedence": [np.inf]}
 

@@ -26,7 +26,8 @@ classifiers = [
 ]
 requires-python = ">=3.9, <3.13"
 dependencies = [
-  "pybamm>=23.9",
+  # "pybamm>=23.9",
+  "pybamm @ git+https://github.com/bradyplanden/PyBaMM@v24.5rc0-diffusivity-test",
   "numpy>=1.16, <2.0",
   "scipy>=1.3",
   "pints>=0.5",
