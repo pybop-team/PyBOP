@@ -227,15 +227,18 @@ class ComposedTransformation(Transformation):
             If the appended object is not a Transformation.
         """
         if not isinstance(transformation, Transformation):
-            raise ValueError("The appended object must be a Transformation.")
+            raise TypeError("The appended object must be a Transformation.")
         self._transformations.append(transformation)
         self._n_parameters += transformation.n_parameters
         self._is_elementwise = self._is_elementwise and transformation.is_elementwise()
 
-    def _update_methods(self):
+    def _update_methods(self, elementwise: bool = None):
         """
         Update the internal methods based on whether the transformation is elementwise.
         """
+        if elementwise is not None:
+            self._is_elementwise = elementwise
+
         if self._is_elementwise:
             self._jacobian = self._elementwise_jacobian
             self._log_jacobian_det = self._elementwise_log_jacobian_det
@@ -344,7 +347,7 @@ class ComposedTransformation(Transformation):
         """
         q = self._verify_input(q)
         return sum(
-            transformation.log_jacobian_det(q[lo : lo + transformation.n_parameters()])
+            transformation.log_jacobian_det(q[lo : lo + transformation.n_parameters])
             for lo, transformation in self._iter_transformations()
         )
 

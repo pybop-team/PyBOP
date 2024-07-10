@@ -47,7 +47,6 @@ class Transformation(ABC):
     @abstractmethod
     def jacobian(self, q: np.ndarray) -> np.ndarray:
         """Returns the Jacobian matrix of the transformation at the parameter vector `q`."""
-        pass
 
     def jacobian_S1(self, q: np.ndarray) -> Tuple[np.ndarray, Sequence[np.ndarray]]:
         """
@@ -89,7 +88,6 @@ class Transformation(ABC):
         Transforms a parameter vector `x` from the search space to the model space if `method`
         is "to_model", or from the model space to the search space if `method` is "to_search".
         """
-        pass
 
     def is_elementwise(self) -> bool:
         """
@@ -98,22 +96,23 @@ class Transformation(ABC):
         """
         raise NotImplementedError("is_elementwise method must be implemented if used.")
 
-    def _verify_input(self, input: Union[List[float], float, np.ndarray]) -> None:
-        """Set and validate the translate parameter."""
+    def _verify_input(self, input: Union[float, int, List[float], np.ndarray, dict[str, float]]) -> np.ndarray:
+        """Set and validate the transformation parameter."""
         if isinstance(input, (float, int)):
-            input = np.full(self._n_parameters, float(input))
-        if isinstance(input, dict):
-            if len(input) != self._n_parameters:
-                raise ValueError(f"Translate must have {self._n_parameters} elements")
-            input = np.asarray([k for k in input.values()], dtype=float)
-        elif isinstance(input, (list, np.ndarray)):
-            if len(input) != self._n_parameters:
-                raise ValueError(f"Translate must have {self._n_parameters} elements")
-            input = np.asarray(input, dtype=float)
-        else:
-            raise TypeError("Translate must be a float, list, or numpy array")
+            return np.full(self._n_parameters, float(input))
 
-        return input
+        if isinstance(input, dict):
+            input = list(input.values())
+
+        try:
+            input_array = np.asarray(input, dtype=float)
+        except (ValueError, TypeError):
+            raise TypeError("Transform must be a float, int, list, numpy array, or dictionary")
+
+        if input_array.size != self._n_parameters:
+            raise ValueError(f"Transform must have {self._n_parameters} elements")
+
+        return input_array
 
 # ---- To be implemented with Monte Carlo PR ------ #
 # class TransformedLogPDF(BaseCost):

@@ -172,16 +172,17 @@ class Parameter:
             else:
                 self.lower_bound = bounds[0]
                 self.upper_bound = bounds[1]
-            bounds = [self.lower_bound, self.upper_bound]
 
         elif self.prior is not None:
             self.applied_prior_bounds = True
             self.lower_bound = self.prior.mean - boundary_multiplier * self.prior.sigma
             self.upper_bound = self.prior.mean + boundary_multiplier * self.prior.sigma
-            bounds = [self.lower_bound, self.upper_bound]
             print("Default bounds applied based on prior distribution.")
+        else:
+            self.bounds = None
+            return
 
-        self.bounds = bounds
+        self.bounds = [self.lower_bound, self.upper_bound]
 
     def get_initial_value(self) -> float:
         """
@@ -467,7 +468,7 @@ class Parameters:
                     UserWarning,
                     stacklevel=2,
                 )
-            elif param.bounds is not None:
+            if param.bounds is not None:
                 bounds[i] = param.bounds
             else:
                 raise ValueError("All parameters require bounds for plotting.")
