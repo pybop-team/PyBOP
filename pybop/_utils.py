@@ -47,11 +47,7 @@ class SymbolReplacer:
             new model with parameter values set. Default is True.
         """
 
-        if inplace:
-            model = unprocessed_model
-        else:
-            model = unprocessed_model.new_copy()
-
+        model = unprocessed_model if inplace else unprocessed_model.new_copy()
         for variable, equation in unprocessed_model.rhs.items():
             pybamm.logger.verbose(f"Replacing symbols in {variable!r} (rhs)")
             model.rhs[self.process_symbol(variable)] = self.process_symbol(equation)
@@ -88,11 +84,6 @@ class SymbolReplacer:
                 )
             )
         model.events = new_events
-
-        # Set external variables
-        # model.external_variables = [
-        #     self.process_symbol(var) for var in unprocessed_model.external_variables
-        # ]
 
         pybamm.logger.info(f"Finish replacing symbols in {model.name}")
 

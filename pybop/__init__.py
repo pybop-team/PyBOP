@@ -77,6 +77,7 @@ from .models.base_model import Inputs
 from .problems.base_problem import BaseProblem
 from .problems.fitting_problem import FittingProblem
 from .problems.design_problem import DesignProblem
+from .problems.eis_problem import EISProblem
 
 #
 # Cost function class
