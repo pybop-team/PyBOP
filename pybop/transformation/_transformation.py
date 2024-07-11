@@ -1,4 +1,4 @@
-from typing import List, Tuple, Union
+from typing import Union
 
 import numpy as np
 
@@ -43,7 +43,7 @@ class IdentityTransformation(Transformation):
         """See :meth:`Transformation.jacobian()`."""
         return np.eye(self._n_parameters)
 
-    def jacobian_S1(self, q: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def jacobian_S1(self, q: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """See :meth:`Transformation.jacobian_S1()`."""
         n = self._n_parameters
         return self.jacobian(q), np.zeros((n, n, n))
@@ -52,7 +52,7 @@ class IdentityTransformation(Transformation):
         """See :meth:`Transformation.log_jacobian_det()`."""
         return 0.0
 
-    def log_jacobian_det_S1(self, q: np.ndarray) -> Tuple[float, np.ndarray]:
+    def log_jacobian_det_S1(self, q: np.ndarray) -> tuple[float, np.ndarray]:
         """See :meth:`Transformation.log_jacobian_det_S1()`."""
         return self.log_jacobian_det(q), np.zeros(self._n_parameters)
 
@@ -102,7 +102,7 @@ class ScaledTransformation(Transformation):
         """See :meth:`Transformation.jacobian()`."""
         return np.diag(self._inverse_coeff)
 
-    def jacobian_S1(self, q: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def jacobian_S1(self, q: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """See :meth:`Transformation.jacobian_S1()`."""
         n = self._n_parameters
         return self.jacobian(q), np.zeros((n, n, n))
@@ -111,7 +111,7 @@ class ScaledTransformation(Transformation):
         """See :meth:`Transformation.log_jacobian_det()`."""
         return np.sum(np.log(np.abs(self._coefficient)))
 
-    def log_jacobian_det_S1(self, q: np.ndarray) -> Tuple[float, np.ndarray]:
+    def log_jacobian_det_S1(self, q: np.ndarray) -> tuple[float, np.ndarray]:
         """See :meth:`Transformation.log_jacobian_det_S1()`."""
         return self.log_jacobian_det(q), np.zeros(self._n_parameters)
 
@@ -164,7 +164,7 @@ class LogTransformation(Transformation):
         """See :meth:`Transformation.jacobian()`."""
         return np.diag(1 / q)
 
-    def jacobian_S1(self, q: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def jacobian_S1(self, q: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """See :meth:`Transformation.jacobian_S1()`."""
         return np.diag(1 / q), np.diag(-1 / q**2)
 
@@ -172,7 +172,7 @@ class LogTransformation(Transformation):
         """See :meth:`Transformation.log_jacobian_det()`."""
         return np.sum(-np.log(q))
 
-    def log_jacobian_det_S1(self, q: np.ndarray) -> Tuple[float, np.ndarray]:
+    def log_jacobian_det_S1(self, q: np.ndarray) -> tuple[float, np.ndarray]:
         """See :meth:`Transformation.log_jacobian_det_S1()`."""
         return self.log_jacobian_det(q), -1 / q
 
@@ -202,7 +202,7 @@ class ComposedTransformation(Transformation):
     Extends pybop.Transformation. Initially based on pints.ComposedTransformation class.
     """
 
-    def __init__(self, transformations: List[Transformation]):
+    def __init__(self, transformations: list[Transformation]):
         if not transformations:
             raise ValueError("Must have at least one sub-transformation.")
         self._transformations = []
@@ -271,7 +271,7 @@ class ComposedTransformation(Transformation):
 
         return np.diag(diag)
 
-    def jacobian_S1(self, q: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def jacobian_S1(self, q: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """See :meth:`Transformation.jacobian_S1()`."""
         q = self._verify_input(q)
         output_S1 = np.zeros(
@@ -308,7 +308,7 @@ class ComposedTransformation(Transformation):
             for lo, transformation in self._iter_transformations()
         )
 
-    def log_jacobian_det_S1(self, q: np.ndarray) -> Tuple[float, np.ndarray]:
+    def log_jacobian_det_S1(self, q: np.ndarray) -> tuple[float, np.ndarray]:
         """
         Compute the elementwise logarithm of the determinant of the Jacobian and its first-order sensitivities.
 
