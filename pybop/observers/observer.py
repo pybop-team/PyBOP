@@ -38,10 +38,14 @@ class Observer(BaseProblem):
         parameters: Parameters,
         model: BaseModel,
         check_model=True,
-        signal=["Voltage [V]"],
-        additional_variables=[],
+        signal=None,
+        additional_variables=None,
         init_soc=None,
     ) -> None:
+        if additional_variables is None:
+            additional_variables = []
+        if signal is None:
+            signal = ["Voltage [V]"]
         super().__init__(
             parameters, model, check_model, signal, additional_variables, init_soc
         )

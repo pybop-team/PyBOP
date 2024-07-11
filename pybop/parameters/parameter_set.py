@@ -1,6 +1,5 @@
 import json
 import types
-from typing import List
 
 from pybamm import LithiumIonParameters, ParameterValues, parameter_sets
 
@@ -35,7 +34,7 @@ class ParameterSet:
     def __getitem__(self, key):
         return self.params[key]
 
-    def keys(self) -> List:
+    def keys(self) -> list:
         """
         A list of parameter names
         """
@@ -67,7 +66,7 @@ class ParameterSet:
 
         # Read JSON file
         if not self.params and self.json_path:
-            with open(self.json_path, "r") as file:
+            with open(self.json_path) as file:
                 self.params = json.load(file)
         else:
             raise ValueError(
@@ -139,7 +138,7 @@ class ParameterSet:
 
         # Update parameter set
         if fit_params is not None:
-            for i, param in enumerate(fit_params):
+            for _i, param in enumerate(fit_params):
                 exportable_params.update({param.name: param.value})
 
         # Replace non-serializable values

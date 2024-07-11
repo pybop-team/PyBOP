@@ -18,7 +18,7 @@ class RootMeanSquaredError(BaseCost):
     """
 
     def __init__(self, problem):
-        super(RootMeanSquaredError, self).__init__(problem)
+        super().__init__(problem)
 
         # Default fail gradient
         self._de = 1.0
@@ -131,7 +131,7 @@ class SumSquaredError(BaseCost):
     """
 
     def __init__(self, problem):
-        super(SumSquaredError, self).__init__(problem)
+        super().__init__(problem)
 
         # Default fail gradient
         self._de = 1.0
@@ -161,7 +161,7 @@ class SumSquaredError(BaseCost):
 
         e = np.asarray(
             [
-                np.sum(((prediction[signal] - self._target[signal]) ** 2))
+                np.sum((prediction[signal] - self._target[signal]) ** 2)
                 for signal in self.signal
             ]
         )
