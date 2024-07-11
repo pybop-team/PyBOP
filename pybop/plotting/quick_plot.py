@@ -57,16 +57,16 @@ class StandardPlot:
         x,
         y,
         layout=None,
-        layout_options=DEFAULT_LAYOUT_OPTIONS.copy(),
-        trace_options=DEFAULT_TRACE_OPTIONS.copy(),
+        layout_options=DEFAULT_LAYOUT_OPTIONS,
+        trace_options=DEFAULT_TRACE_OPTIONS,
         trace_names=None,
         trace_name_width=40,
     ):
         self.x = x
         self.y = y
         self.layout = layout
-        self.layout_options = layout_options
-        self.trace_options = DEFAULT_TRACE_OPTIONS.copy()
+        self.layout_options = layout_options.copy()
+        self.trace_options = trace_options.copy()
         if trace_options is not None:
             for arg, value in trace_options.items():
                 self.trace_options[arg] = value
@@ -246,9 +246,9 @@ class StandardSubplot(StandardPlot):
         num_cols=None,
         axis_titles=None,
         layout=None,
-        layout_options=DEFAULT_LAYOUT_OPTIONS.copy(),
-        subplot_options=DEFAULT_SUBPLOT_OPTIONS.copy(),
-        trace_options=DEFAULT_SUBPLOT_TRACE_OPTIONS.copy(),
+        layout_options=DEFAULT_LAYOUT_OPTIONS,
+        subplot_options=DEFAULT_SUBPLOT_OPTIONS,
+        trace_options=DEFAULT_SUBPLOT_TRACE_OPTIONS,
         trace_names=None,
         trace_name_width=40,
     ):
@@ -267,7 +267,7 @@ class StandardSubplot(StandardPlot):
         elif self.num_cols is None:
             self.num_cols = int(math.ceil(self.num_traces / self.num_rows))
         self.axis_titles = axis_titles
-        self.subplot_options = DEFAULT_SUBPLOT_OPTIONS.copy()
+        self.subplot_options = subplot_options.copy()
         if subplot_options is not None:
             for arg, value in subplot_options.items():
                 self.subplot_options[arg] = value

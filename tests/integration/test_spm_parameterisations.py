@@ -26,12 +26,12 @@ class Test_SPM_Parameterisation:
         return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Uniform(0.4, 0.7),
-                bounds=[0.375, 0.725],
+                prior=pybop.Uniform(0.4, 0.75),
+                bounds=[0.375, 0.75],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Uniform(0.4, 0.7),
+                prior=pybop.Uniform(0.4, 0.75),
                 # no bounds
             ),
         )
@@ -87,6 +87,7 @@ class Test_SPM_Parameterisation:
             pybop.SciPyDifferentialEvolution,
             pybop.AdamW,
             pybop.CMAES,
+            pybop.CuckooSearch,
             pybop.IRPropMin,
             pybop.NelderMead,
             pybop.SNES,
@@ -99,6 +100,7 @@ class Test_SPM_Parameterisation:
         common_args = {
             "cost": spm_costs,
             "max_iterations": 250,
+            "absolute_tolerance": 1e-6,
         }
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
@@ -106,14 +108,18 @@ class Test_SPM_Parameterisation:
             self.ground_truth = np.concatenate(
                 (self.ground_truth, np.asarray([self.sigma0]))
             )
-
+        if isinstance(spm_costs, pybop.MAP):
+            for i in spm_costs.parameters.keys():
+                spm_costs.parameters[i].prior = pybop.Uniform(
+                    0.4, 2.0
+                )  # Increase range to avoid prior == np.inf
         # Set sigma0 and create optimiser
-        sigma0 = 0.01 if isinstance(spm_costs, pybop.GaussianLogLikelihood) else 0.05
+        sigma0 = 0.05 if isinstance(spm_costs, pybop.MAP) else None
         optim = optimiser(sigma0=sigma0, **common_args)
 
         # Set max unchanged iterations for BasePintsOptimisers
         if issubclass(optimiser, pybop.BasePintsOptimiser):
-            optim.set_max_unchanged_iterations(iterations=45, absolute_tolerance=1e-5)
+            optim.set_max_unchanged_iterations(iterations=55)
 
         # AdamW will use lowest sigma0 for learning rate, so allow more iterations
         if issubclass(optimiser, (pybop.AdamW, pybop.IRPropMin)) and isinstance(
