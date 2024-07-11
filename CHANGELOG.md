@@ -3,6 +3,7 @@
 ## Features
 
 - [#327](https://github.com/pybop-team/PyBOP/issues/327) - Adds the `WeightedCost` subclass, defines when to evaluate a problem and adds the `spm_weighted_cost` example script.
+- [#403](https://github.com/pybop-team/PyBOP/pull/403/) - Adds lychee link checking action.
 
 ## Bug Fixes
 

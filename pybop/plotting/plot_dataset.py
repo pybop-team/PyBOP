@@ -3,9 +3,7 @@ import sys
 from pybop import StandardPlot, plot_trajectories
 
 
-def plot_dataset(
-    dataset, signal=["Voltage [V]"], trace_names=None, show=True, **layout_kwargs
-):
+def plot_dataset(dataset, signal=None, trace_names=None, show=True, **layout_kwargs):
     """
     Quickly plot a PyBOP Dataset using Plotly.
 
@@ -31,6 +29,8 @@ def plot_dataset(
     """
 
     # Get data dictionary
+    if signal is None:
+        signal = ["Voltage [V]"]
     dataset.check(signal)
 
     # Compile ydata and labels or legend
