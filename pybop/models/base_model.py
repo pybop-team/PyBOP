@@ -126,8 +126,8 @@ class BaseModel:
         else:
             if not self.pybamm_model._built:
                 self.pybamm_model.build_model()
-            self.set_params(eis=self.eis)
 
+            self.set_params(eis=self.eis)
             self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
             self._disc = pybamm.Discretisation(
                 mesh=self.mesh,
@@ -460,8 +460,8 @@ class BaseModel:
         inputs : dict or array-like
             The input parameters for the simulation. If array-like, it will be
             converted to a dictionary using the model's fit keys.
-        t_eval : array-like
-            An array of time points at which to evaluate the solution.
+        f_eval : array-like
+            An array of frequency points at which to evaluate the solution.
 
         Returns
         -------
@@ -492,31 +492,25 @@ class BaseModel:
             zs = [self.calculate_impedance(frequency) for frequency in f_eval]
             return {"Impedance": np.asarray(zs) * self.z_scale}
 
-    def initialise_eis_simulation(self, inputs: Inputs = None):
-        # Get the mass matrix
+    def initialise_eis_simulation(self, inputs: Optional[Inputs] = None):
+        # Set mass matrix, and solver
         self.M = self._built_model.mass_matrix.entries
+        self._solver.set_up(self._built_model, inputs=inputs)
 
-        if inputs is not None:
-            casadi_inputs = (
-                casadi.vertcat(*[x for x in inputs.values()])
-                if self._built_model.convert_to_format == "casadi"
-                else inputs
-            )
+        # Convert inputs to casadi format if needed
+        casadi_inputs = (
+            casadi.vertcat(*inputs.values())
+            if inputs is not None and self._built_model.convert_to_format == "casadi"
+            else inputs or []
+        )
 
-            # Set up the solver for new inputs
-            self._solver.set_up(self._built_model, inputs=inputs)
-
-            # Extract necessary attributes from the model
-            self.y0 = self._built_model.concatenated_initial_conditions.evaluate(
-                0, inputs=inputs
-            )
-            self.J = self._built_model.jac_rhs_algebraic_eval(
-                0, self.y0, casadi_inputs
-            ).sparse()
-        else:
-            # Extract necessary attributes from the model
-            self.y0 = self._built_model.concatenated_initial_conditions.entries
-            self.J = self._built_model.jac_rhs_algebraic_eval(0, self.y0, []).sparse()
+        # Extract necessary attributes from the model
+        self.y0 = self._built_model.concatenated_initial_conditions.evaluate(
+            0, inputs=inputs
+        )
+        self.J = self._built_model.jac_rhs_algebraic_eval(
+            0, self.y0, casadi_inputs
+        ).sparse()
 
         # Convert to Compressed Sparse Column format
         self.M = csc_matrix(self.M)
@@ -679,9 +673,7 @@ class BaseModel:
                         parameter_values=parameter_set,
                     ).solve(initial_soc=init_soc)
             else:
-                raise ValueError(
-                    "This sim method currently only supports PyBaMM models"
-                )
+                raise ValueError("This method currently only supports PyBaMM models")
 
         else:
             return [np.inf]

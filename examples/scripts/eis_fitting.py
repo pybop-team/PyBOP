@@ -5,7 +5,7 @@ import pybop
 
 # Define model
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-model = pybop.lithium_ion.DFN(
+model = pybop.lithium_ion.SPM(
     parameter_set=parameter_set, options={"surface form": "differential"}
 )
 
@@ -39,33 +39,10 @@ dataset = pybop.Dataset(
 signal = ["Impedance"]
 # Generate problem, cost function, and optimisation class
 problem = pybop.EISProblem(model, parameters, dataset, signal=signal)
-prediction_1 = problem.evaluate(np.array([1.0, 60e-6]))
-prediction_2 = problem.evaluate(np.array([10.0, 40e-6]))
+prediction_1 = problem.evaluate(np.array([0.1, 50e-6]))
+prediction_2 = problem.evaluate(np.array([10, 70e-6]))
+
+# Plot
 fig = px.scatter(x=prediction_1["Impedance"].real, y=-prediction_1["Impedance"].imag)
 fig.add_scatter(x=prediction_2["Impedance"].real, y=-prediction_2["Impedance"].imag)
 fig.show()
-# cost = pybop.SumSquaredError(problem)
-# optim = pybop.CMAES(cost, max_iterations=100)
-
-# # Run the optimisation
-# x, final_cost = optim.run()
-# print("True parameters:", parameters.true_value())
-# print("Estimated parameters:", x)
-
-# # Plot the time series
-# pybop.plot_dataset(dataset)
-
-# # Plot the timeseries output
-# pybop.quick_plot(problem, problem_inputs=x, title="Optimised Comparison")
-
-# # Plot convergence
-# pybop.plot_convergence(optim)
-
-# # Plot the parameter traces
-# pybop.plot_parameters(optim)
-
-# # Plot the cost landscape
-# pybop.plot2d(cost, steps=15)
-
-# # Plot the cost landscape with optimisation path
-# pybop.plot2d(optim, steps=15)
