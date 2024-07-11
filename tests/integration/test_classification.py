@@ -84,13 +84,13 @@ class TestClassification:
             message = classify_using_Hessian(optim, optim_x)
             assert message == (
                 "The optimiser has not converged to a stationary point."
-                + " The result is near the upper bound of R0 [Ohm]."
+                " The result is near the upper bound of R0 [Ohm]."
             )
         elif np.all(x == np.asarray([0.05, 0.01])):
             message = classify_using_Hessian(optim, optim_x)
             assert message == (
                 "The optimiser has not converged to a stationary point."
-                + " The result is near the lower bound of R1 [Ohm]."
+                " The result is near the lower bound of R1 [Ohm]."
             )
         else:
             raise Exception("Please add a check for these values.")
@@ -111,6 +111,6 @@ class TestClassification:
         with pytest.raises(
             ValueError,
             match="The function classify_using_Hessian currently only works"
-            + " in the case of 2 parameters.",
+            " in the case of 2 parameters.",
         ):
             classify_using_Hessian(optim)

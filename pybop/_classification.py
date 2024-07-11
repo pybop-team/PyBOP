@@ -25,7 +25,7 @@ def classify_using_Hessian(optim, x=None, epsilon=1e-2):
     if n != 2:
         raise ValueError(
             "The function classify_using_Hessian currently only works"
-            + " in the case of 2 parameters."
+            " in the case of 2 parameters."
         )
 
     # Get a list of parameter names for use in the output message
