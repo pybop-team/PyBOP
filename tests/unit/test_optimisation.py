@@ -236,7 +236,7 @@ class TestOptimisation:
             assert optim.pints_optimiser._lambda == 0.1
 
             # Incorrect values
-            for i, match in (("Value", -1),):
+            for i, _match in (("Value", -1),):
                 with pytest.raises(
                     Exception, match="must be a numeric value between 0 and 1."
                 ):
@@ -253,7 +253,7 @@ class TestOptimisation:
             # Check defaults
             assert optim.pints_optimiser.n_hyper_parameters() == 5
             assert optim.pints_optimiser.x_guessed() == optim.pints_optimiser._x0
-            with pytest.raises(Exception):
+            with pytest.raises(RuntimeError):
                 optim.pints_optimiser.tell([0.1])
 
         else:
@@ -326,12 +326,8 @@ class TestOptimisation:
         optim = pybop.Optimisation(cost=cost)
         assert optim.name() == "Exponential Natural Evolution Strategy (xNES)"
 
-        # Test incorrect setting attribute
-        with pytest.raises(
-            AttributeError,
-            match="'Optimisation' object has no attribute 'not_a_valid_attribute'",
-        ):
-            optim.not_a_valid_attribute
+        # Test getting incorrect attribute
+        assert not hasattr(optim, "not_a_valid_attribute")
 
     @pytest.mark.unit
     def test_incorrect_optimiser_class(self, cost):

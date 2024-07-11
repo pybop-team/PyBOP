@@ -3,6 +3,7 @@
 ## Features
 
 - [#393](https://github.com/pybop-team/PyBOP/pull/383) - Adds Minkowski cost class, with example and tests
+- [#403](https://github.com/pybop-team/PyBOP/pull/403/) - Adds lychee link checking action.
 
 ## Bug Fixes
 

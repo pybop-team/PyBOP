@@ -1,12 +1,12 @@
 import warnings
 from collections import OrderedDict
-from typing import Dict, List, Union
+from typing import Union
 
 import numpy as np
 
 from pybop._utils import is_numeric
 
-Inputs = Dict[str, float]
+Inputs = dict[str, float]
 
 
 class Parameter:
@@ -219,7 +219,7 @@ class Parameters:
     def __len__(self) -> int:
         return len(self.param)
 
-    def keys(self) -> List:
+    def keys(self) -> list:
         """
         A list of parameter names
         """
@@ -245,7 +245,7 @@ class Parameters:
             if parameter.name in self.param.keys():
                 raise ValueError(
                     f"There is already a parameter with the name {parameter.name} "
-                    + "in the Parameters object. Please remove the duplicate entry."
+                    "in the Parameters object. Please remove the duplicate entry."
                 )
             self.param[parameter.name] = parameter
         elif isinstance(parameter, dict):
@@ -255,7 +255,7 @@ class Parameters:
             if name in self.param.keys():
                 raise ValueError(
                     f"There is already a parameter with the name {name} "
-                    + "in the Parameters object. Please remove the duplicate entry."
+                    "in the Parameters object. Please remove the duplicate entry."
                 )
             self.param[name] = Parameter(**parameter)
         else:
@@ -287,7 +287,7 @@ class Parameters:
             else:
                 print(f"Discarding duplicate {param.name}.")
 
-    def get_bounds(self) -> Dict:
+    def get_bounds(self) -> dict:
         """
         Get bounds, for either all or no parameters.
         """
@@ -317,12 +317,12 @@ class Parameters:
             if values is not None:
                 param.update(value=values[i])
             if bounds is not None:
-                if isinstance(bounds, Dict):
+                if isinstance(bounds, dict):
                     param.set_bounds(bounds=[bounds["lower"][i], bounds["upper"][i]])
                 else:
                     param.set_bounds(bounds=bounds[i])
 
-    def rvs(self, n_samples: int = 1) -> List:
+    def rvs(self, n_samples: int = 1) -> list:
         """
         Draw random samples from each parameter's prior distribution.
 
@@ -355,7 +355,7 @@ class Parameters:
 
         return np.concatenate(all_samples)
 
-    def get_sigma0(self) -> List:
+    def get_sigma0(self) -> list:
         """
         Get the standard deviation, for either all or no parameters.
         """
@@ -434,7 +434,7 @@ class Parameters:
 
         return bounds
 
-    def as_dict(self, values=None) -> Dict:
+    def as_dict(self, values=None) -> dict:
         """
         Parameters
         ----------
@@ -465,7 +465,7 @@ class Parameters:
         ----------
         inputs : Inputs or numeric
         """
-        if inputs is None or isinstance(inputs, Dict):
+        if inputs is None or isinstance(inputs, dict):
             return inputs
         elif (isinstance(inputs, list) and all(is_numeric(x) for x in inputs)) or all(
             is_numeric(x) for x in list(inputs)

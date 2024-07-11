@@ -1,6 +1,5 @@
 import numpy as np
-from pybamm import Interpolant, solvers
-from pybamm import t as pybamm_t
+from pybamm import solvers
 
 
 class Dataset:
@@ -77,26 +76,7 @@ class Dataset:
 
         return self.data[key]
 
-    def Interpolant(self):
-        """
-        Create an interpolation function of the dataset based on the independent variable.
-
-        Currently, only time-based interpolation is supported. This method modifies
-        the instance's Interpolant attribute to be an interpolation function that
-        can be evaluated at different points in time.
-
-        Raises
-        ------
-        NotImplementedError
-            If the independent variable for interpolation is not supported.
-        """
-
-        if self.variable == "time":
-            self.Interpolant = Interpolant(self.x, self.y, pybamm_t)
-        else:
-            NotImplementedError("Only time interpolation is supported")
-
-    def check(self, signal=["Voltage [V]"]):
+    def check(self, signal=None):
         """
         Check the consistency of a PyBOP Dataset against the expected format.
 
@@ -110,11 +90,13 @@ class Dataset:
         ValueError
             If the time series and the data series are not consistent.
         """
+        if signal is None:
+            signal = ["Voltage [V]"]
         if isinstance(signal, str):
             signal = [signal]
 
         # Check that the dataset contains time and chosen signal
-        for name in ["Time [s]"] + signal:
+        for name in ["Time [s]", *signal]:
             if name not in self.names:
                 raise ValueError(f"expected {name} in list of dataset")
 

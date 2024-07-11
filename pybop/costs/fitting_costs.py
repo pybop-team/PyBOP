@@ -18,7 +18,7 @@ class RootMeanSquaredError(BaseCost):
     """
 
     def __init__(self, problem):
-        super(RootMeanSquaredError, self).__init__(problem)
+        super().__init__(problem)
 
     def _evaluate(self, inputs: Inputs, grad=None):
         """
@@ -105,7 +105,7 @@ class SumSquaredError(BaseCost):
     """
 
     def __init__(self, problem):
-        super(SumSquaredError, self).__init__(problem)
+        super().__init__(problem)
 
     def _evaluate(self, inputs: Inputs, grad=None):
         """
@@ -131,7 +131,7 @@ class SumSquaredError(BaseCost):
 
         e = np.asarray(
             [
-                np.sum(((prediction[signal] - self._target[signal]) ** 2))
+                np.sum((prediction[signal] - self._target[signal]) ** 2)
                 for signal in self.signal
             ]
         )
@@ -175,7 +175,7 @@ class Minkowski(BaseCost):
     including Euclidean and Manhattan distances. It is defined as:
 
     .. math::
-        L_p(x, y) = (\sum_i |x_i - y_i|^p)
+        L_p(x, y) = (\\sum_i |x_i - y_i|^p)
 
     where p ≥ 1 is the order of the Minkowski metric.
 
@@ -190,11 +190,10 @@ class Minkowski(BaseCost):
 
     Attributes:
         p (float): The order of the Minkowski metric.
-
     """
 
     def __init__(self, problem, p: float = 2.0):
-        super(Minkowski, self).__init__(problem)
+        super().__init__(problem)
         if p < 0:
             raise ValueError(
                 "The order of the Minkowski metric must be greater than 0."

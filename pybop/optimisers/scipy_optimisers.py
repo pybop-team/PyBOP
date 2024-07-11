@@ -178,7 +178,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         # Compute the absolute initial cost and resample if required
         self._cost0 = np.abs(self.cost(self.x0))
         if np.isinf(self._cost0):
-            for i in range(1, self.num_resamples):
+            for _i in range(1, self.num_resamples):
                 self.x0 = self.parameters.rvs()
                 self._cost0 = np.abs(self.cost(self.x0))
                 if not np.isinf(self._cost0):

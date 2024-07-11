@@ -34,11 +34,15 @@ class DesignProblem(BaseProblem):
         parameters,
         experiment,
         check_model=True,
-        signal=["Voltage [V]"],
-        additional_variables=[],
+        signal=None,
+        additional_variables=None,
         init_soc=None,
     ):
         # Add time and current and remove duplicates
+        if additional_variables is None:
+            additional_variables = []
+        if signal is None:
+            signal = ["Voltage [V]"]
         additional_variables.extend(["Time [s]", "Current [A]"])
         additional_variables = list(set(additional_variables))
 
