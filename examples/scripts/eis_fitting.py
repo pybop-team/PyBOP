@@ -1,4 +1,5 @@
 import numpy as np
+import plotly.express as px
 
 import pybop
 
@@ -11,12 +12,12 @@ model = pybop.lithium_ion.DFN(
 # Fitting parameters
 parameters = pybop.Parameters(
     pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.6, 0.05),
+        "Positive electrode double-layer capacity [F.m-2]",
+        prior=pybop.Gaussian(0.1, 0.05),
     ),
     pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.48, 0.05),
+        "Negative electrode thickness [m]",
+        prior=pybop.Gaussian(40e-6, 0.0),
     ),
 )
 
@@ -38,9 +39,11 @@ dataset = pybop.Dataset(
 signal = ["Impedance"]
 # Generate problem, cost function, and optimisation class
 problem = pybop.EISProblem(model, parameters, dataset, signal=signal)
-prediction = problem.evaluate(np.array([0.75, 0.665]))
-# fig = px.scatter(x=prediction["Impedance"].real, y=-prediction["Impedance"].imag)
-# fig.show()
+prediction_1 = problem.evaluate(np.array([1.0, 60e-6]))
+prediction_2 = problem.evaluate(np.array([10.0, 40e-6]))
+fig = px.scatter(x=prediction_1["Impedance"].real, y=-prediction_1["Impedance"].imag)
+fig.add_scatter(x=prediction_2["Impedance"].real, y=-prediction_2["Impedance"].imag)
+fig.show()
 # cost = pybop.SumSquaredError(problem)
 # optim = pybop.CMAES(cost, max_iterations=100)
 

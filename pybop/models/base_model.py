@@ -6,7 +6,7 @@ import casadi
 import numpy as np
 import pybamm
 from scipy.sparse import csc_matrix
-from scipy.sparse.linalg import splu
+from scipy.sparse.linalg import spsolve
 
 from pybop import Dataset, Experiment, Parameters, ParameterSet, SymbolReplacer
 from pybop.parameters.parameter import Inputs
@@ -110,19 +110,9 @@ class BaseModel:
         if init_soc is not None:
             self.set_init_soc(init_soc)
 
-        if eis:
+        if self.eis:
             self.set_up_for_eis(self.pybamm_model)
             self.parameter_set["Current function [A]"] = 0
-            sim = pybamm.Simulation(
-                self.pybamm_model,
-                geometry=self.geometry,
-                parameter_values=self.parameter_set,
-                submesh_types=self.submesh_types,
-                var_pts=self.var_pts,
-                spatial_methods=self.spatial_methods,
-            )
-            sim.build()
-            self._built_model = sim.built_model
 
             V_scale = getattr(self.pybamm_model.variables["Voltage [V]"], "scale", 1)
             I_scale = getattr(self.pybamm_model.variables["Current [A]"], "scale", 1)
@@ -486,57 +476,65 @@ class BaseModel:
         inputs = self.parameters.verify(inputs)
 
         if self._built_model is None:
-            raise ValueError("Model must be built before calling simulate")
+            raise ValueError("EIS model must be built before calling simulate")
         else:
             if self.rebuild_parameters and not self.standard_parameters:
-                raise NotImplementedError
+                self.initialise_eis_simulation()
             else:
                 if self.check_params(
                     inputs=inputs,
                     allow_infeasible_solutions=self.allow_infeasible_solutions,
                 ):
-                    model = self._built_model
-                    self.inputs = (
-                        casadi.vertcat(*[x for x in inputs.values()])
-                        if model.convert_to_format == "casadi"
-                        else inputs
-                    )
-
-                    # Set up the solver for new inputs
-                    self._solver.set_up(self._built_model, inputs=inputs)
-
-                    # Extract necessary attributes from the model
-                    self.M = self._built_model.mass_matrix.entries
-                    self.y0 = self._built_model.concatenated_initial_conditions.entries
-                    self.J = self._built_model.jac_rhs_algebraic_eval(
-                        0, self.y0, []
-                    ).sparse()
-
-                    # Convert to Compressed Sparse Column format
-                    self.M = csc_matrix(self.M)
-                    self.J = csc_matrix(self.J)
-
-                    # Add forcing to the RHS on the current density
-                    self.b = np.zeros_like(self.y0)
-                    self.b[-1] = -1
-
-                    zs = []
-                    for frequency in f_eval:
-                        # Compute the system matrix
-                        A = 1.0j * 2 * np.pi * frequency * self.M - self.J
-
-                        # Factorize the matrix
-                        lu = splu(A)
-
-                        # Solve the system
-                        x = lu.solve(self.b)
-
-                        # Calculate and store the impedance
-                        z = -x[-2][0] / x[-1][0]
-                        zs.append(z)
-                    return {"Impedance": np.asarray(zs) * self.z_scale}
+                    self.initialise_eis_simulation(inputs)
                 else:
                     return {signal: [np.inf] for signal in self.signal}
+
+            zs = [self.calculate_impedance(frequency) for frequency in f_eval]
+            return {"Impedance": np.asarray(zs) * self.z_scale}
+
+    def initialise_eis_simulation(self, inputs: Inputs = None):
+        # Get the mass matrix
+        self.M = self._built_model.mass_matrix.entries
+
+        if inputs is not None:
+            casadi_inputs = (
+                casadi.vertcat(*[x for x in inputs.values()])
+                if self._built_model.convert_to_format == "casadi"
+                else inputs
+            )
+
+            # Set up the solver for new inputs
+            self._solver.set_up(self._built_model, inputs=inputs)
+
+            # Extract necessary attributes from the model
+            self.y0 = self._built_model.concatenated_initial_conditions.evaluate(
+                0, inputs=inputs
+            )
+            self.J = self._built_model.jac_rhs_algebraic_eval(
+                0, self.y0, casadi_inputs
+            ).sparse()
+        else:
+            # Extract necessary attributes from the model
+            self.y0 = self._built_model.concatenated_initial_conditions.entries
+            self.J = self._built_model.jac_rhs_algebraic_eval(0, self.y0, []).sparse()
+
+        # Convert to Compressed Sparse Column format
+        self.M = csc_matrix(self.M)
+        self.J = csc_matrix(self.J)
+
+        # Add forcing to the RHS on the current density
+        self.b = np.zeros(self.y0.shape)
+        self.b[-1] = -1
+
+    def calculate_impedance(self, frequency):
+        # Compute the system matrix
+        A = 1.0j * 2 * np.pi * frequency * self.M - self.J
+
+        # Solve the system
+        x = spsolve(A, self.b)
+
+        # Calculate the impedance
+        return -x[-2] / x[-1]
 
     def simulateS1(self, inputs: Inputs, t_eval: np.array):
         """
