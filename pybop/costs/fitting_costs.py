@@ -180,9 +180,10 @@ class Minkowski(BaseCost):
     where p ≥ 1 is the order of the Minkowski metric.
 
     Special cases:
-    - p = 1: Manhattan distance
-    - p = 2: Euclidean distance
-    - p → ∞: Chebyshev distance
+
+    * p = 1: Manhattan distance
+    * p = 2: Euclidean distance
+    * p → ∞: Chebyshev distance
 
     This class implements the Minkowski distance as a cost function for
     optimisation problems, allowing for flexible distance-based optimisation
