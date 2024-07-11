@@ -41,7 +41,7 @@ jobs:
             --exclude "https://events.mapbox.com/*|https://events.mapbox.cn/*|https://api.mapbox.cn/*"
             --exclude "https://github.com/mikolalysenko/glsl-read-float/*"
             --exclude "https://fonts.openmaptiles.org/*"
-            --exclude "https://a.tile.openstreetmap.org/*"
+            --exclude "https://a.tile.openstreetmap.org/*|https://openstreetmap.org/*"
             --exclude "https://cdn.plot.ly/*"
             --exclude "https://doi.org/*"
             --exclude-path ./CHANGELOG.md
