@@ -205,10 +205,10 @@ class WeightedCost(BaseCost):
                 self._different_problems = True
 
         if not self._different_problems:
-            super(WeightedCost, self).__init__(self.cost_list[0].problem)
+            super().__init__(self.cost_list[0].problem)
             self._fixed_problem = self.cost_list[0]._fixed_problem
         else:
-            super(WeightedCost, self).__init__()
+            super().__init__()
             self._fixed_problem = False
             for cost in self.cost_list:
                 self.parameters.join(cost.parameters)
