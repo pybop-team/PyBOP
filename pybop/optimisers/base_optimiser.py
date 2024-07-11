@@ -1,4 +1,5 @@
 import warnings
+from typing import Optional
 
 import numpy as np
 
@@ -77,8 +78,9 @@ class BaseOptimiser:
                 cost_test = cost(self.x0)
                 warnings.warn(
                     "The cost is not an instance of pybop.BaseCost, but let's continue "
-                    + "assuming that it is a callable function to be minimised.",
+                    "assuming that it is a callable function to be minimised.",
                     UserWarning,
+                    stacklevel=2,
                 )
                 self.cost = cost
                 for i, value in enumerate(self.x0):
@@ -87,8 +89,10 @@ class BaseOptimiser:
                     )
                 self.minimising = True
 
-            except Exception:
-                raise Exception("The cost is not a recognised cost object or function.")
+            except Exception as e:
+                raise Exception(
+                    "The cost is not a recognised cost object or function."
+                ) from e
 
             if not np.isscalar(cost_test) or not np.isreal(cost_test):
                 raise TypeError(
@@ -216,7 +220,7 @@ class BaseOptimiser:
         else:
             warnings.warn(
                 "Optimised parameters are not physically viable! \nConsider retrying the optimisation"
-                + " with a non-gradient-based optimiser and the option allow_infeasible_solutions=False",
+                " with a non-gradient-based optimiser and the option allow_infeasible_solutions=False",
                 UserWarning,
                 stacklevel=2,
             )
@@ -274,8 +278,8 @@ class Result:
     def __init__(
         self,
         x: np.ndarray = None,
-        final_cost: float = None,
-        n_iterations: int = None,
+        final_cost: Optional[float] = None,
+        n_iterations: Optional[int] = None,
         scipy_result=None,
     ):
         self.x = x

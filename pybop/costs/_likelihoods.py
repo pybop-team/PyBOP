@@ -1,4 +1,4 @@
-from typing import List, Tuple, Union
+from typing import Union
 
 import numpy as np
 
@@ -14,7 +14,7 @@ class BaseLikelihood(BaseCost):
     """
 
     def __init__(self, problem: BaseProblem):
-        super(BaseLikelihood, self).__init__(problem)
+        super().__init__(problem)
         self.n_time_data = problem.n_time_data
 
 
@@ -32,8 +32,8 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         per dimension.
     """
 
-    def __init__(self, problem: BaseProblem, sigma0: Union[List[float], float]):
-        super(GaussianLogLikelihoodKnownSigma, self).__init__(problem)
+    def __init__(self, problem: BaseProblem, sigma0: Union[list[float], float]):
+        super().__init__(problem)
         sigma0 = self.check_sigma0(sigma0)
         self.sigma2 = sigma0**2.0
         self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi * self.sigma2)
@@ -62,7 +62,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
 
         return e if self.n_outputs != 1 else e.item()
 
-    def _evaluateS1(self, inputs: Inputs) -> Tuple[float, np.ndarray]:
+    def _evaluateS1(self, inputs: Inputs) -> tuple[float, np.ndarray]:
         """
         Calls the problem.evaluateS1 method and calculates the log-likelihood and gradient.
         """
@@ -90,7 +90,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         if np.shape(sigma0) not in [(), (1,), (self.n_outputs,)]:
             raise ValueError(
                 "sigma0 must be either a scalar value (one standard deviation for "
-                + "all coordinates) or an array with one entry per dimension."
+                "all coordinates) or an array with one entry per dimension."
             )
         return sigma0
 
@@ -115,10 +115,10 @@ class GaussianLogLikelihood(BaseLikelihood):
     def __init__(
         self,
         problem: BaseProblem,
-        sigma0: Union[float, List[float], List[Parameter]] = 0.002,
+        sigma0: Union[float, list[float], list[Parameter]] = 0.002,
         dsigma_scale: float = 1.0,
     ):
-        super(GaussianLogLikelihood, self).__init__(problem)
+        super().__init__(problem)
         self._dsigma_scale = dsigma_scale
         self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
 
@@ -128,7 +128,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         self._dl = np.ones(self.n_parameters)
 
     def _add_sigma_parameters(self, sigma0):
-        sigma0 = [sigma0] if not isinstance(sigma0, List) else sigma0
+        sigma0 = [sigma0] if not isinstance(sigma0, list) else sigma0
         sigma0 = self._pad_sigma0(sigma0)
 
         for i, value in enumerate(sigma0):
@@ -214,7 +214,7 @@ class GaussianLogLikelihood(BaseLikelihood):
 
         return e if self.n_outputs != 1 else e.item()
 
-    def _evaluateS1(self, inputs: Inputs) -> Tuple[float, np.ndarray]:
+    def _evaluateS1(self, inputs: Inputs) -> tuple[float, np.ndarray]:
         """
         Calls the problem.evaluateS1 method and calculates the log-likelihood.
 
@@ -265,7 +265,7 @@ class MAP(BaseLikelihood):
     """
 
     def __init__(self, problem, likelihood, sigma0=None, gradient_step=1e-3):
-        super(MAP, self).__init__(problem)
+        super().__init__(problem)
         self.sigma0 = sigma0
         self.gradient_step = gradient_step
         if self.sigma0 is None:
@@ -278,7 +278,7 @@ class MAP(BaseLikelihood):
         except Exception as e:
             raise ValueError(
                 f"An error occurred when constructing the Likelihood class: {e}"
-            )
+            ) from e
 
         if hasattr(self, "likelihood") and not isinstance(
             self.likelihood, BaseLikelihood
@@ -307,7 +307,7 @@ class MAP(BaseLikelihood):
         posterior = log_likelihood + log_prior
         return posterior
 
-    def _evaluateS1(self, inputs: Inputs) -> Tuple[float, np.ndarray]:
+    def _evaluateS1(self, inputs: Inputs) -> tuple[float, np.ndarray]:
         """
         Compute the maximum a posteriori with respect to the parameters.
         The method passes the likelihood gradient to the optimiser without modification.

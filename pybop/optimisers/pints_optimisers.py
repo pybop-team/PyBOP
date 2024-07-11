@@ -272,7 +272,7 @@ class CMAES(BasePintsOptimiser):
         if len(x0) == 1 or len(cost.parameters) == 1:
             raise ValueError(
                 "CMAES requires optimisation of >= 2 parameters at once. "
-                + "Please choose another optimiser."
+                "Please choose another optimiser."
             )
         super().__init__(cost, PintsCMAES, **optimiser_kwargs)
 
