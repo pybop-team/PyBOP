@@ -27,11 +27,15 @@ class BaseProblem:
         parameters,
         model=None,
         check_model=True,
-        signal=["Voltage [V]"],
-        additional_variables=[],
+        signal=None,
+        additional_variables=None,
         init_soc=None,
     ):
         # Check if parameters is a list of pybop.Parameter objects
+        if additional_variables is None:
+            additional_variables = []
+        if signal is None:
+            signal = ["Voltage [V]"]
         if isinstance(parameters, list):
             if all(isinstance(param, Parameter) for param in parameters):
                 parameters = Parameters(*parameters)

@@ -33,11 +33,15 @@ class FittingProblem(BaseProblem):
         parameters,
         dataset,
         check_model=True,
-        signal=["Voltage [V]"],
-        additional_variables=[],
+        signal=None,
+        additional_variables=None,
         init_soc=None,
     ):
         # Add time and remove duplicates
+        if additional_variables is None:
+            additional_variables = []
+        if signal is None:
+            signal = ["Voltage [V]"]
         additional_variables.extend(["Time [s]"])
         additional_variables = list(set(additional_variables))
 
@@ -48,7 +52,7 @@ class FittingProblem(BaseProblem):
         self.parameters.initial_value()
 
         # Check that the dataset contains time and current
-        dataset.check(self.signal + ["Current function [A]"])
+        dataset.check([*self.signal, "Current function [A]"])
 
         # Unpack time and target data
         self._time_data = self._dataset["Time [s]"]

@@ -20,7 +20,7 @@ class TestDataset:
         data_dictionary = {
             "Time [s]": solution["Time [s]"].data,
             "Current [A]": solution["Current [A]"].data,
-            "Terminal voltage [V]": solution["Terminal voltage [V]"].data,
+            "Voltage [V]": solution["Voltage [V]"].data,
         }
         dataset = pybop.Dataset(data_dictionary)
 
@@ -55,4 +55,4 @@ class TestDataset:
             dataset["Time"]
 
         # Test conversion of single signal to list
-        assert dataset.check(signal="Terminal voltage [V]")
+        assert dataset.check()

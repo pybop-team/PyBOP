@@ -3,6 +3,7 @@
 ## Features
 
 - [#364](https://github.com/pybop-team/PyBOP/pull/364) - Adds the MultiFittingProblem class and the multi_fitting example script.
+- [#403](https://github.com/pybop-team/PyBOP/pull/403/) - Adds lychee link checking action.
 
 ## Bug Fixes
 

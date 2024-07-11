@@ -71,8 +71,9 @@ def plot2d(
     if len(cost.parameters) > 2:
         warnings.warn(
             "This cost function requires more than 2 parameters. "
-            + "Plotting in 2d with fixed values for the additional parameters.",
+            "Plotting in 2d with fixed values for the additional parameters.",
             UserWarning,
+            stacklevel=2,
         )
         for (
             i,
