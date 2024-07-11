@@ -130,8 +130,8 @@ class TestParameters:
         with pytest.raises(
             ValueError,
             match="There is already a parameter with the name "
-            + "Negative electrode active material volume fraction"
-            + " in the Parameters object. Please remove the duplicate entry.",
+            "Negative electrode active material volume fraction"
+            " in the Parameters object. Please remove the duplicate entry.",
         ):
             params.add(parameter)
 
@@ -158,8 +158,8 @@ class TestParameters:
         with pytest.raises(
             ValueError,
             match="There is already a parameter with the name "
-            + "Negative electrode active material volume fraction"
-            + " in the Parameters object. Please remove the duplicate entry.",
+            "Negative electrode active material volume fraction"
+            " in the Parameters object. Please remove the duplicate entry.",
         ):
             params.add(
                 dict(
