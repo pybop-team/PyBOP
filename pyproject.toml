@@ -86,7 +86,7 @@ fix = true
 [tool.ruff.lint]
 select = [
     "A",    # flake8-builtins: Check for Python builtins being used as variables or parameters
-    "B",    # flake8-bugbear: Find likely bugs and design problems in your program
+    "B",    # flake8-bugbear: Find likely bugs and design problems
     "E",    # pycodestyle errors
     "W",    # pycodestyle warnings
     "F",    # pyflakes: Detect various errors by parsing the source file
