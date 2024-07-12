@@ -51,7 +51,7 @@ class Parameter:
         self.set_bounds(bounds)
         self.margin = 1e-4
 
-    def rvs(self, n_samples, random_state=None):
+    def rvs(self, n_samples: int = 1, random_state=None):
         """
         Draw random samples from the parameter's prior distribution.
 
@@ -61,7 +61,7 @@ class Parameter:
         Parameters
         ----------
         n_samples : int
-            The number of samples to draw.
+            The number of samples to draw (default: 1).
 
         Returns
         -------
@@ -332,7 +332,7 @@ class Parameters:
         Parameters
         ----------
         n_samples : int
-            The number of samples to draw.
+            The number of samples to draw (default: 1).
 
         Returns
         -------
