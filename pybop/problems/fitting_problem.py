@@ -148,19 +148,21 @@ class MultiFittingProblem(BaseProblem):
     Extends `FittingProblem` to multiple fitting problems.
     """
 
-    def __init__(self, problem_list):
-        self.problem_list = problem_list
+    def __init__(self, *args):
+        self.problems = []
+        for problem in args:
+            self.problems.append(problem)
 
         # Compile the set of parameters, ignoring duplicates
         combined_parameters = Parameters()
-        for problem in self.problem_list:
+        for problem in self.problems:
             combined_parameters.join(problem.parameters)
 
         # Combine the target datasets
         combined_dataset = Dataset(
             {"Time [s]": np.asarray([]), "Combined signal": np.asarray([])}
         )
-        for problem in self.problem_list:
+        for problem in self.problems:
             for signal in problem.signal:
                 combined_dataset["Time [s]"] = np.concatenate(
                     (combined_dataset["Time [s]"], problem._time_data)
@@ -200,7 +202,7 @@ class MultiFittingProblem(BaseProblem):
         self.parameters.update(values=list(inputs.values()))
 
         y = {"Combined signal": np.asarray([])}
-        for problem in self.problem_list:
+        for problem in self.problems:
             problem_inputs = problem.parameters.as_dict()
             for signal in problem.signal:
                 yi = problem.evaluate(problem_inputs)
@@ -234,7 +236,7 @@ class MultiFittingProblem(BaseProblem):
 
         y = {"Combined signal": np.asarray([])}
         dy = None
-        for problem in self.problem_list:
+        for problem in self.problems:
             problem_inputs = problem.parameters.as_dict()
             for signal in problem.signal:
                 yi, dyi = problem.evaluateS1(problem_inputs)

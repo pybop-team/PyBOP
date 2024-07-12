@@ -148,7 +148,7 @@ class TestModelAndExperimentChanges:
         # Define a problem for each dataset and combine them into one
         problem_1 = pybop.FittingProblem(model_1, parameters, dataset_1)
         problem_2 = pybop.FittingProblem(model_2, parameters, dataset_2)
-        problem = pybop.MultiFittingProblem(problem_list=[problem_1, problem_2])
+        problem = pybop.MultiFittingProblem(problem_1, problem_2)
         cost = pybop.RootMeanSquaredError(problem)
 
         # Test with a gradient and non-gradient-based optimiser
