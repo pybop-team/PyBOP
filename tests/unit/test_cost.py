@@ -232,6 +232,8 @@ class TestCosts:
         # Incorrect order
         with pytest.raises(ValueError, match="The order of the Minkowski distance"):
             pybop.Minkowski(problem, p=-1)
+        with pytest.raises(ValueError, match="For p = infinity, an implementation of the Chebyshev distance is required."):
+            pybop.Minkowski(problem, p=np.inf)
 
     @pytest.mark.parametrize(
         "cost_class",
