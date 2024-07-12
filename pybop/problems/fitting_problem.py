@@ -163,12 +163,12 @@ class MultiFittingProblem(BaseProblem):
         combined_signal = []
         for problem in self.problems:
             for signal in problem.signal:
-                combined_time_data.append(problem._time_data)
-                combined_signal.append(problem._target[signal])
+                combined_time_data.extend(problem._time_data)
+                combined_signal.extend(problem._target[signal])
         combined_dataset = Dataset(
             {
-                "Time [s]": np.concatenate(combined_time_data),
-                "Combined signal": np.concatenate(combined_signal),
+                "Time [s]": np.asarray(combined_time_data),
+                "Combined signal": np.asarray(combined_signal),
             }
         )
 
@@ -202,16 +202,17 @@ class MultiFittingProblem(BaseProblem):
         inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(inputs.values()))
 
-        y = {"Combined signal": np.asarray([])}
+        combined_signal = []
+
         for problem in self.problems:
             problem_inputs = problem.parameters.as_dict()
-            for signal in problem.signal:
-                yi = problem.evaluate(problem_inputs)
-                y["Combined signal"] = np.concatenate(
-                    (y["Combined signal"], yi[signal])
-                )
+            signal_values = problem.evaluate(problem_inputs)
 
-        return y
+            # Collect signals
+            for signal in problem.signal:
+                combined_signal.extend(signal_values[signal])
+
+        return {"Combined signal": np.asarray(combined_signal)}
 
     def evaluateS1(self, inputs: Inputs):
         """
@@ -232,21 +233,19 @@ class MultiFittingProblem(BaseProblem):
         inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(inputs.values()))
 
-        # y = np.empty((self._target_length))
-        # dy = np.empty((self._target_length, self.n_parameters))
+        combined_signal = []
+        all_derivatives = []
 
-        y = {"Combined signal": np.asarray([])}
-        dy = None
         for problem in self.problems:
             problem_inputs = problem.parameters.as_dict()
+            signal_values, dyi = problem.evaluateS1(problem_inputs)
+
+            # Collect signals and derivatives
             for signal in problem.signal:
-                yi, dyi = problem.evaluateS1(problem_inputs)
-                y["Combined signal"] = np.concatenate(
-                    (y["Combined signal"], yi[signal])
-                )
-                if dy is None:
-                    dy = dyi
-                else:
-                    dy = np.concatenate((dy, dyi))
+                combined_signal.extend(signal_values[signal])
+            all_derivatives.append(dyi)
+
+        y = {"Combined signal": np.asarray(combined_signal)}
+        dy = np.concatenate(all_derivatives) if all_derivatives else None
 
         return (y, dy)
