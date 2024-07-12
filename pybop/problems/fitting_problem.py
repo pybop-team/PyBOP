@@ -19,12 +19,25 @@ class FittingProblem(BaseProblem):
         An object or list of the parameters for the problem.
     dataset : Dataset
         Dataset object containing the data to fit the model to.
+    check_model : bool, optional
+        Flag to indicate if the model should be checked (default: True).
     signal : str, optional
         The variable used for fitting (default: "Voltage [V]").
     additional_variables : List[str], optional
         Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
     init_soc : float, optional
         Initial state of charge (default: None).
+
+    Additional Attributes
+    ---------------------
+    _dataset : dictionary
+        The dictionary from a Dataset object containing the signal keys and values to fit the model to.
+    _time_data : np.ndarray
+        The time points in the dataset.
+    n_time_data : int
+        The number of time points.
+    _target : np.ndarray
+        The target values of the signals.
     """
 
     def __init__(
@@ -143,9 +156,15 @@ class FittingProblem(BaseProblem):
 
 class MultiFittingProblem(BaseProblem):
     """
-    Problem class for joining mulitple fitting problems.
+    Problem class for joining mulitple fitting problems into one combined fitting problem.
 
-    Extends `FittingProblem` to multiple fitting problems.
+    Extends `BaseProblem` in a similar way to FittingProblem but for multiple parameter
+    estimation problems, which must first be defined individually.
+
+    Additional Attributes
+    ---------------------
+    problems : List[pybop.FittingProblem]
+        A list of PyBOP fitting problems.
     """
 
     def __init__(self, *args):
