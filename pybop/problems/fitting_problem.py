@@ -148,9 +148,8 @@ class MultiFittingProblem(BaseProblem):
     Extends `FittingProblem` to multiple fitting problems.
     """
 
-    def __init__(self, problem_list, weights=None):
+    def __init__(self, problem_list):
         self.problem_list = problem_list
-        self.weights = weights
 
         # Compile the set of parameters, ignoring duplicates
         combined_parameters = Parameters()
