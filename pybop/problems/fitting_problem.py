@@ -159,17 +159,18 @@ class MultiFittingProblem(BaseProblem):
             combined_parameters.join(problem.parameters)
 
         # Combine the target datasets
-        combined_dataset = Dataset(
-            {"Time [s]": np.asarray([]), "Combined signal": np.asarray([])}
-        )
+        combined_time_data = []
+        combined_signal = []
         for problem in self.problems:
             for signal in problem.signal:
-                combined_dataset["Time [s]"] = np.concatenate(
-                    (combined_dataset["Time [s]"], problem._time_data)
-                )
-                combined_dataset["Combined signal"] = np.concatenate(
-                    (combined_dataset["Combined signal"], problem._target[signal])
-                )
+                combined_time_data.append(problem._time_data)
+                combined_signal.append(problem._target[signal])
+        combined_dataset = Dataset(
+            {
+                "Time [s]": np.concatenate(combined_time_data),
+                "Combined signal": np.concatenate(combined_signal),
+            }
+        )
 
         super().__init__(
             parameters=combined_parameters,
