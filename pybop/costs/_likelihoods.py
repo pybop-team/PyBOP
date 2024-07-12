@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 
@@ -40,7 +40,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         self._multip = -1 / (2.0 * self.sigma2)
         self._dl = np.ones(self.n_parameters)
 
-    def _evaluate(self, inputs: Inputs, grad: Union[None, np.ndarray] = None) -> float:
+    def _evaluate(self, inputs: Inputs, grad: Optional[np.ndarray] = None) -> float:
         """
         Evaluates the Gaussian log-likelihood for the given parameters with known sigma.
         """
@@ -173,7 +173,7 @@ class GaussianLogLikelihood(BaseLikelihood):
             raise ValueError("dsigma_scale must be non-negative")
         self._dsigma_scale = new_value
 
-    def _evaluate(self, inputs: Inputs, grad: Union[None, np.ndarray] = None) -> float:
+    def _evaluate(self, inputs: Inputs, grad: Optional[np.ndarray] = None) -> float:
         """
         Evaluates the Gaussian log-likelihood for the given parameters.
 

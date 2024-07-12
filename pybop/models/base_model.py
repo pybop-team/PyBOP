@@ -453,10 +453,10 @@ class BaseModel:
 
     def predict(
         self,
-        inputs: Inputs = None,
-        t_eval: np.array = None,
-        parameter_set: ParameterSet = None,
-        experiment: Experiment = None,
+        inputs: Optional[Inputs] = None,
+        t_eval: Optional[np.array] = None,
+        parameter_set: Optional[ParameterSet] = None,
+        experiment: Optional[Experiment] = None,
         init_soc: Optional[float] = None,
     ) -> dict[str, np.ndarray[np.float64]]:
         """

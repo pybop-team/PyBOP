@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 import scipy.linalg as linalg
@@ -294,7 +294,7 @@ class SquareRootUKF:
         w_m: np.ndarray,
         w_c: np.ndarray,
         sqrtR: np.ndarray,
-        states: Union[np.ndarray, None] = None,
+        states: Optional[np.ndarray] = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Performs the unscented transform
