@@ -77,7 +77,7 @@ class DesignProblem(BaseProblem):
         self._target = {key: sol[key] for key in self.signal}
         self._dataset = None
 
-    def evaluate(self, inputs: Inputs):
+    def _evaluate(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal.
 

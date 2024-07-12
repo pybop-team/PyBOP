@@ -95,7 +95,7 @@ class FittingProblem(BaseProblem):
                 init_soc=self.init_soc,
             )
 
-    def evaluate(self, inputs: Inputs):
+    def _evaluate(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal.
 
@@ -109,8 +109,6 @@ class FittingProblem(BaseProblem):
         y : np.ndarray
             The model output y(t) simulated with given inputs.
         """
-        inputs = self.parameters.verify(inputs)
-
         requires_rebuild = False
         for key, value in inputs.items():
             if key in self._model.rebuild_parameters:
@@ -126,7 +124,7 @@ class FittingProblem(BaseProblem):
 
         return y
 
-    def evaluateS1(self, inputs: Inputs):
+    def _evaluateS1(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal and its derivatives.
 
@@ -141,8 +139,6 @@ class FittingProblem(BaseProblem):
             A tuple containing the simulation result y(t) and the sensitivities dy/dx(t) evaluated
             with given inputs.
         """
-        inputs = self.parameters.verify(inputs)
-
         if self._model.rebuild_parameters:
             raise RuntimeError(
                 "Gradient not available when using geometric parameters."
@@ -206,7 +202,7 @@ class MultiFittingProblem(BaseProblem):
         self.n_time_data = len(self._time_data)
         self.set_target(combined_dataset)
 
-    def evaluate(self, inputs: Inputs):
+    def _evaluate(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal.
 
@@ -220,14 +216,13 @@ class MultiFittingProblem(BaseProblem):
         y : np.ndarray
             The model output y(t) simulated with given inputs.
         """
-        inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(inputs.values()))
 
         combined_signal = []
 
         for problem in self.problems:
             problem_inputs = problem.parameters.as_dict()
-            signal_values = problem.evaluate(problem_inputs)
+            signal_values = problem._evaluate(problem_inputs)
 
             # Collect signals
             for signal in problem.signal:
@@ -235,7 +230,7 @@ class MultiFittingProblem(BaseProblem):
 
         return {"Combined signal": np.asarray(combined_signal)}
 
-    def evaluateS1(self, inputs: Inputs):
+    def _evaluateS1(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal and its derivatives.
 
@@ -250,8 +245,6 @@ class MultiFittingProblem(BaseProblem):
             A tuple containing the simulation result y(t) and the sensitivities dy/dx(t) evaluated
             with given inputs.
         """
-
-        inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(inputs.values()))
 
         combined_signal = []
@@ -259,7 +252,7 @@ class MultiFittingProblem(BaseProblem):
 
         for problem in self.problems:
             problem_inputs = problem.parameters.as_dict()
-            signal_values, dyi = problem.evaluateS1(problem_inputs)
+            signal_values, dyi = problem._evaluateS1(problem_inputs)
 
             # Collect signals and derivatives
             for signal in problem.signal:

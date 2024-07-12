@@ -33,11 +33,11 @@ class BaseProblem:
         additional_variables: Optional[list[str]] = None,
         init_soc: Optional[float] = None,
     ):
-        # Check if parameters is a list of pybop.Parameter objects
         if additional_variables is None:
             additional_variables = []
         if signal is None:
             signal = ["Voltage [V]"]
+        # Check if parameters is a list of pybop.Parameter objects
         if isinstance(parameters, list):
             if all(isinstance(param, Parameter) for param in parameters):
                 parameters = Parameters(*parameters)
@@ -86,6 +86,24 @@ class BaseProblem:
         inputs : Inputs
             Parameters for evaluation of the model.
 
+        Returns
+        -------
+        y : np.ndarray
+            The model output y(t) simulated with inputs.
+        """
+        inputs = self.parameters.verify(inputs)
+
+        return self._evaluate(inputs)
+
+    def _evaluate(self, inputs: Inputs):
+        """
+        Evaluate the model with the given parameters and return the signal.
+
+        Parameters
+        ----------
+        inputs : Inputs
+            Parameters for evaluation of the model.
+
         Raises
         ------
         NotImplementedError
@@ -101,7 +119,27 @@ class BaseProblem:
         Parameters
         ----------
         inputs : Inputs
-             Parameters for evaluation of the model.
+            Parameters for evaluation of the model.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the simulation result y(t) and the sensitivities dy/dx(t) evaluated
+            with given inputs.
+        """
+        inputs = self.parameters.verify(inputs)
+
+        return self._evaluateS1(inputs)
+
+    def _evaluateS1(self, inputs: Inputs):
+        """
+        Evaluate the model with the given parameters and return the signal and
+        its derivatives.
+
+        Parameters
+        ----------
+        inputs : Inputs
+            Parameters for evaluation of the model.
 
         Raises
         ------
