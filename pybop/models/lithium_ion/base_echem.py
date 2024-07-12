@@ -2,7 +2,7 @@ import warnings
 
 from pybamm import lithium_ion as pybamm_lithium_ion
 
-from pybop.models.base_model import BaseModel, Inputs
+from pybop.models.base_model import BaseModel, Inputs, ParameterSet
 
 
 class EChemBaseModel(BaseModel):
@@ -85,7 +85,10 @@ class EChemBaseModel(BaseModel):
         self.geometric_parameters = self.set_geometric_parameters()
 
     def _check_params(
-        self, inputs: Inputs = None, parameter_set=None, allow_infeasible_solutions=True
+        self,
+        inputs: Inputs = None,
+        parameter_set: ParameterSet = None,
+        allow_infeasible_solutions=True,
     ):
         """
         Check compatibility of the model parameters.
@@ -94,6 +97,9 @@ class EChemBaseModel(BaseModel):
         ----------
         inputs : Inputs
             The input parameters for the simulation.
+        parameter_set : pybop.ParameterSet, optional
+            A PyBOP ParameterSet, PyBaMM ParameterValues object or a dictionary containing the
+            parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
 

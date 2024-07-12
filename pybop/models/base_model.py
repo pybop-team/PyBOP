@@ -38,21 +38,23 @@ class BaseModel:
     """
     A base class for constructing and simulating models using PyBaMM.
 
-    This class serves as a foundation for building specific models in PyBaMM.
-    It provides methods to set up the model, define parameters, and perform
-    simulations. The class is designed to be subclassed for creating models
-    with custom behaviour.
+    This class serves as a foundation for building specific models in PyBaMM. It provides
+    methods to set up the model, define parameters, and perform simulations. The class is
+    designed to be subclassed for creating models with custom behaviour.
 
     """
 
-    def __init__(self, name="Base Model", parameter_set=None):
+    def __init__(self, name: str = "Base Model", parameter_set: ParameterSet = None):
         """
-        Initialize the BaseModel with an optional name.
+        Initialize the BaseModel with an optional name and a parameter set.
 
         Parameters
         ----------
         name : str, optional
             The name given to the model instance.
+        parameter_set : pybop.ParameterSet, optional
+            A PyBOP ParameterSet, PyBaMM ParameterValues object or a dictionary containing the
+            parameter values.
         """
         self.name = name
         if parameter_set is None:
@@ -197,7 +199,7 @@ class BaseModel:
         init_soc: Optional[float] = None,
     ) -> None:
         """
-        Rebuild the PyBaMM model for a given parameter set.
+        Rebuild the PyBaMM model for a given dataset, parameters and init_soc.
 
         This method requires the self.build() method to be called first, and
         then rebuilds the model for a given parameter set. Specifically,
@@ -210,8 +212,9 @@ class BaseModel:
             The dataset to be used in the model construction.
         parameters : pybop.Parameters or Dict, optional
             A pybop Parameters class or dictionary containing parameter values to apply to the model.
-        parameter_set : pybop.parameter_set, optional
-            A PyBOP parameter set object or a dictionary containing the parameter values
+        parameter_set : pybop.ParameterSet, optional
+            A PyBOP ParameterSet, PyBaMM ParameterValues object or a dictionary containing the
+            parameter values.
         check_model : bool, optional
             If True, the model will be checked for correctness after construction.
         init_soc : float, optional
@@ -481,8 +484,8 @@ class BaseModel:
             A PyBaMM Experiment object specifying the experimental conditions under which
             the simulation should be run. Defaults to None, indicating no experiment.
         init_soc : float, optional
-            The initial state of charge for the simulation, as a fraction (between 0 and 1).
-            Defaults to None.
+            The initial state of charge for the simulation, as a decimal between 0 and 1.
+            Defaults to None, indicating that default value should be used.
 
         Returns
         -------
@@ -543,6 +546,9 @@ class BaseModel:
         ----------
         inputs : Inputs
             The input parameters for the simulation.
+        parameter_set : pybop.ParameterSet, optional
+            A PyBOP ParameterSet, PyBaMM ParameterValues object or a dictionary containing the
+            parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
@@ -555,11 +561,16 @@ class BaseModel:
         inputs = self.parameters.verify(inputs)
 
         return self._check_params(
-            inputs=inputs, allow_infeasible_solutions=allow_infeasible_solutions
+            inputs=inputs,
+            parameter_set=parameter_set,
+            allow_infeasible_solutions=allow_infeasible_solutions,
         )
 
     def _check_params(
-        self, inputs: Inputs = None, allow_infeasible_solutions: bool = True
+        self,
+        inputs: Inputs = None,
+        parameter_set: ParameterSet = None,
+        allow_infeasible_solutions: bool = True,
     ):
         """
         A compatibility check for the model parameters which can be implemented by subclasses
@@ -569,6 +580,9 @@ class BaseModel:
         ----------
         inputs : Inputs
             The input parameters for the simulation.
+        parameter_set : pybop.ParameterSet, optional
+            A PyBOP ParameterSet, PyBaMM ParameterValues object or a dictionary containing the
+            parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
@@ -598,9 +612,9 @@ class BaseModel:
 
         Parameters
         ----------
-        parameter_set : dict, optional
-            A dictionary containing the parameter values necessary for the mass
-            calculations.
+        parameter_set : pybop.ParameterSet, optional
+            A PyBOP ParameterSet, PyBaMM ParameterValues object or a dictionary containing the
+            parameter values necessary for the mass calculation.
 
         Raises
         ------

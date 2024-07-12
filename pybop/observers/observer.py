@@ -22,9 +22,9 @@ class Observer(BaseProblem):
       The model to observe.
     check_model : bool, optional
         Flag to indicate if the model should be checked (default: True).
-    signal: List[str]
+    signal: list[str]
       The signal to observe.
-    additional_variables : List[str], optional
+    additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default: []).
     init_soc : float, optional
         Initial state of charge (default: None).
@@ -37,10 +37,10 @@ class Observer(BaseProblem):
         self,
         parameters: Parameters,
         model: BaseModel,
-        check_model=True,
-        signal=None,
-        additional_variables=None,
-        init_soc=None,
+        check_model: bool = True,
+        signal: Optional[list[str]] = None,
+        additional_variables: Optional[list[str]] = None,
+        init_soc: Optional[float] = None,
     ) -> None:
         if additional_variables is None:
             additional_variables = []

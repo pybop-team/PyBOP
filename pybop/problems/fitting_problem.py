@@ -1,6 +1,8 @@
+from typing import Optional
+
 import numpy as np
 
-from pybop import BaseProblem
+from pybop import BaseModel, BaseProblem
 from pybop._dataset import Dataset
 from pybop.parameters.parameter import Inputs, Parameters
 
@@ -23,7 +25,7 @@ class FittingProblem(BaseProblem):
         Flag to indicate if the model should be checked (default: True).
     signal : str, optional
         The variable used for fitting (default: "Voltage [V]").
-    additional_variables : List[str], optional
+    additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
     init_soc : float, optional
         Initial state of charge (default: None).
@@ -42,13 +44,13 @@ class FittingProblem(BaseProblem):
 
     def __init__(
         self,
-        model,
-        parameters,
-        dataset,
-        check_model=True,
-        signal=None,
-        additional_variables=None,
-        init_soc=None,
+        model: BaseModel,
+        parameters: Parameters,
+        dataset: Dataset,
+        check_model: bool = True,
+        signal: Optional[list[str]] = None,
+        additional_variables: Optional[list[str]] = None,
+        init_soc: Optional[float] = None,
     ):
         # Add time and remove duplicates
         if additional_variables is None:
@@ -163,7 +165,7 @@ class MultiFittingProblem(BaseProblem):
 
     Additional Attributes
     ---------------------
-    problems : List[pybop.FittingProblem]
+    problems : list[pybop.FittingProblem]
         A list of PyBOP fitting problems.
     """
 

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pybop import BaseModel, Dataset, Parameter, Parameters
 from pybop.parameters.parameter import Inputs
 
@@ -14,9 +16,9 @@ class BaseProblem:
         The model to be used for the problem (default: None).
     check_model : bool, optional
         Flag to indicate if the model should be checked (default: True).
-    signal: List[str]
+    signal: list[str]
       The signal to observe.
-    additional_variables : List[str], optional
+    additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default: []).
     init_soc : float, optional
         Initial state of charge (default: None).
@@ -24,12 +26,12 @@ class BaseProblem:
 
     def __init__(
         self,
-        parameters,
-        model=None,
-        check_model=True,
-        signal=None,
-        additional_variables=None,
-        init_soc=None,
+        parameters: Parameters,
+        model: Optional[BaseModel] = None,
+        check_model: bool = True,
+        signal: Optional[list[str]] = None,
+        additional_variables: Optional[list[str]] = None,
+        init_soc: Optional[float] = None,
     ):
         # Check if parameters is a list of pybop.Parameter objects
         if additional_variables is None:
@@ -130,7 +132,7 @@ class BaseProblem:
         """
         return self._target
 
-    def set_target(self, dataset):
+    def set_target(self, dataset: Dataset):
         """
         Set the target dataset.
 

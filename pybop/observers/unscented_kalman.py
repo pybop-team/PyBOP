@@ -4,7 +4,7 @@ from typing import Optional, Union
 import numpy as np
 import scipy.linalg as linalg
 
-from pybop.models.base_model import BaseModel, Inputs
+from pybop.models.base_model import BaseModel, Dataset, Inputs
 from pybop.observers.observer import Observer
 from pybop.parameters.parameter import Parameter
 
@@ -46,11 +46,11 @@ class UnscentedKalmanFilterObserver(Observer):
         sigma0: Union[Covariance, float],
         process: Union[Covariance, float],
         measure: Union[Covariance, float],
-        dataset=None,
-        check_model=True,
-        signal=None,
-        additional_variables=None,
-        init_soc=None,
+        dataset: Optional[Dataset] = None,
+        check_model: bool = True,
+        signal: Optional[list[str]] = None,
+        additional_variables: Optional[list[str]] = None,
+        init_soc: Optional[float] = None,
     ) -> None:
         if additional_variables is None:
             additional_variables = []
@@ -258,11 +258,11 @@ class SquareRootUKF:
 
         Returns
         -------
-        List[np.ndarray]
+        list[np.ndarray]
             The sigma points
-        List[float]
+        list[float]
             The weights of the sigma points
-        List[float]
+        list[float]
             The weights of the covariance of the sigma points
         """
         # Set the scaling parameters: sigma and eta
@@ -301,7 +301,7 @@ class SquareRootUKF:
 
         Parameters
         ----------
-        sigma_points : List[SigmaPoint]
+        sigma_points : list[SigmaPoint]
             The sigma points
         sqrtR : np.ndarray
             The square root of the covariance matrix

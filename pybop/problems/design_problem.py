@@ -1,6 +1,8 @@
+from typing import Optional
+
 import numpy as np
 
-from pybop import BaseProblem
+from pybop import BaseModel, BaseProblem, Experiment, Parameters
 from pybop.parameters.parameter import Inputs
 
 
@@ -22,7 +24,7 @@ class DesignProblem(BaseProblem):
         Flag to indicate if the model parameters should be checked for feasibility each iteration (default: True).
     signal : str, optional
         The signal to fit (default: "Voltage [V]").
-    additional_variables : List[str], optional
+    additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default additions are: ["Time [s]", "Current [A]"]).
     init_soc : float, optional
         Initial state of charge (default: None).
@@ -30,13 +32,13 @@ class DesignProblem(BaseProblem):
 
     def __init__(
         self,
-        model,
-        parameters,
-        experiment,
-        check_model=True,
-        signal=None,
-        additional_variables=None,
-        init_soc=None,
+        model: BaseModel,
+        parameters: Parameters,
+        experiment: Experiment,
+        check_model: bool = True,
+        signal: Optional[list[str]] = None,
+        additional_variables: Optional[list[str]] = None,
+        init_soc: Optional[float] = None,
     ):
         # Add time and current and remove duplicates
         if additional_variables is None:
