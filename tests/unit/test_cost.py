@@ -72,11 +72,11 @@ class TestCosts:
 
     @pytest.fixture(
         params=[
-            # pybop.RootMeanSquaredError,
-            # pybop.SumSquaredError,
+            pybop.RootMeanSquaredError,
+            pybop.SumSquaredError,
             pybop.Minkowski,
-            # pybop.ObserverCost,
-            # pybop.MAP,
+            pybop.ObserverCost,
+            pybop.MAP,
         ]
     )
     def cost(self, problem, request):
