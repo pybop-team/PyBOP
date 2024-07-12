@@ -75,6 +75,7 @@ class TestCosts:
             pybop.RootMeanSquaredError,
             pybop.SumSquaredError,
             pybop.Minkowski,
+            pybop.SumofPower,
             pybop.ObserverCost,
             pybop.MAP,
         ]
@@ -85,7 +86,7 @@ class TestCosts:
             return cls(problem)
         elif cls in [pybop.MAP]:
             return cls(problem, pybop.GaussianLogLikelihoodKnownSigma)
-        elif cls in [pybop.Minkowski]:
+        elif cls in [pybop.Minkowski, pybop.SumofPower]:
             return cls(problem, p=2)
         elif cls in [pybop.ObserverCost]:
             inputs = problem.parameters.initial_value()
@@ -232,6 +233,14 @@ class TestCosts:
         # Incorrect order
         with pytest.raises(ValueError, match="The order of the Minkowski metric"):
             pybop.Minkowski(problem, p=-1)
+
+    @pytest.mark.unit
+    def test_sumofpower(self, problem):
+        # Incorrect order
+        with pytest.raises(
+            ValueError, match="The order of 'p' must be greater than 0."
+        ):
+            pybop.SumofPower(problem, p=-1)
 
     @pytest.mark.parametrize(
         "cost_class",

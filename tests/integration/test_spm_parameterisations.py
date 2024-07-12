@@ -46,6 +46,8 @@ class Test_SPM_Parameterisation:
             pybop.GaussianLogLikelihood,
             pybop.RootMeanSquaredError,
             pybop.SumSquaredError,
+            pybop.SumofPower,
+            pybop.Minkowski,
             pybop.MAP,
         ]
     )
@@ -78,6 +80,8 @@ class Test_SPM_Parameterisation:
             return cost_class(
                 problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=self.sigma0
             )
+        elif cost_class in [pybop.SumofPower, pybop.Minkowski]:
+            return cost_class(problem, p=2)
         else:
             return cost_class(problem)
 

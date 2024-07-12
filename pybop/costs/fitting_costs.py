@@ -122,7 +122,7 @@ class SumSquaredError(BaseCost):
         Returns
         -------
         float
-            The sum of squared errors.
+            The Sum of Squared Error.
         """
         prediction = self.problem.evaluate(inputs)
 
@@ -214,6 +214,100 @@ class Minkowski(BaseCost):
         -------
         float
             The Minkowski cost.
+        """
+        prediction = self.problem.evaluate(inputs)
+        if not self.verify_prediction(prediction):
+            return np.inf
+
+        e = np.asarray(
+            [
+                np.sum(np.abs(prediction[signal] - self._target[signal]) ** self.p)
+                for signal in self.signal
+            ]
+        )
+
+        return e.item() if self.n_outputs == 1 else np.sum(e)
+
+    def _evaluateS1(self, inputs):
+        """
+        Compute the cost and its gradient with respect to the parameters.
+
+        Parameters
+        ----------
+        inputs : Inputs
+            The parameters for which to compute the cost and gradient.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the cost and the gradient. The cost is a float,
+            and the gradient is an array-like of the same length as `inputs`.
+
+        Raises
+        ------
+        ValueError
+            If an error occurs during the calculation of the cost or gradient.
+        """
+        y, dy = self.problem.evaluateS1(inputs)
+        if not self.verify_prediction(y):
+            return np.inf, self._de * np.ones(self.n_parameters)
+
+        r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
+        e = np.sum(np.sum(np.abs(r) ** self.p))
+        de = self.p * np.sum(np.sum(r ** (self.p - 1) * dy.T, axis=2), axis=1)
+
+        return e, de
+
+
+class SumofPower(BaseCost):
+    """
+    The Sum of Power [1] is a generalised cost function based on the p-th power
+    of absolute differences between two vectors. It is defined as:
+
+    .. math::
+        C_p(x, y) = \\sum_i |x_i - y_i|^p
+
+    where p ≥ 1 is the power order.
+
+    This class implements the Sum of Power as a cost function for
+    optimisation problems, allowing for flexible power-based optimisation
+    across various problem domains.
+
+    Special cases:
+
+    * p = 1: Sum of Absolute Differences
+    * p = 2: Sum of Squared Differences
+    * p → ∞: Maximum Absolute Difference
+
+    Note that this is not normalised, unlike distance metrics. To get a
+    distance metric, you would need to take the p-th root of the result.
+
+    [1]: https://mathworld.wolfram.com/PowerSum.html
+
+    Attributes:
+        p : float, optional
+            The power order for Sum of Power.
+    """
+
+    def __init__(self, problem, p: float = 2.0):
+        super().__init__(problem)
+        if p < 0:
+            raise ValueError("The order of 'p' must be greater than 0.")
+        self.p = p
+
+    def _evaluate(self, inputs: Inputs, grad=None):
+        """
+        Calculate the Sum of Power cost for a given set of parameters.
+
+        Parameters
+        ----------
+        inputs : Inputs
+            The parameters for which to compute the cost and gradient.
+
+        Returns
+        -------
+        float
+            The Sum of Power cost.
         """
         prediction = self.problem.evaluate(inputs)
         if not self.verify_prediction(prediction):
