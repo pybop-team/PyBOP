@@ -44,7 +44,9 @@ class BaseModel:
 
     """
 
-    def __init__(self, name: str = "Base Model", parameter_set: ParameterSet = None):
+    def __init__(
+        self, name: str = "Base Model", parameter_set: Optional[ParameterSet] = None
+    ):
         """
         Initialize the BaseModel with an optional name and a parameter set.
 
@@ -55,6 +57,22 @@ class BaseModel:
         parameter_set : pybop.ParameterSet, optional
             A PyBOP ParameterSet, PyBaMM ParameterValues object or a dictionary containing the
             parameter values.
+
+        Additional Attributes
+        ---------------------
+        parameters : pybop.Parameters
+            The input parameters.
+        output_variables : list[str], optional
+            A list of names of variables to include in the solution object.
+        rebuild_parameters : dict
+            A list of parameters which require the model to be rebuilt (default: {}).
+        standard_parameters : dict
+            A list of standard (i.e. not rebuild) parameters (default: {}).
+        param_check_counter : int
+            A counter for the number of parameter checks (default: 0).
+        allow_infeasible_solutions : bool, optional
+            If True, parameter values will be simulated whether or not they are feasible
+            (default: True).
         """
         self.name = name
         if parameter_set is None:
@@ -67,7 +85,6 @@ class BaseModel:
             self._parameter_set = pybamm.ParameterValues(parameter_set.params)
 
         self.parameters = Parameters()
-        self.dataset = None
         self.output_variables = ["Time [s]", "Current [A]", "Voltage [V]"]
         self.rebuild_parameters = {}
         self.standard_parameters = {}
@@ -76,7 +93,7 @@ class BaseModel:
 
     def build(
         self,
-        dataset: Dataset = None,
+        dataset: Optional[Dataset] = None,
         parameters: Union[Parameters, dict] = None,
         check_model: bool = True,
         init_soc: Optional[float] = None,
@@ -99,7 +116,6 @@ class BaseModel:
         init_soc : float, optional
             The initial state of charge to be used in simulations.
         """
-        self.dataset = dataset
         if parameters is not None:
             self.parameters = parameters
             self.classify_and_update_parameters(self.parameters)
@@ -117,7 +133,7 @@ class BaseModel:
         else:
             if not self.pybamm_model._built:
                 self.pybamm_model.build_model()
-            self.set_params()
+            self.set_params(dataset=dataset)
 
             self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
             self._disc = pybamm.Discretisation(self.mesh, self.spatial_methods)
@@ -155,7 +171,7 @@ class BaseModel:
         # Save solved initial SOC in case we need to rebuild the model
         self._built_initial_soc = init_soc
 
-    def set_params(self, rebuild=False):
+    def set_params(self, rebuild=False, dataset=None):
         """
         Assign the parameters to the model.
 
@@ -169,14 +185,14 @@ class BaseModel:
         for key in self.standard_parameters.keys():
             self._parameter_set[key] = "[input]"
 
-        if self.dataset is not None and (not self.rebuild_parameters or not rebuild):
+        if dataset is not None and (not self.rebuild_parameters or not rebuild):
             if (
                 self.parameters is None
                 or "Current function [A]" not in self.parameters.keys()
             ):
                 self._parameter_set["Current function [A]"] = pybamm.Interpolant(
-                    self.dataset["Time [s]"],
-                    self.dataset["Current function [A]"],
+                    dataset["Time [s]"],
+                    dataset["Current function [A]"],
                     pybamm.t,
                 )
                 # Set t_eval
@@ -191,9 +207,9 @@ class BaseModel:
 
     def rebuild(
         self,
-        dataset: Dataset = None,
+        dataset: Optional[Dataset] = None,
         parameters: Union[Parameters, dict] = None,
-        parameter_set: ParameterSet = None,
+        parameter_set: Optional[ParameterSet] = None,
         check_model: bool = True,
         init_soc: Optional[float] = None,
     ) -> None:
@@ -219,8 +235,6 @@ class BaseModel:
         init_soc : float, optional
             The initial state of charge to be used in simulations.
         """
-        self.dataset = dataset
-
         if parameters is not None:
             self.classify_and_update_parameters(parameters)
 
@@ -230,7 +244,7 @@ class BaseModel:
         if self._built_model is None:
             raise ValueError("Model must be built before calling rebuild")
 
-        self.set_params(rebuild=True)
+        self.set_params(rebuild=True, dataset=dataset)
         self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
         self._disc = pybamm.Discretisation(self.mesh, self.spatial_methods)
         self._built_model = self._disc.process_model(
@@ -588,8 +602,8 @@ class BaseModel:
 
     def check_params(
         self,
-        inputs: Inputs = None,
-        parameter_set: ParameterSet = None,
+        inputs: Optional[Inputs] = None,
+        parameter_set: Optional[ParameterSet] = None,
         allow_infeasible_solutions: bool = True,
     ):
         """
@@ -621,8 +635,8 @@ class BaseModel:
 
     def _check_params(
         self,
-        inputs: Inputs = None,
-        parameter_set: ParameterSet = None,
+        inputs: Optional[Inputs] = None,
+        parameter_set: Optional[ParameterSet] = None,
         allow_infeasible_solutions: bool = True,
     ):
         """
@@ -657,7 +671,7 @@ class BaseModel:
         """
         return copy.copy(self)
 
-    def cell_mass(self, parameter_set: ParameterSet = None):
+    def cell_mass(self, parameter_set: Optional[ParameterSet] = None):
         """
         Calculate the cell mass in kilograms.
 
@@ -676,7 +690,7 @@ class BaseModel:
         """
         raise NotImplementedError
 
-    def cell_volume(self, parameter_set: ParameterSet = None):
+    def cell_volume(self, parameter_set: Optional[ParameterSet] = None):
         """
         Calculate the cell volume in m3.
 

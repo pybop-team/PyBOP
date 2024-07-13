@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pybop.models.base_model import BaseModel, Inputs, ParameterSet
 
 
@@ -87,9 +89,9 @@ class ECircuitModel(BaseModel):
 
     def _check_params(
         self,
-        inputs: Inputs = None,
-        parameter_set: ParameterSet = None,
-        allow_infeasible_solutions=True,
+        inputs: Optional[Inputs] = None,
+        parameter_set: Optional[ParameterSet] = None,
+        allow_infeasible_solutions: bool = True,
     ):
         """
         Check the compatibility of the model parameters.
