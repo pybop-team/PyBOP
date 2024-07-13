@@ -68,8 +68,7 @@ class BaseModel:
 
         self.parameters = Parameters()
         self.dataset = None
-        self.signal = None
-        self.additional_variables = []
+        self.output_variables = ["Time [s]", "Current [A]", "Voltage [V]"]
         self.rebuild_parameters = {}
         self.standard_parameters = {}
         self.param_check_counter = 0
@@ -326,7 +325,7 @@ class BaseModel:
         """
         dt = time - state.t
         new_sol = self._solver.step(
-            state.sol, self.built_model, dt, npts=2, inputs=state.inputs, save=False
+            state.sol, self._built_model, dt, npts=2, inputs=state.inputs, save=False
         )
         return TimeSeriesState(sol=new_sol, inputs=state.inputs, t=time)
 
@@ -345,21 +344,49 @@ class BaseModel:
 
         Returns
         -------
-        array-like
-            The simulation result corresponding to the specified signal.
+        dict
+            The simulation result for the specified output variables.
+        """
+        inputs = self.parameters.verify(inputs)
+
+        return self._simulate(
+            inputs=inputs, t_eval=t_eval, output_variables=self.output_variables
+        )
+
+    def _simulate(
+        self,
+        inputs: Inputs,
+        t_eval: np.array,
+        output_variables: Optional[list[str]] = None,
+    ) -> dict[str, np.ndarray[np.float64]]:
+        """
+        Execute the forward model simulation and return the result.
+
+        Parameters
+        ----------
+        inputs : Inputs
+            The input parameters for the simulation.
+        t_eval : array-like
+            An array of time points at which to evaluate the solution.
+        output_variables : list[str], optional
+            A list of names of variables to include in the solution object.
+
+        Returns
+        -------
+        pybamm.Solution or [np.inf]
+            The solution object returned by a PyBaMM simulation, or [np.inf] in the case where
+            the parameter values are infeasible and infeasible solutions are not allowed.
 
         Raises
         ------
         ValueError
             If the model has not been built before simulation.
         """
-        inputs = self.parameters.verify(inputs)
-
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
         else:
             if self.rebuild_parameters and not self.standard_parameters:
-                sol = self.solver.solve(self.built_model, t_eval=t_eval)
+                sol = self.solver.solve(self._built_model, t_eval=t_eval)
 
             else:
                 if self.check_params(
@@ -368,20 +395,15 @@ class BaseModel:
                 ):
                     try:
                         sol = self.solver.solve(
-                            self.built_model, inputs=inputs, t_eval=t_eval
+                            self._built_model, inputs=inputs, t_eval=t_eval
                         )
                     except Exception as e:
                         print(f"Error: {e}")
-                        return {signal: [np.inf] for signal in self.signal}
+                        return {var: [np.inf] for var in output_variables}
                 else:
-                    return {signal: [np.inf] for signal in self.signal}
+                    return {var: [np.inf] for var in output_variables}
 
-            y = {
-                signal: sol[signal].data
-                for signal in (self.signal + self.additional_variables)
-            }
-
-            return y
+            return {var: sol[var].data for var in output_variables}
 
     def simulateS1(self, inputs: Inputs, t_eval: np.array):
         """
@@ -397,15 +419,45 @@ class BaseModel:
 
         Returns
         -------
-        tuple
-            A tuple containing the simulation result and the sensitivities.
+        tuple[dict, np.ndarray]
+            A tuple containing the simulation result as a dictionary and the sensitivities.
+        """
+        inputs = self.parameters.verify(inputs)
+
+        return self._simulateS1(
+            inputs=inputs, t_eval=t_eval, output_variables=self.output_variables
+        )
+
+    def _simulateS1(
+        self,
+        inputs: Inputs,
+        t_eval: np.array,
+        output_variables: Optional[list[str]] = None,
+    ):
+        """
+        Perform the forward model simulation with sensitivities.
+
+        Parameters
+        ----------
+        inputs : Inputs
+            The input parameters for the simulation.
+        t_eval : array-like
+            An array of time points at which to evaluate the solution and its
+            sensitivities.
+        output_variables : list[str], optional
+            A list of names of variables to include in the solution object.
+
+        Returns
+        -------
+        tuple[pybamm.Solution, np.ndarray]
+            A tuple containing the simulation result as a PyBaMM solution object (or
+            [np.inf] in the case of infeasible parameters) and the sensitivities.
 
         Raises
         ------
         ValueError
             If the model has not been built before simulation.
         """
-        inputs = self.parameters.verify(inputs)
 
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
@@ -421,38 +473,38 @@ class BaseModel:
             ):
                 try:
                     sol = self._solver.solve(
-                        self.built_model,
+                        self._built_model,
                         inputs=inputs,
                         t_eval=t_eval,
                         calculate_sensitivities=True,
                     )
-                    y = {signal: sol[signal].data for signal in self.signal}
 
-                    # Extract the sensitivities and stack them along a new axis for each signal
+                    # Extract the sensitivities and stack them along a new axis for each variable
                     dy = np.empty(
                         (
-                            sol[self.signal[0]].data.shape[0],
+                            sol[output_variables[0]].data.shape[0],
                             self.n_outputs,
                             self._n_parameters,
                         )
                     )
 
-                    for i, signal in enumerate(self.signal):
+                    for i, var in enumerate(output_variables):
                         dy[:, i, :] = np.stack(
                             [
-                                sol[signal].sensitivities[key].toarray()[:, 0]
+                                sol[var].sensitivities[key].toarray()[:, 0]
                                 for key in self.parameters.keys()
                             ],
                             axis=-1,
                         )
 
-                    return y, dy
                 except Exception as e:
                     print(f"Error: {e}")
-                    return {signal: [np.inf] for signal in self.signal}, [np.inf]
+                    return {var: [np.inf] for var in output_variables}, [np.inf]
 
             else:
-                return {signal: [np.inf] for signal in self.signal}, [np.inf]
+                return {var: [np.inf] for var in output_variables}, [np.inf]
+
+            return {var: sol[var].data for var in output_variables}, np.asarray(dy)
 
     def predict(
         self,
@@ -489,8 +541,9 @@ class BaseModel:
 
         Returns
         -------
-        pybamm.Solution
-            The solution object returned after solving the simulation.
+        pybamm.Solution or [np.inf]
+            The solution object returned by a PyBaMM simulation, or [np.inf] in the case where
+            the parameter values are infeasible and infeasible solutions are not allowed.
 
         Raises
         ------

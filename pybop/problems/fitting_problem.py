@@ -26,7 +26,7 @@ class FittingProblem(BaseProblem):
     signal : str, optional
         The variable used for fitting (default: "Voltage [V]").
     additional_variables : list[str], optional
-        Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
+        Additional variables to observe and store in the solution (default: []).
     init_soc : float, optional
         Initial state of charge (default: None).
 
@@ -52,13 +52,8 @@ class FittingProblem(BaseProblem):
         additional_variables: Optional[list[str]] = None,
         init_soc: Optional[float] = None,
     ):
-        # Add time and remove duplicates
-        if additional_variables is None:
-            additional_variables = []
         if signal is None:
             signal = ["Voltage [V]"]
-        additional_variables.extend(["Time [s]"])
-        additional_variables = list(set(additional_variables))
 
         super().__init__(
             parameters, model, check_model, signal, additional_variables, init_soc
@@ -66,7 +61,7 @@ class FittingProblem(BaseProblem):
         self._dataset = dataset.data
         self.parameters.initial_value()
 
-        # Check that the dataset contains time and current
+        # Check that the dataset contains necessary variables
         dataset.check([*self.signal, "Current function [A]"])
 
         # Unpack time and target data
@@ -76,8 +71,6 @@ class FittingProblem(BaseProblem):
 
         # Add useful parameters to model
         if model is not None:
-            self._model.signal = self.signal
-            self._model.additional_variables = self.additional_variables
             self._model.n_outputs = self.n_outputs
             self._model.n_time_data = self.n_time_data
 
@@ -120,9 +113,9 @@ class FittingProblem(BaseProblem):
         if requires_rebuild:
             self._model.rebuild(parameters=self.parameters)
 
-        y = self._model.simulate(inputs=inputs, t_eval=self._time_data)
-
-        return y
+        return self._model._simulate(
+            inputs=inputs, t_eval=self._time_data, output_variables=self.variables
+        )
 
     def _evaluateS1(self, inputs: Inputs):
         """
@@ -144,12 +137,9 @@ class FittingProblem(BaseProblem):
                 "Gradient not available when using geometric parameters."
             )
 
-        y, dy = self._model.simulateS1(
-            inputs=inputs,
-            t_eval=self._time_data,
+        return self._model._simulateS1(
+            inputs=inputs, t_eval=self._time_data, output_variables=self.variables
         )
-
-        return (y, np.asarray(dy))
 
 
 class MultiFittingProblem(BaseProblem):

@@ -40,22 +40,14 @@ class DesignProblem(BaseProblem):
         additional_variables: Optional[list[str]] = None,
         init_soc: Optional[float] = None,
     ):
-        # Add time and current and remove duplicates
-        if additional_variables is None:
-            additional_variables = []
-        if signal is None:
-            signal = ["Voltage [V]"]
-        additional_variables.extend(["Time [s]", "Current [A]"])
-        additional_variables = list(set(additional_variables))
-
         super().__init__(
-            parameters,
-            model,
-            check_model,
-            signal,
-            additional_variables,
-            init_soc,
+            parameters, model, check_model, signal, additional_variables, init_soc
         )
+
+        # Add time and current as additional variables and remove duplicates
+        self.variables.extend(["Time [s]", "Current [A]"])
+        self.variables = list(set(self.variables))
+
         self.experiment = experiment
 
         # Build the model if required
@@ -91,8 +83,6 @@ class DesignProblem(BaseProblem):
         y : np.ndarray
             The model output y(t) simulated with inputs.
         """
-        inputs = self.parameters.verify(inputs)
-
         sol = self._model.predict(
             inputs=inputs,
             experiment=self.experiment,
@@ -100,11 +90,7 @@ class DesignProblem(BaseProblem):
         )
 
         if sol == [np.inf]:
-            return sol
+            return {var: [np.inf] for var in self.variables}
 
         else:
-            predictions = {}
-            for signal in self.signal + self.additional_variables:
-                predictions[signal] = sol[signal].data
-
-        return predictions
+            return {var: sol[var].data for var in self.variables}

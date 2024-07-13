@@ -51,8 +51,6 @@ class Observer(BaseProblem):
         )
         if model._built_model is None:
             raise ValueError("Only built models can be used in Observers")
-        if model.signal is None:
-            model.signal = self.signal
 
         inputs = self.parameters.as_dict("initial")
         self._state = model.reinit(inputs)

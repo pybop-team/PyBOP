@@ -287,7 +287,7 @@ class TestModels:
         y0 = 1
         model = ExponentialDecay(pybamm.ParameterValues({"k": k, "y0": y0}))
         model.build()
-        model.signal = ["y_0"]
+        model.output_variables = ["y_0"]
         inputs = {}
         t_eval = np.linspace(0, 10, 100)
         expected = y0 * np.exp(-k * t_eval)

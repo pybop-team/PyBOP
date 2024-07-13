@@ -22,6 +22,11 @@ class BaseProblem:
         Additional variables to observe and store in the solution (default: []).
     init_soc : float, optional
         Initial state of charge (default: None).
+
+    Attributes
+    ----------
+    variables: list[str]
+        A list of variable names for the signal and additional variables.
     """
 
     def __init__(
@@ -33,10 +38,9 @@ class BaseProblem:
         additional_variables: Optional[list[str]] = None,
         init_soc: Optional[float] = None,
     ):
-        if additional_variables is None:
-            additional_variables = []
         if signal is None:
             signal = ["Voltage [V]"]
+
         # Check if parameters is a list of pybop.Parameter objects
         if isinstance(parameters, list):
             if all(isinstance(param, Parameter) for param in parameters):
@@ -63,15 +67,14 @@ class BaseProblem:
         elif not all(isinstance(item, str) for item in signal):
             raise ValueError("Signal should be either a string or list of strings.")
         self.signal = signal
+        self.variables = self.signal.copy()
+        if additional_variables is not None:
+            self.variables.extend(additional_variables)
+            self.variables = list(set(self.variables))
         self.init_soc = init_soc
         self.n_outputs = len(self.signal)
         self._time_data = None
         self._target = None
-
-        if isinstance(model, BaseModel):
-            self.additional_variables = additional_variables
-        else:
-            self.additional_variables = []
 
     @property
     def n_parameters(self):
