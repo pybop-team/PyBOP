@@ -313,7 +313,9 @@ class SumofPower(BaseCost):
         super().__init__(problem)
         if p < 0:
             raise ValueError("The order of 'p' must be greater than 0.")
-        self.p = p
+        elif not np.isfinite(p):
+            raise ValueError("p = np.inf is not yet supported.")
+        self.p = float(p)
 
     def _evaluate(self, inputs: Inputs, grad=None):
         """

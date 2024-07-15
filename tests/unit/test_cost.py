@@ -240,12 +240,15 @@ class TestCosts:
             pybop.Minkowski(problem, p=np.inf)
 
     @pytest.mark.unit
-    def test_sumofpower(self, problem):
+    def test_SumofPower(self, problem):
         # Incorrect order
         with pytest.raises(
             ValueError, match="The order of 'p' must be greater than 0."
         ):
             pybop.SumofPower(problem, p=-1)
+
+        with pytest.raises(ValueError, match="p = np.inf is not yet supported."):
+            pybop.SumofPower(problem, p=np.inf)
 
     @pytest.mark.parametrize(
         "cost_class",
