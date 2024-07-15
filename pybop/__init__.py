@@ -85,6 +85,8 @@ from .costs.base_cost import BaseCost
 from .costs.fitting_costs import (
     RootMeanSquaredError,
     SumSquaredError,
+    Minkowski,
+    SumofPower,
     ObserverCost,
 )
 from .costs.design_costs import (
