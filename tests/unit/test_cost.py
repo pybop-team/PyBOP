@@ -41,13 +41,13 @@ class TestCosts:
 
     @pytest.fixture
     def dataset(self, model, experiment, ground_truth):
-        model.parameter_set = model.pybamm_model.default_parameter_values
-        model.parameter_set.update(
+        parameter_set = model.pybamm_model.default_parameter_values.copy()
+        parameter_set.update(
             {
                 "Negative electrode active material volume fraction": ground_truth,
             }
         )
-        solution = model.predict(experiment=experiment)
+        solution = model.predict(experiment=experiment, parameter_set=parameter_set)
         return pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -63,11 +63,10 @@ class TestCosts:
     @pytest.fixture(params=[2.5, 3.777])
     def problem(self, model, parameters, dataset, signal, request):
         cut_off = request.param
-        model.parameter_set.update({"Lower voltage cut-off [V]": cut_off})
+        model._parameter_set.update({"Lower voltage cut-off [V]": cut_off})
         problem = pybop.FittingProblem(
             model, parameters, dataset, signal=signal, init_soc=1.0
         )
-        problem.dataset = dataset  # add this to pass the pybop dataset to cost
         return problem
 
     @pytest.fixture(
@@ -78,7 +77,7 @@ class TestCosts:
             pybop.MAP,
         ]
     )
-    def cost(self, problem, request):
+    def cost(self, problem, dataset, request):
         cls = request.param
         if cls in [pybop.SumSquaredError, pybop.RootMeanSquaredError]:
             return cls(problem)
@@ -89,21 +88,20 @@ class TestCosts:
             state = problem._model.reinit(inputs)
             n = len(state)
             sigma_diag = [0.0] * n
-            sigma_diag[0] = 1e-4
-            sigma_diag[1] = 1e-4
+            sigma_diag[0] = 1e-5
+            sigma_diag[1] = 1e-5
             process_diag = [0.0] * n
-            process_diag[0] = 1e-4
-            process_diag[1] = 1e-4
+            process_diag[0] = 1e-5
+            process_diag[1] = 1e-5
             sigma0 = np.diag(sigma_diag)
             process = np.diag(process_diag)
-            dataset = problem.dataset
             return cls(
                 pybop.UnscentedKalmanFilterObserver(
                     problem.parameters,
                     problem._model,
                     sigma0=sigma0,
                     process=process,
-                    measure=1e-4,
+                    measure=1e-5,
                     dataset=dataset,
                     signal=problem.signal,
                 ),
