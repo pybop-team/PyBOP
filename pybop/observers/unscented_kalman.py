@@ -52,10 +52,6 @@ class UnscentedKalmanFilterObserver(Observer):
         additional_variables: Optional[list[str]] = None,
         init_soc: Optional[float] = None,
     ) -> None:
-        if additional_variables is None:
-            additional_variables = []
-        if signal is None:
-            signal = ["Voltage [V]"]
         super().__init__(
             parameters, model, check_model, signal, additional_variables, init_soc
         )
@@ -68,12 +64,6 @@ class UnscentedKalmanFilterObserver(Observer):
             self._time_data = self._dataset["Time [s]"]
             self.n_time_data = len(self._time_data)
             self._target = {signal: self._dataset[signal] for signal in self.signal}
-
-        # Add useful parameters to model
-        if model is not None:
-            self._model.n_outputs = self.n_outputs
-            if dataset is not None:
-                self._model.n_time_data = self.n_time_data
 
         # Observer initiation
         self._process = process
@@ -117,7 +107,7 @@ class UnscentedKalmanFilterObserver(Observer):
         super().reset(inputs)
         self._ukf.reset(self.get_current_state().as_ndarray(), self._sigma0)
 
-    def observe(self, time: float, value: np.ndarray) -> float:
+    def observe(self, time: float, value: Optional[np.ndarray]) -> float:
         if value is None:
             raise ValueError("Measurement must be provided.")
         elif isinstance(value, np.floating):

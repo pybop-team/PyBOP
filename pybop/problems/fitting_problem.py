@@ -52,9 +52,6 @@ class FittingProblem(BaseProblem):
         additional_variables: Optional[list[str]] = None,
         init_soc: Optional[float] = None,
     ):
-        if signal is None:
-            signal = ["Voltage [V]"]
-
         super().__init__(
             parameters, model, check_model, signal, additional_variables, init_soc
         )
@@ -69,18 +66,9 @@ class FittingProblem(BaseProblem):
         self.n_time_data = len(self._time_data)
         self.set_target(dataset)
 
-        # Add useful parameters to model
         if model is not None:
-            self._model.n_outputs = self.n_outputs
-            self._model.n_time_data = self.n_time_data
-
             # Build the model from scratch
-            if self._model._built_model is not None:
-                self._model._model_with_set_params = None
-                self._model._built_model = None
-                self._model._built_initial_soc = None
-                self._model._mesh = None
-                self._model._disc = None
+            self._model.reset()
             self._model.build(
                 dataset=self._dataset,
                 parameters=self.parameters,

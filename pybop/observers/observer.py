@@ -42,10 +42,6 @@ class Observer(BaseProblem):
         additional_variables: Optional[list[str]] = None,
         init_soc: Optional[float] = None,
     ) -> None:
-        if additional_variables is None:
-            additional_variables = []
-        if signal is None:
-            signal = ["Voltage [V]"]
         super().__init__(
             parameters, model, check_model, signal, additional_variables, init_soc
         )
@@ -53,14 +49,9 @@ class Observer(BaseProblem):
             raise ValueError("Only built models can be used in Observers")
 
         inputs = self.parameters.as_dict("initial")
-        self._state = model.reinit(inputs)
-        self._model = model
-        self._signal = self.signal
-        self._n_outputs = len(self._signal)
+        self._state = self._model.reinit(inputs)
 
     def reset(self, inputs: Inputs) -> None:
-        inputs = self.parameters.verify(inputs)
-
         self._state = self._model.reinit(inputs)
 
     def observe(self, time: float, value: Optional[np.ndarray] = None) -> float:
@@ -99,12 +90,13 @@ class Observer(BaseProblem):
         """
         inputs = self.parameters.verify(inputs)
 
-        if self._n_outputs == 1:
-            signal = self._signal[0]
+        self.reset(inputs)
+
+        if self.n_outputs == 1:
+            signal = self.signal[0]
             if len(values[signal]) != len(times):
                 raise ValueError("values and times must have the same length.")
             log_likelihood = 0.0
-            self.reset(inputs)
             for t, v in zip(times, values[signal]):
                 try:
                     log_likelihood += self.observe(t, v)
@@ -136,7 +128,7 @@ class Observer(BaseProblem):
         return np.zeros((n, n))
 
     def get_measure(self, x: TimeSeriesState) -> np.ndarray:
-        measures = [x.sol[s].data[-1] for s in self._signal]
+        measures = [x.sol[s].data[-1] for s in self.signal]
         return np.asarray([[m] for m in measures])
 
     def get_current_time(self) -> float:
@@ -145,7 +137,7 @@ class Observer(BaseProblem):
         """
         return self._state.t
 
-    def evaluate(self, inputs: Inputs):
+    def _evaluate(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal.
 
@@ -164,14 +156,14 @@ class Observer(BaseProblem):
         output = {}
         ys = []
         if hasattr(self, "_dataset"):
-            for signal in self._signal:
+            for signal in self.signal:
                 ym = self._target[signal]
                 for i, t in enumerate(self._time_data):
                     self.observe(t, ym[i])
                     ys.append(self.get_current_measure())
                 output[signal] = np.vstack(ys)
         else:
-            for signal in self._signal:
+            for signal in self.signal:
                 for t in self._time_data:
                     self.observe(t)
                     ys.append(self.get_current_measure())

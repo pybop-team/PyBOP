@@ -195,8 +195,6 @@ class BaseModel:
                     dataset["Current function [A]"],
                     pybamm.t,
                 )
-                # Set t_eval
-                self.time_data = self._parameter_set["Current function [A]"].x[0]
 
         self._model_with_set_params = self._parameter_set.process_model(
             self._unprocessed_model, inplace=False
@@ -204,6 +202,17 @@ class BaseModel:
         if self.geometry is not None:
             self._parameter_set.process_geometry(self.geometry)
         self.pybamm_model = self._model_with_set_params
+
+    def reset(self):
+        """
+        Clear any existing built model and its properties.
+        """
+        if self._built_model is not None:
+            self._model_with_set_params = None
+            self._built_model = None
+            self._built_initial_soc = None
+            self._mesh = None
+            self._disc = None
 
     def rebuild(
         self,
@@ -308,12 +317,9 @@ class BaseModel:
 
         self._solver.set_up(self._built_model, inputs=inputs)
 
-        if x is None:
-            x = self._built_model.y0
+        x = x or self._built_model.y0
 
-        sol = pybamm.Solution([np.asarray([t])], [x], self._built_model, inputs)
-
-        return TimeSeriesState(sol=sol, inputs=inputs, t=t)
+        return self.get_state(inputs, t, x)
 
     def get_state(self, inputs: Inputs, t: float, x: np.ndarray) -> TimeSeriesState:
         """
@@ -497,7 +503,7 @@ class BaseModel:
                     dy = np.empty(
                         (
                             sol[output_variables[0]].data.shape[0],
-                            self.n_outputs,
+                            len(output_variables),
                             self._n_parameters,
                         )
                     )
