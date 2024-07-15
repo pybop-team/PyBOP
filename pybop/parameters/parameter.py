@@ -51,7 +51,7 @@ class Parameter:
         self.set_bounds(bounds)
         self.margin = 1e-4
 
-    def rvs(self, n_samples, random_state=None):
+    def rvs(self, n_samples: int = 1, random_state=None):
         """
         Draw random samples from the parameter's prior distribution.
 
@@ -61,7 +61,7 @@ class Parameter:
         Parameters
         ----------
         n_samples : int
-            The number of samples to draw.
+            The number of samples to draw (default: 1).
 
         Returns
         -------
@@ -332,7 +332,7 @@ class Parameters:
         Parameters
         ----------
         n_samples : int
-            The number of samples to draw.
+            The number of samples to draw (default: 1).
 
         Returns
         -------
@@ -417,7 +417,7 @@ class Parameters:
         bounds : numpy.ndarray
             An array of shape (n_parameters, 2) containing the bounds for each parameter.
         """
-        bounds = np.empty((len(self), 2))
+        bounds = np.zeros((len(self), 2))
 
         for i, param in enumerate(self.param.values()):
             if param.applied_prior_bounds:
@@ -427,7 +427,7 @@ class Parameters:
                     UserWarning,
                     stacklevel=2,
                 )
-            elif param.bounds is not None:
+            if param.bounds is not None:
                 bounds[i] = param.bounds
             else:
                 raise ValueError("All parameters require bounds for plotting.")

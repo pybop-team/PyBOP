@@ -172,34 +172,43 @@ class SumSquaredError(BaseCost):
 class Minkowski(BaseCost):
     """
     The Minkowski distance is a generalisation of several distance metrics,
-    including Euclidean and Manhattan distances. It is defined as:
+    including the Euclidean and Manhattan distances. It is defined as:
 
     .. math::
-        L_p(x, y) = (\\sum_i |x_i - y_i|^p)
+        L_p(x, y) = ( \\sum_i |x_i - y_i|^p )^(1/p)
 
-    where p ≥ 1 is the order of the Minkowski metric.
+    where p > 0 is the order of the Minkowski distance. For p ≥ 1, the
+    Minkowski distance is a metric. For 0 < p < 1, it is not a metric, as it
+    does not satisfy the triangle inequality, although a metric can be
+    obtained by removing the (1/p) exponent.
 
     Special cases:
 
     * p = 1: Manhattan distance
     * p = 2: Euclidean distance
-    * p → ∞: Chebyshev distance
+    * p → ∞: Chebyshev distance (not implemented as yet)
 
     This class implements the Minkowski distance as a cost function for
     optimisation problems, allowing for flexible distance-based optimisation
     across various problem domains.
 
-    Attributes:
-        p (float): The order of the Minkowski metric.
+    Attributes
+    ----------
+    p : float, optional
+        The order of the Minkowski distance.
     """
 
     def __init__(self, problem, p: float = 2.0):
         super().__init__(problem)
         if p < 0:
             raise ValueError(
-                "The order of the Minkowski metric must be greater than 0."
+                "The order of the Minkowski distance must be greater than 0."
             )
-        self.p = p
+        elif not np.isfinite(p):
+            raise ValueError(
+                "For p = infinity, an implementation of the Chebyshev distance is required."
+            )
+        self.p = float(p)
 
     def _evaluate(self, inputs: Inputs, grad=None):
         """
@@ -222,6 +231,7 @@ class Minkowski(BaseCost):
         e = np.asarray(
             [
                 np.sum(np.abs(prediction[signal] - self._target[signal]) ** self.p)
+                ** (1 / self.p)
                 for signal in self.signal
             ]
         )
@@ -253,10 +263,20 @@ class Minkowski(BaseCost):
             return np.inf, self._de * np.ones(self.n_parameters)
 
         r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
-        e = np.sum(np.sum(np.abs(r) ** self.p))
-        de = self.p * np.sum(np.sum(r ** (self.p - 1) * dy.T, axis=2), axis=1)
+        e = np.asarray(
+            [
+                np.sum(np.abs(y[signal] - self._target[signal]) ** self.p)
+                ** (1 / self.p)
+                for signal in self.signal
+            ]
+        )
+        de = np.sum(
+            np.sum(r ** (self.p - 1) * dy.T, axis=2)
+            / (e ** (self.p - 1) + np.finfo(float).eps),
+            axis=1,
+        )
 
-        return e, de
+        return np.sum(e), de
 
 
 class SumofPower(BaseCost):
