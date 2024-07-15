@@ -324,7 +324,7 @@ class MAP(BaseLikelihood):
         if self._fixed_problem:
             self.likelihood._current_prediction = self._current_prediction
         log_likelihood = self.likelihood._evaluate(inputs)
-        
+
         posterior = log_likelihood + log_prior
         return posterior
 

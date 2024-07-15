@@ -1,5 +1,6 @@
-import numpy as np
 from typing import Union
+
+import numpy as np
 
 from pybop import BaseProblem
 from pybop.parameters.parameter import Inputs, Parameters
