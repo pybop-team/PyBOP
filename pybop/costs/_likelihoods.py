@@ -38,19 +38,15 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         self.sigma2 = sigma0**2.0
         self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi * self.sigma2)
         self._multip = -1 / (2.0 * self.sigma2)
-        self._dl = np.ones(self.n_parameters)
 
     def _evaluate(self, inputs: Inputs, grad: Union[None, np.ndarray] = None) -> float:
         """
         Evaluates the Gaussian log-likelihood for the given parameters with known sigma.
         """
-        if any(
-            len(self._current_prediction.get(key, [])) != len(self._target.get(key, []))
-            for key in self.signal
-        ):
-            return -np.inf  # prediction length doesn't match target
+        if not self.verify_prediction(self._current_prediction):
+            return -np.inf
 
-        e = np.sum(
+        e = np.asarray(
             [
                 np.sum(
                     self._offset
@@ -63,17 +59,14 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
             ]
         )
 
-        return e if self.n_outputs != 1 else e.item()
+        return e.item() if self.n_outputs == 1 else np.sum(e)
 
     def _evaluateS1(self, inputs: Inputs) -> tuple[float, np.ndarray]:
         """
         Calculates the log-likelihood and gradient.
         """
-        if any(
-            len(self._current_prediction.get(key, [])) != len(self._target.get(key, []))
-            for key in self.signal
-        ):
-            return -np.inf, -self._dl
+        if not self.verify_prediction(self._current_prediction):
+            return -np.inf, -self._de * np.ones(self.n_parameters)
 
         likelihood = self._evaluate(inputs)
 
@@ -135,7 +128,6 @@ class GaussianLogLikelihood(BaseLikelihood):
         self.sigma = Parameters()
         self._add_sigma_parameters(sigma0)
         self.parameters.join(self.sigma)
-        self._dl = np.ones(self.n_parameters)
 
     def _add_sigma_parameters(self, sigma0):
         sigma0 = [sigma0] if not isinstance(sigma0, list) else sigma0
@@ -207,13 +199,10 @@ class GaussianLogLikelihood(BaseLikelihood):
         self._current_prediction = self.problem.evaluate(
             self.problem.parameters.as_dict()
         )
-        if any(
-            len(self._current_prediction.get(key, [])) != len(self._target.get(key, []))
-            for key in self.signal
-        ):
-            return -np.inf  # prediction length doesn't match target
+        if not self.verify_prediction(self._current_prediction):
+            return -np.inf
 
-        e = np.sum(
+        e = np.asarray(
             [
                 np.sum(
                     self._logpi
@@ -227,7 +216,7 @@ class GaussianLogLikelihood(BaseLikelihood):
             ]
         )
 
-        return e if self.n_outputs != 1 else e.item()
+        return e.item() if self.n_outputs == 1 else np.sum(e)
 
     def _evaluateS1(self, inputs: Inputs) -> tuple[float, np.ndarray]:
         """
@@ -247,16 +236,14 @@ class GaussianLogLikelihood(BaseLikelihood):
 
         sigma = self.sigma.current_value()
         if np.any(sigma <= 0):
-            return -np.inf, -self._dl
+            return -np.inf, -self._de * np.ones(self.n_parameters)
 
         self._current_prediction, self._current_sensitivities = self.problem.evaluateS1(
             self.problem.parameters.as_dict()
         )
-        if any(
-            len(self._current_prediction.get(key, [])) != len(self._target.get(key, []))
-            for key in self.signal
-        ):
-            return -np.inf, -self._dl
+        y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
+        if not self.verify_prediction(self._current_prediction):
+            return -np.inf, -self._de * np.ones(self.n_parameters)
 
         likelihood = self._evaluate(inputs)
 
@@ -327,14 +314,17 @@ class MAP(BaseLikelihood):
         float
             The maximum a posteriori cost.
         """
-        if self._fixed_problem:
-            self.likelihood._current_prediction = self._current_prediction
-
-        log_likelihood = self.likelihood._evaluate(inputs)
         log_prior = sum(
             self.parameters[key].prior.logpdf(value) for key, value in inputs.items()
         )
 
+        if not np.isfinite(log_prior).any():
+            return -np.inf
+
+        if self._fixed_problem:
+            self.likelihood._current_prediction = self._current_prediction
+        log_likelihood = self.likelihood._evaluate(inputs)
+        
         posterior = log_likelihood + log_prior
         return posterior
 
@@ -359,16 +349,18 @@ class MAP(BaseLikelihood):
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
+        log_prior = sum(
+            self.parameters[key].prior.logpdf(value) for key, value in inputs.items()
+        )
+        if not np.isfinite(log_prior).any():
+            return -np.inf, -self._de * np.ones(self.n_parameters)
+
         if self._fixed_problem:
             (
                 self.likelihood._current_prediction,
                 self.likelihood._current_sensitivities,
             ) = self._current_prediction, self._current_sensitivities
-
         log_likelihood, dl = self.likelihood._evaluateS1(inputs)
-        log_prior = sum(
-            self.parameters[key].prior.logpdf(value) for key, value in inputs.items()
-        )
 
         # Compute a finite difference approximation of the gradient of the log prior
         delta = self.parameters.initial_value() * self.gradient_step
