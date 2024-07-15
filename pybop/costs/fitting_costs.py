@@ -273,16 +273,24 @@ class Minkowski(BaseCost):
         if not self.verify_prediction(self._current_prediction):
             return np.inf, self._de * np.ones(self.n_parameters)
 
-        r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
+        r = np.asarray(
+            [
+                self._current_prediction[signal] - self._target[signal]
+                for signal in self.signal
+            ]
+        )
         e = np.asarray(
             [
-                np.sum(np.abs(y[signal] - self._target[signal]) ** self.p)
+                np.sum(
+                    np.abs(self._current_prediction[signal] - self._target[signal])
+                    ** self.p
+                )
                 ** (1 / self.p)
                 for signal in self.signal
             ]
         )
         de = np.sum(
-            np.sum(r ** (self.p - 1) * dy.T, axis=2)
+            np.sum(r ** (self.p - 1) * self._current_sensitivities.T, axis=2)
             / (e ** (self.p - 1) + np.finfo(float).eps),
             axis=1,
         )
@@ -380,9 +388,16 @@ class SumofPower(BaseCost):
         if not self.verify_prediction(self._current_prediction):
             return np.inf, self._de * np.ones(self.n_parameters)
 
-        r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
+        r = np.asarray(
+            [
+                self._current_prediction[signal] - self._target[signal]
+                for signal in self.signal
+            ]
+        )
         e = np.sum(np.sum(np.abs(r) ** self.p))
-        de = self.p * np.sum(np.sum(r ** (self.p - 1) * dy.T, axis=2), axis=1)
+        de = self.p * np.sum(
+            np.sum(r ** (self.p - 1) * self._current_sensitivities.T, axis=2), axis=1
+        )
 
         return e, de
 
