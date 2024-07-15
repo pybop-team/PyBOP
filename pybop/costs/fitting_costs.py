@@ -239,7 +239,10 @@ class Minkowski(BaseCost):
 
         e = np.asarray(
             [
-                np.sum(np.abs(prediction[signal] - self._target[signal]) ** self.p)
+                np.sum(
+                    np.abs(self._current_prediction[signal] - self._target[signal])
+                    ** self.p
+                )
                 ** (1 / self.p)
                 for signal in self.signal
             ]
@@ -344,7 +347,10 @@ class SumofPower(BaseCost):
 
         e = np.asarray(
             [
-                np.sum(np.abs(prediction[signal] - self._target[signal]) ** self.p)
+                np.sum(
+                    np.abs(self._current_prediction[signal] - self._target[signal])
+                    ** self.p
+                )
                 for signal in self.signal
             ]
         )
