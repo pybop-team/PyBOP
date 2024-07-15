@@ -287,7 +287,7 @@ class SumofPower(BaseCost):
     .. math::
         C_p(x, y) = \\sum_i |x_i - y_i|^p
 
-    where p ≥ 1 is the power order.
+    where p ≥ 0 is the power order.
 
     This class implements the Sum of Power as a cost function for
     optimisation problems, allowing for flexible power-based optimisation

@@ -322,7 +322,7 @@ class Parameters:
                 else:
                     param.set_bounds(bounds=bounds[i])
 
-    def rvs(self, n_samples: int = 1) -> list:
+    def rvs(self, n_samples: int = 1) -> np.ndarray:
         """
         Draw random samples from each parameter's prior distribution.
 

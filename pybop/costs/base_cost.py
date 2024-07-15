@@ -1,3 +1,5 @@
+from typing import Union
+
 from pybop import BaseProblem
 from pybop.parameters.parameter import Inputs, Parameters
 
@@ -36,19 +38,19 @@ class BaseCost:
     def n_parameters(self):
         return len(self.parameters)
 
-    def __call__(self, inputs: Inputs, grad=None):
+    def __call__(self, inputs: Union[Inputs, list], grad=None):
         """
         Call the evaluate function for a given set of parameters.
         """
         return self.evaluate(inputs, grad)
 
-    def evaluate(self, inputs: Inputs, grad=None):
+    def evaluate(self, inputs: Union[Inputs, list], grad=None):
         """
         Call the evaluate function for a given set of parameters.
 
         Parameters
         ----------
-        inputs : Inputs
+        inputs : Inputs or array-like
             The parameters for which to compute the cost and gradient.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
@@ -101,13 +103,13 @@ class BaseCost:
         """
         raise NotImplementedError
 
-    def evaluateS1(self, inputs: Inputs):
+    def evaluateS1(self, inputs: Union[Inputs, list]):
         """
         Call _evaluateS1 for a given set of parameters.
 
         Parameters
         ----------
-        inputs : Inputs
+        inputs : Inputs or array-like
             The parameters for which to compute the cost and gradient.
 
         Returns

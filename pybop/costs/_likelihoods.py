@@ -121,7 +121,6 @@ class GaussianLogLikelihood(BaseLikelihood):
         self.sigma = Parameters()
         self._add_sigma_parameters(sigma0)
         self.parameters.join(self.sigma)
-        self._dl = self._de * np.ones(self.n_parameters)
 
     def _add_sigma_parameters(self, sigma0):
         sigma0 = [sigma0] if not isinstance(sigma0, list) else sigma0
@@ -226,11 +225,11 @@ class GaussianLogLikelihood(BaseLikelihood):
 
         sigma = self.sigma.current_value()
         if np.any(sigma <= 0):
-            return -np.inf, -self._dl
+            return -np.inf, -self._de * np.ones(self.n_parameters)
 
         y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
         if not self.verify_prediction(y):
-            return -np.inf, -self._dl
+            return -np.inf, -self._de * np.ones(self.n_parameters)
 
         likelihood = self._evaluate(inputs)
 
