@@ -75,14 +75,16 @@ class BaseModel:
             (default: True).
         """
         self.name = name
+
+        # Take a copy of the input parameter set
         if parameter_set is None:
             self._parameter_set = None
         elif isinstance(parameter_set, dict):
-            self._parameter_set = pybamm.ParameterValues(parameter_set)
+            self.parameter_set = pybamm.ParameterValues(parameter_set)
         elif isinstance(parameter_set, pybamm.ParameterValues):
-            self._parameter_set = parameter_set
+            self.parameter_set = parameter_set
         else:  # a pybop parameter set
-            self._parameter_set = pybamm.ParameterValues(parameter_set.params)
+            self.parameter_set = pybamm.ParameterValues(parameter_set.params)
 
         self.parameters = Parameters()
         self.output_variables = ["Time [s]", "Current [A]", "Voltage [V]"]
@@ -155,21 +157,18 @@ class BaseModel:
         init_soc : float
             The initial state of charge to be used in the model.
         """
-        if self._built_initial_soc != init_soc:
-            # reset
-            self._model_with_set_params = None
-            self._built_model = None
-            self.op_conds_to_built_models = None
-            self.op_conds_to_built_solvers = None
+        # Temporarily set inputs
+        for key, value in self.standard_parameters.items():
+            self._parameter_set[key] = value
 
-        param = self.pybamm_model.param
-        self._parameter_set = (
-            self._unprocessed_parameter_set.set_initial_stoichiometries(
-                init_soc, param=param, inplace=False
-            )
+        # Compute and set the initial concentrations
+        self._parameter_set.set_initial_stoichiometries(
+            init_soc, param=self.pybamm_model.param, inplace=True
         )
-        # Save solved initial SOC in case we need to rebuild the model
-        self._built_initial_soc = init_soc
+
+        # Reset the standard parameters back to inputs
+        for key in self.standard_parameters.keys():
+            self._parameter_set[key] = "[input]"
 
     def set_params(self, rebuild=False, dataset=None):
         """

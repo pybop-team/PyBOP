@@ -311,7 +311,7 @@ class TestModels:
         with pytest.raises(NotImplementedError):
             base.approximate_capacity(x)
 
-        base.classify_and_update_parameters(parameters=None)
+        base.classify_and_update_parameters(parameters=pybop.Parameters())
         assert base._n_parameters == 0
 
     @pytest.mark.unit
@@ -366,3 +366,20 @@ class TestModels:
         for key in problem.signal:
             assert np.isinf(res.get(key, [])).any()
         assert np.isinf(res_grad).any()
+
+    @pytest.mark.unit
+    def test_set_init_soc(self):
+        t_eval = np.linspace(0, 10, 100)
+
+        model = pybop.lithium_ion.SPM()
+        model.build(init_soc=0.7)
+        values_1 = model.predict(t_eval=t_eval)
+
+        model = pybop.lithium_ion.SPM()
+        model.build(init_soc=0.4)
+        model.set_init_soc(0.7)
+        values_2 = model.predict(t_eval=t_eval)
+
+        np.testing.assert_allclose(
+            values_1["Voltage [V]"].data, values_2["Voltage [V]"].data, atol=1e-8
+        )

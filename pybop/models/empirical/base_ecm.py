@@ -82,7 +82,6 @@ class ECircuitModel(BaseModel):
         # Internal attributes for the built model are initialized but not set
         self._model_with_set_params = None
         self._built_model = None
-        self._built_initial_soc = None
         self._mesh = None
         self._disc = None
         self.geometric_parameters = {}

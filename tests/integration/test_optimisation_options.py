@@ -53,8 +53,8 @@ class TestOptimisation:
     @pytest.fixture
     def spm_costs(self, model, parameters, cost_class):
         # Form dataset
-        init_soc = 0.5
-        solution = self.get_data(model, parameters, self.ground_truth, init_soc)
+        model.set_init_soc(0.5)
+        solution = self.get_data(model, parameters, self.ground_truth)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -65,7 +65,7 @@ class TestOptimisation:
         )
 
         # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
+        problem = pybop.FittingProblem(model, parameters, dataset)
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
             return cost_class(problem, sigma0=0.002)
         else:
@@ -106,7 +106,7 @@ class TestOptimisation:
                 assert initial_cost < final_cost
         np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
-    def get_data(self, model, parameters, x, init_soc):
+    def get_data(self, model, parameters, x):
         model.classify_and_update_parameters(parameters)
         experiment = pybop.Experiment(
             [
@@ -117,5 +117,5 @@ class TestOptimisation:
             ]
             * 2
         )
-        sim = model.predict(init_soc=init_soc, experiment=experiment, inputs=x)
+        sim = model.predict(experiment=experiment, inputs=x)
         return sim
