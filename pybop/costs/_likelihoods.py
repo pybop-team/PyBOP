@@ -241,7 +241,6 @@ class GaussianLogLikelihood(BaseLikelihood):
         self._current_prediction, self._current_sensitivities = self.problem.evaluateS1(
             self.problem.parameters.as_dict()
         )
-        y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
         if not self.verify_prediction(self._current_prediction):
             return -np.inf, -self._de * np.ones(self.n_parameters)
 
