@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 
@@ -24,9 +24,15 @@ class BaseCost:
         An array containing the target data to fit.
     n_outputs : int
         The number of outputs in the model.
+
+    Additional Attributes
+    ---------------------
+    _fixed_problem : bool
+        If True, the problem does not need to be rebuilt before the cost is
+        calculated (default: False).
     """
 
-    def __init__(self, problem=None):
+    def __init__(self, problem: Optional[BaseProblem] = None):
         self.parameters = Parameters()
         self.problem = problem
         self._fixed_problem = False
@@ -215,11 +221,16 @@ class WeightedCost(BaseCost):
 
     Additional Attributes
     ---------------------
-    costs : List[pybop.BaseCost]
+    costs : list[pybop.BaseCost]
         A list of PyBOP cost objects.
+    weights : list[float]
+        A list of values with which to weight the cost values.
+    _different_problems : bool
+        If True, the problem for each cost is evaluated independently during
+        each evaluation of the cost (default: False).
     """
 
-    def __init__(self, *args, weights=None):
+    def __init__(self, *args, weights: Optional[list[float]] = None):
         self.costs = []
         for cost in args:
             if not isinstance(cost, BaseCost):
