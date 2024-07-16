@@ -66,9 +66,15 @@ class FittingProblem(BaseProblem):
         self.n_time_data = len(self._time_data)
         self.set_target(dataset)
 
-        if model is not None:
+        if self._model is not None:
+            # Clear any existing built model and its properties
+            if self._model._built_model is not None:
+                self._model._model_with_set_params = None
+                self._model._built_model = None
+                self._model._mesh = None
+                self._model._disc = None
+
             # Build the model from scratch
-            self._model.reset()
             self._model.build(
                 dataset=self._dataset,
                 parameters=self.parameters,

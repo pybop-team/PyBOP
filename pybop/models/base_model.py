@@ -203,17 +203,6 @@ class BaseModel:
             self._parameter_set.process_geometry(self.geometry)
         self.pybamm_model = self._model_with_set_params
 
-    def reset(self):
-        """
-        Clear any existing built model and its properties.
-        """
-        if self._built_model is not None:
-            self._model_with_set_params = None
-            self._built_model = None
-            self._built_initial_soc = None
-            self._mesh = None
-            self._disc = None
-
     def rebuild(
         self,
         dataset: Optional[Dataset] = None,
