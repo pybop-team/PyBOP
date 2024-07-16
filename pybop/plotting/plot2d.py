@@ -205,7 +205,7 @@ def plot2d(
     # Update the layout and display the figure
     fig.update_layout(**layout_kwargs)
     if "ipykernel" in sys.modules and show:
-        fig.show("svg")
+        fig.show("svg", encoding="utf-8")
     elif show:
         fig.show()
 
@@ -226,7 +226,7 @@ def plot2d(
             grad_fig.update_layout(**layout_kwargs)
 
             if "ipykernel" in sys.modules and show:
-                grad_fig.show("svg")
+                grad_fig.show("svg", encoding="utf-8")
             elif show:
                 grad_fig.show()
 
