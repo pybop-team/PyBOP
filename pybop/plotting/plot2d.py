@@ -149,8 +149,8 @@ def plot2d(
         title_y=0.9,
         width=600,
         height=600,
-        xaxis=dict(range=bounds[0]),
-        yaxis=dict(range=bounds[1]),
+        xaxis=dict(range=bounds[0], showexponent="last", exponentformat="e"),
+        yaxis=dict(range=bounds[1], showexponent="last", exponentformat="e"),
     )
     if hasattr(cost, "parameters"):
         name = cost.parameters.keys()
@@ -205,7 +205,7 @@ def plot2d(
     # Update the layout and display the figure
     fig.update_layout(**layout_kwargs)
     if "ipykernel" in sys.modules and show:
-        fig.show("svg", encoding="utf-8")
+        fig.show("svg")
     elif show:
         fig.show()
 
@@ -226,7 +226,7 @@ def plot2d(
             grad_fig.update_layout(**layout_kwargs)
 
             if "ipykernel" in sys.modules and show:
-                grad_fig.show("svg", encoding="utf-8")
+                grad_fig.show("svg")
             elif show:
                 grad_fig.show()
 

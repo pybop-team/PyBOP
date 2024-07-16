@@ -9,8 +9,20 @@ from pybop import PlotlyManager
 DEFAULT_LAYOUT_OPTIONS = dict(
     title=None,
     title_x=0.5,
-    xaxis=dict(title=None, titlefont_size=12, tickfont_size=12),
-    yaxis=dict(title=None, titlefont_size=12, tickfont_size=12),
+    xaxis=dict(
+        title=None,
+        showexponent="last",
+        exponentformat="e",
+        titlefont_size=12,
+        tickfont_size=12,
+    ),
+    yaxis=dict(
+        title=None,
+        showexponent="last",
+        exponentformat="e",
+        titlefont_size=12,
+        tickfont_size=12,
+    ),
     legend=dict(x=1, y=1, xanchor="right", yanchor="top", font_size=12),
     showlegend=True,
     autosize=False,
@@ -285,7 +297,11 @@ class StandardSubplot(StandardPlot):
             If True, the figure is shown upon creation (default: True).
         """
         fig = self.make_subplots(
-            rows=self.num_rows, cols=self.num_cols, **self.subplot_options
+            rows=self.num_rows,
+            cols=self.num_cols,
+            horizontal_spacing=0.1,
+            vertical_spacing=0.15,
+            **self.subplot_options,
         )
         fig.update_layout(self.layout_options)
 
@@ -297,7 +313,13 @@ class StandardSubplot(StandardPlot):
             if self.axis_titles and idx < len(self.axis_titles):
                 x_title, y_title = self.axis_titles[idx]
                 fig.update_xaxes(title_text=x_title, row=row, col=col)
-                fig.update_yaxes(title_text=y_title, row=row, col=col)
+                fig.update_yaxes(
+                    title_text=y_title,
+                    row=row,
+                    col=col,
+                    showexponent="last",
+                    exponentformat="e",
+                )
 
         if "ipykernel" in sys.modules and show:
             fig.show("svg")

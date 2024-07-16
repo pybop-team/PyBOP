@@ -35,7 +35,9 @@ def plot_convergence(optim, show=True, **layout_kwargs):
         x=iteration_numbers,
         y=cost_log,
         layout_options=dict(
-            xaxis_title="Iteration", yaxis_title="Cost", title="Convergence"
+            xaxis_title="Iteration",
+            yaxis_title="Cost",
+            title="Convergence",
         ),
         trace_names=optim.name(),
     )
