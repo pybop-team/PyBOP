@@ -180,10 +180,6 @@ class BaseModel:
         if self.model_with_set_params and not rebuild:
             return
 
-        # Mark any simulation inputs in the parameter set
-        for key in self.standard_parameters.keys():
-            self._parameter_set[key] = "[input]"
-
         if dataset is not None and (not self.rebuild_parameters or not rebuild):
             if (
                 self.parameters is None
@@ -206,7 +202,6 @@ class BaseModel:
         self,
         dataset: Optional[Dataset] = None,
         parameters: Union[Parameters, dict] = None,
-        parameter_set: Optional[ParameterSet] = None,
         check_model: bool = True,
         init_soc: Optional[float] = None,
     ) -> None:
@@ -224,9 +219,6 @@ class BaseModel:
             The dataset to be used in the model construction.
         parameters : pybop.Parameters or Dict, optional
             A pybop Parameters class or dictionary containing parameter values to apply to the model.
-        parameter_set : pybop.ParameterSet, optional
-            A PyBOP ParameterSet, PyBaMM ParameterValues object or a dictionary containing the
-            parameter values.
         check_model : bool, optional
             If True, the model will be checked for correctness after construction.
         init_soc : float, optional
@@ -260,36 +252,35 @@ class BaseModel:
         Parameters
         ----------
         parameters : pybop.Parameters
-
+            The input parameters.
         """
-        if parameters is None:
-            self.parameters = Parameters()
-        else:
-            self.parameters = parameters
-
-        parameter_dictionary = self.parameters.as_dict()
+        self.parameters = parameters
+        inputs = self.parameters.as_dict()
 
         rebuild_parameters = {
-            param: parameter_dictionary[param]
-            for param in parameter_dictionary
+            param: inputs[param]
+            for param in inputs
             if param in self.geometric_parameters
         }
         standard_parameters = {
-            param: parameter_dictionary[param]
-            for param in parameter_dictionary
+            param: inputs[param]
+            for param in inputs
             if param not in self.geometric_parameters
         }
 
         self.rebuild_parameters.update(rebuild_parameters)
         self.standard_parameters.update(standard_parameters)
 
-        # Update the parameter set and geometry for rebuild parameters
+        # Mark any standard parameters as inputs in the parameter set
+        for key in self.standard_parameters.keys():
+            self._parameter_set[key] = "[input]"
+
+        # Update the rebuild parameters in the parameter set and geometry
         if self.rebuild_parameters:
             self._parameter_set.update(self.rebuild_parameters)
-            self._unprocessed_parameter_set = self._parameter_set
             self.geometry = self.pybamm_model.default_geometry
 
-        # Update the list of parameter names and number of parameters
+        # Update the number of parameters
         self._n_parameters = len(self.parameters)
 
     def reinit(
@@ -565,7 +556,7 @@ class BaseModel:
         if not self.pybamm_model._built:
             self.pybamm_model.build_model()
 
-        parameter_set = parameter_set or self._unprocessed_parameter_set
+        parameter_set = parameter_set or self._parameter_set
         if inputs is not None:
             parameter_set.update(inputs)
 
