@@ -57,7 +57,7 @@ class TestLogPosterior:
 
     @pytest.fixture
     def likelihood(self, one_signal_problem):
-        return pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, sigma=0.01)
+        return pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, sigma0=0.01)
 
     @pytest.fixture
     def prior(self):
@@ -72,7 +72,8 @@ class TestLogPosterior:
         assert posterior._prior == prior
 
         # Test log posterior construction without parameters
-        likelihood.problem.parameters = None
+        likelihood.problem.parameters.priors = None
+
         with pytest.raises(
             ValueError, match="An error occurred when constructing the Prior class:"
         ):
@@ -95,11 +96,11 @@ class TestLogPosterior:
     def test_log_posterior(self, posterior):
         # Test log posterior
         x = np.array([0.50])
-        assert np.allclose(posterior(x), -3408.15, atol=2e-2)
+        assert np.allclose(posterior(x), -3318.34, atol=2e-2)
 
         # Test log posterior evaluateS1
         p, dp = posterior.evaluateS1(x)
-        assert np.allclose(p, -3408.15, atol=2e-2)
+        assert np.allclose(p, -3318.34, atol=2e-2)
         assert np.allclose(dp, -1736.05, atol=2e-2)
 
         # Get log likelihood and log prior

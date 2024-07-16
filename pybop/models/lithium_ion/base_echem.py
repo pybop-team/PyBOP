@@ -2,7 +2,7 @@ import warnings
 
 from pybamm import lithium_ion as pybamm_lithium_ion
 
-from pybop.models.base_model import BaseModel
+from pybop.models.base_model import BaseModel, Inputs
 
 
 class EChemBaseModel(BaseModel):
@@ -47,10 +47,7 @@ class EChemBaseModel(BaseModel):
         solver=None,
         **model_kwargs,
     ):
-        super().__init__(
-            name=name,
-            parameter_set=parameter_set,
-        )
+        super().__init__(name=name, parameter_set=parameter_set)
 
         model_options = dict(build=False)
         for key, value in model_kwargs.items():
@@ -88,14 +85,14 @@ class EChemBaseModel(BaseModel):
         self.geometric_parameters = self.set_geometric_parameters()
 
     def _check_params(
-        self, inputs=None, parameter_set=None, allow_infeasible_solutions=True
+        self, inputs: Inputs = None, parameter_set=None, allow_infeasible_solutions=True
     ):
         """
         Check compatibility of the model parameters.
 
         Parameters
         ----------
-        inputs : dict
+        inputs : Inputs
             The input parameters for the simulation.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
@@ -139,7 +136,7 @@ class EChemBaseModel(BaseModel):
             ):
                 if self.param_check_counter <= len(electrode_params):
                     infeasibility_warning = "Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
-                    warnings.warn(infeasibility_warning, UserWarning)
+                    warnings.warn(infeasibility_warning, UserWarning, stacklevel=2)
                 self.param_check_counter += 1
                 return allow_infeasible_solutions
 
@@ -267,7 +264,7 @@ class EChemBaseModel(BaseModel):
         )
         return cross_sectional_area * total_area_density
 
-    def approximate_capacity(self, x):
+    def approximate_capacity(self, inputs: Inputs):
         """
         Calculate and update an estimate for the nominal cell capacity based on the theoretical
         energy density and an average voltage.
@@ -277,14 +274,22 @@ class EChemBaseModel(BaseModel):
 
         Parameters
         ----------
-        x : array-like
-            An array of values representing the model inputs.
+        inputs : Inputs
+            The parameters that are the inputs of the model.
 
         Returns
         -------
         None
             The nominal cell capacity is updated directly in the model's parameter set.
         """
+        inputs = self.parameters.verify(inputs)
+        self._parameter_set.update(inputs)
+
+        # Calculate theoretical energy density
+        theoretical_energy = self._electrode_soh.calculate_theoretical_energy(
+            self._parameter_set
+        )
+
         # Extract stoichiometries and compute mean values
         (
             min_sto_neg,
@@ -295,16 +300,6 @@ class EChemBaseModel(BaseModel):
         mean_sto_neg = (min_sto_neg + max_sto_neg) / 2
         mean_sto_pos = (min_sto_pos + max_sto_pos) / 2
 
-        inputs = {
-            key: x[i] for i, key in enumerate([param.name for param in self.parameters])
-        }
-        self._parameter_set.update(inputs)
-
-        # Calculate theoretical energy density
-        theoretical_energy = self._electrode_soh.calculate_theoretical_energy(
-            self._parameter_set
-        )
-
         # Calculate average voltage
         positive_electrode_ocp = self._parameter_set["Positive electrode OCP [V]"]
         negative_electrode_ocp = self._parameter_set["Negative electrode OCP [V]"]
@@ -313,7 +308,7 @@ class EChemBaseModel(BaseModel):
                 mean_sto_pos
             ) - negative_electrode_ocp(mean_sto_neg)
         except Exception as e:
-            raise ValueError(f"Error in average voltage calculation: {e}")
+            raise ValueError(f"Error in average voltage calculation: {e}") from e
 
         # Calculate and update nominal capacity
         theoretical_capacity = theoretical_energy / average_voltage

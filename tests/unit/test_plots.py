@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import pytest
 from packaging import version
@@ -64,7 +66,7 @@ class TestPlots:
             dataset["Voltage [V]"],
             trace_names=["Time [s]", "Voltage [V]"],
         )
-        pybop.plot_dataset(dataset, signal=["Voltage [V]"])
+        pybop.plot_dataset(dataset)
 
     @pytest.fixture
     def fitting_problem(self, model, parameters, dataset):
@@ -87,6 +89,9 @@ class TestPlots:
         # Test plotting of Problem objects
         pybop.quick_plot(fitting_problem, title="Optimised Comparison")
         pybop.quick_plot(design_problem)
+
+        # Test conversion of values into inputs
+        pybop.quick_plot(fitting_problem, problem_inputs=[0.6, 0.6])
 
     @pytest.fixture
     def cost(self, fitting_problem):
@@ -141,3 +146,74 @@ class TestPlots:
         pybop.plot_convergence(optim)
         pybop.plot_parameters(optim)
         pybop.plot2d(optim, steps=5)
+
+    @pytest.mark.unit
+    def test_gaussianlogliklihood_plots(self, fitting_problem):
+        # Test plotting of GaussianLogLikelihood
+        likelihood = pybop.GaussianLogLikelihood(fitting_problem)
+        optim = pybop.CMAES(likelihood, max_iterations=5)
+        optim.run()
+
+        # Plot parameters
+        pybop.plot_parameters(optim)
+
+    @pytest.mark.unit
+    def test_plot2d_incorrect_number_of_parameters(self, model, dataset):
+        # Test with less than two paramters
+        parameters = pybop.Parameters(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.68, 0.05),
+                bounds=[0.5, 0.8],
+            ),
+        )
+        fitting_problem = pybop.FittingProblem(model, parameters, dataset)
+        cost = pybop.SumSquaredError(fitting_problem)
+        with pytest.raises(
+            ValueError, match="This cost function takes fewer than 2 parameters."
+        ):
+            pybop.plot2d(cost)
+
+        # Test with more than two paramters
+        parameters = pybop.Parameters(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.68, 0.05),
+                bounds=[0.5, 0.8],
+            ),
+            pybop.Parameter(
+                "Positive electrode active material volume fraction",
+                prior=pybop.Gaussian(0.58, 0.05),
+                bounds=[0.4, 0.7],
+            ),
+            pybop.Parameter(
+                "Positive particle radius [m]",
+                prior=pybop.Gaussian(4.8e-06, 0.05e-06),
+                bounds=[4e-06, 6e-06],
+            ),
+        )
+        fitting_problem = pybop.FittingProblem(model, parameters, dataset)
+        cost = pybop.SumSquaredError(fitting_problem)
+        pybop.plot2d(cost)
+
+    @pytest.mark.unit
+    def test_plot2d_prior_bounds(self, model, dataset):
+        # Test with prior bounds
+        parameters = pybop.Parameters(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.68, 0.01),
+            ),
+            pybop.Parameter(
+                "Positive electrode active material volume fraction",
+                prior=pybop.Gaussian(0.58, 0.01),
+            ),
+        )
+        fitting_problem = pybop.FittingProblem(model, parameters, dataset)
+        cost = pybop.SumSquaredError(fitting_problem)
+        with pytest.warns(
+            UserWarning,
+            match="Bounds were created from prior distributions.",
+        ):
+            warnings.simplefilter("always")
+            pybop.plot2d(cost)

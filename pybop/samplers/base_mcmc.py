@@ -1,5 +1,5 @@
 import logging
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import numpy as np
 from pints import (
@@ -23,7 +23,7 @@ class BasePintsSampler(BaseSampler):
 
     def __init__(
         self,
-        log_pdf: Union[BaseCost, List[BaseCost]],
+        log_pdf: Union[BaseCost, list[BaseCost]],
         chains: int,
         sampler,
         warm_up=None,
@@ -108,7 +108,7 @@ class BasePintsSampler(BaseSampler):
                 self._n_samplers = 1
                 self._samplers = [sampler(self._n_chains, self._x0, self._cov0)]
         except Exception as e:
-            raise ValueError(f"Error constructing samplers: {e}")
+            raise ValueError(f"Error constructing samplers: {e}") from e
 
         # Check for sensitivities from sampler and set evaluation
         self._needs_sensitivities = self._samplers[0].needs_sensitivities()
@@ -252,7 +252,7 @@ class BasePintsSampler(BaseSampler):
                 self._samples = ys_store
 
             es = []
-            for i, y in enumerate(ys):
+            for i, _y in enumerate(ys):
                 if accepted[i]:
                     self._sampled_logpdf[i] = (
                         fys[0][i] if self._needs_sensitivities else fys[i]

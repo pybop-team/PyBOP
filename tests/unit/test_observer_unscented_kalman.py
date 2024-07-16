@@ -14,15 +14,6 @@ class TestUKF:
 
     measure_noise = 1e-4
 
-    @pytest.fixture(params=[1, 2, 3])
-    def model(self, request):
-        model = ExponentialDecay(
-            parameter_set=pybamm.ParameterValues({"k": "[input]", "y0": "[input]"}),
-            n_states=request.param,
-        )
-        model.build()
-        return model
-
     @pytest.fixture
     def parameters(self):
         return pybop.Parameters(
@@ -39,6 +30,15 @@ class TestUKF:
                 initial_value=1.0,
             ),
         )
+
+    @pytest.fixture(params=[1, 2, 3])
+    def model(self, parameters, request):
+        model = ExponentialDecay(
+            parameter_set=pybamm.ParameterValues({"k": "[input]", "y0": "[input]"}),
+            n_states=request.param,
+        )
+        model.build(parameters=parameters)
+        return model
 
     @pytest.fixture
     def dataset(self, model: pybop.BaseModel, parameters):
@@ -156,3 +156,22 @@ class TestUKF:
             pybop.UnscentedKalmanFilterObserver(
                 parameters, model, sigma0, process, measure, signal=signal
             )
+
+    @pytest.mark.unit
+    def test_without_signal(self):
+        model = pybop.lithium_ion.SPM()
+        parameters = pybop.Parameters(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.5, 0.05),
+            )
+        )
+        model.build(parameters=parameters)
+        n = model.n_states
+        sigma0 = np.diag([1e-4] * n)
+        process = np.diag([1e-4] * n)
+        measure = np.diag([1e-4])
+        observer = pybop.UnscentedKalmanFilterObserver(
+            parameters, model, sigma0, process, measure
+        )
+        assert observer.signal == ["Voltage [V]"]

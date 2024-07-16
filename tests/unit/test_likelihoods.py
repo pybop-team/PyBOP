@@ -76,7 +76,6 @@ class TestLikelihoods:
         assert likelihood.problem == problem
         assert likelihood.n_outputs == n_outputs
         assert likelihood.n_time_data == problem.n_time_data
-        assert likelihood.x0 == problem.x0
         assert likelihood.n_parameters == 1
         assert np.array_equal(likelihood._target, problem._target)
 
@@ -89,21 +88,22 @@ class TestLikelihoods:
             likelihood(np.array([0.5, 0.5]))
 
     @pytest.mark.unit
-    def test_set_get_sigma(self, one_signal_problem):
+    def test_likelihood_check_sigma0(self, one_signal_problem):
+        with pytest.raises(
+            ValueError,
+            match="Sigma0 must be positive",
+        ):
+            pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, sigma0=None)
+
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, 0.1)
-        likelihood.set_sigma(np.array([0.3]))
-        assert np.array_equal(likelihood.get_sigma(), np.array([0.3]))
+        sigma = likelihood.check_sigma0(0.2)
+        assert sigma == np.array(0.2)
 
         with pytest.raises(
             ValueError,
-            match="The GaussianLogLikelihoodKnownSigma cost requires sigma to be "
-            + "either a scalar value or an array with one entry per dimension.",
+            match=r"sigma0 must be either a scalar value",
         ):
-            pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, sigma=None)
-
-        likelihood = pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, 0.1)
-        with pytest.raises(ValueError):
-            likelihood.set_sigma(np.array([-0.2]))
+            pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, sigma0=[0.2, 0.3])
 
     @pytest.mark.unit
     def test_base_likelihood_n_parameters_property(self, one_signal_problem):
@@ -117,7 +117,7 @@ class TestLikelihoods:
     def test_gaussian_log_likelihood_known_sigma(self, problem_name, request):
         problem = request.getfixturevalue(problem_name)
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(
-            problem, sigma=np.array([1.0])
+            problem, sigma0=np.array([1.0])
         )
         result = likelihood(np.array([0.5]))
         grad_result, grad_likelihood = likelihood.evaluateS1(np.array([0.5]))
@@ -133,6 +133,30 @@ class TestLikelihoods:
         assert isinstance(result, float)
         np.testing.assert_allclose(result, grad_result, atol=1e-5)
         assert np.all(grad_likelihood <= 0)
+
+        # Test construction with sigma as a Parameter
+        sigma = pybop.Parameter("sigma", prior=pybop.Uniform(0.4, 0.6))
+        likelihood = pybop.GaussianLogLikelihood(one_signal_problem, sigma0=sigma)
+
+        # Test invalid sigma
+        with pytest.raises(
+            TypeError,
+            match=r"Expected sigma0 to contain Parameter objects or numeric values.",
+        ):
+            likelihood = pybop.GaussianLogLikelihood(
+                one_signal_problem, sigma0="Invalid string"
+            )
+
+    @pytest.mark.unit
+    def test_gaussian_log_likelihood_dsigma_scale(self, one_signal_problem):
+        likelihood = pybop.GaussianLogLikelihood(one_signal_problem, dsigma_scale=0.05)
+        assert likelihood.dsigma_scale == 0.05
+        likelihood.dsigma_scale = 1e3
+        assert likelihood.dsigma_scale == 1e3
+
+        # Test incorrect sigma scale
+        with pytest.raises(ValueError):
+            likelihood.dsigma_scale = -1e3
 
     @pytest.mark.unit
     def test_gaussian_log_likelihood_returns_negative_inf(self, one_signal_problem):
@@ -151,7 +175,7 @@ class TestLikelihoods:
         self, one_signal_problem
     ):
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(
-            one_signal_problem, sigma=np.array([0.2])
+            one_signal_problem, sigma0=np.array([0.2])
         )
         assert likelihood(np.array([0.01])) == -np.inf  # parameter value too small
         assert (

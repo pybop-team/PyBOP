@@ -56,7 +56,7 @@ signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 problem = pybop.FittingProblem(
     model, parameters, dataset, signal=signal, init_soc=init_soc
 )
-likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma=[0.002, 0.002])
+likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002)
 prior1 = pybop.Gaussian(0.7, 0.1)
 prior2 = pybop.Gaussian(0.6, 0.1)
 composed_prior = pybop.ComposedLogPrior(prior1, prior2)
@@ -64,22 +64,22 @@ posterior = pybop.LogPosterior(likelihood, composed_prior)
 
 x0 = []
 n_chains = 10
-for i in range(n_chains):
+for _i in range(n_chains):
     x0.append(np.array([0.68, 0.58]))
 
 optim = pybop.DREAM(
     posterior,
     chains=n_chains,
     x0=x0,
-    max_iterations=1000,
-    burn_in=250,
-    parallel=True,  # uncomment to enable parallelisation (MacOS/Linux only)
+    max_iterations=300,
+    burn_in=100,
+    # parallel=True,  # uncomment to enable parallelisation (MacOS/Linux only)
 )
 result = optim.run()
 
 # Create a histogram
 fig = go.Figure()
-for i, data in enumerate(result):
+for _i, data in enumerate(result):
     fig.add_trace(go.Histogram(x=data[:, 0], name="Neg", opacity=0.75))
     fig.add_trace(go.Histogram(x=data[:, 1], name="Pos", opacity=0.75))
 

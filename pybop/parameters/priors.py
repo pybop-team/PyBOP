@@ -122,6 +122,98 @@ class BasePrior:
             loc=self.loc, scale=self.scale, size=size, random_state=random_state
         )
 
+    def __call__(self, x):
+        """
+        Evaluates the distribution at x.
+
+        Parameters
+        ----------
+        x : float
+            The point(s) at which to evaluate the distribution.
+
+        Returns
+        -------
+        float
+            The value(s) of the distribution at x.
+        """
+        return self.evaluate(x)
+
+    def evaluate(self, x):
+        """
+        Evaluates the distribution at x.
+
+        Parameters
+        ----------
+        x : float
+            The point(s) at which to evaluate the distribution.
+
+        Returns
+        -------
+        float
+            The value(s) of the distribution at x.
+        """
+        inputs = self.verify(x)
+        return self._evaluate(inputs)
+
+    def _evaluate(self, x):
+        """
+        Evaluates the distribution at x.
+
+        Parameters
+        ----------
+        x : float
+            The point(s) at which to evaluate the distribution.
+
+        Returns
+        -------
+        float
+            The value(s) of the distribution at x.
+        """
+        return self.logpdf(x)
+
+    def evaluateS1(self, x):
+        """
+        Evaluates the first derivative of the distribution at x.
+
+        Parameters
+        ----------
+        x : float
+            The point(s) at which to evaluate the first derivative.
+
+        Returns
+        -------
+        float
+            The value(s) of the first derivative at x.
+        """
+        inputs = self.verify(x)
+        return self._evaluateS1(inputs)
+
+    def _evaluateS1(self, x):
+        """
+        Evaluates the first derivative of the distribution at x.
+
+        Parameters
+        ----------
+        x : float
+            The point(s) at which to evaluate the first derivative.
+
+        Returns
+        -------
+        float
+            The value(s) of the first derivative at x.
+        """
+        raise NotImplementedError
+
+    def verify(self, x):
+        """
+        Verifies that the input is a numpy array and converts it if necessary.
+        """
+        if isinstance(x, dict):
+            x = np.asarray(list(x.values()))
+        elif not isinstance(x, np.ndarray):
+            x = np.asarray(x)
+        return x
+
     def __repr__(self):
         """
         Returns a string representation of the object.
@@ -182,23 +274,7 @@ class Gaussian(BasePrior):
         self._multip = -1 / (2.0 * self.sigma2)
         self._n_parameters = 1
 
-    def __call__(self, x):
-        """
-        Evaluates the gaussian (log) distribution at x.
-
-        Parameters
-        ----------
-        x : float
-            The point(s) at which to evaluate the distribution.
-
-        Returns
-        -------
-        float
-            The value(s) of the distribution at x.
-        """
-        return self.logpdf(x)
-
-    def evaluateS1(self, x):
+    def _evaluateS1(self, x):
         """
         Evaluates the first derivative of the gaussian (log) distribution at x.
 
@@ -241,23 +317,7 @@ class Uniform(BasePrior):
         self.prior = stats.uniform
         self._n_parameters = 1
 
-    def __call__(self, x):
-        """
-        Evaluates the uniform distribution at x.
-
-        Parameters
-        ----------
-        x : float
-            The point(s) at which to evaluate the distribution.
-
-        Returns
-        -------
-        float
-            The value(s) of the distribution at x.
-        """
-        return self.logpdf(x)
-
-    def evaluateS1(self, x):
+    def _evaluateS1(self, x):
         """
         Evaluates the first derivative of the log uniform distribution at x.
 
@@ -310,23 +370,7 @@ class Exponential(BasePrior):
         self.prior = stats.expon
         self._n_parameters = 1
 
-    def __call__(self, x):
-        """
-        Evaluates the exponential (log) distribution at x.
-
-        Parameters
-        ----------
-        x : float
-            The point(s) at which to evaluate the distribution.
-
-        Returns
-        -------
-        float
-            The value(s) of the distribution at x.
-        """
-        return self.logpdf(x)
-
-    def evaluateS1(self, x):
+    def _evaluateS1(self, x):
         """
         Evaluates the first derivative of the log exponential distribution at x.
 
@@ -358,7 +402,7 @@ class ComposedLogPrior(BasePrior):
 
         self._n_parameters = len(priors)  # Needs to be updated
 
-    def __call__(self, x):
+    def _evaluate(self, x):
         """
         Evaluates the composed prior distribution at x.
 
@@ -372,11 +416,9 @@ class ComposedLogPrior(BasePrior):
         float
             The value(s) of the distribution at x.
         """
-        if not isinstance(x, np.ndarray):
-            x = np.asarray(x)
         return sum(prior(x) for prior, x in zip(self._priors, x))
 
-    def evaluateS1(self, x):
+    def _evaluateS1(self, x):
         """
         Evaluates the first derivative of the composed prior distribution at x.
         Inspired by PINTS implementation.

@@ -9,6 +9,11 @@ class TestCosts:
     Class for tests cost functions
     """
 
+    # Define an invalid likelihood class for MAP tests
+    class InvalidLikelihood:
+        def __init__(self, problem, sigma0):
+            pass
+
     @pytest.fixture
     def model(self):
         return pybop.lithium_ion.SPM()
@@ -69,6 +74,8 @@ class TestCosts:
         params=[
             pybop.RootMeanSquaredError,
             pybop.SumSquaredError,
+            pybop.Minkowski,
+            pybop.SumofPower,
             pybop.ObserverCost,
             pybop.MAP,
         ]
@@ -79,6 +86,8 @@ class TestCosts:
             return cls(problem)
         elif cls in [pybop.MAP]:
             return cls(problem, pybop.GaussianLogLikelihoodKnownSigma)
+        elif cls in [pybop.Minkowski, pybop.SumofPower]:
+            return cls(problem, p=2)
         elif cls in [pybop.ObserverCost]:
             inputs = problem.parameters.initial_value()
             state = problem._model.reinit(inputs)
@@ -114,14 +123,53 @@ class TestCosts:
             base_cost.evaluateS1([0.5])
 
     @pytest.mark.unit
+    def test_error_in_cost_calculation(self, problem):
+        class RaiseErrorCost(pybop.BaseCost):
+            def _evaluate(self, inputs, grad=None):
+                raise ValueError("Error test.")
+
+            def _evaluateS1(self, inputs):
+                raise ValueError("Error test.")
+
+        cost = RaiseErrorCost(problem)
+        with pytest.raises(ValueError, match="Error in cost calculation: Error test."):
+            cost([0.5])
+        with pytest.raises(ValueError, match="Error in cost calculation: Error test."):
+            cost.evaluateS1([0.5])
+
+    @pytest.mark.unit
     def test_MAP(self, problem):
         # Incorrect likelihood
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match="An error occurred when constructing the Likelihood class:",
+        ):
             pybop.MAP(problem, pybop.SumSquaredError)
 
         # Incorrect construction of likelihood
-        with pytest.raises(ValueError):
-            pybop.MAP(problem, pybop.GaussianLogLikelihoodKnownSigma, sigma="string")
+        with pytest.raises(
+            ValueError,
+            match="An error occurred when constructing the Likelihood class: could not convert string to float: 'string'",
+        ):
+            pybop.MAP(problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0="string")
+
+        # Incorrect likelihood
+        with pytest.raises(ValueError, match="must be a subclass of BaseLikelihood"):
+            pybop.MAP(problem, self.InvalidLikelihood, sigma0=0.1)
+
+        # Non finite prior
+        parameter = pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            prior=pybop.Uniform(0.55, 0.6),
+        )
+        problem_non_finite = pybop.FittingProblem(
+            problem.model, parameter, problem.dataset, signal=problem.signal
+        )
+        likelihood = pybop.MAP(
+            problem_non_finite, pybop.GaussianLogLikelihoodKnownSigma, sigma0=0.01
+        )
+        assert not np.isfinite(likelihood([0.7]))
+        assert not np.isfinite(likelihood.evaluateS1([0.7])[0])
 
     @pytest.mark.unit
     def test_costs(self, cost):
@@ -151,14 +199,16 @@ class TestCosts:
             # Test option setting
             cost.set_fail_gradient(1)
 
-        if isinstance(cost, pybop.SumSquaredError):
+        if not isinstance(cost, (pybop.ObserverCost, pybop.MAP)):
             e, de = cost.evaluateS1([0.5])
 
             assert np.isscalar(e)
-            assert type(de) == np.ndarray
+            assert isinstance(de, np.ndarray)
 
             # Test exception for non-numeric inputs
-            with pytest.raises(ValueError):
+            with pytest.raises(
+                TypeError, match="Inputs must be a dictionary or numeric."
+            ):
                 cost.evaluateS1(["StringInputShouldNotWork"])
 
             with pytest.warns(UserWarning) as record:
@@ -175,11 +225,30 @@ class TestCosts:
             assert cost.evaluateS1([0.01]) == (np.inf, cost._de)
 
         # Test exception for non-numeric inputs
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
             cost(["StringInputShouldNotWork"])
 
-        # Test treatment of simulations that terminated early
-        # by variation of the cut-off voltage.
+    @pytest.mark.unit
+    def test_minkowski(self, problem):
+        # Incorrect order
+        with pytest.raises(ValueError, match="The order of the Minkowski distance"):
+            pybop.Minkowski(problem, p=-1)
+        with pytest.raises(
+            ValueError,
+            match="For p = infinity, an implementation of the Chebyshev distance is required.",
+        ):
+            pybop.Minkowski(problem, p=np.inf)
+
+    @pytest.mark.unit
+    def test_SumofPower(self, problem):
+        # Incorrect order
+        with pytest.raises(
+            ValueError, match="The order of 'p' must be greater than 0."
+        ):
+            pybop.SumofPower(problem, p=-1)
+
+        with pytest.raises(ValueError, match="p = np.inf is not yet supported."):
+            pybop.SumofPower(problem, p=np.inf)
 
     @pytest.mark.parametrize(
         "cost_class",
@@ -224,7 +293,9 @@ class TestCosts:
             assert cost([1.1]) == -np.inf
 
             # Test exception for non-numeric inputs
-            with pytest.raises(ValueError):
+            with pytest.raises(
+                TypeError, match="Inputs must be a dictionary or numeric."
+            ):
                 cost(["StringInputShouldNotWork"])
 
             # Compute after updating nominal capacity

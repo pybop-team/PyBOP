@@ -1,7 +1,7 @@
 import json
 import types
 
-from pybamm import ParameterValues, parameter_sets
+from pybamm import LithiumIonParameters, ParameterValues, parameter_sets
 
 
 class ParameterSet:
@@ -34,6 +34,12 @@ class ParameterSet:
     def __getitem__(self, key):
         return self.params[key]
 
+    def keys(self) -> list:
+        """
+        A list of parameter names
+        """
+        return list(self.params.keys())
+
     def import_parameters(self, json_path=None):
         """
         Imports parameters from a JSON file specified by the `json_path` attribute.
@@ -60,7 +66,7 @@ class ParameterSet:
 
         # Read JSON file
         if not self.params and self.json_path:
-            with open(self.json_path, "r") as file:
+            with open(self.json_path) as file:
                 self.params = json.load(file)
         else:
             raise ValueError(
@@ -132,7 +138,7 @@ class ParameterSet:
 
         # Update parameter set
         if fit_params is not None:
-            for i, param in enumerate(fit_params):
+            for _i, param in enumerate(fit_params):
                 exportable_params.update({param.name: param.value})
 
         # Replace non-serializable values
@@ -167,7 +173,7 @@ class ParameterSet:
             return False
 
     @classmethod
-    def pybamm(cls, name):
+    def pybamm(cls, name, formation_concentrations=False):
         """
         Retrieves a PyBaMM parameter set by name.
 
@@ -175,6 +181,8 @@ class ParameterSet:
         ----------
         name : str
             The name of the PyBaMM parameter set to retrieve.
+        set_formation_concentrations : bool, optional
+            If True, re-calculates the initial concentrations of lithium in the active material (default: False).
 
         Returns
         -------
@@ -187,4 +195,44 @@ class ParameterSet:
         if name not in list(parameter_sets):
             raise ValueError(msg)
 
-        return ParameterValues(name).copy()
+        parameter_set = ParameterValues(name).copy()
+
+        if formation_concentrations:
+            set_formation_concentrations(parameter_set)
+
+        return parameter_set
+
+
+def set_formation_concentrations(parameter_set):
+    """
+    Compute the concentration of lithium in the positive electrode assuming that
+    all lithium in the active material originated from the positive electrode.
+
+    Parameters
+    ----------
+    parameter_set : pybamm.ParameterValues
+        A PyBaMM parameter set containing standard lithium ion parameters.
+    """
+    # Obtain the total amount of lithium in the active material
+    Q_Li_particles_init = parameter_set.evaluate(
+        LithiumIonParameters().Q_Li_particles_init
+    )
+
+    # Convert this total amount to a concentration in the positive electrode
+    c_init = (
+        Q_Li_particles_init
+        * 3600
+        / (
+            parameter_set["Positive electrode active material volume fraction"]
+            * parameter_set["Positive electrode thickness [m]"]
+            * parameter_set["Electrode height [m]"]
+            * parameter_set["Electrode width [m]"]
+            * parameter_set["Faraday constant [C.mol-1]"]
+        )
+    )
+
+    # Update the initial lithium concentrations
+    parameter_set.update({"Initial concentration in negative electrode [mol.m-3]": 0})
+    parameter_set.update(
+        {"Initial concentration in positive electrode [mol.m-3]": c_init}
+    )

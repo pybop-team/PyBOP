@@ -48,7 +48,7 @@ class MCMCSampler:
         except Exception as e:
             raise ValueError(
                 f"Sampler could not be constructed, raised an exception: {e}"
-            )
+            ) from e
 
     def run(self):
         """

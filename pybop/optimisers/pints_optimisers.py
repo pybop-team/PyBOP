@@ -9,7 +9,7 @@ from pints import GradientDescent as PintsGradientDescent
 from pints import IRPropMin as PintsIRPropMin
 from pints import NelderMead as PintsNelderMead
 
-from pybop import AdamWImpl, BasePintsOptimiser
+from pybop import AdamWImpl, BasePintsOptimiser, CuckooSearchImpl
 
 
 class GradientDescent(BasePintsOptimiser):
@@ -268,10 +268,38 @@ class CMAES(BasePintsOptimiser):
     """
 
     def __init__(self, cost, **optimiser_kwargs):
-        x0 = optimiser_kwargs.pop("x0", cost.x0)
-        if x0 is not None and len(x0) == 1:
+        x0 = optimiser_kwargs.get("x0", cost.parameters.initial_value())
+        if len(x0) == 1 or len(cost.parameters) == 1:
             raise ValueError(
                 "CMAES requires optimisation of >= 2 parameters at once. "
-                + "Please choose another optimiser."
+                "Please choose another optimiser."
             )
         super().__init__(cost, PintsCMAES, **optimiser_kwargs)
+
+
+class CuckooSearch(BasePintsOptimiser):
+    """
+    Adapter for the Cuckoo Search optimiser in PyBOP.
+
+    Cuckoo Search is a population-based optimisation algorithm inspired by the brood parasitism of some cuckoo species.
+    It is designed to be simple, efficient, and robust, and is suitable for global optimisation problems.
+
+    Parameters
+    ----------
+    **optimiser_kwargs : optional
+        Valid PyBOP option keys and their values, for example:
+        x0 : array_like
+            Initial parameter values.
+        sigma0 : float
+            Initial step size.
+        bounds : dict
+            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
+            upper bounds on the parameters.
+
+    See Also
+    --------
+    pybop.CuckooSearch : PyBOP implementation of Cuckoo Search algorithm.
+    """
+
+    def __init__(self, cost, **optimiser_kwargs):
+        super().__init__(cost, CuckooSearchImpl, **optimiser_kwargs)

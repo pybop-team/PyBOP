@@ -77,7 +77,7 @@ class TestPintsSamplers:
             two_parameters,
             dataset,
         )
-        likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma=[0.02, 0.02])
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.01)
         prior1 = pybop.Gaussian(0.7, 0.02)
         prior2 = pybop.Gaussian(0.6, 0.02)
         composed_prior = pybop.ComposedLogPrior(prior1, prior2)

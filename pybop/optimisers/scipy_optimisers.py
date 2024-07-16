@@ -141,6 +141,22 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 # Nest this option within an options dictionary for SciPy minimize
                 self._options["options"]["maxiter"] = self.unset_options.pop(key)
 
+    def cost_wrapper(self, x):
+        """
+        Scale the cost function, preserving the sign convention, and eliminate nan values
+        """
+        self.log["x"].append([x])
+
+        if not self._options["jac"]:
+            cost = self.cost(x) / self._cost0
+            if np.isinf(cost):
+                self.inf_count += 1
+                cost = 1 + 0.9**self.inf_count  # for fake finite gradient
+            return cost if self.minimising else -cost
+
+        L, dl = self.cost.evaluateS1(x)
+        return (L, dl) if self.minimising else (-L, -dl)
+
     def _run_optimiser(self):
         """
         Executes the optimisation process using SciPy's minimize function.
@@ -150,6 +166,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         result : scipy.optimize.OptimizeResult
             The result of the optimisation including the optimised parameter values and cost.
         """
+        self.inf_count = 0
 
         # Add callback storing history of parameter values
         def callback(intermediate_result: OptimizeResult):
@@ -161,9 +178,9 @@ class SciPyMinimize(BaseSciPyOptimiser):
         # Compute the absolute initial cost and resample if required
         self._cost0 = np.abs(self.cost(self.x0))
         if np.isinf(self._cost0):
-            for i in range(1, self.num_resamples):
-                x0 = self.cost.parameters.rvs(1)
-                self._cost0 = np.abs(self.cost(x0))
+            for _i in range(1, self.num_resamples):
+                self.x0 = self.parameters.rvs()
+                self._cost0 = np.abs(self.cost(self.x0))
                 if not np.isinf(self._cost0):
                     break
             if np.isinf(self._cost0):
@@ -171,27 +188,8 @@ class SciPyMinimize(BaseSciPyOptimiser):
                     "The initial parameter values return an infinite cost."
                 )
 
-        # Scale the cost function, preserving the sign convention, and eliminate nan values
-        self.inf_count = 0
-
-        if not self._options["jac"]:
-
-            def cost_wrapper(x):
-                self.log["x"].append([x])
-                cost = self.cost(x) / self._cost0
-                if np.isinf(cost):
-                    self.inf_count += 1
-                    cost = 1 + 0.9**self.inf_count  # for fake finite gradient
-                return cost if self.minimising else -cost
-        elif self._options["jac"] is True:
-
-            def cost_wrapper(x):
-                self.log["x"].append([x])
-                L, dl = self.cost.evaluateS1(x)
-                return L, dl if self.minimising else -L, -dl
-
         return minimize(
-            cost_wrapper,
+            self.cost_wrapper,
             self.x0,
             bounds=self._scipy_bounds,
             callback=callback,
