@@ -212,45 +212,47 @@ class WeightedCost(BaseCost):
     a single weighted cost function.
 
     Inherits all parameters and attributes from ``BaseCost``.
+
+    Additional Attributes
+    ---------------------
+    costs : List[pybop.BaseCost]
+        A list of PyBOP cost objects.
     """
 
-    def __init__(self, cost_list, weights=None):
-        self.cost_list = cost_list
+    def __init__(self, *args, weights=None):
+        self.costs = []
+        for cost in args:
+            if not isinstance(cost, BaseCost):
+                raise TypeError(f"Received {type(cost)} instead of cost object.")
+            self.costs.append(cost)
         self.weights = weights
         self._different_problems = False
 
-        if not isinstance(self.cost_list, list):
-            raise TypeError(
-                f"Expected a list of costs. Received {type(self.cost_list)}"
-            )
         if self.weights is None:
-            self.weights = np.ones(len(cost_list))
+            self.weights = np.ones(len(self.costs))
         elif isinstance(self.weights, list):
             self.weights = np.array(self.weights)
         if not isinstance(self.weights, np.ndarray):
             raise TypeError(
-                "Expected a list or array of weights the same length as cost_list."
+                "Expected a list or array of weights the same length as costs."
             )
-        if not len(self.weights) == len(self.cost_list):
+        if not len(self.weights) == len(self.costs):
             raise ValueError(
-                "Expected a list or array of weights the same length as cost_list."
+                "Expected a list or array of weights the same length as costs."
             )
 
         # Check if all costs depend on the same problem
-        for cost in self.cost_list:
-            if (
-                hasattr(cost, "problem")
-                and cost.problem is not self.cost_list[0].problem
-            ):
+        for cost in self.costs:
+            if hasattr(cost, "problem") and cost.problem is not self.costs[0].problem:
                 self._different_problems = True
 
         if not self._different_problems:
-            super().__init__(self.cost_list[0].problem)
-            self._fixed_problem = self.cost_list[0]._fixed_problem
+            super().__init__(self.costs[0].problem)
+            self._fixed_problem = self.costs[0]._fixed_problem
         else:
             super().__init__()
             self._fixed_problem = False
-            for cost in self.cost_list:
+            for cost in self.costs:
                 self.parameters.join(cost.parameters)
 
     def _evaluate(self, inputs: Inputs, grad=None):
@@ -270,14 +272,14 @@ class WeightedCost(BaseCost):
         float
             The weighted cost value.
         """
-        e = np.empty_like(self.cost_list)
+        e = np.empty_like(self.costs)
 
         if not self._fixed_problem and self._different_problems:
             self.parameters.update(values=list(inputs.values()))
         elif not self._fixed_problem:
             self._current_prediction = self.problem.evaluate(inputs)
 
-        for i, cost in enumerate(self.cost_list):
+        for i, cost in enumerate(self.costs):
             if not self._fixed_problem and self._different_problems:
                 inputs = cost.parameters.as_dict()
                 cost._current_prediction = cost.problem.evaluate(inputs)
@@ -302,8 +304,8 @@ class WeightedCost(BaseCost):
             A tuple containing the cost and the gradient. The cost is a float,
             and the gradient is an array-like of the same length as `x`.
         """
-        e = np.empty_like(self.cost_list)
-        de = np.empty((len(self.parameters), len(self.cost_list)))
+        e = np.empty_like(self.costs)
+        de = np.empty((len(self.parameters), len(self.costs)))
 
         if not self._fixed_problem and self._different_problems:
             self.parameters.update(values=list(inputs.values()))
@@ -312,7 +314,7 @@ class WeightedCost(BaseCost):
                 self.problem.evaluateS1(inputs)
             )
 
-        for i, cost in enumerate(self.cost_list):
+        for i, cost in enumerate(self.costs):
             if not self._fixed_problem and self._different_problems:
                 inputs = cost.parameters.as_dict()
                 cost._current_prediction, cost._current_sensitivities = (

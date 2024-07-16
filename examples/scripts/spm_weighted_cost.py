@@ -41,7 +41,7 @@ dataset = pybop.Dataset(
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost1 = pybop.SumSquaredError(problem)
 cost2 = pybop.RootMeanSquaredError(problem)
-weighted_cost = pybop.WeightedCost(cost_list=[cost1, cost2], weights=[1, 100])
+weighted_cost = pybop.WeightedCost(cost1, cost2, weights=[1, 100])
 
 for cost in [weighted_cost, cost1, cost2]:
     optim = pybop.IRPropMin(cost, max_iterations=60)

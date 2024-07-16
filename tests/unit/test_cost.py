@@ -304,37 +304,31 @@ class TestCosts:
         cost2 = pybop.RootMeanSquaredError(problem)
 
         # Test with and without weights
-        weighted_cost = pybop.WeightedCost(cost_list=[cost1, cost2])
+        weighted_cost = pybop.WeightedCost(cost1, cost2)
         np.testing.assert_array_equal(weighted_cost.weights, np.ones(2))
-        weighted_cost = pybop.WeightedCost(cost_list=[cost1, cost2], weights=[1, 1])
+        weighted_cost = pybop.WeightedCost(cost1, cost2, weights=[1, 1])
         np.testing.assert_array_equal(weighted_cost.weights, np.ones(2))
-        weighted_cost = pybop.WeightedCost(
-            cost_list=[cost1, cost2], weights=np.array([1, 1])
-        )
+        weighted_cost = pybop.WeightedCost(cost1, cost2, weights=np.array([1, 1]))
         np.testing.assert_array_equal(weighted_cost.weights, np.ones(2))
         with pytest.raises(
             TypeError,
-            match=r"Expected a list of costs.",
+            match=r"Received <class 'str'> instead of cost object.",
         ):
-            weighted_cost = pybop.WeightedCost(cost_list="Invalid string")
+            weighted_cost = pybop.WeightedCost("Invalid string")
         with pytest.raises(
             TypeError,
-            match="Expected a list or array of weights the same length as cost_list.",
+            match="Expected a list or array of weights the same length as costs.",
         ):
-            weighted_cost = pybop.WeightedCost(
-                cost_list=[cost1, cost2], weights="Invalid string"
-            )
+            weighted_cost = pybop.WeightedCost(cost1, cost2, weights="Invalid string")
         with pytest.raises(
             ValueError,
-            match="Expected a list or array of weights the same length as cost_list.",
+            match="Expected a list or array of weights the same length as costs.",
         ):
-            weighted_cost = pybop.WeightedCost(cost_list=[cost1, cost2], weights=[1])
+            weighted_cost = pybop.WeightedCost(cost1, cost2, weights=[1])
 
         # Test with and without different problems
         weight = 100
-        weighted_cost_2 = pybop.WeightedCost(
-            cost_list=[cost1, cost2], weights=[1, weight]
-        )
+        weighted_cost_2 = pybop.WeightedCost(cost1, cost2, weights=[1, weight])
         assert weighted_cost_2._different_problems is False
         assert weighted_cost_2._fixed_problem is True
         assert weighted_cost_2.problem is problem
@@ -346,9 +340,7 @@ class TestCosts:
         )
 
         cost3 = pybop.RootMeanSquaredError(copy(problem))
-        weighted_cost_3 = pybop.WeightedCost(
-            cost_list=[cost1, cost3], weights=[1, weight]
-        )
+        weighted_cost_3 = pybop.WeightedCost(cost1, cost3, weights=[1, weight])
         assert weighted_cost_3._different_problems is True
         assert weighted_cost_3._fixed_problem is False
         assert weighted_cost_3.problem is None
@@ -370,7 +362,7 @@ class TestCosts:
         cost2 = pybop.RootMeanSquaredError(design_problem)
 
         # Test with and without weights
-        weighted_cost = pybop.WeightedCost(cost_list=[cost1, cost2])
+        weighted_cost = pybop.WeightedCost(cost1, cost2)
         assert weighted_cost._different_problems is False
         assert weighted_cost._fixed_problem is False
         assert weighted_cost.problem is design_problem
