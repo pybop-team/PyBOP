@@ -58,7 +58,7 @@ class Test_SPM_Parameterisation:
     @pytest.fixture
     def spm_costs(self, model, parameters, cost_class, init_soc):
         # Form dataset
-        model.set_init_soc(init_soc, inputs=self.ground_truth)
+        model.set_init_soc(init_soc)
         solution = self.get_data(model, parameters, self.ground_truth)
         dataset = pybop.Dataset(
             {
@@ -126,7 +126,7 @@ class Test_SPM_Parameterisation:
         if issubclass(optimiser, (pybop.AdamW, pybop.IRPropMin)) and isinstance(
             spm_costs, pybop.GaussianLogLikelihood
         ):
-            optim.set_max_unchanged_iterations(iterations=75)
+            optim = optimiser(max_unchanged_iterations=75, **common_args)
 
         initial_cost = optim.cost(x0)
         x, final_cost = optim.run()
@@ -149,7 +149,7 @@ class Test_SPM_Parameterisation:
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, cost_class):
         # Form dataset
-        model.set_init_soc(0.5, inputs=self.ground_truth)
+        model.set_init_soc(0.5)
         solution = self.get_data(model, parameters, self.ground_truth)
         dataset = pybop.Dataset(
             {
@@ -231,7 +231,7 @@ class Test_SPM_Parameterisation:
         second_model = pybop.lithium_ion.SPMe(parameter_set=second_parameter_set)
 
         # Form dataset
-        second_model.set_init_soc(init_soc, inputs=self.ground_truth)
+        second_model.set_init_soc(init_soc)
         solution = self.get_data(second_model, parameters, self.ground_truth)
         dataset = pybop.Dataset(
             {
