@@ -54,16 +54,14 @@ class TestLikelihoods:
     @pytest.fixture
     def one_signal_problem(self, model, parameters, dataset):
         signal = ["Voltage [V]"]
-        return pybop.FittingProblem(
-            model, parameters, dataset, signal=signal, init_soc=1.0
-        )
+        model.set_init_soc(1.0)
+        return pybop.FittingProblem(model, parameters, dataset, signal=signal)
 
     @pytest.fixture
     def two_signal_problem(self, model, parameters, dataset):
         signal = ["Time [s]", "Voltage [V]"]
-        return pybop.FittingProblem(
-            model, parameters, dataset, signal=signal, init_soc=1.0
-        )
+        model.set_init_soc(1.0)
+        return pybop.FittingProblem(model, parameters, dataset, signal=signal)
 
     @pytest.mark.parametrize(
         "problem_name, n_outputs",

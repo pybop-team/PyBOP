@@ -26,8 +26,6 @@ class Observer(BaseProblem):
       The signal to observe.
     additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default: []).
-    init_soc : float, optional
-        Initial state of charge (default: None).
     """
 
     # define a subtype for covariance matrices for use by derived classes
@@ -40,11 +38,8 @@ class Observer(BaseProblem):
         check_model: bool = True,
         signal: Optional[list[str]] = None,
         additional_variables: Optional[list[str]] = None,
-        init_soc: Optional[float] = None,
     ) -> None:
-        super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc
-        )
+        super().__init__(parameters, model, check_model, signal, additional_variables)
         if model._built_model is None:
             raise ValueError("Only built models can be used in Observers")
 

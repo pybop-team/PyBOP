@@ -37,13 +37,11 @@ parameters = pybop.Parameters(
 experiment = pybop.Experiment(
     ["Discharge at 1C until 2.5 V (5 seconds period)"],
 )
-init_soc = 1  # start from full charge
+model.set_init_soc(1.0)  # start from full charge
 signal = ["Voltage [V]", "Current [A]"]
 
 # Generate problem
-problem = pybop.DesignProblem(
-    model, parameters, experiment, signal=signal, init_soc=init_soc
-)
+problem = pybop.DesignProblem(model, parameters, experiment, signal=signal)
 
 # Generate cost function and optimisation class:
 cost = pybop.GravimetricEnergyDensity(problem)

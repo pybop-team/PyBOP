@@ -26,8 +26,6 @@ class DesignProblem(BaseProblem):
         The signal to fit (default: "Voltage [V]").
     additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default additions are: ["Time [s]", "Current [A]"]).
-    init_soc : float, optional
-        Initial state of charge (default: None).
     """
 
     def __init__(
@@ -38,11 +36,8 @@ class DesignProblem(BaseProblem):
         check_model: bool = True,
         signal: Optional[list[str]] = None,
         additional_variables: Optional[list[str]] = None,
-        init_soc: Optional[float] = None,
     ):
-        super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc
-        )
+        super().__init__(parameters, model, check_model, signal, additional_variables)
 
         # Add time and current as additional variables and remove duplicates
         self.variables.extend(["Time [s]", "Current [A]"])
@@ -60,7 +55,6 @@ class DesignProblem(BaseProblem):
                 experiment=self.experiment,
                 parameters=self.parameters,
                 check_model=self.check_model,
-                init_soc=self.init_soc,
             )
 
         # Add an example dataset for plotting comparison
@@ -86,7 +80,6 @@ class DesignProblem(BaseProblem):
         sol = self._model.predict(
             inputs=inputs,
             experiment=self.experiment,
-            init_soc=self.init_soc,
         )
 
         if sol == [np.inf]:

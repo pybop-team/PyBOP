@@ -64,9 +64,8 @@ class TestCosts:
     def problem(self, model, parameters, dataset, signal, request):
         cut_off = request.param
         model._parameter_set.update({"Lower voltage cut-off [V]": cut_off})
-        problem = pybop.FittingProblem(
-            model, parameters, dataset, signal=signal, init_soc=1.0
-        )
+        model.set_init_soc(1.0)
+        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
         return problem
 
     @pytest.fixture(
@@ -229,9 +228,8 @@ class TestCosts:
         signal,
     ):
         # Construct Problem
-        problem = pybop.DesignProblem(
-            model, parameters, experiment, signal=signal, init_soc=0.5
-        )
+        model.set_init_soc(0.5)
+        problem = pybop.DesignProblem(model, parameters, experiment, signal=signal)
 
         # Construct Cost
         cost = cost_class(problem)

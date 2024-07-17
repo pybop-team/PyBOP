@@ -23,7 +23,7 @@ parameters = pybop.Parameters(
         true_value=0.67,
     ),
 )
-init_soc = 0.7
+model.set_init_soc(0.7)
 experiment = pybop.Experiment(
     [
         (
@@ -32,9 +32,7 @@ experiment = pybop.Experiment(
         ),
     ]
 )
-values = model.predict(
-    init_soc=init_soc, experiment=experiment, inputs=parameters.as_dict("true")
-)
+values = model.predict(experiment=experiment, inputs=parameters.as_dict("true"))
 
 sigma = 0.002
 corrupt_values = values["Voltage [V]"].data + np.random.normal(
@@ -51,7 +49,7 @@ dataset = pybop.Dataset(
 )
 
 # Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
+problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.GaussianLogLikelihood(problem, sigma0=sigma * 4)
 optim = pybop.Optimisation(
     cost,

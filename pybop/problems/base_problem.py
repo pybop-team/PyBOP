@@ -20,8 +20,6 @@ class BaseProblem:
       The signal to observe.
     additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default: []).
-    init_soc : float, optional
-        Initial state of charge (default: None).
 
     Attributes
     ----------
@@ -36,7 +34,6 @@ class BaseProblem:
         check_model: bool = True,
         signal: Optional[list[str]] = None,
         additional_variables: Optional[list[str]] = None,
-        init_soc: Optional[float] = None,
     ):
         if signal is None:
             signal = ["Voltage [V]"]
@@ -71,7 +68,6 @@ class BaseProblem:
         if additional_variables is not None:
             self.variables.extend(additional_variables)
             self.variables = list(set(self.variables))
-        self.init_soc = init_soc
         self.n_outputs = len(self.signal)
         self._dataset = None
         self._time_data = None
@@ -180,7 +176,7 @@ class BaseProblem:
 
         Parameters
         ----------
-        target : np.ndarray
+        target : Dataset
             The target dataset array.
         """
         if self.signal is None:

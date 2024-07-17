@@ -27,8 +27,6 @@ class FittingProblem(BaseProblem):
         The variable used for fitting (default: "Voltage [V]").
     additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default: []).
-    init_soc : float, optional
-        Initial state of charge (default: None).
 
     Additional Attributes
     ---------------------
@@ -50,11 +48,8 @@ class FittingProblem(BaseProblem):
         check_model: bool = True,
         signal: Optional[list[str]] = None,
         additional_variables: Optional[list[str]] = None,
-        init_soc: Optional[float] = None,
     ):
-        super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc
-        )
+        super().__init__(parameters, model, check_model, signal, additional_variables)
         self._dataset = dataset.data
         self.parameters.initial_value()
 
@@ -79,7 +74,6 @@ class FittingProblem(BaseProblem):
                 dataset=self._dataset,
                 parameters=self.parameters,
                 check_model=self.check_model,
-                init_soc=self.init_soc,
             )
 
     def _evaluate(self, inputs: Inputs):

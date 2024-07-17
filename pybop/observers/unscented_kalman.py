@@ -34,8 +34,6 @@ class UnscentedKalmanFilterObserver(Observer):
         Flag to indicate if the model should be checked (default: True).
     signal: str
         The signal to observe.
-    init_soc : float, optional
-        Initial state of charge (default: None).
     """
 
     Covariance = np.ndarray
@@ -51,16 +49,30 @@ class UnscentedKalmanFilterObserver(Observer):
         check_model: bool = True,
         signal: Optional[list[str]] = None,
         additional_variables: Optional[list[str]] = None,
-        init_soc: Optional[float] = None,
     ) -> None:
-        super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc
-        )
         if dataset is not None:
-            self._dataset = dataset.data
+            # Check that the dataset contains necessary variables
+            dataset.check([*signal, "Current function [A]"])
+            dataset = dataset.data
 
-            # Check that the dataset contains time and current
-            dataset.check([*self.signal, "Current function [A]"])
+        if model is not None:
+            # Clear any existing built model and its properties
+            if model._built_model is not None:
+                model._model_with_set_params = None
+                model._built_model = None
+                model._mesh = None
+                model._disc = None
+
+            # Build the model from scratch
+            model.build(
+                dataset=dataset,
+                parameters=parameters,
+                check_model=check_model,
+            )
+
+        super().__init__(parameters, model, check_model, signal, additional_variables)
+        if dataset is not None:
+            self._dataset = dataset
 
             self._time_data = self._dataset["Time [s]"]
             self.n_time_data = len(self._time_data)
