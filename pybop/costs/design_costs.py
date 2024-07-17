@@ -1,4 +1,5 @@
 import warnings
+from typing import Union
 
 import numpy as np
 
@@ -65,25 +66,56 @@ class DesignCost(BaseCost):
         self.problem._target = {key: solution[key] for key in self.problem.signal}
         self.dt = solution["Time [s]"][1] - solution["Time [s]"][0]
 
-    def _evaluate(self, inputs: Inputs, grad=None):
+    def evaluate(self, inputs: Union[Inputs, list], grad=None):
         """
-        Computes the value of the cost function.
-
-        This method must be implemented by subclasses.
+        Call the evaluate function for a given set of parameters.
 
         Parameters
         ----------
-        inputs : Inputs
-            The parameters for which to compute the cost.
-        grad : array, optional
-            Gradient information, not used in this method.
+        inputs : Inputs or array-like
+            The parameters for which to compute the cost and gradient.
+        grad : array-like, optional
+            An array to store the gradient of the cost function with respect
+            to the parameters.
+
+        Returns
+        -------
+        float
+            The calculated cost function value.
 
         Raises
         ------
-        NotImplementedError
-            If the method has not been implemented by the subclass.
+        ValueError
+            If an error occurs during the calculation of the cost.
         """
-        raise NotImplementedError
+        inputs = self.parameters.verify(inputs)
+
+        try:
+            with warnings.catch_warnings():
+                # Convert UserWarning to an exception
+                warnings.filterwarnings("error", category=UserWarning)
+                if self._predict:
+                    if self.update_capacity:
+                        self.problem.model.approximate_capacity(inputs)
+                    self.y = self.problem.evaluate(inputs)
+
+                return self._evaluate(inputs, grad)
+
+        # Catch NotImplementedError and raise it
+        except NotImplementedError as e:
+            raise e
+
+        # Catch infeasible solutions and return infinity
+        except UserWarning as e:
+            if self.verbose:
+                print(f"Ignoring this sample due to: {e}")
+            return -np.inf
+
+        # Catch any other exception and return infinity
+        except Exception as e:
+            if self.verbose:
+                print(f"An error occurred during the evaluation: {e}")
+            return -np.inf
 
 
 class GravimetricEnergyDensity(DesignCost):
@@ -98,7 +130,6 @@ class GravimetricEnergyDensity(DesignCost):
 
     def __init__(self, problem, update_capacity=False):
         super().__init__(problem, update_capacity)
-        self._fixed_problem = False  # keep problem evaluation within _evaluate
 
     def _evaluate(self, inputs: Inputs, grad=None):
         """
@@ -116,31 +147,12 @@ class GravimetricEnergyDensity(DesignCost):
         float
             The gravimetric energy density or -infinity in case of infeasible parameters.
         """
-        try:
-            with warnings.catch_warnings():
-                # Convert UserWarning to an exception
-                warnings.filterwarnings("error", category=UserWarning)
+        voltage, current = self.y["Voltage [V]"], self.y["Current [A]"]
+        energy_density = np.trapz(voltage * current, dx=self.dt) / (
+            3600 * self.problem.model.cell_mass(self.parameter_set)
+        )
 
-                if self.update_capacity:
-                    self.problem.model.approximate_capacity(inputs)
-                solution = self.problem.evaluate(inputs)
-
-                voltage, current = solution["Voltage [V]"], solution["Current [A]"]
-                energy_density = np.trapz(voltage * current, dx=self.dt) / (
-                    3600 * self.problem.model.cell_mass(self.parameter_set)
-                )
-
-                return energy_density
-
-        # Catch infeasible solutions and return infinity
-        except UserWarning as e:
-            print(f"Ignoring this sample due to: {e}")
-            return -np.inf
-
-        # Catch any other exception and return infinity
-        except Exception as e:
-            print(f"An error occurred during the evaluation: {e}")
-            return -np.inf
+        return energy_density
 
 
 class VolumetricEnergyDensity(DesignCost):
@@ -155,7 +167,6 @@ class VolumetricEnergyDensity(DesignCost):
 
     def __init__(self, problem, update_capacity=False):
         super().__init__(problem, update_capacity)
-        self._fixed_problem = False  # keep problem evaluation within _evaluate
 
     def _evaluate(self, inputs: Inputs, grad=None):
         """
@@ -173,28 +184,9 @@ class VolumetricEnergyDensity(DesignCost):
         float
             The volumetric energy density or -infinity in case of infeasible parameters.
         """
-        try:
-            with warnings.catch_warnings():
-                # Convert UserWarning to an exception
-                warnings.filterwarnings("error", category=UserWarning)
+        voltage, current = self.y["Voltage [V]"], self.y["Current [A]"]
+        energy_density = np.trapz(voltage * current, dx=self.dt) / (
+            3600 * self.problem.model.cell_volume(self.parameter_set)
+        )
 
-                if self.update_capacity:
-                    self.problem.model.approximate_capacity(inputs)
-                solution = self.problem.evaluate(inputs)
-
-                voltage, current = solution["Voltage [V]"], solution["Current [A]"]
-                energy_density = np.trapz(voltage * current, dx=self.dt) / (
-                    3600 * self.problem.model.cell_volume(self.parameter_set)
-                )
-
-                return energy_density
-
-        # Catch infeasible solutions and return infinity
-        except UserWarning as e:
-            print(f"Ignoring this sample due to: {e}")
-            return -np.inf
-
-        # Catch any other exception and return infinity
-        except Exception as e:
-            print(f"An error occurred during the evaluation: {e}")
-            return -np.inf
+        return energy_density

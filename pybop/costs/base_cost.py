@@ -1,8 +1,10 @@
+import copy
+import warnings
 from typing import Optional, Union
 
 import numpy as np
 
-from pybop import BaseProblem
+from pybop import BaseProblem, DesignProblem
 from pybop.parameters.parameter import Inputs, Parameters
 
 
@@ -24,25 +26,25 @@ class BaseCost:
         An array containing the target data to fit.
     n_outputs : int
         The number of outputs in the model.
-
-    Additional Attributes
-    ---------------------
-    _fixed_problem : bool
-        If True, the problem does not need to be rebuilt before the cost is
-        calculated (default: False).
+    _predict : bool
+        If False, the problem will be evaluated outside the self.evaluate() method
+        before the cost is calculated (default: False).
     """
 
     def __init__(self, problem: Optional[BaseProblem] = None):
         self.parameters = Parameters()
         self.problem = problem
-        self._fixed_problem = False
+        self.verbose = False
+        self._predict = False
+        self.y = None
+        self.dy = None
         self.set_fail_gradient()
         if isinstance(self.problem, BaseProblem):
             self._target = self.problem._target
             self.parameters.join(self.problem.parameters)
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
-            self._fixed_problem = True
+            self._predict = True
 
     @property
     def n_parameters(self):
@@ -79,8 +81,8 @@ class BaseCost:
         inputs = self.parameters.verify(inputs)
 
         try:
-            if self._fixed_problem:
-                self._current_prediction = self.problem.evaluate(inputs)
+            if self._predict:
+                self.y = self.problem.evaluate(inputs)
 
             return self._evaluate(inputs, grad)
 
@@ -139,10 +141,8 @@ class BaseCost:
         inputs = self.parameters.verify(inputs)
 
         try:
-            if self._fixed_problem:
-                self._current_prediction, self._current_sensitivities = (
-                    self.problem.evaluateS1(inputs)
-                )
+            if self._predict:
+                self.y, self.dy = self.problem.evaluateS1(inputs)
 
             return self._evaluateS1(inputs)
 
@@ -219,52 +219,59 @@ class WeightedCost(BaseCost):
 
     Inherits all parameters and attributes from ``BaseCost``.
 
-    Additional Attributes
+    Attributes
     ---------------------
     costs : list[pybop.BaseCost]
         A list of PyBOP cost objects.
     weights : list[float]
         A list of values with which to weight the cost values.
-    _different_problems : bool
+    _has_different_problems : bool
         If True, the problem for each cost is evaluated independently during
         each evaluation of the cost (default: False).
     """
 
-    def __init__(self, *args, weights: Optional[list[float]] = None):
-        self.costs = []
-        for cost in args:
-            if not isinstance(cost, BaseCost):
-                raise TypeError(f"Received {type(cost)} instead of cost object.")
-            self.costs.append(cost)
-        self.weights = weights
-        self._different_problems = False
+    def __init__(self, *costs, weights: Optional[list[float]] = None):
+        if not all(isinstance(cost, BaseCost) for cost in costs):
+            raise TypeError("All costs must be instances of BaseCost.")
+        self.costs = [copy.copy(cost) for cost in costs]
+        self._has_different_problems = False
+        self.minimising = not any(
+            isinstance(cost.problem, DesignProblem) for cost in self.costs
+        )
+        if len(set(type(cost.problem) for cost in self.costs)) > 1:
+            raise TypeError("All problems must be of the same class type.")
 
-        if self.weights is None:
+        # Check if weights are provided
+        if weights is not None:
+            try:
+                self.weights = np.asarray(weights, dtype=float)
+            except ValueError:
+                raise ValueError("Weights must be numeric values.") from None
+
+            if self.weights.size != len(self.costs):
+                raise ValueError("Number of weights must match number of costs.")
+        else:
             self.weights = np.ones(len(self.costs))
-        elif isinstance(self.weights, list):
-            self.weights = np.array(self.weights)
-        if not isinstance(self.weights, np.ndarray):
-            raise TypeError(
-                "Expected a list or array of weights the same length as costs."
-            )
-        if not len(self.weights) == len(self.costs):
-            raise ValueError(
-                "Expected a list or array of weights the same length as costs."
-            )
 
         # Check if all costs depend on the same problem
-        for cost in self.costs:
-            if hasattr(cost, "problem") and cost.problem is not self.costs[0].problem:
-                self._different_problems = True
+        self._has_different_problems = any(
+            hasattr(cost, "problem") and cost.problem is not self.costs[0].problem
+            for cost in self.costs[1:]
+        )
 
-        if not self._different_problems:
-            super().__init__(self.costs[0].problem)
-            self._fixed_problem = self.costs[0]._fixed_problem
-        else:
+        if self._has_different_problems:
             super().__init__()
-            self._fixed_problem = False
             for cost in self.costs:
                 self.parameters.join(cost.parameters)
+        else:
+            super().__init__(self.costs[0].problem)
+            self._predict = False
+            for cost in self.costs:
+                cost._predict = False
+
+        # Catch UserWarnings as exceptions
+        if not self.minimising:
+            warnings.filterwarnings("error", category=UserWarning)
 
     def _evaluate(self, inputs: Inputs, grad=None):
         """
@@ -285,18 +292,22 @@ class WeightedCost(BaseCost):
         """
         e = np.empty_like(self.costs)
 
-        if not self._fixed_problem and self._different_problems:
-            self.parameters.update(values=list(inputs.values()))
-        elif not self._fixed_problem:
-            self._current_prediction = self.problem.evaluate(inputs)
+        if not self._predict:
+            if self._has_different_problems:
+                self.parameters.update(values=list(inputs.values()))
+            else:
+                try:
+                    with warnings.catch_warnings():
+                        self.y = self.problem.evaluate(inputs)
+                except UserWarning as e:
+                    if self.verbose:
+                        print(f"Ignoring this sample due to: {e}")
+                    return -np.inf
 
         for i, cost in enumerate(self.costs):
-            if not self._fixed_problem and self._different_problems:
-                inputs = cost.parameters.as_dict()
-                cost._current_prediction = cost.problem.evaluate(inputs)
-            else:
-                cost._current_prediction = self._current_prediction
-            e[i] = cost._evaluate(inputs, grad)
+            if not self._has_different_problems:
+                cost.y = self.y
+            e[i] = cost.evaluate(inputs)
 
         return np.dot(e, self.weights)
 
@@ -318,25 +329,16 @@ class WeightedCost(BaseCost):
         e = np.empty_like(self.costs)
         de = np.empty((len(self.parameters), len(self.costs)))
 
-        if not self._fixed_problem and self._different_problems:
-            self.parameters.update(values=list(inputs.values()))
-        elif not self._fixed_problem:
-            self._current_prediction, self._current_sensitivities = (
-                self.problem.evaluateS1(inputs)
-            )
+        if not self._predict:
+            if self._has_different_problems:
+                self.parameters.update(values=list(inputs.values()))
+            else:
+                self.y, self.dy = self.problem.evaluateS1(inputs)
 
         for i, cost in enumerate(self.costs):
-            if not self._fixed_problem and self._different_problems:
-                inputs = cost.parameters.as_dict()
-                cost._current_prediction, cost._current_sensitivities = (
-                    cost.problem.evaluateS1(inputs)
-                )
-            else:
-                cost._current_prediction, cost._current_sensitivities = (
-                    self._current_prediction,
-                    self._current_sensitivities,
-                )
-            e[i], de[:, i] = cost._evaluateS1(inputs)
+            if not self._has_different_problems:
+                cost.y, cost.dy = (self.y, self.dy)
+            e[i], de[:, i] = cost.evaluateS1(inputs)
 
         e = np.dot(e, self.weights)
         de = np.dot(de, self.weights)

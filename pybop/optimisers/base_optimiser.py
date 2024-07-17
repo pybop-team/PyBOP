@@ -3,7 +3,14 @@ from typing import Optional
 
 import numpy as np
 
-from pybop import BaseCost, BaseLikelihood, DesignCost, Parameter, Parameters
+from pybop import (
+    BaseCost,
+    BaseLikelihood,
+    DesignCost,
+    Parameter,
+    Parameters,
+    WeightedCost,
+)
 
 
 class BaseOptimiser:
@@ -67,6 +74,8 @@ class BaseOptimiser:
             self.cost = cost
             self.parameters.join(cost.parameters)
             self.set_allow_infeasible_solutions()
+            if isinstance(cost, WeightedCost):
+                self.minimising = cost.minimising
             if isinstance(cost, (BaseLikelihood, DesignCost)):
                 self.minimising = False
 

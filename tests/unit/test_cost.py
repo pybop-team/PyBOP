@@ -312,25 +312,25 @@ class TestCosts:
         np.testing.assert_array_equal(weighted_cost.weights, np.ones(2))
         with pytest.raises(
             TypeError,
-            match=r"Received <class 'str'> instead of cost object.",
+            match="All costs must be instances of BaseCost.",
         ):
-            weighted_cost = pybop.WeightedCost("Invalid string")
+            weighted_cost = pybop.WeightedCost(cost1.problem)
         with pytest.raises(
-            TypeError,
-            match="Expected a list or array of weights the same length as costs.",
+            ValueError,
+            match="Weights must be numeric values.",
         ):
             weighted_cost = pybop.WeightedCost(cost1, cost2, weights="Invalid string")
         with pytest.raises(
             ValueError,
-            match="Expected a list or array of weights the same length as costs.",
+            match="Number of weights must match number of costs.",
         ):
             weighted_cost = pybop.WeightedCost(cost1, cost2, weights=[1])
 
         # Test with and without different problems
         weight = 100
         weighted_cost_2 = pybop.WeightedCost(cost1, cost2, weights=[1, weight])
-        assert weighted_cost_2._different_problems is False
-        assert weighted_cost_2._fixed_problem is True
+        assert weighted_cost_2._has_different_problems is False
+        assert weighted_cost_2._predict is False
         assert weighted_cost_2.problem is problem
         assert weighted_cost_2([0.5]) >= 0
         np.testing.assert_allclose(
@@ -341,8 +341,8 @@ class TestCosts:
 
         cost3 = pybop.RootMeanSquaredError(copy(problem))
         weighted_cost_3 = pybop.WeightedCost(cost1, cost3, weights=[1, weight])
-        assert weighted_cost_3._different_problems is True
-        assert weighted_cost_3._fixed_problem is False
+        assert weighted_cost_3._has_different_problems is True
+        assert weighted_cost_3._predict is False
         assert weighted_cost_3.problem is None
         assert weighted_cost_3([0.5]) >= 0
         np.testing.assert_allclose(
@@ -356,15 +356,27 @@ class TestCosts:
         np.testing.assert_allclose(errors_2, errors_3, atol=1e-5)
         np.testing.assert_allclose(sensitivities_2, sensitivities_3, atol=1e-5)
 
+        # Test MAP explicitly
+        cost4 = pybop.MAP(problem, pybop.GaussianLogLikelihoodKnownSigma)
+        weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, weight])
+        assert weighted_cost_4._has_different_problems is False
+        assert weighted_cost_4._predict is False
+        assert weighted_cost_4([0.5]) <= 0
+        np.testing.assert_allclose(
+            weighted_cost_4.evaluate([0.6]),
+            cost1([0.6]) + weight * cost4([0.6]),
+            atol=1e-5,
+        )
+
     @pytest.mark.unit
     def test_weighted_design_cost(self, design_problem):
         cost1 = pybop.GravimetricEnergyDensity(design_problem)
-        cost2 = pybop.RootMeanSquaredError(design_problem)
+        cost2 = pybop.VolumetricEnergyDensity(design_problem)
 
         # Test with and without weights
         weighted_cost = pybop.WeightedCost(cost1, cost2)
-        assert weighted_cost._different_problems is False
-        assert weighted_cost._fixed_problem is False
+        assert weighted_cost._has_different_problems is False
+        assert weighted_cost._predict is False
         assert weighted_cost.problem is design_problem
         assert weighted_cost([0.5]) >= 0
         np.testing.assert_allclose(
@@ -372,3 +384,13 @@ class TestCosts:
             cost1([0.6]) + cost2([0.6]),
             atol=1e-5,
         )
+
+    @pytest.mark.unit
+    def test_mixed_problem_classes(self, problem, design_problem):
+        cost1 = pybop.SumSquaredError(problem)
+        cost2 = pybop.GravimetricEnergyDensity(design_problem)
+        with pytest.raises(
+            TypeError,
+            match="All problems must be of the same class type.",
+        ):
+            pybop.WeightedCost(cost1, cost2)
