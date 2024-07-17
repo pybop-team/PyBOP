@@ -151,7 +151,7 @@ class BaseModel:
 
         self.n_states = self._built_model.len_rhs_and_alg  # len_rhs + len_alg
 
-    def set_init_soc(self, init_soc: float):
+    def set_init_soc(self, init_soc: float, inputs: Optional[Inputs] = None):
         """
         Set the initial state of charge for the battery model.
 
@@ -159,9 +159,16 @@ class BaseModel:
         ----------
         init_soc : float
             The initial state of charge to be used in the model.
+        inputs : Inputs, optional
+            The input parameters for the simulation.
         """
+        if inputs is None:
+            inputs = self.standard_parameters.copy()
+        else:
+            inputs = self.parameters.verify(inputs)
+
         # Temporarily set inputs
-        for key, value in self.standard_parameters.items():
+        for key, value in inputs.items():
             self._parameter_set[key] = value
 
         # Compute and set the initial concentrations
@@ -170,7 +177,7 @@ class BaseModel:
         )
 
         # Reset the standard parameters back to inputs
-        for key in self.standard_parameters.keys():
+        for key in inputs.keys():
             self._parameter_set[key] = "[input]"
 
     def set_current_function(self, dataset: Dataset):

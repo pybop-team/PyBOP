@@ -53,7 +53,7 @@ class TestOptimisation:
     @pytest.fixture
     def spm_costs(self, model, parameters, cost_class):
         # Form dataset
-        model.set_init_soc(0.5)
+        model.set_init_soc(0.5, inputs=self.ground_truth)
         solution = self.get_data(model, parameters, self.ground_truth)
         dataset = pybop.Dataset(
             {
