@@ -155,7 +155,7 @@ class Observer(BaseProblem):
 
         output = {}
         ys = []
-        if hasattr(self, "_dataset"):
+        if self._dataset is not None:
             for signal in self.signal:
                 ym = self._target[signal]
                 for i, t in enumerate(self._time_data):

@@ -87,7 +87,7 @@ class BaseModel:
             self.parameter_set = pybamm.ParameterValues(parameter_set.params)
 
         self.parameters = Parameters()
-        self.output_variables = ["Time [s]", "Current [A]", "Voltage [V]"]
+        self.output_variables = []
         self.rebuild_parameters = {}
         self.standard_parameters = {}
         self.param_check_counter = 0
@@ -125,6 +125,9 @@ class BaseModel:
         if init_soc is not None:
             self.set_init_soc(init_soc)
 
+        if dataset is not None:
+            self.set_current_function(dataset)
+
         if self._built_model:
             return
 
@@ -135,7 +138,7 @@ class BaseModel:
         else:
             if not self.pybamm_model._built:
                 self.pybamm_model.build_model()
-            self.set_params(dataset=dataset)
+            self.set_params()
 
             self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
             self._disc = pybamm.Discretisation(self.mesh, self.spatial_methods)
@@ -170,7 +173,21 @@ class BaseModel:
         for key in self.standard_parameters.keys():
             self._parameter_set[key] = "[input]"
 
-    def set_params(self, rebuild=False, dataset=None):
+    def set_current_function(self, dataset: Dataset):
+        """
+        Construct the current function from the dataset.
+        """
+        if (
+            self._parameter_set is not None
+            and "Current function [A]" in self._parameter_set.keys()
+        ):
+            self._parameter_set["Current function [A]"] = pybamm.Interpolant(
+                dataset["Time [s]"],
+                dataset["Current function [A]"],
+                pybamm.t,
+            )
+
+    def set_params(self, rebuild=False):
         """
         Assign the parameters to the model.
 
@@ -179,17 +196,6 @@ class BaseModel:
         """
         if self.model_with_set_params and not rebuild:
             return
-
-        if dataset is not None and (not self.rebuild_parameters or not rebuild):
-            if (
-                self.parameters is None
-                or "Current function [A]" not in self.parameters.keys()
-            ):
-                self._parameter_set["Current function [A]"] = pybamm.Interpolant(
-                    dataset["Time [s]"],
-                    dataset["Current function [A]"],
-                    pybamm.t,
-                )
 
         self._model_with_set_params = self._parameter_set.process_model(
             self._unprocessed_model, inplace=False
@@ -230,10 +236,13 @@ class BaseModel:
         if init_soc is not None:
             self.set_init_soc(init_soc)
 
+        if dataset is not None:
+            self.set_current_function(dataset)
+
         if self._built_model is None:
             raise ValueError("Model must be built before calling rebuild")
 
-        self.set_params(rebuild=True, dataset=dataset)
+        self.set_params(rebuild=True)
         self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
         self._disc = pybamm.Discretisation(self.mesh, self.spatial_methods)
         self._built_model = self._disc.process_model(
@@ -614,7 +623,7 @@ class BaseModel:
 
         return self._check_params(
             inputs=inputs,
-            parameter_set=parameter_set,
+            parameter_set=parameter_set or self._parameter_set,
             allow_infeasible_solutions=allow_infeasible_solutions,
         )
 

@@ -85,6 +85,7 @@ class ECircuitModel(BaseModel):
         self._mesh = None
         self._disc = None
         self.geometric_parameters = {}
+        self.output_variables = ["Time [s]", "Current [A]", "Voltage [V]"]
 
     def _check_params(
         self,

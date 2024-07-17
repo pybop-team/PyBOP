@@ -73,6 +73,7 @@ class BaseProblem:
             self.variables = list(set(self.variables))
         self.init_soc = init_soc
         self.n_outputs = len(self.signal)
+        self._dataset = None
         self._time_data = None
         self._target = None
 

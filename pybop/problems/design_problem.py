@@ -34,7 +34,7 @@ class DesignProblem(BaseProblem):
         self,
         model: BaseModel,
         parameters: Parameters,
-        experiment: Experiment,
+        experiment: Optional[Experiment],
         check_model: bool = True,
         signal: Optional[list[str]] = None,
         additional_variables: Optional[list[str]] = None,

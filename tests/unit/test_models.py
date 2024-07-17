@@ -383,3 +383,26 @@ class TestModels:
         np.testing.assert_allclose(
             values_1["Voltage [V]"].data, values_2["Voltage [V]"].data, atol=1e-8
         )
+
+    @pytest.mark.unit
+    def test_set_current_function(self):
+        t_eval = np.linspace(0, 10, 100)
+        dataset_1 = pybop.Dataset(
+            {"Time [s]": t_eval, "Current function [A]": np.ones(100)}
+        )
+        dataset_2 = pybop.Dataset(
+            {"Time [s]": t_eval, "Current function [A]": np.zeros(100)}
+        )
+
+        model = pybop.lithium_ion.SPM()
+        model.build(dataset=dataset_1)
+        values_1 = model.predict(t_eval=t_eval)
+
+        model = pybop.lithium_ion.SPM()
+        model.build(dataset=dataset_2)
+        model.set_current_function(dataset=dataset_1)
+        values_2 = model.predict(t_eval=t_eval)
+
+        np.testing.assert_allclose(
+            values_1["Voltage [V]"].data, values_2["Voltage [V]"].data, atol=1e-8
+        )

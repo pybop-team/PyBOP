@@ -83,6 +83,7 @@ class EChemBaseModel(BaseModel):
 
         self._electrode_soh = pybamm_lithium_ion.electrode_soh
         self.geometric_parameters = self.set_geometric_parameters()
+        self.output_variables = ["Time [s]", "Current [A]", "Voltage [V]"]
 
     def _check_params(
         self,

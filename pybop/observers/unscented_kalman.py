@@ -4,7 +4,8 @@ from typing import Optional, Union
 import numpy as np
 import scipy.linalg as linalg
 
-from pybop.models.base_model import BaseModel, Dataset, Inputs
+from pybop import Dataset
+from pybop.models.base_model import BaseModel, Inputs
 from pybop.observers.observer import Observer
 from pybop.parameters.parameter import Parameter
 
