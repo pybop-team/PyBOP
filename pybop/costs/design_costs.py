@@ -91,31 +91,16 @@ class DesignCost(BaseCost):
         inputs = self.parameters.verify(inputs)
 
         try:
-            with warnings.catch_warnings():
-                # Convert UserWarning to an exception
-                warnings.filterwarnings("error", category=UserWarning)
-                if self._predict:
-                    if self.update_capacity:
-                        self.problem.model.approximate_capacity(inputs)
-                    self.y = self.problem.evaluate(inputs)
+            if self._predict:
+                self.y = self.problem.evaluate(
+                    inputs, update_capacity=self.update_capacity
+                )
 
-                return self._evaluate(inputs, grad)
+            return self._evaluate(inputs, grad)
 
         # Catch NotImplementedError and raise it
         except NotImplementedError as e:
             raise e
-
-        # Catch infeasible solutions and return infinity
-        except UserWarning as e:
-            if self.verbose:
-                print(f"Ignoring this sample due to: {e}")
-            return -np.inf
-
-        # Catch any other exception and return infinity
-        except Exception as e:
-            if self.verbose:
-                print(f"An error occurred during the evaluation: {e}")
-            return -np.inf
 
 
 class GravimetricEnergyDensity(DesignCost):
@@ -147,6 +132,9 @@ class GravimetricEnergyDensity(DesignCost):
         float
             The gravimetric energy density or -infinity in case of infeasible parameters.
         """
+        if not any(np.isfinite(self.y[signal][0]) for signal in self.signal):
+            return -np.inf
+
         voltage, current = self.y["Voltage [V]"], self.y["Current [A]"]
         energy_density = np.trapz(voltage * current, dx=self.dt) / (
             3600 * self.problem.model.cell_mass(self.parameter_set)
@@ -184,6 +172,9 @@ class VolumetricEnergyDensity(DesignCost):
         float
             The volumetric energy density or -infinity in case of infeasible parameters.
         """
+        if not any(np.isfinite(self.y[signal][0]) for signal in self.signal):
+            return -np.inf
+
         voltage, current = self.y["Voltage [V]"], self.y["Current [A]"]
         energy_density = np.trapz(voltage * current, dx=self.dt) / (
             3600 * self.problem.model.cell_volume(self.parameter_set)

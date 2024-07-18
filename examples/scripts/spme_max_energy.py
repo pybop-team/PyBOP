@@ -45,13 +45,15 @@ problem = pybop.DesignProblem(
     model, parameters, experiment, signal=signal, init_soc=init_soc
 )
 
-# Generate cost function and optimisation class:
-cost = pybop.GravimetricEnergyDensity(problem)
+# Generate multiple cost functions and combine them.
+cost1 = pybop.GravimetricEnergyDensity(problem, update_capacity=True)
+cost2 = pybop.VolumetricEnergyDensity(problem, update_capacity=True)
+cost = pybop.WeightedCost(cost1, cost2, weights=[1, 1])
+
+# Run optimisation
 optim = pybop.PSO(
     cost, verbose=True, allow_infeasible_solutions=False, max_iterations=15
 )
-
-# Run optimisation
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
 print(f"Initial gravimetric energy density: {cost(optim.x0):.2f} Wh.kg-1")
