@@ -205,7 +205,7 @@ class TestCosts:
             e, de = cost.evaluateS1([0.5])
 
             assert np.isscalar(e)
-            assert type(de) == np.ndarray
+            assert isinstance(de, np.ndarray)
 
             # Test exception for non-numeric inputs
             with pytest.raises(
