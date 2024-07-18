@@ -81,7 +81,7 @@ from .problems.design_problem import DesignProblem
 #
 # Cost function class
 #
-from .costs.base_cost import BaseCost, WeightedCost
+from .costs.base_cost import BaseCost
 from .costs.fitting_costs import (
     RootMeanSquaredError,
     SumSquaredError,
@@ -100,6 +100,7 @@ from .costs._likelihoods import (
     GaussianLogLikelihoodKnownSigma,
     MAP,
 )
+from .costs._weighted_cost import WeightedCost
 
 #
 # Optimiser class
