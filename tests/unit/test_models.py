@@ -361,7 +361,7 @@ class TestModels:
         problem = pybop.FittingProblem(model, parameters=parameters, dataset=dataset)
 
         # Simulate the DFN with active material values of 0.
-        # The solutions will not change as the solver will not converge.
+        # The solution elements will not change as the solver will not converge.
         output = problem.evaluate([0, 0])
         output_S1, _ = problem.evaluateS1([0, 0])
 
