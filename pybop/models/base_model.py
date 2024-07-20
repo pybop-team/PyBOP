@@ -1,6 +1,6 @@
 import copy
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 
 import casadi
 import numpy as np
@@ -11,7 +11,7 @@ from pybop.parameters.parameter import Inputs
 
 
 @dataclass
-class TimeSeriesState(object):
+class TimeSeriesState:
     """
     The current state of a time series model that is a pybamm model.
     """
@@ -76,9 +76,9 @@ class BaseModel:
     def build(
         self,
         dataset: Dataset = None,
-        parameters: Union[Parameters, Dict] = None,
+        parameters: Union[Parameters, dict] = None,
         check_model: bool = True,
-        init_soc: float = None,
+        init_soc: Optional[float] = None,
     ) -> None:
         """
         Construct the PyBaMM model if not already built, and set parameters.
@@ -195,10 +195,10 @@ class BaseModel:
     def rebuild(
         self,
         dataset: Dataset = None,
-        parameters: Union[Parameters, Dict] = None,
+        parameters: Union[Parameters, dict] = None,
         parameter_set: ParameterSet = None,
         check_model: bool = True,
-        init_soc: float = None,
+        init_soc: Optional[float] = None,
     ) -> None:
         """
         Rebuild the PyBaMM model for a given parameter set.
@@ -337,7 +337,7 @@ class BaseModel:
 
     def simulate(
         self, inputs: Inputs, t_eval: np.array
-    ) -> Dict[str, np.ndarray[np.float64]]:
+    ) -> dict[str, np.ndarray[np.float64]]:
         """
         Execute the forward model simulation and return the result.
 
@@ -465,8 +465,8 @@ class BaseModel:
         t_eval: np.array = None,
         parameter_set: ParameterSet = None,
         experiment: Experiment = None,
-        init_soc: float = None,
-    ) -> Dict[str, np.ndarray[np.float64]]:
+        init_soc: Optional[float] = None,
+    ) -> dict[str, np.ndarray[np.float64]]:
         """
         Solve the model using PyBaMM's simulation framework and return the solution.
 
@@ -684,7 +684,7 @@ class BaseModel:
         return self._submesh_types
 
     @submesh_types.setter
-    def submesh_types(self, submesh_types: Optional[Dict[str, Any]]):
+    def submesh_types(self, submesh_types: Optional[dict[str, Any]]):
         self._submesh_types = (
             submesh_types.copy() if submesh_types is not None else None
         )
@@ -698,7 +698,7 @@ class BaseModel:
         return self._var_pts
 
     @var_pts.setter
-    def var_pts(self, var_pts: Optional[Dict[str, int]]):
+    def var_pts(self, var_pts: Optional[dict[str, int]]):
         self._var_pts = var_pts.copy() if var_pts is not None else None
 
     @property
@@ -706,7 +706,7 @@ class BaseModel:
         return self._spatial_methods
 
     @spatial_methods.setter
-    def spatial_methods(self, spatial_methods: Optional[Dict[str, Any]]):
+    def spatial_methods(self, spatial_methods: Optional[dict[str, Any]]):
         self._spatial_methods = (
             spatial_methods.copy() if spatial_methods is not None else None
         )

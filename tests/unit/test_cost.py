@@ -74,6 +74,8 @@ class TestCosts:
         params=[
             pybop.RootMeanSquaredError,
             pybop.SumSquaredError,
+            pybop.Minkowski,
+            pybop.SumofPower,
             pybop.ObserverCost,
             pybop.MAP,
         ]
@@ -84,6 +86,8 @@ class TestCosts:
             return cls(problem)
         elif cls in [pybop.MAP]:
             return cls(problem, pybop.GaussianLogLikelihoodKnownSigma)
+        elif cls in [pybop.Minkowski, pybop.SumofPower]:
+            return cls(problem, p=2)
         elif cls in [pybop.ObserverCost]:
             inputs = problem.parameters.initial_value()
             state = problem._model.reinit(inputs)
@@ -153,6 +157,20 @@ class TestCosts:
         with pytest.raises(ValueError, match="must be a subclass of BaseLikelihood"):
             pybop.MAP(problem, self.InvalidLikelihood, sigma0=0.1)
 
+        # Non finite prior
+        parameter = pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            prior=pybop.Uniform(0.55, 0.6),
+        )
+        problem_non_finite = pybop.FittingProblem(
+            problem.model, parameter, problem.dataset, signal=problem.signal
+        )
+        likelihood = pybop.MAP(
+            problem_non_finite, pybop.GaussianLogLikelihoodKnownSigma, sigma0=0.01
+        )
+        assert not np.isfinite(likelihood([0.7]))
+        assert not np.isfinite(likelihood.evaluateS1([0.7])[0])
+
     @pytest.mark.unit
     def test_costs(self, cost):
         if isinstance(cost, pybop.BaseLikelihood):
@@ -182,11 +200,11 @@ class TestCosts:
             cost.set_fail_gradient(10)
             assert cost._de == 10
 
-        if isinstance(cost, pybop.SumSquaredError):
+        if not isinstance(cost, (pybop.ObserverCost, pybop.MAP)):
             e, de = cost.evaluateS1([0.5])
 
             assert np.isscalar(e)
-            assert type(de) == np.ndarray
+            assert isinstance(de, np.ndarray)
 
             # Test exception for non-numeric inputs
             with pytest.raises(
@@ -211,8 +229,27 @@ class TestCosts:
         with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
             cost(["StringInputShouldNotWork"])
 
-        # Test treatment of simulations that terminated early
-        # by variation of the cut-off voltage.
+    @pytest.mark.unit
+    def test_minkowski(self, problem):
+        # Incorrect order
+        with pytest.raises(ValueError, match="The order of the Minkowski distance"):
+            pybop.Minkowski(problem, p=-1)
+        with pytest.raises(
+            ValueError,
+            match="For p = infinity, an implementation of the Chebyshev distance is required.",
+        ):
+            pybop.Minkowski(problem, p=np.inf)
+
+    @pytest.mark.unit
+    def test_SumofPower(self, problem):
+        # Incorrect order
+        with pytest.raises(
+            ValueError, match="The order of 'p' must be greater than 0."
+        ):
+            pybop.SumofPower(problem, p=-1)
+
+        with pytest.raises(ValueError, match="p = np.inf is not yet supported."):
+            pybop.SumofPower(problem, p=np.inf)
 
     @pytest.mark.parametrize(
         "cost_class",

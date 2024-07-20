@@ -136,7 +136,7 @@ class EChemBaseModel(BaseModel):
             ):
                 if self.param_check_counter <= len(electrode_params):
                     infeasibility_warning = "Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
-                    warnings.warn(infeasibility_warning, UserWarning)
+                    warnings.warn(infeasibility_warning, UserWarning, stacklevel=2)
                 self.param_check_counter += 1
                 return allow_infeasible_solutions
 
@@ -308,7 +308,7 @@ class EChemBaseModel(BaseModel):
                 mean_sto_pos
             ) - negative_electrode_ocp(mean_sto_neg)
         except Exception as e:
-            raise ValueError(f"Error in average voltage calculation: {e}")
+            raise ValueError(f"Error in average voltage calculation: {e}") from e
 
         # Calculate and update nominal capacity
         theoretical_capacity = theoretical_energy / average_voltage
