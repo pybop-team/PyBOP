@@ -22,8 +22,13 @@ class BaseSampler:
         cov0: The covariance matrix to be sampled.
         """
         self._log_pdf = log_pdf
-        self._x0 = x0
         self._cov0 = cov0
+
+        if not isinstance(x0, np.ndarray):
+            try:
+                self._x0 = np.asarray(x0)
+            except ValueError as e:
+                raise ValueError(f"Error initialising x0: {e}")
 
     def run(self) -> np.ndarray:
         """

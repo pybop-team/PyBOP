@@ -62,18 +62,13 @@ prior2 = pybop.Gaussian(0.6, 0.1)
 composed_prior = pybop.ComposedLogPrior(prior1, prior2)
 posterior = pybop.LogPosterior(likelihood, composed_prior)
 
-x0 = []
-n_chains = 10
-for _i in range(n_chains):
-    x0.append(np.array([0.68, 0.58]))
-
 optim = pybop.DREAM(
     posterior,
-    chains=n_chains,
-    x0=x0,
+    chains=4,
+    x0=[0.68, 0.58],
     max_iterations=300,
     burn_in=100,
-    # parallel=True,  # uncomment to enable parallelisation (MacOS/Linux only)
+    # parallel=True,  # uncomment to enable parallelisation (MacOS/WSL/Linux only)
 )
 result = optim.run()
 

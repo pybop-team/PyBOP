@@ -115,7 +115,7 @@ class Test_Sampling_SPM:
         prior2 = pybop.Uniform(0.4, 0.7)
         composed_prior = pybop.ComposedLogPrior(prior1, prior2)
         posterior = pybop.LogPosterior(spm_likelihood, composed_prior)
-        x0 = [[0.55, 0.55], [0.55, 0.55], [0.55, 0.55]]
+        x0 = [0.55, 0.55]
         sampler = quick_sampler(
             posterior,
             chains=3,

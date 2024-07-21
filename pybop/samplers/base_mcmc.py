@@ -93,7 +93,10 @@ class BasePintsSampler(BaseSampler):
             raise ValueError("Number of chains must be greater than 0")
 
         # Check initial conditions
-        # TODO: len of x0 matching number of chains, number of parameters, etc.
+        if self._x0.size != self.n_parameters:
+            raise ValueError("x0 must have the same number of parameters as log_pdf")
+        if len(self._x0) != self._n_chains:
+            self._x0 = np.tile(self._x0, (self._n_chains, 1))
 
         # Single chain vs multiple chain samplers
         self._single_chain = issubclass(sampler, SingleChainMCMC)

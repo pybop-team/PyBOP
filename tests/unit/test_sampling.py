@@ -87,11 +87,15 @@ class TestPintsSamplers:
 
     @pytest.fixture
     def x0(self):
-        return [[0.68, 0.58], [0.68, 0.58], [0.68, 0.58]]
+        return [0.68, 0.58]
 
     @pytest.fixture
     def chains(self):
         return 3
+
+    @pytest.fixture
+    def multi_samplers(self):
+        return (pybop.DREAM, pybop.EmceeHammerMCMC, pybop.DifferentialEvolutionMCMC)
 
     @pytest.mark.parametrize(
         "MCMC",
@@ -117,7 +121,9 @@ class TestPintsSamplers:
         ],
     )
     @pytest.mark.unit
-    def test_initialization_and_run(self, log_posterior, x0, chains, MCMC):
+    def test_initialization_and_run(
+        self, log_posterior, x0, chains, MCMC, multi_samplers
+    ):
         sampler = pybop.MCMCSampler(
             log_pdf=log_posterior,
             chains=chains,
@@ -128,7 +134,10 @@ class TestPintsSamplers:
         )
         assert sampler._n_chains == chains
         assert sampler._log_pdf == log_posterior
-        assert (sampler._samplers[0]._x0 == x0[0]).all()
+        if isinstance(sampler.sampler, multi_samplers):
+            np.testing.assert_allclose(sampler._samplers[0]._x0[0], x0)
+        else:
+            np.testing.assert_allclose(sampler._samplers[0]._x0, x0)
 
         # Test incorrect __getattr__
         with pytest.raises(
