@@ -104,7 +104,7 @@ class BaseOptimiser:
         self.set_base_options()
         self._set_up_optimiser()
 
-        # Throw an warning if any options remain
+        # Throw a warning if any options remain
         if self.unset_options:
             warnings.warn(
                 f"Unrecognised keyword arguments: {self.unset_options} will not be used.",

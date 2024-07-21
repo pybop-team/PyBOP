@@ -298,8 +298,8 @@ class TestPintsSamplers:
         assert sampler._n_workers == 2
 
     @pytest.mark.unit
-    def test_base_sampler(self, x0):
-        sampler = pybop.BaseSampler(x0=x0, cov0=0.1)
+    def test_base_sampler(self, log_posterior, x0):
+        sampler = pybop.BaseSampler(log_posterior, x0, cov0=0.1)
         with pytest.raises(NotImplementedError):
             sampler.run()
 

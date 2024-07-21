@@ -1,30 +1,33 @@
 import logging
 import numpy as np
 from pints import ParallelEvaluator
-import warnings
+from typing import Union
 
 from pybop import LogPosterior
+
 
 class BaseSampler:
     """
     Base class for Monte Carlo samplers.
     """
-    def __init__(self, x0, cov0):
+
+    def __init__(self, log_pdf, x0, cov0: Union[np.ndarray, float]):
         """
         Initialise the base sampler.
 
-        Args:
-            cost (pybop.cost): The cost to be sampled.
+        Parameters
+        ----------------
+        log_pdf (pybop.BaseCost): The distribution to be sampled.
+        x0: List-like initial condition for Monte Carlo sampling.
+        cov0: The covariance matrix to be sampled.
         """
+        self._log_pdf = log_pdf
         self._x0 = x0
         self._cov0 = cov0
 
     def run(self) -> np.ndarray:
         """
         Sample from the posterior distribution.
-
-        Args:
-            n_samples (int): Number of samples to draw.
 
         Returns:
             np.ndarray: Samples from the posterior distribution.

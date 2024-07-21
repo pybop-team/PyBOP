@@ -32,7 +32,7 @@ class NUTS(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : function
+    log_pdf : pybop.BaseCost
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -42,19 +42,6 @@ class NUTS(BasePintsSampler):
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the NUTS sampler.
-
-    Attributes
-    ----------
-    log_pdf : function
-        The log-probability density function.
-    chains : int
-        The number of chains being run.
-    sampler_class : class
-        The NUTS sampler class from PINTS.
-    x0 : ndarray
-        The initial positions of the chains.
-    cov0 : ndarray
-        The initial covariance matrix.
     """
 
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
@@ -73,7 +60,7 @@ class DREAM(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : function
+    log_pdf : pybop.BaseCost
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -83,19 +70,6 @@ class DREAM(BasePintsSampler):
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the DREAM sampler.
-
-    Attributes
-    ----------
-    log_pdf : function
-        The log-probability density function.
-    chains : int
-        The number of chains being run.
-    sampler_class : class
-        The DREAM sampler class from PINTS.
-    x0 : ndarray
-        The initial positions of the chains.
-    cov0 : ndarray
-        The initial covariance matrix.
     """
 
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
@@ -112,7 +86,7 @@ class AdaptiveCovarianceMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : function
+    log_pdf : pybop.BaseCost
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -122,19 +96,6 @@ class AdaptiveCovarianceMCMC(BasePintsSampler):
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Adaptive Covariance MCMC sampler.
-
-    Attributes
-    ----------
-    log_pdf : function
-        The log-probability density function.
-    chains : int
-        The number of chains being run.
-    sampler_class : class
-        The Adaptive Covariance MCMC sampler class from PINTS.
-    x0 : ndarray
-        The initial positions of the chains.
-    cov0 : ndarray
-        The initial covariance matrix.
     """
 
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
@@ -158,7 +119,7 @@ class DifferentialEvolutionMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : function
+    log_pdf : pybop.BaseCost
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -168,19 +129,6 @@ class DifferentialEvolutionMCMC(BasePintsSampler):
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Differential Evolution MCMC sampler.
-
-    Attributes
-    ----------
-    log_pdf : function
-        The log-probability density function.
-    chains : int
-        The number of chains being run.
-    sampler_class : class
-        The Differential Evolution MCMC sampler class from PINTS.
-    x0 : ndarray
-        The initial positions of the chains.
-    cov0 : ndarray
-        The initial covariance matrix.
     """
 
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
@@ -196,7 +144,8 @@ class DifferentialEvolutionMCMC(BasePintsSampler):
 
 class DramACMC(BasePintsSampler):
     """
-    Implements the Delayed Rejection Adaptive Metropolis (DRAM) Adaptive Covariance Markov Chain Monte Carlo (MCMC) algorithm.
+    Implements the Delayed Rejection Adaptive Metropolis (DRAM) Adaptive Covariance Markov Chain
+    Monte Carlo (MCMC) algorithm.
 
     This class extends the DRAM Adaptive Covariance MCMC sampler from the PINTS library.
     This MCMC method combines Delayed Rejection with Adaptive Metropolis to enhance
@@ -204,7 +153,7 @@ class DramACMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : function
+    log_pdf : pybop.BaseCost
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -214,19 +163,6 @@ class DramACMC(BasePintsSampler):
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the DRAM Adaptive Covariance MCMC sampler.
-
-    Attributes
-    ----------
-    log_pdf : function
-        The log-probability density function.
-    chains : int
-        The number of chains being run.
-    sampler_class : class
-        The DRAM Adaptive Covariance MCMC sampler class from PINTS.
-    x0 : ndarray
-        The initial positions of the chains.
-    cov0 : ndarray
-        The initial covariance matrix.
     """
 
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
@@ -250,7 +186,7 @@ class EmceeHammerMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : function
+    log_pdf : pybop.BaseCost
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -260,19 +196,6 @@ class EmceeHammerMCMC(BasePintsSampler):
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Emcee Hammer MCMC sampler.
-
-    Attributes
-    ----------
-    log_pdf : function
-        The log-probability density function.
-    chains : int
-        The number of chains being run.
-    sampler_class : class
-        The Emcee Hammer MCMC sampler class from PINTS.
-    x0 : ndarray
-        The initial positions of the chains.
-    cov0 : ndarray
-        The initial covariance matrix.
     """
 
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
@@ -296,7 +219,7 @@ class HaarioACMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : function
+    log_pdf : pybop.BaseCost
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -306,19 +229,6 @@ class HaarioACMC(BasePintsSampler):
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Haario Adaptive Covariance MCMC sampler.
-
-    Attributes
-    ----------
-    log_pdf : function
-        The log-probability density function.
-    chains : int
-        The number of chains being run.
-    sampler_class : class
-        The Haario Adaptive Covariance MCMC sampler class from PINTS.
-    x0 : ndarray
-        The initial positions of the chains.
-    cov0 : ndarray
-        The initial covariance matrix.
     """
 
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
@@ -342,7 +252,7 @@ class HaarioBardenetACMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : function
+    log_pdf : pybop.BaseCost
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -352,19 +262,6 @@ class HaarioBardenetACMC(BasePintsSampler):
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Haario-Bardenet Adaptive Covariance MCMC sampler.
-
-    Attributes
-    ----------
-    log_pdf : function
-        The log-probability density function.
-    chains : int
-        The number of chains being run.
-    sampler_class : class
-        The Haario-Bardenet Adaptive Covariance MCMC sampler class from PINTS.
-    x0 : ndarray
-        The initial positions of the chains.
-    cov0 : ndarray
-        The initial covariance matrix.
     """
 
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
@@ -388,7 +285,7 @@ class HamiltonianMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : function
+    log_pdf : pybop.BaseCost
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -398,19 +295,6 @@ class HamiltonianMCMC(BasePintsSampler):
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Hamiltonian MCMC sampler.
-
-    Attributes
-    ----------
-    log_pdf : function
-        The log-probability density function.
-    chains : int
-        The number of chains being run.
-    sampler_class : class
-        The Hamiltonian MCMC sampler class from PINTS.
-    x0 : ndarray
-        The initial positions of the chains.
-    cov0 : ndarray
-        The initial covariance matrix.
     """
 
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
@@ -434,7 +318,7 @@ class MALAMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : function
+    log_pdf : pybop.BaseCost
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -444,19 +328,6 @@ class MALAMCMC(BasePintsSampler):
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the MALA MCMC sampler.
-
-    Attributes
-    ----------
-    log_pdf : function
-        The log-probability density function.
-    chains : int
-        The number of chains being run.
-    sampler_class : class
-        The MALA MCMC sampler class from PINTS.
-    x0 : ndarray
-        The initial positions of the chains.
-    cov0 : ndarray
-        The initial covariance matrix.
     """
 
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
@@ -480,7 +351,7 @@ class MetropolisRandomWalkMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : function
+    log_pdf : pybop.BaseCost
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -490,19 +361,6 @@ class MetropolisRandomWalkMCMC(BasePintsSampler):
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Metropolis Random Walk MCMC sampler.
-
-    Attributes
-    ----------
-    log_pdf : function
-        The log-probability density function.
-    chains : int
-        The number of chains being run.
-    sampler_class : class
-        The Metropolis Random Walk MCMC sampler class from PINTS.
-    x0 : ndarray
-        The initial positions of the chains.
-    cov0 : ndarray
-        The initial covariance matrix.
     """
 
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
@@ -526,7 +384,7 @@ class MonomialGammaHamiltonianMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : function
+    log_pdf : pybop.BaseCost
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -536,19 +394,6 @@ class MonomialGammaHamiltonianMCMC(BasePintsSampler):
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Monomial Gamma Hamiltonian MCMC sampler.
-
-    Attributes
-    ----------
-    log_pdf : function
-        The log-probability density function.
-    chains : int
-        The number of chains being run.
-    sampler_class : class
-        The Monomial Gamma Hamiltonian MCMC sampler class from PINTS.
-    x0 : ndarray
-        The initial positions of the chains.
-    cov0 : ndarray
-        The initial covariance matrix.
     """
 
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
@@ -572,7 +417,7 @@ class PopulationMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : function
+    log_pdf : pybop.BaseCost
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -582,19 +427,6 @@ class PopulationMCMC(BasePintsSampler):
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Population MCMC sampler.
-
-    Attributes
-    ----------
-    log_pdf : function
-        The log-probability density function.
-    chains : int
-        The number of chains being run.
-    sampler_class : class
-        The Population MCMC sampler class from PINTS.
-    x0 : ndarray
-        The initial positions of the chains.
-    cov0 : ndarray
-        The initial covariance matrix.
     """
 
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
@@ -618,7 +450,7 @@ class RaoBlackwellACMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : function
+    log_pdf : pybop.BaseCost
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -628,19 +460,6 @@ class RaoBlackwellACMC(BasePintsSampler):
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Rao-Blackwell Adaptive Covariance MCMC sampler.
-
-    Attributes
-    ----------
-    log_pdf : function
-        The log-probability density function.
-    chains : int
-        The number of chains being run.
-    sampler_class : class
-        The Rao-Blackwell Adaptive Covariance MCMC sampler class from PINTS.
-    x0 : ndarray
-        The initial positions of the chains.
-    cov0 : ndarray
-        The initial covariance matrix.
     """
 
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
@@ -664,7 +483,7 @@ class RelativisticMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : function
+    log_pdf : pybop.BaseCost
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -674,19 +493,6 @@ class RelativisticMCMC(BasePintsSampler):
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Relativistic MCMC sampler.
-
-    Attributes
-    ----------
-    log_pdf : function
-        The log-probability density function.
-    chains : int
-        The number of chains being run.
-    sampler_class : class
-        The Relativistic MCMC sampler class from PINTS.
-    x0 : ndarray
-        The initial positions of the chains.
-    cov0 : ndarray
-        The initial covariance matrix.
     """
 
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
@@ -710,7 +516,7 @@ class SliceDoublingMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : function
+    log_pdf : pybop.BaseCost
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -720,19 +526,6 @@ class SliceDoublingMCMC(BasePintsSampler):
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Slice Doubling MCMC sampler.
-
-    Attributes
-    ----------
-    log_pdf : function
-        The log-probability density function.
-    chains : int
-        The number of chains being run.
-    sampler_class : class
-        The Slice Doubling MCMC sampler class from PINTS.
-    x0 : ndarray
-        The initial positions of the chains.
-    cov0 : ndarray
-        The initial covariance matrix.
     """
 
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
@@ -756,7 +549,7 @@ class SliceRankShrinkingMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : function
+    log_pdf : pybop.BaseCost
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -766,19 +559,6 @@ class SliceRankShrinkingMCMC(BasePintsSampler):
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Slice Rank Shrinking MCMC sampler.
-
-    Attributes
-    ----------
-    log_pdf : function
-        The log-probability density function.
-    chains : int
-        The number of chains being run.
-    sampler_class : class
-        The Slice Rank Shrinking MCMC sampler class from PINTS.
-    x0 : ndarray
-        The initial positions of the chains.
-    cov0 : ndarray
-        The initial covariance matrix.
     """
 
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
@@ -802,7 +582,7 @@ class SliceStepoutMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : function
+    log_pdf : pybop.BaseCost
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -812,19 +592,6 @@ class SliceStepoutMCMC(BasePintsSampler):
         Initial covariance matrix.
     **kwargs
         Additional arguments to pass to the Slice Stepout MCMC sampler.
-
-    Attributes
-    ----------
-    log_pdf : function
-        The log-probability density function.
-    chains : int
-        The number of chains being run.
-    sampler_class : class
-        The Slice Stepout MCMC sampler class from PINTS.
-    x0 : ndarray
-        The initial positions of the chains.
-    cov0 : ndarray
-        The initial covariance matrix.
     """
 
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):

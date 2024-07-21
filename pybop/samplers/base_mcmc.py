@@ -36,7 +36,7 @@ class BasePintsSampler(BaseSampler):
         Initialise the base PINTS sampler.
 
         Args:
-            log_pdf (pybop.BaseCost or List[pybop.BaseCost]): The cost distribution(s) to be sampled.
+            log_pdf (pybop.BaseCost or List[pybop.BaseCost]): The distribution(s) to be sampled.
             chains (int): Number of chains to be used.
             sampler: The sampler class to be used.
             x0 (list): Initial states for the chains.
@@ -44,7 +44,7 @@ class BasePintsSampler(BaseSampler):
             transformation: Transformation to be applied to the samples.
             kwargs: Additional keyword arguments.
         """
-        super().__init__(x0, cov0)
+        super().__init__(log_pdf, x0, cov0)
 
         # Set kwargs
         self._max_iterations = kwargs.get("max_iterations", 500)
@@ -56,23 +56,24 @@ class BasePintsSampler(BaseSampler):
         self._evaluation_files = kwargs.get("evaluation_files", None)
         self._parallel = kwargs.get("parallel", False)
         self._verbose = kwargs.get("verbose", False)
+        self._iteration = 0
         self.warm_up = warm_up
         self.n_parameters = (
-            log_pdf[0].n_parameters
-            if isinstance(log_pdf, list)
-            else log_pdf.n_parameters
+            self._log_pdf[0].n_parameters
+            if isinstance(self._log_pdf, list)
+            else self._log_pdf.n_parameters
         )
         self._transformation = transformation
 
         # Check log_pdf
-        if isinstance(log_pdf, BaseCost):
+        if isinstance(self._log_pdf, BaseCost):
             self._multi_log_pdf = False
         else:
-            if len(log_pdf) != chains:
+            if len(self._log_pdf) != chains:
                 raise ValueError("Number of log pdf's must match number of chains")
 
-            first_pdf_parameters = log_pdf[0].n_parameters
-            for pdf in log_pdf:
+            first_pdf_parameters = self._log_pdf[0].n_parameters
+            for pdf in self._log_pdf:
                 if not isinstance(pdf, BaseCost):
                     raise ValueError("All log pdf's must be instances of BaseCost")
                 if pdf.n_parameters != first_pdf_parameters:
@@ -86,15 +87,13 @@ class BasePintsSampler(BaseSampler):
         if transformation is not None:
             self._apply_transformation(transformation)
 
-        self._log_pdf = log_pdf
-
         # Number of chains
         self._n_chains = chains
         if self._n_chains < 1:
             raise ValueError("Number of chains must be greater than 0")
 
         # Check initial conditions
-        # len of x0 matching number of chains, number of parameters, etc.
+        # TODO: len of x0 matching number of chains, number of parameters, etc.
 
         # Single chain vs multiple chain samplers
         self._single_chain = issubclass(sampler, SingleChainMCMC)
@@ -167,7 +166,6 @@ class BasePintsSampler(BaseSampler):
 
         # Initialise iterations and evaluations
         self._iteration = 0
-        self._evaluations = 0
 
         evaluator = self._create_evaluator()
         self._check_initial_phase()
