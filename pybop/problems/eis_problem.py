@@ -54,8 +54,8 @@ class EISProblem(BaseProblem):
         )
 
         # Unpack frequency and target data
-        self._frequency_data = self._dataset["Frequency [Hz]"]
-        self.n_frequency = len(self._frequency_data)
+        self._domain_data = self._dataset["Frequency [Hz]"]
+        self.n_data = len(self._domain_data)
         self.set_target(dataset)
 
         # Add useful attributes to model
@@ -63,7 +63,7 @@ class EISProblem(BaseProblem):
             self._model.signal = self.signal
             self._model.additional_variables = self.additional_variables
             self._model.n_outputs = self.n_outputs
-            self._model.n_frequency = self.n_frequency
+            self._model.n_data = self.n_data
 
             # Build the model from scratch
             if self._model._built_model is not None:
@@ -107,7 +107,7 @@ class EISProblem(BaseProblem):
         if requires_rebuild:
             self._model.rebuild(parameters=self.parameters)  # Add EIS flag here
 
-        y = self._model.simulateEIS(inputs=inputs, f_eval=self._frequency_data)
+        y = self._model.simulateEIS(inputs=inputs, f_eval=self._domain_data)
 
         return y
 
@@ -135,7 +135,7 @@ class EISProblem(BaseProblem):
 
         y, dy = self._model.simulateEISS1(
             inputs=inputs,
-            f_eval=self._frequency_data,
+            f_eval=self._domain_data,
         )
 
         return (y, np.asarray(dy))

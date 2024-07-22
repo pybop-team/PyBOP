@@ -15,7 +15,7 @@ class BaseLikelihood(BaseCost):
 
     def __init__(self, problem: BaseProblem):
         super().__init__(problem)
-        self.n_time_data = problem.n_time_data
+        self.n_data = problem.n_data
 
 
 class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
@@ -36,7 +36,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         super().__init__(problem)
         sigma0 = self.check_sigma0(sigma0)
         self.sigma2 = sigma0**2.0
-        self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi * self.sigma2)
+        self._offset = -0.5 * self.n_data * np.log(2 * np.pi * self.sigma2)
         self._multip = -1 / (2.0 * self.sigma2)
 
     def _evaluate(self, inputs: Inputs, grad: Union[None, np.ndarray] = None) -> float:
@@ -116,7 +116,7 @@ class GaussianLogLikelihood(BaseLikelihood):
     ):
         super().__init__(problem)
         self._dsigma_scale = dsigma_scale
-        self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
+        self._logpi = -0.5 * self.n_data * np.log(2 * np.pi)
 
         self.sigma = Parameters()
         self._add_sigma_parameters(sigma0)
@@ -197,7 +197,7 @@ class GaussianLogLikelihood(BaseLikelihood):
             [
                 np.sum(
                     self._logpi
-                    - self.n_time_data * np.log(sigma)
+                    - self.n_data * np.log(sigma)
                     - np.sum((self._target[signal] - y[signal]) ** 2.0)
                     / (2.0 * sigma**2.0)
                 )
@@ -236,7 +236,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
         dl = np.sum((np.sum((r * dy.T), axis=2) / (sigma**2.0)), axis=1)
         dsigma = (
-            -self.n_time_data / sigma + np.sum(r**2.0, axis=1) / (sigma**3.0)
+            -self.n_data / sigma + np.sum(r**2.0, axis=1) / (sigma**3.0)
         ) / self._dsigma_scale
         dl = np.concatenate((dl.flatten(), dsigma))
 

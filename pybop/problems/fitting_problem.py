@@ -54,8 +54,8 @@ class FittingProblem(BaseProblem):
         dataset.check(signal=[*self.signal, "Current function [A]"])
 
         # Unpack time and target data
-        self._time_data = self._dataset["Time [s]"]
-        self.n_time_data = len(self._time_data)
+        self._domain_data = self._dataset["Time [s]"]
+        self.n_data = len(self._domain_data)
         self.set_target(dataset)
 
         # Add useful parameters to model
@@ -63,7 +63,7 @@ class FittingProblem(BaseProblem):
             self._model.signal = self.signal
             self._model.additional_variables = self.additional_variables
             self._model.n_outputs = self.n_outputs
-            self._model.n_time_data = self.n_time_data
+            self._model.n_data = self.n_data
 
             # Build the model from scratch
             if self._model._built_model is not None:
@@ -106,7 +106,7 @@ class FittingProblem(BaseProblem):
         if requires_rebuild:
             self._model.rebuild(parameters=self.parameters)
 
-        y = self._model.simulate(inputs=inputs, t_eval=self._time_data)
+        y = self._model.simulate(inputs=inputs, t_eval=self._domain_data)
 
         return y
 
@@ -134,7 +134,7 @@ class FittingProblem(BaseProblem):
 
         y, dy = self._model.simulateS1(
             inputs=inputs,
-            t_eval=self._time_data,
+            t_eval=self._domain_data,
         )
 
         return (y, np.asarray(dy))

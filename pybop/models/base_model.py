@@ -197,7 +197,7 @@ class BaseModel:
                     pybamm.t,
                 )
                 # Set t_eval
-                self.time_data = self._parameter_set["Current function [A]"].x[0]
+                self.domain_data = self._parameter_set["Current function [A]"].x[0]
 
         self._model_with_set_params = self._parameter_set.process_model(
             self._unprocessed_model, inplace=False

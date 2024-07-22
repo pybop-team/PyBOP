@@ -62,7 +62,7 @@ class BaseProblem:
         self.signal = signal
         self.init_soc = init_soc
         self.n_outputs = len(self.signal)
-        self._time_data = None
+        self._domain_data = None
         self._target = None
 
         if isinstance(model, BaseModel):
@@ -107,16 +107,16 @@ class BaseProblem:
         """
         raise NotImplementedError
 
-    def time_data(self):
+    def domain_data(self):
         """
-        Returns the time data.
+        Returns the domain (Frequency, Time) data.
 
         Returns
         -------
         np.ndarray
-            The time array.
+            The frequency or time array.
         """
-        return self._time_data
+        return self._domain_data
 
     def get_target(self):
         """

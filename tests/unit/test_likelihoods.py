@@ -75,7 +75,7 @@ class TestLikelihoods:
         likelihood = pybop.BaseLikelihood(problem)
         assert likelihood.problem == problem
         assert likelihood.n_outputs == n_outputs
-        assert likelihood.n_time_data == problem.n_time_data
+        assert likelihood.n_data == problem.n_data
         assert likelihood.n_parameters == 1
         assert np.array_equal(likelihood._target, problem._target)
 
