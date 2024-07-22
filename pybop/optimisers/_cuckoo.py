@@ -47,7 +47,7 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
       https://doi.org/10.1016/j.chaos.2011.06.004.
     """
 
-    def __init__(self, x0, sigma0=0.01, boundaries=None, pa=0.25):
+    def __init__(self, x0, sigma0=0.05, boundaries=None, pa=0.25):
         super().__init__(x0, sigma0, boundaries=boundaries)
 
         # Problem dimensionality

@@ -11,6 +11,7 @@ To create a new release, follow these steps:
    -  Increment the following;
          -  The version number in the `pyproject.toml` and `CITATION.cff` files following CalVer versioning.
          -  The`CHANGELOG.md` version with the changes for the new version.
+         -  Add a new entry for the documentation site version switcher located at `docs/_static/switcher.json`
    -  Open a PR to the `main` branch. Once the PR is merged, proceed to the next step.
 
 2. **Tag the Release:**

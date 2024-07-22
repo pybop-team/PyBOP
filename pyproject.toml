@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pybop"
-version = "24.3.1"
+version = "24.6"
 authors = [
   {name = "The PyBOP Team"},
 ]
@@ -74,7 +74,7 @@ Homepage = "https://github.com/pybop-team/PyBOP"
 Documentation = "https://pybop-docs.readthedocs.io"
 Repository = "https://github.com/pybop-team/PyBOP"
 Releases = "https://github.com/pybop-team/PyBOP/releases"
-Changelog = "https://github.com/pybop-team/PyBOP/CHANGELOG.md"
+Changelog = "https://github.com/pybop-team/PyBOP/blob/develop/CHANGELOG.md"
 
 [tool.pytest.ini_options]
 addopts = "--showlocals -v -n auto"
@@ -87,7 +87,7 @@ fix = true
 [tool.ruff.lint]
 select = [
     "A",    # flake8-builtins: Check for Python builtins being used as variables or parameters
-    "B",    # flake8-bugbear: Find likely bugs and design problems in your program
+    "B",    # flake8-bugbear: Find likely bugs and design problems
     "E",    # pycodestyle errors
     "W",    # pycodestyle warnings
     "F",    # pyflakes: Detect various errors by parsing the source file

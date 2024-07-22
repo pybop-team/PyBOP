@@ -2,41 +2,28 @@ import numpy as np
 
 import pybop
 
-# Set variables
-sigma = 0.002
-init_soc = 0.7
-
-# Construct and update initial parameter values
-parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-parameter_set.update(
-    {
-        "Negative electrode active material volume fraction": 0.43,
-        "Positive electrode active material volume fraction": 0.56,
-    }
-)
-
 # Define model
+parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = pybop.Parameters(
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        prior=pybop.Uniform(0.3, 0.8),
-        bounds=[0.3, 0.8],
-        initial_value=0.653,
-        true_value=parameter_set["Negative electrode active material volume fraction"],
+        prior=pybop.Gaussian(0.6, 0.05),
+        bounds=[0.4, 0.75],
+        initial_value=0.41,
+        true_value=0.7,
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        prior=pybop.Uniform(0.3, 0.8),
-        bounds=[0.4, 0.7],
-        initial_value=0.657,
-        true_value=parameter_set["Positive electrode active material volume fraction"],
+        prior=pybop.Gaussian(0.48, 0.05),
+        bounds=[0.4, 0.75],
+        initial_value=0.41,
+        true_value=0.67,
     ),
 )
-
-# Generate data and corrupt it with noise
+init_soc = 0.7
 experiment = pybop.Experiment(
     [
         (
@@ -46,8 +33,10 @@ experiment = pybop.Experiment(
     ]
 )
 values = model.predict(
-    init_soc=init_soc, experiment=experiment, inputs=parameters.true_value()
+    init_soc=init_soc, experiment=experiment, inputs=parameters.as_dict("true")
 )
+
+sigma = 0.002
 corrupt_values = values["Voltage [V]"].data + np.random.normal(
     0, sigma, len(values["Voltage [V]"].data)
 )
@@ -63,18 +52,14 @@ dataset = pybop.Dataset(
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
-cost = pybop.MAP(problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=sigma)
-optim = pybop.AdamW(
+cost = pybop.GaussianLogLikelihood(problem, sigma0=sigma * 4)
+optim = pybop.Optimisation(
     cost,
-    sigma0=0.05,
-    max_unchanged_iterations=20,
-    min_iterations=20,
+    optimiser=pybop.CuckooSearch,
     max_iterations=100,
 )
 
-# Run the optimisation
 x, final_cost = optim.run()
-print("True parameters:", parameters.true_value())
 print("Estimated parameters:", x)
 
 # Plot the timeseries output
@@ -86,9 +71,5 @@ pybop.plot_convergence(optim)
 # Plot the parameter traces
 pybop.plot_parameters(optim)
 
-# Plot the cost landscape
-pybop.plot2d(cost, steps=15)
-
 # Plot the cost landscape with optimisation path
-bounds = np.asarray([[0.35, 0.7], [0.45, 0.625]])
-pybop.plot2d(optim, bounds=bounds, steps=15)
+pybop.plot2d(optim, steps=15)

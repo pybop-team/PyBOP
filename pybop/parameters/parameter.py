@@ -1,3 +1,4 @@
+import warnings
 from collections import OrderedDict
 from typing import Union
 
@@ -46,10 +47,11 @@ class Parameter:
         self.true_value = true_value
         self.initial_value = initial_value
         self.value = initial_value
+        self.applied_prior_bounds = False
         self.set_bounds(bounds)
         self.margin = 1e-4
 
-    def rvs(self, n_samples, random_state=None):
+    def rvs(self, n_samples: int = 1, random_state=None):
         """
         Draw random samples from the parameter's prior distribution.
 
@@ -59,7 +61,7 @@ class Parameter:
         Parameters
         ----------
         n_samples : int
-            The number of samples to draw.
+            The number of samples to draw (default: 1).
 
         Returns
         -------
@@ -153,6 +155,7 @@ class Parameter:
                 self.lower_bound = bounds[0]
                 self.upper_bound = bounds[1]
         elif self.prior is not None:
+            self.applied_prior_bounds = True
             self.lower_bound = self.prior.mean - boundary_multiplier * self.prior.sigma
             self.upper_bound = self.prior.mean + boundary_multiplier * self.prior.sigma
             bounds = [self.lower_bound, self.upper_bound]
@@ -319,7 +322,7 @@ class Parameters:
                 else:
                     param.set_bounds(bounds=bounds[i])
 
-    def rvs(self, n_samples: int) -> list:
+    def rvs(self, n_samples: int = 1) -> np.ndarray:
         """
         Draw random samples from each parameter's prior distribution.
 
@@ -329,7 +332,7 @@ class Parameters:
         Parameters
         ----------
         n_samples : int
-            The number of samples to draw.
+            The number of samples to draw (default: 1).
 
         Returns
         -------
@@ -350,7 +353,7 @@ class Parameters:
 
             all_samples.append(samples)
 
-        return all_samples
+        return np.concatenate(all_samples)
 
     def get_sigma0(self) -> list:
         """
@@ -414,9 +417,16 @@ class Parameters:
         bounds : numpy.ndarray
             An array of shape (n_parameters, 2) containing the bounds for each parameter.
         """
-        bounds = np.empty((len(self), 2))
+        bounds = np.zeros((len(self), 2))
 
         for i, param in enumerate(self.param.values()):
+            if param.applied_prior_bounds:
+                warnings.warn(
+                    "Bounds were created from prior distributions. "
+                    "Please provide bounds for better plotting results.",
+                    UserWarning,
+                    stacklevel=2,
+                )
             if param.bounds is not None:
                 bounds[i] = param.bounds
             else:
