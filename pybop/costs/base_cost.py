@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 from pybop import BaseProblem
 from pybop.parameters.parameter import Inputs, Parameters
@@ -22,17 +22,25 @@ class BaseCost:
         An array containing the target data to fit.
     n_outputs : int
         The number of outputs in the model.
+
+    Additional Attributes
+    ---------------------
+    _fixed_problem : bool
+        If True, the problem does not need to be rebuilt before the cost is
+        calculated (default: False).
     """
 
-    def __init__(self, problem=None):
+    def __init__(self, problem: Optional[BaseProblem] = None):
         self.parameters = Parameters()
         self.problem = problem
+        self._fixed_problem = False
         self.set_fail_gradient()
         if isinstance(self.problem, BaseProblem):
             self._target = self.problem._target
             self.parameters.join(self.problem.parameters)
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
+            self._fixed_problem = True
 
     @property
     def n_parameters(self):
@@ -69,6 +77,9 @@ class BaseCost:
         inputs = self.parameters.verify(inputs)
 
         try:
+            if self._fixed_problem:
+                self._current_prediction = self.problem.evaluate(inputs)
+
             return self._evaluate(inputs, grad)
 
         except NotImplementedError as e:
@@ -126,6 +137,11 @@ class BaseCost:
         inputs = self.parameters.verify(inputs)
 
         try:
+            if self._fixed_problem:
+                self._current_prediction, self._current_sensitivities = (
+                    self.problem.evaluateS1(inputs)
+                )
+
             return self._evaluateS1(inputs)
 
         except NotImplementedError as e:
