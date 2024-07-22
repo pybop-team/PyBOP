@@ -302,6 +302,8 @@ class MAP(BaseLikelihood):
         if not np.isfinite(log_prior).any():
             return -np.inf
 
+        if not self._predict:
+            self.likelihood.y = self.y
         log_likelihood = self.likelihood.evaluate(inputs)
 
         posterior = log_likelihood + log_prior
@@ -334,6 +336,8 @@ class MAP(BaseLikelihood):
         if not np.isfinite(log_prior).any():
             return -np.inf, -self._de * np.ones(self.n_parameters)
 
+        if not self._predict:
+            self.likelihood.y, self.likelihood.dy = (self.y, self.dy)
         log_likelihood, dl = self.likelihood.evaluateS1(inputs)
 
         # Compute a finite difference approximation of the gradient of the log prior
