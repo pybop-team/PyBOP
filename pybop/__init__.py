@@ -100,6 +100,7 @@ from .costs._likelihoods import (
     GaussianLogLikelihoodKnownSigma,
     MAP,
 )
+from .costs._weighted_cost import WeightedCost
 
 #
 # Optimiser class
