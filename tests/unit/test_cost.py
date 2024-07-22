@@ -296,7 +296,7 @@ class TestCosts:
 
             # Compute after updating nominal capacity
             cost = cost_class(design_problem, update_capacity=True)
-            cost([0.4])
+            assert np.isfinite(cost([0.4]))
 
     @pytest.mark.unit
     def test_weighted_fitting_cost(self, problem):
