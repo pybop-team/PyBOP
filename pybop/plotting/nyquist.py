@@ -47,28 +47,61 @@ def nyquist(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
     else:
         problem_inputs = problem.parameters.verify(problem_inputs)
 
-    # Extract the time data and evaluate the model's output and target values
     model_output = problem.evaluate(problem_inputs)
     domain_data = model_output["Impedance"].real
     target_output = problem.get_target()
 
-    # Create a plot for each output
     figure_list = []
     for i in problem.signal:
         default_layout_options = dict(
-            title="Scatter Plot",
-            xaxis_title="Z_re / Ohm",
-            yaxis_title="Z_i / Ohm",
+            title="Nyquist Plot",
+            font=dict(family="Arial", size=14),
+            plot_bgcolor="white",
+            paper_bgcolor="white",
+            xaxis=dict(
+                title=dict(text="Z<sub>re</sub> / Ω", font=dict(size=16), standoff=15),
+                showline=True,
+                linewidth=2,
+                linecolor="black",
+                mirror=True,
+                ticks="outside",
+                tickwidth=2,
+                tickcolor="black",
+                ticklen=5,
+            ),
+            yaxis=dict(
+                title=dict(text="-Z<sub>im</sub> / Ω", font=dict(size=16), standoff=15),
+                showline=True,
+                linewidth=2,
+                linecolor="black",
+                mirror=True,
+                ticks="outside",
+                tickwidth=2,
+                tickcolor="black",
+                ticklen=5,
+            ),
+            legend=dict(
+                x=0.02,
+                y=0.98,
+                bgcolor="rgba(255, 255, 255, 0.5)",
+                bordercolor="black",
+                borderwidth=1,
+            ),
+            width=600,
+            height=600,
         )
-
-        # Create a plotting dictionary
-        trace_name = "Model"
 
         plot_dict = StandardPlot(
             x=domain_data,
             y=-model_output[i].imag,
             layout_options=default_layout_options,
-            trace_names=trace_name,
+            trace_names="Model",
+        )
+
+        plot_dict.traces[0].update(
+            mode="lines+markers",
+            line=dict(color="blue", width=2),
+            marker=dict(size=8, color="blue", symbol="circle"),
         )
 
         target_trace = plot_dict.create_trace(
@@ -76,13 +109,30 @@ def nyquist(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
             y=-target_output[i].imag,
             name="Reference",
             mode="markers",
+            marker=dict(size=8, color="red", symbol="circle-open"),
             showlegend=True,
         )
         plot_dict.traces.append(target_trace)
 
-        # Generate the figure and update the layout
         fig = plot_dict(show=False)
+
+        # Add minor gridlines
+        fig.update_xaxes(
+            showgrid=True,
+            gridwidth=1,
+            gridcolor="lightgray",
+            minor=dict(showgrid=True, gridwidth=0.5, gridcolor="lightgray"),
+        )
+        fig.update_yaxes(
+            showgrid=True,
+            gridwidth=1,
+            gridcolor="lightgray",
+            minor=dict(showgrid=True, gridwidth=0.5, gridcolor="lightgray"),
+        )
+
+        # Overwrite with user-kwargs
         fig.update_layout(**layout_kwargs)
+
         if "ipykernel" in sys.modules and show:
             fig.show("svg")
         elif show:
