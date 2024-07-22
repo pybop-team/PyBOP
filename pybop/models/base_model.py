@@ -107,6 +107,9 @@ class BaseModel:
             self.parameters = parameters
             self.classify_and_update_parameters(self.parameters)
 
+        if not self.pybamm_model._built:
+            self.pybamm_model.build_model()
+
         if init_soc is not None:
             self.set_init_soc(init_soc)
 
@@ -124,9 +127,6 @@ class BaseModel:
             self._model_with_set_params = self.pybamm_model
             self._built_model = self.pybamm_model
         else:
-            if not self.pybamm_model._built:
-                self.pybamm_model.build_model()
-
             self.set_params(eis=self.eis)
             self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
             self._disc = pybamm.Discretisation(
@@ -452,7 +452,7 @@ class BaseModel:
 
     def simulateEIS(self, inputs: Inputs, f_eval: list) -> dict[str, np.ndarray]:
         """
-        Compute the forward model simulation with electrochemical impedence spectroscopy
+        Compute the forward model simulation with electrochemical impedance spectroscopy
         and return the result.
 
         Parameters
