@@ -11,7 +11,7 @@ from pybop.parameters.parameter import Inputs
 
 
 @dataclass
-class TimeSeriesState(object):
+class TimeSeriesState:
     """
     The current state of a time series model that is a pybamm model.
     """
