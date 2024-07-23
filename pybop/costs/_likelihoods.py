@@ -116,7 +116,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         super().__init__(problem)
         self._dsigma_scale = dsigma_scale
         self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
-        self._predict = False  # keep problem evaluation within _evaluate
+        self._has_separable_problem = False
 
         self.sigma = Parameters()
         self._add_sigma_parameters(sigma0)
@@ -278,6 +278,9 @@ class MAP(BaseLikelihood):
         ):
             raise ValueError(f"{self.likelihood} must be a subclass of BaseLikelihood")
 
+        self.parameters = self.likelihood.parameters
+        self._has_separable_problem = self.likelihood._has_separable_problem
+
     def _evaluate(self, inputs: Inputs, grad=None) -> float:
         """
         Calculate the maximum a posteriori cost for a given set of parameters.
@@ -302,7 +305,7 @@ class MAP(BaseLikelihood):
         if not np.isfinite(log_prior).any():
             return -np.inf
 
-        if not self._predict:
+        if self._has_separable_problem:
             self.likelihood.y = self.y
         log_likelihood = self.likelihood.evaluate(inputs)
 
@@ -336,7 +339,7 @@ class MAP(BaseLikelihood):
         if not np.isfinite(log_prior).any():
             return -np.inf, -self._de * np.ones(self.n_parameters)
 
-        if not self._predict:
+        if self._has_separable_problem:
             self.likelihood.y, self.likelihood.dy = (self.y, self.dy)
         log_likelihood, dl = self.likelihood.evaluateS1(inputs)
 

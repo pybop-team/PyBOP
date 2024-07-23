@@ -329,8 +329,8 @@ class TestCosts:
         # Test with and without different problems
         weight = 100
         weighted_cost_2 = pybop.WeightedCost(cost1, cost2, weights=[1, weight])
-        assert weighted_cost_2._has_different_problems is False
-        assert weighted_cost_2._predict is False
+        assert weighted_cost_2._has_identical_problems is True
+        assert weighted_cost_2._has_separable_problem is False
         assert weighted_cost_2.problem is problem
         assert weighted_cost_2([0.5]) >= 0
         np.testing.assert_allclose(
@@ -341,8 +341,8 @@ class TestCosts:
 
         cost3 = pybop.RootMeanSquaredError(copy(problem))
         weighted_cost_3 = pybop.WeightedCost(cost1, cost3, weights=[1, weight])
-        assert weighted_cost_3._has_different_problems is True
-        assert weighted_cost_3._predict is False
+        assert weighted_cost_3._has_identical_problems is False
+        assert weighted_cost_3._has_separable_problem is False
         assert weighted_cost_3.problem is None
         assert weighted_cost_3([0.5]) >= 0
         np.testing.assert_allclose(
@@ -357,14 +357,15 @@ class TestCosts:
         np.testing.assert_allclose(sensitivities_2, sensitivities_3, atol=1e-5)
 
         # Test MAP explicitly
-        cost4 = pybop.MAP(problem, pybop.GaussianLogLikelihoodKnownSigma)
+        cost4 = pybop.MAP(problem, pybop.GaussianLogLikelihood)
         weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, weight])
-        assert weighted_cost_4._has_different_problems is False
-        assert weighted_cost_4._predict is False
-        assert weighted_cost_4([0.5]) <= 0
+        assert weighted_cost_4._has_identical_problems is False
+        assert weighted_cost_4._has_separable_problem is False
+        sigma = 0.05
+        assert weighted_cost_4([0.5, sigma]) <= 0
         np.testing.assert_allclose(
-            weighted_cost_4.evaluate([0.6]),
-            cost1([0.6]) + weight * cost4([0.6]),
+            weighted_cost_4.evaluate([0.6, sigma]),
+            cost1([0.6, sigma]) + weight * cost4([0.6, sigma]),
             atol=1e-5,
         )
 
@@ -375,8 +376,8 @@ class TestCosts:
 
         # Test with and without weights
         weighted_cost = pybop.WeightedCost(cost1, cost2)
-        assert weighted_cost._has_different_problems is False
-        assert weighted_cost._predict is False
+        assert weighted_cost._has_identical_problems is True
+        assert weighted_cost._has_separable_problem is False
         assert weighted_cost.problem is design_problem
         assert weighted_cost([0.5]) >= 0
         np.testing.assert_allclose(

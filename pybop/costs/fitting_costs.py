@@ -387,7 +387,7 @@ class ObserverCost(BaseCost):
     def __init__(self, observer: Observer):
         super().__init__(problem=observer)
         self._observer = observer
-        self._predict = False  # evaluate problem within cost._evaluate()
+        self._has_separable_problem = False
 
     def _evaluate(self, inputs: Inputs, grad=None):
         """

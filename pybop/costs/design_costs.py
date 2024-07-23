@@ -1,5 +1,4 @@
 import warnings
-from typing import Union
 
 import numpy as np
 
@@ -66,42 +65,6 @@ class DesignCost(BaseCost):
         self.problem._target = {key: solution[key] for key in self.problem.signal}
         self.dt = solution["Time [s]"][1] - solution["Time [s]"][0]
 
-    def evaluate(self, inputs: Union[Inputs, list], grad=None):
-        """
-        Call the evaluate function for a given set of parameters.
-
-        Parameters
-        ----------
-        inputs : Inputs or array-like
-            The parameters for which to compute the cost and gradient.
-        grad : array-like, optional
-            An array to store the gradient of the cost function with respect
-            to the parameters.
-
-        Returns
-        -------
-        float
-            The calculated cost function value.
-
-        Raises
-        ------
-        ValueError
-            If an error occurs during the calculation of the cost.
-        """
-        inputs = self.parameters.verify(inputs)
-
-        try:
-            if self._predict:
-                self.y = self.problem.evaluate(
-                    inputs, update_capacity=self.update_capacity
-                )
-
-            return self._evaluate(inputs, grad)
-
-        # Catch NotImplementedError and raise it
-        except NotImplementedError as e:
-            raise e
-
 
 class GravimetricEnergyDensity(DesignCost):
     """
@@ -115,7 +78,6 @@ class GravimetricEnergyDensity(DesignCost):
 
     def __init__(self, problem, update_capacity=False):
         super().__init__(problem, update_capacity)
-        self._fixed_problem = False  # keep problem evaluation within _evaluate
 
     def _evaluate(self, inputs: Inputs, grad=None):
         """
@@ -156,7 +118,6 @@ class VolumetricEnergyDensity(DesignCost):
 
     def __init__(self, problem, update_capacity=False):
         super().__init__(problem, update_capacity)
-        self._fixed_problem = False  # keep problem evaluation within _evaluate
 
     def _evaluate(self, inputs: Inputs, grad=None):
         """

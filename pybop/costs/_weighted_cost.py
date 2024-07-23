@@ -1,4 +1,3 @@
-import copy
 from typing import Optional
 
 import numpy as np
@@ -20,21 +19,20 @@ class WeightedCost(BaseCost):
         A list of PyBOP cost objects.
     weights : list[float]
         A list of values with which to weight the cost values.
-    _has_different_problems : bool
-        If True, the problem for each cost is evaluated independently during
-        each evaluation of the cost (default: False).
+    _has_identical_problems : bool
+        If True, the shared problem will be evaluated once and saved before the
+        self._evaluate() method of each cost is called (default: False).
     """
 
     def __init__(self, *costs, weights: Optional[list[float]] = None):
         if not all(isinstance(cost, BaseCost) for cost in costs):
             raise TypeError("All costs must be instances of BaseCost.")
-        self.costs = [copy.copy(cost) for cost in costs]
-        self._has_different_problems = False
+        self.costs = [cost for cost in costs]
+        if len(set(type(cost.problem) for cost in self.costs)) > 1:
+            raise TypeError("All problems must be of the same class type.")
         self.minimising = not any(
             isinstance(cost, (BaseLikelihood, DesignCost)) for cost in self.costs
         )
-        if len(set(type(cost.problem) for cost in self.costs)) > 1:
-            raise TypeError("All problems must be of the same class type.")
 
         # Check if weights are provided
         if weights is not None:
@@ -49,24 +47,26 @@ class WeightedCost(BaseCost):
             self.weights = np.ones(len(self.costs))
 
         # Check if all costs depend on the same problem
-        self._has_different_problems = any(
-            hasattr(cost, "problem") and cost.problem is not self.costs[0].problem
-            for cost in self.costs[1:]
+        self._has_identical_problems = all(
+            cost._has_separable_problem and cost.problem is self.costs[0].problem
+            for cost in self.costs
         )
 
-        if self._has_different_problems:
+        # Check if any cost function requires capacity update
+        self.update_capacity = False
+        if any(cost.update_capacity for cost in self.costs):
+            self.update_capacity = True
+
+        if self._has_identical_problems:
+            super().__init__(self.costs[0].problem)
+        else:
             super().__init__()
             for cost in self.costs:
                 self.parameters.join(cost.parameters)
-        else:
-            super().__init__(self.costs[0].problem)
-            self._predict = False
-            for cost in self.costs:
-                cost._predict = False
+                cost.update_capacity = self.update_capacity
 
-        # Check if any cost function requires capacity update
-        if any(cost.update_capacity for cost in self.costs):
-            self.update_capacity = True
+        # Weighted costs do not use this functionality
+        self._has_separable_problem = False
 
     def _evaluate(self, inputs: Inputs, grad=None):
         """
@@ -85,20 +85,22 @@ class WeightedCost(BaseCost):
         float
             The weighted cost value.
         """
+        self.parameters.update(values=list(inputs.values()))
+
+        if self._has_identical_problems:
+            self.y = self.problem.evaluate(inputs, update_capacity=self.update_capacity)
+
         e = np.empty_like(self.costs)
 
-        if not self._predict:
-            if self._has_different_problems:
-                self.parameters.update(values=list(inputs.values()))
-            else:
-                self.y = self.problem.evaluate(
+        for i, cost in enumerate(self.costs):
+            inputs = cost.parameters.as_dict()
+            if self._has_identical_problems:
+                cost.y = self.y
+            elif cost._has_separable_problem:
+                cost.y = cost.problem.evaluate(
                     inputs, update_capacity=self.update_capacity
                 )
-
-        for i, cost in enumerate(self.costs):
-            if not self._has_different_problems:
-                cost.y = self.y
-            e[i] = cost.evaluate(inputs)
+            e[i] = cost._evaluate(inputs)
 
         return np.dot(e, self.weights)
 
@@ -117,19 +119,21 @@ class WeightedCost(BaseCost):
             A tuple containing the cost and the gradient. The cost is a float,
             and the gradient is an array-like of the same length as `x`.
         """
+        self.parameters.update(values=list(inputs.values()))
+
+        if self._has_identical_problems:
+            self.y, self.dy = self.problem.evaluateS1(inputs)
+
         e = np.empty_like(self.costs)
         de = np.empty((len(self.parameters), len(self.costs)))
 
-        if not self._predict:
-            if self._has_different_problems:
-                self.parameters.update(values=list(inputs.values()))
-            else:
-                self.y, self.dy = self.problem.evaluateS1(inputs)
-
         for i, cost in enumerate(self.costs):
-            if not self._has_different_problems:
+            inputs = cost.parameters.as_dict()
+            if self._has_identical_problems:
                 cost.y, cost.dy = (self.y, self.dy)
-            e[i], de[:, i] = cost.evaluateS1(inputs)
+            elif cost._has_separable_problem:
+                cost.y, cost.dy = cost.problem.evaluateS1(inputs)
+            e[i], de[:, i] = cost._evaluateS1(inputs)
 
         e = np.dot(e, self.weights)
         de = np.dot(de, self.weights)

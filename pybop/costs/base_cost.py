@@ -22,16 +22,16 @@ class BaseCost:
         An array containing the target data to fit.
     n_outputs : int
         The number of outputs in the model.
-    _predict : bool
-        If False, the problem will be evaluated outside the self.evaluate() method
-        before the cost is calculated (default: False).
+    _has_separable_problem : bool
+        If True, the problem is independent from the cost function and will be
+        evaluated in advance of the call to self._evaluate() (default: False).
     """
 
     def __init__(self, problem: Optional[BaseProblem] = None):
         self.parameters = Parameters()
         self.problem = problem
         self.verbose = False
-        self._predict = False
+        self._has_separable_problem = False
         self.update_capacity = False
         self.y = None
         self.dy = None
@@ -41,7 +41,7 @@ class BaseCost:
             self.parameters.join(self.problem.parameters)
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
-            self._predict = True
+            self._has_separable_problem = True
 
     @property
     def n_parameters(self):
@@ -78,8 +78,10 @@ class BaseCost:
         inputs = self.parameters.verify(inputs)
 
         try:
-            if self._predict:
-                self.y = self.problem.evaluate(inputs)
+            if self._has_separable_problem:
+                self.y = self.problem.evaluate(
+                    inputs, update_capacity=self.update_capacity
+                )
 
             return self._evaluate(inputs, grad)
 
@@ -138,7 +140,7 @@ class BaseCost:
         inputs = self.parameters.verify(inputs)
 
         try:
-            if self._predict:
+            if self._has_separable_problem:
                 self.y, self.dy = self.problem.evaluateS1(inputs)
 
             return self._evaluateS1(inputs)
