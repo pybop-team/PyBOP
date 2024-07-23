@@ -98,6 +98,7 @@ class GravimetricEnergyDensity(DesignCost):
 
     def __init__(self, problem, update_capacity=False):
         super().__init__(problem, update_capacity)
+        self._fixed_problem = False  # keep problem evaluation within _evaluate
 
     def _evaluate(self, inputs: Inputs, grad=None):
         """
@@ -154,6 +155,7 @@ class VolumetricEnergyDensity(DesignCost):
 
     def __init__(self, problem, update_capacity=False):
         super().__init__(problem, update_capacity)
+        self._fixed_problem = False  # keep problem evaluation within _evaluate
 
     def _evaluate(self, inputs: Inputs, grad=None):
         """
