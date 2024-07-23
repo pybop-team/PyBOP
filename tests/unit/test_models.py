@@ -358,14 +358,16 @@ class TestModels:
                 "Voltage [V]": np.zeros(100),
             }
         )
-
         problem = pybop.FittingProblem(model, parameters=parameters, dataset=dataset)
-        res = problem.evaluate([-0.2, -0.2])
-        _, res_grad = problem.evaluateS1([-0.2, -0.2])
+
+        # Simulate the DFN with active material values of 0.
+        # The solution elements will not change as the solver will not converge.
+        output = problem.evaluate([0, 0])
+        output_S1, _ = problem.evaluateS1([0, 0])
 
         for key in problem.signal:
-            assert np.isinf(res.get(key, [])).any()
-        assert np.isinf(res_grad).any()
+            assert np.allclose(output.get(key, [])[0], output.get(key, []))
+            assert np.allclose(output_S1.get(key, [])[0], output_S1.get(key, []))
 
     @pytest.mark.unit
     def test_set_init_soc(self):

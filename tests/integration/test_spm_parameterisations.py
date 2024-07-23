@@ -46,6 +46,8 @@ class Test_SPM_Parameterisation:
             pybop.GaussianLogLikelihood,
             pybop.RootMeanSquaredError,
             pybop.SumSquaredError,
+            pybop.SumofPower,
+            pybop.Minkowski,
             pybop.MAP,
         ]
     )
@@ -79,6 +81,8 @@ class Test_SPM_Parameterisation:
             return cost_class(
                 problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=self.sigma0
             )
+        elif cost_class in [pybop.SumofPower, pybop.Minkowski]:
+            return cost_class(problem, p=2)
         else:
             return cost_class(problem)
 
@@ -102,6 +106,7 @@ class Test_SPM_Parameterisation:
             "cost": spm_costs,
             "max_iterations": 250,
             "absolute_tolerance": 1e-6,
+            "max_unchanged_iterations": 55,
         }
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
@@ -112,21 +117,18 @@ class Test_SPM_Parameterisation:
         if isinstance(spm_costs, pybop.MAP):
             for i in spm_costs.parameters.keys():
                 spm_costs.parameters[i].prior = pybop.Uniform(
-                    0.4, 2.0
+                    0.2, 2.0
                 )  # Increase range to avoid prior == np.inf
         # Set sigma0 and create optimiser
         sigma0 = 0.05 if isinstance(spm_costs, pybop.MAP) else None
         optim = optimiser(sigma0=sigma0, **common_args)
 
-        # Set max unchanged iterations for BasePintsOptimisers
-        if issubclass(optimiser, pybop.BasePintsOptimiser):
-            optim.set_max_unchanged_iterations(iterations=55)
-
         # AdamW will use lowest sigma0 for learning rate, so allow more iterations
         if issubclass(optimiser, (pybop.AdamW, pybop.IRPropMin)) and isinstance(
             spm_costs, pybop.GaussianLogLikelihood
         ):
-            optim = optimiser(max_unchanged_iterations=75, **common_args)
+            common_args["max_unchanged_iterations"] = 75
+            optim = optimiser(**common_args)
 
         initial_cost = optim.cost(x0)
         x, final_cost = optim.run()
