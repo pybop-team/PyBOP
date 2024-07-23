@@ -65,7 +65,7 @@ class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
         # Parameters
         ######################
 
-        d_s = Parameter("Positive electrode diffusivity [m2.s-1]")
+        d_s = Parameter("Positive particle diffusivity [m2.s-1]")
 
         c_s_max = Parameter("Maximum concentration in positive electrode [mol.m-3]")
 
