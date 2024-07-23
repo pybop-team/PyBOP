@@ -9,12 +9,6 @@ import pybop
 # electrode widths, particle radii, volume fractions and
 # separator width.
 
-# NOTE: This script can be easily adjusted to consider the volumetric
-# (instead of gravimetric) energy density by changing the line which
-# defines the cost and changing the output to:
-# print(f"Initial volumetric energy density: {cost(optim.x0):.2f} Wh.m-3")
-# print(f"Optimised volumetric energy density: {final_cost:.2f} Wh.m-3")
-
 # Define parameter set and model
 parameter_set = pybop.ParameterSet.pybamm("Chen2020", formation_concentrations=True)
 model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
@@ -56,8 +50,10 @@ optim = pybop.PSO(
 )
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
-print(f"Initial gravimetric energy density: {cost(optim.x0):.2f} Wh.kg-1")
-print(f"Optimised gravimetric energy density: {final_cost:.2f} Wh.kg-1")
+print(f"Initial gravimetric energy density: {cost1(optim.x0):.2f} Wh.kg-1")
+print(f"Optimised gravimetric energy density: {cost1(x):.2f} Wh.kg-1")
+print(f"Initial volumetric energy density: {cost2(optim.x0):.2f} Wh.m-3")
+print(f"Optimised volumetric energy density: {cost2(x):.2f} Wh.m-3")
 
 # Plot the timeseries output
 if cost.update_capacity:
