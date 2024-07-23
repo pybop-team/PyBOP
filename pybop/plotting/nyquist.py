@@ -79,6 +79,8 @@ def nyquist(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
                 tickwidth=2,
                 tickcolor="black",
                 ticklen=5,
+                scaleanchor="x",
+                scaleratio=1,
             ),
             legend=dict(
                 x=0.02,
