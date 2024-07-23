@@ -22,7 +22,7 @@ class TestModelAndExperimentChanges:
             ),
             pybop.Parameters(
                 pybop.Parameter(  # non-geometric parameter
-                    "Positive electrode diffusivity [m2.s-1]",
+                    "Positive particle diffusivity [m2.s-1]",
                     prior=pybop.Gaussian(3.43e-15, 1e-15),
                     bounds=[1e-15, 5e-15],
                     true_value=4e-15,
