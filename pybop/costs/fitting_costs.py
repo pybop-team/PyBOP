@@ -45,7 +45,8 @@ class RootMeanSquaredError(BaseCost):
             [
                 np.sqrt(
                     np.mean(
-                        np.abs(self._current_prediction[signal] - self._target[signal]) ** 2
+                        np.abs(self._current_prediction[signal] - self._target[signal])
+                        ** 2
                     )
                 )
                 for signal in self.signal
@@ -137,7 +138,9 @@ class SumSquaredError(BaseCost):
 
         e = np.asarray(
             [
-                np.sum(np.abs(self._current_prediction[signal] - self._target[signal]) ** 2)
+                np.sum(
+                    np.abs(self._current_prediction[signal] - self._target[signal]) ** 2
+                )
                 for signal in self.signal
             ]
         )
