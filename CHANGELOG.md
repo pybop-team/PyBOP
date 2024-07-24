@@ -9,6 +9,7 @@
 
 ## Bug Fixes
 
+- [#421](https://github.com/pybop-team/PyBOP/issues/421) - Adds a default value for the initial SOC for design problems.
 
 ## Breaking Changes
 
