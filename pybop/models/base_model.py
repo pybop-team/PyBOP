@@ -215,7 +215,7 @@ class BaseModel:
         parameters : pybop.Parameters or Dict, optional
             A pybop Parameters class or dictionary containing parameter values to apply to the model.
         parameter_set : pybop.parameter_set, optional
-            A PyBOP parameter set object or a dictionary containing the parameter values
+            A PyBOP parameter set object or a dictionary containing the parameter values.
         check_model : bool, optional
             If True, the model will be checked for correctness after construction.
         init_soc : float, optional
@@ -461,10 +461,10 @@ class BaseModel:
 
     def predict(
         self,
-        inputs: Inputs = None,
-        t_eval: np.array = None,
-        parameter_set: ParameterSet = None,
-        experiment: Experiment = None,
+        inputs: Optional[Inputs] = None,
+        t_eval: Optional[np.array] = None,
+        parameter_set: Optional[ParameterSet] = None,
+        experiment: Optional[Experiment] = None,
         init_soc: Optional[float] = None,
     ) -> dict[str, np.ndarray[np.float64]]:
         """
@@ -504,44 +504,41 @@ class BaseModel:
             if PyBaMM models are not supported by the current simulation method.
 
         """
-        inputs = self.parameters.verify(inputs)
-
-        if not self.pybamm_model._built:
-            self.pybamm_model.build_model()
-
         parameter_set = parameter_set or self._unprocessed_parameter_set
         if inputs is not None:
+            inputs = self.parameters.verify(inputs)
             parameter_set.update(inputs)
 
+        if self._unprocessed_model is None:
+            raise ValueError(
+                "The predict method currently only supports PyBaMM models."
+            )
+        elif not self.pybamm_model._built:
+            self.pybamm_model.build_model()
+
         if self.check_params(
-            inputs=inputs,
             parameter_set=parameter_set,
             allow_infeasible_solutions=self.allow_infeasible_solutions,
         ):
-            if self._unprocessed_model is not None:
-                if experiment is None:
-                    return pybamm.Simulation(
-                        self._unprocessed_model,
-                        parameter_values=parameter_set,
-                    ).solve(t_eval=t_eval, initial_soc=init_soc)
-                else:
-                    return pybamm.Simulation(
-                        self._unprocessed_model,
-                        experiment=experiment,
-                        parameter_values=parameter_set,
-                    ).solve(initial_soc=init_soc)
+            if experiment is None:
+                return pybamm.Simulation(
+                    model=self._unprocessed_model,
+                    parameter_values=parameter_set,
+                ).solve(t_eval=t_eval, initial_soc=init_soc)
             else:
-                raise ValueError(
-                    "This sim method currently only supports PyBaMM models"
-                )
+                return pybamm.Simulation(
+                    model=self._unprocessed_model,
+                    experiment=experiment,
+                    parameter_values=parameter_set,
+                ).solve(initial_soc=init_soc)
 
         else:
             return [np.inf]
 
     def check_params(
         self,
-        inputs: Inputs = None,
-        parameter_set: ParameterSet = None,
+        inputs: Optional[Inputs] = None,
+        parameter_set: Optional[ParameterSet] = None,
         allow_infeasible_solutions: bool = True,
     ):
         """
@@ -551,6 +548,8 @@ class BaseModel:
         ----------
         inputs : Inputs
             The input parameters for the simulation.
+        parameter_set : pybop.parameter_set, optional
+            A PyBOP parameter set object or a dictionary containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
@@ -560,14 +559,20 @@ class BaseModel:
             A boolean which signifies whether the parameters are compatible.
 
         """
-        inputs = self.parameters.verify(inputs)
+        inputs = self.parameters.verify(inputs) or {}
+        parameter_set = parameter_set or self._parameter_set
 
         return self._check_params(
-            inputs=inputs, allow_infeasible_solutions=allow_infeasible_solutions
+            inputs=inputs,
+            parameter_set=parameter_set,
+            allow_infeasible_solutions=allow_infeasible_solutions,
         )
 
     def _check_params(
-        self, inputs: Inputs = None, allow_infeasible_solutions: bool = True
+        self,
+        inputs: Inputs,
+        parameter_set: ParameterSet,
+        allow_infeasible_solutions: bool = True,
     ):
         """
         A compatibility check for the model parameters which can be implemented by subclasses
@@ -577,6 +582,8 @@ class BaseModel:
         ----------
         inputs : Inputs
             The input parameters for the simulation.
+        parameter_set : pybop.parameter_set
+            A PyBOP parameter set object or a dictionary containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
 

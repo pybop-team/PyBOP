@@ -1,4 +1,5 @@
 from pybop.models.base_model import BaseModel, Inputs
+from pybop.parameters.parameter_set import ParameterSet
 
 
 class ECircuitModel(BaseModel):
@@ -85,7 +86,12 @@ class ECircuitModel(BaseModel):
         self._disc = None
         self.geometric_parameters = {}
 
-    def _check_params(self, inputs: Inputs = None, allow_infeasible_solutions=True):
+    def _check_params(
+        self,
+        inputs: Inputs,
+        parameter_set: ParameterSet,
+        allow_infeasible_solutions: bool = True,
+    ):
         """
         Check the compatibility of the model parameters.
 
@@ -93,6 +99,8 @@ class ECircuitModel(BaseModel):
         ----------
         inputs : Inputs
             The input parameters for the simulation.
+        parameter_set : pybop.parameter_set
+            A PyBOP parameter set object or a dictionary containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
@@ -100,6 +108,5 @@ class ECircuitModel(BaseModel):
         -------
         bool
             A boolean which signifies whether the parameters are compatible.
-
         """
         return True
