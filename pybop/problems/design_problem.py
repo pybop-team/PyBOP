@@ -25,7 +25,7 @@ class DesignProblem(BaseProblem):
     additional_variables : List[str], optional
         Additional variables to observe and store in the solution (default additions are: ["Time [s]", "Current [A]"]).
     init_soc : float, optional
-        Initial state of charge (default: None).
+        Initial state of charge (default: 1.0).
     """
 
     def __init__(
@@ -36,7 +36,7 @@ class DesignProblem(BaseProblem):
         check_model=True,
         signal=None,
         additional_variables=None,
-        init_soc=None,
+        init_soc=1.0,
     ):
         # Add time and current and remove duplicates
         if additional_variables is None:

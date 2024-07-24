@@ -171,6 +171,7 @@ class TestProblem:
         assert (
             problem._model._built_model is None
         )  # building postponed with input experiment
+        assert problem.init_soc == 1.0
 
         # Test model.predict
         model.predict(inputs=[1e-5, 1e-5], experiment=experiment)
