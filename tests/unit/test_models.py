@@ -368,3 +368,8 @@ class TestModels:
         for key in problem.signal:
             assert np.allclose(output.get(key, [])[0], output.get(key, []))
             assert np.allclose(output_S1.get(key, [])[0], output_S1.get(key, []))
+
+    @pytest.mark.unit
+    def test_get_parameter_info(self, model):
+        parameter_info = model.get_parameter_info()
+        assert isinstance(parameter_info, dict)
