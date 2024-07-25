@@ -95,17 +95,6 @@ class FittingProblem(BaseProblem):
         """
         inputs = self.parameters.verify(inputs)
 
-        requires_rebuild = False
-        for key, value in inputs.items():
-            if key in self._model.rebuild_parameters:
-                current_value = self.parameters[key].value
-                if value != current_value:
-                    self.parameters[key].update(value=value)
-                    requires_rebuild = True
-
-        if requires_rebuild:
-            self._model.rebuild(parameters=self.parameters)
-
         y = self._model.simulate(inputs=inputs, t_eval=self._time_data)
 
         return y
@@ -126,11 +115,6 @@ class FittingProblem(BaseProblem):
             with given inputs.
         """
         inputs = self.parameters.verify(inputs)
-
-        if self._model.rebuild_parameters:
-            raise RuntimeError(
-                "Gradient not available when using geometric parameters."
-            )
 
         y, dy = self._model.simulateS1(
             inputs=inputs,

@@ -362,31 +362,36 @@ class BaseModel:
 
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
+
+        requires_rebuild = False
+        for key, value in inputs.items():
+            if key in self.rebuild_parameters:
+                current_value = self.parameters[key].value
+                if value != current_value:
+                    self.parameters[key].update(value=value)
+                    requires_rebuild = True
+
+        if requires_rebuild:
+            self.rebuild(parameters=self.parameters)
+
+        if self.check_params(
+            inputs=inputs,
+            allow_infeasible_solutions=self.allow_infeasible_solutions,
+        ):
+            try:
+                sol = self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
+            except Exception as e:
+                print(f"Error: {e}")
+                return {signal: [np.inf] for signal in self.signal}
         else:
-            if self.rebuild_parameters and not self.standard_parameters:
-                sol = self.solver.solve(self.built_model, t_eval=t_eval)
+            return {signal: [np.inf] for signal in self.signal}
 
-            else:
-                if self.check_params(
-                    inputs=inputs,
-                    allow_infeasible_solutions=self.allow_infeasible_solutions,
-                ):
-                    try:
-                        sol = self.solver.solve(
-                            self.built_model, inputs=inputs, t_eval=t_eval
-                        )
-                    except Exception as e:
-                        print(f"Error: {e}")
-                        return {signal: [np.inf] for signal in self.signal}
-                else:
-                    return {signal: [np.inf] for signal in self.signal}
+        y = {
+            signal: sol[signal].data
+            for signal in (self.signal + self.additional_variables)
+        }
 
-            y = {
-                signal: sol[signal].data
-                for signal in (self.signal + self.additional_variables)
-            }
-
-            return y
+        return y
 
     def simulateS1(self, inputs: Inputs, t_eval: np.array):
         """
@@ -414,50 +419,50 @@ class BaseModel:
 
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
-        else:
-            if self.rebuild_parameters:
-                raise ValueError(
-                    "Cannot use sensitivies for parameters which require a model rebuild"
+
+        if self.rebuild_parameters:
+            raise ValueError(
+                "Cannot use sensitivies for parameters which require a model rebuild"
+            )
+
+        if self.check_params(
+            inputs=inputs,
+            allow_infeasible_solutions=self.allow_infeasible_solutions,
+        ):
+            try:
+                sol = self._solver.solve(
+                    self.built_model,
+                    inputs=inputs,
+                    t_eval=t_eval,
+                    calculate_sensitivities=True,
+                )
+                y = {signal: sol[signal].data for signal in self.signal}
+
+                # Extract the sensitivities and stack them along a new axis for each signal
+                dy = np.empty(
+                    (
+                        sol[self.signal[0]].data.shape[0],
+                        self.n_outputs,
+                        self._n_parameters,
+                    )
                 )
 
-            if self.check_params(
-                inputs=inputs,
-                allow_infeasible_solutions=self.allow_infeasible_solutions,
-            ):
-                try:
-                    sol = self._solver.solve(
-                        self.built_model,
-                        inputs=inputs,
-                        t_eval=t_eval,
-                        calculate_sensitivities=True,
-                    )
-                    y = {signal: sol[signal].data for signal in self.signal}
-
-                    # Extract the sensitivities and stack them along a new axis for each signal
-                    dy = np.empty(
-                        (
-                            sol[self.signal[0]].data.shape[0],
-                            self.n_outputs,
-                            self._n_parameters,
-                        )
+                for i, signal in enumerate(self.signal):
+                    dy[:, i, :] = np.stack(
+                        [
+                            sol[signal].sensitivities[key].toarray()[:, 0]
+                            for key in self.parameters.keys()
+                        ],
+                        axis=-1,
                     )
 
-                    for i, signal in enumerate(self.signal):
-                        dy[:, i, :] = np.stack(
-                            [
-                                sol[signal].sensitivities[key].toarray()[:, 0]
-                                for key in self.parameters.keys()
-                            ],
-                            axis=-1,
-                        )
-
-                    return y, dy
-                except Exception as e:
-                    print(f"Error: {e}")
-                    return {signal: [np.inf] for signal in self.signal}, [np.inf]
-
-            else:
+                return y, dy
+            except Exception as e:
+                print(f"Error: {e}")
                 return {signal: [np.inf] for signal in self.signal}, [np.inf]
+
+        else:
+            return {signal: [np.inf] for signal in self.signal}, [np.inf]
 
     def predict(
         self,
