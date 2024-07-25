@@ -71,7 +71,7 @@ class Test_SPM_Parameterisation:
         )
 
         # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
+        problem = pybop.FittingProblem(model, parameters, dataset)
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
             return cost_class(problem, sigma0=self.sigma0)
         elif cost_class in [pybop.GaussianLogLikelihood]:
@@ -167,9 +167,7 @@ class Test_SPM_Parameterisation:
 
         # Define the cost to optimise
         signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
-        problem = pybop.FittingProblem(
-            model, parameters, dataset, signal=signal, init_soc=init_soc
-        )
+        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
             return cost_class(problem, sigma0=self.sigma0)
@@ -244,7 +242,7 @@ class Test_SPM_Parameterisation:
         )
 
         # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
+        problem = pybop.FittingProblem(model, parameters, dataset)
         cost = pybop.RootMeanSquaredError(problem)
 
         # Select optimiser
@@ -274,5 +272,5 @@ class Test_SPM_Parameterisation:
                 ),
             ]
         )
-        sim = model.predict(init_soc=init_soc, experiment=experiment, inputs=x)
+        sim = model.predict(initial_state=init_soc, experiment=experiment, inputs=x)
         return sim

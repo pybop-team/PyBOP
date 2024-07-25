@@ -22,8 +22,8 @@ class FittingProblem(BaseProblem):
         The variable used for fitting (default: "Voltage [V]").
     additional_variables : List[str], optional
         Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
-    init_soc : float, optional
-        Initial state of charge (default: None).
+    init_ocv : float, optional
+        Initial open-circuit voltage (default: None).
     """
 
     def __init__(
@@ -34,7 +34,7 @@ class FittingProblem(BaseProblem):
         check_model=True,
         signal=None,
         additional_variables=None,
-        init_soc=None,
+        init_ocv=None,
     ):
         # Add time and remove duplicates
         if additional_variables is None:
@@ -44,12 +44,13 @@ class FittingProblem(BaseProblem):
         additional_variables.extend(["Time [s]"])
         additional_variables = list(set(additional_variables))
 
-        super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc
-        )
+        super().__init__(parameters, model, check_model, signal, additional_variables)
         self._dataset = dataset.data
         self.parameters.initial_value()
         self._n_parameters = len(self.parameters)
+        self.init_ocv = None
+        if init_ocv is not None:
+            self.init_ocv = str(init_ocv) + "V"
 
         # Check that the dataset contains time and current
         dataset.check([*self.signal, "Current function [A]"])
@@ -75,10 +76,10 @@ class FittingProblem(BaseProblem):
                 dataset=self._dataset,
                 parameters=self.parameters,
                 check_model=self.check_model,
-                init_soc=self.init_soc,
+                initial_state=self.init_ocv,
             )
 
-    def evaluate(self, inputs: Inputs):
+    def evaluate(self, inputs: Inputs) -> dict[str, np.ndarray[np.float64]]:
         """
         Evaluate the model with the given parameters and return the signal.
 
@@ -94,7 +95,9 @@ class FittingProblem(BaseProblem):
         """
         inputs = self.parameters.verify(inputs)
 
-        sol = self._model.simulate(inputs=inputs, t_eval=self._time_data)
+        sol = self._model.simulate(
+            inputs=inputs, t_eval=self._time_data, initial_state=self.init_ocv
+        )
 
         if sol == [np.inf]:
             return {signal: [np.inf] for signal in self.signal}
@@ -125,8 +128,7 @@ class FittingProblem(BaseProblem):
         inputs = self.parameters.verify(inputs)
 
         sol = self._model.simulateS1(
-            inputs=inputs,
-            t_eval=self._time_data,
+            inputs=inputs, t_eval=self._time_data, initial_state=self.init_ocv
         )
 
         if sol == [np.inf]:

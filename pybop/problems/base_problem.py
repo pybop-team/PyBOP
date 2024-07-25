@@ -18,8 +18,6 @@ class BaseProblem:
       The signal to observe.
     additional_variables : List[str], optional
         Additional variables to observe and store in the solution (default: []).
-    init_soc : float, optional
-        Initial state of charge (default: None).
     """
 
     def __init__(
@@ -29,7 +27,6 @@ class BaseProblem:
         check_model=True,
         signal=None,
         additional_variables=None,
-        init_soc=None,
     ):
         # Check if parameters is a list of pybop.Parameter objects
         self.additional_variables = additional_variables or []
@@ -59,7 +56,6 @@ class BaseProblem:
         elif not all(isinstance(item, str) for item in signal):
             raise ValueError("Signal should be either a string or list of strings.")
         self.signal = signal
-        self.init_soc = init_soc
         self.n_outputs = len(self.signal)
         self._time_data = None
         self._target = None

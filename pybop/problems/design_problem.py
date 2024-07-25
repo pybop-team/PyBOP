@@ -46,15 +46,9 @@ class DesignProblem(BaseProblem):
         additional_variables.extend(["Time [s]", "Current [A]"])
         additional_variables = list(set(additional_variables))
 
-        super().__init__(
-            parameters,
-            model,
-            check_model,
-            signal,
-            additional_variables,
-            init_soc,
-        )
+        super().__init__(parameters, model, check_model, signal, additional_variables)
         self.experiment = experiment
+        self.init_soc = init_soc
 
         # Build the model if required
         if experiment is not None:
@@ -66,7 +60,7 @@ class DesignProblem(BaseProblem):
                 experiment=self.experiment,
                 parameters=self.parameters,
                 check_model=self.check_model,
-                init_soc=self.init_soc,
+                initial_state=self.init_soc,
             )
 
         # Add an example dataset for plotting comparison
@@ -94,7 +88,7 @@ class DesignProblem(BaseProblem):
         sol = self._model.predict(
             inputs=inputs,
             experiment=self.experiment,
-            init_soc=self.init_soc,
+            initial_state=self.init_soc,
         )
 
         if sol == [np.inf]:

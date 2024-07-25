@@ -26,8 +26,8 @@ class Observer(BaseProblem):
       The signal to observe.
     additional_variables : List[str], optional
         Additional variables to observe and store in the solution (default: []).
-    init_soc : float, optional
-        Initial state of charge (default: None).
+    init_ocv : float, optional
+        Initial open-circuit voltage (default: None).
     """
 
     # define a subtype for covariance matrices for use by derived classes
@@ -40,15 +40,13 @@ class Observer(BaseProblem):
         check_model=True,
         signal=None,
         additional_variables=None,
-        init_soc=None,
+        init_ocv=None,
     ) -> None:
         if additional_variables is None:
             additional_variables = []
         if signal is None:
             signal = ["Voltage [V]"]
-        super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc
-        )
+        super().__init__(parameters, model, check_model, signal, additional_variables)
         if model._built_model is None:
             raise ValueError("Only built models can be used in Observers")
 
@@ -57,6 +55,9 @@ class Observer(BaseProblem):
         self._model = model
         self._signal = self.signal
         self._n_outputs = len(self._signal)
+        self.init_ocv = None
+        if init_ocv is not None:
+            self.init_ocv = str(init_ocv) + "V"
 
     def reset(self, inputs: Inputs) -> None:
         inputs = self.parameters.verify(inputs)

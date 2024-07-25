@@ -17,20 +17,23 @@ class TestCosts:
             pass
 
     @pytest.fixture
-    def model(self):
-        return pybop.lithium_ion.SPM()
+    def model(self, ground_truth):
+        model = pybop.lithium_ion.SPM()
+        model._parameter_set["Negative electrode active material volume fraction"] = (
+            ground_truth
+        )
+        return model
 
     @pytest.fixture
     def ground_truth(self):
         return 0.52
 
     @pytest.fixture
-    def parameters(self, ground_truth):
+    def parameters(self):
         return pybop.Parameter(
             "Negative electrode active material volume fraction",
             prior=pybop.Gaussian(0.5, 0.01),
             bounds=[0.375, 0.625],
-            initial_value=ground_truth,
         )
 
     @pytest.fixture
@@ -42,13 +45,7 @@ class TestCosts:
         )
 
     @pytest.fixture
-    def dataset(self, model, experiment, ground_truth):
-        model.parameter_set = model.pybamm_model.default_parameter_values
-        model.parameter_set.update(
-            {
-                "Negative electrode active material volume fraction": ground_truth,
-            }
-        )
+    def dataset(self, model, experiment):
         solution = model.predict(experiment=experiment)
         return pybop.Dataset(
             {
@@ -66,9 +63,7 @@ class TestCosts:
     def problem(self, model, parameters, dataset, signal, request):
         cut_off = request.param
         model.parameter_set.update({"Lower voltage cut-off [V]": cut_off})
-        problem = pybop.FittingProblem(
-            model, parameters, dataset, signal=signal, init_soc=1.0
-        )
+        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
         problem.dataset = dataset  # add this to pass the pybop dataset to cost
         return problem
 
@@ -182,7 +177,7 @@ class TestCosts:
             higher_cost = cost([0.55])
             lower_cost = cost([0.52])
         assert higher_cost > lower_cost or (
-            higher_cost == lower_cost and higher_cost == np.inf
+            higher_cost == lower_cost and not np.isfinite(higher_cost)
         )
 
         # Test type of returned value

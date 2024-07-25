@@ -30,7 +30,7 @@ experiment = pybop.Experiment(
     ]
     * 2
 )
-values = model.predict(init_soc=init_soc, experiment=experiment)
+values = model.predict(initial_state=init_soc, experiment=experiment)
 
 
 def noise(sigma):
@@ -50,9 +50,7 @@ dataset = pybop.Dataset(
 
 signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 # Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(
-    model, parameters, dataset, signal=signal, init_soc=init_soc
-)
+problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 cost = pybop.Minkowski(problem, p=2)
 optim = pybop.AdamW(
     cost,

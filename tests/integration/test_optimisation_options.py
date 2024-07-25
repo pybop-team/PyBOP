@@ -65,7 +65,7 @@ class TestOptimisation:
         )
 
         # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
+        problem = pybop.FittingProblem(model, parameters, dataset)
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
             return cost_class(problem, sigma0=0.002)
         else:
@@ -117,5 +117,5 @@ class TestOptimisation:
             ]
             * 2
         )
-        sim = model.predict(init_soc=init_soc, experiment=experiment, inputs=x)
+        sim = model.predict(initial_state=init_soc, experiment=experiment, inputs=x)
         return sim

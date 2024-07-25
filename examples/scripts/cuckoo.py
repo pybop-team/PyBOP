@@ -33,7 +33,7 @@ experiment = pybop.Experiment(
     ]
 )
 values = model.predict(
-    init_soc=init_soc, experiment=experiment, inputs=parameters.as_dict("true")
+    initial_state=init_soc, experiment=experiment, inputs=parameters.as_dict("true")
 )
 
 sigma = 0.002
@@ -51,7 +51,7 @@ dataset = pybop.Dataset(
 )
 
 # Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
+problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.GaussianLogLikelihood(problem, sigma0=sigma * 4)
 optim = pybop.Optimisation(
     cost,
