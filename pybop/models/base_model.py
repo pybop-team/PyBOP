@@ -719,7 +719,7 @@ class BaseModel:
     def solver(self, solver):
         self._solver = solver.copy() if solver is not None else None
 
-    def get_parameter_info(self):
+    def get_parameter_info(self, print_info: bool = False):
         """
         Extracts the parameter names and types and returns them as a dictionary.
         """
@@ -732,4 +732,9 @@ class BaseModel:
         for param, param_type in info.values():
             param_name = getattr(param, "name", str(param))
             reduced_info[param_name] = param_type
+
+        if print_info:
+            for param, param_type in info.values():
+                print(param, " : ", param_type)
+
         return reduced_info

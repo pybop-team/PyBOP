@@ -1,3 +1,6 @@
+import sys
+from io import StringIO
+
 import numpy as np
 import pybamm
 import pytest
@@ -373,3 +376,15 @@ class TestModels:
     def test_get_parameter_info(self, model):
         parameter_info = model.get_parameter_info()
         assert isinstance(parameter_info, dict)
+
+        captured_output = StringIO()
+        sys.stdout = captured_output
+
+        model.get_parameter_info(print_info=True)
+        sys.stdout = sys.__stdout__
+
+        printed_messaage = captured_output.getvalue().strip()
+
+        for key, value in parameter_info.items():
+            assert key in printed_messaage
+            assert value in printed_messaage
