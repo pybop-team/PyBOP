@@ -1,4 +1,4 @@
-from pybop import BaseModel, Dataset, Parameter, Parameters
+from pybop import Dataset, Parameter, Parameters
 from pybop.parameters.parameter import Inputs
 
 
@@ -32,8 +32,7 @@ class BaseProblem:
         init_soc=None,
     ):
         # Check if parameters is a list of pybop.Parameter objects
-        if additional_variables is None:
-            additional_variables = []
+        self.additional_variables = additional_variables or []
         if signal is None:
             signal = ["Voltage [V]"]
         if isinstance(parameters, list):
@@ -64,11 +63,6 @@ class BaseProblem:
         self.n_outputs = len(self.signal)
         self._time_data = None
         self._target = None
-
-        if isinstance(model, BaseModel):
-            self.additional_variables = additional_variables
-        else:
-            self.additional_variables = []
 
     @property
     def n_parameters(self):

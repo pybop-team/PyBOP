@@ -49,6 +49,7 @@ class FittingProblem(BaseProblem):
         )
         self._dataset = dataset.data
         self.parameters.initial_value()
+        self._n_parameters = len(self.parameters)
 
         # Check that the dataset contains time and current
         dataset.check([*self.signal, "Current function [A]"])
@@ -60,8 +61,6 @@ class FittingProblem(BaseProblem):
 
         # Add useful parameters to model
         if model is not None:
-            self._model.signal = self.signal
-            self._model.additional_variables = self.additional_variables
             self._model.n_outputs = self.n_outputs
             self._model.n_time_data = self.n_time_data
 
@@ -95,9 +94,18 @@ class FittingProblem(BaseProblem):
         """
         inputs = self.parameters.verify(inputs)
 
-        y = self._model.simulate(inputs=inputs, t_eval=self._time_data)
+        sol = self._model.simulate(inputs=inputs, t_eval=self._time_data)
 
-        return y
+        if sol == [np.inf]:
+            return {signal: [np.inf] for signal in self.signal}
+
+        else:
+            y = {
+                signal: sol[signal].data
+                for signal in (self.signal + self.additional_variables)
+            }
+
+            return y
 
     def evaluateS1(self, inputs: Inputs):
         """
@@ -116,9 +124,33 @@ class FittingProblem(BaseProblem):
         """
         inputs = self.parameters.verify(inputs)
 
-        y, dy = self._model.simulateS1(
+        sol = self._model.simulateS1(
             inputs=inputs,
             t_eval=self._time_data,
         )
 
-        return (y, np.asarray(dy))
+        if sol == [np.inf]:
+            return {signal: [np.inf] for signal in self.signal}, [np.inf]
+
+        else:
+            y = {signal: sol[signal].data for signal in self.signal}
+
+            # Extract the sensitivities and stack them along a new axis for each signal
+            dy = np.empty(
+                (
+                    sol[self.signal[0]].data.shape[0],
+                    self.n_outputs,
+                    self._n_parameters,
+                )
+            )
+
+            for i, signal in enumerate(self.signal):
+                dy[:, i, :] = np.stack(
+                    [
+                        sol[signal].sensitivities[key].toarray()[:, 0]
+                        for key in self.parameters.keys()
+                    ],
+                    axis=-1,
+                )
+
+            return (y, np.asarray(dy))

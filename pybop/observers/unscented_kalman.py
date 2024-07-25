@@ -71,7 +71,6 @@ class UnscentedKalmanFilterObserver(Observer):
 
         # Add useful parameters to model
         if model is not None:
-            self._model.signal = self.signal
             self._model.n_outputs = self.n_outputs
             if dataset is not None:
                 self._model.n_time_data = self.n_time_data

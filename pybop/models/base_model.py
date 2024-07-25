@@ -66,8 +66,6 @@ class BaseModel:
 
         self.parameters = Parameters()
         self.dataset = None
-        self.signal = None
-        self.additional_variables = []
         self.rebuild_parameters = {}
         self.standard_parameters = {}
         self.param_check_counter = 0
@@ -284,9 +282,6 @@ class BaseModel:
             self._unprocessed_parameter_set = self._parameter_set
             self.geometry = self.pybamm_model.default_geometry
 
-        # Update the list of parameter names and number of parameters
-        self._n_parameters = len(self.parameters)
-
     def reinit(
         self, inputs: Inputs, t: float = 0.0, x: Optional[np.ndarray] = None
     ) -> TimeSeriesState:
@@ -350,8 +345,8 @@ class BaseModel:
 
         Returns
         -------
-        array-like
-            The simulation result corresponding to the specified signal.
+        pybamm.Solution
+            The solution object returned after solving the simulation.
 
         Raises
         ------
@@ -379,19 +374,12 @@ class BaseModel:
             allow_infeasible_solutions=self.allow_infeasible_solutions,
         ):
             try:
-                sol = self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
+                return self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
             except Exception as e:
                 print(f"Error: {e}")
-                return {signal: [np.inf] for signal in self.signal}
+                return [np.inf]
         else:
-            return {signal: [np.inf] for signal in self.signal}
-
-        y = {
-            signal: sol[signal].data
-            for signal in (self.signal + self.additional_variables)
-        }
-
-        return y
+            return [np.inf]
 
     def simulateS1(self, inputs: Inputs, t_eval: np.array):
         """
@@ -407,8 +395,8 @@ class BaseModel:
 
         Returns
         -------
-        tuple
-            A tuple containing the simulation result and the sensitivities.
+        pybamm.Solution
+            The solution object returned after solving the simulation.
 
         Raises
         ------
@@ -430,39 +418,18 @@ class BaseModel:
             allow_infeasible_solutions=self.allow_infeasible_solutions,
         ):
             try:
-                sol = self._solver.solve(
+                return self._solver.solve(
                     self.built_model,
                     inputs=inputs,
                     t_eval=t_eval,
                     calculate_sensitivities=True,
                 )
-                y = {signal: sol[signal].data for signal in self.signal}
 
-                # Extract the sensitivities and stack them along a new axis for each signal
-                dy = np.empty(
-                    (
-                        sol[self.signal[0]].data.shape[0],
-                        self.n_outputs,
-                        self._n_parameters,
-                    )
-                )
-
-                for i, signal in enumerate(self.signal):
-                    dy[:, i, :] = np.stack(
-                        [
-                            sol[signal].sensitivities[key].toarray()[:, 0]
-                            for key in self.parameters.keys()
-                        ],
-                        axis=-1,
-                    )
-
-                return y, dy
             except Exception as e:
                 print(f"Error: {e}")
-                return {signal: [np.inf] for signal in self.signal}, [np.inf]
-
+                return [np.inf]
         else:
-            return {signal: [np.inf] for signal in self.signal}, [np.inf]
+            return [np.inf]
 
     def predict(
         self,

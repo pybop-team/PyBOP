@@ -292,7 +292,7 @@ class TestModels:
         t_eval = np.linspace(0, 10, 100)
         expected = y0 * np.exp(-k * t_eval)
         solved = model.simulate(inputs, t_eval)
-        np.testing.assert_array_almost_equal(solved["y_0"], expected, decimal=5)
+        np.testing.assert_array_almost_equal(solved["y_0"].data, expected, decimal=5)
 
         with pytest.raises(ValueError):
             ExponentialDecay(n_states=-1)
@@ -312,7 +312,7 @@ class TestModels:
             base.approximate_capacity(x)
 
         base.classify_and_update_parameters(parameters=None)
-        assert base._n_parameters == 0
+        assert isinstance(base.parameters, pybop.Parameters)
 
     @pytest.mark.unit
     def test_thevenin_model(self):
