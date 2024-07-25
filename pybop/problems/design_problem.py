@@ -56,19 +56,6 @@ class DesignProblem(BaseProblem):
         )
         self.experiment = experiment
 
-        # Build the model if required
-        if experiment is not None:
-            # Leave the build until later to apply the experiment
-            self._model.classify_and_update_parameters(self.parameters)
-
-        elif self._model._built_model is None:
-            self._model.build(
-                experiment=self.experiment,
-                parameters=self.parameters,
-                check_model=self.check_model,
-                init_soc=self.init_soc,
-            )
-
         # Add an example dataset for plotting comparison
         sol = self.evaluate(self.parameters.as_dict("initial"))
         self._time_data = sol["Time [s]"]

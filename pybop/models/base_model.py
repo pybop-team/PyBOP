@@ -505,33 +505,38 @@ class BaseModel:
             if PyBaMM models are not supported by the current simulation method.
 
         """
+        if self._unprocessed_model is None:
+            raise ValueError(
+                "The predict method currently only supports PyBaMM models."
+            )
+        elif not self._unprocessed_model._built:
+            self._unprocessed_model.build_model()
+
         parameter_set = parameter_set or self._unprocessed_parameter_set
         if inputs is not None:
             inputs = self.parameters.verify(inputs)
             parameter_set.update(inputs)
 
-        if self._unprocessed_model is None:
-            raise ValueError(
-                "The predict method currently only supports PyBaMM models."
-            )
-        elif not self.pybamm_model._built:
-            self.pybamm_model.build_model()
-
         if self.check_params(
             parameter_set=parameter_set,
             allow_infeasible_solutions=self.allow_infeasible_solutions,
         ):
-            if experiment is None:
-                return pybamm.Simulation(
-                    model=self._unprocessed_model,
-                    parameter_values=parameter_set,
-                ).solve(t_eval=t_eval, initial_soc=init_soc)
-            else:
+            if experiment is not None:
                 return pybamm.Simulation(
                     model=self._unprocessed_model,
                     experiment=experiment,
                     parameter_values=parameter_set,
                 ).solve(initial_soc=init_soc)
+            elif t_eval is not None:
+                return pybamm.Simulation(
+                    model=self._unprocessed_model,
+                    parameter_values=parameter_set,
+                ).solve(t_eval=t_eval, initial_soc=init_soc)
+            else:
+                raise ValueError(
+                    "The predict method requires either an experiment or "
+                    "t_eval to be specified."
+                )
 
         else:
             return [np.inf]
