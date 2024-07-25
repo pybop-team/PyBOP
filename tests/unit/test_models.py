@@ -374,6 +374,10 @@ class TestModels:
 
     @pytest.mark.unit
     def test_get_parameter_info(self, model):
+        if isinstance(model, pybop.empirical.Thevenin):
+            # Test at least one model without a built pybamm model
+            model = pybop.empirical.Thevenin(build=False)
+
         parameter_info = model.get_parameter_info()
         assert isinstance(parameter_info, dict)
 
