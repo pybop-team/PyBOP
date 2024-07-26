@@ -44,22 +44,3 @@ class Thevenin(ECircuitModel):
         super().__init__(
             pybamm_model=pybamm_equivalent_circuit.Thevenin, name=name, **model_kwargs
         )
-
-    def _check_params(self, inputs: Inputs = None, allow_infeasible_solutions=True):
-        """
-        Check the compatibility of the model parameters.
-
-        Parameters
-        ----------
-        inputs : Inputs
-            The input parameters for the simulation.
-        allow_infeasible_solutions : bool, optional
-            If True, infeasible parameter values will be allowed in the optimisation (default: True).
-
-        Returns
-        -------
-        bool
-            A boolean which signifies whether the parameters are compatible.
-
-        """
-        return True
