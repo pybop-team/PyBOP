@@ -21,7 +21,13 @@ class TestTheveninParameterisation:
             json_path="examples/scripts/parameters/initial_ecm_parameters.json"
         )
         parameter_set.import_parameters()
-        parameter_set.params.update({"C1 [F]": 1000})
+        parameter_set.params.update(
+            {
+                "C1 [F]": 1000,
+                "R0 [Ohm]": self.ground_truth[0],
+                "R1 [Ohm]": self.ground_truth[1],
+            }
+        )
         return pybop.empirical.Thevenin(parameter_set=parameter_set)
 
     @pytest.fixture

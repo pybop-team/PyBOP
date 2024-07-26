@@ -20,6 +20,13 @@ class TestOptimisation:
     @pytest.fixture
     def model(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        x = self.ground_truth
+        parameter_set.update(
+            {
+                "Negative electrode active material volume fraction": x[0],
+                "Positive electrode active material volume fraction": x[1],
+            }
+        )
         return pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
     @pytest.fixture
@@ -54,7 +61,7 @@ class TestOptimisation:
     def spm_costs(self, model, parameters, cost_class):
         # Form dataset
         init_soc = 0.5
-        solution = self.get_data(model, parameters, self.ground_truth, init_soc)
+        solution = self.get_data(model, init_soc)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -106,8 +113,10 @@ class TestOptimisation:
                 assert initial_cost < final_cost
         np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
-    def get_data(self, model, parameters, x, init_soc):
-        model.classify_and_update_parameters(parameters)
+    def get_data(self, model, init_soc):
+        # Update the initial state and save the ground truth initial concentrations
+        model.set_initial_state(init_soc)
+        model._unprocessed_parameter_set = model._parameter_set.copy()
         experiment = pybop.Experiment(
             [
                 (
@@ -117,5 +126,5 @@ class TestOptimisation:
             ]
             * 2
         )
-        sim = model.predict(initial_state=init_soc, experiment=experiment, inputs=x)
+        sim = model.predict(experiment=experiment)
         return sim

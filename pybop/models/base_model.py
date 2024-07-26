@@ -516,7 +516,7 @@ class BaseModel:
         if not self.pybamm_model._built:
             self.pybamm_model.build_model()
 
-        parameter_set = parameter_set or self._unprocessed_parameter_set
+        parameter_set = parameter_set or self._unprocessed_parameter_set.copy()
         if inputs is not None:
             parameter_set.update(inputs)
 
