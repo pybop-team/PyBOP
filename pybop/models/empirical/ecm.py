@@ -1,7 +1,6 @@
 from pybamm import equivalent_circuit as pybamm_equivalent_circuit
 
 from pybop.models.empirical.base_ecm import ECircuitModel
-from pybop.parameters.parameter import Inputs
 
 
 class Thevenin(ECircuitModel):
