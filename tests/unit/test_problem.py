@@ -110,7 +110,9 @@ class TestProblem:
     @pytest.mark.unit
     def test_fitting_problem(self, parameters, dataset, model, signal):
         # Construct Problem
-        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
+        problem = pybop.FittingProblem(
+            model, parameters, dataset, signal=signal, init_ocv=4.0
+        )
 
         assert problem._model == model
         assert problem._model._built_model is not None
@@ -129,6 +131,9 @@ class TestProblem:
 
         # Test model.simulate
         model.simulate(inputs=[1e-5, 1e-5], t_eval=np.linspace(0, 10, 100))
+
+        # Test model.simulate with an initial state
+        problem.evaluate(inputs=[1e-5, 1e-5])
 
         # Test problem construction errors
         for bad_dataset in [
