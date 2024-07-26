@@ -59,9 +59,11 @@ class TestObserver:
             )
 
         # Test with invalid inputs
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Time must be increasing."):
             observer.observe(-1)
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError, match="values and times must have the same length."
+        ):
             observer.log_likelihood(
                 {"2y": t_eval}, np.array([1]), inputs=observer._state.inputs
             )
@@ -88,5 +90,26 @@ class TestObserver:
     @pytest.mark.unit
     def test_unbuilt_model(self, parameters):
         model = ExponentialDecay()
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError, match="Only built models can be used in Observers"
+        ):
             pybop.Observer(parameters, model)
+
+    @pytest.mark.unit
+    def test_observer_inputs(self):
+        init_ocv = 4.0
+        t_eval = np.linspace(0, 1, 100)
+        model = ExponentialDecay(n_states=1)
+        model.build()
+        observer = pybop.Observer(
+            pybop.Parameters(), model, signal=["y_0", "2y"], init_ocv=init_ocv
+        )
+        assert observer.init_ocv == str(init_ocv) + "V"
+
+        with pytest.raises(
+            ValueError,
+            match="Observer.log_likelihood is currently restricted to single output models.",
+        ):
+            observer.log_likelihood(
+                {"2y": t_eval}, t_eval, inputs=observer._state.inputs
+            )
