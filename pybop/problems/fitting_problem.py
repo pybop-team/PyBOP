@@ -1,7 +1,10 @@
+from typing import Optional
+
 import numpy as np
 
-from pybop import BaseProblem
-from pybop.parameters.parameter import Inputs
+from pybop import BaseModel, BaseProblem
+from pybop._dataset import Dataset
+from pybop.parameters.parameter import Inputs, Parameters
 
 
 class FittingProblem(BaseProblem):
@@ -20,7 +23,7 @@ class FittingProblem(BaseProblem):
         Dataset object containing the data to fit the model to.
     signal : str, optional
         The variable used for fitting (default: "Voltage [V]").
-    additional_variables : List[str], optional
+    additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
     init_ocv : float, optional
         Initial open-circuit voltage (default: None).
@@ -28,19 +31,16 @@ class FittingProblem(BaseProblem):
 
     def __init__(
         self,
-        model,
-        parameters,
-        dataset,
-        check_model=True,
-        signal=None,
-        additional_variables=None,
+        model: BaseModel,
+        parameters: Parameters,
+        dataset: Dataset,
+        check_model: bool = True,
+        signal: Optional[list[str]] = None,
+        additional_variables: Optional[list[str]] = None,
         init_ocv=None,
     ):
         # Add time and remove duplicates
-        if additional_variables is None:
-            additional_variables = []
-        if signal is None:
-            signal = ["Voltage [V]"]
+        additional_variables = additional_variables or []
         additional_variables.extend(["Time [s]"])
         additional_variables = list(set(additional_variables))
 
@@ -52,7 +52,7 @@ class FittingProblem(BaseProblem):
         if init_ocv is not None:
             self.init_ocv = str(init_ocv) + "V"
 
-        # Check that the dataset contains time and current
+        # Check that the dataset contains necessary variables
         dataset.check([*self.signal, "Current function [A]"])
 
         # Unpack time and target data
@@ -60,11 +60,7 @@ class FittingProblem(BaseProblem):
         self.n_time_data = len(self._time_data)
         self.set_target(dataset)
 
-        # Add useful parameters to model
         if model is not None:
-            self._model.n_outputs = self.n_outputs
-            self._model.n_time_data = self.n_time_data
-
             # Build the model from scratch
             if self._model._built_model is not None:
                 self._model._model_with_set_params = None
@@ -103,12 +99,10 @@ class FittingProblem(BaseProblem):
             return {signal: [np.inf] for signal in self.signal}
 
         else:
-            y = {
+            return {
                 signal: sol[signal].data
                 for signal in (self.signal + self.additional_variables)
             }
-
-            return y
 
     def evaluateS1(self, inputs: Inputs):
         """
@@ -121,9 +115,9 @@ class FittingProblem(BaseProblem):
 
         Returns
         -------
-        tuple
-            A tuple containing the simulation result y(t) and the sensitivities dy/dx(t) evaluated
-            with given inputs.
+        tuple[dict, np.ndarray]
+            A tuple containing the simulation result y(t) as a dictionary and the sensitivities
+            dy/dx(t) evaluated with given inputs.
         """
         inputs = self.parameters.verify(inputs)
 

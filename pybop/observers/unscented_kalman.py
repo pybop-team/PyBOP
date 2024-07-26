@@ -1,9 +1,10 @@
 from dataclasses import dataclass
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 import scipy.linalg as linalg
 
+from pybop._dataset import Dataset
 from pybop.models.base_model import BaseModel, Inputs
 from pybop.observers.observer import Observer
 from pybop.parameters.parameter import Parameter
@@ -33,8 +34,8 @@ class UnscentedKalmanFilterObserver(Observer):
         Flag to indicate if the model should be checked (default: True).
     signal: str
         The signal to observe.
-    init_soc : float, optional
-        Initial state of charge (default: None).
+    init_ocv : float, optional
+        Initial open-circuit voltage (default: None).
     """
 
     Covariance = np.ndarray
@@ -46,34 +47,41 @@ class UnscentedKalmanFilterObserver(Observer):
         sigma0: Union[Covariance, float],
         process: Union[Covariance, float],
         measure: Union[Covariance, float],
-        dataset=None,
-        check_model=True,
-        signal=None,
-        additional_variables=None,
-        init_soc=None,
+        dataset: Optional[Dataset] = None,
+        check_model: bool = True,
+        signal: Optional[list[str]] = None,
+        additional_variables: Optional[list[str]] = None,
+        init_ocv: Optional[float] = None,
     ) -> None:
-        if additional_variables is None:
-            additional_variables = []
-        if signal is None:
-            signal = ["Voltage [V]"]
+        if dataset is not None:
+            # Check that the dataset contains necessary variables
+            dataset.check([*signal, "Current function [A]"])
+            dataset = dataset.data
+
+        if model is not None:
+            # Clear any existing built model and its properties
+            if model._built_model is not None:
+                model._model_with_set_params = None
+                model._built_model = None
+                model._mesh = None
+                model._disc = None
+
+            # Build the model from scratch
+            model.build(
+                dataset=dataset,
+                parameters=parameters,
+                check_model=check_model,
+            )
+
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc
+            parameters, model, check_model, signal, additional_variables, init_ocv
         )
         if dataset is not None:
-            self._dataset = dataset.data
-
-            # Check that the dataset contains time and current
-            dataset.check([*self.signal, "Current function [A]"])
+            self._dataset = dataset
 
             self._time_data = self._dataset["Time [s]"]
             self.n_time_data = len(self._time_data)
             self._target = {signal: self._dataset[signal] for signal in self.signal}
-
-        # Add useful parameters to model
-        if model is not None:
-            self._model.n_outputs = self.n_outputs
-            if dataset is not None:
-                self._model.n_time_data = self.n_time_data
 
         # Observer initiation
         self._process = process
@@ -257,11 +265,11 @@ class SquareRootUKF:
 
         Returns
         -------
-        List[np.ndarray]
+        list[np.ndarray]
             The sigma points
-        List[float]
+        list[float]
             The weights of the sigma points
-        List[float]
+        list[float]
             The weights of the covariance of the sigma points
         """
         # Set the scaling parameters: sigma and eta
@@ -293,14 +301,14 @@ class SquareRootUKF:
         w_m: np.ndarray,
         w_c: np.ndarray,
         sqrtR: np.ndarray,
-        states: Union[np.ndarray, None] = None,
+        states: Optional[np.ndarray] = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Performs the unscented transform
 
         Parameters
         ----------
-        sigma_points : List[SigmaPoint]
+        sigma_points : list[SigmaPoint]
             The sigma points
         sqrtR : np.ndarray
             The square root of the covariance matrix

@@ -1,6 +1,6 @@
 import warnings
 from collections import OrderedDict
-from typing import Union
+from typing import Optional
 
 import numpy as np
 
@@ -456,7 +456,7 @@ class Parameters:
                 values = self.true_value()
         return {key: values[i] for i, key in enumerate(self.param.keys())}
 
-    def verify(self, inputs: Union[Inputs, None] = None):
+    def verify(self, inputs: Optional[Inputs] = None):
         """
         Verify that the inputs are an Inputs dictionary or numeric values
         which can be used to construct an Inputs dictionary

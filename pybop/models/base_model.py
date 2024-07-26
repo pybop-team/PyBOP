@@ -38,21 +38,41 @@ class BaseModel:
     """
     A base class for constructing and simulating models using PyBaMM.
 
-    This class serves as a foundation for building specific models in PyBaMM.
-    It provides methods to set up the model, define parameters, and perform
-    simulations. The class is designed to be subclassed for creating models
-    with custom behaviour.
+    This class serves as a foundation for building specific models in PyBaMM. It provides
+    methods to set up the model, define parameters, and perform simulations. The class is
+    designed to be subclassed for creating models with custom behaviour.
 
     """
 
-    def __init__(self, name="Base Model", parameter_set=None):
+    def __init__(
+        self, name: str = "Base Model", parameter_set: Optional[ParameterSet] = None
+    ):
         """
-        Initialize the BaseModel with an optional name.
+        Initialize the BaseModel with an optional name and a parameter set.
 
         Parameters
         ----------
         name : str, optional
             The name given to the model instance.
+        parameter_set : pybop.ParameterSet, optional
+            A PyBOP ParameterSet, PyBaMM ParameterValues object or a dictionary containing the
+            parameter values.
+
+        Additional Attributes
+        ---------------------
+        parameters : pybop.Parameters
+            The input parameters.
+        output_variables : list[str], optional
+            A list of names of variables to include in the solution object.
+        rebuild_parameters : dict
+            A list of parameters which require the model to be rebuilt (default: {}).
+        standard_parameters : dict
+            A list of standard (i.e. not rebuild) parameters (default: {}).
+        param_check_counter : int
+            A counter for the number of parameter checks (default: 0).
+        allow_infeasible_solutions : bool, optional
+            If True, parameter values will be simulated whether or not they are feasible
+            (default: True).
         """
         self.name = name
         if parameter_set is None:
@@ -65,7 +85,6 @@ class BaseModel:
             self._parameter_set = pybamm.ParameterValues(parameter_set.params)
 
         self.parameters = Parameters()
-        self.dataset = None
         self.rebuild_parameters = {}
         self.standard_parameters = {}
         self.param_check_counter = 0
@@ -75,7 +94,7 @@ class BaseModel:
 
     def build(
         self,
-        dataset: Dataset = None,
+        dataset: Optional[Dataset] = None,
         parameters: Union[Parameters, dict] = None,
         check_model: bool = True,
         initial_state: Optional[float] = None,
@@ -96,11 +115,10 @@ class BaseModel:
         check_model : bool, optional
             If True, the model will be checked for correctness after construction.
         initial_state : float or str, optional
-            If float, this value is used as the initial state of charge (as a fraction between 0
+            If float, this value is used as the initial state of charge (as a decimal between 0
             and 1). If str ending in "V", this value is used as the initial open-circuit voltage.
             Defaults to None, indicating that the existing initial concentrations will be used.
         """
-        self.dataset = dataset
         if parameters is not None:
             self.parameters = parameters
             self.classify_and_update_parameters(self.parameters)
@@ -117,7 +135,7 @@ class BaseModel:
         else:
             if not self.pybamm_model._built:
                 self.pybamm_model.build_model()
-            self.set_params()
+            self.set_params(dataset=dataset)
 
             self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
             self._disc = pybamm.Discretisation(
@@ -141,7 +159,7 @@ class BaseModel:
         Parameters
         ----------
         initial_state : float or str, optional
-            If float, this value is used as the initial state of charge (as a fraction between 0
+            If float, this value is used as the initial state of charge (as a decimal between 0
             and 1). If str ending in "V", this value is used as the initial open-circuit voltage.
             Defaults to None, indicating that the existing initial concentrations will be used.
         """
@@ -164,7 +182,7 @@ class BaseModel:
             # Save solved initial SOC in case we need to rebuild the model
             self._built_initial_soc = initial_state
 
-    def set_params(self, rebuild=False):
+    def set_params(self, rebuild: bool = False, dataset: Dataset = None):
         """
         Assign the parameters to the model.
 
@@ -178,21 +196,17 @@ class BaseModel:
         for key in self.standard_parameters.keys():
             self._parameter_set[key] = "[input]"
 
-        if self.dataset is not None and (not self.rebuild_parameters or not rebuild):
-            if (
-                self.parameters is None
-                or "Current function [A]" not in self.parameters.keys()
-            ):
-                self.current_function = pybamm.Interpolant(
-                    self.dataset["Time [s]"],
-                    self.dataset["Current function [A]"],
-                    pybamm.t,
-                )
+        if "Current function [A]" in self._parameter_set.keys():
+            if dataset is not None and (not self.rebuild_parameters or not rebuild):
+                if "Current function [A]" not in self.parameters.keys():
+                    self.current_function = pybamm.Interpolant(
+                        dataset["Time [s]"],
+                        dataset["Current function [A]"],
+                        pybamm.t,
+                    )
+                    self._parameter_set["Current function [A]"] = self.current_function
+            elif rebuild and self.current_function is not None:
                 self._parameter_set["Current function [A]"] = self.current_function
-                # Set t_eval
-                self.time_data = self._parameter_set["Current function [A]"].x[0]
-        elif rebuild and self.current_function is not None:
-            self._parameter_set["Current function [A]"] = self.current_function
 
         self._model_with_set_params = self._parameter_set.process_model(
             self._unprocessed_model, inplace=False
@@ -203,14 +217,13 @@ class BaseModel:
 
     def rebuild(
         self,
-        dataset: Dataset = None,
+        dataset: Optional[Dataset] = None,
         parameters: Union[Parameters, dict] = None,
-        parameter_set: ParameterSet = None,
         check_model: bool = True,
         initial_state: Optional[float] = None,
     ) -> None:
         """
-        Rebuild the PyBaMM model for a given parameter set.
+        Rebuild the PyBaMM model for a given set of inputs.
 
         This method requires the self.build() method to be called first, and
         then rebuilds the model for a given parameter set. Specifically,
@@ -223,8 +236,6 @@ class BaseModel:
             The dataset to be used in the model construction.
         parameters : pybop.Parameters or Dict, optional
             A pybop Parameters class or dictionary containing parameter values to apply to the model.
-        parameter_set : pybop.parameter_set, optional
-            A PyBOP parameter set object or a dictionary containing the parameter values
         check_model : bool, optional
             If True, the model will be checked for correctness after construction.
         initial_state : float or str, optional
@@ -232,8 +243,6 @@ class BaseModel:
             value is used as the initial open-circuit voltage. Defaults to None, indicating that the
             initial concentrations in the parameter set should be used.
         """
-        self.dataset = dataset
-
         if parameters is not None:
             self.classify_and_update_parameters(parameters)
 
@@ -242,7 +251,7 @@ class BaseModel:
         if self._built_model is None:
             raise ValueError("Model must be built before calling rebuild")
 
-        self.set_params(rebuild=True)
+        self.set_params(rebuild=True, dataset=dataset)
         self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
         self._disc = pybamm.Discretisation(
             mesh=self.mesh,
@@ -265,12 +274,9 @@ class BaseModel:
         Parameters
         ----------
         parameters : pybop.Parameters
-
+            The input parameters.
         """
-        if parameters is None:
-            self.parameters = Parameters()
-        else:
-            self.parameters = parameters
+        self.parameters = parameters or Parameters()
 
         parameter_dictionary = self.parameters.as_dict()
 
@@ -310,9 +316,7 @@ class BaseModel:
         if x is None:
             x = self._built_model.y0
 
-        sol = pybamm.Solution([np.asarray([t])], [x], self._built_model, inputs)
-
-        return TimeSeriesState(sol=sol, inputs=inputs, t=t)
+        return self.get_state(inputs, t, x)
 
     def get_state(self, inputs: Inputs, t: float, x: np.ndarray) -> TimeSeriesState:
         """
@@ -338,7 +342,7 @@ class BaseModel:
         """
         dt = time - state.t
         new_sol = self._solver.step(
-            state.sol, self.built_model, dt, npts=2, inputs=state.inputs, save=False
+            state.sol, self._built_model, dt, npts=2, inputs=state.inputs, save=False
         )
         return TimeSeriesState(sol=new_sol, inputs=state.inputs, t=time)
 
@@ -355,14 +359,15 @@ class BaseModel:
         t_eval : array-like
             An array of time points at which to evaluate the solution.
         initial_state : float or str, optional
-            If float, this value is used as the initial state of charge (as a fraction between 0
+            If float, this value is used as the initial state of charge (as a decimal between 0
             and 1). If str ending in "V", this value is used as the initial open-circuit voltage.
             Defaults to None, indicating that the existing initial concentrations will be used.
 
         Returns
         -------
-        pybamm.Solution
-            The solution object returned after solving the simulation.
+        pybamm.Solution or [np.inf]
+            The solution object returned by a PyBaMM simulation, or [np.inf] in the case where
+            the parameter values are infeasible and infeasible solutions are not allowed.
 
         Raises
         ------
@@ -393,7 +398,9 @@ class BaseModel:
             allow_infeasible_solutions=self.allow_infeasible_solutions,
         ):
             try:
-                return self.solver.solve(self.built_model, inputs=inputs, t_eval=t_eval)
+                return self.solver.solve(
+                    self._built_model, inputs=inputs, t_eval=t_eval
+                )
             except Exception as e:
                 print(f"Error: {e}")
                 return [np.inf]
@@ -414,14 +421,15 @@ class BaseModel:
             An array of time points at which to evaluate the solution and its
             sensitivities.
         initial_state : float or str, optional
-            If float, this value is used as the initial state of charge (as a fraction between 0
+            If float, this value is used as the initial state of charge (as a decimal between 0
             and 1). If str ending in "V", this value is used as the initial open-circuit voltage.
             Defaults to None, indicating that the existing initial concentrations will be used.
 
         Returns
         -------
-        pybamm.Solution
-            The solution object returned after solving the simulation.
+        pybamm.Solution or [np.inf]
+            The solution object returned by a PyBaMM simulation, or [np.inf] in the case where
+            the parameter values are infeasible and infeasible solutions are not allowed.
 
         Raises
         ------
@@ -444,7 +452,7 @@ class BaseModel:
         ):
             try:
                 return self._solver.solve(
-                    self.built_model,
+                    self._built_model,
                     inputs=inputs,
                     t_eval=t_eval,
                     calculate_sensitivities=True,
@@ -486,14 +494,15 @@ class BaseModel:
             A PyBaMM Experiment object specifying the experimental conditions under which
             the simulation should be run. Defaults to None, indicating no experiment.
         initial_state : float or str, optional
-            If float, this value is used as the initial state of charge (as a fraction between 0
+            If float, this value is used as the initial state of charge (as a decimal between 0
             and 1). If str ending in "V", this value is used as the initial open-circuit voltage.
             Defaults to None, indicating that the existing initial concentrations will be used.
 
         Returns
         -------
-        pybamm.Solution
-            The solution object returned after solving the simulation.
+        pybamm.Solution or [np.inf]
+            The solution object returned by a PyBaMM simulation, or [np.inf] in the case where
+            the parameter values are infeasible and infeasible solutions are not allowed.
 
         Raises
         ------

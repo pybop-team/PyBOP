@@ -14,9 +14,9 @@ class BaseProblem:
         The model to be used for the problem (default: None).
     check_model : bool, optional
         Flag to indicate if the model should be checked (default: True).
-    signal: List[str]
+    signal: list[str]
       The signal to observe.
-    additional_variables : List[str], optional
+    additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default: []).
     """
 
@@ -28,10 +28,11 @@ class BaseProblem:
         signal=None,
         additional_variables=None,
     ):
-        # Check if parameters is a list of pybop.Parameter objects
         self.additional_variables = additional_variables or []
         if signal is None:
             signal = ["Voltage [V]"]
+
+        # Check if parameters is a list of pybop.Parameter objects
         if isinstance(parameters, list):
             if all(isinstance(param, Parameter) for param in parameters):
                 parameters = Parameters(*parameters)
@@ -57,6 +58,7 @@ class BaseProblem:
             raise ValueError("Signal should be either a string or list of strings.")
         self.signal = signal
         self.n_outputs = len(self.signal)
+        self._dataset = None
         self._time_data = None
         self._target = None
 
@@ -88,7 +90,7 @@ class BaseProblem:
         Parameters
         ----------
         inputs : Inputs
-             Parameters for evaluation of the model.
+            Parameters for evaluation of the model.
 
         Raises
         ------
@@ -119,13 +121,13 @@ class BaseProblem:
         """
         return self._target
 
-    def set_target(self, dataset):
+    def set_target(self, dataset: Dataset):
         """
         Set the target dataset.
 
         Parameters
         ----------
-        target : np.ndarray
+        target : Dataset
             The target dataset array.
         """
         if self.signal is None:
