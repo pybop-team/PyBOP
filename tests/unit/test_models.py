@@ -368,3 +368,20 @@ class TestModels:
         for key in problem.signal:
             assert np.allclose(output.get(key, [])[0], output.get(key, []))
             assert np.allclose(output_S1.get(key, [])[0], output_S1.get(key, []))
+
+    @pytest.mark.unit
+    def test_set_initial_state(self):
+        t_eval = np.linspace(0, 10, 100)
+
+        model = pybop.lithium_ion.SPM()
+        model.build(initial_state=0.7)
+        values_1 = model.predict(t_eval=t_eval)
+
+        model = pybop.lithium_ion.SPM()
+        model.build(initial_state=0.4)
+        model.set_initial_state(0.7)
+        values_2 = model.predict(t_eval=t_eval)
+
+        np.testing.assert_allclose(
+            values_1["Voltage [V]"].data, values_2["Voltage [V]"].data, atol=1e-8
+        )
