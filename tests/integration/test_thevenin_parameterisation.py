@@ -99,7 +99,6 @@ class TestTheveninParameterisation:
         np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
     def get_data(self, model, parameters, x):
-        model.classify_and_update_parameters(parameters)
         experiment = pybop.Experiment(
             [
                 (
@@ -108,5 +107,5 @@ class TestTheveninParameterisation:
                 ),
             ]
         )
-        sim = model.predict(experiment=experiment, inputs=x)
+        sim = model.predict(experiment=experiment)
         return sim

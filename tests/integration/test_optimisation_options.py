@@ -115,8 +115,6 @@ class TestOptimisation:
 
     def get_data(self, model, init_soc):
         # Update the initial state and save the ground truth initial concentrations
-        model.set_initial_state(init_soc)
-        model._unprocessed_parameter_set = model._parameter_set.copy()
         experiment = pybop.Experiment(
             [
                 (
@@ -126,5 +124,5 @@ class TestOptimisation:
             ]
             * 2
         )
-        sim = model.predict(experiment=experiment)
+        sim = model.predict(initial_state=init_soc, experiment=experiment)
         return sim

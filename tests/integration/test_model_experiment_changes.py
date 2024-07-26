@@ -39,6 +39,7 @@ class TestModelAndExperimentChanges:
         # Change the experiment and check that the results are different.
 
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set.update(parameters.as_dict("true)"))
         init_soc = 0.5
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
@@ -69,6 +70,7 @@ class TestModelAndExperimentChanges:
         # Change the model and check that the results are different.
 
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set.update(parameters.as_dict("true)"))
         init_soc = 0.5
         experiment = pybop.Experiment(["Charge at 1C until 4.1 V (2 seconds period)"])
 

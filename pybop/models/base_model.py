@@ -174,9 +174,10 @@ class BaseModel:
                 self.op_conds_to_built_solvers = None
 
             param = self.pybamm_model.param
+            # Update the unprocessed parameter set in place for consistency
             self._parameter_set = (
                 self._unprocessed_parameter_set.set_initial_stoichiometries(
-                    initial_state, param=param, inplace=False
+                    initial_state, param=param, inplace=True
                 )
             )
             # Save solved initial SOC in case we need to rebuild the model

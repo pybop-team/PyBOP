@@ -4,6 +4,12 @@ import pybop
 
 # Define model
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+parameter_set.update(
+    {
+        "Negative electrode active material volume fraction": 0.7,
+        "Positive electrode active material volume fraction": 0.67,
+    }
+)
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
@@ -13,14 +19,12 @@ parameters = pybop.Parameters(
         prior=pybop.Gaussian(0.6, 0.05),
         bounds=[0.4, 0.75],
         initial_value=0.41,
-        true_value=0.7,
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
         prior=pybop.Gaussian(0.48, 0.05),
         bounds=[0.4, 0.75],
         initial_value=0.41,
-        true_value=0.67,
     ),
 )
 init_soc = 0.7
@@ -32,9 +36,7 @@ experiment = pybop.Experiment(
         ),
     ]
 )
-values = model.predict(
-    initial_state=init_soc, experiment=experiment, inputs=parameters.as_dict("true")
-)
+values = model.predict(initial_state=init_soc, experiment=experiment)
 
 sigma = 0.002
 corrupt_values = values["Voltage [V]"].data + np.random.normal(
