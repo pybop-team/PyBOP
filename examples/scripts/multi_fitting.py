@@ -4,8 +4,32 @@ import pybop
 
 # Parameter set and model definition
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-model_1 = pybop.lithium_ion.SPM(parameter_set=parameter_set)
-model_2 = pybop.lithium_ion.SPM(parameter_set=parameter_set.copy())
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+
+# Generate a dataset
+sigma = 0.001
+experiment = pybop.Experiment([("Discharge at 0.5C for 2 minutes (4 second period)")])
+values = model.predict(experiment=experiment)
+dataset_1 = pybop.Dataset(
+    {
+        "Time [s]": values["Time [s]"].data,
+        "Current function [A]": values["Current [A]"].data,
+        "Voltage [V]": values["Voltage [V]"].data
+        + np.random.normal(0, sigma, len(values["Voltage [V]"].data)),
+    }
+)
+
+# Generate a second dataset
+experiment = pybop.Experiment([("Discharge at 1C for 2 minutes (4 second period)")])
+values = model.predict(experiment=experiment)
+dataset_2 = pybop.Dataset(
+    {
+        "Time [s]": values["Time [s]"].data,
+        "Current function [A]": values["Current [A]"].data,
+        "Voltage [V]": values["Voltage [V]"].data
+        + np.random.normal(0, sigma, len(values["Voltage [V]"].data)),
+    }
+)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -21,34 +45,10 @@ parameters = pybop.Parameters(
     ),
 )
 
-# Generate a dataset
-sigma = 0.001
-experiment_1 = pybop.Experiment([("Discharge at 0.5C for 2 minutes (4 second period)")])
-values_1 = model_1.predict(experiment=experiment_1)
-dataset_1 = pybop.Dataset(
-    {
-        "Time [s]": values_1["Time [s]"].data,
-        "Current function [A]": values_1["Current [A]"].data,
-        "Voltage [V]": values_1["Voltage [V]"].data
-        + np.random.normal(0, sigma, len(values_1["Voltage [V]"].data)),
-    }
-)
-
-# Generate a second dataset
-experiment_2 = pybop.Experiment([("Discharge at 1C for 2 minutes (4 second period)")])
-values_2 = model_2.predict(experiment=experiment_2)
-dataset_2 = pybop.Dataset(
-    {
-        "Time [s]": values_2["Time [s]"].data,
-        "Current function [A]": values_2["Current [A]"].data,
-        "Voltage [V]": values_2["Voltage [V]"].data
-        + np.random.normal(0, sigma, len(values_2["Voltage [V]"].data)),
-    }
-)
 
 # Generate a problem for each dataset and combine into one
-problem_1 = pybop.FittingProblem(model_1, parameters, dataset_1)
-problem_2 = pybop.FittingProblem(model_2, parameters, dataset_2)
+problem_1 = pybop.FittingProblem(model, parameters, dataset_1)
+problem_2 = pybop.FittingProblem(model, parameters, dataset_2)
 problem = pybop.MultiFittingProblem(problem_1, problem_2)
 
 # Generate the cost function and optimisation class

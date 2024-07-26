@@ -83,7 +83,7 @@ class TestModels:
 
     @pytest.mark.unit
     def test_predict_without_pybamm(self, model):
-        model._unprocessed_model = None
+        model.pybamm_model = None
 
         with pytest.raises(ValueError):
             model.predict(None, None)

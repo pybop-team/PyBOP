@@ -64,6 +64,7 @@ class BaseModel:
         else:  # a pybop parameter set
             self._parameter_set = pybamm.ParameterValues(parameter_set.params)
 
+        self.pybamm_model = None
         self.parameters = Parameters()
         self.dataset = None
         self.signal = None
@@ -506,8 +507,10 @@ class BaseModel:
         """
         inputs = self.parameters.verify(inputs)
 
-        if not self.pybamm_model._built:
-            self.pybamm_model.build_model()
+        if self.pybamm_model is None:
+            raise ValueError("This sim method currently only supports PyBaMM models")
+        elif not self._unprocessed_model._built:
+            self._unprocessed_model.build_model()
 
         parameter_set = parameter_set or self._unprocessed_parameter_set
         if inputs is not None:
@@ -518,22 +521,17 @@ class BaseModel:
             parameter_set=parameter_set,
             allow_infeasible_solutions=self.allow_infeasible_solutions,
         ):
-            if self._unprocessed_model is not None:
-                if experiment is None:
-                    return pybamm.Simulation(
-                        self._unprocessed_model,
-                        parameter_values=parameter_set,
-                    ).solve(t_eval=t_eval, initial_soc=init_soc)
-                else:
-                    return pybamm.Simulation(
-                        self._unprocessed_model,
-                        experiment=experiment,
-                        parameter_values=parameter_set,
-                    ).solve(initial_soc=init_soc)
+            if experiment is None:
+                return pybamm.Simulation(
+                    self._unprocessed_model,
+                    parameter_values=parameter_set,
+                ).solve(t_eval=t_eval, initial_soc=init_soc)
             else:
-                raise ValueError(
-                    "This sim method currently only supports PyBaMM models"
-                )
+                return pybamm.Simulation(
+                    self._unprocessed_model,
+                    experiment=experiment,
+                    parameter_values=parameter_set,
+                ).solve(initial_soc=init_soc)
 
         else:
             return [np.inf]
@@ -597,6 +595,36 @@ class BaseModel:
             A copy of the model.
         """
         return copy.copy(self)
+
+    def new_copy(self):
+        """
+        Return a new copy of the model, explicitly copying all the mutable attributes
+        to avoid issues with shared objects.
+
+        Returns
+        -------
+        BaseModel
+            A new copy of the model.
+        """
+        new_model = copy.copy(self)
+
+        # Reset the key attributes
+        new_model.param_check_counter = 0
+        if self.pybamm_model is not None:
+            new_model.parameter_set = self._unprocessed_parameter_set
+            new_model.pybamm_model = self._unprocessed_model.new_copy()
+            new_model.geometry = self.pybamm_model.default_geometry
+            new_model.submesh_types = self.pybamm_model.default_submesh_types
+            new_model.var_pts = self.pybamm_model.default_var_pts
+            new_model.spatial_methods = self.pybamm_model.default_spatial_methods
+            new_model.solver = self.pybamm_model.default_solver
+            new_model._model_with_set_params = None
+            new_model._built_model = None
+            new_model._built_initial_soc = None
+            new_model._mesh = None
+            new_model._disc = None
+
+        return new_model
 
     def cell_mass(self, parameter_set: ParameterSet = None):
         """

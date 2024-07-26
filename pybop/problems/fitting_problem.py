@@ -170,6 +170,15 @@ class MultiFittingProblem(BaseProblem):
     def __init__(self, *args):
         self.problems = []
         for problem in args:
+            if problem._model is not None:
+                # Take a copy of the model and build from scratch
+                problem._model = problem._model.new_copy()
+                problem._model.build(
+                    dataset=problem._dataset,
+                    parameters=problem.parameters,
+                    check_model=problem.check_model,
+                    init_soc=problem.init_soc,
+                )
             self.problems.append(problem)
 
         # Compile the set of parameters, ignoring duplicates
