@@ -78,18 +78,17 @@ class BaseModel:
         if parameter_set is None:
             self._parameter_set = None
         elif isinstance(parameter_set, dict):
-            self._parameter_set = pybamm.ParameterValues(parameter_set)
+            self.parameter_set = pybamm.ParameterValues(parameter_set)
         elif isinstance(parameter_set, pybamm.ParameterValues):
-            self._parameter_set = parameter_set
+            self.parameter_set = parameter_set
         else:  # a pybop parameter set
-            self._parameter_set = pybamm.ParameterValues(parameter_set.params)
+            self.parameter_set = pybamm.ParameterValues(parameter_set.params)
 
         self.parameters = Parameters()
         self.rebuild_parameters = {}
         self.standard_parameters = {}
         self.param_check_counter = 0
         self.allow_infeasible_solutions = True
-        self.initial_state = None
         self.current_function = None
 
     def build(
@@ -123,7 +122,8 @@ class BaseModel:
             self.parameters = parameters
             self.classify_and_update_parameters(self.parameters)
 
-        self.set_initial_state(initial_state or self.initial_state)
+        if initial_state is not None:
+            self.set_initial_state(initial_state)
 
         if self._built_model:
             return
@@ -163,25 +163,23 @@ class BaseModel:
             and 1). If str ending in "V", this value is used as the initial open-circuit voltage.
             Defaults to None, indicating that the existing initial concentrations will be used.
         """
-        if initial_state is not None:
-            self.initial_state = initial_state
+        if self._built_initial_soc != initial_state:
+            # reset
+            self._model_with_set_params = None
+            self._built_model = None
+            self.op_conds_to_built_models = None
+            self.op_conds_to_built_solvers = None
 
-            if self._built_initial_soc != initial_state:
-                # reset
-                self._model_with_set_params = None
-                self._built_model = None
-                self.op_conds_to_built_models = None
-                self.op_conds_to_built_solvers = None
-
-            param = self.pybamm_model.param
-            # Update the unprocessed parameter set in place for consistency
-            self._parameter_set = (
-                self._unprocessed_parameter_set.set_initial_stoichiometries(
-                    initial_state, param=param, inplace=True
-                )
+        # Update both the active and unprocessed parameter sets for consistency
+        param = self.pybamm_model.param
+        self.parameter_set = (
+            self._unprocessed_parameter_set.set_initial_stoichiometries(
+                initial_state, param=param, inplace=True
             )
-            # Save solved initial SOC in case we need to rebuild the model
-            self._built_initial_soc = initial_state
+        )
+
+        # Save solved initial SOC in case we need to rebuild the model
+        self._built_initial_soc = initial_state
 
     def set_params(self, rebuild: bool = False, dataset: Dataset = None):
         """
@@ -247,7 +245,8 @@ class BaseModel:
         if parameters is not None:
             self.classify_and_update_parameters(parameters)
 
-        self.set_initial_state(initial_state or self.initial_state)
+        if initial_state is not None:
+            self.set_initial_state(initial_state)
 
         if self._built_model is None:
             raise ValueError("Model must be built before calling rebuild")
@@ -295,11 +294,12 @@ class BaseModel:
         self.rebuild_parameters.update(rebuild_parameters)
         self.standard_parameters.update(standard_parameters)
 
-        # Update the parameter set and geometry for rebuild parameters
         if self.rebuild_parameters:
-            self._parameter_set.update(self.rebuild_parameters)
-            self._unprocessed_parameter_set = self._parameter_set
             self.geometry = self.pybamm_model.default_geometry
+
+        # Update both the active and unprocessed parameter sets for consistency
+        self._parameter_set.update(parameter_dictionary)
+        self._unprocessed_parameter_set = self._parameter_set
 
     def reinit(
         self, inputs: Inputs, t: float = 0.0, x: Optional[np.ndarray] = None
@@ -521,8 +521,8 @@ class BaseModel:
         if inputs is not None:
             parameter_set.update(inputs)
 
-        # Update the model.initial_state for consistency
-        self.set_initial_state(initial_state)
+        if initial_state is not None:
+            self.set_initial_state(initial_state)
 
         if self.check_params(
             inputs=inputs,

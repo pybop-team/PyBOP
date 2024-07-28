@@ -48,6 +48,7 @@ class DesignProblem(BaseProblem):
         super().__init__(parameters, model, check_model, signal, additional_variables)
         self.experiment = experiment
         self.init_soc = init_soc
+        self.parameters.initial_value()
 
         # Build the model if required
         if experiment is not None:
