@@ -50,11 +50,7 @@ dataset = pybop.Dataset(
 
 # Generate problem, cost function, and optimisation class
 signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
-init_ocv = values["Bulk open-circuit voltage [V]"].data[0]
-print(init_ocv)
-problem = pybop.FittingProblem(
-    model, parameters, dataset, signal=signal, init_ocv=init_ocv
-)
+problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 cost = pybop.RootMeanSquaredError(problem)
 optim = pybop.NelderMead(
     cost,
