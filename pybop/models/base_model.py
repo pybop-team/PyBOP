@@ -298,8 +298,9 @@ class BaseModel:
             self.geometry = self.pybamm_model.default_geometry
 
         # Update both the active and unprocessed parameter sets for consistency
-        self._parameter_set.update(parameter_dictionary)
-        self._unprocessed_parameter_set = self._parameter_set
+        if self._parameter_set is not None:
+            self._parameter_set.update(parameter_dictionary)
+            self._unprocessed_parameter_set = self._parameter_set
 
     def reinit(
         self, inputs: Inputs, t: float = 0.0, x: Optional[np.ndarray] = None
