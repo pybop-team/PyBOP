@@ -1,8 +1,7 @@
 import numpy as np
 
 import pybop
-
-from .benchmark_utils import set_random_seed
+from benchmarks.benchmark_utils import set_random_seed
 
 
 class BenchmarkModel:
@@ -81,3 +80,13 @@ class BenchmarkModel:
             parameter_set (str): The name of the parameter set being used.
         """
         self.problem._model.simulate(inputs=self.inputs, t_eval=self.t_eval)
+
+    def time_model_simulateS1(self, model, parameter_set):
+        """
+        Benchmark the simulateS1 method of the model.
+
+        Args:
+            model (pybop.Model): The model class being benchmarked.
+            parameter_set (str): The name of the parameter set being used.
+        """
+        self.problem._model.simulateS1(inputs=self.inputs, t_eval=self.t_eval)

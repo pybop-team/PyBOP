@@ -78,6 +78,16 @@ class TestParameter:
         ):
             pybop.Parameter("Name", bounds=[0.7, 0.3])
 
+    @pytest.mark.unit
+    def test_sample_initial_values(self):
+        parameter = pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            prior=pybop.Gaussian(0.6, 0.02),
+            bounds=[0.375, 0.7],
+        )
+        sample = parameter.get_initial_value()
+        assert (sample >= 0.375) and (sample <= 0.7)
+
 
 class TestParameters:
     """
@@ -105,11 +115,23 @@ class TestParameters:
         assert parameter.name in params.param.keys()
         assert parameter in params.param.values()
 
+        params.join(
+            pybop.Parameters(
+                parameter,
+                pybop.Parameter(
+                    "Positive electrode active material volume fraction",
+                    prior=pybop.Gaussian(0.6, 0.02),
+                    bounds=[0.375, 0.7],
+                    initial_value=0.6,
+                ),
+            )
+        )
+
         with pytest.raises(
             ValueError,
             match="There is already a parameter with the name "
-            + "Negative electrode active material volume fraction"
-            + " in the Parameters object. Please remove the duplicate entry.",
+            "Negative electrode active material volume fraction"
+            " in the Parameters object. Please remove the duplicate entry.",
         ):
             params.add(parameter)
 
@@ -129,10 +151,15 @@ class TestParameters:
             )
         )
         with pytest.raises(
+            Exception,
+            match="Parameter requires a name.",
+        ):
+            params.add(dict(value=1))
+        with pytest.raises(
             ValueError,
             match="There is already a parameter with the name "
-            + "Negative electrode active material volume fraction"
-            + " in the Parameters object. Please remove the duplicate entry.",
+            "Negative electrode active material volume fraction"
+            " in the Parameters object. Please remove the duplicate entry.",
         ):
             params.add(
                 dict(
@@ -155,6 +182,28 @@ class TestParameters:
             TypeError, match="The input parameter_name is not a string."
         ):
             params.remove(parameter_name=parameter)
+
+    @pytest.mark.unit
+    def test_parameters_naming(self, parameter):
+        params = pybop.Parameters(parameter)
+        param = params["Negative electrode active material volume fraction"]
+        assert param == parameter
+
+        with pytest.raises(
+            ValueError,
+            match="is not the name of a parameter.",
+        ):
+            params["Positive electrode active material volume fraction"]
+
+    @pytest.mark.unit
+    def test_parameters_update(self, parameter):
+        params = pybop.Parameters(parameter)
+        params.update(values=[0.5])
+        assert parameter.value == 0.5
+        params.update(bounds=[[0.38, 0.68]])
+        assert parameter.bounds == [0.38, 0.68]
+        params.update(bounds=dict(lower=[0.37], upper=[0.7]))
+        assert parameter.bounds == [0.37, 0.7]
 
     @pytest.mark.unit
     def test_get_sigma(self, parameter):

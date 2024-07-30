@@ -36,7 +36,7 @@ class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
         # Model kwargs (build, options) are not implemented, keeping here for consistent interface
         if model_kwargs is not dict(build=True):
             unused_kwargs_warning = "The input model_kwargs are not currently used by the Weppner & Huggins model."
-            warnings.warn(unused_kwargs_warning, UserWarning)
+            warnings.warn(unused_kwargs_warning, UserWarning, stacklevel=2)
 
         super().__init__({}, name)
 
@@ -65,7 +65,7 @@ class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
         # Parameters
         ######################
 
-        d_s = Parameter("Positive electrode diffusivity [m2.s-1]")
+        d_s = Parameter("Positive particle diffusivity [m2.s-1]")
 
         c_s_max = Parameter("Maximum concentration in positive electrode [mol.m-3]")
 

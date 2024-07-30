@@ -62,15 +62,15 @@ You now have everything you need to start making changes!
 
 ### B. Writing your code
 
-6. PyBOP is developed in [Python](https://en.wikipedia.org/wiki/Python_(programming_language)), and makes heavy use of [NumPy](https://en.wikipedia.org/wiki/NumPy) (see also [NumPy for MatLab users](https://numpy.org/doc/stable/user/numpy-for-matlab-users.html) and [Python for R users](http://blog.hackerearth.com/how-can-r-users-learn-python-for-data-science)).
+6. PyBOP is developed in [Python](https://en.wikipedia.org/wiki/Python_(programming_language)), and makes heavy use of [NumPy](https://en.wikipedia.org/wiki/NumPy) (see also [NumPy for MatLab users](https://numpy.org/doc/stable/user/numpy-for-matlab-users.html) and [Python for R users](https://rebeccabarter.com/blog/2023-09-11-from_r_to_python)).
 7. Make sure to follow our [coding style guidelines](#coding-style-guidelines).
-8. Commit your changes to your branch with [useful, descriptive commit messages](https://chris.beams.io/posts/git-commit/): Remember these are publicly visible and should still make sense a few months ahead in time. While developing, you can keep using the GitHub issue you're working on as a place for discussion. [Refer to your commits](https://stackoverflow.com/questions/8910271/how-can-i-reference-a-commit-in-an-issue-comment-on-github) when discussing specific lines of code.
+8. Commit your changes to your branch with [useful, descriptive commit messages](https://chris.beams.io/posts/git-commit/): Remember these are publicly visible and should still make sense a few months ahead in time. While developing, you can keep using the GitHub issue you're working on as a place for discussion. Refer to your commits when discussing specific lines of code. This is achieved by referencing the SHA-hash in the comment. An example of this looks like: `the commit 3e5c1e6 solved the issue...`
 9. If you want to add a dependency on another library, or re-use code you found somewhere else, have a look at [these guidelines](#dependencies-and-reusing-code).
 
 ### C. Merging your changes with PyBOP
 
 10. [Test your code!](#testing)
-12. If you added a major new feature, perhaps it should be showcased in an [example notebook](#example-notebooks).
+12. If you added a major new feature, perhaps it should be showcased in an [example notebook](https://github.com/pybop-team/PyBOP/tree/develop/examples/notebooks).
 13. If you've added new functionality, please add additional tests to ensure ample code coverage in PyBOP.
 13. When you feel your code is finished, or at least warrants serious discussion, create a [pull request](https://help.github.com/articles/about-pull-requests/) (PR) on [PyBOP's GitHub page](https://github.com/pybop-team/PyBOP).
 14. Once a PR has been created, it will be reviewed by any member of the community. Changes might be suggested which you can make by simply adding new commits to the branch. When everything's finished, someone with the right GitHub permissions will merge your changes into PyBOP main repository.
@@ -105,7 +105,7 @@ Class names are CamelCase, and start with an upper case letter, for example `MyO
 While it's a bad idea for developers to "reinvent the wheel", it's important for users to get a _reasonably sized download and an easy install_. In addition, external libraries can sometimes cease to be supported, and when they contain bugs it might take a while before fixes become available as automatic downloads to PyBOP users.
 For these reasons, all dependencies in PyBOP should be thought about carefully and discussed on GitHub.
 
-Direct inclusion of code from other packages is possible, as long as their license permits it and is compatible with ours, but again should be considered carefully and discussed in the group. Snippets from blogs and [stackoverflow](https://stackoverflow.com/) can often be included but must include attribution to the original by commenting with a link in the source code.
+Direct inclusion of code from other packages is possible, as long as their license permits it and is compatible with ours, but again should be considered carefully and discussed in the group. Snippets from blogs and stackoverflow can often be included but must include attribution to the original by commenting with a link in the source code.
 
 ### Separating dependencies
 
@@ -313,8 +313,6 @@ Configuration files:
 ```
 pyproject.toml
 ```
-
-Note that this file must be kept in sync with the version number in [pybop/**init**.py](https://github.com/pybop-team/PyBOP/blob/develop/pybop/__init__.py).
 
 ### Continuous Integration using GitHub actions
 

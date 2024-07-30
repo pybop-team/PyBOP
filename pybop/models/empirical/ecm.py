@@ -1,6 +1,7 @@
 from pybamm import equivalent_circuit as pybamm_equivalent_circuit
 
 from pybop.models.empirical.base_ecm import ECircuitModel
+from pybop.parameters.parameter import Inputs
 
 
 class Thevenin(ECircuitModel):
@@ -44,13 +45,13 @@ class Thevenin(ECircuitModel):
             pybamm_model=pybamm_equivalent_circuit.Thevenin, name=name, **model_kwargs
         )
 
-    def _check_params(self, inputs=None, allow_infeasible_solutions=True):
+    def _check_params(self, inputs: Inputs = None, allow_infeasible_solutions=True):
         """
         Check the compatibility of the model parameters.
 
         Parameters
         ----------
-        inputs : dict
+        inputs : Inputs
             The input parameters for the simulation.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).

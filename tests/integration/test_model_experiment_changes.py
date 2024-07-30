@@ -22,7 +22,7 @@ class TestModelAndExperimentChanges:
             ),
             pybop.Parameters(
                 pybop.Parameter(  # non-geometric parameter
-                    "Positive electrode diffusivity [m2.s-1]",
+                    "Positive particle diffusivity [m2.s-1]",
                     prior=pybop.Gaussian(3.43e-15, 1e-15),
                     bounds=[1e-15, 5e-15],
                     true_value=4e-15,
@@ -48,7 +48,9 @@ class TestModelAndExperimentChanges:
 
         experiment = pybop.Experiment(["Charge at 1C until 4.1 V (2 seconds period)"])
         solution_2 = model.predict(
-            init_soc=init_soc, experiment=experiment, inputs=parameters.true_value()
+            init_soc=init_soc,
+            experiment=experiment,
+            inputs=parameters.as_dict("true"),
         )
         cost_2 = self.final_cost(solution_2, model, parameters, init_soc)
 

@@ -1,4 +1,5 @@
 from pybop import BaseModel, Dataset, Parameter, Parameters
+from pybop.parameters.parameter import Inputs
 
 
 class BaseProblem:
@@ -26,11 +27,15 @@ class BaseProblem:
         parameters,
         model=None,
         check_model=True,
-        signal=["Voltage [V]"],
-        additional_variables=[],
+        signal=None,
+        additional_variables=None,
         init_soc=None,
     ):
         # Check if parameters is a list of pybop.Parameter objects
+        if additional_variables is None:
+            additional_variables = []
+        if signal is None:
+            signal = ["Voltage [V]"]
         if isinstance(parameters, list):
             if all(isinstance(param, Parameter) for param in parameters):
                 parameters = Parameters(*parameters)
@@ -65,21 +70,18 @@ class BaseProblem:
         else:
             self.additional_variables = []
 
-        # Set initial values
-        self.x0 = self.parameters.initial_value()
-
     @property
     def n_parameters(self):
         return len(self.parameters)
 
-    def evaluate(self, x):
+    def evaluate(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal.
 
         Parameters
         ----------
-        x : np.ndarray
-            Parameter values to evaluate the model at.
+        inputs : Inputs
+            Parameters for evaluation of the model.
 
         Raises
         ------
@@ -88,15 +90,15 @@ class BaseProblem:
         """
         raise NotImplementedError
 
-    def evaluateS1(self, x):
+    def evaluateS1(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal and
         its derivatives.
 
         Parameters
         ----------
-        x : np.ndarray
-            Parameter values to evaluate the model at.
+        inputs : Inputs
+             Parameters for evaluation of the model.
 
         Raises
         ------

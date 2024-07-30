@@ -24,7 +24,7 @@ class StandaloneProblem(BaseProblem):
         self._dataset = dataset.data
 
         # Check that the dataset contains time and current
-        for name in ["Time [s]"] + self.signal:
+        for name in ["Time [s]", *self.signal]:
             if name not in self._dataset:
                 raise ValueError(f"expected {name} in list of dataset")
 
@@ -42,31 +42,34 @@ class StandaloneProblem(BaseProblem):
                 )
         self._target = {signal: self._dataset[signal] for signal in self.signal}
 
-    def evaluate(self, x):
+    def evaluate(self, inputs):
         """
         Evaluate the model with the given parameters and return the signal.
 
         Parameters
         ----------
-        x : np.ndarray
-            Parameter values to evaluate the model at.
+        inputs : Dict
+            Parameters for evaluation of the model.
 
         Returns
         -------
         y : np.ndarray
-            The model output y(t) simulated with inputs x.
+            The model output y(t) simulated with given inputs.
         """
 
-        return {signal: x[0] * self._time_data + x[1] for signal in self.signal}
+        return {
+            signal: inputs["Gradient"] * self._time_data + inputs["Intercept"]
+            for signal in self.signal
+        }
 
-    def evaluateS1(self, x):
+    def evaluateS1(self, inputs):
         """
         Evaluate the model with the given parameters and return the signal and its derivatives.
 
         Parameters
         ----------
-        x : np.ndarray
-            Parameter values to evaluate the model at.
+        inputs : Dict
+            Parameters for evaluation of the model.
 
         Returns
         -------
@@ -75,7 +78,7 @@ class StandaloneProblem(BaseProblem):
             with given inputs x.
         """
 
-        y = {signal: x[0] * self._time_data + x[1] for signal in self.signal}
+        y = self.evaluate(inputs)
 
         dy = np.zeros((self.n_time_data, self.n_outputs, self.n_parameters))
         dy[:, 0, 0] = self._time_data

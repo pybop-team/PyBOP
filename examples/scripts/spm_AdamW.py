@@ -53,7 +53,7 @@ signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 problem = pybop.FittingProblem(
     model, parameters, dataset, signal=signal, init_soc=init_soc
 )
-cost = pybop.RootMeanSquaredError(problem)
+cost = pybop.Minkowski(problem, p=2)
 optim = pybop.AdamW(
     cost,
     verbose=True,
@@ -68,7 +68,7 @@ x, final_cost = optim.run()
 print("Estimated parameters:", x)
 
 # Plot the timeseries output
-pybop.quick_plot(problem, parameter_values=x, title="Optimised Comparison")
+pybop.quick_plot(problem, problem_inputs=x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)
@@ -77,5 +77,5 @@ pybop.plot_convergence(optim)
 pybop.plot_parameters(optim)
 
 # Plot the cost landscape with optimisation path
-bounds = np.array([[0.5, 0.8], [0.4, 0.7]])
+bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
 pybop.plot2d(optim, bounds=bounds, steps=15)

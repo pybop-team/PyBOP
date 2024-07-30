@@ -1,6 +1,7 @@
 <div align="center">
 
-  ![logo](https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/Temp_Logo.png)
+  <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/logo/PyBOP_logo_flat.png" alt="logo.svg" width="700" />
+
   # Python Battery Optimisation and Parameterisation
 
 
@@ -8,7 +9,7 @@
   [![Contributors](https://img.shields.io/github/contributors/pybop-team/PyBOP)](https://github.com/pybop-team/PyBOP/graphs/contributors)
   [![Last Commit](https://img.shields.io/github/last-commit/pybop-team/PyBOP/develop?color=purple)](https://github.com/pybop-team/PyBOP/commits/develop)
   [![Python Versions from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fpybop-team%2FPyBOP%2Fdevelop%2Fpyproject.toml&label=Python)](https://pypi.org/project/pybop/)
-  [![Forks](https://img.shields.io/github/forks/pybop-team/PyBOP?style=flat)](https://github.com/pybop-team/PyBOPe/network/members)
+  [![Forks](https://img.shields.io/github/forks/pybop-team/PyBOP?style=flat)](https://github.com/pybop-team/PyBOP/network/members)
   [![Stars](https://img.shields.io/github/stars/pybop-team/PyBOP?style=flat&color=gold)](https://github.com/pybop-team/PyBOP/stargazers)
   [![Codecov](https://codecov.io/gh/pybop-team/PyBOP/branch/develop/graph/badge.svg)](https://codecov.io/gh/pybop-team/PyBOP)
   [![Open Issues](https://img.shields.io/github/issues/pybop-team/PyBOP)](https://github.com/pybop-team/PyBOP/issues/)
@@ -25,8 +26,7 @@ PyBOP provides a complete set of tools for parameterisation and optimisation of 
 The diagram below shows the conceptual framework of PyBOP. This package is currently under development, so users can expect the API to evolve with future releases.
 
 <p align="center">
-    <!-- <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/pybop_architecture.svg" alt="pybop_arch.svg" width="600" /> -->
-    <img src="assets/PyBOP-high-level.svg" alt="pybop_arch.svg" width="700" />
+    <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/PyBOP-high-level.svg" alt="pybop_arch.svg" width="700" />
 </p>
 
 ## Installation
@@ -74,7 +74,7 @@ Additional script-based examples can be found in the [examples directory](https:
 - [Unscented Kalman filter parameter identification of a SPM](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_UKF.py)
 - [Import and export parameters using Faraday's BPX format](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/BPX_spm.py)
 - [Maximum a posteriori parameter identification of a SPM](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/BPX_spm.py)
-- [Gradient based parameter identification of a SPM](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_adam.py)
+- [Gradient based parameter identification of a SPM](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_AdamW.py)
 
 ### Supported Methods
 The table below lists the currently supported [models](https://github.com/pybop-team/PyBOP/tree/develop/pybop/models), [optimisers](https://github.com/pybop-team/PyBOP/tree/develop/pybop/optimisers), and [cost functions](https://github.com/pybop-team/PyBOP/tree/develop/pybop/costs) in PyBOP.

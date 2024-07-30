@@ -1,18 +1,17 @@
 import copy
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Union, Callable
+from typing import Any, Optional, Union, Callable
 
 import casadi
 import numpy as np
 import pybamm
 
 from pybop import Dataset, Experiment, Parameters, ParameterSet
-
-Inputs = Dict[str, float]
+from pybop.parameters.parameter import Inputs
 
 
 @dataclass
-class TimeSeriesState(object):
+class TimeSeriesState:
     """
     The current state of a time series model that is a pybamm model.
     """
@@ -77,7 +76,7 @@ class BaseModel:
             self._parameter_set = pybamm.ParameterValues(parameter_set.params)
         self.param_checker = check_params
 
-        self.parameters = None
+        self.parameters = Parameters()
         self.dataset = None
         self.signal = None
         self.additional_variables = []
@@ -86,16 +85,12 @@ class BaseModel:
         self.param_check_counter = 0
         self.allow_infeasible_solutions = True
 
-    @property
-    def n_parameters(self):
-        return len(self.parameters)
-
     def build(
         self,
         dataset: Dataset = None,
-        parameters: Union[Parameters, Dict] = None,
+        parameters: Union[Parameters, dict] = None,
         check_model: bool = True,
-        init_soc: float = None,
+        init_soc: Optional[float] = None,
     ) -> None:
         """
         Construct the PyBaMM model if not already built, and set parameters.
@@ -116,8 +111,8 @@ class BaseModel:
             The initial state of charge to be used in simulations.
         """
         self.dataset = dataset
-        self.parameters = parameters
-        if self.parameters is not None:
+        if parameters is not None:
+            self.parameters = parameters
             self.classify_and_update_parameters(self.parameters)
 
         if init_soc is not None:
@@ -136,9 +131,13 @@ class BaseModel:
             self.set_params()
 
             self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
-            self._disc = pybamm.Discretisation(self.mesh, self.spatial_methods)
+            self._disc = pybamm.Discretisation(
+                mesh=self.mesh,
+                spatial_methods=self.spatial_methods,
+                check_model=check_model,
+            )
             self._built_model = self._disc.process_model(
-                self._model_with_set_params, inplace=False, check_model=check_model
+                self._model_with_set_params, inplace=False
             )
 
             # Clear solver and setup model
@@ -208,10 +207,10 @@ class BaseModel:
     def rebuild(
         self,
         dataset: Dataset = None,
-        parameters: Union[Parameters, Dict] = None,
+        parameters: Union[Parameters, dict] = None,
         parameter_set: ParameterSet = None,
         check_model: bool = True,
-        init_soc: float = None,
+        init_soc: Optional[float] = None,
     ) -> None:
         """
         Rebuild the PyBaMM model for a given parameter set.
@@ -235,8 +234,8 @@ class BaseModel:
             The initial state of charge to be used in simulations.
         """
         self.dataset = dataset
+
         if parameters is not None:
-            self.parameters = parameters
             self.classify_and_update_parameters(parameters)
 
         if init_soc is not None:
@@ -247,15 +246,19 @@ class BaseModel:
 
         self.set_params(rebuild=True)
         self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
-        self._disc = pybamm.Discretisation(self.mesh, self.spatial_methods)
+        self._disc = pybamm.Discretisation(
+            mesh=self.mesh,
+            spatial_methods=self.spatial_methods,
+            check_model=check_model,
+        )
         self._built_model = self._disc.process_model(
-            self._model_with_set_params, inplace=False, check_model=check_model
+            self._model_with_set_params, inplace=False
         )
 
         # Clear solver and setup model
         self._solver._model_set_up = {}
 
-    def classify_and_update_parameters(self, parameters: Union[Parameters, Dict]):
+    def classify_and_update_parameters(self, parameters: Parameters):
         """
         Update the parameter values according to their classification as either
         'rebuild_parameters' which require a model rebuild and
@@ -263,10 +266,16 @@ class BaseModel:
 
         Parameters
         ----------
-        parameters : pybop.ParameterSet
+        parameters : pybop.Parameters
 
         """
-        parameter_dictionary = parameters.as_dict()
+        if parameters is None:
+            self.parameters = Parameters()
+        else:
+            self.parameters = parameters
+
+        parameter_dictionary = self.parameters.as_dict()
+
         rebuild_parameters = {
             param: parameter_dictionary[param]
             for param in parameter_dictionary
@@ -287,6 +296,9 @@ class BaseModel:
             self._unprocessed_parameter_set = self._parameter_set
             self.geometry = self.pybamm_model.default_geometry
 
+        # Update the list of parameter names and number of parameters
+        self._n_parameters = len(self.parameters)
+
     def reinit(
         self, inputs: Inputs, t: float = 0.0, x: Optional[np.ndarray] = None
     ) -> TimeSeriesState:
@@ -296,15 +308,14 @@ class BaseModel:
         if self._built_model is None:
             raise ValueError("Model must be built before calling reinit")
 
-        if not isinstance(inputs, dict):
-            inputs = self.parameters.as_dict(inputs)
+        inputs = self.parameters.verify(inputs)
 
         self._solver.set_up(self._built_model, inputs=inputs)
 
         if x is None:
             x = self._built_model.y0
 
-        sol = pybamm.Solution([np.array([t])], [x], self._built_model, inputs)
+        sol = pybamm.Solution([np.asarray([t])], [x], self._built_model, inputs)
 
         return TimeSeriesState(sol=sol, inputs=inputs, t=t)
 
@@ -315,7 +326,7 @@ class BaseModel:
         if self._built_model is None:
             raise ValueError("Model must be built before calling get_state")
 
-        sol = pybamm.Solution([np.array([t])], [x], self._built_model, inputs)
+        sol = pybamm.Solution([np.asarray([t])], [x], self._built_model, inputs)
 
         return TimeSeriesState(sol=sol, inputs=inputs, t=t)
 
@@ -338,15 +349,14 @@ class BaseModel:
 
     def simulate(
         self, inputs: Inputs, t_eval: np.array
-    ) -> Dict[str, np.ndarray[np.float64]]:
+    ) -> dict[str, np.ndarray[np.float64]]:
         """
         Execute the forward model simulation and return the result.
 
         Parameters
         ----------
-        inputs : dict or array-like
-            The input parameters for the simulation. If array-like, it will be
-            converted to a dictionary using the model's fit keys.
+        inputs : Inputs
+            The input parameters for the simulation.
         t_eval : array-like
             An array of time points at which to evaluate the solution.
 
@@ -360,6 +370,8 @@ class BaseModel:
         ValueError
             If the model has not been built before simulation.
         """
+        inputs = self.parameters.verify(inputs)
+
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
         else:
@@ -367,9 +379,6 @@ class BaseModel:
                 sol = self.solver.solve(self.built_model, t_eval=t_eval)
 
             else:
-                if not isinstance(inputs, dict):
-                    inputs = self.parameters.as_dict(inputs)
-
                 if self.check_params(
                     inputs=inputs,
                     allow_infeasible_solutions=self.allow_infeasible_solutions,
@@ -397,9 +406,8 @@ class BaseModel:
 
         Parameters
         ----------
-        inputs : dict or array-like
-            The input parameters for the simulation. If array-like, it will be
-            converted to a dictionary using the model's fit keys.
+        inputs : Inputs
+            The input parameters for the simulation.
         t_eval : array-like
             An array of time points at which to evaluate the solution and its
             sensitivities.
@@ -414,6 +422,7 @@ class BaseModel:
         ValueError
             If the model has not been built before simulation.
         """
+        inputs = self.parameters.verify(inputs)
 
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
@@ -422,9 +431,6 @@ class BaseModel:
                 raise ValueError(
                     "Cannot use sensitivies for parameters which require a model rebuild"
                 )
-
-            if not isinstance(inputs, dict):
-                inputs = self.parameters.as_dict(inputs)
 
             if self.check_params(
                 inputs=inputs,
@@ -444,7 +450,7 @@ class BaseModel:
                         (
                             sol[self.signal[0]].data.shape[0],
                             self.n_outputs,
-                            self.n_parameters,
+                            self._n_parameters,
                         )
                     )
 
@@ -471,8 +477,8 @@ class BaseModel:
         t_eval: np.array = None,
         parameter_set: ParameterSet = None,
         experiment: Experiment = None,
-        init_soc: float = None,
-    ) -> Dict[str, np.ndarray[np.float64]]:
+        init_soc: Optional[float] = None,
+    ) -> dict[str, np.ndarray[np.float64]]:
         """
         Solve the model using PyBaMM's simulation framework and return the solution.
 
@@ -482,10 +488,9 @@ class BaseModel:
 
         Parameters
         ----------
-        inputs : dict or array-like, optional
-            Input parameters for the simulation. If the input is array-like, it is converted
-            to a dictionary using the model's fitting keys. Defaults to None, indicating
-            that the default parameters should be used.
+        inputs : Inputs, optional
+            Input parameters for the simulation. Defaults to None, indicating that the
+            default parameters should be used.
         t_eval : array-like, optional
             An array of time points at which to evaluate the solution. Defaults to None,
             which means the time points need to be specified within experiment or elsewhere.
@@ -511,13 +516,13 @@ class BaseModel:
             if PyBaMM models are not supported by the current simulation method.
 
         """
+        inputs = self.parameters.verify(inputs)
+
         if not self.pybamm_model._built:
             self.pybamm_model.build_model()
 
         parameter_set = parameter_set or self._unprocessed_parameter_set
         if inputs is not None:
-            if not isinstance(inputs, dict):
-                inputs = self.parameters.as_dict(inputs)
             parameter_set.update(inputs)
 
         if self.check_params(
@@ -556,7 +561,7 @@ class BaseModel:
 
         Parameters
         ----------
-        inputs : dict
+        inputs : Inputs
             The input parameters for the simulation.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
@@ -567,17 +572,7 @@ class BaseModel:
             A boolean which signifies whether the parameters are compatible.
 
         """
-        if inputs is not None:
-            if not isinstance(inputs, dict):
-                if isinstance(inputs, list):
-                    for entry in inputs:
-                        if not isinstance(entry, (int, float)):
-                            raise ValueError(
-                                "Expecting inputs in the form of a dictionary, numeric list"
-                                + f" or None, but received a list with type: {type(inputs)}"
-                            )
-                else:
-                    inputs = self.parameters.as_dict(inputs)
+        inputs = self.parameters.verify(inputs)
 
         return self._check_params(
             inputs=inputs, allow_infeasible_solutions=allow_infeasible_solutions
@@ -592,7 +587,7 @@ class BaseModel:
 
         Parameters
         ----------
-        inputs : dict
+        inputs : Inputs
             The input parameters for the simulation.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
@@ -655,7 +650,7 @@ class BaseModel:
         """
         raise NotImplementedError
 
-    def approximate_capacity(self, x):
+    def approximate_capacity(self, inputs: Inputs):
         """
         Calculate a new estimate for the nominal capacity based on the theoretical energy density
         and an average voltage.
@@ -664,8 +659,8 @@ class BaseModel:
 
         Parameters
         ----------
-        x : array-like
-            An array of values representing the model inputs.
+        inputs : Inputs
+            The parameters that are the inputs of the model.
 
         Raises
         ------
@@ -703,7 +698,7 @@ class BaseModel:
         return self._submesh_types
 
     @submesh_types.setter
-    def submesh_types(self, submesh_types: Optional[Dict[str, Any]]):
+    def submesh_types(self, submesh_types: Optional[dict[str, Any]]):
         self._submesh_types = (
             submesh_types.copy() if submesh_types is not None else None
         )
@@ -717,7 +712,7 @@ class BaseModel:
         return self._var_pts
 
     @var_pts.setter
-    def var_pts(self, var_pts: Optional[Dict[str, int]]):
+    def var_pts(self, var_pts: Optional[dict[str, int]]):
         self._var_pts = var_pts.copy() if var_pts is not None else None
 
     @property
@@ -725,7 +720,7 @@ class BaseModel:
         return self._spatial_methods
 
     @spatial_methods.setter
-    def spatial_methods(self, spatial_methods: Optional[Dict[str, Any]]):
+    def spatial_methods(self, spatial_methods: Optional[dict[str, Any]]):
         self._spatial_methods = (
             spatial_methods.copy() if spatial_methods is not None else None
         )

@@ -1,4 +1,6 @@
 import sys
+import warnings
+from typing import Union
 
 import numpy as np
 from scipy.interpolate import griddata
@@ -9,7 +11,7 @@ from pybop import BaseOptimiser, Optimisation, PlotlyManager
 def plot2d(
     cost_or_optim,
     gradient: bool = False,
-    bounds: np.ndarray = None,
+    bounds: Union[np.ndarray, None] = None,
     steps: int = 10,
     show: bool = True,
     use_optim_log: bool = False,
@@ -63,6 +65,25 @@ def plot2d(
         cost = cost_or_optim
         plot_optim = False
 
+    if len(cost.parameters) < 2:
+        raise ValueError("This cost function takes fewer than 2 parameters.")
+
+    additional_values = []
+    if len(cost.parameters) > 2:
+        warnings.warn(
+            "This cost function requires more than 2 parameters. "
+            "Plotting in 2d with fixed values for the additional parameters.",
+            UserWarning,
+            stacklevel=2,
+        )
+        for (
+            i,
+            param,
+        ) in enumerate(cost.parameters):
+            if i > 1:
+                additional_values.append(param.value)
+                print(f"Fixed {param.name}:", param.value)
+
     # Set up parameter bounds
     if bounds is None:
         bounds = cost.parameters.get_bounds_for_plotly()
@@ -77,19 +98,23 @@ def plot2d(
     # Populate cost matrix
     for i, xi in enumerate(x):
         for j, yj in enumerate(y):
-            costs[j, i] = cost(np.array([xi, yj]))
+            costs[j, i] = cost(np.asarray([xi, yj] + additional_values))
 
     if gradient:
         grad_parameter_costs = []
 
         # Determine the number of gradient outputs from cost.evaluateS1
-        num_gradients = len(cost.evaluateS1(np.array([x[0], y[0]]))[1])
+        num_gradients = len(
+            cost.evaluateS1(np.asarray([x[0], y[0]] + additional_values))[1]
+        )
 
         # Create an array to hold each gradient output & populate
         grads = [np.zeros((len(y), len(x))) for _ in range(num_gradients)]
         for i, xi in enumerate(x):
             for j, yj in enumerate(y):
-                (*current_grads,) = cost.evaluateS1(np.array([xi, yj]))[1]
+                (*current_grads,) = cost.evaluateS1(
+                    np.asarray([xi, yj] + additional_values)
+                )[1]
                 for k, grad_output in enumerate(current_grads):
                     grads[k][j, i] = grad_output
 
@@ -103,7 +128,7 @@ def plot2d(
         flat_costs = costs.flatten()
 
         # Append the optimisation trace to the data
-        parameter_log = np.array(optim.log["x_best"])
+        parameter_log = np.asarray(optim.log["x_best"])
         flat_x = np.concatenate((flat_x, parameter_log[:, 0]))
         flat_y = np.concatenate((flat_y, parameter_log[:, 1]))
         flat_costs = np.concatenate((flat_costs, optim.log["cost"]))
@@ -140,7 +165,9 @@ def plot2d(
 
     if plot_optim:
         # Plot the optimisation trace
-        optim_trace = np.array([item for sublist in optim.log["x"] for item in sublist])
+        optim_trace = np.asarray(
+            [item[:2] for sublist in optim.log["x"] for item in sublist]
+        )
         optim_trace = optim_trace.reshape(-1, 2)
         fig.add_trace(
             go.Scatter(

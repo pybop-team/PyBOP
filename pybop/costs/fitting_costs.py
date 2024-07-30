@@ -1,8 +1,8 @@
 import numpy as np
 
-from pybop.costs._likelihoods import BaseLikelihood
 from pybop.costs.base_cost import BaseCost
 from pybop.observers.observer import Observer
+from pybop.parameters.parameter import Inputs
 
 
 class RootMeanSquaredError(BaseCost):
@@ -18,18 +18,15 @@ class RootMeanSquaredError(BaseCost):
     """
 
     def __init__(self, problem):
-        super(RootMeanSquaredError, self).__init__(problem)
+        super().__init__(problem)
 
-        # Default fail gradient
-        self._de = 1.0
-
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calculate the root mean square error for a given set of parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to evaluate the cost.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
@@ -41,75 +38,60 @@ class RootMeanSquaredError(BaseCost):
             The root mean square error.
 
         """
-        prediction = self.problem.evaluate(x)
+        if not self.verify_prediction(self._current_prediction):
+            return np.inf
 
-        for key in self.signal:
-            if len(prediction.get(key, [])) != len(self._target.get(key, [])):
-                return np.float64(np.inf)  # prediction doesn't match target
-
-        e = np.array(
+        e = np.asarray(
             [
-                np.sqrt(np.mean((prediction[signal] - self._target[signal]) ** 2))
+                np.sqrt(
+                    np.mean(
+                        (self._current_prediction[signal] - self._target[signal]) ** 2
+                    )
+                )
                 for signal in self.signal
             ]
         )
 
-        if self.n_outputs == 1:
-            return e.item()
-        else:
-            return np.sum(e)
+        return e.item() if self.n_outputs == 1 else np.sum(e)
 
-    def _evaluateS1(self, x):
+    def _evaluateS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns
         -------
         tuple
             A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `x`.
+            and the gradient is an array-like of the same length as `inputs`.
 
         Raises
         ------
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        y, dy = self.problem.evaluateS1(x)
+        if not self.verify_prediction(self._current_prediction):
+            return np.inf, self._de * np.ones(self.n_parameters)
 
-        for key in self.signal:
-            if len(y.get(key, [])) != len(self._target.get(key, [])):
-                e = np.float64(np.inf)
-                de = self._de * np.ones(self.n_parameters)
-                return e, de
-
-        r = np.array([y[signal] - self._target[signal] for signal in self.signal])
+        r = np.asarray(
+            [
+                self._current_prediction[signal] - self._target[signal]
+                for signal in self.signal
+            ]
+        )
         e = np.sqrt(np.mean(r**2, axis=1))
-        de = np.mean((r * dy.T), axis=2) / (e + np.finfo(float).eps)
+        de = np.mean((r * self._current_sensitivities.T), axis=2) / (
+            e + np.finfo(float).eps
+        )
 
         if self.n_outputs == 1:
             return e.item(), de.flatten()
         else:
             return np.sum(e), np.sum(de, axis=1)
-
-    def set_fail_gradient(self, de):
-        """
-        Set the fail gradient to a specified value.
-
-        The fail gradient is used if an error occurs during the calculation
-        of the gradient. This method allows updating the default gradient value.
-
-        Parameters
-        ----------
-        de : float
-            The new fail gradient value to be used.
-        """
-        de = float(de)
-        self._de = de
 
 
 class SumSquaredError(BaseCost):
@@ -131,18 +113,15 @@ class SumSquaredError(BaseCost):
     """
 
     def __init__(self, problem):
-        super(SumSquaredError, self).__init__(problem)
+        super().__init__(problem)
 
-        # Default fail gradient
-        self._de = 1.0
-
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calculate the sum of squared errors for a given set of parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to evaluate the cost.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
@@ -151,72 +130,276 @@ class SumSquaredError(BaseCost):
         Returns
         -------
         float
-            The sum of squared errors.
+            The Sum of Squared Error.
         """
-        prediction = self.problem.evaluate(x)
+        if not self.verify_prediction(self._current_prediction):
+            return np.inf
 
-        for key in self.signal:
-            if len(prediction.get(key, [])) != len(self._target.get(key, [])):
-                return np.float64(np.inf)  # prediction doesn't match target
-
-        e = np.array(
+        e = np.asarray(
             [
-                np.sum(((prediction[signal] - self._target[signal]) ** 2))
+                np.sum((self._current_prediction[signal] - self._target[signal]) ** 2)
                 for signal in self.signal
             ]
         )
-        if self.n_outputs == 1:
-            return e.item()
-        else:
-            return np.sum(e)
 
-    def _evaluateS1(self, x):
+        return e.item() if self.n_outputs == 1 else np.sum(e)
+
+    def _evaluateS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns
         -------
         tuple
             A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `x`.
+            and the gradient is an array-like of the same length as `inputs`.
 
         Raises
         ------
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        y, dy = self.problem.evaluateS1(x)
-        for key in self.signal:
-            if len(y.get(key, [])) != len(self._target.get(key, [])):
-                e = np.float64(np.inf)
-                de = self._de * np.ones(self.n_parameters)
-                return e, de
+        if not self.verify_prediction(self._current_prediction):
+            return np.inf, self._de * np.ones(self.n_parameters)
 
-        r = np.array([y[signal] - self._target[signal] for signal in self.signal])
+        r = np.asarray(
+            [
+                self._current_prediction[signal] - self._target[signal]
+                for signal in self.signal
+            ]
+        )
         e = np.sum(np.sum(r**2, axis=0), axis=0)
-        de = 2 * np.sum(np.sum((r * dy.T), axis=2), axis=1)
+        de = 2 * np.sum(np.sum((r * self._current_sensitivities.T), axis=2), axis=1)
 
         return e, de
 
-    def set_fail_gradient(self, de):
-        """
-        Set the fail gradient to a specified value.
 
-        The fail gradient is used if an error occurs during the calculation
-        of the gradient. This method allows updating the default gradient value.
+class Minkowski(BaseCost):
+    """
+    The Minkowski distance is a generalisation of several distance metrics,
+    including the Euclidean and Manhattan distances. It is defined as:
+
+    .. math::
+        L_p(x, y) = ( \\sum_i |x_i - y_i|^p )^(1/p)
+
+    where p > 0 is the order of the Minkowski distance. For p ≥ 1, the
+    Minkowski distance is a metric. For 0 < p < 1, it is not a metric, as it
+    does not satisfy the triangle inequality, although a metric can be
+    obtained by removing the (1/p) exponent.
+
+    Special cases:
+
+    * p = 1: Manhattan distance
+    * p = 2: Euclidean distance
+    * p → ∞: Chebyshev distance (not implemented as yet)
+
+    This class implements the Minkowski distance as a cost function for
+    optimisation problems, allowing for flexible distance-based optimisation
+    across various problem domains.
+
+    Attributes
+    ----------
+    p : float, optional
+        The order of the Minkowski distance.
+    """
+
+    def __init__(self, problem, p: float = 2.0):
+        super().__init__(problem)
+        if p < 0:
+            raise ValueError(
+                "The order of the Minkowski distance must be greater than 0."
+            )
+        elif not np.isfinite(p):
+            raise ValueError(
+                "For p = infinity, an implementation of the Chebyshev distance is required."
+            )
+        self.p = float(p)
+
+    def _evaluate(self, inputs: Inputs, grad=None):
+        """
+        Calculate the Minkowski cost for a given set of parameters.
 
         Parameters
         ----------
-        de : float
-            The new fail gradient value to be used.
+        inputs : Inputs
+            The parameters for which to compute the cost and gradient.
+
+        Returns
+        -------
+        float
+            The Minkowski cost.
         """
-        de = float(de)
-        self._de = de
+        if not self.verify_prediction(self._current_prediction):
+            return np.inf
+
+        e = np.asarray(
+            [
+                np.sum(
+                    np.abs(self._current_prediction[signal] - self._target[signal])
+                    ** self.p
+                )
+                ** (1 / self.p)
+                for signal in self.signal
+            ]
+        )
+
+        return e.item() if self.n_outputs == 1 else np.sum(e)
+
+    def _evaluateS1(self, inputs):
+        """
+        Compute the cost and its gradient with respect to the parameters.
+
+        Parameters
+        ----------
+        inputs : Inputs
+            The parameters for which to compute the cost and gradient.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the cost and the gradient. The cost is a float,
+            and the gradient is an array-like of the same length as `inputs`.
+
+        Raises
+        ------
+        ValueError
+            If an error occurs during the calculation of the cost or gradient.
+        """
+        if not self.verify_prediction(self._current_prediction):
+            return np.inf, self._de * np.ones(self.n_parameters)
+
+        r = np.asarray(
+            [
+                self._current_prediction[signal] - self._target[signal]
+                for signal in self.signal
+            ]
+        )
+        e = np.asarray(
+            [
+                np.sum(
+                    np.abs(self._current_prediction[signal] - self._target[signal])
+                    ** self.p
+                )
+                ** (1 / self.p)
+                for signal in self.signal
+            ]
+        )
+        de = np.sum(
+            np.sum(r ** (self.p - 1) * self._current_sensitivities.T, axis=2)
+            / (e ** (self.p - 1) + np.finfo(float).eps),
+            axis=1,
+        )
+
+        return np.sum(e), de
+
+
+class SumofPower(BaseCost):
+    """
+    The Sum of Power [1] is a generalised cost function based on the p-th power
+    of absolute differences between two vectors. It is defined as:
+
+    .. math::
+        C_p(x, y) = \\sum_i |x_i - y_i|^p
+
+    where p ≥ 0 is the power order.
+
+    This class implements the Sum of Power as a cost function for
+    optimisation problems, allowing for flexible power-based optimisation
+    across various problem domains.
+
+    Special cases:
+
+    * p = 1: Sum of Absolute Differences
+    * p = 2: Sum of Squared Differences
+    * p → ∞: Maximum Absolute Difference
+
+    Note that this is not normalised, unlike distance metrics. To get a
+    distance metric, you would need to take the p-th root of the result.
+
+    [1]: https://mathworld.wolfram.com/PowerSum.html
+
+    Attributes:
+        p : float, optional
+            The power order for Sum of Power.
+    """
+
+    def __init__(self, problem, p: float = 2.0):
+        super().__init__(problem)
+        if p < 0:
+            raise ValueError("The order of 'p' must be greater than 0.")
+        elif not np.isfinite(p):
+            raise ValueError("p = np.inf is not yet supported.")
+        self.p = float(p)
+
+    def _evaluate(self, inputs: Inputs, grad=None):
+        """
+        Calculate the Sum of Power cost for a given set of parameters.
+
+        Parameters
+        ----------
+        inputs : Inputs
+            The parameters for which to compute the cost and gradient.
+
+        Returns
+        -------
+        float
+            The Sum of Power cost.
+        """
+        if not self.verify_prediction(self._current_prediction):
+            return np.inf
+
+        e = np.asarray(
+            [
+                np.sum(
+                    np.abs(self._current_prediction[signal] - self._target[signal])
+                    ** self.p
+                )
+                for signal in self.signal
+            ]
+        )
+
+        return e.item() if self.n_outputs == 1 else np.sum(e)
+
+    def _evaluateS1(self, inputs):
+        """
+        Compute the cost and its gradient with respect to the parameters.
+
+        Parameters
+        ----------
+        inputs : Inputs
+            The parameters for which to compute the cost and gradient.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the cost and the gradient. The cost is a float,
+            and the gradient is an array-like of the same length as `inputs`.
+
+        Raises
+        ------
+        ValueError
+            If an error occurs during the calculation of the cost or gradient.
+        """
+        if not self.verify_prediction(self._current_prediction):
+            return np.inf, self._de * np.ones(self.n_parameters)
+
+        r = np.asarray(
+            [
+                self._current_prediction[signal] - self._target[signal]
+                for signal in self.signal
+            ]
+        )
+        e = np.sum(np.sum(np.abs(r) ** self.p))
+        de = self.p * np.sum(
+            np.sum(r ** (self.p - 1) * self._current_sensitivities.T, axis=2), axis=1
+        )
+
+        return e, de
 
 
 class ObserverCost(BaseCost):
@@ -233,14 +416,15 @@ class ObserverCost(BaseCost):
     def __init__(self, observer: Observer):
         super().__init__(problem=observer)
         self._observer = observer
+        self._fixed_problem = False  # keep problem evaluation within _evaluate
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs, grad=None):
         """
         Calculate the observer cost for a given set of parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to evaluate the cost.
         grad : array-like, optional
             An array to store the gradient of the cost function with respect
@@ -251,26 +435,25 @@ class ObserverCost(BaseCost):
         float
             The observer cost (negative of the log likelihood).
         """
-        inputs = self._observer.parameters.as_dict(x)
         log_likelihood = self._observer.log_likelihood(
             self._target, self._observer.time_data(), inputs
         )
         return -log_likelihood
 
-    def evaluateS1(self, x):
+    def _evaluateS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
 
         Parameters
         ----------
-        x : array-like
+        inputs : Inputs
             The parameters for which to compute the cost and gradient.
 
         Returns
         -------
         tuple
             A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `x`.
+            and the gradient is an array-like of the same length as `inputs`.
 
         Raises
         ------
@@ -278,90 +461,3 @@ class ObserverCost(BaseCost):
             If an error occurs during the calculation of the cost or gradient.
         """
         raise NotImplementedError
-
-
-class MAP(BaseLikelihood):
-    """
-    Maximum a posteriori cost function.
-
-    Computes the maximum a posteriori cost function, which is the sum of the
-    log likelihood and the log prior. The goal of maximising is achieved by
-    setting minimising = False in the optimiser settings.
-
-    Inherits all parameters and attributes from ``BaseLikelihood``.
-
-    """
-
-    def __init__(self, problem, likelihood, sigma=None):
-        super(MAP, self).__init__(problem)
-        self.sigma0 = sigma
-        if self.sigma0 is None:
-            self.sigma0 = []
-            for param in self.problem.parameters:
-                self.sigma0.append(param.prior.sigma)
-
-        try:
-            self.likelihood = likelihood(problem=self.problem, sigma=self.sigma0)
-        except Exception as e:
-            raise ValueError(
-                f"An error occurred when constructing the Likelihood class: {e}"
-            )
-
-        if hasattr(self, "likelihood") and not isinstance(
-            self.likelihood, BaseLikelihood
-        ):
-            raise ValueError(f"{self.likelihood} must be a subclass of BaseLikelihood")
-
-    def _evaluate(self, x, grad=None):
-        """
-        Calculate the maximum a posteriori cost for a given set of parameters.
-
-        Parameters
-        ----------
-        x : array-like
-            The parameters for which to evaluate the cost.
-        grad : array-like, optional
-            An array to store the gradient of the cost function with respect
-            to the parameters.
-
-        Returns
-        -------
-        float
-            The maximum a posteriori cost.
-        """
-        log_likelihood = self.likelihood.evaluate(x)
-        log_prior = sum(
-            param.prior.logpdf(x_i) for x_i, param in zip(x, self.problem.parameters)
-        )
-
-        posterior = log_likelihood + log_prior
-        return posterior
-
-    def _evaluateS1(self, x):
-        """
-        Compute the maximum a posteriori with respect to the parameters.
-        The method passes the likelihood gradient to the optimiser without modification.
-
-        Parameters
-        ----------
-        x : array-like
-            The parameters for which to compute the cost and gradient.
-
-        Returns
-        -------
-        tuple
-            A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `x`.
-
-        Raises
-        ------
-        ValueError
-            If an error occurs during the calculation of the cost or gradient.
-        """
-        log_likelihood, dl = self.likelihood.evaluateS1(x)
-        log_prior = sum(
-            param.prior.logpdf(x_i) for x_i, param in zip(x, self.problem.parameters)
-        )
-
-        posterior = log_likelihood + log_prior
-        return posterior, dl

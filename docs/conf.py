@@ -7,11 +7,11 @@ import sys
 from pathlib import Path
 
 sys.path.append(str(Path(".").resolve()))
-from pybop._version import __version__  # noqa: E402
+from pybop._version import __version__
 
 # -- Project information -----------------------------------------------------
 project = "PyBOP"
-copyright = "2023, The PyBOP Team"
+copyright = "2023, The PyBOP Team"  # noqa A001
 author = "The PyBOP Team"
 release = f"v{__version__}"
 
@@ -39,7 +39,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # -- Options for autoapi -------------------------------------------------------
 autoapi_type = "python"
 autoapi_dirs = ["../pybop"]
-autoapi_keep_files = True
+autoapi_keep_files = False
 autoapi_root = "api"
 autoapi_member_order = "groupwise"
 

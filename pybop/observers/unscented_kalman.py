@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Tuple, Union
+from typing import Union
 
 import numpy as np
 import scipy.linalg as linalg
@@ -15,8 +15,8 @@ class UnscentedKalmanFilterObserver(Observer):
 
     Parameters
     ----------
-    parameters: List[Parameters]
-        The inputs to the model.
+    parameters: Parameters
+        The parameters for the model.
     model : BaseModel
         The model to observe.
     sigma0 : np.ndarray | float
@@ -41,17 +41,21 @@ class UnscentedKalmanFilterObserver(Observer):
 
     def __init__(
         self,
-        parameters: List[Parameter],
+        parameters: list[Parameter],
         model: BaseModel,
         sigma0: Union[Covariance, float],
         process: Union[Covariance, float],
         measure: Union[Covariance, float],
         dataset=None,
         check_model=True,
-        signal=["Voltage [V]"],
-        additional_variables=[],
+        signal=None,
+        additional_variables=None,
         init_soc=None,
     ) -> None:
+        if additional_variables is None:
+            additional_variables = []
+        if signal is None:
+            signal = ["Voltage [V]"]
         super().__init__(
             parameters, model, check_model, signal, additional_variables, init_soc
         )
@@ -59,7 +63,7 @@ class UnscentedKalmanFilterObserver(Observer):
             self._dataset = dataset.data
 
             # Check that the dataset contains time and current
-            dataset.check(self.signal + ["Current function [A]"])
+            dataset.check([*self.signal, "Current function [A]"])
 
             self._time_data = self._dataset["Time [s]"]
             self.n_time_data = len(self._time_data)
@@ -118,7 +122,7 @@ class UnscentedKalmanFilterObserver(Observer):
         if value is None:
             raise ValueError("Measurement must be provided.")
         elif isinstance(value, np.floating):
-            value = np.array([value])
+            value = np.asarray([value])
 
         dt = time - self.get_current_time()
         if dt < 0:
@@ -152,7 +156,7 @@ class UnscentedKalmanFilterObserver(Observer):
 
 
 @dataclass
-class SigmaPoint(object):
+class SigmaPoint:
     """
     A sigma point is a point in the state space that is used to estimate the mean and covariance of a random variable.
     """
@@ -162,7 +166,7 @@ class SigmaPoint(object):
     w_c: float
 
 
-class SquareRootUKF(object):
+class SquareRootUKF:
     """
     van der Menve, R., & Wan, E. A. (2001). THE SQUARE-ROOT UNSCENTED KALMAN FILTER FOR STATE AND PARAMETER-ESTIMATION.
     https://doi.org/10.1109/ICASSP.2001.940586
@@ -201,7 +205,7 @@ class SquareRootUKF(object):
         zero_cols = np.logical_and(np.all(P0 == 0, axis=1), np.all(Rp == 0, axis=1))
         zeros = np.logical_and(zero_rows, zero_cols)
         ones = np.logical_not(zeros)
-        states = np.array(range(len(x0)))[ones]
+        states = np.asarray(range(len(x0)))[ones]
         bool_mask = np.ix_(ones, ones)
 
         S_filtered = linalg.cholesky(P0[ones, :][:, ones])
@@ -235,7 +239,7 @@ class SquareRootUKF(object):
     @staticmethod
     def gen_sigma_points(
         x: np.ndarray, S: np.ndarray, alpha: float, beta: float, states: np.ndarray
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
         Generates 2L+1 sigma points for the unscented transform, where L is the number of states.
 
@@ -276,11 +280,11 @@ class SquareRootUKF(object):
 
         # Define the weights of the sigma points
         w_m0 = sigma / (L + sigma)
-        w_m = np.array([w_m0] + [1 / (2 * (L + sigma))] * (2 * L))
+        w_m = np.asarray([w_m0] + [1 / (2 * (L + sigma))] * (2 * L))
 
         # Define the weights of the covariance of the sigma points
         w_c0 = w_m0 + (1 - alpha**2 + beta)
-        w_c = np.array([w_c0] + [1 / (2 * (L + sigma))] * (2 * L))
+        w_c = np.asarray([w_c0] + [1 / (2 * (L + sigma))] * (2 * L))
 
         return (points, w_m, w_c)
 
@@ -291,7 +295,7 @@ class SquareRootUKF(object):
         w_c: np.ndarray,
         sqrtR: np.ndarray,
         states: Union[np.ndarray, None] = None,
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Performs the unscented transform
 
