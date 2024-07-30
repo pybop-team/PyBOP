@@ -329,6 +329,13 @@ class TestModels:
             == model.pybamm_model.default_parameter_values["Open-circuit voltage [V]"]
         )
 
+        model.set_initial_state(parameter_set["Initial SoC"] / 2)
+        assert model._parameter_set["Initial SoC"] == parameter_set["Initial SoC"] / 2
+        model.set_initial_state(str(parameter_set["Lower voltage cut-off [V]"]) + "V")
+        np.testing.assert_allclose(model._parameter_set["Initial SoC"], 0.0, atol=1e-2)
+        model.set_initial_state(str(parameter_set["Upper voltage cut-off [V]"]) + "V")
+        np.testing.assert_allclose(model._parameter_set["Initial SoC"], 1.0, atol=1e-2)
+
     @pytest.mark.unit
     def test_check_params(self):
         base = pybop.BaseModel()

@@ -1,3 +1,4 @@
+import numpy as np
 import pybamm
 
 from pybop.models.base_model import BaseModel, Inputs
@@ -172,6 +173,9 @@ class ECircuitModel(BaseModel):
             initial_soc = (
                 pybamm.AlgebraicSolver(tol=tol).solve(soc_model, [0])["soc"].data[0]
             )
+
+            # Ensure that the result lies between 0 and 1
+            initial_soc = np.minimum(np.maximum(initial_soc, 0.0), 1.0)
 
         elif isinstance(initial_value, (int, float)):
             initial_soc = initial_value
