@@ -39,43 +39,56 @@ parameter_set = {
 }
 
 
-class ConstrainedThevenin(pybop.empirical.Thevenin):
-    def __init__(self, tau_limits: list | np.ndarray, **model_kwargs):
-        super().__init__(**model_kwargs)
-        if tau_limits is None:
-            tau_limits = [np.inf] * self.pybamm_model.options["number of rc elements"]
-        elif len(tau_limits) != self.pybamm_model.options["number of rc elements"]:
-            raise ValueError(
-                "Length of tau constraints must match number of rc elements"
-            )
-        self._tau_limits = tau_limits
+def get_parameter_checker(
+    tau_mins: float | list[float],
+    tau_maxs: float | list[float],
+    fitted_rc_pair_indices: int | list[int],
+):
+    if not hasattr(tau_mins, "len"):
+        tau_mins = [tau_mins]
+    if not hasattr(tau_maxs, "len"):
+        tau_maxs = [tau_maxs]
+    if not hasattr(fitted_rc_pair_indices, "len"):
+        fitted_rc_pair_indices = [fitted_rc_pair_indices]
 
-    def _check_params(
-        self,
+    if len(tau_mins) != len(fitted_rc_pair_indices):
+        raise ValueError(
+            "tau_mins must have the same length as fitted_rc_pair_indices"
+        )
+    if len(tau_maxs) != len(fitted_rc_pair_indices):
+        raise ValueError(
+            "tau_maxs must have the same length as fitted_rc_pair_indices"
+        )
+
+    def check_params(
         inputs: dict[str, float] = None,
         allow_infeasible_solutions: bool = False,
     ) -> bool:
         # Check every respective R*C <= tau_bound
-
-        i = 1
         if inputs is None:
             # Simulating the model will result in this being called with
             # inputs=None; must return true to allow the simulation to run
             return True
-        while True:
-            if f"C{i} [F]" in inputs and f"R{i} [Ohm]" in inputs:
-                tau = inputs[f"R{i} [Ohm]"] * inputs[f"C{i} [F]"]
-                if tau > self._tau_limits[i - 1]:
-                    return False
-                i += 1
-            else:
-                return True
+
+        for i, tau_min, tau_max in zip(
+            fitted_rc_pair_indices, tau_mins, tau_maxs
+        ):
+            tau = inputs[f"R{i} [Ohm]"] * inputs[f"C{i} [F]"]
+            if tau < tau_min:
+                return False
+            if tau > tau_max:
+                return False
+        return True
+
+    return check_params
 
 
+n_rc = 2
 # Define the model
-model = ConstrainedThevenin(
-    tau_limits=[0.5, 10],
-    parameter_set=parameter_set,
+params = pybop.ParameterSet(params_dict=parameter_set)
+model = pybop.empirical.Thevenin(
+    parameter_set=params,
+    check_params=get_parameter_checker(0, 0.5, 1),
     options={"number of rc elements": 2},
 )
 
@@ -101,7 +114,9 @@ parameters = [
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
 values = model.predict(t_eval=t_eval)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
+corrupt_values = values["Voltage [V]"].data + np.random.normal(
+    0, sigma, len(t_eval)
+)
 
 # Form dataset
 dataset = pybop.Dataset(
