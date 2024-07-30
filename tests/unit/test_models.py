@@ -339,6 +339,21 @@ class TestModels:
             base.check_params(inputs=["unexpected_string"])
 
     @pytest.mark.unit
+    def test_userdefined_check_params(self):
+        def check_params(
+                inputs: dict,
+                allow_infeasible_solutions: bool
+        ):
+            return True if inputs is None else inputs["a"] < 2
+        for model in [pybop.BaseModel(check_params=check_params), pybop.empirical.Thevenin(check_params=check_params)]:
+            assert model.check_params()
+            assert model.check_params(inputs=None)
+            assert model.check_params(inputs={"a": 1})
+            assert not model.check_params(inputs={"a": 2})
+            with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
+                model.check_params(inputs=["unexpected_string"])
+
+    @pytest.mark.unit
     def test_non_converged_solution(self):
         model = pybop.lithium_ion.DFN()
         parameters = pybop.Parameters(
