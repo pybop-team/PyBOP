@@ -48,9 +48,9 @@ class FittingProblem(BaseProblem):
         self._dataset = dataset.data
         self.parameters.initial_value()
         self._n_parameters = len(self.parameters)
-        self.init_ocv = None
+        self._init_ocv = None
         if init_ocv is not None:
-            self.init_ocv = str(init_ocv) + "V"
+            self.init_ocv = init_ocv
 
         # Check that the dataset contains necessary variables
         dataset.check([*self.signal, "Current function [A]"])
@@ -150,3 +150,11 @@ class FittingProblem(BaseProblem):
                 )
 
             return (y, np.asarray(dy))
+
+    @property
+    def init_ocv(self):
+        return self._init_ocv
+
+    @init_ocv.setter
+    def init_ocv(self, initial_state):
+        self._init_ocv = str(initial_state) + "V"
