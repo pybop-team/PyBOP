@@ -336,6 +336,16 @@ class TestModels:
         model.set_initial_state(str(parameter_set["Upper voltage cut-off [V]"]) + "V")
         np.testing.assert_allclose(model._parameter_set["Initial SoC"], 1.0, atol=1e-2)
 
+        with pytest.raises(ValueError, match="outside the voltage limits"):
+            model.set_initial_state("-1.0V")
+        with pytest.raises(ValueError, match="Initial SOC should be between 0 and 1"):
+            model.set_initial_state(-1.0)
+        with pytest.raises(
+            ValueError,
+            match="Initial value must be a float between 0 and 1, or a string ending in 'V'",
+        ):
+            model.set_initial_state("invalid string")
+
     @pytest.mark.unit
     def test_check_params(self):
         base = pybop.BaseModel()
