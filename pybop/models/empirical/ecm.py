@@ -61,4 +61,6 @@ class Thevenin(ECircuitModel):
             A boolean which signifies whether the parameters are compatible.
 
         """
+        if self.param_checker:
+            return self.param_checker(inputs, allow_infeasible_solutions)
         return True
