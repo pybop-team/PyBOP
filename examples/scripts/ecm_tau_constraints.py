@@ -52,13 +52,9 @@ def get_parameter_checker(
         fitted_rc_pair_indices = [fitted_rc_pair_indices]
 
     if len(tau_mins) != len(fitted_rc_pair_indices):
-        raise ValueError(
-            "tau_mins must have the same length as fitted_rc_pair_indices"
-        )
+        raise ValueError("tau_mins must have the same length as fitted_rc_pair_indices")
     if len(tau_maxs) != len(fitted_rc_pair_indices):
-        raise ValueError(
-            "tau_maxs must have the same length as fitted_rc_pair_indices"
-        )
+        raise ValueError("tau_maxs must have the same length as fitted_rc_pair_indices")
 
     def check_params(
         inputs: dict[str, float] = None,
@@ -70,9 +66,7 @@ def get_parameter_checker(
             # inputs=None; must return true to allow the simulation to run
             return True
 
-        for i, tau_min, tau_max in zip(
-            fitted_rc_pair_indices, tau_mins, tau_maxs
-        ):
+        for i, tau_min, tau_max in zip(fitted_rc_pair_indices, tau_mins, tau_maxs):
             tau = inputs[f"R{i} [Ohm]"] * inputs[f"C{i} [F]"]
             if tau < tau_min:
                 return False
@@ -114,9 +108,7 @@ parameters = [
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
 values = model.predict(t_eval=t_eval)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(
-    0, sigma, len(t_eval)
-)
+corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
 
 # Form dataset
 dataset = pybop.Dataset(

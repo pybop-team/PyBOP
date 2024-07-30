@@ -1,6 +1,6 @@
 import copy
 from dataclasses import dataclass
-from typing import Any, Optional, Union, Callable
+from typing import Any, Callable, Optional, Union
 
 import casadi
 import numpy as np
@@ -45,7 +45,9 @@ class BaseModel:
 
     """
 
-    def __init__(self, name="Base Model", parameter_set=None, check_params: Callable=None):
+    def __init__(
+        self, name="Base Model", parameter_set=None, check_params: Callable = None
+    ):
         """
         Initialize the BaseModel with an optional name.
 
