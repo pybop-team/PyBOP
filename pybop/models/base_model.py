@@ -163,23 +163,30 @@ class BaseModel:
             and 1). If str ending in "V", this value is used as the initial open-circuit voltage.
             Defaults to None, indicating that the existing initial concentrations will be used.
         """
-        if self._built_initial_soc != initial_state:
-            # reset
-            self._model_with_set_params = None
-            self._built_model = None
-            self.op_conds_to_built_models = None
-            self.op_conds_to_built_solvers = None
+        if "Initial SoC" in self._unprocessed_parameter_set.keys():
+            initial_soc = self.get_initial_state(initial_state)
+            self._unprocessed_parameter_set.update({"Initial SoC": initial_soc})
 
-        # Update both the active and unprocessed parameter sets for consistency
-        param = self.pybamm_model.param
-        self.parameter_set = (
-            self._unprocessed_parameter_set.set_initial_stoichiometries(
-                initial_state, param=param, inplace=True
-            )
-        )
+        else:
+            # Point pybamm variables at pybop variables
+            self.model = self.pybamm_model
+            self._model = self.pybamm_model
+            self._unprocessed_parameter_values = self._unprocessed_parameter_set
 
-        # Save solved initial SOC in case we need to rebuild the model
-        self._built_initial_soc = initial_state
+            pybamm_set_initial_state = pybamm.Simulation.set_initial_soc
+            pybamm_set_initial_state(self, initial_state, inputs=None)
+
+            # Update the default parameter set for consistency
+            self._unprocessed_parameter_set = self._parameter_values
+
+            # Clear the pybamm variables
+            del self.model
+            del self._model
+            del self._unprocessed_parameter_values
+            del self._parameter_values
+
+        # Use a copy of the updated default parameter set
+        self.parameter_set = self._unprocessed_parameter_set
 
     def set_params(self, rebuild: bool = False, dataset: Dataset = None):
         """

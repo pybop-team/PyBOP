@@ -1,3 +1,5 @@
+import pybamm
+
 from pybop.models.base_model import BaseModel, Inputs
 
 
@@ -103,3 +105,83 @@ class ECircuitModel(BaseModel):
 
         """
         return True
+
+    def get_initial_state(
+        self,
+        initial_value,
+        parameter_values=None,
+        param=None,
+        options=None,
+        tol=1e-6,
+        inputs=None,
+    ):
+        """
+        Calculate the initial state of charge given an open-circuit voltage, voltage limits
+        and the open-circuit voltage function defined by the parameter set.
+
+        Parameters
+        ----------
+        initial_value : float
+            Target initial value.
+            If integer, interpreted as SOC, must be between 0 and 1.
+            If string e.g. "4 V", interpreted as voltage, must be between V_min and V_max.
+        parameter_values : :class:`pybamm.ParameterValues`
+            The parameter values class that will be used for the simulation. Required for
+            calculating appropriate initial stoichiometries.
+        param : :class:`pybamm.LithiumIonParameters`, optional
+            The symbolic parameter set to use for the simulation.
+            If not provided, the default parameter set will be used.
+        options : dict-like, optional
+            A dictionary of options to be passed to the model, see
+            :class:`pybamm.BatteryModelOptions`.
+        tol : float, optional
+            The tolerance for the solver used to compute the initial stoichiometries.
+            A lower value results in higher precision but may increase computation time.
+            Default is 1e-6.
+
+        Returns
+        -------
+        initial_soc
+            The initial state of charge
+        """
+        parameter_values = parameter_values or self._unprocessed_parameter_set
+        param = param or self.pybamm_model.param
+
+        if isinstance(initial_value, str) and initial_value.endswith("V"):
+            V_init = float(initial_value[:-1])
+            V_min = parameter_values.evaluate(param.voltage_low_cut)
+            V_max = parameter_values.evaluate(param.voltage_high_cut)
+
+            if not V_min <= V_init <= V_max:
+                raise ValueError(
+                    f"Initial voltage {V_init}V is outside the voltage limits "
+                    f"({V_min}, {V_max})"
+                )
+
+            # Solve simple model for initial soc based on target voltage
+            soc_model = pybamm.BaseModel()
+            soc = pybamm.Variable("soc")
+            ocv = param.ocv
+            soc_model.algebraic[soc] = ocv(soc) - V_init
+
+            # initial guess for soc linearly interpolates between 0 and 1
+            # based on V linearly interpolating between V_max and V_min
+            soc_model.initial_conditions[soc] = (V_init - V_min) / (V_max - V_min)
+            soc_model.variables["soc"] = soc
+            parameter_values.process_model(soc_model)
+            initial_soc = (
+                pybamm.AlgebraicSolver(tol=tol).solve(soc_model, [0])["soc"].data[0]
+            )
+
+        elif isinstance(initial_value, (int, float)):
+            initial_soc = initial_value
+            if not 0 <= initial_soc <= 1:
+                raise ValueError("Initial SOC should be between 0 and 1")
+
+        else:
+            raise ValueError(
+                "Initial value must be a float between 0 and 1, "
+                "or a string ending in 'V'"
+            )
+
+        return initial_soc
