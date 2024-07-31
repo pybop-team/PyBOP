@@ -56,6 +56,17 @@ from ._experiment import Experiment
 from ._dataset import Dataset
 
 #
+# Transformation classes
+#
+from .transformation import Transformation
+from .transformation._transformation import (
+    IdentityTransformation,
+    ScaledTransformation,
+    LogTransformation,
+    ComposedTransformation,
+)
+
+#
 # Parameter classes
 #
 from .parameters.parameter import Parameter, Parameters
@@ -77,17 +88,6 @@ from .models.base_model import Inputs
 from .problems.base_problem import BaseProblem
 from .problems.fitting_problem import FittingProblem
 from .problems.design_problem import DesignProblem
-
-#
-# Transformation classes
-#
-from .transformation import Transformation
-from .transformation._transformation import (
-    IdentityTransformation,
-    ScaledTransformation,
-    LogTransformation,
-    ComposedTransformation,
-)
 
 #
 # Cost function class

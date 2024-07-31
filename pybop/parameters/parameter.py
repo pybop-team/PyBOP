@@ -4,6 +4,7 @@ from typing import Union
 
 import numpy as np
 
+from pybop import ComposedTransformation, IdentityTransformation
 from pybop._utils import is_numeric
 
 Inputs = dict[str, float]
@@ -57,7 +58,6 @@ class Parameter:
         self.applied_prior_bounds = False
         self.set_bounds(bounds)
         self.margin = 1e-4
-        self.set_bounds(bounds)
 
     def rvs(self, n_samples, random_state=None):
         """
@@ -448,6 +448,19 @@ class Parameters:
             transformations.append(param.transformation)
 
         return transformations
+
+    def construct_transformation(self):
+        """
+        Create a ComposedTransformation object from the individual parameter transformations.
+        """
+        transformations = self.get_transformations()
+        if not transformations or all(t is None for t in transformations):
+            return None
+
+        valid_transformations = [
+            t if t is not None else IdentityTransformation() for t in transformations
+        ]
+        return ComposedTransformation(valid_transformations)
 
     def get_bounds_for_plotly(self):
         """

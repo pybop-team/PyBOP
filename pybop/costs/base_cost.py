@@ -1,4 +1,4 @@
-from pybop import BaseProblem, ComposedTransformation, IdentityTransformation
+from pybop import BaseProblem
 from pybop.parameters.parameter import Inputs, Parameters
 
 
@@ -31,30 +31,13 @@ class BaseCost:
             self.parameters.join(self.problem.parameters)
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
-            self.transformation = self.construct_transformation()
-
-    def construct_transformation(self):
-        """
-        Create a ComposedTransformation object from the individual parameters transformations.
-        """
-        transformations = self.parameters.get_transformations()
-        if not transformations or all(t is None for t in transformations):
-            return None
-
-        valid_transformations = [
-            t if t is not None else IdentityTransformation() for t in transformations
-        ]
-        return ComposedTransformation(valid_transformations)
+            self.transformation = self.parameters.construct_transformation()
 
     def __call__(self, x):
         """
         Call the evaluate function for a given set of parameters.
         """
-        if self.transformation:
-            p = self.transformation.to_model(x)
-            return self.evaluate(p)
-        else:
-            return self.evaluate(x)
+        return self.evaluate(x)
 
     def evaluate(self, x):
         """
@@ -75,7 +58,9 @@ class BaseCost:
         ValueError
             If an error occurs during the calculation of the cost.
         """
-        inputs = self.parameters.verify(x)
+        if self.transformation:
+            p = self.transformation.to_model(x)
+        inputs = self.parameters.verify(p if self.transformation else x)
 
         try:
             return self._evaluate(inputs)
@@ -129,14 +114,12 @@ class BaseCost:
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        inputs = self.parameters.verify(x)
+        if self.transformation:
+            p = self.transformation.to_model(x)
+        inputs = self.parameters.verify(p if self.transformation else x)
 
         try:
-            if self.transformation:
-                p = self.transformation.to_model(inputs)
-                return self._evaluateS1(p)
-            else:
-                return self._evaluateS1(inputs)
+            return self._evaluateS1(inputs)
 
         except NotImplementedError as e:
             raise e
