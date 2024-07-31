@@ -72,7 +72,7 @@ class FittingProblem(BaseProblem):
                 dataset=self._dataset,
                 parameters=self.parameters,
                 check_model=self.check_model,
-                initial_state=self.init_ocv,
+                initial_state=self._init_ocv,
             )
 
     def evaluate(self, inputs: Inputs) -> dict[str, np.ndarray[np.float64]]:
@@ -92,7 +92,7 @@ class FittingProblem(BaseProblem):
         inputs = self.parameters.verify(inputs)
 
         sol = self._model.simulate(
-            inputs=inputs, t_eval=self._time_data, initial_state=self.init_ocv
+            inputs=inputs, t_eval=self._time_data, initial_state=self._init_ocv
         )
 
         if sol == [np.inf]:
@@ -122,7 +122,7 @@ class FittingProblem(BaseProblem):
         inputs = self.parameters.verify(inputs)
 
         sol = self._model.simulateS1(
-            inputs=inputs, t_eval=self._time_data, initial_state=self.init_ocv
+            inputs=inputs, t_eval=self._time_data, initial_state=self._init_ocv
         )
 
         if sol == [np.inf]:
