@@ -77,7 +77,6 @@ def get_parameter_checker(
     return check_params
 
 
-n_rc = 2
 # Define the model
 params = pybop.ParameterSet(params_dict=parameter_set)
 model = pybop.empirical.Thevenin(
