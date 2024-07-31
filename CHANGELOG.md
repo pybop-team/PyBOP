@@ -6,7 +6,7 @@
 
 ## Breaking Changes
 
-# [v24.6.1](https://github.com/pybop-team/PyBOP/tree/v24.6.1) - 2024-07-XX
+# [v24.6.1](https://github.com/pybop-team/PyBOP/tree/v24.6.1) - 2024-07-31
 
 ## Features
 - [#313](https://github.com/pybop-team/PyBOP/pull/313/) - Fixes for PyBaMM v24.5, drops support for PyBaMM v23.9, v24.1
