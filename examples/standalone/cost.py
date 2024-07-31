@@ -54,9 +54,6 @@ class StandaloneCost(pybop.BaseCost):
         ----------
         inputs : Dict
             The parameters for which to evaluate the cost.
-        grad : array-like, optional
-            Unused parameter, present for compatibility with gradient-based
-            optimizers.
 
         Returns
         -------
