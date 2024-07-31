@@ -126,41 +126,50 @@ class TestWeightedCost:
         parameters = pybop.Parameters(
             pybop.Parameter(
                 "Positive electrode thickness [m]",
-                prior=pybop.Gaussian(5e-05, 0.1e-05),
-                bounds=[50e-06, 10e-05],
+                prior=pybop.Gaussian(5e-05, 5e-06),
+                bounds=[2e-06, 10e-05],
             ),
             pybop.Parameter(
-                "Positive particle radius [m]",
-                prior=pybop.Gaussian(5.22e-06, 0.1e-06),
-                bounds=[2e-06, 9e-06],
+                "Negative electrode thickness [m]",
+                prior=pybop.Gaussian(5e-05, 5e-06),
+                bounds=[2e-06, 10e-05],
             ),
         )
         experiment = pybop.Experiment(
-            ["Discharge at 1C until 3.3 V (5 seconds period)"],
+            ["Discharge at 1C until 3.5 V (5 seconds period)"],
         )
 
         problem = pybop.DesignProblem(
             model, parameters, experiment=experiment, init_soc=init_soc
         )
+        costs_update_capacity = []
         costs = []
         for cost in design_cost:
-            costs.append(cost(problem, update_capacity=True))
+            costs_update_capacity.append(cost(problem, update_capacity=True))
+            costs.append(cost(problem))
 
-        return pybop.WeightedCost(*costs, weights=[100, 1])
+        return [
+            pybop.WeightedCost(*costs, weights=[1.0, 0.1]),
+            pybop.WeightedCost(*costs_update_capacity, weights=[0.1, 1.0]),
+        ]
 
     @pytest.mark.integration
-    def test_design_costs(self, weighted_design_cost):
+    @pytest.mark.parametrize("cost_index", [0, 1])
+    def test_design_costs(self, weighted_design_cost, cost_index):
+        cost = weighted_design_cost[cost_index]
         optim = pybop.CuckooSearch(
-            weighted_design_cost,
+            cost,
             max_iterations=15,
             allow_infeasible_solutions=False,
         )
-
-        initial_cost = optim.cost(optim.parameters.initial_value())
-        _, final_cost = optim.run()
+        initial_values = optim.parameters.initial_value()
+        initial_cost = optim.cost(initial_values)
+        x, final_cost = optim.run()
 
         # Assertions
         assert initial_cost < final_cost
+        for i, _ in enumerate(x):
+            assert x[i] > initial_values[i]
 
     def get_data(self, model, parameters, x, init_soc):
         model.classify_and_update_parameters(parameters)

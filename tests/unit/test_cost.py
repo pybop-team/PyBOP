@@ -326,7 +326,7 @@ class TestCosts:
         ):
             weighted_cost = pybop.WeightedCost(cost1, cost2, weights=[1])
 
-        # Test with and without different problems
+        # Test with identical problems
         weight = 100
         weighted_cost_2 = pybop.WeightedCost(cost1, cost2, weights=[1, weight])
         assert weighted_cost_2._has_identical_problems is True
@@ -339,6 +339,7 @@ class TestCosts:
             atol=1e-5,
         )
 
+        # Test with different problems
         cost3 = pybop.RootMeanSquaredError(copy(problem))
         weighted_cost_3 = pybop.WeightedCost(cost1, cost3, weights=[1, weight])
         assert weighted_cost_3._has_identical_problems is False
@@ -374,8 +375,49 @@ class TestCosts:
         cost1 = pybop.GravimetricEnergyDensity(design_problem)
         cost2 = pybop.VolumetricEnergyDensity(design_problem)
 
-        # Test with and without weights
+        # Test DesignCosts with identical problems
         weighted_cost = pybop.WeightedCost(cost1, cost2)
+        assert weighted_cost._has_identical_problems is True
+        assert weighted_cost._has_separable_problem is False
+        assert weighted_cost.problem is design_problem
+        assert weighted_cost([0.5]) >= 0
+        np.testing.assert_allclose(
+            weighted_cost.evaluate([0.6]),
+            cost1([0.6]) + cost2([0.6]),
+            atol=1e-5,
+        )
+
+        # Test DesignCosts with different problems
+        cost3 = pybop.VolumetricEnergyDensity(copy(design_problem))
+        weighted_cost = pybop.WeightedCost(cost1, cost3)
+        assert weighted_cost._has_identical_problems is False
+        assert weighted_cost._has_separable_problem is False
+        for i, _ in enumerate(weighted_cost.costs):
+            assert isinstance(weighted_cost.costs[i].problem, pybop.DesignProblem)
+
+        # Ensure attributes are set correctly and not modified via side-effects
+        assert weighted_cost.update_capacity is False
+        assert weighted_cost.costs[0].update_capacity is False
+        assert weighted_cost.costs[1].update_capacity is False
+
+        assert weighted_cost([0.5]) >= 0
+        np.testing.assert_allclose(
+            weighted_cost.evaluate([0.6]),
+            cost1([0.6]) + cost2([0.6]),
+            atol=1e-5,
+        )
+
+    @pytest.mark.unit
+    def test_weighted_design_cost_with_update_capacity(self, design_problem):
+        cost1 = pybop.GravimetricEnergyDensity(design_problem, update_capacity=True)
+        cost2 = pybop.VolumetricEnergyDensity(design_problem)
+        weighted_cost = pybop.WeightedCost(cost1, cost2, weights=[1, 1])
+
+        # Ensure attributes are set correctly and not modified via side-effects
+        assert weighted_cost.update_capacity is True
+        assert weighted_cost.costs[0].update_capacity is True
+        assert weighted_cost.costs[1].update_capacity is False
+
         assert weighted_cost._has_identical_problems is True
         assert weighted_cost._has_separable_problem is False
         assert weighted_cost.problem is design_problem

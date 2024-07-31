@@ -1,3 +1,4 @@
+import warnings
 from typing import Optional
 
 import numpy as np
@@ -52,18 +53,24 @@ class WeightedCost(BaseCost):
             for cost in self.costs
         )
 
-        # Check if any cost function requires capacity update
-        self.update_capacity = False
-        if any(cost.update_capacity for cost in self.costs):
-            self.update_capacity = True
-
         if self._has_identical_problems:
             super().__init__(self.costs[0].problem)
         else:
             super().__init__()
             for cost in self.costs:
                 self.parameters.join(cost.parameters)
-                cost.update_capacity = self.update_capacity
+
+        # Check if any cost function requires capacity update
+        self.update_capacity = False
+        if any(cost.update_capacity for cost in self.costs):
+            self.update_capacity = True
+
+        warnings.warn(
+            "WeightedCost doesn't currently support DesignCosts with different `update_capacity` attributes,\n"
+            f"Using global `DesignCost.update_capacity` attribute as: {self.update_capacity}",
+            UserWarning,
+            stacklevel=2,
+        )
 
         # Weighted costs do not use this functionality
         self._has_separable_problem = False
