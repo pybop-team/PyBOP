@@ -70,10 +70,15 @@ class BaseSciPyOptimiser(BaseOptimiser):
         """
         result = self._run_optimiser()
 
+        try:
+            nit = result.nit
+        except AttributeError:
+            nit = -1
+
         return Result(
             x=result.x,
             final_cost=self.cost(result.x),
-            n_iterations=result.nit,
+            n_iterations=nit,
             scipy_result=result,
         )
 
@@ -171,10 +176,17 @@ class SciPyMinimize(BaseSciPyOptimiser):
         # Add callback storing history of parameter values
 
         def base_callback(intermediate_result: OptimizeResult):
-            self.log["x_best"].append(intermediate_result.x)
-            self.log["cost"].append(
-                intermediate_result.fun if self.minimising else -intermediate_result.fun
-            )
+            try:
+                self.log["x_best"].append(intermediate_result.x)
+                self.log["cost"].append(
+                    intermediate_result.fun if self.minimising else -intermediate_result.fun
+                )
+            except AttributeError:
+                cost = self.cost(intermediate_result)
+                self.log["x_best"].append(intermediate_result)
+                self.log["cost"].append(
+                    cost if self.minimising else -cost
+                )
 
         if self._options["method"] == "trust-constr":
 
