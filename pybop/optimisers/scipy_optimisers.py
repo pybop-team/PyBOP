@@ -179,14 +179,14 @@ class SciPyMinimize(BaseSciPyOptimiser):
             try:
                 self.log["x_best"].append(intermediate_result.x)
                 self.log["cost"].append(
-                    intermediate_result.fun if self.minimising else -intermediate_result.fun
+                    intermediate_result.fun
+                    if self.minimising
+                    else -intermediate_result.fun
                 )
             except AttributeError:
                 cost = self.cost(intermediate_result)
                 self.log["x_best"].append(intermediate_result)
-                self.log["cost"].append(
-                    cost if self.minimising else -cost
-                )
+                self.log["cost"].append(cost if self.minimising else -cost)
 
         if self._options["method"] == "trust-constr":
 
