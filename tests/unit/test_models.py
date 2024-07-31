@@ -339,6 +339,22 @@ class TestModels:
             base.check_params(inputs=["unexpected_string"])
 
     @pytest.mark.unit
+    def test_base_ecircuit_model(self):
+        def check_params(inputs: dict, allow_infeasible_solutions: bool):
+             return True if inputs is None else inputs["a"] < 2
+
+        base_ecircuit_model = pybop.empirical.ECircuitModel(
+            pybamm_model=pybamm.equivalent_circuit.Thevenin,
+            check_params=check_params,
+        )
+        assert base_ecircuit_model.check_params()
+
+        base_ecircuit_model = pybop.empirical.ECircuitModel(
+            pybamm_model=pybamm.equivalent_circuit.Thevenin,
+        )
+        assert base_ecircuit_model.check_params()
+     
+    @pytest.mark.unit
     def test_userdefined_check_params(self):
         def check_params(inputs: dict, allow_infeasible_solutions: bool):
             return True if inputs is None else inputs["a"] < 2
