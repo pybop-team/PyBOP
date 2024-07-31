@@ -194,7 +194,8 @@ class TestCosts:
                 cost([1.1])
 
             # Test option setting
-            cost.set_fail_gradient(1)
+            cost.set_fail_gradient(10)
+            assert cost._de == 10
 
         if not isinstance(cost, (pybop.ObserverCost, pybop.MAP)):
             e, de = cost.evaluateS1([0.5])
