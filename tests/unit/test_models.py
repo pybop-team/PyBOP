@@ -85,7 +85,10 @@ class TestModels:
     def test_predict_without_pybamm(self, model):
         model._unprocessed_model = None
 
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match="The predict method currently only supports PyBaMM models.",
+        ):
             model.predict(None, None)
 
     @pytest.mark.unit

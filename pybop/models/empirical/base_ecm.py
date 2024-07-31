@@ -2,6 +2,7 @@ import numpy as np
 import pybamm
 
 from pybop.models.base_model import BaseModel, Inputs
+from pybop.parameters.parameter_set import ParameterSet
 
 
 class ECircuitModel(BaseModel):
@@ -49,15 +50,14 @@ class ECircuitModel(BaseModel):
         model_options = dict(build=False)
         for key, value in model_kwargs.items():
             model_options[key] = value
-        self.pybamm_model = pybamm_model(**model_options)
-        self._unprocessed_model = self.pybamm_model
+        pybamm_model = pybamm_model(**model_options)
 
         # Correct OCP if set to default
         if (
             parameter_set is not None
             and "Open-circuit voltage [V]" in parameter_set.keys()
         ):
-            default_ocp = self.pybamm_model.default_parameter_values[
+            default_ocp = pybamm_model.default_parameter_values[
                 "Open-circuit voltage [V]"
             ]
             if parameter_set["Open-circuit voltage [V]"] == "default":
@@ -65,6 +65,8 @@ class ECircuitModel(BaseModel):
                 parameter_set["Open-circuit voltage [V]"] = default_ocp
 
         super().__init__(name=name, parameter_set=parameter_set)
+        self.pybamm_model = pybamm_model
+        self._unprocessed_model = self.pybamm_model
 
         # Set parameters, using either the provided ones or the default
         self.default_parameter_values = self.pybamm_model.default_parameter_values
@@ -88,7 +90,12 @@ class ECircuitModel(BaseModel):
         self._disc = None
         self.geometric_parameters = {}
 
-    def _check_params(self, inputs: Inputs = None, allow_infeasible_solutions=True):
+    def _check_params(
+        self,
+        inputs: Inputs,
+        parameter_set: ParameterSet,
+        allow_infeasible_solutions: bool = True,
+    ):
         """
         Check the compatibility of the model parameters.
 
@@ -96,6 +103,8 @@ class ECircuitModel(BaseModel):
         ----------
         inputs : Inputs
             The input parameters for the simulation.
+        parameter_set : pybop.parameter_set
+            A PyBOP parameter set object or a dictionary containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
@@ -103,7 +112,6 @@ class ECircuitModel(BaseModel):
         -------
         bool
             A boolean which signifies whether the parameters are compatible.
-
         """
         return True
 
