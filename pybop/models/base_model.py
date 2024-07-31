@@ -535,12 +535,11 @@ class BaseModel:
 
         if initial_state is not None:
             if "Initial SoC" in parameter_set.keys():
-                # Update the initial state in the parameter set
                 parameter_set["Initial SoC"] = initial_state
                 initial_state = None
-        else:
-            # Update the default initial state just for consistency
-            self.set_initial_state(initial_state)
+            else:
+                # Update the default initial state just for consistency
+                self.set_initial_state(initial_state)
 
         if self.check_params(
             parameter_set=parameter_set,
