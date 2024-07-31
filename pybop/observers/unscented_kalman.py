@@ -53,11 +53,6 @@ class UnscentedKalmanFilterObserver(Observer):
         additional_variables: Optional[list[str]] = None,
         init_ocv: Optional[float] = None,
     ) -> None:
-        if dataset is not None:
-            # Check that the dataset contains necessary variables
-            dataset.check([*signal, "Current function [A]"])
-            dataset = dataset.data
-
         if model is not None:
             # Clear any existing built model and its properties
             if model._built_model is not None:
@@ -77,8 +72,10 @@ class UnscentedKalmanFilterObserver(Observer):
             parameters, model, check_model, signal, additional_variables, init_ocv
         )
         if dataset is not None:
-            self._dataset = dataset
+            # Check that the dataset contains necessary variables
+            dataset.check([*self.signal, "Current function [A]"])
 
+            self._dataset = dataset.data
             self._time_data = self._dataset["Time [s]"]
             self.n_time_data = len(self._time_data)
             self._target = {signal: self._dataset[signal] for signal in self.signal}
