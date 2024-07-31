@@ -65,12 +65,12 @@ class WeightedCost(BaseCost):
         if any(cost.update_capacity for cost in self.costs):
             self.update_capacity = True
 
-        warnings.warn(
-            "WeightedCost doesn't currently support DesignCosts with different `update_capacity` attributes,\n"
-            f"Using global `DesignCost.update_capacity` attribute as: {self.update_capacity}",
-            UserWarning,
-            stacklevel=2,
-        )
+            warnings.warn(
+                "WeightedCost doesn't currently support DesignCosts with different `update_capacity` attributes,\n"
+                f"Using global `DesignCost.update_capacity` attribute as: {self.update_capacity}",
+                UserWarning,
+                stacklevel=2,
+            )
 
         # Weighted costs do not use this functionality
         self._has_separable_problem = False
