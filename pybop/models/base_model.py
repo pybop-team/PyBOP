@@ -389,17 +389,17 @@ class BaseModel:
             raise ValueError("Model must be built before calling simulate")
 
         requires_rebuild = False
+        # A rebuild is required if any of the rebuild parameter values have changed
         for key, value in inputs.items():
             if key in self.rebuild_parameters:
-                current_value = self.parameters[key].value
-                if value != current_value:
-                    self.parameters[key].update(value=value)
+                if value != self.parameters[key].value:
                     requires_rebuild = True
-
+        # Or if the simulation is set to start from a specific initial value
         if initial_state is not None:
             requires_rebuild = True
 
         if requires_rebuild:
+            self.parameters.update(values=list(inputs.values()))
             self.rebuild(parameters=self.parameters, initial_state=initial_state)
 
         if self.check_params(
@@ -529,6 +529,7 @@ class BaseModel:
         if inputs is not None:
             parameter_set.update(inputs)
 
+        # Update the default initial state just for consistency
         if initial_state is not None:
             self.set_initial_state(initial_state)
 
