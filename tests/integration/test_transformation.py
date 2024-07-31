@@ -73,6 +73,7 @@ class TestTransformation:
         x0 = cost.parameters.initial_value()
         optim = optimiser(
             cost=cost,
+            max_unchanged_iterations=35,
             max_iterations=125,
         )
 

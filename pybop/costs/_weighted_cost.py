@@ -60,7 +60,7 @@ class WeightedCost(BaseCost):
             for cost in self.costs:
                 self.parameters.join(cost.parameters)
 
-    def _evaluate(self, inputs: Inputs, grad=None):
+    def _evaluate(self, inputs: Inputs):
         """
         Calculate the weighted cost for a given set of parameters.
 
@@ -68,9 +68,6 @@ class WeightedCost(BaseCost):
         ----------
         inputs : Inputs
             The parameters for which to compute the cost.
-        grad : array-like, optional
-            An array to store the gradient of the cost function with respect
-            to the parameters.
 
         Returns
         -------
@@ -90,7 +87,7 @@ class WeightedCost(BaseCost):
                 cost._current_prediction = cost.problem.evaluate(inputs)
             else:
                 cost._current_prediction = self._current_prediction
-            e[i] = cost._evaluate(inputs, grad)
+            e[i] = cost._evaluate(inputs)
 
         return np.dot(e, self.weights)
 
