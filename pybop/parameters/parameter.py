@@ -379,10 +379,8 @@ class Parameters:
         initial_values = []
 
         for param in self.param.values():
-            if param.initial_value is None:
-                initial_value = param.rvs(1)[0]
-                param.update(initial_value=initial_value)
-            initial_values.append(param.initial_value)
+            initial_value = param.get_initial_value()
+            initial_values.append(initial_value)
 
         return np.asarray(initial_values)
 
