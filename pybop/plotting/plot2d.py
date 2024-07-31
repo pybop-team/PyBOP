@@ -1,5 +1,6 @@
 import sys
 import warnings
+from typing import Union
 
 import numpy as np
 from scipy.interpolate import griddata
@@ -10,7 +11,7 @@ from pybop import BaseOptimiser, Optimisation, PlotlyManager
 def plot2d(
     cost_or_optim,
     gradient: bool = False,
-    bounds: np.ndarray = None,
+    bounds: Union[np.ndarray, None] = None,
     steps: int = 10,
     show: bool = True,
     use_optim_log: bool = False,
@@ -71,8 +72,9 @@ def plot2d(
     if len(cost.parameters) > 2:
         warnings.warn(
             "This cost function requires more than 2 parameters. "
-            + "Plotting in 2d with fixed values for the additional parameters.",
+            "Plotting in 2d with fixed values for the additional parameters.",
             UserWarning,
+            stacklevel=2,
         )
         for (
             i,

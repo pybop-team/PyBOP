@@ -1,8 +1,7 @@
 import numpy as np
 
 import pybop
-
-from .benchmark_utils import set_random_seed
+from benchmarks.benchmark_utils import set_random_seed
 
 
 class BenchmarkTrackParameterisation:
