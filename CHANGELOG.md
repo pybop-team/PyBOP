@@ -3,9 +3,19 @@
 ## Features
 
 - [#418](https://github.com/pybop-team/PyBOP/issues/418) - Wraps the `get_parameter_info` method from PyBaMM to get a dictionary of parameter names and types.
+- [#427](https://github.com/pybop-team/PyBOP/issues/427) - Adds the nbstripout pre-commit hook to remove unnecessary metadata from notebooks.
 - [#327](https://github.com/pybop-team/PyBOP/issues/327) - Adds the `WeightedCost` subclass, defines when to evaluate a problem and adds the `spm_weighted_cost` example script.
 - [#393](https://github.com/pybop-team/PyBOP/pull/383) - Adds Minkowski and SumofPower cost classes, with an example and corresponding tests.
 - [#403](https://github.com/pybop-team/PyBOP/pull/403/) - Adds lychee link checking action.
+
+## Bug Fixes
+
+## Breaking Changes
+
+# [v24.6.1](https://github.com/pybop-team/PyBOP/tree/v24.6.1) - 2024-07-31
+
+## Features
+
 - [#313](https://github.com/pybop-team/PyBOP/pull/313/) - Fixes for PyBaMM v24.5, drops support for PyBaMM v23.9, v24.1
 
 ## Bug Fixes
