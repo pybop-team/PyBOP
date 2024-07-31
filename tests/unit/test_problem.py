@@ -177,6 +177,12 @@ class TestProblem:
         model.predict(inputs=[1e-5, 1e-5], experiment=experiment)
         model.predict(inputs=[3e-5, 3e-5], experiment=experiment)
 
+        # Test init_soc from parameter_set
+        model = pybop.empirical.Thevenin()
+        model._parameter_set["Initial SoC"] = 0.8
+        problem = pybop.DesignProblem(model, pybop.Parameters(), experiment)
+        assert problem.init_soc == 0.8
+
     @pytest.mark.unit
     def test_problem_construct_with_model_predict(
         self, parameters, model, dataset, signal

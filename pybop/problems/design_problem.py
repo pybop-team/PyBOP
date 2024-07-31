@@ -36,7 +36,7 @@ class DesignProblem(BaseProblem):
         check_model=True,
         signal=None,
         additional_variables=None,
-        init_soc=1.0,
+        init_soc=None,
     ):
         # Add time and current and remove duplicates
         if additional_variables is None:
@@ -45,6 +45,12 @@ class DesignProblem(BaseProblem):
             signal = ["Voltage [V]"]
         additional_variables.extend(["Time [s]", "Current [A]"])
         additional_variables = list(set(additional_variables))
+
+        if init_soc is None:
+            if "Initial SoC" in model._parameter_set.keys():
+                init_soc = model._parameter_set["Initial SoC"]
+            else:
+                init_soc = 1.0  # default value
 
         super().__init__(
             parameters,
