@@ -67,7 +67,7 @@ class ParameterSet:
 
         # Read JSON file
         if not self.params and self.json_path:
-            with open(self.json_path, "r") as file:
+            with open(self.json_path) as file:
                 self.params = json.load(file)
         else:
             raise ValueError(

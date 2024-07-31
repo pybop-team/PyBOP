@@ -26,7 +26,7 @@ classifiers = [
 ]
 requires-python = ">=3.9, <3.13"
 dependencies = [
-  "pybamm>=23.9",
+  "pybamm>=24.5",
   "numpy>=1.16, <2.0",
   "scipy>=1.3",
   "pints>=0.5",
@@ -73,7 +73,7 @@ Homepage = "https://github.com/pybop-team/PyBOP"
 Documentation = "https://pybop-docs.readthedocs.io"
 Repository = "https://github.com/pybop-team/PyBOP"
 Releases = "https://github.com/pybop-team/PyBOP/releases"
-Changelog = "https://github.com/pybop-team/PyBOP/CHANGELOG.md"
+Changelog = "https://github.com/pybop-team/PyBOP/blob/develop/CHANGELOG.md"
 
 [tool.pytest.ini_options]
 addopts = "--showlocals -v -n auto"
@@ -81,6 +81,7 @@ addopts = "--showlocals -v -n auto"
 [tool.ruff]
 extend-include = ["*.ipynb"]
 extend-exclude = ["__init__.py"]
+fix = true
 
 [tool.ruff.lint]
 extend-select = ["I"]
