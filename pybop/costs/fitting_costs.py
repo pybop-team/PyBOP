@@ -137,7 +137,7 @@ class SumSquaredError(BaseCost):
 
         e = np.asarray(
             [
-                np.sum((prediction[signal] - self._target[signal]) ** 2)
+                np.sum((self._current_prediction[signal] - self._target[signal]) ** 2)
                 for signal in self.signal
             ]
         )
