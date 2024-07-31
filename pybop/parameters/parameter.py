@@ -382,6 +382,8 @@ class Parameters:
             if param.initial_value is None:
                 initial_value = param.rvs(1)[0]
                 param.update(initial_value=initial_value)
+            # Make sure to also reset the current value
+            param.update(value=param.initial_value)
             initial_values.append(param.initial_value)
 
         return np.asarray(initial_values)
