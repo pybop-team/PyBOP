@@ -20,7 +20,7 @@ class RootMeanSquaredError(BaseCost):
     def __init__(self, problem):
         super().__init__(problem)
 
-    def _evaluate(self, inputs: Inputs, grad=None):
+    def _evaluate(self, inputs: Inputs):
         """
         Calculate the root mean square error for a given set of parameters.
 
@@ -106,7 +106,7 @@ class SumSquaredError(BaseCost):
     def __init__(self, problem):
         super().__init__(problem)
 
-    def _evaluate(self, inputs: Inputs, grad=None):
+    def _evaluate(self, inputs: Inputs):
         """
         Calculate the sum of squared errors for a given set of parameters.
 
@@ -114,9 +114,6 @@ class SumSquaredError(BaseCost):
         ----------
         inputs : Inputs
             The parameters for which to evaluate the cost.
-        grad : array-like, optional
-            An array to store the gradient of the cost function with respect
-            to the parameters.
 
         Returns
         -------
@@ -389,7 +386,7 @@ class ObserverCost(BaseCost):
         self._observer = observer
         self._has_separable_problem = False
 
-    def _evaluate(self, inputs: Inputs, grad=None):
+    def _evaluate(self, inputs: Inputs):
         """
         Calculate the observer cost for a given set of parameters.
 

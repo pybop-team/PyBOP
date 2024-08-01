@@ -80,7 +80,7 @@ class WeightedCost(BaseCost):
         # Weighted costs do not use this functionality
         self._has_separable_problem = False
 
-    def _evaluate(self, inputs: Inputs, grad=None):
+    def _evaluate(self, inputs: Inputs):
         """
         Calculate the weighted cost for a given set of parameters.
 
@@ -88,9 +88,6 @@ class WeightedCost(BaseCost):
         ----------
         inputs : Inputs
             The parameters for which to compute the cost.
-        grad : array-like, optional
-            An array to store the gradient of the cost function with respect
-            to the parameters.
 
         Returns
         -------

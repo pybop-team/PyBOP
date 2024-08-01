@@ -39,7 +39,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi * self.sigma2)
         self._multip = -1 / (2.0 * self.sigma2)
 
-    def _evaluate(self, inputs: Inputs, grad: Union[None, np.ndarray] = None) -> float:
+    def _evaluate(self, inputs: Inputs) -> float:
         """
         Evaluates the Gaussian log-likelihood for the given parameters with known sigma.
         """
@@ -168,7 +168,7 @@ class GaussianLogLikelihood(BaseLikelihood):
             raise ValueError("dsigma_scale must be non-negative")
         self._dsigma_scale = new_value
 
-    def _evaluate(self, inputs: Inputs, grad: Union[None, np.ndarray] = None) -> float:
+    def _evaluate(self, inputs: Inputs) -> float:
         """
         Evaluates the Gaussian log-likelihood for the given parameters.
 
@@ -281,7 +281,7 @@ class MAP(BaseLikelihood):
         self.parameters = self.likelihood.parameters
         self._has_separable_problem = self.likelihood._has_separable_problem
 
-    def _evaluate(self, inputs: Inputs, grad=None) -> float:
+    def _evaluate(self, inputs: Inputs) -> float:
         """
         Calculate the maximum a posteriori cost for a given set of parameters.
 
@@ -289,9 +289,6 @@ class MAP(BaseLikelihood):
         ----------
         inputs : Inputs
             The parameters for which to evaluate the cost.
-        grad : array-like, optional
-            An array to store the gradient of the cost function with respect
-            to the parameters.
 
         Returns
         -------

@@ -78,8 +78,9 @@ class GravimetricEnergyDensity(DesignCost):
 
     def __init__(self, problem, update_capacity=False):
         super().__init__(problem, update_capacity)
+        self._fixed_problem = False  # keep problem evaluation within _evaluate
 
-    def _evaluate(self, inputs: Inputs, grad=None):
+    def _evaluate(self, inputs: Inputs):
         """
         Computes the cost function for the energy density.
 
@@ -87,8 +88,6 @@ class GravimetricEnergyDensity(DesignCost):
         ----------
         inputs : Inputs
             The parameters for which to compute the cost.
-        grad : array, optional
-            Gradient information, not used in this method.
 
         Returns
         -------
@@ -119,7 +118,7 @@ class VolumetricEnergyDensity(DesignCost):
     def __init__(self, problem, update_capacity=False):
         super().__init__(problem, update_capacity)
 
-    def _evaluate(self, inputs: Inputs, grad=None):
+    def _evaluate(self, inputs: Inputs):
         """
         Computes the cost function for the energy density.
 
@@ -127,8 +126,6 @@ class VolumetricEnergyDensity(DesignCost):
         ----------
         inputs : Inputs
             The parameters for which to compute the cost.
-        grad : array, optional
-            Gradient information, not used in this method.
 
         Returns
         -------
