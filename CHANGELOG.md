@@ -2,7 +2,6 @@
 
 ## Features
 
-- [#424](https://github.com/pybop-team/PyBOP/issues/424) - Enables the option to pass an initial OCV value to `FittingProblem`, updates `BaseModel` and fixes `multi_model_identification.ipynb` and `spm_electrode_design.ipynb`.
 - [#427](https://github.com/pybop-team/PyBOP/issues/427) - Adds the nbstripout pre-commit hook to remove unnecessary metadata from notebooks.
 - [#327](https://github.com/pybop-team/PyBOP/issues/327) - Adds the `WeightedCost` subclass, defines when to evaluate a problem and adds the `spm_weighted_cost` example script.
 - [#393](https://github.com/pybop-team/PyBOP/pull/383) - Adds Minkowski and SumofPower cost classes, with an example and corresponding tests.
@@ -10,7 +9,11 @@
 
 ## Bug Fixes
 
+- [#421](https://github.com/pybop-team/PyBOP/issues/421) - Adds a default value for the initial SOC for design problems.
+
 ## Breaking Changes
+
+- [#424](https://github.com/pybop-team/PyBOP/issues/424) - Replaces the `init_soc` input to `FittingProblem` with the option to pass an initial OCV value, updates `BaseModel` and fixes `multi_model_identification.ipynb` and `spm_electrode_design.ipynb`.
 
 # [v24.6.1](https://github.com/pybop-team/PyBOP/tree/v24.6.1) - 2024-07-31
 
@@ -19,8 +22,6 @@
 - [#313](https://github.com/pybop-team/PyBOP/pull/313/) - Fixes for PyBaMM v24.5, drops support for PyBaMM v23.9, v24.1
 
 ## Bug Fixes
-
-- [#421](https://github.com/pybop-team/PyBOP/issues/421) - Adds a default value for the initial SOC for design problems.
 
 ## Breaking Changes
 
