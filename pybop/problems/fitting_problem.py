@@ -75,7 +75,9 @@ class FittingProblem(BaseProblem):
                 initial_state=self._init_ocv,
             )
 
-    def evaluate(self, inputs: Inputs, update_capacity=False) -> dict[str, np.ndarray[np.float64]]:
+    def evaluate(
+        self, inputs: Inputs, update_capacity=False
+    ) -> dict[str, np.ndarray[np.float64]]:
         """
         Evaluate the model with the given parameters and return the signal.
 
