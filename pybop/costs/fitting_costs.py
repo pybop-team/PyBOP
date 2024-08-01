@@ -20,7 +20,7 @@ class RootMeanSquaredError(BaseCost):
     def __init__(self, problem):
         super().__init__(problem)
 
-    def _evaluate(self, inputs: Inputs, grad=None):
+    def _evaluate(self, inputs: Inputs):
         """
         Calculate the root mean square error for a given set of parameters.
 
@@ -38,16 +38,12 @@ class RootMeanSquaredError(BaseCost):
             The root mean square error.
 
         """
-        if not self.verify_prediction(self._current_prediction):
+        if not self.verify_prediction(self.y):
             return np.inf
 
         e = np.asarray(
             [
-                np.sqrt(
-                    np.mean(
-                        (self._current_prediction[signal] - self._target[signal]) ** 2
-                    )
-                )
+                np.sqrt(np.mean((self.y[signal] - self._target[signal]) ** 2))
                 for signal in self.signal
             ]
         )
@@ -74,19 +70,14 @@ class RootMeanSquaredError(BaseCost):
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        if not self.verify_prediction(self._current_prediction):
+        if not self.verify_prediction(self.y):
             return np.inf, self._de * np.ones(self.n_parameters)
 
         r = np.asarray(
-            [
-                self._current_prediction[signal] - self._target[signal]
-                for signal in self.signal
-            ]
+            [self.y[signal] - self._target[signal] for signal in self.signal]
         )
         e = np.sqrt(np.mean(r**2, axis=1))
-        de = np.mean((r * self._current_sensitivities.T), axis=2) / (
-            e + np.finfo(float).eps
-        )
+        de = np.mean((r * self.dy.T), axis=2) / (e + np.finfo(float).eps)
 
         if self.n_outputs == 1:
             return e.item(), de.flatten()
@@ -115,7 +106,7 @@ class SumSquaredError(BaseCost):
     def __init__(self, problem):
         super().__init__(problem)
 
-    def _evaluate(self, inputs: Inputs, grad=None):
+    def _evaluate(self, inputs: Inputs):
         """
         Calculate the sum of squared errors for a given set of parameters.
 
@@ -123,21 +114,18 @@ class SumSquaredError(BaseCost):
         ----------
         inputs : Inputs
             The parameters for which to evaluate the cost.
-        grad : array-like, optional
-            An array to store the gradient of the cost function with respect
-            to the parameters.
 
         Returns
         -------
         float
             The Sum of Squared Error.
         """
-        if not self.verify_prediction(self._current_prediction):
+        if not self.verify_prediction(self.y):
             return np.inf
 
         e = np.asarray(
             [
-                np.sum((self._current_prediction[signal] - self._target[signal]) ** 2)
+                np.sum((self.y[signal] - self._target[signal]) ** 2)
                 for signal in self.signal
             ]
         )
@@ -164,17 +152,14 @@ class SumSquaredError(BaseCost):
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        if not self.verify_prediction(self._current_prediction):
+        if not self.verify_prediction(self.y):
             return np.inf, self._de * np.ones(self.n_parameters)
 
         r = np.asarray(
-            [
-                self._current_prediction[signal] - self._target[signal]
-                for signal in self.signal
-            ]
+            [self.y[signal] - self._target[signal] for signal in self.signal]
         )
         e = np.sum(np.sum(r**2, axis=0), axis=0)
-        de = 2 * np.sum(np.sum((r * self._current_sensitivities.T), axis=2), axis=1)
+        de = 2 * np.sum(np.sum((r * self.dy.T), axis=2), axis=1)
 
         return e, de
 
@@ -234,15 +219,12 @@ class Minkowski(BaseCost):
         float
             The Minkowski cost.
         """
-        if not self.verify_prediction(self._current_prediction):
+        if not self.verify_prediction(self.y):
             return np.inf
 
         e = np.asarray(
             [
-                np.sum(
-                    np.abs(self._current_prediction[signal] - self._target[signal])
-                    ** self.p
-                )
+                np.sum(np.abs(self.y[signal] - self._target[signal]) ** self.p)
                 ** (1 / self.p)
                 for signal in self.signal
             ]
@@ -270,27 +252,21 @@ class Minkowski(BaseCost):
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        if not self.verify_prediction(self._current_prediction):
+        if not self.verify_prediction(self.y):
             return np.inf, self._de * np.ones(self.n_parameters)
 
         r = np.asarray(
-            [
-                self._current_prediction[signal] - self._target[signal]
-                for signal in self.signal
-            ]
+            [self.y[signal] - self._target[signal] for signal in self.signal]
         )
         e = np.asarray(
             [
-                np.sum(
-                    np.abs(self._current_prediction[signal] - self._target[signal])
-                    ** self.p
-                )
+                np.sum(np.abs(self.y[signal] - self._target[signal]) ** self.p)
                 ** (1 / self.p)
                 for signal in self.signal
             ]
         )
         de = np.sum(
-            np.sum(r ** (self.p - 1) * self._current_sensitivities.T, axis=2)
+            np.sum(r ** (self.p - 1) * self.dy.T, axis=2)
             / (e ** (self.p - 1) + np.finfo(float).eps),
             axis=1,
         )
@@ -350,15 +326,12 @@ class SumofPower(BaseCost):
         float
             The Sum of Power cost.
         """
-        if not self.verify_prediction(self._current_prediction):
+        if not self.verify_prediction(self.y):
             return np.inf
 
         e = np.asarray(
             [
-                np.sum(
-                    np.abs(self._current_prediction[signal] - self._target[signal])
-                    ** self.p
-                )
+                np.sum(np.abs(self.y[signal] - self._target[signal]) ** self.p)
                 for signal in self.signal
             ]
         )
@@ -385,19 +358,14 @@ class SumofPower(BaseCost):
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        if not self.verify_prediction(self._current_prediction):
+        if not self.verify_prediction(self.y):
             return np.inf, self._de * np.ones(self.n_parameters)
 
         r = np.asarray(
-            [
-                self._current_prediction[signal] - self._target[signal]
-                for signal in self.signal
-            ]
+            [self.y[signal] - self._target[signal] for signal in self.signal]
         )
         e = np.sum(np.sum(np.abs(r) ** self.p))
-        de = self.p * np.sum(
-            np.sum(r ** (self.p - 1) * self._current_sensitivities.T, axis=2), axis=1
-        )
+        de = self.p * np.sum(np.sum(r ** (self.p - 1) * self.dy.T, axis=2), axis=1)
 
         return e, de
 
@@ -416,9 +384,9 @@ class ObserverCost(BaseCost):
     def __init__(self, observer: Observer):
         super().__init__(problem=observer)
         self._observer = observer
-        self._fixed_problem = False  # keep problem evaluation within _evaluate
+        self._has_separable_problem = False
 
-    def _evaluate(self, inputs: Inputs, grad=None):
+    def _evaluate(self, inputs: Inputs):
         """
         Calculate the observer cost for a given set of parameters.
 
