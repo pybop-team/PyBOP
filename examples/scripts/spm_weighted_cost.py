@@ -34,7 +34,7 @@ experiment = pybop.Experiment(
     ]
     * 2
 )
-values = model.predict(experiment=experiment, init_soc=init_soc)
+values = model.predict(experiment=experiment, initial_state=init_soc)
 
 
 def noise(sigma):
@@ -51,7 +51,7 @@ dataset = pybop.Dataset(
 )
 
 # Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
+problem = pybop.FittingProblem(model, parameters, dataset)
 cost1 = pybop.SumSquaredError(problem)
 cost2 = pybop.RootMeanSquaredError(problem)
 weighted_cost = pybop.WeightedCost(cost1, cost2, weights=[0.1, 1])
