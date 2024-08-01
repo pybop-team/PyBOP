@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from pybop import BaseProblem
@@ -67,8 +69,12 @@ class DesignProblem(BaseProblem):
         self._time_data = sol["Time [s]"]
         self._target = {key: sol[key] for key in self.signal}
         self._dataset = None
+        self.warning_patterns = [
+            "Ah is greater than",
+            "Non-physical point encountered",
+        ]
 
-    def evaluate(self, inputs: Inputs):
+    def evaluate(self, inputs: Inputs, update_capacity=False):
         """
         Evaluate the model with the given parameters and return the signal.
 
@@ -83,19 +89,33 @@ class DesignProblem(BaseProblem):
             The model output y(t) simulated with inputs.
         """
         inputs = self.parameters.verify(inputs)
+        if update_capacity:
+            self.model.approximate_capacity(inputs)
 
-        sol = self._model.predict(
-            inputs=inputs,
-            experiment=self.experiment,
-            init_soc=self.init_soc,
-        )
+        try:
+            with warnings.catch_warnings():
+                for pattern in self.warning_patterns:
+                    warnings.filterwarnings(
+                        "error", category=UserWarning, message=pattern
+                    )
 
-        if sol == [np.inf]:
-            return sol
+                sol = self._model.predict(
+                    inputs=inputs,
+                    experiment=self.experiment,
+                    init_soc=self.init_soc,
+                )
 
-        else:
-            predictions = {}
-            for signal in self.signal + self.additional_variables:
-                predictions[signal] = sol[signal].data
+        # Catch infeasible solutions and return infinity
+        except (UserWarning, Exception) as e:
+            if self.verbose:
+                print(f"Ignoring this sample due to: {e}")
+            return {
+                signal: np.asarray(np.ones(2) * -np.inf)
+                for signal in [*self.signal, *self.additional_variables]
+            }
+
+        predictions = {}
+        for signal in self.signal + self.additional_variables:
+            predictions[signal] = sol[signal].data
 
         return predictions

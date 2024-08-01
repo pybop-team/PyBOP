@@ -196,7 +196,6 @@ class Test_SPM_Parameterisation:
         # Test each optimiser
         optim = multi_optimiser(
             cost=spm_two_signal_cost,
-            sigma0=0.03,
             max_iterations=250,
         )
 
