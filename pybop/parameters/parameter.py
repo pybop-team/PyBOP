@@ -409,9 +409,16 @@ class Parameters:
         initial_values = []
 
         for param in self.param.values():
-            if param.initial_value is None and param.prior is not None:
-                initial_value = param.rvs(1)[0]
-                param.update(initial_value=initial_value)
+            if param.initial_value is None:
+                if param.prior is not None:
+                    initial_value = param.rvs(1)[0]
+                    param.update(initial_value=initial_value)
+                else:
+                    warnings.warn(
+                        "Initial value or Prior are None, proceeding without initial value.",
+                        UserWarning,
+                        stacklevel=2,
+                    )
             initial_values.append(param.initial_value)
 
         return np.asarray(initial_values)
