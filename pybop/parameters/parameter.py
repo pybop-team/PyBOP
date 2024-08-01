@@ -190,7 +190,7 @@ class Parameter:
         """
         if self.initial_value is None:
             if self.prior is not None:
-                sample = param.rvs(1)[0]
+                sample = self.rvs(1)[0]
                 self.update(initial_value=sample)
             else:
                 warnings.warn(
