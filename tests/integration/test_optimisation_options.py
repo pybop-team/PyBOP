@@ -111,6 +111,8 @@ class TestOptimisation:
                 assert initial_cost > final_cost
             else:
                 assert initial_cost < final_cost
+        else:
+            raise ValueError("Initial value is the same as the ground truth value.")
         np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
     def get_data(self, model, init_soc):

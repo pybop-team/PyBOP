@@ -61,6 +61,7 @@ class BaseProblem:
         self._dataset = None
         self._time_data = None
         self._target = None
+        self.verbose = False
 
     @property
     def n_parameters(self):
