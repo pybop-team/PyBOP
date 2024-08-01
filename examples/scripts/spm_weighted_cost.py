@@ -24,24 +24,37 @@ parameters = pybop.Parameters(
 
 # Generate data
 sigma = 0.001
-t_eval = np.arange(0, 900, 3)
-values = model.predict(t_eval=t_eval)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
+init_soc = 0.5
+experiment = pybop.Experiment(
+    [
+        (
+            "Discharge at 0.5C for 3 minutes (3 second period)",
+            "Charge at 0.5C for 3 minutes (3 second period)",
+        ),
+    ]
+    * 2
+)
+values = model.predict(experiment=experiment, init_soc=init_soc)
+
+
+def noise(sigma):
+    return np.random.normal(0, sigma, len(values["Voltage [V]"].data))
+
 
 # Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": t_eval,
+        "Time [s]": values["Time [s]"].data,
         "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": corrupt_values,
+        "Voltage [V]": values["Voltage [V]"].data + noise(sigma),
     }
 )
 
 # Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset)
+problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
 cost1 = pybop.SumSquaredError(problem)
 cost2 = pybop.RootMeanSquaredError(problem)
-weighted_cost = pybop.WeightedCost(cost1, cost2, weights=[1, 100])
+weighted_cost = pybop.WeightedCost(cost1, cost2, weights=[0.1, 1])
 
 for cost in [weighted_cost, cost1, cost2]:
     optim = pybop.IRPropMin(cost, max_iterations=60)
