@@ -23,10 +23,11 @@ class WeightedCost(BaseCost):
     _has_identical_problems : bool
         If True, the shared problem will be evaluated once and saved before the
         self._evaluate() method of each cost is called (default: False).
-    _has_seperable_problem: bool
+    _has_separable_problem: bool
         If True, the shared problem is seperable from the cost function and
         will be evaluated for each problem before the cost evaluation is
-        called (default: False).
+        called (default: False). This attribute is used for sub-cost objects;
+        however, the top-level WeightedCost attribute is not used (i.e. == False).
     """
 
     def __init__(self, *costs, weights: Optional[list[float]] = None):

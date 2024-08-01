@@ -23,7 +23,7 @@ class BaseCost:
     n_outputs : int
         The number of outputs in the model.
     _has_separable_problem : bool
-        If True, the problem is independent from the cost function and will be
+        If True, the problem is separable from the cost function and will be
         evaluated in advance of the call to self._evaluate() (default: False).
     """
 
