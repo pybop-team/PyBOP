@@ -47,6 +47,10 @@ class BaseCost:
     def n_parameters(self):
         return len(self.parameters)
 
+    @property
+    def has_separable_problem(self):
+        return self._has_separable_problem
+
     def __call__(self, inputs: Union[Inputs, list], grad=None):
         """
         Call the evaluate function for a given set of parameters.

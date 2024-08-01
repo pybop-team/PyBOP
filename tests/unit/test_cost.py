@@ -329,8 +329,8 @@ class TestCosts:
         # Test with identical problems
         weight = 100
         weighted_cost_2 = pybop.WeightedCost(cost1, cost2, weights=[1, weight])
-        assert weighted_cost_2._has_identical_problems is True
-        assert weighted_cost_2._has_separable_problem is False
+        assert weighted_cost_2.has_identical_problems is True
+        assert weighted_cost_2.has_separable_problem is False
         assert weighted_cost_2.problem is problem
         assert weighted_cost_2([0.5]) >= 0
         np.testing.assert_allclose(
@@ -342,8 +342,8 @@ class TestCosts:
         # Test with different problems
         cost3 = pybop.RootMeanSquaredError(copy(problem))
         weighted_cost_3 = pybop.WeightedCost(cost1, cost3, weights=[1, weight])
-        assert weighted_cost_3._has_identical_problems is False
-        assert weighted_cost_3._has_separable_problem is False
+        assert weighted_cost_3.has_identical_problems is False
+        assert weighted_cost_3.has_separable_problem is False
         assert weighted_cost_3.problem is None
         assert weighted_cost_3([0.5]) >= 0
         np.testing.assert_allclose(
@@ -360,8 +360,8 @@ class TestCosts:
         # Test MAP explicitly
         cost4 = pybop.MAP(problem, pybop.GaussianLogLikelihood)
         weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, weight])
-        assert weighted_cost_4._has_identical_problems is False
-        assert weighted_cost_4._has_separable_problem is False
+        assert weighted_cost_4.has_identical_problems is False
+        assert weighted_cost_4.has_separable_problem is False
         sigma = 0.05
         assert weighted_cost_4([0.5, sigma]) <= 0
         np.testing.assert_allclose(
@@ -377,8 +377,8 @@ class TestCosts:
 
         # Test DesignCosts with identical problems
         weighted_cost = pybop.WeightedCost(cost1, cost2)
-        assert weighted_cost._has_identical_problems is True
-        assert weighted_cost._has_separable_problem is False
+        assert weighted_cost.has_identical_problems is True
+        assert weighted_cost.has_separable_problem is False
         assert weighted_cost.problem is design_problem
         assert weighted_cost([0.5]) >= 0
         np.testing.assert_allclose(
@@ -390,8 +390,8 @@ class TestCosts:
         # Test DesignCosts with different problems
         cost3 = pybop.VolumetricEnergyDensity(copy(design_problem))
         weighted_cost = pybop.WeightedCost(cost1, cost3)
-        assert weighted_cost._has_identical_problems is False
-        assert weighted_cost._has_separable_problem is False
+        assert weighted_cost.has_identical_problems is False
+        assert weighted_cost.has_separable_problem is False
         for i, _ in enumerate(weighted_cost.costs):
             assert isinstance(weighted_cost.costs[i].problem, pybop.DesignProblem)
 
@@ -418,8 +418,8 @@ class TestCosts:
         assert weighted_cost.costs[0].update_capacity is True
         assert weighted_cost.costs[1].update_capacity is False
 
-        assert weighted_cost._has_identical_problems is True
-        assert weighted_cost._has_separable_problem is False
+        assert weighted_cost.has_identical_problems is True
+        assert weighted_cost.has_separable_problem is False
         assert weighted_cost.problem is design_problem
         assert weighted_cost([0.5]) >= 0
         np.testing.assert_allclose(

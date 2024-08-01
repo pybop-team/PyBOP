@@ -23,6 +23,10 @@ class WeightedCost(BaseCost):
     _has_identical_problems : bool
         If True, the shared problem will be evaluated once and saved before the
         self._evaluate() method of each cost is called (default: False).
+    _has_seperable_problem: bool
+        If True, the shared problem is seperable from the cost function and
+        will be evaluated for each problem before the cost evaluation is
+        called (default: False).
     """
 
     def __init__(self, *costs, weights: Optional[list[float]] = None):
@@ -146,3 +150,7 @@ class WeightedCost(BaseCost):
         de = np.dot(de, self.weights)
 
         return e, de
+
+    @property
+    def has_identical_problems(self):
+        return self._has_identical_problems
