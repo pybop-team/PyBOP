@@ -187,7 +187,7 @@ class Parameter:
     def get_initial_value(self) -> float:
         """
         Return the initial value of each parameter.
-        """         
+        """
         if self.initial_value is None:
             if self.prior is not None:
                 sample = param.rvs(1)[0]
