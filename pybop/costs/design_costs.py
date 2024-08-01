@@ -65,24 +65,6 @@ class DesignCost(BaseCost):
         self.problem._target = {key: solution[key] for key in self.problem.signal}
         self.dt = solution["Time [s]"][1] - solution["Time [s]"][0]
 
-    def _evaluate(self, inputs: Inputs):
-        """
-        Computes the value of the cost function.
-
-        This method must be implemented by subclasses.
-
-        Parameters
-        ----------
-        inputs : Inputs
-            The parameters for which to compute the cost.
-
-        Raises
-        ------
-        NotImplementedError
-            If the method has not been implemented by the subclass.
-        """
-        raise NotImplementedError
-
 
 class GravimetricEnergyDensity(DesignCost):
     """
@@ -112,31 +94,15 @@ class GravimetricEnergyDensity(DesignCost):
         float
             The gravimetric energy density or -infinity in case of infeasible parameters.
         """
-        try:
-            with warnings.catch_warnings():
-                # Convert UserWarning to an exception
-                warnings.filterwarnings("error", category=UserWarning)
-
-                if self.update_capacity:
-                    self.problem.model.approximate_capacity(inputs)
-                solution = self.problem.evaluate(inputs)
-
-                voltage, current = solution["Voltage [V]"], solution["Current [A]"]
-                energy_density = np.trapz(voltage * current, dx=self.dt) / (
-                    3600 * self.problem.model.cell_mass(self.parameter_set)
-                )
-
-                return energy_density
-
-        # Catch infeasible solutions and return infinity
-        except UserWarning as e:
-            print(f"Ignoring this sample due to: {e}")
+        if not any(np.isfinite(self.y[signal][0]) for signal in self.signal):
             return -np.inf
 
-        # Catch any other exception and return infinity
-        except Exception as e:
-            print(f"An error occurred during the evaluation: {e}")
-            return -np.inf
+        voltage, current = self.y["Voltage [V]"], self.y["Current [A]"]
+        energy_density = np.trapz(voltage * current, dx=self.dt) / (
+            3600 * self.problem.model.cell_mass(self.parameter_set)
+        )
+
+        return energy_density
 
 
 class VolumetricEnergyDensity(DesignCost):
@@ -151,7 +117,6 @@ class VolumetricEnergyDensity(DesignCost):
 
     def __init__(self, problem, update_capacity=False):
         super().__init__(problem, update_capacity)
-        self._fixed_problem = False  # keep problem evaluation within _evaluate
 
     def _evaluate(self, inputs: Inputs):
         """
@@ -167,28 +132,12 @@ class VolumetricEnergyDensity(DesignCost):
         float
             The volumetric energy density or -infinity in case of infeasible parameters.
         """
-        try:
-            with warnings.catch_warnings():
-                # Convert UserWarning to an exception
-                warnings.filterwarnings("error", category=UserWarning)
-
-                if self.update_capacity:
-                    self.problem.model.approximate_capacity(inputs)
-                solution = self.problem.evaluate(inputs)
-
-                voltage, current = solution["Voltage [V]"], solution["Current [A]"]
-                energy_density = np.trapz(voltage * current, dx=self.dt) / (
-                    3600 * self.problem.model.cell_volume(self.parameter_set)
-                )
-
-                return energy_density
-
-        # Catch infeasible solutions and return infinity
-        except UserWarning as e:
-            print(f"Ignoring this sample due to: {e}")
+        if not any(np.isfinite(self.y[signal][0]) for signal in self.signal):
             return -np.inf
 
-        # Catch any other exception and return infinity
-        except Exception as e:
-            print(f"An error occurred during the evaluation: {e}")
-            return -np.inf
+        voltage, current = self.y["Voltage [V]"], self.y["Current [A]"]
+        energy_density = np.trapz(voltage * current, dx=self.dt) / (
+            3600 * self.problem.model.cell_volume(self.parameter_set)
+        )
+
+        return energy_density

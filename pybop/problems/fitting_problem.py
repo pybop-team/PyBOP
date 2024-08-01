@@ -79,7 +79,7 @@ class FittingProblem(BaseProblem):
                 init_soc=self.init_soc,
             )
 
-    def evaluate(self, inputs: Inputs):
+    def evaluate(self, inputs: Inputs, update_capacity=False):
         """
         Evaluate the model with the given parameters and return the signal.
 

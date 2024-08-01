@@ -22,19 +22,20 @@ class BaseCost:
         An array containing the target data to fit.
     n_outputs : int
         The number of outputs in the model.
-
-    Additional Attributes
-    ---------------------
-    _fixed_problem : bool
-        If True, the problem does not need to be rebuilt before the cost is
-        calculated (default: False).
+    _has_separable_problem : bool
+        If True, the problem is separable from the cost function and will be
+        evaluated in advance of the call to self._evaluate() (default: False).
     """
 
     def __init__(self, problem: Optional[BaseProblem] = None):
         self.parameters = Parameters()
         self.transformation = None
         self.problem = problem
-        self._fixed_problem = False
+        self.verbose = False
+        self._has_separable_problem = False
+        self.update_capacity = False
+        self.y = None
+        self.dy = None
         self.set_fail_gradient()
         if isinstance(self.problem, BaseProblem):
             self._target = self.problem._target
@@ -42,11 +43,15 @@ class BaseCost:
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
             self.transformation = self.parameters.construct_transformation()
-            self._fixed_problem = True
+            self._has_separable_problem = True
 
     @property
     def n_parameters(self):
         return len(self.parameters)
+
+    @property
+    def has_separable_problem(self):
+        return self._has_separable_problem
 
     def __call__(self, inputs: Union[Inputs, list]):
         """
@@ -78,8 +83,10 @@ class BaseCost:
         inputs = self.parameters.verify(p if self.transformation else inputs)
 
         try:
-            if self._fixed_problem:
-                self._current_prediction = self.problem.evaluate(inputs)
+            if self._has_separable_problem:
+                self.y = self.problem.evaluate(
+                    inputs, update_capacity=self.update_capacity
+                )
 
             return self._evaluate(inputs)
 
@@ -137,10 +144,8 @@ class BaseCost:
         inputs = self.parameters.verify(p if self.transformation else inputs)
 
         try:
-            if self._fixed_problem:
-                self._current_prediction, self._current_sensitivities = (
-                    self.problem.evaluateS1(inputs)
-                )
+            if self._has_separable_problem:
+                self.y, self.dy = self.problem.evaluateS1(inputs)
 
             return self._evaluateS1(inputs)
 
