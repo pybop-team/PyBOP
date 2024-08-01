@@ -58,6 +58,7 @@ class BaseOptimiser:
         self.verbose = False
         self.log = dict(x=[], x_best=[], cost=[])
         self.minimising = True
+        self.transformation = None
         self.physical_viability = False
         self.allow_infeasible_solutions = False
         self.default_max_iterations = 1000
@@ -65,6 +66,7 @@ class BaseOptimiser:
 
         if isinstance(cost, BaseCost):
             self.cost = cost
+            self.transformation = self.cost.transformation
             self.parameters.join(cost.parameters)
             self.set_allow_infeasible_solutions()
             if isinstance(cost, (BaseLikelihood, DesignCost)):
@@ -131,6 +133,9 @@ class BaseOptimiser:
         # Set other options
         self.verbose = self.unset_options.pop("verbose", self.verbose)
         self.minimising = self.unset_options.pop("minimising", self.minimising)
+        self.transformation = self.unset_options.pop(
+            "transformation", self.transformation
+        )
         if "allow_infeasible_solutions" in self.unset_options.keys():
             self.set_allow_infeasible_solutions(
                 self.unset_options.pop("allow_infeasible_solutions")

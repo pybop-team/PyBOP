@@ -21,7 +21,7 @@ class StandaloneCost(pybop.BaseCost):
 
     Methods
     -------
-    __call__(x, grad=None)
+    __call__(x)
         Calculate the cost for a given parameter value.
     """
 
@@ -43,7 +43,7 @@ class StandaloneCost(pybop.BaseCost):
         )
         self.x0 = self.parameters.initial_value()
 
-    def _evaluate(self, inputs, grad=None):
+    def _evaluate(self, inputs):
         """
         Calculate the cost for a given parameter value.
 
@@ -54,9 +54,6 @@ class StandaloneCost(pybop.BaseCost):
         ----------
         inputs : Dict
             The parameters for which to evaluate the cost.
-        grad : array-like, optional
-            Unused parameter, present for compatibility with gradient-based
-            optimizers.
 
         Returns
         -------

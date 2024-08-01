@@ -65,7 +65,7 @@ class DesignCost(BaseCost):
         self.problem._target = {key: solution[key] for key in self.problem.signal}
         self.dt = solution["Time [s]"][1] - solution["Time [s]"][0]
 
-    def _evaluate(self, inputs: Inputs, grad=None):
+    def _evaluate(self, inputs: Inputs):
         """
         Computes the value of the cost function.
 
@@ -75,8 +75,6 @@ class DesignCost(BaseCost):
         ----------
         inputs : Inputs
             The parameters for which to compute the cost.
-        grad : array, optional
-            Gradient information, not used in this method.
 
         Raises
         ------
@@ -100,7 +98,7 @@ class GravimetricEnergyDensity(DesignCost):
         super().__init__(problem, update_capacity)
         self._fixed_problem = False  # keep problem evaluation within _evaluate
 
-    def _evaluate(self, inputs: Inputs, grad=None):
+    def _evaluate(self, inputs: Inputs):
         """
         Computes the cost function for the energy density.
 
@@ -108,8 +106,6 @@ class GravimetricEnergyDensity(DesignCost):
         ----------
         inputs : Inputs
             The parameters for which to compute the cost.
-        grad : array, optional
-            Gradient information, not used in this method.
 
         Returns
         -------
@@ -157,7 +153,7 @@ class VolumetricEnergyDensity(DesignCost):
         super().__init__(problem, update_capacity)
         self._fixed_problem = False  # keep problem evaluation within _evaluate
 
-    def _evaluate(self, inputs: Inputs, grad=None):
+    def _evaluate(self, inputs: Inputs):
         """
         Computes the cost function for the energy density.
 
@@ -165,8 +161,6 @@ class VolumetricEnergyDensity(DesignCost):
         ----------
         inputs : Inputs
             The parameters for which to compute the cost.
-        grad : array, optional
-            Gradient information, not used in this method.
 
         Returns
         -------
