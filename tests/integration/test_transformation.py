@@ -18,6 +18,13 @@ class TestTransformation:
     @pytest.fixture
     def model(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        x = self.ground_truth
+        parameter_set.update(
+            {
+                "Negative electrode active material volume fraction": x[0],
+                "Positive electrode active material volume fraction": x[1],
+            }
+        )
         return pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
     @pytest.fixture
@@ -47,7 +54,7 @@ class TestTransformation:
     @pytest.fixture
     def cost(self, model, parameters, init_soc):
         # Form dataset
-        solution = self.get_data(model, parameters, self.ground_truth, init_soc)
+        solution = self.get_data(model, init_soc)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -58,7 +65,7 @@ class TestTransformation:
         )
 
         # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
+        problem = pybop.FittingProblem(model, parameters, dataset)
         return pybop.RootMeanSquaredError(problem)
 
     @pytest.mark.parametrize(
@@ -87,8 +94,8 @@ class TestTransformation:
         else:
             raise ValueError("Initial value is the same as the ground truth value.")
 
-    def get_data(self, model, parameters, x, init_soc):
-        model.parameters = parameters
+    def get_data(self, model, init_soc):
+        # Update the initial state and save the ground truth initial concentrations
         experiment = pybop.Experiment(
             [
                 (
@@ -97,7 +104,5 @@ class TestTransformation:
                 ),
             ]
         )
-        sim = model.predict(
-            init_soc=init_soc, experiment=experiment, inputs=parameters.as_dict(x)
-        )
+        sim = model.predict(initial_state=init_soc, experiment=experiment)
         return sim
