@@ -58,8 +58,8 @@ from ._dataset import Dataset
 #
 # Transformation classes
 #
-from .transformation import Transformation
-from .transformation._transformation import (
+from .transformation.base_transformation import Transformation
+from .transformation.transformations import (
     IdentityTransformation,
     ScaledTransformation,
     LogTransformation,

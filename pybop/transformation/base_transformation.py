@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Tuple, Union, Sequence, List
+from collections.abc import Sequence
+from typing import Union
+
 import numpy as np
 
 
@@ -20,6 +22,7 @@ class Transformation(ABC):
            http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.47.9023
     .. [2] Kaare Brandt Petersen and Michael Syskind Pedersen. "The Matrix Cookbook." 2012.
     """
+
     # ---- To be implemented with Monte Carlo PR ------ #
     # def convert_log_prior(self, log_prior):
     #     """Returns a transformed log-prior class."""
@@ -33,7 +36,9 @@ class Transformation(ABC):
         jac_inv = np.linalg.pinv(self.jacobian(q))
         return jac_inv @ cov @ jac_inv.T
 
-    def convert_standard_deviation(self, std: Union[float, np.ndarray], q: np.ndarray) -> np.ndarray:
+    def convert_standard_deviation(
+        self, std: Union[float, np.ndarray], q: np.ndarray
+    ) -> np.ndarray:
         """
         Converts standard deviation `std`, either a scalar or a vector, from the model space
         to the search space around a parameter vector `q` in the search space.
@@ -48,7 +53,7 @@ class Transformation(ABC):
     def jacobian(self, q: np.ndarray) -> np.ndarray:
         """Returns the Jacobian matrix of the transformation at the parameter vector `q`."""
 
-    def jacobian_S1(self, q: np.ndarray) -> Tuple[np.ndarray, Sequence[np.ndarray]]:
+    def jacobian_S1(self, q: np.ndarray) -> tuple[np.ndarray, Sequence[np.ndarray]]:
         """
         Computes the Jacobian matrix and its partial derivatives at the parameter vector `q`.
 
@@ -61,14 +66,18 @@ class Transformation(ABC):
         Returns the logarithm of the absolute value of the determinant of the Jacobian matrix
         at the parameter vector `q`.
         """
-        raise NotImplementedError("log_jacobian_det method must be implemented if used.")
+        raise NotImplementedError(
+            "log_jacobian_det method must be implemented if used."
+        )
 
-    def log_jacobian_det_S1(self, q: np.ndarray) -> Tuple[float, np.ndarray]:
+    def log_jacobian_det_S1(self, q: np.ndarray) -> tuple[float, np.ndarray]:
         """
         Computes the logarithm of the absolute value of the determinant of the Jacobian,
         and returns it along with its partial derivatives.
         """
-        raise NotImplementedError("log_jacobian_det_S1 method must be implemented if used.")
+        raise NotImplementedError(
+            "log_jacobian_det_S1 method must be implemented if used."
+        )
 
     @property
     def n_parameters(self):
@@ -96,23 +105,28 @@ class Transformation(ABC):
         """
         raise NotImplementedError("is_elementwise method must be implemented if used.")
 
-    def _verify_input(self, input: Union[float, int, List[float], np.ndarray, dict[str, float]]) -> np.ndarray:
+    def _verify_input(
+        self, inputs: Union[float, int, list[float], np.ndarray, dict[str, float]]
+    ) -> np.ndarray:
         """Set and validate the transformation parameter."""
-        if isinstance(input, (float, int)):
-            return np.full(self._n_parameters, float(input))
+        if isinstance(inputs, (float, int)):
+            return np.full(self._n_parameters, float(inputs))
 
-        if isinstance(input, dict):
-            input = list(input.values())
+        if isinstance(inputs, dict):
+            inputs = list(inputs.values())
 
         try:
-            input_array = np.asarray(input, dtype=float)
-        except (ValueError, TypeError):
-            raise TypeError("Transform must be a float, int, list, numpy array, or dictionary")
+            input_array = np.asarray(inputs, dtype=float)
+        except (ValueError, TypeError) as e:
+            raise TypeError(
+                "Transform must be a float, int, list, numpy array, or dictionary"
+            ) from e
 
         if input_array.size != self._n_parameters:
             raise ValueError(f"Transform must have {self._n_parameters} elements")
 
         return input_array
+
 
 # ---- To be implemented with Monte Carlo PR ------ #
 # class TransformedLogPDF(BaseCost):
