@@ -213,7 +213,7 @@ class MultiFittingProblem(BaseProblem):
         self.n_time_data = len(self._time_data)
         self.set_target(combined_dataset)
 
-    def evaluate(self, inputs: Inputs):
+    def evaluate(self, inputs: Inputs, **kwargs):
         """
         Evaluate the model with the given parameters and return the signal.
 
@@ -234,7 +234,7 @@ class MultiFittingProblem(BaseProblem):
 
         for problem in self.problems:
             problem_inputs = problem.parameters.as_dict()
-            signal_values = problem.evaluate(problem_inputs)
+            signal_values = problem.evaluate(problem_inputs, **kwargs)
 
             # Collect signals
             for signal in problem.signal:
