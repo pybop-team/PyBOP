@@ -44,17 +44,16 @@ def get_parameter_checker(
     tau_maxs: float | list[float],
     fitted_rc_pair_indices: int | list[int],
 ):
-    if not hasattr(tau_mins, "len"):
-        tau_mins = [tau_mins]
-    if not hasattr(tau_maxs, "len"):
-        tau_maxs = [tau_maxs]
-    if not hasattr(fitted_rc_pair_indices, "len"):
-        fitted_rc_pair_indices = [fitted_rc_pair_indices]
+"""Returns a function to check parameters against given tau bounds."""
+    
+    # Ensure inputs are lists
+    tau_mins = [tau_mins] if not isinstance(tau_mins, list) else tau_mins
+    tau_maxs = [tau_maxs] if not isinstance(tau_maxs, list) else tau_maxs
+    fitted_rc_pair_indices = [fitted_rc_pair_indices] if not isinstance(fitted_rc_pair_indices, list) else fitted_rc_pair_indices
 
-    if len(tau_mins) != len(fitted_rc_pair_indices):
-        raise ValueError("tau_mins must have the same length as fitted_rc_pair_indices")
-    if len(tau_maxs) != len(fitted_rc_pair_indices):
-        raise ValueError("tau_maxs must have the same length as fitted_rc_pair_indices")
+    # Validate input lengths
+    if len(tau_mins) != len(fitted_rc_pair_indices) or len(tau_maxs) != len(fitted_rc_pair_indices):
+        raise ValueError("tau_mins and tau_maxs must have the same length as fitted_rc_pair_indices")
 
     def check_params(
         inputs: dict[str, float] = None,
