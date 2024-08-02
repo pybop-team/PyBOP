@@ -281,7 +281,7 @@ class TestOptimisation:
         for method in ["trust-constr", "SLSQP", "COBYLA"]:
             optim = pybop.SciPyMinimize(cost=cost, method=method, maxiter=10)
             optim.run()
-            assert bool(optim.result.scipy_result.success) is True
+            assert optim.result.scipy_result.success
 
         with pytest.raises(
             ValueError,
