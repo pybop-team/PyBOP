@@ -188,12 +188,11 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 self.log["x_best"].append(intermediate_result)
                 self.log["cost"].append(cost if self.minimising else -cost)
 
-        if self._options["method"] == "trust-constr":
-
-            def callback(x: np.ndarray, intermediate_result: OptimizeResult):
-                base_callback(intermediate_result)
-        else:
-            callback = base_callback
+        callback = (
+            base_callback
+            if self._options["method"] != "trust-constr"
+            else lambda x, intermediate_result: base_callback(intermediate_result)
+        )
 
         # Compute the absolute initial cost and resample if required
         self._cost0 = np.abs(self.cost(self.x0))
