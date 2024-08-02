@@ -373,7 +373,7 @@ class TestCosts:
 
         # Test MAP explicitly
         cost4 = pybop.MAP(problem, pybop.GaussianLogLikelihood)
-        weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, -1/weight])
+        weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, -1 / weight])
         assert weighted_cost_4.has_identical_problems is False
         assert weighted_cost_4.has_separable_problem is False
         sigma = 0.01
@@ -381,7 +381,7 @@ class TestCosts:
         assert np.isfinite(weighted_cost_4([0.5, sigma]))
         np.testing.assert_allclose(
             weighted_cost_4.evaluate([0.6, sigma]),
-            cost1([0.6, sigma]) -1/ weight * cost4([0.6, sigma]),
+            cost1([0.6, sigma]) - 1 / weight * cost4([0.6, sigma]),
             atol=1e-5,
         )
 
