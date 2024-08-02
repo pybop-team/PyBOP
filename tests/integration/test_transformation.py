@@ -21,8 +21,8 @@ class TestTransformation:
         x = self.ground_truth
         parameter_set.update(
             {
-                "Negative electrode active material volume fraction": x[0],
-                "Positive electrode active material volume fraction": x[1],
+                "Positive electrode active material volume fraction": x[0],
+                "Positive electrode conductivity [S.m-1]": x[1],
             }
         )
         return pybop.lithium_ion.SPMe(parameter_set=parameter_set)

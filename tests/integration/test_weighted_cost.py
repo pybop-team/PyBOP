@@ -77,7 +77,7 @@ class TestWeightedCost:
         )
 
         # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
+        problem = pybop.FittingProblem(model, parameters, dataset)
         costs = []
         for cost in cost_class:
             if issubclass(cost, pybop.MAP):

@@ -128,8 +128,8 @@ class TestLikelihoods:
         grad_result, grad_likelihood = likelihood.evaluateS1(np.array([0.8, 0.2]))
         assert isinstance(result, float)
         np.testing.assert_allclose(result, grad_result, atol=1e-5)
-        # Since 0.5 < ground_truth, the likelihood should be increasing
-        assert grad_likelihood[0] >= 0
+        # Since 0.8 > ground_truth, the likelihood should be decreasing
+        assert grad_likelihood[0] <= 0
         # Since sigma < 0.5, the likelihood should be decreasing
         assert grad_likelihood[1] <= 0
 

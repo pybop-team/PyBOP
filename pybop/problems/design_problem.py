@@ -95,7 +95,7 @@ class DesignProblem(BaseProblem):
                 sol = self._model.predict(
                     inputs=inputs,
                     experiment=self.experiment,
-                    init_soc=self.init_soc,
+                    initial_state=self.init_soc,
                 )
 
         # Catch infeasible solutions and return infinity
