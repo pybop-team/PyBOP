@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 from pybop import BaseProblem
 from pybop.parameters.parameter import Inputs, Parameters
@@ -22,29 +22,44 @@ class BaseCost:
         An array containing the target data to fit.
     n_outputs : int
         The number of outputs in the model.
+    _has_separable_problem : bool
+        If True, the problem is separable from the cost function and will be
+        evaluated in advance of the call to self._evaluate() (default: False).
     """
 
-    def __init__(self, problem=None):
+    def __init__(self, problem: Optional[BaseProblem] = None):
         self.parameters = Parameters()
+        self.transformation = None
         self.problem = problem
+        self.verbose = False
+        self._has_separable_problem = False
+        self.update_capacity = False
+        self.y = None
+        self.dy = None
         self.set_fail_gradient()
         if isinstance(self.problem, BaseProblem):
             self._target = self.problem._target
             self.parameters.join(self.problem.parameters)
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
+            self.transformation = self.parameters.construct_transformation()
+            self._has_separable_problem = True
 
     @property
     def n_parameters(self):
         return len(self.parameters)
 
-    def __call__(self, inputs: Union[Inputs, list], grad=None):
+    @property
+    def has_separable_problem(self):
+        return self._has_separable_problem
+
+    def __call__(self, inputs: Union[Inputs, list]):
         """
         Call the evaluate function for a given set of parameters.
         """
-        return self.evaluate(inputs, grad)
+        return self.evaluate(inputs)
 
-    def evaluate(self, inputs: Union[Inputs, list], grad=None):
+    def evaluate(self, inputs: Union[Inputs, list]):
         """
         Call the evaluate function for a given set of parameters.
 
@@ -52,9 +67,6 @@ class BaseCost:
         ----------
         inputs : Inputs or array-like
             The parameters for which to compute the cost and gradient.
-        grad : array-like, optional
-            An array to store the gradient of the cost function with respect
-            to the parameters.
 
         Returns
         -------
@@ -66,10 +78,17 @@ class BaseCost:
         ValueError
             If an error occurs during the calculation of the cost.
         """
-        inputs = self.parameters.verify(inputs)
+        if self.transformation:
+            p = self.transformation.to_model(inputs)
+        inputs = self.parameters.verify(p if self.transformation else inputs)
 
         try:
-            return self._evaluate(inputs, grad)
+            if self._has_separable_problem:
+                self.y = self.problem.evaluate(
+                    inputs, update_capacity=self.update_capacity
+                )
+
+            return self._evaluate(inputs)
 
         except NotImplementedError as e:
             raise e
@@ -77,7 +96,7 @@ class BaseCost:
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}") from e
 
-    def _evaluate(self, inputs: Inputs, grad=None):
+    def _evaluate(self, inputs: Inputs):
         """
         Calculate the cost function value for a given set of parameters.
 
@@ -87,9 +106,6 @@ class BaseCost:
         ----------
         inputs : Inputs
             The parameters for which to evaluate the cost.
-        grad : array-like, optional
-            An array to store the gradient of the cost function with respect
-            to the parameters.
 
         Returns
         -------
@@ -123,9 +139,14 @@ class BaseCost:
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        inputs = self.parameters.verify(inputs)
+        if self.transformation:
+            p = self.transformation.to_model(inputs)
+        inputs = self.parameters.verify(p if self.transformation else inputs)
 
         try:
+            if self._has_separable_problem:
+                self.y, self.dy = self.problem.evaluateS1(inputs)
+
             return self._evaluateS1(inputs)
 
         except NotImplementedError as e:

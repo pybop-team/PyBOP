@@ -119,9 +119,13 @@ class BaseModel:
             self.set_params()
 
             self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
-            self._disc = pybamm.Discretisation(self.mesh, self.spatial_methods)
+            self._disc = pybamm.Discretisation(
+                mesh=self.mesh,
+                spatial_methods=self.spatial_methods,
+                check_model=check_model,
+            )
             self._built_model = self._disc.process_model(
-                self._model_with_set_params, inplace=False, check_model=check_model
+                self._model_with_set_params, inplace=False
             )
 
             # Clear solver and setup model
@@ -230,9 +234,13 @@ class BaseModel:
 
         self.set_params(rebuild=True)
         self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
-        self._disc = pybamm.Discretisation(self.mesh, self.spatial_methods)
+        self._disc = pybamm.Discretisation(
+            mesh=self.mesh,
+            spatial_methods=self.spatial_methods,
+            check_model=check_model,
+        )
         self._built_model = self._disc.process_model(
-            self._model_with_set_params, inplace=False, check_model=check_model
+            self._model_with_set_params, inplace=False
         )
 
         # Clear solver and setup model
@@ -710,3 +718,23 @@ class BaseModel:
     @solver.setter
     def solver(self, solver):
         self._solver = solver.copy() if solver is not None else None
+
+    def get_parameter_info(self, print_info: bool = False):
+        """
+        Extracts the parameter names and types and returns them as a dictionary.
+        """
+        if not self.pybamm_model._built:
+            self.pybamm_model.build_model()
+
+        info = self.pybamm_model.get_parameter_info()
+
+        reduced_info = dict()
+        for param, param_type in info.values():
+            param_name = getattr(param, "name", str(param))
+            reduced_info[param_name] = param_type
+
+        if print_info:
+            for param, param_type in info.values():
+                print(param, " : ", param_type)
+
+        return reduced_info

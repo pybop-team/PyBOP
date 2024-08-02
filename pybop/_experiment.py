@@ -49,6 +49,4 @@ class Experiment(Experiment):
             period,
             temperature,
             termination,
-            drive_cycles,
-            cccv_handling,
         )
