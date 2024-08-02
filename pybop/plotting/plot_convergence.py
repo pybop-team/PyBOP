@@ -1,5 +1,3 @@
-import sys
-
 from pybop import StandardPlot
 
 
@@ -45,9 +43,7 @@ def plot_convergence(optim, show=True, **layout_kwargs):
     # Generate and display the figure
     fig = plot_dict(show=False)
     fig.update_layout(**layout_kwargs)
-    if "ipykernel" in sys.modules and show:
-        fig.show("svg")
-    elif show:
+    if show:
         fig.show()
 
     return fig

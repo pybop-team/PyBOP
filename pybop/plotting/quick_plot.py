@@ -1,5 +1,4 @@
 import math
-import sys
 import textwrap
 
 import numpy as np
@@ -26,9 +25,10 @@ DEFAULT_LAYOUT_OPTIONS = dict(
     legend=dict(x=1, y=1, xanchor="right", yanchor="top", font_size=12),
     showlegend=True,
     autosize=False,
-    width=1024,
-    height=576,
+    width=600,
+    height=600,
     margin=dict(l=10, r=10, b=10, t=75, pad=4),
+    plot_bgcolor="white",
 )
 DEFAULT_SUBPLOT_OPTIONS = dict(
     start_cell="bottom-left",
@@ -69,24 +69,31 @@ class StandardPlot:
         x,
         y,
         layout=None,
-        layout_options=DEFAULT_LAYOUT_OPTIONS,
-        trace_options=DEFAULT_TRACE_OPTIONS,
+        layout_options=None,
+        trace_options=None,
         trace_names=None,
         trace_name_width=40,
     ):
         self.x = x
         self.y = y
         self.layout = layout
-        self.layout_options = layout_options.copy()
-        self.trace_options = trace_options.copy()
-        if trace_options is not None:
-            for arg, value in trace_options.items():
-                self.trace_options[arg] = value
+        self.trace_name_width = trace_name_width
+
+        # Set default layout options and update if provided
+        self.layout_options = DEFAULT_LAYOUT_OPTIONS.copy()
+        if layout_options:
+            self.layout_options.update(layout_options)
+
+        # Set default trace options and update if provided
+        self.trace_options = DEFAULT_TRACE_OPTIONS.copy()
+        if trace_options:
+            self.trace_options.update(trace_options)
+
+        # Check trace_names and set attribute
         if isinstance(trace_names, str):
             self.trace_names = [trace_names]
         else:
             self.trace_names = trace_names
-        self.trace_name_width = trace_name_width
 
         # Check type and dimensions of data
         # What we want is a list of 'things plotly can take', e.g. numpy arrays or lists of numbers
@@ -125,10 +132,12 @@ class StandardPlot:
 
         # Create layout
         if self.layout is None:
-            self.layout = self.go.Layout(self.layout_options)
-        if self.layout_options is not None:
+            self.layout = self.go.Layout(**self.layout_options)
+        else:
+            # If a layout is provided, update it with layout_options
             for arg, value in self.layout_options.items():
-                self.layout[arg] = value
+                if arg not in self.layout:
+                    self.layout[arg] = value
 
         # Wrap trace names
         if self.trace_names is not None:
@@ -158,9 +167,7 @@ class StandardPlot:
             If True, the figure is shown upon creation (default: True).
         """
         fig = self.go.Figure(data=self.traces, layout=self.layout)
-        if "ipykernel" in sys.modules and show:
-            fig.show("svg")
-        elif show:
+        if show:
             fig.show()
 
         return fig
@@ -321,9 +328,7 @@ class StandardSubplot(StandardPlot):
                     exponentformat="e",
                 )
 
-        if "ipykernel" in sys.modules and show:
-            fig.show("svg")
-        elif show:
+        if show:
             fig.show()
 
         return fig
@@ -361,9 +366,7 @@ def plot_trajectories(x, y, trace_names=None, show=True, **layout_kwargs):
     # Generate the figure and update the layout
     fig = plot_dict(show=False)
     fig.update_layout(**layout_kwargs)
-    if "ipykernel" in sys.modules and show:
-        fig.show("svg")
-    elif show:
+    if show:
         fig.show()
 
     return fig
