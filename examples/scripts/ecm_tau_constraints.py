@@ -59,17 +59,15 @@ def get_parameter_checker(
         inputs: dict[str, float] = None,
         allow_infeasible_solutions: bool = False,
     ) -> bool:
-        # Check every respective R*C <= tau_bound
+ """Checks if the given inputs are within the tau bounds."""
+        # Allow simulation to run if inputs are None
         if inputs is None:
-            # Simulating the model will result in this being called with
-            # inputs=None; must return true to allow the simulation to run
             return True
 
+        # Check every respective R*C against tau bounds
         for i, tau_min, tau_max in zip(fitted_rc_pair_indices, tau_mins, tau_maxs):
             tau = inputs[f"R{i} [Ohm]"] * inputs[f"C{i} [F]"]
-            if tau < tau_min:
-                return False
-            if tau > tau_max:
+            if not tau_min <= tau <= tau_max:
                 return False
         return True
 
