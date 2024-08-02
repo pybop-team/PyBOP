@@ -1,3 +1,6 @@
+import sys
+from io import StringIO
+
 import numpy as np
 import pybamm
 import pytest
@@ -420,3 +423,24 @@ class TestModels:
         np.testing.assert_allclose(
             values_1["Voltage [V]"].data, values_2["Voltage [V]"].data, atol=1e-8
         )
+
+    @pytest.mark.unit
+    def test_get_parameter_info(self, model):
+        if isinstance(model, pybop.empirical.Thevenin):
+            # Test at least one model without a built pybamm model
+            model = pybop.empirical.Thevenin(build=False)
+
+        parameter_info = model.get_parameter_info()
+        assert isinstance(parameter_info, dict)
+
+        captured_output = StringIO()
+        sys.stdout = captured_output
+
+        model.get_parameter_info(print_info=True)
+        sys.stdout = sys.__stdout__
+
+        printed_messaage = captured_output.getvalue().strip()
+
+        for key, value in parameter_info.items():
+            assert key in printed_messaage
+            assert value in printed_messaage

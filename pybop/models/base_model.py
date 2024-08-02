@@ -755,3 +755,23 @@ class BaseModel:
     @solver.setter
     def solver(self, solver):
         self._solver = solver.copy() if solver is not None else None
+
+    def get_parameter_info(self, print_info: bool = False):
+        """
+        Extracts the parameter names and types and returns them as a dictionary.
+        """
+        if not self.pybamm_model._built:
+            self.pybamm_model.build_model()
+
+        info = self.pybamm_model.get_parameter_info()
+
+        reduced_info = dict()
+        for param, param_type in info.values():
+            param_name = getattr(param, "name", str(param))
+            reduced_info[param_name] = param_type
+
+        if print_info:
+            for param, param_type in info.values():
+                print(param, " : ", param_type)
+
+        return reduced_info
