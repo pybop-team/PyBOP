@@ -6,16 +6,17 @@ This directory contains example notebooks and scripts demonstrating how to use P
 
 - `notebooks/`: Jupyter notebooks of example functionality with explanations
 - `scripts/`: Python scripts for quick reference and command-line usage
+- `standalone/`: Example scripts for using standalone classes
 
 ## Notebooks
 
 The `notebooks/` directory contains Jupyter notebooks that provide detailed, interactive examples of various features and use cases. These notebooks include explanations, code snippets, and visualisations.
 
-To view the notebooks with interactive figures without downloading the repository, we recommend nbviewer:
+To view the notebooks with interactive figures without downloading the repository, please use nbviewer:
 
 <div align="center">
 
-[View on nbviewer](https://nbviewer.org/github/pybop-team/PyBOP/tree/develop/examples/notebooks/)
+[Notebooks on nbviewer](https://nbviewer.org/github/pybop-team/PyBOP/tree/develop/examples/notebooks/)
 
 </div>
 
