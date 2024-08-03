@@ -183,18 +183,18 @@ class TestModels:
         # Test initilisation with different types of parameter set
         param_dict = {"Nominal cell capacity [A.h]": 5}
         model = pybop.BaseModel(parameter_set=None)
-        assert model._parameter_set is None
+        assert model.parameter_set is None
 
         model = pybop.BaseModel(parameter_set=param_dict)
         parameter_set = pybamm.ParameterValues(param_dict)
-        assert model._parameter_set == parameter_set
+        assert model.parameter_set == parameter_set
 
         model = pybop.BaseModel(parameter_set=parameter_set)
-        assert model._parameter_set == parameter_set
+        assert model.parameter_set == parameter_set
 
         pybop_parameter_set = pybop.ParameterSet(params_dict=param_dict)
         model = pybop.BaseModel(parameter_set=pybop_parameter_set)
-        assert model._parameter_set == parameter_set
+        assert model.parameter_set == parameter_set
 
     @pytest.mark.unit
     def test_rebuild_geometric_parameters(self):
@@ -232,8 +232,8 @@ class TestModels:
 
         # Test model geometry
         assert (
-            rebuilt_model._mesh["negative electrode"].nodes[1]
-            != initial_built_model._mesh["negative electrode"].nodes[1]
+            rebuilt_model.mesh["negative electrode"].nodes[1]
+            != initial_built_model.mesh["negative electrode"].nodes[1]
         )
         assert (
             rebuilt_model.geometry["negative electrode"]["x_n"]["max"]
@@ -246,8 +246,8 @@ class TestModels:
         )
 
         assert (
-            rebuilt_model._mesh["positive particle"].nodes[1]
-            != initial_built_model._mesh["positive particle"].nodes[1]
+            rebuilt_model.mesh["positive particle"].nodes[1]
+            != initial_built_model.mesh["positive particle"].nodes[1]
         )
 
         # Compare model results

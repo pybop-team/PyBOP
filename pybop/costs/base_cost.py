@@ -38,7 +38,7 @@ class BaseCost:
         self.dy = None
         self.set_fail_gradient()
         if isinstance(self.problem, BaseProblem):
-            self._target = self.problem._target
+            self._target = self.problem.target
             self.parameters.join(self.problem.parameters)
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
@@ -52,6 +52,10 @@ class BaseCost:
     @property
     def has_separable_problem(self):
         return self._has_separable_problem
+
+    @property
+    def target(self):
+        return self._target
 
     def __call__(self, inputs: Union[Inputs, list]):
         """

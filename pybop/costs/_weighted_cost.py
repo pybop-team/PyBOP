@@ -54,7 +54,7 @@ class WeightedCost(BaseCost):
 
         # Check if all costs depend on the same problem
         self._has_identical_problems = all(
-            cost._has_separable_problem and cost.problem is self.costs[0].problem
+            cost.has_separable_problem and cost.problem is self.costs[0].problem
             for cost in self.costs
         )
 
@@ -105,7 +105,7 @@ class WeightedCost(BaseCost):
             inputs = cost.parameters.as_dict()
             if self._has_identical_problems:
                 cost.y = self.y
-            elif cost._has_separable_problem:
+            elif cost.has_separable_problem:
                 cost.y = cost.problem.evaluate(
                     inputs, update_capacity=self.update_capacity
                 )
@@ -140,7 +140,7 @@ class WeightedCost(BaseCost):
             inputs = cost.parameters.as_dict()
             if self._has_identical_problems:
                 cost.y, cost.dy = (self.y, self.dy)
-            elif cost._has_separable_problem:
+            elif cost.has_separable_problem:
                 cost.y, cost.dy = cost.problem.evaluateS1(inputs)
             e[i], de[:, i] = cost._evaluateS1(inputs)
 

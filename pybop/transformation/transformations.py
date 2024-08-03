@@ -90,9 +90,9 @@ class ScaledTransformation(Transformation):
         n_parameters: int = 1,
     ):
         self._n_parameters = n_parameters
-        self._intercept = self._verify_input(intercept)
-        self._coefficient = self._verify_input(coefficient)
-        self._inverse_coeff = np.reciprocal(self._coefficient)
+        self.intercept = self.verify_input(intercept)
+        self.coefficient = self.verify_input(coefficient)
+        self.inverse_coeff = np.reciprocal(self.coefficient)
 
     def is_elementwise(self) -> bool:
         """See :meth:`Transformation.is_elementwise()`."""
@@ -100,7 +100,7 @@ class ScaledTransformation(Transformation):
 
     def jacobian(self, q: np.ndarray) -> np.ndarray:
         """See :meth:`Transformation.jacobian()`."""
-        return np.diag(self._inverse_coeff)
+        return np.diag(self.inverse_coeff)
 
     def jacobian_S1(self, q: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """See :meth:`Transformation.jacobian_S1()`."""
@@ -109,7 +109,7 @@ class ScaledTransformation(Transformation):
 
     def log_jacobian_det(self, q: np.ndarray) -> float:
         """See :meth:`Transformation.log_jacobian_det()`."""
-        return np.sum(np.log(np.abs(self._coefficient)))
+        return np.sum(np.log(np.abs(self.coefficient)))
 
     def log_jacobian_det_S1(self, q: np.ndarray) -> tuple[float, np.ndarray]:
         """See :meth:`Transformation.log_jacobian_det_S1()`."""
@@ -117,11 +117,11 @@ class ScaledTransformation(Transformation):
 
     def _transform(self, x: np.ndarray, method: str) -> np.ndarray:
         """See :meth:`Transformation._transform`."""
-        x = self._verify_input(x)
+        x = self.verify_input(x)
         if method == "to_model":
-            return x * self._inverse_coeff - self._intercept
+            return x * self.inverse_coeff - self.intercept
         elif method == "to_search":
-            return self._coefficient * (x + self._intercept)
+            return self.coefficient * (x + self.intercept)
         else:
             raise ValueError(f"Unknown method: {method}")
 
@@ -178,7 +178,7 @@ class LogTransformation(Transformation):
 
     def _transform(self, x: np.ndarray, method: str) -> np.ndarray:
         """See :meth:`Transformation._transform`."""
-        x = self._verify_input(x)
+        x = self.verify_input(x)
         if method == "to_model":
             return np.exp(x)
         elif method == "to_search":
@@ -260,7 +260,7 @@ class ComposedTransformation(Transformation):
         np.ndarray
             Diagonal matrix representing the elementwise Jacobian.
         """
-        q = self._verify_input(q)
+        q = self.verify_input(q)
         diag = np.zeros(self._n_parameters)
         lo = 0
 
@@ -273,7 +273,7 @@ class ComposedTransformation(Transformation):
 
     def jacobian_S1(self, q: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """See :meth:`Transformation.jacobian_S1()`."""
-        q = self._verify_input(q)
+        q = self.verify_input(q)
         output_S1 = np.zeros(
             (self._n_parameters, self._n_parameters, self._n_parameters)
         )
@@ -302,7 +302,7 @@ class ComposedTransformation(Transformation):
         float
             Sum of log determinants of individual transformations.
         """
-        q = self._verify_input(q)
+        q = self.verify_input(q)
         return sum(
             transformation.log_jacobian_det(q[lo : lo + transformation.n_parameters])
             for lo, transformation in self._iter_transformations()
@@ -322,7 +322,7 @@ class ComposedTransformation(Transformation):
         Tuple[float, np.ndarray]
             Tuple of sum of log determinants and concatenated first-order sensitivities.
         """
-        q = self._verify_input(q)
+        q = self.verify_input(q)
         output = 0.0
         output_S1 = np.zeros(self._n_parameters)
         lo = 0
@@ -338,7 +338,7 @@ class ComposedTransformation(Transformation):
 
     def _transform(self, data: np.ndarray, method: str) -> np.ndarray:
         """See :meth:`Transformation._transform`."""
-        data = self._verify_input(data)
+        data = self.verify_input(data)
         output = np.zeros_like(data)
         lo = 0
 

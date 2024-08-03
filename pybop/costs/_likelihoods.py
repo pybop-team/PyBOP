@@ -279,7 +279,7 @@ class MAP(BaseLikelihood):
             raise ValueError(f"{self.likelihood} must be a subclass of BaseLikelihood")
 
         self.parameters = self.likelihood.parameters
-        self._has_separable_problem = self.likelihood._has_separable_problem
+        self._has_separable_problem = self.likelihood.has_separable_problem
 
     def _evaluate(self, inputs: Inputs) -> float:
         """

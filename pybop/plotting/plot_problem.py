@@ -37,7 +37,7 @@ def quick_plot(problem, problem_inputs: Inputs = None, show=True, **layout_kwarg
         problem_inputs = problem.parameters.verify(problem_inputs)
 
     # Extract the time data and evaluate the model's output and target values
-    xaxis_data = problem.time_data()
+    xaxis_data = problem.time_data
     model_output = problem.evaluate(problem_inputs)
     target_output = problem.get_target()
 

@@ -114,7 +114,7 @@ class BaseModel:
             self._built_model = self.pybamm_model
 
         else:
-            if not self.pybamm_model._built:
+            if not self.pybamm_model._built:  # noqa: SLF001
                 self.pybamm_model.build_model()
             self.set_params()
 
@@ -129,7 +129,7 @@ class BaseModel:
             )
 
             # Clear solver and setup model
-            self._solver._model_set_up = {}
+            self._solver._model_set_up = {}  # noqa: SLF001
 
         self.n_states = self._built_model.len_rhs_and_alg  # len_rhs + len_alg
 
@@ -244,7 +244,7 @@ class BaseModel:
         )
 
         # Clear solver and setup model
-        self._solver._model_set_up = {}
+        self._solver._model_set_up = {}  # noqa: SLF001
 
     def classify_and_update_parameters(self, parameters: Parameters):
         """
@@ -506,7 +506,7 @@ class BaseModel:
         """
         inputs = self.parameters.verify(inputs)
 
-        if not self.pybamm_model._built:
+        if not self.pybamm_model._built:  # noqa: SLF001
             self.pybamm_model.build_model()
 
         parameter_set = parameter_set or self._unprocessed_parameter_set
@@ -659,17 +659,30 @@ class BaseModel:
     def built_model(self):
         return self._built_model
 
+    @built_model.setter
+    def built_model(self, built_model):
+        self._built_model = built_model if built_model is not None else None
+
+    def built_initial_soc(self):
+        return self._built_initial_soc
+
     @property
     def parameter_set(self):
         return self._parameter_set
 
     @parameter_set.setter
     def parameter_set(self, parameter_set):
-        self._parameter_set = parameter_set.copy()
+        self._parameter_set = parameter_set.copy() if parameter_set is not None else {}
 
     @property
     def model_with_set_params(self):
         return self._model_with_set_params
+
+    @model_with_set_params.setter
+    def model_with_set_params(self, model_with_set_params):
+        self._model_with_set_params = (
+            model_with_set_params.copy() if model_with_set_params is not None else None
+        )
 
     @property
     def geometry(self):
@@ -692,6 +705,18 @@ class BaseModel:
     @property
     def mesh(self):
         return self._mesh
+
+    @mesh.setter
+    def mesh(self, mesh):
+        self._mesh = mesh if mesh is not None else None
+
+    @property
+    def disc(self):
+        return self._disc
+
+    @disc.setter
+    def disc(self, disc):
+        self._disc = disc if disc is not None else None
 
     @property
     def var_pts(self):
@@ -723,7 +748,7 @@ class BaseModel:
         """
         Extracts the parameter names and types and returns them as a dictionary.
         """
-        if not self.pybamm_model._built:
+        if not self.pybamm_model._built:  # noqa: SLF001
             self.pybamm_model.build_model()
 
         info = self.pybamm_model.get_parameter_info()

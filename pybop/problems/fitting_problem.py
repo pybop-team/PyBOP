@@ -66,12 +66,12 @@ class FittingProblem(BaseProblem):
             self._model.n_time_data = self.n_time_data
 
             # Build the model from scratch
-            if self._model._built_model is not None:
-                self._model._model_with_set_params = None
-                self._model._built_model = None
-                self._model._built_initial_soc = None
-                self._model._mesh = None
-                self._model._disc = None
+            if self._model.built_model is not None:
+                self._model.model_with_set_params = None
+                self._model.built_model = None
+                self._model.built_initial_soc = None
+                self._model.mesh = None
+                self._model.disc = None
             self._model.build(
                 dataset=self._dataset,
                 parameters=self.parameters,

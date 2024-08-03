@@ -404,7 +404,7 @@ class ObserverCost(BaseCost):
             The observer cost (negative of the log likelihood).
         """
         log_likelihood = self._observer.log_likelihood(
-            self._target, self._observer.time_data(), inputs
+            self._target, self._observer.time_data, inputs
         )
         return -log_likelihood
 

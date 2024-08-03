@@ -40,7 +40,7 @@ expected_values = (
 # Verification step: make another prediction using the Observer class
 model.build(parameters=parameters)
 simulator = pybop.Observer(parameters, model, signal=["2y"])
-simulator._time_data = t_eval
+simulator.time_data = t_eval
 measurements = simulator.evaluate(true_inputs)
 
 # Verification step: Compare by plotting
