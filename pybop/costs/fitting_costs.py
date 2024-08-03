@@ -20,9 +20,11 @@ class RootMeanSquaredError(BaseCost):
     def __init__(self, problem):
         super().__init__(problem)
 
-    def _evaluate(self, inputs: Inputs):
+    def compute(self, inputs: Inputs):
         """
-        Calculate the root mean square error for a given set of parameters.
+        Compute the cost and its gradient with respect to the parameters.
+
+        This method only computes the cost, without calling the problem.evaluate().
 
         Parameters
         ----------
@@ -50,9 +52,11 @@ class RootMeanSquaredError(BaseCost):
 
         return e.item() if self.n_outputs == 1 else np.sum(e)
 
-    def _evaluateS1(self, inputs: Inputs):
+    def computeS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
+
+        This method only computes the cost, without calling the problem.evaluateS1().
 
         Parameters
         ----------
@@ -106,9 +110,11 @@ class SumSquaredError(BaseCost):
     def __init__(self, problem):
         super().__init__(problem)
 
-    def _evaluate(self, inputs: Inputs):
+    def compute(self, inputs: Inputs):
         """
-        Calculate the sum of squared errors for a given set of parameters.
+        Compute the cost and its gradient with respect to the parameters.
+
+        This method only computes the cost, without calling the problem.evaluate().
 
         Parameters
         ----------
@@ -132,9 +138,11 @@ class SumSquaredError(BaseCost):
 
         return e.item() if self.n_outputs == 1 else np.sum(e)
 
-    def _evaluateS1(self, inputs: Inputs):
+    def computeS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
+
+        This method only computes the cost, without calling the problem.evaluateS1().
 
         Parameters
         ----------
@@ -205,9 +213,11 @@ class Minkowski(BaseCost):
             )
         self.p = float(p)
 
-    def _evaluate(self, inputs: Inputs, grad=None):
+    def compute(self, inputs: Inputs, grad=None):
         """
-        Calculate the Minkowski cost for a given set of parameters.
+        Compute the cost with respect to the parameters.
+
+        This method only computes the cost, without calling the problem.evaluate().
 
         Parameters
         ----------
@@ -232,9 +242,11 @@ class Minkowski(BaseCost):
 
         return e.item() if self.n_outputs == 1 else np.sum(e)
 
-    def _evaluateS1(self, inputs):
+    def computeS1(self, inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
+
+        This method only computes the cost, without calling the problem.evaluateS1().
 
         Parameters
         ----------
@@ -312,9 +324,11 @@ class SumofPower(BaseCost):
             raise ValueError("p = np.inf is not yet supported.")
         self.p = float(p)
 
-    def _evaluate(self, inputs: Inputs, grad=None):
+    def compute(self, inputs: Inputs, grad=None):
         """
-        Calculate the Sum of Power cost for a given set of parameters.
+        Compute the cost with respect to the parameters.
+
+        This method only computes the cost, without calling the problem.evaluate().
 
         Parameters
         ----------
@@ -338,9 +352,11 @@ class SumofPower(BaseCost):
 
         return e.item() if self.n_outputs == 1 else np.sum(e)
 
-    def _evaluateS1(self, inputs):
+    def computeS1(self, inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
+
+        This method only computes the cost, without calling the problem.evaluateS1().
 
         Parameters
         ----------
@@ -386,7 +402,7 @@ class ObserverCost(BaseCost):
         self._observer = observer
         self._has_separable_problem = False
 
-    def _evaluate(self, inputs: Inputs):
+    def compute(self, inputs: Inputs):
         """
         Calculate the observer cost for a given set of parameters.
 
@@ -408,9 +424,11 @@ class ObserverCost(BaseCost):
         )
         return -log_likelihood
 
-    def _evaluateS1(self, inputs: Inputs):
+    def computeS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
+
+        This method only computes the cost, without calling the problem.evaluateS1().
 
         Parameters
         ----------

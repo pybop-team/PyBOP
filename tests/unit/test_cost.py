@@ -127,10 +127,10 @@ class TestCosts:
     @pytest.mark.unit
     def test_error_in_cost_calculation(self, problem):
         class RaiseErrorCost(pybop.BaseCost):
-            def _evaluate(self, inputs, grad=None):
+            def compute(self, inputs, grad=None):
                 raise ValueError("Error test.")
 
-            def _evaluateS1(self, inputs):
+            def computeS1(self, inputs):
                 raise ValueError("Error test.")
 
         cost = RaiseErrorCost(problem)
