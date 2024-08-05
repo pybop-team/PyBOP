@@ -505,7 +505,7 @@ class BaseModel:
             if PyBaMM models are not supported by the current simulation method.
 
         """
-        if self._unprocessed_model is None:
+        if self.pybamm_model is None:
             raise ValueError(
                 "The predict method currently only supports PyBaMM models."
             )
