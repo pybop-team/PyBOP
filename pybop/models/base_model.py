@@ -598,6 +598,26 @@ class BaseModel:
         """
         return copy.copy(self)
 
+    def get_parameter_info(self, print_info: bool = False):
+        """
+        Extracts the parameter names and types and returns them as a dictionary.
+        """
+        if not self.pybamm_model._built:  # noqa: SLF001
+            self.pybamm_model.build_model()
+
+        info = self.pybamm_model.get_parameter_info()
+
+        reduced_info = dict()
+        for param, param_type in info.values():
+            param_name = getattr(param, "name", str(param))
+            reduced_info[param_name] = param_type
+
+        if print_info:
+            for param, param_type in info.values():
+                print(param, " : ", param_type)
+
+        return reduced_info
+
     def cell_mass(self, parameter_set: ParameterSet = None):
         """
         Calculate the cell mass in kilograms.
@@ -663,8 +683,15 @@ class BaseModel:
     def built_model(self, built_model):
         self._built_model = built_model if built_model is not None else None
 
+    @property
     def built_initial_soc(self):
         return self._built_initial_soc
+
+    @built_initial_soc.setter
+    def built_initial_soc(self, built_initial_soc):
+        self._built_initial_soc = (
+            built_initial_soc if built_initial_soc is not None else None
+        )
 
     @property
     def parameter_set(self):
@@ -743,23 +770,3 @@ class BaseModel:
     @solver.setter
     def solver(self, solver):
         self._solver = solver.copy() if solver is not None else None
-
-    def get_parameter_info(self, print_info: bool = False):
-        """
-        Extracts the parameter names and types and returns them as a dictionary.
-        """
-        if not self.pybamm_model._built:  # noqa: SLF001
-            self.pybamm_model.build_model()
-
-        info = self.pybamm_model.get_parameter_info()
-
-        reduced_info = dict()
-        for param, param_type in info.values():
-            param_name = getattr(param, "name", str(param))
-            reduced_info[param_name] = param_type
-
-        if print_info:
-            for param, param_type in info.values():
-                print(param, " : ", param_type)
-
-        return reduced_info
