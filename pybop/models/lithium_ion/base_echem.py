@@ -317,9 +317,7 @@ class EChemBaseModel(BaseModel):
 
         # Calculate and update nominal capacity
         theoretical_capacity = theoretical_energy / average_voltage
-        self.parameter_set.update(
-            {"Nominal cell capacity [A.h]": theoretical_capacity}
-        )
+        self.parameter_set.update({"Nominal cell capacity [A.h]": theoretical_capacity})
 
     def set_geometric_parameters(self):
         """
