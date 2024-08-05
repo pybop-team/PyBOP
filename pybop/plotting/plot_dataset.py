@@ -1,5 +1,3 @@
-import sys
-
 from pybop import StandardPlot, plot_trajectories
 
 
@@ -54,9 +52,7 @@ def plot_dataset(dataset, signal=None, trace_names=None, show=True, **layout_kwa
         yaxis_title=yaxis_title,
     )
     fig.update_layout(**layout_kwargs)
-    if "ipykernel" in sys.modules and show:
-        fig.show("svg")
-    elif show:
+    if show:
         fig.show()
 
     return fig
