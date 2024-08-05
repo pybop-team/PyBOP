@@ -80,9 +80,10 @@ class StandardPlot:
         self.trace_name_width = trace_name_width
 
         # Set default layout options and update if provided
-        self.layout_options = DEFAULT_LAYOUT_OPTIONS.copy()
-        if layout_options:
-            self.layout_options.update(layout_options)
+        if self.layout is None:
+            self.layout_options = DEFAULT_LAYOUT_OPTIONS.copy()
+            if layout_options:
+                self.layout_options.update(layout_options)
 
         # Set default trace options and update if provided
         self.trace_options = DEFAULT_TRACE_OPTIONS.copy()
@@ -133,11 +134,6 @@ class StandardPlot:
         # Create layout
         if self.layout is None:
             self.layout = self.go.Layout(**self.layout_options)
-        else:
-            # If a layout is provided, update it with layout_options
-            for arg, value in self.layout_options.items():
-                if arg not in self.layout:
-                    self.layout[arg] = value
 
         # Wrap trace names
         if self.trace_names is not None:
