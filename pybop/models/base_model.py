@@ -721,7 +721,9 @@ class BaseModel:
 
     @parameter_set.setter
     def parameter_set(self, parameter_set):
-        self._parameter_set = parameter_set.copy() if parameter_set is not None else None
+        self._parameter_set = (
+            parameter_set.copy() if parameter_set is not None else None
+        )
 
     @property
     def model_with_set_params(self):
