@@ -505,7 +505,3 @@ class BasePintsOptimiser(BaseOptimiser):
             self._threshold = None
         else:
             self._threshold = float(threshold)
-
-    @property
-    def iterations(self):
-        return self._iterations
