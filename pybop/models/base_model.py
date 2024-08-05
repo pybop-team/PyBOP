@@ -377,7 +377,7 @@ class BaseModel:
 
     def simulate(
         self, inputs: Inputs, t_eval: np.array, initial_state: Optional[float] = None
-    ): -> Union[pybamm.Solution, np.inf]
+    ) -> Union[pybamm.Solution, list[np.float64]]:
         """
         Execute the forward model simulation and return the result.
 
