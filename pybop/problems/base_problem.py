@@ -50,6 +50,8 @@ class BaseProblem:
             )
 
         self.parameters = parameters
+        self.parameters.reset_initial_value()
+
         self._model = model
         self.check_model = check_model
         if isinstance(signal, str):

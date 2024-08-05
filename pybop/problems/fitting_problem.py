@@ -45,7 +45,6 @@ class FittingProblem(BaseProblem):
 
         super().__init__(parameters, model, check_model, signal, additional_variables)
         self._dataset = dataset.data
-        self.parameters.initial_value()
         self._n_parameters = len(self.parameters)
         self._init_ocv = None
         if init_ocv is not None:

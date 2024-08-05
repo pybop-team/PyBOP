@@ -56,7 +56,6 @@ class DesignProblem(BaseProblem):
         super().__init__(parameters, model, check_model, signal, additional_variables)
         self.experiment = experiment
         self.init_soc = init_soc
-        self.parameters.initial_value()
 
         # Add an example dataset for plotting comparison
         sol = self.evaluate(self.parameters.as_dict("initial"))
