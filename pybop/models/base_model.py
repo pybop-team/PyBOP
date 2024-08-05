@@ -486,8 +486,8 @@ class BaseModel:
         Solve the model using PyBaMM's simulation framework and return the solution.
 
         This method sets up a PyBaMM simulation by configuring the model, parameters, experiment
-        (if any), and initial state of charge (if provided). It then solves the simulation and
-        returns the resulting solution object.
+        or time vector, and initial state of charge (if provided). Either 't_eval' or 'experiment'
+        must be provided. It then solves the simulation and returns the resulting solution object.
 
         Parameters
         ----------
@@ -534,7 +534,7 @@ class BaseModel:
             parameter_set.update(inputs)
 
         if initial_state is not None:
-            if "Initial SoC" in parameter_set.keys():
+            if isinstance(self.pybamm_model, pybamm.equivalent_circuit.Thevenin):
                 parameter_set["Initial SoC"] = initial_state
                 initial_state = None
             else:
