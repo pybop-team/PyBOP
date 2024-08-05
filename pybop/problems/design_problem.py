@@ -4,6 +4,7 @@ from typing import Optional
 import numpy as np
 
 from pybop import BaseModel, BaseProblem, Experiment, Parameters
+from pybop.models.empirical.base_ecm import ECircuitModel
 from pybop.parameters.parameter import Inputs
 
 
@@ -47,7 +48,7 @@ class DesignProblem(BaseProblem):
         additional_variables = list(set(additional_variables))
 
         if init_soc is None:
-            if isinstance(self.pybamm_model, pybamm.equivalent_circuit.Thevenin):
+            if isinstance(model, ECircuitModel):
                 init_soc = model._parameter_set["Initial SoC"]
             else:
                 init_soc = 1.0  # default value
