@@ -517,7 +517,9 @@ class BaseModel:
             inputs = self.parameters.verify(inputs)
             parameter_set.update(inputs)
 
-        if init_soc is not None and "Initial SoC" in parameter_set.keys():
+        if init_soc is not None and isinstance(
+            self.pybamm_model, pybamm.equivalent_circuit.Thevenin
+        ):
             parameter_set["Initial SoC"] = init_soc
             init_soc = None
 
