@@ -96,7 +96,7 @@ class BaseModel:
         """
         self.name = name
         if parameter_set is None:
-            self._parameter_set = None
+            self.parameter_set = None
         elif isinstance(parameter_set, dict):
             self.parameter_set = pybamm.ParameterValues(parameter_set)
         elif isinstance(parameter_set, pybamm.ParameterValues):
@@ -721,7 +721,7 @@ class BaseModel:
 
     @parameter_set.setter
     def parameter_set(self, parameter_set):
-        self._parameter_set = parameter_set.copy()
+        self._parameter_set = parameter_set.copy() if parameter_set is not None else None
 
     @property
     def model_with_set_params(self):
