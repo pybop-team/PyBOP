@@ -2,8 +2,7 @@ from typing import Optional
 
 import numpy as np
 
-from pybop import BaseModel, BaseProblem
-from pybop._dataset import Dataset
+from pybop import BaseModel, BaseProblem, Dataset
 from pybop.parameters.parameter import Inputs, Parameters
 
 

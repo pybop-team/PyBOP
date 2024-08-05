@@ -47,7 +47,7 @@ class Observer(BaseProblem):
             raise ValueError("Only built models can be used in Observers")
 
         inputs = self.parameters.as_dict("initial")
-        self._state = self._model.reinit(inputs)
+        self._state = self.model.reinit(inputs)
         self.init_ocv = None
         if init_ocv is not None:
             self.init_ocv = str(init_ocv) + "V"

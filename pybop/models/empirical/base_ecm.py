@@ -186,9 +186,9 @@ class ECircuitModel(BaseModel):
             initial_soc = np.minimum(np.maximum(initial_soc, 0.0), 1.0)
 
         elif isinstance(initial_value, (int, float)):
-            initial_soc = initial_value
             if not 0 <= initial_soc <= 1:
                 raise ValueError("Initial SOC should be between 0 and 1")
+            initial_soc = initial_value
 
         else:
             raise ValueError(
