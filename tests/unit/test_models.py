@@ -1,3 +1,6 @@
+import sys
+from io import StringIO
+
 import numpy as np
 import pybamm
 import pytest
@@ -85,7 +88,10 @@ class TestModels:
     def test_predict_without_pybamm(self, model):
         model.pybamm_model = None
 
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            ValueError,
+            match="The predict method currently only supports PyBaMM models.",
+        ):
             model.predict(None, None)
 
     @pytest.mark.unit
@@ -112,6 +118,12 @@ class TestModels:
 
         res = model.predict(t_eval=t_eval, inputs=inputs)
         assert len(res["Voltage [V]"].data) == 100
+
+        with pytest.raises(
+            ValueError,
+            match="The predict method requires either an experiment or t_eval to be specified.",
+        ):
+            model.predict(inputs=inputs)
 
     @pytest.mark.unit
     def test_predict_without_allow_infeasible_solutions(self, model):
@@ -219,6 +231,12 @@ class TestModels:
         # Run prediction
         t_eval = np.linspace(0, 100, 100)
         out_init = initial_built_model.predict(t_eval=t_eval)
+
+        with pytest.raises(
+            ValueError,
+            match="Cannot use sensitivies for parameters which require a model rebuild",
+        ):
+            model.simulateS1(t_eval=t_eval, inputs=parameters.as_dict())
 
         # Test that the model can be rebuilt with different geometric parameters
         parameters["Positive particle radius [m]"].update(5e-06)
@@ -329,6 +347,9 @@ class TestModels:
             == model.pybamm_model.default_parameter_values["Open-circuit voltage [V]"]
         )
 
+        model.predict(init_soc=0.5, t_eval=np.arange(0, 10, 5))
+        assert model._parameter_set["Initial SoC"] == 0.5
+
     @pytest.mark.unit
     def test_check_params(self):
         base = pybop.BaseModel()
@@ -368,3 +389,24 @@ class TestModels:
         for key in problem.signal:
             assert np.allclose(output.get(key, [])[0], output.get(key, []))
             assert np.allclose(output_S1.get(key, [])[0], output_S1.get(key, []))
+
+    @pytest.mark.unit
+    def test_get_parameter_info(self, model):
+        if isinstance(model, pybop.empirical.Thevenin):
+            # Test at least one model without a built pybamm model
+            model = pybop.empirical.Thevenin(build=False)
+
+        parameter_info = model.get_parameter_info()
+        assert isinstance(parameter_info, dict)
+
+        captured_output = StringIO()
+        sys.stdout = captured_output
+
+        model.get_parameter_info(print_info=True)
+        sys.stdout = sys.__stdout__
+
+        printed_messaage = captured_output.getvalue().strip()
+
+        for key, value in parameter_info.items():
+            assert key in printed_messaage
+            assert value in printed_messaage
