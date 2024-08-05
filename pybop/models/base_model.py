@@ -96,7 +96,7 @@ class BaseModel:
         """
         self.name = name
         if parameter_set is None:
-            self.parameter_set = None
+            self._parameter_set = None
         elif isinstance(parameter_set, dict):
             self.parameter_set = pybamm.ParameterValues(parameter_set)
         elif isinstance(parameter_set, pybamm.ParameterValues):
@@ -221,9 +221,9 @@ class BaseModel:
 
         # Mark any simulation inputs in the parameter set
         for key in self.standard_parameters.keys():
-            self.parameter_set[key] = "[input]"
+            self._parameter_set[key] = "[input]"
 
-        if "Current function [A]" in self.parameter_set.keys():
+        if "Current function [A]" in self._parameter_set.keys():
             if dataset is not None and (not self.rebuild_parameters or not rebuild):
                 if "Current function [A]" not in self.parameters.keys():
                     self.current_function = pybamm.Interpolant(
@@ -231,15 +231,15 @@ class BaseModel:
                         dataset["Current function [A]"],
                         pybamm.t,
                     )
-                    self.parameter_set["Current function [A]"] = self.current_function
+                    self._parameter_set["Current function [A]"] = self.current_function
             elif rebuild and self.current_function is not None:
-                self.parameter_set["Current function [A]"] = self.current_function
+                self._parameter_set["Current function [A]"] = self.current_function
 
-        self._model_with_set_params = self.parameter_set.process_model(
+        self._model_with_set_params = self._parameter_set.process_model(
             self._unprocessed_model, inplace=False
         )
         if self.geometry is not None:
-            self.parameter_set.process_geometry(self.geometry)
+            self._parameter_set.process_geometry(self.geometry)
         self.pybamm_model = self._model_with_set_params
 
     def rebuild(
@@ -326,9 +326,9 @@ class BaseModel:
             self.geometry = self.pybamm_model.default_geometry
 
         # Update both the active and unprocessed parameter sets for consistency
-        if self.parameter_set is not None:
-            self.parameter_set.update(parameter_dictionary)
-            self._unprocessed_parameter_set = self.parameter_set
+        if self._parameter_set is not None:
+            self._parameter_set.update(parameter_dictionary)
+            self._unprocessed_parameter_set = self._parameter_set
 
     def reinit(
         self, inputs: Inputs, t: float = 0.0, x: Optional[np.ndarray] = None
@@ -610,7 +610,7 @@ class BaseModel:
 
         """
         inputs = self.parameters.verify(inputs) or {}
-        parameter_set = parameter_set or self.parameter_set
+        parameter_set = parameter_set or self._parameter_set
 
         return self._check_params(
             inputs=inputs,
@@ -722,10 +722,7 @@ class BaseModel:
 
     @parameter_set.setter
     def parameter_set(self, parameter_set):
-        if parameter_set is None:
-            self._parameter_set = None
-        else:
-            self._parameter_set = parameter_set.copy()
+        self._parameter_set = parameter_set.copy()
 
     @property
     def model_with_set_params(self):

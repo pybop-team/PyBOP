@@ -58,9 +58,8 @@ class EChemBaseModel(BaseModel):
 
         # Set parameters, using either the provided ones or the default
         self.default_parameter_values = self.pybamm_model.default_parameter_values
-        if self.parameter_set is None:
-            self.parameter_set = self.default_parameter_values
-        self._unprocessed_parameter_set = self.parameter_set
+        self._parameter_set = self._parameter_set or self.default_parameter_values
+        self._unprocessed_parameter_set = self._parameter_set
 
         # Define model geometry and discretization
         self.geometry = geometry or self.pybamm_model.default_geometry
@@ -166,7 +165,7 @@ class EChemBaseModel(BaseModel):
         float
             The total volume of the cell in m3.
         """
-        parameter_set = parameter_set or self.parameter_set
+        parameter_set = parameter_set or self._parameter_set
 
         # Calculate cell thickness
         cell_thickness = (
@@ -205,7 +204,7 @@ class EChemBaseModel(BaseModel):
         float
             The total mass of the cell in kilograms.
         """
-        parameter_set = parameter_set or self.parameter_set
+        parameter_set = parameter_set or self._parameter_set
 
         def mass_density(
             active_material_vol_frac, density, porosity, electrolyte_density
@@ -288,11 +287,11 @@ class EChemBaseModel(BaseModel):
             The nominal cell capacity is updated directly in the model's parameter set.
         """
         inputs = self.parameters.verify(inputs)
-        self.parameter_set.update(inputs)
+        self._parameter_set.update(inputs)
 
         # Calculate theoretical energy density
         theoretical_energy = self._electrode_soh.calculate_theoretical_energy(
-            self.parameter_set
+            self._parameter_set
         )
 
         # Extract stoichiometries and compute mean values
@@ -301,13 +300,13 @@ class EChemBaseModel(BaseModel):
             max_sto_neg,
             min_sto_pos,
             max_sto_pos,
-        ) = self._electrode_soh.get_min_max_stoichiometries(self.parameter_set)
+        ) = self._electrode_soh.get_min_max_stoichiometries(self._parameter_set)
         mean_sto_neg = (min_sto_neg + max_sto_neg) / 2
         mean_sto_pos = (min_sto_pos + max_sto_pos) / 2
 
         # Calculate average voltage
-        positive_electrode_ocp = self.parameter_set["Positive electrode OCP [V]"]
-        negative_electrode_ocp = self.parameter_set["Negative electrode OCP [V]"]
+        positive_electrode_ocp = self._parameter_set["Positive electrode OCP [V]"]
+        negative_electrode_ocp = self._parameter_set["Negative electrode OCP [V]"]
         try:
             average_voltage = positive_electrode_ocp(
                 mean_sto_pos
@@ -317,7 +316,9 @@ class EChemBaseModel(BaseModel):
 
         # Calculate and update nominal capacity
         theoretical_capacity = theoretical_energy / average_voltage
-        self.parameter_set.update({"Nominal cell capacity [A.h]": theoretical_capacity})
+        self._parameter_set.update(
+            {"Nominal cell capacity [A.h]": theoretical_capacity}
+        )
 
     def set_geometric_parameters(self):
         """
