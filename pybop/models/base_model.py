@@ -472,8 +472,8 @@ class BaseModel:
         Solve the model using PyBaMM's simulation framework and return the solution.
 
         This method sets up a PyBaMM simulation by configuring the model, parameters, experiment
-        (if any), and initial state of charge (if provided). It then solves the simulation and
-        returns the resulting solution object.
+        or time vector, and initial state of charge (if provided). Either 't_eval' or 'experiment'
+        must be provided. It then solves the simulation and returns the resulting solution object.
 
         Parameters
         ----------
