@@ -38,10 +38,30 @@ class BaseModel:
     """
     A base class for constructing and simulating models using PyBaMM.
 
-    This class serves as a foundation for building specific models in PyBaMM. It provides
-    methods to set up the model, define parameters, and perform simulations. The class is
-    designed to be subclassed for creating models with custom behaviour.
+    This class serves as a foundation for constructing models based on PyBaMM models. It
+    provides methods to set up the model, define parameters, and perform simulations. The
+    class is designed to be subclassed for creating models with custom behaviour.
 
+    This class is based on PyBaMM's Simulation class. A PyBOP model is set up via a
+    similar 3-step process. The `pybamm_model` attributes echoes the `model` attribute of
+    a simulation, which tracks the model through the build process. Firstly, note that a
+    PyBaMM `model` must first be built via `build_model` before a simulation or PyBOP
+    model can be built. The 3-step process is then as follows.
+
+    The `pybamm_model` attribute is first defined as an instance of the imported PyBaMM
+    model, using any given model options. This initial version of the model is saved as
+    the `_unprocessed_model` for future reference. Next, the type of each parameter in
+    the parameter set as well as the geometry of the model is set. Parameters may be set
+    as an input, interpolant, functional or just a standard PyBaMM parameter. This
+    version of the model is referred to as the `model_with_set_params`. After its
+    creation, the `pybamm_model` attribute is updated to point at this version of the
+    model. Finally, the model required for simulations is built by defining the mesh and
+    processing the discretisation. The complete model is referred to as the `built_model`
+    and this version is used to run simulations.
+
+    In order to rebuild a model with a different initial state or geometry, the
+    `built_model` and the `model_with_set_params` must be cleared and the `pybamm_model`
+    reset to the `unprocessed_model` in order to start the build process again.
     """
 
     def __init__(
