@@ -68,7 +68,7 @@ class BaseModel:
         self, name: str = "Base Model", parameter_set: Optional[ParameterSet] = None
     ):
         """
-        Initialize the BaseModel with an optional name and a parameter set.
+        Initialise the BaseModel with an optional name and a parameter set.
 
         Parameters
         ----------
@@ -189,18 +189,17 @@ class BaseModel:
             self._unprocessed_parameter_set.update({"Initial SoC": initial_soc})
 
         else:
-            # Point pybamm variables at pybop variables
-            self.model = self.pybamm_model
-            self._model = self.pybamm_model
+            # Temporary construction of attribute for PyBaMM
+            self.model = self._model = self.pybamm_model
             self._unprocessed_parameter_values = self._unprocessed_parameter_set
 
-            pybamm_set_initial_state = pybamm.Simulation.set_initial_soc
-            pybamm_set_initial_state(self, initial_state, inputs=None)
+            # Set initial SOC via PyBaMM's Simulation class
+            pybamm.Simulation.set_initial_soc(self, initial_state, inputs=None)
 
             # Update the default parameter set for consistency
             self._unprocessed_parameter_set = self._parameter_values
 
-            # Clear the pybamm variables
+            # Clear the pybamm objects
             del self.model
             del self._model
             del self._unprocessed_parameter_values
@@ -378,7 +377,7 @@ class BaseModel:
 
     def simulate(
         self, inputs: Inputs, t_eval: np.array, initial_state: Optional[float] = None
-    ):
+    ): -> Union[pybamm.Solution, np.inf]
         """
         Execute the forward model simulation and return the result.
 
