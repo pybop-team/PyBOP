@@ -19,7 +19,7 @@ class TestCosts:
     @pytest.fixture
     def model(self, ground_truth):
         model = pybop.lithium_ion.SPM()
-        model._parameter_set["Negative electrode active material volume fraction"] = (
+        model.parameter_set["Negative electrode active material volume fraction"] = (
             ground_truth
         )
         return model
@@ -297,7 +297,7 @@ class TestCosts:
     @pytest.fixture
     def noisy_problem(self, ground_truth, parameters, experiment):
         model = pybop.lithium_ion.SPM()
-        model._parameter_set["Negative electrode active material volume fraction"] = (
+        model.parameter_set["Negative electrode active material volume fraction"] = (
             ground_truth
         )
         sol = model.predict(experiment=experiment)

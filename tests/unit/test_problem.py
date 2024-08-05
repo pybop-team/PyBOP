@@ -184,7 +184,7 @@ class TestProblem:
 
         # Test init_soc from parameter_set
         model = pybop.empirical.Thevenin()
-        model._parameter_set["Initial SoC"] = 0.8
+        model.parameter_set["Initial SoC"] = 0.8
         problem = pybop.DesignProblem(model, pybop.Parameters(), experiment)
         assert problem.init_soc == 0.8
 

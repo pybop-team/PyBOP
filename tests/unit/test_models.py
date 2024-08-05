@@ -192,18 +192,18 @@ class TestModels:
         # Test initilisation with different types of parameter set
         param_dict = {"Nominal cell capacity [A.h]": 5}
         model = pybop.BaseModel(parameter_set=None)
-        assert model._parameter_set is None
+        assert model.parameter_set is None
 
         model = pybop.BaseModel(parameter_set=param_dict)
         parameter_set = pybamm.ParameterValues(param_dict)
-        assert model._parameter_set == parameter_set
+        assert model.parameter_set == parameter_set
 
         model = pybop.BaseModel(parameter_set=parameter_set)
-        assert model._parameter_set == parameter_set
+        assert model.parameter_set == parameter_set
 
         pybop_parameter_set = pybop.ParameterSet(params_dict=param_dict)
         model = pybop.BaseModel(parameter_set=pybop_parameter_set)
-        assert model._parameter_set == parameter_set
+        assert model.parameter_set == parameter_set
 
     @pytest.mark.unit
     def test_rebuild_geometric_parameters(self):
@@ -348,14 +348,14 @@ class TestModels:
         )
 
         model.predict(initial_state=0.5, t_eval=np.arange(0, 10, 5))
-        assert model._parameter_set["Initial SoC"] == 0.5
+        assert model.parameter_set["Initial SoC"] == 0.5
 
         model.set_initial_state(parameter_set["Initial SoC"] / 2)
-        assert model._parameter_set["Initial SoC"] == parameter_set["Initial SoC"] / 2
+        assert model.parameter_set["Initial SoC"] == parameter_set["Initial SoC"] / 2
         model.set_initial_state(str(parameter_set["Lower voltage cut-off [V]"]) + "V")
-        np.testing.assert_allclose(model._parameter_set["Initial SoC"], 0.0, atol=1e-2)
+        np.testing.assert_allclose(model.parameter_set["Initial SoC"], 0.0, atol=1e-2)
         model.set_initial_state(str(parameter_set["Upper voltage cut-off [V]"]) + "V")
-        np.testing.assert_allclose(model._parameter_set["Initial SoC"], 1.0, atol=1e-2)
+        np.testing.assert_allclose(model.parameter_set["Initial SoC"], 1.0, atol=1e-2)
 
         with pytest.raises(ValueError, match="outside the voltage limits"):
             model.set_initial_state("-1.0V")
