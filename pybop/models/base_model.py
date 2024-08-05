@@ -184,7 +184,7 @@ class BaseModel:
             and 1). If str ending in "V", this value is used as the initial open-circuit voltage.
             Defaults to None, indicating that the existing initial concentrations will be used.
         """
-        if "Initial SoC" in self._unprocessed_parameter_set.keys():
+        if isinstance(self.pybamm_model, pybamm.equivalent_circuit.Thevenin):
             initial_soc = self.get_initial_state(initial_state)
             self._unprocessed_parameter_set.update({"Initial SoC": initial_soc})
 
