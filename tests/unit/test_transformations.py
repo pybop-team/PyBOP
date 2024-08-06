@@ -158,7 +158,7 @@ class TestTransformation:
             )
 
     @pytest.mark.unit
-    def testverify_input(self, parameters):
+    def test_verify_input(self, parameters):
         q = np.asarray([5.0])
         q_dict = {"Identity": q[0]}
         transformation = parameters["Scaled"].transformation

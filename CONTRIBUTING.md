@@ -94,6 +94,8 @@ ruff is configured inside the file `pyproject.toml`, allowing us to ignore some 
 
 When you commit your changes they will be checked against ruff automatically (see [Pre-commit checks](#pre-commit-checks)). If you are having issues getting your commit to pass the linting, it
 is possible to skip linting for single lines (this should only be done as a **last resort**) by adding a line comment of `#noqa: $ruff_rule` where the `$ruff_rule` is replaced with the rule in question.
+It is also possible to skip linting altogether by committing your changes by using the
+`--no-verify` command-line flag.
 These rules can be found in the ruff configuration in `pyproject.toml` or in the failed pre-commit output. Please note the lint skipping in the pull request for reviewers.
 
 ### Naming
