@@ -132,7 +132,7 @@ class ECircuitModel(BaseModel):
         ----------
         initial_value : float
             Target initial value.
-            If integer, interpreted as SOC, must be between 0 and 1.
+            If float, interpreted as SOC, must be between 0 and 1.
             If string e.g. "4 V", interpreted as voltage, must be between V_min and V_max.
         parameter_values : :class:`pybamm.ParameterValues`
             The parameter values class that will be used for the simulation. Required for
