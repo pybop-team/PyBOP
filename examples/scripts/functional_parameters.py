@@ -1,7 +1,7 @@
 import numpy as np
-import pybop
 import pybamm
 
+import pybop
 
 # This example demonstrates how to use a pybamm.FunctionalParameter to
 # optimise functional parameters using PyBOP.
@@ -13,6 +13,7 @@ import pybamm
 # Parameter set and model definition
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+
 
 # Define a new function using new parameters
 def positive_electrode_exchange_current_density(c_e, c_s_surf, c_s_max, T):
@@ -39,7 +40,9 @@ parameter_set.update(
     },
     check_already_exists=False,
 )
-parameter_set["Positive electrode exchange-current density [A.m-2]"] = positive_electrode_exchange_current_density
+parameter_set["Positive electrode exchange-current density [A.m-2]"] = (
+    positive_electrode_exchange_current_density
+)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -71,7 +74,7 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.RootMeanSquaredError(problem)
-optim = pybop.SciPyMinimize(cost,max_iterations=125)
+optim = pybop.SciPyMinimize(cost, max_iterations=125)
 
 # Run optimisation
 x, final_cost = optim.run()
