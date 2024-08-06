@@ -108,6 +108,16 @@ class TestProblem:
 
     @pytest.mark.unit
     def test_fitting_problem(self, parameters, dataset, model, signal):
+        with pytest.warns(UserWarning) as record:
+            problem = pybop.FittingProblem(
+                model,
+                parameters,
+                dataset,
+                signal=signal,
+                initial_state={"Initial SoC": 0.8},
+            )
+        assert "It is usually better to define an initial open-circuit voltage" in str(record[0].message)
+
         # Construct Problem
         problem = pybop.FittingProblem(
             model,
@@ -172,6 +182,15 @@ class TestProblem:
 
     @pytest.mark.unit
     def test_design_problem(self, parameters, experiment, model):
+        with pytest.warns(UserWarning) as record:
+            problem = pybop.DesignProblem(
+                model,
+                parameters,
+                experiment,
+                initial_state={"Initial open-circuit voltage [V]": 4.0},
+            )
+        assert "It is usually better to define an initial state of charge" in str(record[0].message)
+
         # Construct Problem
         problem = pybop.DesignProblem(model, parameters, experiment)
 
