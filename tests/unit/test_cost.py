@@ -1,3 +1,5 @@
+from copy import copy
+
 import numpy as np
 import pytest
 
@@ -197,7 +199,8 @@ class TestCosts:
                 cost([1.1])
 
             # Test option setting
-            cost.set_fail_gradient(1)
+            cost.set_fail_gradient(10)
+            assert cost._de == 10
 
         if not isinstance(cost, (pybop.ObserverCost, pybop.MAP)):
             e, de = cost.evaluateS1([0.5])
@@ -250,6 +253,12 @@ class TestCosts:
         with pytest.raises(ValueError, match="p = np.inf is not yet supported."):
             pybop.SumofPower(problem, p=np.inf)
 
+    @pytest.fixture
+    def design_problem(self, model, parameters, experiment, signal):
+        return pybop.DesignProblem(
+            model, parameters, experiment, signal=signal, init_soc=0.5
+        )
+
     @pytest.mark.parametrize(
         "cost_class",
         [
@@ -259,21 +268,9 @@ class TestCosts:
         ],
     )
     @pytest.mark.unit
-    def test_design_costs(
-        self,
-        cost_class,
-        model,
-        parameters,
-        experiment,
-        signal,
-    ):
-        # Construct Problem
-        problem = pybop.DesignProblem(
-            model, parameters, experiment, signal=signal, init_soc=0.5
-        )
-
+    def test_design_costs(self, cost_class, design_problem):
         # Construct Cost
-        cost = cost_class(problem)
+        cost = cost_class(design_problem)
 
         if cost_class in [pybop.DesignCost]:
             with pytest.raises(NotImplementedError):
@@ -299,5 +296,145 @@ class TestCosts:
                 cost(["StringInputShouldNotWork"])
 
             # Compute after updating nominal capacity
-            cost = cost_class(problem, update_capacity=True)
+            cost = cost_class(design_problem, update_capacity=True)
             cost([0.4])
+
+    @pytest.mark.unit
+    def test_weighted_fitting_cost(self, problem):
+        cost1 = pybop.SumSquaredError(problem)
+        cost2 = pybop.RootMeanSquaredError(problem)
+
+        # Test with and without weights
+        weighted_cost = pybop.WeightedCost(cost1, cost2)
+        np.testing.assert_array_equal(weighted_cost.weights, np.ones(2))
+        weighted_cost = pybop.WeightedCost(cost1, cost2, weights=[1, 1])
+        np.testing.assert_array_equal(weighted_cost.weights, np.ones(2))
+        weighted_cost = pybop.WeightedCost(cost1, cost2, weights=np.array([1, 1]))
+        np.testing.assert_array_equal(weighted_cost.weights, np.ones(2))
+        with pytest.raises(
+            TypeError,
+            match="All costs must be instances of BaseCost.",
+        ):
+            weighted_cost = pybop.WeightedCost(cost1.problem)
+        with pytest.raises(
+            ValueError,
+            match="Weights must be numeric values.",
+        ):
+            weighted_cost = pybop.WeightedCost(cost1, cost2, weights="Invalid string")
+        with pytest.raises(
+            ValueError,
+            match="Number of weights must match number of costs.",
+        ):
+            weighted_cost = pybop.WeightedCost(cost1, cost2, weights=[1])
+
+        # Test with identical problems
+        weight = 100
+        weighted_cost_2 = pybop.WeightedCost(cost1, cost2, weights=[1, weight])
+        assert weighted_cost_2.has_identical_problems is True
+        assert weighted_cost_2.has_separable_problem is False
+        assert weighted_cost_2.problem is problem
+        assert weighted_cost_2([0.5]) >= 0
+        np.testing.assert_allclose(
+            weighted_cost_2.evaluate([0.6]),
+            cost1([0.6]) + weight * cost2([0.6]),
+            atol=1e-5,
+        )
+
+        # Test with different problems
+        cost3 = pybop.RootMeanSquaredError(copy(problem))
+        weighted_cost_3 = pybop.WeightedCost(cost1, cost3, weights=[1, weight])
+        assert weighted_cost_3.has_identical_problems is False
+        assert weighted_cost_3.has_separable_problem is False
+        assert weighted_cost_3.problem is None
+        assert weighted_cost_3([0.5]) >= 0
+        np.testing.assert_allclose(
+            weighted_cost_3.evaluate([0.6]),
+            cost1([0.6]) + weight * cost3([0.6]),
+            atol=1e-5,
+        )
+
+        errors_2, sensitivities_2 = weighted_cost_2.evaluateS1([0.5])
+        errors_3, sensitivities_3 = weighted_cost_3.evaluateS1([0.5])
+        np.testing.assert_allclose(errors_2, errors_3, atol=1e-5)
+        np.testing.assert_allclose(sensitivities_2, sensitivities_3, atol=1e-5)
+
+        # Test MAP explicitly
+        cost4 = pybop.MAP(problem, pybop.GaussianLogLikelihood)
+        weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, weight])
+        assert weighted_cost_4.has_identical_problems is False
+        assert weighted_cost_4.has_separable_problem is False
+        sigma = 0.05
+        assert weighted_cost_4([0.5, sigma]) <= 0
+        np.testing.assert_allclose(
+            weighted_cost_4.evaluate([0.6, sigma]),
+            cost1([0.6, sigma]) + weight * cost4([0.6, sigma]),
+            atol=1e-5,
+        )
+
+    @pytest.mark.unit
+    def test_weighted_design_cost(self, design_problem):
+        cost1 = pybop.GravimetricEnergyDensity(design_problem)
+        cost2 = pybop.VolumetricEnergyDensity(design_problem)
+
+        # Test DesignCosts with identical problems
+        weighted_cost = pybop.WeightedCost(cost1, cost2)
+        assert weighted_cost.has_identical_problems is True
+        assert weighted_cost.has_separable_problem is False
+        assert weighted_cost.problem is design_problem
+        assert weighted_cost([0.5]) >= 0
+        np.testing.assert_allclose(
+            weighted_cost.evaluate([0.6]),
+            cost1([0.6]) + cost2([0.6]),
+            atol=1e-5,
+        )
+
+        # Test DesignCosts with different problems
+        cost3 = pybop.VolumetricEnergyDensity(copy(design_problem))
+        weighted_cost = pybop.WeightedCost(cost1, cost3)
+        assert weighted_cost.has_identical_problems is False
+        assert weighted_cost.has_separable_problem is False
+        for i, _ in enumerate(weighted_cost.costs):
+            assert isinstance(weighted_cost.costs[i].problem, pybop.DesignProblem)
+
+        # Ensure attributes are set correctly and not modified via side-effects
+        assert weighted_cost.update_capacity is False
+        assert weighted_cost.costs[0].update_capacity is False
+        assert weighted_cost.costs[1].update_capacity is False
+
+        assert weighted_cost([0.5]) >= 0
+        np.testing.assert_allclose(
+            weighted_cost.evaluate([0.6]),
+            cost1([0.6]) + cost2([0.6]),
+            atol=1e-5,
+        )
+
+    @pytest.mark.unit
+    def test_weighted_design_cost_with_update_capacity(self, design_problem):
+        cost1 = pybop.GravimetricEnergyDensity(design_problem, update_capacity=True)
+        cost2 = pybop.VolumetricEnergyDensity(design_problem)
+        weighted_cost = pybop.WeightedCost(cost1, cost2, weights=[1, 1])
+
+        # Ensure attributes are set correctly and not modified via side-effects
+        assert weighted_cost.update_capacity is True
+        assert weighted_cost.costs[0].update_capacity is True
+        assert weighted_cost.costs[1].update_capacity is False
+
+        assert weighted_cost.has_identical_problems is True
+        assert weighted_cost.has_separable_problem is False
+        assert weighted_cost.problem is design_problem
+        assert weighted_cost([0.5]) >= 0
+        np.testing.assert_allclose(
+            weighted_cost.evaluate([0.6]),
+            cost1([0.6]) + cost2([0.6]),
+            atol=1e-5,
+        )
+
+    @pytest.mark.unit
+    def test_mixed_problem_classes(self, problem, design_problem):
+        cost1 = pybop.SumSquaredError(problem)
+        cost2 = pybop.GravimetricEnergyDensity(design_problem)
+        with pytest.raises(
+            TypeError,
+            match="All problems must be of the same class type.",
+        ):
+            pybop.WeightedCost(cost1, cost2)

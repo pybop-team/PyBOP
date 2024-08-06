@@ -13,12 +13,14 @@ parameters = pybop.Parameters(
         prior=pybop.Gaussian(6e-06, 0.1e-6),
         bounds=[1e-6, 9e-6],
         true_value=parameter_set["Negative particle radius [m]"],
+        transformation=pybop.LogTransformation(),
     ),
     pybop.Parameter(
         "Positive particle radius [m]",
         prior=pybop.Gaussian(4.5e-06, 0.1e-6),
         bounds=[1e-6, 9e-6],
         true_value=parameter_set["Positive particle radius [m]"],
+        transformation=pybop.LogTransformation(),
     ),
 )
 
@@ -42,7 +44,7 @@ signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.CMAES(cost, max_iterations=100)
+optim = pybop.CMAES(cost, sigma0=0.25, max_unchanged_iterations=20, max_iterations=50)
 
 # Run the optimisation
 x, final_cost = optim.run()
