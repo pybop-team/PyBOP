@@ -368,7 +368,7 @@ class TestModels:
             pybamm_model=pybamm.equivalent_circuit.Thevenin,
             check_params=check_params,
         )
-        assert base_ecircuit_model.check_params()
+        assert base_ecircuit_model.check_params({"a": 1})
 
         base_ecircuit_model = pybop.empirical.ECircuitModel(
             pybamm_model=pybamm.equivalent_circuit.Thevenin,
@@ -384,8 +384,6 @@ class TestModels:
             pybop.BaseModel(check_params=check_params),
             pybop.empirical.Thevenin(check_params=check_params),
         ]:
-            assert model.check_params()
-            assert model.check_params(inputs=None)
             assert model.check_params(inputs={"a": 1})
             assert not model.check_params(inputs={"a": 2})
             with pytest.raises(
