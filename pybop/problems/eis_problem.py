@@ -80,7 +80,7 @@ class EISProblem(BaseProblem):
                 eis=True,
             )
 
-    def evaluate(self, inputs: Inputs):
+    def evaluate(self, inputs: Inputs, **kwargs):
         """
         Evaluate the model with the given parameters and return the signal.
 
