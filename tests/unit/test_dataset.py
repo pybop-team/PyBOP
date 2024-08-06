@@ -13,7 +13,6 @@ class TestDataset:
     def test_dataset(self):
         # Construct and simulate model
         model = pybop.lithium_ion.SPM()
-        model.parameter_set = model.pybamm_model.default_parameter_values
         solution = model.predict(t_eval=np.linspace(0, 10, 100))
 
         # Form dataset

@@ -103,7 +103,7 @@ class ECircuitModel(BaseModel):
         ----------
         inputs : Inputs
             The input parameters for the simulation.
-        parameter_set : pybop.parameter_set
+        parameter_set : pybop.ParameterSet
             A PyBOP parameter set object or a dictionary containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).

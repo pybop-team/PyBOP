@@ -96,13 +96,13 @@ class BaseModel:
         """
         self.name = name
         if parameter_set is None:
-            self.parameter_set = None
+            self._parameter_set = None
         elif isinstance(parameter_set, dict):
-            self.parameter_set = pybamm.ParameterValues(parameter_set)
+            self._parameter_set = pybamm.ParameterValues(parameter_set).copy()
         elif isinstance(parameter_set, pybamm.ParameterValues):
-            self.parameter_set = parameter_set
+            self._parameter_set = parameter_set.copy()
         else:  # a pybop parameter set
-            self.parameter_set = pybamm.ParameterValues(parameter_set.params)
+            self._parameter_set = pybamm.ParameterValues(parameter_set.params).copy()
 
         self.pybamm_model = None
         self.parameters = Parameters()
@@ -206,7 +206,7 @@ class BaseModel:
             del self._parameter_values
 
         # Use a copy of the updated default parameter set
-        self.parameter_set = self._unprocessed_parameter_set
+        self._parameter_set = self._unprocessed_parameter_set.copy()
 
     def set_params(self, rebuild: bool = False, dataset: Dataset = None):
         """
@@ -597,7 +597,7 @@ class BaseModel:
         ----------
         inputs : Inputs
             The input parameters for the simulation.
-        parameter_set : pybop.parameter_set, optional
+        parameter_set : pybop.ParameterSet, optional
             A PyBOP parameter set object or a dictionary containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
@@ -631,7 +631,7 @@ class BaseModel:
         ----------
         inputs : Inputs
             The input parameters for the simulation.
-        parameter_set : pybop.parameter_set
+        parameter_set : pybop.ParameterSet
             A PyBOP parameter set object or a dictionary containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
@@ -718,12 +718,6 @@ class BaseModel:
     @property
     def parameter_set(self):
         return self._parameter_set
-
-    @parameter_set.setter
-    def parameter_set(self, parameter_set):
-        self._parameter_set = (
-            parameter_set.copy() if parameter_set is not None else None
-        )
 
     @property
     def model_with_set_params(self):

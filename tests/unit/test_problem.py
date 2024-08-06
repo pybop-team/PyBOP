@@ -45,7 +45,6 @@ class TestProblem:
 
     @pytest.fixture
     def dataset(self, model, experiment):
-        model.parameter_set = model.pybamm_model.default_parameter_values
         x0 = np.array([2e-5, 0.5e-5])
         model.parameter_set.update(
             {
