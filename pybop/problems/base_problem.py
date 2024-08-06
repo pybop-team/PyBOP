@@ -67,7 +67,7 @@ class BaseProblem:
     @property
     def n_parameters(self):
         return len(self.parameters)
-    
+
     @property
     def n_outputs(self):
         return len(self.signal)
