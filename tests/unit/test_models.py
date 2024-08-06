@@ -438,6 +438,17 @@ class TestModels:
             values_1["Voltage [V]"].data, values_2["Voltage [V]"].data, atol=1e-8
         )
 
+        init_ocp_p = model.parameter_set["Positive electrode OCP [V]"](0.7)
+        init_ocp_n = model.parameter_set["Negative electrode OCP [V]"](0.7)
+        model.set_initial_state(
+            {"Initial open-circuit voltage [V]": init_ocp_p - init_ocp_n}
+        )
+        values_3 = model.predict(t_eval=t_eval)
+
+        np.testing.assert_allclose(
+            values_1["Voltage [V]"].data, values_3["Voltage [V]"].data, atol=0.05
+        )
+
     @pytest.mark.unit
     def test_get_parameter_info(self, model):
         if isinstance(model, pybop.empirical.Thevenin):
