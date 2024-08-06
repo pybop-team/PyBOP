@@ -27,7 +27,7 @@ class DesignProblem(BaseProblem):
     additional_variables : List[str], optional
         Additional variables to observe and store in the solution (default additions are: ["Time [s]", "Current [A]"]).
     init_soc : float, optional
-        Initial state of charge (default: None).
+        Initial state of charge (default: 1.0).
     """
 
     def __init__(
@@ -47,10 +47,13 @@ class DesignProblem(BaseProblem):
             signal = ["Voltage [V]"]
         additional_variables.extend(["Time [s]", "Current [A]"])
         additional_variables = list(set(additional_variables))
-        self.warning_patterns = [
-            "Ah is greater than",
-            "Non-physical point encountered",
-        ]
+
+        if init_soc is None:
+            if "Initial SoC" in model.parameter_set.keys():
+                init_soc = model.parameter_set["Initial SoC"]
+            else:
+                init_soc = 1.0  # default value
+
         super().__init__(
             parameters,
             model,
@@ -61,24 +64,15 @@ class DesignProblem(BaseProblem):
         )
         self.experiment = experiment
 
-        # Build the model if required
-        if experiment is not None:
-            # Leave the build until later to apply the experiment
-            self._model.classify_and_update_parameters(self.parameters)
-
-        elif self._model.built_model is None:
-            self._model.build(
-                experiment=self.experiment,
-                parameters=self.parameters,
-                check_model=self.check_model,
-                init_soc=self.init_soc,
-            )
-
         # Add an example dataset for plotting comparison
         sol = self.evaluate(self.parameters.as_dict("initial"))
         self._time_data = sol["Time [s]"]
         self._target = {key: sol[key] for key in self.signal}
         self._dataset = None
+        self.warning_patterns = [
+            "Ah is greater than",
+            "Non-physical point encountered",
+        ]
 
     def evaluate(self, inputs: Inputs, update_capacity=False):
         """

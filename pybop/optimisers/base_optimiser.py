@@ -199,20 +199,6 @@ class BaseOptimiser:
         """
         raise NotImplementedError
 
-    def store_optimised_parameters(self, x):
-        """
-        Update the problem parameters with optimised values.
-
-        The optimised parameter values are stored within the associated PyBOP parameter class.
-
-        Parameters
-        ----------
-        x : array-like
-            Optimised parameter values.
-        """
-        for i, param in enumerate(self.cost.parameters):
-            param.update(value=x[i])
-
     def check_optimal_parameters(self, x):
         """
         Check if the optimised parameters are physically viable.
