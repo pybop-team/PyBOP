@@ -173,7 +173,7 @@ class BaseModel:
 
         self.n_states = self._built_model.len_rhs_and_alg  # len_rhs + len_alg
 
-    def convert_to_pybamm_initial_state(self, initial_state: dict = {}):
+    def convert_to_pybamm_initial_state(self, initial_state: dict):
         """
         Convert an initial state of charge into a float and an initial open-circuit
         voltage into a string ending in "V".
@@ -203,7 +203,7 @@ class BaseModel:
         else:
             raise ValueError("Unrecognised initial state.")
 
-    def set_initial_state(self, initial_state: dict = {}):
+    def set_initial_state(self, initial_state: dict):
         """
         Set the initial state of charge or concentrations for the battery model.
 
