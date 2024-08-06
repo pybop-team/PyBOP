@@ -45,13 +45,13 @@ class FittingProblem(BaseProblem):
         additional_variables = list(set(additional_variables))
 
         if initial_state is not None and "Initial SoC" in initial_state.keys():
-             warnings.warn(
+            warnings.warn(
                 "It is usually better to define an initial open-circuit voltage as the "
                 "initial_state for a FittingProblem because this value can typically be "
                 "obtained from the data, unlike the intrinsic initial state of charge. "
                 "In the case where the fitting parameters do not change the OCV-SOC "
                 "relationship, the initial state of charge may be passed to the model "
-                "using, for example, `model.set_initial_state({\"Initial SoC\": 1.0})` "
+                'using, for example, `model.set_initial_state({"Initial SoC": 1.0})` '
                 "before constructing the FittingProblem.",
                 UserWarning,
             )

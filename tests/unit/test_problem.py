@@ -116,7 +116,9 @@ class TestProblem:
                 signal=signal,
                 initial_state={"Initial SoC": 0.8},
             )
-        assert "It is usually better to define an initial open-circuit voltage" in str(record[0].message)
+        assert "It is usually better to define an initial open-circuit voltage" in str(
+            record[0].message
+        )
 
         # Construct Problem
         problem = pybop.FittingProblem(
@@ -189,7 +191,9 @@ class TestProblem:
                 experiment,
                 initial_state={"Initial open-circuit voltage [V]": 4.0},
             )
-        assert "It is usually better to define an initial state of charge" in str(record[0].message)
+        assert "It is usually better to define an initial state of charge" in str(
+            record[0].message
+        )
 
         # Construct Problem
         problem = pybop.DesignProblem(model, parameters, experiment)

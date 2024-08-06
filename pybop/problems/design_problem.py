@@ -53,7 +53,7 @@ class DesignProblem(BaseProblem):
             else:
                 initial_state = {"Initial SoC": 1.0}  # default value
         elif "Initial open-circuit voltage [V]" in initial_state.keys():
-             warnings.warn(
+            warnings.warn(
                 "It is usually better to define an initial state of charge as the "
                 "initial_state for a DesignProblem because this state will scale with "
                 "design properties such as the capacity of the battery, as opposed to the "
