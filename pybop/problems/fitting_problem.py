@@ -54,6 +54,7 @@ class FittingProblem(BaseProblem):
                 'using, for example, `model.set_initial_state({"Initial SoC": 1.0})` '
                 "before constructing the FittingProblem.",
                 UserWarning,
+                stacklevel=1,
             )
 
         super().__init__(

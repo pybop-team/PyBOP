@@ -60,6 +60,7 @@ class DesignProblem(BaseProblem):
                 "initial open-circuit voltage which may correspond to a different state "
                 "of charge for each design.",
                 UserWarning,
+                stacklevel=1,
             )
 
         super().__init__(
