@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 from scipy.optimize import OptimizeResult, differential_evolution, minimize
 
@@ -70,10 +72,15 @@ class BaseSciPyOptimiser(BaseOptimiser):
         """
         result = self._run_optimiser()
 
+        try:
+            nit = result.nit
+        except AttributeError:
+            nit = -1
+
         return Result(
             x=result.x,
             final_cost=self.cost(result.x),
-            n_iterations=result.nit,
+            n_iterations=nit,
             scipy_result=result,
         )
 
@@ -169,11 +176,31 @@ class SciPyMinimize(BaseSciPyOptimiser):
         self.inf_count = 0
 
         # Add callback storing history of parameter values
-        def callback(intermediate_result: OptimizeResult):
-            self.log["x_best"].append(intermediate_result.x)
-            self.log["cost"].append(
-                intermediate_result.fun if self.minimising else -intermediate_result.fun
-            )
+
+        def base_callback(intermediate_result: Union[OptimizeResult, np.ndarray]):
+            """
+            Log intermediate optimisation solutions. Depending on the
+            optimisation algorithm, intermediate_result may be either
+            a OptimizeResult or an array of parameter values, with a
+            try/except ensuring both cases are handled correctly.
+            """
+            try:
+                self.log["x_best"].append(intermediate_result.x)
+                self.log["cost"].append(
+                    intermediate_result.fun
+                    if self.minimising
+                    else -intermediate_result.fun
+                )
+            except AttributeError:
+                cost = self.cost(intermediate_result)
+                self.log["x_best"].append(intermediate_result)
+                self.log["cost"].append(cost if self.minimising else -cost)
+
+        callback = (
+            base_callback
+            if self._options["method"] != "trust-constr"
+            else lambda x, intermediate_result: base_callback(intermediate_result)
+        )
 
         # Compute the absolute initial cost and resample if required
         self._cost0 = np.abs(self.cost(self.x0))

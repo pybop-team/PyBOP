@@ -1,6 +1,6 @@
 import copy
 from dataclasses import dataclass
-from typing import Any, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import casadi
 import numpy as np
@@ -45,7 +45,9 @@ class BaseModel:
 
     """
 
-    def __init__(self, name="Base Model", parameter_set=None):
+    def __init__(
+        self, name="Base Model", parameter_set=None, check_params: Callable = None
+    ):
         """
         Initialize the BaseModel with an optional name.
 
@@ -53,6 +55,17 @@ class BaseModel:
         ----------
         name : str, optional
             The name given to the model instance.
+        parameter_set : dict | pybamm.ParameterValues, optional
+            Parameter set to run the model with
+        check_params : Callable, optional
+            A compatibility check for the model parameters. Function, with
+            signature
+                check_params(
+                    inputs: dict,
+                    allow_infeasible_solutions: bool, optional
+                )
+            Returns true if parameters are valid, False otherwise. Can be
+            used to impose constraints on valid parameters.
         """
         self.name = name
         if parameter_set is None:
@@ -63,6 +76,7 @@ class BaseModel:
             self._parameter_set = parameter_set
         else:  # a pybop parameter set
             self._parameter_set = pybamm.ParameterValues(parameter_set.params)
+        self.param_checker = check_params
 
         self.pybamm_model = None
         self.parameters = Parameters()
@@ -604,6 +618,8 @@ class BaseModel:
         bool
             A boolean which signifies whether the parameters are compatible.
         """
+        if self.param_checker:
+            return self.param_checker(inputs, allow_infeasible_solutions)
         return True
 
     def copy(self):
