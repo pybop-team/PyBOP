@@ -3,7 +3,14 @@ from typing import Optional
 
 import numpy as np
 
-from pybop import BaseCost, BaseLikelihood, DesignCost, Parameter, Parameters
+from pybop import (
+    BaseCost,
+    BaseLikelihood,
+    DesignCost,
+    Parameter,
+    Parameters,
+    WeightedCost,
+)
 
 
 class BaseOptimiser:
@@ -58,6 +65,7 @@ class BaseOptimiser:
         self.verbose = False
         self.log = dict(x=[], x_best=[], cost=[])
         self.minimising = True
+        self.transformation = None
         self.physical_viability = False
         self.allow_infeasible_solutions = False
         self.default_max_iterations = 1000
@@ -65,8 +73,11 @@ class BaseOptimiser:
 
         if isinstance(cost, BaseCost):
             self.cost = cost
+            self.transformation = self.cost.transformation
             self.parameters.join(cost.parameters)
             self.set_allow_infeasible_solutions()
+            if isinstance(cost, WeightedCost):
+                self.minimising = cost.minimising
             if isinstance(cost, (BaseLikelihood, DesignCost)):
                 self.minimising = False
 
@@ -131,6 +142,9 @@ class BaseOptimiser:
         # Set other options
         self.verbose = self.unset_options.pop("verbose", self.verbose)
         self.minimising = self.unset_options.pop("minimising", self.minimising)
+        self.transformation = self.unset_options.pop(
+            "transformation", self.transformation
+        )
         if "allow_infeasible_solutions" in self.unset_options.keys():
             self.set_allow_infeasible_solutions(
                 self.unset_options.pop("allow_infeasible_solutions")
@@ -184,20 +198,6 @@ class BaseOptimiser:
             If the method has not been implemented by the subclass.
         """
         raise NotImplementedError
-
-    def store_optimised_parameters(self, x):
-        """
-        Update the problem parameters with optimised values.
-
-        The optimised parameter values are stored within the associated PyBOP parameter class.
-
-        Parameters
-        ----------
-        x : array-like
-            Optimised parameter values.
-        """
-        for i, param in enumerate(self.cost.parameters):
-            param.update(value=x[i])
 
     def check_optimal_parameters(self, x):
         """

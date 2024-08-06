@@ -4,6 +4,7 @@ from typing import Union
 
 import numpy as np
 
+from pybop import ComposedTransformation, IdentityTransformation
 from pybop._utils import is_numeric
 
 Inputs = dict[str, float]
@@ -37,7 +38,13 @@ class Parameter:
     """
 
     def __init__(
-        self, name, initial_value=None, true_value=None, prior=None, bounds=None
+        self,
+        name,
+        initial_value=None,
+        true_value=None,
+        prior=None,
+        bounds=None,
+        transformation=None,
     ):
         """
         Construct the parameter class with a name, initial value, prior, and bounds.
@@ -47,6 +54,7 @@ class Parameter:
         self.true_value = true_value
         self.initial_value = initial_value
         self.value = initial_value
+        self.transformation = transformation
         self.applied_prior_bounds = False
         self.set_bounds(bounds)
         self.margin = 1e-4
@@ -69,6 +77,9 @@ class Parameter:
             An array of samples drawn from the prior distribution within the parameter's bounds.
         """
         samples = self.prior.rvs(n_samples, random_state=random_state)
+
+        if self.transformation is not None:
+            samples = self.transformation.to_search(samples)
 
         # Constrain samples to be within bounds
         if self.bounds is not None:
@@ -151,25 +162,42 @@ class Parameter:
         if bounds is not None:
             if bounds[0] >= bounds[1]:
                 raise ValueError("Lower bound must be less than upper bound")
+            elif self.transformation is not None:
+                self.lower_bound = np.ndarray.item(
+                    self.transformation.to_search(bounds[0])
+                )
+                self.upper_bound = np.ndarray.item(
+                    self.transformation.to_search(bounds[1])
+                )
             else:
                 self.lower_bound = bounds[0]
                 self.upper_bound = bounds[1]
+
         elif self.prior is not None:
             self.applied_prior_bounds = True
             self.lower_bound = self.prior.mean - boundary_multiplier * self.prior.sigma
             self.upper_bound = self.prior.mean + boundary_multiplier * self.prior.sigma
-            bounds = [self.lower_bound, self.upper_bound]
             print("Default bounds applied based on prior distribution.")
+        else:
+            self.bounds = None
+            return
 
-        self.bounds = bounds
+        self.bounds = [self.lower_bound, self.upper_bound]
 
     def get_initial_value(self) -> float:
         """
         Return the initial value of each parameter.
         """
         if self.initial_value is None:
-            sample = self.rvs(1)
-            self.update(initial_value=sample[0])
+            if self.prior is not None:
+                sample = self.rvs(1)[0]
+                self.update(initial_value=sample)
+            else:
+                warnings.warn(
+                    "Initial value or Prior are None, proceeding without initial value.",
+                    UserWarning,
+                    stacklevel=2,
+                )
 
         return self.initial_value
 
@@ -191,6 +219,7 @@ class Parameters:
         self.param = OrderedDict()
         for param in args:
             self.add(param)
+        self.initial_value()
 
     def __getitem__(self, key: str) -> Parameter:
         """
@@ -364,12 +393,20 @@ class Parameters:
 
         for param in self.param.values():
             if hasattr(param.prior, "sigma"):
-                sigma0.append(param.prior.sigma)
+                if param.transformation is None:
+                    sigma0.append(param.prior.sigma)
+                else:
+                    sigma0.append(
+                        np.ndarray.item(
+                            param.transformation.convert_standard_deviation(
+                                param.prior.sigma, param.initial_value
+                            )
+                        )
+                    )
             else:
                 all_have_sigma = False
         if not all_have_sigma:
             sigma0 = None
-
         return sigma0
 
     def initial_value(self) -> np.ndarray:
@@ -379,10 +416,8 @@ class Parameters:
         initial_values = []
 
         for param in self.param.values():
-            if param.initial_value is None:
-                initial_value = param.rvs(1)[0]
-                param.update(initial_value=initial_value)
-            initial_values.append(param.initial_value)
+            initial_value = param.get_initial_value()
+            initial_values.append(initial_value)
 
         return np.asarray(initial_values)
 
@@ -407,6 +442,30 @@ class Parameters:
             true_values.append(param.true_value)
 
         return np.asarray(true_values)
+
+    def get_transformations(self):
+        """
+        Get the transformations for each parameter.
+        """
+        transformations = []
+
+        for param in self.param.values():
+            transformations.append(param.transformation)
+
+        return transformations
+
+    def construct_transformation(self):
+        """
+        Create a ComposedTransformation object from the individual parameter transformations.
+        """
+        transformations = self.get_transformations()
+        if not transformations or all(t is None for t in transformations):
+            return None
+
+        valid_transformations = [
+            t if t is not None else IdentityTransformation() for t in transformations
+        ]
+        return ComposedTransformation(valid_transformations)
 
     def get_bounds_for_plotly(self):
         """

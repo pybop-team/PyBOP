@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from pybop import BaseProblem
@@ -25,7 +27,7 @@ class DesignProblem(BaseProblem):
     additional_variables : List[str], optional
         Additional variables to observe and store in the solution (default additions are: ["Time [s]", "Current [A]"]).
     init_soc : float, optional
-        Initial state of charge (default: None).
+        Initial state of charge (default: 1.0).
     """
 
     def __init__(
@@ -46,6 +48,12 @@ class DesignProblem(BaseProblem):
         additional_variables.extend(["Time [s]", "Current [A]"])
         additional_variables = list(set(additional_variables))
 
+        if init_soc is None:
+            if "Initial SoC" in model._parameter_set.keys():
+                init_soc = model._parameter_set["Initial SoC"]
+            else:
+                init_soc = 1.0  # default value
+
         super().__init__(
             parameters,
             model,
@@ -56,26 +64,17 @@ class DesignProblem(BaseProblem):
         )
         self.experiment = experiment
 
-        # Build the model if required
-        if experiment is not None:
-            # Leave the build until later to apply the experiment
-            self._model.classify_and_update_parameters(self.parameters)
-
-        elif self._model._built_model is None:
-            self._model.build(
-                experiment=self.experiment,
-                parameters=self.parameters,
-                check_model=self.check_model,
-                init_soc=self.init_soc,
-            )
-
         # Add an example dataset for plotting comparison
         sol = self.evaluate(self.parameters.as_dict("initial"))
         self._time_data = sol["Time [s]"]
         self._target = {key: sol[key] for key in self.signal}
         self._dataset = None
+        self.warning_patterns = [
+            "Ah is greater than",
+            "Non-physical point encountered",
+        ]
 
-    def evaluate(self, inputs: Inputs):
+    def evaluate(self, inputs: Inputs, update_capacity=False):
         """
         Evaluate the model with the given parameters and return the signal.
 
@@ -90,19 +89,33 @@ class DesignProblem(BaseProblem):
             The model output y(t) simulated with inputs.
         """
         inputs = self.parameters.verify(inputs)
+        if update_capacity:
+            self.model.approximate_capacity(inputs)
 
-        sol = self._model.predict(
-            inputs=inputs,
-            experiment=self.experiment,
-            init_soc=self.init_soc,
-        )
+        try:
+            with warnings.catch_warnings():
+                for pattern in self.warning_patterns:
+                    warnings.filterwarnings(
+                        "error", category=UserWarning, message=pattern
+                    )
 
-        if sol == [np.inf]:
-            return sol
+                sol = self._model.predict(
+                    inputs=inputs,
+                    experiment=self.experiment,
+                    init_soc=self.init_soc,
+                )
 
-        else:
-            predictions = {}
-            for signal in self.signal + self.additional_variables:
-                predictions[signal] = sol[signal].data
+        # Catch infeasible solutions and return infinity
+        except (UserWarning, Exception) as e:
+            if self.verbose:
+                print(f"Ignoring this sample due to: {e}")
+            return {
+                signal: np.asarray(np.ones(2) * -np.inf)
+                for signal in [*self.signal, *self.additional_variables]
+            }
+
+        predictions = {}
+        for signal in self.signal + self.additional_variables:
+            predictions[signal] = sol[signal].data
 
         return predictions

@@ -1,4 +1,5 @@
 import numpy as np
+
 import pybop
 
 """
@@ -124,7 +125,9 @@ def get_parameter_checker(
 params = pybop.ParameterSet(params_dict=parameter_set)
 model = pybop.empirical.Thevenin(
     parameter_set=params,
-    check_params=get_parameter_checker(0, 0.5, 1), # Set the model up to automatically check parameters
+    check_params=get_parameter_checker(
+        0, 0.5, 1
+    ),  # Set the model up to automatically check parameters
     options={"number of rc elements": 2},
 )
 
