@@ -42,7 +42,7 @@ class StandaloneProblem(BaseProblem):
                 )
         self._target = {signal: self._dataset[signal] for signal in self.signal}
 
-    def evaluate(self, inputs):
+    def evaluate(self, inputs, **kwargs):
         """
         Evaluate the model with the given parameters and return the signal.
 

@@ -56,6 +56,17 @@ from ._experiment import Experiment
 from ._dataset import Dataset
 
 #
+# Transformation classes
+#
+from .transformation.base_transformation import Transformation
+from .transformation.transformations import (
+    IdentityTransformation,
+    ScaledTransformation,
+    LogTransformation,
+    ComposedTransformation,
+)
+
+#
 # Parameter classes
 #
 from .parameters.parameter import Parameter, Parameters
