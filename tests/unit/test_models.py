@@ -135,8 +135,10 @@ class TestModels:
                 "Positive electrode active material volume fraction": 0.9,
             }
 
-            res = model.predict(t_eval=t_eval, inputs=inputs)
-            assert np.isinf(res).any()
+            with pytest.raises(
+                ValueError, match="These parameter values are infeasible."
+            ):
+                model.predict(t_eval=t_eval, inputs=inputs)
 
     @pytest.mark.unit
     def test_build(self, model):

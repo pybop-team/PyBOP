@@ -424,9 +424,9 @@ class BaseModel:
 
         Returns
         -------
-        pybamm.Solution or [np.inf]
-            The solution object returned by a PyBaMM simulation, or [np.inf] in the case where
-            the parameter values are infeasible and infeasible solutions are not allowed.
+        pybamm.Solution
+            The solution object returned by a PyBaMM simulation, or a pybamm error in the case
+            where the parameter values are infeasible and infeasible solutions are not allowed.
 
         Raises
         ------
@@ -452,19 +452,13 @@ class BaseModel:
             self.parameters.update(values=list(inputs.values()))
             self.rebuild(parameters=self.parameters, initial_state=initial_state)
 
-        if self.check_params(
+        if not self.check_params(
             inputs=inputs,
             allow_infeasible_solutions=self.allow_infeasible_solutions,
         ):
-            try:
-                return self.solver.solve(
-                    self._built_model, inputs=inputs, t_eval=t_eval
-                )
-            except Exception as e:
-                print(f"Error: {e}")
-                return [np.inf]
-        else:
-            return [np.inf]
+            raise ValueError("These parameter values are infeasible.")
+
+        return self.solver.solve(self._built_model, inputs=inputs, t_eval=t_eval)
 
     def simulateS1(
         self, inputs: Inputs, t_eval: np.array, initial_state: Optional[dict] = None
@@ -486,9 +480,9 @@ class BaseModel:
 
         Returns
         -------
-        pybamm.Solution or [np.inf]
-            The solution object returned by a PyBaMM simulation, or [np.inf] in the case where
-            the parameter values are infeasible and infeasible solutions are not allowed.
+        pybamm.Solution
+            The solution object returned by a PyBaMM simulation, or a pybamm error in the case
+            where the parameter values are infeasible and infeasible solutions are not allowed.
 
         Raises
         ------
@@ -505,23 +499,18 @@ class BaseModel:
                 "Cannot use sensitivies for parameters which require a model rebuild"
             )
 
-        if self.check_params(
+        if not self.check_params(
             inputs=inputs,
             allow_infeasible_solutions=self.allow_infeasible_solutions,
         ):
-            try:
-                return self._solver.solve(
-                    self._built_model,
-                    inputs=inputs,
-                    t_eval=t_eval,
-                    calculate_sensitivities=True,
-                )
+            raise ValueError("These parameter values are infeasible.")
 
-            except Exception as e:
-                print(f"Error: {e}")
-                return [np.inf]
-        else:
-            return [np.inf]
+        return self._solver.solve(
+            self._built_model,
+            inputs=inputs,
+            t_eval=t_eval,
+            calculate_sensitivities=True,
+        )
 
     def predict(
         self,
@@ -559,9 +548,9 @@ class BaseModel:
 
         Returns
         -------
-        pybamm.Solution or [np.inf]
-            The solution object returned by a PyBaMM simulation, or [np.inf] in the case where
-            the parameter values are infeasible and infeasible solutions are not allowed.
+        pybamm.Solution
+            The solution object returned by a PyBaMM simulation, or a pybamm error in the case
+            where the parameter values are infeasible and infeasible solutions are not allowed.
 
         Raises
         ------
@@ -591,29 +580,28 @@ class BaseModel:
                 parameter_set["Initial SoC"] = self._parameter_set["Initial SoC"]
                 initial_state = None
 
-        if self.check_params(
+        if not self.check_params(
             parameter_set=parameter_set,
             allow_infeasible_solutions=self.allow_infeasible_solutions,
         ):
-            if experiment is not None:
-                return pybamm.Simulation(
-                    model=self._unprocessed_model,
-                    experiment=experiment,
-                    parameter_values=parameter_set,
-                ).solve(initial_soc=initial_state)
-            elif t_eval is not None:
-                return pybamm.Simulation(
-                    model=self._unprocessed_model,
-                    parameter_values=parameter_set,
-                ).solve(t_eval=t_eval, initial_soc=initial_state)
-            else:
-                raise ValueError(
-                    "The predict method requires either an experiment or "
-                    "t_eval to be specified."
-                )
+            raise ValueError("These parameter values are infeasible.")
 
+        if experiment is not None:
+            return pybamm.Simulation(
+                model=self._unprocessed_model,
+                experiment=experiment,
+                parameter_values=parameter_set,
+            ).solve(initial_soc=initial_state)
+        elif t_eval is not None:
+            return pybamm.Simulation(
+                model=self._unprocessed_model,
+                parameter_values=parameter_set,
+            ).solve(t_eval=t_eval, initial_soc=initial_state)
         else:
-            return [np.inf]
+            raise ValueError(
+                "The predict method requires either an experiment or t_eval "
+                "to be specified."
+            )
 
     def check_params(
         self,
