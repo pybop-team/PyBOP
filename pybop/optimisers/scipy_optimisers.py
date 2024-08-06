@@ -175,7 +175,13 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
         # Add callback storing history of parameter values
 
-        def base_callback(intermediate_result: OptimizeResult):
+        def base_callback(intermediate_result: OptimizeResult | np.ndarray):
+            """
+            Log intermediate optimisation solutions. Depending on the
+            optimisation algorithm, intermediate_result may be either
+            a OptimizeResult or an array of parameter values, with a
+            try/except ensuring both cases are handled correctly.
+            """
             try:
                 self.log["x_best"].append(intermediate_result.x)
                 self.log["cost"].append(
