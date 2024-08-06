@@ -110,7 +110,11 @@ class TestProblem:
     def test_fitting_problem(self, parameters, dataset, model, signal):
         # Construct Problem
         problem = pybop.FittingProblem(
-            model, parameters, dataset, signal=signal, init_ocv=4.0
+            model,
+            parameters,
+            dataset,
+            signal=signal,
+            initial_state={"Initial open-circuit voltage [V]": 4.0},
         )
 
         assert problem._model == model
@@ -175,17 +179,17 @@ class TestProblem:
         assert (
             problem._model._built_model is None
         )  # building postponed with input experiment
-        assert problem.init_soc == 1.0
+        assert problem.initial_state == {"Initial SoC": 1.0}
 
         # Test model.predict
         model.predict(inputs=[1e-5, 1e-5], experiment=experiment)
         model.predict(inputs=[3e-5, 3e-5], experiment=experiment)
 
-        # Test init_soc from parameter_set
+        # Test initial SoC from parameter_set
         model = pybop.empirical.Thevenin()
         model.parameter_set["Initial SoC"] = 0.8
         problem = pybop.DesignProblem(model, pybop.Parameters(), experiment)
-        assert problem.init_soc == 0.8
+        assert problem.initial_state == {"Initial SoC": 0.8}
 
     @pytest.mark.unit
     def test_problem_construct_with_model_predict(

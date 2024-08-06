@@ -28,8 +28,8 @@ class DesignProblem(BaseProblem):
         The signal to fit (default: "Voltage [V]").
     additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default additions are: ["Time [s]", "Current [A]"]).
-    init_soc : float, optional
-        Initial state of charge (default: 1.0).
+    initial_state : dict, optional
+        A valid initial state (default: {"Initial SoC": 1.0}).
     """
 
     def __init__(
@@ -40,22 +40,23 @@ class DesignProblem(BaseProblem):
         check_model: bool = True,
         signal: Optional[list[str]] = None,
         additional_variables: Optional[list[str]] = None,
-        init_soc=None,
+        initial_state: Optional[dict] = None,
     ):
         # Add time and current and remove duplicates
         additional_variables = additional_variables or []
         additional_variables.extend(["Time [s]", "Current [A]"])
         additional_variables = list(set(additional_variables))
 
-        if init_soc is None:
+        if initial_state is None:
             if isinstance(model, ECircuitModel):
-                init_soc = model._parameter_set["Initial SoC"]
+                initial_state = {"Initial SoC": model._parameter_set["Initial SoC"]}
             else:
-                init_soc = 1.0  # default value
+                initial_state = {"Initial SoC": 1.0}  # default value
 
-        super().__init__(parameters, model, check_model, signal, additional_variables)
+        super().__init__(
+            parameters, model, check_model, signal, additional_variables, initial_state
+        )
         self.experiment = experiment
-        self.init_soc = init_soc
 
         # Add an example dataset for plotting comparison
         sol = self.evaluate(self.parameters.as_dict("initial"))
@@ -95,7 +96,7 @@ class DesignProblem(BaseProblem):
                 sol = self._model.predict(
                     inputs=inputs,
                     experiment=self.experiment,
-                    initial_state=self.init_soc,
+                    initial_state=self.initial_state,
                 )
 
         # Catch infeasible solutions and return infinity

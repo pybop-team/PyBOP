@@ -1,4 +1,6 @@
-from pybop import Dataset, Parameter, Parameters
+from typing import Optional
+
+from pybop import BaseModel, Dataset, Parameter, Parameters
 from pybop.parameters.parameter import Inputs
 
 
@@ -18,19 +20,24 @@ class BaseProblem:
       The signal to observe.
     additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default: []).
+    initial_state : dict, optional
+        A valid initial state (default: None).
     """
 
     def __init__(
         self,
-        parameters,
-        model=None,
-        check_model=True,
-        signal=None,
-        additional_variables=None,
+        parameters: Parameters,
+        model: Optional[BaseModel] = None,
+        check_model: bool = True,
+        signal: Optional[list[str]] = None,
+        additional_variables: Optional[list[str]] = None,
+        initial_state: Optional[dict] = None,
     ):
-        self.additional_variables = additional_variables or []
-        if signal is None:
-            signal = ["Voltage [V]"]
+        signal = signal or ["Voltage [V]"]
+        if isinstance(signal, str):
+            signal = [signal]
+        elif not all(isinstance(item, str) for item in signal):
+            raise ValueError("Signal should be either a string or list of strings.")
 
         # Check if parameters is a list of pybop.Parameter objects
         if isinstance(parameters, list):
@@ -54,11 +61,9 @@ class BaseProblem:
 
         self._model = model
         self.check_model = check_model
-        if isinstance(signal, str):
-            signal = [signal]
-        elif not all(isinstance(item, str) for item in signal):
-            raise ValueError("Signal should be either a string or list of strings.")
-        self.signal = signal
+        self.signal = signal or ["Voltage [V]"]
+        self.additional_variables = additional_variables or []
+        self.initial_state = initial_state
         self._dataset = None
         self._time_data = None
         self._target = None

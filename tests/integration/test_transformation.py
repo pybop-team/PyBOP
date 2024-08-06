@@ -95,7 +95,7 @@ class TestTransformation:
             raise ValueError("Initial value is the same as the ground truth value.")
 
     def get_data(self, model, init_soc):
-        # Update the initial state and save the ground truth initial concentrations
+        initial_state = {"Initial SoC": init_soc}
         experiment = pybop.Experiment(
             [
                 (
@@ -104,5 +104,5 @@ class TestTransformation:
                 ),
             ]
         )
-        sim = model.predict(initial_state=init_soc, experiment=experiment)
+        sim = model.predict(initial_state=initial_state, experiment=experiment)
         return sim

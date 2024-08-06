@@ -347,25 +347,37 @@ class TestModels:
             == model.pybamm_model.default_parameter_values["Open-circuit voltage [V]"]
         )
 
-        model.predict(initial_state=0.5, t_eval=np.arange(0, 10, 5))
+        model.predict(initial_state={"Initial SoC": 0.5}, t_eval=np.arange(0, 10, 5))
         assert model.parameter_set["Initial SoC"] == 0.5
 
-        model.set_initial_state(parameter_set["Initial SoC"] / 2)
+        model.set_initial_state({"Initial SoC": parameter_set["Initial SoC"] / 2})
         assert model.parameter_set["Initial SoC"] == parameter_set["Initial SoC"] / 2
-        model.set_initial_state(str(parameter_set["Lower voltage cut-off [V]"]) + "V")
+        model.set_initial_state(
+            {
+                "Initial open-circuit voltage [V]": parameter_set[
+                    "Lower voltage cut-off [V]"
+                ]
+            }
+        )
         np.testing.assert_allclose(model.parameter_set["Initial SoC"], 0.0, atol=1e-2)
-        model.set_initial_state(str(parameter_set["Upper voltage cut-off [V]"]) + "V")
+        model.set_initial_state(
+            {
+                "Initial open-circuit voltage [V]": parameter_set[
+                    "Upper voltage cut-off [V]"
+                ]
+            }
+        )
         np.testing.assert_allclose(model.parameter_set["Initial SoC"], 1.0, atol=1e-2)
 
         with pytest.raises(ValueError, match="outside the voltage limits"):
-            model.set_initial_state("-1.0V")
+            model.set_initial_state({"Initial open-circuit voltage [V]": -1.0})
         with pytest.raises(ValueError, match="Initial SOC should be between 0 and 1"):
-            model.set_initial_state(-1.0)
+            model.set_initial_state({"Initial SoC": -1.0})
         with pytest.raises(
             ValueError,
             match="Initial value must be a float between 0 and 1, or a string ending in 'V'",
         ):
-            model.set_initial_state("invalid string")
+            model.set_initial_state({"Initial SoC": "invalid string"})
 
     @pytest.mark.unit
     def test_check_params(self):
@@ -412,12 +424,12 @@ class TestModels:
         t_eval = np.linspace(0, 10, 100)
 
         model = pybop.lithium_ion.SPM()
-        model.build(initial_state=0.7)
+        model.build(initial_state={"Initial SoC": 0.7})
         values_1 = model.predict(t_eval=t_eval)
 
         model = pybop.lithium_ion.SPM()
-        model.build(initial_state=0.4)
-        model.set_initial_state(0.7)
+        model.build(initial_state={"Initial SoC": 0.4})
+        model.set_initial_state({"Initial SoC": 0.7})
         values_2 = model.predict(t_eval=t_eval)
 
         np.testing.assert_allclose(

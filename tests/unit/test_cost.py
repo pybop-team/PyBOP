@@ -251,7 +251,11 @@ class TestCosts:
     @pytest.fixture
     def design_problem(self, model, parameters, experiment, signal):
         return pybop.DesignProblem(
-            model, parameters, experiment, signal=signal, init_soc=0.5
+            model,
+            parameters,
+            experiment,
+            signal=signal,
+            initial_state={"Initial SoC": 0.5},
         )
 
     @pytest.mark.parametrize(

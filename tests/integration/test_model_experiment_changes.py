@@ -40,16 +40,16 @@ class TestModelAndExperimentChanges:
 
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
         parameter_set.update(parameters.as_dict("true"))
-        init_soc = 0.5
+        initial_state = {"Initial SoC": 0.5}
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
         t_eval = np.arange(0, 3600, 2)  # Default 1C discharge to cut-off voltage
-        solution_1 = model.predict(initial_state=init_soc, t_eval=t_eval)
+        solution_1 = model.predict(initial_state=initial_state, t_eval=t_eval)
         cost_1 = self.final_cost(solution_1, model, parameters)
 
         experiment = pybop.Experiment(["Charge at 1C until 4.1 V (2 seconds period)"])
         solution_2 = model.predict(
-            initial_state=init_soc,
+            initial_state=initial_state,
             experiment=experiment,
             inputs=parameters.as_dict("true"),
         )
@@ -71,15 +71,15 @@ class TestModelAndExperimentChanges:
 
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
         parameter_set.update(parameters.as_dict("true"))
-        init_soc = 0.5
+        initial_state = {"Initial SoC": 0.5}
         experiment = pybop.Experiment(["Charge at 1C until 4.1 V (2 seconds period)"])
 
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
-        solution_1 = model.predict(initial_state=init_soc, experiment=experiment)
+        solution_1 = model.predict(initial_state=initial_state, experiment=experiment)
         cost_1 = self.final_cost(solution_1, model, parameters)
 
         model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
-        solution_2 = model.predict(initial_state=init_soc, experiment=experiment)
+        solution_2 = model.predict(initial_state=initial_state, experiment=experiment)
         cost_2 = self.final_cost(solution_2, model, parameters)
 
         with np.testing.assert_raises(AssertionError):

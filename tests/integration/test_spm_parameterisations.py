@@ -157,8 +157,7 @@ class Test_SPM_Parameterisation:
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, cost_class):
         # Form dataset
-        init_soc = 0.5
-        solution = self.get_data(model, init_soc)
+        solution = self.get_data(model, 0.5)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -269,7 +268,7 @@ class Test_SPM_Parameterisation:
             np.testing.assert_allclose(x, self.ground_truth, atol=2e-2)
 
     def get_data(self, model, init_soc):
-        # Update the initial state and save the ground truth initial concentrations
+        initial_state = {"Initial SoC": init_soc}
         experiment = pybop.Experiment(
             [
                 (
@@ -278,5 +277,5 @@ class Test_SPM_Parameterisation:
                 ),
             ]
         )
-        sim = model.predict(initial_state=init_soc, experiment=experiment)
+        sim = model.predict(initial_state=initial_state, experiment=experiment)
         return sim

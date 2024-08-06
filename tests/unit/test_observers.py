@@ -97,14 +97,14 @@ class TestObserver:
 
     @pytest.mark.unit
     def test_observer_inputs(self):
-        init_ocv = 4.0
+        initial_state = {"Initial open-circuit voltage [V]": 4.0}
         t_eval = np.linspace(0, 1, 100)
         model = ExponentialDecay(n_states=1)
         model.build()
         observer = pybop.Observer(
-            pybop.Parameters(), model, signal=["y_0", "2y"], init_ocv=init_ocv
+            pybop.Parameters(), model, signal=["y_0", "2y"], initial_state=initial_state
         )
-        assert observer.init_ocv == str(init_ocv) + "V"
+        assert observer.initial_state == initial_state
 
         with pytest.raises(
             ValueError,

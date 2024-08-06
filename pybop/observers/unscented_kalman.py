@@ -34,8 +34,8 @@ class UnscentedKalmanFilterObserver(Observer):
         Flag to indicate if the model should be checked (default: True).
     signal: str
         The signal to observe.
-    init_ocv : float, optional
-        Initial open-circuit voltage (default: None).
+    initial_state : dict, optional
+        A valid initial state, e.g. the initial open-circuit voltage (default: None).
     """
 
     Covariance = np.ndarray
@@ -51,7 +51,7 @@ class UnscentedKalmanFilterObserver(Observer):
         check_model: bool = True,
         signal: Optional[list[str]] = None,
         additional_variables: Optional[list[str]] = None,
-        init_ocv: Optional[float] = None,
+        initial_state: Optional[float] = None,
     ) -> None:
         if model is not None:
             # Clear any existing built model and its properties
@@ -69,7 +69,7 @@ class UnscentedKalmanFilterObserver(Observer):
             )
 
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_ocv
+            parameters, model, check_model, signal, additional_variables, initial_state
         )
         if dataset is not None:
             # Check that the dataset contains necessary variables

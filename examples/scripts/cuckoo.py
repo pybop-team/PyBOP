@@ -27,7 +27,6 @@ parameters = pybop.Parameters(
         initial_value=0.41,
     ),
 )
-init_soc = 0.7
 experiment = pybop.Experiment(
     [
         (
@@ -36,7 +35,7 @@ experiment = pybop.Experiment(
         ),
     ]
 )
-values = model.predict(initial_state=init_soc, experiment=experiment)
+values = model.predict(initial_state={"Initial SoC": 0.7}, experiment=experiment)
 
 sigma = 0.002
 corrupt_values = values["Voltage [V]"].data + np.random.normal(

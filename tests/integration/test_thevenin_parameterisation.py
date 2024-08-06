@@ -52,7 +52,7 @@ class TestTheveninParameterisation:
     @pytest.fixture
     def cost(self, model, parameters, cost_class):
         # Form dataset
-        solution = self.get_data(model, parameters, self.ground_truth)
+        solution = self.get_data(model)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -100,7 +100,7 @@ class TestTheveninParameterisation:
             raise ValueError("Initial value is the same as the ground truth value.")
         np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
-    def get_data(self, model, parameters, x):
+    def get_data(self, model):
         experiment = pybop.Experiment(
             [
                 (

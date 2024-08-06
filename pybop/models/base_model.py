@@ -117,7 +117,7 @@ class BaseModel:
         dataset: Optional[Dataset] = None,
         parameters: Union[Parameters, dict] = None,
         check_model: bool = True,
-        initial_state: Optional[float] = None,
+        initial_state: Optional[dict] = None,
     ) -> None:
         """
         Construct the PyBaMM model if not already built, and set parameters.
@@ -134,10 +134,10 @@ class BaseModel:
             A pybop Parameters class or dictionary containing parameter values to apply to the model.
         check_model : bool, optional
             If True, the model will be checked for correctness after construction.
-        initial_state : float or str, optional
-            If float, this value is used as the initial state of charge (as a decimal between 0
-            and 1). If str ending in "V", this value is used as the initial open-circuit voltage.
-            Defaults to None, indicating that the existing initial concentrations will be used.
+        initial_state : dict, optional
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+            Defaults to None, indicating that the existing initial state of charge (for an ECM)
+            or initial concentrations (for an EChem model) will be used.
         """
         if parameters is not None:
             self.parameters = parameters
@@ -173,20 +173,50 @@ class BaseModel:
 
         self.n_states = self._built_model.len_rhs_and_alg  # len_rhs + len_alg
 
-    def set_initial_state(self, initial_state: Optional[float] = None):
+    def convert_to_pybamm_initial_state(self, initial_state: dict = {}):
         """
-        Set the initial concentrations for the battery model.
+        Convert an initial state of charge into a float and an initial open-circuit
+        voltage into a string ending in "V".
 
         Parameters
         ----------
-        initial_state : float or str, optional
+        initial_state : dict
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+
+        Returns
+        -------
+        float or str
             If float, this value is used as the initial state of charge (as a decimal between 0
             and 1). If str ending in "V", this value is used as the initial open-circuit voltage.
-            Defaults to None, indicating that the existing initial concentrations will be used.
+
+        Raises
+        ------
+        ValueError
+            If the input is not a dictionary with a single, valid key.
         """
+        if len(initial_state) > 1:
+            raise ValueError("Expecting only one initial state.")
+        elif "Initial SoC" in initial_state.keys():
+            return initial_state["Initial SoC"]
+        elif "Initial open-circuit voltage [V]" in initial_state.keys():
+            return str(initial_state["Initial open-circuit voltage [V]"]) + "V"
+        else:
+            raise ValueError("Unrecognised initial state.")
+
+    def set_initial_state(self, initial_state: dict = {}):
+        """
+        Set the initial state of charge or concentrations for the battery model.
+
+        Parameters
+        ----------
+        initial_state : dict
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+        """
+        initial_state = self.convert_to_pybamm_initial_state(initial_state)
+
         if isinstance(self.pybamm_model, pybamm.equivalent_circuit.Thevenin):
-            initial_soc = self.get_initial_state(initial_state)
-            self._unprocessed_parameter_set.update({"Initial SoC": initial_soc})
+            initial_state = self.get_initial_state(initial_state)
+            self._unprocessed_parameter_set.update({"Initial SoC": initial_state})
 
         else:
             # Temporary construction of attribute for PyBaMM
@@ -246,7 +276,7 @@ class BaseModel:
         dataset: Optional[Dataset] = None,
         parameters: Union[Parameters, dict] = None,
         check_model: bool = True,
-        initial_state: Optional[float] = None,
+        initial_state: Optional[dict] = None,
     ) -> None:
         """
         Rebuild the PyBaMM model for a given set of inputs.
@@ -264,10 +294,10 @@ class BaseModel:
             A pybop Parameters class or dictionary containing parameter values to apply to the model.
         check_model : bool, optional
             If True, the model will be checked for correctness after construction.
-        initial_state : float or str, optional
-            If float, this value is used as the initial state of charge. If str ending in "V", this
-            value is used as the initial open-circuit voltage. Defaults to None, indicating that the
-            initial concentrations in the parameter set should be used.
+        initial_state : dict, optional
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+            Defaults to None, indicating that the existing initial state of charge (for an ECM)
+            or initial concentrations (for an EChem model) will be used.
         """
         if parameters is not None:
             self.classify_and_update_parameters(parameters)
@@ -376,7 +406,7 @@ class BaseModel:
         return TimeSeriesState(sol=new_sol, inputs=state.inputs, t=time)
 
     def simulate(
-        self, inputs: Inputs, t_eval: np.array, initial_state: Optional[float] = None
+        self, inputs: Inputs, t_eval: np.array, initial_state: Optional[dict] = None
     ) -> Union[pybamm.Solution, list[np.float64]]:
         """
         Execute the forward model simulation and return the result.
@@ -387,10 +417,10 @@ class BaseModel:
             The input parameters for the simulation.
         t_eval : array-like
             An array of time points at which to evaluate the solution.
-        initial_state : float or str, optional
-            If float, this value is used as the initial state of charge (as a decimal between 0
-            and 1). If str ending in "V", this value is used as the initial open-circuit voltage.
-            Defaults to None, indicating that the existing initial concentrations will be used.
+        initial_state : dict, optional
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+            Defaults to None, indicating that the existing initial state of charge (for an ECM)
+            or initial concentrations (for an EChem model) will be used.
 
         Returns
         -------
@@ -437,7 +467,7 @@ class BaseModel:
             return [np.inf]
 
     def simulateS1(
-        self, inputs: Inputs, t_eval: np.array, initial_state: Optional[float] = None
+        self, inputs: Inputs, t_eval: np.array, initial_state: Optional[dict] = None
     ):
         """
         Perform the forward model simulation with sensitivities.
@@ -449,10 +479,10 @@ class BaseModel:
         t_eval : array-like
             An array of time points at which to evaluate the solution and its
             sensitivities.
-        initial_state : float or str, optional
-            If float, this value is used as the initial state of charge (as a decimal between 0
-            and 1). If str ending in "V", this value is used as the initial open-circuit voltage.
-            Defaults to None, indicating that the existing initial concentrations will be used.
+        initial_state : dict, optional
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+            Defaults to None, indicating that the existing initial state of charge (for an ECM)
+            or initial concentrations (for an EChem model) will be used.
 
         Returns
         -------
@@ -499,7 +529,7 @@ class BaseModel:
         t_eval: Optional[np.array] = None,
         parameter_set: Optional[ParameterSet] = None,
         experiment: Optional[Experiment] = None,
-        initial_state: Optional[float] = None,
+        initial_state: Optional[dict] = None,
     ) -> dict[str, np.ndarray[np.float64]]:
         """
         Solve the model using PyBaMM's simulation framework and return the solution.
@@ -522,10 +552,10 @@ class BaseModel:
         experiment : pybamm.Experiment, optional
             A PyBaMM Experiment object specifying the experimental conditions under which
             the simulation should be run. Defaults to None, indicating no experiment.
-        initial_state : float or str, optional
-            If float, this value is used as the initial state of charge (as a decimal between 0
-            and 1). If str ending in "V", this value is used as the initial open-circuit voltage.
-            Defaults to None, indicating that the existing initial concentrations will be used.
+        initial_state : dict, optional
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+            Defaults to None, indicating that the existing initial state of charge (for an ECM)
+            or initial concentrations (for an EChem model) will be used.
 
         Returns
         -------
@@ -553,12 +583,13 @@ class BaseModel:
             parameter_set.update(inputs)
 
         if initial_state is not None:
+            # Update the default initial state for consistency
+            self.set_initial_state(initial_state)
+
+            initial_state = self.convert_to_pybamm_initial_state(initial_state)
             if isinstance(self.pybamm_model, pybamm.equivalent_circuit.Thevenin):
-                parameter_set["Initial SoC"] = initial_state
+                parameter_set["Initial SoC"] = self._parameter_set["Initial SoC"]
                 initial_state = None
-            else:
-                # Update the default initial state just for consistency
-                self.set_initial_state(initial_state)
 
         if self.check_params(
             parameter_set=parameter_set,

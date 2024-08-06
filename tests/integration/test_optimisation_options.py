@@ -60,8 +60,8 @@ class TestOptimisation:
     @pytest.fixture
     def spm_costs(self, model, parameters, cost_class):
         # Form dataset
-        init_soc = 0.5
-        solution = self.get_data(model, init_soc)
+        initial_state = {"Initial SoC": 0.5}
+        solution = self.get_data(model, initial_state)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -115,7 +115,7 @@ class TestOptimisation:
             raise ValueError("Initial value is the same as the ground truth value.")
         np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
-    def get_data(self, model, init_soc):
+    def get_data(self, model, initial_state):
         # Update the initial state and save the ground truth initial concentrations
         experiment = pybop.Experiment(
             [
@@ -126,5 +126,5 @@ class TestOptimisation:
             ]
             * 2
         )
-        sim = model.predict(initial_state=init_soc, experiment=experiment)
+        sim = model.predict(initial_state=initial_state, experiment=experiment)
         return sim

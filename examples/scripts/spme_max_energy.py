@@ -31,12 +31,11 @@ parameters = pybop.Parameters(
 experiment = pybop.Experiment(
     ["Discharge at 1C until 2.5 V (5 seconds period)"],
 )
-init_soc = 1  # start from full charge
 signal = ["Voltage [V]", "Current [A]"]
 
 # Generate problem
 problem = pybop.DesignProblem(
-    model, parameters, experiment, signal=signal, init_soc=init_soc
+    model, parameters, experiment, signal=signal, initial_state={"Initial SoC": 1.0}
 )
 
 # Generate multiple cost functions and combine them.

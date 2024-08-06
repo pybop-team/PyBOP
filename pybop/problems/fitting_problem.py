@@ -24,8 +24,8 @@ class FittingProblem(BaseProblem):
         The variable used for fitting (default: "Voltage [V]").
     additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
-    init_ocv : float, optional
-        Initial open-circuit voltage (default: None).
+    initial_state : dict, optional
+        A valid initial state, e.g. the initial open-circuit voltage (default: None).
     """
 
     def __init__(
@@ -36,19 +36,18 @@ class FittingProblem(BaseProblem):
         check_model: bool = True,
         signal: Optional[list[str]] = None,
         additional_variables: Optional[list[str]] = None,
-        init_ocv=None,
+        initial_state: Optional[dict] = None,
     ):
         # Add time and remove duplicates
         additional_variables = additional_variables or []
         additional_variables.extend(["Time [s]"])
         additional_variables = list(set(additional_variables))
 
-        super().__init__(parameters, model, check_model, signal, additional_variables)
+        super().__init__(
+            parameters, model, check_model, signal, additional_variables, initial_state
+        )
         self._dataset = dataset.data
         self._n_parameters = len(self.parameters)
-        self._init_ocv = None
-        if init_ocv is not None:
-            self.init_ocv = init_ocv
 
         # Check that the dataset contains necessary variables
         dataset.check([*self.signal, "Current function [A]"])
@@ -70,7 +69,7 @@ class FittingProblem(BaseProblem):
                 dataset=self._dataset,
                 parameters=self.parameters,
                 check_model=self.check_model,
-                initial_state=self._init_ocv,
+                initial_state=self.initial_state,
             )
 
     def evaluate(
@@ -92,7 +91,7 @@ class FittingProblem(BaseProblem):
         inputs = self.parameters.verify(inputs)
 
         sol = self._model.simulate(
-            inputs=inputs, t_eval=self._time_data, initial_state=self._init_ocv
+            inputs=inputs, t_eval=self._time_data, initial_state=self.initial_state
         )
 
         if sol == [np.inf]:
@@ -122,7 +121,7 @@ class FittingProblem(BaseProblem):
         inputs = self.parameters.verify(inputs)
 
         sol = self._model.simulateS1(
-            inputs=inputs, t_eval=self._time_data, initial_state=self._init_ocv
+            inputs=inputs, t_eval=self._time_data, initial_state=self.initial_state
         )
 
         if sol == [np.inf]:
@@ -150,11 +149,3 @@ class FittingProblem(BaseProblem):
                 )
 
             return (y, np.asarray(dy))
-
-    @property
-    def init_ocv(self):
-        return self._init_ocv
-
-    @init_ocv.setter
-    def init_ocv(self, initial_state):
-        self._init_ocv = str(initial_state) + "V"
