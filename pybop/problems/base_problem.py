@@ -64,6 +64,7 @@ class BaseProblem:
         self.n_outputs = len(self.signal)
         self._domain_data = None
         self._target = None
+        self.verbose = False
 
         if isinstance(model, BaseModel):
             self.additional_variables = additional_variables
