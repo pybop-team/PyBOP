@@ -230,7 +230,7 @@ class BaseModel:
             self._unprocessed_parameter_set = self._parameter_values
 
             # Clear the pybamm objects
-            del self.model
+            del self.model  # can be removed after PyBaMM's next release, fixed with pybamm-team/PyBaMM#4319
             del self._model
             del self._unprocessed_parameter_values
             del self._parameter_values
