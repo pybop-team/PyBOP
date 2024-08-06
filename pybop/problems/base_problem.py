@@ -59,7 +59,6 @@ class BaseProblem:
         elif not all(isinstance(item, str) for item in signal):
             raise ValueError("Signal should be either a string or list of strings.")
         self.signal = signal
-        self.n_outputs = len(self.signal)
         self._dataset = None
         self._time_data = None
         self._target = None
@@ -68,6 +67,10 @@ class BaseProblem:
     @property
     def n_parameters(self):
         return len(self.parameters)
+    
+    @property
+    def n_outputs(self):
+        return len(self.signal)
 
     def evaluate(self, inputs: Inputs):
         """
