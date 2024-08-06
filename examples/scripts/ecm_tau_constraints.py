@@ -1,6 +1,23 @@
 import numpy as np
 import pybop
 
+"""
+When fitting empirical models, the parameters we are able to identify
+will be constrained from the data that's available. For example, it's
+no good trying to fit an RC timescale of 0.1 s from data sampled at
+1 Hz! Likewise, an RC timescale of 100 s cannot be meaningfully fitted
+to just 10 s of data. To ensure the optimiser doesn't propose
+excessively long or short timescales - beyond what can reasonably be
+inferred from the data - it is common to apply nonlinear constraints
+on the parameter space. This script fits an RC pair with the
+constraint 0.5 <= R1 * C1 <= 1, to highlight a possible method for
+applying constraints on the timescales.
+
+An alternative approach is given i the ecm_trust-constr notebook,
+which can lead to better results and higher optimisation efficiency
+when good timescale guesses are available.
+"""
+
 # Import the ECM parameter set from JSON
 # parameter_set = pybop.ParameterSet(
 #     json_path="examples/scripts/parameters/initial_ecm_parameters.json"
@@ -43,7 +60,29 @@ def get_parameter_checker(
     tau_maxs: float | list[float],
     fitted_rc_pair_indices: int | list[int],
 ):
-    """Returns a function to check parameters against given tau bounds."""
+    """Returns a function to check parameters against given tau bounds.
+    The resulting check_params function will be sent off to PyBOP; the
+    rest of the code does some light checking of the constraints.
+
+    Parameters
+    ----------
+    tau_mins: float | list[float]
+        Lower bounds on timescale tau_i = Ri * Ci
+    tau_maxs: float | list[float]
+        Upper bounds on timescale tau_i = Ri * Ci
+    fitted_rc_pair_indices: int | list[float]
+        The index of each RC pair whose parameters are to be fitted.
+        Eg. [1, 2] means fitting R1, R2, C1, C2. The timescale of RC
+        pair fitted_rc_pair_indices[j] is constrained to be in the
+        range tau_mins[j] <= R * C <= tau_maxs[j]
+
+    Returns
+    -------
+    check_params
+        Function to check the proposed parameter values match the
+        requested constraints
+
+    """
 
     # Ensure inputs are lists
     tau_mins = [tau_mins] if not isinstance(tau_mins, list) else tau_mins
@@ -85,7 +124,7 @@ def get_parameter_checker(
 params = pybop.ParameterSet(params_dict=parameter_set)
 model = pybop.empirical.Thevenin(
     parameter_set=params,
-    check_params=get_parameter_checker(0, 0.5, 1),
+    check_params=get_parameter_checker(0, 0.5, 1), # Set the model up to automatically check parameters
     options={"number of rc elements": 2},
 )
 
