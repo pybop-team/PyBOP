@@ -77,7 +77,7 @@ class TestLikelihoods:
         assert likelihood.n_outputs == n_outputs
         assert likelihood.n_time_data == problem.n_time_data
         assert likelihood.n_parameters == 1
-        assert np.array_equal(likelihood._target, problem._target)
+        assert np.array_equal(likelihood.target, problem.target)
 
     @pytest.mark.unit
     def test_base_likelihood_call_raises_not_implemented_error(

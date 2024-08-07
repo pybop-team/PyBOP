@@ -49,8 +49,8 @@ class DesignProblem(BaseProblem):
         additional_variables = list(set(additional_variables))
 
         if init_soc is None:
-            if "Initial SoC" in model._parameter_set.keys():
-                init_soc = model._parameter_set["Initial SoC"]
+            if "Initial SoC" in model.parameter_set.keys():
+                init_soc = model.parameter_set["Initial SoC"]
             else:
                 init_soc = 1.0  # default value
 

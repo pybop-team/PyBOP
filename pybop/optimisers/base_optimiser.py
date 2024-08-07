@@ -208,7 +208,7 @@ class BaseOptimiser:
         x : array-like
             Optimised parameter values.
         """
-        if self.cost.problem._model.check_params(
+        if self.cost.problem.model.check_params(
             inputs=x, allow_infeasible_solutions=False
         ):
             return
@@ -245,7 +245,7 @@ class BaseOptimiser:
         self.allow_infeasible_solutions = allow
 
         if hasattr(self.cost, "problem") and hasattr(self.cost.problem, "_model"):
-            self.cost.problem._model.allow_infeasible_solutions = (
+            self.cost.problem.model.allow_infeasible_solutions = (
                 self.allow_infeasible_solutions
             )
         else:
