@@ -67,11 +67,7 @@ class FittingProblem(BaseProblem):
 
             # Build the model from scratch
             if self._model.built_model is not None:
-                self._model.model_with_set_params = None
-                self._model.built_model = None
-                self._model.built_initial_soc = None
-                self._model.mesh = None
-                self._model.disc = None
+                self._model.clear()
             self._model.build(
                 dataset=self._dataset,
                 parameters=self.parameters,
