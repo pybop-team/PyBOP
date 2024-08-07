@@ -143,6 +143,7 @@ class FittingProblem(BaseProblem):
             dy/dx(t) evaluated with given inputs.
         """
         inputs = self.parameters.verify(inputs)
+        self.parameters.update(values=list(inputs.values()))
 
         try:
             sol = self._model.simulateS1(
@@ -274,11 +275,10 @@ class MultiFittingProblem(BaseProblem):
 
         Returns
         -------
-        tuple
-            A tuple containing the simulation result y(t) and the sensitivities dy/dx(t) evaluated
-            with given inputs.
+        tuple[dict, np.ndarray]
+            A tuple containing the simulation result y(t) as a dictionary and the sensitivities
+            dy/dx(t) evaluated with given inputs.
         """
-
         inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(inputs.values()))
 
