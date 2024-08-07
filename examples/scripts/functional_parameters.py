@@ -10,9 +10,8 @@ import pybop
 # that already exists in the model, for example an exchange current density.
 
 
-# Parameter set and model definition
+# Load default parameter set
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 
 # Define a new function using new parameters
@@ -42,6 +41,11 @@ parameter_set.update(
 )
 parameter_set["Positive electrode exchange-current density [A.m-2]"] = (
     positive_electrode_exchange_current_density
+)
+
+# Model definition
+model = pybop.lithium_ion.SPM(
+    parameter_set=parameter_set, options={"contact resistance": "true"}
 )
 
 # Fitting parameters
