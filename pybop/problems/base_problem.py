@@ -110,17 +110,6 @@ class BaseProblem:
         """
         raise NotImplementedError
 
-    def time_data(self):
-        """
-        Returns the time data.
-
-        Returns
-        -------
-        np.ndarray
-            The time array.
-        """
-        return self._time_data
-
     def get_target(self):
         """
         Return the target dataset.
@@ -151,3 +140,19 @@ class BaseProblem:
     @property
     def model(self):
         return self._model
+
+    @property
+    def target(self):
+        return self._target
+
+    @target.setter
+    def target(self, target):
+        self._target = target
+
+    @property
+    def time_data(self):
+        return self._time_data
+
+    @time_data.setter
+    def time_data(self, time_data):
+        self._time_data = time_data

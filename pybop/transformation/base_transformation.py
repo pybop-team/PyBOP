@@ -105,7 +105,7 @@ class Transformation(ABC):
         """
         raise NotImplementedError("is_elementwise method must be implemented if used.")
 
-    def _verify_input(
+    def verify_input(
         self, inputs: Union[float, int, list[float], np.ndarray, dict[str, float]]
     ) -> np.ndarray:
         """Set and validate the transformation parameter."""

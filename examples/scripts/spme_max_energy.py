@@ -56,7 +56,7 @@ print(f"Optimised volumetric energy density: {cost2(x):.2f} Wh.m-3")
 
 # Plot the timeseries output
 if cost.update_capacity:
-    problem._model.approximate_capacity(x)
+    problem.model.approximate_capacity(x)
 pybop.quick_plot(problem, problem_inputs=x, title="Optimised Comparison")
 
 # Plot the cost landscape with optimisation path

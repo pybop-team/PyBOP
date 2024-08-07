@@ -24,7 +24,7 @@ class BaseCost:
         The number of outputs in the model.
     _has_separable_problem : bool
         If True, the problem is separable from the cost function and will be
-        evaluated in advance of the call to self._evaluate() (default: False).
+        evaluated in advance of the call to self.compute() (default: False).
     """
 
     def __init__(self, problem: Optional[BaseProblem] = None):
@@ -38,7 +38,7 @@ class BaseCost:
         self.dy = None
         self.set_fail_gradient()
         if isinstance(self.problem, BaseProblem):
-            self._target = self.problem._target
+            self._target = self.problem.target
             self.parameters.join(self.problem.parameters)
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
@@ -53,6 +53,10 @@ class BaseCost:
     def has_separable_problem(self):
         return self._has_separable_problem
 
+    @property
+    def target(self):
+        return self._target
+
     def __call__(self, inputs: Union[Inputs, list]):
         """
         Call the evaluate function for a given set of parameters.
@@ -61,7 +65,8 @@ class BaseCost:
 
     def evaluate(self, inputs: Union[Inputs, list]):
         """
-        Call the evaluate function for a given set of parameters.
+        This method calls the forward model via problem.evaluateS1(inputs),
+        and computes the cost for the given output by calling self.computeS1(inputs).
 
         Parameters
         ----------
@@ -88,7 +93,7 @@ class BaseCost:
                     inputs, update_capacity=self.update_capacity
                 )
 
-            return self._evaluate(inputs)
+            return self.compute(inputs)
 
         except NotImplementedError as e:
             raise e
@@ -96,16 +101,17 @@ class BaseCost:
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}") from e
 
-    def _evaluate(self, inputs: Inputs):
+    def compute(self, inputs: Inputs):
         """
-        Calculate the cost function value for a given set of parameters.
+        Calculates the cost function value for a given set of parameters.
 
+        This method only computes the cost, without calling the problem.evaluate.
         This method must be implemented by subclasses.
 
         Parameters
         ----------
         inputs : Inputs
-            The parameters for which to evaluate the cost.
+            The parameters for which to compute the cost.
 
         Returns
         -------
@@ -121,12 +127,17 @@ class BaseCost:
 
     def evaluateS1(self, inputs: Union[Inputs, list]):
         """
-        Call _evaluateS1 for a given set of parameters.
+        This method calls the forward model via problem.evaluateS1(inputs),
+        and computes the cost for the given output by calling self.computeS1(inputs).
+
+        This method includes the gradient of the cost function computed by
+        calling self.computeS1(inputs) with the sensitivity information provided by
+        the forward model via problem.evaluateS1(inputs).
 
         Parameters
         ----------
         inputs : Inputs or array-like
-            The parameters for which to compute the cost and gradient.
+            The parameters for which to evaluate the cost and gradient.
 
         Returns
         -------
@@ -147,7 +158,7 @@ class BaseCost:
             if self._has_separable_problem:
                 self.y, self.dy = self.problem.evaluateS1(inputs)
 
-            return self._evaluateS1(inputs)
+            return self.computeS1(inputs)
 
         except NotImplementedError as e:
             raise e
@@ -155,9 +166,12 @@ class BaseCost:
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}") from e
 
-    def _evaluateS1(self, inputs: Inputs):
+    def computeS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
+
+        This method only computes the cost, without calling the problem.evaluateS1.
+        This method must be implemented by subclasses.
 
         Parameters
         ----------

@@ -70,7 +70,7 @@ class TestProblem:
         # Construct Problem
         problem = pybop.BaseProblem(parameters, model=model)
 
-        assert problem._model == model
+        assert problem.model == model
 
         with pytest.raises(NotImplementedError):
             problem.evaluate([1e-5, 1e-5])
@@ -129,8 +129,8 @@ class TestProblem:
             initial_state={"Initial open-circuit voltage [V]": 4.0},
         )
 
-        assert problem._model == model
-        assert problem._model._built_model is not None
+        assert problem.model == model
+        assert problem.model.built_model is not None
 
         # Test get target
         target = problem.get_target()["Voltage [V]"]
@@ -198,9 +198,9 @@ class TestProblem:
         # Construct Problem
         problem = pybop.DesignProblem(model, parameters, experiment)
 
-        assert problem._model == model
+        assert problem.model == model
         assert (
-            problem._model._built_model is None
+            problem.model.built_model is None
         )  # building postponed with input experiment
         assert problem.initial_state == {"Initial SoC": 1.0}
 
@@ -229,7 +229,7 @@ class TestProblem:
         # Test problem evaluate
         problem_output = problem.evaluate([2e-5, 2e-5])
 
-        assert problem._model._built_model is not None
+        assert problem.model.built_model is not None
         with pytest.raises(AssertionError):
             assert_allclose(
                 out["Voltage [V]"].data,

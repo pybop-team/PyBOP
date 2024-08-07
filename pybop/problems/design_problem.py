@@ -49,7 +49,7 @@ class DesignProblem(BaseProblem):
 
         if initial_state is None:
             if isinstance(model, ECircuitModel):
-                initial_state = {"Initial SoC": model._parameter_set["Initial SoC"]}
+                initial_state = {"Initial SoC": model.parameter_set["Initial SoC"]}
             else:
                 initial_state = {"Initial SoC": 1.0}  # default value
         elif "Initial open-circuit voltage [V]" in initial_state.keys():

@@ -22,7 +22,7 @@ class WeightedCost(BaseCost):
         A list of values with which to weight the cost values.
     _has_identical_problems : bool
         If True, the shared problem will be evaluated once and saved before the
-        self._evaluate() method of each cost is called (default: False).
+        self.compute() method of each cost is called (default: False).
     _has_separable_problem: bool
         This attribute must be set to False for WeightedCost objects. If the
         corresponding attribute of an individual cost is True, the problem is
@@ -54,7 +54,7 @@ class WeightedCost(BaseCost):
 
         # Check if all costs depend on the same problem
         self._has_identical_problems = all(
-            cost._has_separable_problem and cost.problem is self.costs[0].problem
+            cost.has_separable_problem and cost.problem is self.costs[0].problem
             for cost in self.costs
         )
 
@@ -80,9 +80,9 @@ class WeightedCost(BaseCost):
         # Weighted costs do not use this functionality
         self._has_separable_problem = False
 
-    def _evaluate(self, inputs: Inputs):
+    def compute(self, inputs: Inputs):
         """
-        Calculate the weighted cost for a given set of parameters.
+        Compute the weighted cost for a given set of parameters.
 
         Parameters
         ----------
@@ -105,15 +105,15 @@ class WeightedCost(BaseCost):
             inputs = cost.parameters.as_dict()
             if self._has_identical_problems:
                 cost.y = self.y
-            elif cost._has_separable_problem:
+            elif cost.has_separable_problem:
                 cost.y = cost.problem.evaluate(
                     inputs, update_capacity=self.update_capacity
                 )
-            e[i] = cost._evaluate(inputs)
+            e[i] = cost.compute(inputs)
 
         return np.dot(e, self.weights)
 
-    def _evaluateS1(self, inputs: Inputs):
+    def computeS1(self, inputs: Inputs):
         """
         Compute the weighted cost and its gradient with respect to the parameters.
 
@@ -140,9 +140,9 @@ class WeightedCost(BaseCost):
             inputs = cost.parameters.as_dict()
             if self._has_identical_problems:
                 cost.y, cost.dy = (self.y, self.dy)
-            elif cost._has_separable_problem:
+            elif cost.has_separable_problem:
                 cost.y, cost.dy = cost.problem.evaluateS1(inputs)
-            e[i], de[:, i] = cost._evaluateS1(inputs)
+            e[i], de[:, i] = cost.computeS1(inputs)
 
         e = np.dot(e, self.weights)
         de = np.dot(de, self.weights)

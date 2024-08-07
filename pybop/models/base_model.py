@@ -1,6 +1,6 @@
 import copy
 from dataclasses import dataclass
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 import casadi
 import numpy as np
@@ -154,7 +154,7 @@ class BaseModel:
             self._built_model = self.pybamm_model
 
         else:
-            if not self.pybamm_model._built:
+            if not self.pybamm_model._built:  # noqa: SLF001
                 self.pybamm_model.build_model()
             self.set_params(dataset=dataset)
 
@@ -169,7 +169,7 @@ class BaseModel:
             )
 
             # Clear solver and setup model
-            self._solver._model_set_up = {}
+            self._solver._model_set_up = {}  # noqa: SLF001
 
         self.n_states = self._built_model.len_rhs_and_alg  # len_rhs + len_alg
 
@@ -271,6 +271,16 @@ class BaseModel:
             self._parameter_set.process_geometry(self.geometry)
         self.pybamm_model = self._model_with_set_params
 
+    def clear(self):
+        """
+        Clear any built PyBaMM model.
+        """
+        self._model_with_set_params = None
+        self._built_model = None
+        self._built_initial_soc = None
+        self._mesh = None
+        self._disc = None
+
     def rebuild(
         self,
         dataset: Optional[Dataset] = None,
@@ -320,7 +330,7 @@ class BaseModel:
         )
 
         # Clear solver and setup model
-        self._solver._model_set_up = {}
+        self._solver._model_set_up = {}  # noqa: SLF001
 
     def classify_and_update_parameters(self, parameters: Parameters):
         """
@@ -352,7 +362,7 @@ class BaseModel:
         self.standard_parameters.update(standard_parameters)
 
         if self.rebuild_parameters:
-            self.geometry = self.pybamm_model.default_geometry
+            self._geometry = self.pybamm_model.default_geometry
 
         # Update both the active and unprocessed parameter sets for consistency
         if self._parameter_set is not None:
@@ -563,7 +573,7 @@ class BaseModel:
             raise ValueError(
                 "The predict method currently only supports PyBaMM models."
             )
-        elif not self._unprocessed_model._built:
+        elif not self._unprocessed_model._built:  # noqa: SLF001
             self._unprocessed_model.build_model()
 
         parameter_set = parameter_set or self._unprocessed_parameter_set.copy()
@@ -673,6 +683,26 @@ class BaseModel:
         """
         return copy.copy(self)
 
+    def get_parameter_info(self, print_info: bool = False):
+        """
+        Extracts the parameter names and types and returns them as a dictionary.
+        """
+        if not self.pybamm_model._built:  # noqa: SLF001
+            self.pybamm_model.build_model()
+
+        info = self.pybamm_model.get_parameter_info()
+
+        reduced_info = dict()
+        for param, param_type in info.values():
+            param_name = getattr(param, "name", str(param))
+            reduced_info[param_name] = param_type
+
+        if print_info:
+            for param, param_type in info.values():
+                print(param, " : ", param_type)
+
+        return reduced_info
+
     def cell_mass(self, parameter_set: ParameterSet = None):
         """
         Calculate the cell mass in kilograms.
@@ -735,6 +765,10 @@ class BaseModel:
         return self._built_model
 
     @property
+    def built_initial_soc(self):
+        return self._built_initial_soc
+
+    @property
     def parameter_set(self):
         return self._parameter_set
 
@@ -746,66 +780,26 @@ class BaseModel:
     def geometry(self):
         return self._geometry
 
-    @geometry.setter
-    def geometry(self, geometry: Optional[pybamm.Geometry]):
-        self._geometry = geometry.copy() if geometry is not None else None
-
     @property
     def submesh_types(self):
         return self._submesh_types
-
-    @submesh_types.setter
-    def submesh_types(self, submesh_types: Optional[dict[str, Any]]):
-        self._submesh_types = (
-            submesh_types.copy() if submesh_types is not None else None
-        )
 
     @property
     def mesh(self):
         return self._mesh
 
     @property
+    def disc(self):
+        return self._disc
+
+    @property
     def var_pts(self):
         return self._var_pts
-
-    @var_pts.setter
-    def var_pts(self, var_pts: Optional[dict[str, int]]):
-        self._var_pts = var_pts.copy() if var_pts is not None else None
 
     @property
     def spatial_methods(self):
         return self._spatial_methods
 
-    @spatial_methods.setter
-    def spatial_methods(self, spatial_methods: Optional[dict[str, Any]]):
-        self._spatial_methods = (
-            spatial_methods.copy() if spatial_methods is not None else None
-        )
-
     @property
     def solver(self):
         return self._solver
-
-    @solver.setter
-    def solver(self, solver):
-        self._solver = solver.copy() if solver is not None else None
-
-    def get_parameter_info(self, print_info: bool = False):
-        """
-        Extracts the parameter names and types and returns them as a dictionary.
-        """
-        if not self.pybamm_model._built:
-            self.pybamm_model.build_model()
-
-        info = self.pybamm_model.get_parameter_info()
-
-        reduced_info = dict()
-        for param, param_type in info.values():
-            param_name = getattr(param, "name", str(param))
-            reduced_info[param_name] = param_type
-
-        if print_info:
-            for param, param_type in info.values():
-                print(param, " : ", param_type)
-
-        return reduced_info

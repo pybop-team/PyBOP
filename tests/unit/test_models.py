@@ -142,12 +142,20 @@ class TestModels:
 
     @pytest.mark.unit
     def test_build(self, model):
-        model.build()
-        assert model.built_model is not None
+        if isinstance(model, pybop.lithium_ion.SPMe):
+            model.build(init_soc=1.0)
 
-        # Test that the model can be built again
-        model.build()
-        assert model.built_model is not None
+            # Test attributes with init_soc
+            assert model.built_model is not None
+            assert model.disc is not None
+            assert model.built_initial_soc is not None
+        else:
+            model.build()
+            assert model.built_model is not None
+
+            # Test that the model can be built again
+            model.build()
+            assert model.built_model is not None
 
     @pytest.mark.unit
     def test_rebuild(self, model):
@@ -249,8 +257,8 @@ class TestModels:
 
         # Test model geometry
         assert (
-            rebuilt_model._mesh["negative electrode"].nodes[1]
-            != initial_built_model._mesh["negative electrode"].nodes[1]
+            rebuilt_model.mesh["negative electrode"].nodes[1]
+            != initial_built_model.mesh["negative electrode"].nodes[1]
         )
         assert (
             rebuilt_model.geometry["negative electrode"]["x_n"]["max"]
@@ -263,8 +271,8 @@ class TestModels:
         )
 
         assert (
-            rebuilt_model._mesh["positive particle"].nodes[1]
-            != initial_built_model._mesh["positive particle"].nodes[1]
+            rebuilt_model.mesh["positive particle"].nodes[1]
+            != initial_built_model.mesh["positive particle"].nodes[1]
         )
 
         # Compare model results
