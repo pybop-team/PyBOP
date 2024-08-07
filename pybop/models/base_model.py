@@ -193,6 +193,16 @@ class BaseModel:
             self._parameter_set.process_geometry(self.geometry)
         self.pybamm_model = self._model_with_set_params
 
+    def clear(self):
+        """
+        Clear any built PyBaMM model.
+        """
+        self._model_with_set_params = None
+        self._built_model = None
+        self._built_initial_soc = None
+        self._mesh = None
+        self._disc = None
+
     def rebuild(
         self,
         dataset: Dataset = None,
@@ -698,37 +708,21 @@ class BaseModel:
     def built_model(self):
         return self._built_model
 
-    @built_model.setter
-    def built_model(self, built_model):
-        self._built_model = built_model if built_model is not None else None
-
     @property
     def built_initial_soc(self):
         return self._built_initial_soc
-
-    @built_initial_soc.setter
-    def built_initial_soc(self, built_initial_soc):
-        self._built_initial_soc = (
-            built_initial_soc if built_initial_soc is not None else None
-        )
 
     @property
     def parameter_set(self):
         return self._parameter_set
 
-    @parameter_set.setter
+    @parameter_set.setter  # remove in #425
     def parameter_set(self, parameter_set):
         self._parameter_set = parameter_set.copy() if parameter_set is not None else {}
 
     @property
     def model_with_set_params(self):
         return self._model_with_set_params
-
-    @model_with_set_params.setter
-    def model_with_set_params(self, model_with_set_params):
-        self._model_with_set_params = (
-            model_with_set_params.copy() if model_with_set_params is not None else None
-        )
 
     @property
     def geometry(self):
@@ -742,25 +736,13 @@ class BaseModel:
     def mesh(self):
         return self._mesh
 
-    @mesh.setter
-    def mesh(self, mesh):
-        self._mesh = mesh if mesh is not None else None
-
     @property
     def disc(self):
         return self._disc
 
-    @disc.setter
-    def disc(self, disc):
-        self._disc = disc if disc is not None else None
-
     @property
     def var_pts(self):
         return self._var_pts
-
-    @var_pts.setter
-    def var_pts(self, var_pts: Optional[dict[str, int]]):
-        self._var_pts = var_pts.copy() if var_pts is not None else None
 
     @property
     def spatial_methods(self):
@@ -769,7 +751,3 @@ class BaseModel:
     @property
     def solver(self):
         return self._solver
-
-    @solver.setter
-    def solver(self, solver):
-        self._solver = solver.copy() if solver is not None else None
