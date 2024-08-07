@@ -8,7 +8,7 @@ parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 synth_model = pybop.lithium_ion.DFN(parameter_set=parameter_set)
 
 # Fitting parameters
-parameters = [
+parameters = pybop.Parameters(
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         prior=pybop.Gaussian(0.68, 0.05),
@@ -19,7 +19,7 @@ parameters = [
         prior=pybop.Gaussian(0.58, 0.05),
         transformation=pybop.LogTransformation(),
     ),
-]
+)
 
 # Generate data
 init_soc = 1.0
@@ -67,7 +67,6 @@ posterior = pybop.LogPosterior(likelihood, composed_prior)
 optim = pybop.DREAM(
     posterior,
     chains=4,
-    # x0=[0.68, 0.58],
     max_iterations=300,
     burn_in=100,
     # parallel=True,  # uncomment to enable parallelisation (MacOS/WSL/Linux only)

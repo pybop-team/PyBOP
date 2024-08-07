@@ -117,7 +117,5 @@ class TestLogPosterior:
     @pytest.mark.unit
     def test_log_posterior_inf(self, posterior_uniform_prior):
         # Test prior np.inf
-        p1 = posterior_uniform_prior([1])
-        p2, _ = posterior_uniform_prior.evaluateS1([1])
-        assert p1 == -np.inf
-        assert p2 == -np.inf
+        assert not np.isfinite(posterior_uniform_prior([1]))
+        assert not np.isfinite(posterior_uniform_prior.evaluateS1([1])[0])

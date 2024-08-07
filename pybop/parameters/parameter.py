@@ -56,6 +56,9 @@ class Parameter:
         self.value = initial_value
         self.transformation = transformation
         self.applied_prior_bounds = False
+        self.bounds = None
+        self.lower_bounds = None
+        self.upper_bounds = None
         self.set_bounds(bounds)
         self.margin = 1e-4
 
@@ -162,17 +165,9 @@ class Parameter:
         if bounds is not None:
             if bounds[0] >= bounds[1]:
                 raise ValueError("Lower bound must be less than upper bound")
-            elif self.transformation is not None:
-                self.lower_bound = np.ndarray.item(
-                    self.transformation.to_search(bounds[0])
-                )
-                self.upper_bound = np.ndarray.item(
-                    self.transformation.to_search(bounds[1])
-                )
             else:
                 self.lower_bound = bounds[0]
                 self.upper_bound = bounds[1]
-
         elif self.prior is not None:
             self.applied_prior_bounds = True
             self.lower_bound = self.prior.mean - boundary_multiplier * self.prior.sigma
@@ -181,6 +176,13 @@ class Parameter:
         else:
             self.bounds = None
             return
+        if self.transformation is not None:
+            self.lower_bound = np.ndarray.item(
+                self.transformation.to_search(self.lower_bound)
+            )
+            self.upper_bound = np.ndarray.item(
+                self.transformation.to_search(self.upper_bound)
+            )
 
         self.bounds = [self.lower_bound, self.upper_bound]
 

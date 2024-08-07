@@ -385,7 +385,7 @@ class LogPosterior(BaseCost):
                     f"An error occurred when constructing the Prior class: {e}"
                 ) from e
 
-    def _evaluate(self, x, grad=None):
+    def _evaluate(self, inputs: Inputs) -> float:
         """
         Calculate the posterior cost for a given set of parameters.
 
@@ -402,12 +402,18 @@ class LogPosterior(BaseCost):
         float
             The posterior cost.
         """
-        prior = self._prior(x)
-        if not np.isfinite(prior):
-            return prior
-        return prior + self._log_likelihood.evaluate(x)
+        log_prior = self._prior(inputs)
 
-    def _evaluateS1(self, x):
+        if not np.isfinite(log_prior).any():
+            return log_prior
+
+        if self._has_separable_problem:
+            self._log_likelihood.y = self.y
+        log_likelihood = self._log_likelihood._evaluate(inputs)
+
+        return log_likelihood + log_prior
+
+    def _evaluateS1(self, inputs: Inputs) -> tuple[float, np.ndarray]:
         """
         Compute the posterior with respect to the parameters.
         The method passes the likelihood gradient to the optimiser without modification.
@@ -428,10 +434,12 @@ class LogPosterior(BaseCost):
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        prior, dp = self._prior.evaluateS1(x)
+        prior, dp = self._prior.evaluateS1(inputs)
         if not np.isfinite(prior):
             return prior, dp
-        likelihood, dl = self._log_likelihood.evaluateS1(x)
+        if self._has_separable_problem:
+            self._log_likelihood.y, self._log_likelihood.dy = (self.y, self.dy)
+        likelihood, dl = self._log_likelihood._evaluateS1(inputs)
         return prior + likelihood, dp + dl
 
     def prior(self):

@@ -28,7 +28,7 @@ class BasePintsSampler(BaseSampler):
         sampler,
         warm_up=None,
         x0=None,
-        cov0=None,
+        cov0=0.1,
         transformation=None,
         **kwargs,
     ):
