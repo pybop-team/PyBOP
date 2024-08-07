@@ -156,3 +156,7 @@ class BaseProblem:
     @time_data.setter
     def time_data(self, time_data):
         self._time_data = time_data
+
+    @property
+    def dataset(self):
+        return self._dataset
