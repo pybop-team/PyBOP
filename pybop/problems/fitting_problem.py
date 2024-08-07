@@ -192,11 +192,11 @@ class MultiFittingProblem(BaseProblem):
     def __init__(self, *args):
         self.problems = []
         for problem in args:
-            if problem._model is not None:
+            if problem.model is not None:
                 # Take a copy of the model and build from scratch
-                problem._model = problem._model.new_copy()
-                problem._model.build(
-                    dataset=problem._dataset,
+                problem.model = problem.model.new_copy()
+                problem.model.build(
+                    dataset=problem.dataset,
                     parameters=problem.parameters,
                     check_model=problem.check_model,
                     init_soc=problem.init_soc,
@@ -213,8 +213,8 @@ class MultiFittingProblem(BaseProblem):
         combined_signal = []
         for problem in self.problems:
             for signal in problem.signal:
-                combined_time_data.extend(problem._time_data)
-                combined_signal.extend(problem._target[signal])
+                combined_time_data.extend(problem.time_data)
+                combined_signal.extend(problem.target[signal])
         combined_dataset = Dataset(
             {
                 "Time [s]": np.asarray(combined_time_data),
