@@ -3,7 +3,7 @@ import numpy as np
 from pints import ParallelEvaluator
 from typing import Union
 
-from pybop import LogPosterior
+from pybop import LogPosterior, Parameters
 
 
 class BaseSampler:
@@ -11,20 +11,26 @@ class BaseSampler:
     Base class for Monte Carlo samplers.
     """
 
-    def __init__(self, log_pdf, x0, cov0: Union[np.ndarray, float]):
+    def __init__(self, log_pdf: LogPosterior, x0, cov0: Union[np.ndarray, float]):
         """
         Initialise the base sampler.
 
         Parameters
         ----------------
-        log_pdf (pybop.BaseCost): The distribution to be sampled.
+        log_pdf (pybop.LogPosterior): The posterior or PDF to be sampled.
         x0: List-like initial condition for Monte Carlo sampling.
         cov0: The covariance matrix to be sampled.
         """
         self._log_pdf = log_pdf
+        self._x0 = x0
         self._cov0 = cov0
+        self.parameters = Parameters()
+        if isinstance(log_pdf, LogPosterior):
+            self.parameters = log_pdf.parameters
 
-        if not isinstance(x0, np.ndarray):
+        if x0 is None:
+            self._x0 = self.parameters.initial_value()
+        elif not isinstance(x0, np.ndarray):
             try:
                 self._x0 = np.asarray(x0)
             except ValueError as e:
@@ -87,9 +93,6 @@ class BaseSampler:
             return [self._samplers[i].ask() for i in self._active]
         else:
             return self._samplers[0].ask()
-
-    def _inverse_transform(self, y):
-        return self._transformation.to_model(y) if self._transformation else y
 
     def _check_initial_phase(self):
         # Set initial phase if needed

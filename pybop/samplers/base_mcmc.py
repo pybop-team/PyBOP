@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 from pints import (
@@ -9,7 +9,7 @@ from pints import (
     SingleChainMCMC,
 )
 
-from pybop import BaseCost, BaseSampler
+from pybop import BaseCost, BaseSampler, LogPosterior
 
 
 class BasePintsSampler(BaseSampler):
@@ -23,7 +23,7 @@ class BasePintsSampler(BaseSampler):
 
     def __init__(
         self,
-        log_pdf: Union[BaseCost, list[BaseCost]],
+        log_pdf: LogPosterior,
         chains: int,
         sampler,
         warm_up=None,
@@ -63,7 +63,6 @@ class BasePintsSampler(BaseSampler):
             if isinstance(self._log_pdf, list)
             else self._log_pdf.n_parameters
         )
-        self._transformation = transformation
 
         # Check log_pdf
         if isinstance(self._log_pdf, BaseCost):
@@ -82,10 +81,6 @@ class BasePintsSampler(BaseSampler):
                     )
 
             self._multi_log_pdf = True
-
-        # Transformations
-        if transformation is not None:
-            self._apply_transformation(transformation)
 
         # Number of chains
         self._n_chains = chains
@@ -123,10 +118,6 @@ class BasePintsSampler(BaseSampler):
         # Parallelisation (Might be able to move into parent class)
         self._n_workers = 1
         self.set_parallel(self._parallel)
-
-    def _apply_transformation(self, transformation):
-        # TODO: Implement transformation logic (alongside #357)
-        pass
 
     def run(self) -> Optional[np.ndarray]:
         """
@@ -215,7 +206,9 @@ class BasePintsSampler(BaseSampler):
             reply = self._samplers[i].tell(next(self.fxs_iterator))
             if reply:
                 y, fy, accepted = reply
-                y_store = self._inverse_transform(y)
+                y_store = self._inverse_transform(
+                    y, self._log_pdf[i] if self._multi_log_pdf else self._log_pdf
+                )
                 if self._chains_in_memory:
                     self._samples[i][self._n_samples[i]] = y_store
                 else:
@@ -246,7 +239,7 @@ class BasePintsSampler(BaseSampler):
         self._intermediate_step = reply is None
         if reply:
             ys, fys, accepted = reply
-            ys_store = np.array([self._inverse_transform(y) for y in ys])
+            ys_store = np.array([self._inverse_transform(y, self._log_pdf) for y in ys])
             if self._chains_in_memory:
                 self._samples[:, self._iteration] = ys_store
             else:
@@ -297,3 +290,6 @@ class BasePintsSampler(BaseSampler):
                 if not self._multi_log_pdf
                 else MultiSequentialEvaluator(f)
             )
+
+    def _inverse_transform(self, y, log_pdf):
+        return log_pdf.transformation.to_model(y) if log_pdf.transformation else y

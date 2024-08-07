@@ -132,7 +132,8 @@ class TestLikelihoods:
         grad_result, grad_likelihood = likelihood.evaluateS1(np.array([0.8, 0.2]))
         assert isinstance(result, float)
         np.testing.assert_allclose(result, grad_result, atol=1e-5)
-        assert np.all(grad_likelihood <= 0)
+        assert grad_likelihood[0] <= 0
+        assert grad_likelihood[1] >= 0
 
         # Test construction with sigma as a Parameter
         sigma = pybop.Parameter("sigma", prior=pybop.Uniform(0.4, 0.6))

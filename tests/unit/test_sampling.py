@@ -1,5 +1,5 @@
 import copy
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -43,8 +43,8 @@ class TestPintsSamplers:
         )
 
     @pytest.fixture
-    def two_parameters(self):
-        return [
+    def parameters(self):
+        return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.6, 0.2),
@@ -55,26 +55,17 @@ class TestPintsSamplers:
                 prior=pybop.Gaussian(0.55, 0.05),
                 bounds=[0.53, 0.57],
             ),
-        ]
+        )
 
     @pytest.fixture
     def model(self):
         return pybop.lithium_ion.SPM()
 
     @pytest.fixture
-    def cost(self, model, one_parameter, dataset):
+    def log_posterior(self, model, parameters, dataset):
         problem = pybop.FittingProblem(
             model,
-            one_parameter,
-            dataset,
-        )
-        return pybop.SumSquaredError(problem)
-
-    @pytest.fixture
-    def log_posterior(self, model, two_parameters, dataset):
-        problem = pybop.FittingProblem(
-            model,
-            two_parameters,
+            parameters,
             dataset,
         )
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.01)
@@ -237,16 +228,6 @@ class TestPintsSamplers:
         # Run the sampler
         samples = sampler.run()
         assert samples is None
-
-    @pytest.mark.unit
-    def test_apply_transformation(self, log_posterior, x0, chains):
-        sampler = AdaptiveCovarianceMCMC(
-            log_pdf=log_posterior, chains=chains, x0=x0, transformation=MagicMock()
-        )
-
-        with patch.object(sampler, "_apply_transformation") as mock_method:
-            sampler._apply_transformation(sampler._transformation)
-            mock_method.assert_called_once_with(sampler._transformation)
 
     @pytest.mark.unit
     def test_logging_initialisation(self, log_posterior, x0, chains):
