@@ -705,11 +705,7 @@ class BaseModel:
             new_model.var_pts = self.pybamm_model.default_var_pts
             new_model.spatial_methods = self.pybamm_model.default_spatial_methods
             new_model.solver = self.pybamm_model.default_solver
-            new_model._model_with_set_params = None
-            new_model._built_model = None
-            new_model._built_initial_soc = None
-            new_model._mesh = None
-            new_model._disc = None
+            new_model.clear()
 
         return new_model
 
