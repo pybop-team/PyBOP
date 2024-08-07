@@ -367,7 +367,7 @@ class BaseModel:
         # Update both the active and unprocessed parameter sets for consistency
         if self._parameter_set is not None:
             self._parameter_set.update(parameter_dictionary)
-            self._unprocessed_parameter_set = self._parameter_set
+            self._unprocessed_parameter_set.update(parameter_dictionary)
 
     def reinit(
         self, inputs: Inputs, t: float = 0.0, x: Optional[np.ndarray] = None
@@ -693,19 +693,20 @@ class BaseModel:
         BaseModel
             A new copy of the model.
         """
-        new_model = copy.copy(self)
-
-        # Reset the key attributes
-        new_model.param_check_counter = 0
-        if self.pybamm_model is not None:
-            new_model.parameter_set = self._unprocessed_parameter_set
-            new_model.pybamm_model = self._unprocessed_model.new_copy()
-            new_model.geometry = self.pybamm_model.default_geometry
-            new_model.submesh_types = self.pybamm_model.default_submesh_types
-            new_model.var_pts = self.pybamm_model.default_var_pts
-            new_model.spatial_methods = self.pybamm_model.default_spatial_methods
-            new_model.solver = self.pybamm_model.default_solver
-            new_model.clear()
+        model_class = type(self)
+        if self.pybamm_model is None:
+            new_model = model_class(name=self.name, parameter_set=self.parameter_set)
+        else:
+            new_model = model_class(
+                name=self.name,
+                options=self._unprocessed_model.options,
+                parameter_set=self._unprocessed_parameter_set,
+                geometry=self.pybamm_model.default_geometry,
+                submesh_types=self.pybamm_model.default_submesh_types,
+                var_pts=self.pybamm_model.default_var_pts,
+                spatial_methods=self.pybamm_model.default_spatial_methods,
+                solver=self.pybamm_model.default_solver,
+            )
 
         return new_model
 
