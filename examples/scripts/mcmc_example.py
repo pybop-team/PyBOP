@@ -33,7 +33,7 @@ experiment = pybop.Experiment(
     ]
     # * 2
 )
-values = synth_model.predict(init_soc=init_soc, experiment=experiment)
+values = synth_model.predict(initial_state={"Initial SoC": 1.0}, experiment=experiment)
 
 
 def noise(sigma):
@@ -52,12 +52,11 @@ dataset = pybop.Dataset(
 )
 
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+model.build(initial_state={"Initial SoC": 1.0})
 signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 
 # Generate problem, likelihood, and sampler
-problem = pybop.FittingProblem(
-    model, parameters, dataset, signal=signal, init_soc=init_soc
-)
+problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002)
 prior1 = pybop.Gaussian(0.7, 0.1)
 prior2 = pybop.Gaussian(0.6, 0.1)

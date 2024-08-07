@@ -1,6 +1,6 @@
 import warnings
 from collections import OrderedDict
-from typing import Union
+from typing import Optional
 
 import numpy as np
 
@@ -196,7 +196,7 @@ class Parameter:
                 self.update(initial_value=sample)
             else:
                 warnings.warn(
-                    "Initial value or Prior are None, proceeding without initial value.",
+                    "Initial value and prior are None, proceeding without an initial value.",
                     UserWarning,
                     stacklevel=2,
                 )
@@ -429,6 +429,21 @@ class Parameters:
 
         return np.asarray(initial_values)
 
+    def reset_initial_value(self) -> np.ndarray:
+        """
+        Reset and return the initial value of each parameter.
+        """
+        initial_values = []
+
+        for param in self.param.values():
+            initial_value = param.get_initial_value()
+            if initial_value is not None:
+                # Reset the current value as well
+                param.update(value=initial_value)
+            initial_values.append(initial_value)
+
+        return np.asarray(initial_values)
+
     def current_value(self) -> np.ndarray:
         """
         Return the current value of each parameter.
@@ -523,7 +538,7 @@ class Parameters:
                 values = self.true_value()
         return {key: values[i] for i, key in enumerate(self.param.keys())}
 
-    def verify(self, inputs: Union[Inputs, None] = None):
+    def verify(self, inputs: Optional[Inputs] = None):
         """
         Verify that the inputs are an Inputs dictionary or numeric values
         which can be used to construct an Inputs dictionary

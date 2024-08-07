@@ -224,7 +224,7 @@ class TestParameters:
         )
         with pytest.warns(
             UserWarning,
-            match="Initial value or Prior are None, proceeding without initial value.",
+            match="Initial value and prior are None, proceeding without an initial value.",
         ):
             sample = parameter.initial_value()
 

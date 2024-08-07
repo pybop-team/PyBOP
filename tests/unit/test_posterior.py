@@ -36,8 +36,8 @@ class TestLogPosterior:
 
     @pytest.fixture
     def dataset(self, model, experiment, ground_truth):
-        model.parameter_set = model.pybamm_model.default_parameter_values
-        model.parameter_set.update(
+        model._parameter_set = model.pybamm_model.default_parameter_values
+        model._parameter_set.update(
             {
                 "Negative electrode active material volume fraction": ground_truth,
             }
@@ -53,7 +53,7 @@ class TestLogPosterior:
 
     @pytest.fixture
     def one_signal_problem(self, model, parameters, dataset):
-        return pybop.FittingProblem(model, parameters, dataset, init_soc=1.0)
+        return pybop.FittingProblem(model, parameters, dataset)
 
     @pytest.fixture
     def likelihood(self, one_signal_problem):
@@ -96,12 +96,12 @@ class TestLogPosterior:
     def test_log_posterior(self, posterior):
         # Test log posterior
         x = np.array([0.50])
-        assert np.allclose(posterior(x), -3318.34, atol=2e-2)
+        assert np.allclose(posterior(x), 51.5236, atol=2e-2)
 
         # Test log posterior evaluateS1
         p, dp = posterior.evaluateS1(x)
-        assert np.allclose(p, -3318.34, atol=2e-2)
-        assert np.allclose(dp, -1736.05, atol=2e-2)
+        assert np.allclose(p, 51.5236, atol=2e-2)
+        assert np.allclose(dp, 2.0, atol=2e-2)
 
         # Get log likelihood and log prior
         likelihood = posterior.likelihood()

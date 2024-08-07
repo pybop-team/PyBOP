@@ -129,7 +129,7 @@ class BaseOptimiser:
         """
         # Set initial values, if x0 is None, initial values are unmodified.
         self.parameters.update(initial_values=self.unset_options.pop("x0", None))
-        self.x0 = self.parameters.initial_value()
+        self.x0 = self.parameters.reset_initial_value()
 
         # Set default bounds (for all or no parameters)
         self.bounds = self.unset_options.pop("bounds", self.parameters.get_bounds())

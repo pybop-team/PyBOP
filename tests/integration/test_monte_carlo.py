@@ -76,7 +76,7 @@ class Test_Sampling_SPM:
         )
 
         # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
+        problem = pybop.FittingProblem(model, parameters, dataset)
         return cost_class(problem, sigma0=0.002)
 
     @pytest.mark.parametrize(
@@ -124,9 +124,9 @@ class Test_Sampling_SPM:
             max_iterations=400,
         )
         results = sampler.run()
-        x = np.mean(results, axis=1)
 
-        # Compute mean of posteriors and udate assert below
+        # compute mean of posterior and assert
+        x = np.mean(results, axis=1)
         for i in range(len(x)):
             np.testing.assert_allclose(x[i], self.ground_truth, atol=2.5e-2)
 
@@ -145,5 +145,7 @@ class Test_Sampling_SPM:
                 ),
             ]
         )
-        sim = model.predict(init_soc=init_soc, experiment=experiment)
+        sim = model.predict(
+            initial_state={"Initial SoC": init_soc}, experiment=experiment
+        )
         return sim

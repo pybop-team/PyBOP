@@ -39,20 +39,21 @@ class TestModelAndExperimentChanges:
         # Change the experiment and check that the results are different.
 
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-        init_soc = 0.5
+        parameter_set.update(parameters.as_dict("true"))
+        initial_state = {"Initial SoC": 0.5}
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
         t_eval = np.arange(0, 3600, 2)  # Default 1C discharge to cut-off voltage
-        solution_1 = model.predict(init_soc=init_soc, t_eval=t_eval)
-        cost_1 = self.final_cost(solution_1, model, parameters, init_soc)
+        solution_1 = model.predict(initial_state=initial_state, t_eval=t_eval)
+        cost_1 = self.final_cost(solution_1, model, parameters)
 
         experiment = pybop.Experiment(["Charge at 1C until 4.1 V (2 seconds period)"])
         solution_2 = model.predict(
-            init_soc=init_soc,
+            initial_state=initial_state,
             experiment=experiment,
             inputs=parameters.as_dict("true"),
         )
-        cost_2 = self.final_cost(solution_2, model, parameters, init_soc)
+        cost_2 = self.final_cost(solution_2, model, parameters)
 
         with np.testing.assert_raises(AssertionError):
             np.testing.assert_array_equal(
@@ -69,16 +70,17 @@ class TestModelAndExperimentChanges:
         # Change the model and check that the results are different.
 
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-        init_soc = 0.5
+        parameter_set.update(parameters.as_dict("true"))
+        initial_state = {"Initial SoC": 0.5}
         experiment = pybop.Experiment(["Charge at 1C until 4.1 V (2 seconds period)"])
 
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
-        solution_1 = model.predict(init_soc=init_soc, experiment=experiment)
-        cost_1 = self.final_cost(solution_1, model, parameters, init_soc)
+        solution_1 = model.predict(initial_state=initial_state, experiment=experiment)
+        cost_1 = self.final_cost(solution_1, model, parameters)
 
         model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
-        solution_2 = model.predict(init_soc=init_soc, experiment=experiment)
-        cost_2 = self.final_cost(solution_2, model, parameters, init_soc)
+        solution_2 = model.predict(initial_state=initial_state, experiment=experiment)
+        cost_2 = self.final_cost(solution_2, model, parameters)
 
         with np.testing.assert_raises(AssertionError):
             np.testing.assert_array_equal(
@@ -90,7 +92,7 @@ class TestModelAndExperimentChanges:
         np.testing.assert_allclose(cost_1, 0, atol=1e-5)
         np.testing.assert_allclose(cost_2, 0, atol=1e-5)
 
-    def final_cost(self, solution, model, parameters, init_soc):
+    def final_cost(self, solution, model, parameters):
         # Compute the cost corresponding to a particular solution
         dataset = pybop.Dataset(
             {
@@ -100,9 +102,7 @@ class TestModelAndExperimentChanges:
             }
         )
         signal = ["Voltage [V]"]
-        problem = pybop.FittingProblem(
-            model, parameters, dataset, signal=signal, init_soc=init_soc
-        )
+        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
         cost = pybop.RootMeanSquaredError(problem)
         optim = pybop.PSO(cost)
         x, final_cost = optim.run()
