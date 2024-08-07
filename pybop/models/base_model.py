@@ -38,48 +38,86 @@ class BaseModel:
     """
     A base class for constructing and simulating models using PyBaMM.
 
-    This class serves as a foundation for building specific models in PyBaMM.
-    It provides methods to set up the model, define parameters, and perform
-    simulations. The class is designed to be subclassed for creating models
-    with custom behaviour.
+    This class serves as a foundation for constructing models based on PyBaMM models. It
+    provides methods to set up the model, define parameters, and perform simulations. The
+    class is designed to be subclassed for creating models with custom behaviour.
 
+    This class is based on PyBaMM's Simulation class. A PyBOP model is set up via a
+    similar 3-step process. The `pybamm_model` attributes echoes the `model` attribute of
+    a simulation, which tracks the model through the build process. Firstly, note that a
+    PyBaMM `model` must first be built via `build_model` before a simulation or PyBOP
+    model can be built. The 3-step process is then as follows.
+
+    The `pybamm_model` attribute is first defined as an instance of the imported PyBaMM
+    model, using any given model options. This initial version of the model is saved as
+    the `_unprocessed_model` for future reference. Next, the type of each parameter in
+    the parameter set as well as the geometry of the model is set. Parameters may be set
+    as an input, interpolant, functional or just a standard PyBaMM parameter. This
+    version of the model is referred to as the `model_with_set_params`. After its
+    creation, the `pybamm_model` attribute is updated to point at this version of the
+    model. Finally, the model required for simulations is built by defining the mesh and
+    processing the discretisation. The complete model is referred to as the `built_model`
+    and this version is used to run simulations.
+
+    In order to rebuild a model with a different initial state or geometry, the
+    `built_model` and the `model_with_set_params` must be cleared and the `pybamm_model`
+    reset to the `unprocessed_model` in order to start the build process again.
     """
 
-    def __init__(self, name="Base Model", parameter_set=None):
+    def __init__(
+        self, name: str = "Base Model", parameter_set: Optional[ParameterSet] = None
+    ):
         """
-        Initialize the BaseModel with an optional name.
+        Initialise the BaseModel with an optional name and a parameter set.
 
         Parameters
         ----------
         name : str, optional
             The name given to the model instance.
+        parameter_set : pybop.ParameterSet, optional
+            A PyBOP ParameterSet, PyBaMM ParameterValues object or a dictionary containing the
+            parameter values.
+
+        Additional Attributes
+        ---------------------
+        parameters : pybop.Parameters
+            The input parameters.
+        output_variables : list[str], optional
+            A list of names of variables to include in the solution object.
+        rebuild_parameters : dict
+            A list of parameters which require the model to be rebuilt (default: {}).
+        standard_parameters : dict
+            A list of standard (i.e. not rebuild) parameters (default: {}).
+        param_check_counter : int
+            A counter for the number of parameter checks (default: 0).
+        allow_infeasible_solutions : bool, optional
+            If True, parameter values will be simulated whether or not they are feasible
+            (default: True).
         """
         self.name = name
         if parameter_set is None:
             self._parameter_set = None
         elif isinstance(parameter_set, dict):
-            self._parameter_set = pybamm.ParameterValues(parameter_set)
+            self._parameter_set = pybamm.ParameterValues(parameter_set).copy()
         elif isinstance(parameter_set, pybamm.ParameterValues):
-            self._parameter_set = parameter_set
+            self._parameter_set = parameter_set.copy()
         else:  # a pybop parameter set
-            self._parameter_set = pybamm.ParameterValues(parameter_set.params)
+            self._parameter_set = pybamm.ParameterValues(parameter_set.params).copy()
 
         self.pybamm_model = None
         self.parameters = Parameters()
-        self.dataset = None
-        self.signal = None
-        self.additional_variables = []
         self.rebuild_parameters = {}
         self.standard_parameters = {}
         self.param_check_counter = 0
         self.allow_infeasible_solutions = True
+        self.current_function = None
 
     def build(
         self,
-        dataset: Dataset = None,
+        dataset: Optional[Dataset] = None,
         parameters: Union[Parameters, dict] = None,
         check_model: bool = True,
-        init_soc: Optional[float] = None,
+        initial_state: Optional[dict] = None,
     ) -> None:
         """
         Construct the PyBaMM model if not already built, and set parameters.
@@ -96,16 +134,17 @@ class BaseModel:
             A pybop Parameters class or dictionary containing parameter values to apply to the model.
         check_model : bool, optional
             If True, the model will be checked for correctness after construction.
-        init_soc : float, optional
-            The initial state of charge to be used in simulations.
+        initial_state : dict, optional
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+            Defaults to None, indicating that the existing initial state of charge (for an ECM)
+            or initial concentrations (for an EChem model) will be used.
         """
-        self.dataset = dataset
         if parameters is not None:
             self.parameters = parameters
             self.classify_and_update_parameters(self.parameters)
 
-        if init_soc is not None:
-            self.set_init_soc(init_soc)
+        if initial_state is not None:
+            self.set_initial_state(initial_state)
 
         if self._built_model:
             return
@@ -117,7 +156,7 @@ class BaseModel:
         else:
             if not self.pybamm_model._built:  # noqa: SLF001
                 self.pybamm_model.build_model()
-            self.set_params()
+            self.set_params(dataset=dataset)
 
             self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
             self._disc = pybamm.Discretisation(
@@ -134,32 +173,72 @@ class BaseModel:
 
         self.n_states = self._built_model.len_rhs_and_alg  # len_rhs + len_alg
 
-    def set_init_soc(self, init_soc: float):
+    def convert_to_pybamm_initial_state(self, initial_state: dict):
         """
-        Set the initial state of charge for the battery model.
+        Convert an initial state of charge into a float and an initial open-circuit
+        voltage into a string ending in "V".
 
         Parameters
         ----------
-        init_soc : float
-            The initial state of charge to be used in the model.
+        initial_state : dict
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+
+        Returns
+        -------
+        float or str
+            If float, this value is used as the initial state of charge (as a decimal between 0
+            and 1). If str ending in "V", this value is used as the initial open-circuit voltage.
+
+        Raises
+        ------
+        ValueError
+            If the input is not a dictionary with a single, valid key.
         """
-        if self._built_initial_soc != init_soc:
-            # reset
-            self._model_with_set_params = None
-            self._built_model = None
-            self.op_conds_to_built_models = None
-            self.op_conds_to_built_solvers = None
+        if len(initial_state) > 1:
+            raise ValueError("Expecting only one initial state.")
+        elif "Initial SoC" in initial_state.keys():
+            return initial_state["Initial SoC"]
+        elif "Initial open-circuit voltage [V]" in initial_state.keys():
+            return str(initial_state["Initial open-circuit voltage [V]"]) + "V"
+        else:
+            raise ValueError(f'Unrecognised initial state: "{list(initial_state)[0]}"')
 
-        param = self.pybamm_model.param
-        self._parameter_set = (
-            self._unprocessed_parameter_set.set_initial_stoichiometries(
-                init_soc, param=param, inplace=False
-            )
-        )
-        # Save solved initial SOC in case we need to rebuild the model
-        self._built_initial_soc = init_soc
+    def set_initial_state(self, initial_state: dict):
+        """
+        Set the initial state of charge or concentrations for the battery model.
 
-    def set_params(self, rebuild=False):
+        Parameters
+        ----------
+        initial_state : dict
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+        """
+        initial_state = self.convert_to_pybamm_initial_state(initial_state)
+
+        if isinstance(self.pybamm_model, pybamm.equivalent_circuit.Thevenin):
+            initial_state = self.get_initial_state(initial_state)
+            self._unprocessed_parameter_set.update({"Initial SoC": initial_state})
+
+        else:
+            # Temporary construction of attribute for PyBaMM
+            self.model = self._model = self.pybamm_model
+            self._unprocessed_parameter_values = self._unprocessed_parameter_set
+
+            # Set initial SOC via PyBaMM's Simulation class
+            pybamm.Simulation.set_initial_soc(self, initial_state, inputs=None)
+
+            # Update the default parameter set for consistency
+            self._unprocessed_parameter_set = self._parameter_values
+
+            # Clear the pybamm objects
+            del self.model  # can be removed after PyBaMM's next release, fixed with pybamm-team/PyBaMM#4319
+            del self._model
+            del self._unprocessed_parameter_values
+            del self._parameter_values
+
+        # Use a copy of the updated default parameter set
+        self._parameter_set = self._unprocessed_parameter_set.copy()
+
+    def set_params(self, rebuild: bool = False, dataset: Dataset = None):
         """
         Assign the parameters to the model.
 
@@ -173,18 +252,17 @@ class BaseModel:
         for key in self.standard_parameters.keys():
             self._parameter_set[key] = "[input]"
 
-        if self.dataset is not None and (not self.rebuild_parameters or not rebuild):
-            if (
-                self.parameters is None
-                or "Current function [A]" not in self.parameters.keys()
-            ):
-                self._parameter_set["Current function [A]"] = pybamm.Interpolant(
-                    self.dataset["Time [s]"],
-                    self.dataset["Current function [A]"],
-                    pybamm.t,
-                )
-                # Set t_eval
-                self.time_data = self._parameter_set["Current function [A]"].x[0]
+        if "Current function [A]" in self._parameter_set.keys():
+            if dataset is not None and (not self.rebuild_parameters or not rebuild):
+                if "Current function [A]" not in self.parameters.keys():
+                    self.current_function = pybamm.Interpolant(
+                        dataset["Time [s]"],
+                        dataset["Current function [A]"],
+                        pybamm.t,
+                    )
+                    self._parameter_set["Current function [A]"] = self.current_function
+            elif rebuild and self.current_function is not None:
+                self._parameter_set["Current function [A]"] = self.current_function
 
         self._model_with_set_params = self._parameter_set.process_model(
             self._unprocessed_model, inplace=False
@@ -205,14 +283,13 @@ class BaseModel:
 
     def rebuild(
         self,
-        dataset: Dataset = None,
+        dataset: Optional[Dataset] = None,
         parameters: Union[Parameters, dict] = None,
-        parameter_set: ParameterSet = None,
         check_model: bool = True,
-        init_soc: Optional[float] = None,
+        initial_state: Optional[dict] = None,
     ) -> None:
         """
-        Rebuild the PyBaMM model for a given parameter set.
+        Rebuild the PyBaMM model for a given set of inputs.
 
         This method requires the self.build() method to be called first, and
         then rebuilds the model for a given parameter set. Specifically,
@@ -225,25 +302,23 @@ class BaseModel:
             The dataset to be used in the model construction.
         parameters : pybop.Parameters or Dict, optional
             A pybop Parameters class or dictionary containing parameter values to apply to the model.
-        parameter_set : pybop.parameter_set, optional
-            A PyBOP parameter set object or a dictionary containing the parameter values.
         check_model : bool, optional
             If True, the model will be checked for correctness after construction.
-        init_soc : float, optional
-            The initial state of charge to be used in simulations.
+        initial_state : dict, optional
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+            Defaults to None, indicating that the existing initial state of charge (for an ECM)
+            or initial concentrations (for an EChem model) will be used.
         """
-        self.dataset = dataset
-
         if parameters is not None:
             self.classify_and_update_parameters(parameters)
 
-        if init_soc is not None:
-            self.set_init_soc(init_soc)
+        if initial_state is not None:
+            self.set_initial_state(initial_state)
 
         if self._built_model is None:
             raise ValueError("Model must be built before calling rebuild")
 
-        self.set_params(rebuild=True)
+        self.set_params(rebuild=True, dataset=dataset)
         self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
         self._disc = pybamm.Discretisation(
             mesh=self.mesh,
@@ -266,12 +341,9 @@ class BaseModel:
         Parameters
         ----------
         parameters : pybop.Parameters
-
+            The input parameters.
         """
-        if parameters is None:
-            self.parameters = Parameters()
-        else:
-            self.parameters = parameters
+        self.parameters = parameters or Parameters()
 
         parameter_dictionary = self.parameters.as_dict()
 
@@ -289,14 +361,13 @@ class BaseModel:
         self.rebuild_parameters.update(rebuild_parameters)
         self.standard_parameters.update(standard_parameters)
 
-        # Update the parameter set and geometry for rebuild parameters
         if self.rebuild_parameters:
-            self._parameter_set.update(self.rebuild_parameters)
-            self._unprocessed_parameter_set = self._parameter_set
             self._geometry = self.pybamm_model.default_geometry
 
-        # Update the list of parameter names and number of parameters
-        self._n_parameters = len(self.parameters)
+        # Update both the active and unprocessed parameter sets for consistency
+        if self._parameter_set is not None:
+            self._parameter_set.update(parameter_dictionary)
+            self._unprocessed_parameter_set = self._parameter_set
 
     def reinit(
         self, inputs: Inputs, t: float = 0.0, x: Optional[np.ndarray] = None
@@ -314,9 +385,7 @@ class BaseModel:
         if x is None:
             x = self._built_model.y0
 
-        sol = pybamm.Solution([np.asarray([t])], [x], self._built_model, inputs)
-
-        return TimeSeriesState(sol=sol, inputs=inputs, t=t)
+        return self.get_state(inputs, t, x)
 
     def get_state(self, inputs: Inputs, t: float, x: np.ndarray) -> TimeSeriesState:
         """
@@ -342,13 +411,13 @@ class BaseModel:
         """
         dt = time - state.t
         new_sol = self._solver.step(
-            state.sol, self.built_model, dt, npts=2, inputs=state.inputs, save=False
+            state.sol, self._built_model, dt, npts=2, inputs=state.inputs, save=False
         )
         return TimeSeriesState(sol=new_sol, inputs=state.inputs, t=time)
 
     def simulate(
-        self, inputs: Inputs, t_eval: np.array
-    ) -> dict[str, np.ndarray[np.float64]]:
+        self, inputs: Inputs, t_eval: np.array, initial_state: Optional[dict] = None
+    ) -> Union[pybamm.Solution, list[np.float64]]:
         """
         Execute the forward model simulation and return the result.
 
@@ -358,11 +427,16 @@ class BaseModel:
             The input parameters for the simulation.
         t_eval : array-like
             An array of time points at which to evaluate the solution.
+        initial_state : dict, optional
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+            Defaults to None, indicating that the existing initial state of charge (for an ECM)
+            or initial concentrations (for an EChem model) will be used.
 
         Returns
         -------
-        array-like
-            The simulation result corresponding to the specified signal.
+        pybamm.Solution
+            The solution object returned by a PyBaMM simulation, or a pybamm error in the case
+            where the parameter values are infeasible and infeasible solutions are not allowed.
 
         Raises
         ------
@@ -373,33 +447,32 @@ class BaseModel:
 
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
-        else:
-            if self.rebuild_parameters and not self.standard_parameters:
-                sol = self.solver.solve(self.built_model, t_eval=t_eval)
 
-            else:
-                if self.check_params(
-                    inputs=inputs,
-                    allow_infeasible_solutions=self.allow_infeasible_solutions,
-                ):
-                    try:
-                        sol = self.solver.solve(
-                            self.built_model, inputs=inputs, t_eval=t_eval
-                        )
-                    except Exception as e:
-                        print(f"Error: {e}")
-                        return {signal: [np.inf] for signal in self.signal}
-                else:
-                    return {signal: [np.inf] for signal in self.signal}
+        requires_rebuild = False
+        # A rebuild is required if any of the rebuild parameter values have changed
+        for key, value in inputs.items():
+            if key in self.rebuild_parameters:
+                if value != self.parameters[key].value:
+                    requires_rebuild = True
+        # Or if the simulation is set to start from a specific initial value
+        if initial_state is not None:
+            requires_rebuild = True
 
-            y = {
-                signal: sol[signal].data
-                for signal in (self.signal + self.additional_variables)
-            }
+        if requires_rebuild:
+            self.parameters.update(values=list(inputs.values()))
+            self.rebuild(parameters=self.parameters, initial_state=initial_state)
 
-            return y
+        if not self.check_params(
+            inputs=inputs,
+            allow_infeasible_solutions=self.allow_infeasible_solutions,
+        ):
+            raise ValueError("These parameter values are infeasible.")
 
-    def simulateS1(self, inputs: Inputs, t_eval: np.array):
+        return self.solver.solve(self._built_model, inputs=inputs, t_eval=t_eval)
+
+    def simulateS1(
+        self, inputs: Inputs, t_eval: np.array, initial_state: Optional[dict] = None
+    ):
         """
         Perform the forward model simulation with sensitivities.
 
@@ -410,11 +483,16 @@ class BaseModel:
         t_eval : array-like
             An array of time points at which to evaluate the solution and its
             sensitivities.
+        initial_state : dict, optional
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+            Defaults to None, indicating that the existing initial state of charge (for an ECM)
+            or initial concentrations (for an EChem model) will be used.
 
         Returns
         -------
-        tuple
-            A tuple containing the simulation result and the sensitivities.
+        pybamm.Solution
+            The solution object returned by a PyBaMM simulation, or a pybamm error in the case
+            where the parameter values are infeasible and infeasible solutions are not allowed.
 
         Raises
         ------
@@ -425,50 +503,24 @@ class BaseModel:
 
         if self._built_model is None:
             raise ValueError("Model must be built before calling simulate")
-        else:
-            if self.rebuild_parameters:
-                raise ValueError(
-                    "Cannot use sensitivies for parameters which require a model rebuild"
-                )
 
-            if self.check_params(
-                inputs=inputs,
-                allow_infeasible_solutions=self.allow_infeasible_solutions,
-            ):
-                try:
-                    sol = self._solver.solve(
-                        self.built_model,
-                        inputs=inputs,
-                        t_eval=t_eval,
-                        calculate_sensitivities=True,
-                    )
-                    y = {signal: sol[signal].data for signal in self.signal}
+        if self.rebuild_parameters or initial_state is not None:
+            raise ValueError(
+                "Cannot use sensitivies for parameters which require a model rebuild"
+            )
 
-                    # Extract the sensitivities and stack them along a new axis for each signal
-                    dy = np.empty(
-                        (
-                            sol[self.signal[0]].data.shape[0],
-                            self.n_outputs,
-                            self._n_parameters,
-                        )
-                    )
+        if not self.check_params(
+            inputs=inputs,
+            allow_infeasible_solutions=self.allow_infeasible_solutions,
+        ):
+            raise ValueError("These parameter values are infeasible.")
 
-                    for i, signal in enumerate(self.signal):
-                        dy[:, i, :] = np.stack(
-                            [
-                                sol[signal].sensitivities[key].toarray()[:, 0]
-                                for key in self.parameters.keys()
-                            ],
-                            axis=-1,
-                        )
-
-                    return y, dy
-                except Exception as e:
-                    print(f"Error: {e}")
-                    return {signal: [np.inf] for signal in self.signal}, [np.inf]
-
-            else:
-                return {signal: [np.inf] for signal in self.signal}, [np.inf]
+        return self._solver.solve(
+            self._built_model,
+            inputs=inputs,
+            t_eval=t_eval,
+            calculate_sensitivities=True,
+        )
 
     def predict(
         self,
@@ -476,7 +528,7 @@ class BaseModel:
         t_eval: Optional[np.array] = None,
         parameter_set: Optional[ParameterSet] = None,
         experiment: Optional[Experiment] = None,
-        init_soc: Optional[float] = None,
+        initial_state: Optional[dict] = None,
     ) -> dict[str, np.ndarray[np.float64]]:
         """
         Solve the model using PyBaMM's simulation framework and return the solution.
@@ -499,14 +551,16 @@ class BaseModel:
         experiment : pybamm.Experiment, optional
             A PyBaMM Experiment object specifying the experimental conditions under which
             the simulation should be run. Defaults to None, indicating no experiment.
-        init_soc : float, optional
-            The initial state of charge for the simulation, as a fraction (between 0 and 1).
-            Defaults to None.
+        initial_state : dict, optional
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+            Defaults to None, indicating that the existing initial state of charge (for an ECM)
+            or initial concentrations (for an EChem model) will be used.
 
         Returns
         -------
         pybamm.Solution
-            The solution object returned after solving the simulation.
+            The solution object returned by a PyBaMM simulation, or a pybamm error in the case
+            where the parameter values are infeasible and infeasible solutions are not allowed.
 
         Raises
         ------
@@ -522,40 +576,42 @@ class BaseModel:
         elif not self._unprocessed_model._built:  # noqa: SLF001
             self._unprocessed_model.build_model()
 
-        parameter_set = parameter_set or self._unprocessed_parameter_set
+        parameter_set = parameter_set or self._unprocessed_parameter_set.copy()
         if inputs is not None:
             inputs = self.parameters.verify(inputs)
             parameter_set.update(inputs)
 
-        if init_soc is not None and isinstance(
-            self.pybamm_model, pybamm.equivalent_circuit.Thevenin
-        ):
-            parameter_set["Initial SoC"] = init_soc
-            init_soc = None
+        if initial_state is not None:
+            # Update the default initial state for consistency
+            self.set_initial_state(initial_state)
 
-        if self.check_params(
+            initial_state = self.convert_to_pybamm_initial_state(initial_state)
+            if isinstance(self.pybamm_model, pybamm.equivalent_circuit.Thevenin):
+                parameter_set["Initial SoC"] = self._parameter_set["Initial SoC"]
+                initial_state = None
+
+        if not self.check_params(
             parameter_set=parameter_set,
             allow_infeasible_solutions=self.allow_infeasible_solutions,
         ):
-            if experiment is not None:
-                return pybamm.Simulation(
-                    model=self._unprocessed_model,
-                    experiment=experiment,
-                    parameter_values=parameter_set,
-                ).solve(initial_soc=init_soc)
-            elif t_eval is not None:
-                return pybamm.Simulation(
-                    model=self._unprocessed_model,
-                    parameter_values=parameter_set,
-                ).solve(t_eval=t_eval, initial_soc=init_soc)
-            else:
-                raise ValueError(
-                    "The predict method requires either an experiment or "
-                    "t_eval to be specified."
-                )
+            raise ValueError("These parameter values are infeasible.")
 
+        if experiment is not None:
+            return pybamm.Simulation(
+                model=self._unprocessed_model,
+                experiment=experiment,
+                parameter_values=parameter_set,
+            ).solve(initial_soc=initial_state)
+        elif t_eval is not None:
+            return pybamm.Simulation(
+                model=self._unprocessed_model,
+                parameter_values=parameter_set,
+            ).solve(t_eval=t_eval, initial_soc=initial_state)
         else:
-            return [np.inf]
+            raise ValueError(
+                "The predict method requires either an experiment or t_eval "
+                "to be specified."
+            )
 
     def check_params(
         self,
@@ -570,7 +626,7 @@ class BaseModel:
         ----------
         inputs : Inputs
             The input parameters for the simulation.
-        parameter_set : pybop.parameter_set, optional
+        parameter_set : pybop.ParameterSet, optional
             A PyBOP parameter set object or a dictionary containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
@@ -604,7 +660,7 @@ class BaseModel:
         ----------
         inputs : Inputs
             The input parameters for the simulation.
-        parameter_set : pybop.parameter_set
+        parameter_set : pybop.ParameterSet
             A PyBOP parameter set object or a dictionary containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
@@ -715,10 +771,6 @@ class BaseModel:
     @property
     def parameter_set(self):
         return self._parameter_set
-
-    @parameter_set.setter  # remove in #425
-    def parameter_set(self, parameter_set):
-        self._parameter_set = parameter_set.copy() if parameter_set is not None else {}
 
     @property
     def model_with_set_params(self):

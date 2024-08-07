@@ -17,20 +17,23 @@ class TestCosts:
             pass
 
     @pytest.fixture
-    def model(self):
-        return pybop.lithium_ion.SPM()
+    def model(self, ground_truth):
+        model = pybop.lithium_ion.SPM()
+        model.parameter_set["Negative electrode active material volume fraction"] = (
+            ground_truth
+        )
+        return model
 
     @pytest.fixture
     def ground_truth(self):
         return 0.52
 
     @pytest.fixture
-    def parameters(self, ground_truth):
+    def parameters(self):
         return pybop.Parameter(
             "Negative electrode active material volume fraction",
             prior=pybop.Gaussian(0.5, 0.01),
             bounds=[0.375, 0.625],
-            initial_value=ground_truth,
         )
 
     @pytest.fixture
@@ -42,13 +45,7 @@ class TestCosts:
         )
 
     @pytest.fixture
-    def dataset(self, model, experiment, ground_truth):
-        model.parameter_set = model.pybamm_model.default_parameter_values
-        model.parameter_set.update(
-            {
-                "Negative electrode active material volume fraction": ground_truth,
-            }
-        )
+    def dataset(self, model, experiment):
         solution = model.predict(experiment=experiment)
         return pybop.Dataset(
             {
@@ -66,9 +63,7 @@ class TestCosts:
     def problem(self, model, parameters, dataset, signal, request):
         cut_off = request.param
         model.parameter_set.update({"Lower voltage cut-off [V]": cut_off})
-        problem = pybop.FittingProblem(
-            model, parameters, dataset, signal=signal, init_soc=1.0
-        )
+        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
         problem.dataset = dataset  # add this to pass the pybop dataset to cost
         return problem
 
@@ -182,7 +177,7 @@ class TestCosts:
             higher_cost = cost([0.55])
             lower_cost = cost([0.52])
         assert higher_cost > lower_cost or (
-            higher_cost == lower_cost and higher_cost == np.inf
+            higher_cost == lower_cost and not np.isfinite(higher_cost)
         )
 
         # Test type of returned value
@@ -256,7 +251,11 @@ class TestCosts:
     @pytest.fixture
     def design_problem(self, model, parameters, experiment, signal):
         return pybop.DesignProblem(
-            model, parameters, experiment, signal=signal, init_soc=0.5
+            model,
+            parameters,
+            experiment,
+            signal=signal,
+            initial_state={"Initial SoC": 0.5},
         )
 
     @pytest.mark.parametrize(
@@ -299,8 +298,26 @@ class TestCosts:
             cost = cost_class(design_problem, update_capacity=True)
             cost([0.4])
 
+    @pytest.fixture
+    def noisy_problem(self, ground_truth, parameters, experiment):
+        model = pybop.lithium_ion.SPM()
+        model.parameter_set["Negative electrode active material volume fraction"] = (
+            ground_truth
+        )
+        sol = model.predict(experiment=experiment)
+        noisy_dataset = pybop.Dataset(
+            {
+                "Time [s]": sol["Time [s]"].data,
+                "Current function [A]": sol["Current [A]"].data,
+                "Voltage [V]": sol["Voltage [V]"].data
+                + np.random.normal(0, 0.02, len(sol["Time [s]"].data)),
+            }
+        )
+        return pybop.FittingProblem(model, parameters, noisy_dataset)
+
     @pytest.mark.unit
-    def test_weighted_fitting_cost(self, problem):
+    def test_weighted_fitting_cost(self, noisy_problem):
+        problem = noisy_problem
         cost1 = pybop.SumSquaredError(problem)
         cost2 = pybop.RootMeanSquaredError(problem)
 
@@ -360,14 +377,15 @@ class TestCosts:
 
         # Test MAP explicitly
         cost4 = pybop.MAP(problem, pybop.GaussianLogLikelihood)
-        weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, weight])
+        weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, -1 / weight])
         assert weighted_cost_4.has_identical_problems is False
         assert weighted_cost_4.has_separable_problem is False
-        sigma = 0.05
-        assert weighted_cost_4([0.5, sigma]) <= 0
+        sigma = 0.01
+        assert np.isfinite(cost4.parameters["Sigma for output 1"].prior.logpdf(sigma))
+        assert np.isfinite(weighted_cost_4([0.5, sigma]))
         np.testing.assert_allclose(
             weighted_cost_4.evaluate([0.6, sigma]),
-            cost1([0.6, sigma]) + weight * cost4([0.6, sigma]),
+            cost1([0.6, sigma]) - 1 / weight * cost4([0.6, sigma]),
             atol=1e-5,
         )
 

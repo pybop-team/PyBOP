@@ -10,20 +10,25 @@ class TestLikelihoods:
     """
 
     @pytest.fixture
-    def model(self):
-        return pybop.lithium_ion.SPM()
+    def model(self, ground_truth):
+        model = pybop.lithium_ion.SPM()
+        model.parameter_set.update(
+            {
+                "Negative electrode active material volume fraction": ground_truth,
+            }
+        )
+        return model
 
     @pytest.fixture
     def ground_truth(self):
         return 0.52
 
     @pytest.fixture
-    def parameters(self, ground_truth):
+    def parameters(self):
         return pybop.Parameter(
             "Negative electrode active material volume fraction",
             prior=pybop.Gaussian(0.5, 0.01),
             bounds=[0.375, 0.625],
-            initial_value=ground_truth,
         )
 
     @pytest.fixture
@@ -35,13 +40,7 @@ class TestLikelihoods:
         )
 
     @pytest.fixture
-    def dataset(self, model, experiment, ground_truth):
-        model.parameter_set = model.pybamm_model.default_parameter_values
-        model.parameter_set.update(
-            {
-                "Negative electrode active material volume fraction": ground_truth,
-            }
-        )
+    def dataset(self, model, experiment):
         solution = model.predict(experiment=experiment)
         return pybop.Dataset(
             {
@@ -54,16 +53,12 @@ class TestLikelihoods:
     @pytest.fixture
     def one_signal_problem(self, model, parameters, dataset):
         signal = ["Voltage [V]"]
-        return pybop.FittingProblem(
-            model, parameters, dataset, signal=signal, init_soc=1.0
-        )
+        return pybop.FittingProblem(model, parameters, dataset, signal=signal)
 
     @pytest.fixture
     def two_signal_problem(self, model, parameters, dataset):
         signal = ["Time [s]", "Voltage [V]"]
-        return pybop.FittingProblem(
-            model, parameters, dataset, signal=signal, init_soc=1.0
-        )
+        return pybop.FittingProblem(model, parameters, dataset, signal=signal)
 
     @pytest.mark.parametrize(
         "problem_name, n_outputs",
@@ -123,7 +118,8 @@ class TestLikelihoods:
         grad_result, grad_likelihood = likelihood.evaluateS1(np.array([0.5]))
         assert isinstance(result, float)
         np.testing.assert_allclose(result, grad_result, atol=1e-5)
-        assert np.all(grad_likelihood <= 0)
+        # Since 0.5 < ground_truth, the likelihood should be increasing
+        assert grad_likelihood >= 0
 
     @pytest.mark.unit
     def test_gaussian_log_likelihood(self, one_signal_problem):
@@ -132,7 +128,10 @@ class TestLikelihoods:
         grad_result, grad_likelihood = likelihood.evaluateS1(np.array([0.8, 0.2]))
         assert isinstance(result, float)
         np.testing.assert_allclose(result, grad_result, atol=1e-5)
-        assert np.all(grad_likelihood <= 0)
+        # Since 0.8 > ground_truth, the likelihood should be decreasing
+        assert grad_likelihood[0] <= 0
+        # Since sigma < 0.5, the likelihood should be decreasing
+        assert grad_likelihood[1] <= 0
 
         # Test construction with sigma as a Parameter
         sigma = pybop.Parameter("sigma", prior=pybop.Uniform(0.4, 0.6))
