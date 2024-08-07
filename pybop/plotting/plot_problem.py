@@ -37,7 +37,7 @@ def quick_plot(problem, problem_inputs: Inputs = None, show=True, **layout_kwarg
         problem_inputs = problem.parameters.verify(problem_inputs)
 
     # Extract the time data and evaluate the model's output and target values
-    xaxis_data = problem.time_data()
+    xaxis_data = problem.domain_data()
     model_output = problem.evaluate(problem_inputs)
     target_output = problem.get_target()
 
@@ -53,13 +53,13 @@ def quick_plot(problem, problem_inputs: Inputs = None, show=True, **layout_kwarg
         # Create a plotting dictionary
         if isinstance(problem, DesignProblem):
             trace_name = "Optimised"
-            opt_time_data = model_output["Time [s]"]
+            opt_domain_data = model_output["Time [s]"]
         else:
             trace_name = "Model"
-            opt_time_data = xaxis_data
+            opt_domain_data = xaxis_data
 
         plot_dict = StandardPlot(
-            x=opt_time_data,
+            x=opt_domain_data,
             y=model_output[i],
             layout_options=default_layout_options,
             trace_names=trace_name,

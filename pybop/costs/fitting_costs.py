@@ -43,7 +43,7 @@ class RootMeanSquaredError(BaseCost):
 
         e = np.asarray(
             [
-                np.sqrt(np.mean((self.y[signal] - self._target[signal]) ** 2))
+                np.sqrt(np.mean(np.abs(self.y[signal] - self._target[signal]) ** 2))
                 for signal in self.signal
             ]
         )
@@ -125,7 +125,7 @@ class SumSquaredError(BaseCost):
 
         e = np.asarray(
             [
-                np.sum((self.y[signal] - self._target[signal]) ** 2)
+                np.sum(np.abs(self.y[signal] - self._target[signal]) ** 2)
                 for signal in self.signal
             ]
         )
@@ -258,13 +258,7 @@ class Minkowski(BaseCost):
         r = np.asarray(
             [self.y[signal] - self._target[signal] for signal in self.signal]
         )
-        e = np.asarray(
-            [
-                np.sum(np.abs(self.y[signal] - self._target[signal]) ** self.p)
-                ** (1 / self.p)
-                for signal in self.signal
-            ]
-        )
+        e = np.asarray([np.sum(np.abs(r) ** self.p) ** (1 / self.p)])
         de = np.sum(
             np.sum(r ** (self.p - 1) * self.dy.T, axis=2)
             / (e ** (self.p - 1) + np.finfo(float).eps),
@@ -404,7 +398,7 @@ class ObserverCost(BaseCost):
             The observer cost (negative of the log likelihood).
         """
         log_likelihood = self._observer.log_likelihood(
-            self._target, self._observer.time_data(), inputs
+            self._target, self._observer.domain_data(), inputs
         )
         return -log_likelihood
 

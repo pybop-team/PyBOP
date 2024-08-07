@@ -28,15 +28,15 @@ class StandaloneProblem(BaseProblem):
             if name not in self._dataset:
                 raise ValueError(f"expected {name} in list of dataset")
 
-        self._time_data = self._dataset["Time [s]"]
-        self.n_time_data = len(self._time_data)
-        if np.any(self._time_data < 0):
+        self._domain_data = self._dataset["Time [s]"]
+        self.n_data = len(self._domain_data)
+        if np.any(self._domain_data < 0):
             raise ValueError("Times can not be negative.")
-        if np.any(self._time_data[:-1] >= self._time_data[1:]):
+        if np.any(self._domain_data[:-1] >= self._domain_data[1:]):
             raise ValueError("Times must be increasing.")
 
         for signal in self.signal:
-            if len(self._dataset[signal]) != self.n_time_data:
+            if len(self._dataset[signal]) != self.n_data:
                 raise ValueError(
                     f"Time data and {signal} data must be the same length."
                 )
@@ -58,7 +58,7 @@ class StandaloneProblem(BaseProblem):
         """
 
         return {
-            signal: inputs["Gradient"] * self._time_data + inputs["Intercept"]
+            signal: inputs["Gradient"] * self._domain_data + inputs["Intercept"]
             for signal in self.signal
         }
 
@@ -80,7 +80,7 @@ class StandaloneProblem(BaseProblem):
 
         y = self.evaluate(inputs)
 
-        dy = np.zeros((self.n_time_data, self.n_outputs, self.n_parameters))
-        dy[:, 0, 0] = self._time_data
+        dy = np.zeros((self.n_data, self.n_outputs, self.n_parameters))
+        dy[:, 0, 0] = self._domain_data
 
         return (y, dy)

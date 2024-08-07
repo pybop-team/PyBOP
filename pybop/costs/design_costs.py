@@ -61,7 +61,7 @@ class DesignCost(BaseCost):
 
         if "Time [s]" not in solution:
             raise ValueError("The solution does not contain time data.")
-        self.problem._time_data = solution["Time [s]"]
+        self.problem._domain_data = solution["Time [s]"]
         self.problem._target = {key: solution[key] for key in self.problem.signal}
         self.dt = solution["Time [s]"][1] - solution["Time [s]"][0]
 

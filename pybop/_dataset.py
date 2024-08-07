@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 from pybamm import solvers
 
@@ -76,41 +78,68 @@ class Dataset:
 
         return self.data[key]
 
-    def check(self, signal=None):
+    def check(self, domain: str = None, signal: Union[str, list[str]] = None) -> bool:
         """
         Check the consistency of a PyBOP Dataset against the expected format.
+
+        Parameters
+        ----------
+        domain : str, optional
+            The domain of the dataset. Defaults to "Time [s]".
+        signal : str or List[str], optional
+            The signal(s) to check. Defaults to ["Voltage [V]"].
 
         Returns
         -------
         bool
-            If True, the dataset has the expected attributes.
+            True if the dataset has the expected attributes.
 
         Raises
         ------
         ValueError
             If the time series and the data series are not consistent.
         """
-        if signal is None:
-            signal = ["Voltage [V]"]
-        if isinstance(signal, str):
-            signal = [signal]
+        self.domain = domain or "Time [s]"
+        signals = [signal] if isinstance(signal, str) else (signal or ["Voltage [V]"])
 
-        # Check that the dataset contains time and chosen signal
-        for name in ["Time [s]", *signal]:
-            if name not in self.names:
-                raise ValueError(f"expected {name} in list of dataset")
+        # Check that the dataset contains domain and chosen signals
+        missing_attributes = set([self.domain, *signals]) - set(self.names)
+        if missing_attributes:
+            raise ValueError(
+                f"Expected {', '.join(missing_attributes)} in list of dataset"
+            )
 
-        # Check for increasing times
-        time_data = self.data["Time [s]"]
+        domain_data = self.data[self.domain]
+
+        # Check domain-specific constraints
+        if self.domain == "Time [s]":
+            self._check_time_constraints(domain_data)
+        elif self.domain == "Frequency [Hz]":
+            self._check_frequency_constraints(domain_data)
+
+        # Check for consistent data length
+        self._check_data_consistency(domain_data, signals)
+
+        return True
+
+    @staticmethod
+    def _check_time_constraints(time_data: np.ndarray) -> None:
         if np.any(time_data < 0):
-            raise ValueError("Times can not be negative.")
+            raise ValueError("Times cannot be negative.")
         if np.any(time_data[:-1] >= time_data[1:]):
             raise ValueError("Times must be increasing.")
 
-        # Check for consistent data
-        n_time_data = len(time_data)
-        for s in signal:
-            if len(self.data[s]) != n_time_data:
-                raise ValueError(f"Time data and {s} data must be the same length.")
+    @staticmethod
+    def _check_frequency_constraints(freq_data: np.ndarray) -> None:
+        if np.any(freq_data < 0):
+            raise ValueError("Frequencies cannot be negative.")
 
-        return True
+    def _check_data_consistency(
+        self, domain_data: np.ndarray, signals: list[str]
+    ) -> None:
+        n_domain_data = len(domain_data)
+        for s in signals:
+            if len(self.data[s]) != n_domain_data:
+                raise ValueError(
+                    f"{self.domain} data and {s} data must be the same length."
+                )

@@ -43,7 +43,7 @@ script_path = path.dirname(__file__)
 #
 # Utilities
 #
-from ._utils import is_numeric
+from ._utils import is_numeric, SymbolReplacer
 
 #
 # Experiment class
@@ -88,6 +88,7 @@ from .models.base_model import Inputs
 from .problems.base_problem import BaseProblem
 from .problems.fitting_problem import FittingProblem
 from .problems.design_problem import DesignProblem
+from .problems.eis_problem import EISProblem
 
 #
 # Cost function class
@@ -156,6 +157,7 @@ from .plotting.plot_dataset import plot_dataset
 from .plotting.plot_convergence import plot_convergence
 from .plotting.plot_parameters import plot_parameters
 from .plotting.plot_problem import quick_plot
+from .plotting.nyquist import nyquist
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop
