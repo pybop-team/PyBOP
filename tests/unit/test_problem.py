@@ -45,7 +45,6 @@ class TestProblem:
 
     @pytest.fixture
     def dataset(self, model, experiment):
-        model.parameter_set = model.pybamm_model.default_parameter_values
         x0 = np.array([2e-5, 0.5e-5])
         model.parameter_set.update(
             {
@@ -71,7 +70,7 @@ class TestProblem:
         # Construct Problem
         problem = pybop.BaseProblem(parameters, model=model)
 
-        assert problem._model == model
+        assert problem.model == model
 
         with pytest.raises(NotImplementedError):
             problem.evaluate([1e-5, 1e-5])
@@ -109,11 +108,29 @@ class TestProblem:
 
     @pytest.mark.unit
     def test_fitting_problem(self, parameters, dataset, model, signal):
-        # Construct Problem
-        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
+        with pytest.warns(UserWarning) as record:
+            problem = pybop.FittingProblem(
+                model,
+                parameters,
+                dataset,
+                signal=signal,
+                initial_state={"Initial SoC": 0.8},
+            )
+        assert "It is usually better to define an initial open-circuit voltage" in str(
+            record[0].message
+        )
 
-        assert problem._model == model
-        assert problem._model._built_model is not None
+        # Construct Problem
+        problem = pybop.FittingProblem(
+            model,
+            parameters,
+            dataset,
+            signal=signal,
+            initial_state={"Initial open-circuit voltage [V]": 4.0},
+        )
+
+        assert problem.model == model
+        assert problem.model.built_model is not None
 
         # Test get target
         target = problem.get_target()["Voltage [V]"]
@@ -129,6 +146,9 @@ class TestProblem:
 
         # Test model.simulate
         model.simulate(inputs=[1e-5, 1e-5], t_eval=np.linspace(0, 10, 100))
+
+        # Test model.simulate with an initial state
+        problem.evaluate(inputs=[1e-5, 1e-5])
 
         # Test problem construction errors
         for bad_dataset in [
@@ -164,24 +184,35 @@ class TestProblem:
 
     @pytest.mark.unit
     def test_design_problem(self, parameters, experiment, model):
+        with pytest.warns(UserWarning) as record:
+            problem = pybop.DesignProblem(
+                model,
+                parameters,
+                experiment,
+                initial_state={"Initial open-circuit voltage [V]": 4.0},
+            )
+        assert "It is usually better to define an initial state of charge" in str(
+            record[0].message
+        )
+
         # Construct Problem
         problem = pybop.DesignProblem(model, parameters, experiment)
 
-        assert problem._model == model
+        assert problem.model == model
         assert (
-            problem._model._built_model is None
+            problem.model.built_model is None
         )  # building postponed with input experiment
-        assert problem.init_soc == 1.0
+        assert problem.initial_state == {"Initial SoC": 1.0}
 
         # Test model.predict
         model.predict(inputs=[1e-5, 1e-5], experiment=experiment)
         model.predict(inputs=[3e-5, 3e-5], experiment=experiment)
 
-        # Test init_soc from parameter_set
+        # Test initial SoC from parameter_set
         model = pybop.empirical.Thevenin()
-        model._parameter_set["Initial SoC"] = 0.8
+        model.parameter_set["Initial SoC"] = 0.8
         problem = pybop.DesignProblem(model, pybop.Parameters(), experiment)
-        assert problem.init_soc == 0.8
+        assert problem.initial_state == {"Initial SoC": 0.8}
 
     @pytest.mark.unit
     def test_problem_construct_with_model_predict(
@@ -198,7 +229,7 @@ class TestProblem:
         # Test problem evaluate
         problem_output = problem.evaluate([2e-5, 2e-5])
 
-        assert problem._model._built_model is not None
+        assert problem.model.built_model is not None
         with pytest.raises(AssertionError):
             assert_allclose(
                 out["Voltage [V]"].data,

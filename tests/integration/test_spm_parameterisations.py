@@ -19,6 +19,13 @@ class Test_SPM_Parameterisation:
     @pytest.fixture
     def model(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        x = self.ground_truth
+        parameter_set.update(
+            {
+                "Negative electrode active material volume fraction": x[0],
+                "Positive electrode active material volume fraction": x[1],
+            }
+        )
         return pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
     @pytest.fixture
@@ -60,7 +67,7 @@ class Test_SPM_Parameterisation:
     @pytest.fixture
     def spm_costs(self, model, parameters, cost_class, init_soc):
         # Form dataset
-        solution = self.get_data(model, parameters, self.ground_truth, init_soc)
+        solution = self.get_data(model, init_soc)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -71,7 +78,7 @@ class Test_SPM_Parameterisation:
         )
 
         # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
+        problem = pybop.FittingProblem(model, parameters, dataset)
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
             return cost_class(problem, sigma0=self.sigma0)
         elif cost_class in [pybop.GaussianLogLikelihood]:
@@ -150,8 +157,7 @@ class Test_SPM_Parameterisation:
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, cost_class):
         # Form dataset
-        init_soc = 0.5
-        solution = self.get_data(model, parameters, self.ground_truth, init_soc)
+        solution = self.get_data(model, 0.5)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -167,9 +173,7 @@ class Test_SPM_Parameterisation:
 
         # Define the cost to optimise
         signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
-        problem = pybop.FittingProblem(
-            model, parameters, dataset, signal=signal, init_soc=init_soc
-        )
+        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
             return cost_class(problem, sigma0=self.sigma0)
@@ -233,7 +237,7 @@ class Test_SPM_Parameterisation:
         second_model = pybop.lithium_ion.SPMe(parameter_set=second_parameter_set)
 
         # Form dataset
-        solution = self.get_data(second_model, parameters, self.ground_truth, init_soc)
+        solution = self.get_data(second_model, init_soc)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -243,7 +247,7 @@ class Test_SPM_Parameterisation:
         )
 
         # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
+        problem = pybop.FittingProblem(model, parameters, dataset)
         cost = pybop.RootMeanSquaredError(problem)
 
         # Select optimiser
@@ -263,8 +267,8 @@ class Test_SPM_Parameterisation:
         with np.testing.assert_raises(AssertionError):
             np.testing.assert_allclose(x, self.ground_truth, atol=2e-2)
 
-    def get_data(self, model, parameters, x, init_soc):
-        model.classify_and_update_parameters(parameters)
+    def get_data(self, model, init_soc):
+        initial_state = {"Initial SoC": init_soc}
         experiment = pybop.Experiment(
             [
                 (
@@ -273,5 +277,5 @@ class Test_SPM_Parameterisation:
                 ),
             ]
         )
-        sim = model.predict(init_soc=init_soc, experiment=experiment, inputs=x)
+        sim = model.predict(initial_state=initial_state, experiment=experiment)
         return sim

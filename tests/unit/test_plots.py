@@ -82,6 +82,7 @@ class TestPlots:
 
     @pytest.fixture
     def design_problem(self, model, parameters, experiment):
+        model = pybop.lithium_ion.SPM()
         return pybop.DesignProblem(model, parameters, experiment)
 
     @pytest.mark.unit

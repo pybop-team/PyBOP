@@ -135,17 +135,27 @@ class TestModels:
                 "Positive electrode active material volume fraction": 0.9,
             }
 
-            res = model.predict(t_eval=t_eval, inputs=inputs)
-            assert np.isinf(res).any()
+            with pytest.raises(
+                ValueError, match="These parameter values are infeasible."
+            ):
+                model.predict(t_eval=t_eval, inputs=inputs)
 
     @pytest.mark.unit
     def test_build(self, model):
-        model.build()
-        assert model.built_model is not None
+        if isinstance(model, pybop.lithium_ion.SPMe):
+            model.build(initial_state={"Initial SoC": 1.0})
 
-        # Test that the model can be built again
-        model.build()
-        assert model.built_model is not None
+            # Test attributes with init_soc
+            assert model.built_model is not None
+            assert model.disc is not None
+            assert model.built_initial_soc is not None
+        else:
+            model.build()
+            assert model.built_model is not None
+
+            # Test that the model can be built again
+            model.build()
+            assert model.built_model is not None
 
     @pytest.mark.unit
     def test_rebuild(self, model):
@@ -192,18 +202,18 @@ class TestModels:
         # Test initilisation with different types of parameter set
         param_dict = {"Nominal cell capacity [A.h]": 5}
         model = pybop.BaseModel(parameter_set=None)
-        assert model._parameter_set is None
+        assert model.parameter_set is None
 
         model = pybop.BaseModel(parameter_set=param_dict)
         parameter_set = pybamm.ParameterValues(param_dict)
-        assert model._parameter_set == parameter_set
+        assert model.parameter_set == parameter_set
 
         model = pybop.BaseModel(parameter_set=parameter_set)
-        assert model._parameter_set == parameter_set
+        assert model.parameter_set == parameter_set
 
         pybop_parameter_set = pybop.ParameterSet(params_dict=param_dict)
         model = pybop.BaseModel(parameter_set=pybop_parameter_set)
-        assert model._parameter_set == parameter_set
+        assert model.parameter_set == parameter_set
 
     @pytest.mark.unit
     def test_rebuild_geometric_parameters(self):
@@ -247,8 +257,8 @@ class TestModels:
 
         # Test model geometry
         assert (
-            rebuilt_model._mesh["negative electrode"].nodes[1]
-            != initial_built_model._mesh["negative electrode"].nodes[1]
+            rebuilt_model.mesh["negative electrode"].nodes[1]
+            != initial_built_model.mesh["negative electrode"].nodes[1]
         )
         assert (
             rebuilt_model.geometry["negative electrode"]["x_n"]["max"]
@@ -261,8 +271,8 @@ class TestModels:
         )
 
         assert (
-            rebuilt_model._mesh["positive particle"].nodes[1]
-            != initial_built_model._mesh["positive particle"].nodes[1]
+            rebuilt_model.mesh["positive particle"].nodes[1]
+            != initial_built_model.mesh["positive particle"].nodes[1]
         )
 
         # Compare model results
@@ -310,7 +320,7 @@ class TestModels:
         t_eval = np.linspace(0, 10, 100)
         expected = y0 * np.exp(-k * t_eval)
         solved = model.simulate(inputs, t_eval)
-        np.testing.assert_array_almost_equal(solved["y_0"], expected, decimal=5)
+        np.testing.assert_array_almost_equal(solved["y_0"].data, expected, decimal=5)
 
         with pytest.raises(ValueError):
             ExponentialDecay(n_states=-1)
@@ -330,7 +340,7 @@ class TestModels:
             base.approximate_capacity(x)
 
         base.classify_and_update_parameters(parameters=None)
-        assert base._n_parameters == 0
+        assert isinstance(base.parameters, pybop.Parameters)
 
     @pytest.mark.unit
     def test_thevenin_model(self):
@@ -347,8 +357,37 @@ class TestModels:
             == model.pybamm_model.default_parameter_values["Open-circuit voltage [V]"]
         )
 
-        model.predict(init_soc=0.5, t_eval=np.arange(0, 10, 5))
-        assert model._parameter_set["Initial SoC"] == 0.5
+        model.predict(initial_state={"Initial SoC": 0.5}, t_eval=np.arange(0, 10, 5))
+        assert model.parameter_set["Initial SoC"] == 0.5
+
+        model.set_initial_state({"Initial SoC": parameter_set["Initial SoC"] / 2})
+        assert model.parameter_set["Initial SoC"] == parameter_set["Initial SoC"] / 2
+        model.set_initial_state(
+            {
+                "Initial open-circuit voltage [V]": parameter_set[
+                    "Lower voltage cut-off [V]"
+                ]
+            }
+        )
+        np.testing.assert_allclose(model.parameter_set["Initial SoC"], 0.0, atol=1e-2)
+        model.set_initial_state(
+            {
+                "Initial open-circuit voltage [V]": parameter_set[
+                    "Upper voltage cut-off [V]"
+                ]
+            }
+        )
+        np.testing.assert_allclose(model.parameter_set["Initial SoC"], 1.0, atol=1e-2)
+
+        with pytest.raises(ValueError, match="outside the voltage limits"):
+            model.set_initial_state({"Initial open-circuit voltage [V]": -1.0})
+        with pytest.raises(ValueError, match="Initial SOC should be between 0 and 1"):
+            model.set_initial_state({"Initial SoC": -1.0})
+        with pytest.raises(
+            ValueError,
+            match="Initial value must be a float between 0 and 1, or a string ending in 'V'",
+        ):
+            model.set_initial_state({"Initial SoC": "invalid string"})
 
     @pytest.mark.unit
     def test_check_params(self):
@@ -389,6 +428,41 @@ class TestModels:
         for key in problem.signal:
             assert np.allclose(output.get(key, [])[0], output.get(key, []))
             assert np.allclose(output_S1.get(key, [])[0], output_S1.get(key, []))
+
+    @pytest.mark.unit
+    def test_set_initial_state(self):
+        t_eval = np.linspace(0, 10, 100)
+
+        model = pybop.lithium_ion.SPM()
+        model.build(initial_state={"Initial SoC": 0.7})
+        values_1 = model.predict(t_eval=t_eval)
+
+        model = pybop.lithium_ion.SPM()
+        model.build(initial_state={"Initial SoC": 0.4})
+        model.set_initial_state({"Initial SoC": 0.7})
+        values_2 = model.predict(t_eval=t_eval)
+
+        np.testing.assert_allclose(
+            values_1["Voltage [V]"].data, values_2["Voltage [V]"].data, atol=1e-8
+        )
+
+        init_ocp_p = model.parameter_set["Positive electrode OCP [V]"](0.7)
+        init_ocp_n = model.parameter_set["Negative electrode OCP [V]"](0.7)
+        model.set_initial_state(
+            {"Initial open-circuit voltage [V]": init_ocp_p - init_ocp_n}
+        )
+        values_3 = model.predict(t_eval=t_eval)
+
+        np.testing.assert_allclose(
+            values_1["Voltage [V]"].data, values_3["Voltage [V]"].data, atol=0.05
+        )
+
+        with pytest.raises(ValueError, match="Expecting only one initial state."):
+            model.set_initial_state(
+                {"Initial open-circuit voltage [V]": 3.7, "Initial SoC": 0.7}
+            )
+        with pytest.raises(ValueError, match="Unrecognised initial state"):
+            model.set_initial_state({"Initial voltage [V]": 3.7})
 
     @pytest.mark.unit
     def test_get_parameter_info(self, model):

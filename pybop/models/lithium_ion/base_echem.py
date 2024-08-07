@@ -62,18 +62,18 @@ class EChemBaseModel(BaseModel):
         self._unprocessed_parameter_set = self._parameter_set
 
         # Define model geometry and discretization
-        self.geometry = geometry or self.pybamm_model.default_geometry
-        self.submesh_types = submesh_types or self.pybamm_model.default_submesh_types
-        self.var_pts = var_pts or self.pybamm_model.default_var_pts
-        self.spatial_methods = (
+        self._geometry = geometry or self.pybamm_model.default_geometry
+        self._submesh_types = submesh_types or self.pybamm_model.default_submesh_types
+        self._var_pts = var_pts or self.pybamm_model.default_var_pts
+        self._spatial_methods = (
             spatial_methods or self.pybamm_model.default_spatial_methods
         )
         if solver is None:
-            self.solver = self.pybamm_model.default_solver
-            self.solver.mode = "fast with events"
-            self.solver.max_step_decrease_count = 1
+            self._solver = self.pybamm_model.default_solver
+            self._solver.mode = "fast with events"
+            self._solver.max_step_decrease_count = 1
         else:
-            self.solver = solver
+            self._solver = solver
 
         # Internal attributes for the built model are initialized but not set
         self._model_with_set_params = None
@@ -98,7 +98,7 @@ class EChemBaseModel(BaseModel):
         ----------
         inputs : Inputs
             The input parameters for the simulation.
-        parameter_set : pybop.parameter_set
+        parameter_set : pybop.ParameterSet
             A PyBOP parameter set object or a dictionary containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
