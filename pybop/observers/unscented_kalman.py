@@ -55,7 +55,7 @@ class UnscentedKalmanFilterObserver(Observer):
     ) -> None:
         if model is not None:
             # Clear any existing built model and its properties
-            if model._built_model is not None:
+            if model.built_model is not None:
                 model.clear()
 
             # Build the model from scratch
