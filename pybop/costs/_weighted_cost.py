@@ -16,14 +16,14 @@ class WeightedCost(BaseCost):
 
     Attributes
     ---------------------
-    costs : list[pybop.BaseCost]
-        A list of PyBOP cost objects.
+    costs : pybop.BaseCost
+        The individual PyBOP cost objects.
     weights : list[float]
         A list of values with which to weight the cost values.
-    _has_identical_problems : bool
+    has_identical_problems : bool
         If True, the shared problem will be evaluated once and saved before the
         self.compute() method of each cost is called (default: False).
-    _has_separable_problem: bool
+    has_separable_problem: bool
         This attribute must be set to False for WeightedCost objects. If the
         corresponding attribute of an individual cost is True, the problem is
         separable from the cost function and will be evaluated before the
