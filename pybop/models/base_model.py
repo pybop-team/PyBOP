@@ -201,7 +201,7 @@ class BaseModel:
         elif "Initial open-circuit voltage [V]" in initial_state.keys():
             return str(initial_state["Initial open-circuit voltage [V]"]) + "V"
         else:
-            raise ValueError("Unrecognised initial state.")
+            raise ValueError(f'Unrecognised initial state: "{list(initial_state)[0]}"')
 
     def set_initial_state(self, initial_state: dict):
         """

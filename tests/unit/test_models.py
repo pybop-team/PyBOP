@@ -457,6 +457,13 @@ class TestModels:
             values_1["Voltage [V]"].data, values_3["Voltage [V]"].data, atol=0.05
         )
 
+        with pytest.raises(ValueError, match="Expecting only one initial state."):
+            model.set_initial_state(
+                {"Initial open-circuit voltage [V]": 3.7, "Initial SoC": 0.7}
+            )
+        with pytest.raises(ValueError, match="Unrecognised initial state"):
+            model.set_initial_state({"Initial voltage [V]": 3.7})
+
     @pytest.mark.unit
     def test_get_parameter_info(self, model):
         if isinstance(model, pybop.empirical.Thevenin):
