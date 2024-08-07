@@ -375,3 +375,107 @@ class MAP(BaseLikelihood):
         total_gradient = dl + prior_gradient
 
         return posterior, total_gradient
+
+
+class LogPosterior(BaseCost):
+    """
+    The Log Posterior for a given problem.
+
+    Computes the log posterior which is the sum of the log
+    likelihood and the log prior.
+
+    Inherits all parameters and attributes from ``BaseCost``.
+    """
+
+    def __init__(self, log_likelihood, log_prior=None):
+        super().__init__(problem=log_likelihood.problem)
+
+        # Store the likelihood and prior
+        self._log_likelihood = log_likelihood
+        self._prior = log_prior
+        if self._prior is None:
+            try:
+                self._prior = log_likelihood.problem.parameters.priors()
+            except Exception as e:
+                raise ValueError(
+                    f"An error occurred when constructing the Prior class: {e}"
+                ) from e
+
+    def compute(self, inputs: Inputs) -> float:
+        """
+        Calculate the posterior cost for a given set of parameters.
+
+        Parameters
+        ----------
+        x : array-like
+            The parameters for which to evaluate the cost.
+        grad : array-like, optional
+            An array to store the gradient of the cost function with respect
+            to the parameters.
+
+        Returns
+        -------
+        float
+            The posterior cost.
+        """
+        log_prior = self._prior(inputs)
+
+        if not np.isfinite(log_prior).any():
+            return log_prior
+
+        if self._has_separable_problem:
+            self._log_likelihood.y = self.y
+        log_likelihood = self._log_likelihood.compute(inputs)
+
+        return log_likelihood + log_prior
+
+    def computeS1(self, inputs: Inputs) -> tuple[float, np.ndarray]:
+        """
+        Compute the posterior with respect to the parameters.
+        The method passes the likelihood gradient to the optimiser without modification.
+
+        Parameters
+        ----------
+        x : array-like
+            The parameters for which to compute the cost and gradient.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the cost and the gradient. The cost is a float,
+            and the gradient is an array-like of the same length as `x`.
+
+        Raises
+        ------
+        ValueError
+            If an error occurs during the calculation of the cost or gradient.
+        """
+        prior, dp = self._prior.evaluateS1(inputs)
+        if not np.isfinite(prior):
+            return prior, dp
+        if self._has_separable_problem:
+            self._log_likelihood.y, self._log_likelihood.dy = (self.y, self.dy)
+        likelihood, dl = self._log_likelihood.computeS1(inputs)
+        return prior + likelihood, dp + dl
+
+    def prior(self):
+        """
+        Return the prior object.
+
+        Returns
+        -------
+        object
+            The prior object.
+        """
+        return self._prior
+
+    def likelihood(self):
+        """
+        Returns the likelihood.
+
+        Returns
+        -------
+        object
+            The likelihood object.
+        """
+        return self._log_likelihood
