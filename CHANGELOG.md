@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#441](https://github.com/pybop-team/PyBOP/issues/441) - Adds an example for estimating constants within a `pybamm.FunctionalParameter`.
 - [#418](https://github.com/pybop-team/PyBOP/issues/418) - Wraps the `get_parameter_info` method from PyBaMM to get a dictionary of parameter names and types.
 - [#413](https://github.com/pybop-team/PyBOP/pull/413) - Adds `DesignCost` functionality to `WeightedCost` class with additional tests.
 - [#357](https://github.com/pybop-team/PyBOP/pull/357) - Adds `Transformation()` class with `LogTransformation()`, `IdentityTransformation()`, and `ScaledTransformation()`, `ComposedTransformation()` implementations with corresponding examples and tests.
