@@ -1,6 +1,6 @@
 import copy
 from dataclasses import dataclass
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 import casadi
 import numpy as np
@@ -283,7 +283,7 @@ class BaseModel:
         if self.rebuild_parameters:
             self._parameter_set.update(self.rebuild_parameters)
             self._unprocessed_parameter_set = self._parameter_set
-            self.geometry = self.pybamm_model.default_geometry
+            self._geometry = self.pybamm_model.default_geometry
 
         # Update the list of parameter names and number of parameters
         self._n_parameters = len(self.parameters)
@@ -734,19 +734,9 @@ class BaseModel:
     def geometry(self):
         return self._geometry
 
-    @geometry.setter
-    def geometry(self, geometry: Optional[pybamm.Geometry]):
-        self._geometry = geometry.copy() if geometry is not None else None
-
     @property
     def submesh_types(self):
         return self._submesh_types
-
-    @submesh_types.setter
-    def submesh_types(self, submesh_types: Optional[dict[str, Any]]):
-        self._submesh_types = (
-            submesh_types.copy() if submesh_types is not None else None
-        )
 
     @property
     def mesh(self):
@@ -775,12 +765,6 @@ class BaseModel:
     @property
     def spatial_methods(self):
         return self._spatial_methods
-
-    @spatial_methods.setter
-    def spatial_methods(self, spatial_methods: Optional[dict[str, Any]]):
-        self._spatial_methods = (
-            spatial_methods.copy() if spatial_methods is not None else None
-        )
 
     @property
     def solver(self):
