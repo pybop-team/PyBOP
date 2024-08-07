@@ -183,6 +183,44 @@ class TestProblem:
             pybop.FittingProblem(model, parameters, bad_dataset, signal=two_signals)
 
     @pytest.mark.unit
+    def test_multi_fitting_problem(self, model, parameters, dataset, signal):
+        problem_1 = pybop.FittingProblem(model, parameters, dataset, signal=signal)
+
+        # Generate a second fitting problem
+        model = model.new_copy()
+        experiment = pybop.Experiment(
+            ["Discharge at 1C for 5 minutes (1 second period)"]
+        )
+        values = model.predict(
+            initial_state={"Initial SoC": 0.8}, experiment=experiment
+        )
+        dataset_2 = pybop.Dataset(
+            {
+                "Time [s]": values["Time [s]"].data,
+                "Current function [A]": values["Current [A]"].data,
+                "Voltage [V]": values["Voltage [V]"].data,
+            }
+        )
+        problem_2 = pybop.FittingProblem(model, parameters, dataset_2, signal=signal)
+        combined_problem = pybop.MultiFittingProblem(problem_1, problem_2)
+
+        assert combined_problem._model is None
+        assert combined_problem.problems[0] == problem_1
+        assert combined_problem.problems[1] == problem_2
+
+        assert len(combined_problem._dataset["Time [s]"]) == len(
+            problem_1._dataset["Time [s]"]
+        ) + len(problem_2._dataset["Time [s]"])
+        assert len(combined_problem._dataset["Combined signal"]) == len(
+            problem_1._dataset[signal]
+        ) + len(problem_2._dataset[signal])
+
+        y = combined_problem.evaluate(inputs=[1e-5, 1e-5])
+        assert len(y["Combined signal"]) == len(
+            combined_problem._dataset["Combined signal"]
+        )
+
+    @pytest.mark.unit
     def test_design_problem(self, parameters, experiment, model):
         with pytest.warns(UserWarning) as record:
             problem = pybop.DesignProblem(
