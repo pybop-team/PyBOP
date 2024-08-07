@@ -74,7 +74,7 @@ class TestTransformation:
         # Test covariance transformation
         cov = np.array([[0.5]])
         cov_transformed = transformation.convert_covariance_matrix(cov, q)
-        assert np.array_equal(cov_transformed, cov * transformation._coefficient**2)
+        assert np.array_equal(cov_transformed, cov * transformation.coefficient**2)
 
         # Test incorrect transform
         with pytest.raises(ValueError, match="Unknown method:"):
@@ -162,17 +162,17 @@ class TestTransformation:
         q = np.asarray([5.0])
         q_dict = {"Identity": q[0]}
         transformation = parameters["Scaled"].transformation
-        assert transformation._verify_input(q) == q
-        assert transformation._verify_input(q.tolist()) == q
-        assert transformation._verify_input(q_dict) == q
+        assert transformation.verify_input(q) == q
+        assert transformation.verify_input(q.tolist()) == q
+        assert transformation.verify_input(q_dict) == q
 
         with pytest.raises(
             TypeError, match="Transform must be a float, int, list, numpy array,"
         ):
-            transformation._verify_input("string")
+            transformation.verify_input("string")
 
         with pytest.raises(ValueError, match="Transform must have"):
-            transformation._verify_input(np.array([1.0, 2.0, 3.0]))
+            transformation.verify_input(np.array([1.0, 2.0, 3.0]))
 
 
 class TestBaseTransformation:

@@ -39,10 +39,13 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi * self.sigma2)
         self._multip = -1 / (2.0 * self.sigma2)
 
-    def _evaluate(self, inputs: Inputs) -> float:
+    def compute(self, inputs: Inputs) -> float:
         """
-        Evaluates the Gaussian log-likelihood for the given parameters with known sigma.
+        Compute the Gaussian log-likelihood for the given parameters with known sigma.
+
+        This method only computes the likelihood, without calling the problem.evaluateS1.
         """
+
         if not self.verify_prediction(self.y):
             return -np.inf
 
@@ -59,14 +62,16 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
 
         return e.item() if self.n_outputs == 1 else np.sum(e)
 
-    def _evaluateS1(self, inputs: Inputs) -> tuple[float, np.ndarray]:
+    def computeS1(self, inputs: Inputs) -> tuple[float, np.ndarray]:
         """
-        Calculates the log-likelihood and gradient.
+        Compute the Gaussian log-likelihood and it's gradient for the given parameters with known sigma.
+
+        This method only computes the likelihood, without calling the problem.evaluateS1.
         """
         if not self.verify_prediction(self.y):
             return -np.inf, -self._de * np.ones(self.n_parameters)
 
-        likelihood = self._evaluate(inputs)
+        likelihood = self.compute(inputs)
 
         r = np.asarray(
             [self._target[signal] - self.y[signal] for signal in self.signal]
@@ -168,9 +173,11 @@ class GaussianLogLikelihood(BaseLikelihood):
             raise ValueError("dsigma_scale must be non-negative")
         self._dsigma_scale = new_value
 
-    def _evaluate(self, inputs: Inputs) -> float:
+    def compute(self, inputs: Inputs) -> float:
         """
-        Evaluates the Gaussian log-likelihood for the given parameters.
+        Compute the Gaussian log-likelihood for the given parameters.
+
+        This method only computes the likelihood, without calling the problem.evaluateS1.
 
         Parameters
         ----------
@@ -207,9 +214,11 @@ class GaussianLogLikelihood(BaseLikelihood):
 
         return e.item() if self.n_outputs == 1 else np.sum(e)
 
-    def _evaluateS1(self, inputs: Inputs) -> tuple[float, np.ndarray]:
+    def computeS1(self, inputs: Inputs) -> tuple[float, np.ndarray]:
         """
-        Calculates the log-likelihood and sensitivities.
+        Compute the Gaussian log-likelihood and it's gradient for the given parameters.
+
+        This method only computes the likelihood, without calling the problem.evaluateS1.
 
         Parameters
         ----------
@@ -231,7 +240,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         if not self.verify_prediction(self.y):
             return -np.inf, -self._de * np.ones(self.n_parameters)
 
-        likelihood = self._evaluate(inputs)
+        likelihood = self.compute(inputs)
 
         r = np.asarray(
             [self._target[signal] - self.y[signal] for signal in self.signal]
@@ -279,16 +288,20 @@ class MAP(BaseLikelihood):
             raise ValueError(f"{self.likelihood} must be a subclass of BaseLikelihood")
 
         self.parameters = self.likelihood.parameters
-        self._has_separable_problem = self.likelihood._has_separable_problem
+        self._has_separable_problem = self.likelihood.has_separable_problem
 
-    def _evaluate(self, inputs: Inputs) -> float:
+    def compute(self, inputs: Inputs) -> float:
         """
-        Calculate the maximum a posteriori cost for a given set of parameters.
+        Compute the Maximum a Posteriori for the given parameters.
+
+        If self._has_separable_problem is True, then this method only computes the
+        likelihood, without calling the problem.evaluate(). Else, problem.evaluate()
+        is called before computing the likelihood.
 
         Parameters
         ----------
         inputs : Inputs
-            The parameters for which to evaluate the cost.
+            The parameters for which to compute the cost.
 
         Returns
         -------
@@ -309,10 +322,13 @@ class MAP(BaseLikelihood):
         posterior = log_likelihood + log_prior
         return posterior
 
-    def _evaluateS1(self, inputs: Inputs) -> tuple[float, np.ndarray]:
+    def computeS1(self, inputs: Inputs) -> tuple[float, np.ndarray]:
         """
-        Compute the maximum a posteriori with respect to the parameters.
-        The method passes the likelihood gradient to the optimiser without modification.
+        Compute the Maximum a Posteriori, and it's gradient for the given parameters.
+
+        If self._has_separable_problem is True, then this method only computes the
+        likelihood, without calling the problem.evaluateS1(). Else, problem.evaluateS1()
+        is called before computing the likelihood.
 
         Parameters
         ----------
@@ -385,7 +401,7 @@ class LogPosterior(BaseCost):
                     f"An error occurred when constructing the Prior class: {e}"
                 ) from e
 
-    def _evaluate(self, inputs: Inputs) -> float:
+    def compute(self, inputs: Inputs) -> float:
         """
         Calculate the posterior cost for a given set of parameters.
 
@@ -409,11 +425,11 @@ class LogPosterior(BaseCost):
 
         if self._has_separable_problem:
             self._log_likelihood.y = self.y
-        log_likelihood = self._log_likelihood._evaluate(inputs)
+        log_likelihood = self._log_likelihood.compute(inputs)
 
         return log_likelihood + log_prior
 
-    def _evaluateS1(self, inputs: Inputs) -> tuple[float, np.ndarray]:
+    def computeS1(self, inputs: Inputs) -> tuple[float, np.ndarray]:
         """
         Compute the posterior with respect to the parameters.
         The method passes the likelihood gradient to the optimiser without modification.
@@ -439,7 +455,7 @@ class LogPosterior(BaseCost):
             return prior, dp
         if self._has_separable_problem:
             self._log_likelihood.y, self._log_likelihood.dy = (self.y, self.dy)
-        likelihood, dl = self._log_likelihood._evaluateS1(inputs)
+        likelihood, dl = self._log_likelihood.computeS1(inputs)
         return prior + likelihood, dp + dl
 
     def prior(self):

@@ -49,7 +49,7 @@ class Observer(BaseProblem):
         super().__init__(
             parameters, model, check_model, signal, additional_variables, init_soc
         )
-        if model._built_model is None:
+        if model.built_model is None:
             raise ValueError("Only built models can be used in Observers")
         if model.signal is None:
             model.signal = self.signal

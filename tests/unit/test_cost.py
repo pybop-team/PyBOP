@@ -92,7 +92,7 @@ class TestCosts:
             return cls(problem, p=2)
         elif cls in [pybop.ObserverCost]:
             inputs = problem.parameters.initial_value()
-            state = problem._model.reinit(inputs)
+            state = problem.model.reinit(inputs)
             n = len(state)
             sigma_diag = [0.0] * n
             sigma_diag[0] = 1e-4
@@ -106,7 +106,7 @@ class TestCosts:
             return cls(
                 pybop.UnscentedKalmanFilterObserver(
                     problem.parameters,
-                    problem._model,
+                    problem.model,
                     sigma0=sigma0,
                     process=process,
                     measure=1e-4,
@@ -127,10 +127,10 @@ class TestCosts:
     @pytest.mark.unit
     def test_error_in_cost_calculation(self, problem):
         class RaiseErrorCost(pybop.BaseCost):
-            def _evaluate(self, inputs, grad=None):
+            def compute(self, inputs, grad=None):
                 raise ValueError("Error test.")
 
-            def _evaluateS1(self, inputs):
+            def computeS1(self, inputs):
                 raise ValueError("Error test.")
 
         cost = RaiseErrorCost(problem)
@@ -221,7 +221,7 @@ class TestCosts:
                 assert "Non-physical point encountered" in str(record[i].message)
 
             # Test infeasible locations
-            cost.problem._model.allow_infeasible_solutions = False
+            cost.problem.model.allow_infeasible_solutions = False
             assert cost([1.1]) == np.inf
             assert cost.evaluateS1([1.1]) == (np.inf, cost._de)
             assert cost([0.01]) == np.inf
@@ -286,7 +286,7 @@ class TestCosts:
             assert cost([-0.1]) == -np.inf  # Should not be a viable design
 
             # Test infeasible locations
-            cost.problem._model.allow_infeasible_solutions = False
+            cost.problem.model.allow_infeasible_solutions = False
             assert cost([1.1]) == -np.inf
 
             # Test exception for non-numeric inputs
