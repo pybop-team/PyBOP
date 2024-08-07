@@ -143,7 +143,7 @@ class TestModels:
     @pytest.mark.unit
     def test_build(self, model):
         if isinstance(model, pybop.lithium_ion.SPMe):
-            model.build(init_soc=1.0)
+            model.build(initial_state={"Initial SoC": 1.0})
 
             # Test attributes with init_soc
             assert model.built_model is not None
