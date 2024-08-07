@@ -86,7 +86,8 @@ from .models.base_model import Inputs
 # Problem class
 #
 from .problems.base_problem import BaseProblem
-from .problems.fitting_problem import FittingProblem, MultiFittingProblem
+from .problems.fitting_problem import FittingProblem
+from .problems.multi_fitting_problem import MultiFittingProblem
 from .problems.design_problem import DesignProblem
 
 #
