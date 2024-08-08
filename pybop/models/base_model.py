@@ -136,7 +136,7 @@ class BaseModel:
         check_model : bool, optional
             If True, the model will be checked for correctness after construction.
         """
-        if parameters is not None:
+        if parameters is not None or inputs is not None:
             # Classify parameters and clear the model if rebuild required
             inputs = self.classify_parameters(parameters, inputs=inputs)
 
@@ -289,7 +289,7 @@ class BaseModel:
         self._disc = None
 
     def classify_parameters(
-        self, parameters: Parameters, inputs: Optional[Inputs] = None
+        self, parameters: Optional[Parameters] = None, inputs: Optional[Inputs] = None
     ):
         """
         Check for any 'rebuild_parameters' which require a model rebuild and
@@ -297,11 +297,15 @@ class BaseModel:
 
         Parameters
         ----------
-        parameters : pybop.Parameters
-            The input parameters.
+        parameters : Parameters, optional
+            The optimisation parameters. Defaults to None, meaning that the parameters
+            attribute is not modified.
+        inputs : Inputs, optional
+            The input parameters for the simulation (default: None).
         """
-        self.parameters = parameters or Parameters()
+        self.parameters = parameters or self.parameters
 
+        # Compile all parameters and inputs
         parameter_dictionary = self.parameters.as_dict()
         parameter_dictionary.update(inputs or {})
 
