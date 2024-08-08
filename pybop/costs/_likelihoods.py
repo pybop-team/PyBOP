@@ -275,7 +275,7 @@ class MAP(BaseLikelihood):
             self.parameters[key].prior.logpdf(value) for key, value in inputs.items()
         )
 
-        if not self.verify_prediction(self.y):
+        if not np.isfinite(log_prior).any():
             return (
                 (-np.inf, -self._de * np.ones(self.n_parameters))
                 if calculate_grad
@@ -286,32 +286,29 @@ class MAP(BaseLikelihood):
             self.likelihood.y = self.y
             if calculate_grad:
                 self.likelihood.dy = self.dy
-                log_likelihood, dl = self.likelihood(inputs, calculate_grad=True)
+        if calculate_grad:
+            log_likelihood, dl = self.likelihood(inputs, calculate_grad=True)
 
-                # Compute a finite difference approximation of the gradient of the log prior
-                delta = self.parameters.initial_value() * self.gradient_step
-                prior_gradient = []
+            # Compute a finite difference approximation of the gradient of the log prior
+            delta = self.parameters.initial_value() * self.gradient_step
+            prior_gradient = []
 
-                for parameter, step_size in zip(self.problem.parameters, delta):
-                    param_value = inputs[parameter.name]
+            for parameter, step_size in zip(self.problem.parameters, delta):
+                param_value = inputs[parameter.name]
 
-                    log_prior_upper = parameter.prior.logpdf(
-                        param_value * (1 + step_size)
-                    )
-                    log_prior_lower = parameter.prior.logpdf(
-                        param_value * (1 - step_size)
-                    )
+                log_prior_upper = parameter.prior.logpdf(param_value * (1 + step_size))
+                log_prior_lower = parameter.prior.logpdf(param_value * (1 - step_size))
 
-                    gradient = (log_prior_upper - log_prior_lower) / (
-                        2 * step_size * param_value + np.finfo(float).eps
-                    )
-                    prior_gradient.append(gradient)
+                gradient = (log_prior_upper - log_prior_lower) / (
+                    2 * step_size * param_value + np.finfo(float).eps
+                )
+                prior_gradient.append(gradient)
 
-                posterior = log_likelihood + log_prior
-                total_gradient = dl + prior_gradient
-
-                return posterior, total_gradient
-
-            log_likelihood = self.likelihood(inputs)
             posterior = log_likelihood + log_prior
-            return posterior
+            total_gradient = dl + prior_gradient
+
+            return posterior, total_gradient
+
+        log_likelihood = self.likelihood(inputs)
+        posterior = log_likelihood + log_prior
+        return posterior

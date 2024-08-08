@@ -120,10 +120,7 @@ class TestCosts:
     @pytest.mark.unit
     def test_error_in_cost_calculation(self, problem):
         class RaiseErrorCost(pybop.BaseCost):
-            def compute(self, inputs, grad=None):
-                raise ValueError("Error test.")
-
-            def computeS1(self, inputs):
+            def compute(self, inputs, calculate_grad: bool = False):
                 raise ValueError("Error test.")
 
         cost = RaiseErrorCost(problem)
@@ -346,7 +343,7 @@ class TestCosts:
         assert weighted_cost_2.problem is problem
         assert weighted_cost_2([0.5]) >= 0
         np.testing.assert_allclose(
-            weighted_cost_2.evaluate([0.6]),
+            weighted_cost_2([0.6]),
             cost1([0.6]) + weight * cost2([0.6]),
             atol=1e-5,
         )
@@ -359,7 +356,7 @@ class TestCosts:
         assert weighted_cost_3.problem is None
         assert weighted_cost_3([0.5]) >= 0
         np.testing.assert_allclose(
-            weighted_cost_3.evaluate([0.6]),
+            weighted_cost_3([0.6]),
             cost1([0.6]) + weight * cost3([0.6]),
             atol=1e-5,
         )
@@ -378,7 +375,7 @@ class TestCosts:
         assert np.isfinite(cost4.parameters["Sigma for output 1"].prior.logpdf(sigma))
         assert np.isfinite(weighted_cost_4([0.5, sigma]))
         np.testing.assert_allclose(
-            weighted_cost_4.evaluate([0.6, sigma]),
+            weighted_cost_4([0.6, sigma]),
             cost1([0.6, sigma]) - 1 / weight * cost4([0.6, sigma]),
             atol=1e-5,
         )
@@ -395,7 +392,7 @@ class TestCosts:
         assert weighted_cost.problem is design_problem
         assert weighted_cost([0.5]) >= 0
         np.testing.assert_allclose(
-            weighted_cost.evaluate([0.6]),
+            weighted_cost([0.6]),
             cost1([0.6]) + cost2([0.6]),
             atol=1e-5,
         )
@@ -415,7 +412,7 @@ class TestCosts:
 
         assert weighted_cost([0.5]) >= 0
         np.testing.assert_allclose(
-            weighted_cost.evaluate([0.6]),
+            weighted_cost([0.6]),
             cost1([0.6]) + cost2([0.6]),
             atol=1e-5,
         )
@@ -436,7 +433,7 @@ class TestCosts:
         assert weighted_cost.problem is design_problem
         assert weighted_cost([0.5]) >= 0
         np.testing.assert_allclose(
-            weighted_cost.evaluate([0.6]),
+            weighted_cost([0.6]),
             cost1([0.6]) + cost2([0.6]),
             atol=1e-5,
         )

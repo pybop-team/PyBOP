@@ -123,9 +123,10 @@ class WeightedCost(BaseCost):
                         inputs, update_capacity=self.update_capacity
                     )
 
-            e[i] = cost.compute(inputs)
             if calculate_grad:
                 e[i], de[:, i] = cost.compute(inputs, calculate_grad=True)
+            else:
+                e[i] = cost.compute(inputs)
 
         e = np.dot(e, self.weights)
         if calculate_grad:

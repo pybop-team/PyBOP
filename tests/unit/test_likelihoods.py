@@ -115,7 +115,7 @@ class TestLikelihoods:
             problem, sigma0=np.array([1.0])
         )
         result = likelihood(np.array([0.5]))
-        grad_result, grad_likelihood = likelihood.evaluateS1(np.array([0.5]))
+        grad_result, grad_likelihood = likelihood(np.array([0.5]), calculate_grad=True)
         assert isinstance(result, float)
         np.testing.assert_allclose(result, grad_result, atol=1e-5)
         # Since 0.5 < ground_truth, the likelihood should be increasing
@@ -125,7 +125,9 @@ class TestLikelihoods:
     def test_gaussian_log_likelihood(self, one_signal_problem):
         likelihood = pybop.GaussianLogLikelihood(one_signal_problem)
         result = likelihood(np.array([0.8, 0.2]))
-        grad_result, grad_likelihood = likelihood.evaluateS1(np.array([0.8, 0.2]))
+        grad_result, grad_likelihood = likelihood(
+            np.array([0.8, 0.2]), calculate_grad=True
+        )
         assert isinstance(result, float)
         np.testing.assert_allclose(result, grad_result, atol=1e-5)
         # Since 0.8 > ground_truth, the likelihood should be decreasing
@@ -162,11 +164,11 @@ class TestLikelihoods:
         likelihood = pybop.GaussianLogLikelihood(one_signal_problem)
         assert likelihood(np.array([-0.5, -0.5])) == -np.inf  # negative sigma value
         assert (
-            likelihood.evaluateS1(np.array([-0.5, -0.5]))[0] == -np.inf
+            likelihood(np.array([-0.5, -0.5]), calculate_grad=True)[0] == -np.inf
         )  # negative sigma value
         assert likelihood(np.array([0.01, 0.1])) == -np.inf  # parameter value too small
         assert (
-            likelihood.evaluateS1(np.array([0.01, 0.1]))[0] == -np.inf
+            likelihood(np.array([0.01, 0.1]), calculate_grad=True)[0] == -np.inf
         )  # parameter value too small
 
     @pytest.mark.unit
@@ -178,5 +180,5 @@ class TestLikelihoods:
         )
         assert likelihood(np.array([0.01])) == -np.inf  # parameter value too small
         assert (
-            likelihood.evaluateS1(np.array([0.01]))[0] == -np.inf
+            likelihood(np.array([0.01]), calculate_grad=True)[0] == -np.inf
         )  # parameter value too small

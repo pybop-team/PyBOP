@@ -43,7 +43,7 @@ class StandaloneCost(pybop.BaseCost):
         )
         self.x0 = self.parameters.initial_value()
 
-    def compute(self, inputs):
+    def compute(self, inputs, calculate_grad: bool = False):
         """
         Compute the cost for a given parameter value.
 
