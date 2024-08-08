@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#450](https://github.com/pybop-team/PyBOP/pull/450) - Adds support for IDAKLU with output variables, and corresponding examples, tests.
 - [#435](https://github.com/pybop-team/PyBOP/pull/435) - Adds SLF001 linting for private members.
 - [#418](https://github.com/pybop-team/PyBOP/issues/418) - Wraps the `get_parameter_info` method from PyBaMM to get a dictionary of parameter names and types.
 - [#413](https://github.com/pybop-team/PyBOP/pull/413) - Adds `DesignCost` functionality to `WeightedCost` class with additional tests.

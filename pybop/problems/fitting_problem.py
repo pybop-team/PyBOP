@@ -107,7 +107,7 @@ class FittingProblem(BaseProblem):
         except Exception as e:
             if self.verbose:
                 print(f"Simulation error: {e}")
-            return {signal: [np.inf] for signal in self.signal}
+            return {signal: self.failure_output for signal in self.signal}
 
         return {
             signal: sol[signal].data
@@ -137,7 +137,9 @@ class FittingProblem(BaseProblem):
             )
         except Exception as e:
             print(f"Error: {e}")
-            return {signal: [np.inf] for signal in self.signal}, [np.inf]
+            return {
+                signal: self.failure_output for signal in self.signal
+            }, self.failure_output
 
         y = {signal: sol[signal].data for signal in self.signal}
 

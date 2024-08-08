@@ -803,3 +803,7 @@ class BaseModel:
     @property
     def solver(self):
         return self._solver
+
+    @solver.setter
+    def solver(self, solver):
+        self._solver = solver.copy() if solver is not None else None
