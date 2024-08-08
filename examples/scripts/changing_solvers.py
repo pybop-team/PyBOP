@@ -16,6 +16,7 @@ solvers = [
 ]
 
 for solver in solvers:
+    model.build()
     model.solver = solver
     t1 = time.time()
     model.predict(t_eval=np.linspace(0, 1, 100))
