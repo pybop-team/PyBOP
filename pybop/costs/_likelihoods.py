@@ -139,6 +139,7 @@ class GaussianLogLikelihood(BaseLikelihood):
                     f"Sigma for output {index+1}",
                     initial_value=value,
                     prior=Uniform(0.5 * value, 1.5 * value),
+                    # bounds = [1e-6, 1.0], # TODO: This should have a lower bound of zero and no higher bound
                 )
             )
         else:
@@ -181,13 +182,19 @@ class GaussianLogLikelihood(BaseLikelihood):
         """
         self.parameters.update(values=list(inputs.values()))
         sigma = self.sigma.current_value()
+        if np.any(sigma <= 0):
+            return (
+                (-np.inf, -self._de * np.ones(self.n_parameters))
+                if calculate_grad
+                else -np.inf
+            )
 
         if calculate_grad:
             self.y, self.dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
         else:
             self.y = self.problem.evaluate(self.problem.parameters.as_dict())
 
-        if not self.verify_prediction(self.y) or np.any(sigma <= 0):
+        if not self.verify_prediction(self.y):
             return (
                 (-np.inf, -self._de * np.ones(self.n_parameters))
                 if calculate_grad
@@ -210,7 +217,7 @@ class GaussianLogLikelihood(BaseLikelihood):
                 -self.n_time_data / sigma + np.sum(r**2.0, axis=1) / (sigma**3.0)
             ) / self._dsigma_scale
             dl = np.concatenate((dl.flatten(), dsigma))
-            return e, dl
+            return (e.item(), dl) if self.n_outputs == 1 else (np.sum(e), dl)
 
         return e.item() if self.n_outputs == 1 else np.sum(e)
 
