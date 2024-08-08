@@ -79,7 +79,7 @@ class BenchmarkModel:
             model (pybop.Model): The model class being benchmarked.
             parameter_set (str): The name of the parameter set being used.
         """
-        self.problem._model.simulate(inputs=self.inputs, t_eval=self.t_eval)
+        self.problem.model.simulate(inputs=self.inputs, t_eval=self.t_eval)
 
     def time_model_simulateS1(self, model, parameter_set):
         """
@@ -89,4 +89,4 @@ class BenchmarkModel:
             model (pybop.Model): The model class being benchmarked.
             parameter_set (str): The name of the parameter set being used.
         """
-        self.problem._model.simulateS1(inputs=self.inputs, t_eval=self.t_eval)
+        self.problem.model.simulateS1(inputs=self.inputs, t_eval=self.t_eval)

@@ -94,10 +94,14 @@ select = [
     "ISC",  # flake8-implicit-str-concat: Check for implicit string concatenation
     "TID",  # flake8-tidy-imports: Validate import hygiene
     "UP",   # pyupgrade: Automatically upgrade syntax for newer versions of Python
+    "SLF001",  # flake8-string-format: Check for private object name access
 ]
 
 ignore = ["E501","E741"]
-per-file-ignores = {"**.ipynb" = ["E402", "E703"]}
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["SLF001"]
+"**.ipynb" = ["E402", "E703"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"

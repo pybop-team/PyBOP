@@ -36,12 +36,9 @@ dataset = pybop.Dataset(
 )
 
 # Build the model to get the number of states
-model.build(dataset=dataset.data, parameters=parameters)
+model.build(dataset=dataset, parameters=parameters)
 
 # Define the UKF observer, setting the particle boundaries as uncertain states
-signal = ["Voltage [V]"]
-n_states = model.n_states
-n_signals = len(signal)
 covariance = np.diag([0] * 20 + [sigma**2] + [0] * 20 + [sigma**2])
 process_noise = np.diag([0] * 20 + [1e-6] + [0] * 20 + [1e-6])
 measurement_noise = np.diag([sigma**2])
@@ -52,7 +49,6 @@ observer = pybop.UnscentedKalmanFilterObserver(
     process_noise,
     measurement_noise,
     dataset,
-    signal=signal,
 )
 
 # Generate problem, cost function, and optimisation class
