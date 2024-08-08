@@ -6,31 +6,6 @@ import pybop
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
-# Generate a dataset
-sigma = 0.001
-experiment = pybop.Experiment([("Discharge at 0.5C for 2 minutes (4 second period)")])
-values = model.predict(experiment=experiment)
-dataset_1 = pybop.Dataset(
-    {
-        "Time [s]": values["Time [s]"].data,
-        "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": values["Voltage [V]"].data
-        + np.random.normal(0, sigma, len(values["Voltage [V]"].data)),
-    }
-)
-
-# Generate a second dataset
-experiment = pybop.Experiment([("Discharge at 1C for 2 minutes (4 second period)")])
-values = model.predict(experiment=experiment)
-dataset_2 = pybop.Dataset(
-    {
-        "Time [s]": values["Time [s]"].data,
-        "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": values["Voltage [V]"].data
-        + np.random.normal(0, sigma, len(values["Voltage [V]"].data)),
-    }
-)
-
 # Fitting parameters
 parameters = pybop.Parameters(
     pybop.Parameter(
@@ -45,23 +20,48 @@ parameters = pybop.Parameters(
     ),
 )
 
-
-# Generate a problem for each dataset and combine into one
+# Generate a dataset and a fitting problem
+sigma = 0.001
+experiment = pybop.Experiment([("Discharge at 0.5C for 2 minutes (4 second period)")])
+values = model.predict(initial_state={"Initial SoC": 0.8}, experiment=experiment)
+dataset_1 = pybop.Dataset(
+    {
+        "Time [s]": values["Time [s]"].data,
+        "Current function [A]": values["Current [A]"].data,
+        "Voltage [V]": values["Voltage [V]"].data
+        + np.random.normal(0, sigma, len(values["Voltage [V]"].data)),
+    }
+)
 problem_1 = pybop.FittingProblem(model, parameters, dataset_1)
+
+# Generate a second dataset and problem
+model = model.new_copy()
+experiment = pybop.Experiment([("Discharge at 1C for 1 minutes (4 second period)")])
+values = model.predict(initial_state={"Initial SoC": 0.8}, experiment=experiment)
+dataset_2 = pybop.Dataset(
+    {
+        "Time [s]": values["Time [s]"].data,
+        "Current function [A]": values["Current [A]"].data,
+        "Voltage [V]": values["Voltage [V]"].data
+        + np.random.normal(0, sigma, len(values["Voltage [V]"].data)),
+    }
+)
 problem_2 = pybop.FittingProblem(model, parameters, dataset_2)
+
+# Combine the problems into one
 problem = pybop.MultiFittingProblem(problem_1, problem_2)
 
 # Generate the cost function and optimisation class
 cost = pybop.SumSquaredError(problem)
 optim = pybop.IRPropMin(
     cost,
-    # sigma0=0.011,
     verbose=True,
-    max_iterations=12,
+    max_iterations=100,
 )
 
 # Run optimisation
 x, final_cost = optim.run()
+print("True parameters:", parameters.true_value())
 print("Estimated parameters:", x)
 
 # Plot the timeseries output
