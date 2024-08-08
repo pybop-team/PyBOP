@@ -57,16 +57,10 @@ class BaseCost:
     def target(self):
         return self._target
 
-    def __call__(self, inputs: Union[Inputs, list]):
+    def __call__(self, inputs: Union[Inputs, list], calculate_grad=False):
         """
-        Call the evaluate function for a given set of parameters.
-        """
-        return self.evaluate(inputs)
-
-    def evaluate(self, inputs: Union[Inputs, list]):
-        """
-        This method calls the forward model via problem.evaluateS1(inputs),
-        and computes the cost for the given output by calling self.computeS1(inputs).
+        This method calls the forward model via problem.evaluate(inputs),
+        and computes the cost for the given output by calling self.compute(inputs).
 
         Parameters
         ----------
@@ -89,11 +83,17 @@ class BaseCost:
 
         try:
             if self._has_separable_problem:
-                self.y = self.problem.evaluate(
-                    inputs, update_capacity=self.update_capacity
-                )
-
-            return self.compute(inputs)
+                if calculate_grad is True:
+                    self.y, self.dy = self.problem.evaluateS1(
+                        inputs,
+                        # calculate_grad=calculate_grad,
+                    )
+                else:
+                    self.y = self.problem.evaluate(
+                        inputs,
+                        update_capacity=self.update_capacity,
+                    )
+            return self.compute(inputs, calculate_grad=calculate_grad)
 
         except NotImplementedError as e:
             raise e
@@ -101,11 +101,12 @@ class BaseCost:
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}") from e
 
-    def compute(self, inputs: Inputs):
+    def compute(self, inputs: Inputs, calculate_grad=False):
         """
-        Calculates the cost function value for a given set of parameters.
+        Compute the cost and  if `calculate_grad` is True, its gradient with
+        respect to the parameters.
 
-        This method only computes the cost, without calling the problem.evaluate.
+        This method only computes the cost, without calling the `problem.evaluate()`.
         This method must be implemented by subclasses.
 
         Parameters
@@ -117,72 +118,6 @@ class BaseCost:
         -------
         float
             The calculated cost function value.
-
-        Raises
-        ------
-        NotImplementedError
-            If the method has not been implemented by the subclass.
-        """
-        raise NotImplementedError
-
-    def evaluateS1(self, inputs: Union[Inputs, list]):
-        """
-        This method calls the forward model via problem.evaluateS1(inputs),
-        and computes the cost for the given output by calling self.computeS1(inputs).
-
-        This method includes the gradient of the cost function computed by
-        calling self.computeS1(inputs) with the sensitivity information provided by
-        the forward model via problem.evaluateS1(inputs).
-
-        Parameters
-        ----------
-        inputs : Inputs or array-like
-            The parameters for which to evaluate the cost and gradient.
-
-        Returns
-        -------
-        tuple
-            A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `inputs`.
-
-        Raises
-        ------
-        ValueError
-            If an error occurs during the calculation of the cost or gradient.
-        """
-        if self.transformation:
-            p = self.transformation.to_model(inputs)
-        inputs = self.parameters.verify(p if self.transformation else inputs)
-
-        try:
-            if self._has_separable_problem:
-                self.y, self.dy = self.problem.evaluateS1(inputs)
-
-            return self.computeS1(inputs)
-
-        except NotImplementedError as e:
-            raise e
-
-        except Exception as e:
-            raise ValueError(f"Error in cost calculation: {e}") from e
-
-    def computeS1(self, inputs: Inputs):
-        """
-        Compute the cost and its gradient with respect to the parameters.
-
-        This method only computes the cost, without calling the problem.evaluateS1.
-        This method must be implemented by subclasses.
-
-        Parameters
-        ----------
-        inputs : Inputs
-            The parameters for which to compute the cost and gradient.
-
-        Returns
-        -------
-        tuple
-            A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `inputs`.
 
         Raises
         ------

@@ -116,8 +116,6 @@ class TestCosts:
         assert base_cost.problem == problem
         with pytest.raises(NotImplementedError):
             base_cost([0.5])
-        with pytest.raises(NotImplementedError):
-            base_cost.evaluateS1([0.5])
 
     @pytest.mark.unit
     def test_error_in_cost_calculation(self, problem):
@@ -132,7 +130,7 @@ class TestCosts:
         with pytest.raises(ValueError, match="Error in cost calculation: Error test."):
             cost([0.5])
         with pytest.raises(ValueError, match="Error in cost calculation: Error test."):
-            cost.evaluateS1([0.5])
+            cost([0.5], calculate_grad=True)
 
     @pytest.mark.unit
     def test_MAP(self, problem):
@@ -166,7 +164,7 @@ class TestCosts:
             problem_non_finite, pybop.GaussianLogLikelihoodKnownSigma, sigma0=0.01
         )
         assert not np.isfinite(likelihood([0.7]))
-        assert not np.isfinite(likelihood.evaluateS1([0.7])[0])
+        assert not np.isfinite(likelihood([0.7], calculate_grad=True)[0])
 
     @pytest.mark.unit
     def test_costs(self, cost):
@@ -183,10 +181,6 @@ class TestCosts:
         # Test type of returned value
         assert np.isscalar(cost([0.5]))
 
-        if isinstance(cost, pybop.ObserverCost):
-            with pytest.raises(NotImplementedError):
-                cost.evaluateS1([0.5])
-
         # Test UserWarnings
         if isinstance(cost, (pybop.SumSquaredError, pybop.RootMeanSquaredError)):
             assert cost([0.5]) >= 0
@@ -198,7 +192,7 @@ class TestCosts:
             assert cost._de == 10
 
         if not isinstance(cost, (pybop.ObserverCost, pybop.MAP)):
-            e, de = cost.evaluateS1([0.5])
+            e, de = cost([0.5], calculate_grad=True)
 
             assert np.isscalar(e)
             assert isinstance(de, np.ndarray)
@@ -207,10 +201,10 @@ class TestCosts:
             with pytest.raises(
                 TypeError, match="Inputs must be a dictionary or numeric."
             ):
-                cost.evaluateS1(["StringInputShouldNotWork"])
+                cost(["StringInputShouldNotWork"], calculate_grad=True)
 
             with pytest.warns(UserWarning) as record:
-                cost.evaluateS1([1.1])
+                cost([1.1], calculate_grad=True)
 
             for i in range(len(record)):
                 assert "Non-physical point encountered" in str(record[i].message)
@@ -218,9 +212,9 @@ class TestCosts:
             # Test infeasible locations
             cost.problem.model.allow_infeasible_solutions = False
             assert cost([1.1]) == np.inf
-            assert cost.evaluateS1([1.1]) == (np.inf, cost._de)
+            assert cost([1.1], calculate_grad=True) == (np.inf, cost._de)
             assert cost([0.01]) == np.inf
-            assert cost.evaluateS1([0.01]) == (np.inf, cost._de)
+            assert cost([0.01], calculate_grad=True) == (np.inf, cost._de)
 
         # Test exception for non-numeric inputs
         with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
@@ -370,8 +364,8 @@ class TestCosts:
             atol=1e-5,
         )
 
-        errors_2, sensitivities_2 = weighted_cost_2.evaluateS1([0.5])
-        errors_3, sensitivities_3 = weighted_cost_3.evaluateS1([0.5])
+        errors_2, sensitivities_2 = weighted_cost_2([0.5], calculate_grad=True)
+        errors_3, sensitivities_3 = weighted_cost_3([0.5], calculate_grad=True)
         np.testing.assert_allclose(errors_2, errors_3, atol=1e-5)
         np.testing.assert_allclose(sensitivities_2, sensitivities_3, atol=1e-5)
 

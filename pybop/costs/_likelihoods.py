@@ -39,46 +39,33 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         self._offset = -0.5 * self.n_time_data * np.log(2 * np.pi * self.sigma2)
         self._multip = -1 / (2.0 * self.sigma2)
 
-    def compute(self, inputs: Inputs) -> float:
+    def compute(
+        self, inputs: Inputs, calculate_grad: bool = False
+    ) -> Union[float, tuple[float, np.ndarray]]:
         """
         Compute the Gaussian log-likelihood for the given parameters with known sigma.
 
         This method only computes the likelihood, without calling the problem.evaluateS1.
         """
-
+        # Early return if the prediction is not verified
         if not self.verify_prediction(self.y):
-            return -np.inf
+            return (
+                (-np.inf, -self._de * np.ones(self.n_parameters))
+                if calculate_grad
+                else -np.inf
+            )
 
-        e = np.asarray(
-            [
-                np.sum(
-                    self._offset
-                    + self._multip
-                    * np.sum((self._target[signal] - self.y[signal]) ** 2.0)
-                )
-                for signal in self.signal
-            ]
-        )
-
-        return e.item() if self.n_outputs == 1 else np.sum(e)
-
-    def computeS1(self, inputs: Inputs) -> tuple[float, np.ndarray]:
-        """
-        Compute the Gaussian log-likelihood and it's gradient for the given parameters with known sigma.
-
-        This method only computes the likelihood, without calling the problem.evaluateS1.
-        """
-        if not self.verify_prediction(self.y):
-            return -np.inf, -self._de * np.ones(self.n_parameters)
-
-        likelihood = self.compute(inputs)
-
+        # Calculate residuals and error
         r = np.asarray(
             [self._target[signal] - self.y[signal] for signal in self.signal]
         )
-        dl = np.sum((np.sum((r * self.dy.T), axis=2) / self.sigma2), axis=1)
+        e = np.sum(self._offset + self._multip * np.sum(r**2.0))
 
-        return likelihood, dl
+        if calculate_grad:
+            dl = np.sum((np.sum((r * self.dy.T), axis=2) / self.sigma2), axis=1)
+            return e, dl
+
+        return e.item() if self.n_outputs == 1 else np.sum(e)
 
     def check_sigma0(self, sigma0: Union[np.ndarray, float]):
         """
@@ -173,7 +160,9 @@ class GaussianLogLikelihood(BaseLikelihood):
             raise ValueError("dsigma_scale must be non-negative")
         self._dsigma_scale = new_value
 
-    def compute(self, inputs: Inputs) -> float:
+    def compute(
+        self, inputs: Inputs, calculate_grad: bool = False
+    ) -> Union[float, tuple[float, np.ndarray]]:
         """
         Compute the Gaussian log-likelihood for the given parameters.
 
@@ -191,67 +180,39 @@ class GaussianLogLikelihood(BaseLikelihood):
             The log-likelihood value, or -inf if the standard deviations are non-positive.
         """
         self.parameters.update(values=list(inputs.values()))
-
         sigma = self.sigma.current_value()
-        if np.any(sigma <= 0):
-            return -np.inf
 
-        self.y = self.problem.evaluate(self.problem.parameters.as_dict())
-        if not self.verify_prediction(self.y):
-            return -np.inf
+        if calculate_grad:
+            self.y, self.dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
+        else:
+            self.y = self.problem.evaluate(self.problem.parameters.as_dict())
 
-        e = np.asarray(
-            [
-                np.sum(
-                    self._logpi
-                    - self.n_time_data * np.log(sigma)
-                    - np.sum((self._target[signal] - self.y[signal]) ** 2.0)
-                    / (2.0 * sigma**2.0)
-                )
-                for signal in self.signal
-            ]
-        )
+        if not self.verify_prediction(self.y) or np.any(sigma <= 0):
+            return (
+                (-np.inf, -self._de * np.ones(self.n_parameters))
+                if calculate_grad
+                else -np.inf
+            )
 
-        return e.item() if self.n_outputs == 1 else np.sum(e)
-
-    def computeS1(self, inputs: Inputs) -> tuple[float, np.ndarray]:
-        """
-        Compute the Gaussian log-likelihood and it's gradient for the given parameters.
-
-        This method only computes the likelihood, without calling the problem.evaluateS1.
-
-        Parameters
-        ----------
-        inputs : Inputs
-            The parameters for which to evaluate the log-likelihood.
-
-        Returns
-        -------
-        Tuple[float, np.ndarray]
-            The log-likelihood and its gradient.
-        """
-        self.parameters.update(values=list(inputs.values()))
-
-        sigma = self.sigma.current_value()
-        if np.any(sigma <= 0):
-            return -np.inf, -self._de * np.ones(self.n_parameters)
-
-        self.y, self.dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
-        if not self.verify_prediction(self.y):
-            return -np.inf, -self._de * np.ones(self.n_parameters)
-
-        likelihood = self.compute(inputs)
-
+        # Calculate residuals and error
         r = np.asarray(
             [self._target[signal] - self.y[signal] for signal in self.signal]
         )
-        dl = np.sum((np.sum((r * self.dy.T), axis=2) / (sigma**2.0)), axis=1)
-        dsigma = (
-            -self.n_time_data / sigma + np.sum(r**2.0, axis=1) / (sigma**3.0)
-        ) / self._dsigma_scale
-        dl = np.concatenate((dl.flatten(), dsigma))
+        e = np.sum(
+            self._logpi
+            - self.n_time_data * np.log(sigma)
+            - np.sum((r) ** 2.0) / (2.0 * sigma**2.0)
+        )
 
-        return likelihood, dl
+        if calculate_grad:
+            dl = np.sum((np.sum((r * self.dy.T), axis=2) / (sigma**2.0)), axis=1)
+            dsigma = (
+                -self.n_time_data / sigma + np.sum(r**2.0, axis=1) / (sigma**3.0)
+            ) / self._dsigma_scale
+            dl = np.concatenate((dl.flatten(), dsigma))
+            return e, dl
+
+        return e.item() if self.n_outputs == 1 else np.sum(e)
 
 
 class MAP(BaseLikelihood):
@@ -290,7 +251,9 @@ class MAP(BaseLikelihood):
         self.parameters = self.likelihood.parameters
         self._has_separable_problem = self.likelihood.has_separable_problem
 
-    def compute(self, inputs: Inputs) -> float:
+    def compute(
+        self, inputs: Inputs, calculate_grad: bool = False
+    ) -> Union[float, tuple[float, np.ndarray]]:
         """
         Compute the Maximum a Posteriori for the given parameters.
 
@@ -312,66 +275,43 @@ class MAP(BaseLikelihood):
             self.parameters[key].prior.logpdf(value) for key, value in inputs.items()
         )
 
-        if not np.isfinite(log_prior).any():
-            return -np.inf
+        if not self.verify_prediction(self.y):
+            return (
+                (-np.inf, -self._de * np.ones(self.n_parameters))
+                if calculate_grad
+                else -np.inf
+            )
 
         if self._has_separable_problem:
             self.likelihood.y = self.y
-        log_likelihood = self.likelihood.evaluate(inputs)
+            if calculate_grad:
+                self.likelihood.dy = self.dy
+                log_likelihood, dl = self.likelihood(inputs, calculate_grad=True)
 
-        posterior = log_likelihood + log_prior
-        return posterior
+                # Compute a finite difference approximation of the gradient of the log prior
+                delta = self.parameters.initial_value() * self.gradient_step
+                prior_gradient = []
 
-    def computeS1(self, inputs: Inputs) -> tuple[float, np.ndarray]:
-        """
-        Compute the Maximum a Posteriori, and it's gradient for the given parameters.
+                for parameter, step_size in zip(self.problem.parameters, delta):
+                    param_value = inputs[parameter.name]
 
-        If self._has_separable_problem is True, then this method only computes the
-        likelihood, without calling the problem.evaluateS1(). Else, problem.evaluateS1()
-        is called before computing the likelihood.
+                    log_prior_upper = parameter.prior.logpdf(
+                        param_value * (1 + step_size)
+                    )
+                    log_prior_lower = parameter.prior.logpdf(
+                        param_value * (1 - step_size)
+                    )
 
-        Parameters
-        ----------
-        inputs : Inputs
-            The parameters for which to compute the cost and gradient.
+                    gradient = (log_prior_upper - log_prior_lower) / (
+                        2 * step_size * param_value + np.finfo(float).eps
+                    )
+                    prior_gradient.append(gradient)
 
-        Returns
-        -------
-        tuple
-            A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `x`.
+                posterior = log_likelihood + log_prior
+                total_gradient = dl + prior_gradient
 
-        Raises
-        ------
-        ValueError
-            If an error occurs during the calculation of the cost or gradient.
-        """
-        log_prior = sum(
-            self.parameters[key].prior.logpdf(value) for key, value in inputs.items()
-        )
-        if not np.isfinite(log_prior).any():
-            return -np.inf, -self._de * np.ones(self.n_parameters)
+                return posterior, total_gradient
 
-        if self._has_separable_problem:
-            self.likelihood.y, self.likelihood.dy = (self.y, self.dy)
-        log_likelihood, dl = self.likelihood.evaluateS1(inputs)
-
-        # Compute a finite difference approximation of the gradient of the log prior
-        delta = self.parameters.initial_value() * self.gradient_step
-        prior_gradient = []
-
-        for parameter, step_size in zip(self.problem.parameters, delta):
-            param_value = inputs[parameter.name]
-
-            log_prior_upper = parameter.prior.logpdf(param_value * (1 + step_size))
-            log_prior_lower = parameter.prior.logpdf(param_value * (1 - step_size))
-
-            gradient = (log_prior_upper - log_prior_lower) / (
-                2 * step_size * param_value + np.finfo(float).eps
-            )
-            prior_gradient.append(gradient)
-
-        posterior = log_likelihood + log_prior
-        total_gradient = dl + prior_gradient
-
-        return posterior, total_gradient
+            log_likelihood = self.likelihood(inputs)
+            posterior = log_likelihood + log_prior
+            return posterior
