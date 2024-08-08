@@ -100,7 +100,7 @@ class Test_SPM_Parameterisation:
         # Define the problem
         problem = pybop.FittingProblem(model, parameters, dataset)
 
-        # Cost
+        # Construct the cost
         if cost in [pybop.GaussianLogLikelihoodKnownSigma]:
             cost = cost(problem, sigma0=self.sigma0)
         elif cost in [pybop.GaussianLogLikelihood]:
@@ -114,6 +114,7 @@ class Test_SPM_Parameterisation:
         else:
             cost = cost(problem)
 
+        # Construct optimisation object
         common_args = {
             "cost": cost,
             "max_iterations": 250,
@@ -126,7 +127,8 @@ class Test_SPM_Parameterisation:
                 cost.parameters[i].prior = pybop.Uniform(
                     0.2, 2.0
                 )  # Increase range to avoid prior == np.inf
-            # Set sigma0 and create optimiser
+
+        # Set sigma0 and create optimiser
         sigma0 = 0.05 if isinstance(cost, pybop.MAP) else None
         optim = optimiser(sigma0=sigma0, **common_args)
 
