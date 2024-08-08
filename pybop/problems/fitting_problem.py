@@ -57,19 +57,6 @@ class FittingProblem(BaseProblem):
         additional_variables.extend(["Time [s]"])
         additional_variables = list(set(additional_variables))
 
-        if initial_state is not None and "Initial SoC" in initial_state.keys():
-            warnings.warn(
-                "It is usually better to define an initial open-circuit voltage as the "
-                "initial_state for a FittingProblem because this value can typically be "
-                "obtained from the data, unlike the intrinsic initial state of charge. "
-                "In the case where the fitting parameters do not change the OCV-SOC "
-                "relationship, the initial state of charge may be passed to the model "
-                'using, for example, `model.set_initial_state({"Initial SoC": 1.0})` '
-                "before constructing the FittingProblem.",
-                UserWarning,
-                stacklevel=1,
-            )
-
         super().__init__(
             parameters, model, check_model, signal, additional_variables, initial_state
         )
@@ -94,6 +81,30 @@ class FittingProblem(BaseProblem):
                 check_model=self.check_model,
                 initial_state=self.initial_state,
             )
+
+    def set_initial_state(self, initial_state: Optional[dict] = None):
+        """
+        Set the initial state to be applied to evaluations of the problem.
+
+        Parameters
+        ----------
+        initial_state : dict, optional
+            A valid initial state (default: None).
+        """
+        if initial_state is not None and "Initial SoC" in initial_state.keys():
+            warnings.warn(
+                "It is usually better to define an initial open-circuit voltage as the "
+                "initial_state for a FittingProblem because this value can typically be "
+                "obtained from the data, unlike the intrinsic initial state of charge. "
+                "In the case where the fitting parameters do not change the OCV-SOC "
+                "relationship, the initial state of charge may be passed to the model "
+                'using, for example, `model.set_initial_state({"Initial SoC": 1.0})` '
+                "before constructing the FittingProblem.",
+                UserWarning,
+                stacklevel=1,
+            )
+
+        self.initial_state = initial_state
 
     def evaluate(
         self, inputs: Inputs, update_capacity=False

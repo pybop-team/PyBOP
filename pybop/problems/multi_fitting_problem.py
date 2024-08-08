@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 
 from pybop import BaseProblem, Dataset
@@ -62,6 +64,18 @@ class MultiFittingProblem(BaseProblem):
         self._time_data = self._dataset["Time [s]"]
         self.n_time_data = len(self._time_data)
         self.set_target(combined_dataset)
+
+    def set_initial_state(self, initial_state: Optional[dict] = None):
+        """
+        Set the initial state to be applied to evaluations of the problem.
+
+        Parameters
+        ----------
+        initial_state : dict, optional
+            A valid initial state (default: None).
+        """
+        for problem in self.problems:
+            problem.set_initial_state(initial_state)
 
     def evaluate(self, inputs: Inputs, **kwargs):
         """
