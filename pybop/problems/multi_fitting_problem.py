@@ -4,7 +4,6 @@ import numpy as np
 
 from pybop import BaseProblem, Dataset
 from pybop.parameters.parameter import Inputs, Parameters
-from pybop.problems.fitting_problem import FittingProblem
 
 
 class MultiFittingProblem(BaseProblem):
@@ -22,18 +21,15 @@ class MultiFittingProblem(BaseProblem):
 
     def __init__(self, *args):
         self.problems = []
+        models_to_check = []
         for problem in args:
-            # Create a copy and build the model from scratch
-            problem_copy = FittingProblem(
-                model=problem.model.new_copy() if problem.model is not None else None,
-                parameters=problem.parameters,
-                dataset=Dataset(data_dictionary=problem.dataset),
-                check_model=problem.check_model,
-                signal=problem.signal,
-                additional_variables=problem.additional_variables,
-                initial_state=problem.initial_state,
-            )
-            self.problems.append(problem_copy)
+            self.problems.append(problem)
+            if problem.model is not None:
+                models_to_check.append(problem.model)
+
+        # Check that there are no copies of the same model
+        if len(set(models_to_check)) < len(models_to_check):
+            raise ValueError("Make a new_copy of the model for each problem.")
 
         # Compile the set of parameters, ignoring duplicates
         combined_parameters = Parameters()

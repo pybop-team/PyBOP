@@ -186,6 +186,11 @@ class TestProblem:
     def test_multi_fitting_problem(self, model, parameters, dataset, signal):
         problem_1 = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 
+        with pytest.raises(
+            ValueError, match="Make a new_copy of the model for each problem."
+        ):
+            pybop.MultiFittingProblem(problem_1, problem_1)
+
         # Generate a second fitting problem
         model = model.new_copy()
         experiment = pybop.Experiment(
