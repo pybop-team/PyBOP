@@ -205,8 +205,6 @@ class TestProblem:
         combined_problem = pybop.MultiFittingProblem(problem_1, problem_2)
 
         assert combined_problem._model is None
-        assert combined_problem.problems[0] == problem_1
-        assert combined_problem.problems[1] == problem_2
 
         assert len(combined_problem._dataset["Time [s]"]) == len(
             problem_1._dataset["Time [s]"]

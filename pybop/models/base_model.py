@@ -654,17 +654,19 @@ class BaseModel:
         """
         model_class = type(self)
         if self.pybamm_model is None:
-            new_model = model_class(name=self.name, parameter_set=self.parameter_set)
+            new_model = model_class(
+                name=self.name, parameter_set=self.parameter_set.copy()
+            )
         else:
             new_model = model_class(
                 name=self.name,
                 options=self._unprocessed_model.options,
-                parameter_set=self._unprocessed_parameter_set,
-                geometry=self.pybamm_model.default_geometry,
-                submesh_types=self.pybamm_model.default_submesh_types,
-                var_pts=self.pybamm_model.default_var_pts,
-                spatial_methods=self.pybamm_model.default_spatial_methods,
-                solver=self.pybamm_model.default_solver,
+                parameter_set=self._unprocessed_parameter_set.copy(),
+                geometry=self.pybamm_model.default_geometry.copy(),
+                submesh_types=self.pybamm_model.default_submesh_types.copy(),
+                var_pts=self.pybamm_model.default_var_pts.copy(),
+                spatial_methods=self.pybamm_model.default_spatial_methods.copy(),
+                solver=self.pybamm_model.default_solver.copy(),
             )
 
         return new_model
