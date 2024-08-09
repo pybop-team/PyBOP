@@ -85,23 +85,20 @@ class BaseCost:
         if self.transformation:
             p = self.transformation.to_model(inputs)
         inputs = self.parameters.verify(p if self.transformation else inputs)
+        self.parameters.update(values=list(inputs.values()))
+        y, dy = None, None
 
         try:
             if self._has_separable_problem:
-                self.parameters.update(values=list(inputs.values()))
                 if calculate_grad is True:
-                    self.y, self.dy = self.problem.evaluateS1(
-                        self.problem.parameters.as_dict()
-                    )
+                    y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
                 else:
-                    self.y = self.problem.evaluate(
+                    y = self.problem.evaluate(
                         self.problem.parameters.as_dict(),
                         update_capacity=self.update_capacity,
                     )
-                    self.dy = None
-            return self.compute(
-                self.y, dy=self.dy, inputs=inputs, calculate_grad=calculate_grad
-            )
+
+            return self.compute(y, dy=dy, inputs=inputs, calculate_grad=calculate_grad)
 
         except NotImplementedError as e:
             raise e
