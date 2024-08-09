@@ -80,9 +80,9 @@ class BaseModel:
 
         Additional Attributes
         ---------------------
-        pybamm_model : pybamm.BaseModel, optional
+        pybamm_model : pybamm.BaseModel
             An instance of a PyBaMM model.
-        parameters : pybop.Parameters, optional
+        parameters : pybop.Parameters
             The input parameters.
         param_check_counter : int
             A counter for the number of parameter checks (default: 0).
@@ -298,8 +298,7 @@ class BaseModel:
         Parameters
         ----------
         parameters : Parameters, optional
-            The optimisation parameters. Defaults to None, meaning that the parameters
-            attribute is not modified.
+            The optimisation parameters. Defaults to None, resulting in the internal `pybop.Parameters` object to be used.
         inputs : Inputs, optional
             The input parameters for the simulation (default: None).
         """
