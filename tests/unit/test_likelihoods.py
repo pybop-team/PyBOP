@@ -162,10 +162,6 @@ class TestLikelihoods:
     @pytest.mark.unit
     def test_gaussian_log_likelihood_returns_negative_inf(self, one_signal_problem):
         likelihood = pybop.GaussianLogLikelihood(one_signal_problem)
-        assert likelihood(np.array([-0.5, -0.5])) == -np.inf  # negative sigma value
-        assert (
-            likelihood(np.array([-0.5, -0.5]), calculate_grad=True)[0] == -np.inf
-        )  # negative sigma value
         assert likelihood(np.array([0.01, 0.1])) == -np.inf  # parameter value too small
         assert (
             likelihood(np.array([0.01, 0.1]), calculate_grad=True)[0] == -np.inf

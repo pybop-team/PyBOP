@@ -40,15 +40,22 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         self._multip = -1 / (2.0 * self.sigma2)
 
     def compute(
-        self, inputs: Inputs, calculate_grad: bool = False
+        self,
+        y: dict,
+        dy: np.ndarray = None,
+        inputs: Inputs = None,
+        calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
         Compute the Gaussian log-likelihood for the given parameters with known sigma.
 
         This method only computes the likelihood, without calling the problem.evaluateS1.
         """
+        # Verify we have dy if calculate_grad is True
+        self.verify_args(dy, calculate_grad)
+
         # Early return if the prediction is not verified
-        if not self.verify_prediction(self.y):
+        if not self.verify_prediction(y):
             return (
                 (-np.inf, -self._de * np.ones(self.n_parameters))
                 if calculate_grad
@@ -56,13 +63,11 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
             )
 
         # Calculate residuals and error
-        r = np.asarray(
-            [self._target[signal] - self.y[signal] for signal in self.signal]
-        )
+        r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
         e = np.sum(self._offset + self._multip * np.sum(r**2.0))
 
         if calculate_grad:
-            dl = np.sum((np.sum((r * self.dy.T), axis=2) / self.sigma2), axis=1)
+            dl = np.sum((np.sum((r * dy.T), axis=2) / self.sigma2), axis=1)
             return e, dl
 
         return e
@@ -108,7 +113,6 @@ class GaussianLogLikelihood(BaseLikelihood):
         super().__init__(problem)
         self._dsigma_scale = dsigma_scale
         self._logpi = -0.5 * self.n_time_data * np.log(2 * np.pi)
-        self._has_separable_problem = False
 
         self.sigma = Parameters()
         self._add_sigma_parameters(sigma0)
@@ -162,7 +166,11 @@ class GaussianLogLikelihood(BaseLikelihood):
         self._dsigma_scale = new_value
 
     def compute(
-        self, inputs: Inputs, calculate_grad: bool = False
+        self,
+        y: dict,
+        dy: np.ndarray = None,
+        inputs: Inputs = None,
+        calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
         Compute the Gaussian log-likelihood for the given parameters.
@@ -180,21 +188,19 @@ class GaussianLogLikelihood(BaseLikelihood):
         float
             The log-likelihood value, or -inf if the standard deviations are non-positive.
         """
+        # Verify we have dy if calculate_grad is True
+        self.verify_args(dy, calculate_grad)
+
         self.parameters.update(values=list(inputs.values()))
         sigma = self.sigma.current_value()
-        if np.any(sigma <= 0):
-            return (
-                (-np.inf, -self._de * np.ones(self.n_parameters))
-                if calculate_grad
-                else -np.inf
-            )
+        # if np.any(sigma <= 0):
+        #     return (
+        #         (-np.inf, -self._de * np.ones(self.n_parameters))
+        #         if calculate_grad
+        #         else -np.inf
+        #     )
 
-        if calculate_grad:
-            self.y, self.dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
-        else:
-            self.y = self.problem.evaluate(self.problem.parameters.as_dict())
-
-        if not self.verify_prediction(self.y):
+        if not self.verify_prediction(y):
             return (
                 (-np.inf, -self._de * np.ones(self.n_parameters))
                 if calculate_grad
@@ -202,9 +208,7 @@ class GaussianLogLikelihood(BaseLikelihood):
             )
 
         # Calculate residuals and error
-        r = np.asarray(
-            [self._target[signal] - self.y[signal] for signal in self.signal]
-        )
+        r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
         e = np.sum(
             self._logpi
             - self.n_time_data * np.log(sigma)
@@ -212,7 +216,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         )
 
         if calculate_grad:
-            dl = np.sum((np.sum((r * self.dy.T), axis=2) / (sigma**2.0)), axis=1)
+            dl = np.sum((np.sum((r * dy.T), axis=2) / (sigma**2.0)), axis=1)
             dsigma = (
                 -self.n_time_data / sigma + np.sum(r**2.0, axis=1) / (sigma**3.0)
             ) / self._dsigma_scale
@@ -259,7 +263,11 @@ class MAP(BaseLikelihood):
         self._has_separable_problem = self.likelihood.has_separable_problem
 
     def compute(
-        self, inputs: Inputs, calculate_grad: bool = False
+        self,
+        y: dict,
+        dy: np.ndarray = None,
+        inputs: Inputs = None,
+        calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
         Compute the Maximum a Posteriori for the given parameters.
@@ -278,6 +286,9 @@ class MAP(BaseLikelihood):
         float
             The maximum a posteriori cost.
         """
+        # Verify we have dy if calculate_grad is True
+        self.verify_args(dy, calculate_grad)
+
         log_prior = sum(
             self.parameters[key].prior.logpdf(value) for key, value in inputs.items()
         )
@@ -289,12 +300,10 @@ class MAP(BaseLikelihood):
                 else -np.inf
             )
 
-        if self._has_separable_problem:
-            self.likelihood.y = self.y
-            if calculate_grad:
-                self.likelihood.dy = self.dy
         if calculate_grad:
-            log_likelihood, dl = self.likelihood(inputs, calculate_grad=True)
+            log_likelihood, dl = self.likelihood.compute(
+                y, dy, inputs, calculate_grad=True
+            )
 
             # Compute a finite difference approximation of the gradient of the log prior
             delta = self.parameters.initial_value() * self.gradient_step
@@ -316,6 +325,6 @@ class MAP(BaseLikelihood):
 
             return posterior, total_gradient
 
-        log_likelihood = self.likelihood(inputs)
+        log_likelihood = self.likelihood.compute(y, inputs)
         posterior = log_likelihood + log_prior
         return posterior

@@ -23,7 +23,11 @@ class RootMeanSquaredError(BaseCost):
         super().__init__(problem)
 
     def compute(
-        self, inputs: Inputs, calculate_grad: bool = False
+        self,
+        y: dict,
+        dy: np.ndarray = None,
+        inputs: Inputs = None,
+        calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
         Compute the cost and its gradient with respect to the parameters.
@@ -44,8 +48,11 @@ class RootMeanSquaredError(BaseCost):
             The root mean square error.
 
         """
+        # Verify we have dy if calculate_grad is True
+        self.verify_args(dy, calculate_grad)
+
         # Early return if the prediction is not verified
-        if not self.verify_prediction(self.y):
+        if not self.verify_prediction(y):
             return (
                 (np.inf, self._de * np.ones(self.n_parameters))
                 if calculate_grad
@@ -53,13 +60,11 @@ class RootMeanSquaredError(BaseCost):
             )
 
         # Calculate residuals and error
-        r = np.asarray(
-            [self.y[signal] - self._target[signal] for signal in self.signal]
-        )
+        r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
         e = np.sqrt(np.mean(r**2, axis=1))
 
         if calculate_grad:
-            de = np.mean((r * self.dy.T), axis=2) / (e + np.finfo(float).eps)
+            de = np.mean((r * dy.T), axis=2) / (e + np.finfo(float).eps)
             return (
                 (e.item(), de.flatten())
                 if self.n_outputs == 1
@@ -91,7 +96,11 @@ class SumSquaredError(BaseCost):
         super().__init__(problem)
 
     def compute(
-        self, inputs: Inputs, calculate_grad: bool = False
+        self,
+        y: dict,
+        dy: np.ndarray = None,
+        inputs: Inputs = None,
+        calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
         Compute the cost and its gradient with respect to the parameters.
@@ -108,8 +117,11 @@ class SumSquaredError(BaseCost):
         float
             The Sum of Squared Error.
         """
+        # Verify we have dy if calculate_grad is True
+        self.verify_args(dy, calculate_grad)
+
         # Early return if the prediction is not verified
-        if not self.verify_prediction(self.y):
+        if not self.verify_prediction(y):
             return (
                 (np.inf, self._de * np.ones(self.n_parameters))
                 if calculate_grad
@@ -117,13 +129,11 @@ class SumSquaredError(BaseCost):
             )
 
         # Calculate residuals and error
-        r = np.asarray(
-            [self.y[signal] - self._target[signal] for signal in self.signal]
-        )
+        r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
         e = np.sum(np.sum(r**2, axis=0), axis=0)
 
         if calculate_grad is True:
-            de = 2 * np.sum(np.sum((r * self.dy.T), axis=2), axis=1)
+            de = 2 * np.sum(np.sum((r * dy.T), axis=2), axis=1)
             return e, de
 
         return e
@@ -171,7 +181,11 @@ class Minkowski(BaseCost):
         self.p = float(p)
 
     def compute(
-        self, inputs: Inputs, grad=None, calculate_grad: bool = False
+        self,
+        y: dict,
+        dy: np.ndarray = None,
+        inputs: Inputs = None,
+        calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
         Compute the cost with respect to the parameters.
@@ -188,8 +202,11 @@ class Minkowski(BaseCost):
         float
             The Minkowski cost.
         """
+        # Verify we have dy if calculate_grad is True
+        self.verify_args(dy, calculate_grad)
+
         # Early return if the prediction is not verified
-        if not self.verify_prediction(self.y):
+        if not self.verify_prediction(y):
             return (
                 (np.inf, self._de * np.ones(self.n_parameters))
                 if calculate_grad
@@ -197,14 +214,12 @@ class Minkowski(BaseCost):
             )
 
         # Calculate residuals and error
-        r = np.asarray(
-            [self.y[signal] - self._target[signal] for signal in self.signal]
-        )
+        r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
         e = np.sum(np.abs(r) ** self.p) ** (1 / self.p)
 
         if calculate_grad is True:
             de = np.sum(
-                np.sum(r ** (self.p - 1) * self.dy.T, axis=2)
+                np.sum(r ** (self.p - 1) * dy.T, axis=2)
                 / (e ** (self.p - 1) + np.finfo(float).eps),
                 axis=1,
             )
@@ -252,7 +267,11 @@ class SumofPower(BaseCost):
         self.p = float(p)
 
     def compute(
-        self, inputs: Inputs, calculate_grad: bool = False
+        self,
+        y: dict,
+        dy: np.ndarray = None,
+        inputs: Inputs = None,
+        calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
         Compute the cost with respect to the parameters.
@@ -269,8 +288,11 @@ class SumofPower(BaseCost):
         float
             The Sum of Power cost.
         """
+        # Verify we have dy if calculate_grad is True
+        self.verify_args(dy, calculate_grad)
+
         # Early return if the prediction is not verified
-        if not self.verify_prediction(self.y):
+        if not self.verify_prediction(y):
             return (
                 (
                     np.inf,
@@ -281,16 +303,16 @@ class SumofPower(BaseCost):
             )
 
         # Calculate residuals and error
-        r = np.asarray(
-            [self.y[signal] - self._target[signal] for signal in self.signal]
-        )
-        e = np.sum(np.sum(np.abs(r) ** self.p))
+        r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
+        e = np.sum(np.sum(np.abs(r) ** self.p))  # TODO: fix the double sum here
 
         if calculate_grad is True:
-            de = self.p * np.sum(np.sum(r ** (self.p - 1) * self.dy.T, axis=2), axis=1)
+            de = self.p * np.sum(
+                np.sum(r ** (self.p - 1) * dy.T, axis=2), axis=1
+            )  # TODO: fix the double sum here
             return e, de
 
-        return e.item() if self.n_outputs == 1 else np.sum(e)
+        return e
 
 
 class ObserverCost(BaseCost):
@@ -309,7 +331,13 @@ class ObserverCost(BaseCost):
         self._observer = observer
         self._has_separable_problem = False
 
-    def compute(self, inputs: Inputs, calculate_grad: bool = False) -> float:
+    def compute(
+        self,
+        y: dict,
+        dy: np.ndarray = None,
+        inputs: Inputs = None,
+        calculate_grad: bool = False,
+    ) -> float:
         """
         Calculate the observer cost for a given set of parameters.
 

@@ -81,7 +81,11 @@ class WeightedCost(BaseCost):
         self._has_separable_problem = False
 
     def compute(
-        self, inputs: Inputs, calculate_grad: bool = False
+        self,
+        y: dict,
+        dy: np.ndarray = None,
+        inputs: Inputs = None,
+        calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
         Compute the weighted cost for a given set of parameters.
@@ -100,11 +104,9 @@ class WeightedCost(BaseCost):
 
         if self._has_identical_problems:
             if calculate_grad:
-                self.y, self.dy = self.problem.evaluateS1(inputs)
+                y, dy = self.problem.evaluateS1(inputs)
             else:
-                self.y = self.problem.evaluate(
-                    inputs, update_capacity=self.update_capacity
-                )
+                y = self.problem.evaluate(inputs, update_capacity=self.update_capacity)
 
         e = np.empty_like(self.costs)
         de = np.empty((len(self.parameters), len(self.costs)))
@@ -112,21 +114,21 @@ class WeightedCost(BaseCost):
         for i, cost in enumerate(self.costs):
             inputs = cost.parameters.as_dict()
             if self._has_identical_problems:
-                cost.y = self.y
-                if calculate_grad:
-                    cost.dy = self.dy
+                y, dy = (y, dy)
             elif cost.has_separable_problem:
                 if calculate_grad:
-                    cost.y, cost.dy = cost.problem.evaluateS1(inputs)
+                    y, dy = cost.problem.evaluateS1(inputs)
                 else:
-                    cost.y = cost.problem.evaluate(
+                    y = cost.problem.evaluate(
                         inputs, update_capacity=self.update_capacity
                     )
 
             if calculate_grad:
-                e[i], de[:, i] = cost.compute(inputs, calculate_grad=True)
+                e[i], de[:, i] = cost.compute(
+                    y, dy=dy, inputs=inputs, calculate_grad=True
+                )
             else:
-                e[i] = cost.compute(inputs)
+                e[i] = cost.compute(y, inputs=inputs)
 
         e = np.dot(e, self.weights)
         if calculate_grad:

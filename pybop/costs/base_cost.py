@@ -1,5 +1,7 @@
 from typing import Optional, Union
 
+from numpy import ndarray
+
 from pybop import BaseProblem
 from pybop.parameters.parameter import Inputs, Parameters
 
@@ -83,17 +85,20 @@ class BaseCost:
 
         try:
             if self._has_separable_problem:
+                self.parameters.update(values=list(inputs.values()))
                 if calculate_grad is True:
                     self.y, self.dy = self.problem.evaluateS1(
-                        inputs,
-                        # calculate_grad=calculate_grad,
+                        self.problem.parameters.as_dict()
                     )
                 else:
                     self.y = self.problem.evaluate(
-                        inputs,
+                        self.problem.parameters.as_dict(),
                         update_capacity=self.update_capacity,
                     )
-            return self.compute(inputs, calculate_grad=calculate_grad)
+                    self.dy = None
+            return self.compute(
+                self.y, dy=self.dy, inputs=inputs, calculate_grad=calculate_grad
+            )
 
         except NotImplementedError as e:
             raise e
@@ -101,7 +106,9 @@ class BaseCost:
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}") from e
 
-    def compute(self, inputs: Inputs, calculate_grad: bool = False):
+    def compute(
+        self, y: dict, dy: ndarray, inputs: Inputs = None, calculate_grad: bool = False
+    ):
         """
         Compute the cost and  if `calculate_grad` is True, its gradient with
         respect to the parameters.
@@ -162,3 +169,9 @@ class BaseCost:
             return False
 
         return True
+
+    def verify_args(self, dy: ndarray, calculate_grad: bool):
+        if calculate_grad and dy is None:
+            raise ValueError(
+                "Forward model sensitivies need to be provided alongside `calculate_grad=True` for `cost.compute`."
+            )
