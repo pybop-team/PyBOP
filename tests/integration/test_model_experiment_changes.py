@@ -107,3 +107,53 @@ class TestModelAndExperimentChanges:
         optim = pybop.PSO(cost)
         x, final_cost = optim.run()
         return final_cost
+
+    @pytest.mark.integration
+    def test_multi_fitting_problem(self):
+        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameters = pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            prior=pybop.Gaussian(0.68, 0.05),
+            true_value=parameter_set[
+                "Negative electrode active material volume fraction"
+            ],
+        )
+
+        model_1 = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+        experiment_1 = pybop.Experiment(
+            ["Discharge at 1C until 3 V (4 seconds period)"]
+        )
+        solution_1 = model_1.predict(experiment=experiment_1)
+        dataset_1 = pybop.Dataset(
+            {
+                "Time [s]": solution_1["Time [s]"].data,
+                "Current function [A]": solution_1["Current [A]"].data,
+                "Voltage [V]": solution_1["Voltage [V]"].data,
+            }
+        )
+
+        model_2 = pybop.lithium_ion.SPMe(parameter_set=parameter_set.copy())
+        experiment_2 = pybop.Experiment(
+            ["Discharge at 3C until 3 V (4 seconds period)"]
+        )
+        solution_2 = model_2.predict(experiment=experiment_2)
+        dataset_2 = pybop.Dataset(
+            {
+                "Time [s]": solution_2["Time [s]"].data,
+                "Current function [A]": solution_2["Current [A]"].data,
+                "Voltage [V]": solution_2["Voltage [V]"].data,
+            }
+        )
+
+        # Define a problem for each dataset and combine them into one
+        problem_1 = pybop.FittingProblem(model_1, parameters, dataset_1)
+        problem_2 = pybop.FittingProblem(model_2, parameters, dataset_2)
+        problem = pybop.MultiFittingProblem(problem_1, problem_2)
+        cost = pybop.RootMeanSquaredError(problem)
+
+        # Test with a gradient and non-gradient-based optimiser
+        for optimiser in [pybop.SNES, pybop.IRPropMin]:
+            optim = optimiser(cost)
+            x, final_cost = optim.run()
+            np.testing.assert_allclose(x, parameters.true_value, atol=2e-5)
+            np.testing.assert_allclose(final_cost, 0, atol=2e-5)

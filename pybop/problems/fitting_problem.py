@@ -21,12 +21,25 @@ class FittingProblem(BaseProblem):
         An object or list of the parameters for the problem.
     dataset : Dataset
         Dataset object containing the data to fit the model to.
+    check_model : bool, optional
+        Flag to indicate if the model should be checked (default: True).
     signal : str, optional
         The variable used for fitting (default: "Voltage [V]").
     additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
     initial_state : dict, optional
         A valid initial state, e.g. the initial open-circuit voltage (default: None).
+
+    Additional Attributes
+    ---------------------
+    dataset : dictionary
+        The dictionary from a Dataset object containing the signal keys and values to fit the model to.
+    time_data : np.ndarray
+        The time points in the dataset.
+    n_time_data : int
+        The number of time points.
+    target : np.ndarray
+        The target values of the signals.
     """
 
     def __init__(
@@ -43,19 +56,6 @@ class FittingProblem(BaseProblem):
         additional_variables = additional_variables or []
         additional_variables.extend(["Time [s]"])
         additional_variables = list(set(additional_variables))
-
-        if initial_state is not None and "Initial SoC" in initial_state.keys():
-            warnings.warn(
-                "It is usually better to define an initial open-circuit voltage as the "
-                "initial_state for a FittingProblem because this value can typically be "
-                "obtained from the data, unlike the intrinsic initial state of charge. "
-                "In the case where the fitting parameters do not change the OCV-SOC "
-                "relationship, the initial state of charge may be passed to the model "
-                'using, for example, `model.set_initial_state({"Initial SoC": 1.0})` '
-                "before constructing the FittingProblem.",
-                UserWarning,
-                stacklevel=1,
-            )
 
         super().__init__(
             parameters, model, check_model, signal, additional_variables, initial_state
@@ -81,6 +81,30 @@ class FittingProblem(BaseProblem):
                 check_model=self.check_model,
                 initial_state=self.initial_state,
             )
+
+    def set_initial_state(self, initial_state: Optional[dict] = None):
+        """
+        Set the initial state to be applied to evaluations of the problem.
+
+        Parameters
+        ----------
+        initial_state : dict, optional
+            A valid initial state (default: None).
+        """
+        if initial_state is not None and "Initial SoC" in initial_state.keys():
+            warnings.warn(
+                "It is usually better to define an initial open-circuit voltage as the "
+                "initial_state for a FittingProblem because this value can typically be "
+                "obtained from the data, unlike the intrinsic initial state of charge. "
+                "In the case where the fitting parameters do not change the OCV-SOC "
+                "relationship, the initial state of charge may be passed to the model "
+                'using, for example, `model.set_initial_state({"Initial SoC": 1.0})` '
+                "before constructing the FittingProblem.",
+                UserWarning,
+                stacklevel=1,
+            )
+
+        self.initial_state = initial_state
 
     def evaluate(
         self, inputs: Inputs, update_capacity=False
@@ -130,6 +154,7 @@ class FittingProblem(BaseProblem):
             dy/dx(t) evaluated with given inputs.
         """
         inputs = self.parameters.verify(inputs)
+        self.parameters.update(values=list(inputs.values()))
 
         try:
             sol = self._model.simulateS1(

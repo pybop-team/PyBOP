@@ -47,22 +47,6 @@ class DesignProblem(BaseProblem):
         additional_variables.extend(["Time [s]", "Current [A]"])
         additional_variables = list(set(additional_variables))
 
-        if initial_state is None:
-            if isinstance(model, ECircuitModel):
-                initial_state = {"Initial SoC": model.parameter_set["Initial SoC"]}
-            else:
-                initial_state = {"Initial SoC": 1.0}  # default value
-        elif "Initial open-circuit voltage [V]" in initial_state.keys():
-            warnings.warn(
-                "It is usually better to define an initial state of charge as the "
-                "initial_state for a DesignProblem because this state will scale with "
-                "design properties such as the capacity of the battery, as opposed to the "
-                "initial open-circuit voltage which may correspond to a different state "
-                "of charge for each design.",
-                UserWarning,
-                stacklevel=1,
-            )
-
         super().__init__(
             parameters, model, check_model, signal, additional_variables, initial_state
         )
@@ -77,6 +61,33 @@ class DesignProblem(BaseProblem):
             "Ah is greater than",
             "Non-physical point encountered",
         ]
+
+    def set_initial_state(self, initial_state):
+        """
+        Set the initial state to be applied to evaluations of the problem.
+
+        Parameters
+        ----------
+        initial_state : dict, optional
+            A valid initial state (default: None).
+        """
+        if initial_state is None:
+            if isinstance(self.model, ECircuitModel):
+                initial_state = {"Initial SoC": self.model.parameter_set["Initial SoC"]}
+            else:
+                initial_state = {"Initial SoC": 1.0}  # default value
+        elif "Initial open-circuit voltage [V]" in initial_state.keys():
+            warnings.warn(
+                "It is usually better to define an initial state of charge as the "
+                "initial_state for a DesignProblem because this state will scale with "
+                "design properties such as the capacity of the battery, as opposed to the "
+                "initial open-circuit voltage which may correspond to a different state "
+                "of charge for each design.",
+                UserWarning,
+                stacklevel=1,
+            )
+
+        self.initial_state = initial_state
 
     def evaluate(self, inputs: Inputs, update_capacity=False):
         """

@@ -63,11 +63,22 @@ class BaseProblem:
         self.check_model = check_model
         self.signal = signal or ["Voltage [V]"]
         self.additional_variables = additional_variables or []
-        self.initial_state = initial_state
+        self.set_initial_state(initial_state)
         self._dataset = None
         self._time_data = None
         self._target = None
         self.verbose = False
+
+    def set_initial_state(self, initial_state: Optional[dict] = None):
+        """
+        Set the initial state to be applied to evaluations of the problem.
+
+        Parameters
+        ----------
+        initial_state : dict, optional
+            A valid initial state (default: None).
+        """
+        self.initial_state = initial_state
 
     @property
     def n_parameters(self):
@@ -156,3 +167,7 @@ class BaseProblem:
     @time_data.setter
     def time_data(self, time_data):
         self._time_data = time_data
+
+    @property
+    def dataset(self):
+        return self._dataset
