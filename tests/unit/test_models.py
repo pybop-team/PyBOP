@@ -466,3 +466,45 @@ class TestModels:
         for key, value in parameter_info.items():
             assert key in printed_messaage
             assert value in printed_messaage
+
+    @pytest.mark.unit
+    def test_set_current_function(self):
+        dataset_1 = pybop.Dataset(
+            {
+                "Time [s]": np.linspace(0, 10, 100),
+                "Current function [A]": 3.0 * np.ones(100),
+            }
+        )
+        dataset_2 = pybop.Dataset(
+            {
+                "Time [s]": np.linspace(0, 5, 100),
+                "Current function [A]": 6.0 * np.ones(100),
+            }
+        )
+
+        model = pybop.lithium_ion.SPM()
+        model.set_current_function(dataset=dataset_1)
+        values_1 = model.predict(t_eval=dataset_1["Time [s]"])
+
+        np.testing.assert_allclose(
+            values_1["Current [A]"].data,
+            dataset_1["Current function [A]"].data,
+            atol=1e-8,
+        )
+
+        model.set_current_function(dataset=dataset_2)
+        values_2 = model.predict(t_eval=dataset_2["Time [s]"])
+
+        np.testing.assert_allclose(
+            values_2["Current [A]"].data,
+            dataset_2["Current function [A]"].data,
+            atol=1e-8,
+        )
+
+        values_3 = model.simulate(inputs={}, t_eval=dataset_2["Time [s]"])
+
+        np.testing.assert_allclose(
+            values_3["Current [A]"].data,
+            dataset_2["Current function [A]"].data,
+            atol=1e-8,
+        )
