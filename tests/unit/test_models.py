@@ -500,3 +500,11 @@ class TestModels:
             dataset_2["Current function [A]"].data,
             atol=1e-8,
         )
+
+        values_3 = model.simulate(inputs={}, t_eval=dataset_2["Time [s]"])
+
+        np.testing.assert_allclose(
+            values_3["Current [A]"].data,
+            dataset_2["Current function [A]"].data,
+            atol=1e-8,
+        )
