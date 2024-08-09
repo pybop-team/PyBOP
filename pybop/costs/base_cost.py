@@ -1,5 +1,6 @@
 from typing import Optional, Union
 
+import numpy as np
 from numpy import ndarray
 
 from pybop import BaseProblem
@@ -38,7 +39,7 @@ class BaseCost:
         self.update_capacity = False
         self.y = None
         self.dy = None
-        self.set_fail_gradient()
+        self._de = 1.0
         if isinstance(self.problem, BaseProblem):
             self._target = self.problem.target
             self.parameters.join(self.problem.parameters)
@@ -46,6 +47,8 @@ class BaseCost:
             self.signal = self.problem.signal
             self.transformation = self.parameters.construct_transformation()
             self._has_separable_problem = True
+            self.grad_fail = None
+            self.set_fail_gradient()
 
     @property
     def n_parameters(self):
@@ -111,15 +114,24 @@ class BaseCost:
     ):
         """
         Compute the cost and  if `calculate_grad` is True, its gradient with
-        respect to the parameters.
+        respect to the predictions.
 
         This method only computes the cost, without calling the `problem.evaluate()`.
         This method must be implemented by subclasses.
 
         Parameters
         ----------
-        inputs : Inputs
-            The parameters for which to compute the cost.
+        y : dict
+            The dictionary of predictions with keys designating the signals for fitting.
+
+        dy : np.ndarray, optional
+            The corresponding gradient with respect to the parameters for each signal.
+
+        inputs: Inputs, optional
+            The corresponding parameter values for the obtained predictions
+
+        calculate_grad: bool, optional
+            A bool condition designating whether to calculate the gradient
 
         Returns
         -------
@@ -148,6 +160,7 @@ class BaseCost:
         if not isinstance(de, float):
             de = float(de)
         self._de = de
+        self.grad_fail = self._de * np.ones(self.n_parameters)
 
     def verify_prediction(self, y):
         """

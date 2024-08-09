@@ -56,11 +56,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
 
         # Early return if the prediction is not verified
         if not self.verify_prediction(y):
-            return (
-                (-np.inf, -self._de * np.ones(self.n_parameters))
-                if calculate_grad
-                else -np.inf
-            )
+            return (-np.inf, -self.grad_fail) if calculate_grad else -np.inf
 
         # Calculate residuals and error
         r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
@@ -190,22 +186,10 @@ class GaussianLogLikelihood(BaseLikelihood):
         """
         # Verify we have dy if calculate_grad is True
         self.verify_args(dy, calculate_grad)
-
-        self.parameters.update(values=list(inputs.values()))
         sigma = self.sigma.current_value()
-        # if np.any(sigma <= 0):
-        #     return (
-        #         (-np.inf, -self._de * np.ones(self.n_parameters))
-        #         if calculate_grad
-        #         else -np.inf
-        #     )
 
         if not self.verify_prediction(y):
-            return (
-                (-np.inf, -self._de * np.ones(self.n_parameters))
-                if calculate_grad
-                else -np.inf
-            )
+            return (-np.inf, -self.grad_fail) if calculate_grad else -np.inf
 
         # Calculate residuals and error
         r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
@@ -294,11 +278,7 @@ class MAP(BaseLikelihood):
         )
 
         if not np.isfinite(log_prior).any():
-            return (
-                (-np.inf, -self._de * np.ones(self.n_parameters))
-                if calculate_grad
-                else -np.inf
-            )
+            return (-np.inf, -self.grad_fail) if calculate_grad else -np.inf
 
         if calculate_grad:
             log_likelihood, dl = self.likelihood.compute(

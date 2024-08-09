@@ -369,7 +369,7 @@ class TestCosts:
         # Test MAP explicitly
         cost4 = pybop.MAP(problem, pybop.GaussianLogLikelihood)
         weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, -1 / weight])
-        assert weighted_cost_4.has_identical_problems is False
+        assert weighted_cost_4.has_identical_problems is True
         assert weighted_cost_4.has_separable_problem is False
         sigma = 0.01
         assert np.isfinite(cost4.parameters["Sigma for output 1"].prior.logpdf(sigma))

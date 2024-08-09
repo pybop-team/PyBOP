@@ -30,17 +30,21 @@ class RootMeanSquaredError(BaseCost):
         calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
-        Compute the cost and its gradient with respect to the parameters.
-
-        This method only computes the cost, without calling the problem.evaluate().
+        Computes the cost function for the given predictions.
 
         Parameters
         ----------
-        inputs : Inputs
-            The parameters for which to evaluate the cost.
-        grad : array-like, optional
-            An array to store the gradient of the cost function with respect
-            to the parameters.
+        y : dict
+            The dictionary of predictions with keys designating the signals for fitting.
+
+        dy : np.ndarray, optional
+            The corresponding gradient with respect to the parameters for each signal.
+
+        inputs: Inputs, optional
+            The corresponding parameter values for the obtained predictions
+
+        calculate_grad: bool, optional
+            A bool condition designating whether to calculate the gradient
 
         Returns
         -------
@@ -53,11 +57,7 @@ class RootMeanSquaredError(BaseCost):
 
         # Early return if the prediction is not verified
         if not self.verify_prediction(y):
-            return (
-                (np.inf, self._de * np.ones(self.n_parameters))
-                if calculate_grad
-                else np.inf
-            )
+            return (np.inf, self.grad_fail) if calculate_grad else np.inf
 
         # Calculate residuals and error
         r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
@@ -103,14 +103,21 @@ class SumSquaredError(BaseCost):
         calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
-        Compute the cost and its gradient with respect to the parameters.
-
-        This method only computes the cost, without calling the problem.evaluate().
+        Computes the cost function for the given predictions.
 
         Parameters
         ----------
-        inputs : Inputs
-            The parameters for which to evaluate the cost.
+        y : dict
+            The dictionary of predictions with keys designating the signals for fitting.
+
+        dy : np.ndarray, optional
+            The corresponding gradient with respect to the parameters for each signal.
+
+        inputs: Inputs, optional
+            The corresponding parameter values for the obtained predictions
+
+        calculate_grad: bool, optional
+            A bool condition designating whether to calculate the gradient
 
         Returns
         -------
@@ -122,11 +129,7 @@ class SumSquaredError(BaseCost):
 
         # Early return if the prediction is not verified
         if not self.verify_prediction(y):
-            return (
-                (np.inf, self._de * np.ones(self.n_parameters))
-                if calculate_grad
-                else np.inf
-            )
+            return (np.inf, self.grad_fail) if calculate_grad else np.inf
 
         # Calculate residuals and error
         r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
@@ -188,14 +191,21 @@ class Minkowski(BaseCost):
         calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
-        Compute the cost with respect to the parameters.
-
-        This method only computes the cost, without calling the problem.evaluate().
+        Computes the cost function for the given predictions.
 
         Parameters
         ----------
-        inputs : Inputs
-            The parameters for which to compute the cost and gradient.
+        y : dict
+            The dictionary of predictions with keys designating the signals for fitting.
+
+        dy : np.ndarray, optional
+            The corresponding gradient with respect to the parameters for each signal.
+
+        inputs: Inputs, optional
+            The corresponding parameter values for the obtained predictions
+
+        calculate_grad: bool, optional
+            A bool condition designating whether to calculate the gradient
 
         Returns
         -------
@@ -207,11 +217,7 @@ class Minkowski(BaseCost):
 
         # Early return if the prediction is not verified
         if not self.verify_prediction(y):
-            return (
-                (np.inf, self._de * np.ones(self.n_parameters))
-                if calculate_grad
-                else np.inf
-            )
+            return (np.inf, self.grad_fail) if calculate_grad else np.inf
 
         # Calculate residuals and error
         r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
@@ -274,14 +280,21 @@ class SumofPower(BaseCost):
         calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
-        Compute the cost with respect to the parameters.
-
-        This method only computes the cost, without calling the problem.evaluate().
+        Computes the cost function for the given predictions.
 
         Parameters
         ----------
-        inputs : Inputs
-            The parameters for which to compute the cost and gradient.
+        y : dict
+            The dictionary of predictions with keys designating the signals for fitting.
+
+        dy : np.ndarray, optional
+            The corresponding gradient with respect to the parameters for each signal.
+
+        inputs: Inputs, optional
+            The corresponding parameter values for the obtained predictions
+
+        calculate_grad: bool, optional
+            A bool condition designating whether to calculate the gradient
 
         Returns
         -------
@@ -293,23 +306,14 @@ class SumofPower(BaseCost):
 
         # Early return if the prediction is not verified
         if not self.verify_prediction(y):
-            return (
-                (
-                    np.inf,
-                    self._de * np.ones(self.n_parameters),
-                )  # TODO: replace this with an attr.
-                if calculate_grad
-                else np.inf
-            )
+            return (np.inf, self.grad_fail) if calculate_grad else np.inf
 
         # Calculate residuals and error
         r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
-        e = np.sum(np.sum(np.abs(r) ** self.p))  # TODO: fix the double sum here
+        e = np.sum(np.abs(r) ** self.p)
 
         if calculate_grad is True:
-            de = self.p * np.sum(
-                np.sum(r ** (self.p - 1) * dy.T, axis=2), axis=1
-            )  # TODO: fix the double sum here
+            de = self.p * np.sum(np.sum(r ** (self.p - 1) * dy.T, axis=2), axis=1)
             return e, de
 
         return e
@@ -339,15 +343,21 @@ class ObserverCost(BaseCost):
         calculate_grad: bool = False,
     ) -> float:
         """
-        Calculate the observer cost for a given set of parameters.
+        Computes the cost function for the given predictions.
 
         Parameters
         ----------
-        inputs : Inputs
-            The parameters for which to evaluate the cost.
-        grad : array-like, optional
-            An array to store the gradient of the cost function with respect
-            to the parameters.
+        y : dict
+            The dictionary of predictions with keys designating the signals for fitting.
+
+        dy : np.ndarray, optional
+            The corresponding gradient with respect to the parameters for each signal.
+
+        inputs: Inputs, optional
+            The corresponding parameter values for the obtained predictions
+
+        calculate_grad: bool, optional
+            A bool condition designating whether to calculate the gradient
 
         Returns
         -------

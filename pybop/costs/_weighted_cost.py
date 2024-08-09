@@ -88,12 +88,21 @@ class WeightedCost(BaseCost):
         calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
-        Compute the weighted cost for a given set of parameters.
+        Computes the cost function for the given predictions.
 
         Parameters
         ----------
-        inputs : Inputs
-            The parameters for which to compute the cost.
+        y : dict
+            The dictionary of predictions with keys designating the signals for fitting.
+
+        dy : np.ndarray, optional
+            The corresponding gradient with respect to the parameters for each signal.
+
+        inputs: Inputs, optional
+            The corresponding parameter values for the obtained predictions
+
+        calculate_grad: bool, optional
+            A bool condition designating whether to calculate the gradient
 
         Returns
         -------
