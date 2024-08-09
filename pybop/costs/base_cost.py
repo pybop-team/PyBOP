@@ -57,7 +57,7 @@ class BaseCost:
     def target(self):
         return self._target
 
-    def __call__(self, inputs: Union[Inputs, list], calculate_grad=False):
+    def __call__(self, inputs: Union[Inputs, list], calculate_grad: bool = False):
         """
         This method calls the forward model via problem.evaluate(inputs),
         and computes the cost for the given output by calling self.compute(inputs).
@@ -101,7 +101,7 @@ class BaseCost:
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}") from e
 
-    def compute(self, inputs: Inputs, calculate_grad=False):
+    def compute(self, inputs: Inputs, calculate_grad: bool = False):
         """
         Compute the cost and  if `calculate_grad` is True, its gradient with
         respect to the parameters.

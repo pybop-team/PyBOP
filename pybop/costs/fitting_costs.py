@@ -63,7 +63,7 @@ class RootMeanSquaredError(BaseCost):
             return (
                 (e.item(), de.flatten())
                 if self.n_outputs == 1
-                else (np.sum(e), np.sum(de, axis=1))
+                else (e.sum(), de.sum(1))
             )
 
         return e.item() if self.n_outputs == 1 else np.sum(e)
@@ -125,9 +125,8 @@ class SumSquaredError(BaseCost):
         if calculate_grad is True:
             de = 2 * np.sum(np.sum((r * self.dy.T), axis=2), axis=1)
             return e, de
-            # return e.item(), de.flatten() if self.n_outputs == 1 else np.sum(e), np.sum(de, axis=1) #TODO: double check the output size on this
 
-        return e.item() if self.n_outputs == 1 else np.sum(e)
+        return e
 
 
 class Minkowski(BaseCost):
@@ -201,13 +200,7 @@ class Minkowski(BaseCost):
         r = np.asarray(
             [self.y[signal] - self._target[signal] for signal in self.signal]
         )
-        e = np.asarray(
-            [
-                np.sum(np.abs(self.y[signal] - self._target[signal]) ** self.p)
-                ** (1 / self.p)
-                for signal in self.signal
-            ]
-        )
+        e = np.sum(np.abs(r) ** self.p) ** (1 / self.p)
 
         if calculate_grad is True:
             de = np.sum(
@@ -215,9 +208,9 @@ class Minkowski(BaseCost):
                 / (e ** (self.p - 1) + np.finfo(float).eps),
                 axis=1,
             )
-            return np.sum(e), de
+            return e, de
 
-        return e.item() if self.n_outputs == 1 else np.sum(e)
+        return e
 
 
 class SumofPower(BaseCost):

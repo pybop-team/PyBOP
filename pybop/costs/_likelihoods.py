@@ -65,7 +65,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
             dl = np.sum((np.sum((r * self.dy.T), axis=2) / self.sigma2), axis=1)
             return e, dl
 
-        return e.item() if self.n_outputs == 1 else np.sum(e)
+        return e
 
     def check_sigma0(self, sigma0: Union[np.ndarray, float]):
         """
@@ -139,7 +139,7 @@ class GaussianLogLikelihood(BaseLikelihood):
                     f"Sigma for output {index+1}",
                     initial_value=value,
                     prior=Uniform(0.5 * value, 1.5 * value),
-                    # bounds = [1e-6, 1.0], # TODO: This should have a lower bound of zero and no higher bound
+                    bounds=[1e-8, 3 * value],
                 )
             )
         else:
@@ -208,7 +208,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         e = np.sum(
             self._logpi
             - self.n_time_data * np.log(sigma)
-            - np.sum((r) ** 2.0) / (2.0 * sigma**2.0)
+            - np.sum(r**2.0, axis=1) / (2.0 * sigma**2.0)
         )
 
         if calculate_grad:
@@ -217,9 +217,9 @@ class GaussianLogLikelihood(BaseLikelihood):
                 -self.n_time_data / sigma + np.sum(r**2.0, axis=1) / (sigma**3.0)
             ) / self._dsigma_scale
             dl = np.concatenate((dl.flatten(), dsigma))
-            return (e.item(), dl) if self.n_outputs == 1 else (np.sum(e), dl)
+            return e, dl
 
-        return e.item() if self.n_outputs == 1 else np.sum(e)
+        return e
 
 
 class MAP(BaseLikelihood):
