@@ -256,11 +256,15 @@ class BaseModel:
             The dataset to be used in the model construction.
         """
         if "Current function [A]" in self._parameter_set.keys():
-            self._parameter_set["Current function [A]"] = pybamm.Interpolant(
-                dataset["Time [s]"],
-                dataset["Current function [A]"],
-                pybamm.t,
-            )
+            if "Current function [A]" not in self.parameters.keys():
+                current = pybamm.Interpolant(
+                    dataset["Time [s]"],
+                    dataset["Current function [A]"],
+                    pybamm.t,
+                )
+                # Update both the active and unprocessed parameter sets for consistency
+                self._parameter_set["Current function [A]"] = current
+                self._unprocessed_parameter_set["Current function [A]"] = current
 
     def set_parameters(self):
         """
