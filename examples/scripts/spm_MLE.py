@@ -2,8 +2,14 @@ import numpy as np
 
 import pybop
 
-# Define model
+# Define model and set initial parameter values
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+parameter_set.update(
+    {
+        "Negative electrode active material volume fraction": 0.63,
+        "Positive electrode active material volume fraction": 0.51,
+    }
+)
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
@@ -19,31 +25,39 @@ parameters = pybop.Parameters(
     ),
 )
 
-# Set initial parameter values
-parameter_set.update(
-    {
-        "Negative electrode active material volume fraction": 0.63,
-        "Positive electrode active material volume fraction": 0.51,
-    }
-)
 # Generate data
-sigma = 0.005
-t_eval = np.arange(0, 900, 3)
-values = model.predict(t_eval=t_eval)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
+sigma = 0.002
+experiment = pybop.Experiment(
+    [
+        (
+            "Discharge at 0.5C for 3 minutes (3 second period)",
+            "Charge at 0.5C for 3 minutes (3 second period)",
+        ),
+    ]
+)
+values = model.predict(initial_state={"Initial SoC": 0.5}, experiment=experiment)
+
+
+def noise(sigma):
+    return np.random.normal(0, sigma, len(values["Voltage [V]"].data))
+
 
 # Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": t_eval,
+        "Time [s]": values["Time [s]"].data,
         "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": corrupt_values,
+        "Voltage [V]": values["Voltage [V]"].data + noise(sigma),
+        "Bulk open-circuit voltage [V]": values["Bulk open-circuit voltage [V]"].data
+        + noise(sigma),
     }
 )
 
+
+signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 # Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset)
-likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=sigma)
+problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
+likelihood = pybop.GaussianLogLikelihood(problem, sigma0=sigma * 4)
 optim = pybop.IRPropMin(
     likelihood,
     max_unchanged_iterations=20,
