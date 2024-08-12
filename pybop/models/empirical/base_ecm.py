@@ -158,8 +158,8 @@ class ECircuitModel(BaseModel):
 
         if isinstance(initial_value, str) and initial_value.endswith("V"):
             V_init = float(initial_value[:-1])
-            V_min = parameter_values.evaluate(param.voltage_low_cut)
-            V_max = parameter_values.evaluate(param.voltage_high_cut)
+            V_min = parameter_values.evaluate(param.voltage_low_cut, inputs=inputs)
+            V_max = parameter_values.evaluate(param.voltage_high_cut, inputs=inputs)
 
             if not V_min <= V_init <= V_max:
                 raise ValueError(
