@@ -129,7 +129,7 @@ class BaseOptimiser:
         """
         # Set initial values, if x0 is None, initial values are unmodified.
         self.parameters.update(initial_values=self.unset_options.pop("x0", None))
-        self.x0 = self.parameters.initial_value()
+        self.x0 = self.parameters.reset_initial_value()
 
         # Set default bounds (for all or no parameters)
         self.bounds = self.unset_options.pop("bounds", self.parameters.get_bounds())
@@ -199,20 +199,6 @@ class BaseOptimiser:
         """
         raise NotImplementedError
 
-    def store_optimised_parameters(self, x):
-        """
-        Update the problem parameters with optimised values.
-
-        The optimised parameter values are stored within the associated PyBOP parameter class.
-
-        Parameters
-        ----------
-        x : array-like
-            Optimised parameter values.
-        """
-        for i, param in enumerate(self.cost.parameters):
-            param.update(value=x[i])
-
     def check_optimal_parameters(self, x):
         """
         Check if the optimised parameters are physically viable.
@@ -222,7 +208,7 @@ class BaseOptimiser:
         x : array-like
             Optimised parameter values.
         """
-        if self.cost.problem._model.check_params(
+        if self.cost.problem.model.check_params(
             inputs=x, allow_infeasible_solutions=False
         ):
             return
@@ -259,7 +245,7 @@ class BaseOptimiser:
         self.allow_infeasible_solutions = allow
 
         if hasattr(self.cost, "problem") and hasattr(self.cost.problem, "_model"):
-            self.cost.problem._model.allow_infeasible_solutions = (
+            self.cost.problem.model.allow_infeasible_solutions = (
                 self.allow_infeasible_solutions
             )
         else:

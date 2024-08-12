@@ -43,9 +43,9 @@ class StandaloneCost(pybop.BaseCost):
         )
         self.x0 = self.parameters.initial_value()
 
-    def _evaluate(self, inputs):
+    def compute(self, inputs):
         """
-        Calculate the cost for a given parameter value.
+        Compute the cost for a given parameter value.
 
         The cost function is defined as cost(x) = x^2 + 42, where x is the
         parameter value.

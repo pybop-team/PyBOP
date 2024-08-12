@@ -228,29 +228,29 @@ class TestOptimisation:
 
         # Test AdamW hyperparameters
         if optimiser in [pybop.AdamW]:
-            optim = optimiser(cost=cost, b1=0.9, b2=0.999, lambda_=0.1)
-            optim.pints_optimiser.set_b1(0.9)
-            optim.pints_optimiser.set_b2(0.9)
-            optim.pints_optimiser.set_lambda(0.1)
+            optim = optimiser(cost=cost, b1=0.9, b2=0.999, lam=0.1)
+            optim.pints_optimiser.b1 = 0.9
+            optim.pints_optimiser.b2 = 0.9
+            optim.pints_optimiser.lam = 0.1
 
-            assert optim.pints_optimiser._b1 == 0.9
-            assert optim.pints_optimiser._b2 == 0.9
-            assert optim.pints_optimiser._lambda == 0.1
+            assert optim.pints_optimiser.b1 == 0.9
+            assert optim.pints_optimiser.b2 == 0.9
+            assert optim.pints_optimiser.lam == 0.1
 
             # Incorrect values
             for i, _match in (("Value", -1),):
                 with pytest.raises(
                     Exception, match="must be a numeric value between 0 and 1."
                 ):
-                    optim.pints_optimiser.set_b1(i)
+                    optim.pints_optimiser.b1 = i
                 with pytest.raises(
                     Exception, match="must be a numeric value between 0 and 1."
                 ):
-                    optim.pints_optimiser.set_b2(i)
+                    optim.pints_optimiser.b2 = i
                 with pytest.raises(
                     Exception, match="must be a numeric value between 0 and 1."
                 ):
-                    optim.pints_optimiser.set_lambda(i)
+                    optim.pints_optimiser.lam = i
 
             # Check defaults
             assert optim.pints_optimiser.n_hyper_parameters() == 5

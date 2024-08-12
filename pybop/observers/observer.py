@@ -22,12 +22,12 @@ class Observer(BaseProblem):
       The model to observe.
     check_model : bool, optional
         Flag to indicate if the model should be checked (default: True).
-    signal: List[str]
+    signal: list[str]
       The signal to observe.
-    additional_variables : List[str], optional
+    additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default: []).
-    init_soc : float, optional
-        Initial state of charge (default: None).
+    initial_state : dict, optional
+        A valid initial state, e.g. the initial open-circuit voltage (default: None).
     """
 
     # define a subtype for covariance matrices for use by derived classes
@@ -37,32 +37,21 @@ class Observer(BaseProblem):
         self,
         parameters: Parameters,
         model: BaseModel,
-        check_model=True,
-        signal=None,
-        additional_variables=None,
-        init_soc=None,
+        check_model: bool = True,
+        signal: Optional[list[str]] = None,
+        additional_variables: Optional[list[str]] = None,
+        initial_state: Optional[dict] = None,
     ) -> None:
-        if additional_variables is None:
-            additional_variables = []
-        if signal is None:
-            signal = ["Voltage [V]"]
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc
+            parameters, model, check_model, signal, additional_variables, initial_state
         )
-        if model._built_model is None:
+        if model.built_model is None:
             raise ValueError("Only built models can be used in Observers")
-        if model.signal is None:
-            model.signal = self.signal
 
         inputs = self.parameters.as_dict("initial")
-        self._state = model.reinit(inputs)
-        self._model = model
-        self._signal = self.signal
-        self._n_outputs = len(self._signal)
+        self._state = self.model.reinit(inputs)
 
     def reset(self, inputs: Inputs) -> None:
-        inputs = self.parameters.verify(inputs)
-
         self._state = self._model.reinit(inputs)
 
     def observe(self, time: float, value: Optional[np.ndarray] = None) -> float:
@@ -101,8 +90,8 @@ class Observer(BaseProblem):
         """
         inputs = self.parameters.verify(inputs)
 
-        if self._n_outputs == 1:
-            signal = self._signal[0]
+        if self.n_outputs == 1:
+            signal = self.signal[0]
             if len(values[signal]) != len(times):
                 raise ValueError("values and times must have the same length.")
             log_likelihood = 0.0
@@ -138,7 +127,7 @@ class Observer(BaseProblem):
         return np.zeros((n, n))
 
     def get_measure(self, x: TimeSeriesState) -> np.ndarray:
-        measures = [x.sol[s].data[-1] for s in self._signal]
+        measures = [x.sol[s].data[-1] for s in self.signal]
         return np.asarray([[m] for m in measures])
 
     def get_current_time(self) -> float:
@@ -161,19 +150,21 @@ class Observer(BaseProblem):
         y : np.ndarray
             The model output y(t) simulated with given inputs.
         """
+        inputs = self.parameters.verify(inputs)
+
         self.reset(inputs)
 
         output = {}
         ys = []
-        if hasattr(self, "_dataset"):
-            for signal in self._signal:
+        if self._dataset is not None:
+            for signal in self.signal:
                 ym = self._target[signal]
                 for i, t in enumerate(self._time_data):
                     self.observe(t, ym[i])
                     ys.append(self.get_current_measure())
                 output[signal] = np.vstack(ys)
         else:
-            for signal in self._signal:
+            for signal in self.signal:
                 for t in self._time_data:
                     self.observe(t)
                     ys.append(self.get_current_measure())
