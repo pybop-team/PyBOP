@@ -3,6 +3,7 @@
 ## Features
 
 - [#436](https://github.com/pybop-team/PyBOP/pull/436) - Refactors `BaseCost.evaluate/S1` & `BaseCost._evaluate/S1` into `BaseCost.__call__` & `BaseCost.compute`. `BaseCost.compute` directly acts on the predictions, while `BaseCost.__call__` calls `BaseProblem.evaluate/S1` before `BaseCost.compute`. Fully separates `__call__` and `compute` for FittingCosts, Likelihoods. Bugfixes to GaussianLogLikelihood calculation.
+- [#364](https://github.com/pybop-team/PyBOP/pull/364) - Adds the MultiFittingProblem class and the multi_fitting example script.
 - [#444](https://github.com/pybop-team/PyBOP/issues/444) - Merge `BaseModel` `build()` and `rebuild()` functionality.
 - [#435](https://github.com/pybop-team/PyBOP/pull/435) - Adds SLF001 linting for private members.
 - [#418](https://github.com/pybop-team/PyBOP/issues/418) - Wraps the `get_parameter_info` method from PyBaMM to get a dictionary of parameter names and types.
@@ -29,6 +30,7 @@
 - [#313](https://github.com/pybop-team/PyBOP/pull/313/) - Fixes for PyBaMM v24.5, drops support for PyBaMM v23.9, v24.1
 
 ## Bug Fixes
+
 
 ## Breaking Changes
 

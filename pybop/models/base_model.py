@@ -302,7 +302,8 @@ class BaseModel:
         Parameters
         ----------
         parameters : Parameters, optional
-            The optimisation parameters. Defaults to None, resulting in the internal `pybop.Parameters` object to be used.
+            The optimisation parameters. Defaults to None, resulting in the internal
+            `pybop.Parameters` object to be used.
         inputs : Inputs, optional
             The input parameters for the simulation (default: None).
         """
@@ -337,6 +338,7 @@ class BaseModel:
             if requires_rebuild:
                 self.clear()
                 self._geometry = self.pybamm_model.default_geometry
+                # Update both the active and unprocessed parameter sets for consistency
                 self._parameter_set.update(rebuild_parameters)
                 self._unprocessed_parameter_set.update(rebuild_parameters)
 
@@ -530,7 +532,7 @@ class BaseModel:
             if PyBaMM models are not supported by the current simulation method.
 
         """
-        if self._unprocessed_model is None:
+        if self.pybamm_model is None:
             raise ValueError(
                 "The predict method currently only supports PyBaMM models."
             )
@@ -643,6 +645,32 @@ class BaseModel:
             A copy of the model.
         """
         return copy.copy(self)
+
+    def new_copy(self):
+        """
+        Return a new copy of the model, explicitly copying all the mutable attributes
+        to avoid issues with shared objects.
+
+        Returns
+        -------
+        BaseModel
+            A new copy of the model.
+        """
+        model_class = type(self)
+        if self.pybamm_model is None:
+            model_args = {"parameter_set": self.parameter_set.copy()}
+        else:
+            model_args = {
+                "options": self._unprocessed_model.options,
+                "parameter_set": self._unprocessed_parameter_set.copy(),
+                "geometry": self.pybamm_model.default_geometry.copy(),
+                "submesh_types": self.pybamm_model.default_submesh_types.copy(),
+                "var_pts": self.pybamm_model.default_var_pts.copy(),
+                "spatial_methods": self.pybamm_model.default_spatial_methods.copy(),
+                "solver": self.pybamm_model.default_solver.copy(),
+            }
+
+        return model_class(**model_args)
 
     def get_parameter_info(self, print_info: bool = False):
         """
