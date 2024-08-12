@@ -217,6 +217,14 @@ class TestCosts:
         with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
             cost(["StringInputShouldNotWork"])
 
+        # Test ValueError for none dy w/ calculate_grad == True
+        if not isinstance(cost, pybop.ObserverCost):
+            with pytest.raises(
+                ValueError,
+                match="Forward model sensitivies need to be provided alongside `calculate_grad=True` for `cost.compute`.",
+            ):
+                cost.compute([1.1], dy=None, calculate_grad=True)
+
     @pytest.mark.unit
     def test_minkowski(self, problem):
         # Incorrect order
@@ -229,7 +237,7 @@ class TestCosts:
             pybop.Minkowski(problem, p=np.inf)
 
     @pytest.mark.unit
-    def test_SumofPower(self, problem):
+    def test_sumofpower(self, problem):
         # Incorrect order
         with pytest.raises(
             ValueError, match="The order of 'p' must be greater than 0."
