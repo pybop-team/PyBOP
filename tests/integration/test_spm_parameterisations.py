@@ -34,7 +34,7 @@ class Test_SPM_Parameterisation:
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Uniform(0.4, 0.75),
-                bounds=[0.375, 0.75],
+                bounds=[0.375, 0.775],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
@@ -96,11 +96,11 @@ class Test_SPM_Parameterisation:
         "optimiser",
         [
             pybop.SciPyDifferentialEvolution,
+            pybop.CuckooSearch,
+            pybop.NelderMead,
+            pybop.IRPropMin,
             pybop.AdamW,
             pybop.CMAES,
-            pybop.CuckooSearch,
-            pybop.IRPropMin,
-            pybop.NelderMead,
             pybop.SNES,
             pybop.XNES,
         ],
