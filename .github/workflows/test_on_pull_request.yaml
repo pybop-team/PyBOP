@@ -116,6 +116,7 @@ jobs:
     steps:
       - name: Check out PyBOP repository
         uses: actions/checkout@v4
+
       - name: Set up Python 3.12
         id: setup-python
         uses: actions/setup-python@v4
@@ -130,8 +131,9 @@ jobs:
 
       - name: Run quick benchmarks
         run: |
-          python -m asv machine --machine "GitHubRunner"
-          python -m asv run --machine "GitHubRunner" --quick --show-stderr -v
+          asv machine --machine "GitHubRunner"
+          HEAD_COMMIT=$(git rev-parse HEAD)
+          asv run HEAD_COMMIT^! --machine "GitHubRunner" --quick --show-stderr -v
 
   # Runs only on macos-14 with Python 3.12
   check_coverage:
