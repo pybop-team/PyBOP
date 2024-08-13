@@ -134,7 +134,7 @@ jobs:
         shell: bash
         run: |
           asv machine --machine "GitHubRunner"
-          asv run --machine "GitHubRunner" --quick --show-stderr -v
+          asv run --machine "GitHubRunner" --quick --show-stderr
 
   # Runs only on macos-14 with Python 3.12
   check_coverage:
