@@ -126,13 +126,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install -e .[all,dev]
           python -m pip install --upgrade pip asv[virtualenv]
 
       - name: Run quick benchmarks
         run: |
           python -m asv machine --machine "GitHubRunner"
-          python -m asv run --machine "GitHubRunner" NEW --quick --show-stderr -v
+          python -m asv run --machine "GitHubRunner" --quick --show-stderr -v
 
   # Runs only on macos-14 with Python 3.12
   check_coverage:
