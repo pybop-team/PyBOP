@@ -129,6 +129,17 @@ jobs:
         run: |
           python -m pip install --upgrade pip asv[virtualenv]
 
+      - name: Fetch develop branch
+        run: |
+          # Save the current branch
+          current_branch=$(git rev-parse --abbrev-ref HEAD)
+
+          # Fetch the upstream branch for this repo.
+          git remote add upstream https://github.com/pybop-team/PyBOP/
+          if [ $current_branch != "develop" ]; then
+              git fetch upstream develop:develop
+          fi
+
       - name: Run quick benchmarks
         run: |
           asv machine --machine "GitHubRunner"
