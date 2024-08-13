@@ -108,7 +108,7 @@ jobs:
   # Quick benchmarks on macos-14
   benchmarks:
     needs: style
-    runs-on: macos-14
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
     name: Benchmarks
