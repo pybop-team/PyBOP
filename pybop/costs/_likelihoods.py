@@ -450,7 +450,7 @@ class LogPosterior(BaseCost):
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        prior, dp = self._prior.evaluateS1(inputs)
+        prior, dp = self._prior.logpdfS1(inputs)
         if not np.isfinite(prior):
             return prior, dp
         if self._has_separable_problem:

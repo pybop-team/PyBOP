@@ -136,42 +136,10 @@ class BasePrior:
         float
             The value(s) of the distribution at x.
         """
-        return self.evaluate(x)
-
-    def evaluate(self, x):
-        """
-        Evaluates the distribution at x.
-
-        Parameters
-        ----------
-        x : float
-            The point(s) at which to evaluate the distribution.
-
-        Returns
-        -------
-        float
-            The value(s) of the distribution at x.
-        """
         inputs = self.verify(x)
-        return self._evaluate(inputs)
+        return self.logpdf(inputs)
 
-    def _evaluate(self, x):
-        """
-        Evaluates the distribution at x.
-
-        Parameters
-        ----------
-        x : float
-            The point(s) at which to evaluate the distribution.
-
-        Returns
-        -------
-        float
-            The value(s) of the distribution at x.
-        """
-        return self.logpdf(x)
-
-    def evaluateS1(self, x):
+    def logpdfS1(self, x):
         """
         Evaluates the first derivative of the distribution at x.
 
@@ -186,9 +154,9 @@ class BasePrior:
             The value(s) of the first derivative at x.
         """
         inputs = self.verify(x)
-        return self._evaluateS1(inputs)
+        return self._logpdfS1(inputs)
 
-    def _evaluateS1(self, x):
+    def _logpdfS1(self, x):
         """
         Evaluates the first derivative of the distribution at x.
 
@@ -244,10 +212,6 @@ class BasePrior:
         """
         return self.scale
 
-    @property
-    def n_parameters(self):
-        return self._n_parameters
-
 
 class Gaussian(BasePrior):
     """
@@ -274,7 +238,7 @@ class Gaussian(BasePrior):
         self._multip = -1 / (2.0 * self.sigma2)
         self._n_parameters = 1
 
-    def _evaluateS1(self, x):
+    def _logpdfS1(self, x):
         """
         Evaluates the first derivative of the gaussian (log) distribution at x.
 
@@ -317,7 +281,7 @@ class Uniform(BasePrior):
         self.prior = stats.uniform
         self._n_parameters = 1
 
-    def _evaluateS1(self, x):
+    def _logpdfS1(self, x):
         """
         Evaluates the first derivative of the log uniform distribution at x.
 
@@ -370,7 +334,7 @@ class Exponential(BasePrior):
         self.prior = stats.expon
         self._n_parameters = 1
 
-    def _evaluateS1(self, x):
+    def _logpdfS1(self, x):
         """
         Evaluates the first derivative of the log exponential distribution at x.
 
@@ -389,9 +353,9 @@ class Exponential(BasePrior):
         return log_pdf, dlog_pdf
 
 
-class ComposedLogPrior(BasePrior):
+class JointLogPrior(BasePrior):
     """
-    Represents a composition of multiple prior distributions.
+    Represents a joint prior distributions.
     """
 
     def __init__(self, *priors):
@@ -402,7 +366,7 @@ class ComposedLogPrior(BasePrior):
 
         self._n_parameters = len(priors)  # Needs to be updated
 
-    def _evaluate(self, x):
+    def logpdf(self, x):
         """
         Evaluates the composed prior distribution at x.
 
@@ -418,13 +382,13 @@ class ComposedLogPrior(BasePrior):
         """
         return sum(prior(x) for prior, x in zip(self._priors, x))
 
-    def _evaluateS1(self, x):
+    def _logpdfS1(self, x):
         """
         Evaluates the first derivative of the composed prior distribution at x.
         Inspired by PINTS implementation.
 
         *This method only works if the underlying :class:`LogPrior` classes all
-        implement the optional method :class:`LogPDF.evaluateS1().`.*
+        implement the optional method :class:`LogPDF.logpdfS1().`.*
 
         Parameters
         ----------
@@ -437,13 +401,13 @@ class ComposedLogPrior(BasePrior):
             The value(s) of the first derivative at x.
         """
         output = 0
-        doutput = np.zeros(self.n_parameters)
+        doutput = np.zeros(self._n_parameters)
         index = 0
 
         for prior in self._priors:
-            num_params = prior.n_parameters
+            num_params = 1
             x_subset = x[index : index + num_params]
-            p, dp = prior.evaluateS1(x_subset)
+            p, dp = prior.logpdfS1(x_subset)
             output += p
             doutput[index : index + num_params] = dp
             index += num_params

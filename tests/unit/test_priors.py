@@ -22,12 +22,12 @@ class TestPriors:
         return pybop.Exponential(scale=1)
 
     @pytest.fixture
-    def ComposedPrior1(self, Gaussian, Uniform):
-        return pybop.ComposedLogPrior(Gaussian, Uniform)
+    def JointPrior1(self, Gaussian, Uniform):
+        return pybop.JointLogPrior(Gaussian, Uniform)
 
     @pytest.fixture
-    def ComposedPrior2(self, Gaussian, Exponential):
-        return pybop.ComposedLogPrior(Gaussian, Exponential)
+    def JointPrior2(self, Gaussian, Exponential):
+        return pybop.JointLogPrior(Gaussian, Exponential)
 
     @pytest.mark.unit
     def test_base_prior(self):
@@ -35,9 +35,7 @@ class TestPriors:
         assert isinstance(base, pybop.BasePrior)
 
     @pytest.mark.unit
-    def test_priors(
-        self, Gaussian, Uniform, Exponential, ComposedPrior1, ComposedPrior2
-    ):
+    def test_priors(self, Gaussian, Uniform, Exponential, JointPrior1, JointPrior2):
         # Test pdf
         np.testing.assert_allclose(Gaussian.pdf(0.5), 0.3989422804014327, atol=1e-4)
         np.testing.assert_allclose(Uniform.pdf(0.5), 1, atol=1e-4)
@@ -58,50 +56,50 @@ class TestPriors:
         np.testing.assert_allclose(Uniform.cdf(0.5), 0.5, atol=1e-4)
         np.testing.assert_allclose(Exponential.cdf(1), 0.6321205588285577, atol=1e-4)
 
-        # Test evaluate
+        # Test __call__
         assert Gaussian(0.5) == Gaussian.logpdf(0.5)
         assert Uniform(0.5) == Uniform.logpdf(0.5)
         assert Exponential(1) == Exponential.logpdf(1)
-        assert ComposedPrior1([0.5, 0.5]) == Gaussian.logpdf(0.5) + Uniform.logpdf(0.5)
-        assert ComposedPrior2([0.5, 1]) == Gaussian.logpdf(0.5) + Exponential.logpdf(1)
+        assert JointPrior1([0.5, 0.5]) == Gaussian.logpdf(0.5) + Uniform.logpdf(0.5)
+        assert JointPrior2([0.5, 1]) == Gaussian.logpdf(0.5) + Exponential.logpdf(1)
 
-        # Test Gaussian.evaluateS1
-        p, dp = Gaussian.evaluateS1(0.5)
+        # Test Gaussian.logpdfS1
+        p, dp = Gaussian.logpdfS1(0.5)
         assert p == Gaussian.logpdf(0.5)
         assert dp == 0.0
 
-        # Test Uniform.evaluateS1
-        p, dp = Uniform.evaluateS1(0.5)
+        # Test Uniform.logpdfS1
+        p, dp = Uniform.logpdfS1(0.5)
         assert p == Uniform.logpdf(0.5)
         assert dp == 0.0
 
-        # Test Exponential.evaluateS1
-        p, dp = Exponential.evaluateS1(1)
+        # Test Exponential.logpdfS1
+        p, dp = Exponential.logpdfS1(1)
         assert p == Exponential.logpdf(1)
         assert dp == Exponential.logpdf(1)
 
-        # Test ComposedPrior1.evaluateS1
-        p, dp = ComposedPrior1.evaluateS1([0.5, 0.5])
+        # Test JointPrior1.logpdfS1
+        p, dp = JointPrior1.logpdfS1([0.5, 0.5])
         assert p == Gaussian.logpdf(0.5) + Uniform.logpdf(0.5)
         np.testing.assert_allclose(dp, np.array([0.0, 0.0]), atol=1e-4)
 
-        # Test ComposedPrior.evaluateS1
-        p, dp = ComposedPrior2.evaluateS1([0.5, 1])
+        # Test JointPrior.logpdfS1
+        p, dp = JointPrior2.logpdfS1([0.5, 1])
         assert p == Gaussian.logpdf(0.5) + Exponential.logpdf(1)
         np.testing.assert_allclose(
             dp, np.array([0.0, Exponential.logpdf(1)]), atol=1e-4
         )
 
-        # Test ComposedPrior1 non-symmetric
+        # Test JointPrior1 non-symmetric
         with pytest.raises(AssertionError):
             np.testing.assert_allclose(
-                ComposedPrior1([0.4, 0.5]), ComposedPrior1([0.5, 0.4]), atol=1e-4
+                JointPrior1([0.4, 0.5]), JointPrior1([0.5, 0.4]), atol=1e-4
             )
 
-        # Test ComposedPrior2 non-symmetric
+        # Test JointPrior2 non-symmetric
         with pytest.raises(AssertionError):
             np.testing.assert_allclose(
-                ComposedPrior2([0.4, 1]), ComposedPrior2([1, 0.4]), atol=1e-4
+                JointPrior2([0.4, 1]), JointPrior2([1, 0.4]), atol=1e-4
             )
 
         # Test properties
@@ -140,13 +138,13 @@ class TestPriors:
         assert abs(mean - 1) < 0.2
 
     @pytest.mark.unit
-    def test_repr(self, Gaussian, Uniform, Exponential, ComposedPrior1):
+    def test_repr(self, Gaussian, Uniform, Exponential, JointPrior1):
         assert repr(Gaussian) == "Gaussian, loc: 0.5, scale: 1"
         assert repr(Uniform) == "Uniform, loc: 0, scale: 1"
         assert repr(Exponential) == "Exponential, loc: 0, scale: 1"
         assert (
-            repr(ComposedPrior1)
-            == "ComposedLogPrior, priors: (Gaussian, loc: 0.5, scale: 1, Uniform, loc: 0, scale: 1)"
+            repr(JointPrior1)
+            == "JointLogPrior, priors: (Gaussian, loc: 0.5, scale: 1, Uniform, loc: 0, scale: 1)"
         )
 
     @pytest.mark.unit
@@ -163,8 +161,8 @@ class TestPriors:
         with pytest.raises(
             ValueError, match="All priors must be instances of BasePrior"
         ):
-            pybop.ComposedLogPrior(Gaussian, Uniform, "string")
+            pybop.JointLogPrior(Gaussian, Uniform, "string")
         with pytest.raises(
             ValueError, match="All priors must be instances of BasePrior"
         ):
-            pybop.ComposedLogPrior(Gaussian, Uniform, 0.5)
+            pybop.JointLogPrior(Gaussian, Uniform, 0.5)

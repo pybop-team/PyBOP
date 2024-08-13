@@ -71,7 +71,7 @@ from .transformation.transformations import (
 #
 from .parameters.parameter import Parameter, Parameters
 from .parameters.parameter_set import ParameterSet
-from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, ComposedLogPrior
+from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointLogPrior
 
 #
 # Model classes
@@ -145,8 +145,8 @@ from .optimisers.optimisation import Optimisation
 #
 # Monte Carlo classes
 #
-from .samplers import BaseSampler
-from .samplers.base_mcmc import BasePintsSampler
+from .samplers.base_sampler import BaseSampler
+from .samplers.base_pints_sampler import BasePintsSampler
 from .samplers.pints_samplers import (
     NUTS, DREAM, AdaptiveCovarianceMCMC,
     DifferentialEvolutionMCMC, DramACMC,

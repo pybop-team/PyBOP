@@ -29,7 +29,6 @@ class BasePintsSampler(BaseSampler):
         warm_up=None,
         x0=None,
         cov0=0.1,
-        transformation=None,
         **kwargs,
     ):
         """
@@ -57,7 +56,7 @@ class BasePintsSampler(BaseSampler):
         self._parallel = kwargs.get("parallel", False)
         self._verbose = kwargs.get("verbose", False)
         self._iteration = 0
-        self.warm_up = warm_up
+        self._warm_up = warm_up
         self.n_parameters = (
             self._log_pdf[0].n_parameters
             if isinstance(self._log_pdf, list)
@@ -195,8 +194,8 @@ class BasePintsSampler(BaseSampler):
 
         self._finalise_logging()
 
-        if self.warm_up:
-            self._samples = self._samples[:, self.warm_up :, :]
+        if self._warm_up:
+            self._samples = self._samples[:, self._warm_up :, :]
 
         return self._samples if self._chains_in_memory else None
 

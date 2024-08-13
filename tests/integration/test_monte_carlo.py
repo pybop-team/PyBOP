@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -13,6 +14,14 @@ from pybop import (
     RaoBlackwellACMC,
     SliceDoublingMCMC,
     SliceStepoutMCMC,
+    # Grad samplers
+    # NUTS,
+    # HamiltonianMCMC,
+    # MonomialGammaHamiltonianMCMC,
+    # RelativisticMCMC,
+    # SliceRankShrinkingMCMC,
+    # EmceeHammerMCMC,
+    # MALAMCMC,
 )
 
 
@@ -30,11 +39,19 @@ class Test_Sampling_SPM:
     @pytest.fixture
     def model(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-        return pybop.lithium_ion.SPM(parameter_set=parameter_set)
+        x = self.ground_truth
+        parameter_set.update(
+            {
+                "Negative electrode active material volume fraction": x[0],
+                "Positive electrode active material volume fraction": x[1],
+            }
+        )
+        solver = pybamm.IDAKLUSolver()
+        return pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
 
     @pytest.fixture
     def parameters(self):
-        return [
+        return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Uniform(0.4, 0.7),
@@ -45,7 +62,7 @@ class Test_Sampling_SPM:
                 prior=pybop.Uniform(0.4, 0.7),
                 # no bounds
             ),
-        ]
+        )
 
     @pytest.fixture(params=[0.5])
     def init_soc(self, request):
@@ -97,7 +114,7 @@ class Test_Sampling_SPM:
     # Samplers that either have along runtime, or converge slowly
     # Need to assess how to perform integration tests with these samplers
     # @pytest.mark.parametrize(
-    #     "long_sampler",
+    #     "gradient_sampler",
     #     [
     #         NUTS,
     #         HamiltonianMCMC,
@@ -113,13 +130,11 @@ class Test_Sampling_SPM:
     def test_sampling_spm(self, quick_sampler, spm_likelihood):
         prior1 = pybop.Uniform(0.4, 0.7)
         prior2 = pybop.Uniform(0.4, 0.7)
-        composed_prior = pybop.ComposedLogPrior(prior1, prior2)
+        composed_prior = pybop.JointLogPrior(prior1, prior2)
         posterior = pybop.LogPosterior(spm_likelihood, composed_prior)
-        x0 = [0.55, 0.55]
         sampler = quick_sampler(
             posterior,
             chains=3,
-            x0=x0,
             warm_up=50,
             max_iterations=400,
         )
