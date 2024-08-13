@@ -108,7 +108,7 @@ jobs:
   # Quick benchmarks on macos-14
   benchmarks:
     needs: style
-    runs-on: ubuntu-latest
+    runs-on: macos-14
     strategy:
       fail-fast: false
     name: Benchmarks
@@ -116,6 +116,8 @@ jobs:
     steps:
       - name: Check out PyBOP repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python 3.12
         id: setup-python
