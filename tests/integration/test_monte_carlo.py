@@ -82,7 +82,7 @@ class Test_Sampling_SPM:
     @pytest.fixture
     def spm_likelihood(self, model, parameters, cost_class, init_soc):
         # Form dataset
-        solution = self.get_data(model, self.ground_truth, init_soc)
+        solution = self.get_data(model, init_soc)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -132,12 +132,20 @@ class Test_Sampling_SPM:
         prior2 = pybop.Uniform(0.4, 0.7)
         composed_prior = pybop.JointLogPrior(prior1, prior2)
         posterior = pybop.LogPosterior(spm_likelihood, composed_prior)
-        sampler = quick_sampler(
-            posterior,
-            chains=3,
-            warm_up=50,
-            max_iterations=400,
-        )
+
+        # set common args
+        common_args = {
+            "log_pdf": posterior,
+            "chains": 3,
+            "warm_up": 50,
+            "max_iterations": 400,
+        }
+        if issubclass(quick_sampler, pybop.DramACMC):
+            common_args["warm_up"] = 200
+            common_args["max_iterations"] = 650
+
+        # construct and run
+        sampler = quick_sampler(**common_args)
         results = sampler.run()
 
         # compute mean of posterior and assert
@@ -145,13 +153,8 @@ class Test_Sampling_SPM:
         for i in range(len(x)):
             np.testing.assert_allclose(x[i], self.ground_truth, atol=2.5e-2)
 
-    def get_data(self, model, x, init_soc):
-        model.parameter_set.update(
-            {
-                "Negative electrode active material volume fraction": x[0],
-                "Positive electrode active material volume fraction": x[1],
-            }
-        )
+    def get_data(self, model, init_soc):
+        initial_state = {"Initial SoC": init_soc}
         experiment = pybop.Experiment(
             [
                 (
@@ -160,7 +163,5 @@ class Test_Sampling_SPM:
                 ),
             ]
         )
-        sim = model.predict(
-            initial_state={"Initial SoC": init_soc}, experiment=experiment
-        )
+        sim = model.predict(initial_state=initial_state, experiment=experiment)
         return sim

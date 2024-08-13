@@ -73,11 +73,11 @@ posterior = pybop.LogPosterior(likelihood, composed_prior)
 
 optim = pybop.DREAM(
     posterior,
-    chains=6,
-    max_iterations=4000,
-    burn_in=2000,
+    chains=3,
+    max_iterations=300,
+    burn_in=100,
     verbose=True,
-    parallel=True,  # uncomment to enable parallelisation (MacOS/WSL/Linux only)
+    # parallel=True,  # uncomment to enable parallelisation (MacOS/WSL/Linux only)
 )
 result = optim.run()
 
