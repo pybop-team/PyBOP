@@ -244,7 +244,11 @@ class BaseOptimiser:
         self.physical_viability = allow
         self.allow_infeasible_solutions = allow
 
-        if hasattr(self.cost, "problem") and hasattr(self.cost.problem, "_model"):
+        if (
+            hasattr(self.cost, "problem")
+            and hasattr(self.cost.problem, "model")
+            and self.cost.problem.model is not None
+        ):
             self.cost.problem.model.allow_infeasible_solutions = (
                 self.allow_infeasible_solutions
             )

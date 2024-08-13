@@ -64,7 +64,6 @@ class TestCosts:
         cut_off = request.param
         model.parameter_set.update({"Lower voltage cut-off [V]": cut_off})
         problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
-        problem.dataset = dataset  # add this to pass the pybop dataset to cost
         return problem
 
     @pytest.fixture(
@@ -97,7 +96,7 @@ class TestCosts:
             process_diag[1] = 1e-4
             sigma0 = np.diag(sigma_diag)
             process = np.diag(process_diag)
-            dataset = problem.dataset
+            dataset = pybop.Dataset(data_dictionary=problem.dataset)
             return cls(
                 pybop.UnscentedKalmanFilterObserver(
                     problem.parameters,
@@ -159,8 +158,9 @@ class TestCosts:
             "Negative electrode active material volume fraction",
             prior=pybop.Uniform(0.55, 0.6),
         )
+        dataset = pybop.Dataset(data_dictionary=problem.dataset)
         problem_non_finite = pybop.FittingProblem(
-            problem.model, parameter, problem.dataset, signal=problem.signal
+            problem.model, parameter, dataset, signal=problem.signal
         )
         likelihood = pybop.MAP(
             problem_non_finite, pybop.GaussianLogLikelihoodKnownSigma, sigma0=0.01

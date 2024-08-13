@@ -80,14 +80,10 @@ class BaseModel:
 
         Additional Attributes
         ---------------------
+        pybamm_model : pybamm.BaseModel
+            An instance of a PyBaMM model.
         parameters : pybop.Parameters
             The input parameters.
-        output_variables : list[str], optional
-            A list of names of variables to include in the solution object.
-        rebuild_parameters : dict
-            A list of parameters which require the model to be rebuilt (default: {}).
-        standard_parameters : dict
-            A list of standard (i.e. not rebuild) parameters (default: {}).
         param_check_counter : int
             A counter for the number of parameter checks (default: 0).
         allow_infeasible_solutions : bool, optional
@@ -106,21 +102,20 @@ class BaseModel:
 
         self.pybamm_model = None
         self.parameters = Parameters()
-        self.rebuild_parameters = {}
-        self.standard_parameters = {}
         self.param_check_counter = 0
         self.allow_infeasible_solutions = True
-        self.current_function = None
 
     def build(
         self,
-        dataset: Optional[Dataset] = None,
         parameters: Union[Parameters, dict] = None,
-        check_model: bool = True,
+        inputs: Optional[Inputs] = None,
         initial_state: Optional[dict] = None,
+        dataset: Optional[Dataset] = None,
+        check_model: bool = True,
     ) -> None:
         """
-        Construct the PyBaMM model if not already built, and set parameters.
+        Construct the PyBaMM model, if not already built or if there are changes to any
+        `rebuild_parameters` or the initial state.
 
         This method initializes the model components, applies the given parameters,
         sets up the mesh and discretisation if needed, and prepares the model
@@ -128,23 +123,29 @@ class BaseModel:
 
         Parameters
         ----------
-        dataset : pybamm.Dataset, optional
-            The dataset to be used in the model construction.
         parameters : pybop.Parameters or Dict, optional
             A pybop Parameters class or dictionary containing parameter values to apply to the model.
-        check_model : bool, optional
-            If True, the model will be checked for correctness after construction.
+        inputs : Inputs
+            The input parameters to be used when building the model.
         initial_state : dict, optional
             A valid initial state, e.g. the initial state of charge or open-circuit voltage.
             Defaults to None, indicating that the existing initial state of charge (for an ECM)
             or initial concentrations (for an EChem model) will be used.
+        dataset : pybop.Dataset or dict, optional
+            The dataset to be used in the model construction.
+        check_model : bool, optional
+            If True, the model will be checked for correctness after construction.
         """
-        if parameters is not None:
-            self.parameters = parameters
-            self.classify_and_update_parameters(self.parameters)
+        if parameters is not None or inputs is not None:
+            # Classify parameters and clear the model if rebuild required
+            inputs = self.classify_parameters(parameters, inputs=inputs)
 
         if initial_state is not None:
-            self.set_initial_state(initial_state)
+            # Clear the model if rebuild required (currently if any initial state)
+            self.set_initial_state(initial_state, inputs=inputs)
+
+        if dataset is not None:
+            self.set_current_function(dataset)
 
         if self._built_model:
             return
@@ -156,8 +157,8 @@ class BaseModel:
         else:
             if not self.pybamm_model._built:  # noqa: SLF001
                 self.pybamm_model.build_model()
-            self.set_params(dataset=dataset)
 
+            self.set_parameters()
             self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
             self._disc = pybamm.Discretisation(
                 mesh=self.mesh,
@@ -203,7 +204,7 @@ class BaseModel:
         else:
             raise ValueError(f'Unrecognised initial state: "{list(initial_state)[0]}"')
 
-    def set_initial_state(self, initial_state: dict):
+    def set_initial_state(self, initial_state: dict, inputs: Optional[Inputs] = None):
         """
         Set the initial state of charge or concentrations for the battery model.
 
@@ -211,20 +212,27 @@ class BaseModel:
         ----------
         initial_state : dict
             A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+        inputs : Inputs
+            The input parameters to be used when building the model.
         """
+        self.clear()
+
         initial_state = self.convert_to_pybamm_initial_state(initial_state)
 
         if isinstance(self.pybamm_model, pybamm.equivalent_circuit.Thevenin):
-            initial_state = self.get_initial_state(initial_state)
+            initial_state = self.get_initial_state(initial_state, inputs=inputs)
             self._unprocessed_parameter_set.update({"Initial SoC": initial_state})
 
         else:
-            # Temporary construction of attribute for PyBaMM
+            if not self.pybamm_model._built:  # noqa: SLF001
+                self.pybamm_model.build_model()
+
+            # Temporary construction of attributes for PyBaMM
             self.model = self._model = self.pybamm_model
             self._unprocessed_parameter_values = self._unprocessed_parameter_set
 
-            # Set initial SOC via PyBaMM's Simulation class
-            pybamm.Simulation.set_initial_soc(self, initial_state, inputs=None)
+            # Set initial state via PyBaMM's Simulation class
+            pybamm.Simulation.set_initial_soc(self, initial_state, inputs=inputs)
 
             # Update the default parameter set for consistency
             self._unprocessed_parameter_set = self._parameter_values
@@ -238,37 +246,40 @@ class BaseModel:
         # Use a copy of the updated default parameter set
         self._parameter_set = self._unprocessed_parameter_set.copy()
 
-    def set_params(self, rebuild: bool = False, dataset: Dataset = None):
+    def set_current_function(self, dataset: Union[Dataset, dict]):
+        """
+        Update the input current function according to the data.
+
+        Parameters
+        ----------
+        dataset : pybop.Dataset or dict, optional
+            The dataset to be used in the model construction.
+        """
+        if "Current function [A]" in self._parameter_set.keys():
+            if "Current function [A]" not in self.parameters.keys():
+                current = pybamm.Interpolant(
+                    dataset["Time [s]"],
+                    dataset["Current function [A]"],
+                    pybamm.t,
+                )
+                # Update both the active and unprocessed parameter sets for consistency
+                self._parameter_set["Current function [A]"] = current
+                self._unprocessed_parameter_set["Current function [A]"] = current
+
+    def set_parameters(self):
         """
         Assign the parameters to the model.
 
         This method processes the model with the given parameters, sets up
         the geometry, and updates the model instance.
         """
-        if self.model_with_set_params and not rebuild:
+        if self._model_with_set_params:
             return
-
-        # Mark any simulation inputs in the parameter set
-        for key in self.standard_parameters.keys():
-            self._parameter_set[key] = "[input]"
-
-        if "Current function [A]" in self._parameter_set.keys():
-            if dataset is not None and (not self.rebuild_parameters or not rebuild):
-                if "Current function [A]" not in self.parameters.keys():
-                    self.current_function = pybamm.Interpolant(
-                        dataset["Time [s]"],
-                        dataset["Current function [A]"],
-                        pybamm.t,
-                    )
-                    self._parameter_set["Current function [A]"] = self.current_function
-            elif rebuild and self.current_function is not None:
-                self._parameter_set["Current function [A]"] = self.current_function
 
         self._model_with_set_params = self._parameter_set.process_model(
             self._unprocessed_model, inplace=False
         )
-        if self.geometry is not None:
-            self._parameter_set.process_geometry(self.geometry)
+        self._parameter_set.process_geometry(self._geometry)
         self.pybamm_model = self._model_with_set_params
 
     def clear(self):
@@ -281,71 +292,26 @@ class BaseModel:
         self._mesh = None
         self._disc = None
 
-    def rebuild(
-        self,
-        dataset: Optional[Dataset] = None,
-        parameters: Union[Parameters, dict] = None,
-        check_model: bool = True,
-        initial_state: Optional[dict] = None,
-    ) -> None:
+    def classify_parameters(
+        self, parameters: Optional[Parameters] = None, inputs: Optional[Inputs] = None
+    ):
         """
-        Rebuild the PyBaMM model for a given set of inputs.
-
-        This method requires the self.build() method to be called first, and
-        then rebuilds the model for a given parameter set. Specifically,
-        this method applies the given parameters, sets up the mesh and
-        discretisation if needed, and prepares the model for simulations.
+        Check for any 'rebuild_parameters' which require a model rebuild and
+        update the unprocessed_parameter_set if a rebuild is required.
 
         Parameters
         ----------
-        dataset : pybamm.Dataset, optional
-            The dataset to be used in the model construction.
-        parameters : pybop.Parameters or Dict, optional
-            A pybop Parameters class or dictionary containing parameter values to apply to the model.
-        check_model : bool, optional
-            If True, the model will be checked for correctness after construction.
-        initial_state : dict, optional
-            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
-            Defaults to None, indicating that the existing initial state of charge (for an ECM)
-            or initial concentrations (for an EChem model) will be used.
+        parameters : Parameters, optional
+            The optimisation parameters. Defaults to None, resulting in the internal
+            `pybop.Parameters` object to be used.
+        inputs : Inputs, optional
+            The input parameters for the simulation (default: None).
         """
-        if parameters is not None:
-            self.classify_and_update_parameters(parameters)
+        self.parameters = parameters or self.parameters
 
-        if initial_state is not None:
-            self.set_initial_state(initial_state)
-
-        if self._built_model is None:
-            raise ValueError("Model must be built before calling rebuild")
-
-        self.set_params(rebuild=True, dataset=dataset)
-        self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
-        self._disc = pybamm.Discretisation(
-            mesh=self.mesh,
-            spatial_methods=self.spatial_methods,
-            check_model=check_model,
-        )
-        self._built_model = self._disc.process_model(
-            self._model_with_set_params, inplace=False
-        )
-
-        # Clear solver and setup model
-        self._solver._model_set_up = {}  # noqa: SLF001
-
-    def classify_and_update_parameters(self, parameters: Parameters):
-        """
-        Update the parameter values according to their classification as either
-        'rebuild_parameters' which require a model rebuild and
-        'standard_parameters' which do not.
-
-        Parameters
-        ----------
-        parameters : pybop.Parameters
-            The input parameters.
-        """
-        self.parameters = parameters or Parameters()
-
+        # Compile all parameters and inputs
         parameter_dictionary = self.parameters.as_dict()
+        parameter_dictionary.update(inputs or {})
 
         rebuild_parameters = {
             param: parameter_dictionary[param]
@@ -358,16 +324,25 @@ class BaseModel:
             if param not in self.geometric_parameters
         }
 
-        self.rebuild_parameters.update(rebuild_parameters)
-        self.standard_parameters.update(standard_parameters)
+        # Mark any standard parameters in the active parameter set and pass as inputs
+        for key in standard_parameters.keys():
+            self._parameter_set[key] = "[input]"
 
-        if self.rebuild_parameters:
-            self._geometry = self.pybamm_model.default_geometry
+        # Clear any built model, update the parameter set and geometry if rebuild required
+        if rebuild_parameters:
+            requires_rebuild = False
+            # A rebuild is required if any of the rebuild parameter values have changed
+            for key, value in rebuild_parameters.items():
+                if value != self._unprocessed_parameter_set[key]:
+                    requires_rebuild = True
+            if requires_rebuild:
+                self.clear()
+                self._geometry = self.pybamm_model.default_geometry
+                # Update both the active and unprocessed parameter sets for consistency
+                self._parameter_set.update(rebuild_parameters)
+                self._unprocessed_parameter_set.update(rebuild_parameters)
 
-        # Update both the active and unprocessed parameter sets for consistency
-        if self._parameter_set is not None:
-            self._parameter_set.update(parameter_dictionary)
-            self._unprocessed_parameter_set = self._parameter_set
+        return standard_parameters
 
     def reinit(
         self, inputs: Inputs, t: float = 0.0, x: Optional[np.ndarray] = None
@@ -445,22 +420,8 @@ class BaseModel:
         """
         inputs = self.parameters.verify(inputs)
 
-        if self._built_model is None:
-            raise ValueError("Model must be built before calling simulate")
-
-        requires_rebuild = False
-        # A rebuild is required if any of the rebuild parameter values have changed
-        for key, value in inputs.items():
-            if key in self.rebuild_parameters:
-                if value != self.parameters[key].value:
-                    requires_rebuild = True
-        # Or if the simulation is set to start from a specific initial value
-        if initial_state is not None:
-            requires_rebuild = True
-
-        if requires_rebuild:
-            self.parameters.update(values=list(inputs.values()))
-            self.rebuild(parameters=self.parameters, initial_state=initial_state)
+        # Build or rebuild if required
+        self.build(inputs=inputs, initial_state=initial_state)
 
         if not self.check_params(
             inputs=inputs,
@@ -501,13 +462,15 @@ class BaseModel:
         """
         inputs = self.parameters.verify(inputs)
 
-        if self._built_model is None:
-            raise ValueError("Model must be built before calling simulate")
-
-        if self.rebuild_parameters or initial_state is not None:
+        if initial_state is not None or any(
+            key in self.geometric_parameters for key in inputs.keys()
+        ):
             raise ValueError(
                 "Cannot use sensitivies for parameters which require a model rebuild"
             )
+
+        # Build if required
+        self.build(inputs=inputs, initial_state=initial_state)
 
         if not self.check_params(
             inputs=inputs,
@@ -569,7 +532,7 @@ class BaseModel:
             if PyBaMM models are not supported by the current simulation method.
 
         """
-        if self._unprocessed_model is None:
+        if self.pybamm_model is None:
             raise ValueError(
                 "The predict method currently only supports PyBaMM models."
             )
@@ -682,6 +645,32 @@ class BaseModel:
             A copy of the model.
         """
         return copy.copy(self)
+
+    def new_copy(self):
+        """
+        Return a new copy of the model, explicitly copying all the mutable attributes
+        to avoid issues with shared objects.
+
+        Returns
+        -------
+        BaseModel
+            A new copy of the model.
+        """
+        model_class = type(self)
+        if self.pybamm_model is None:
+            model_args = {"parameter_set": self.parameter_set.copy()}
+        else:
+            model_args = {
+                "options": self._unprocessed_model.options,
+                "parameter_set": self._unprocessed_parameter_set.copy(),
+                "geometry": self.pybamm_model.default_geometry.copy(),
+                "submesh_types": self.pybamm_model.default_submesh_types.copy(),
+                "var_pts": self.pybamm_model.default_var_pts.copy(),
+                "spatial_methods": self.pybamm_model.default_spatial_methods.copy(),
+                "solver": self.pybamm_model.default_solver.copy(),
+            }
+
+        return model_class(**model_args)
 
     def get_parameter_info(self, print_info: bool = False):
         """
@@ -803,3 +792,7 @@ class BaseModel:
     @property
     def solver(self):
         return self._solver
+
+    @solver.setter
+    def solver(self, solver):
+        self._solver = solver.copy() if solver is not None else None

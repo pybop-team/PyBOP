@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -58,14 +59,29 @@ class Test_SPM_Parameterisation:
             pybop.MAP,
         ]
     )
-    def cost_class(self, request):
+    def cost(self, request):
         return request.param
 
     def noise(self, sigma, values):
         return np.random.normal(0, sigma, values)
 
+    @pytest.fixture(
+        params=[
+            pybop.SciPyDifferentialEvolution,
+            pybop.AdamW,
+            pybop.CMAES,
+            pybop.CuckooSearch,
+            pybop.IRPropMin,
+            pybop.NelderMead,
+            pybop.SNES,
+            pybop.XNES,
+        ]
+    )
+    def optimiser(self, request):
+        return request.param
+
     @pytest.fixture
-    def spm_costs(self, model, parameters, cost_class, init_soc):
+    def optim(self, optimiser, model, parameters, cost, init_soc):
         # Form dataset
         solution = self.get_data(model, init_soc)
         dataset = pybop.Dataset(
@@ -77,64 +93,63 @@ class Test_SPM_Parameterisation:
             }
         )
 
-        # Define the cost to optimise
+        # IDAKLU Solver for Gradient-based optimisers
+        if optimiser in [pybop.AdamW, pybop.IRPropMin]:
+            model.solver = pybamm.IDAKLUSolver()
+
+        # Define the problem
         problem = pybop.FittingProblem(model, parameters, dataset)
-        if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
-            return cost_class(problem, sigma0=self.sigma0)
-        elif cost_class in [pybop.GaussianLogLikelihood]:
-            return cost_class(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
-        elif cost_class in [pybop.MAP]:
-            return cost_class(
+
+        # Construct the cost
+        if cost in [pybop.GaussianLogLikelihoodKnownSigma]:
+            cost = cost(problem, sigma0=self.sigma0)
+        elif cost in [pybop.GaussianLogLikelihood]:
+            cost = cost(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
+        elif cost in [pybop.MAP]:
+            cost = cost(
                 problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=self.sigma0
             )
-        elif cost_class in [pybop.SumofPower, pybop.Minkowski]:
-            return cost_class(problem, p=2)
+        elif cost in [pybop.SumofPower, pybop.Minkowski]:
+            cost = cost(problem, p=2)
         else:
-            return cost_class(problem)
+            cost = cost(problem)
 
-    @pytest.mark.parametrize(
-        "optimiser",
-        [
-            pybop.SciPyDifferentialEvolution,
-            pybop.AdamW,
-            pybop.CMAES,
-            pybop.CuckooSearch,
-            pybop.IRPropMin,
-            pybop.NelderMead,
-            pybop.SNES,
-            pybop.XNES,
-        ],
-    )
-    @pytest.mark.integration
-    def test_spm_optimisers(self, optimiser, spm_costs):
-        x0 = spm_costs.parameters.initial_value()
+        # Construct optimisation object
         common_args = {
-            "cost": spm_costs,
+            "cost": cost,
             "max_iterations": 250,
             "absolute_tolerance": 1e-6,
             "max_unchanged_iterations": 55,
         }
 
-        # Add sigma0 to ground truth for GaussianLogLikelihood
-        if isinstance(spm_costs, pybop.GaussianLogLikelihood):
-            self.ground_truth = np.concatenate(
-                (self.ground_truth, np.asarray([self.sigma0]))
-            )
-        if isinstance(spm_costs, pybop.MAP):
-            for i in spm_costs.parameters.keys():
-                spm_costs.parameters[i].prior = pybop.Uniform(
+        if isinstance(cost, pybop.MAP):
+            for i in cost.parameters.keys():
+                cost.parameters[i].prior = pybop.Uniform(
                     0.2, 2.0
                 )  # Increase range to avoid prior == np.inf
+
         # Set sigma0 and create optimiser
-        sigma0 = 0.05 if isinstance(spm_costs, pybop.MAP) else None
+        sigma0 = 0.05 if isinstance(cost, pybop.MAP) else None
         optim = optimiser(sigma0=sigma0, **common_args)
 
         # AdamW will use lowest sigma0 for learning rate, so allow more iterations
         if issubclass(optimiser, (pybop.AdamW, pybop.IRPropMin)) and isinstance(
-            spm_costs, pybop.GaussianLogLikelihood
+            cost, pybop.GaussianLogLikelihood
         ):
             common_args["max_unchanged_iterations"] = 75
             optim = optimiser(**common_args)
+
+        return optim
+
+    @pytest.mark.integration
+    def test_spm_optimisers(self, optim):
+        x0 = optim.parameters.initial_value()
+
+        # Add sigma0 to ground truth for GaussianLogLikelihood
+        if isinstance(optim.cost, pybop.GaussianLogLikelihood):
+            self.ground_truth = np.concatenate(
+                (self.ground_truth, np.asarray([self.sigma0]))
+            )
 
         initial_cost = optim.cost(x0)
         x, final_cost = optim.run()
@@ -143,7 +158,7 @@ class Test_SPM_Parameterisation:
         if np.allclose(x0, self.ground_truth, atol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
-        if isinstance(spm_costs, pybop.GaussianLogLikelihood):
+        if isinstance(optim.cost, pybop.GaussianLogLikelihood):
             np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
             np.testing.assert_allclose(x[-1], self.sigma0, atol=5e-4)
         else:
@@ -155,7 +170,7 @@ class Test_SPM_Parameterisation:
             np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
     @pytest.fixture
-    def spm_two_signal_cost(self, parameters, model, cost_class):
+    def spm_two_signal_cost(self, parameters, model, cost):
         # Form dataset
         solution = self.get_data(model, 0.5)
         dataset = pybop.Dataset(
@@ -175,14 +190,14 @@ class Test_SPM_Parameterisation:
         signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
         problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 
-        if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
-            return cost_class(problem, sigma0=self.sigma0)
-        elif cost_class in [pybop.MAP]:
-            return cost_class(
+        if cost in [pybop.GaussianLogLikelihoodKnownSigma]:
+            return cost(problem, sigma0=self.sigma0)
+        elif cost in [pybop.MAP]:
+            return cost(
                 problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=self.sigma0
             )
         else:
-            return cost_class(problem)
+            return cost(problem)
 
     @pytest.mark.parametrize(
         "multi_optimiser",
