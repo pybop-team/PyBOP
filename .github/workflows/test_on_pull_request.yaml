@@ -117,36 +117,24 @@ jobs:
       - name: Check out PyBOP repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 2
 
       - name: Set up Python 3.12
         id: setup-python
         uses: actions/setup-python@v4
         with:
           python-version: 3.12
-          cache: 'pip'
-          cache-dependency-path: setup.py
 
       - name: Install dependencies
+        shell: bash
         run: |
           python -m pip install --upgrade pip asv[virtualenv]
 
-      - name: Fetch develop branch
-        run: |
-          # Save the current branch
-          current_branch=$(git rev-parse --abbrev-ref HEAD)
-
-          # Fetch the upstream branch for this repo.
-          git remote add upstream https://github.com/pybop-team/PyBOP/
-          if [ $current_branch != "develop" ]; then
-              git fetch upstream develop:develop
-          fi
-
       - name: Run quick benchmarks
+        shell: bash
         run: |
           asv machine --machine "GitHubRunner"
-          HEAD_COMMIT=$(git rev-parse HEAD)
-          asv run HEAD_COMMIT^! --machine "GitHubRunner" --quick --show-stderr -v
+          asv run --machine "GitHubRunner" --quick --show-stderr -v
 
   # Runs only on macos-14 with Python 3.12
   check_coverage:
