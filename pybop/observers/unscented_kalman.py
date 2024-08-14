@@ -1,9 +1,10 @@
 from dataclasses import dataclass
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 import scipy.linalg as linalg
 
+from pybop._dataset import Dataset
 from pybop.models.base_model import BaseModel, Inputs
 from pybop.observers.observer import Observer
 from pybop.parameters.parameter import Parameter
@@ -33,8 +34,8 @@ class UnscentedKalmanFilterObserver(Observer):
         Flag to indicate if the model should be checked (default: True).
     signal: str
         The signal to observe.
-    init_soc : float, optional
-        Initial state of charge (default: None).
+    initial_state : dict, optional
+        A valid initial state, e.g. the initial open-circuit voltage (default: None).
     """
 
     Covariance = np.ndarray
@@ -46,35 +47,35 @@ class UnscentedKalmanFilterObserver(Observer):
         sigma0: Union[Covariance, float],
         process: Union[Covariance, float],
         measure: Union[Covariance, float],
-        dataset=None,
-        check_model=True,
-        signal=None,
-        additional_variables=None,
-        init_soc=None,
+        dataset: Optional[Dataset] = None,
+        check_model: bool = True,
+        signal: Optional[list[str]] = None,
+        additional_variables: Optional[list[str]] = None,
+        initial_state: Optional[float] = None,
     ) -> None:
-        if additional_variables is None:
-            additional_variables = []
-        if signal is None:
-            signal = ["Voltage [V]"]
+        if model is not None:
+            # Clear any existing built model and its properties
+            if model.built_model is not None:
+                model.clear()
+
+            # Build the model from scratch
+            model.build(
+                dataset=dataset,
+                parameters=parameters,
+                check_model=check_model,
+            )
+
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc
+            parameters, model, check_model, signal, additional_variables, initial_state
         )
         if dataset is not None:
+            # Check that the dataset contains necessary variables
+            dataset.check([*self.signal, "Current function [A]"])
+
             self._dataset = dataset.data
-
-            # Check that the dataset contains time and current
-            dataset.check(signal=[*self.signal, "Current function [A]"])
-
             self._domain_data = self._dataset["Time [s]"]
             self.n_data = len(self._domain_data)
             self._target = {signal: self._dataset[signal] for signal in self.signal}
-
-        # Add useful parameters to model
-        if model is not None:
-            self._model.signal = self.signal
-            self._model.n_outputs = self.n_outputs
-            if dataset is not None:
-                self._model.n_domain_data = self.n_data
 
         # Observer initiation
         self._process = process
@@ -258,11 +259,11 @@ class SquareRootUKF:
 
         Returns
         -------
-        List[np.ndarray]
+        list[np.ndarray]
             The sigma points
-        List[float]
+        list[float]
             The weights of the sigma points
-        List[float]
+        list[float]
             The weights of the covariance of the sigma points
         """
         # Set the scaling parameters: sigma and eta
@@ -294,14 +295,14 @@ class SquareRootUKF:
         w_m: np.ndarray,
         w_c: np.ndarray,
         sqrtR: np.ndarray,
-        states: Union[np.ndarray, None] = None,
+        states: Optional[np.ndarray] = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Performs the unscented transform
 
         Parameters
         ----------
-        sigma_points : List[SigmaPoint]
+        sigma_points : list[SigmaPoint]
             The sigma points
         sqrtR : np.ndarray
             The square root of the covariance matrix

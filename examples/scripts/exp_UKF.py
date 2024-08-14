@@ -4,7 +4,7 @@ import pybop
 from examples.standalone.model import ExponentialDecay
 
 # Parameter set and model definition
-parameter_set = {"k": "[input]", "y0": "[input]"}
+parameter_set = {"k": 0.1, "y0": 1.0}
 model = ExponentialDecay(parameter_set=parameter_set, n_states=1)
 
 # Fitting parameters
@@ -13,22 +13,21 @@ parameters = pybop.Parameters(
         "k",
         prior=pybop.Gaussian(0.1, 0.05),
         bounds=[0, 1],
-        true_value=0.1,
+        true_value=parameter_set["k"],
     ),
     pybop.Parameter(
         "y0",
         prior=pybop.Gaussian(1, 0.05),
         bounds=[0, 3],
-        true_value=1.0,
+        true_value=parameter_set["y0"],
     ),
 )
 
 # Make a prediction with measurement noise
 sigma = 1e-2
 t_eval = np.linspace(0, 20, 10)
-model.parameters = parameters
 true_inputs = parameters.as_dict("true")
-values = model.predict(t_eval=t_eval, inputs=true_inputs)
+values = model.predict(t_eval=t_eval)
 values = values["2y"].data
 corrupt_values = values + np.random.normal(0, sigma, len(t_eval))
 
@@ -40,7 +39,7 @@ expected_values = (
 # Verification step: make another prediction using the Observer class
 model.build(parameters=parameters)
 simulator = pybop.Observer(parameters, model, signal=["2y"])
-simulator._domain_data = t_eval
+simulator.domain_data = t_eval
 measurements = simulator.evaluate(true_inputs)
 
 # Verification step: Compare by plotting

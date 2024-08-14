@@ -1,8 +1,10 @@
 import warnings
+from typing import Optional
 
 import numpy as np
 
-from pybop import BaseProblem
+from pybop import BaseModel, BaseProblem, Experiment, Parameters
+from pybop.models.empirical.base_ecm import ECircuitModel
 from pybop.parameters.parameter import Inputs
 
 
@@ -24,43 +26,29 @@ class DesignProblem(BaseProblem):
         Flag to indicate if the model parameters should be checked for feasibility each iteration (default: True).
     signal : str, optional
         The signal to fit (default: "Voltage [V]").
-    additional_variables : List[str], optional
+    additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default additions are: ["Time [s]", "Current [A]"]).
-    init_soc : float, optional
-        Initial state of charge (default: 1.0).
+    initial_state : dict, optional
+        A valid initial state (default: {"Initial SoC": 1.0}).
     """
 
     def __init__(
         self,
-        model,
-        parameters,
-        experiment,
-        check_model=True,
-        signal=None,
-        additional_variables=None,
-        init_soc=None,
+        model: BaseModel,
+        parameters: Parameters,
+        experiment: Optional[Experiment],
+        check_model: bool = True,
+        signal: Optional[list[str]] = None,
+        additional_variables: Optional[list[str]] = None,
+        initial_state: Optional[dict] = None,
     ):
         # Add time and current and remove duplicates
-        if additional_variables is None:
-            additional_variables = []
-        if signal is None:
-            signal = ["Voltage [V]"]
+        additional_variables = additional_variables or []
         additional_variables.extend(["Time [s]", "Current [A]"])
         additional_variables = list(set(additional_variables))
 
-        if init_soc is None:
-            if "Initial SoC" in model._parameter_set.keys():
-                init_soc = model._parameter_set["Initial SoC"]
-            else:
-                init_soc = 1.0  # default value
-
         super().__init__(
-            parameters,
-            model,
-            check_model,
-            signal,
-            additional_variables,
-            init_soc,
+            parameters, model, check_model, signal, additional_variables, initial_state
         )
         self.experiment = experiment
 
@@ -73,6 +61,33 @@ class DesignProblem(BaseProblem):
             "Ah is greater than",
             "Non-physical point encountered",
         ]
+
+    def set_initial_state(self, initial_state):
+        """
+        Set the initial state to be applied to evaluations of the problem.
+
+        Parameters
+        ----------
+        initial_state : dict, optional
+            A valid initial state (default: None).
+        """
+        if initial_state is None:
+            if isinstance(self.model, ECircuitModel):
+                initial_state = {"Initial SoC": self.model.parameter_set["Initial SoC"]}
+            else:
+                initial_state = {"Initial SoC": 1.0}  # default value
+        elif "Initial open-circuit voltage [V]" in initial_state.keys():
+            warnings.warn(
+                "It is usually better to define an initial state of charge as the "
+                "initial_state for a DesignProblem because this state will scale with "
+                "design properties such as the capacity of the battery, as opposed to the "
+                "initial open-circuit voltage which may correspond to a different state "
+                "of charge for each design.",
+                UserWarning,
+                stacklevel=1,
+            )
+
+        self.initial_state = initial_state
 
     def evaluate(self, inputs: Inputs, update_capacity=False):
         """
@@ -102,7 +117,7 @@ class DesignProblem(BaseProblem):
                 sol = self._model.predict(
                     inputs=inputs,
                     experiment=self.experiment,
-                    init_soc=self.init_soc,
+                    initial_state=self.initial_state,
                 )
 
         # Catch infeasible solutions and return infinity
@@ -114,8 +129,7 @@ class DesignProblem(BaseProblem):
                 for signal in [*self.signal, *self.additional_variables]
             }
 
-        predictions = {}
-        for signal in self.signal + self.additional_variables:
-            predictions[signal] = sol[signal].data
-
-        return predictions
+        return {
+            signal: sol[signal].data
+            for signal in self.signal + self.additional_variables
+        }

@@ -1,7 +1,10 @@
+import warnings
+from typing import Optional
+
 import numpy as np
 
-from pybop import BaseProblem
-from pybop.parameters.parameter import Inputs
+from pybop import BaseModel, BaseProblem, Dataset
+from pybop.parameters.parameter import Inputs, Parameters
 
 
 class FittingProblem(BaseProblem):
@@ -18,68 +21,94 @@ class FittingProblem(BaseProblem):
         An object or list of the parameters for the problem.
     dataset : Dataset
         Dataset object containing the data to fit the model to.
+    check_model : bool, optional
+        Flag to indicate if the model should be checked (default: True).
     signal : str, optional
         The variable used for fitting (default: "Voltage [V]").
-    additional_variables : List[str], optional
+    additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
-    init_soc : float, optional
-        Initial state of charge (default: None).
+    initial_state : dict, optional
+        A valid initial state, e.g. the initial open-circuit voltage (default: None).
+
+    Additional Attributes
+    ---------------------
+    dataset : dictionary
+        The dictionary from a Dataset object containing the signal keys and values to fit the model to.
+    time_data : np.ndarray
+        The time points in the dataset.
+    n_time_data : int
+        The number of time points.
+    target : np.ndarray
+        The target values of the signals.
     """
 
     def __init__(
         self,
-        model,
-        parameters,
-        dataset,
-        check_model=True,
-        signal=None,
-        additional_variables=None,
-        init_soc=None,
+        model: BaseModel,
+        parameters: Parameters,
+        dataset: Dataset,
+        check_model: bool = True,
+        signal: Optional[list[str]] = None,
+        additional_variables: Optional[list[str]] = None,
+        initial_state: Optional[dict] = None,
     ):
         # Add time and remove duplicates
-        if additional_variables is None:
-            additional_variables = []
-        if signal is None:
-            signal = ["Voltage [V]"]
+        additional_variables = additional_variables or []
         additional_variables.extend(["Time [s]"])
         additional_variables = list(set(additional_variables))
 
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc
+            parameters, model, check_model, signal, additional_variables, initial_state
         )
         self._dataset = dataset.data
-        self.parameters.initial_value()
+        self._n_parameters = len(self.parameters)
 
-        # Check that the dataset contains time and current
-        dataset.check(signal=[*self.signal, "Current function [A]"])
+        # Check that the dataset contains necessary variables
+        dataset.check([*self.signal, "Current function [A]"])
 
         # Unpack time and target data
         self._domain_data = self._dataset["Time [s]"]
         self.n_data = len(self._domain_data)
         self.set_target(dataset)
 
-        # Add useful parameters to model
         if model is not None:
-            self._model.signal = self.signal
-            self._model.additional_variables = self.additional_variables
-            self._model.n_outputs = self.n_outputs
-            self._model.n_data = self.n_data
-
             # Build the model from scratch
-            if self._model._built_model is not None:
-                self._model._model_with_set_params = None
-                self._model._built_model = None
-                self._model._built_initial_soc = None
-                self._model._mesh = None
-                self._model._disc = None
+            if self._model.built_model is not None:
+                self._model.clear()
             self._model.build(
                 dataset=self._dataset,
                 parameters=self.parameters,
                 check_model=self.check_model,
-                init_soc=self.init_soc,
+                initial_state=self.initial_state,
             )
 
-    def evaluate(self, inputs: Inputs, update_capacity=False):
+    def set_initial_state(self, initial_state: Optional[dict] = None):
+        """
+        Set the initial state to be applied to evaluations of the problem.
+
+        Parameters
+        ----------
+        initial_state : dict, optional
+            A valid initial state (default: None).
+        """
+        if initial_state is not None and "Initial SoC" in initial_state.keys():
+            warnings.warn(
+                "It is usually better to define an initial open-circuit voltage as the "
+                "initial_state for a FittingProblem because this value can typically be "
+                "obtained from the data, unlike the intrinsic initial state of charge. "
+                "In the case where the fitting parameters do not change the OCV-SOC "
+                "relationship, the initial state of charge may be passed to the model "
+                'using, for example, `model.set_initial_state({"Initial SoC": 1.0})` '
+                "before constructing the FittingProblem.",
+                UserWarning,
+                stacklevel=1,
+            )
+
+        self.initial_state = initial_state
+
+    def evaluate(
+        self, inputs: Inputs, update_capacity=False
+    ) -> dict[str, np.ndarray[np.float64]]:
         """
         Evaluate the model with the given parameters and return the signal.
 
@@ -95,20 +124,21 @@ class FittingProblem(BaseProblem):
         """
         inputs = self.parameters.verify(inputs)
 
-        requires_rebuild = False
-        for key, value in inputs.items():
-            if key in self._model.rebuild_parameters:
-                current_value = self.parameters[key].value
-                if value != current_value:
-                    self.parameters[key].update(value=value)
-                    requires_rebuild = True
+        try:
+            sol = self._model.simulate(
+                inputs=inputs,
+                t_eval=self._domain_data,
+                initial_state=self.initial_state,
+            )
+        except Exception as e:
+            if self.verbose:
+                print(f"Simulation error: {e}")
+            return {signal: self.failure_output for signal in self.signal}
 
-        if requires_rebuild:
-            self._model.rebuild(parameters=self.parameters)
-
-        y = self._model.simulate(inputs=inputs, t_eval=self._domain_data)
-
-        return y
+        return {
+            signal: sol[signal].data
+            for signal in (self.signal + self.additional_variables)
+        }
 
     def evaluateS1(self, inputs: Inputs):
         """
@@ -121,20 +151,43 @@ class FittingProblem(BaseProblem):
 
         Returns
         -------
-        tuple
-            A tuple containing the simulation result y(t) and the sensitivities dy/dx(t) evaluated
-            with given inputs.
+        tuple[dict, np.ndarray]
+            A tuple containing the simulation result y(t) as a dictionary and the sensitivities
+            dy/dx(t) evaluated with given inputs.
         """
         inputs = self.parameters.verify(inputs)
+        self.parameters.update(values=list(inputs.values()))
 
-        if self._model.rebuild_parameters:
-            raise RuntimeError(
-                "Gradient not available when using geometric parameters."
+        try:
+            sol = self._model.simulateS1(
+                inputs=inputs,
+                t_eval=self._domain_data,
+                initial_state=self.initial_state,
             )
+        except Exception as e:
+            print(f"Error: {e}")
+            return {
+                signal: self.failure_output for signal in self.signal
+            }, self.failure_output
 
-        y, dy = self._model.simulateS1(
-            inputs=inputs,
-            t_eval=self._domain_data,
+        y = {signal: sol[signal].data for signal in self.signal}
+
+        # Extract the sensitivities and stack them along a new axis for each signal
+        dy = np.empty(
+            (
+                sol[self.signal[0]].data.shape[0],
+                self.n_outputs,
+                self._n_parameters,
+            )
         )
 
-        return (y, np.asarray(dy))
+        for i, signal in enumerate(self.signal):
+            dy[:, i, :] = np.stack(
+                [
+                    sol[signal].sensitivities[key].toarray()[:, 0]
+                    for key in self.parameters.keys()
+                ],
+                axis=-1,
+            )
+
+        return y, np.asarray(dy)

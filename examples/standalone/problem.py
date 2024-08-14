@@ -18,9 +18,7 @@ class StandaloneProblem(BaseProblem):
         additional_variables=None,
         init_soc=None,
     ):
-        super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc
-        )
+        super().__init__(parameters, model, check_model, signal, additional_variables)
         self._dataset = dataset.data
 
         # Check that the dataset contains time and current
