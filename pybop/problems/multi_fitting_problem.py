@@ -37,15 +37,15 @@ class MultiFittingProblem(BaseProblem):
             combined_parameters.join(problem.parameters)
 
         # Combine the target datasets
-        combined_time_data = []
+        combined_domain_data = []
         combined_signal = []
         for problem in self.problems:
             for signal in problem.signal:
-                combined_time_data.extend(problem.time_data)
+                combined_domain_data.extend(problem.domain_data)
                 combined_signal.extend(problem.target[signal])
         combined_dataset = Dataset(
             {
-                "Time [s]": np.asarray(combined_time_data),
+                "Time [s]": np.asarray(combined_domain_data),
                 "Combined signal": np.asarray(combined_signal),
             }
         )
@@ -59,8 +59,8 @@ class MultiFittingProblem(BaseProblem):
         self.parameters.initial_value()
 
         # Unpack time and target data
-        self._time_data = self._dataset["Time [s]"]
-        self.n_time_data = len(self._time_data)
+        self._domain_data = self._dataset["Time [s]"]
+        self.n_domain_data = len(self._domain_data)
         self.set_target(combined_dataset)
 
     def set_initial_state(self, initial_state: Optional[dict] = None):

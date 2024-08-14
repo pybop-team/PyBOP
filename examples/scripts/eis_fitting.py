@@ -7,6 +7,7 @@ parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 parameter_set["Contact resistance [Ohm]"] = 0.0
 model = pybop.lithium_ion.SPM(
     parameter_set=parameter_set,
+    eis=True,
     options={"surface form": "differential", "contact resistance": "true"},
 )
 

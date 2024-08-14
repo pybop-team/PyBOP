@@ -154,6 +154,8 @@ class BaseModel:
             self.set_current_function(dataset)
 
         if self.eis:
+            if not self.pybamm_model._built:  # noqa: SLF001
+                self.pybamm_model.build_model()
             self.set_up_for_eis(self.pybamm_model)
             self._parameter_set["Current function [A]"] = 0
 
@@ -170,7 +172,7 @@ class BaseModel:
             if not self.pybamm_model._built:  # noqa: SLF001
                 self.pybamm_model.build_model()
 
-            self.set_parameters(eis=self.eis)
+            self.set_parameters()
             self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
             self._disc = pybamm.Discretisation(
                 mesh=self.mesh,
@@ -278,7 +280,7 @@ class BaseModel:
                 self._parameter_set["Current function [A]"] = current
                 self._unprocessed_parameter_set["Current function [A]"] = current
 
-    def set_parameters(self, eis=False):
+    def set_parameters(self):
         """
         Assign the parameters to the model.
 
@@ -491,7 +493,9 @@ class BaseModel:
 
         return self.solver.solve(self._built_model, inputs=inputs, t_eval=t_eval)
 
-    def simulateEIS(self, inputs: Inputs, f_eval: list) -> dict[str, np.ndarray]:
+    def simulateEIS(
+        self, inputs: Inputs, f_eval: list, initial_state: Optional[dict] = None
+    ) -> dict[str, np.ndarray]:
         """
         Compute the forward model simulation with electrochemical impedance spectroscopy
         and return the result.
@@ -516,22 +520,21 @@ class BaseModel:
         """
         inputs = self.parameters.verify(inputs)
 
-        if self._built_model is None:
-            raise ValueError("EIS model must be built before calling simulate")
-        else:
-            if self.rebuild_parameters and not self.standard_parameters:
-                self.initialise_eis_simulation()
-            else:
-                if self.check_params(
-                    inputs=inputs,
-                    allow_infeasible_solutions=self.allow_infeasible_solutions,
-                ):
-                    self.initialise_eis_simulation(inputs)
-                else:
-                    return {signal: [np.inf] for signal in self.signal}
+        # Build or rebuild if required
+        self.build(inputs=inputs, initial_state=initial_state)
 
-            zs = [self.calculate_impedance(frequency) for frequency in f_eval]
-            return {"Impedance": np.asarray(zs) * self.z_scale}
+        # return self.solver.solve(self._built_model, inputs=inputs, t_eval=t_eval)
+
+        if not self.check_params(
+            inputs=inputs,
+            allow_infeasible_solutions=self.allow_infeasible_solutions,
+        ):
+            raise ValueError("These parameter values are infeasible.")
+
+        self.initialise_eis_simulation(inputs)
+        zs = [self.calculate_impedance(frequency) for frequency in f_eval]
+
+        return {"Impedance": np.asarray(zs) * self.z_scale}
 
     def initialise_eis_simulation(self, inputs: Optional[Inputs] = None):
         # Set mass matrix, and solver

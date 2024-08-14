@@ -34,10 +34,10 @@ class FittingProblem(BaseProblem):
     ---------------------
     dataset : dictionary
         The dictionary from a Dataset object containing the signal keys and values to fit the model to.
-    time_data : np.ndarray
-        The time points in the dataset.
-    n_time_data : int
-        The number of time points.
+    domain_data : np.ndarray
+        The domain points in the dataset.
+    n_domain_data : int
+        The number of domain points.
     target : np.ndarray
         The target values of the signals.
     """
@@ -64,7 +64,7 @@ class FittingProblem(BaseProblem):
         self._n_parameters = len(self.parameters)
 
         # Check that the dataset contains necessary variables
-        dataset.check([*self.signal, "Current function [A]"])
+        dataset.check(signal=[*self.signal, "Current function [A]"])
 
         # Unpack time and target data
         self._domain_data = self._dataset["Time [s]"]

@@ -139,17 +139,6 @@ class BaseProblem:
         """
         raise NotImplementedError
 
-    def domain_data(self):
-        """
-        Returns the domain (Frequency, Time) data.
-
-        Returns
-        -------
-        np.ndarray
-            The frequency or time array.
-        """
-        return self._domain_data
-
     def get_target(self):
         """
         Return the target dataset.
@@ -190,12 +179,12 @@ class BaseProblem:
         self._target = target
 
     @property
-    def time_data(self):
-        return self._time_data
+    def domain_data(self):
+        return self._domain_data
 
-    @time_data.setter
-    def time_data(self, time_data):
-        self._time_data = time_data
+    @domain_data.setter
+    def domain_data(self, domain_data):
+        self._domain_data = domain_data
 
     @property
     def dataset(self):
