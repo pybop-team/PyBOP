@@ -24,8 +24,8 @@ class BasePintsSampler(BaseSampler):
     def __init__(
         self,
         log_pdf: LogPosterior,
-        chains: int,
         sampler,
+        chains: int = 1,
         warm_up=None,
         x0=None,
         cov0=0.1,
@@ -95,15 +95,12 @@ class BasePintsSampler(BaseSampler):
         self._single_chain = issubclass(sampler, SingleChainMCMC)
 
         # Construct the samplers object
-        try:
-            if self._single_chain:
-                self._n_samplers = self._n_chains
-                self._samplers = [sampler(x0, sigma0=self._cov0) for x0 in self._x0]
-            else:
-                self._n_samplers = 1
-                self._samplers = [sampler(self._n_chains, self._x0, self._cov0)]
-        except Exception as e:
-            raise ValueError(f"Error constructing samplers: {e}") from e
+        if self._single_chain:
+            self._n_samplers = self._n_chains
+            self._samplers = [sampler(x0, sigma0=self._cov0) for x0 in self._x0]
+        else:
+            self._n_samplers = 1
+            self._samplers = [sampler(self._n_chains, self._x0, self._cov0)]
 
         # Check for sensitivities from sampler and set evaluation
         self._needs_sensitivities = self._samplers[0].needs_sensitivities()

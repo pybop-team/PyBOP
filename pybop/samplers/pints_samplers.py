@@ -45,7 +45,9 @@ class NUTS(BasePintsSampler):
     """
 
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
-        super().__init__(log_pdf, chains, NoUTurnMCMC, x0=x0, cov0=cov0, **kwargs)
+        super().__init__(
+            log_pdf, NoUTurnMCMC, chains=chains, x0=x0, cov0=cov0, **kwargs
+        )
 
 
 class DREAM(BasePintsSampler):
@@ -73,7 +75,7 @@ class DREAM(BasePintsSampler):
     """
 
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
-        super().__init__(log_pdf, chains, PintsDREAM, x0=x0, cov0=cov0, **kwargs)
+        super().__init__(log_pdf, PintsDREAM, chains=chains, x0=x0, cov0=cov0, **kwargs)
 
 
 class AdaptiveCovarianceMCMC(BasePintsSampler):
@@ -101,8 +103,8 @@ class AdaptiveCovarianceMCMC(BasePintsSampler):
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
-            chains,
             PintsAdaptiveCovarianceMCMC,
+            chains=chains,
             x0=x0,
             cov0=cov0,
             **kwargs,
@@ -134,8 +136,8 @@ class DifferentialEvolutionMCMC(BasePintsSampler):
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
-            chains,
             PintsDifferentialEvolutionMCMC,
+            chains=chains,
             x0=x0,
             cov0=cov0,
             **kwargs,
@@ -168,8 +170,8 @@ class DramACMC(BasePintsSampler):
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
-            chains,
             PintsDramACMC,
+            chains=chains,
             x0=x0,
             cov0=cov0,
             **kwargs,
@@ -201,8 +203,8 @@ class EmceeHammerMCMC(BasePintsSampler):
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
-            chains,
             PintsEmceeHammerMCMC,
+            chains=chains,
             x0=x0,
             cov0=cov0,
             **kwargs,
@@ -234,8 +236,8 @@ class HaarioACMC(BasePintsSampler):
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
-            chains,
             PintsHaarioACMC,
+            chains=chains,
             x0=x0,
             cov0=cov0,
             **kwargs,
@@ -267,8 +269,8 @@ class HaarioBardenetACMC(BasePintsSampler):
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
-            chains,
             PintsHaarioBardenetACMC,
+            chains=chains,
             x0=x0,
             cov0=cov0,
             **kwargs,
@@ -300,8 +302,8 @@ class HamiltonianMCMC(BasePintsSampler):
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
-            chains,
             PintsHamiltonianMCMC,
+            chains=chains,
             x0=x0,
             cov0=cov0,
             **kwargs,
@@ -333,8 +335,8 @@ class MALAMCMC(BasePintsSampler):
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
-            chains,
             PintsMALAMCMC,
+            chains=chains,
             x0=x0,
             cov0=cov0,
             **kwargs,
@@ -366,8 +368,8 @@ class MetropolisRandomWalkMCMC(BasePintsSampler):
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
-            chains,
             PintsMetropolisRandomWalkMCMC,
+            chains=chains,
             x0=x0,
             cov0=cov0,
             **kwargs,
@@ -399,8 +401,8 @@ class MonomialGammaHamiltonianMCMC(BasePintsSampler):
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
-            chains,
             PintsMonomialGammaHamiltonianMCMC,
+            chains=chains,
             x0=x0,
             cov0=cov0,
             **kwargs,
@@ -432,8 +434,8 @@ class PopulationMCMC(BasePintsSampler):
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
-            chains,
             PintsPopulationMCMC,
+            chains=chains,
             x0=x0,
             cov0=cov0,
             **kwargs,
@@ -465,8 +467,8 @@ class RaoBlackwellACMC(BasePintsSampler):
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
-            chains,
             PintsRaoBlackwellACMC,
+            chains=chains,
             x0=x0,
             cov0=cov0,
             **kwargs,
@@ -498,8 +500,8 @@ class RelativisticMCMC(BasePintsSampler):
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
-            chains,
             PintsRelativisticMCMC,
+            chains=chains,
             x0=x0,
             cov0=cov0,
             **kwargs,
@@ -531,8 +533,8 @@ class SliceDoublingMCMC(BasePintsSampler):
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
-            chains,
             PintsSliceDoublingMCMC,
+            chains=chains,
             x0=x0,
             cov0=cov0,
             **kwargs,
@@ -564,8 +566,8 @@ class SliceRankShrinkingMCMC(BasePintsSampler):
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
-            chains,
             PintsSliceRankShrinkingMCMC,
+            chains=chains,
             x0=x0,
             cov0=cov0,
             **kwargs,
@@ -597,8 +599,8 @@ class SliceStepoutMCMC(BasePintsSampler):
     def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
         super().__init__(
             log_pdf,
-            chains,
             PintsSliceStepoutMCMC,
+            chains=chains,
             x0=x0,
             cov0=cov0,
             **kwargs,

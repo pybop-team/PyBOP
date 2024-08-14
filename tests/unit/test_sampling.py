@@ -114,7 +114,7 @@ class TestPintsSamplers:
         ],
     )
     @pytest.mark.unit
-    def test_initialization_and_run(
+    def test_initialisation_and_run(
         self, log_posterior, x0, chains, MCMC, multi_samplers
     ):
         sampler = pybop.MCMCSampler(
@@ -199,7 +199,7 @@ class TestPintsSamplers:
             )
 
     @pytest.mark.unit
-    def test_invalid_initialization(self, log_posterior, x0):
+    def test_invalid_initialisation(self, log_posterior, x0):
         with pytest.raises(ValueError, match="Number of chains must be greater than 0"):
             AdaptiveCovarianceMCMC(
                 log_pdf=log_posterior,

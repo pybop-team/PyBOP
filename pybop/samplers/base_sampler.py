@@ -37,12 +37,6 @@ class BaseSampler:
             else np.asarray(x0, dtype=float)
         )
 
-        # Validate x0 shape
-        if self._x0.ndim == 0:
-            raise ValueError(
-                f"x0 must be an array-like structure, but got a scalar: {x0}"
-            )
-
     def run(self) -> np.ndarray:
         """
         Sample from the posterior distribution.
