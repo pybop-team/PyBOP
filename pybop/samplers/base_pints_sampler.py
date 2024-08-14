@@ -35,12 +35,11 @@ class BasePintsSampler(BaseSampler):
         Initialise the base PINTS sampler.
 
         Args:
-            log_pdf (pybop.BaseCost or List[pybop.BaseCost]): The distribution(s) to be sampled.
+            log_pdf (pybop.LogPosterior or List[pybop.LogPosterior]): The distribution(s) to be sampled.
             chains (int): Number of chains to be used.
             sampler: The sampler class to be used.
             x0 (list): Initial states for the chains.
             cov0: Initial standard deviation for the chains.
-            transformation: Transformation to be applied to the samples.
             kwargs: Additional keyword arguments.
         """
         super().__init__(log_pdf, x0, cov0)

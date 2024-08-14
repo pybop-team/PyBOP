@@ -18,24 +18,30 @@ class BaseSampler:
 
         Parameters
         ----------------
-        log_pdf (pybop.LogPosterior): The posterior or PDF to be sampled.
+        log_pdf (pybop.LogPosterior or List[pybop.LogPosterior]): The posterior or PDF to be sampled.
         x0: List-like initial condition for Monte Carlo sampling.
         cov0: The covariance matrix to be sampled.
         """
         self._log_pdf = log_pdf
-        self._x0 = x0
         self._cov0 = cov0
-        self.parameters = Parameters()
-        if isinstance(log_pdf, LogPosterior):
-            self.parameters = log_pdf.parameters
 
-        if x0 is None:
-            self._x0 = self.parameters.initial_value()
-        elif not isinstance(x0, np.ndarray):
-            try:
-                self._x0 = np.asarray(x0)
-            except ValueError as e:
-                raise ValueError(f"Error initialising x0: {e}") from e
+        # Set up parameters based on log_pdf
+        self.parameters = (
+            log_pdf.parameters if isinstance(log_pdf, LogPosterior) else Parameters()
+        )
+
+        # Initialize x0
+        self._x0 = (
+            self.parameters.initial_value()
+            if x0 is None
+            else np.asarray(x0, dtype=float)
+        )
+
+        # Validate x0 shape
+        if self._x0.ndim == 0:
+            raise ValueError(
+                f"x0 must be an array-like structure, but got a scalar: {x0}"
+            )
 
     def run(self) -> np.ndarray:
         """

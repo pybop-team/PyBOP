@@ -32,7 +32,7 @@ class NUTS(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : pybop.BaseCost
+    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -60,7 +60,7 @@ class DREAM(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : pybop.BaseCost
+    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -86,7 +86,7 @@ class AdaptiveCovarianceMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : pybop.BaseCost
+    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -119,7 +119,7 @@ class DifferentialEvolutionMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : pybop.BaseCost
+    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -153,7 +153,7 @@ class DramACMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : pybop.BaseCost
+    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -186,7 +186,7 @@ class EmceeHammerMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : pybop.BaseCost
+    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -219,7 +219,7 @@ class HaarioACMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : pybop.BaseCost
+    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -252,7 +252,7 @@ class HaarioBardenetACMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : pybop.BaseCost
+    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -285,7 +285,7 @@ class HamiltonianMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : pybop.BaseCost
+    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -318,7 +318,7 @@ class MALAMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : pybop.BaseCost
+    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -351,7 +351,7 @@ class MetropolisRandomWalkMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : pybop.BaseCost
+    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -384,7 +384,7 @@ class MonomialGammaHamiltonianMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : pybop.BaseCost
+    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -417,7 +417,7 @@ class PopulationMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : pybop.BaseCost
+    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -450,7 +450,7 @@ class RaoBlackwellACMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : pybop.BaseCost
+    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -483,7 +483,7 @@ class RelativisticMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : pybop.BaseCost
+    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -516,7 +516,7 @@ class SliceDoublingMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : pybop.BaseCost
+    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -549,7 +549,7 @@ class SliceRankShrinkingMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : pybop.BaseCost
+    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.
@@ -582,7 +582,7 @@ class SliceStepoutMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : pybop.BaseCost
+    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
         A function that calculates the log-probability density.
     chains : int
         The number of chains to run.

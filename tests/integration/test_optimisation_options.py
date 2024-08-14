@@ -1,5 +1,3 @@
-import sys
-
 import numpy as np
 import pytest
 
@@ -97,10 +95,6 @@ class TestOptimisation:
             absolute_tolerance=1e-5,
             use_f_guessed=f_guessed,
         )
-
-        # Set parallelisation if not on Windows
-        if sys.platform != "win32":
-            optim.set_parallel(True)
 
         initial_cost = optim.cost(x0)
         x, final_cost = optim.run()

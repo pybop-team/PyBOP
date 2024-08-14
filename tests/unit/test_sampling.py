@@ -4,6 +4,7 @@ from unittest.mock import call, patch
 
 import numpy as np
 import pytest
+from pints import ParallelEvaluator
 
 import pybop
 from pybop import (
@@ -215,6 +216,15 @@ class TestPintsSamplers:
                 x0=x0,
             )
 
+        with pytest.raises(
+            ValueError, match="x0 must have the same number of parameters as log_pdf"
+        ):
+            AdaptiveCovarianceMCMC(
+                log_pdf=[log_posterior, log_posterior, log_posterior],
+                chains=3,
+                x0=[0.4, 0.4, 0.4, 0.4],
+            )
+
     @pytest.mark.unit
     def test_no_chains_in_memory(self, log_posterior, x0, chains):
         sampler = AdaptiveCovarianceMCMC(
@@ -314,6 +324,11 @@ class TestPintsSamplers:
         sampler.set_parallel(2)
         assert sampler._parallel is True
         assert sampler._n_workers == 2
+
+        # Test evaluator construction
+        sampler.set_parallel(2)
+        evaluator = sampler._create_evaluator()
+        assert isinstance(evaluator, ParallelEvaluator)
 
     @pytest.mark.unit
     def test_base_sampler(self, log_posterior, x0):

@@ -104,6 +104,13 @@ class TestPriors:
                 JointPrior2([0.4, 1]), JointPrior2([1, 0.4]), atol=1e-4
             )
 
+        # Test JointPrior with incorrect dimensions
+        with pytest.raises(ValueError, match="Input x must have length 2, got 1"):
+            JointPrior1([0.4])
+
+        with pytest.raises(ValueError, match="Input x must have length 2, got 1"):
+            JointPrior1.logpdfS1([0.4])
+
         # Test properties
         assert Uniform.mean == (Uniform.upper - Uniform.lower) / 2
         np.testing.assert_allclose(
