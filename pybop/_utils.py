@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 import pybamm
 
@@ -26,9 +28,9 @@ class SymbolReplacer:
 
     def __init__(
         self,
-        symbol_replacement_map,
-        processed_symbols=None,
-        process_initial_conditions=True,
+        symbol_replacement_map: dict[pybamm.Symbol, pybamm.Symbol],
+        processed_symbols: Optional[dict[pybamm.Symbol, pybamm.Symbol]] = None,
+        process_initial_conditions: bool = True,
     ):
         self._symbol_replacement_map = symbol_replacement_map
         self._processed_symbols = processed_symbols or {}
@@ -48,6 +50,7 @@ class SymbolReplacer:
         """
 
         model = unprocessed_model if inplace else unprocessed_model.new_copy()
+
         for variable, equation in unprocessed_model.rhs.items():
             pybamm.logger.verbose(f"Replacing symbols in {variable!r} (rhs)")
             model.rhs[self.process_symbol(variable)] = self.process_symbol(equation)
@@ -75,19 +78,21 @@ class SymbolReplacer:
             pybamm.logger.verbose(f"Replacing symbols in {variable!r} (variables)")
             model.variables[variable] = self.process_symbol(equation)
 
+        model.events = self._process_events(unprocessed_model.events)
+        pybamm.logger.info(f"Finish replacing symbols in {model.name}")
+
+        return model
+
+    def _process_events(self, events: list) -> list:
         new_events = []
-        for event in unprocessed_model.events:
-            pybamm.logger.verbose(f"Replacing symbols in event'{event.name}''")
+        for event in events:
+            pybamm.logger.verbose(f"Replacing symbols in event '{event.name}'")
             new_events.append(
                 pybamm.Event(
                     event.name, self.process_symbol(event.expression), event.event_type
                 )
             )
-        model.events = new_events
-
-        pybamm.logger.info(f"Finish replacing symbols in {model.name}")
-
-        return model
+        return new_events
 
     def process_boundary_conditions(self, model):
         """
@@ -102,6 +107,7 @@ class SymbolReplacer:
         for variable, bcs in model.boundary_conditions.items():
             processed_variable = self.process_symbol(variable)
             boundary_conditions[processed_variable] = {}
+
             for side in sides:
                 try:
                     bc, typ = bcs[side]
@@ -135,43 +141,35 @@ class SymbolReplacer:
         :class:`pybamm.Symbol`
             Symbol with all replacements performed
         """
-
-        try:
-            return self._processed_symbols[symbol]
-        except KeyError:
-            self._processed_symbols[symbol] = self._process_symbol(symbol)
+        if symbol in self._processed_symbols:
             return self._processed_symbols[symbol]
 
-    def _process_symbol(self, symbol):
-        """See :meth:`Simplification.process_symbol()`."""
-        if symbol in self._symbol_replacement_map.keys():
+        processed_symbol = self._process_symbol(symbol)
+        self._processed_symbols[symbol] = processed_symbol
+        return processed_symbol
+
+    def _process_symbol(self, symbol: pybamm.Symbol) -> pybamm.Symbol:
+        if symbol in self._symbol_replacement_map:
             return self._symbol_replacement_map[symbol]
 
-        elif isinstance(symbol, pybamm.BinaryOperator):
-            left, right = symbol.children
+        if isinstance(symbol, pybamm.BinaryOperator):
             # process children
-            new_left = self.process_symbol(left)  # BP: We could do this recursively
-            new_right = self.process_symbol(right)
-            # Return a new copy with the replaced symbols
-            return symbol._binary_new_copy(new_left, new_right)
+            new_left = self.process_symbol(symbol.left)
+            new_right = self.process_symbol(symbol.right)
+            return symbol._binary_new_copy(new_left, new_right)  # noqa: SLF001
 
-        elif isinstance(symbol, pybamm.UnaryOperator):
+        if isinstance(symbol, pybamm.UnaryOperator):
             new_child = self.process_symbol(symbol.child)
-            # Return a new copy with the replaced symbols
-            return symbol._unary_new_copy(new_child)
+            return symbol._unary_new_copy(new_child)  # noqa: SLF001
 
-        elif isinstance(symbol, pybamm.Function):
+        if isinstance(symbol, pybamm.Function):
             new_children = [self.process_symbol(child) for child in symbol.children]
             # Return a new copy with the replaced symbols
-            return symbol._function_new_copy(new_children)
+            return symbol._function_new_copy(new_children)  # noqa: SLF001
 
-        elif isinstance(symbol, pybamm.Concatenation):
+        if isinstance(symbol, pybamm.Concatenation):
             new_children = [self.process_symbol(child) for child in symbol.children]
-            # Return a new copy with the replaced symbols
-            return symbol._concatenation_new_copy(new_children)
+            return symbol._concatenation_new_copy(new_children)  # noqa: SLF001
 
-        else:
-            # Only other option is that the symbol is a leaf (doesn't have children)
-            # In this case, since we have already ruled out that the symbol is one of
-            # the symbols that needs to be replaced, we can just return the symbol
-            return symbol
+        # Return leaf
+        return symbol
