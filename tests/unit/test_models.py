@@ -82,6 +82,12 @@ class TestModels:
         ):
             model.predict(None, None)
 
+        # Test new_copy() without pybamm_model
+        if not isinstance(model, pybop.lithium_ion.MSMR):
+            new_model = model.new_copy()
+            assert new_model.pybamm_model is not None
+            assert new_model.parameter_set is not None
+
     @pytest.mark.unit
     def test_predict_with_inputs(self, model):
         # Define inputs
