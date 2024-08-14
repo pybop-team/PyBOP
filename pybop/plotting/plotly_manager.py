@@ -71,7 +71,8 @@ class PlotlyManager:
             print("Installation cancelled by user.")
             sys.exit(1)  # Exit if user cancels installation
 
-    def install_plotly(self):
+    @staticmethod
+    def install_plotly():
         """
         Install the Plotly package using pip. Exit if installation fails.
         """
