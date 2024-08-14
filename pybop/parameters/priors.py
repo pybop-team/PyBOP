@@ -255,8 +255,6 @@ class Gaussian(BasePrior):
         float
             The value(s) of the first derivative at x.
         """
-        if not isinstance(x, np.ndarray):
-            x = np.asarray(x)
         return self(x), -(x - self.loc) * self._multip
 
 
@@ -435,4 +433,4 @@ class JointLogPrior(BasePrior):
 
     def __repr__(self) -> str:
         priors_repr = ", ".join([repr(prior) for prior in self._priors])
-        return f"{self.__class__.__name__}(priors=[{priors_repr}])"
+        return f"{self.__class__.__name__}(priors: [{priors_repr}])"

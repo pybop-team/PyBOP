@@ -33,6 +33,8 @@ class TestPriors:
     def test_base_prior(self):
         base = pybop.BasePrior()
         assert isinstance(base, pybop.BasePrior)
+        with pytest.raises(NotImplementedError):
+            base._logpdfS1(0.0)
 
     @pytest.mark.unit
     def test_priors(self, Gaussian, Uniform, Exponential, JointPrior1, JointPrior2):
@@ -144,7 +146,7 @@ class TestPriors:
         assert repr(Exponential) == "Exponential, loc: 0, scale: 1"
         assert (
             repr(JointPrior1)
-            == "JointLogPrior, priors: (Gaussian, loc: 0.5, scale: 1, Uniform, loc: 0, scale: 1)"
+            == "JointLogPrior(priors: [Gaussian, loc: 0.5, scale: 1, Uniform, loc: 0, scale: 1])"
         )
 
     @pytest.mark.unit

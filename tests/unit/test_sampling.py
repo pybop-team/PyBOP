@@ -1,5 +1,6 @@
 import copy
-from unittest.mock import patch
+import logging
+from unittest.mock import call, patch
 
 import numpy as np
 import pytest
@@ -229,17 +230,44 @@ class TestPintsSamplers:
         samples = sampler.run()
         assert samples is None
 
+    @patch("logging.basicConfig")
+    @patch("logging.info")
     @pytest.mark.unit
-    def test_logging_initialisation(self, log_posterior, x0, chains):
+    def test_initialise_logging(
+        self, mock_info, mock_basicConfig, log_posterior, x0, chains
+    ):
         sampler = AdaptiveCovarianceMCMC(
             log_pdf=log_posterior,
             chains=chains,
             x0=x0,
+            parallel=True,
+            evaluation_files=["eval1.txt", "eval2.txt"],
+            chain_files=["chain1.txt", "chain2.txt"],
         )
 
-        with patch("logging.basicConfig"), patch("logging.info") as mock_info:
-            sampler._initialise_logging()
-            assert mock_info.call_count > 0
+        # Set parallel workers
+        sampler.set_parallel(parallel=2)
+        sampler._initialise_logging()
+
+        # Check if basicConfig was called with correct arguments
+        mock_basicConfig.assert_called_once_with(
+            format="%(message)s", level=logging.INFO
+        )
+
+        # Check if correct messages were called
+        expected_calls = [
+            call("Using Haario-Bardenet adaptive covariance MCMC"),
+            call("Generating 3 chains."),
+            call("Running in parallel with 2 worker processes."),
+            call("Writing chains to chain1.txt etc."),
+            call("Writing evaluations to eval1.txt etc."),
+        ]
+        mock_info.assert_has_calls(expected_calls, any_order=False)
+
+        # Test when _log_to_screen is False
+        sampler._log_to_screen = False
+        sampler._initialise_logging()
+        assert mock_info.call_count == len(expected_calls)  # No additional calls
 
     @pytest.mark.unit
     def test_check_stopping_criteria(self, log_posterior, x0, chains):
