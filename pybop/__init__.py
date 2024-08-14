@@ -89,7 +89,6 @@ from .problems.base_problem import BaseProblem
 from .problems.fitting_problem import FittingProblem
 from .problems.multi_fitting_problem import MultiFittingProblem
 from .problems.design_problem import DesignProblem
-from .problems.eis_problem import EISProblem
 
 #
 # Cost function class

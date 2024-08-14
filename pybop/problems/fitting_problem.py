@@ -52,11 +52,6 @@ class FittingProblem(BaseProblem):
         additional_variables: Optional[list[str]] = None,
         initial_state: Optional[dict] = None,
     ):
-        # Add time and remove duplicates
-        additional_variables = additional_variables or []
-        additional_variables.extend(["Time [s]"])
-        additional_variables = list(set(additional_variables))
-
         super().__init__(
             parameters, model, check_model, signal, additional_variables, initial_state
         )
@@ -64,10 +59,10 @@ class FittingProblem(BaseProblem):
         self._n_parameters = len(self.parameters)
 
         # Check that the dataset contains necessary variables
-        dataset.check(signal=[*self.signal, "Current function [A]"])
+        dataset.check(domain=self.domain, signal=[*self.signal, "Current function [A]"])
 
-        # Unpack time and target data
-        self._domain_data = self._dataset["Time [s]"]
+        # Unpack domain and target data
+        self._domain_data = self._dataset[self.domain]
         self.n_data = len(self._domain_data)
         self.set_target(dataset)
 
@@ -107,7 +102,10 @@ class FittingProblem(BaseProblem):
         self.initial_state = initial_state
 
     def evaluate(
-        self, inputs: Inputs, update_capacity=False
+        self,
+        inputs: Inputs,
+        eis=False,
+        update_capacity=False,
     ) -> dict[str, np.ndarray[np.float64]]:
         """
         Evaluate the model with the given parameters and return the signal.
@@ -123,11 +121,45 @@ class FittingProblem(BaseProblem):
             The model output y(t) simulated with given inputs.
         """
         inputs = self.parameters.verify(inputs)
+        if eis:
+            return self._evaluateEIS(inputs, update_capacity=update_capacity)
+        else:
+            try:
+                sol = self._model.simulate(
+                    inputs=inputs,
+                    t_eval=self._domain_data,
+                    initial_state=self.initial_state,
+                )
+            except Exception as e:
+                if self.verbose:
+                    print(f"Simulation error: {e}")
+                return {signal: self.failure_output for signal in self.signal}
 
+            return {
+                signal: sol[signal].data
+                for signal in (self.signal + self.additional_variables)
+            }
+
+    def _evaluateEIS(
+        self, inputs: Inputs, update_capacity=False
+    ) -> dict[str, np.ndarray[np.float64]]:
+        """
+        Evaluate the model with the given parameters and return the signal.
+
+        Parameters
+        ----------
+        inputs : Inputs
+            Parameters for evaluation of the model.
+
+        Returns
+        -------
+        y : np.ndarray
+            The model output y(t) simulated with given inputs.
+        """
         try:
-            sol = self._model.simulate(
+            sol = self._model.simulateEIS(
                 inputs=inputs,
-                t_eval=self._domain_data,
+                f_eval=self._domain_data,
                 initial_state=self.initial_state,
             )
         except Exception as e:
@@ -135,10 +167,7 @@ class FittingProblem(BaseProblem):
                 print(f"Simulation error: {e}")
             return {signal: self.failure_output for signal in self.signal}
 
-        return {
-            signal: sol[signal].data
-            for signal in (self.signal + self.additional_variables)
-        }
+        return sol
 
     def evaluateS1(self, inputs: Inputs):
         """

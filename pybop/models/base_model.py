@@ -96,6 +96,7 @@ class BaseModel:
             (default: True).
         """
         self.name = name
+        self.eis = eis
         if parameter_set is None:
             self._parameter_set = None
         elif isinstance(parameter_set, dict):
@@ -109,7 +110,6 @@ class BaseModel:
         self.parameters = Parameters()
         self.param_check_counter = 0
         self.allow_infeasible_solutions = True
-        self.eis = eis
 
     def build(
         self,
@@ -150,12 +150,10 @@ class BaseModel:
             # Clear the model if rebuild required (currently if any initial state)
             self.set_initial_state(initial_state, inputs=inputs)
 
-        if dataset is not None and not self.eis:
-            self.set_current_function(dataset)
+        if not self.pybamm_model._built:  # noqa: SLF001
+            self.pybamm_model.build_model()
 
         if self.eis:
-            if not self.pybamm_model._built:  # noqa: SLF001
-                self.pybamm_model.build_model()
             self.set_up_for_eis(self.pybamm_model)
             self._parameter_set["Current function [A]"] = 0
 
@@ -163,15 +161,15 @@ class BaseModel:
             I_scale = getattr(self.pybamm_model.variables["Current [A]"], "scale", 1)
             self.z_scale = self._parameter_set.evaluate(V_scale / I_scale)
 
+        if dataset is not None:
+            self.set_current_function(dataset)
+
         if self._built_model:
             return
         elif self.pybamm_model.is_discretised:
             self._model_with_set_params = self.pybamm_model
             self._built_model = self.pybamm_model
         else:
-            if not self.pybamm_model._built:  # noqa: SLF001
-                self.pybamm_model.build_model()
-
             self.set_parameters()
             self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
             self._disc = pybamm.Discretisation(
@@ -523,8 +521,6 @@ class BaseModel:
         # Build or rebuild if required
         self.build(inputs=inputs, initial_state=initial_state)
 
-        # return self.solver.solve(self._built_model, inputs=inputs, t_eval=t_eval)
-
         if not self.check_params(
             inputs=inputs,
             allow_infeasible_solutions=self.allow_infeasible_solutions,
@@ -801,7 +797,7 @@ class BaseModel:
         """
         model_class = type(self)
         if self.pybamm_model is None:
-            model_args = {"parameter_set": self.parameter_set.copy()}
+            model_args = {"parameter_set": self._parameter_set.copy()}
         else:
             model_args = {
                 "options": self._unprocessed_model.options,

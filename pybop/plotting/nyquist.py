@@ -47,7 +47,7 @@ def nyquist(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
     else:
         problem_inputs = problem.parameters.verify(problem_inputs)
 
-    model_output = problem.evaluate(problem_inputs)
+    model_output = problem.evaluate(problem_inputs, eis=problem.eis)
     domain_data = model_output["Impedance"].real
     target_output = problem.get_target()
 

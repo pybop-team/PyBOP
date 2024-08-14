@@ -16,7 +16,7 @@ class StandaloneProblem(BaseProblem):
         check_model=True,
         signal=None,
         additional_variables=None,
-        init_soc=None,
+        initial_state=None,
     ):
         super().__init__(parameters, model, check_model, signal, additional_variables)
         self._dataset = dataset.data
@@ -26,7 +26,7 @@ class StandaloneProblem(BaseProblem):
             if name not in self._dataset:
                 raise ValueError(f"expected {name} in list of dataset")
 
-        self._domain_data = self._dataset["Time [s]"]
+        self._domain_data = self._dataset[self.domain]
         self.n_data = len(self._domain_data)
         if np.any(self._domain_data < 0):
             raise ValueError("Times can not be negative.")

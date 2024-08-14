@@ -69,9 +69,9 @@ dataset = pybop.Dataset(
 
 signal = ["Impedance"]
 # Generate problem, cost function, and optimisation class
-problem = pybop.EISProblem(model, parameters, dataset, signal=signal)
+problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.CMAES(cost, max_iterations=100, max_unchanged_iterations=30)
+optim = pybop.CMAES(cost, max_iterations=100, sigma0=0.25, max_unchanged_iterations=30)
 
 x, final_cost = optim.run()
 print("Estimated parameters:", x)

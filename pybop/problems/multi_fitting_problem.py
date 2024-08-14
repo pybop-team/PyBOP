@@ -43,23 +43,24 @@ class MultiFittingProblem(BaseProblem):
             for signal in problem.signal:
                 combined_domain_data.extend(problem.domain_data)
                 combined_signal.extend(problem.target[signal])
-        combined_dataset = Dataset(
-            {
-                "Time [s]": np.asarray(combined_domain_data),
-                "Combined signal": np.asarray(combined_signal),
-            }
-        )
 
         super().__init__(
             parameters=combined_parameters,
             model=None,
             signal=["Combined signal"],
         )
+
+        combined_dataset = Dataset(
+            {
+                self.domain: np.asarray(combined_domain_data),
+                "Combined signal": np.asarray(combined_signal),
+            }
+        )
         self._dataset = combined_dataset.data
         self.parameters.initial_value()
 
-        # Unpack time and target data
-        self._domain_data = self._dataset["Time [s]"]
+        # Unpack domain and target data
+        self._domain_data = self._dataset[self.domain]
         self.n_domain_data = len(self._domain_data)
         self.set_target(combined_dataset)
 
@@ -75,7 +76,7 @@ class MultiFittingProblem(BaseProblem):
         for problem in self.problems:
             problem.set_initial_state(initial_state)
 
-    def evaluate(self, inputs: Inputs, **kwargs):
+    def evaluate(self, inputs: Inputs, eis=False, **kwargs):
         """
         Evaluate the model with the given parameters and return the signal.
 
