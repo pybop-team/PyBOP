@@ -183,6 +183,29 @@ class TestProblem:
             pybop.FittingProblem(model, parameters, bad_dataset, signal=two_signals)
 
     @pytest.mark.unit
+    def test_fitting_problem_eis(self, parameters):
+        model = pybop.lithium_ion.SPM(eis=True)
+
+        dataset = pybop.Dataset(
+            {
+                "Frequency [Hz]": np.logspace(-4, 5, 30),
+                "Current function [A]": np.ones(30) * 0.0,
+                "Impedance": np.ones(30) * 0.0,
+            }
+        )
+
+        # Construct Problem
+        problem = pybop.FittingProblem(
+            model,
+            parameters,
+            dataset,
+            signal=["Impedance"],
+            initial_state={"Initial open-circuit voltage [V]": 4.0},
+        )
+        assert problem.eis == model.eis
+        assert problem.domain == "Frequency [Hz]"
+
+    @pytest.mark.unit
     def test_multi_fitting_problem(self, model, parameters, dataset, signal):
         problem_1 = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 

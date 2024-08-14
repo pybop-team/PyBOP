@@ -78,11 +78,9 @@ class BaseProblem:
             self.domain = "Frequency [Hz]" if self.eis else "Time [s]"
 
         # Add domain and remove duplicates
-        additional_variables = additional_variables or []
-        additional_variables.extend([self.domain, "Current [A]"])
-        additional_variables = list(set(additional_variables))
-
         self.additional_variables = additional_variables or []
+        self.additional_variables.extend([self.domain, "Current [A]"])
+        self.additional_variables = list(set(self.additional_variables))
 
         # If model.solver is IDAKLU, set output vars for improved performance
         self.output_vars = tuple(self.signal + self.additional_variables)

@@ -161,7 +161,7 @@ class BaseModel:
             I_scale = getattr(self.pybamm_model.variables["Current [A]"], "scale", 1)
             self.z_scale = self._parameter_set.evaluate(V_scale / I_scale)
 
-        if dataset is not None:
+        if dataset is not None and not self.eis:
             self.set_current_function(dataset)
 
         if self._built_model:

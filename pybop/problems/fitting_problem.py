@@ -66,7 +66,7 @@ class FittingProblem(BaseProblem):
         self.n_data = len(self._domain_data)
         self.set_target(dataset)
 
-        if model is not None:
+        if self._model is not None:
             # Build the model from scratch
             if self._model.built_model is not None:
                 self._model.clear()
