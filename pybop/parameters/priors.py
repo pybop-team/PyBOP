@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 import scipy.stats as stats
 
@@ -229,6 +231,7 @@ class Gaussian(BasePrior):
     """
 
     def __init__(self, mean, sigma, random_state=None):
+        super().__init__()
         self.name = "Gaussian"
         self.loc = mean
         self.scale = sigma
@@ -273,6 +276,7 @@ class Uniform(BasePrior):
     """
 
     def __init__(self, lower, upper, random_state=None):
+        super().__init__()
         self.name = "Uniform"
         self.lower = lower
         self.upper = upper
@@ -328,6 +332,7 @@ class Exponential(BasePrior):
     """
 
     def __init__(self, scale, loc=0, random_state=None):
+        super().__init__()
         self.name = "Exponential"
         self.loc = loc
         self.scale = scale
@@ -355,51 +360,65 @@ class Exponential(BasePrior):
 
 class JointLogPrior(BasePrior):
     """
-    Represents a joint prior distributions.
+    Represents a joint prior distribution composed of multiple prior distributions.
+
+    Parameters
+    ----------
+    priors : BasePrior
+        One or more prior distributions to combine into a joint distribution.
     """
 
-    def __init__(self, *priors):
-        self._priors = priors
-        for prior in priors:
-            if not isinstance(prior, BasePrior):
-                raise ValueError("All priors must be instances of BasePrior")
+    def __init__(self, *priors: BasePrior):
+        super().__init__()
 
-        self._n_parameters = len(priors)  # Needs to be updated
+        if not all(isinstance(prior, BasePrior) for prior in priors):
+            raise ValueError("All priors must be instances of BasePrior")
 
-    def logpdf(self, x):
+        self._n_parameters = len(priors)
+        self._priors: list[BasePrior] = list(priors)
+
+    def logpdf(self, x: Union[float, np.ndarray]) -> float:
         """
-        Evaluates the composed prior distribution at x.
+        Evaluates the joint log-prior distribution at a given point.
 
         Parameters
         ----------
-        x : float
-            The point(s) at which to evaluate the distribution.
+        x : Union[float, np.ndarray]
+            The point(s) at which to evaluate the distribution. The length of `x`
+            should match the total number of parameters in the joint distribution.
 
         Returns
         -------
         float
-            The value(s) of the distribution at x.
+            The joint log-probability density of the distribution at `x`.
         """
+        if len(x) != self._n_parameters:
+            raise ValueError(
+                f"Input x must have length {self._n_parameters}, got {len(x)}"
+            )
+
         return sum(prior(x) for prior, x in zip(self._priors, x))
 
-    def _logpdfS1(self, x):
+    def _logpdfS1(self, x: Union[float, np.ndarray]) -> tuple[float, np.ndarray]:
         """
-        Evaluates the first derivative of the composed prior distribution at x.
-        Inspired by PINTS implementation.
-
-        *This method only works if the underlying :class:`LogPrior` classes all
-        implement the optional method :class:`LogPDF.logpdfS1().`.*
+        Evaluates the first derivative of the joint log-prior distribution at a given point.
 
         Parameters
         ----------
-        x : float
-            The point(s) at which to evaluate the first derivative.
+        x : Union[float, np.ndarray]
+            The point(s) at which to evaluate the first derivative. The length of `x`
+            should match the total number of parameters in the joint distribution.
 
         Returns
         -------
-        float
-            The value(s) of the first derivative at x.
+        Tuple[float, np.ndarray]
+            A tuple containing the log-probability density and its first derivative at `x`.
         """
+        if len(x) != self._n_parameters:
+            raise ValueError(
+                f"Input x must have length {self._n_parameters}, got {len(x)}"
+            )
+
         output = 0
         doutput = np.zeros(self._n_parameters)
         index = 0
@@ -414,5 +433,6 @@ class JointLogPrior(BasePrior):
 
         return output, doutput
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}, priors: {self._priors}"
+    def __repr__(self) -> str:
+        priors_repr = ", ".join([repr(prior) for prior in self._priors])
+        return f"{self.__class__.__name__}(priors=[{priors_repr}])"
