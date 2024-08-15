@@ -218,3 +218,35 @@ class TestPlots:
         ):
             warnings.simplefilter("always")
             pybop.plot2d(cost)
+
+    @pytest.mark.unit
+    def test_nyquist(self):
+        # Define model
+        model = pybop.lithium_ion.SPM(
+            eis=True, options={"surface form": "differential"}
+        )
+
+        # Fitting parameters
+        parameters = pybop.Parameters(
+            pybop.Parameter(
+                "Positive electrode thickness [m]",
+                prior=pybop.Gaussian(60e-6, 1e-6),
+                bounds=[10e-6, 80e-6],
+            )
+        )
+
+        # Form dataset
+        dataset = pybop.Dataset(
+            {
+                "Frequency [Hz]": np.logspace(-4, 5, 10),
+                "Current function [A]": np.ones(10) * 0.0,
+                "Impedance": np.ones(10) * 0.0,
+            }
+        )
+
+        signal = ["Impedance"]
+        # Generate problem, cost function, and optimisation class
+        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
+
+        # Plot the nyquist
+        pybop.nyquist(problem, problem_inputs=[60e-6], title="Optimised Comparison")
