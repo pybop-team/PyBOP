@@ -54,7 +54,12 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
                 np.sum(
                     self._offset
                     + self._multip
-                    * np.sum((self._target[signal] - self.y[signal]) ** 2.0)
+                    * np.sum(
+                        np.real(
+                            (self._target[signal] - self.y[signal])
+                            * np.conj(self._target[signal] - self.y[signal])
+                        )
+                    )
                 )
                 for signal in self.signal
             ]
@@ -205,7 +210,12 @@ class GaussianLogLikelihood(BaseLikelihood):
                 np.sum(
                     self._logpi
                     - self.n_data * np.log(sigma)
-                    - np.sum((self._target[signal] - self.y[signal]) ** 2.0)
+                    - np.sum(
+                        np.real(
+                            (self._target[signal] - self.y[signal])
+                            * np.conj(self._target[signal] - self.y[signal])
+                        )
+                    )
                     / (2.0 * sigma**2.0)
                 )
                 for signal in self.signal

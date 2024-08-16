@@ -104,7 +104,6 @@ class FittingProblem(BaseProblem):
     def evaluate(
         self,
         inputs: Inputs,
-        eis=False,
         update_capacity=False,
     ) -> dict[str, np.ndarray[np.float64]]:
         """
@@ -121,7 +120,7 @@ class FittingProblem(BaseProblem):
             The model output y(t) simulated with given inputs.
         """
         inputs = self.parameters.verify(inputs)
-        if eis:
+        if self.eis:
             return self._evaluateEIS(inputs, update_capacity=update_capacity)
         else:
             try:

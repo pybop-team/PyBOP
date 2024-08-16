@@ -807,6 +807,7 @@ class BaseModel:
                 "var_pts": self.pybamm_model.default_var_pts.copy(),
                 "spatial_methods": self.pybamm_model.default_spatial_methods.copy(),
                 "solver": self.pybamm_model.default_solver.copy(),
+                "eis": copy.copy(self.eis),
             }
 
         return model_class(**model_args)

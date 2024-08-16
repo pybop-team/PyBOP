@@ -44,7 +44,6 @@ class BaseCost:
             self.signal = self.problem.signal
             self.transformation = self.parameters.construct_transformation()
             self._has_separable_problem = True
-            self.eis = self.problem.eis
 
     @property
     def n_parameters(self):
@@ -91,7 +90,7 @@ class BaseCost:
         try:
             if self._has_separable_problem:
                 self.y = self.problem.evaluate(
-                    inputs, eis=self.eis, update_capacity=self.update_capacity
+                    inputs, update_capacity=self.update_capacity
                 )
 
             return self.compute(inputs)
