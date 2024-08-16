@@ -26,19 +26,20 @@ class BenchmarkModel:
         self.model = model(parameter_set=pybop.ParameterSet.pybamm(parameter_set))
 
         # Define fitting parameters
-        parameters = [
+        parameters = pybop.Parameters(
             pybop.Parameter(
                 "Current function [A]",
                 prior=pybop.Gaussian(0.4, 0.02),
                 bounds=[0.2, 0.7],
                 initial_value=0.4,
             )
-        ]
+        )
 
         # Generate synthetic data
         sigma = 0.001
         self.t_eval = np.arange(0, 900, 2)
-        values = self.model.predict(t_eval=self.t_eval)
+        self.init_state = {"Initial SoC": 0.5}
+        values = self.model.predict(t_eval=self.t_eval, initial_state=self.init_state)
         corrupt_values = values["Voltage [V]"].data + np.random.normal(
             0, sigma, len(self.t_eval)
         )
@@ -58,7 +59,7 @@ class BenchmarkModel:
 
         # Create fitting problem
         self.problem = pybop.FittingProblem(
-            model=self.model, dataset=dataset, parameters=parameters, init_soc=0.5
+            model=self.model, dataset=dataset, parameters=parameters
         )
 
     def time_model_predict(self, model, parameter_set):
@@ -69,7 +70,9 @@ class BenchmarkModel:
             model (pybop.Model): The model class being benchmarked.
             parameter_set (str): The name of the parameter set being used.
         """
-        self.model.predict(inputs=self.inputs, t_eval=self.t_eval)
+        self.model.predict(
+            inputs=self.inputs, t_eval=self.t_eval, initial_state=self.init_state
+        )
 
     def time_model_simulate(self, model, parameter_set):
         """
