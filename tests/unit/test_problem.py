@@ -205,6 +205,10 @@ class TestProblem:
         assert problem.eis == model.eis
         assert problem.domain == "Frequency [Hz]"
 
+        # Test try-except
+        out = problem.evaluate(inputs=[0.0, 0.0])
+        assert not np.isfinite(out["Impedance"])
+
     @pytest.mark.unit
     def test_multi_fitting_problem(self, model, parameters, dataset, signal):
         problem_1 = pybop.FittingProblem(model, parameters, dataset, signal=signal)

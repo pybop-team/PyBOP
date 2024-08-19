@@ -324,6 +324,18 @@ class TestModels:
         sol = model.simulateEIS(inputs={}, f_eval=f_eval)
         assert np.isfinite(sol["Impedance"]).all()
 
+        # Test infeasible parameter values
+        model.allow_infeasible_solutions = False
+        inputs = {
+            "Negative electrode active material volume fraction": 0.9,
+            "Positive electrode active material volume fraction": 0.9,
+        }
+        # Rebuild model
+        model.build(inputs=inputs)
+
+        with pytest.raises(ValueError, match="These parameter values are infeasible."):
+            model.simulateEIS(f_eval=f_eval, inputs=inputs)
+
     @pytest.mark.unit
     def test_basemodel(self):
         base = pybop.BaseModel()
