@@ -155,12 +155,16 @@ class FittingProblem(BaseProblem):
         y : np.ndarray
             The model output y(t) simulated with given inputs.
         """
-
-        sol = self._model.simulateEIS(
-            inputs=inputs,
-            f_eval=self._domain_data,
-            initial_state=self.initial_state,
-        )
+        try:
+            sol = self._model.simulateEIS(
+                inputs=inputs,
+                f_eval=self._domain_data,
+                initial_state=self.initial_state,
+            )
+        except Exception as e:
+            if self.verbose:
+                print(f"Simulation error: {e}")
+            return {signal: self.failure_output for signal in self.signal}
 
         return sol
 

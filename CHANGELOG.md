@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#460](https://github.com/pybop-team/PyBOP/pull/460) - Notebook example files added for ECM and folder structure updated.
 - [#450](https://github.com/pybop-team/PyBOP/pull/450) - Adds support for IDAKLU with output variables, and corresponding examples, tests.
 - [#364](https://github.com/pybop-team/PyBOP/pull/364) - Adds the MultiFittingProblem class and the multi_fitting example script.
 - [#444](https://github.com/pybop-team/PyBOP/issues/444) - Merge `BaseModel` `build()` and `rebuild()` functionality.
@@ -16,6 +17,7 @@
 
 ## Bug Fixes
 
+- [#454](https://github.com/pybop-team/PyBOP/issue/454) - Fixes benchmarking suite.
 - [#421](https://github.com/pybop-team/PyBOP/issues/421) - Adds a default value for the initial SOC for design problems.
 
 ## Breaking Changes
