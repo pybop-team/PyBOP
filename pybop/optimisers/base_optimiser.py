@@ -1,8 +1,16 @@
 import warnings
+from typing import Optional
 
 import numpy as np
 
-from pybop import BaseCost, BaseLikelihood, DesignCost, Parameter, Parameters
+from pybop import (
+    BaseCost,
+    BaseLikelihood,
+    DesignCost,
+    Parameter,
+    Parameters,
+    WeightedCost,
+)
 
 
 class BaseOptimiser:
@@ -57,6 +65,7 @@ class BaseOptimiser:
         self.verbose = False
         self.log = dict(x=[], x_best=[], cost=[])
         self.minimising = True
+        self.transformation = None
         self.physical_viability = False
         self.allow_infeasible_solutions = False
         self.default_max_iterations = 1000
@@ -64,8 +73,11 @@ class BaseOptimiser:
 
         if isinstance(cost, BaseCost):
             self.cost = cost
+            self.transformation = self.cost.transformation
             self.parameters.join(cost.parameters)
             self.set_allow_infeasible_solutions()
+            if isinstance(cost, WeightedCost):
+                self.minimising = cost.minimising
             if isinstance(cost, (BaseLikelihood, DesignCost)):
                 self.minimising = False
 
@@ -75,8 +87,9 @@ class BaseOptimiser:
                 cost_test = cost(self.x0)
                 warnings.warn(
                     "The cost is not an instance of pybop.BaseCost, but let's continue "
-                    + "assuming that it is a callable function to be minimised.",
+                    "assuming that it is a callable function to be minimised.",
                     UserWarning,
+                    stacklevel=2,
                 )
                 self.cost = cost
                 for i, value in enumerate(self.x0):
@@ -85,8 +98,10 @@ class BaseOptimiser:
                     )
                 self.minimising = True
 
-            except Exception:
-                raise Exception("The cost is not a recognised cost object or function.")
+            except Exception as e:
+                raise Exception(
+                    "The cost is not a recognised cost object or function."
+                ) from e
 
             if not np.isscalar(cost_test) or not np.isreal(cost_test):
                 raise TypeError(
@@ -114,7 +129,7 @@ class BaseOptimiser:
         """
         # Set initial values, if x0 is None, initial values are unmodified.
         self.parameters.update(initial_values=self.unset_options.pop("x0", None))
-        self.x0 = self.parameters.initial_value()
+        self.x0 = self.parameters.reset_initial_value()
 
         # Set default bounds (for all or no parameters)
         self.bounds = self.unset_options.pop("bounds", self.parameters.get_bounds())
@@ -127,6 +142,9 @@ class BaseOptimiser:
         # Set other options
         self.verbose = self.unset_options.pop("verbose", self.verbose)
         self.minimising = self.unset_options.pop("minimising", self.minimising)
+        self.transformation = self.unset_options.pop(
+            "transformation", self.transformation
+        )
         if "allow_infeasible_solutions" in self.unset_options.keys():
             self.set_allow_infeasible_solutions(
                 self.unset_options.pop("allow_infeasible_solutions")
@@ -181,20 +199,6 @@ class BaseOptimiser:
         """
         raise NotImplementedError
 
-    def store_optimised_parameters(self, x):
-        """
-        Update the problem parameters with optimised values.
-
-        The optimised parameter values are stored within the associated PyBOP parameter class.
-
-        Parameters
-        ----------
-        x : array-like
-            Optimised parameter values.
-        """
-        for i, param in enumerate(self.cost.parameters):
-            param.update(value=x[i])
-
     def check_optimal_parameters(self, x):
         """
         Check if the optimised parameters are physically viable.
@@ -204,14 +208,14 @@ class BaseOptimiser:
         x : array-like
             Optimised parameter values.
         """
-        if self.cost.problem._model.check_params(
+        if self.cost.problem.model.check_params(
             inputs=x, allow_infeasible_solutions=False
         ):
             return
         else:
             warnings.warn(
                 "Optimised parameters are not physically viable! \nConsider retrying the optimisation"
-                + " with a non-gradient-based optimiser and the option allow_infeasible_solutions=False",
+                " with a non-gradient-based optimiser and the option allow_infeasible_solutions=False",
                 UserWarning,
                 stacklevel=2,
             )
@@ -240,8 +244,12 @@ class BaseOptimiser:
         self.physical_viability = allow
         self.allow_infeasible_solutions = allow
 
-        if hasattr(self.cost, "problem") and hasattr(self.cost.problem, "_model"):
-            self.cost.problem._model.allow_infeasible_solutions = (
+        if (
+            hasattr(self.cost, "problem")
+            and hasattr(self.cost.problem, "model")
+            and self.cost.problem.model is not None
+        ):
+            self.cost.problem.model.allow_infeasible_solutions = (
                 self.allow_infeasible_solutions
             )
         else:
@@ -269,8 +277,8 @@ class Result:
     def __init__(
         self,
         x: np.ndarray = None,
-        final_cost: float = None,
-        n_iterations: int = None,
+        final_cost: Optional[float] = None,
+        n_iterations: Optional[int] = None,
         scipy_result=None,
     ):
         self.x = x

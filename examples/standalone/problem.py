@@ -18,13 +18,11 @@ class StandaloneProblem(BaseProblem):
         additional_variables=None,
         init_soc=None,
     ):
-        super().__init__(
-            parameters, model, check_model, signal, additional_variables, init_soc
-        )
+        super().__init__(parameters, model, check_model, signal, additional_variables)
         self._dataset = dataset.data
 
         # Check that the dataset contains time and current
-        for name in ["Time [s]"] + self.signal:
+        for name in ["Time [s]", *self.signal]:
             if name not in self._dataset:
                 raise ValueError(f"expected {name} in list of dataset")
 
@@ -42,7 +40,7 @@ class StandaloneProblem(BaseProblem):
                 )
         self._target = {signal: self._dataset[signal] for signal in self.signal}
 
-    def evaluate(self, inputs):
+    def evaluate(self, inputs, **kwargs):
         """
         Evaluate the model with the given parameters and return the signal.
 

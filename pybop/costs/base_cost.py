@@ -1,3 +1,5 @@
+from typing import Optional, Union
+
 from pybop import BaseProblem
 from pybop.parameters.parameter import Inputs, Parameters
 
@@ -20,38 +22,56 @@ class BaseCost:
         An array containing the target data to fit.
     n_outputs : int
         The number of outputs in the model.
+    _has_separable_problem : bool
+        If True, the problem is separable from the cost function and will be
+        evaluated in advance of the call to self.compute() (default: False).
     """
 
-    def __init__(self, problem=None):
+    def __init__(self, problem: Optional[BaseProblem] = None):
         self.parameters = Parameters()
+        self.transformation = None
         self.problem = problem
+        self.verbose = False
+        self._has_separable_problem = False
+        self.update_capacity = False
+        self.y = None
+        self.dy = None
+        self.set_fail_gradient()
         if isinstance(self.problem, BaseProblem):
-            self._target = self.problem._target
+            self._target = self.problem.target
             self.parameters.join(self.problem.parameters)
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
+            self.transformation = self.parameters.construct_transformation()
+            self._has_separable_problem = True
 
     @property
     def n_parameters(self):
         return len(self.parameters)
 
-    def __call__(self, x, grad=None):
-        """
-        Call the evaluate function for a given set of parameters.
-        """
-        return self.evaluate(x, grad)
+    @property
+    def has_separable_problem(self):
+        return self._has_separable_problem
 
-    def evaluate(self, x, grad=None):
+    @property
+    def target(self):
+        return self._target
+
+    def __call__(self, inputs: Union[Inputs, list]):
         """
         Call the evaluate function for a given set of parameters.
+        """
+        return self.evaluate(inputs)
+
+    def evaluate(self, inputs: Union[Inputs, list]):
+        """
+        This method calls the forward model via problem.evaluateS1(inputs),
+        and computes the cost for the given output by calling self.computeS1(inputs).
 
         Parameters
         ----------
-        x : array-like
-            The parameters for which to evaluate the cost.
-        grad : array-like, optional
-            An array to store the gradient of the cost function with respect
-            to the parameters.
+        inputs : Inputs or array-like
+            The parameters for which to compute the cost and gradient.
 
         Returns
         -------
@@ -63,30 +83,35 @@ class BaseCost:
         ValueError
             If an error occurs during the calculation of the cost.
         """
-        inputs = self.parameters.verify(x)
+        if self.transformation:
+            p = self.transformation.to_model(inputs)
+        inputs = self.parameters.verify(p if self.transformation else inputs)
 
         try:
-            return self._evaluate(inputs, grad)
+            if self._has_separable_problem:
+                self.y = self.problem.evaluate(
+                    inputs, update_capacity=self.update_capacity
+                )
+
+            return self.compute(inputs)
 
         except NotImplementedError as e:
             raise e
 
         except Exception as e:
-            raise ValueError(f"Error in cost calculation: {e}")
+            raise ValueError(f"Error in cost calculation: {e}") from e
 
-    def _evaluate(self, inputs: Inputs, grad=None):
+    def compute(self, inputs: Inputs):
         """
-        Calculate the cost function value for a given set of parameters.
+        Calculates the cost function value for a given set of parameters.
 
+        This method only computes the cost, without calling the problem.evaluate.
         This method must be implemented by subclasses.
 
         Parameters
         ----------
         inputs : Inputs
-            The parameters for which to evaluate the cost.
-        grad : array-like, optional
-            An array to store the gradient of the cost function with respect
-            to the parameters.
+            The parameters for which to compute the cost.
 
         Returns
         -------
@@ -100,40 +125,53 @@ class BaseCost:
         """
         raise NotImplementedError
 
-    def evaluateS1(self, x):
+    def evaluateS1(self, inputs: Union[Inputs, list]):
         """
-        Call _evaluateS1 for a given set of parameters.
+        This method calls the forward model via problem.evaluateS1(inputs),
+        and computes the cost for the given output by calling self.computeS1(inputs).
+
+        This method includes the gradient of the cost function computed by
+        calling self.computeS1(inputs) with the sensitivity information provided by
+        the forward model via problem.evaluateS1(inputs).
 
         Parameters
         ----------
-        x : array-like
-            The parameters for which to compute the cost and gradient.
+        inputs : Inputs or array-like
+            The parameters for which to evaluate the cost and gradient.
 
         Returns
         -------
         tuple
             A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `x`.
+            and the gradient is an array-like of the same length as `inputs`.
 
         Raises
         ------
         ValueError
             If an error occurs during the calculation of the cost or gradient.
         """
-        inputs = self.parameters.verify(x)
+        if self.transformation:
+            p = self.transformation.to_model(inputs)
+        inputs = self.parameters.verify(p if self.transformation else inputs)
 
         try:
-            return self._evaluateS1(inputs)
+            if self._has_separable_problem:
+                self.y, self.dy = self.problem.evaluateS1(inputs)
+
+            return self.computeS1(inputs)
 
         except NotImplementedError as e:
             raise e
 
         except Exception as e:
-            raise ValueError(f"Error in cost calculation: {e}")
+            raise ValueError(f"Error in cost calculation: {e}") from e
 
-    def _evaluateS1(self, inputs: Inputs):
+    def computeS1(self, inputs: Inputs):
         """
         Compute the cost and its gradient with respect to the parameters.
+
+        This method only computes the cost, without calling the problem.evaluateS1.
+        This method must be implemented by subclasses.
 
         Parameters
         ----------
@@ -144,7 +182,7 @@ class BaseCost:
         -------
         tuple
             A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `x`.
+            and the gradient is an array-like of the same length as `inputs`.
 
         Raises
         ------
@@ -152,3 +190,40 @@ class BaseCost:
             If the method has not been implemented by the subclass.
         """
         raise NotImplementedError
+
+    def set_fail_gradient(self, de: float = 1.0):
+        """
+        Set the fail gradient to a specified value.
+
+        The fail gradient is used if an error occurs during the calculation
+        of the gradient. This method allows updating the default gradient value.
+
+        Parameters
+        ----------
+        de : float
+            The new fail gradient value to be used.
+        """
+        if not isinstance(de, float):
+            de = float(de)
+        self._de = de
+
+    def verify_prediction(self, y):
+        """
+        Verify that the prediction matches the target data.
+
+        Parameters
+        ----------
+        y : dict
+            The model predictions.
+
+        Returns
+        -------
+        bool
+            True if the prediction matches the target data, otherwise False.
+        """
+        if any(
+            len(y.get(key, [])) != len(self._target.get(key, [])) for key in self.signal
+        ):
+            return False
+
+        return True

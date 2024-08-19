@@ -26,7 +26,7 @@ class AdamWImpl(PintsOptimiser):
         m_j' = m_j[i] / (1 - beta1**(1 + i))
         v_j' = v_j[i] / (1 - beta2**(1 + i))
 
-        p_j[i] = p_j[i - 1] - alpha * (m_j' / (sqrt(v_j') + eps) + lambda * p_j[i - 1])
+        p_j[i] = p_j[i - 1] - alpha * (m_j' / (sqrt(v_j') + eps) + lam * p_j[i - 1])
 
     The initial values of the moments are ``m_j[0] = v_j[0] = 0``, after which
     they decay with rates ``beta1`` and ``beta2``. The default values for these are,
@@ -38,7 +38,7 @@ class AdamWImpl(PintsOptimiser):
     The parameter ``alpha`` is a step size, which is set as ``min(sigma0)`` in
     this implementation.
 
-    The parameter ``lambda`` is the weight decay rate, which is set to ``0.01``
+    The parameter ``lam`` is the weight decay rate, which is set to ``0.01``
     by default in this implementation.
 
     Finally, ``eps`` is a small constant used to avoid division by zero, set to
@@ -89,7 +89,7 @@ class AdamWImpl(PintsOptimiser):
         self._alpha = np.min(self._sigma0)
 
         # Weight decay rate
-        self.set_lambda()
+        self._lam = 0.01
 
         # Small number added to avoid divide-by-zero
         self._eps = np.finfo(float).eps
@@ -157,7 +157,7 @@ class AdamWImpl(PintsOptimiser):
 
         # Check ask-tell pattern
         if not self._ready_for_tell:
-            raise Exception("ask() not called before tell()")
+            raise RuntimeError("ask() not called before tell()")
         self._ready_for_tell = False
 
         # Unpack reply
@@ -186,7 +186,7 @@ class AdamWImpl(PintsOptimiser):
 
         # Take step with weight decay
         self._proposed = self._current - self._alpha * (
-            m / (np.sqrt(v) + self._eps) + self._lambda * self._current
+            m / (np.sqrt(v) + self._eps) + self._lam * self._current
         )
 
         # Update x_best and f_best
@@ -206,17 +206,27 @@ class AdamWImpl(PintsOptimiser):
         """
         return self._current
 
-    def set_lambda(self, lambda_: float = 0.01) -> None:
+    @property
+    def lam(self):
+        return self._lam
+
+    @lam.setter
+    def lam(self, lam: float = 0.01) -> None:
         """
-        Sets the lambda_ decay constant. This is the weight decay rate
+        Sets the lam decay constant. This is the weight decay rate
         that helps in finding the optimal solution.
         """
-        if not isinstance(lambda_, (int, float)) or not 0 < lambda_ <= 1:
-            raise ValueError("lambda_ must be a numeric value between 0 and 1.")
+        if not isinstance(lam, (int, float)) or not 0 < lam <= 1:
+            raise ValueError("lam must be a numeric value between 0 and 1.")
 
-        self._lambda = float(lambda_)
+        self._lam = float(lam)
 
-    def set_b1(self, b1: float) -> None:
+    @property
+    def b1(self):
+        return self._b1
+
+    @b1.setter
+    def b1(self, b1: float) -> None:
         """
         Sets the b1 momentum decay constant.
         """
@@ -225,7 +235,12 @@ class AdamWImpl(PintsOptimiser):
 
         self._b1 = float(b1)
 
-    def set_b2(self, b2: float) -> None:
+    @property
+    def b2(self):
+        return self._b2
+
+    @b2.setter
+    def b2(self, b2: float) -> None:
         """
         Sets the b2 momentum decay constant.
         """

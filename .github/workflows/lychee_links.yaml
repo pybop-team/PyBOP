@@ -1,0 +1,59 @@
+# Lychee Link Checking
+
+name: Links
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 6 * * 0'  # Run weekly on Sundays at 06:00 UTC
+
+jobs:
+  Lychee:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Restore lychee cache
+        uses: actions/cache@v4
+        with:
+          path: .lycheecache
+          key: cache-lychee-${{ github.sha }}
+          restore-keys: cache-lychee-
+
+      - name: Set up Lychee
+        uses: lycheeverse/lychee-action@v1.10.0
+        with:
+          args: >-
+            --cache
+            --no-progress
+            --max-cache-age 2d
+            --timeout 10
+            --max-retries 5
+            --skip-missing
+            --exclude-loopback
+            --accept 200,429
+            --exclude "https://tiles.stadiamaps.com/*|https://b.tile.openstreetmap.org/*"
+            --exclude "https://cartodb-basemaps-c.global.ssl.fastly.net/*"
+            --exclude "https://events.mapbox.com/*|https://events.mapbox.cn/*|https://api.mapbox.cn/*"
+            --exclude "https://github.com/mikolalysenko/glsl-read-float/*"
+            --exclude "https://fonts.openmaptiles.org/*"
+            --exclude "https://a.tile.openstreetmap.org/*"
+            --exclude "https://openstreetmap.org/*|https://www.openstreetmap.org/*"
+            --exclude "https://cdn.plot.ly/*"
+            --exclude "https://doi.org/*"
+            --exclude-path ./CHANGELOG.md
+            --exclude-path asv.conf.json
+            --exclude-path docs/conf.py
+            './**/*.rst'
+            './**/*.md'
+            './**/*.py'
+            './**/*.ipynb'
+            './**/*.json'
+            './**/*.toml'
+          fail: true
+          jobSummary: true
+          format: markdown

@@ -226,34 +226,34 @@ class TestOptimisation:
 
         # Test AdamW hyperparameters
         if optimiser in [pybop.AdamW]:
-            optim = optimiser(cost=cost, b1=0.9, b2=0.999, lambda_=0.1)
-            optim.pints_optimiser.set_b1(0.9)
-            optim.pints_optimiser.set_b2(0.9)
-            optim.pints_optimiser.set_lambda(0.1)
+            optim = optimiser(cost=cost, b1=0.9, b2=0.999, lam=0.1)
+            optim.pints_optimiser.b1 = 0.9
+            optim.pints_optimiser.b2 = 0.9
+            optim.pints_optimiser.lam = 0.1
 
-            assert optim.pints_optimiser._b1 == 0.9
-            assert optim.pints_optimiser._b2 == 0.9
-            assert optim.pints_optimiser._lambda == 0.1
+            assert optim.pints_optimiser.b1 == 0.9
+            assert optim.pints_optimiser.b2 == 0.9
+            assert optim.pints_optimiser.lam == 0.1
 
             # Incorrect values
-            for i, match in (("Value", -1),):
+            for i, _match in (("Value", -1),):
                 with pytest.raises(
                     Exception, match="must be a numeric value between 0 and 1."
                 ):
-                    optim.pints_optimiser.set_b1(i)
+                    optim.pints_optimiser.b1 = i
                 with pytest.raises(
                     Exception, match="must be a numeric value between 0 and 1."
                 ):
-                    optim.pints_optimiser.set_b2(i)
+                    optim.pints_optimiser.b2 = i
                 with pytest.raises(
                     Exception, match="must be a numeric value between 0 and 1."
                 ):
-                    optim.pints_optimiser.set_lambda(i)
+                    optim.pints_optimiser.lam = i
 
             # Check defaults
             assert optim.pints_optimiser.n_hyper_parameters() == 5
             assert optim.pints_optimiser.x_guessed() == optim.pints_optimiser._x0
-            with pytest.raises(Exception):
+            with pytest.raises(RuntimeError):
                 optim.pints_optimiser.tell([0.1])
 
         else:
@@ -326,12 +326,8 @@ class TestOptimisation:
         optim = pybop.Optimisation(cost=cost)
         assert optim.name() == "Exponential Natural Evolution Strategy (xNES)"
 
-        # Test incorrect setting attribute
-        with pytest.raises(
-            AttributeError,
-            match="'Optimisation' object has no attribute 'not_a_valid_attribute'",
-        ):
-            optim.not_a_valid_attribute
+        # Test getting incorrect attribute
+        assert not hasattr(optim, "not_a_valid_attribute")
 
     @pytest.mark.unit
     def test_incorrect_optimiser_class(self, cost):
@@ -356,6 +352,7 @@ class TestOptimisation:
         [
             (0.85, 0.2, False),
             (0.85, 0.001, True),
+            (1.0, 0.5, False),
         ],
     )
     def test_scipy_prior_resampling(
@@ -388,6 +385,10 @@ class TestOptimisation:
                 opt.run()
         else:
             opt.run()
+
+            # Test cost_wrapper inf return
+            cost = opt.cost_wrapper(np.array([0.9]))
+            assert cost in [1.729, 1.81, 1.9]
 
     @pytest.mark.unit
     def test_halting(self, cost):

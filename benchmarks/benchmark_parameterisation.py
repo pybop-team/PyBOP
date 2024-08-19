@@ -1,8 +1,7 @@
 import numpy as np
 
 import pybop
-
-from .benchmark_utils import set_random_seed
+from benchmarks.benchmark_utils import set_random_seed
 
 
 class BenchmarkParameterisation:
@@ -30,7 +29,7 @@ class BenchmarkParameterisation:
         Args:
             model (pybop.Model): The model class to be benchmarked.
             parameter_set (str): The name of the parameter set to be used.
-            optimiser (pybop.Optimiser): The optimizer class to be used.
+            optimiser (pybop.Optimiser): The optimiser class to be used.
         """
         # Set random seed
         set_random_seed()
@@ -46,7 +45,7 @@ class BenchmarkParameterisation:
         model_instance = model(parameter_set=params)
 
         # Define fitting parameters
-        parameters = [
+        parameters = pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.55, 0.03),
@@ -57,7 +56,7 @@ class BenchmarkParameterisation:
                 prior=pybop.Gaussian(0.55, 0.03),
                 bounds=[0.375, 0.7],
             ),
-        ]
+        )
 
         # Generate synthetic data
         sigma = 0.003
@@ -111,7 +110,7 @@ class BenchmarkParameterisation:
         Args:
             model (pybop.Model): The model class being benchmarked (unused).
             parameter_set (str): The name of the parameter set being used (unused).
-            optimiser (pybop.Optimiser): The optimizer class being used (unused).
+            optimiser (pybop.Optimiser): The optimiser class being used (unused).
         """
         self.optim.run()
 

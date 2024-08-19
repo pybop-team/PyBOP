@@ -56,6 +56,17 @@ from ._experiment import Experiment
 from ._dataset import Dataset
 
 #
+# Transformation classes
+#
+from .transformation.base_transformation import Transformation
+from .transformation.transformations import (
+    IdentityTransformation,
+    ScaledTransformation,
+    LogTransformation,
+    ComposedTransformation,
+)
+
+#
 # Parameter classes
 #
 from .parameters.parameter import Parameter, Parameters
@@ -76,6 +87,7 @@ from .models.base_model import Inputs
 #
 from .problems.base_problem import BaseProblem
 from .problems.fitting_problem import FittingProblem
+from .problems.multi_fitting_problem import MultiFittingProblem
 from .problems.design_problem import DesignProblem
 
 #
@@ -85,6 +97,8 @@ from .costs.base_cost import BaseCost
 from .costs.fitting_costs import (
     RootMeanSquaredError,
     SumSquaredError,
+    Minkowski,
+    SumofPower,
     ObserverCost,
 )
 from .costs.design_costs import (
@@ -98,6 +112,7 @@ from .costs._likelihoods import (
     GaussianLogLikelihoodKnownSigma,
     MAP,
 )
+from .costs._weighted_cost import WeightedCost
 
 #
 # Optimiser class

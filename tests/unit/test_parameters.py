@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 import pybop
@@ -130,8 +131,8 @@ class TestParameters:
         with pytest.raises(
             ValueError,
             match="There is already a parameter with the name "
-            + "Negative electrode active material volume fraction"
-            + " in the Parameters object. Please remove the duplicate entry.",
+            "Negative electrode active material volume fraction"
+            " in the Parameters object. Please remove the duplicate entry.",
         ):
             params.add(parameter)
 
@@ -158,8 +159,8 @@ class TestParameters:
         with pytest.raises(
             ValueError,
             match="There is already a parameter with the name "
-            + "Negative electrode active material volume fraction"
-            + " in the Parameters object. Please remove the duplicate entry.",
+            "Negative electrode active material volume fraction"
+            " in the Parameters object. Please remove the duplicate entry.",
         ):
             params.add(
                 dict(
@@ -212,3 +213,19 @@ class TestParameters:
 
         parameter.prior = None
         assert params.get_sigma0() is None
+
+    @pytest.mark.unit
+    def test_initial_values_without_attributes(self):
+        # Test without initial values
+        parameter = pybop.Parameters(
+            pybop.Parameter(
+                "Negative electrode conductivity [S.m-1]",
+            )
+        )
+        with pytest.warns(
+            UserWarning,
+            match="Initial value and prior are None, proceeding without an initial value.",
+        ):
+            sample = parameter.initial_value()
+
+        np.testing.assert_equal(sample, np.array([None]))

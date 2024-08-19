@@ -315,5 +315,8 @@ $RECYCLE.BIN/
 *.asv/
 results/
 
+# Pycharm
+*.idea/
+
 # JOSS
 jats/
