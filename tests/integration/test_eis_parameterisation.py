@@ -128,7 +128,7 @@ class TestEISParameterisation:
             "cost": cost,
             "max_iterations": 250,
             "absolute_tolerance": 1e-6,
-            "max_unchanged_iterations": 25,
+            "max_unchanged_iterations": 35,
         }
 
         if isinstance(cost, pybop.MAP):
