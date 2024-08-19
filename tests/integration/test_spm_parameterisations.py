@@ -104,7 +104,7 @@ class Test_SPM_Parameterisation:
         if cost in [pybop.GaussianLogLikelihoodKnownSigma]:
             cost = cost(problem, sigma0=self.sigma0)
         elif cost in [pybop.GaussianLogLikelihood]:
-            cost = cost(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
+            cost = cost(problem, sigma0=self.sigma0 * 3)  # Initial sigma0 guess
         elif cost in [pybop.MAP]:
             cost = cost(
                 problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=self.sigma0
@@ -129,7 +129,12 @@ class Test_SPM_Parameterisation:
                 )  # Increase range to avoid prior == np.inf
 
         # Set sigma0 and create optimiser
-        sigma0 = 0.05 if isinstance(cost, pybop.MAP) else None
+        if isinstance(cost, pybop.MAP):
+            sigma0 = 0.05
+        elif isinstance(cost, pybop.GaussianLogLikelihood):
+            sigma0 = [0.05, 0.05, 5e-3]
+        else:
+            sigma0 = None
         optim = optimiser(sigma0=sigma0, **common_args)
 
         # AdamW will use lowest sigma0 for learning rate, so allow more iterations
@@ -192,6 +197,8 @@ class Test_SPM_Parameterisation:
 
         if cost in [pybop.GaussianLogLikelihoodKnownSigma]:
             return cost(problem, sigma0=self.sigma0)
+        elif cost in [pybop.GaussianLogLikelihood]:
+            return cost(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
         elif cost in [pybop.MAP]:
             return cost(
                 problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=self.sigma0
@@ -212,8 +219,15 @@ class Test_SPM_Parameterisation:
         x0 = spm_two_signal_cost.parameters.initial_value()
         combined_sigma0 = np.asarray([self.sigma0, self.sigma0])
 
+        # Set sigma0 and create optimiser
+        if isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood):
+            sigma0 = [0.035, 0.035, 6e-3, 6e-3]
+        else:
+            sigma0 = None
+
         # Test each optimiser
         optim = multi_optimiser(
+            sigma0=sigma0,
             cost=spm_two_signal_cost,
             max_iterations=250,
         )
@@ -223,7 +237,7 @@ class Test_SPM_Parameterisation:
             self.ground_truth = np.concatenate((self.ground_truth, combined_sigma0))
 
         if issubclass(multi_optimiser, pybop.BasePintsOptimiser):
-            optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
+            optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-6)
 
         initial_cost = optim.cost(optim.parameters.initial_value())
         x, final_cost = optim.run()

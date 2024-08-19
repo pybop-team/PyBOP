@@ -115,7 +115,7 @@ class GaussianLogLikelihood(BaseLikelihood):
     def __init__(
         self,
         problem: BaseProblem,
-        sigma0: Union[float, list[float], list[Parameter]] = 0.002,
+        sigma0: Union[float, list[float], list[Parameter]] = 1e-2,
         dsigma_scale: float = 1.0,
     ):
         super().__init__(problem)
