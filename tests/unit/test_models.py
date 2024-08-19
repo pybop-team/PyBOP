@@ -61,18 +61,6 @@ class TestModels:
         return model.copy()
 
     @pytest.mark.unit
-    def test_simulate_without_build_model(self, model):
-        with pytest.raises(
-            ValueError, match="Model must be built before calling simulate"
-        ):
-            model.simulate(None, None)
-
-        with pytest.raises(
-            ValueError, match="Model must be built before calling simulate"
-        ):
-            model.simulateS1(None, None)
-
-    @pytest.mark.unit
     def test_non_default_solver(self):
         solver = pybamm.CasadiSolver(
             mode="fast",
@@ -86,13 +74,19 @@ class TestModels:
 
     @pytest.mark.unit
     def test_predict_without_pybamm(self, model):
-        model._unprocessed_model = None
+        model.pybamm_model = None
 
         with pytest.raises(
             ValueError,
             match="The predict method currently only supports PyBaMM models.",
         ):
             model.predict(None, None)
+
+        # Test new_copy() without pybamm_model
+        if not isinstance(model, pybop.lithium_ion.MSMR):
+            new_model = model.new_copy()
+            assert new_model.pybamm_model is not None
+            assert new_model.parameter_set is not None
 
     @pytest.mark.unit
     def test_predict_with_inputs(self, model):
@@ -159,21 +153,15 @@ class TestModels:
 
     @pytest.mark.unit
     def test_rebuild(self, model):
-        # Test rebuild before build
-        with pytest.raises(
-            ValueError, match="Model must be built before calling rebuild"
-        ):
-            model.rebuild()
-
         model.build()
         initial_built_model = model._built_model
         assert model._built_model is not None
 
-        model.set_params()
+        model.set_parameters()
         assert model.model_with_set_params is not None
 
         # Test that the model can be built again
-        model.rebuild()
+        model.build()
         rebuilt_model = model._built_model
         assert rebuilt_model is not None
 
@@ -251,7 +239,7 @@ class TestModels:
         # Test that the model can be rebuilt with different geometric parameters
         parameters["Positive particle radius [m]"].update(5e-06)
         parameters["Negative electrode thickness [m]"].update(45e-06)
-        model.rebuild(parameters=parameters)
+        model.build(parameters=parameters)
         rebuilt_model = model
         assert rebuilt_model._built_model is not None
 
@@ -299,7 +287,7 @@ class TestModels:
         state = model.reinit(inputs={})
         np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
 
-        model.classify_and_update_parameters(pybop.Parameters(pybop.Parameter("y0")))
+        model.classify_parameters(pybop.Parameters(pybop.Parameter("y0")))
         state = model.reinit(inputs=[1])
         np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
 
@@ -339,7 +327,7 @@ class TestModels:
         with pytest.raises(NotImplementedError):
             base.approximate_capacity(x)
 
-        base.classify_and_update_parameters(parameters=None)
+        base.classify_parameters(parameters=None)
         assert isinstance(base.parameters, pybop.Parameters)
 
     @pytest.mark.unit
@@ -484,3 +472,45 @@ class TestModels:
         for key, value in parameter_info.items():
             assert key in printed_messaage
             assert value in printed_messaage
+
+    @pytest.mark.unit
+    def test_set_current_function(self):
+        dataset_1 = pybop.Dataset(
+            {
+                "Time [s]": np.linspace(0, 10, 100),
+                "Current function [A]": 3.0 * np.ones(100),
+            }
+        )
+        dataset_2 = pybop.Dataset(
+            {
+                "Time [s]": np.linspace(0, 5, 100),
+                "Current function [A]": 6.0 * np.ones(100),
+            }
+        )
+
+        model = pybop.lithium_ion.SPM()
+        model.set_current_function(dataset=dataset_1)
+        values_1 = model.predict(t_eval=dataset_1["Time [s]"])
+
+        np.testing.assert_allclose(
+            values_1["Current [A]"].data,
+            dataset_1["Current function [A]"].data,
+            atol=1e-8,
+        )
+
+        model.set_current_function(dataset=dataset_2)
+        values_2 = model.predict(t_eval=dataset_2["Time [s]"])
+
+        np.testing.assert_allclose(
+            values_2["Current [A]"].data,
+            dataset_2["Current function [A]"].data,
+            atol=1e-8,
+        )
+
+        values_3 = model.simulate(inputs={}, t_eval=dataset_2["Time [s]"])
+
+        np.testing.assert_allclose(
+            values_3["Current [A]"].data,
+            dataset_2["Current function [A]"].data,
+            atol=1e-8,
+        )

@@ -1,5 +1,8 @@
 from typing import Optional
 
+import numpy as np
+from pybamm import IDAKLUSolver
+
 from pybop import BaseModel, Dataset, Parameter, Parameters
 from pybop.parameters.parameter import Inputs
 
@@ -63,11 +66,37 @@ class BaseProblem:
         self.check_model = check_model
         self.signal = signal or ["Voltage [V]"]
         self.additional_variables = additional_variables or []
-        self.initial_state = initial_state
+        self.set_initial_state(initial_state)
         self._dataset = None
         self._time_data = None
         self._target = None
         self.verbose = False
+        self.failure_output = np.asarray([np.inf])
+
+        # If model.solver is IDAKLU, set output vars for improved performance
+        self.output_vars = tuple(self.signal + self.additional_variables)
+        if self._model is not None and isinstance(self._model.solver, IDAKLUSolver):
+            self._solver_copy = self._model.solver.copy()
+            self._model.solver = IDAKLUSolver(
+                atol=self._solver_copy.atol,
+                rtol=self._solver_copy.rtol,
+                root_method=self._solver_copy.root_method,
+                root_tol=self._solver_copy.root_tol,
+                extrap_tol=self._solver_copy.extrap_tol,
+                options=self._solver_copy._options,  # noqa: SLF001
+                output_variables=self.output_vars,
+            )
+
+    def set_initial_state(self, initial_state: Optional[dict] = None):
+        """
+        Set the initial state to be applied to evaluations of the problem.
+
+        Parameters
+        ----------
+        initial_state : dict, optional
+            A valid initial state (default: None).
+        """
+        self.initial_state = initial_state
 
     @property
     def n_parameters(self):
@@ -156,3 +185,7 @@ class BaseProblem:
     @time_data.setter
     def time_data(self, time_data):
         self._time_data = time_data
+
+    @property
+    def dataset(self):
+        return self._dataset
