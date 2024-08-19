@@ -90,7 +90,7 @@ class TestEISParameterisation:
 
     @pytest.fixture
     def optim(self, optimiser, model, parameters, cost, init_soc):
-        n_frequency = 12
+        n_frequency = 15
         # Set frequency set
         f_eval = np.logspace(-4, 5, n_frequency)
 

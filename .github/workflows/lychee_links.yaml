@@ -44,6 +44,7 @@ jobs:
             --exclude "https://a.tile.openstreetmap.org/*"
             --exclude "https://openstreetmap.org/*|https://www.openstreetmap.org/*"
             --exclude "https://cdn.plot.ly/*"
+            --exclude "http://www.w3.org/*" | "https://www.w3.org/*"
             --exclude "https://doi.org/*"
             --exclude-path ./CHANGELOG.md
             --exclude-path asv.conf.json
