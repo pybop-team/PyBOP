@@ -150,6 +150,11 @@ class TestProblem:
         # Test model.simulate with an initial state
         problem.evaluate(inputs=[1e-5, 1e-5])
 
+        # Test try-except
+        problem.verbose = True
+        out = problem.evaluate(inputs=[0.0, 0.0])
+        assert not np.isfinite(out["Voltage [V]"])
+
         # Test problem construction errors
         for bad_dataset in [
             pybop.Dataset({"Time [s]": np.array([0])}),
@@ -206,6 +211,7 @@ class TestProblem:
         assert problem.domain == "Frequency [Hz]"
 
         # Test try-except
+        problem.verbose = True
         out = problem.evaluate(inputs=[0.0, 0.0])
         assert not np.isfinite(out["Impedance"])
 
