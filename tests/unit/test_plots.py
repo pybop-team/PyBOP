@@ -250,3 +250,6 @@ class TestPlots:
 
         # Plot the nyquist
         pybop.nyquist(problem, problem_inputs=[60e-6], title="Optimised Comparison")
+
+        # Without inputs
+        pybop.nyquist(problem, title="Optimised Comparison")
