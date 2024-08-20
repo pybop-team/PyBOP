@@ -176,5 +176,5 @@ class BaseCost:
     def verify_args(self, dy: ndarray, calculate_grad: bool):
         if calculate_grad and dy is None:
             raise ValueError(
-                "Forward model sensitivies need to be provided alongside `calculate_grad=True` for `cost.compute`."
+                "Forward model sensitives need to be provided alongside `calculate_grad=True` for `cost.compute`."
             )

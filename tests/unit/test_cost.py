@@ -221,7 +221,7 @@ class TestCosts:
         if not isinstance(cost, pybop.ObserverCost):
             with pytest.raises(
                 ValueError,
-                match="Forward model sensitivies need to be provided alongside `calculate_grad=True` for `cost.compute`.",
+                match="Forward model sensitives need to be provided alongside `calculate_grad=True` for `cost.compute`.",
             ):
                 cost.compute([1.1], dy=None, calculate_grad=True)
 
