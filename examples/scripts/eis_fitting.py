@@ -7,19 +7,12 @@ parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 parameter_set["Contact resistance [Ohm]"] = 0.0
 initial_state = {"Initial SoC": 0.5}
 n_frequency = 20
+sigma0 = 1e-4
 f_eval = np.logspace(-4, 5, n_frequency)
 model = pybop.lithium_ion.SPM(
     parameter_set=parameter_set,
     eis=True,
     options={"surface form": "differential", "contact resistance": "true"},
-)
-
-model.build(
-    inputs={
-        "Negative electrode active material volume fraction": 0.531,
-        "Positive electrode active material volume fraction": 0.732,
-    },
-    initial_state=initial_state,
 )
 
 sim = model.simulateEIS(
@@ -28,6 +21,7 @@ sim = model.simulateEIS(
         "Positive electrode active material volume fraction": 0.732,
     },
     f_eval=f_eval,
+    initial_state=initial_state,
 )
 
 # Fitting parameters
@@ -43,8 +37,6 @@ parameters = pybop.Parameters(
         bounds=[0.375, 0.75],
     ),
 )
-
-sigma0 = 1e-4
 
 
 def noise(sigma, values):

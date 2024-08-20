@@ -317,7 +317,6 @@ class TestModels:
     def test_simulateEIS(self):
         # Test EIS on SPM
         model = pybop.lithium_ion.SPM(eis=True)
-        model.build()
 
         # Construct frequencies and solve
         f_eval = np.linspace(100, 1000, 5)
