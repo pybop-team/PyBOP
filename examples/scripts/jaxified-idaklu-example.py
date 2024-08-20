@@ -1,5 +1,3 @@
-import time
-
 import numpy as np
 import pybamm
 
@@ -60,12 +58,15 @@ for solver in solvers:
     f = solver.get_jaxpr()
     print(f"JAX expression: {f}")
     model.solver = f
-    problem = pybop.FittingProblem(model, parameters, dataset)
 
-    start_time = time.time()
-    for input_values in inputs:
-        problem.evaluate(inputs=input_values)
-    print(f"Time Evaluate {solver.name}: {time.time() - start_time:.3f}")
+    # Setup Fitting Problem
+    problem = pybop.JaxFittingProblem(model, parameters, dataset)
+    problem.evaluate([0.55, 0.55])
+
+    # start_time = time.time()
+    # for input_values in inputs:
+    #     problem.evaluate(inputs=input_values)
+    # print(f"Time Evaluate {solver.name}: {time.time() - start_time:.3f}")
 
     # start_time = time.time()
     # for input_values in inputs:

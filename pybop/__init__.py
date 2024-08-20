@@ -159,6 +159,11 @@ from .plotting.plot_parameters import plot_parameters
 from .plotting.plot_problem import quick_plot
 
 #
+# Experimental
+#
+from .experimental.jax_costs import JaxSumSquaredError
+
+#
 # Remove any imported modules, so we don't expose them as part of pybop
 #
 del sys
