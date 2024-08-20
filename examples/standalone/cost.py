@@ -46,7 +46,7 @@ class StandaloneCost(pybop.BaseCost):
         self.x0 = self.parameters.initial_value()
 
     def compute(
-        self, y: dict, dy: np.ndarray = None, inputs=None, calculate_grad: bool = False
+        self, y: dict = None, dy: np.ndarray = None, calculate_grad: bool = False
     ):
         """
         Compute the cost for a given parameter value.
@@ -54,15 +54,9 @@ class StandaloneCost(pybop.BaseCost):
         The cost function is defined as cost(x) = x^2 + 42, where x is the
         parameter value.
 
-        Parameters
-        ----------
-        inputs : Dict
-            The parameters for which to evaluate the cost.
-
         Returns
         -------
         float
             The calculated cost value for the given parameter.
         """
-
-        return inputs["x"] ** 2 + 42
+        return self.parameters["x"].value ** 2 + 42

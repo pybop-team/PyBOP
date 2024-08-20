@@ -4,7 +4,6 @@ from typing import Optional, Union
 import numpy as np
 
 from pybop import BaseCost, BaseLikelihood, DesignCost
-from pybop.parameters.parameter import Inputs
 
 
 class WeightedCost(BaseCost):
@@ -84,7 +83,6 @@ class WeightedCost(BaseCost):
         self,
         y: dict,
         dy: np.ndarray = None,
-        inputs: Inputs = None,
         calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
@@ -94,24 +92,18 @@ class WeightedCost(BaseCost):
         ----------
         y : dict
             The dictionary of predictions with keys designating the signals for fitting.
-
         dy : np.ndarray, optional
             The corresponding gradient with respect to the parameters for each signal.
-
-        inputs: Inputs, optional
-            The corresponding parameter values for the obtained predictions
-
-        calculate_grad: bool, optional
-            A bool condition designating whether to calculate the gradient
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
         float
             The weighted cost value.
         """
-        self.parameters.update(values=list(inputs.values()))
-
         if self._has_identical_problems:
+            inputs = self.parameters.as_dict()
             if calculate_grad:
                 y, dy = self.problem.evaluateS1(inputs)
             else:
@@ -133,11 +125,9 @@ class WeightedCost(BaseCost):
                     )
 
             if calculate_grad:
-                e[i], de[:, i] = cost.compute(
-                    y, dy=dy, inputs=inputs, calculate_grad=True
-                )
+                e[i], de[:, i] = cost.compute(y, dy=dy, calculate_grad=True)
             else:
-                e[i] = cost.compute(y, inputs=inputs)
+                e[i] = cost.compute(y)
 
         e = np.dot(e, self.weights)
         if calculate_grad:

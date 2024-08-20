@@ -4,7 +4,6 @@ import numpy as np
 
 from pybop.costs.base_cost import BaseCost
 from pybop.observers.observer import Observer
-from pybop.parameters.parameter import Inputs
 
 
 class RootMeanSquaredError(BaseCost):
@@ -26,7 +25,6 @@ class RootMeanSquaredError(BaseCost):
         self,
         y: dict,
         dy: np.ndarray = None,
-        inputs: Inputs = None,
         calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
@@ -36,15 +34,10 @@ class RootMeanSquaredError(BaseCost):
         ----------
         y : dict
             The dictionary of predictions with keys designating the signals for fitting.
-
         dy : np.ndarray, optional
             The corresponding gradient with respect to the parameters for each signal.
-
-        inputs: Inputs, optional
-            The corresponding parameter values for the obtained predictions
-
-        calculate_grad: bool, optional
-            A bool condition designating whether to calculate the gradient
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
@@ -99,7 +92,6 @@ class SumSquaredError(BaseCost):
         self,
         y: dict,
         dy: np.ndarray = None,
-        inputs: Inputs = None,
         calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
@@ -109,15 +101,10 @@ class SumSquaredError(BaseCost):
         ----------
         y : dict
             The dictionary of predictions with keys designating the signals for fitting.
-
         dy : np.ndarray, optional
             The corresponding gradient with respect to the parameters for each signal.
-
-        inputs: Inputs, optional
-            The corresponding parameter values for the obtained predictions
-
-        calculate_grad: bool, optional
-            A bool condition designating whether to calculate the gradient
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
@@ -187,7 +174,6 @@ class Minkowski(BaseCost):
         self,
         y: dict,
         dy: np.ndarray = None,
-        inputs: Inputs = None,
         calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
@@ -197,15 +183,10 @@ class Minkowski(BaseCost):
         ----------
         y : dict
             The dictionary of predictions with keys designating the signals for fitting.
-
         dy : np.ndarray, optional
             The corresponding gradient with respect to the parameters for each signal.
-
-        inputs: Inputs, optional
-            The corresponding parameter values for the obtained predictions
-
-        calculate_grad: bool, optional
-            A bool condition designating whether to calculate the gradient
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
@@ -276,7 +257,6 @@ class SumofPower(BaseCost):
         self,
         y: dict,
         dy: np.ndarray = None,
-        inputs: Inputs = None,
         calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
@@ -286,15 +266,10 @@ class SumofPower(BaseCost):
         ----------
         y : dict
             The dictionary of predictions with keys designating the signals for fitting.
-
         dy : np.ndarray, optional
             The corresponding gradient with respect to the parameters for each signal.
-
-        inputs: Inputs, optional
-            The corresponding parameter values for the obtained predictions
-
-        calculate_grad: bool, optional
-            A bool condition designating whether to calculate the gradient
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
@@ -339,7 +314,6 @@ class ObserverCost(BaseCost):
         self,
         y: dict,
         dy: np.ndarray = None,
-        inputs: Inputs = None,
         calculate_grad: bool = False,
     ) -> float:
         """
@@ -349,21 +323,17 @@ class ObserverCost(BaseCost):
         ----------
         y : dict
             The dictionary of predictions with keys designating the signals for fitting.
-
         dy : np.ndarray, optional
             The corresponding gradient with respect to the parameters for each signal.
-
-        inputs: Inputs, optional
-            The corresponding parameter values for the obtained predictions
-
-        calculate_grad: bool, optional
-            A bool condition designating whether to calculate the gradient
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
         float
             The observer cost (negative of the log likelihood).
         """
+        inputs = self.parameters.as_dict()
         log_likelihood = self._observer.log_likelihood(
             self._target, self._observer.time_data, inputs
         )

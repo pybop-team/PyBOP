@@ -84,7 +84,6 @@ class GravimetricEnergyDensity(DesignCost):
         self,
         y: dict,
         dy: np.ndarray = None,
-        inputs: Inputs = None,
         calculate_grad: bool = False,
     ) -> float:
         """
@@ -94,16 +93,11 @@ class GravimetricEnergyDensity(DesignCost):
         ----------
         y : dict
             The dictionary of predictions with keys designating the signals for fitting.
-
         dy : np.ndarray, optional
             The corresponding gradient with respect to the parameters for each signal.
             Note: not used in design optimisation classes.
-
-        inputs: Inputs, optional
-            The corresponding parameter values for the obtained predictions
-
-        calculate_grad: bool, optional
-            A bool condition designating whether to calculate the gradient
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
@@ -138,7 +132,6 @@ class VolumetricEnergyDensity(DesignCost):
         self,
         y: dict,
         dy: np.ndarray = None,
-        inputs: Inputs = None,
         calculate_grad: bool = False,
     ) -> float:
         """
@@ -148,16 +141,11 @@ class VolumetricEnergyDensity(DesignCost):
         ----------
         y : dict
             The dictionary of predictions with keys designating the signals for fitting.
-
         dy : np.ndarray, optional
             The corresponding gradient with respect to the parameters for each signal.
             Note: not used in design optimisation classes.
-
-        inputs: Inputs, optional
-            The corresponding parameter values for the obtained predictions
-
-        calculate_grad: bool, optional
-            A bool condition designating whether to calculate the gradient
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------

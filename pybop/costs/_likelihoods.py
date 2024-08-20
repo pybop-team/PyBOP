@@ -3,7 +3,7 @@ from typing import Union
 import numpy as np
 
 from pybop.costs.base_cost import BaseCost
-from pybop.parameters.parameter import Inputs, Parameter, Parameters
+from pybop.parameters.parameter import Parameter, Parameters
 from pybop.parameters.priors import Uniform
 from pybop.problems.base_problem import BaseProblem
 
@@ -43,7 +43,6 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         self,
         y: dict,
         dy: np.ndarray = None,
-        inputs: Inputs = None,
         calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
@@ -165,19 +164,12 @@ class GaussianLogLikelihood(BaseLikelihood):
         self,
         y: dict,
         dy: np.ndarray = None,
-        inputs: Inputs = None,
         calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
         Compute the Gaussian log-likelihood for the given parameters.
 
-        This method only computes the likelihood, without calling the problem.evaluateS1.
-
-        Parameters
-        ----------
-        inputs : Inputs
-            The parameters for which to evaluate the log-likelihood, including the `n_outputs`
-            standard deviations of the Gaussian distributions.
+        This method only computes the likelihood, without calling problem.evaluate().
 
         Returns
         -------
@@ -250,7 +242,6 @@ class MAP(BaseLikelihood):
         self,
         y: dict,
         dy: np.ndarray = None,
-        inputs: Inputs = None,
         calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
@@ -260,11 +251,6 @@ class MAP(BaseLikelihood):
         likelihood, without calling the problem.evaluate(). Else, problem.evaluate()
         is called before computing the likelihood.
 
-        Parameters
-        ----------
-        inputs : Inputs
-            The parameters for which to compute the cost.
-
         Returns
         -------
         float
@@ -273,24 +259,20 @@ class MAP(BaseLikelihood):
         # Verify we have dy if calculate_grad is True
         self.verify_args(dy, calculate_grad)
 
-        log_prior = sum(
-            self.parameters[key].prior.logpdf(value) for key, value in inputs.items()
-        )
+        log_prior = sum(param.prior.logpdf(param.value) for param in self.parameters)
 
         if not np.isfinite(log_prior).any():
             return (-np.inf, -self.grad_fail) if calculate_grad else -np.inf
 
         if calculate_grad:
-            log_likelihood, dl = self.likelihood.compute(
-                y, dy, inputs, calculate_grad=True
-            )
+            log_likelihood, dl = self.likelihood.compute(y, dy, calculate_grad=True)
 
             # Compute a finite difference approximation of the gradient of the log prior
             delta = self.parameters.initial_value() * self.gradient_step
             prior_gradient = []
 
             for parameter, step_size in zip(self.problem.parameters, delta):
-                param_value = inputs[parameter.name]
+                param_value = parameter.value
 
                 log_prior_upper = parameter.prior.logpdf(param_value * (1 + step_size))
                 log_prior_lower = parameter.prior.logpdf(param_value * (1 - step_size))
@@ -305,6 +287,6 @@ class MAP(BaseLikelihood):
 
             return posterior, total_gradient
 
-        log_likelihood = self.likelihood.compute(y, inputs)
+        log_likelihood = self.likelihood.compute(y)
         posterior = log_likelihood + log_prior
         return posterior

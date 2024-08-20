@@ -65,7 +65,7 @@ class BaseCost:
     def __call__(self, inputs: Union[Inputs, list], calculate_grad: bool = False):
         """
         This method calls the forward model via problem.evaluate(inputs),
-        and computes the cost for the given output by calling self.compute(inputs).
+        and computes the cost for the given output by calling self.compute().
 
         Parameters
         ----------
@@ -98,7 +98,7 @@ class BaseCost:
                         update_capacity=self.update_capacity,
                     )
 
-            return self.compute(y, dy=dy, inputs=inputs, calculate_grad=calculate_grad)
+            return self.compute(y, dy=dy, calculate_grad=calculate_grad)
 
         except NotImplementedError as e:
             raise e
@@ -106,9 +106,7 @@ class BaseCost:
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}") from e
 
-    def compute(
-        self, y: dict, dy: ndarray, inputs: Inputs = None, calculate_grad: bool = False
-    ):
+    def compute(self, y: dict, dy: ndarray, calculate_grad: bool = False):
         """
         Compute the cost and  if `calculate_grad` is True, its gradient with
         respect to the predictions.
@@ -120,15 +118,10 @@ class BaseCost:
         ----------
         y : dict
             The dictionary of predictions with keys designating the signals for fitting.
-
         dy : np.ndarray, optional
             The corresponding gradient with respect to the parameters for each signal.
-
-        inputs: Inputs, optional
-            The corresponding parameter values for the obtained predictions
-
-        calculate_grad: bool, optional
-            A bool condition designating whether to calculate the gradient
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
