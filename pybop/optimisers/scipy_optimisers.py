@@ -154,7 +154,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 cost = 1 + 0.9**self.inf_count  # for fake finite gradient
             return cost if self.minimising else -cost
 
-        L, dl = self.cost.evaluateS1(x)
+        L, dl = self.cost(x, calculate_grad=True)
         return (L, dl) if self.minimising else (-L, -dl)
 
     def _run_optimiser(self):
