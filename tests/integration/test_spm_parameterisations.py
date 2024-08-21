@@ -35,7 +35,7 @@ class Test_SPM_Parameterisation:
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Uniform(0.4, 0.75),
-                bounds=[0.375, 0.75],
+                bounds=[0.375, 0.775],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
@@ -68,11 +68,11 @@ class Test_SPM_Parameterisation:
     @pytest.fixture(
         params=[
             pybop.SciPyDifferentialEvolution,
+            pybop.CuckooSearch,
+            pybop.NelderMead,
+            pybop.IRPropMin,
             pybop.AdamW,
             pybop.CMAES,
-            pybop.CuckooSearch,
-            pybop.IRPropMin,
-            pybop.NelderMead,
             pybop.SNES,
             pybop.XNES,
         ]
@@ -172,7 +172,7 @@ class Test_SPM_Parameterisation:
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, cost):
         # Form dataset
-        solution = self.get_data(model, 0.5)
+        solution = self.get_data(model, init_soc=0.5)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -192,6 +192,8 @@ class Test_SPM_Parameterisation:
 
         if cost in [pybop.GaussianLogLikelihoodKnownSigma]:
             return cost(problem, sigma0=self.sigma0)
+        elif cost in [pybop.GaussianLogLikelihood]:
+            return cost(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
         elif cost in [pybop.MAP]:
             return cost(
                 problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=self.sigma0
@@ -212,18 +214,19 @@ class Test_SPM_Parameterisation:
         x0 = spm_two_signal_cost.parameters.initial_value()
         combined_sigma0 = np.asarray([self.sigma0, self.sigma0])
 
+        common_args = {
+            "cost": spm_two_signal_cost,
+            "max_iterations": 250,
+            "absolute_tolerance": 1e-6,
+            "max_unchanged_iterations": 55,
+        }
+
         # Test each optimiser
-        optim = multi_optimiser(
-            cost=spm_two_signal_cost,
-            max_iterations=250,
-        )
+        optim = multi_optimiser(**common_args)
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
         if isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood):
             self.ground_truth = np.concatenate((self.ground_truth, combined_sigma0))
-
-        if issubclass(multi_optimiser, pybop.BasePintsOptimiser):
-            optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
 
         initial_cost = optim.cost(optim.parameters.initial_value())
         x, final_cost = optim.run()

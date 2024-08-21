@@ -73,14 +73,14 @@ class TestStandalone:
         # Test the Problem with a Cost
         rmse_cost = pybop.RootMeanSquaredError(problem)
         rmse_x = rmse_cost([1, 2])
-        rmse_grad_x = rmse_cost.evaluateS1([1, 2])
+        rmse_grad_x = rmse_cost([1, 2], calculate_grad=True)
 
         np.testing.assert_allclose(rmse_x, 3.05615, atol=1e-2)
         np.testing.assert_allclose(rmse_grad_x[1], [-0.54645, 0.0], atol=1e-2)
 
         # Test the sensitivities
         sums_cost = pybop.SumSquaredError(problem)
-        x = sums_cost.evaluateS1([1, 2])
+        x = sums_cost([1, 2], calculate_grad=True)
 
         np.testing.assert_allclose(x[0], 934.006734006734, atol=1e-2)
         np.testing.assert_allclose(x[1], [-334.006734, 0.0], atol=1e-2)
