@@ -151,14 +151,11 @@ class TestWeightedCost:
         )
         costs = [cost(problem) for cost in design_cost]
 
-        return [
-            pybop.WeightedCost(*costs, weights=[1.0, 0.1]),
-        ]
+        return pybop.WeightedCost(*costs, weights=[1.0, 0.1])
 
     @pytest.mark.integration
-    @pytest.mark.parametrize("cost_index", [0, 1])
-    def test_design_costs(self, weighted_design_cost, cost_index):
-        cost = weighted_design_cost[cost_index]
+    def test_design_costs(self, weighted_design_cost):
+        cost = weighted_design_cost
         optim = pybop.CuckooSearch(
             cost,
             max_iterations=15,
