@@ -17,6 +17,7 @@
 
 ## Bug Fixes
 
+- [#464](https://github.com/pybop-team/PyBOP/issues/464) - Fix order of design `parameter_set` updates and refactor `update_capacity`.
 - [#454](https://github.com/pybop-team/PyBOP/issue/454) - Fixes benchmarking suite.
 - [#421](https://github.com/pybop-team/PyBOP/issues/421) - Adds a default value for the initial SOC for design problems.
 
