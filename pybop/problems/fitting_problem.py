@@ -117,7 +117,7 @@ class FittingProblem(BaseProblem):
         Returns
         -------
         y : np.ndarray
-            The model output y(t) simulated with given inputs.
+            The simulated model output y(t) for self.eis == False, and y(ω) for self.eis == True for the given inputs.
         """
         inputs = self.parameters.verify(inputs)
         if self.eis:
@@ -153,7 +153,7 @@ class FittingProblem(BaseProblem):
         Returns
         -------
         y : np.ndarray
-            The model output y(t) simulated with given inputs.
+            The simulated model output y(ω) for the given inputs.
         """
         try:
             sol = self._model.simulateEIS(

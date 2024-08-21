@@ -15,6 +15,7 @@ model = pybop.lithium_ion.SPM(
     options={"surface form": "differential", "contact resistance": "true"},
 )
 
+# Create synthetic data for parameter inference
 sim = model.simulateEIS(
     inputs={
         "Negative electrode active material volume fraction": 0.531,
