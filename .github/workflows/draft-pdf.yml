@@ -5,7 +5,7 @@ on:
     paths:
       - joss/**
   pull_request:
-    paths: 
+    paths:
     - 'joss/**'
   workflow_dispatch:
 jobs:
