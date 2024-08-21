@@ -149,15 +149,10 @@ class TestWeightedCost:
         problem = pybop.DesignProblem(
             model, parameters, experiment=experiment, initial_state=initial_state
         )
-        costs_update_capacity = []
-        costs = []
-        for cost in design_cost:
-            costs_update_capacity.append(cost(problem, update_capacity=True))
-            costs.append(cost(problem))
+        costs = [cost(problem) for cost in design_cost]
 
         return [
             pybop.WeightedCost(*costs, weights=[1.0, 0.1]),
-            pybop.WeightedCost(*costs_update_capacity, weights=[0.1, 1.0]),
         ]
 
     @pytest.mark.integration

@@ -701,8 +701,7 @@ class BaseModel:
         Parameters
         ----------
         parameter_set : dict, optional
-            A dictionary containing the parameter values necessary for the mass
-            calculations.
+            A dictionary containing the parameter values necessary for the calculation.
 
         Raises
         ------
@@ -720,8 +719,7 @@ class BaseModel:
         Parameters
         ----------
         parameter_set : dict, optional
-            A dictionary containing the parameter values necessary for the volume
-            calculation.
+            A dictionary containing the parameter values necessary for the calculation.
 
         Raises
         ------
@@ -730,7 +728,7 @@ class BaseModel:
         """
         raise NotImplementedError
 
-    def approximate_capacity(self, inputs: Inputs):
+    def approximate_capacity(self, parameter_set: ParameterSet = None):
         """
         Calculate a new estimate for the nominal capacity based on the theoretical energy density
         and an average voltage.
@@ -739,8 +737,8 @@ class BaseModel:
 
         Parameters
         ----------
-        inputs : Inputs
-            The parameters that are the inputs of the model.
+        parameter_set : dict, optional
+            A dictionary containing the parameter values necessary for the calculation.
 
         Raises
         ------
