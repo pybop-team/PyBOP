@@ -15,6 +15,7 @@ class SymbolReplacer:
     """
     Helper class to replace all instances of one or more symbols in an expression tree
     with another symbol, as defined by the dictionary `symbol_replacement_map`
+    Originally developed by pybamm: https://github.com/pybamm-team/pybamm
 
     Parameters
     ----------

@@ -188,7 +188,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         e = np.sum(
             self._logpi
             - self.n_data * np.log(sigma)
-            - np.sum(np.real(r * np.conj(r))) / (2.0 * sigma**2.0)
+            - np.sum(np.real(r * np.conj(r)), axis=1) / (2.0 * sigma**2.0)
         )
 
         if calculate_grad:

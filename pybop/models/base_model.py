@@ -300,6 +300,7 @@ class BaseModel:
 
         This method sets up the model for EIS simulations by adding the necessary
         algebraic equations and variables to the model.
+        Originally developed by pybamm-eis: https://github.com/pybamm-team/pybamm-eis
 
         Parameters
         ----------
@@ -533,7 +534,18 @@ class BaseModel:
         return {"Impedance": np.asarray(zs) * self.z_scale}
 
     def initialise_eis_simulation(self, inputs: Optional[Inputs] = None):
-        # Set mass matrix, and solver
+        """
+        Initialise the Electrochemical Impedance Spectroscopy (EIS) simulation.
+
+        This method sets up the mass matrix and solver, converts inputs to the appropriate format,
+        extracts necessary attributes from the model, and prepares matrices for the simulation.
+
+        Parameters
+        ----------
+        inputs : dict (optional)
+            The input parameters for the simulation.
+        """
+        # Setup mass matrix, solver
         self.M = self._built_model.mass_matrix.entries
         self._solver.set_up(self._built_model, inputs=inputs)
 
@@ -561,6 +573,20 @@ class BaseModel:
         self.b[-1] = -1
 
     def calculate_impedance(self, frequency):
+        """
+        Calculate the impedance for a given frequency.
+
+        This method computes the system matrix, solves the linear system, and calculates
+        the impedance based on the solution.
+
+        Parameters
+        ----------
+            frequency (np.ndarray | list like): The frequency at which to calculate the impedance.
+
+        Returns
+        -------
+            The calculated impedance (complex np.ndarray).
+        """
         # Compute the system matrix
         A = 1.0j * 2 * np.pi * frequency * self.M - self.J
 

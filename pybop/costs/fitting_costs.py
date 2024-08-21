@@ -120,7 +120,7 @@ class SumSquaredError(BaseCost):
 
         # Calculate residuals and error
         r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
-        e = np.sum(np.sum(r**2, axis=0), axis=0)
+        e = np.sum(np.sum(np.abs(r) ** 2, axis=0), axis=0)
 
         if calculate_grad is True:
             de = 2 * np.sum(np.sum((r * dy.T), axis=2), axis=1)
