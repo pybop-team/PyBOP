@@ -164,6 +164,7 @@ class BaseProblem:
         if not isinstance(dataset, Dataset):
             raise ValueError("Dataset must be a pybop Dataset object.")
 
+        self._time_data = dataset["Time [s]"]
         self._target = {signal: dataset[signal] for signal in self.signal}
 
     @property
@@ -174,17 +175,9 @@ class BaseProblem:
     def target(self):
         return self._target
 
-    @target.setter
-    def target(self, target):
-        self._target = target
-
     @property
     def time_data(self):
         return self._time_data
-
-    @time_data.setter
-    def time_data(self, time_data):
-        self._time_data = time_data
 
     @property
     def dataset(self):
