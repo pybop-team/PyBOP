@@ -6,15 +6,15 @@ import pybop
 # This example demonstrates how to use a pybamm.FunctionalParameter to
 # optimise functional parameters using PyBOP.
 
-# Method: Define a new constant parameter for use in a functional parameter
+# Method: Define a new scalar parameter for use in a functional parameter
 # that already exists in the model, for example an exchange current density.
 
 
-# Load default parameter set
+# Load parameter set
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 
 
-# Define a new function using new parameters
+# Define a new function using pybamm parameters
 def positive_electrode_exchange_current_density(c_e, c_s_surf, c_s_max, T):
     # New parameters
     j0_ref = pybamm.Parameter(
@@ -31,7 +31,7 @@ def positive_electrode_exchange_current_density(c_e, c_s_surf, c_s_max, T):
     )
 
 
-# Give default values to the new constant parameters and pass the new function
+# Give default values to the new scalar parameters and pass the new function
 parameter_set.update(
     {
         "Positive electrode reference exchange-current density [A.m-2]": 1,
