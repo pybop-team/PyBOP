@@ -195,7 +195,9 @@ class SciPyMinimize(BaseSciPyOptimiser):
             except AttributeError:
                 cost = self.cost(intermediate_result)
                 self.log["x_best"].append(intermediate_result)
-                self.log["cost"].append((cost if self.minimising else -cost) * self._cost0)
+                self.log["cost"].append(
+                    (cost if self.minimising else -cost) * self._cost0
+                )
 
         callback = (
             base_callback
