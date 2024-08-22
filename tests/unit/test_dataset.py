@@ -13,7 +13,6 @@ class TestDataset:
     def test_dataset(self):
         # Construct and simulate model
         model = pybop.lithium_ion.SPM()
-        model.parameter_set = model.pybamm_model.default_parameter_values
         solution = model.predict(t_eval=np.linspace(0, 10, 100))
 
         # Form dataset
@@ -56,3 +55,14 @@ class TestDataset:
 
         # Test conversion of single signal to list
         assert dataset.check()
+
+        # Form frequency dataset
+        data_dictionary = {
+            "Frequency [Hz]": np.linspace(-10, 0, 10),
+            "Current [A]": np.zeros(10),
+            "Impedance": np.zeros(10),
+        }
+        frequency_dataset = pybop.Dataset(data_dictionary)
+
+        with pytest.raises(ValueError, match="Frequencies cannot be negative."):
+            frequency_dataset.check(domain="Frequency [Hz]", signal="Impedance")
