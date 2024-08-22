@@ -159,13 +159,13 @@ class Observer(BaseProblem):
         if self._dataset is not None:
             for signal in self.signal:
                 ym = self._target[signal]
-                for i, t in enumerate(self._time_data):
+                for i, t in enumerate(self._domain_data):
                     self.observe(t, ym[i])
                     ys.append(self.get_current_measure())
                 output[signal] = np.vstack(ys)
         else:
             for signal in self.signal:
-                for t in self._time_data:
+                for t in self._domain_data:
                     self.observe(t)
                     ys.append(self.get_current_measure())
                 output[signal] = np.vstack(ys)

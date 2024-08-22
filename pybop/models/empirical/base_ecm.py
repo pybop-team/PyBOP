@@ -45,6 +45,7 @@ class ECircuitModel(BaseModel):
         var_pts=None,
         spatial_methods=None,
         solver=None,
+        eis=False,
         **model_kwargs,
     ):
         model_options = dict(build=False)
@@ -64,7 +65,7 @@ class ECircuitModel(BaseModel):
                 print("Setting open-circuit voltage to default function")
                 parameter_set["Open-circuit voltage [V]"] = default_ocp
 
-        super().__init__(name=name, parameter_set=parameter_set)
+        super().__init__(name=name, parameter_set=parameter_set, eis=eis)
         self.pybamm_model = pybamm_model
         self._unprocessed_model = self.pybamm_model
 

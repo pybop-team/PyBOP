@@ -38,8 +38,12 @@ class Thevenin(ECircuitModel):
     def __init__(
         self,
         name="Equivalent Circuit Thevenin Model",
+        eis=False,
         **model_kwargs,
     ):
         super().__init__(
-            pybamm_model=pybamm_equivalent_circuit.Thevenin, name=name, **model_kwargs
+            pybamm_model=pybamm_equivalent_circuit.Thevenin,
+            name=name,
+            eis=eis,
+            **model_kwargs,
         )
