@@ -63,15 +63,24 @@ class BaseProblem:
         self.parameters.reset_initial_value()
 
         self._model = model
+        self.eis = False
+        self.domain = "Time [s]"
         self.check_model = check_model
         self.signal = signal or ["Voltage [V]"]
-        self.additional_variables = additional_variables or []
         self.set_initial_state(initial_state)
         self._dataset = None
-        self._time_data = None
+        self._domain_data = None
         self._target = None
         self.verbose = False
         self.failure_output = np.asarray([np.inf])
+        if isinstance(self._model, BaseModel):
+            self.eis = self.model.eis
+            self.domain = "Frequency [Hz]" if self.eis else "Time [s]"
+
+        # Add domain and remove duplicates
+        self.additional_variables = additional_variables or []
+        self.additional_variables.extend([self.domain, "Current [A]"])
+        self.additional_variables = list(set(self.additional_variables))
 
         # If model.solver is IDAKLU, set output vars for improved performance
         self.output_vars = tuple(self.signal + self.additional_variables)
@@ -106,7 +115,7 @@ class BaseProblem:
     def n_outputs(self):
         return len(self.signal)
 
-    def evaluate(self, inputs: Inputs):
+    def evaluate(self, inputs: Inputs, eis=False):
         """
         Evaluate the model with the given parameters and return the signal.
 
@@ -179,12 +188,12 @@ class BaseProblem:
         self._target = target
 
     @property
-    def time_data(self):
-        return self._time_data
+    def domain_data(self):
+        return self._domain_data
 
-    @time_data.setter
-    def time_data(self, time_data):
-        self._time_data = time_data
+    @domain_data.setter
+    def domain_data(self, domain_data):
+        self._domain_data = domain_data
 
     @property
     def dataset(self):

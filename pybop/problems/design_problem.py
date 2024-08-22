@@ -42,11 +42,6 @@ class DesignProblem(BaseProblem):
         additional_variables: Optional[list[str]] = None,
         initial_state: Optional[dict] = None,
     ):
-        # Add time and current and remove duplicates
-        additional_variables = additional_variables or []
-        additional_variables.extend(["Time [s]", "Current [A]"])
-        additional_variables = list(set(additional_variables))
-
         super().__init__(
             parameters, model, check_model, signal, additional_variables, initial_state
         )
@@ -54,7 +49,7 @@ class DesignProblem(BaseProblem):
 
         # Add an example dataset for plotting comparison
         sol = self.evaluate(self.parameters.as_dict("initial"))
-        self._time_data = sol["Time [s]"]
+        self._domain_data = sol["Time [s]"]
         self._target = {key: sol[key] for key in self.signal}
         self._dataset = None
         self.warning_patterns = [
@@ -89,7 +84,7 @@ class DesignProblem(BaseProblem):
 
         self.initial_state = initial_state
 
-    def evaluate(self, inputs: Inputs, update_capacity=False):
+    def evaluate(self, inputs: Inputs, eis=False, update_capacity=False):
         """
         Evaluate the model with the given parameters and return the signal.
 

@@ -193,7 +193,7 @@ class BasePintsOptimiser(BaseOptimiser):
         if self._needs_sensitivities:
 
             def f(x):
-                L, dl = self.cost.evaluateS1(x)
+                L, dl = self.cost(x, calculate_grad=True)
                 return (L, dl) if self.minimising else (-L, -dl)
         else:
 
