@@ -99,7 +99,7 @@ class TestLogPosterior:
         assert np.allclose(posterior(x), 51.5236, atol=2e-2)
 
         # Test log posterior evaluateS1
-        p, dp = posterior.evaluateS1(x)
+        p, dp = posterior(x, calculate_grad=True)
         assert np.allclose(p, 51.5236, atol=2e-2)
         assert np.allclose(dp, 2.0, atol=2e-2)
 
@@ -118,4 +118,4 @@ class TestLogPosterior:
     def test_log_posterior_inf(self, posterior_uniform_prior):
         # Test prior np.inf
         assert not np.isfinite(posterior_uniform_prior([1]))
-        assert not np.isfinite(posterior_uniform_prior.evaluateS1([1])[0])
+        assert not np.isfinite(posterior_uniform_prior([1], calculate_grad=True)[0])

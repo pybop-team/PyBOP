@@ -1,4 +1,5 @@
 import logging
+from functools import partial
 from typing import Optional
 
 import numpy as np
@@ -271,9 +272,9 @@ class BasePintsSampler(BaseSampler):
         # Check for sensitivities from sampler and set evaluator
         if self._needs_sensitivities:
             if not self._multi_log_pdf:
-                f = f.evaluateS1
+                f = partial(f, calculate_grad=True)
             else:
-                f = [pdf.evaluateS1 for pdf in f]
+                f = [partial(pdf, calculate_grad=True) for pdf in f]
 
         if self._parallel:
             if not self._multi_log_pdf:
