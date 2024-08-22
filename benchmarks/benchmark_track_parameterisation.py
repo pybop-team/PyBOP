@@ -45,7 +45,7 @@ class BenchmarkTrackParameterisation:
         model_instance = model(parameter_set=params)
 
         # Define fitting parameters
-        parameters = [
+        parameters = pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.55, 0.03),
@@ -56,7 +56,7 @@ class BenchmarkTrackParameterisation:
                 prior=pybop.Gaussian(0.55, 0.03),
                 bounds=[0.375, 0.7],
             ),
-        ]
+        )
 
         # Generate synthetic data
         sigma = 0.003

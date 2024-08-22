@@ -19,6 +19,13 @@ class TestWeightedCost:
     @pytest.fixture
     def model(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        x = self.ground_truth
+        parameter_set.update(
+            {
+                "Negative electrode active material volume fraction": x[0],
+                "Positive electrode active material volume fraction": x[1],
+            }
+        )
         return pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
     @pytest.fixture
@@ -59,7 +66,7 @@ class TestWeightedCost:
     @pytest.fixture
     def weighted_fitting_cost(self, model, parameters, cost_class, init_soc):
         # Form dataset
-        solution = self.get_data(model, parameters, self.ground_truth, init_soc)
+        solution = self.get_data(model, init_soc)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -70,7 +77,7 @@ class TestWeightedCost:
         )
 
         # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
+        problem = pybop.FittingProblem(model, parameters, dataset)
         costs = []
         for cost in cost_class:
             if issubclass(cost, pybop.MAP):
@@ -122,7 +129,7 @@ class TestWeightedCost:
 
     @pytest.fixture
     def weighted_design_cost(self, model, design_cost):
-        init_soc = 1.0
+        initial_state = {"Initial SoC": 1.0}
         parameters = pybop.Parameters(
             pybop.Parameter(
                 "Positive electrode thickness [m]",
@@ -140,7 +147,7 @@ class TestWeightedCost:
         )
 
         problem = pybop.DesignProblem(
-            model, parameters, experiment=experiment, init_soc=init_soc
+            model, parameters, experiment=experiment, initial_state=initial_state
         )
         costs_update_capacity = []
         costs = []
@@ -171,8 +178,8 @@ class TestWeightedCost:
         for i, _ in enumerate(x):
             assert x[i] > initial_values[i]
 
-    def get_data(self, model, parameters, x, init_soc):
-        model.classify_and_update_parameters(parameters)
+    def get_data(self, model, init_soc):
+        initial_state = {"Initial SoC": init_soc}
         experiment = pybop.Experiment(
             [
                 (
@@ -181,5 +188,5 @@ class TestWeightedCost:
                 ),
             ]
         )
-        sim = model.predict(init_soc=init_soc, experiment=experiment, inputs=x)
+        sim = model.predict(initial_state=initial_state, experiment=experiment)
         return sim
