@@ -501,11 +501,7 @@ class BaseModel:
         ):
             raise ValueError("These parameter values are infeasible.")
 
-        sol = self.solver.solve(self._built_model, inputs=inputs, t_eval=t_eval)
-        if sol.termination != "final time":
-            print(f"Solver terminated due to {sol.termination}")
-
-        return sol
+        return self.solver.solve(self._built_model, inputs=inputs, t_eval=t_eval)
 
     def simulateEIS(
         self, inputs: Inputs, f_eval: list, initial_state: Optional[dict] = None
@@ -658,16 +654,12 @@ class BaseModel:
         ):
             raise ValueError("These parameter values are infeasible.")
 
-        sol = self._solver.solve(
+        return self._solver.solve(
             self._built_model,
             inputs=inputs,
             t_eval=t_eval,
             calculate_sensitivities=True,
         )
-        if sol.termination != "final time":
-            print(f"Solver terminated due to {sol.termination}")
-
-        return sol
 
     def predict(
         self,
