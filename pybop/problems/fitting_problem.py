@@ -34,10 +34,10 @@ class FittingProblem(BaseProblem):
     ---------------------
     dataset : dictionary
         The dictionary from a Dataset object containing the signal keys and values to fit the model to.
-    time_data : np.ndarray
-        The time points in the dataset.
-    n_time_data : int
-        The number of time points.
+    domain_data : np.ndarray
+        The domain points in the dataset.
+    n_domain_data : int
+        The number of domain points.
     target : np.ndarray
         The target values of the signals.
     """
@@ -52,11 +52,6 @@ class FittingProblem(BaseProblem):
         additional_variables: Optional[list[str]] = None,
         initial_state: Optional[dict] = None,
     ):
-        # Add time and remove duplicates
-        additional_variables = additional_variables or []
-        additional_variables.extend(["Time [s]"])
-        additional_variables = list(set(additional_variables))
-
         super().__init__(
             parameters, model, check_model, signal, additional_variables, initial_state
         )
@@ -64,14 +59,14 @@ class FittingProblem(BaseProblem):
         self._n_parameters = len(self.parameters)
 
         # Check that the dataset contains necessary variables
-        dataset.check([*self.signal, "Current function [A]"])
+        dataset.check(domain=self.domain, signal=[*self.signal, "Current function [A]"])
 
-        # Unpack time and target data
-        self._time_data = self._dataset["Time [s]"]
-        self.n_time_data = len(self._time_data)
+        # Unpack domain and target data
+        self._domain_data = self._dataset[self.domain]
+        self.n_data = len(self._domain_data)
         self.set_target(dataset)
 
-        if model is not None:
+        if self._model is not None:
             # Build the model from scratch
             if self._model.built_model is not None:
                 self._model.clear()
@@ -107,6 +102,44 @@ class FittingProblem(BaseProblem):
         self.initial_state = initial_state
 
     def evaluate(
+        self,
+        inputs: Inputs,
+        update_capacity=False,
+    ) -> dict[str, np.ndarray[np.float64]]:
+        """
+        Evaluate the model with the given parameters and return the signal.
+
+        Parameters
+        ----------
+        inputs : Inputs
+            Parameters for evaluation of the model.
+
+        Returns
+        -------
+        y : np.ndarray
+            The simulated model output y(t) for self.eis == False, and y(ω) for self.eis == True for the given inputs.
+        """
+        inputs = self.parameters.verify(inputs)
+        if self.eis:
+            return self._evaluateEIS(inputs, update_capacity=update_capacity)
+        else:
+            try:
+                sol = self._model.simulate(
+                    inputs=inputs,
+                    t_eval=self._domain_data,
+                    initial_state=self.initial_state,
+                )
+            except Exception as e:
+                if self.verbose:
+                    print(f"Simulation error: {e}")
+                return {signal: self.failure_output for signal in self.signal}
+
+            return {
+                signal: sol[signal].data
+                for signal in (self.signal + self.additional_variables)
+            }
+
+    def _evaluateEIS(
         self, inputs: Inputs, update_capacity=False
     ) -> dict[str, np.ndarray[np.float64]]:
         """
@@ -120,23 +153,20 @@ class FittingProblem(BaseProblem):
         Returns
         -------
         y : np.ndarray
-            The model output y(t) simulated with given inputs.
+            The simulated model output y(ω) for the given inputs.
         """
-        inputs = self.parameters.verify(inputs)
-
         try:
-            sol = self._model.simulate(
-                inputs=inputs, t_eval=self._time_data, initial_state=self.initial_state
+            sol = self._model.simulateEIS(
+                inputs=inputs,
+                f_eval=self._domain_data,
+                initial_state=self.initial_state,
             )
         except Exception as e:
             if self.verbose:
                 print(f"Simulation error: {e}")
             return {signal: self.failure_output for signal in self.signal}
 
-        return {
-            signal: sol[signal].data
-            for signal in (self.signal + self.additional_variables)
-        }
+        return sol
 
     def evaluateS1(self, inputs: Inputs):
         """
@@ -158,7 +188,9 @@ class FittingProblem(BaseProblem):
 
         try:
             sol = self._model.simulateS1(
-                inputs=inputs, t_eval=self._time_data, initial_state=self.initial_state
+                inputs=inputs,
+                t_eval=self._domain_data,
+                initial_state=self.initial_state,
             )
         except Exception as e:
             print(f"Error: {e}")
@@ -186,4 +218,4 @@ class FittingProblem(BaseProblem):
                 axis=-1,
             )
 
-        return (y, np.asarray(dy))
+        return y, np.asarray(dy)

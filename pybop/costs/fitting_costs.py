@@ -54,7 +54,7 @@ class RootMeanSquaredError(BaseCost):
 
         # Calculate residuals and error
         r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
-        e = np.sqrt(np.mean(r**2, axis=1))
+        e = np.sqrt(np.mean(np.abs(r) ** 2, axis=1))
 
         if calculate_grad:
             de = np.mean((r * dy.T), axis=2) / (e + np.finfo(float).eps)
@@ -120,7 +120,7 @@ class SumSquaredError(BaseCost):
 
         # Calculate residuals and error
         r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
-        e = np.sum(np.sum(r**2, axis=0), axis=0)
+        e = np.sum(np.sum(np.abs(r) ** 2, axis=0), axis=0)
 
         if calculate_grad is True:
             de = 2 * np.sum(np.sum((r * dy.T), axis=2), axis=1)
@@ -335,6 +335,6 @@ class ObserverCost(BaseCost):
         """
         inputs = self.parameters.as_dict()
         log_likelihood = self._observer.log_likelihood(
-            self._target, self._observer.time_data, inputs
+            self._target, self._observer.domain_data, inputs
         )
         return -log_likelihood

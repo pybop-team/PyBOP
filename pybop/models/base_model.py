@@ -5,8 +5,10 @@ from typing import Optional, Union
 import casadi
 import numpy as np
 import pybamm
+from scipy.sparse import csc_matrix
+from scipy.sparse.linalg import spsolve
 
-from pybop import Dataset, Experiment, Parameters, ParameterSet
+from pybop import Dataset, Experiment, Parameters, ParameterSet, SymbolReplacer
 from pybop.parameters.parameter import Inputs
 
 
@@ -65,7 +67,10 @@ class BaseModel:
     """
 
     def __init__(
-        self, name: str = "Base Model", parameter_set: Optional[ParameterSet] = None
+        self,
+        name: str = "Base Model",
+        parameter_set: Optional[ParameterSet] = None,
+        eis=False,
     ):
         """
         Initialise the BaseModel with an optional name and a parameter set.
@@ -91,6 +96,7 @@ class BaseModel:
             (default: True).
         """
         self.name = name
+        self.eis = eis
         if parameter_set is None:
             self._parameter_set = None
         elif isinstance(parameter_set, dict):
@@ -144,20 +150,26 @@ class BaseModel:
             # Clear the model if rebuild required (currently if any initial state)
             self.set_initial_state(initial_state, inputs=inputs)
 
-        if dataset is not None:
+        if not self.pybamm_model._built:  # noqa: SLF001
+            self.pybamm_model.build_model()
+
+        if self.eis:
+            self.set_up_for_eis(self.pybamm_model)
+            self._parameter_set["Current function [A]"] = 0
+
+            V_scale = getattr(self.pybamm_model.variables["Voltage [V]"], "scale", 1)
+            I_scale = getattr(self.pybamm_model.variables["Current [A]"], "scale", 1)
+            self.z_scale = self._parameter_set.evaluate(V_scale / I_scale)
+
+        if dataset is not None and not self.eis:
             self.set_current_function(dataset)
 
         if self._built_model:
             return
-
         elif self.pybamm_model.is_discretised:
             self._model_with_set_params = self.pybamm_model
             self._built_model = self.pybamm_model
-
         else:
-            if not self.pybamm_model._built:  # noqa: SLF001
-                self.pybamm_model.build_model()
-
             self.set_parameters()
             self._mesh = pybamm.Mesh(self.geometry, self.submesh_types, self.var_pts)
             self._disc = pybamm.Discretisation(
@@ -281,6 +293,55 @@ class BaseModel:
         )
         self._parameter_set.process_geometry(self._geometry)
         self.pybamm_model = self._model_with_set_params
+
+    def set_up_for_eis(self, model):
+        """
+        Set up the model for electrochemical impedance spectroscopy (EIS) simulations.
+
+        This method sets up the model for EIS simulations by adding the necessary
+        algebraic equations and variables to the model.
+        Originally developed by pybamm-eis: https://github.com/pybamm-team/pybamm-eis
+
+        Parameters
+        ----------
+        model : pybamm.Model
+            The PyBaMM model to be used for EIS simulations.
+        """
+        V_cell = pybamm.Variable("Voltage variable [V]")
+        model.variables["Voltage variable [V]"] = V_cell
+        V = model.variables["Voltage [V]"]
+
+        # Add algebraic equation for the voltage
+        model.algebraic[V_cell] = V_cell - V
+        model.initial_conditions[V_cell] = model.param.ocv_init
+
+        # Create the FunctionControl submodel and extract variables
+        external_circuit_variables = pybamm.external_circuit.FunctionControl(
+            model.param, None, model.options, control="algebraic"
+        ).get_fundamental_variables()
+
+        # Perform the replacement
+        symbol_replacement_map = {
+            model.variables[name]: variable
+            for name, variable in external_circuit_variables.items()
+        }
+
+        # Don't replace initial conditions, as these should not contain
+        # Variable objects
+        replacer = SymbolReplacer(
+            symbol_replacement_map, process_initial_conditions=False
+        )
+        replacer.process_model(model, inplace=True)
+
+        # Add an algebraic equation for the current density variable
+        # External circuit submodels are always equations on the current
+        I_cell = model.variables["Current variable [A]"]
+        I = model.variables["Current [A]"]
+        I_applied = pybamm.FunctionParameter(
+            "Current function [A]", {"Time [s]": pybamm.t}
+        )
+        model.algebraic[I_cell] = I - I_applied
+        model.initial_conditions[I_cell] = 0
 
     def clear(self):
         """
@@ -430,6 +491,110 @@ class BaseModel:
             raise ValueError("These parameter values are infeasible.")
 
         return self.solver.solve(self._built_model, inputs=inputs, t_eval=t_eval)
+
+    def simulateEIS(
+        self, inputs: Inputs, f_eval: list, initial_state: Optional[dict] = None
+    ) -> dict[str, np.ndarray]:
+        """
+        Compute the forward model simulation with electrochemical impedance spectroscopy
+        and return the result.
+
+        Parameters
+        ----------
+        inputs : dict or array-like
+            The input parameters for the simulation. If array-like, it will be
+            converted to a dictionary using the model's fit keys.
+        f_eval : array-like
+            An array of frequency points at which to evaluate the solution.
+
+        Returns
+        -------
+        array-like
+            The simulation result corresponding to the specified signal.
+
+        Raises
+        ------
+        ValueError
+            If the model has not been built before simulation.
+        """
+        inputs = self.parameters.verify(inputs)
+
+        # Build or rebuild if required
+        self.build(inputs=inputs, initial_state=initial_state)
+
+        if not self.check_params(
+            inputs=inputs,
+            allow_infeasible_solutions=self.allow_infeasible_solutions,
+        ):
+            raise ValueError("These parameter values are infeasible.")
+
+        self.initialise_eis_simulation(inputs)
+        zs = [self.calculate_impedance(frequency) for frequency in f_eval]
+
+        return {"Impedance": np.asarray(zs) * self.z_scale}
+
+    def initialise_eis_simulation(self, inputs: Optional[Inputs] = None):
+        """
+        Initialise the Electrochemical Impedance Spectroscopy (EIS) simulation.
+
+        This method sets up the mass matrix and solver, converts inputs to the appropriate format,
+        extracts necessary attributes from the model, and prepares matrices for the simulation.
+
+        Parameters
+        ----------
+        inputs : dict (optional)
+            The input parameters for the simulation.
+        """
+        # Setup mass matrix, solver
+        self.M = self._built_model.mass_matrix.entries
+        self._solver.set_up(self._built_model, inputs=inputs)
+
+        # Convert inputs to casadi format if needed
+        casadi_inputs = (
+            casadi.vertcat(*inputs.values())
+            if inputs is not None and self._built_model.convert_to_format == "casadi"
+            else inputs or []
+        )
+
+        # Extract necessary attributes from the model
+        self.y0 = self._built_model.concatenated_initial_conditions.evaluate(
+            0, inputs=inputs
+        )
+        self.J = self._built_model.jac_rhs_algebraic_eval(
+            0, self.y0, casadi_inputs
+        ).sparse()
+
+        # Convert to Compressed Sparse Column format
+        self.M = csc_matrix(self.M)
+        self.J = csc_matrix(self.J)
+
+        # Add forcing to the RHS on the current density
+        self.b = np.zeros(self.y0.shape)
+        self.b[-1] = -1
+
+    def calculate_impedance(self, frequency):
+        """
+        Calculate the impedance for a given frequency.
+
+        This method computes the system matrix, solves the linear system, and calculates
+        the impedance based on the solution.
+
+        Parameters
+        ----------
+            frequency (np.ndarray | list like): The frequency at which to calculate the impedance.
+
+        Returns
+        -------
+            The calculated impedance (complex np.ndarray).
+        """
+        # Compute the system matrix
+        A = 1.0j * 2 * np.pi * frequency * self.M - self.J
+
+        # Solve the system
+        x = spsolve(A, self.b)
+
+        # Calculate the impedance
+        return -x[-2] / x[-1]
 
     def simulateS1(
         self, inputs: Inputs, t_eval: np.array, initial_state: Optional[dict] = None
@@ -658,7 +823,7 @@ class BaseModel:
         """
         model_class = type(self)
         if self.pybamm_model is None:
-            model_args = {"parameter_set": self.parameter_set.copy()}
+            model_args = {"parameter_set": self._parameter_set.copy()}
         else:
             model_args = {
                 "options": self._unprocessed_model.options,
@@ -668,6 +833,7 @@ class BaseModel:
                 "var_pts": self.pybamm_model.default_var_pts.copy(),
                 "spatial_methods": self.pybamm_model.default_spatial_methods.copy(),
                 "solver": self.pybamm_model.default_solver.copy(),
+                "eis": copy.copy(self.eis),
             }
 
         return model_class(**model_args)
