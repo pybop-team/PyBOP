@@ -114,6 +114,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         optimiser_options = dict(method="Nelder-Mead", jac=False)
         optimiser_options.update(**optimiser_kwargs)
         super().__init__(cost, **optimiser_options)
+        self._cost0 = 1.0
 
     def _set_up_optimiser(self):
         """
@@ -194,7 +195,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
             except AttributeError:
                 cost = self.cost(intermediate_result)
                 self.log["x_best"].append(intermediate_result)
-                self.log["cost"].append(cost if self.minimising else -cost)
+                self.log["cost"].append((cost if self.minimising else -cost) * self._cost0)
 
         callback = (
             base_callback
