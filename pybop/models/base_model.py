@@ -503,7 +503,7 @@ class BaseModel:
 
         sol = self.solver.solve(self._built_model, inputs=inputs, t_eval=t_eval)
         if sol.termination != "final time":
-            print("Solver terminated due to {sol.termination}")
+            print(f"Solver terminated due to {sol.termination}")
 
         return sol
 
@@ -665,7 +665,7 @@ class BaseModel:
             calculate_sensitivities=True,
         )
         if sol.termination != "final time":
-            print("Solver terminated due to {sol.termination}")
+            print(f"Solver terminated due to {sol.termination}")
 
         return sol
 
