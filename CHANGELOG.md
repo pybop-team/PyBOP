@@ -3,6 +3,7 @@
 ## Features
 
 - [#6](https://github.com/pybop-team/PyBOP/issues/6) - Adds Monte Carlo functionality, with methods based on Pints' algorithms. A base class is added `BaseSampler`, in addition to `PintsBaseSampler`.
+- [#405](https://github.com/pybop-team/PyBOP/pull/405) - Adds frequency-domain based EIS prediction methods via `model.simulateEIS` and updates to `problem.evaluate` with examples and tests.
 - [#460](https://github.com/pybop-team/PyBOP/pull/460) - Notebook example files added for ECM and folder structure updated.
 - [#450](https://github.com/pybop-team/PyBOP/pull/450) - Adds support for IDAKLU with output variables, and corresponding examples, tests.
 - [#364](https://github.com/pybop-team/PyBOP/pull/364) - Adds the MultiFittingProblem class and the multi_fitting example script.

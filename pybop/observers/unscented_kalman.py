@@ -70,11 +70,11 @@ class UnscentedKalmanFilterObserver(Observer):
         )
         if dataset is not None:
             # Check that the dataset contains necessary variables
-            dataset.check([*self.signal, "Current function [A]"])
+            dataset.check(signal=[*self.signal, "Current function [A]"])
 
             self._dataset = dataset.data
-            self._time_data = self._dataset["Time [s]"]
-            self.n_time_data = len(self._time_data)
+            self._domain_data = self._dataset["Time [s]"]
+            self.n_data = len(self._domain_data)
             self._target = {signal: self._dataset[signal] for signal in self.signal}
 
         # Observer initiation

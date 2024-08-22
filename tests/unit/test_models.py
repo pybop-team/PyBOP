@@ -314,6 +314,28 @@ class TestModels:
             ExponentialDecay(n_states=-1)
 
     @pytest.mark.unit
+    def test_simulateEIS(self):
+        # Test EIS on SPM
+        model = pybop.lithium_ion.SPM(eis=True)
+
+        # Construct frequencies and solve
+        f_eval = np.linspace(100, 1000, 5)
+        sol = model.simulateEIS(inputs={}, f_eval=f_eval)
+        assert np.isfinite(sol["Impedance"]).all()
+
+        # Test infeasible parameter values
+        model.allow_infeasible_solutions = False
+        inputs = {
+            "Negative electrode active material volume fraction": 0.9,
+            "Positive electrode active material volume fraction": 0.9,
+        }
+        # Rebuild model
+        model.build(inputs=inputs)
+
+        with pytest.raises(ValueError, match="These parameter values are infeasible."):
+            model.simulateEIS(f_eval=f_eval, inputs=inputs)
+
+    @pytest.mark.unit
     def test_basemodel(self):
         base = pybop.BaseModel()
         x = np.array([1, 2, 3])
