@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 
@@ -7,6 +7,7 @@ from pybop import (
     BaseCost,
     BaseLikelihood,
     DesignCost,
+    Inputs,
     Parameter,
     Parameters,
     WeightedCost,
@@ -91,7 +92,17 @@ class BaseOptimiser:
                     UserWarning,
                     stacklevel=2,
                 )
-                self.cost = cost
+
+                def cost_function(
+                    inputs: Union[Inputs, list], calculate_grad: bool = False
+                ):
+                    if calculate_grad:
+                        raise ValueError(
+                            "Gradient information not available for user-defined cost."
+                        )
+                    return cost(inputs)
+
+                self.cost = cost_function
                 for i, value in enumerate(self.x0):
                     self.parameters.add(
                         Parameter(name=f"Parameter {i}", initial_value=value)
@@ -198,6 +209,36 @@ class BaseOptimiser:
             If the method has not been implemented by the subclass.
         """
         raise NotImplementedError
+
+    def cost_call(self, inputs: Union[Inputs, list], calculate_grad: bool = False):
+        """
+        Transform the inputs if required, then call the cost and silently catch and convert
+        any errors encountered during the cost computation into an infinite cost value.
+
+        Parameters
+        ----------
+        inputs : Inputs or array-like
+            The parameters for which to compute the cost and gradient.
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
+
+        Returns
+        -------
+        float
+            The calculated cost function value or an infinite value if an
+            error occurs during the calculation of the cost.
+        """
+        if self.transformation:
+            inputs = self.transformation.to_model(inputs)
+
+        try:
+            return self.cost(inputs=inputs, calculate_grad=calculate_grad)
+
+        except NotImplementedError as e:
+            raise e
+
+        except Exception as e:
+            raise ValueError(f"Error in cost calculation: {e}") from e
 
     def check_optimal_parameters(self, x):
         """

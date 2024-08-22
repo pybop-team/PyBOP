@@ -193,12 +193,12 @@ class BasePintsOptimiser(BaseOptimiser):
         if self._needs_sensitivities:
 
             def f(x):
-                L, dl = self.cost(x, calculate_grad=True)
+                L, dl = self.cost_call(x, calculate_grad=True)
                 return (L, dl) if self.minimising else (-L, -dl)
         else:
 
             def f(x):
-                return self.cost(x) if self.minimising else -self.cost(x)
+                return self.cost_call(x) if self.minimising else -self.cost_call(x)
 
         # Create evaluator object
         if self._parallel:

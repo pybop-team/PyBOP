@@ -72,7 +72,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
 
         return Result(
             x=result.x,
-            final_cost=self.cost(result.x),
+            final_cost=self.cost_call(result.x),
             n_iterations=result.nit,
             scipy_result=result,
         )
@@ -148,13 +148,13 @@ class SciPyMinimize(BaseSciPyOptimiser):
         self.log["x"].append([x])
 
         if not self._options["jac"]:
-            cost = self.cost(x) / self._cost0
+            cost = self.cost_call(x) / self._cost0
             if np.isinf(cost):
                 self.inf_count += 1
                 cost = 1 + 0.9**self.inf_count  # for fake finite gradient
             return cost if self.minimising else -cost
 
-        L, dl = self.cost(x, calculate_grad=True)
+        L, dl = self.cost_call(x, calculate_grad=True)
         return (L, dl) if self.minimising else (-L, -dl)
 
     def _run_optimiser(self):
@@ -176,11 +176,11 @@ class SciPyMinimize(BaseSciPyOptimiser):
             )
 
         # Compute the absolute initial cost and resample if required
-        self._cost0 = np.abs(self.cost(self.x0))
+        self._cost0 = np.abs(self.cost_call(self.x0))
         if np.isinf(self._cost0):
             for _i in range(1, self.num_resamples):
                 self.x0 = self.parameters.rvs()
-                self._cost0 = np.abs(self.cost(self.x0))
+                self._cost0 = np.abs(self.cost_call(self.x0))
                 if not np.isinf(self._cost0):
                     break
             if np.isinf(self._cost0):
@@ -307,7 +307,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
         def cost_wrapper(x):
             self.log["x"].append([x])
-            return self.cost(x) if self.minimising else -self.cost(x)
+            return self.cost_call(x) if self.minimising else -self.cost_call(x)
 
         return differential_evolution(
             cost_wrapper,

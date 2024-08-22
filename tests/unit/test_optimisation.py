@@ -304,6 +304,18 @@ class TestOptimisation:
             pybop.CMAES(cost=cost)
 
     @pytest.mark.unit
+    def test_error_in_cost_calculation(self):
+        class RaiseErrorCost(pybop.BaseCost):
+            def __call__(self, inputs=None, calculate_grad: bool = False):
+                raise ValueError("Error test.")
+
+        cost = RaiseErrorCost()
+        cost.parameters = pybop.Parameters(pybop.Parameter("p", initial_value=1.0))
+        optim = pybop.Optimisation(cost)
+        with pytest.raises(ValueError, match="Error in cost calculation: Error test."):
+            optim.cost_call(1.0)
+
+    @pytest.mark.unit
     def test_invalid_cost(self):
         # Test without valid cost
         with pytest.raises(
