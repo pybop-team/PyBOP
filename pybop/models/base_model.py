@@ -401,6 +401,9 @@ class BaseModel:
                 for signal in (self.signal + self.additional_variables)
             }
 
+            if sol.termination != "final time":
+                print("Solver terminated due to {sol.termination}")
+
             return y
 
     def simulateS1(self, inputs: Inputs, t_eval: np.array):
