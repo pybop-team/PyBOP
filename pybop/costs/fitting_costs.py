@@ -43,7 +43,6 @@ class RootMeanSquaredError(BaseCost):
         -------
         float
             The root mean square error.
-
         """
         # Verify we have dy if calculate_grad is True
         self.verify_args(dy, calculate_grad)
@@ -76,12 +75,6 @@ class SumSquaredError(BaseCost):
     predicted and observed values.
 
     Inherits all parameters and attributes from ``BaseCost``.
-
-    Additional Attributes
-    ---------------------
-    _de : float
-        The gradient of the cost function to use if an error occurs during
-        evaluation. Defaults to 1.0.
 
     """
 
@@ -152,8 +145,8 @@ class Minkowski(BaseCost):
     optimisation problems, allowing for flexible distance-based optimisation
     across various problem domains.
 
-    Attributes
-    ----------
+    Additional Attributes
+    ---------------------
     p : float, optional
         The order of the Minkowski distance.
     """
@@ -240,9 +233,10 @@ class SumofPower(BaseCost):
 
     [1]: https://mathworld.wolfram.com/PowerSum.html
 
-    Attributes:
-        p : float, optional
-            The power order for Sum of Power.
+    Additional Attributes
+    ---------------------
+    p : float, optional
+        The power order for Sum of Power.
     """
 
     def __init__(self, problem, p: float = 2.0):

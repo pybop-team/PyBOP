@@ -21,13 +21,16 @@ class BaseCost:
     problem : object
         A problem instance containing the data and functions necessary for
         evaluating the cost function.
-    _target : array-like
+    target : array-like
         An array containing the target data to fit.
     n_outputs : int
         The number of outputs in the model.
-    _has_separable_problem : bool
+    has_separable_problem : bool
         If True, the problem is separable from the cost function and will be
         evaluated in advance of the call to self.compute() (default: False).
+    _de : float
+        The gradient of the cost function to use if an error occurs during
+        evaluation. Defaults to 1.0.
     """
 
     def __init__(self, problem: Optional[BaseProblem] = None):
@@ -71,6 +74,8 @@ class BaseCost:
         ----------
         inputs : Inputs or array-like
             The parameters for which to compute the cost and gradient.
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
