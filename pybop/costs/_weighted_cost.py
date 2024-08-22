@@ -1,10 +1,9 @@
 import warnings
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 
 from pybop import BaseCost, BaseLikelihood, DesignCost
-from pybop.parameters.parameter import Inputs
 
 
 class WeightedCost(BaseCost):
@@ -16,18 +15,18 @@ class WeightedCost(BaseCost):
 
     Attributes
     ---------------------
-    costs : list[pybop.BaseCost]
-        A list of PyBOP cost objects.
+    costs : pybop.BaseCost
+        The individual PyBOP cost objects.
     weights : list[float]
         A list of values with which to weight the cost values.
-    _has_identical_problems : bool
+    has_identical_problems : bool
         If True, the shared problem will be evaluated once and saved before the
-        self._evaluate() method of each cost is called (default: False).
-    _has_separable_problem: bool
-        If True, the shared problem is seperable from the cost function and
-        will be evaluated for each problem before the cost evaluation is
-        called (default: False). This attribute is used for sub-cost objects;
-        however, the top-level WeightedCost attribute is not used (i.e. == False).
+        self.compute() method of each cost is called (default: False).
+    has_separable_problem: bool
+        This attribute must be set to False for WeightedCost objects. If the
+        corresponding attribute of an individual cost is True, the problem is
+        separable from the cost function and will be evaluated before the
+        individual cost evaluation is called.
     """
 
     def __init__(self, *costs, weights: Optional[list[float]] = None):
@@ -54,7 +53,7 @@ class WeightedCost(BaseCost):
 
         # Check if all costs depend on the same problem
         self._has_identical_problems = all(
-            cost._has_separable_problem and cost.problem is self.costs[0].problem
+            cost.has_separable_problem and cost.problem is self.costs[0].problem
             for cost in self.costs
         )
 
@@ -80,58 +79,35 @@ class WeightedCost(BaseCost):
         # Weighted costs do not use this functionality
         self._has_separable_problem = False
 
-    def _evaluate(self, inputs: Inputs):
+    def compute(
+        self,
+        y: dict,
+        dy: np.ndarray = None,
+        calculate_grad: bool = False,
+    ) -> Union[float, tuple[float, np.ndarray]]:
         """
-        Calculate the weighted cost for a given set of parameters.
+        Computes the cost function for the given predictions.
 
         Parameters
         ----------
-        inputs : Inputs
-            The parameters for which to compute the cost.
+        y : dict
+            The dictionary of predictions with keys designating the signals for fitting.
+        dy : np.ndarray, optional
+            The corresponding gradient with respect to the parameters for each signal.
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
         float
             The weighted cost value.
         """
-        self.parameters.update(values=list(inputs.values()))
-
         if self._has_identical_problems:
-            self.y = self.problem.evaluate(inputs, update_capacity=self.update_capacity)
-
-        e = np.empty_like(self.costs)
-
-        for i, cost in enumerate(self.costs):
-            inputs = cost.parameters.as_dict()
-            if self._has_identical_problems:
-                cost.y = self.y
-            elif cost._has_separable_problem:
-                cost.y = cost.problem.evaluate(
-                    inputs, update_capacity=self.update_capacity
-                )
-            e[i] = cost._evaluate(inputs)
-
-        return np.dot(e, self.weights)
-
-    def _evaluateS1(self, inputs: Inputs):
-        """
-        Compute the weighted cost and its gradient with respect to the parameters.
-
-        Parameters
-        ----------
-        inputs : Inputs
-            The parameters for which to compute the cost and gradient.
-
-        Returns
-        -------
-        tuple
-            A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `x`.
-        """
-        self.parameters.update(values=list(inputs.values()))
-
-        if self._has_identical_problems:
-            self.y, self.dy = self.problem.evaluateS1(inputs)
+            inputs = self.parameters.as_dict()
+            if calculate_grad:
+                y, dy = self.problem.evaluateS1(inputs)
+            else:
+                y = self.problem.evaluate(inputs, update_capacity=self.update_capacity)
 
         e = np.empty_like(self.costs)
         de = np.empty((len(self.parameters), len(self.costs)))
@@ -139,15 +115,26 @@ class WeightedCost(BaseCost):
         for i, cost in enumerate(self.costs):
             inputs = cost.parameters.as_dict()
             if self._has_identical_problems:
-                cost.y, cost.dy = (self.y, self.dy)
-            elif cost._has_separable_problem:
-                cost.y, cost.dy = cost.problem.evaluateS1(inputs)
-            e[i], de[:, i] = cost._evaluateS1(inputs)
+                y, dy = (y, dy)
+            elif cost.has_separable_problem:
+                if calculate_grad:
+                    y, dy = cost.problem.evaluateS1(inputs)
+                else:
+                    y = cost.problem.evaluate(
+                        inputs, update_capacity=self.update_capacity
+                    )
+
+            if calculate_grad:
+                e[i], de[:, i] = cost.compute(y, dy=dy, calculate_grad=True)
+            else:
+                e[i] = cost.compute(y)
 
         e = np.dot(e, self.weights)
-        de = np.dot(de, self.weights)
+        if calculate_grad:
+            de = np.dot(de, self.weights)
+            return e, de
 
-        return e, de
+        return e
 
     @property
     def has_identical_problems(self):

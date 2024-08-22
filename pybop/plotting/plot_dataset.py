@@ -31,7 +31,7 @@ def plot_dataset(dataset, signal=None, trace_names=None, show=True, **layout_kwa
     # Get data dictionary
     if signal is None:
         signal = ["Voltage [V]"]
-    dataset.check(signal)
+    dataset.check(signal=signal)
 
     # Compile ydata and labels or legend
     y = [dataset[s] for s in signal]
