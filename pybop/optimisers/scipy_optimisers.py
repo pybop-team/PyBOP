@@ -194,7 +194,9 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 cost = self.cost(x_best)
 
             self.log["x_best"].append(x_best)
-            self.log["cost"].append((-1 if not self.minimising else 1) * cost * self._cost0)
+            self.log["cost"].append(
+                (-1 if not self.minimising else 1) * cost * self._cost0
+            )
 
         callback = (
             base_callback
