@@ -232,7 +232,7 @@ class TestModels:
 
         with pytest.raises(
             ValueError,
-            match="Cannot use sensitivies for parameters which require a model rebuild",
+            match="Cannot use sensitivities for parameters which require a model rebuild",
         ):
             model.simulateS1(t_eval=t_eval, inputs=parameters.as_dict())
 
