@@ -183,7 +183,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         self._cost0 = np.abs(self.cost_call(self.x0))
         if np.isinf(self._cost0):
             for _i in range(1, self.num_resamples):
-                self.x0 = self.parameters.rvs()
+                self.x0 = self.parameters.rvs(apply_transform=True)
                 self._cost0 = np.abs(self.cost_call(self.x0))
                 if not np.isinf(self._cost0):
                     break
