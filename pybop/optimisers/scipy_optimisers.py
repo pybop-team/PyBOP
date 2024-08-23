@@ -186,19 +186,15 @@ class SciPyMinimize(BaseSciPyOptimiser):
             a OptimizeResult or an array of parameter values, with a
             try/except ensuring both cases are handled correctly.
             """
-            try:
-                self.log["x_best"].append(intermediate_result.x)
-                self.log["cost"].append(
-                    intermediate_result.fun
-                    if self.minimising
-                    else -intermediate_result.fun
-                )
-            except AttributeError:
-                cost = self.cost(intermediate_result)
-                self.log["x_best"].append(intermediate_result)
-                self.log["cost"].append(
-                    (cost if self.minimising else -cost) * self._cost0
-                )
+            if isinstance(intermediate_result, OptimizeResult):
+                x_best = intermediate_result.x
+                cost = intermediate_result.fun
+            else:
+                x_best = intermediate_result
+                cost = self.cost(x_best)
+
+            self.log["x_best"].append(x_best)
+            self.log["cost"].append((-1 if not self.minimising else 1) * cost * self._cost0)
 
         callback = (
             base_callback
