@@ -212,7 +212,11 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 try:
                     self.x0 = self.parameters.rvs()
                 except AttributeError:
-                    warnings.warn("Parameter does not have a prior distribution. Stopping resampling.", UserWarning, stacklevel=2)
+                    warnings.warn(
+                        "Parameter does not have a prior distribution. Stopping resampling.",
+                        UserWarning,
+                        stacklevel=2,
+                    )
                     break
                 self._cost0 = np.abs(self.cost(self.x0))
                 if not np.isinf(self._cost0):
