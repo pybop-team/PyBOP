@@ -34,7 +34,9 @@ class TestTransformation:
                 "Positive electrode active material volume fraction",
                 prior=pybop.Uniform(0.4, 0.7),
                 bounds=[0.375, 0.725],
-                transformation=pybop.LogTransformation(),
+                transformation=pybop.ScaledTransformation(
+                    coefficient=1 / 0.35, intercept=-0.375
+                ),
             ),
             pybop.Parameter(
                 "Positive electrode conductivity [S.m-1]",
