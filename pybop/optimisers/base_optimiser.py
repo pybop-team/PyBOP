@@ -220,14 +220,16 @@ class BaseOptimiser:
             error occurs during the calculation of the cost.
         """
         if self._transformation:
-            inputs = self._transformation.to_model(inputs)
+            q = inputs
+            inputs = self._transformation.to_model(q)
 
         try:
             if calculate_grad:
                 cost, grad = self.cost(inputs=inputs, calculate_grad=calculate_grad)
 
-                if self._transformation:
-                    grad = np.matmul(grad, self._transformation.jacobian(cost))
+                if self._transformation and np.isfinite(cost):
+                    jacobian = self._transformation.jacobian(q)
+                    grad = np.matmul(grad, jacobian)
 
                 return cost, grad
 
