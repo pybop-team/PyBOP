@@ -74,7 +74,6 @@ class BaseOptimiser:
 
         if isinstance(cost, BaseCost):
             self.cost = cost
-            self.transformation = self.cost.transformation
             self.parameters.join(cost.parameters)
             self.set_allow_infeasible_solutions()
             if isinstance(cost, WeightedCost):
@@ -138,24 +137,26 @@ class BaseOptimiser:
         """
         Update the base optimiser options and remove them from the options dictionary.
         """
-        # Set initial values, if x0 is None, initial values are unmodified.
+        # Set up the transformation
+        self.transformation = self.parameters.construct_transformation()
+
+        # Set initial values, if x0 is None, initial values are unmodified
         self.parameters.update(initial_values=self.unset_options.pop("x0", None))
-        self.x0 = self.parameters.reset_initial_value()
+        self.x0 = self.parameters.reset_initial_value(apply_transform=True)
 
         # Set default bounds (for all or no parameters)
-        self.bounds = self.unset_options.pop("bounds", self.parameters.get_bounds())
+        self.bounds = self.unset_options.pop(
+            "bounds", self.parameters.get_bounds(apply_transform=True)
+        )
 
         # Set default initial standard deviation (for all or no parameters)
         self.sigma0 = self.unset_options.pop(
-            "sigma0", self.parameters.get_sigma0() or self.sigma0
+            "sigma0", self.parameters.get_sigma0(apply_transform=True) or self.sigma0
         )
 
         # Set other options
         self.verbose = self.unset_options.pop("verbose", self.verbose)
         self.minimising = self.unset_options.pop("minimising", self.minimising)
-        self.transformation = self.unset_options.pop(
-            "transformation", self.transformation
-        )
         if "allow_infeasible_solutions" in self.unset_options.keys():
             self.set_allow_infeasible_solutions(
                 self.unset_options.pop("allow_infeasible_solutions")
@@ -239,6 +240,36 @@ class BaseOptimiser:
 
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}") from e
+
+    def log_update(self, x=None, x_best=None, cost=None):
+        """
+        Update the log with new values.
+
+        Parameters
+        ----------
+        x : list or array-like, optional
+            Parameter values (default: None).
+        x_best : list or array-like, optional
+            Paraneter values corresponding to the best cost yet (default: None).
+        cost : float, optional
+            Cost value (default: None).
+        """
+        if x is not None:
+            if self.transformation:
+                x = list(x)
+                for i, xi in enumerate(x):
+                    x[i] = self.transformation.to_model(xi)
+            self.log["x"].append(x)
+
+        if x_best is not None:
+            if self.transformation:
+                x_best = list(x_best)
+                for i, xi in enumerate(x_best):
+                    x_best[i] = self.transformation.to_model(xi)
+            self.log["x_best"].append(x_best)
+
+        if cost is not None:
+            self.log["cost"].append(cost)
 
     def check_optimal_parameters(self, x):
         """

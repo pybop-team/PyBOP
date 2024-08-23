@@ -71,7 +71,9 @@ class BaseSciPyOptimiser(BaseOptimiser):
         result = self._run_optimiser()
 
         return Result(
-            x=result.x,
+            x=self.transformation.to_model(result.x)
+            if self.transformation
+            else result.x,
             final_cost=self.cost_call(result.x),
             n_iterations=result.nit,
             scipy_result=result,
@@ -145,7 +147,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         """
         Scale the cost function, preserving the sign convention, and eliminate nan values
         """
-        self.log["x"].append([x])
+        self.log_update(x=[x])
 
         if not self._options["jac"]:
             cost = self.cost_call(x) / self._cost0
@@ -170,9 +172,11 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
         # Add callback storing history of parameter values
         def callback(intermediate_result: OptimizeResult):
-            self.log["x_best"].append(intermediate_result.x)
-            self.log["cost"].append(
-                intermediate_result.fun if self.minimising else -intermediate_result.fun
+            self.log_update(
+                x_best=intermediate_result.x,
+                cost=intermediate_result.fun
+                if self.minimising
+                else -intermediate_result.fun,
             )
 
         # Compute the absolute initial cost and resample if required
@@ -300,13 +304,15 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
         # Add callback storing history of parameter values
         def callback(intermediate_result: OptimizeResult):
-            self.log["x_best"].append(intermediate_result.x)
-            self.log["cost"].append(
-                intermediate_result.fun if self.minimising else -intermediate_result.fun
+            self.log_update(
+                x_best=intermediate_result.x,
+                cost=intermediate_result.fun
+                if self.minimising
+                else -intermediate_result.fun,
             )
 
         def cost_wrapper(x):
-            self.log["x"].append([x])
+            self.log_update(x=[x])
             return self.cost_call(x) if self.minimising else -self.cost_call(x)
 
         return differential_evolution(

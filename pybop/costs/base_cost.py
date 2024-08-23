@@ -35,7 +35,6 @@ class BaseCost:
 
     def __init__(self, problem: Optional[BaseProblem] = None):
         self.parameters = Parameters()
-        self.transformation = None
         self.problem = problem
         self.verbose = False
         self._has_separable_problem = False
@@ -48,7 +47,6 @@ class BaseCost:
             self.parameters.join(self.problem.parameters)
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
-            self.transformation = self.parameters.construct_transformation()
             self._has_separable_problem = True
             self.grad_fail = None
             self.set_fail_gradient()
@@ -87,9 +85,7 @@ class BaseCost:
         ValueError
             If an error occurs during the calculation of the cost.
         """
-        if self.transformation:
-            p = self.transformation.to_model(inputs)
-        inputs = self.parameters.verify(p if self.transformation else inputs)
+        inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(inputs.values()))
         y, dy = None, None
 
