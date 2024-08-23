@@ -411,13 +411,6 @@ class Parameters:
         for param in self.param.values():
             if hasattr(param.prior, "sigma"):
                 if apply_transform and param.transformation is not None:
-                        np.ndarray.item(
-                            param.transformation.convert_standard_deviation(
-                                param.prior.sigma,
-                                param.get_initial_value(apply_transform=True),
-                            )
-                        )
-                    )
                     sigma0.append(
                         np.ndarray.item(
                             param.transformation.convert_standard_deviation(
