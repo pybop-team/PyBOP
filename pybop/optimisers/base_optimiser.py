@@ -62,7 +62,7 @@ class BaseOptimiser:
         self.parameters = Parameters()
         self.x0 = None
         self.bounds = None
-        self.sigma0 = 0.1
+        self.sigma0 = 0.02
         self.verbose = False
         self.log = dict(x=[], x_best=[], cost=[])
         self.minimising = True
