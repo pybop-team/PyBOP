@@ -324,8 +324,8 @@ class BasePintsOptimiser(BaseOptimiser):
 
             # Show current parameters
             x_user = self.pints_optimiser.x_guessed()
-            if self.transformation is not None:
-                x_user = self.transformation.to_model(x_user)
+            if self._transformation:
+                x_user = self._transformation.to_model(x_user)
             for p in x_user:
                 print(PintsStrFloat(p))
             print("-" * 40)
@@ -347,8 +347,8 @@ class BasePintsOptimiser(BaseOptimiser):
             f = self.pints_optimiser.f_best()
 
         # Inverse transform search parameters
-        if self.transformation is not None:
-            x = self.transformation.to_model(x)
+        if self._transformation:
+            x = self._transformation.to_model(x)
 
         return Result(
             x=x, final_cost=f if self.minimising else -f, n_iterations=self._iterations

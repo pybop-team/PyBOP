@@ -71,8 +71,8 @@ class BaseSciPyOptimiser(BaseOptimiser):
         result = self._run_optimiser()
 
         return Result(
-            x=self.transformation.to_model(result.x)
-            if self.transformation
+            x=self._transformation.to_model(result.x)
+            if self._transformation
             else result.x,
             final_cost=self.cost_call(result.x),
             n_iterations=result.nit,

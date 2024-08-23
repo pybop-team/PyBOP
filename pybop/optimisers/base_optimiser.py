@@ -66,7 +66,7 @@ class BaseOptimiser:
         self.verbose = False
         self.log = dict(x=[], x_best=[], cost=[])
         self.minimising = True
-        self.transformation = None
+        self._transformation = None
         self.physical_viability = False
         self.allow_infeasible_solutions = False
         self.default_max_iterations = 1000
@@ -91,17 +91,7 @@ class BaseOptimiser:
                     UserWarning,
                     stacklevel=2,
                 )
-
-                def cost_function(
-                    inputs: Union[Inputs, list], calculate_grad: bool = False
-                ):
-                    if calculate_grad:
-                        raise ValueError(
-                            "Gradient information not available for user-defined cost."
-                        )
-                    return cost(inputs)
-
-                self.cost = cost_function
+                self.cost = cost
                 for i, value in enumerate(self.x0):
                     self.parameters.add(
                         Parameter(name=f"Parameter {i}", initial_value=value)
@@ -138,7 +128,7 @@ class BaseOptimiser:
         Update the base optimiser options and remove them from the options dictionary.
         """
         # Set up the transformation
-        self.transformation = self.parameters.construct_transformation()
+        self._transformation = self.parameters.construct_transformation()
 
         # Set initial values, if x0 is None, initial values are unmodified
         self.parameters.update(initial_values=self.unset_options.pop("x0", None))
@@ -229,11 +219,19 @@ class BaseOptimiser:
             The calculated cost function value or an infinite value if an
             error occurs during the calculation of the cost.
         """
-        if self.transformation:
-            inputs = self.transformation.to_model(inputs)
+        if self._transformation:
+            inputs = self._transformation.to_model(inputs)
 
         try:
-            return self.cost(inputs=inputs, calculate_grad=calculate_grad)
+            if calculate_grad:
+                cost, grad = self.cost(inputs=inputs, calculate_grad=calculate_grad)
+
+                if self._transformation:
+                    grad = np.matmul(grad, self._transformation.jacobian(cost))
+
+                return cost, grad
+
+            return self.cost(inputs=inputs)
 
         except NotImplementedError as e:
             raise e
@@ -255,17 +253,17 @@ class BaseOptimiser:
             Cost value (default: None).
         """
         if x is not None:
-            if self.transformation:
+            if self._transformation:
                 x = list(x)
                 for i, xi in enumerate(x):
-                    x[i] = self.transformation.to_model(xi)
+                    x[i] = self._transformation.to_model(xi)
             self.log["x"].append(x)
 
         if x_best is not None:
-            if self.transformation:
+            if self._transformation:
                 x_best = list(x_best)
                 for i, xi in enumerate(x_best):
-                    x_best[i] = self.transformation.to_model(xi)
+                    x_best[i] = self._transformation.to_model(xi)
             self.log["x_best"].append(x_best)
 
         if cost is not None:
