@@ -1,5 +1,6 @@
-from typing import Union
 import warnings
+from typing import Union
+
 import numpy as np
 from scipy.optimize import OptimizeResult, differential_evolution, minimize
 
