@@ -66,6 +66,14 @@ class TestOptimisation:
         )
         return pybop.SumSquaredError(problem)
 
+    @pytest.mark.unit
+    def test_optimiser_without_cost_call(self, one_parameter):
+        cost = pybop.BaseCost()
+        cost.parameters = pybop.Parameters(one_parameter)
+        optim = pybop.Optimisation(cost=cost)
+        with pytest.raises(NotImplementedError):
+            optim.cost_call([0.5])
+
     @pytest.mark.parametrize(
         "optimiser, expected_name",
         [
@@ -404,6 +412,11 @@ class TestOptimisation:
 
     @pytest.mark.unit
     def test_halting(self, cost):
+        # Add a parameter transformation
+        cost.parameters[
+            "Negative electrode active material volume fraction"
+        ].transformation = pybop.IdentityTransformation()
+
         # Test max evalutions
         optim = pybop.GradientDescent(cost=cost, max_evaluations=1, verbose=True)
         x, __ = optim.run()

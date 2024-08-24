@@ -207,6 +207,17 @@ class TestParameters:
         assert parameter.bounds == [0.37, 0.7]
 
     @pytest.mark.unit
+    def test_parameters_rvs(self, parameter):
+        parameter.transformation = pybop.ScaledTransformation(
+            coefficient=0.2, intercept=-1
+        )
+        params = pybop.Parameters(parameter)
+        params.construct_transformation()
+        samples = params.rvs(n_samples=500, apply_transform=True)
+        assert (samples >= -0.125).all() and (samples <= -0.06).all()
+        parameter.transformation = None
+
+    @pytest.mark.unit
     def test_get_sigma(self, parameter):
         params = pybop.Parameters(parameter)
         assert params.get_sigma0() == [0.02]

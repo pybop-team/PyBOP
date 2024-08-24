@@ -90,7 +90,10 @@ class Parameter:
             )
 
         if apply_transform and self.transformation is not None:
-            return self.transformation.to_search(samples)
+            samples = list(samples)
+            for i, x in enumerate(samples):
+                samples[i] = float(self.transformation.to_search(x))
+            return np.asarray(samples)
 
         return samples
 
