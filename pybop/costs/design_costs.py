@@ -40,7 +40,6 @@ class GravimetricEnergyDensity(DesignCost):
 
     def __init__(self, problem):
         super().__init__(problem)
-        self._fixed_problem = False  # keep problem evaluation within compute
 
     def compute(
         self,
