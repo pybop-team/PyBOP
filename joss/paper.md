@@ -56,7 +56,7 @@ This package complements other tools in the field of lithium-ion battery modelli
 
 `PyBOP` formulates the optimisation workflow through four main classes, namely the model, problem (or observer), cost (or likelihood), and optimiser (or sampler), as shown in \autoref{fig:classes}. Each of these objects represent a base class with children classes constructing differing functionality for specialised parameterisation or optimisation workflows. For example, the model class offers children classes for differing physics-based battery models, as well as empirical models. This allows for the underlying `PyBaMM` model to be constructed and validated for the different requirements between the physics-based and empirical models. For a given set of model equations provided from `PyBaMM`, initial conditions, spatial discretisation, and numerical solver initialisation is completed. By composing `PyBaMM` models directly into `PyBOP`, the underlying model structure can be modified, and optimally constructed for the optimisation tasks. One such example of this, is the spatial rediscretisation that is performed when geometric parameters are optimised. In this situation, `PyBOP` aims to minimally reconstruct the `PyBaMM` model while maintaining the problem, cost, and optimiser objects, providing improved performance benefits to users. In the typical optimisation workflow, the classes in \autoref{fig:classes} are constructed in sequence.
 
-![The core `PyBOP` architecture, showcasing the base class interfaces. Each class provide direct mapping to a classical step in the optimisation workflow. \label{fig:classes}](PyBOP_components.drawio.png){ width=80% }
+![The core `PyBOP` architecture, showcasing the base class interfaces. Each class provide direct mapping to a classical step in the optimisation workflow. \label{fig:classes}](figures/PyBOP_components.drawio.png){ width=80% }
 
 The currently implemented subclasses for the model, problem, and cost classes are listed in \autoref{tab:subclasses}. From this point onwards, the parameterisation and design optimisation tasks will simply be referred to as optimisation tasks. This simplification can be justified by inspecting \autoref{eqn:parameterisation} and \autoref{eqn:design} and confirming that parameterisation can be viewed as an optimisation task to minimise a distance-based cost function.
 
@@ -64,25 +64,28 @@ The currently implemented subclasses for the model, problem, and cost classes ar
 
 | Battery Models                      | Problem Types   | Cost / Likelihood Functions    |
 | :---------------------------------- | :-------------- | :----------------------------- |
-| Single particle model (SPM)         | Fitting problem | Sum of squared error           |
+| Single particle model (SPM)         | Fitting problem | Sum squared error              |
 | SPM with electrolyte (SPMe)         |                 | Root mean squared error        |
-| Doyle-Fuller-Newman (DFN)           |                 | Gaussian log likelihood        |
-| Many particle model (MPM)           |                 | Maximum a posteriori           |
-| Multi-species multi-reaction (MSMR) | Observer        | Unscented Kalman filter        |
-| Weppner Huggins                     | Design problem  | Gravimetric energy density     |
-| Equivalent circuit model (ECM)      |                 | Volumetric energy density      |
+| Doyle-Fuller-Newman (DFN)           |                 | Minkowski                      |
+| Many particle model (MPM)           |                 | Sum of power                   |
+| Multi-species multi-reaction (MSMR) |                 | Gaussian log likelihood        |
+| Weppner Huggins                     |                 | Maximum a posteriori           |
+| Equivalent circuit model (ECM)      | Observer        | Unscented Kalman filter        |
+|                                     | Design problem  | Gravimetric energy density     |
+|                                     |                 | Volumetric energy density      |
 
 
 Likewise, the current optimisation algorithms available for usage in optimisation tasks are presented in \autoref{tab:optimisers}. The cost functions in \autoref{tab:subclasses} are grouped by problem type, while the model and optimiser classes can be selected in combination with any problem-cost pair.
 
 : The currently supported optimisation algorithms classified by candidate solution type, inclusive of gradient information. (*) Scipy Minimize has gradient and non-gradient methods. \label{tab:optimisers}
 
-| Gradient-based                                       | Evolutionary Strategies               | Swarm Intelligence   | Direct Search |
-| :--------------------------------------------------- | :------------------------------------ | :------------------- | :------------ |
-| Adaptive moment estimation with weight decay (AdamW) | Covariance matrix adaptation (CMA-ES) | Particle swarm (PSO) | Nelder-Mead   |
-| Improved resilient backpropagation (iRProp-)         | Exponential natural (xNES)            | Cuckoo search        |               |
-| Gradient descent                                     | Separable natural (sNES)              |                      |               |
-| SciPy minimize (*)                                   | SciPy differential evolution          |                      |               |
+| Gradient-based                                       | Evolutionary Strategies               | (Meta)heuristic      |
+| :--------------------------------------------------- | :------------------------------------ | :------------------- |
+| Adaptive moment estimation with weight decay (AdamW) | Covariance matrix adaptation (CMA-ES) | Particle swarm (PSO) |
+| Improved resilient backpropagation (iRProp-)         | Exponential natural (xNES)            | Nelder-Mead          |
+| Gradient descent                                     | Separable natural (sNES)              |                      |
+| SciPy minimize (*)                                   | SciPy differential evolution          |                      |
+|                                                      | Cuckoo search                         |                      |
 
  As discussed above, `PyBOP` offers Bayesian inference methods such as Maximum a Posteriori (MAP) presented alongside the frequentist methods in \autoref{tab:subclasses}; however, for a full Bayesian framework, Monte Carlo sampling is implemented within `PyBOP`. These methods construct a posterior distribution of the unknown parameters which can used for uncertainty and practical identifiability diagnostics. The individual sampler classes are currently composed within `PyBOP` from the `PINTS` library, with a base sampling class implemented for interoperability and direct integration to the `PyBOP` model, problem, and likelihood classes. The currently supported samplers are presented in \autoref{tab:samplers}.
 
@@ -136,6 +139,22 @@ in which $\mathcal{L} : \mathbf{\theta} \mapsto [0,\infty)$ is a cost (or likeli
 
 By way of example, we next demonstrate the fitting of some synthetic data for which we know the true parameter values.
 
+In this example problem, we employ `PyBaMM`'s implementation of the single particle model (SPM) with contact resistance. We assume that the battery model is already parameterised except for two dynamic parameters, namely the lithium diffusivity in the active material particles in the negative electrode (the "negative particle diffusivity") and the contact resistance. We generate some synthetic data for a 1C discharge followed by 30 minutes of relaxation, shown by the dots in \autoref{fig:simulation}. The initial states are assumed known, although such an assumption is not necessary in general. The cost landscape to be explored by the optimiser is shown in \autoref{fig:landscape}.
+
+![The data and the underlying model. \label{fig:simulation}](figures/simulation.png){ width=40% }
+![The cost landscape for the parameterisation problem using the root mean square error. \label{fig:landscape}](figures/landscape.png){ width=40% }
+
+In order to estimate the best fit parameter values, we can employ any of the error-based cost functions and any of the optimisers. Due to the vastly different magnitudes of the two parameters, we apply two of the transformations offered by `PyBOP`, namely the log transformation for the negative particle diffusivity and the scaled transformation (with a coefficient of 100) for the contact resistance. As a demonstration of `PyBOP`'s parameterisation capabilities, (\autoref{fig:minimising}) shows the rate of convergence in the cost value for each of the error-minimising cost functions, while (\autoref{fig:maximising}) displays analogous results for maximising a likelihood. Here, the optimisation is perfomed with SciPy minimize using the gradient-based L-BFGS-B method.
+
+![Convergence in the distance-based cost functions obtained using various error measures and SciPy minimize. \label{fig:minimising}](figures/convergence_minimising.png){ width=40% }
+![Convergence in the likelihood functions obtained using various likelihood functions and SciPy minimize. \label{fig:maximising}](figures/convergence_maximising.png){ width=40% }
+
+We also compare the performance of the different optimisation algorithms divided by category: gradient-based algorithms in \autoref{fig:gradient}, evolution strategies in \autoref{fig:evolution} and (meta)heuristics in \autoref{fig:heuristic}. Note that optimiser performance will depend on the specific cost landscape and prior information.
+
+![Convergence in the parameter values obtained using the sum squared error and various gradient-based optimisers. \label{fig:gradient}](figures/gradient_parameters.png){ width=30% }
+![Convergence in the parameter values obtained using the sum squared error and various evolution strategies. \label{fig:evolution}](figures/evolution_parameters.png){ width=30% }
+![Convergence in the parameter values obtained using the sum squared error and various (meta)heuristics. \label{fig:heuristic}](figures/heuristic_parameters.png){ width=30% }
+
 ## Design optimisation
 
 Design optimisation is supported within `PyBOP` to guide future development of the battery design by identifying parameter variations which may unlock improvements in battery performance. This optimisation task can be viewed similarly to the parameterisation workflows described above, however, with the aim of increasing the distance metric instead of minimising it. In the case of design optimisation for maximising gravimetric energy density, `PyBOP` minimises the negative of the cost function, where the cost metric is no longer a distance between two time-series vectors, instead it is the integrated energy from the vector normalised with the corresponding cell mass. This is typically quantified for operational conditions such as a 1C (the applied current required to discharge the cell in one hour) capacity.
@@ -149,7 +168,12 @@ Design optimisation can be written in the form of a constrained optimisation pro
 in which $\mathcal{L} : \mathbf{\theta} \mapsto [0,\infty)$ is a cost function that quantifies the desirability
 of the design and $\Omega$ is the set of allowable parameter values.
 
-As an example, let us consider the target of maximising gravimetric energy density subject to constraints on the geometric electrode parameters [@Couto:2023].
+As an example, let us consider the target of maximising gravimetric energy density subject to constraints on two of the geometric electrode parameters [@Couto:2023]. For this example, we use `PyBaMM`'s implementation of the single particle model with electrolyte (SPMe) to investigate the impact of the positive electrode thickness and active material volume fraction on the target cost. The energy density is typically computed from a constant-current discharge performed at an appropriate rate. Here, we estimate the 1C rate (the current required to fully discharge a battery in one hour) from the theoretical capacity for each iteration of the design.
+
+![The optimiser trace overlaid on a map of the gravimetric energy density as a function of positive electrode thickness and active material volume fraction. \label{fig:gravimetric}](figures/design_gravimetric.png){ width=40% }
+![The voltage profiles for a 1C discharge predicted using the initial and optimised parameter values. \label{fig:prediction}](figures/design_prediction.png){ width=40% }
+
+\autoref{fig:gravimetric} shows the optimiser's search for the maximum gravimetric energy density within the parameter space. For this example, we employ the particle swarm optimisation (PSO) algorithm from `PINTS`. The predicted improvement in the discharge profile between the initial and optimised parameter values is shown in \autoref{fig:prediction}.
 
 # Acknowledgements
 
