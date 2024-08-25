@@ -292,9 +292,9 @@ class TestProblem:
         )  # building postponed with input experiment
         assert problem.initial_state == {"Initial SoC": 1.0}
 
-        # Test model.predict
-        model.predict(inputs=[1e-5, 1e-5], experiment=experiment)
-        model.predict(inputs=[3e-5, 3e-5], experiment=experiment)
+        # Test evaluation
+        problem.evaluate(inputs=[1e-5, 1e-5])
+        problem.evaluate(inputs=[3e-5, 3e-5])
 
         # Test initial SoC from parameter_set
         model = pybop.empirical.Thevenin()

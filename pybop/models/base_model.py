@@ -703,14 +703,16 @@ class BaseModel:
         elif not self._unprocessed_model._built:  # noqa: SLF001
             self._unprocessed_model.build_model()
 
+        no_parameter_set = parameter_set is None
         parameter_set = parameter_set or self._unprocessed_parameter_set.copy()
         if inputs is not None:
             inputs = self.parameters.verify(inputs)
             parameter_set.update(inputs)
 
         if initial_state is not None:
-            # Update the default initial state for consistency
-            self.set_initial_state(initial_state)
+            if no_parameter_set:
+                # Update the default initial state for consistency
+                self.set_initial_state(initial_state)
 
             initial_state = self.convert_to_pybamm_initial_state(initial_state)
             if isinstance(self.pybamm_model, pybamm.equivalent_circuit.Thevenin):
