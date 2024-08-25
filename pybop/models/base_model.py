@@ -79,9 +79,8 @@ class BaseModel:
         ----------
         name : str, optional
             The name given to the model instance.
-        parameter_set : pybop.ParameterSet, optional
-            A PyBOP ParameterSet, PyBaMM ParameterValues object or a dictionary containing the
-            parameter values.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values.
 
         Additional Attributes
         ---------------------
@@ -673,9 +672,9 @@ class BaseModel:
         t_eval : array-like, optional
             An array of time points at which to evaluate the solution. Defaults to None,
             which means the time points need to be specified within experiment or elsewhere.
-        parameter_set : pybamm.ParameterValues, optional
-            A PyBaMM ParameterValues object or a dictionary containing the parameter values
-            to use for the simulation. Defaults to the model's current ParameterValues if None.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values to use for the simulation.
+            Defaults to the model's current ParameterValues if None.
         experiment : pybamm.Experiment, optional
             A PyBaMM Experiment object specifying the experimental conditions under which
             the simulation should be run. Defaults to None, indicating no experiment.
@@ -754,8 +753,8 @@ class BaseModel:
         ----------
         inputs : Inputs
             The input parameters for the simulation.
-        parameter_set : pybop.ParameterSet, optional
-            A PyBOP parameter set object or a dictionary containing the parameter values.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
@@ -788,8 +787,8 @@ class BaseModel:
         ----------
         inputs : Inputs
             The input parameters for the simulation.
-        parameter_set : pybop.ParameterSet
-            A PyBOP parameter set object or a dictionary containing the parameter values.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
@@ -866,8 +865,8 @@ class BaseModel:
 
         Parameters
         ----------
-        parameter_set : dict, optional
-            A dictionary containing the parameter values necessary for the calculation.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values.
 
         Raises
         ------
@@ -884,8 +883,8 @@ class BaseModel:
 
         Parameters
         ----------
-        parameter_set : dict, optional
-            A dictionary containing the parameter values necessary for the calculation.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values.
 
         Raises
         ------
@@ -896,15 +895,15 @@ class BaseModel:
 
     def approximate_capacity(self, parameter_set: ParameterSet = None):
         """
-        Calculate a new estimate for the nominal capacity based on the theoretical energy density
-        and an average voltage.
+        Calculate a new estimate for the nominal capacity based on the theoretical energy
+        density and an average voltage.
 
         This method must be implemented by subclasses.
 
         Parameters
         ----------
-        parameter_set : dict, optional
-            A dictionary containing the parameter values necessary for the calculation.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values.
 
         Raises
         ------
