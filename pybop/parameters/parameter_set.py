@@ -216,12 +216,15 @@ def set_formation_concentrations(parameter_set):
     parameter_set : pybamm.ParameterValues
         A PyBaMM parameter set containing standard lithium ion parameters.
     """
-    if all(
-        key in parameter_set.keys()
-        for key in [
-            "Initial concentration in negative electrode [mol.m-3]",
-            "Initial concentration in positive electrode [mol.m-3]",
-        ]
+    if (
+        all(
+            key in parameter_set.keys()
+            for key in [
+                "Initial concentration in negative electrode [mol.m-3]",
+                "Initial concentration in positive electrode [mol.m-3]",
+            ]
+        )
+        and parameter_set["Initial concentration in negative electrode [mol.m-3]"] > 0
     ):
         # Obtain the total amount of lithium in the active material
         Q_Li_particles_init = parameter_set.evaluate(
