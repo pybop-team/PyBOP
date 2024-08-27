@@ -134,7 +134,7 @@ model = pybop.empirical.Thevenin(
 )
 
 # Fitting parameters
-parameters = [
+parameters = pybop.Parameters(
     pybop.Parameter(
         "R0 [Ohm]",
         prior=pybop.Gaussian(0.0002, 0.0001),
@@ -150,7 +150,7 @@ parameters = [
         prior=pybop.Gaussian(10000, 2500),
         bounds=[2500, 5e4],
     ),
-]
+)
 
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
@@ -172,6 +172,7 @@ cost = pybop.SumSquaredError(problem)
 optim = pybop.XNES(
     cost,
     allow_infeasible_solutions=False,
+    max_iterations=100,
 )
 
 x, final_cost = optim.run()

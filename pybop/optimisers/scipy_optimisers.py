@@ -2,7 +2,7 @@ import warnings
 from typing import Union
 
 import numpy as np
-from scipy.optimize import OptimizeResult, differential_evolution, minimize
+from scipy.optimize import Bounds, OptimizeResult, differential_evolution, minimize
 
 from pybop import BaseOptimiser, Result
 
@@ -55,12 +55,18 @@ class BaseSciPyOptimiser(BaseOptimiser):
 
         # Convert bounds to SciPy format
         if isinstance(self.bounds, dict):
-            self._scipy_bounds = [
-                (lower, upper)
-                for lower, upper in zip(self.bounds["lower"], self.bounds["upper"])
-            ]
-        else:
+            self._scipy_bounds = Bounds(
+                self.bounds["lower"], self.bounds["upper"], True
+            )
+        elif isinstance(self.bounds, list):
+            lb, ub = zip(*self.bounds)
+            self._scipy_bounds = Bounds(lb, ub, True)
+        elif isinstance(self.bounds, Bounds) or self.bounds is None:
             self._scipy_bounds = self.bounds
+        else:
+            raise TypeError(
+                "Bounds provided must be either type dict, list or SciPy.optimize.bounds object."
+            )
 
     def _run(self):
         """
@@ -286,9 +292,8 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         if self._scipy_bounds is None:
             raise ValueError("Bounds must be specified for differential_evolution.")
         else:
-            if not all(
-                np.isfinite(value) for pair in self._scipy_bounds for value in pair
-            ):
+            bnds = self._scipy_bounds
+            if not (np.isfinite(bnds.lb).all() and np.isfinite(bnds.ub).all()):
                 raise ValueError("Bounds must be specified for differential_evolution.")
 
         # Apply default maxiter and tolerance
