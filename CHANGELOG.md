@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#222](https://github.com/pybop-team/PyBOP/issues/222) - Adds an example for performing and electrode balancing.
 - [#441](https://github.com/pybop-team/PyBOP/issues/441) - Adds an example for estimating constants within a `pybamm.FunctionalParameter`.
 - [#405](https://github.com/pybop-team/PyBOP/pull/405) - Adds frequency-domain based EIS prediction methods via `model.simulateEIS` and updates to `problem.evaluate` with examples and tests.
 - [#460](https://github.com/pybop-team/PyBOP/pull/460) - Notebook example files added for ECM and folder structure updated.
