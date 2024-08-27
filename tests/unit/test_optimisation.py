@@ -422,6 +422,19 @@ class TestOptimisation:
             opt.run()
 
     @pytest.mark.unit
+    def test_scipy_bounds(self, cost):
+        # Create the optimisation class with incorrect bounds type
+        with pytest.raises(
+            TypeError,
+            match="Bounds provided must be either type dict, list or SciPy.optimize.bounds object.",
+        ):
+            pybop.SciPyMinimize(
+                cost=cost,
+                bounds="This is a bad bound",
+                max_iterations=1,
+            )
+
+    @pytest.mark.unit
     def test_halting(self, cost):
         # Test max evalutions
         optim = pybop.GradientDescent(cost=cost, max_evaluations=1, verbose=True)
