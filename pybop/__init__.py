@@ -43,7 +43,7 @@ script_path = path.dirname(__file__)
 #
 # Utilities
 #
-from ._utils import is_numeric
+from ._utils import is_numeric, SymbolReplacer
 
 #
 # Experiment class
@@ -151,12 +151,13 @@ from .observers.observer import Observer
 # Plotting class
 #
 from .plotting.plotly_manager import PlotlyManager
-from .plotting.quick_plot import StandardPlot, StandardSubplot, plot_trajectories
+from .plotting.standard_plots import StandardPlot, StandardSubplot, plot_trajectories
 from .plotting.plot2d import plot2d
 from .plotting.plot_dataset import plot_dataset
 from .plotting.plot_convergence import plot_convergence
 from .plotting.plot_parameters import plot_parameters
 from .plotting.plot_problem import quick_plot
+from .plotting.nyquist import nyquist
 
 #
 # Experimental
