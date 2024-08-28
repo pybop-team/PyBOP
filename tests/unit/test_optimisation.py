@@ -285,6 +285,11 @@ class TestOptimisation:
         optim = pybop.SciPyMinimize(cost=cost, method="L-BFGS-B", jac=True, maxiter=10)
         optim.run()
         assert optim.result.scipy_result.success is True
+        # Check constraint-based methods, which have different callbacks / returns
+        for method in ["trust-constr", "SLSQP", "COBYLA"]:
+            optim = pybop.SciPyMinimize(cost=cost, method=method, maxiter=10)
+            optim.run()
+            assert optim.result.scipy_result.success
 
         with pytest.raises(
             ValueError,
@@ -409,6 +414,45 @@ class TestOptimisation:
             # Test cost_wrapper inf return
             cost = opt.cost_wrapper(np.array([0.9]))
             assert cost in [1.729, 1.81, 1.9]
+
+    @pytest.mark.unit
+    def test_scipy_noprior(self, model, dataset):
+        # Test that Scipy minimize handles no-priors correctly
+        # Set up the parameter with no prior
+        parameter = pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            initial_value=1,  # Intentionally infeasible!
+            bounds=[0.55, 0.95],
+        )
+
+        # Define the problem and cost
+        problem = pybop.FittingProblem(model, parameter, dataset)
+        cost = pybop.SumSquaredError(problem)
+
+        # Create the optimisation class with infeasible solutions disabled
+        opt = pybop.SciPyMinimize(
+            cost=cost,
+            allow_infeasible_solutions=False,
+            max_iterations=1,
+        )
+        with pytest.raises(
+            ValueError,
+            match="The initial parameter values return an infinite cost.",
+        ):
+            opt.run()
+
+    @pytest.mark.unit
+    def test_scipy_bounds(self, cost):
+        # Create the optimisation class with incorrect bounds type
+        with pytest.raises(
+            TypeError,
+            match="Bounds provided must be either type dict, list or SciPy.optimize.bounds object.",
+        ):
+            pybop.SciPyMinimize(
+                cost=cost,
+                bounds="This is a bad bound",
+                max_iterations=1,
+            )
 
     @pytest.mark.unit
     def test_halting(self, cost):

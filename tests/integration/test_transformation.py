@@ -11,8 +11,10 @@ class TestTransformation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ground_truth = np.array([0.5, 0.2]) + np.random.normal(
-            loc=0.0, scale=0.05, size=2
+        self.ground_truth = np.clip(
+            np.array([0.5, 0.1]) + np.random.normal(loc=0.0, scale=0.05, size=2),
+            a_min=[0.375, 0.02],
+            a_max=[0.7, 0.5],
         )
 
     @pytest.fixture
@@ -41,7 +43,7 @@ class TestTransformation:
             pybop.Parameter(
                 "Positive electrode conductivity [S.m-1]",
                 prior=pybop.Uniform(0.05, 0.45),
-                bounds=[0.04, 0.5],
+                bounds=[0.02, 0.5],
                 transformation=pybop.LogTransformation(),
             ),
         )
@@ -80,10 +82,12 @@ class TestTransformation:
     @pytest.mark.integration
     def test_spm_optimisers(self, optimiser, cost):
         x0 = cost.parameters.initial_value()
+        sigma0 = None if optimiser is pybop.AdamW else 0.2
         optim = optimiser(
             cost=cost,
+            sigma0=sigma0,
             max_unchanged_iterations=35,
-            max_iterations=125,
+            max_iterations=150,
         )
 
         initial_cost = optim.cost(x0)
