@@ -45,6 +45,7 @@ class ECircuitModel(BaseModel):
         var_pts=None,
         spatial_methods=None,
         solver=None,
+        check_params=None,
         eis=False,
         **model_kwargs,
     ):
@@ -65,7 +66,9 @@ class ECircuitModel(BaseModel):
                 print("Setting open-circuit voltage to default function")
                 parameter_set["Open-circuit voltage [V]"] = default_ocp
 
-        super().__init__(name=name, parameter_set=parameter_set, eis=eis)
+        super().__init__(
+            name=name, parameter_set=parameter_set, check_params=check_params, eis=eis
+        )
         self.pybamm_model = pybamm_model
         self._unprocessed_model = self.pybamm_model
 
@@ -114,6 +117,8 @@ class ECircuitModel(BaseModel):
         bool
             A boolean which signifies whether the parameters are compatible.
         """
+        if self.param_checker:
+            return self.param_checker(inputs, allow_infeasible_solutions)
         return True
 
     def get_initial_state(
