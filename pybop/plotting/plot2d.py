@@ -102,17 +102,17 @@ def plot2d(
     if gradient:
         grad_parameter_costs = []
 
-        # Determine the number of gradient outputs from cost.evaluateS1
+        # Determine the number of gradient outputs from cost.compute
         num_gradients = len(
-            cost.evaluateS1(np.asarray([x[0], y[0]] + additional_values))[1]
+            cost(np.asarray([x[0], y[0]] + additional_values), calculate_grad=True)[1]
         )
 
         # Create an array to hold each gradient output & populate
         grads = [np.zeros((len(y), len(x))) for _ in range(num_gradients)]
         for i, xi in enumerate(x):
             for j, yj in enumerate(y):
-                (*current_grads,) = cost.evaluateS1(
-                    np.asarray([xi, yj] + additional_values)
+                (*current_grads,) = cost(
+                    np.asarray([xi, yj] + additional_values), calculate_grad=True
                 )[1]
                 for k, grad_output in enumerate(current_grads):
                     grads[k][j, i] = grad_output

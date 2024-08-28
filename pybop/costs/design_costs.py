@@ -61,7 +61,7 @@ class DesignCost(BaseCost):
 
         if "Time [s]" not in solution:
             raise ValueError("The solution does not contain time data.")
-        self.problem.time_data = solution["Time [s]"]
+        self.problem.domain_data = solution["Time [s]"]
         self.problem.target = {key: solution[key] for key in self.problem.signal}
         self.dt = solution["Time [s]"][1] - solution["Time [s]"][0]
 
@@ -80,24 +80,34 @@ class GravimetricEnergyDensity(DesignCost):
         super().__init__(problem, update_capacity)
         self._fixed_problem = False  # keep problem evaluation within compute
 
-    def compute(self, inputs: Inputs):
+    def compute(
+        self,
+        y: dict,
+        dy: np.ndarray = None,
+        calculate_grad: bool = False,
+    ) -> float:
         """
-        Computes the cost function for the given parameters.
+        Computes the cost function for the given predictions.
 
         Parameters
         ----------
-        inputs : Inputs
-            The parameters for which to compute the cost.
+        y : dict
+            The dictionary of predictions with keys designating the signals for fitting.
+        dy : np.ndarray, optional
+            The corresponding gradient with respect to the parameters for each signal.
+            Note: not used in design optimisation classes.
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
         float
             The gravimetric energy density or -infinity in case of infeasible parameters.
         """
-        if not any(np.isfinite(self.y[signal][0]) for signal in self.signal):
+        if not any(np.isfinite(y[signal][0]) for signal in self.signal):
             return -np.inf
 
-        voltage, current = self.y["Voltage [V]"], self.y["Current [A]"]
+        voltage, current = y["Voltage [V]"], y["Current [A]"]
         energy_density = np.trapz(voltage * current, dx=self.dt) / (
             3600 * self.problem.model.cell_mass(self.parameter_set)
         )
@@ -118,24 +128,34 @@ class VolumetricEnergyDensity(DesignCost):
     def __init__(self, problem, update_capacity=False):
         super().__init__(problem, update_capacity)
 
-    def compute(self, inputs: Inputs):
+    def compute(
+        self,
+        y: dict,
+        dy: np.ndarray = None,
+        calculate_grad: bool = False,
+    ) -> float:
         """
-        Computes the cost function for the given parameters.
+        Computes the cost function for the given predictions.
 
         Parameters
         ----------
-        inputs : Inputs
-            The parameters for which to compute the cost.
+        y : dict
+            The dictionary of predictions with keys designating the signals for fitting.
+        dy : np.ndarray, optional
+            The corresponding gradient with respect to the parameters for each signal.
+            Note: not used in design optimisation classes.
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
         float
             The volumetric energy density or -infinity in case of infeasible parameters.
         """
-        if not any(np.isfinite(self.y[signal][0]) for signal in self.signal):
+        if not any(np.isfinite(y[signal][0]) for signal in self.signal):
             return -np.inf
 
-        voltage, current = self.y["Voltage [V]"], self.y["Current [A]"]
+        voltage, current = y["Voltage [V]"], y["Current [A]"]
         energy_density = np.trapz(voltage * current, dx=self.dt) / (
             3600 * self.problem.model.cell_volume(self.parameter_set)
         )
