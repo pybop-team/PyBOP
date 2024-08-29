@@ -202,6 +202,8 @@ class BasePintsSampler(BaseSampler):
             reply = self._samplers[i].tell(next(self.fxs_iterator))
             if reply:
                 y, fy, accepted = reply
+                if y.ndim == 0:
+                    y = y[np.newaxis]
                 y_store = self._inverse_transform(
                     y, self._log_pdf[i] if self._multi_log_pdf else self._log_pdf
                 )

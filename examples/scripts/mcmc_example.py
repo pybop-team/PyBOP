@@ -24,24 +24,22 @@ parameters = pybop.Parameters(
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.68, 0.02),
+        prior=pybop.Gaussian(0.65, 0.02),
         transformation=pybop.LogTransformation(),
     ),
 )
 
 # Generate data
-init_soc = 1.0
-sigma = 0.001
+init_soc = 0.5
+sigma = 0.002
 experiment = pybop.Experiment(
     [
-        (
-            "Discharge at 0.5C until 3.5V (10 second period)",
-            "Charge at 0.5C until 4.0V (10 second period)",
-        ),
+        ("Discharge at 0.5C for 6 minutes (5 second period)",),
     ]
-    # * 2
 )
-values = synth_model.predict(initial_state={"Initial SoC": 1.0}, experiment=experiment)
+values = synth_model.predict(
+    initial_state={"Initial SoC": init_soc}, experiment=experiment
+)
 
 
 def noise(sigma):
@@ -60,22 +58,19 @@ dataset = pybop.Dataset(
 )
 
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=pybamm.IDAKLUSolver())
-model.build(initial_state={"Initial SoC": 1.0})
+model.build(initial_state={"Initial SoC": init_soc})
 signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 
 # Generate problem, likelihood, and sampler
 problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002)
-prior1 = pybop.Gaussian(0.59, 0.05)
-prior2 = pybop.Gaussian(0.65, 0.05)
-composed_prior = pybop.JointLogPrior(prior1, prior2)
-posterior = pybop.LogPosterior(likelihood, composed_prior)
+posterior = pybop.LogPosterior(likelihood)
 
-optim = pybop.DREAM(
+optim = pybop.DifferentialEvolutionMCMC(
     posterior,
     chains=3,
     max_iterations=300,
-    burn_in=100,
+    warm_up=100,
     verbose=True,
     # parallel=True,  # uncomment to enable parallelisation (MacOS/WSL/Linux only)
 )

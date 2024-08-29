@@ -4,7 +4,7 @@ import numpy as np
 
 from pybop.costs.base_cost import BaseCost
 from pybop.parameters.parameter import Parameter, Parameters
-from pybop.parameters.priors import Uniform
+from pybop.parameters.priors import JointLogPrior, Uniform
 from pybop.problems.base_problem import BaseProblem
 
 
@@ -307,14 +307,10 @@ class LogPosterior(BaseCost):
 
         # Store the likelihood and prior
         self._log_likelihood = log_likelihood
-        self._prior = log_prior
-        if self._prior is None:
-            try:
-                self._prior = log_likelihood.problem.parameters.priors()
-            except Exception as e:
-                raise ValueError(
-                    f"An error occurred when constructing the Prior class: {e}"
-                ) from e
+        if log_prior is None:
+            self._prior = JointLogPrior(*log_likelihood.problem.parameters.priors())
+        else:
+            self._prior = log_prior
 
     def compute(
         self,

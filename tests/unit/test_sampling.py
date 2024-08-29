@@ -150,6 +150,33 @@ class TestPintsSamplers:
         assert samples.shape == (chains, 1, 2)
 
     @pytest.mark.unit
+    def test_single_parameter_sampling(self, model, dataset):
+        parameters = pybop.Parameters(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.6, 0.2),
+                bounds=[0.58, 0.62],
+            )
+        )
+        problem = pybop.FittingProblem(
+            model,
+            parameters,
+            dataset,
+        )
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.01)
+        log_posterior = pybop.LogPosterior(likelihood)
+
+        # Construct and run
+        sampler = pybop.MCMCSampler(
+            log_pdf=log_posterior,
+            chains=1,
+            sampler=MALAMCMC,
+            max_iterations=1,
+            verbose=True,
+        )
+        sampler.run()
+
+    @pytest.mark.unit
     def test_multi_log_pdf(self, log_posterior, x0, chains):
         multi_log_posterior = [log_posterior, log_posterior, log_posterior]
         sampler = pybop.MCMCSampler(
@@ -338,7 +365,7 @@ class TestPintsSamplers:
 
     @pytest.mark.unit
     def test_MCMC_sampler(self, log_posterior, x0, chains):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             pybop.MCMCSampler(
                 log_pdf=log_posterior,
                 chains=chains,

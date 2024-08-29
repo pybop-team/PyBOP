@@ -74,9 +74,7 @@ class TestLogPosterior:
         # Test log posterior construction without parameters
         likelihood.problem.parameters.priors = None
 
-        with pytest.raises(
-            ValueError, match="An error occurred when constructing the Prior class:"
-        ):
+        with pytest.raises(TypeError, match="'NoneType' object is not callable"):
             pybop.LogPosterior(likelihood, log_prior=None)
 
     @pytest.mark.unit
@@ -85,7 +83,9 @@ class TestLogPosterior:
         posterior = pybop.LogPosterior(likelihood, None)
 
         assert posterior._prior is not None
-        for i, p in enumerate(posterior._prior):
+        assert isinstance(posterior._prior, pybop.JointLogPrior)
+
+        for i, p in enumerate(posterior._prior._priors):
             assert p == posterior._log_likelihood.problem.parameters.priors()[i]
 
     @pytest.fixture

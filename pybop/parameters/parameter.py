@@ -549,7 +549,9 @@ class Parameters:
         """
         if inputs is None or isinstance(inputs, dict):
             return inputs
-        elif (isinstance(inputs, list) and all(is_numeric(x) for x in inputs)) or all(
+        if isinstance(inputs, np.ndarray) and inputs.ndim == 0:
+            inputs = inputs[np.newaxis]
+        if (isinstance(inputs, list) and all(is_numeric(x) for x in inputs)) or all(
             is_numeric(x) for x in list(inputs)
         ):
             return self.as_dict(inputs)
