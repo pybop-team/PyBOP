@@ -170,7 +170,7 @@ from .observers.observer import Observer
 # Plotting classes
 #
 from .plotting.plotly_manager import PlotlyManager
-from .plotting.quick_plot import StandardPlot, StandardSubplot, plot_trajectories
+from .plotting.standard_plots import StandardPlot, StandardSubplot, plot_trajectories
 from .plotting.plot2d import plot2d
 from .plotting.plot_dataset import plot_dataset
 from .plotting.plot_convergence import plot_convergence
