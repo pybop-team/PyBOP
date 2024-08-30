@@ -89,7 +89,7 @@ class BasePintsSampler(BaseSampler):
         # Check initial conditions
         if self._x0.size != self.n_parameters:
             raise ValueError("x0 must have the same number of parameters as log_pdf")
-        if len(self._x0) != self._n_chains:
+        if len(self._x0) != self._n_chains or len(self._x0) == 1:
             self._x0 = np.tile(self._x0, (self._n_chains, 1))
 
         # Single chain vs multiple chain samplers
@@ -202,8 +202,6 @@ class BasePintsSampler(BaseSampler):
             reply = self._samplers[i].tell(next(self.fxs_iterator))
             if reply:
                 y, fy, accepted = reply
-                if y.ndim == 0:
-                    y = y[np.newaxis]
                 y_store = self._inverse_transform(
                     y, self._log_pdf[i] if self._multi_log_pdf else self._log_pdf
                 )
@@ -237,7 +235,9 @@ class BasePintsSampler(BaseSampler):
         self._intermediate_step = reply is None
         if reply:
             ys, fys, accepted = reply
-            ys_store = np.array([self._inverse_transform(y, self._log_pdf) for y in ys])
+            ys_store = np.asarray(
+                [self._inverse_transform(y, self._log_pdf) for y in ys]
+            )
             if self._chains_in_memory:
                 self._samples[:, self._iteration] = ys_store
             else:

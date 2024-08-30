@@ -34,7 +34,7 @@ class BaseSampler:
         self._x0 = (
             self.parameters.initial_value()
             if x0 is None
-            else np.asarray(x0, dtype=float)
+            else np.asarray([x0], dtype=float)
         )
 
     def run(self) -> np.ndarray:

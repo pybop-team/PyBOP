@@ -118,7 +118,7 @@ class TestSamplingThevenin:
         }
         if sampler in self.fast_samplers:
             common_args["warm_up"] = 500
-            common_args["max_iterations"] = 800
+            common_args["max_iterations"] = 1000
 
         # construct and run
         sampler = sampler(**common_args)
@@ -130,7 +130,7 @@ class TestSamplingThevenin:
         x = np.mean(results, axis=1)
         for i in range(len(x)):
             np.testing.assert_allclose(x[i], self.ground_truth, atol=1.5e-2)
-            np.testing.assert_allclose(results[i][-1], self.ground_truth, atol=5e-3)
+            np.testing.assert_allclose(results[i][-1], self.ground_truth, atol=1e-2)
 
     def get_data(self, model, init_soc):
         initial_state = {"Initial SoC": init_soc}

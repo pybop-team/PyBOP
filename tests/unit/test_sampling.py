@@ -90,9 +90,8 @@ class TestPintsSamplers:
     def multi_samplers(self):
         return (pybop.DREAM, pybop.EmceeHammerMCMC, pybop.DifferentialEvolutionMCMC)
 
-    @pytest.mark.parametrize(
-        "MCMC",
-        [
+    @pytest.fixture(
+        params=[
             NUTS,
             DREAM,
             AdaptiveCovarianceMCMC,
@@ -111,8 +110,11 @@ class TestPintsSamplers:
             SliceDoublingMCMC,
             SliceRankShrinkingMCMC,
             SliceStepoutMCMC,
-        ],
+        ]
     )
+    def MCMC(self, request):
+        return request.param
+
     @pytest.mark.unit
     def test_initialisation_and_run(
         self, log_posterior, x0, chains, MCMC, multi_samplers
@@ -150,7 +152,7 @@ class TestPintsSamplers:
         assert samples.shape == (chains, 1, 2)
 
     @pytest.mark.unit
-    def test_single_parameter_sampling(self, model, dataset):
+    def test_single_parameter_sampling(self, model, dataset, MCMC, chains):
         parameters = pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
@@ -166,11 +168,15 @@ class TestPintsSamplers:
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.01)
         log_posterior = pybop.LogPosterior(likelihood)
 
+        # Skip RelativisticMCMC as it requires > 1 parameter
+        if issubclass(MCMC, RelativisticMCMC):
+            return
+
         # Construct and run
         sampler = pybop.MCMCSampler(
             log_pdf=log_posterior,
-            chains=1,
-            sampler=MALAMCMC,
+            chains=chains,
+            sampler=MCMC,
             max_iterations=1,
             verbose=True,
         )
@@ -252,9 +258,17 @@ class TestPintsSamplers:
                 x0=[0.4, 0.4, 0.4, 0.4],
             )
 
+    # SingleChain & MultiChain Sampler
+    @pytest.mark.parametrize(
+        "sampler",
+        [
+            AdaptiveCovarianceMCMC,
+            DifferentialEvolutionMCMC,
+        ],
+    )
     @pytest.mark.unit
-    def test_no_chains_in_memory(self, log_posterior, x0, chains):
-        sampler = AdaptiveCovarianceMCMC(
+    def test_no_chains_in_memory(self, log_posterior, x0, chains, sampler):
+        sampler = sampler(
             log_pdf=log_posterior,
             chains=chains,
             x0=x0,
@@ -265,6 +279,7 @@ class TestPintsSamplers:
 
         # Run the sampler
         samples = sampler.run()
+        assert sampler._samples is not None
         assert samples is None
 
     @patch("logging.basicConfig")
