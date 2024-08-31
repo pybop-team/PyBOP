@@ -2,6 +2,7 @@ import warnings
 from typing import Optional
 
 import numpy as np
+from pybamm import IDAKLUSolver
 
 from pybop import BaseModel, BaseProblem, Dataset
 from pybop.parameters.parameter import Inputs, Parameters
@@ -76,6 +77,9 @@ class FittingProblem(BaseProblem):
                 check_model=self.check_model,
                 initial_state=self.initial_state,
             )
+
+        if isinstance(self._model.solver, IDAKLUSolver) and self.model.jax:
+            self.model.jaxify_solver(t_eval=self._domain_data)
 
     def set_initial_state(self, initial_state: Optional[dict] = None):
         """
@@ -192,30 +196,27 @@ class FittingProblem(BaseProblem):
                 t_eval=self._domain_data,
                 initial_state=self.initial_state,
             )
+
         except Exception as e:
             print(f"Error: {e}")
             return {
                 signal: self.failure_output for signal in self.signal
             }, self.failure_output
 
-        y = {signal: sol[signal].data for signal in self.signal}
+        y = {
+            signal: sol[signal].data
+            for signal in (self.signal + self.additional_variables)
+        }
 
-        # Extract the sensitivities and stack them along a new axis for each signal
-        dy = np.empty(
-            (
-                sol[self.signal[0]].data.shape[0],
-                self.n_outputs,
-                self._n_parameters,
-            )
-        )
+        # Pre-allocate the dy array
+        dy = np.empty((len(self._domain_data), self.n_outputs, self._n_parameters))
 
+        # Extract the sensitivities for all signals at once
+        param_keys = self.parameters.keys()
         for i, signal in enumerate(self.signal):
-            dy[:, i, :] = np.stack(
-                [
-                    sol[signal].sensitivities[key].toarray()[:, 0]
-                    for key in self.parameters.keys()
-                ],
-                axis=-1,
+            sensitivities = sol[signal].sensitivities
+            dy[:, i, :] = np.column_stack(
+                [sensitivities[key].toarray()[:, 0] for key in param_keys]
             )
 
-        return y, np.asarray(dy)
+        return y, dy

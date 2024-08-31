@@ -47,9 +47,10 @@ class EChemBaseModel(BaseModel):
         spatial_methods=None,
         solver=None,
         eis=False,
+        jax=False,
         **model_kwargs,
     ):
-        super().__init__(name=name, parameter_set=parameter_set, eis=eis)
+        super().__init__(name=name, parameter_set=parameter_set, eis=eis, jax=jax)
 
         model_options = dict(build=False)
         for key, value in model_kwargs.items():

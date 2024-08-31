@@ -38,13 +38,15 @@ class SPM(EChemBaseModel):
     def __init__(
         self,
         name="Single Particle Model",
-        eis=False,
+        eis: bool = False,
+        jax: bool = False,
         **model_kwargs,
     ):
         super().__init__(
             pybamm_model=pybamm_lithium_ion.SPM,
             name=name,
             eis=eis,
+            jax=jax,
             **model_kwargs,
         )
 

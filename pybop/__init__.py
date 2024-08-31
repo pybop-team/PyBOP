@@ -162,7 +162,7 @@ from .plotting.nyquist import nyquist
 #
 # Experimental
 #
-from .experimental.jax_costs import JaxSumSquaredError
+from .experimental.jax_costs import JaxSumSquaredError, JaxLogNormalLikelihood
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop

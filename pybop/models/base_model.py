@@ -71,7 +71,8 @@ class BaseModel:
         name: str = "Base Model",
         parameter_set: Optional[ParameterSet] = None,
         check_params: Callable = None,
-        eis=False,
+        eis: bool = False,
+        jax: bool = False,
     ):
         """
         Initialise the BaseModel with an optional name and a parameter set.
@@ -107,6 +108,9 @@ class BaseModel:
         """
         self.name = name
         self.eis = eis
+        self.jax = jax
+        self.calculate_sensitivities = False
+
         if parameter_set is None:
             self._parameter_set = None
         elif isinstance(parameter_set, dict):
@@ -751,6 +755,30 @@ class BaseModel:
                 "The predict method requires either an experiment or t_eval "
                 "to be specified."
             )
+
+    def jaxify_solver(self, t_eval, calculate_sensitivities=False):
+        """
+        Jaxify the IDAKLU Solver and store a copy for reconstructing
+        the jax'ed solver in the future. This is helpful for reconstructing
+        the solver with `calculate_sensitivities=True` as this solver requires
+        casting sensitivity information on construction.
+        """
+        self.calculate_sensitivities = calculate_sensitivities
+        if isinstance(self._solver, pybamm.IDAKLUSolver):
+            self._IDAKLU_stored = self._solver.copy()
+            self._solver = self._solver.jaxify(
+                model=self._built_model,
+                t_eval=t_eval,
+                calculate_sensitivities=calculate_sensitivities,
+            )
+        elif isinstance(self._solver, pybamm.solvers.idaklu_jax.IDAKLUJax):
+            self._solver = self._IDAKLU_stored.jaxify(
+                model=self._built_model,
+                t_eval=t_eval,
+                calculate_sensitivities=calculate_sensitivities,
+            )
+        else:
+            raise ValueError("Solver is not pybamm.IDAKLUSolver, cannot jaxify it.")
 
     def check_params(
         self,
