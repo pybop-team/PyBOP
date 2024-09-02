@@ -71,7 +71,7 @@ from .transformation.transformations import (
 #
 from .parameters.parameter import Parameter, Parameters
 from .parameters.parameter_set import ParameterSet
-from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential
+from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointLogPrior
 
 #
 # Model classes
@@ -83,7 +83,7 @@ from .models.base_model import TimeSeriesState
 from .models.base_model import Inputs
 
 #
-# Problem class
+# Problem classes
 #
 from .problems.base_problem import BaseProblem
 from .problems.fitting_problem import FittingProblem
@@ -91,7 +91,7 @@ from .problems.multi_fitting_problem import MultiFittingProblem
 from .problems.design_problem import DesignProblem
 
 #
-# Cost function class
+# Cost classes
 #
 from .costs.base_cost import BaseCost
 from .costs.fitting_costs import (
@@ -110,12 +110,13 @@ from .costs._likelihoods import (
     BaseLikelihood,
     GaussianLogLikelihood,
     GaussianLogLikelihoodKnownSigma,
+    LogPosterior,
     MAP,
 )
 from .costs._weighted_cost import WeightedCost
 
 #
-# Optimiser class
+# Optimiser classes
 #
 
 from .optimisers._cuckoo import CuckooSearchImpl
@@ -142,13 +143,31 @@ from .optimisers.pints_optimisers import (
 from .optimisers.optimisation import Optimisation
 
 #
+# Monte Carlo classes
+#
+from .samplers.base_sampler import BaseSampler
+from .samplers.base_pints_sampler import BasePintsSampler
+from .samplers.pints_samplers import (
+    NUTS, DREAM, AdaptiveCovarianceMCMC,
+    DifferentialEvolutionMCMC, DramACMC,
+    EmceeHammerMCMC,
+    HaarioACMC, HaarioBardenetACMC,
+    HamiltonianMCMC, MALAMCMC,
+    MetropolisRandomWalkMCMC, MonomialGammaHamiltonianMCMC,
+    PopulationMCMC, RaoBlackwellACMC,
+    RelativisticMCMC, SliceDoublingMCMC,
+    SliceRankShrinkingMCMC, SliceStepoutMCMC,
+)
+from .samplers.mcmc_sampler import MCMCSampler
+
+#
 # Observer classes
 #
 from .observers.unscented_kalman import UnscentedKalmanFilterObserver
 from .observers.observer import Observer
 
 #
-# Plotting class
+# Plotting classes
 #
 from .plotting.plotly_manager import PlotlyManager
 from .plotting.standard_plots import StandardPlot, StandardSubplot, plot_trajectories
