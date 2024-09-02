@@ -117,8 +117,8 @@ class TestSamplingThevenin:
             "cov0": [3e-4, 3e-4],
         }
         if sampler in self.fast_samplers:
-            common_args["warm_up"] = 500
-            common_args["max_iterations"] = 1000
+            common_args["warm_up"] = 600
+            common_args["max_iterations"] = 1200
 
         # construct and run
         sampler = sampler(**common_args)
