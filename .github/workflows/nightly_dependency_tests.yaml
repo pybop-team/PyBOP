@@ -35,7 +35,7 @@ jobs:
           python -m pip install -e .[all,dev]
           python -m pip uninstall -y pybamm
           python -m pip install "pybamm[all] @ git+https://github.com/pybamm-team/PyBaMM@develop"
-
+          python -m nox -s pybamm-requires
 
       - name: Run ${{ matrix.suite }} tests
         run: |
