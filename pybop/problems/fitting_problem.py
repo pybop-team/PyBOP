@@ -203,13 +203,11 @@ class FittingProblem(BaseProblem):
                 signal: self.failure_output for signal in self.signal
             }, self.failure_output
 
-        y = {
-            signal: sol[signal].data
-            for signal in (self.signal + self.additional_variables)
-        }
+        y = {sig: sol[sig].data for sig in (self.signal + self.additional_variables)}
 
-        # Pre-allocate the dy array
-        dy = np.empty((len(self._domain_data), self.n_outputs, self._n_parameters))
+        # Pre-allocate sensitivities array
+        y_dims = sol[self.signal[0]].data.shape[0]
+        dy = np.empty((y_dims, self.n_outputs, self._n_parameters))
 
         # Extract the sensitivities for all signals at once
         param_keys = self.parameters.keys()
