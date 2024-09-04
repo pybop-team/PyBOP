@@ -55,7 +55,7 @@ class TestWeightedCost:
                 pybop.GaussianLogLikelihoodKnownSigma,
                 pybop.RootMeanSquaredError,
                 pybop.SumSquaredError,
-                pybop.MAP,
+                pybop.LogPosterior,
             )
         ]
     )
@@ -82,12 +82,12 @@ class TestWeightedCost:
         problem = pybop.FittingProblem(model, parameters, dataset)
         costs = []
         for cost in cost_class:
-            if issubclass(cost, pybop.MAP):
+            if issubclass(cost, pybop.LogPosterior):
                 costs.append(
                     cost(
-                        problem,
-                        pybop.GaussianLogLikelihoodKnownSigma,
-                        sigma0=self.sigma0,
+                        pybop.GaussianLogLikelihoodKnownSigma(
+                            problem, sigma0=self.sigma0
+                        ),
                     )
                 )
             elif issubclass(cost, pybop.BaseLikelihood):

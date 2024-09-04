@@ -72,7 +72,7 @@ class TestLogPosterior:
         assert posterior._prior == prior
 
         # Test log posterior construction without parameters
-        likelihood.problem.parameters.priors = None
+        likelihood.parameters.priors = None
 
         with pytest.raises(TypeError, match="'NoneType' object is not callable"):
             pybop.LogPosterior(likelihood, log_prior=None)
@@ -104,8 +104,8 @@ class TestLogPosterior:
         assert np.allclose(dp, 2.0, atol=2e-2)
 
         # Get log likelihood and log prior
-        likelihood = posterior.likelihood()
-        prior = posterior.prior()
+        likelihood = posterior.likelihood
+        prior = posterior.prior
 
         assert likelihood == posterior._log_likelihood
         assert prior == posterior._prior

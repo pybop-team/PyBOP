@@ -65,11 +65,11 @@ def plot2d(
         cost = cost_or_optim
         plot_optim = False
 
-    if len(cost.parameters) < 2:
+    if hasattr(cost, "parameters") and len(cost.parameters) < 2:
         raise ValueError("This cost function takes fewer than 2 parameters.")
 
     additional_values = []
-    if len(cost.parameters) > 2:
+    if hasattr(cost, "parameters") and len(cost.parameters) > 2:
         warnings.warn(
             "This cost function requires more than 2 parameters. "
             "Plotting in 2d with fixed values for the additional parameters.",

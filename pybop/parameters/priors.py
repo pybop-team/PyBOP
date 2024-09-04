@@ -255,7 +255,7 @@ class Gaussian(BasePrior):
         float
             The value(s) of the first derivative at x.
         """
-        return self(x), -(x - self.loc) * self._multip
+        return self.__call__(x), -(x - self.loc) * self._multip
 
 
 class Uniform(BasePrior):
@@ -417,17 +417,16 @@ class JointLogPrior(BasePrior):
                 f"Input x must have length {self._n_parameters}, got {len(x)}"
             )
 
-        output = 0
-        doutput = np.zeros(self._n_parameters)
-        index = 0
+        log_probs = []
+        derivatives = []
 
-        for prior in self._priors:
-            num_params = 1
-            x_subset = x[index : index + num_params]
-            p, dp = prior.logpdfS1(x_subset)
-            output += p
-            doutput[index : index + num_params] = dp
-            index += num_params
+        for prior, xi in zip(self._priors, x):
+            p, dp = prior.logpdfS1(xi)
+            log_probs.append(p)
+            derivatives.append(dp)
+
+        output = sum(log_probs)
+        doutput = np.array(derivatives)
 
         return output, doutput
 
