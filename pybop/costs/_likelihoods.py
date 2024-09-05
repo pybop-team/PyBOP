@@ -5,7 +5,7 @@ import numpy as np
 import pybop
 from pybop.costs.base_cost import BaseCost
 from pybop.parameters.parameter import Parameter, Parameters
-from pybop.parameters.priors import JointLogPrior, Uniform
+from pybop.parameters.priors import BasePrior, JointLogPrior, Uniform
 from pybop.problems.base_problem import BaseProblem
 
 
@@ -239,20 +239,21 @@ class LogPosterior(BaseLikelihood):
         calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
-        Calculate the posterior cost for a given set of parameters.
+        Calculate the posterior cost for a given forward model prediction.
 
         Parameters
         ----------
-        x : array-like
-            The parameters for which to evaluate the cost.
-        grad : array-like, optional
-            An array to store the gradient of the cost function with respect
-            to the parameters.
+        y : dict
+            The data for which to evaluate the cost.
+        dy : np.ndarray, optional
+            The correspond sensitivities in the data.
+        calculate_grad : bool, optional
+            Whether to calculate the gradient of the cost function.
 
         Returns
         -------
-        float
-            The posterior cost.
+        Union[float, Tuple[float, np.ndarray]]
+            The posterior cost, and optionally the gradient.
         """
         # Verify we have dy if calculate_grad is True
         self.verify_args(dy, calculate_grad)
@@ -300,9 +301,9 @@ class LogPosterior(BaseLikelihood):
         return posterior
 
     @property
-    def prior(self):
+    def prior(self) -> BasePrior:
         return self._prior
 
     @property
-    def likelihood(self):
+    def likelihood(self) -> BaseLikelihood:
         return self._log_likelihood
