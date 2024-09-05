@@ -38,7 +38,7 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.Minkowski(problem, p=2)
-optim = pybop.AdamW(cost, min_iterations=100, max_iterations=100)
+optim = pybop.IRPropMin(cost, max_iterations=100)
 
 x, final_cost = optim.run()
 print("Estimated parameters:", x)

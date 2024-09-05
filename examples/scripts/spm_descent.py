@@ -21,7 +21,7 @@ parameters = pybop.Parameters(
 )
 
 # Generate data
-sigma = 0.002
+sigma = 0.001
 t_eval = np.arange(0, 900, 3)
 values = model.predict(t_eval=t_eval)
 corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
@@ -42,7 +42,6 @@ optim = pybop.GradientDescent(
     cost,
     sigma0=0.05,
     verbose=True,
-    max_unchanged_iterations=30,
     max_iterations=125,
 )
 
