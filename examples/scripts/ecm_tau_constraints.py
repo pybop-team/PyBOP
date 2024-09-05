@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 
 import pybop
@@ -57,9 +59,9 @@ parameter_set = {
 
 
 def get_parameter_checker(
-    tau_mins: float | list[float],
-    tau_maxs: float | list[float],
-    fitted_rc_pair_indices: int | list[int],
+    tau_mins: Union[float, list[float]],
+    tau_maxs: Union[float, list[float]],
+    fitted_rc_pair_indices: Union[int, list[int]],
 ):
     """Returns a function to check parameters against given tau bounds.
     The resulting check_params function will be sent off to PyBOP; the
@@ -67,11 +69,11 @@ def get_parameter_checker(
 
     Parameters
     ----------
-    tau_mins: float | list[float]
+    tau_mins: float or list[float]
         Lower bounds on timescale tau_i = Ri * Ci
-    tau_maxs: float | list[float]
+    tau_maxs: float or list[float]
         Upper bounds on timescale tau_i = Ri * Ci
-    fitted_rc_pair_indices: int | list[float]
+    fitted_rc_pair_indices: int or list[float]
         The index of each RC pair whose parameters are to be fitted.
         Eg. [1, 2] means fitting R1, R2, C1, C2. The timescale of RC
         pair fitted_rc_pair_indices[j] is constrained to be in the
