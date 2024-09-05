@@ -86,6 +86,7 @@ def notebooks(session):
 @nox.session(name="tests")
 def run_tests(session):
     """Run all the tests."""
+    session.install("setuptools", "wheel")
     session.install("-e", ".[all,dev]", silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
