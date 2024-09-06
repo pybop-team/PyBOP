@@ -115,7 +115,6 @@ def get_parameter_checker(
             return True
 
         # Check every respective R*C against tau bounds
-        print(inputs)
         for i, tau_min, tau_max in zip(fitted_rc_pair_indices, tau_mins, tau_maxs):
             tau = inputs[f"R{i} [Ohm]"] * inputs[f"C{i} [F]"]
             if not tau_min <= tau <= tau_max:
@@ -130,7 +129,7 @@ params = pybop.ParameterSet(params_dict=parameter_set)
 model = pybop.empirical.Thevenin(
     parameter_set=params,
     check_params=get_parameter_checker(
-        0, 0.5, 1
+        0, 1.0, 1
     ),  # Set the model up to automatically check parameters
     options={"number of rc elements": 2},
 )
@@ -170,11 +169,13 @@ dataset = pybop.Dataset(
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.SumSquaredError(problem)
+cost = pybop.RootMeanSquaredError(problem)
 optim = pybop.XNES(
     cost,
+    sigma0=[1e-4, 1e-4, 100],  # Set parameter specific step size
     allow_infeasible_solutions=False,
-    max_iterations=100,
+    max_unchanged_iterations=30,
+    max_iterations=125,
 )
 
 x, final_cost = optim.run()
