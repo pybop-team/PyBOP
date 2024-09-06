@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#6](https://github.com/pybop-team/PyBOP/issues/6) - Adds Monte Carlo functionality, with methods based on Pints' algorithms. A base class is added `BaseSampler`, in addition to `PintsBaseSampler`.
 - [#353](https://github.com/pybop-team/PyBOP/issues/353) - Allow user-defined check_params functions to enforce nonlinear constraints, and enable SciPy constrained optimisation methods
 - [#222](https://github.com/pybop-team/PyBOP/issues/222) - Adds an example for performing and electrode balancing.
 - [#441](https://github.com/pybop-team/PyBOP/issues/441) - Adds an example for estimating constants within a `pybamm.FunctionalParameter`.
@@ -38,7 +39,6 @@
 - [#313](https://github.com/pybop-team/PyBOP/pull/313/) - Fixes for PyBaMM v24.5, drops support for PyBaMM v23.9, v24.1
 
 ## Bug Fixes
-
 
 ## Breaking Changes
 

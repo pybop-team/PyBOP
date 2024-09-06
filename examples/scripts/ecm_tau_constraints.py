@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 
 import pybop
@@ -30,7 +32,7 @@ when good timescale guesses are available.
 # Add definitions for R's, C's, and initial overpotentials for any additional RC elements
 parameter_set = {
     "chemistry": "ecm",
-    "Initial SoC": 0.5,
+    "Initial SoC": 0.75,
     "Initial temperature [K]": 25 + 273.15,
     "Cell capacity [A.h]": 5,
     "Nominal cell capacity [A.h]": 5,
@@ -57,9 +59,9 @@ parameter_set = {
 
 
 def get_parameter_checker(
-    tau_mins: float | list[float],
-    tau_maxs: float | list[float],
-    fitted_rc_pair_indices: int | list[int],
+    tau_mins: Union[float, list[float]],
+    tau_maxs: Union[float, list[float]],
+    fitted_rc_pair_indices: Union[int, list[int]],
 ):
     """Returns a function to check parameters against given tau bounds.
     The resulting check_params function will be sent off to PyBOP; the
@@ -67,11 +69,11 @@ def get_parameter_checker(
 
     Parameters
     ----------
-    tau_mins: float | list[float]
+    tau_mins: float or list[float]
         Lower bounds on timescale tau_i = Ri * Ci
-    tau_maxs: float | list[float]
+    tau_maxs: float or list[float]
         Upper bounds on timescale tau_i = Ri * Ci
-    fitted_rc_pair_indices: int | list[float]
+    fitted_rc_pair_indices: int or list[float]
         The index of each RC pair whose parameters are to be fitted.
         Eg. [1, 2] means fitting R1, R2, C1, C2. The timescale of RC
         pair fitted_rc_pair_indices[j] is constrained to be in the
@@ -113,7 +115,6 @@ def get_parameter_checker(
             return True
 
         # Check every respective R*C against tau bounds
-        print(inputs)
         for i, tau_min, tau_max in zip(fitted_rc_pair_indices, tau_mins, tau_maxs):
             tau = inputs[f"R{i} [Ohm]"] * inputs[f"C{i} [F]"]
             if not tau_min <= tau <= tau_max:
@@ -128,7 +129,7 @@ params = pybop.ParameterSet(params_dict=parameter_set)
 model = pybop.empirical.Thevenin(
     parameter_set=params,
     check_params=get_parameter_checker(
-        0, 0.5, 1
+        0, 1.0, 1
     ),  # Set the model up to automatically check parameters
     options={"number of rc elements": 2},
 )
@@ -153,7 +154,7 @@ parameters = pybop.Parameters(
 )
 
 sigma = 0.001
-t_eval = np.arange(0, 900, 3)
+t_eval = np.arange(0, 600, 3)
 values = model.predict(t_eval=t_eval)
 corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
 
@@ -168,11 +169,13 @@ dataset = pybop.Dataset(
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.SumSquaredError(problem)
+cost = pybop.RootMeanSquaredError(problem)
 optim = pybop.XNES(
     cost,
+    sigma0=[1e-4, 1e-4, 100],  # Set parameter specific step size
     allow_infeasible_solutions=False,
-    max_iterations=100,
+    max_unchanged_iterations=30,
+    max_iterations=125,
 )
 
 x, final_cost = optim.run()

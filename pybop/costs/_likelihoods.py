@@ -4,7 +4,7 @@ import numpy as np
 
 from pybop.costs.base_cost import BaseCost
 from pybop.parameters.parameter import Parameter, Parameters
-from pybop.parameters.priors import Uniform
+from pybop.parameters.priors import JointLogPrior, Uniform
 from pybop.problems.base_problem import BaseProblem
 
 
@@ -290,3 +290,93 @@ class MAP(BaseLikelihood):
         log_likelihood = self.likelihood.compute(y)
         posterior = log_likelihood + log_prior
         return posterior
+
+
+class LogPosterior(BaseCost):
+    """
+    The Log Posterior for a given problem.
+
+    Computes the log posterior which is the sum of the log
+    likelihood and the log prior.
+
+    Inherits all parameters and attributes from ``BaseCost``.
+    """
+
+    def __init__(self, log_likelihood, log_prior=None):
+        super().__init__(problem=log_likelihood.problem)
+
+        # Store the likelihood and prior
+        self._log_likelihood = log_likelihood
+        if log_prior is None:
+            self._prior = JointLogPrior(*log_likelihood.problem.parameters.priors())
+        else:
+            self._prior = log_prior
+
+    def compute(
+        self,
+        y: dict,
+        dy: np.ndarray = None,
+        calculate_grad: bool = False,
+    ) -> Union[float, tuple[float, np.ndarray]]:
+        """
+        Calculate the posterior cost for a given set of parameters.
+
+        Parameters
+        ----------
+        x : array-like
+            The parameters for which to evaluate the cost.
+        grad : array-like, optional
+            An array to store the gradient of the cost function with respect
+            to the parameters.
+
+        Returns
+        -------
+        float
+            The posterior cost.
+        """
+        # Verify we have dy if calculate_grad is True
+        self.verify_args(dy, calculate_grad)
+
+        if calculate_grad:
+            log_prior, dp = self._prior.logpdfS1(self.parameters.current_value())
+        else:
+            log_prior = self._prior.logpdf(self.parameters.current_value())
+
+        if not np.isfinite(log_prior).any():
+            return (-np.inf, -self.grad_fail) if calculate_grad else -np.inf
+
+        if calculate_grad:
+            log_likelihood, dl = self._log_likelihood.compute(
+                y, dy, calculate_grad=True
+            )
+
+            posterior = log_likelihood + log_prior
+            total_gradient = dl + dp
+
+            return posterior, total_gradient
+
+        log_likelihood = self._log_likelihood.compute(y)
+        posterior = log_likelihood + log_prior
+        return posterior
+
+    def prior(self):
+        """
+        Return the prior object.
+
+        Returns
+        -------
+        object
+            The prior object.
+        """
+        return self._prior
+
+    def likelihood(self):
+        """
+        Returns the likelihood.
+
+        Returns
+        -------
+        object
+            The likelihood object.
+        """
+        return self._log_likelihood
