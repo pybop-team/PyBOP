@@ -3,7 +3,7 @@ from pybamm import Experiment
 
 class Experiment(Experiment):
     """
-    Wraps the Experiment class for generating experiment conditions for PyBaMM models.
+    Light wrapper of the PyBaMM Experiment class for generating experiment conditions for PyBaMM models.
     Credit: PyBaMM
 
     Base class for experimental conditions under which to run the model. In general, a
@@ -38,11 +38,9 @@ class Experiment(Experiment):
     def __init__(
         self,
         operating_conditions,
-        period="1 minute",
+        period=None,
         temperature=None,
         termination=None,
-        drive_cycles=None,
-        cccv_handling=None,
     ):
         super().__init__(
             operating_conditions,
