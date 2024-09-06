@@ -83,6 +83,23 @@ def notebooks(session):
     )
 
 
+@nox.session(name="notebooks-overwrite")
+def notebooks_overwrite(session):
+    """Run the Jupyter notebooks."""
+    session.install("setuptools", "wheel")
+    session.install("-e", ".[all,dev]", silent=False)
+    if PYBOP_SCHEDULED:
+        session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
+    session.run(
+        "pytest",
+        "--notebooks",
+        "--nbmake",
+        "--overwrite",
+        "--nbmake-timeout=1000",
+        "examples/",
+    )
+
+
 @nox.session(name="tests")
 def run_tests(session):
     """Run all the tests."""
