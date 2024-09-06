@@ -5,6 +5,7 @@ from typing import Callable, Optional, Union
 import casadi
 import numpy as np
 import pybamm
+from pybamm import IDAKLUSolver as IDAKLUSolver
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
 
@@ -505,7 +506,14 @@ class BaseModel:
         ):
             raise ValueError("These parameter values are infeasible.")
 
-        return self.solver.solve(self._built_model, inputs=inputs, t_eval=t_eval)
+        return self.solver.solve(
+            self._built_model,
+            inputs=inputs,
+            t_eval=[t_eval[0], t_eval[-1]]
+            if isinstance(self._solver, IDAKLUSolver)
+            else t_eval,
+            t_interp=t_eval,
+        )
 
     def simulateEIS(
         self, inputs: Inputs, f_eval: list, initial_state: Optional[dict] = None
@@ -661,8 +669,11 @@ class BaseModel:
         return self._solver.solve(
             self._built_model,
             inputs=inputs,
-            t_eval=t_eval,
+            t_eval=[t_eval[0], t_eval[-1]]
+            if isinstance(self._solver, IDAKLUSolver)
+            else t_eval,
             calculate_sensitivities=True,
+            t_interp=t_eval,
         )
 
     def predict(
