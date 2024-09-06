@@ -1,6 +1,7 @@
 from copy import copy
 
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -18,7 +19,8 @@ class TestCosts:
 
     @pytest.fixture
     def model(self, ground_truth):
-        model = pybop.lithium_ion.SPM()
+        solver = pybamm.IDAKLUSolver()
+        model = pybop.lithium_ion.SPM(solver=solver)
         model.parameter_set["Negative electrode active material volume fraction"] = (
             ground_truth
         )
