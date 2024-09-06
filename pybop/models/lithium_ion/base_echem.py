@@ -270,7 +270,7 @@ class EChemBaseModel(BaseModel):
 
     def approximate_capacity(self, parameter_set: Optional[ParameterSet] = None):
         """
-        Calculate aan estimate for the nominal cell capacity. The estimate is computed
+        Calculate an estimate for the nominal cell capacity. The estimate is computed
         by dividing the theoretical energy (in watt-hours) by the average open circuit
         potential (voltage) of the cell.
 
