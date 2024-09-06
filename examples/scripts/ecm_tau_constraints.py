@@ -32,7 +32,7 @@ when good timescale guesses are available.
 # Add definitions for R's, C's, and initial overpotentials for any additional RC elements
 parameter_set = {
     "chemistry": "ecm",
-    "Initial SoC": 0.5,
+    "Initial SoC": 0.75,
     "Initial temperature [K]": 25 + 273.15,
     "Cell capacity [A.h]": 5,
     "Nominal cell capacity [A.h]": 5,
@@ -154,7 +154,7 @@ parameters = pybop.Parameters(
 )
 
 sigma = 0.001
-t_eval = np.arange(0, 900, 3)
+t_eval = np.arange(0, 600, 3)
 values = model.predict(t_eval=t_eval)
 corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
 
