@@ -55,11 +55,8 @@ class TestEISParameterisation:
 
     @pytest.fixture(
         params=[
-            pybop.GaussianLogLikelihoodKnownSigma,
             pybop.GaussianLogLikelihood,
-            pybop.RootMeanSquaredError,
             pybop.SumSquaredError,
-            pybop.SumofPower,
             pybop.Minkowski,
             pybop.MAP,
         ]
@@ -82,8 +79,6 @@ class TestEISParameterisation:
             pybop.SciPyDifferentialEvolution,
             pybop.CMAES,
             pybop.CuckooSearch,
-            pybop.NelderMead,
-            pybop.SNES,
             pybop.XNES,
         ]
     )

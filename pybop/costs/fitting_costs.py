@@ -122,8 +122,8 @@ class SumSquaredError(BaseCost):
         r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
         e = np.sum(np.sum(np.abs(r) ** 2, axis=0), axis=0)
 
-        if calculate_grad is True:
-            de = 2 * np.sum(np.sum((r * dy.T), axis=2), axis=1)
+        if calculate_grad:
+            de = 2 * np.sum((r * dy.T), axis=(1, 2))
             return e, de
 
         return e
@@ -204,9 +204,9 @@ class Minkowski(BaseCost):
         r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
         e = np.sum(np.abs(r) ** self.p) ** (1 / self.p)
 
-        if calculate_grad is True:
+        if calculate_grad:
             de = np.sum(
-                np.sum(r ** (self.p - 1) * dy.T, axis=2)
+                np.sum(np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T, axis=2)
                 / (e ** (self.p - 1) + np.finfo(float).eps),
                 axis=1,
             )
@@ -287,8 +287,10 @@ class SumofPower(BaseCost):
         r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
         e = np.sum(np.abs(r) ** self.p)
 
-        if calculate_grad is True:
-            de = self.p * np.sum(np.sum(r ** (self.p - 1) * dy.T, axis=2), axis=1)
+        if calculate_grad:
+            de = self.p * np.sum(
+                np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T, axis=(1, 2)
+            )
             return e, de
 
         return e

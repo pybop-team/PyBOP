@@ -112,7 +112,7 @@ class Test_SPM_Parameterisation:
                 problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=self.sigma0
             )
         elif cost in [pybop.SumofPower, pybop.Minkowski]:
-            cost = cost(problem, p=2)
+            cost = cost(problem, p=2.5)
         else:
             cost = cost(problem)
 
@@ -132,19 +132,12 @@ class Test_SPM_Parameterisation:
 
         # Set sigma0 and create optimiser
         if isinstance(cost, pybop.MAP):
-            sigma0 = 0.05
+            common_args["sigma0"] = 0.05
         elif isinstance(cost, pybop.GaussianLogLikelihood):
-            sigma0 = [0.05, 0.05, 5e-3]
+            common_args["sigma0"] = [0.05, 0.05, 1e-3]
         else:
-            sigma0 = None
-        optim = optimiser(sigma0=sigma0, **common_args)
-
-        # AdamW will use lowest sigma0 for learning rate, so allow more iterations
-        if issubclass(optimiser, (pybop.AdamW, pybop.IRPropMin)) and isinstance(
-            cost, pybop.GaussianLogLikelihood
-        ):
-            common_args["max_unchanged_iterations"] = 75
-            optim = optimiser(**common_args)
+            common_args["sigma0"] = 0.05
+        optim = optimiser(**common_args)
 
         return optim
 
