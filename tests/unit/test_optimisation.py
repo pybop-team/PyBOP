@@ -1,3 +1,5 @@
+import io
+import sys
 import warnings
 
 import numpy as np
@@ -277,6 +279,11 @@ class TestOptimisation:
         optim = pybop.SciPyMinimize(cost=cost, method="L-BFGS-B", jac=True, maxiter=10)
         optim.run()
         assert optim.result.scipy_result.success is True
+        # Check constraint-based methods, which have different callbacks / returns
+        for method in ["trust-constr", "SLSQP", "COBYLA"]:
+            optim = pybop.SciPyMinimize(cost=cost, method=method, maxiter=10)
+            optim.run()
+            assert optim.result.scipy_result.success
 
         with pytest.raises(
             ValueError,
@@ -391,6 +398,45 @@ class TestOptimisation:
             assert cost in [1.729, 1.81, 1.9]
 
     @pytest.mark.unit
+    def test_scipy_noprior(self, model, dataset):
+        # Test that Scipy minimize handles no-priors correctly
+        # Set up the parameter with no prior
+        parameter = pybop.Parameter(
+            "Negative electrode active material volume fraction",
+            initial_value=1,  # Intentionally infeasible!
+            bounds=[0.55, 0.95],
+        )
+
+        # Define the problem and cost
+        problem = pybop.FittingProblem(model, parameter, dataset)
+        cost = pybop.SumSquaredError(problem)
+
+        # Create the optimisation class with infeasible solutions disabled
+        opt = pybop.SciPyMinimize(
+            cost=cost,
+            allow_infeasible_solutions=False,
+            max_iterations=1,
+        )
+        with pytest.raises(
+            ValueError,
+            match="The initial parameter values return an infinite cost.",
+        ):
+            opt.run()
+
+    @pytest.mark.unit
+    def test_scipy_bounds(self, cost):
+        # Create the optimisation class with incorrect bounds type
+        with pytest.raises(
+            TypeError,
+            match="Bounds provided must be either type dict, list or SciPy.optimize.bounds object.",
+        ):
+            pybop.SciPyMinimize(
+                cost=cost,
+                bounds="This is a bad bound",
+                max_iterations=1,
+            )
+
+    @pytest.mark.unit
     def test_halting(self, cost):
         # Test max evalutions
         optim = pybop.GradientDescent(cost=cost, max_evaluations=1, verbose=True)
@@ -422,12 +468,23 @@ class TestOptimisation:
         with pytest.raises(ValueError):
             optim.set_max_evaluations(-1)
 
-        optim = pybop.Optimisation(cost=cost)
+        # Reset optim
+        optim = pybop.Optimisation(cost=cost, sigma0=0.015, verbose=True)
 
-        # Trigger threshold
+        # Confirm setting threshold == None
         optim.set_threshold(None)
+        assert optim._threshold is None
+
+        # Confirm threshold halts
+        # Redirect stdout to capture print output
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
         optim.set_threshold(np.inf)
         optim.run()
+        assert (
+            captured_output.getvalue().strip()
+            == "Halt: Objective function crossed threshold: inf."
+        )
         optim.set_max_unchanged_iterations()
 
         # Test callback and halting output

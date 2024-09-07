@@ -2,6 +2,12 @@
 
 ## Features
 
+- [#411](https://github.com/pybop-team/PyBOP/pull/411) - Updates notebooks with README in `examples/` directory, removes kaleido dependency and moves to nbviewer rendering, displays notebook figures with `notebook_connected` plotly renderer
+- [#6](https://github.com/pybop-team/PyBOP/issues/6) - Adds Monte Carlo functionality, with methods based on Pints' algorithms. A base class is added `BaseSampler`, in addition to `PintsBaseSampler`.
+- [#353](https://github.com/pybop-team/PyBOP/issues/353) - Allow user-defined check_params functions to enforce nonlinear constraints, and enable SciPy constrained optimisation methods
+- [#222](https://github.com/pybop-team/PyBOP/issues/222) - Adds an example for performing and electrode balancing.
+- [#441](https://github.com/pybop-team/PyBOP/issues/441) - Adds an example for estimating constants within a `pybamm.FunctionalParameter`.
+- [#405](https://github.com/pybop-team/PyBOP/pull/405) - Adds frequency-domain based EIS prediction methods via `model.simulateEIS` and updates to `problem.evaluate` with examples and tests.
 - [#460](https://github.com/pybop-team/PyBOP/pull/460) - Notebook example files added for ECM and folder structure updated.
 - [#450](https://github.com/pybop-team/PyBOP/pull/450) - Adds support for IDAKLU with output variables, and corresponding examples, tests.
 - [#364](https://github.com/pybop-team/PyBOP/pull/364) - Adds the MultiFittingProblem class and the multi_fitting example script.
@@ -17,11 +23,13 @@
 
 ## Bug Fixes
 
+- [#468](https://github.com/pybop-team/PyBOP/issue/468) - Renames `quick_plot.py` to `standard_plots.py`.
 - [#454](https://github.com/pybop-team/PyBOP/issue/454) - Fixes benchmarking suite.
 - [#421](https://github.com/pybop-team/PyBOP/issues/421) - Adds a default value for the initial SOC for design problems.
 
 ## Breaking Changes
 
+- [#436](https://github.com/pybop-team/PyBOP/pull/436) - **API Change:** The functionality from `BaseCost.evaluate/S1` & `BaseCost._evaluate/S1` is represented in `BaseCost.__call__` & `BaseCost.compute`. `BaseCost.compute` directly acts on the predictions, while `BaseCost.__call__` calls `BaseProblem.evaluate/S1` before `BaseCost.compute`. `compute` has optional args for gradient cost calculations.
 - [#424](https://github.com/pybop-team/PyBOP/issues/424) - Replaces the `init_soc` input to `FittingProblem` with the option to pass an initial OCV value, updates `BaseModel` and fixes `multi_model_identification.ipynb` and `spm_electrode_design.ipynb`.
 
 # [v24.6.1](https://github.com/pybop-team/PyBOP/tree/v24.6.1) - 2024-07-31
@@ -31,7 +39,6 @@
 - [#313](https://github.com/pybop-team/PyBOP/pull/313/) - Fixes for PyBaMM v24.5, drops support for PyBaMM v23.9, v24.1
 
 ## Bug Fixes
-
 
 ## Breaking Changes
 

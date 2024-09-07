@@ -99,6 +99,7 @@ class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
         self.variables = {
             "Voltage [V]": V,
             "Time [s]": t,
+            "Current [A]": self.param.current_with_time,
         }
 
         # Set the built property on creation to prevent unnecessary model rebuilds

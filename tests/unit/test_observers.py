@@ -1,5 +1,4 @@
 import numpy as np
-import pybamm
 import pytest
 
 import pybop
@@ -18,22 +17,18 @@ class TestObserver:
                 "k",
                 prior=pybop.Gaussian(0.1, 0.05),
                 bounds=[0, 1],
-                initial_value=0.1,
             ),
             pybop.Parameter(
                 "y0",
                 prior=pybop.Gaussian(1, 0.05),
                 bounds=[0, 3],
-                initial_value=1.0,
             ),
         )
 
     @pytest.fixture(params=[1, 2])
     def model(self, parameters, request):
-        model = ExponentialDecay(
-            parameter_set=pybamm.ParameterValues({"k": "[input]", "y0": "[input]"}),
-            n_states=request.param,
-        )
+        parameter_set = {"k": 0.1, "y0": 1.0}
+        model = ExponentialDecay(parameter_set=parameter_set, n_states=request.param)
         model.build(parameters=parameters)
         return model
 
@@ -41,7 +36,7 @@ class TestObserver:
     def test_observer(self, model, parameters):
         n = model.n_states
         observer = pybop.Observer(parameters, model, signal=["2y"])
-        t_eval = np.linspace(0, 1, 100)
+        t_eval = np.linspace(0, 20, 10)
         expected = parameters["y0"].initial_value * np.exp(
             -parameters["k"].initial_value * t_eval
         )
@@ -73,7 +68,7 @@ class TestObserver:
         assert np.shape(covariance) == (n, n)
 
         # Test evaluate with different inputs
-        observer._time_data = t_eval
+        observer._domain_data = t_eval
         observer.evaluate(parameters.as_dict())
         observer.evaluate(parameters.current_value())
 

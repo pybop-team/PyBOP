@@ -13,8 +13,10 @@ class Test_SPM_Parameterisation:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.sigma0 = 0.002
-        self.ground_truth = np.asarray([0.55, 0.55]) + np.random.normal(
-            loc=0.0, scale=0.05, size=2
+        self.ground_truth = np.clip(
+            np.asarray([0.55, 0.55]) + np.random.normal(loc=0.0, scale=0.05, size=2),
+            a_min=0.4,
+            a_max=0.75,
         )
 
     @pytest.fixture
@@ -35,7 +37,7 @@ class Test_SPM_Parameterisation:
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Uniform(0.4, 0.75),
-                bounds=[0.375, 0.75],
+                bounds=[0.375, 0.775],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
@@ -68,11 +70,11 @@ class Test_SPM_Parameterisation:
     @pytest.fixture(
         params=[
             pybop.SciPyDifferentialEvolution,
+            pybop.CuckooSearch,
+            pybop.NelderMead,
+            pybop.IRPropMin,
             pybop.AdamW,
             pybop.CMAES,
-            pybop.CuckooSearch,
-            pybop.IRPropMin,
-            pybop.NelderMead,
             pybop.SNES,
             pybop.XNES,
         ]
@@ -104,7 +106,7 @@ class Test_SPM_Parameterisation:
         if cost in [pybop.GaussianLogLikelihoodKnownSigma]:
             cost = cost(problem, sigma0=self.sigma0)
         elif cost in [pybop.GaussianLogLikelihood]:
-            cost = cost(problem, sigma0=self.sigma0 * 3)  # Initial sigma0 guess
+            cost = cost(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
         elif cost in [pybop.MAP]:
             cost = cost(
                 problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=self.sigma0
@@ -177,7 +179,7 @@ class Test_SPM_Parameterisation:
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, cost):
         # Form dataset
-        solution = self.get_data(model, 0.5)
+        solution = self.get_data(model, init_soc=0.5)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -219,18 +221,18 @@ class Test_SPM_Parameterisation:
         x0 = spm_two_signal_cost.parameters.initial_value()
         combined_sigma0 = np.asarray([self.sigma0, self.sigma0])
 
-        # Set sigma0 and create optimiser
-        if isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood):
-            sigma0 = [0.035, 0.035, 6e-3, 6e-3]
-        else:
-            sigma0 = None
+        common_args = {
+            "cost": spm_two_signal_cost,
+            "max_iterations": 250,
+            "absolute_tolerance": 1e-6,
+            "max_unchanged_iterations": 55,
+            "sigma0": [0.035, 0.035, 6e-3, 6e-3]
+            if spm_two_signal_cost is pybop.GaussianLogLikelihood
+            else None,
+        }
 
         # Test each optimiser
-        optim = multi_optimiser(
-            sigma0=sigma0,
-            cost=spm_two_signal_cost,
-            max_iterations=250,
-        )
+        optim = multi_optimiser(**common_args)
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
         if isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood):

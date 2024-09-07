@@ -1,5 +1,8 @@
 from typing import Optional, Union
 
+import numpy as np
+from numpy import ndarray
+
 from pybop import BaseProblem
 from pybop.parameters.parameter import Inputs, Parameters
 
@@ -36,7 +39,7 @@ class BaseCost:
         self.update_capacity = False
         self.y = None
         self.dy = None
-        self.set_fail_gradient()
+        self._de = 1.0
         if isinstance(self.problem, BaseProblem):
             self._target = self.problem.target
             self.parameters.join(self.problem.parameters)
@@ -44,6 +47,8 @@ class BaseCost:
             self.signal = self.problem.signal
             self.transformation = self.parameters.construct_transformation()
             self._has_separable_problem = True
+            self.grad_fail = None
+            self.set_fail_gradient()
 
     @property
     def n_parameters(self):
@@ -57,16 +62,10 @@ class BaseCost:
     def target(self):
         return self._target
 
-    def __call__(self, inputs: Union[Inputs, list]):
+    def __call__(self, inputs: Union[Inputs, list], calculate_grad: bool = False):
         """
-        Call the evaluate function for a given set of parameters.
-        """
-        return self.evaluate(inputs)
-
-    def evaluate(self, inputs: Union[Inputs, list]):
-        """
-        This method calls the forward model via problem.evaluateS1(inputs),
-        and computes the cost for the given output by calling self.computeS1(inputs).
+        This method calls the forward model via problem.evaluate(inputs),
+        and computes the cost for the given output by calling self.compute().
 
         Parameters
         ----------
@@ -86,14 +85,20 @@ class BaseCost:
         if self.transformation:
             p = self.transformation.to_model(inputs)
         inputs = self.parameters.verify(p if self.transformation else inputs)
+        self.parameters.update(values=list(inputs.values()))
+        y, dy = None, None
 
         try:
             if self._has_separable_problem:
-                self.y = self.problem.evaluate(
-                    inputs, update_capacity=self.update_capacity
-                )
+                if calculate_grad is True:
+                    y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
+                else:
+                    y = self.problem.evaluate(
+                        self.problem.parameters.as_dict(),
+                        update_capacity=self.update_capacity,
+                    )
 
-            return self.compute(inputs)
+            return self.compute(y, dy=dy, calculate_grad=calculate_grad)
 
         except NotImplementedError as e:
             raise e
@@ -101,88 +106,27 @@ class BaseCost:
         except Exception as e:
             raise ValueError(f"Error in cost calculation: {e}") from e
 
-    def compute(self, inputs: Inputs):
+    def compute(self, y: dict, dy: ndarray, calculate_grad: bool = False):
         """
-        Calculates the cost function value for a given set of parameters.
+        Compute the cost and  if `calculate_grad` is True, its gradient with
+        respect to the predictions.
 
-        This method only computes the cost, without calling the problem.evaluate.
+        This method only computes the cost, without calling the `problem.evaluate()`.
         This method must be implemented by subclasses.
 
         Parameters
         ----------
-        inputs : Inputs
-            The parameters for which to compute the cost.
+        y : dict
+            The dictionary of predictions with keys designating the signals for fitting.
+        dy : np.ndarray, optional
+            The corresponding gradient with respect to the parameters for each signal.
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
         float
             The calculated cost function value.
-
-        Raises
-        ------
-        NotImplementedError
-            If the method has not been implemented by the subclass.
-        """
-        raise NotImplementedError
-
-    def evaluateS1(self, inputs: Union[Inputs, list]):
-        """
-        This method calls the forward model via problem.evaluateS1(inputs),
-        and computes the cost for the given output by calling self.computeS1(inputs).
-
-        This method includes the gradient of the cost function computed by
-        calling self.computeS1(inputs) with the sensitivity information provided by
-        the forward model via problem.evaluateS1(inputs).
-
-        Parameters
-        ----------
-        inputs : Inputs or array-like
-            The parameters for which to evaluate the cost and gradient.
-
-        Returns
-        -------
-        tuple
-            A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `inputs`.
-
-        Raises
-        ------
-        ValueError
-            If an error occurs during the calculation of the cost or gradient.
-        """
-        if self.transformation:
-            p = self.transformation.to_model(inputs)
-        inputs = self.parameters.verify(p if self.transformation else inputs)
-
-        try:
-            if self._has_separable_problem:
-                self.y, self.dy = self.problem.evaluateS1(inputs)
-
-            return self.computeS1(inputs)
-
-        except NotImplementedError as e:
-            raise e
-
-        except Exception as e:
-            raise ValueError(f"Error in cost calculation: {e}") from e
-
-    def computeS1(self, inputs: Inputs):
-        """
-        Compute the cost and its gradient with respect to the parameters.
-
-        This method only computes the cost, without calling the problem.evaluateS1.
-        This method must be implemented by subclasses.
-
-        Parameters
-        ----------
-        inputs : Inputs
-            The parameters for which to compute the cost and gradient.
-
-        Returns
-        -------
-        tuple
-            A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `inputs`.
 
         Raises
         ------
@@ -206,6 +150,7 @@ class BaseCost:
         if not isinstance(de, float):
             de = float(de)
         self._de = de
+        self.grad_fail = self._de * np.ones(self.n_parameters)
 
     def verify_prediction(self, y):
         """
@@ -227,3 +172,9 @@ class BaseCost:
             return False
 
         return True
+
+    def verify_args(self, dy: ndarray, calculate_grad: bool):
+        if calculate_grad and dy is None:
+            raise ValueError(
+                "Forward model sensitivities need to be provided alongside `calculate_grad=True` for `cost.compute`."
+            )

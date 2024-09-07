@@ -45,7 +45,7 @@ cost = pybop.WeightedCost(cost1, cost2, weights=[1, 1])
 
 # Run optimisation
 optim = pybop.PSO(
-    cost, verbose=True, allow_infeasible_solutions=False, max_iterations=15
+    cost, verbose=True, allow_infeasible_solutions=False, max_iterations=10
 )
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
