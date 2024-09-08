@@ -1,5 +1,3 @@
-import sys
-
 import numpy as np
 
 from pybop import DesignProblem, FittingProblem, StandardPlot
@@ -100,9 +98,7 @@ def quick_plot(problem, problem_inputs: Inputs = None, show=True, **layout_kwarg
         # Generate the figure and update the layout
         fig = plot_dict(show=False)
         fig.update_layout(**layout_kwargs)
-        if "ipykernel" in sys.modules and show:
-            fig.show("svg")
-        elif show:
+        if show:
             fig.show()
 
         figure_list.append(fig)

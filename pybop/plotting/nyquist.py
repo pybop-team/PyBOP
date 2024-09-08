@@ -1,5 +1,3 @@
-import sys
-
 from pybop import StandardPlot
 from pybop.parameters.parameter import Inputs
 
@@ -17,8 +15,7 @@ def nyquist(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
         Input parameters for the problem. If not provided, the default parameters from the problem
         instance will be used. These parameters are verified before use (default is None).
     show : bool, optional
-        If True, the plots will be displayed. If running in an IPython kernel (e.g., Jupyter Notebook),
-        the plots will be shown using SVG format for better quality (default is True).
+        If True, the plots will be displayed.
     **layout_kwargs : dict, optional
         Additional keyword arguments for customising the plot layout. These arguments are passed to
         `fig.update_layout()`.
@@ -134,10 +131,7 @@ def nyquist(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
 
         # Overwrite with user-kwargs
         fig.update_layout(**layout_kwargs)
-
-        if "ipykernel" in sys.modules and show:
-            fig.show("svg")
-        elif show:
+        if show:
             fig.show()
 
         figure_list.append(fig)
