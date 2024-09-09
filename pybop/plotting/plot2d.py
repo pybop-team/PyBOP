@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 from scipy.interpolate import griddata
 
-from pybop import BaseOptimiser, Optimisation, PlotlyManager
+from pybop import BaseCost, BaseOptimiser, Optimisation, PlotlyManager
 
 
 def plot2d(
@@ -64,11 +64,11 @@ def plot2d(
         cost = cost_or_optim
         plot_optim = False
 
-    if hasattr(cost, "parameters") and len(cost.parameters) < 2:
+    if isinstance(cost, BaseCost) and len(cost.parameters) < 2:
         raise ValueError("This cost function takes fewer than 2 parameters.")
 
     additional_values = []
-    if hasattr(cost, "parameters") and len(cost.parameters) > 2:
+    if isinstance(cost, BaseCost) and len(cost.parameters) > 2:
         warnings.warn(
             "This cost function requires more than 2 parameters. "
             "Plotting in 2d with fixed values for the additional parameters.",

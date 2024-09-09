@@ -211,7 +211,17 @@ class LogPosterior(BaseLikelihood):
     Computes the log posterior which is proportional to the sum of the log
     likelihood and the log prior.
 
-    Inherits all parameters and attributes from ``BaseLikelihood``.
+    Parameters
+    ----------
+    log_likelihood : BaseLikelihood
+        The likelihood class of type ``BaseLikelihood``.
+    log_prior : Optional, Union[pybop.BasePrior, stats.rv_continuous]
+        The prior class of type ``BasePrior`` or ``stats.rv_continuous``.
+        If not provided, the prior class will be taken from the parameter priors
+        constructed in the `pybop.Parameters` class.
+    gradient_step : float, default: 1e-3
+        The step size for the finite-difference gradient calculation
+        if the ``log_prior`` is not of type ``BasePrior``.
     """
 
     def __init__(
@@ -260,7 +270,7 @@ class LogPosterior(BaseLikelihood):
         self.verify_args(dy, calculate_grad)
 
         if calculate_grad:
-            if hasattr(self._prior, "logpdfS1"):
+            if isinstance(self._prior, BasePrior):
                 log_prior, dp = self._prior.logpdfS1(self.parameters.current_value())
             else:
                 # Compute log prior first
