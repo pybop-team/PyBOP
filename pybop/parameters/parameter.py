@@ -570,7 +570,7 @@ class Parameters:
             A string including the number of parameters and a summary of each parameter.
         """
         param_summary = "\n".join(
-            f"  {name}: value={param.value}, bounds={param.bounds}"
+            f" {name}: prior= {param.prior}, value={param.value}, bounds={param.bounds}"
             for name, param in self.param.items()
         )
         return f"Parameters({len(self)}):\n{param_summary}"
