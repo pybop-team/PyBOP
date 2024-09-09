@@ -36,7 +36,6 @@ class BaseCost:
         self.problem = problem
         self.verbose = False
         self._has_separable_problem = False
-        self.update_capacity = False
         self.y = None
         self.dy = None
         self._de = 1.0
@@ -93,10 +92,7 @@ class BaseCost:
                 if calculate_grad is True:
                     y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
                 else:
-                    y = self.problem.evaluate(
-                        self.problem.parameters.as_dict(),
-                        update_capacity=self.update_capacity,
-                    )
+                    y = self.problem.evaluate(self.problem.parameters.as_dict())
 
             return self.compute(y, dy=dy, calculate_grad=calculate_grad)
 

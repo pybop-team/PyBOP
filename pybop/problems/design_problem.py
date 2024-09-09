@@ -5,7 +5,9 @@ import numpy as np
 
 from pybop import BaseModel, BaseProblem, Experiment, Parameters
 from pybop.models.empirical.base_ecm import ECircuitModel
+from pybop.models.lithium_ion.base_echem import EChemBaseModel
 from pybop.parameters.parameter import Inputs
+from pybop.parameters.parameter_set import set_formation_concentrations
 
 
 class DesignProblem(BaseProblem):
@@ -30,6 +32,8 @@ class DesignProblem(BaseProblem):
         Additional variables to observe and store in the solution (default additions are: ["Time [s]", "Current [A]"]).
     initial_state : dict, optional
         A valid initial state (default: {"Initial SoC": 1.0}).
+    update_capacity : bool, optional
+        If True, the nominal capacity is updated with an approximate value for each design.
     """
 
     def __init__(
@@ -41,23 +45,36 @@ class DesignProblem(BaseProblem):
         signal: Optional[list[str]] = None,
         additional_variables: Optional[list[str]] = None,
         initial_state: Optional[dict] = None,
+        update_capacity: bool = False,
     ):
         super().__init__(
             parameters, model, check_model, signal, additional_variables, initial_state
         )
         self.experiment = experiment
+        self.warning_patterns = [
+            "Ah is greater than",
+            "Non-physical point encountered",
+        ]
+
+        # Set whether to update the nominal capacity along with the design parameters
+        if update_capacity is True:
+            nominal_capacity_warning = (
+                "The nominal capacity is approximated for each evaluation."
+            )
+        else:
+            nominal_capacity_warning = (
+                "The nominal capacity is fixed at the initial model value."
+            )
+        warnings.warn(nominal_capacity_warning, UserWarning, stacklevel=2)
+        self.update_capacity = update_capacity
 
         # Add an example dataset for plotting comparison
         sol = self.evaluate(self.parameters.as_dict("initial"))
         self._domain_data = sol["Time [s]"]
         self._target = {key: sol[key] for key in self.signal}
         self._dataset = None
-        self.warning_patterns = [
-            "Ah is greater than",
-            "Non-physical point encountered",
-        ]
 
-    def set_initial_state(self, initial_state):
+    def set_initial_state(self, initial_state: dict):
         """
         Set the initial state to be applied to evaluations of the problem.
 
@@ -84,7 +101,7 @@ class DesignProblem(BaseProblem):
 
         self.initial_state = initial_state
 
-    def evaluate(self, inputs: Inputs, eis=False, update_capacity=False):
+    def evaluate(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal.
 
@@ -99,8 +116,15 @@ class DesignProblem(BaseProblem):
             The model output y(t) simulated with inputs.
         """
         inputs = self.parameters.verify(inputs)
-        if update_capacity:
-            self.model.approximate_capacity(inputs)
+
+        # Update the active parameter set
+        parameter_set = self.model.parameter_set
+        if isinstance(self._model, EChemBaseModel):
+            set_formation_concentrations(parameter_set)
+        parameter_set.update(inputs)
+        if self.update_capacity:
+            approximate_capacity = self.model.approximate_capacity(parameter_set)
+            parameter_set.update({"Nominal cell capacity [A.h]": approximate_capacity})
 
         try:
             with warnings.catch_warnings():
@@ -110,7 +134,7 @@ class DesignProblem(BaseProblem):
                     )
 
                 sol = self._model.predict(
-                    inputs=inputs,
+                    parameter_set=parameter_set,
                     experiment=self.experiment,
                     initial_state=self.initial_state,
                 )

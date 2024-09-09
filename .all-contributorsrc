@@ -121,6 +121,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "f-g-r-i-m-m",
+      "name": "f-g-r-i-m-m",
+      "avatar_url": "https://avatars.githubusercontent.com/u/137511310?v=4",
+      "profile": "https://github.com/f-g-r-i-m-m",
+      "contributions": [
+        "example"
+      ]
     }
   ],
   "contributorsPerLine": 7,
