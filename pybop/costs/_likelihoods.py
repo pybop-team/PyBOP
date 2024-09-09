@@ -1,6 +1,7 @@
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
+import scipy.stats as stats
 
 import pybop
 from pybop.costs.base_cost import BaseCost
@@ -216,8 +217,8 @@ class LogPosterior(BaseLikelihood):
     def __init__(
         self,
         log_likelihood: BaseLikelihood,
-        log_prior: pybop.BasePrior = None,
-        gradient_step=1e-3,
+        log_prior: Optional[Union[pybop.BasePrior, stats.rv_continuous]] = None,
+        gradient_step: float = 1e-3,
     ):
         super().__init__(problem=log_likelihood.problem)
         self.gradient_step = gradient_step
@@ -262,19 +263,20 @@ class LogPosterior(BaseLikelihood):
             if hasattr(self._prior, "logpdfS1"):
                 log_prior, dp = self._prior.logpdfS1(self.parameters.current_value())
             else:
+                # Compute log prior first
+                log_prior = self._prior.logpdf(self.parameters.current_value())
+
                 # Compute a finite difference approximation of the gradient of the log prior
                 delta = self.parameters.initial_value() * self.gradient_step
                 dp = []
 
                 for parameter, step_size in zip(self.parameters, delta):
                     param_value = parameter.value
+                    upper_value = param_value * (1 + step_size)
+                    lower_value = param_value * (1 - step_size)
 
-                    log_prior_upper = parameter.prior.logpdf(
-                        param_value * (1 + step_size)
-                    )
-                    log_prior_lower = parameter.prior.logpdf(
-                        param_value * (1 - step_size)
-                    )
+                    log_prior_upper = parameter.prior.logpdf(upper_value)
+                    log_prior_lower = parameter.prior.logpdf(lower_value)
 
                     gradient = (log_prior_upper - log_prior_lower) / (
                         2 * step_size * param_value + np.finfo(float).eps
