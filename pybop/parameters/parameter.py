@@ -559,3 +559,18 @@ class Parameters:
             raise TypeError(
                 f"Inputs must be a dictionary or numeric. Received {type(inputs)}"
             )
+
+    def __repr__(self):
+        """
+        Return a string representation of the Parameters instance.
+
+        Returns
+        -------
+        str
+            A string including the number of parameters and a summary of each parameter.
+        """
+        param_summary = "\n".join(
+            f" {name}: prior= {param.prior}, value={param.value}, bounds={param.bounds}"
+            for name, param in self.param.items()
+        )
+        return f"Parameters({len(self)}):\n{param_summary}"

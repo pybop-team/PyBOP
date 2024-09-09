@@ -60,8 +60,9 @@ class WeightedCost(BaseCost):
             super().__init__(self.costs[0].problem)
         else:
             super().__init__()
-            for cost in self.costs:
-                self.parameters.join(cost.parameters)
+
+        for cost in self.costs:
+            self.parameters.join(cost.parameters)
 
         # Weighted costs do not use this functionality
         self._has_separable_problem = False
@@ -90,7 +91,7 @@ class WeightedCost(BaseCost):
             The weighted cost value.
         """
         if self._has_identical_problems:
-            inputs = self.parameters.as_dict()
+            inputs = self.problem.parameters.as_dict()
             if calculate_grad:
                 y, dy = self.problem.evaluateS1(inputs)
             else:
