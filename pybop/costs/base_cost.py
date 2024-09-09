@@ -92,8 +92,8 @@ class BaseCost:
             If an error occurs during the calculation of the cost.
         """
         # Apply transformation if needed
-        transform = self.transformation is not None and apply_transform
-        if transform:
+        self.has_transform = self.transformation is not None and apply_transform
+        if self.has_transform:
             inputs = self.transformation.to_model(inputs)
         inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(inputs.values()))
@@ -103,7 +103,7 @@ class BaseCost:
             if calculate_grad:
                 y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
                 cost, grad = self.compute(y, dy=dy, calculate_grad=calculate_grad)
-                if transform and np.isfinite(cost):
+                if self.has_transform and np.isfinite(cost):
                     jac = self.transformation.jacobian(inputs)
                     grad = np.matmul(grad, jac)
                 return cost, grad
