@@ -35,6 +35,7 @@ class BaseCost:
 
     def __init__(self, problem: Optional[BaseProblem] = None):
         self.parameters = Parameters()
+        self.transformation = None
         self.problem = problem
         self.verbose = False
         self._has_separable_problem = False
@@ -46,6 +47,7 @@ class BaseCost:
             self.parameters.join(self.problem.parameters)
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
+            self.transformation = self.parameters.construct_transformation()
             self._has_separable_problem = True
             self.grad_fail = None
             self.set_fail_gradient()
@@ -62,7 +64,12 @@ class BaseCost:
     def target(self):
         return self._target
 
-    def __call__(self, inputs: Union[Inputs, list], calculate_grad: bool = False):
+    def __call__(
+        self,
+        inputs: Union[Inputs, list],
+        calculate_grad: bool = False,
+        apply_transform: bool = False,
+    ):
         """
         This method calls the forward model via problem.evaluate(inputs),
         and computes the cost for the given output by calling self.compute().
@@ -84,16 +91,24 @@ class BaseCost:
         ValueError
             If an error occurs during the calculation of the cost.
         """
+        # Apply transformation if needed
+        transform = self.transformation is not None and apply_transform
+        if transform:
+            inputs = self.transformation.to_model(inputs)
         inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(inputs.values()))
+
         y, dy = None, None
-
         if self._has_separable_problem:
-            if calculate_grad is True:
+            if calculate_grad:
                 y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
-            else:
-                y = self.problem.evaluate(self.problem.parameters.as_dict())
+                cost, grad = self.compute(y, dy=dy, calculate_grad=calculate_grad)
+                if transform and np.isfinite(cost):
+                    jac = self.transformation.jacobian(inputs)
+                    grad = np.matmul(grad, jac)
+                return cost, grad
 
+            y = self.problem.evaluate(self.problem.parameters.as_dict())
         return self.compute(y, dy=dy, calculate_grad=calculate_grad)
 
     def compute(self, y: dict, dy: ndarray, calculate_grad: bool = False):

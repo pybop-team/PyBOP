@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional, Union
+from typing import Optional
 
 import numpy as np
 
@@ -7,7 +7,6 @@ from pybop import (
     BaseCost,
     BaseLikelihood,
     DesignCost,
-    Inputs,
     Parameter,
     Parameters,
     WeightedCost,
@@ -74,6 +73,7 @@ class BaseOptimiser:
 
         if isinstance(cost, BaseCost):
             self.cost = cost
+            self._transformation = self.cost.transformation
             self.parameters.join(cost.parameters)
             self.set_allow_infeasible_solutions()
             if isinstance(cost, WeightedCost):
@@ -127,10 +127,7 @@ class BaseOptimiser:
         """
         Update the base optimiser options and remove them from the options dictionary.
         """
-        # Set up the transformation
-        self._transformation = self.parameters.construct_transformation()
-
-        # Set initial values, if x0 is None, initial values are unmodified
+        # Set initial values, if x0 is None, initial values are unmodified.
         self.parameters.update(initial_values=self.unset_options.pop("x0", None))
         self.x0 = self.parameters.reset_initial_value(apply_transform=True)
 
@@ -200,46 +197,6 @@ class BaseOptimiser:
             If the method has not been implemented by the subclass.
         """
         raise NotImplementedError
-
-    def cost_call(self, inputs: Union[Inputs, list], calculate_grad: bool = False):
-        """
-        Transform the inputs if required, then call the cost and silently catch and convert
-        any errors encountered during the cost computation into an infinite cost value.
-
-        Parameters
-        ----------
-        inputs : Inputs or array-like
-            The parameters for which to compute the cost and gradient.
-        calculate_grad : bool, optional
-            A bool condition designating whether to calculate the gradient.
-
-        Returns
-        -------
-        float
-            The calculated cost function value or an infinite value if an
-            error occurs during the calculation of the cost.
-        """
-        if self._transformation:
-            q = inputs
-            inputs = self._transformation.to_model(q)
-
-        try:
-            if calculate_grad:
-                cost, grad = self.cost(inputs=inputs, calculate_grad=calculate_grad)
-
-                if self._transformation and np.isfinite(cost):
-                    jacobian = self._transformation.jacobian(q)
-                    grad = np.matmul(grad, jacobian)
-
-                return cost, grad
-
-            return self.cost(inputs=inputs)
-
-        except NotImplementedError as e:
-            raise e
-
-        except Exception as e:
-            raise ValueError(f"Error in cost calculation: {e}") from e
 
     def log_update(self, x=None, x_best=None, cost=None):
         """
