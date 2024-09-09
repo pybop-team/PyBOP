@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 import scipy.stats as stats
 
@@ -56,6 +58,38 @@ class BasePrior:
         """
         return self.prior.logpdf(x, loc=self.loc, scale=self.scale)
 
+    def icdf(self, q):
+        """
+        Calculates the inverse cumulative distribution function (CDF) of the distribution at q.
+
+        Parameters
+        ----------
+        q : float
+            The point(s) at which to evaluate the inverse CDF.
+
+        Returns
+        -------
+        float
+            The inverse cumulative distribution function value at q.
+        """
+        return self.prior.ppf(q, scale=self.scale, loc=self.loc)
+
+    def cdf(self, x):
+        """
+        Calculates the cumulative distribution function (CDF) of the distribution at x.
+
+        Parameters
+        ----------
+        x : float
+            The point(s) at which to evaluate the CDF.
+
+        Returns
+        -------
+        float
+            The cumulative distribution function value at x.
+        """
+        return self.prior.cdf(x, scale=self.scale, loc=self.loc)
+
     def rvs(self, size=1, random_state=None):
         """
         Generates random variates from the distribution.
@@ -89,6 +123,66 @@ class BasePrior:
         return self.prior.rvs(
             loc=self.loc, scale=self.scale, size=size, random_state=random_state
         )
+
+    def __call__(self, x):
+        """
+        Evaluates the distribution at x.
+
+        Parameters
+        ----------
+        x : float
+            The point(s) at which to evaluate the distribution.
+
+        Returns
+        -------
+        float
+            The value(s) of the distribution at x.
+        """
+        inputs = self.verify(x)
+        return self.logpdf(inputs)
+
+    def logpdfS1(self, x):
+        """
+        Evaluates the first derivative of the distribution at x.
+
+        Parameters
+        ----------
+        x : float
+            The point(s) at which to evaluate the first derivative.
+
+        Returns
+        -------
+        float
+            The value(s) of the first derivative at x.
+        """
+        inputs = self.verify(x)
+        return self._logpdfS1(inputs)
+
+    def _logpdfS1(self, x):
+        """
+        Evaluates the first derivative of the distribution at x.
+
+        Parameters
+        ----------
+        x : float
+            The point(s) at which to evaluate the first derivative.
+
+        Returns
+        -------
+        float
+            The value(s) of the first derivative at x.
+        """
+        raise NotImplementedError
+
+    def verify(self, x):
+        """
+        Verifies that the input is a numpy array and converts it if necessary.
+        """
+        if isinstance(x, dict):
+            x = np.asarray(list(x.values()))
+        elif not isinstance(x, np.ndarray):
+            x = np.asarray(x)
+        return x
 
     def __repr__(self):
         """
@@ -137,10 +231,31 @@ class Gaussian(BasePrior):
     """
 
     def __init__(self, mean, sigma, random_state=None):
+        super().__init__()
         self.name = "Gaussian"
         self.loc = mean
         self.scale = sigma
         self.prior = stats.norm
+        self._offset = -0.5 * np.log(2 * np.pi * self.scale**2)
+        self.sigma2 = self.scale**2
+        self._multip = -1 / (2.0 * self.sigma2)
+        self._n_parameters = 1
+
+    def _logpdfS1(self, x):
+        """
+        Evaluates the first derivative of the gaussian (log) distribution at x.
+
+        Parameters
+        ----------
+        x : float
+            The point(s) at which to evaluate the first derivative.
+
+        Returns
+        -------
+        float
+            The value(s) of the first derivative at x.
+        """
+        return self(x), -(x - self.loc) * self._multip
 
 
 class Uniform(BasePrior):
@@ -159,12 +274,32 @@ class Uniform(BasePrior):
     """
 
     def __init__(self, lower, upper, random_state=None):
+        super().__init__()
         self.name = "Uniform"
         self.lower = lower
         self.upper = upper
         self.loc = lower
         self.scale = upper - lower
         self.prior = stats.uniform
+        self._n_parameters = 1
+
+    def _logpdfS1(self, x):
+        """
+        Evaluates the first derivative of the log uniform distribution at x.
+
+        Parameters
+        ----------
+        x : float
+            The point(s) at which to evaluate the first derivative.
+
+        Returns
+        -------
+        float
+            The value(s) of the first derivative at x.
+        """
+        log_pdf = self.__call__(x)
+        dlog_pdf = np.zeros_like(x)
+        return log_pdf, dlog_pdf
 
     @property
     def mean(self):
@@ -195,7 +330,107 @@ class Exponential(BasePrior):
     """
 
     def __init__(self, scale, loc=0, random_state=None):
+        super().__init__()
         self.name = "Exponential"
         self.loc = loc
         self.scale = scale
         self.prior = stats.expon
+        self._n_parameters = 1
+
+    def _logpdfS1(self, x):
+        """
+        Evaluates the first derivative of the log exponential distribution at x.
+
+        Parameters
+        ----------
+        x : float
+            The point(s) at which to evaluate the first derivative.
+
+        Returns
+        -------
+        float
+            The value(s) of the first derivative at x.
+        """
+        log_pdf = self.__call__(x)
+        dlog_pdf = -1 / self.scale * np.ones_like(x)
+        return log_pdf, dlog_pdf
+
+
+class JointLogPrior(BasePrior):
+    """
+    Represents a joint prior distribution composed of multiple prior distributions.
+
+    Parameters
+    ----------
+    priors : BasePrior
+        One or more prior distributions to combine into a joint distribution.
+    """
+
+    def __init__(self, *priors: BasePrior):
+        super().__init__()
+
+        if not all(isinstance(prior, BasePrior) for prior in priors):
+            raise ValueError("All priors must be instances of BasePrior")
+
+        self._n_parameters = len(priors)
+        self._priors: list[BasePrior] = list(priors)
+
+    def logpdf(self, x: Union[float, np.ndarray]) -> float:
+        """
+        Evaluates the joint log-prior distribution at a given point.
+
+        Parameters
+        ----------
+        x : Union[float, np.ndarray]
+            The point(s) at which to evaluate the distribution. The length of `x`
+            should match the total number of parameters in the joint distribution.
+
+        Returns
+        -------
+        float
+            The joint log-probability density of the distribution at `x`.
+        """
+        if len(x) != self._n_parameters:
+            raise ValueError(
+                f"Input x must have length {self._n_parameters}, got {len(x)}"
+            )
+
+        return sum(prior(x) for prior, x in zip(self._priors, x))
+
+    def _logpdfS1(self, x: Union[float, np.ndarray]) -> tuple[float, np.ndarray]:
+        """
+        Evaluates the first derivative of the joint log-prior distribution at a given point.
+
+        Parameters
+        ----------
+        x : Union[float, np.ndarray]
+            The point(s) at which to evaluate the first derivative. The length of `x`
+            should match the total number of parameters in the joint distribution.
+
+        Returns
+        -------
+        Tuple[float, np.ndarray]
+            A tuple containing the log-probability density and its first derivative at `x`.
+        """
+        if len(x) != self._n_parameters:
+            raise ValueError(
+                f"Input x must have length {self._n_parameters}, got {len(x)}"
+            )
+
+        output = 0
+        doutput = np.zeros(self._n_parameters)
+        index = 0
+
+        for prior in self._priors:
+            num_params = 1
+            x_subset = x[index : index + num_params]
+            p, dp = prior.logpdfS1(x_subset)
+            output += p
+            doutput[index : index + num_params] = dp
+            index += num_params
+
+        return output, doutput
+
+    def __repr__(self) -> str:
+        priors_repr = ", ".join([repr(prior) for prior in self._priors])
+        return f"{self.__class__.__name__}(priors: [{priors_repr}])"

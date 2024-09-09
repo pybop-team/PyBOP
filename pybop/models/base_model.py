@@ -5,6 +5,7 @@ from typing import Callable, Optional, Union
 import casadi
 import numpy as np
 import pybamm
+from pybamm import IDAKLUSolver as IDAKLUSolver
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
 
@@ -80,9 +81,8 @@ class BaseModel:
         ----------
         name : str, optional
             The name given to the model instance.
-        parameter_set : pybop.ParameterSet, optional
-            A PyBOP ParameterSet, PyBaMM ParameterValues object or a dictionary containing the
-            parameter values.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values.
         check_params : Callable, optional
             A compatibility check for the model parameters. Function, with
             signature
@@ -501,7 +501,14 @@ class BaseModel:
         ):
             raise ValueError("These parameter values are infeasible.")
 
-        return self.solver.solve(self._built_model, inputs=inputs, t_eval=t_eval)
+        return self.solver.solve(
+            self._built_model,
+            inputs=inputs,
+            t_eval=[t_eval[0], t_eval[-1]]
+            if isinstance(self._solver, IDAKLUSolver)
+            else t_eval,
+            t_interp=t_eval,
+        )
 
     def simulateEIS(
         self, inputs: Inputs, f_eval: list, initial_state: Optional[dict] = None
@@ -657,8 +664,11 @@ class BaseModel:
         return self._solver.solve(
             self._built_model,
             inputs=inputs,
-            t_eval=t_eval,
+            t_eval=[t_eval[0], t_eval[-1]]
+            if isinstance(self._solver, IDAKLUSolver)
+            else t_eval,
             calculate_sensitivities=True,
+            t_interp=t_eval,
         )
 
     def predict(
@@ -684,9 +694,9 @@ class BaseModel:
         t_eval : array-like, optional
             An array of time points at which to evaluate the solution. Defaults to None,
             which means the time points need to be specified within experiment or elsewhere.
-        parameter_set : pybamm.ParameterValues, optional
-            A PyBaMM ParameterValues object or a dictionary containing the parameter values
-            to use for the simulation. Defaults to the model's current ParameterValues if None.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values to use for the simulation.
+            Defaults to the model's current ParameterValues if None.
         experiment : pybamm.Experiment, optional
             A PyBaMM Experiment object specifying the experimental conditions under which
             the simulation should be run. Defaults to None, indicating no experiment.
@@ -715,14 +725,16 @@ class BaseModel:
         elif not self._unprocessed_model._built:  # noqa: SLF001
             self._unprocessed_model.build_model()
 
+        no_parameter_set = parameter_set is None
         parameter_set = parameter_set or self._unprocessed_parameter_set.copy()
         if inputs is not None:
             inputs = self.parameters.verify(inputs)
             parameter_set.update(inputs)
 
         if initial_state is not None:
-            # Update the default initial state for consistency
-            self.set_initial_state(initial_state)
+            if no_parameter_set:
+                # Update the default initial state for consistency
+                self.set_initial_state(initial_state)
 
             initial_state = self.convert_to_pybamm_initial_state(initial_state)
             if isinstance(self.pybamm_model, pybamm.equivalent_circuit.Thevenin):
@@ -765,8 +777,8 @@ class BaseModel:
         ----------
         inputs : Inputs
             The input parameters for the simulation.
-        parameter_set : pybop.ParameterSet, optional
-            A PyBOP parameter set object or a dictionary containing the parameter values.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
@@ -799,8 +811,8 @@ class BaseModel:
         ----------
         inputs : Inputs
             The input parameters for the simulation.
-        parameter_set : pybop.ParameterSet
-            A PyBOP parameter set object or a dictionary containing the parameter values.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
@@ -879,9 +891,8 @@ class BaseModel:
 
         Parameters
         ----------
-        parameter_set : dict, optional
-            A dictionary containing the parameter values necessary for the mass
-            calculations.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values.
 
         Raises
         ------
@@ -898,9 +909,8 @@ class BaseModel:
 
         Parameters
         ----------
-        parameter_set : dict, optional
-            A dictionary containing the parameter values necessary for the volume
-            calculation.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values.
 
         Raises
         ------
@@ -909,17 +919,17 @@ class BaseModel:
         """
         raise NotImplementedError
 
-    def approximate_capacity(self, inputs: Inputs):
+    def approximate_capacity(self, parameter_set: ParameterSet = None):
         """
-        Calculate a new estimate for the nominal capacity based on the theoretical energy density
-        and an average voltage.
+        Calculate a new estimate for the nominal capacity based on the theoretical energy
+        density and an average voltage.
 
         This method must be implemented by subclasses.
 
         Parameters
         ----------
-        inputs : Inputs
-            The parameters that are the inputs of the model.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values.
 
         Raises
         ------

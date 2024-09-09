@@ -1,6 +1,7 @@
 from copy import copy
 
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -18,7 +19,8 @@ class TestCosts:
 
     @pytest.fixture
     def model(self, ground_truth):
-        model = pybop.lithium_ion.SPM()
+        solver = pybamm.IDAKLUSolver()
+        model = pybop.lithium_ion.SPM(solver=solver)
         model.parameter_set["Negative electrode active material volume fraction"] = (
             ground_truth
         )
@@ -236,7 +238,8 @@ class TestCosts:
             pybop.SumofPower(problem, p=np.inf)
 
     @pytest.fixture
-    def design_problem(self, model, parameters, experiment, signal):
+    def design_problem(self, parameters, experiment, signal):
+        model = pybop.lithium_ion.SPM()
         return pybop.DesignProblem(
             model,
             parameters,
@@ -282,7 +285,8 @@ class TestCosts:
                 cost(["StringInputShouldNotWork"])
 
             # Compute after updating nominal capacity
-            cost = cost_class(design_problem, update_capacity=True)
+            design_problem.update_capacity = True
+            cost = cost_class(design_problem)
             cost([0.4])
 
     @pytest.fixture
@@ -401,11 +405,6 @@ class TestCosts:
         for i, _ in enumerate(weighted_cost.costs):
             assert isinstance(weighted_cost.costs[i].problem, pybop.DesignProblem)
 
-        # Ensure attributes are set correctly and not modified via side-effects
-        assert weighted_cost.update_capacity is False
-        assert weighted_cost.costs[0].update_capacity is False
-        assert weighted_cost.costs[1].update_capacity is False
-
         assert weighted_cost([0.5]) >= 0
         np.testing.assert_allclose(
             weighted_cost([0.6]),
@@ -415,14 +414,10 @@ class TestCosts:
 
     @pytest.mark.unit
     def test_weighted_design_cost_with_update_capacity(self, design_problem):
-        cost1 = pybop.GravimetricEnergyDensity(design_problem, update_capacity=True)
+        design_problem.update_capacity = True
+        cost1 = pybop.GravimetricEnergyDensity(design_problem)
         cost2 = pybop.VolumetricEnergyDensity(design_problem)
         weighted_cost = pybop.WeightedCost(cost1, cost2, weights=[1, 1])
-
-        # Ensure attributes are set correctly and not modified via side-effects
-        assert weighted_cost.update_capacity is True
-        assert weighted_cost.costs[0].update_capacity is True
-        assert weighted_cost.costs[1].update_capacity is False
 
         assert weighted_cost.has_identical_problems is True
         assert weighted_cost.has_separable_problem is False

@@ -56,6 +56,9 @@ class Parameter:
         self.value = initial_value
         self.transformation = transformation
         self.applied_prior_bounds = False
+        self.bounds = None
+        self.lower_bounds = None
+        self.upper_bounds = None
         self.set_bounds(bounds)
         self.margin = 1e-4
 
@@ -172,7 +175,6 @@ class Parameter:
             else:
                 self.lower_bound = bounds[0]
                 self.upper_bound = bounds[1]
-
         elif self.prior is not None:
             self.applied_prior_bounds = True
             self.lower_bound = self.prior.mean - boundary_multiplier * self.prior.sigma
@@ -430,6 +432,12 @@ class Parameters:
             sigma0 = None
         return sigma0
 
+    def priors(self) -> list:
+        """
+        Return the prior distribution of each parameter.
+        """
+        return [param.prior for param in self.param.values()]
+
     def initial_value(self, apply_transform: bool = False) -> np.ndarray:
         """
         Return the initial value of each parameter.
@@ -572,7 +580,9 @@ class Parameters:
         """
         if inputs is None or isinstance(inputs, dict):
             return inputs
-        elif (isinstance(inputs, list) and all(is_numeric(x) for x in inputs)) or all(
+        if isinstance(inputs, np.ndarray) and inputs.ndim == 0:
+            inputs = inputs[np.newaxis]
+        if (isinstance(inputs, list) and all(is_numeric(x) for x in inputs)) or all(
             is_numeric(x) for x in list(inputs)
         ):
             return self.as_dict(inputs)

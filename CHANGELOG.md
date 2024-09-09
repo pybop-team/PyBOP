@@ -2,6 +2,8 @@
 
 ## Features
 
+- [#411](https://github.com/pybop-team/PyBOP/pull/411) - Updates notebooks with README in `examples/` directory, removes kaleido dependency and moves to nbviewer rendering, displays notebook figures with `notebook_connected` plotly renderer
+- [#6](https://github.com/pybop-team/PyBOP/issues/6) - Adds Monte Carlo functionality, with methods based on Pints' algorithms. A base class is added `BaseSampler`, in addition to `PintsBaseSampler`.
 - [#353](https://github.com/pybop-team/PyBOP/issues/353) - Allow user-defined check_params functions to enforce nonlinear constraints, and enable SciPy constrained optimisation methods
 - [#222](https://github.com/pybop-team/PyBOP/issues/222) - Adds an example for performing and electrode balancing.
 - [#441](https://github.com/pybop-team/PyBOP/issues/441) - Adds an example for estimating constants within a `pybamm.FunctionalParameter`.
@@ -21,6 +23,7 @@
 
 ## Bug Fixes
 
+- [#464](https://github.com/pybop-team/PyBOP/issues/464) - Fix order of design `parameter_set` updates and refactor `update_capacity`.
 - [#468](https://github.com/pybop-team/PyBOP/issue/468) - Renames `quick_plot.py` to `standard_plots.py`.
 - [#454](https://github.com/pybop-team/PyBOP/issue/454) - Fixes benchmarking suite.
 - [#421](https://github.com/pybop-team/PyBOP/issues/421) - Adds a default value for the initial SOC for design problems.
@@ -37,7 +40,6 @@
 - [#313](https://github.com/pybop-team/PyBOP/pull/313/) - Fixes for PyBaMM v24.5, drops support for PyBaMM v23.9, v24.1
 
 ## Bug Fixes
-
 
 ## Breaking Changes
 

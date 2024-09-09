@@ -1,3 +1,5 @@
+import io
+import sys
 import warnings
 
 import numpy as np
@@ -491,12 +493,23 @@ class TestOptimisation:
         with pytest.raises(ValueError):
             optim.set_max_evaluations(-1)
 
-        optim = pybop.Optimisation(cost=cost)
+        # Reset optim
+        optim = pybop.Optimisation(cost=cost, sigma0=0.015, verbose=True)
 
-        # Trigger threshold
+        # Confirm setting threshold == None
         optim.set_threshold(None)
+        assert optim._threshold is None
+
+        # Confirm threshold halts
+        # Redirect stdout to capture print output
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
         optim.set_threshold(np.inf)
         optim.run()
+        assert (
+            captured_output.getvalue().strip()
+            == "Halt: Objective function crossed threshold: inf."
+        )
         optim.set_max_unchanged_iterations()
 
         # Test callback and halting output
