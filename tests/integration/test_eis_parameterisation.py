@@ -126,6 +126,7 @@ class TestEISParameterisation:
             "max_iterations": 250,
             "absolute_tolerance": 1e-6,
             "max_unchanged_iterations": 35,
+            "sigma0": 0.05,
         }
 
         if isinstance(cost, pybop.MAP):
@@ -135,9 +136,10 @@ class TestEISParameterisation:
                 )  # Increase range to avoid prior == np.inf
 
         # Set sigma0 and create optimiser
-        sigma0 = 0.05 if isinstance(cost, pybop.MAP) else None
-        optim = optimiser(sigma0=sigma0, **common_args)
+        if isinstance(cost, pybop.GaussianLogLikelihood):
+            common_args["sigma0"] = [0.05, 0.05, 1e-3]
 
+        optim = optimiser(**common_args)
         return optim
 
     @pytest.mark.integration
