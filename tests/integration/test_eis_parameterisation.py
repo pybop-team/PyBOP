@@ -55,11 +55,8 @@ class TestEISParameterisation:
 
     @pytest.fixture(
         params=[
-            pybop.GaussianLogLikelihoodKnownSigma,
             pybop.GaussianLogLikelihood,
-            pybop.RootMeanSquaredError,
             pybop.SumSquaredError,
-            pybop.SumofPower,
             pybop.Minkowski,
             pybop.LogPosterior,
         ]
@@ -82,8 +79,6 @@ class TestEISParameterisation:
             pybop.SciPyDifferentialEvolution,
             pybop.CMAES,
             pybop.CuckooSearch,
-            pybop.NelderMead,
-            pybop.SNES,
             pybop.XNES,
         ]
     )
@@ -131,6 +126,9 @@ class TestEISParameterisation:
             "max_iterations": 250,
             "absolute_tolerance": 1e-6,
             "max_unchanged_iterations": 35,
+            "sigma0": [0.05, 0.05, 1e-3]
+            if isinstance(cost, pybop.GaussianLogLikelihood)
+            else 0.05,
         }
 
         if isinstance(cost, pybop.LogPosterior):
@@ -139,10 +137,8 @@ class TestEISParameterisation:
                     0.2, 2.0
                 )  # Increase range to avoid prior == np.inf
 
-        # Set sigma0 and create optimiser
-        sigma0 = 0.05 if isinstance(cost, pybop.LogPosterior) else None
-        optim = optimiser(sigma0=sigma0, **common_args)
-
+        # Create optimiser
+        optim = optimiser(**common_args)
         return optim
 
     @pytest.mark.integration

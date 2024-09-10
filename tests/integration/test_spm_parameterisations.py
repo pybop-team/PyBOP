@@ -112,7 +112,7 @@ class Test_SPM_Parameterisation:
                 pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
             )
         elif cost in [pybop.SumofPower, pybop.Minkowski]:
-            cost = cost(problem, p=2)
+            cost = cost(problem, p=2.5)
         else:
             cost = cost(problem)
 
@@ -122,6 +122,9 @@ class Test_SPM_Parameterisation:
             "max_iterations": 250,
             "absolute_tolerance": 1e-6,
             "max_unchanged_iterations": 55,
+            "sigma0": [0.05, 0.05, 1e-3]
+            if isinstance(cost, pybop.GaussianLogLikelihood)
+            else 0.05,
         }
 
         if isinstance(cost, pybop.LogPosterior):
@@ -131,16 +134,7 @@ class Test_SPM_Parameterisation:
                 )  # Increase range to avoid prior == np.inf
 
         # Set sigma0 and create optimiser
-        sigma0 = 0.05 if isinstance(cost, pybop.LogPosterior) else None
-        optim = optimiser(sigma0=sigma0, **common_args)
-
-        # AdamW will use lowest sigma0 for learning rate, so allow more iterations
-        if issubclass(optimiser, (pybop.AdamW, pybop.IRPropMin)) and isinstance(
-            cost, pybop.GaussianLogLikelihood
-        ):
-            common_args["max_unchanged_iterations"] = 75
-            optim = optimiser(**common_args)
-
+        optim = optimiser(**common_args)
         return optim
 
     @pytest.mark.integration
@@ -221,6 +215,9 @@ class Test_SPM_Parameterisation:
             "max_iterations": 250,
             "absolute_tolerance": 1e-6,
             "max_unchanged_iterations": 55,
+            "sigma0": [0.035, 0.035, 6e-3, 6e-3]
+            if spm_two_signal_cost is pybop.GaussianLogLikelihood
+            else None,
         }
 
         # Test each optimiser
@@ -229,6 +226,9 @@ class Test_SPM_Parameterisation:
         # Add sigma0 to ground truth for GaussianLogLikelihood
         if isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood):
             self.ground_truth = np.concatenate((self.ground_truth, combined_sigma0))
+
+        if issubclass(multi_optimiser, pybop.BasePintsOptimiser):
+            optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-6)
 
         initial_cost = optim.cost(optim.parameters.initial_value())
         x, final_cost = optim.run()
