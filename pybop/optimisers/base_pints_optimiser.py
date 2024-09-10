@@ -190,15 +190,14 @@ class BasePintsOptimiser(BaseOptimiser):
         unchanged_iterations = 0
 
         # Choose method to evaluate
-        if self._needs_sensitivities:
-
-            def f(x):
-                L, dl = self.cost_call(x, calculate_grad=True)
-                return (L, dl) if self.minimising else (-L, -dl)
-        else:
-
-            def f(x):
-                return self.cost_call(x) if self.minimising else -self.cost_call(x)
+        def fun(x):
+            if self._needs_sensitivities:
+                L, dl = self.cost(x, calculate_grad=True, apply_transform=True)
+            else:
+                L = self.cost(x, apply_transform=True)
+                dl = None
+            sign = -1 if not self.minimising else 1
+            return (sign * L, sign * dl) if dl is not None else sign * L
 
         # Create evaluator object
         if self._parallel:
@@ -209,9 +208,9 @@ class BasePintsOptimiser(BaseOptimiser):
             # particles!
             if isinstance(self.pints_optimiser, PintsPopulationBasedOptimiser):
                 n_workers = min(n_workers, self.pints_optimiser.population_size())
-            evaluator = PintsParallelEvaluator(f, n_workers=n_workers)
+            evaluator = PintsParallelEvaluator(fun, n_workers=n_workers)
         else:
-            evaluator = PintsSequentialEvaluator(f)
+            evaluator = PintsSequentialEvaluator(fun)
 
         # Keep track of current best and best-guess scores.
         fb = fg = np.inf
