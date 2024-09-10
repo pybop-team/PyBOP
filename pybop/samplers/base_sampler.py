@@ -110,7 +110,7 @@ class BaseSampler:
     def _initialise_storage(self):
         self._prior = None
         if isinstance(self._log_pdf, LogPosterior):
-            self._prior = self._log_pdf.prior()
+            self._prior = self._log_pdf.prior
 
         # Storage of the received samples
         self._sampled_logpdf = np.zeros(self._n_chains)

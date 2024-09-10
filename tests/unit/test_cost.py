@@ -75,18 +75,18 @@ class TestCosts:
             pybop.Minkowski,
             pybop.SumofPower,
             pybop.ObserverCost,
-            pybop.MAP,
+            pybop.LogPosterior,
         ]
     )
     def cost(self, problem, request):
         cls = request.param
         if cls in [pybop.SumSquaredError, pybop.RootMeanSquaredError]:
             return cls(problem)
-        elif cls in [pybop.MAP]:
-            return cls(problem, pybop.GaussianLogLikelihoodKnownSigma)
+        elif cls is pybop.LogPosterior:
+            return cls(pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002))
         elif cls in [pybop.Minkowski, pybop.SumofPower]:
             return cls(problem, p=2)
-        elif cls in [pybop.ObserverCost]:
+        elif cls is pybop.ObserverCost:
             inputs = problem.parameters.initial_value()
             state = problem.model.reinit(inputs)
             n = len(state)
@@ -131,41 +131,6 @@ class TestCosts:
             cost([0.5], calculate_grad=True)
 
     @pytest.mark.unit
-    def test_MAP(self, problem):
-        # Incorrect likelihood
-        with pytest.raises(
-            ValueError,
-            match="An error occurred when constructing the Likelihood class:",
-        ):
-            pybop.MAP(problem, pybop.SumSquaredError)
-
-        # Incorrect construction of likelihood
-        with pytest.raises(
-            ValueError,
-            match="An error occurred when constructing the Likelihood class: could not convert string to float: 'string'",
-        ):
-            pybop.MAP(problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0="string")
-
-        # Incorrect likelihood
-        with pytest.raises(ValueError, match="must be a subclass of BaseLikelihood"):
-            pybop.MAP(problem, self.InvalidLikelihood, sigma0=0.1)
-
-        # Non finite prior
-        parameter = pybop.Parameter(
-            "Negative electrode active material volume fraction",
-            prior=pybop.Uniform(0.55, 0.6),
-        )
-        dataset = pybop.Dataset(data_dictionary=problem.dataset)
-        problem_non_finite = pybop.FittingProblem(
-            problem.model, parameter, dataset, signal=problem.signal
-        )
-        likelihood = pybop.MAP(
-            problem_non_finite, pybop.GaussianLogLikelihoodKnownSigma, sigma0=0.01
-        )
-        assert not np.isfinite(likelihood([0.7]))
-        assert not np.isfinite(likelihood([0.7], calculate_grad=True)[0])
-
-    @pytest.mark.unit
     def test_costs(self, cost):
         if isinstance(cost, pybop.BaseLikelihood):
             higher_cost = cost([0.52])
@@ -190,7 +155,7 @@ class TestCosts:
             cost.set_fail_gradient(10)
             assert cost._de == 10
 
-        if not isinstance(cost, (pybop.ObserverCost, pybop.MAP)):
+        if not isinstance(cost, (pybop.ObserverCost, pybop.LogPosterior)):
             e, de = cost([0.5], calculate_grad=True)
 
             assert np.isscalar(e)
@@ -335,17 +300,17 @@ class TestCosts:
             TypeError,
             match="All costs must be instances of BaseCost.",
         ):
-            weighted_cost = pybop.WeightedCost(cost1.problem)
+            pybop.WeightedCost(cost1.problem)
         with pytest.raises(
             ValueError,
             match="Weights must be numeric values.",
         ):
-            weighted_cost = pybop.WeightedCost(cost1, cost2, weights="Invalid string")
+            pybop.WeightedCost(cost1, cost2, weights="Invalid string")
         with pytest.raises(
             ValueError,
             match="Number of weights must match number of costs.",
         ):
-            weighted_cost = pybop.WeightedCost(cost1, cost2, weights=[1])
+            pybop.WeightedCost(cost1, cost2, weights=[1])
 
         # Test with identical problems
         weight = 100
@@ -378,8 +343,8 @@ class TestCosts:
         np.testing.assert_allclose(errors_2, errors_3, atol=1e-5)
         np.testing.assert_allclose(sensitivities_2, sensitivities_3, atol=1e-5)
 
-        # Test MAP explicitly
-        cost4 = pybop.MAP(problem, pybop.GaussianLogLikelihood)
+        # Test LogPosterior explicitly
+        cost4 = pybop.LogPosterior(pybop.GaussianLogLikelihood(problem))
         weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, -1 / weight])
         assert weighted_cost_4.has_identical_problems is True
         assert weighted_cost_4.has_separable_problem is False

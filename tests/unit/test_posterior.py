@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import scipy.stats as st
 
 import pybop
 
@@ -72,7 +73,7 @@ class TestLogPosterior:
         assert posterior._prior == prior
 
         # Test log posterior construction without parameters
-        likelihood.problem.parameters.priors = None
+        likelihood.parameters.priors = None
 
         with pytest.raises(TypeError, match="'NoneType' object is not callable"):
             pybop.LogPosterior(likelihood, log_prior=None)
@@ -104,8 +105,8 @@ class TestLogPosterior:
         assert np.allclose(dp, 2.0, atol=2e-2)
 
         # Get log likelihood and log prior
-        likelihood = posterior.likelihood()
-        prior = posterior.prior()
+        likelihood = posterior.likelihood
+        prior = posterior.prior
 
         assert likelihood == posterior._log_likelihood
         assert prior == posterior._prior
@@ -119,3 +120,14 @@ class TestLogPosterior:
         # Test prior np.inf
         assert not np.isfinite(posterior_uniform_prior([1]))
         assert not np.isfinite(posterior_uniform_prior([1], calculate_grad=True)[0])
+
+    @pytest.mark.unit
+    def test_non_logpdfS1_prior(self, likelihood):
+        # Scipy distribution
+        prior = st.norm(0.8, 0.01)
+        posterior = pybop.LogPosterior(likelihood, log_prior=prior)
+        p, dp = posterior([0.6], calculate_grad=True)
+
+        # Assert to PyBOP.Gaussian
+        p2, dp2 = pybop.Gaussian(0.8, 0.01).logpdfS1(0.6)
+        np.testing.assert_allclose(dp, dp2, atol=2e-3)

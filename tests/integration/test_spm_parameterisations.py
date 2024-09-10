@@ -58,7 +58,7 @@ class Test_SPM_Parameterisation:
             pybop.SumSquaredError,
             pybop.SumofPower,
             pybop.Minkowski,
-            pybop.MAP,
+            pybop.LogPosterior,
         ]
     )
     def cost(self, request):
@@ -103,13 +103,13 @@ class Test_SPM_Parameterisation:
         problem = pybop.FittingProblem(model, parameters, dataset)
 
         # Construct the cost
-        if cost in [pybop.GaussianLogLikelihoodKnownSigma]:
+        if cost is pybop.GaussianLogLikelihoodKnownSigma:
             cost = cost(problem, sigma0=self.sigma0)
-        elif cost in [pybop.GaussianLogLikelihood]:
+        elif cost is pybop.GaussianLogLikelihood:
             cost = cost(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
-        elif cost in [pybop.MAP]:
+        elif cost is pybop.LogPosterior:
             cost = cost(
-                problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=self.sigma0
+                pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
             )
         elif cost in [pybop.SumofPower, pybop.Minkowski]:
             cost = cost(problem, p=2.5)
@@ -127,7 +127,7 @@ class Test_SPM_Parameterisation:
             else 0.05,
         }
 
-        if isinstance(cost, pybop.MAP):
+        if isinstance(cost, pybop.LogPosterior):
             for i in cost.parameters.keys():
                 cost.parameters[i].prior = pybop.Uniform(
                     0.2, 2.0
@@ -186,13 +186,13 @@ class Test_SPM_Parameterisation:
         signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
         problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 
-        if cost in [pybop.GaussianLogLikelihoodKnownSigma]:
+        if cost is pybop.GaussianLogLikelihoodKnownSigma:
             return cost(problem, sigma0=self.sigma0)
-        elif cost in [pybop.GaussianLogLikelihood]:
+        elif cost is pybop.GaussianLogLikelihood:
             return cost(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
-        elif cost in [pybop.MAP]:
+        elif cost is pybop.LogPosterior:
             return cost(
-                problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=self.sigma0
+                pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
             )
         else:
             return cost(problem)

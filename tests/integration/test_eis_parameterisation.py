@@ -58,7 +58,7 @@ class TestEISParameterisation:
             pybop.GaussianLogLikelihood,
             pybop.SumSquaredError,
             pybop.Minkowski,
-            pybop.MAP,
+            pybop.LogPosterior,
         ]
     )
     def cost(self, request):
@@ -107,13 +107,13 @@ class TestEISParameterisation:
         problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 
         # Construct the cost
-        if cost in [pybop.GaussianLogLikelihoodKnownSigma]:
+        if cost is pybop.GaussianLogLikelihoodKnownSigma:
             cost = cost(problem, sigma0=self.sigma0)
-        elif cost in [pybop.GaussianLogLikelihood]:
+        elif cost is pybop.GaussianLogLikelihood:
             cost = cost(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
-        elif cost in [pybop.MAP]:
+        elif cost is pybop.LogPosterior:
             cost = cost(
-                problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=self.sigma0
+                pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
             )
         elif cost in [pybop.SumofPower, pybop.Minkowski]:
             cost = cost(problem, p=2)
@@ -131,7 +131,7 @@ class TestEISParameterisation:
             else 0.05,
         }
 
-        if isinstance(cost, pybop.MAP):
+        if isinstance(cost, pybop.LogPosterior):
             for i in cost.parameters.keys():
                 cost.parameters[i].prior = pybop.Uniform(
                     0.2, 2.0
