@@ -23,6 +23,7 @@
 
 ## Bug Fixes
 
+- [#473](https://github.com/pybop-team/PyBOP/pull/473) - Bugfixes for transformation class, adds optional `apply_transform` arg to `BaseCost.__call__()`, adds `log_update()` method to `BaseOptimiser`
 - [#464](https://github.com/pybop-team/PyBOP/issues/464) - Fix order of design `parameter_set` updates and refactor `update_capacity`.
 - [#468](https://github.com/pybop-team/PyBOP/issue/468) - Renames `quick_plot.py` to `standard_plots.py`.
 - [#454](https://github.com/pybop-team/PyBOP/issue/454) - Fixes benchmarking suite.
