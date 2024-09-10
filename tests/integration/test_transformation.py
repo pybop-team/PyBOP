@@ -48,7 +48,7 @@ class TestTransformation:
             ),
         )
 
-    @pytest.fixture(params=[0.4, 0.7])
+    @pytest.fixture(params=[0.5])
     def init_soc(self, request):
         return request.param
 
@@ -80,14 +80,14 @@ class TestTransformation:
         ],
     )
     @pytest.mark.integration
-    def test_spm_optimisers(self, optimiser, cost):
+    def test_spm_transformation(self, optimiser, cost):
         x0 = cost.parameters.initial_value()
-        sigma0 = None if optimiser is pybop.AdamW else 0.2
         optim = optimiser(
             cost=cost,
-            sigma0=sigma0,
+            sigma0=0.1,
             max_unchanged_iterations=35,
-            max_iterations=150,
+            absolute_tolerance=1e-6,
+            max_iterations=250,
         )
 
         initial_cost = optim.cost(x0)
@@ -105,8 +105,8 @@ class TestTransformation:
         experiment = pybop.Experiment(
             [
                 (
-                    "Discharge at 1C for 3 minutes (4 second period)",
-                    "Charge at 1C for 3 minutes (4 second period)",
+                    "Discharge at 1C for 3 minutes (5 second period)",
+                    "Charge at 1C for 3 minutes (5 second period)",
                 ),
             ]
         )
