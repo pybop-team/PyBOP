@@ -2,6 +2,14 @@
 
 ## Features
 
+## Bug Fixes
+
+## Breaking Changes
+
+# [v24.9.0](https://github.com/pybop-team/PyBOP/tree/v24.9.0) - 2024-09-10
+
+## Features
+
 - [#462](https://github.com/pybop-team/PyBOP/pull/462) - Enables multidimensional learning rate for `pybop.AdamW` with updated (more robust) integration testing. Fixes bug in `Minkowski` and `SumofPower` cost functions for gradient-based optimisers.
 - [#411](https://github.com/pybop-team/PyBOP/pull/411) - Updates notebooks with README in `examples/` directory, removes kaleido dependency and moves to nbviewer rendering, displays notebook figures with `notebook_connected` plotly renderer
 - [#6](https://github.com/pybop-team/PyBOP/issues/6) - Adds Monte Carlo functionality, with methods based on Pints' algorithms. A base class is added `BaseSampler`, in addition to `PintsBaseSampler`.
