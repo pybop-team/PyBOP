@@ -438,6 +438,11 @@ class TestOptimisation:
 
     @pytest.mark.unit
     def test_halting(self, cost):
+        # Add a parameter transformation
+        cost.parameters[
+            "Negative electrode active material volume fraction"
+        ].transformation = pybop.IdentityTransformation()
+
         # Test max evalutions
         optim = pybop.GradientDescent(cost=cost, max_evaluations=1, verbose=True)
         x, __ = optim.run()

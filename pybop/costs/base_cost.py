@@ -21,13 +21,16 @@ class BaseCost:
     problem : object
         A problem instance containing the data and functions necessary for
         evaluating the cost function.
-    _target : array-like
+    target : array-like
         An array containing the target data to fit.
     n_outputs : int
         The number of outputs in the model.
-    _has_separable_problem : bool
+    has_separable_problem : bool
         If True, the problem is separable from the cost function and will be
         evaluated in advance of the call to self.compute() (default: False).
+    _de : float
+        The gradient of the cost function to use if an error occurs during
+        evaluation. Defaults to 1.0.
     """
 
     def __init__(self, problem: Optional[BaseProblem] = None):
@@ -61,7 +64,12 @@ class BaseCost:
     def target(self):
         return self._target
 
-    def __call__(self, inputs: Union[Inputs, list], calculate_grad: bool = False):
+    def __call__(
+        self,
+        inputs: Union[Inputs, list],
+        calculate_grad: bool = False,
+        apply_transform: bool = False,
+    ):
         """
         This method calls the forward model via problem.evaluate(inputs),
         and computes the cost for the given output by calling self.compute().
@@ -70,6 +78,8 @@ class BaseCost:
         ----------
         inputs : Inputs or array-like
             The parameters for which to compute the cost and gradient.
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
@@ -81,26 +91,25 @@ class BaseCost:
         ValueError
             If an error occurs during the calculation of the cost.
         """
-        if self.transformation:
-            p = self.transformation.to_model(inputs)
-        inputs = self.parameters.verify(p if self.transformation else inputs)
+        # Apply transformation if needed
+        self.has_transform = self.transformation is not None and apply_transform
+        if self.has_transform:
+            inputs = self.transformation.to_model(inputs)
+        inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(inputs.values()))
+
         y, dy = None, None
+        if self._has_separable_problem:
+            if calculate_grad:
+                y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
+                cost, grad = self.compute(y, dy=dy, calculate_grad=calculate_grad)
+                if self.has_transform and np.isfinite(cost):
+                    jac = self.transformation.jacobian(inputs)
+                    grad = np.matmul(grad, jac)
+                return cost, grad
 
-        try:
-            if self._has_separable_problem:
-                if calculate_grad is True:
-                    y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
-                else:
-                    y = self.problem.evaluate(self.problem.parameters.as_dict())
-
-            return self.compute(y, dy=dy, calculate_grad=calculate_grad)
-
-        except NotImplementedError as e:
-            raise e
-
-        except Exception as e:
-            raise ValueError(f"Error in cost calculation: {e}") from e
+            y = self.problem.evaluate(self.problem.parameters.as_dict())
+        return self.compute(y, dy=dy, calculate_grad=calculate_grad)
 
     def compute(self, y: dict, dy: ndarray, calculate_grad: bool = False):
         """

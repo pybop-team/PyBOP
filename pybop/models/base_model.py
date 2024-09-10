@@ -649,7 +649,7 @@ class BaseModel:
             key in self.geometric_parameters for key in inputs.keys()
         ):
             raise ValueError(
-                "Cannot use sensitivies for parameters which require a model rebuild"
+                "Cannot use sensitivities for parameters which require a model rebuild"
             )
 
         # Build if required

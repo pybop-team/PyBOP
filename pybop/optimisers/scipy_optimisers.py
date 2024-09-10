@@ -85,7 +85,9 @@ class BaseSciPyOptimiser(BaseOptimiser):
             nit = -1
 
         return Result(
-            x=result.x,
+            x=self._transformation.to_model(result.x)
+            if self._transformation
+            else result.x,
             final_cost=self.cost(result.x),
             n_iterations=nit,
             scipy_result=result,
@@ -160,7 +162,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         """
         Scale the cost function, preserving the sign convention, and eliminate nan values
         """
-        self.log["x"].append([x])
+        self.log_update(x=[x])
 
         if not self._options["jac"]:
             cost = self.cost(x) / self._cost0
@@ -184,7 +186,6 @@ class SciPyMinimize(BaseSciPyOptimiser):
         self.inf_count = 0
 
         # Add callback storing history of parameter values
-
         def base_callback(intermediate_result: Union[OptimizeResult, np.ndarray]):
             """
             Log intermediate optimisation solutions. Depending on the
@@ -199,9 +200,9 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 x_best = intermediate_result
                 cost = self.cost(x_best)
 
-            self.log["x_best"].append(x_best)
-            self.log["cost"].append(
-                (-1 if not self.minimising else 1) * cost * self._cost0
+            self.log_update(
+                x_best=x_best,
+                cost=(-1 if not self.minimising else 1) * cost * self._cost0,
             )
 
         callback = (
@@ -215,7 +216,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         if np.isinf(self._cost0):
             for _i in range(1, self.num_resamples):
                 try:
-                    self.x0 = self.parameters.rvs()
+                    self.x0 = self.parameters.rvs(apply_transform=True)
                 except AttributeError:
                     warnings.warn(
                         "Parameter does not have a prior distribution. Stopping resampling.",
@@ -342,13 +343,15 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
         # Add callback storing history of parameter values
         def callback(intermediate_result: OptimizeResult):
-            self.log["x_best"].append(intermediate_result.x)
-            self.log["cost"].append(
-                intermediate_result.fun if self.minimising else -intermediate_result.fun
+            self.log_update(
+                x_best=intermediate_result.x,
+                cost=intermediate_result.fun
+                if self.minimising
+                else -intermediate_result.fun,
             )
 
         def cost_wrapper(x):
-            self.log["x"].append([x])
+            self.log_update(x=[x])
             return self.cost(x) if self.minimising else -self.cost(x)
 
         return differential_evolution(
