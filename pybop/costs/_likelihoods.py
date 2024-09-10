@@ -1,10 +1,12 @@
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
+import scipy.stats as stats
 
+import pybop
 from pybop.costs.base_cost import BaseCost
 from pybop.parameters.parameter import Parameter, Parameters
-from pybop.parameters.priors import Uniform
+from pybop.parameters.priors import BasePrior, JointLogPrior, Uniform
 from pybop.problems.base_problem import BaseProblem
 
 
@@ -102,7 +104,7 @@ class GaussianLogLikelihood(BaseLikelihood):
     def __init__(
         self,
         problem: BaseProblem,
-        sigma0: Union[float, list[float], list[Parameter]] = 0.002,
+        sigma0: Union[float, list[float], list[Parameter]] = 1e-2,
         dsigma_scale: float = 1.0,
     ):
         super().__init__(problem)
@@ -202,41 +204,44 @@ class GaussianLogLikelihood(BaseLikelihood):
         return e
 
 
-class MAP(BaseLikelihood):
+class LogPosterior(BaseLikelihood):
     """
-    Maximum a posteriori cost function.
+    The Log Posterior for a given problem.
 
-    Computes the maximum a posteriori cost function, which is the sum of the
-    log likelihood and the log prior. The goal of maximising is achieved by
-    setting minimising = False in the optimiser settings.
+    Computes the log posterior which is proportional to the sum of the log
+    likelihood and the log prior.
 
-    Inherits all parameters and attributes from ``BaseLikelihood``.
-
+    Parameters
+    ----------
+    log_likelihood : BaseLikelihood
+        The likelihood class of type ``BaseLikelihood``.
+    log_prior : Optional, Union[pybop.BasePrior, stats.rv_continuous]
+        The prior class of type ``BasePrior`` or ``stats.rv_continuous``.
+        If not provided, the prior class will be taken from the parameter priors
+        constructed in the `pybop.Parameters` class.
+    gradient_step : float, default: 1e-3
+        The step size for the finite-difference gradient calculation
+        if the ``log_prior`` is not of type ``BasePrior``.
     """
 
-    def __init__(self, problem, likelihood, sigma0=None, gradient_step=1e-3):
-        super().__init__(problem)
-        self.sigma0 = sigma0
+    def __init__(
+        self,
+        log_likelihood: BaseLikelihood,
+        log_prior: Optional[Union[pybop.BasePrior, stats.rv_continuous]] = None,
+        gradient_step: float = 1e-3,
+    ):
+        super().__init__(problem=log_likelihood.problem)
         self.gradient_step = gradient_step
-        if self.sigma0 is None:
-            self.sigma0 = []
-            for param in self.problem.parameters:
-                self.sigma0.append(param.prior.sigma)
 
-        try:
-            self.likelihood = likelihood(problem=self.problem, sigma0=self.sigma0)
-        except Exception as e:
-            raise ValueError(
-                f"An error occurred when constructing the Likelihood class: {e}"
-            ) from e
+        # Store the likelihood and prior
+        self._log_likelihood = log_likelihood
+        self.parameters = self._log_likelihood.parameters
+        self._has_separable_problem = self._log_likelihood.has_separable_problem
 
-        if hasattr(self, "likelihood") and not isinstance(
-            self.likelihood, BaseLikelihood
-        ):
-            raise ValueError(f"{self.likelihood} must be a subclass of BaseLikelihood")
-
-        self.parameters = self.likelihood.parameters
-        self._has_separable_problem = self.likelihood.has_separable_problem
+        if log_prior is None:
+            self._prior = JointLogPrior(*self.parameters.priors())
+        else:
+            self._prior = log_prior
 
     def compute(
         self,
@@ -245,48 +250,72 @@ class MAP(BaseLikelihood):
         calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
-        Compute the Maximum a Posteriori for the given parameters.
+        Calculate the posterior cost for a given forward model prediction.
 
-        If self._has_separable_problem is True, then this method only computes the
-        likelihood, without calling the problem.evaluate(). Else, problem.evaluate()
-        is called before computing the likelihood.
+        Parameters
+        ----------
+        y : dict
+            The data for which to evaluate the cost.
+        dy : np.ndarray, optional
+            The correspond sensitivities in the data.
+        calculate_grad : bool, optional
+            Whether to calculate the gradient of the cost function.
 
         Returns
         -------
-        float
-            The maximum a posteriori cost.
+        Union[float, Tuple[float, np.ndarray]]
+            The posterior cost, and optionally the gradient.
         """
         # Verify we have dy if calculate_grad is True
         self.verify_args(dy, calculate_grad)
 
-        log_prior = sum(param.prior.logpdf(param.value) for param in self.parameters)
+        if calculate_grad:
+            if isinstance(self._prior, BasePrior):
+                log_prior, dp = self._prior.logpdfS1(self.parameters.current_value())
+            else:
+                # Compute log prior first
+                log_prior = self._prior.logpdf(self.parameters.current_value())
+
+                # Compute a finite difference approximation of the gradient of the log prior
+                delta = self.parameters.initial_value() * self.gradient_step
+                dp = []
+
+                for parameter, step_size in zip(self.parameters, delta):
+                    param_value = parameter.value
+                    upper_value = param_value * (1 + step_size)
+                    lower_value = param_value * (1 - step_size)
+
+                    log_prior_upper = parameter.prior.logpdf(upper_value)
+                    log_prior_lower = parameter.prior.logpdf(lower_value)
+
+                    gradient = (log_prior_upper - log_prior_lower) / (
+                        2 * step_size * param_value + np.finfo(float).eps
+                    )
+                    dp.append(gradient)
+        else:
+            log_prior = self._prior.logpdf(self.parameters.current_value())
 
         if not np.isfinite(log_prior).any():
             return (-np.inf, -self.grad_fail) if calculate_grad else -np.inf
 
         if calculate_grad:
-            log_likelihood, dl = self.likelihood.compute(y, dy, calculate_grad=True)
-
-            # Compute a finite difference approximation of the gradient of the log prior
-            delta = self.parameters.initial_value() * self.gradient_step
-            prior_gradient = []
-
-            for parameter, step_size in zip(self.problem.parameters, delta):
-                param_value = parameter.value
-
-                log_prior_upper = parameter.prior.logpdf(param_value * (1 + step_size))
-                log_prior_lower = parameter.prior.logpdf(param_value * (1 - step_size))
-
-                gradient = (log_prior_upper - log_prior_lower) / (
-                    2 * step_size * param_value + np.finfo(float).eps
-                )
-                prior_gradient.append(gradient)
+            log_likelihood, dl = self._log_likelihood.compute(
+                y, dy, calculate_grad=True
+            )
 
             posterior = log_likelihood + log_prior
-            total_gradient = dl + prior_gradient
+            total_gradient = dl + dp
 
             return posterior, total_gradient
 
-        log_likelihood = self.likelihood.compute(y)
+        log_likelihood = self._log_likelihood.compute(y)
         posterior = log_likelihood + log_prior
         return posterior
+
+    @property
+    def prior(self) -> BasePrior:
+        return self._prior
+
+    @property
+    def likelihood(self) -> BaseLikelihood:
+        return self._log_likelihood

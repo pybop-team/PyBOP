@@ -60,8 +60,8 @@ dataset = pybop.Dataset(
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.MAP(problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=sigma)
-optim = pybop.AdamW(
+cost = pybop.LogPosterior(pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=sigma))
+optim = pybop.IRPropMin(
     cost,
     sigma0=0.05,
     max_unchanged_iterations=20,

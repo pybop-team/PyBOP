@@ -232,7 +232,7 @@ class TestModels:
 
         with pytest.raises(
             ValueError,
-            match="Cannot use sensitivies for parameters which require a model rebuild",
+            match="Cannot use sensitivities for parameters which require a model rebuild",
         ):
             model.simulateS1(t_eval=t_eval, inputs=parameters.as_dict())
 
@@ -407,6 +407,38 @@ class TestModels:
         assert base.check_params(inputs=[1])
         with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
             base.check_params(inputs=["unexpected_string"])
+
+    @pytest.mark.unit
+    def test_base_ecircuit_model(self):
+        def check_params(inputs: dict, allow_infeasible_solutions: bool):
+            return True if inputs is None else inputs["a"] < 2
+
+        base_ecircuit_model = pybop.empirical.ECircuitModel(
+            pybamm_model=pybamm.equivalent_circuit.Thevenin,
+            check_params=check_params,
+        )
+        assert base_ecircuit_model.check_params({"a": 1})
+
+        base_ecircuit_model = pybop.empirical.ECircuitModel(
+            pybamm_model=pybamm.equivalent_circuit.Thevenin,
+        )
+        assert base_ecircuit_model.check_params()
+
+    @pytest.mark.unit
+    def test_userdefined_check_params(self):
+        def check_params(inputs: dict, allow_infeasible_solutions: bool):
+            return True if inputs is None else inputs["a"] < 2
+
+        for model in [
+            pybop.BaseModel(check_params=check_params),
+            pybop.empirical.Thevenin(check_params=check_params),
+        ]:
+            assert model.check_params(inputs={"a": 1})
+            assert not model.check_params(inputs={"a": 2})
+            with pytest.raises(
+                TypeError, match="Inputs must be a dictionary or numeric."
+            ):
+                model.check_params(inputs=["unexpected_string"])
 
     @pytest.mark.unit
     def test_non_converged_solution(self):

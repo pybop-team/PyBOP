@@ -1,10 +1,12 @@
 import numpy as np
+import pybamm
 
 import pybop
 
-# Define model
+# Define model and use high-performant solver for sensitivities
+solver = pybamm.IDAKLUSolver()
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -52,4 +54,4 @@ pybop.plot_parameters(optim)
 
 # Plot the cost landscape with optimisation path
 bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
-pybop.plot2d(optim, bounds=bounds, steps=15)
+pybop.plot2d(optim, gradient=True, bounds=bounds, steps=15)

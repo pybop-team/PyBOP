@@ -1,4 +1,3 @@
-import warnings
 from typing import Optional, Union
 
 import numpy as np
@@ -61,20 +60,9 @@ class WeightedCost(BaseCost):
             super().__init__(self.costs[0].problem)
         else:
             super().__init__()
-            for cost in self.costs:
-                self.parameters.join(cost.parameters)
 
-        # Check if any cost function requires capacity update
-        self.update_capacity = False
-        if any(cost.update_capacity for cost in self.costs):
-            self.update_capacity = True
-
-            warnings.warn(
-                "WeightedCost doesn't currently support DesignCosts with different `update_capacity` attributes,\n"
-                f"Using global `DesignCost.update_capacity` attribute as: {self.update_capacity}",
-                UserWarning,
-                stacklevel=2,
-            )
+        for cost in self.costs:
+            self.parameters.join(cost.parameters)
 
         # Weighted costs do not use this functionality
         self._has_separable_problem = False
@@ -103,11 +91,11 @@ class WeightedCost(BaseCost):
             The weighted cost value.
         """
         if self._has_identical_problems:
-            inputs = self.parameters.as_dict()
+            inputs = self.problem.parameters.as_dict()
             if calculate_grad:
                 y, dy = self.problem.evaluateS1(inputs)
             else:
-                y = self.problem.evaluate(inputs, update_capacity=self.update_capacity)
+                y = self.problem.evaluate(inputs)
 
         e = np.empty_like(self.costs)
         de = np.empty((len(self.parameters), len(self.costs)))
@@ -120,9 +108,7 @@ class WeightedCost(BaseCost):
                 if calculate_grad:
                     y, dy = cost.problem.evaluateS1(inputs)
                 else:
-                    y = cost.problem.evaluate(
-                        inputs, update_capacity=self.update_capacity
-                    )
+                    y = cost.problem.evaluate(inputs)
 
             if calculate_grad:
                 e[i], de[:, i] = cost.compute(y, dy=dy, calculate_grad=True)

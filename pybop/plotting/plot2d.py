@@ -1,11 +1,10 @@
-import sys
 import warnings
 from typing import Union
 
 import numpy as np
 from scipy.interpolate import griddata
 
-from pybop import BaseOptimiser, Optimisation, PlotlyManager
+from pybop import BaseCost, BaseOptimiser, Optimisation, PlotlyManager
 
 
 def plot2d(
@@ -65,11 +64,11 @@ def plot2d(
         cost = cost_or_optim
         plot_optim = False
 
-    if len(cost.parameters) < 2:
+    if isinstance(cost, BaseCost) and len(cost.parameters) < 2:
         raise ValueError("This cost function takes fewer than 2 parameters.")
 
     additional_values = []
-    if len(cost.parameters) > 2:
+    if isinstance(cost, BaseCost) and len(cost.parameters) > 2:
         warnings.warn(
             "This cost function requires more than 2 parameters. "
             "Plotting in 2d with fixed values for the additional parameters.",
@@ -149,8 +148,8 @@ def plot2d(
         title_y=0.9,
         width=600,
         height=600,
-        xaxis=dict(range=bounds[0]),
-        yaxis=dict(range=bounds[1]),
+        xaxis=dict(range=bounds[0], showexponent="last", exponentformat="e"),
+        yaxis=dict(range=bounds[1], showexponent="last", exponentformat="e"),
     )
     if hasattr(cost, "parameters"):
         name = cost.parameters.keys()
@@ -204,9 +203,7 @@ def plot2d(
 
     # Update the layout and display the figure
     fig.update_layout(**layout_kwargs)
-    if "ipykernel" in sys.modules and show:
-        fig.show("svg")
-    elif show:
+    if show:
         fig.show()
 
     if gradient:
@@ -225,9 +222,7 @@ def plot2d(
             )
             grad_fig.update_layout(**layout_kwargs)
 
-            if "ipykernel" in sys.modules and show:
-                grad_fig.show("svg")
-            elif show:
+            if show:
                 grad_fig.show()
 
             # append grad_fig to list

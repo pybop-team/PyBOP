@@ -43,7 +43,6 @@ class RootMeanSquaredError(BaseCost):
         -------
         float
             The root mean square error.
-
         """
         # Verify we have dy if calculate_grad is True
         self.verify_args(dy, calculate_grad)
@@ -76,12 +75,6 @@ class SumSquaredError(BaseCost):
     predicted and observed values.
 
     Inherits all parameters and attributes from ``BaseCost``.
-
-    Additional Attributes
-    ---------------------
-    _de : float
-        The gradient of the cost function to use if an error occurs during
-        evaluation. Defaults to 1.0.
 
     """
 
@@ -122,8 +115,8 @@ class SumSquaredError(BaseCost):
         r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
         e = np.sum(np.sum(np.abs(r) ** 2, axis=0), axis=0)
 
-        if calculate_grad is True:
-            de = 2 * np.sum(np.sum((r * dy.T), axis=2), axis=1)
+        if calculate_grad:
+            de = 2 * np.sum((r * dy.T), axis=(1, 2))
             return e, de
 
         return e
@@ -152,8 +145,8 @@ class Minkowski(BaseCost):
     optimisation problems, allowing for flexible distance-based optimisation
     across various problem domains.
 
-    Attributes
-    ----------
+    Additional Attributes
+    ---------------------
     p : float, optional
         The order of the Minkowski distance.
     """
@@ -204,9 +197,9 @@ class Minkowski(BaseCost):
         r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
         e = np.sum(np.abs(r) ** self.p) ** (1 / self.p)
 
-        if calculate_grad is True:
+        if calculate_grad:
             de = np.sum(
-                np.sum(r ** (self.p - 1) * dy.T, axis=2)
+                np.sum(np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T, axis=2)
                 / (e ** (self.p - 1) + np.finfo(float).eps),
                 axis=1,
             )
@@ -240,9 +233,10 @@ class SumofPower(BaseCost):
 
     [1]: https://mathworld.wolfram.com/PowerSum.html
 
-    Attributes:
-        p : float, optional
-            The power order for Sum of Power.
+    Additional Attributes
+    ---------------------
+    p : float, optional
+        The power order for Sum of Power.
     """
 
     def __init__(self, problem, p: float = 2.0):
@@ -287,8 +281,10 @@ class SumofPower(BaseCost):
         r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
         e = np.sum(np.abs(r) ** self.p)
 
-        if calculate_grad is True:
-            de = self.p * np.sum(np.sum(r ** (self.p - 1) * dy.T, axis=2), axis=1)
+        if calculate_grad:
+            de = self.p * np.sum(
+                np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T, axis=(1, 2)
+            )
             return e, de
 
         return e

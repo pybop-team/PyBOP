@@ -173,6 +173,7 @@ class BaseProblem:
         if not isinstance(dataset, Dataset):
             raise ValueError("Dataset must be a pybop Dataset object.")
 
+        self._domain_data = dataset[self.domain]
         self._target = {signal: dataset[signal] for signal in self.signal}
 
     @property
@@ -182,10 +183,6 @@ class BaseProblem:
     @property
     def target(self):
         return self._target
-
-    @target.setter
-    def target(self, target):
-        self._target = target
 
     @property
     def domain_data(self):
