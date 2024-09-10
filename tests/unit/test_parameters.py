@@ -240,3 +240,11 @@ class TestParameters:
             sample = parameter.initial_value()
 
         np.testing.assert_equal(sample, np.array([None]))
+
+    @pytest.mark.unit
+    def test_parameters_repr(self, parameter):
+        params = pybop.Parameters(parameter)
+        assert (
+            repr(params)
+            == "Parameters(1):\n Negative electrode active material volume fraction: prior= Gaussian, loc: 0.6, scale: 0.02, value=0.6, bounds=[0.375, 0.7]"
+        )
