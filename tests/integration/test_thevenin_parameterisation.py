@@ -11,8 +11,10 @@ class TestTheveninParameterisation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ground_truth = np.asarray([0.05, 0.05]) + np.random.normal(
-            loc=0.0, scale=0.01, size=2
+        self.ground_truth = np.clip(
+            np.asarray([0.05, 0.05]) + np.random.normal(loc=0.0, scale=0.01, size=2),
+            a_min=0.0,
+            a_max=0.1,
         )
 
     @pytest.fixture
@@ -21,7 +23,13 @@ class TestTheveninParameterisation:
             json_path="examples/scripts/parameters/initial_ecm_parameters.json"
         )
         parameter_set.import_parameters()
-        parameter_set.params.update({"C1 [F]": 1000})
+        parameter_set.params.update(
+            {
+                "C1 [F]": 1000,
+                "R0 [Ohm]": self.ground_truth[0],
+                "R1 [Ohm]": self.ground_truth[1],
+            }
+        )
         return pybop.empirical.Thevenin(parameter_set=parameter_set)
 
     @pytest.fixture
@@ -46,7 +54,7 @@ class TestTheveninParameterisation:
     @pytest.fixture
     def cost(self, model, parameters, cost_class):
         # Form dataset
-        solution = self.get_data(model, parameters, self.ground_truth)
+        solution = self.get_data(model)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -90,10 +98,11 @@ class TestTheveninParameterisation:
                 assert initial_cost > final_cost
             else:
                 assert initial_cost < final_cost
+        else:
+            raise ValueError("Initial value is the same as the ground truth value.")
         np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
-    def get_data(self, model, parameters, x):
-        model.classify_and_update_parameters(parameters)
+    def get_data(self, model):
         experiment = pybop.Experiment(
             [
                 (
@@ -102,5 +111,5 @@ class TestTheveninParameterisation:
                 ),
             ]
         )
-        sim = model.predict(experiment=experiment, inputs=x)
+        sim = model.predict(experiment=experiment)
         return sim

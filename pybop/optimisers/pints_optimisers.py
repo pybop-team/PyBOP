@@ -17,8 +17,9 @@ class GradientDescent(BasePintsOptimiser):
     Implements a simple gradient descent optimization algorithm.
 
     This class extends the gradient descent optimiser from the PINTS library, designed
-    to minimize a scalar function of one or more variables. Note that this optimiser
-    does not support boundary constraints.
+    to minimize a scalar function of one or more variables.
+
+    Note that this optimiser does not support boundary constraints.
 
     Parameters
     ----------
@@ -27,7 +28,7 @@ class GradientDescent(BasePintsOptimiser):
         x0 : array_like
             Initial position from which optimisation will start.
         sigma0 : float
-            The learning rate / Initial step size (default: 0.02).
+            The learning rate / Initial step size.
 
     See Also
     --------
@@ -35,8 +36,6 @@ class GradientDescent(BasePintsOptimiser):
     """
 
     def __init__(self, cost, **optimiser_kwargs):
-        if "sigma0" not in optimiser_kwargs.keys():
-            optimiser_kwargs["sigma0"] = 0.02  # set default
         super().__init__(cost, PintsGradientDescent, **optimiser_kwargs)
 
 
@@ -45,8 +44,9 @@ class Adam(BasePintsOptimiser):
     Implements the Adam optimization algorithm.
 
     This class extends the Adam optimiser from the PINTS library, which combines
-    ideas from RMSProp and Stochastic Gradient Descent with momentum. Note that
-    this optimiser does not support boundary constraints.
+    ideas from RMSProp and Stochastic Gradient Descent with momentum.
+
+    Note that this optimiser does not support boundary constraints.
 
     Parameters
     ----------
@@ -81,6 +81,7 @@ class AdamW(BasePintsOptimiser):
     robust and stable for training deep neural networks, particularly when
     using larger learning rates.
 
+    Note that this optimiser does not support boundary constraints.
     Parameters
     ----------
     **optimiser_kwargs : optional
@@ -223,6 +224,8 @@ class NelderMead(BasePintsOptimiser):
     either one evaluation, or two sequential evaluations, so that it will not
     typically benefit from parallelisation.
 
+    Note that this optimiser does not support boundary constraints.
+
     Parameters
     ----------
     **optimiser_kwargs : optional
@@ -272,7 +275,7 @@ class CMAES(BasePintsOptimiser):
         if len(x0) == 1 or len(cost.parameters) == 1:
             raise ValueError(
                 "CMAES requires optimisation of >= 2 parameters at once. "
-                + "Please choose another optimiser."
+                "Please choose another optimiser."
             )
         super().__init__(cost, PintsCMAES, **optimiser_kwargs)
 

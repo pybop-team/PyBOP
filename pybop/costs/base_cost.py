@@ -1,3 +1,8 @@
+from typing import Optional, Union
+
+import numpy as np
+from numpy import ndarray
+
 from pybop import BaseProblem
 from pybop.parameters.parameter import Inputs, Parameters
 
@@ -16,42 +21,65 @@ class BaseCost:
     problem : object
         A problem instance containing the data and functions necessary for
         evaluating the cost function.
-    _target : array-like
+    target : array-like
         An array containing the target data to fit.
     n_outputs : int
         The number of outputs in the model.
+    has_separable_problem : bool
+        If True, the problem is separable from the cost function and will be
+        evaluated in advance of the call to self.compute() (default: False).
+    _de : float
+        The gradient of the cost function to use if an error occurs during
+        evaluation. Defaults to 1.0.
     """
 
-    def __init__(self, problem=None):
+    def __init__(self, problem: Optional[BaseProblem] = None):
         self.parameters = Parameters()
+        self.transformation = None
         self.problem = problem
+        self.verbose = False
+        self._has_separable_problem = False
+        self.y = None
+        self.dy = None
+        self._de = 1.0
         if isinstance(self.problem, BaseProblem):
-            self._target = self.problem._target
+            self._target = self.problem.target
             self.parameters.join(self.problem.parameters)
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
+            self.transformation = self.parameters.construct_transformation()
+            self._has_separable_problem = True
+            self.grad_fail = None
+            self.set_fail_gradient()
 
     @property
     def n_parameters(self):
         return len(self.parameters)
 
-    def __call__(self, x, grad=None):
-        """
-        Call the evaluate function for a given set of parameters.
-        """
-        return self.evaluate(x, grad)
+    @property
+    def has_separable_problem(self):
+        return self._has_separable_problem
 
-    def evaluate(self, x, grad=None):
+    @property
+    def target(self):
+        return self._target
+
+    def __call__(
+        self,
+        inputs: Union[Inputs, list],
+        calculate_grad: bool = False,
+        apply_transform: bool = False,
+    ):
         """
-        Call the evaluate function for a given set of parameters.
+        This method calls the forward model via problem.evaluate(inputs),
+        and computes the cost for the given output by calling self.compute().
 
         Parameters
         ----------
-        x : array-like
-            The parameters for which to evaluate the cost.
-        grad : array-like, optional
-            An array to store the gradient of the cost function with respect
-            to the parameters.
+        inputs : Inputs or array-like
+            The parameters for which to compute the cost and gradient.
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
@@ -63,30 +91,42 @@ class BaseCost:
         ValueError
             If an error occurs during the calculation of the cost.
         """
-        inputs = self.parameters.verify(x)
+        # Apply transformation if needed
+        self.has_transform = self.transformation is not None and apply_transform
+        if self.has_transform:
+            inputs = self.transformation.to_model(inputs)
+        inputs = self.parameters.verify(inputs)
+        self.parameters.update(values=list(inputs.values()))
 
-        try:
-            return self._evaluate(inputs, grad)
+        y, dy = None, None
+        if self._has_separable_problem:
+            if calculate_grad:
+                y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
+                cost, grad = self.compute(y, dy=dy, calculate_grad=calculate_grad)
+                if self.has_transform and np.isfinite(cost):
+                    jac = self.transformation.jacobian(inputs)
+                    grad = np.matmul(grad, jac)
+                return cost, grad
 
-        except NotImplementedError as e:
-            raise e
+            y = self.problem.evaluate(self.problem.parameters.as_dict())
+        return self.compute(y, dy=dy, calculate_grad=calculate_grad)
 
-        except Exception as e:
-            raise ValueError(f"Error in cost calculation: {e}")
-
-    def _evaluate(self, inputs: Inputs, grad=None):
+    def compute(self, y: dict, dy: ndarray, calculate_grad: bool = False):
         """
-        Calculate the cost function value for a given set of parameters.
+        Compute the cost and  if `calculate_grad` is True, its gradient with
+        respect to the predictions.
 
+        This method only computes the cost, without calling the `problem.evaluate()`.
         This method must be implemented by subclasses.
 
         Parameters
         ----------
-        inputs : Inputs
-            The parameters for which to evaluate the cost.
-        grad : array-like, optional
-            An array to store the gradient of the cost function with respect
-            to the parameters.
+        y : dict
+            The dictionary of predictions with keys designating the signals for fitting.
+        dy : np.ndarray, optional
+            The corresponding gradient with respect to the parameters for each signal.
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
@@ -100,55 +140,46 @@ class BaseCost:
         """
         raise NotImplementedError
 
-    def evaluateS1(self, x):
+    def set_fail_gradient(self, de: float = 1.0):
         """
-        Call _evaluateS1 for a given set of parameters.
+        Set the fail gradient to a specified value.
+
+        The fail gradient is used if an error occurs during the calculation
+        of the gradient. This method allows updating the default gradient value.
 
         Parameters
         ----------
-        x : array-like
-            The parameters for which to compute the cost and gradient.
-
-        Returns
-        -------
-        tuple
-            A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `x`.
-
-        Raises
-        ------
-        ValueError
-            If an error occurs during the calculation of the cost or gradient.
+        de : float
+            The new fail gradient value to be used.
         """
-        inputs = self.parameters.verify(x)
+        if not isinstance(de, float):
+            de = float(de)
+        self._de = de
+        self.grad_fail = self._de * np.ones(self.n_parameters)
 
-        try:
-            return self._evaluateS1(inputs)
-
-        except NotImplementedError as e:
-            raise e
-
-        except Exception as e:
-            raise ValueError(f"Error in cost calculation: {e}")
-
-    def _evaluateS1(self, inputs: Inputs):
+    def verify_prediction(self, y):
         """
-        Compute the cost and its gradient with respect to the parameters.
+        Verify that the prediction matches the target data.
 
         Parameters
         ----------
-        inputs : Inputs
-            The parameters for which to compute the cost and gradient.
+        y : dict
+            The model predictions.
 
         Returns
         -------
-        tuple
-            A tuple containing the cost and the gradient. The cost is a float,
-            and the gradient is an array-like of the same length as `x`.
-
-        Raises
-        ------
-        NotImplementedError
-            If the method has not been implemented by the subclass.
+        bool
+            True if the prediction matches the target data, otherwise False.
         """
-        raise NotImplementedError
+        if any(
+            len(y.get(key, [])) != len(self._target.get(key, [])) for key in self.signal
+        ):
+            return False
+
+        return True
+
+    def verify_args(self, dy: ndarray, calculate_grad: bool):
+        if calculate_grad and dy is None:
+            raise ValueError(
+                "Forward model sensitivities need to be provided alongside `calculate_grad=True` for `cost.compute`."
+            )

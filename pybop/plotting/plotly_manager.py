@@ -71,14 +71,13 @@ class PlotlyManager:
             print("Installation cancelled by user.")
             sys.exit(1)  # Exit if user cancels installation
 
-    def install_plotly(self):
+    @staticmethod
+    def install_plotly():
         """
         Install the Plotly package using pip. Exit if installation fails.
         """
         try:
-            subprocess.check_call(
-                [sys.executable, "-m", "pip", "install", "plotly", "kaleido"]
-            )
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "plotly"])
         except subprocess.CalledProcessError as e:
             print(f"Error installing plotly: {e}")
             sys.exit(1)  # Exit if installation fails
@@ -119,7 +118,7 @@ class PlotlyManager:
         if self.pio and self.pio.renderers.default == "browser":
             try:
                 webbrowser.get()
-            except webbrowser.Error:
+            except webbrowser.Error as e:
                 raise Exception(
                     "\n **Browser Not Found** \nFor Windows users, in order to view figures in the browser using Plotly, "
                     "you need to set the environment variable BROWSER equal to the "
@@ -129,4 +128,4 @@ class PlotlyManager:
                     "\n\nThen reactivate your virtual environment. Alternatively, you can use a "
                     "different Plotly renderer. For more information see: "
                     "https://plotly.com/python/renderers/#setting-the-default-renderer"
-                )
+                ) from e

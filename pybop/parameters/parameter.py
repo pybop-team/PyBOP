@@ -1,12 +1,13 @@
 import warnings
 from collections import OrderedDict
-from typing import Dict, List, Union
+from typing import Optional
 
 import numpy as np
 
+from pybop import ComposedTransformation, IdentityTransformation
 from pybop._utils import is_numeric
 
-Inputs = Dict[str, float]
+Inputs = dict[str, float]
 
 
 class Parameter:
@@ -37,7 +38,13 @@ class Parameter:
     """
 
     def __init__(
-        self, name, initial_value=None, true_value=None, prior=None, bounds=None
+        self,
+        name,
+        initial_value=None,
+        true_value=None,
+        prior=None,
+        bounds=None,
+        transformation=None,
     ):
         """
         Construct the parameter class with a name, initial value, prior, and bounds.
@@ -47,11 +54,15 @@ class Parameter:
         self.true_value = true_value
         self.initial_value = initial_value
         self.value = initial_value
+        self.transformation = transformation
         self.applied_prior_bounds = False
+        self.bounds = None
+        self.lower_bounds = None
+        self.upper_bounds = None
         self.set_bounds(bounds)
         self.margin = 1e-4
 
-    def rvs(self, n_samples, random_state=None):
+    def rvs(self, n_samples: int = 1, random_state=None, apply_transform: bool = False):
         """
         Draw random samples from the parameter's prior distribution.
 
@@ -61,7 +72,11 @@ class Parameter:
         Parameters
         ----------
         n_samples : int
-            The number of samples to draw.
+            The number of samples to draw (default: 1).
+        random_state : int, optional
+            The random state seed for reproducibility (default: None).
+        apply_transform : bool
+            If True, the transformation is applied to the output (default: False).
 
         Returns
         -------
@@ -76,6 +91,12 @@ class Parameter:
             samples = np.clip(
                 samples, self.lower_bound + offset, self.upper_bound - offset
             )
+
+        if apply_transform and self.transformation is not None:
+            samples = list(samples)
+            for i, x in enumerate(samples):
+                samples[i] = float(self.transformation.to_search(x))
+            return np.asarray(samples)
 
         return samples
 
@@ -158,18 +179,35 @@ class Parameter:
             self.applied_prior_bounds = True
             self.lower_bound = self.prior.mean - boundary_multiplier * self.prior.sigma
             self.upper_bound = self.prior.mean + boundary_multiplier * self.prior.sigma
-            bounds = [self.lower_bound, self.upper_bound]
             print("Default bounds applied based on prior distribution.")
+        else:
+            self.bounds = None
+            return
 
-        self.bounds = bounds
+        self.bounds = [self.lower_bound, self.upper_bound]
 
-    def get_initial_value(self) -> float:
+    def get_initial_value(self, apply_transform: bool = False) -> float:
         """
         Return the initial value of each parameter.
+
+        Parameters
+        ----------
+        apply_transform : bool
+            If True, the transformation is applied to the output (default: False).
         """
         if self.initial_value is None:
-            sample = self.rvs(1)
-            self.update(initial_value=sample[0])
+            if self.prior is not None:
+                sample = self.rvs(1)[0]
+                self.update(initial_value=sample)
+            else:
+                warnings.warn(
+                    "Initial value and prior are None, proceeding without an initial value.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+
+        if apply_transform and self.transformation is not None:
+            return float(self.transformation.to_search(self.initial_value))
 
         return self.initial_value
 
@@ -191,6 +229,7 @@ class Parameters:
         self.param = OrderedDict()
         for param in args:
             self.add(param)
+        self.initial_value()
 
     def __getitem__(self, key: str) -> Parameter:
         """
@@ -219,7 +258,7 @@ class Parameters:
     def __len__(self) -> int:
         return len(self.param)
 
-    def keys(self) -> List:
+    def keys(self) -> list:
         """
         A list of parameter names
         """
@@ -245,7 +284,7 @@ class Parameters:
             if parameter.name in self.param.keys():
                 raise ValueError(
                     f"There is already a parameter with the name {parameter.name} "
-                    + "in the Parameters object. Please remove the duplicate entry."
+                    "in the Parameters object. Please remove the duplicate entry."
                 )
             self.param[parameter.name] = parameter
         elif isinstance(parameter, dict):
@@ -255,7 +294,7 @@ class Parameters:
             if name in self.param.keys():
                 raise ValueError(
                     f"There is already a parameter with the name {name} "
-                    + "in the Parameters object. Please remove the duplicate entry."
+                    "in the Parameters object. Please remove the duplicate entry."
                 )
             self.param[name] = Parameter(**parameter)
         else:
@@ -287,17 +326,30 @@ class Parameters:
             else:
                 print(f"Discarding duplicate {param.name}.")
 
-    def get_bounds(self) -> Dict:
+    def get_bounds(self, apply_transform: bool = False) -> dict:
         """
         Get bounds, for either all or no parameters.
+
+        Parameters
+        ----------
+        apply_transform : bool
+            If True, the transformation is applied to the output (default: False).
         """
         all_unbounded = True  # assumption
         bounds = {"lower": [], "upper": []}
 
         for param in self.param.values():
             if param.bounds is not None:
-                bounds["lower"].append(param.bounds[0])
-                bounds["upper"].append(param.bounds[1])
+                if apply_transform and param.transformation is not None:
+                    bounds["lower"].append(
+                        float(param.transformation.to_search(param.bounds[0]))
+                    )
+                    bounds["upper"].append(
+                        float(param.transformation.to_search(param.bounds[1]))
+                    )
+                else:
+                    bounds["lower"].append(param.bounds[0])
+                    bounds["upper"].append(param.bounds[1])
                 all_unbounded = False
             else:
                 bounds["lower"].append(-np.inf)
@@ -317,12 +369,12 @@ class Parameters:
             if values is not None:
                 param.update(value=values[i])
             if bounds is not None:
-                if isinstance(bounds, Dict):
+                if isinstance(bounds, dict):
                     param.set_bounds(bounds=[bounds["lower"][i], bounds["upper"][i]])
                 else:
                     param.set_bounds(bounds=bounds[i])
 
-    def rvs(self, n_samples: int) -> List:
+    def rvs(self, n_samples: int = 1, apply_transform: bool = False) -> np.ndarray:
         """
         Draw random samples from each parameter's prior distribution.
 
@@ -332,7 +384,9 @@ class Parameters:
         Parameters
         ----------
         n_samples : int
-            The number of samples to draw.
+            The number of samples to draw (default: 1).
+        apply_transform : bool
+            If True, the transformation is applied to the output (default: False).
 
         Returns
         -------
@@ -342,47 +396,82 @@ class Parameters:
         all_samples = []
 
         for param in self.param.values():
-            samples = param.rvs(n_samples)
-
-            # Constrain samples to be within bounds
-            if param.bounds is not None:
-                offset = param.margin * (param.upper_bound - param.lower_bound)
-                samples = np.clip(
-                    samples, param.lower_bound + offset, param.upper_bound - offset
-                )
-
+            samples = param.rvs(n_samples, apply_transform=apply_transform)
             all_samples.append(samples)
 
-        return all_samples
+        return np.concatenate(all_samples)
 
-    def get_sigma0(self) -> List:
+    def get_sigma0(self, apply_transform: bool = False) -> list:
         """
         Get the standard deviation, for either all or no parameters.
+
+        Parameters
+        ----------
+        apply_transform : bool
+            If True, the transformation is applied to the output (default: False).
         """
         all_have_sigma = True  # assumption
         sigma0 = []
 
         for param in self.param.values():
             if hasattr(param.prior, "sigma"):
-                sigma0.append(param.prior.sigma)
+                if apply_transform and param.transformation is not None:
+                    sigma0.append(
+                        np.ndarray.item(
+                            param.transformation.convert_standard_deviation(
+                                param.prior.sigma,
+                                param.get_initial_value(apply_transform=True),
+                            )
+                        )
+                    )
+                else:
+                    sigma0.append(param.prior.sigma)
             else:
                 all_have_sigma = False
         if not all_have_sigma:
             sigma0 = None
-
         return sigma0
 
-    def initial_value(self) -> np.ndarray:
+    def priors(self) -> list:
+        """
+        Return the prior distribution of each parameter.
+        """
+        return [param.prior for param in self.param.values()]
+
+    def initial_value(self, apply_transform: bool = False) -> np.ndarray:
         """
         Return the initial value of each parameter.
+
+        Parameters
+        ----------
+        apply_transform : bool
+            If True, the transformation is applied to the output (default: False).
         """
         initial_values = []
 
         for param in self.param.values():
-            if param.initial_value is None:
-                initial_value = param.rvs(1)[0]
-                param.update(initial_value=initial_value)
-            initial_values.append(param.initial_value)
+            initial_value = param.get_initial_value(apply_transform=apply_transform)
+            initial_values.append(initial_value)
+
+        return np.asarray(initial_values)
+
+    def reset_initial_value(self, apply_transform: bool = False) -> np.ndarray:
+        """
+        Reset and return the initial value of each parameter.
+
+        Parameters
+        ----------
+        apply_transform : bool
+            If True, the transformation is applied to the output (default: False).
+        """
+        initial_values = []
+
+        for param in self.param.values():
+            initial_value = param.get_initial_value(apply_transform=apply_transform)
+            if initial_value is not None:
+                # Reset the current value as well
+                param.update(value=param.get_initial_value())
+            initial_values.append(initial_value)
 
         return np.asarray(initial_values)
 
@@ -408,6 +497,30 @@ class Parameters:
 
         return np.asarray(true_values)
 
+    def get_transformations(self):
+        """
+        Get the transformations for each parameter.
+        """
+        transformations = []
+
+        for param in self.param.values():
+            transformations.append(param.transformation)
+
+        return transformations
+
+    def construct_transformation(self):
+        """
+        Create a ComposedTransformation object from the individual parameter transformations.
+        """
+        transformations = self.get_transformations()
+        if not transformations or all(t is None for t in transformations):
+            return None
+
+        valid_transformations = [
+            t if t is not None else IdentityTransformation() for t in transformations
+        ]
+        return ComposedTransformation(valid_transformations)
+
     def get_bounds_for_plotly(self):
         """
         Retrieve parameter bounds in the format expected by Plotly.
@@ -417,7 +530,7 @@ class Parameters:
         bounds : numpy.ndarray
             An array of shape (n_parameters, 2) containing the bounds for each parameter.
         """
-        bounds = np.empty((len(self), 2))
+        bounds = np.zeros((len(self), 2))
 
         for i, param in enumerate(self.param.values()):
             if param.applied_prior_bounds:
@@ -427,14 +540,14 @@ class Parameters:
                     UserWarning,
                     stacklevel=2,
                 )
-            elif param.bounds is not None:
+            if param.bounds is not None:
                 bounds[i] = param.bounds
             else:
                 raise ValueError("All parameters require bounds for plotting.")
 
         return bounds
 
-    def as_dict(self, values=None) -> Dict:
+    def as_dict(self, values=None) -> dict:
         """
         Parameters
         ----------
@@ -456,7 +569,7 @@ class Parameters:
                 values = self.true_value()
         return {key: values[i] for i, key in enumerate(self.param.keys())}
 
-    def verify(self, inputs: Union[Inputs, None] = None):
+    def verify(self, inputs: Optional[Inputs] = None):
         """
         Verify that the inputs are an Inputs dictionary or numeric values
         which can be used to construct an Inputs dictionary
@@ -465,9 +578,11 @@ class Parameters:
         ----------
         inputs : Inputs or numeric
         """
-        if inputs is None or isinstance(inputs, Dict):
+        if inputs is None or isinstance(inputs, dict):
             return inputs
-        elif (isinstance(inputs, list) and all(is_numeric(x) for x in inputs)) or all(
+        if isinstance(inputs, np.ndarray) and inputs.ndim == 0:
+            inputs = inputs[np.newaxis]
+        if (isinstance(inputs, list) and all(is_numeric(x) for x in inputs)) or all(
             is_numeric(x) for x in list(inputs)
         ):
             return self.as_dict(inputs)
@@ -475,3 +590,18 @@ class Parameters:
             raise TypeError(
                 f"Inputs must be a dictionary or numeric. Received {type(inputs)}"
             )
+
+    def __repr__(self):
+        """
+        Return a string representation of the Parameters instance.
+
+        Returns
+        -------
+        str
+            A string including the number of parameters and a summary of each parameter.
+        """
+        param_summary = "\n".join(
+            f" {name}: prior= {param.prior}, value={param.value}, bounds={param.bounds}"
+            for name, param in self.param.items()
+        )
+        return f"Parameters({len(self)}):\n{param_summary}"

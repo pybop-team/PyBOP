@@ -21,7 +21,7 @@ pip install -e .[all,dev]
 
 Before you commit any code, please perform the following checks using [Nox](https://nox.thea.codes/en/stable/index.html):
 
-- [All tests pass](#testing): `$ nox -s unit`
+- [All tests pass](#testing): `$ nox -s quick`
 
 ### Installing and using pre-commit
 
@@ -62,9 +62,9 @@ You now have everything you need to start making changes!
 
 ### B. Writing your code
 
-6. PyBOP is developed in [Python](https://en.wikipedia.org/wiki/Python_(programming_language)), and makes heavy use of [NumPy](https://en.wikipedia.org/wiki/NumPy) (see also [NumPy for MatLab users](https://numpy.org/doc/stable/user/numpy-for-matlab-users.html) and [Python for R users](http://blog.hackerearth.com/how-can-r-users-learn-python-for-data-science)).
+6. PyBOP is developed in [Python](https://en.wikipedia.org/wiki/Python_(programming_language)), and makes heavy use of [NumPy](https://en.wikipedia.org/wiki/NumPy) (see also [NumPy for MatLab users](https://numpy.org/doc/stable/user/numpy-for-matlab-users.html) and [Python for R users](https://rebeccabarter.com/blog/2023-09-11-from_r_to_python)).
 7. Make sure to follow our [coding style guidelines](#coding-style-guidelines).
-8. Commit your changes to your branch with [useful, descriptive commit messages](https://chris.beams.io/posts/git-commit/): Remember these are publicly visible and should still make sense a few months ahead in time. While developing, you can keep using the GitHub issue you're working on as a place for discussion. [Refer to your commits](https://stackoverflow.com/questions/8910271/how-can-i-reference-a-commit-in-an-issue-comment-on-github) when discussing specific lines of code.
+8. Commit your changes to your branch with [useful, descriptive commit messages](https://chris.beams.io/posts/git-commit/): Remember these are publicly visible and should still make sense a few months ahead in time. While developing, you can keep using the GitHub issue you're working on as a place for discussion. Refer to your commits when discussing specific lines of code. This is achieved by referencing the SHA-hash in the comment. An example of this looks like: `the commit 3e5c1e6 solved the issue...`
 9. If you want to add a dependency on another library, or re-use code you found somewhere else, have a look at [these guidelines](#dependencies-and-reusing-code).
 
 ### C. Merging your changes with PyBOP
@@ -83,16 +83,20 @@ PyBOP follows the [PEP8 recommendations](https://www.python.org/dev/peps/pep-000
 
 ### Ruff
 
-We use [ruff](https://github.com/charliermarsh/ruff) to check our PEP8 adherence. To try this on your system, navigate to the PyBOP directory in a console and type
+We use [ruff](https://github.com/charliermarsh/ruff) to lint and ensure adherence to Python PEP standards. To manually trigger `ruff`, navigate to the PyBOP directory in a console and type
 
 ```bash
 python -m pip install pre-commit
 pre-commit run ruff
 ```
 
-ruff is configured inside the file `pre-commit-config.yaml`, allowing us to ignore some errors. If you think this should be added or removed, please submit an [issue](https://guides.github.com/features/issues/).
+ruff is configured inside the file `pyproject.toml`, allowing us to ignore some errors. If you think a rule should be added or removed, please submit an [issue](https://guides.github.com/features/issues/).
 
-When you commit your changes they will be checked against ruff automatically (see [Pre-commit checks](#pre-commit-checks)).
+When you commit your changes they will be checked against ruff automatically (see [Pre-commit checks](#pre-commit-checks)). If you are having issues getting your commit to pass the linting, it
+is possible to skip linting for single lines (this should only be done as a **last resort**) by adding a line comment of `#noqa: $ruff_rule` where the `$ruff_rule` is replaced with the rule in question.
+It is also possible to skip linting altogether by committing your changes by using the
+`--no-verify` command-line flag.
+These rules can be found in the ruff configuration in `pyproject.toml` or in the failed pre-commit output. Please note the lint skipping in the pull request for reviewers.
 
 ### Naming
 
@@ -105,7 +109,7 @@ Class names are CamelCase, and start with an upper case letter, for example `MyO
 While it's a bad idea for developers to "reinvent the wheel", it's important for users to get a _reasonably sized download and an easy install_. In addition, external libraries can sometimes cease to be supported, and when they contain bugs it might take a while before fixes become available as automatic downloads to PyBOP users.
 For these reasons, all dependencies in PyBOP should be thought about carefully and discussed on GitHub.
 
-Direct inclusion of code from other packages is possible, as long as their license permits it and is compatible with ours, but again should be considered carefully and discussed in the group. Snippets from blogs and [stackoverflow](https://stackoverflow.com/) can often be included but must include attribution to the original by commenting with a link in the source code.
+Direct inclusion of code from other packages is possible, as long as their license permits it and is compatible with ours, but again should be considered carefully and discussed in the group. Snippets from blogs and stackoverflow can often be included but must include attribution to the original by commenting with a link in the source code.
 
 ### Separating dependencies
 

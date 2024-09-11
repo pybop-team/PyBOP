@@ -1,5 +1,4 @@
 import math
-import sys
 import textwrap
 
 import numpy as np
@@ -9,14 +8,27 @@ from pybop import PlotlyManager
 DEFAULT_LAYOUT_OPTIONS = dict(
     title=None,
     title_x=0.5,
-    xaxis=dict(title=None, titlefont_size=12, tickfont_size=12),
-    yaxis=dict(title=None, titlefont_size=12, tickfont_size=12),
+    xaxis=dict(
+        title=None,
+        showexponent="last",
+        exponentformat="e",
+        titlefont_size=12,
+        tickfont_size=12,
+    ),
+    yaxis=dict(
+        title=None,
+        showexponent="last",
+        exponentformat="e",
+        titlefont_size=12,
+        tickfont_size=12,
+    ),
     legend=dict(x=1, y=1, xanchor="right", yanchor="top", font_size=12),
     showlegend=True,
     autosize=False,
-    width=1024,
-    height=576,
+    width=600,
+    height=600,
     margin=dict(l=10, r=10, b=10, t=75, pad=4),
+    plot_bgcolor="white",
 )
 DEFAULT_SUBPLOT_OPTIONS = dict(
     start_cell="bottom-left",
@@ -57,24 +69,32 @@ class StandardPlot:
         x,
         y,
         layout=None,
-        layout_options=DEFAULT_LAYOUT_OPTIONS.copy(),
-        trace_options=DEFAULT_TRACE_OPTIONS.copy(),
+        layout_options=None,
+        trace_options=None,
         trace_names=None,
         trace_name_width=40,
     ):
         self.x = x
         self.y = y
         self.layout = layout
-        self.layout_options = layout_options
+        self.trace_name_width = trace_name_width
+
+        # Set default layout options and update if provided
+        if self.layout is None:
+            self.layout_options = DEFAULT_LAYOUT_OPTIONS.copy()
+            if layout_options:
+                self.layout_options.update(layout_options)
+
+        # Set default trace options and update if provided
         self.trace_options = DEFAULT_TRACE_OPTIONS.copy()
-        if trace_options is not None:
-            for arg, value in trace_options.items():
-                self.trace_options[arg] = value
+        if trace_options:
+            self.trace_options.update(trace_options)
+
+        # Check trace_names and set attribute
         if isinstance(trace_names, str):
             self.trace_names = [trace_names]
         else:
             self.trace_names = trace_names
-        self.trace_name_width = trace_name_width
 
         # Check type and dimensions of data
         # What we want is a list of 'things plotly can take', e.g. numpy arrays or lists of numbers
@@ -113,10 +133,7 @@ class StandardPlot:
 
         # Create layout
         if self.layout is None:
-            self.layout = self.go.Layout(self.layout_options)
-        if self.layout_options is not None:
-            for arg, value in self.layout_options.items():
-                self.layout[arg] = value
+            self.layout = self.go.Layout(**self.layout_options)
 
         # Wrap trace names
         if self.trace_names is not None:
@@ -146,9 +163,7 @@ class StandardPlot:
             If True, the figure is shown upon creation (default: True).
         """
         fig = self.go.Figure(data=self.traces, layout=self.layout)
-        if "ipykernel" in sys.modules and show:
-            fig.show("svg")
-        elif show:
+        if show:
             fig.show()
 
         return fig
@@ -246,9 +261,9 @@ class StandardSubplot(StandardPlot):
         num_cols=None,
         axis_titles=None,
         layout=None,
-        layout_options=DEFAULT_LAYOUT_OPTIONS.copy(),
-        subplot_options=DEFAULT_SUBPLOT_OPTIONS.copy(),
-        trace_options=DEFAULT_SUBPLOT_TRACE_OPTIONS.copy(),
+        layout_options=DEFAULT_LAYOUT_OPTIONS,
+        subplot_options=DEFAULT_SUBPLOT_OPTIONS,
+        trace_options=DEFAULT_SUBPLOT_TRACE_OPTIONS,
         trace_names=None,
         trace_name_width=40,
     ):
@@ -267,7 +282,7 @@ class StandardSubplot(StandardPlot):
         elif self.num_cols is None:
             self.num_cols = int(math.ceil(self.num_traces / self.num_rows))
         self.axis_titles = axis_titles
-        self.subplot_options = DEFAULT_SUBPLOT_OPTIONS.copy()
+        self.subplot_options = subplot_options.copy()
         if subplot_options is not None:
             for arg, value in subplot_options.items():
                 self.subplot_options[arg] = value
@@ -285,7 +300,11 @@ class StandardSubplot(StandardPlot):
             If True, the figure is shown upon creation (default: True).
         """
         fig = self.make_subplots(
-            rows=self.num_rows, cols=self.num_cols, **self.subplot_options
+            rows=self.num_rows,
+            cols=self.num_cols,
+            horizontal_spacing=0.1,
+            vertical_spacing=0.15,
+            **self.subplot_options,
         )
         fig.update_layout(self.layout_options)
 
@@ -297,11 +316,15 @@ class StandardSubplot(StandardPlot):
             if self.axis_titles and idx < len(self.axis_titles):
                 x_title, y_title = self.axis_titles[idx]
                 fig.update_xaxes(title_text=x_title, row=row, col=col)
-                fig.update_yaxes(title_text=y_title, row=row, col=col)
+                fig.update_yaxes(
+                    title_text=y_title,
+                    row=row,
+                    col=col,
+                    showexponent="last",
+                    exponentformat="e",
+                )
 
-        if "ipykernel" in sys.modules and show:
-            fig.show("svg")
-        elif show:
+        if show:
             fig.show()
 
         return fig
@@ -339,9 +362,7 @@ def plot_trajectories(x, y, trace_names=None, show=True, **layout_kwargs):
     # Generate the figure and update the layout
     fig = plot_dict(show=False)
     fig.update_layout(**layout_kwargs)
-    if "ipykernel" in sys.modules and show:
-        fig.show("svg")
-    elif show:
+    if show:
         fig.show()
 
     return fig

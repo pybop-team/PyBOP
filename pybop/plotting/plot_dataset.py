@@ -1,11 +1,7 @@
-import sys
-
 from pybop import StandardPlot, plot_trajectories
 
 
-def plot_dataset(
-    dataset, signal=["Voltage [V]"], trace_names=None, show=True, **layout_kwargs
-):
+def plot_dataset(dataset, signal=None, trace_names=None, show=True, **layout_kwargs):
     """
     Quickly plot a PyBOP Dataset using Plotly.
 
@@ -31,7 +27,9 @@ def plot_dataset(
     """
 
     # Get data dictionary
-    dataset.check(signal)
+    if signal is None:
+        signal = ["Voltage [V]"]
+    dataset.check(signal=signal)
 
     # Compile ydata and labels or legend
     y = [dataset[s] for s in signal]
@@ -54,9 +52,7 @@ def plot_dataset(
         yaxis_title=yaxis_title,
     )
     fig.update_layout(**layout_kwargs)
-    if "ipykernel" in sys.modules and show:
-        fig.show("svg")
-    elif show:
+    if show:
         fig.show()
 
     return fig

@@ -1,10 +1,12 @@
 import numpy as np
+import pybamm
 
 import pybop
 
-# Parameter set and model definition
+# Define model and use high-performant solver for sensitivities
+solver = pybamm.IDAKLUSolver()
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -19,7 +21,6 @@ parameters = pybop.Parameters(
 )
 
 # Generate data
-init_soc = 0.5
 sigma = 0.003
 experiment = pybop.Experiment(
     [
@@ -30,7 +31,7 @@ experiment = pybop.Experiment(
     ]
     * 2
 )
-values = model.predict(init_soc=init_soc, experiment=experiment)
+values = model.predict(initial_state={"Initial SoC": 0.5}, experiment=experiment)
 
 
 def noise(sigma):
@@ -50,10 +51,8 @@ dataset = pybop.Dataset(
 
 signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 # Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(
-    model, parameters, dataset, signal=signal, init_soc=init_soc
-)
-cost = pybop.RootMeanSquaredError(problem)
+problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
+cost = pybop.Minkowski(problem, p=2)
 optim = pybop.AdamW(
     cost,
     verbose=True,

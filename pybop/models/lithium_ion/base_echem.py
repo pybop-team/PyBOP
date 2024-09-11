@@ -1,8 +1,10 @@
 import warnings
+from typing import Optional
 
 from pybamm import lithium_ion as pybamm_lithium_ion
 
 from pybop.models.base_model import BaseModel, Inputs
+from pybop.parameters.parameter_set import ParameterSet
 
 
 class EChemBaseModel(BaseModel):
@@ -45,9 +47,10 @@ class EChemBaseModel(BaseModel):
         var_pts=None,
         spatial_methods=None,
         solver=None,
+        eis=False,
         **model_kwargs,
     ):
-        super().__init__(name=name, parameter_set=parameter_set)
+        super().__init__(name=name, parameter_set=parameter_set, eis=eis)
 
         model_options = dict(build=False)
         for key, value in model_kwargs.items():
@@ -61,18 +64,18 @@ class EChemBaseModel(BaseModel):
         self._unprocessed_parameter_set = self._parameter_set
 
         # Define model geometry and discretization
-        self.geometry = geometry or self.pybamm_model.default_geometry
-        self.submesh_types = submesh_types or self.pybamm_model.default_submesh_types
-        self.var_pts = var_pts or self.pybamm_model.default_var_pts
-        self.spatial_methods = (
+        self._geometry = geometry or self.pybamm_model.default_geometry
+        self._submesh_types = submesh_types or self.pybamm_model.default_submesh_types
+        self._var_pts = var_pts or self.pybamm_model.default_var_pts
+        self._spatial_methods = (
             spatial_methods or self.pybamm_model.default_spatial_methods
         )
         if solver is None:
-            self.solver = self.pybamm_model.default_solver
-            self.solver.mode = "fast with events"
-            self.solver.max_step_decrease_count = 1
+            self._solver = self.pybamm_model.default_solver
+            self._solver.mode = "fast with events"
+            self._solver.max_step_decrease_count = 1
         else:
-            self.solver = solver
+            self._solver = solver
 
         # Internal attributes for the built model are initialized but not set
         self._model_with_set_params = None
@@ -85,7 +88,10 @@ class EChemBaseModel(BaseModel):
         self.geometric_parameters = self.set_geometric_parameters()
 
     def _check_params(
-        self, inputs: Inputs = None, parameter_set=None, allow_infeasible_solutions=True
+        self,
+        inputs: Inputs,
+        parameter_set: ParameterSet,
+        allow_infeasible_solutions: bool = True,
     ):
         """
         Check compatibility of the model parameters.
@@ -94,6 +100,8 @@ class EChemBaseModel(BaseModel):
         ----------
         inputs : Inputs
             The input parameters for the simulation.
+        parameter_set : pybop.ParameterSet
+            A PyBOP parameter set object or a dictionary containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
@@ -102,8 +110,6 @@ class EChemBaseModel(BaseModel):
         bool
             A boolean which signifies whether the parameters are compatible.
         """
-        parameter_set = parameter_set or self._parameter_set
-
         if self.pybamm_model.options["working electrode"] == "positive":
             electrode_params = [
                 (
@@ -136,13 +142,13 @@ class EChemBaseModel(BaseModel):
             ):
                 if self.param_check_counter <= len(electrode_params):
                     infeasibility_warning = "Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
-                    warnings.warn(infeasibility_warning, UserWarning)
+                    warnings.warn(infeasibility_warning, UserWarning, stacklevel=2)
                 self.param_check_counter += 1
                 return allow_infeasible_solutions
 
         return True
 
-    def cell_volume(self, parameter_set=None):
+    def cell_volume(self, parameter_set: Optional[ParameterSet] = None):
         """
         Calculate the total cell volume in m3.
 
@@ -153,8 +159,7 @@ class EChemBaseModel(BaseModel):
         Parameters
         ----------
         parameter_set : dict, optional
-            A dictionary containing the parameter values necessary for the volume
-            calculation.
+            A dictionary containing the parameter values necessary for the calculation.
 
         Returns
         -------
@@ -180,7 +185,7 @@ class EChemBaseModel(BaseModel):
         # Calculate and return total cell volume
         return cross_sectional_area * cell_thickness
 
-    def cell_mass(self, parameter_set=None):
+    def cell_mass(self, parameter_set: Optional[ParameterSet] = None):
         """
         Calculate the total cell mass in kilograms.
 
@@ -192,8 +197,7 @@ class EChemBaseModel(BaseModel):
         Parameters
         ----------
         parameter_set : dict, optional
-            A dictionary containing the parameter values necessary for the mass
-            calculations.
+            A dictionary containing the parameter values necessary for the calculation.
 
         Returns
         -------
@@ -264,30 +268,27 @@ class EChemBaseModel(BaseModel):
         )
         return cross_sectional_area * total_area_density
 
-    def approximate_capacity(self, inputs: Inputs):
+    def approximate_capacity(self, parameter_set: Optional[ParameterSet] = None):
         """
-        Calculate and update an estimate for the nominal cell capacity based on the theoretical
-        energy density and an average voltage.
-
-        The nominal capacity is computed by dividing the theoretical energy (in watt-hours) by
-        the average open circuit potential (voltage) of the cell.
+        Calculate an estimate for the nominal cell capacity. The estimate is computed
+        by dividing the theoretical energy (in watt-hours) by the average open circuit
+        potential (voltage) of the cell.
 
         Parameters
         ----------
-        inputs : Inputs
-            The parameters that are the inputs of the model.
+        parameter_set : dict, optional
+            A dictionary containing the parameter values necessary for the calculation.
 
         Returns
         -------
-        None
-            The nominal cell capacity is updated directly in the model's parameter set.
+        float
+            The estimate of the nominal cell capacity.
         """
-        inputs = self.parameters.verify(inputs)
-        self._parameter_set.update(inputs)
+        parameter_set = parameter_set or self._parameter_set
 
         # Calculate theoretical energy density
         theoretical_energy = self._electrode_soh.calculate_theoretical_energy(
-            self._parameter_set
+            parameter_set
         )
 
         # Extract stoichiometries and compute mean values
@@ -296,25 +297,24 @@ class EChemBaseModel(BaseModel):
             max_sto_neg,
             min_sto_pos,
             max_sto_pos,
-        ) = self._electrode_soh.get_min_max_stoichiometries(self._parameter_set)
+        ) = self._electrode_soh.get_min_max_stoichiometries(parameter_set)
         mean_sto_neg = (min_sto_neg + max_sto_neg) / 2
         mean_sto_pos = (min_sto_pos + max_sto_pos) / 2
 
         # Calculate average voltage
-        positive_electrode_ocp = self._parameter_set["Positive electrode OCP [V]"]
-        negative_electrode_ocp = self._parameter_set["Negative electrode OCP [V]"]
+        positive_electrode_ocp = parameter_set["Positive electrode OCP [V]"]
+        negative_electrode_ocp = parameter_set["Negative electrode OCP [V]"]
         try:
             average_voltage = positive_electrode_ocp(
                 mean_sto_pos
             ) - negative_electrode_ocp(mean_sto_neg)
         except Exception as e:
-            raise ValueError(f"Error in average voltage calculation: {e}")
+            raise ValueError(f"Error in average voltage calculation: {e}") from e
 
-        # Calculate and update nominal capacity
-        theoretical_capacity = theoretical_energy / average_voltage
-        self._parameter_set.update(
-            {"Nominal cell capacity [A.h]": theoretical_capacity}
-        )
+        # Calculate the capacity estimate
+        approximate_capacity = theoretical_energy / average_voltage
+
+        return approximate_capacity
 
     def set_geometric_parameters(self):
         """

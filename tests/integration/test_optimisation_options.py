@@ -20,6 +20,13 @@ class TestOptimisation:
     @pytest.fixture
     def model(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        x = self.ground_truth
+        parameter_set.update(
+            {
+                "Negative electrode active material volume fraction": x[0],
+                "Positive electrode active material volume fraction": x[1],
+            }
+        )
         return pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
     @pytest.fixture
@@ -53,8 +60,8 @@ class TestOptimisation:
     @pytest.fixture
     def spm_costs(self, model, parameters, cost_class):
         # Form dataset
-        init_soc = 0.5
-        solution = self.get_data(model, parameters, self.ground_truth, init_soc)
+        initial_state = {"Initial SoC": 0.5}
+        solution = self.get_data(model, initial_state)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -65,7 +72,7 @@ class TestOptimisation:
         )
 
         # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
+        problem = pybop.FittingProblem(model, parameters, dataset)
         if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
             return cost_class(problem, sigma0=0.002)
         else:
@@ -93,7 +100,7 @@ class TestOptimisation:
 
         # Set parallelisation if not on Windows
         if sys.platform != "win32":
-            optim.set_parallel(True)
+            optim.set_parallel(1)
 
         initial_cost = optim.cost(x0)
         x, final_cost = optim.run()
@@ -104,10 +111,12 @@ class TestOptimisation:
                 assert initial_cost > final_cost
             else:
                 assert initial_cost < final_cost
+        else:
+            raise ValueError("Initial value is the same as the ground truth value.")
         np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
 
-    def get_data(self, model, parameters, x, init_soc):
-        model.classify_and_update_parameters(parameters)
+    def get_data(self, model, initial_state):
+        # Update the initial state and save the ground truth initial concentrations
         experiment = pybop.Experiment(
             [
                 (
@@ -117,5 +126,5 @@ class TestOptimisation:
             ]
             * 2
         )
-        sim = model.predict(init_soc=init_soc, experiment=experiment, inputs=x)
+        sim = model.predict(initial_state=initial_state, experiment=experiment)
         return sim
