@@ -53,12 +53,14 @@ dev = [
     "pytest-mock",
     "pytest-xdist",
     "ruff",
-    "bpx>=0.4",
     ]
 scifem = [
   "scikit-fem>=8.1.0" # scikit-fem is a dependency for the multi-dimensional pybamm models
 ]
-all = ["pybop[plot]", "pybop[scifem]"]
+bpx = [
+    "bpx>=0.4",
+]
+all = ["pybop[plot]", "pybop[scifem]", "pybop[bpx]"]
 
 [tool.setuptools.packages.find]
 include = ["pybop", "pybop.*"]
