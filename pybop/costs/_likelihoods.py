@@ -116,6 +116,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         self._add_sigma_parameters(sigma0)
         self.parameters.join(self.sigma)
         self.transformation = self.parameters.construct_transformation()
+        self.set_fail_gradient()
 
     def _add_sigma_parameters(self, sigma0):
         sigma0 = [sigma0] if not isinstance(sigma0, list) else sigma0
