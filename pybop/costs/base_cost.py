@@ -183,3 +183,12 @@ class BaseCost:
             raise ValueError(
                 "Forward model sensitivities need to be provided alongside `calculate_grad=True` for `cost.compute`."
             )
+
+    def join_parameters(self, parameters):
+        """
+        Setter for joining parameters. This method sets the fail gradient if the join adds parameters.
+        """
+        original_n_params = self.n_parameters
+        self.parameters.join(parameters)
+        if original_n_params != self.n_parameters:
+            self.set_fail_gradient()
