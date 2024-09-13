@@ -190,15 +190,14 @@ class BasePintsOptimiser(BaseOptimiser):
         unchanged_iterations = 0
 
         # Choose method to evaluate
-        if self._needs_sensitivities:
-
-            def f(x):
-                L, dl = self.cost.evaluateS1(x)
-                return (L, dl) if self.minimising else (-L, -dl)
-        else:
-
-            def f(x):
-                return self.cost(x) if self.minimising else -self.cost(x)
+        def fun(x):
+            if self._needs_sensitivities:
+                L, dl = self.cost(x, calculate_grad=True, apply_transform=True)
+            else:
+                L = self.cost(x, apply_transform=True)
+                dl = None
+            sign = -1 if not self.minimising else 1
+            return (sign * L, sign * dl) if dl is not None else sign * L
 
         # Create evaluator object
         if self._parallel:
@@ -209,9 +208,9 @@ class BasePintsOptimiser(BaseOptimiser):
             # particles!
             if isinstance(self.pints_optimiser, PintsPopulationBasedOptimiser):
                 n_workers = min(n_workers, self.pints_optimiser.population_size())
-            evaluator = PintsParallelEvaluator(f, n_workers=n_workers)
+            evaluator = PintsParallelEvaluator(fun, n_workers=n_workers)
         else:
-            evaluator = PintsSequentialEvaluator(f)
+            evaluator = PintsSequentialEvaluator(fun)
 
         # Keep track of current best and best-guess scores.
         fb = fg = np.inf
@@ -253,9 +252,11 @@ class BasePintsOptimiser(BaseOptimiser):
                 # Update counts
                 evaluations += len(fs)
                 iteration += 1
-                self.log["x"].append(xs)
-                self.log["x_best"].append(self.pints_optimiser.x_best())
-                self.log["cost"].append(fb if self.minimising else -fb)
+                self.log_update(
+                    x=xs,
+                    x_best=self.pints_optimiser.x_best(),
+                    cost=fb if self.minimising else -fb,
+                )
 
                 # Check stopping criteria:
                 # Maximum number of iterations
@@ -322,8 +323,8 @@ class BasePintsOptimiser(BaseOptimiser):
 
             # Show current parameters
             x_user = self.pints_optimiser.x_guessed()
-            if self.transformation is not None:
-                x_user = self.transformation.to_model(x_user)
+            if self._transformation:
+                x_user = self._transformation.to_model(x_user)
             for p in x_user:
                 print(PintsStrFloat(p))
             print("-" * 40)
@@ -345,8 +346,8 @@ class BasePintsOptimiser(BaseOptimiser):
             f = self.pints_optimiser.f_best()
 
         # Inverse transform search parameters
-        if self.transformation is not None:
-            x = self.transformation.to_model(x)
+        if self._transformation:
+            x = self._transformation.to_model(x)
 
         return Result(
             x=x, final_cost=f if self.minimising else -f, n_iterations=self._iterations

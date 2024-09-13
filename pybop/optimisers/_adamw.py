@@ -86,8 +86,7 @@ class AdamWImpl(PintsOptimiser):
         self._b2 = 0.999
 
         # Step size
-        self._alpha = np.min(self._sigma0)
-
+        self._alpha = self._sigma0
         # Weight decay rate
         self._lam = 0.01
 

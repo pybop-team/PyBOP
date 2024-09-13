@@ -13,8 +13,10 @@ class Test_SPM_Parameterisation:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.sigma0 = 0.002
-        self.ground_truth = np.asarray([0.55, 0.55]) + np.random.normal(
-            loc=0.0, scale=0.05, size=2
+        self.ground_truth = np.clip(
+            np.asarray([0.55, 0.55]) + np.random.normal(loc=0.0, scale=0.05, size=2),
+            a_min=0.4,
+            a_max=0.75,
         )
 
     @pytest.fixture
@@ -35,7 +37,7 @@ class Test_SPM_Parameterisation:
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Uniform(0.4, 0.75),
-                bounds=[0.375, 0.75],
+                bounds=[0.375, 0.775],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
@@ -56,7 +58,7 @@ class Test_SPM_Parameterisation:
             pybop.SumSquaredError,
             pybop.SumofPower,
             pybop.Minkowski,
-            pybop.MAP,
+            pybop.LogPosterior,
         ]
     )
     def cost(self, request):
@@ -68,11 +70,11 @@ class Test_SPM_Parameterisation:
     @pytest.fixture(
         params=[
             pybop.SciPyDifferentialEvolution,
+            pybop.CuckooSearch,
+            pybop.NelderMead,
+            pybop.IRPropMin,
             pybop.AdamW,
             pybop.CMAES,
-            pybop.CuckooSearch,
-            pybop.IRPropMin,
-            pybop.NelderMead,
             pybop.SNES,
             pybop.XNES,
         ]
@@ -101,16 +103,16 @@ class Test_SPM_Parameterisation:
         problem = pybop.FittingProblem(model, parameters, dataset)
 
         # Construct the cost
-        if cost in [pybop.GaussianLogLikelihoodKnownSigma]:
+        if cost is pybop.GaussianLogLikelihoodKnownSigma:
             cost = cost(problem, sigma0=self.sigma0)
-        elif cost in [pybop.GaussianLogLikelihood]:
+        elif cost is pybop.GaussianLogLikelihood:
             cost = cost(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
-        elif cost in [pybop.MAP]:
+        elif cost is pybop.LogPosterior:
             cost = cost(
-                problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=self.sigma0
+                pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
             )
         elif cost in [pybop.SumofPower, pybop.Minkowski]:
-            cost = cost(problem, p=2)
+            cost = cost(problem, p=2.5)
         else:
             cost = cost(problem)
 
@@ -120,25 +122,19 @@ class Test_SPM_Parameterisation:
             "max_iterations": 250,
             "absolute_tolerance": 1e-6,
             "max_unchanged_iterations": 55,
+            "sigma0": [0.05, 0.05, 1e-3]
+            if isinstance(cost, pybop.GaussianLogLikelihood)
+            else 0.05,
         }
 
-        if isinstance(cost, pybop.MAP):
+        if isinstance(cost, pybop.LogPosterior):
             for i in cost.parameters.keys():
                 cost.parameters[i].prior = pybop.Uniform(
                     0.2, 2.0
                 )  # Increase range to avoid prior == np.inf
 
         # Set sigma0 and create optimiser
-        sigma0 = 0.05 if isinstance(cost, pybop.MAP) else None
-        optim = optimiser(sigma0=sigma0, **common_args)
-
-        # AdamW will use lowest sigma0 for learning rate, so allow more iterations
-        if issubclass(optimiser, (pybop.AdamW, pybop.IRPropMin)) and isinstance(
-            cost, pybop.GaussianLogLikelihood
-        ):
-            common_args["max_unchanged_iterations"] = 75
-            optim = optimiser(**common_args)
-
+        optim = optimiser(**common_args)
         return optim
 
     @pytest.mark.integration
@@ -172,7 +168,7 @@ class Test_SPM_Parameterisation:
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, cost):
         # Form dataset
-        solution = self.get_data(model, 0.5)
+        solution = self.get_data(model, init_soc=0.5)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -190,11 +186,13 @@ class Test_SPM_Parameterisation:
         signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
         problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 
-        if cost in [pybop.GaussianLogLikelihoodKnownSigma]:
+        if cost is pybop.GaussianLogLikelihoodKnownSigma:
             return cost(problem, sigma0=self.sigma0)
-        elif cost in [pybop.MAP]:
+        elif cost is pybop.GaussianLogLikelihood:
+            return cost(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
+        elif cost is pybop.LogPosterior:
             return cost(
-                problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=self.sigma0
+                pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
             )
         else:
             return cost(problem)
@@ -212,18 +210,25 @@ class Test_SPM_Parameterisation:
         x0 = spm_two_signal_cost.parameters.initial_value()
         combined_sigma0 = np.asarray([self.sigma0, self.sigma0])
 
+        common_args = {
+            "cost": spm_two_signal_cost,
+            "max_iterations": 250,
+            "absolute_tolerance": 1e-6,
+            "max_unchanged_iterations": 55,
+            "sigma0": [0.035, 0.035, 6e-3, 6e-3]
+            if isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood)
+            else None,
+        }
+
         # Test each optimiser
-        optim = multi_optimiser(
-            cost=spm_two_signal_cost,
-            max_iterations=250,
-        )
+        optim = multi_optimiser(**common_args)
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
         if isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood):
             self.ground_truth = np.concatenate((self.ground_truth, combined_sigma0))
 
         if issubclass(multi_optimiser, pybop.BasePintsOptimiser):
-            optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
+            optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-6)
 
         initial_cost = optim.cost(optim.parameters.initial_value())
         x, final_cost = optim.run()

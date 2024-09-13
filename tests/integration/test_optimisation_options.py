@@ -100,7 +100,7 @@ class TestOptimisation:
 
         # Set parallelisation if not on Windows
         if sys.platform != "win32":
-            optim.set_parallel(True)
+            optim.set_parallel(1)
 
         initial_cost = optim.cost(x0)
         x, final_cost = optim.run()

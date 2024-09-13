@@ -150,6 +150,11 @@ class TestProblem:
         # Test model.simulate with an initial state
         problem.evaluate(inputs=[1e-5, 1e-5])
 
+        # Test try-except
+        problem.verbose = True
+        out = problem.evaluate(inputs=[0.0, 0.0])
+        assert not np.isfinite(out["Voltage [V]"])
+
         # Test problem construction errors
         for bad_dataset in [
             pybop.Dataset({"Time [s]": np.array([0])}),
@@ -181,6 +186,34 @@ class TestProblem:
         two_signals = ["Voltage [V]", "Time [s]"]
         with pytest.raises(ValueError):
             pybop.FittingProblem(model, parameters, bad_dataset, signal=two_signals)
+
+    @pytest.mark.unit
+    def test_fitting_problem_eis(self, parameters):
+        model = pybop.lithium_ion.SPM(eis=True)
+
+        dataset = pybop.Dataset(
+            {
+                "Frequency [Hz]": np.logspace(-4, 5, 30),
+                "Current function [A]": np.ones(30) * 0.0,
+                "Impedance": np.ones(30) * 0.0,
+            }
+        )
+
+        # Construct Problem
+        problem = pybop.FittingProblem(
+            model,
+            parameters,
+            dataset,
+            signal=["Impedance"],
+            initial_state={"Initial open-circuit voltage [V]": 4.0},
+        )
+        assert problem.eis == model.eis
+        assert problem.domain == "Frequency [Hz]"
+
+        # Test try-except
+        problem.verbose = True
+        out = problem.evaluate(inputs=[0.0, 0.0])
+        assert not np.isfinite(out["Impedance"])
 
     @pytest.mark.unit
     def test_multi_fitting_problem(self, model, parameters, dataset, signal):
@@ -230,10 +263,24 @@ class TestProblem:
                 model,
                 parameters,
                 experiment,
+                update_capacity=True,
+            )
+        assert "The nominal capacity is approximated for each evaluation." in str(
+            record[0].message
+        )
+
+        with pytest.warns(UserWarning) as record:
+            problem = pybop.DesignProblem(
+                model,
+                parameters,
+                experiment,
                 initial_state={"Initial open-circuit voltage [V]": 4.0},
             )
         assert "It is usually better to define an initial state of charge" in str(
             record[0].message
+        )
+        assert "The nominal capacity is fixed at the initial model value." in str(
+            record[1].message
         )
 
         # Construct Problem
@@ -245,9 +292,9 @@ class TestProblem:
         )  # building postponed with input experiment
         assert problem.initial_state == {"Initial SoC": 1.0}
 
-        # Test model.predict
-        model.predict(inputs=[1e-5, 1e-5], experiment=experiment)
-        model.predict(inputs=[3e-5, 3e-5], experiment=experiment)
+        # Test evaluation
+        problem.evaluate(inputs=[1e-5, 1e-5])
+        problem.evaluate(inputs=[3e-5, 3e-5])
 
         # Test initial SoC from parameter_set
         model = pybop.empirical.Thevenin()

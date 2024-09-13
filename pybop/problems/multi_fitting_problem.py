@@ -37,30 +37,31 @@ class MultiFittingProblem(BaseProblem):
             combined_parameters.join(problem.parameters)
 
         # Combine the target datasets
-        combined_time_data = []
+        combined_domain_data = []
         combined_signal = []
         for problem in self.problems:
             for signal in problem.signal:
-                combined_time_data.extend(problem.time_data)
+                combined_domain_data.extend(problem.domain_data)
                 combined_signal.extend(problem.target[signal])
-        combined_dataset = Dataset(
-            {
-                "Time [s]": np.asarray(combined_time_data),
-                "Combined signal": np.asarray(combined_signal),
-            }
-        )
 
         super().__init__(
             parameters=combined_parameters,
             model=None,
             signal=["Combined signal"],
         )
+
+        combined_dataset = Dataset(
+            {
+                self.domain: np.asarray(combined_domain_data),
+                "Combined signal": np.asarray(combined_signal),
+            }
+        )
         self._dataset = combined_dataset.data
         self.parameters.initial_value()
 
-        # Unpack time and target data
-        self._time_data = self._dataset["Time [s]"]
-        self.n_time_data = len(self._time_data)
+        # Unpack domain and target data
+        self._domain_data = self._dataset[self.domain]
+        self.n_domain_data = len(self._domain_data)
         self.set_target(combined_dataset)
 
     def set_initial_state(self, initial_state: Optional[dict] = None):
@@ -75,7 +76,7 @@ class MultiFittingProblem(BaseProblem):
         for problem in self.problems:
             problem.set_initial_state(initial_state)
 
-    def evaluate(self, inputs: Inputs, **kwargs):
+    def evaluate(self, inputs: Inputs, eis=False):
         """
         Evaluate the model with the given parameters and return the signal.
 
@@ -96,7 +97,7 @@ class MultiFittingProblem(BaseProblem):
 
         for problem in self.problems:
             problem_inputs = problem.parameters.as_dict()
-            signal_values = problem.evaluate(problem_inputs, **kwargs)
+            signal_values = problem.evaluate(problem_inputs)
 
             # Collect signals
             for signal in problem.signal:

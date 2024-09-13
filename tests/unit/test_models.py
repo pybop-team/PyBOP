@@ -82,6 +82,12 @@ class TestModels:
         ):
             model.predict(None, None)
 
+        # Test new_copy() without pybamm_model
+        if not isinstance(model, pybop.lithium_ion.MSMR):
+            new_model = model.new_copy()
+            assert new_model.pybamm_model is not None
+            assert new_model.parameter_set is not None
+
     @pytest.mark.unit
     def test_predict_with_inputs(self, model):
         # Define inputs
@@ -226,7 +232,7 @@ class TestModels:
 
         with pytest.raises(
             ValueError,
-            match="Cannot use sensitivies for parameters which require a model rebuild",
+            match="Cannot use sensitivities for parameters which require a model rebuild",
         ):
             model.simulateS1(t_eval=t_eval, inputs=parameters.as_dict())
 
@@ -308,6 +314,28 @@ class TestModels:
             ExponentialDecay(n_states=-1)
 
     @pytest.mark.unit
+    def test_simulateEIS(self):
+        # Test EIS on SPM
+        model = pybop.lithium_ion.SPM(eis=True)
+
+        # Construct frequencies and solve
+        f_eval = np.linspace(100, 1000, 5)
+        sol = model.simulateEIS(inputs={}, f_eval=f_eval)
+        assert np.isfinite(sol["Impedance"]).all()
+
+        # Test infeasible parameter values
+        model.allow_infeasible_solutions = False
+        inputs = {
+            "Negative electrode active material volume fraction": 0.9,
+            "Positive electrode active material volume fraction": 0.9,
+        }
+        # Rebuild model
+        model.build(inputs=inputs)
+
+        with pytest.raises(ValueError, match="These parameter values are infeasible."):
+            model.simulateEIS(f_eval=f_eval, inputs=inputs)
+
+    @pytest.mark.unit
     def test_basemodel(self):
         base = pybop.BaseModel()
         x = np.array([1, 2, 3])
@@ -379,6 +407,38 @@ class TestModels:
         assert base.check_params(inputs=[1])
         with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
             base.check_params(inputs=["unexpected_string"])
+
+    @pytest.mark.unit
+    def test_base_ecircuit_model(self):
+        def check_params(inputs: dict, allow_infeasible_solutions: bool):
+            return True if inputs is None else inputs["a"] < 2
+
+        base_ecircuit_model = pybop.empirical.ECircuitModel(
+            pybamm_model=pybamm.equivalent_circuit.Thevenin,
+            check_params=check_params,
+        )
+        assert base_ecircuit_model.check_params({"a": 1})
+
+        base_ecircuit_model = pybop.empirical.ECircuitModel(
+            pybamm_model=pybamm.equivalent_circuit.Thevenin,
+        )
+        assert base_ecircuit_model.check_params()
+
+    @pytest.mark.unit
+    def test_userdefined_check_params(self):
+        def check_params(inputs: dict, allow_infeasible_solutions: bool):
+            return True if inputs is None else inputs["a"] < 2
+
+        for model in [
+            pybop.BaseModel(check_params=check_params),
+            pybop.empirical.Thevenin(check_params=check_params),
+        ]:
+            assert model.check_params(inputs={"a": 1})
+            assert not model.check_params(inputs={"a": 2})
+            with pytest.raises(
+                TypeError, match="Inputs must be a dictionary or numeric."
+            ):
+                model.check_params(inputs=["unexpected_string"])
 
     @pytest.mark.unit
     def test_non_converged_solution(self):
