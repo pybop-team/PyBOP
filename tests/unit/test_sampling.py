@@ -215,8 +215,8 @@ class TestPintsSamplers:
 
         # Test incorrect number of parameters
         new_multi_log_posterior = copy.copy(log_posterior)
-        new_multi_log_posterior.parameters = [
-            new_multi_log_posterior.parameters[
+        new_multi_log_posterior._parameters = [
+            new_multi_log_posterior._parameters[
                 "Positive electrode active material volume fraction"
             ]
         ]
