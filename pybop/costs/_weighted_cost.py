@@ -62,7 +62,7 @@ class WeightedCost(BaseCost):
             super().__init__()
 
         for cost in self.costs:
-            self.parameters.join(cost.parameters)
+            self.join_parameters(cost.parameters)
 
         # Weighted costs do not use this functionality
         self._has_separable_problem = False
