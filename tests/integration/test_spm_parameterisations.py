@@ -216,7 +216,7 @@ class Test_SPM_Parameterisation:
             "absolute_tolerance": 1e-6,
             "max_unchanged_iterations": 55,
             "sigma0": [0.035, 0.035, 6e-3, 6e-3]
-            if spm_two_signal_cost is pybop.GaussianLogLikelihood
+            if isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood)
             else None,
         }
 

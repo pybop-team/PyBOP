@@ -73,8 +73,8 @@ class BaseOptimiser:
 
         if isinstance(cost, BaseCost):
             self.cost = cost
+            self.parameters = self.cost.parameters
             self._transformation = self.cost.transformation
-            self.parameters.join(cost.parameters)
             self.set_allow_infeasible_solutions()
             if isinstance(cost, WeightedCost):
                 self.minimising = cost.minimising

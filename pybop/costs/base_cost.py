@@ -34,7 +34,7 @@ class BaseCost:
     """
 
     def __init__(self, problem: Optional[BaseProblem] = None):
-        self.parameters = Parameters()
+        self._parameters = Parameters()
         self.transformation = None
         self.problem = problem
         self.verbose = False
@@ -44,17 +44,17 @@ class BaseCost:
         self._de = 1.0
         if isinstance(self.problem, BaseProblem):
             self._target = self.problem.target
-            self.parameters.join(self.problem.parameters)
+            self._parameters.join(self.problem.parameters)
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
-            self.transformation = self.parameters.construct_transformation()
+            self.transformation = self._parameters.construct_transformation()
             self._has_separable_problem = True
             self.grad_fail = None
             self.set_fail_gradient()
 
     @property
     def n_parameters(self):
-        return len(self.parameters)
+        return len(self._parameters)
 
     @property
     def has_separable_problem(self):
@@ -95,8 +95,8 @@ class BaseCost:
         self.has_transform = self.transformation is not None and apply_transform
         if self.has_transform:
             inputs = self.transformation.to_model(inputs)
-        inputs = self.parameters.verify(inputs)
-        self.parameters.update(values=list(inputs.values()))
+        inputs = self._parameters.verify(inputs)
+        self._parameters.update(values=list(inputs.values()))
 
         y, dy = None, None
         if self._has_separable_problem:
@@ -183,3 +183,16 @@ class BaseCost:
             raise ValueError(
                 "Forward model sensitivities need to be provided alongside `calculate_grad=True` for `cost.compute`."
             )
+
+    def join_parameters(self, parameters):
+        """
+        Setter for joining parameters. This method sets the fail gradient if the join adds parameters.
+        """
+        original_n_params = self.n_parameters
+        self._parameters.join(parameters)
+        if original_n_params != self.n_parameters:
+            self.set_fail_gradient()
+
+    @property
+    def parameters(self):
+        return self._parameters
