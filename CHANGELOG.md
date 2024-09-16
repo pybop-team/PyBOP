@@ -6,6 +6,17 @@
 
 ## Breaking Changes
 
+# [v24.9.1](https://github.com/pybop-team/PyBOP/tree/v24.9.0) - 2024-09-16
+
+
+## Features
+
+## Bug Fixes
+
+- [#495](https://github.com/pybop-team/PyBOP/pull/495) - Bugfixes for Transformation class, adds `apply_transform` optional arg to `BaseCost` for transformation functionality.
+
+## Breaking Changes
+
 # [v24.9.0](https://github.com/pybop-team/PyBOP/tree/v24.9.0) - 2024-09-10
 
 ## Features
