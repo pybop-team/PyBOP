@@ -68,6 +68,7 @@ class TestTransformation:
             pybop.SumofPower,
             pybop.Minkowski,
             pybop.LogPosterior,
+            pybop.LogPosterior,  # Second for GaussianLogLikelihood
         ]
     )
     def cost_cls(self, request):
@@ -90,13 +91,19 @@ class TestTransformation:
         problem = pybop.FittingProblem(model, parameters, dataset)
 
         # Construct the cost
+        first_map = True
         if cost_cls is pybop.GaussianLogLikelihoodKnownSigma:
             return cost_cls(problem, sigma0=self.sigma0)
         elif cost_cls is pybop.GaussianLogLikelihood:
             return cost_cls(problem)
+        elif cost_cls is pybop.LogPosterior and first_map:
+            first_map = False
+            return cost_cls(log_likelihood=pybop.GaussianLogLikelihood(problem))
         elif cost_cls is pybop.LogPosterior:
             return cost_cls(
-                pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
+                log_likelihood=pybop.GaussianLogLikelihoodKnownSigma(
+                    problem, sigma0=self.sigma0
+                )
             )
         else:
             return cost_cls(problem)
@@ -114,7 +121,7 @@ class TestTransformation:
         optim = optimiser(
             cost=cost,
             sigma0=[0.03, 0.03, 1e-3]
-            if isinstance(cost, pybop.GaussianLogLikelihood)
+            if isinstance(cost, (pybop.GaussianLogLikelihood, pybop.LogPosterior))
             else [0.03, 0.03],
             max_unchanged_iterations=35,
             absolute_tolerance=1e-6,
@@ -125,7 +132,7 @@ class TestTransformation:
         x, final_cost = optim.run()
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
-        if isinstance(optim.cost, pybop.GaussianLogLikelihood):
+        if isinstance(optim.cost, (pybop.GaussianLogLikelihood, pybop.LogPosterior)):
             self.ground_truth = np.concatenate(
                 (self.ground_truth, np.asarray([self.sigma0]))
             )

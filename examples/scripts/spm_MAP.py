@@ -25,6 +25,7 @@ parameters = pybop.Parameters(
         bounds=[0.3, 0.8],
         initial_value=0.653,
         true_value=parameter_set["Negative electrode active material volume fraction"],
+        transformation=pybop.LogTransformation(),
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
@@ -32,6 +33,7 @@ parameters = pybop.Parameters(
         bounds=[0.4, 0.7],
         initial_value=0.657,
         true_value=parameter_set["Positive electrode active material volume fraction"],
+        transformation=pybop.LogTransformation(),
     ),
 )
 
@@ -44,7 +46,7 @@ experiment = pybop.Experiment(
         ),
     ]
 )
-values = model.predict(initial_state={"Initial SoC": 0.7}, experiment=experiment)
+values = model.predict(initial_state={"Initial SoC": 0.5}, experiment=experiment)
 corrupt_values = values["Voltage [V]"].data + np.random.normal(
     0, sigma, len(values["Voltage [V]"].data)
 )
@@ -60,7 +62,7 @@ dataset = pybop.Dataset(
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.LogPosterior(pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=sigma))
+cost = pybop.LogPosterior(pybop.GaussianLogLikelihood(problem))
 optim = pybop.IRPropMin(
     cost,
     sigma0=0.05,
