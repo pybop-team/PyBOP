@@ -148,6 +148,7 @@ class BaseModel:
             A valid initial state, e.g. the initial state of charge or open-circuit voltage.
             Defaults to None, indicating that the existing initial state of charge (for an ECM)
             or initial concentrations (for an EChem model) will be used.
+            Accepted keys either `"Initial open-circuit voltage [V]"` or ``"Initial SoC"`
         dataset : pybop.Dataset or dict, optional
             The dataset to be used in the model construction.
         check_model : bool, optional

@@ -197,6 +197,23 @@ class TestParameters:
             params["Positive electrode active material volume fraction"]
 
     @pytest.mark.unit
+    def test_parameters_transformation(self):
+        # Test unbounded transformation causes ValueError due to NaN
+        params = pybop.Parameters(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.01, 0.2),
+                transformation=pybop.LogTransformation(),
+            )
+        )
+
+        with pytest.raises(
+            ValueError,
+            match="Transformed bounds resulted in NaN values.\nIf you've not applied bounds",
+        ):
+            params.get_bounds(apply_transform=True)
+
+    @pytest.mark.unit
     def test_parameters_update(self, parameter):
         params = pybop.Parameters(parameter)
         params.update(values=[0.5])
