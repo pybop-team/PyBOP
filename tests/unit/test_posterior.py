@@ -68,15 +68,13 @@ class TestLogPosterior:
     def test_log_posterior_construction(self, likelihood, prior):
         # Test log posterior construction
         posterior = pybop.LogPosterior(likelihood, prior)
+        keys = likelihood.parameters.keys()
 
         assert posterior._log_likelihood == likelihood
         assert posterior._prior == prior
-
-        # Test log posterior construction without parameters
-        likelihood.parameters.priors = None
-
-        with pytest.raises(TypeError, match="'NoneType' object is not callable"):
-            pybop.LogPosterior(likelihood, log_prior=None)
+        assert posterior.parameters[keys[0]] == likelihood.parameters[keys[0]]
+        assert posterior.has_separable_problem == likelihood.has_separable_problem
+        assert posterior.transformation == likelihood.transformation
 
     @pytest.mark.unit
     def test_log_posterior_construction_no_prior(self, likelihood):
