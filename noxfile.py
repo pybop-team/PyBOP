@@ -70,7 +70,7 @@ def examples(session):
 @nox.session
 def notebooks(session):
     """Run the Jupyter notebooks."""
-    session.install("setuptools", "wheel")
+    session.install("setuptools", "wheel", "openpyxl", "ipywidgets")
     session.install("-e", ".[all,dev]", silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
@@ -86,7 +86,7 @@ def notebooks(session):
 @nox.session(name="notebooks-overwrite")
 def notebooks_overwrite(session):
     """Run the Jupyter notebooks."""
-    session.install("setuptools", "wheel")
+    session.install("setuptools", "wheel", "openpyxl", "ipywidgets")
     session.install("-e", ".[all,dev]", silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
