@@ -4,6 +4,8 @@
 
 ## Bug Fixes
 
+- [#505](https://github.com/pybop-team/PyBOP/pull/505) - Bug fixes for `LogPosterior` with transformed `GaussianLogLikelihood` likelihood.
+
 ## Breaking Changes
 
 # [v24.9.0](https://github.com/pybop-team/PyBOP/tree/v24.9.0) - 2024-09-10
