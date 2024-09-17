@@ -65,10 +65,11 @@ These include a wide variety of optimisation problems that require careful consi
 Explore our [example notebooks](https://github.com/pybop-team/PyBOP/blob/develop/examples) for hands-on demonstrations:
 
 - [Gravimetric design optimisation (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/spm_electrode_design.ipynb)
-- [GITT fitting of an ECM for an LG M50](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/LG_M50_ECM/1-single-pulse-circuit-model.ipynb)
+- [GITT fitting of an ECM for an LG M50](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/1-single-pulse-circuit-model.ipynb)
 - [Non-linear constrained ECM parameter identification](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/ecm_trust-constr.ipynb)
 - [Optimiser comparison for parameter identification](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/multi_optimiser_identification.ipynb)
 - [Parameter identification for spatial pouch cell model](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/pouch_cell_identification.ipynb)
+- [Estimating ECM parameters from HPPC pulse](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/equivalent_circuit_identification_hppc.ipynb)
 
 ### Python Scripts
 
