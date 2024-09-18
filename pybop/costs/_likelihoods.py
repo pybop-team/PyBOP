@@ -141,7 +141,7 @@ class GaussianLogLikelihood(BaseLikelihood):
                 Parameter(
                     f"Sigma for output {index+1}",
                     initial_value=value,
-                    prior=Uniform(0.5 * value, 1.5 * value),
+                    prior=Uniform(1e-3 * value, 1e3 * value),
                     bounds=[1e-8, 3 * value],
                 )
             )
@@ -235,10 +235,12 @@ class LogPosterior(BaseLikelihood):
         super().__init__(problem=log_likelihood.problem)
         self.gradient_step = gradient_step
 
-        # Store the likelihood and prior
+        # Store the likelihood, prior, update parameters and transformation
+        self.join_parameters(log_likelihood.parameters)
         self._log_likelihood = log_likelihood
-        self._parameters = self._log_likelihood.parameters
-        self._has_separable_problem = self._log_likelihood.has_separable_problem
+
+        for attr in ["transformation", "_has_separable_problem"]:
+            setattr(self, attr, getattr(log_likelihood, attr))
 
         if log_prior is None:
             self._prior = JointLogPrior(*self._parameters.priors())
