@@ -126,35 +126,3 @@ class Transformation(ABC):
             raise ValueError(f"Transform must have {self._n_parameters} elements")
 
         return input_array
-
-
-# ---- To be implemented with Monte Carlo PR ------ #
-# class TransformedLogPDF(BaseCost):
-#     """Transformed log-PDF class."""
-#     def __init__(self, log_pdf, transformation):
-#         self._log_pdf = log_pdf
-#         self._transformation = transformation
-
-#     def __call__(self, q):
-#         p = self._transformation.to_model(q)
-#         log_pdf = self._log_pdf(p)
-
-#         # Calculate the PDF using change of variable
-#         # Wikipedia: https://w.wiki/UsJ
-#         log_jacobian_det = self._transformation.log_jacobian_det(q)
-#         return log_pdf + log_jacobian_det
-
-#     def _evaluateS1(self, x):
-#         p = self._transformation.to_model(x)
-#         log_pdf, log_pdf_derivatives = self._log_pdf._evaluateS1(p)
-#         log_jacobian_det, log_jacobian_det_derivatives = self._transformation.log_jacobian_det_S1(x)
-#         return log_pdf + log_jacobian_det, log_pdf_derivatives + log_jacobian_det_derivatives
-
-# class TransformedLogPrior:
-#     """Transformed log-prior class."""
-#     def __init__(self, log_prior, transformation):
-#         self._log_prior = log_prior
-#         self._transformation = transformation
-
-#     def __call__(self, q):
-#         return self

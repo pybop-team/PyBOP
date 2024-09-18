@@ -341,12 +341,16 @@ class Parameters:
         for param in self.param.values():
             if param.bounds is not None:
                 if apply_transform and param.transformation is not None:
-                    bounds["lower"].append(
-                        float(param.transformation.to_search(param.bounds[0]))
-                    )
-                    bounds["upper"].append(
-                        float(param.transformation.to_search(param.bounds[1]))
-                    )
+                    lower = float(param.transformation.to_search(param.bounds[0]))
+                    upper = float(param.transformation.to_search(param.bounds[1]))
+                    if np.isnan(lower) or np.isnan(upper):
+                        raise ValueError(
+                            "Transformed bounds resulted in NaN values.\n"
+                            "If you've not applied bounds, this is due to the defaults applied from the prior distribution,\n"
+                            "consider bounding the parameters to avoid this error."
+                        )
+                    bounds["lower"].append(lower)
+                    bounds["upper"].append(upper)
                 else:
                     bounds["lower"].append(param.bounds[0])
                     bounds["upper"].append(param.bounds[1])
