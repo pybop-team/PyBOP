@@ -35,7 +35,7 @@ class BaseCost:
 
     def __init__(self, problem: Optional[BaseProblem] = None):
         self._parameters = Parameters()
-        self.transformation = None
+        self._transformation = None
         self.problem = problem
         self.verbose = False
         self._has_separable_problem = False
@@ -47,22 +47,10 @@ class BaseCost:
             self._parameters.join(self.problem.parameters)
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
-            self.transformation = self._parameters.construct_transformation()
+            self._transformation = self._parameters.construct_transformation()
             self._has_separable_problem = True
             self.grad_fail = None
             self.set_fail_gradient()
-
-    @property
-    def n_parameters(self):
-        return len(self._parameters)
-
-    @property
-    def has_separable_problem(self):
-        return self._has_separable_problem
-
-    @property
-    def target(self):
-        return self._target
 
     def __call__(
         self,
@@ -92,11 +80,13 @@ class BaseCost:
             If an error occurs during the calculation of the cost.
         """
         # Apply transformation if needed
+        # Note, we use the transformation and parameter properties here to enable
+        # differing attributes within the `LogPosterior` class
         self.has_transform = self.transformation is not None and apply_transform
         if self.has_transform:
             inputs = self.transformation.to_model(inputs)
-        inputs = self._parameters.verify(inputs)
-        self._parameters.update(values=list(inputs.values()))
+        inputs = self.parameters.verify(inputs)
+        self.parameters.update(values=list(inputs.values()))
 
         y, dy = None, None
         if self._has_separable_problem:
@@ -194,5 +184,33 @@ class BaseCost:
             self.set_fail_gradient()
 
     @property
+    def n_parameters(self):
+        return len(self._parameters)
+
+    @property
+    def has_separable_problem(self):
+        return self._has_separable_problem
+
+    @has_separable_problem.setter
+    def has_separable_problem(self, has_separable_problem):
+        self._has_separable_problem = has_separable_problem
+
+    @property
+    def target(self):
+        return self._target
+
+    @property
     def parameters(self):
         return self._parameters
+
+    @parameters.setter
+    def parameters(self, parameters):
+        self._parameters = parameters
+
+    @property
+    def transformation(self):
+        return self._transformation
+
+    @transformation.setter
+    def transformation(self, transformation):
+        self._transformation = transformation
