@@ -35,17 +35,22 @@ signal = ["Voltage [V]", "Current [A]"]
 
 # Generate problem
 problem = pybop.DesignProblem(
-    model, parameters, experiment, signal=signal, initial_state={"Initial SoC": 1.0}
+    model,
+    parameters,
+    experiment,
+    signal=signal,
+    initial_state={"Initial SoC": 1.0},
+    update_capacity=True,
 )
 
-# Generate multiple cost functions and combine them.
-cost1 = pybop.GravimetricEnergyDensity(problem, update_capacity=True)
-cost2 = pybop.VolumetricEnergyDensity(problem, update_capacity=True)
-cost = pybop.WeightedCost(cost1, cost2, weights=[1, 1])
+# Generate multiple cost functions and combine them
+cost1 = pybop.GravimetricEnergyDensity(problem)
+cost2 = pybop.VolumetricEnergyDensity(problem)
+cost = pybop.WeightedCost(cost1, cost2, weights=[1, 1e-3])
 
 # Run optimisation
 optim = pybop.PSO(
-    cost, verbose=True, allow_infeasible_solutions=False, max_iterations=15
+    cost, verbose=True, allow_infeasible_solutions=False, max_iterations=10
 )
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
@@ -55,10 +60,7 @@ print(f"Initial volumetric energy density: {cost2(optim.x0):.2f} Wh.m-3")
 print(f"Optimised volumetric energy density: {cost2(x):.2f} Wh.m-3")
 
 # Plot the timeseries output
-if cost.update_capacity:
-    problem.model.approximate_capacity(x)
 pybop.quick_plot(problem, problem_inputs=x, title="Optimised Comparison")
 
 # Plot the cost landscape with optimisation path
-if len(x) == 2:
-    pybop.plot2d(optim, steps=3)
+pybop.plot2d(optim, steps=5)

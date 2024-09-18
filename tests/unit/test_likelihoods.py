@@ -35,7 +35,7 @@ class TestLikelihoods:
     def experiment(self):
         return pybop.Experiment(
             [
-                ("Discharge at 1C for 10 minutes (20 second period)"),
+                ("Discharge at 1C for 1 minutes (5 second period)"),
             ]
         )
 
@@ -147,6 +147,13 @@ class TestLikelihoods:
             likelihood = pybop.GaussianLogLikelihood(
                 one_signal_problem, sigma0="Invalid string"
             )
+
+        # Test transformation fail dimensions
+        cost_fail, grad_fail = likelihood(
+            [0.01, 0.01], calculate_grad=True, apply_transform=True
+        )
+        assert not np.isfinite(cost_fail)
+        assert grad_fail.shape == (2,)
 
     @pytest.mark.unit
     def test_gaussian_log_likelihood_dsigma_scale(self, one_signal_problem):

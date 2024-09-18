@@ -1,5 +1,8 @@
+import warnings
+from typing import Union
+
 import numpy as np
-from scipy.optimize import OptimizeResult, differential_evolution, minimize
+from scipy.optimize import Bounds, OptimizeResult, differential_evolution, minimize
 
 from pybop import BaseOptimiser, Result
 
@@ -52,12 +55,18 @@ class BaseSciPyOptimiser(BaseOptimiser):
 
         # Convert bounds to SciPy format
         if isinstance(self.bounds, dict):
-            self._scipy_bounds = [
-                (lower, upper)
-                for lower, upper in zip(self.bounds["lower"], self.bounds["upper"])
-            ]
-        else:
+            self._scipy_bounds = Bounds(
+                self.bounds["lower"], self.bounds["upper"], True
+            )
+        elif isinstance(self.bounds, list):
+            lb, ub = zip(*self.bounds)
+            self._scipy_bounds = Bounds(lb, ub, True)
+        elif isinstance(self.bounds, Bounds) or self.bounds is None:
             self._scipy_bounds = self.bounds
+        else:
+            raise TypeError(
+                "Bounds provided must be either type dict, list or SciPy.optimize.bounds object."
+            )
 
     def _run(self):
         """
@@ -70,10 +79,17 @@ class BaseSciPyOptimiser(BaseOptimiser):
         """
         result = self._run_optimiser()
 
+        try:
+            nit = result.nit
+        except AttributeError:
+            nit = -1
+
         return Result(
-            x=result.x,
-            final_cost=self.cost(result.x),
-            n_iterations=result.nit,
+            x=self._transformation.to_model(result.x)
+            if self._transformation
+            else result.x,
+            final_cost=self.cost(result.x, apply_transform=True),
+            n_iterations=nit,
             scipy_result=result,
         )
 
@@ -107,6 +123,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         optimiser_options = dict(method="Nelder-Mead", jac=False)
         optimiser_options.update(**optimiser_kwargs)
         super().__init__(cost, **optimiser_options)
+        self._cost0 = 1.0
 
     def _set_up_optimiser(self):
         """
@@ -145,16 +162,16 @@ class SciPyMinimize(BaseSciPyOptimiser):
         """
         Scale the cost function, preserving the sign convention, and eliminate nan values
         """
-        self.log["x"].append([x])
+        self.log_update(x=[x])
 
         if not self._options["jac"]:
-            cost = self.cost(x) / self._cost0
+            cost = self.cost(x, apply_transform=True) / self._cost0
             if np.isinf(cost):
                 self.inf_count += 1
                 cost = 1 + 0.9**self.inf_count  # for fake finite gradient
             return cost if self.minimising else -cost
 
-        L, dl = self.cost(x, calculate_grad=True)
+        L, dl = self.cost(x, calculate_grad=True, apply_transform=True)
         return (L, dl) if self.minimising else (-L, -dl)
 
     def _run_optimiser(self):
@@ -169,18 +186,45 @@ class SciPyMinimize(BaseSciPyOptimiser):
         self.inf_count = 0
 
         # Add callback storing history of parameter values
-        def callback(intermediate_result: OptimizeResult):
-            self.log["x_best"].append(intermediate_result.x)
-            self.log["cost"].append(
-                intermediate_result.fun if self.minimising else -intermediate_result.fun
+        def base_callback(intermediate_result: Union[OptimizeResult, np.ndarray]):
+            """
+            Log intermediate optimisation solutions. Depending on the
+            optimisation algorithm, intermediate_result may be either
+            a OptimizeResult or an array of parameter values, with a
+            try/except ensuring both cases are handled correctly.
+            """
+            if isinstance(intermediate_result, OptimizeResult):
+                x_best = intermediate_result.x
+                cost = intermediate_result.fun
+            else:
+                x_best = intermediate_result
+                cost = self.cost(x_best, apply_transform=True)
+
+            self.log_update(
+                x_best=x_best,
+                cost=(-1 if not self.minimising else 1) * cost * self._cost0,
             )
 
+        callback = (
+            base_callback
+            if self._options["method"] != "trust-constr"
+            else lambda x, intermediate_result: base_callback(intermediate_result)
+        )
+
         # Compute the absolute initial cost and resample if required
-        self._cost0 = np.abs(self.cost(self.x0))
+        self._cost0 = np.abs(self.cost(self.x0, apply_transform=True))
         if np.isinf(self._cost0):
             for _i in range(1, self.num_resamples):
-                self.x0 = self.parameters.rvs()
-                self._cost0 = np.abs(self.cost(self.x0))
+                try:
+                    self.x0 = self.parameters.rvs(apply_transform=True)
+                except AttributeError:
+                    warnings.warn(
+                        "Parameter does not have a prior distribution. Stopping resampling.",
+                        UserWarning,
+                        stacklevel=2,
+                    )
+                    break
+                self._cost0 = np.abs(self.cost(self.x0, apply_transform=True))
                 if not np.isinf(self._cost0):
                     break
             if np.isinf(self._cost0):
@@ -249,9 +293,8 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         if self._scipy_bounds is None:
             raise ValueError("Bounds must be specified for differential_evolution.")
         else:
-            if not all(
-                np.isfinite(value) for pair in self._scipy_bounds for value in pair
-            ):
+            bnds = self._scipy_bounds
+            if not (np.isfinite(bnds.lb).all() and np.isfinite(bnds.ub).all()):
                 raise ValueError("Bounds must be specified for differential_evolution.")
 
         # Apply default maxiter and tolerance
@@ -300,14 +343,20 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
         # Add callback storing history of parameter values
         def callback(intermediate_result: OptimizeResult):
-            self.log["x_best"].append(intermediate_result.x)
-            self.log["cost"].append(
-                intermediate_result.fun if self.minimising else -intermediate_result.fun
+            self.log_update(
+                x_best=intermediate_result.x,
+                cost=intermediate_result.fun
+                if self.minimising
+                else -intermediate_result.fun,
             )
 
         def cost_wrapper(x):
-            self.log["x"].append([x])
-            return self.cost(x) if self.minimising else -self.cost(x)
+            self.log_update(x=[x])
+            return (
+                self.cost(x, apply_transform=True)
+                if self.minimising
+                else -self.cost(x, apply_transform=True)
+            )
 
         return differential_evolution(
             cost_wrapper,

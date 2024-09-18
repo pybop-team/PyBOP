@@ -90,20 +90,24 @@ class TestTransformation:
 
         q_transformed = transformation.to_search(p)
         assert np.allclose(q_transformed, q)
-        assert np.allclose(transformation.log_jacobian_det(q), -np.sum(np.log(q)))
+        assert np.allclose(transformation.log_jacobian_det(q), np.sum(q))
 
         log_jac_det_S1 = transformation.log_jacobian_det_S1(q)
-        assert log_jac_det_S1[0] == -np.sum(np.log(q))
-        assert log_jac_det_S1[1] == -1 / q
+        n = transformation._n_parameters
+        assert log_jac_det_S1[0] == np.sum(q)
+        assert log_jac_det_S1[1] == np.ones(n)
 
         jac, jac_S1 = transformation.jacobian_S1(q)
-        assert np.array_equal(jac, np.diag(1 / q))
-        assert np.array_equal(jac_S1, np.diag(-1 / q**2))
+        assert np.array_equal(jac, np.diag(np.exp(q)))
+        jac_S1_def = np.zeros((n, n, n))
+        rn = np.arange(n)
+        jac_S1_def[rn, rn, rn] = np.diagonal(jac)
+        assert np.array_equal(jac_S1, jac_S1_def)
 
         # Test covariance transformation
         cov = np.array([[0.5]])
         cov_transformed = transformation.convert_covariance_matrix(cov, q)
-        assert np.array_equal(cov_transformed, cov * q**2)
+        assert np.array_equal(cov_transformed, cov * np.exp(q) ** -2)
 
         # Test incorrect transform
         with pytest.raises(ValueError, match="Unknown method:"):
@@ -127,21 +131,23 @@ class TestTransformation:
         jac = transformation.jacobian(q)
         jac_S1 = transformation.jacobian_S1(q)
         np.testing.assert_allclose(
-            jac, np.asarray([[1, 0.0, 0.0], [0.0, 0.5, 0.0], [0.0, 0.0, 0.1]])
+            jac,
+            np.asarray([[1, 0.0, 0.0], [0.0, 0.5, 0.0], [0.0, 0.0, 2.202647e04]]),
+            rtol=1e-6,
         )
         np.testing.assert_allclose(jac_S1[0], jac)
         assert jac_S1[1].shape == (3, 3, 3)
-        assert jac_S1[1][2, 2, 2] == -0.01
+        np.testing.assert_allclose(jac_S1[1][2, 2, 2], 22026.4657948067)
         np.testing.assert_allclose(jac_S1[1][0, :, :], np.zeros((3, 3)))
         np.testing.assert_allclose(jac_S1[1][1, :, :], np.zeros((3, 3)))
 
-        correct_output = np.sum(np.log(np.abs(2.0))) + np.sum(-np.log(10))
+        correct_output = np.sum(np.log(np.abs(2.0))) + np.sum(10)
         log_jac_det = transformation.log_jacobian_det(q)
         assert log_jac_det == correct_output
 
         log_jac_det_S1 = transformation.log_jacobian_det_S1(q)
         assert log_jac_det_S1[0] == correct_output
-        np.testing.assert_allclose(log_jac_det_S1[1], np.asarray([0.0, 0.0, -0.1]))
+        np.testing.assert_allclose(log_jac_det_S1[1], np.asarray([0.0, 0.0, 1.0]))
 
         # Test composed with no transformations
         with pytest.raises(

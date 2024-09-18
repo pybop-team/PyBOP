@@ -61,11 +61,11 @@ class BaseOptimiser:
         self.parameters = Parameters()
         self.x0 = None
         self.bounds = None
-        self.sigma0 = 0.1
+        self.sigma0 = 0.02
         self.verbose = False
         self.log = dict(x=[], x_best=[], cost=[])
         self.minimising = True
-        self.transformation = None
+        self._transformation = None
         self.physical_viability = False
         self.allow_infeasible_solutions = False
         self.default_max_iterations = 1000
@@ -73,8 +73,8 @@ class BaseOptimiser:
 
         if isinstance(cost, BaseCost):
             self.cost = cost
-            self.transformation = self.cost.transformation
-            self.parameters.join(cost.parameters)
+            self.parameters = self.cost.parameters
+            self._transformation = self.cost.transformation
             self.set_allow_infeasible_solutions()
             if isinstance(cost, WeightedCost):
                 self.minimising = cost.minimising
@@ -115,7 +115,7 @@ class BaseOptimiser:
         self.set_base_options()
         self._set_up_optimiser()
 
-        # Throw an warning if any options remain
+        # Throw a warning if any options remain
         if self.unset_options:
             warnings.warn(
                 f"Unrecognised keyword arguments: {self.unset_options} will not be used.",
@@ -129,22 +129,21 @@ class BaseOptimiser:
         """
         # Set initial values, if x0 is None, initial values are unmodified.
         self.parameters.update(initial_values=self.unset_options.pop("x0", None))
-        self.x0 = self.parameters.reset_initial_value()
+        self.x0 = self.parameters.reset_initial_value(apply_transform=True)
 
         # Set default bounds (for all or no parameters)
-        self.bounds = self.unset_options.pop("bounds", self.parameters.get_bounds())
+        self.bounds = self.unset_options.pop(
+            "bounds", self.parameters.get_bounds(apply_transform=True)
+        )
 
         # Set default initial standard deviation (for all or no parameters)
         self.sigma0 = self.unset_options.pop(
-            "sigma0", self.parameters.get_sigma0() or self.sigma0
+            "sigma0", self.parameters.get_sigma0(apply_transform=True) or self.sigma0
         )
 
         # Set other options
         self.verbose = self.unset_options.pop("verbose", self.verbose)
         self.minimising = self.unset_options.pop("minimising", self.minimising)
-        self.transformation = self.unset_options.pop(
-            "transformation", self.transformation
-        )
         if "allow_infeasible_solutions" in self.unset_options.keys():
             self.set_allow_infeasible_solutions(
                 self.unset_options.pop("allow_infeasible_solutions")
@@ -198,6 +197,36 @@ class BaseOptimiser:
             If the method has not been implemented by the subclass.
         """
         raise NotImplementedError
+
+    def log_update(self, x=None, x_best=None, cost=None):
+        """
+        Update the log with new values.
+
+        Parameters
+        ----------
+        x : list or array-like, optional
+            Parameter values (default: None).
+        x_best : list or array-like, optional
+            Paraneter values corresponding to the best cost yet (default: None).
+        cost : float, optional
+            Cost value (default: None).
+        """
+        if x is not None:
+            if self._transformation:
+                x = list(x)
+                for i, xi in enumerate(x):
+                    x[i] = self._transformation.to_model(xi)
+            self.log["x"].append(x)
+
+        if x_best is not None:
+            if self._transformation:
+                x_best = list(x_best)
+                for i, xi in enumerate(x_best):
+                    x_best[i] = self._transformation.to_model(xi)
+            self.log["x_best"].append(x_best)
+
+        if cost is not None:
+            self.log["cost"].append(cost)
 
     def check_optimal_parameters(self, x):
         """

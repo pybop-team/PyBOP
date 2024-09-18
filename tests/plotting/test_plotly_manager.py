@@ -21,7 +21,7 @@ def plotly_installed():
 
     # If Plotly is not installed initially, install it
     if not initially_installed:
-        subprocess.check_call([python_executable, "-m", "pip", "install", "plotly"])
+        PlotlyManager.install_plotly()
 
     # Yield control back to the tests
     yield
@@ -50,7 +50,7 @@ def uninstall_plotly_if_installed():
 
     # If Plotly was uninstalled for the test, reinstall it afterwards
     if was_installed:
-        subprocess.check_call([python_executable, "-m", "pip", "install", "plotly"])
+        PlotlyManager.install_plotly()
 
     # Reset the default renderer for tests
     plotly.io.renderers.default = None

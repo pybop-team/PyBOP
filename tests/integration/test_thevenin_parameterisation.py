@@ -11,8 +11,10 @@ class TestTheveninParameterisation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ground_truth = np.asarray([0.05, 0.05]) + np.random.normal(
-            loc=0.0, scale=0.01, size=2
+        self.ground_truth = np.clip(
+            np.asarray([0.05, 0.05]) + np.random.normal(loc=0.0, scale=0.01, size=2),
+            a_min=0.0,
+            a_max=0.1,
         )
 
     @pytest.fixture
@@ -105,6 +107,7 @@ class TestTheveninParameterisation:
             [
                 (
                     "Discharge at 0.5C for 2 minutes (4 seconds period)",
+                    "Rest for 20 seconds (4 seconds period)",
                     "Charge at 0.5C for 2 minutes (4 seconds period)",
                 ),
             ]

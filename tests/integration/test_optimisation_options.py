@@ -13,8 +13,10 @@ class TestOptimisation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ground_truth = np.asarray([0.55, 0.55]) + np.random.normal(
-            loc=0.0, scale=0.05, size=2
+        self.ground_truth = np.clip(
+            np.asarray([0.55, 0.55]) + np.random.normal(loc=0.0, scale=0.05, size=2),
+            a_min=0.4,
+            a_max=0.75,
         )
 
     @pytest.fixture
@@ -100,7 +102,7 @@ class TestOptimisation:
 
         # Set parallelisation if not on Windows
         if sys.platform != "win32":
-            optim.set_parallel(True)
+            optim.set_parallel(1)
 
         initial_cost = optim.cost(x0)
         x, final_cost = optim.run()
