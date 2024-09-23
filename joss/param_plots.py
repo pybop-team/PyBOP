@@ -152,10 +152,10 @@ minimising_cost_classes = [
     pybop.RootMeanSquaredError,  # smallest
 ]
 maximising_cost_classes = [
-    pybop.GaussianLogLikelihoodKnownSigma,
     pybop.GaussianLogLikelihood,
-    pybop.MAP,
-    pybop.MAP,
+    pybop.GaussianLogLikelihoodKnownSigma,
+    pybop.LogPosterior,
+    pybop.LogPosterior,
 ]
 
 
@@ -202,6 +202,7 @@ if create_plot["minimising"]:
             legend=dict(
                 orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
             ),
+            plot_bgcolor="white",
             width=576,
             height=576,
         ),
@@ -214,30 +215,30 @@ if create_plot["maximising"]:
     ## Do the same for the maximising cost functions
     convergence_traces = []
     first_MAP = True
-    sigma0 = pybop.Parameter(
-        "Sigma",
-        initial_value=0.012,
-        prior=pybop.Gaussian(0.012, 0.005),
-        bounds=[0, 0.05],
-    )
+    # sigma0 = pybop.Parameter(
+    #     "Sigma",
+    #     initial_value=0.012,
+    #     prior=pybop.Gaussian(0.012, 0.005),
+    #     bounds=[0, 0.05],
+    # )
+    # sigma0 = 0.02
     for cost in maximising_cost_classes:
-        # Define keyword arguments for the cost class
-        kwargs = {}
         if cost is pybop.GaussianLogLikelihoodKnownSigma:
-            kwargs["sigma0"] = sigma
+            cost = cost(problem, sigma0=sigma)
         elif cost is pybop.GaussianLogLikelihood:
-            kwargs["sigma0"] = sigma0
-        elif cost is pybop.MAP and first_MAP:
-            kwargs["likelihood"] = pybop.GaussianLogLikelihoodKnownSigma
-            kwargs["sigma0"] = sigma
+            cost = cost(problem, sigma0=4 * sigma)
+        elif cost is pybop.LogPosterior and first_MAP:
+            cost = cost(
+                log_likelihood=pybop.GaussianLogLikelihoodKnownSigma(
+                    problem, sigma0=sigma
+                )
+            )
             first_MAP = False
-        elif cost is pybop.MAP:
-            kwargs["likelihood"] = pybop.GaussianLogLikelihood
-            kwargs["sigma0"] = sigma0
+        elif cost is pybop.LogPosterior:
+            cost = cost(log_likelihood=pybop.GaussianLogLikelihood(problem))
 
-        # Define the cost and optimiser
-        cost = cost(problem, **kwargs)
-        optim = pybop.SciPyMinimize(
+        # Define the optimiser
+        optim = pybop.CMAES(
             cost,
             verbose=True,
             max_iterations=500,
@@ -257,7 +258,11 @@ if create_plot["maximising"]:
             y=cost_log,
             trace_names=type(cost).__name__
             + " "
-            + (type(cost.likelihood).__name__ if isinstance(cost, pybop.MAP) else ""),
+            + (
+                type(cost.likelihood).__name__
+                if isinstance(cost, pybop.LogPosterior)
+                else ""
+            ),
             trace_options={"line": {"width": 4, "dash": "dash"}},
         )
         convergence_traces.extend(convergence_plot_dict.traces)
@@ -271,6 +276,7 @@ if create_plot["maximising"]:
             legend=dict(
                 orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
             ),
+            plot_bgcolor="white",
             width=576,
             height=576,
         ),
@@ -339,7 +345,7 @@ if create_plot["gradient"]:
         parameter_traces.extend(parameter_fig.data)
 
     # Plot the parameter traces together
-    parameter_fig.update_layout(width=576, height=1024)
+    parameter_fig.update_layout(width=576, height=1024, plot_bgcolor="white")
     parameter_fig.data = []
     parameter_fig.add_traces(parameter_traces)
     parameter_fig = plotly.subplots.make_subplots(figure=parameter_fig, rows=2, cols=1)
@@ -381,7 +387,7 @@ if create_plot["evolution"]:
         parameter_traces.extend(parameter_fig.data)
 
     # Plot the parameter traces together
-    parameter_fig.update_layout(width=576, height=1024)
+    parameter_fig.update_layout(width=576, height=1024, plot_bgcolor="white")
     parameter_fig.data = []
     parameter_fig.add_traces(parameter_traces)
     parameter_fig = plotly.subplots.make_subplots(figure=parameter_fig, rows=2, cols=1)
@@ -426,7 +432,7 @@ if create_plot["heuristic"]:
         # pybop.plot2d(optim, steps=15)
 
     # Plot the parameter traces together
-    parameter_fig.update_layout(width=576, height=1024)
+    parameter_fig.update_layout(width=576, height=1024, plot_bgcolor="white")
     parameter_fig.data = []
     parameter_fig.add_traces(parameter_traces)
     parameter_fig = plotly.subplots.make_subplots(figure=parameter_fig, rows=2, cols=1)
