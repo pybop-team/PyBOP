@@ -101,10 +101,10 @@ class WeightedCost(BaseCost):
         de = np.empty((len(self.parameters), len(self.costs)))
 
         for i, cost in enumerate(self.costs):
-            inputs = cost.parameters.as_dict()
             if self._has_identical_problems:
                 y, dy = (y, dy)
             elif cost.has_separable_problem:
+                inputs = cost.parameters.as_dict()
                 if calculate_grad:
                     y, dy = cost.problem.evaluateS1(inputs)
                 else:

@@ -191,10 +191,6 @@ class BaseCost:
     def has_separable_problem(self):
         return self._has_separable_problem
 
-    @has_separable_problem.setter
-    def has_separable_problem(self, has_separable_problem):
-        self._has_separable_problem = has_separable_problem
-
     @property
     def target(self):
         return self._target
