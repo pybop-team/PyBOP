@@ -54,4 +54,4 @@ pybop.plot_parameters(optim)
 
 # Plot the cost landscape with optimisation path
 bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
-pybop.plot2d(optim, bounds=bounds, steps=15)
+pybop.plot2d(optim, gradient=True, bounds=bounds, steps=15)

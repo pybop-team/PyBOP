@@ -76,7 +76,7 @@ class MultiFittingProblem(BaseProblem):
         for problem in self.problems:
             problem.set_initial_state(initial_state)
 
-    def evaluate(self, inputs: Inputs, eis=False, **kwargs):
+    def evaluate(self, inputs: Inputs, eis=False):
         """
         Evaluate the model with the given parameters and return the signal.
 
@@ -97,7 +97,7 @@ class MultiFittingProblem(BaseProblem):
 
         for problem in self.problems:
             problem_inputs = problem.parameters.as_dict()
-            signal_values = problem.evaluate(problem_inputs, **kwargs)
+            signal_values = problem.evaluate(problem_inputs)
 
             # Collect signals
             for signal in problem.signal:

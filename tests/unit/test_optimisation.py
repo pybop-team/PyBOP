@@ -1,3 +1,5 @@
+import io
+import sys
 import warnings
 
 import numpy as np
@@ -436,6 +438,11 @@ class TestOptimisation:
 
     @pytest.mark.unit
     def test_halting(self, cost):
+        # Add a parameter transformation
+        cost.parameters[
+            "Negative electrode active material volume fraction"
+        ].transformation = pybop.IdentityTransformation()
+
         # Test max evalutions
         optim = pybop.GradientDescent(cost=cost, max_evaluations=1, verbose=True)
         x, __ = optim.run()
@@ -466,12 +473,23 @@ class TestOptimisation:
         with pytest.raises(ValueError):
             optim.set_max_evaluations(-1)
 
-        optim = pybop.Optimisation(cost=cost)
+        # Reset optim
+        optim = pybop.Optimisation(cost=cost, sigma0=0.015, verbose=True)
 
-        # Trigger threshold
+        # Confirm setting threshold == None
         optim.set_threshold(None)
+        assert optim._threshold is None
+
+        # Confirm threshold halts
+        # Redirect stdout to capture print output
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
         optim.set_threshold(np.inf)
         optim.run()
+        assert (
+            captured_output.getvalue().strip()
+            == "Halt: Objective function crossed threshold: inf."
+        )
         optim.set_max_unchanged_iterations()
 
         # Test callback and halting output

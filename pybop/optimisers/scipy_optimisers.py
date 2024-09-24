@@ -85,8 +85,10 @@ class BaseSciPyOptimiser(BaseOptimiser):
             nit = -1
 
         return Result(
-            x=result.x,
-            final_cost=self.cost(result.x),
+            x=self._transformation.to_model(result.x)
+            if self._transformation
+            else result.x,
+            final_cost=self.cost(result.x, apply_transform=True),
             n_iterations=nit,
             scipy_result=result,
         )
@@ -160,16 +162,16 @@ class SciPyMinimize(BaseSciPyOptimiser):
         """
         Scale the cost function, preserving the sign convention, and eliminate nan values
         """
-        self.log["x"].append([x])
+        self.log_update(x=[x])
 
         if not self._options["jac"]:
-            cost = self.cost(x) / self._cost0
+            cost = self.cost(x, apply_transform=True) / self._cost0
             if np.isinf(cost):
                 self.inf_count += 1
                 cost = 1 + 0.9**self.inf_count  # for fake finite gradient
             return cost if self.minimising else -cost
 
-        L, dl = self.cost(x, calculate_grad=True)
+        L, dl = self.cost(x, calculate_grad=True, apply_transform=True)
         return (L, dl) if self.minimising else (-L, -dl)
 
     def _run_optimiser(self):
@@ -184,7 +186,6 @@ class SciPyMinimize(BaseSciPyOptimiser):
         self.inf_count = 0
 
         # Add callback storing history of parameter values
-
         def base_callback(intermediate_result: Union[OptimizeResult, np.ndarray]):
             """
             Log intermediate optimisation solutions. Depending on the
@@ -197,11 +198,11 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 cost = intermediate_result.fun
             else:
                 x_best = intermediate_result
-                cost = self.cost(x_best)
+                cost = self.cost(x_best, apply_transform=True)
 
-            self.log["x_best"].append(x_best)
-            self.log["cost"].append(
-                (-1 if not self.minimising else 1) * cost * self._cost0
+            self.log_update(
+                x_best=x_best,
+                cost=(-1 if not self.minimising else 1) * cost * self._cost0,
             )
 
         callback = (
@@ -211,11 +212,11 @@ class SciPyMinimize(BaseSciPyOptimiser):
         )
 
         # Compute the absolute initial cost and resample if required
-        self._cost0 = np.abs(self.cost(self.x0))
+        self._cost0 = np.abs(self.cost(self.x0, apply_transform=True))
         if np.isinf(self._cost0):
             for _i in range(1, self.num_resamples):
                 try:
-                    self.x0 = self.parameters.rvs()
+                    self.x0 = self.parameters.rvs(apply_transform=True)
                 except AttributeError:
                     warnings.warn(
                         "Parameter does not have a prior distribution. Stopping resampling.",
@@ -223,7 +224,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
                         stacklevel=2,
                     )
                     break
-                self._cost0 = np.abs(self.cost(self.x0))
+                self._cost0 = np.abs(self.cost(self.x0, apply_transform=True))
                 if not np.isinf(self._cost0):
                     break
             if np.isinf(self._cost0):
@@ -342,14 +343,20 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
         # Add callback storing history of parameter values
         def callback(intermediate_result: OptimizeResult):
-            self.log["x_best"].append(intermediate_result.x)
-            self.log["cost"].append(
-                intermediate_result.fun if self.minimising else -intermediate_result.fun
+            self.log_update(
+                x_best=intermediate_result.x,
+                cost=intermediate_result.fun
+                if self.minimising
+                else -intermediate_result.fun,
             )
 
         def cost_wrapper(x):
-            self.log["x"].append([x])
-            return self.cost(x) if self.minimising else -self.cost(x)
+            self.log_update(x=[x])
+            return (
+                self.cost(x, apply_transform=True)
+                if self.minimising
+                else -self.cost(x, apply_transform=True)
+            )
 
         return differential_evolution(
             cost_wrapper,

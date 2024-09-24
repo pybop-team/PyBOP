@@ -1,4 +1,3 @@
-import warnings
 from typing import Optional, Union
 
 import numpy as np
@@ -11,10 +10,8 @@ class WeightedCost(BaseCost):
     A subclass for constructing a linear combination of cost functions as
     a single weighted cost function.
 
-    Inherits all parameters and attributes from ``BaseCost``.
-
-    Attributes
-    ---------------------
+    Parameters
+    ----------
     costs : pybop.BaseCost
         The individual PyBOP cost objects.
     weights : list[float]
@@ -61,20 +58,9 @@ class WeightedCost(BaseCost):
             super().__init__(self.costs[0].problem)
         else:
             super().__init__()
-            for cost in self.costs:
-                self.parameters.join(cost.parameters)
 
-        # Check if any cost function requires capacity update
-        self.update_capacity = False
-        if any(cost.update_capacity for cost in self.costs):
-            self.update_capacity = True
-
-            warnings.warn(
-                "WeightedCost doesn't currently support DesignCosts with different `update_capacity` attributes,\n"
-                f"Using global `DesignCost.update_capacity` attribute as: {self.update_capacity}",
-                UserWarning,
-                stacklevel=2,
-            )
+        for cost in self.costs:
+            self.join_parameters(cost.parameters)
 
         # Weighted costs do not use this functionality
         self._has_separable_problem = False
@@ -103,26 +89,24 @@ class WeightedCost(BaseCost):
             The weighted cost value.
         """
         if self._has_identical_problems:
-            inputs = self.parameters.as_dict()
+            inputs = self.problem.parameters.as_dict()
             if calculate_grad:
                 y, dy = self.problem.evaluateS1(inputs)
             else:
-                y = self.problem.evaluate(inputs, update_capacity=self.update_capacity)
+                y = self.problem.evaluate(inputs)
 
         e = np.empty_like(self.costs)
         de = np.empty((len(self.parameters), len(self.costs)))
 
         for i, cost in enumerate(self.costs):
-            inputs = cost.parameters.as_dict()
             if self._has_identical_problems:
                 y, dy = (y, dy)
             elif cost.has_separable_problem:
+                inputs = cost.parameters.as_dict()
                 if calculate_grad:
                     y, dy = cost.problem.evaluateS1(inputs)
                 else:
-                    y = cost.problem.evaluate(
-                        inputs, update_capacity=self.update_capacity
-                    )
+                    y = cost.problem.evaluate(inputs)
 
             if calculate_grad:
                 e[i], de[:, i] = cost.compute(y, dy=dy, calculate_grad=True)

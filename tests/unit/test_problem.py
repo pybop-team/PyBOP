@@ -263,10 +263,24 @@ class TestProblem:
                 model,
                 parameters,
                 experiment,
+                update_capacity=True,
+            )
+        assert "The nominal capacity is approximated for each evaluation." in str(
+            record[0].message
+        )
+
+        with pytest.warns(UserWarning) as record:
+            problem = pybop.DesignProblem(
+                model,
+                parameters,
+                experiment,
                 initial_state={"Initial open-circuit voltage [V]": 4.0},
             )
         assert "It is usually better to define an initial state of charge" in str(
             record[0].message
+        )
+        assert "The nominal capacity is fixed at the initial model value." in str(
+            record[1].message
         )
 
         # Construct Problem
@@ -278,9 +292,9 @@ class TestProblem:
         )  # building postponed with input experiment
         assert problem.initial_state == {"Initial SoC": 1.0}
 
-        # Test model.predict
-        model.predict(inputs=[1e-5, 1e-5], experiment=experiment)
-        model.predict(inputs=[3e-5, 3e-5], experiment=experiment)
+        # Test evaluation
+        problem.evaluate(inputs=[1e-5, 1e-5])
+        problem.evaluate(inputs=[3e-5, 3e-5])
 
         # Test initial SoC from parameter_set
         model = pybop.empirical.Thevenin()

@@ -82,9 +82,8 @@ class BaseModel:
         ----------
         name : str, optional
             The name given to the model instance.
-        parameter_set : pybop.ParameterSet, optional
-            A PyBOP ParameterSet, PyBaMM ParameterValues object or a dictionary containing the
-            parameter values.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values.
         check_params : Callable, optional
             A compatibility check for the model parameters. Function, with
             signature
@@ -153,6 +152,7 @@ class BaseModel:
             A valid initial state, e.g. the initial state of charge or open-circuit voltage.
             Defaults to None, indicating that the existing initial state of charge (for an ECM)
             or initial concentrations (for an EChem model) will be used.
+            Accepted keys either `"Initial open-circuit voltage [V]"` or ``"Initial SoC"`
         dataset : pybop.Dataset or dict, optional
             The dataset to be used in the model construction.
         check_model : bool, optional
@@ -654,7 +654,7 @@ class BaseModel:
             key in self.geometric_parameters for key in inputs.keys()
         ):
             raise ValueError(
-                "Cannot use sensitivies for parameters which require a model rebuild"
+                "Cannot use sensitivities for parameters which require a model rebuild"
             )
 
         # Build if required
@@ -699,9 +699,9 @@ class BaseModel:
         t_eval : array-like, optional
             An array of time points at which to evaluate the solution. Defaults to None,
             which means the time points need to be specified within experiment or elsewhere.
-        parameter_set : pybamm.ParameterValues, optional
-            A PyBaMM ParameterValues object or a dictionary containing the parameter values
-            to use for the simulation. Defaults to the model's current ParameterValues if None.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values to use for the simulation.
+            Defaults to the model's current ParameterValues if None.
         experiment : pybamm.Experiment, optional
             A PyBaMM Experiment object specifying the experimental conditions under which
             the simulation should be run. Defaults to None, indicating no experiment.
@@ -730,14 +730,16 @@ class BaseModel:
         elif not self._unprocessed_model._built:  # noqa: SLF001
             self._unprocessed_model.build_model()
 
+        no_parameter_set = parameter_set is None
         parameter_set = parameter_set or self._unprocessed_parameter_set.copy()
         if inputs is not None:
             inputs = self.parameters.verify(inputs)
             parameter_set.update(inputs)
 
         if initial_state is not None:
-            # Update the default initial state for consistency
-            self.set_initial_state(initial_state)
+            if no_parameter_set:
+                # Update the default initial state for consistency
+                self.set_initial_state(initial_state)
 
             initial_state = self.convert_to_pybamm_initial_state(initial_state)
             if isinstance(self.pybamm_model, pybamm.equivalent_circuit.Thevenin):
@@ -804,8 +806,8 @@ class BaseModel:
         ----------
         inputs : Inputs
             The input parameters for the simulation.
-        parameter_set : pybop.ParameterSet, optional
-            A PyBOP parameter set object or a dictionary containing the parameter values.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
@@ -838,8 +840,8 @@ class BaseModel:
         ----------
         inputs : Inputs
             The input parameters for the simulation.
-        parameter_set : pybop.ParameterSet
-            A PyBOP parameter set object or a dictionary containing the parameter values.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values.
         allow_infeasible_solutions : bool, optional
             If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
@@ -918,9 +920,8 @@ class BaseModel:
 
         Parameters
         ----------
-        parameter_set : dict, optional
-            A dictionary containing the parameter values necessary for the mass
-            calculations.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values.
 
         Raises
         ------
@@ -937,9 +938,8 @@ class BaseModel:
 
         Parameters
         ----------
-        parameter_set : dict, optional
-            A dictionary containing the parameter values necessary for the volume
-            calculation.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values.
 
         Raises
         ------
@@ -948,17 +948,17 @@ class BaseModel:
         """
         raise NotImplementedError
 
-    def approximate_capacity(self, inputs: Inputs):
+    def approximate_capacity(self, parameter_set: ParameterSet = None):
         """
-        Calculate a new estimate for the nominal capacity based on the theoretical energy density
-        and an average voltage.
+        Calculate a new estimate for the nominal capacity based on the theoretical energy
+        density and an average voltage.
 
         This method must be implemented by subclasses.
 
         Parameters
         ----------
-        inputs : Inputs
-            The parameters that are the inputs of the model.
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+            A dict-like object containing the parameter values.
 
         Raises
         ------

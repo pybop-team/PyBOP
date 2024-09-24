@@ -28,7 +28,7 @@ class GradientDescent(BasePintsOptimiser):
         x0 : array_like
             Initial position from which optimisation will start.
         sigma0 : float
-            The learning rate / Initial step size (default: 0.02).
+            The learning rate / Initial step size.
 
     See Also
     --------
@@ -36,8 +36,6 @@ class GradientDescent(BasePintsOptimiser):
     """
 
     def __init__(self, cost, **optimiser_kwargs):
-        if "sigma0" not in optimiser_kwargs.keys():
-            optimiser_kwargs["sigma0"] = 0.02  # set default
         super().__init__(cost, PintsGradientDescent, **optimiser_kwargs)
 
 

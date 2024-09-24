@@ -162,19 +162,26 @@ class LogTransformation(Transformation):
 
     def jacobian(self, q: np.ndarray) -> np.ndarray:
         """See :meth:`Transformation.jacobian()`."""
-        return np.diag(1 / q)
+        return np.diag(np.exp(q))
 
     def jacobian_S1(self, q: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """See :meth:`Transformation.jacobian_S1()`."""
-        return np.diag(1 / q), np.diag(-1 / q**2)
+        n = self._n_parameters
+        jac = self.jacobian(q)
+        jac_S1 = np.zeros((n, n, n))
+        rn = np.arange(n)
+        jac_S1[rn, rn, rn] = np.diagonal(jac)
+        return jac, jac_S1
 
     def log_jacobian_det(self, q: np.ndarray) -> float:
         """See :meth:`Transformation.log_jacobian_det()`."""
-        return np.sum(-np.log(q))
+        return np.sum(q)
 
     def log_jacobian_det_S1(self, q: np.ndarray) -> tuple[float, np.ndarray]:
         """See :meth:`Transformation.log_jacobian_det_S1()`."""
-        return self.log_jacobian_det(q), -1 / q
+        logjacdet = self.log_jacobian_det(q)
+        dlogjacdet = np.ones(self._n_parameters)
+        return logjacdet, dlogjacdet
 
     def _transform(self, x: np.ndarray, method: str) -> np.ndarray:
         """See :meth:`Transformation._transform`."""

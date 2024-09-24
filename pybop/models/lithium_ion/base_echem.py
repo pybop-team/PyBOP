@@ -1,4 +1,5 @@
 import warnings
+from typing import Optional
 
 from pybamm import lithium_ion as pybamm_lithium_ion
 
@@ -148,7 +149,7 @@ class EChemBaseModel(BaseModel):
 
         return True
 
-    def cell_volume(self, parameter_set=None):
+    def cell_volume(self, parameter_set: Optional[ParameterSet] = None):
         """
         Calculate the total cell volume in m3.
 
@@ -159,8 +160,7 @@ class EChemBaseModel(BaseModel):
         Parameters
         ----------
         parameter_set : dict, optional
-            A dictionary containing the parameter values necessary for the volume
-            calculation.
+            A dictionary containing the parameter values necessary for the calculation.
 
         Returns
         -------
@@ -186,7 +186,7 @@ class EChemBaseModel(BaseModel):
         # Calculate and return total cell volume
         return cross_sectional_area * cell_thickness
 
-    def cell_mass(self, parameter_set=None):
+    def cell_mass(self, parameter_set: Optional[ParameterSet] = None):
         """
         Calculate the total cell mass in kilograms.
 
@@ -198,8 +198,7 @@ class EChemBaseModel(BaseModel):
         Parameters
         ----------
         parameter_set : dict, optional
-            A dictionary containing the parameter values necessary for the mass
-            calculations.
+            A dictionary containing the parameter values necessary for the calculation.
 
         Returns
         -------
@@ -270,30 +269,27 @@ class EChemBaseModel(BaseModel):
         )
         return cross_sectional_area * total_area_density
 
-    def approximate_capacity(self, inputs: Inputs):
+    def approximate_capacity(self, parameter_set: Optional[ParameterSet] = None):
         """
-        Calculate and update an estimate for the nominal cell capacity based on the theoretical
-        energy density and an average voltage.
-
-        The nominal capacity is computed by dividing the theoretical energy (in watt-hours) by
-        the average open circuit potential (voltage) of the cell.
+        Calculate an estimate for the nominal cell capacity. The estimate is computed
+        by dividing the theoretical energy (in watt-hours) by the average open circuit
+        potential (voltage) of the cell.
 
         Parameters
         ----------
-        inputs : Inputs
-            The parameters that are the inputs of the model.
+        parameter_set : dict, optional
+            A dictionary containing the parameter values necessary for the calculation.
 
         Returns
         -------
-        None
-            The nominal cell capacity is updated directly in the model's parameter set.
+        float
+            The estimate of the nominal cell capacity.
         """
-        inputs = self.parameters.verify(inputs)
-        self._parameter_set.update(inputs)
+        parameter_set = parameter_set or self._parameter_set
 
         # Calculate theoretical energy density
         theoretical_energy = self._electrode_soh.calculate_theoretical_energy(
-            self._parameter_set
+            parameter_set
         )
 
         # Extract stoichiometries and compute mean values
@@ -302,13 +298,13 @@ class EChemBaseModel(BaseModel):
             max_sto_neg,
             min_sto_pos,
             max_sto_pos,
-        ) = self._electrode_soh.get_min_max_stoichiometries(self._parameter_set)
+        ) = self._electrode_soh.get_min_max_stoichiometries(parameter_set)
         mean_sto_neg = (min_sto_neg + max_sto_neg) / 2
         mean_sto_pos = (min_sto_pos + max_sto_pos) / 2
 
         # Calculate average voltage
-        positive_electrode_ocp = self._parameter_set["Positive electrode OCP [V]"]
-        negative_electrode_ocp = self._parameter_set["Negative electrode OCP [V]"]
+        positive_electrode_ocp = parameter_set["Positive electrode OCP [V]"]
+        negative_electrode_ocp = parameter_set["Negative electrode OCP [V]"]
         try:
             average_voltage = positive_electrode_ocp(
                 mean_sto_pos
@@ -316,11 +312,10 @@ class EChemBaseModel(BaseModel):
         except Exception as e:
             raise ValueError(f"Error in average voltage calculation: {e}") from e
 
-        # Calculate and update nominal capacity
-        theoretical_capacity = theoretical_energy / average_voltage
-        self._parameter_set.update(
-            {"Nominal cell capacity [A.h]": theoretical_capacity}
-        )
+        # Calculate the capacity estimate
+        approximate_capacity = theoretical_energy / average_voltage
+
+        return approximate_capacity
 
     def set_geometric_parameters(self):
         """

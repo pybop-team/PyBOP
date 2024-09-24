@@ -68,7 +68,7 @@ class TestObserver:
         assert np.shape(covariance) == (n, n)
 
         # Test evaluate with different inputs
-        observer._domain_data = t_eval
+        observer.domain_data = t_eval
         observer.evaluate(parameters.as_dict())
         observer.evaluate(parameters.current_value())
 

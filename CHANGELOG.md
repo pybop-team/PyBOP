@@ -2,6 +2,33 @@
 
 ## Features
 
+## Optimisations
+
+- [#512](https://github.com/pybop-team/PyBOP/pull/513) - Refactors `LogPosterior` with attributes pointing to composed likelihood object.
+
+## Bug Fixes
+
+- [#505](https://github.com/pybop-team/PyBOP/pull/505) - Bug fixes for `LogPosterior` with transformed `GaussianLogLikelihood` likelihood.
+
+## Breaking Changes
+
+# [v24.9.1](https://github.com/pybop-team/PyBOP/tree/v24.9.0) - 2024-09-16
+
+
+## Features
+
+## Bug Fixes
+
+- [#495](https://github.com/pybop-team/PyBOP/pull/495) - Bugfixes for Transformation class, adds `apply_transform` optional arg to `BaseCost` for transformation functionality.
+
+## Breaking Changes
+
+# [v24.9.0](https://github.com/pybop-team/PyBOP/tree/v24.9.0) - 2024-09-10
+
+## Features
+
+- [#462](https://github.com/pybop-team/PyBOP/pull/462) - Enables multidimensional learning rate for `pybop.AdamW` with updated (more robust) integration testing. Fixes bug in `Minkowski` and `SumofPower` cost functions for gradient-based optimisers.
+- [#411](https://github.com/pybop-team/PyBOP/pull/411) - Updates notebooks with README in `examples/` directory, removes kaleido dependency and moves to nbviewer rendering, displays notebook figures with `notebook_connected` plotly renderer
 - [#6](https://github.com/pybop-team/PyBOP/issues/6) - Adds Monte Carlo functionality, with methods based on Pints' algorithms. A base class is added `BaseSampler`, in addition to `PintsBaseSampler`.
 - [#353](https://github.com/pybop-team/PyBOP/issues/353) - Allow user-defined check_params functions to enforce nonlinear constraints, and enable SciPy constrained optimisation methods
 - [#222](https://github.com/pybop-team/PyBOP/issues/222) - Adds an example for performing and electrode balancing.
@@ -22,12 +49,15 @@
 
 ## Bug Fixes
 
+- [#473](https://github.com/pybop-team/PyBOP/pull/473) - Bugfixes for transformation class, adds optional `apply_transform` arg to `BaseCost.__call__()`, adds `log_update()` method to `BaseOptimiser`
+- [#464](https://github.com/pybop-team/PyBOP/issues/464) - Fix order of design `parameter_set` updates and refactor `update_capacity`.
 - [#468](https://github.com/pybop-team/PyBOP/issue/468) - Renames `quick_plot.py` to `standard_plots.py`.
 - [#454](https://github.com/pybop-team/PyBOP/issue/454) - Fixes benchmarking suite.
 - [#421](https://github.com/pybop-team/PyBOP/issues/421) - Adds a default value for the initial SOC for design problems.
 
 ## Breaking Changes
 
+- [#483](https://github.com/pybop-team/PyBOP/pull/483) - Replaces `pybop.MAP` with `pybop.LogPosterior` with an updated call args and bugfixes.
 - [#436](https://github.com/pybop-team/PyBOP/pull/436) - **API Change:** The functionality from `BaseCost.evaluate/S1` & `BaseCost._evaluate/S1` is represented in `BaseCost.__call__` & `BaseCost.compute`. `BaseCost.compute` directly acts on the predictions, while `BaseCost.__call__` calls `BaseProblem.evaluate/S1` before `BaseCost.compute`. `compute` has optional args for gradient cost calculations.
 - [#424](https://github.com/pybop-team/PyBOP/issues/424) - Replaces the `init_soc` input to `FittingProblem` with the option to pass an initial OCV value, updates `BaseModel` and fixes `multi_model_identification.ipynb` and `spm_electrode_design.ipynb`.
 

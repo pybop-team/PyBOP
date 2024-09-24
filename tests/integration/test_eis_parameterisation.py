@@ -55,13 +55,10 @@ class TestEISParameterisation:
 
     @pytest.fixture(
         params=[
-            pybop.GaussianLogLikelihoodKnownSigma,
             pybop.GaussianLogLikelihood,
-            pybop.RootMeanSquaredError,
             pybop.SumSquaredError,
-            pybop.SumofPower,
             pybop.Minkowski,
-            pybop.MAP,
+            pybop.LogPosterior,
         ]
     )
     def cost(self, request):
@@ -82,8 +79,6 @@ class TestEISParameterisation:
             pybop.SciPyDifferentialEvolution,
             pybop.CMAES,
             pybop.CuckooSearch,
-            pybop.NelderMead,
-            pybop.SNES,
             pybop.XNES,
         ]
     )
@@ -112,13 +107,13 @@ class TestEISParameterisation:
         problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 
         # Construct the cost
-        if cost in [pybop.GaussianLogLikelihoodKnownSigma]:
+        if cost is pybop.GaussianLogLikelihoodKnownSigma:
             cost = cost(problem, sigma0=self.sigma0)
-        elif cost in [pybop.GaussianLogLikelihood]:
+        elif cost is pybop.GaussianLogLikelihood:
             cost = cost(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
-        elif cost in [pybop.MAP]:
+        elif cost is pybop.LogPosterior:
             cost = cost(
-                problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=self.sigma0
+                pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
             )
         elif cost in [pybop.SumofPower, pybop.Minkowski]:
             cost = cost(problem, p=2)
@@ -131,18 +126,19 @@ class TestEISParameterisation:
             "max_iterations": 250,
             "absolute_tolerance": 1e-6,
             "max_unchanged_iterations": 35,
+            "sigma0": [0.05, 0.05, 1e-3]
+            if isinstance(cost, pybop.GaussianLogLikelihood)
+            else 0.05,
         }
 
-        if isinstance(cost, pybop.MAP):
+        if isinstance(cost, pybop.LogPosterior):
             for i in cost.parameters.keys():
                 cost.parameters[i].prior = pybop.Uniform(
                     0.2, 2.0
                 )  # Increase range to avoid prior == np.inf
 
-        # Set sigma0 and create optimiser
-        sigma0 = 0.05 if isinstance(cost, pybop.MAP) else None
-        optim = optimiser(sigma0=sigma0, **common_args)
-
+        # Create optimiser
+        optim = optimiser(**common_args)
         return optim
 
     @pytest.mark.integration

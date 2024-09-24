@@ -55,7 +55,7 @@ class TestWeightedCost:
                 pybop.GaussianLogLikelihoodKnownSigma,
                 pybop.RootMeanSquaredError,
                 pybop.SumSquaredError,
-                pybop.MAP,
+                pybop.LogPosterior,
             )
         ]
     )
@@ -82,12 +82,12 @@ class TestWeightedCost:
         problem = pybop.FittingProblem(model, parameters, dataset)
         costs = []
         for cost in cost_class:
-            if issubclass(cost, pybop.MAP):
+            if issubclass(cost, pybop.LogPosterior):
                 costs.append(
                     cost(
-                        problem,
-                        pybop.GaussianLogLikelihoodKnownSigma,
-                        sigma0=self.sigma0,
+                        pybop.GaussianLogLikelihoodKnownSigma(
+                            problem, sigma0=self.sigma0
+                        ),
                     )
                 )
             elif issubclass(cost, pybop.BaseLikelihood):
@@ -151,21 +151,13 @@ class TestWeightedCost:
         problem = pybop.DesignProblem(
             model, parameters, experiment=experiment, initial_state=initial_state
         )
-        costs_update_capacity = []
-        costs = []
-        for cost in design_cost:
-            costs_update_capacity.append(cost(problem, update_capacity=True))
-            costs.append(cost(problem))
+        costs = [cost(problem) for cost in design_cost]
 
-        return [
-            pybop.WeightedCost(*costs, weights=[1.0, 0.1]),
-            pybop.WeightedCost(*costs_update_capacity, weights=[0.1, 1.0]),
-        ]
+        return pybop.WeightedCost(*costs, weights=[1.0, 0.1])
 
     @pytest.mark.integration
-    @pytest.mark.parametrize("cost_index", [0, 1])
-    def test_design_costs(self, weighted_design_cost, cost_index):
-        cost = weighted_design_cost[cost_index]
+    def test_design_costs(self, weighted_design_cost):
+        cost = weighted_design_cost
         optim = pybop.CuckooSearch(
             cost,
             max_iterations=15,

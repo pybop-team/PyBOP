@@ -107,6 +107,7 @@ class TestTheveninParameterisation:
             [
                 (
                     "Discharge at 0.5C for 2 minutes (4 seconds period)",
+                    "Rest for 20 seconds (4 seconds period)",
                     "Charge at 0.5C for 2 minutes (4 seconds period)",
                 ),
             ]

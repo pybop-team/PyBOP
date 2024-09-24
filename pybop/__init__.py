@@ -111,7 +111,6 @@ from .costs._likelihoods import (
     GaussianLogLikelihood,
     GaussianLogLikelihoodKnownSigma,
     LogPosterior,
-    MAP,
 )
 from .costs._weighted_cost import WeightedCost
 
