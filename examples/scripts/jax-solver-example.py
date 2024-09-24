@@ -8,9 +8,9 @@ import pybop
 # Parameter set and model definition
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 
-# Set up the IDAKLU Solver, and enable jax compiliation via the pybop.model arg 'jax'
+# Set up the IDAKLU Solver, and enable jax compilation via the pybop.model arg 'jax'
 # The IDAKLU, and it's jaxified version perform very well on the DFN with and without
-# gradient calulations
+# gradient calculations
 solver = pybamm.IDAKLUSolver()
 model = pybop.lithium_ion.DFN(parameter_set=parameter_set, solver=solver, jax=True)
 
@@ -25,7 +25,7 @@ parameters = pybop.Parameters(
 )
 
 # Define test protocol and generate data
-t_eval = np.linspace(0, 100, 100)
+t_eval = np.linspace(0, 300, 100)
 values = model.predict(
     initial_state={"Initial open-circuit voltage [V]": 4.2}, t_eval=t_eval
 )

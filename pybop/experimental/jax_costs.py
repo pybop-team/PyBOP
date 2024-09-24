@@ -19,6 +19,7 @@ class BaseJaxCost(BaseCost):
         self,
         inputs: Inputs,
         calculate_grad: bool = False,
+        apply_transform: bool = False,
     ) -> Union[np.array, tuple[float, np.ndarray]]:
         """
         Computes the cost function for the given predictions.
@@ -42,7 +43,9 @@ class BaseJaxCost(BaseCost):
 
         if calculate_grad:
             y, dy = jax.value_and_grad(self.evaluate)(inputs)
-            return y, np.stack(list(dy.values()))
+            return y, np.asarray(
+                list(dy.values())
+            )  # Convert grad to numpy for optimisers
         else:
             return self.evaluate(inputs)
 
@@ -61,8 +64,6 @@ class BaseJaxCost(BaseCost):
 
     @staticmethod
     def check_sigma0(sigma0):
-        if sigma0 is None:
-            return 0.005
         if not isinstance(sigma0, (int, float)) or sigma0 <= 0:
             raise ValueError("sigma0 must be a positive number")
         return float(sigma0)
@@ -87,9 +88,16 @@ class JaxLogNormalLikelihood(BaseJaxCost, BaseLikelihood):
     """
     A Log-Normal Likelihood function. This function represents the
     underlining observed data sampled from a Log-Normal distribution.
+
+    Parameters
+    -----------
+    problem: BaseProblem
+        The problem to fit of type `pybop.BaseProblem`
+    sigma0: float, optional
+        The variance in the measured data
     """
 
-    def __init__(self, problem: BaseProblem, sigma0=None):
+    def __init__(self, problem: BaseProblem, sigma0=0.02):
         super().__init__(problem)
         self.sigma = self.check_sigma0(sigma0)
         self.sigma2 = jnp.square(self.sigma)
