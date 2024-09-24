@@ -42,6 +42,19 @@ For those who prefer to install PyBOP from a local clone of the repository or wi
 
 In editable mode, changes you make to the source code will immediately affect the PyBOP installation without the need for reinstallation.
 
+Optional Packages
+-----------------
+scikit-fem - This is a dependency for the multi-dimensional pybamm models, and can be installed using:
+.. code-block:: console
+
+    pip install scikit-fem[all]
+
+bpx - To use physics based battery models of Faraday Institution's MSM project Battery Parameter eXchange (BPX) is required.
+.. code-block:: console
+
+    pip install bpx
+
+
 Verifying Installation
 ----------------------
 
