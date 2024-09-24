@@ -44,6 +44,11 @@ In editable mode, changes you make to the source code will immediately affect th
 
 Optional Packages
 -----------------
+plotly - PyBOP requires "plotly>=5.0" and can be installed with:
+.. code-block:: console
+
+    pip install plotly
+    
 scikit-fem - This is a dependency for the multi-dimensional pybamm models, and can be installed using:
 .. code-block:: console
 
