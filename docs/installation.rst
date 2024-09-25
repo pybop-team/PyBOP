@@ -48,19 +48,19 @@ plotly - PyBOP uses plotly>=5.0, and can be installed with:
 
 .. code-block:: console
 
-    pip install plotly
+    pip install pybop[plot]
 
 scikit-fem - This is a dependency for the multi-dimensional pybamm models, and can be installed using:
 
 .. code-block:: console
 
-    pip install scikit-fem[all]
+    pip install pybop[scifem]
 
 bpx - To use physics based battery models of Faraday Institution's MSM project Battery Parameter eXchange (BPX) is required:
 
 .. code-block:: console
 
-    pip install bpx
+    pip install pybop[bpx]
 
 For more information of the additional packages, user may have a look `here <https://github.com/pybop-team/PyBOP/blob/develop/pyproject.toml>`_.
 
