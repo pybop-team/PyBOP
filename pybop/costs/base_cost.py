@@ -34,8 +34,8 @@ class BaseCost:
     """
 
     def __init__(self, problem: Optional[BaseProblem] = None):
-        self.parameters = Parameters()
-        self.transformation = None
+        self._parameters = Parameters()
+        self._transformation = None
         self.problem = problem
         self.verbose = False
         self._has_separable_problem = False
@@ -44,25 +44,13 @@ class BaseCost:
         self._de = 1.0
         if isinstance(self.problem, BaseProblem):
             self._target = self.problem.target
-            self.parameters.join(self.problem.parameters)
+            self._parameters.join(self.problem.parameters)
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
-            self.transformation = self.parameters.construct_transformation()
+            self._transformation = self._parameters.construct_transformation()
             self._has_separable_problem = True
             self.grad_fail = None
             self.set_fail_gradient()
-
-    @property
-    def n_parameters(self):
-        return len(self.parameters)
-
-    @property
-    def has_separable_problem(self):
-        return self._has_separable_problem
-
-    @property
-    def target(self):
-        return self._target
 
     def __call__(
         self,
@@ -92,6 +80,8 @@ class BaseCost:
             If an error occurs during the calculation of the cost.
         """
         # Apply transformation if needed
+        # Note, we use the transformation and parameter properties here to enable
+        # differing attributes within the `LogPosterior` class
         self.has_transform = self.transformation is not None and apply_transform
         if self.has_transform:
             inputs = self.transformation.to_model(inputs)
@@ -183,3 +173,40 @@ class BaseCost:
             raise ValueError(
                 "Forward model sensitivities need to be provided alongside `calculate_grad=True` for `cost.compute`."
             )
+
+    def join_parameters(self, parameters):
+        """
+        Setter for joining parameters. This method sets the fail gradient if the join adds parameters.
+        """
+        original_n_params = self.n_parameters
+        self._parameters.join(parameters)
+        if original_n_params != self.n_parameters:
+            self.set_fail_gradient()
+
+    @property
+    def n_parameters(self):
+        return len(self._parameters)
+
+    @property
+    def has_separable_problem(self):
+        return self._has_separable_problem
+
+    @property
+    def target(self):
+        return self._target
+
+    @property
+    def parameters(self):
+        return self._parameters
+
+    @parameters.setter
+    def parameters(self, parameters):
+        self._parameters = parameters
+
+    @property
+    def transformation(self):
+        return self._transformation
+
+    @transformation.setter
+    def transformation(self, transformation):
+        self._transformation = transformation

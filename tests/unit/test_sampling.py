@@ -214,12 +214,14 @@ class TestPintsSamplers:
             )
 
         # Test incorrect number of parameters
-        new_multi_log_posterior = copy.copy(log_posterior)
-        new_multi_log_posterior.parameters = [
-            new_multi_log_posterior.parameters[
+        likelihood_copy = copy.copy(log_posterior.likelihood)
+        likelihood_copy.parameters = pybop.Parameters(
+            likelihood_copy.parameters[
                 "Positive electrode active material volume fraction"
             ]
-        ]
+        )
+        new_multi_log_posterior = pybop.LogPosterior(likelihood_copy)
+
         with pytest.raises(
             ValueError, match="All log pdf's must have the same number of parameters"
         ):

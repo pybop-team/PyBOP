@@ -2,7 +2,24 @@
 
 ## Features
 
+## Optimisations
+
+- [#512](https://github.com/pybop-team/PyBOP/pull/513) - Refactors `LogPosterior` with attributes pointing to composed likelihood object.
+
 ## Bug Fixes
+
+- [#505](https://github.com/pybop-team/PyBOP/pull/505) - Bug fixes for `LogPosterior` with transformed `GaussianLogLikelihood` likelihood.
+
+## Breaking Changes
+
+# [v24.9.1](https://github.com/pybop-team/PyBOP/tree/v24.9.0) - 2024-09-16
+
+
+## Features
+
+## Bug Fixes
+
+- [#495](https://github.com/pybop-team/PyBOP/pull/495) - Bugfixes for Transformation class, adds `apply_transform` optional arg to `BaseCost` for transformation functionality.
 
 ## Breaking Changes
 

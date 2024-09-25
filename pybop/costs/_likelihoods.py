@@ -111,9 +111,11 @@ class GaussianLogLikelihood(BaseLikelihood):
         self._dsigma_scale = dsigma_scale
         self._logpi = -0.5 * self.n_data * np.log(2 * np.pi)
 
+        # Add sigma parameter, join with self.parameters, reapply transformations
         self.sigma = Parameters()
         self._add_sigma_parameters(sigma0)
-        self.parameters.join(self.sigma)
+        self.join_parameters(self.sigma)
+        self.transformation = self._parameters.construct_transformation()
 
     def _add_sigma_parameters(self, sigma0):
         sigma0 = [sigma0] if not isinstance(sigma0, list) else sigma0
@@ -139,7 +141,7 @@ class GaussianLogLikelihood(BaseLikelihood):
                 Parameter(
                     f"Sigma for output {index+1}",
                     initial_value=value,
-                    prior=Uniform(0.5 * value, 1.5 * value),
+                    prior=Uniform(1e-3 * value, 1e3 * value),
                     bounds=[1e-8, 3 * value],
                 )
             )
@@ -230,13 +232,9 @@ class LogPosterior(BaseLikelihood):
         log_prior: Optional[Union[pybop.BasePrior, stats.rv_continuous]] = None,
         gradient_step: float = 1e-3,
     ):
-        super().__init__(problem=log_likelihood.problem)
-        self.gradient_step = gradient_step
-
-        # Store the likelihood and prior
         self._log_likelihood = log_likelihood
-        self.parameters = self._log_likelihood.parameters
-        self._has_separable_problem = self._log_likelihood.has_separable_problem
+        self.gradient_step = gradient_step
+        super().__init__(problem=log_likelihood.problem)
 
         if log_prior is None:
             self._prior = JointLogPrior(*self.parameters.priors())
@@ -311,6 +309,22 @@ class LogPosterior(BaseLikelihood):
         log_likelihood = self._log_likelihood.compute(y)
         posterior = log_likelihood + log_prior
         return posterior
+
+    @property
+    def transformation(self):
+        return self._log_likelihood.transformation
+
+    @property
+    def has_separable_problem(self):
+        return self._log_likelihood.has_separable_problem
+
+    @property
+    def parameters(self):
+        return self._log_likelihood.parameters
+
+    @property
+    def n_parameters(self):
+        return self._log_likelihood.n_parameters
 
     @property
     def prior(self) -> BasePrior:

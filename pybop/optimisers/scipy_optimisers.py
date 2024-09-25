@@ -88,7 +88,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
             x=self._transformation.to_model(result.x)
             if self._transformation
             else result.x,
-            final_cost=self.cost(result.x),
+            final_cost=self.cost(result.x, apply_transform=True),
             n_iterations=nit,
             scipy_result=result,
         )
@@ -165,13 +165,13 @@ class SciPyMinimize(BaseSciPyOptimiser):
         self.log_update(x=[x])
 
         if not self._options["jac"]:
-            cost = self.cost(x) / self._cost0
+            cost = self.cost(x, apply_transform=True) / self._cost0
             if np.isinf(cost):
                 self.inf_count += 1
                 cost = 1 + 0.9**self.inf_count  # for fake finite gradient
             return cost if self.minimising else -cost
 
-        L, dl = self.cost(x, calculate_grad=True)
+        L, dl = self.cost(x, calculate_grad=True, apply_transform=True)
         return (L, dl) if self.minimising else (-L, -dl)
 
     def _run_optimiser(self):
@@ -198,7 +198,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 cost = intermediate_result.fun
             else:
                 x_best = intermediate_result
-                cost = self.cost(x_best)
+                cost = self.cost(x_best, apply_transform=True)
 
             self.log_update(
                 x_best=x_best,
@@ -212,7 +212,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         )
 
         # Compute the absolute initial cost and resample if required
-        self._cost0 = np.abs(self.cost(self.x0))
+        self._cost0 = np.abs(self.cost(self.x0, apply_transform=True))
         if np.isinf(self._cost0):
             for _i in range(1, self.num_resamples):
                 try:
@@ -224,7 +224,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
                         stacklevel=2,
                     )
                     break
-                self._cost0 = np.abs(self.cost(self.x0))
+                self._cost0 = np.abs(self.cost(self.x0, apply_transform=True))
                 if not np.isinf(self._cost0):
                     break
             if np.isinf(self._cost0):
@@ -352,7 +352,11 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
         def cost_wrapper(x):
             self.log_update(x=[x])
-            return self.cost(x) if self.minimising else -self.cost(x)
+            return (
+                self.cost(x, apply_transform=True)
+                if self.minimising
+                else -self.cost(x, apply_transform=True)
+            )
 
         return differential_evolution(
             cost_wrapper,
