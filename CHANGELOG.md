@@ -2,6 +2,8 @@
 
 ## Features
 
+- [#481](https://github.com/pybop-team/PyBOP/pull/481) - Adds experimental support for PyBaMM's jaxified IDAKLU solver. Includes Jax-specific cost functions `pybop.JaxSumSquareError` and `pybop.JaxLogNormalLikelihood`. Adds `Jax` optional dependency to PyBaMM dependency.
+
 ## Optimisations
 
 - [#512](https://github.com/pybop-team/PyBOP/pull/513) - Refactors `LogPosterior` with attributes pointing to composed likelihood object.
