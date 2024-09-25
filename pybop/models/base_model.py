@@ -109,7 +109,7 @@ class BaseModel:
         self.name = name
         self.eis = eis
         self.jax = jax
-        self.calculate_sensitivities = False
+        self._calculate_sensitivities = False
 
         if parameter_set is None:
             self._parameter_set = None
@@ -776,7 +776,7 @@ class BaseModel:
         the solver with `calculate_sensitivities=True` as this solver requires
         casting sensitivity information on construction.
         """
-        self.calculate_sensitivities = calculate_sensitivities
+        self._calculate_sensitivities = calculate_sensitivities
         if isinstance(self._solver, pybamm.IDAKLUSolver):
             self._IDAKLU_stored = self._solver.copy()
             self._solver = self._solver.jaxify(
@@ -1010,6 +1010,10 @@ class BaseModel:
     @property
     def solver(self):
         return self._solver
+
+    @property
+    def calculate_sensitivities(self):
+        return self._calculate_sensitivities
 
     @solver.setter
     def solver(self, solver):
