@@ -84,13 +84,14 @@ class TestCosts:
         assert isinstance(out, jnp.ndarray)
         assert out.dtype == jnp.float64
 
-        # Test UserWarnings
-        if isinstance(cost, pybop.JaxSumSquaredError):
-            assert cost([0.5]) >= 0
+        # Test option setting
+        cost.set_fail_gradient(10)
+        assert cost._de == 10
 
-            # Test option setting
-            cost.set_fail_gradient(10)
-            assert cost._de == 10
+        # Test incorrect Sigma0
+        if isinstance(cost, pybop.JaxLogNormalLikelihood):
+            with pytest.raises(ValueError, match="sigma0 must be a positive number"):
+                cost.check_sigma0(-0.01)
 
         # Test grad
         e, de = cost([0.5], calculate_grad=True)
@@ -116,3 +117,10 @@ class TestCosts:
         # Test incorrect setter
         model.solver = model.pybamm_model
         assert model.solver is None
+
+        # Test jaxify with incorrect solver
+        model.solver = pybamm.CasadiSolver()
+        with pytest.raises(
+            ValueError, match="Solver is not pybamm.IDAKLUSolver, cannot jaxify it."
+        ):
+            model.jaxify_solver(t_eval=np.linspace(0, 1, 100))

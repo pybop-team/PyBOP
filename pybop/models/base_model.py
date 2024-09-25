@@ -784,7 +784,7 @@ class BaseModel:
                 t_eval=t_eval,
                 calculate_sensitivities=calculate_sensitivities,
             )
-        elif isinstance(self._solver, pybamm.solvers.idaklu_jax.IDAKLUJax):
+        elif isinstance(self._solver, pybamm.IDAKLUJax):
             self._solver = self._IDAKLU_stored.jaxify(
                 model=self._built_model,
                 t_eval=t_eval,
