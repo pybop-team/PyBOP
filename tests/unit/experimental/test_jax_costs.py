@@ -1,3 +1,5 @@
+import copy
+
 import jax.numpy as jnp
 import numpy as np
 import pybamm
@@ -98,3 +100,19 @@ class TestCosts:
         assert isinstance(de, np.ndarray)
         assert e.dtype == jnp.float64
         assert de.dtype == np.float64
+
+    @pytest.mark.unit
+    def test_solver_property(self, problem):
+        model = problem.model
+
+        # Test getter
+        assert isinstance(model.solver, pybamm.IDAKLUJax)
+
+        # Test setter
+        jaxed_solver_copy = copy.copy(model.solver)
+        model.solver = jaxed_solver_copy
+        assert isinstance(model.solver, pybamm.IDAKLUJax)
+
+        # Test incorrect setter
+        model.solver = model.pybamm_model
+        assert model.solver is None

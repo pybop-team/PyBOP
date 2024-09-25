@@ -1015,7 +1015,7 @@ class BaseModel:
     def solver(self, solver):
         if isinstance(solver, pybamm.solvers.idaklu_jax.IDAKLUJax):
             self._solver = solver
-        elif solver is not None:
+        elif isinstance(solver, pybamm.BaseSolver):
             self._solver = solver.copy()
         else:
             self._solver = None
