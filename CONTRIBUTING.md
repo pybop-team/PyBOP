@@ -168,7 +168,7 @@ For individual tests, use:
 nox -s tests -- tests/unit/test_costs.py::TestCosts::test_costs
 ```
 
-which will run the specified cost, alternatively you can run all tests within a file by removing the trailing `::test_costs` in the above command.
+which will run the specified test, alternatively you can run all tests within a file by removing the trailing `::test_costs` in the above command.
 
 Alternatively, to run tests standalone with pytest, use:
 
@@ -179,7 +179,7 @@ pytest --unit -v
 To run individual test files with nox, you can use
 
 ```bash
-pytest tests/unit/path/to/test --unit -v
+pytest tests/unit/path/to/test.py --unit -v
 ```
 
 And for individual tests,
