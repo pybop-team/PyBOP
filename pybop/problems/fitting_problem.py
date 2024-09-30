@@ -2,7 +2,6 @@ import warnings
 from typing import Optional
 
 import numpy as np
-from pybamm import IDAKLUSolver
 
 from pybop import BaseModel, BaseProblem, Dataset
 from pybop.parameters.parameter import Inputs, Parameters
@@ -77,9 +76,6 @@ class FittingProblem(BaseProblem):
                 check_model=self.check_model,
                 initial_state=self.initial_state,
             )
-
-        if isinstance(self._model.solver, IDAKLUSolver) and self.model.jax:
-            self.model.jaxify_solver(t_eval=self._domain_data)
 
     def set_initial_state(self, initial_state: Optional[dict] = None):
         """

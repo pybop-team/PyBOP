@@ -31,8 +31,6 @@ class EChemBaseModel(BaseModel):
         The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
     eis : bool, optional
         A flag to build the forward model for EIS predictions. Defaults to False.
-    jax : bool, optional
-        A flag to build the forward model in preparation for the JAX solvers. Defaults to False.
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values. For example,
         build : bool, optional
@@ -52,10 +50,9 @@ class EChemBaseModel(BaseModel):
         spatial_methods=None,
         solver=None,
         eis=False,
-        jax=False,
         **model_kwargs,
     ):
-        super().__init__(name=name, parameter_set=parameter_set, eis=eis, jax=jax)
+        super().__init__(name=name, parameter_set=parameter_set, eis=eis)
 
         model_options = dict(build=False)
         for key, value in model_kwargs.items():

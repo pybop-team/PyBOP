@@ -17,8 +17,6 @@ class SPM(EChemBaseModel):
         The name for the model instance, defaulting to "Single Particle Model".
     eis : bool, optional
         A flag to build the forward model for EIS predictions. Defaults to False.
-    jax : bool, optional
-        A flag to build the forward model in preparation for the JAX solvers. Defaults to False.
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values, for example:
         parameter_set : pybamm.ParameterValues or dict, optional
@@ -43,14 +41,12 @@ class SPM(EChemBaseModel):
         self,
         name="Single Particle Model",
         eis: bool = False,
-        jax: bool = False,
         **model_kwargs,
     ):
         super().__init__(
             pybamm_model=pybamm_lithium_ion.SPM,
             name=name,
             eis=eis,
-            jax=jax,
             **model_kwargs,
         )
 
@@ -70,8 +66,6 @@ class SPMe(EChemBaseModel):
         A name for the model instance, defaults to "Single Particle Model with Electrolyte".
     eis : bool, optional
         A flag to build the forward model for EIS predictions. Defaults to False.
-    jax : bool, optional
-        A flag to build the forward model in preparation for the JAX solvers. Defaults to False.
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values, for example:
         parameter_set : pybamm.ParameterValues or dict, optional
@@ -96,14 +90,12 @@ class SPMe(EChemBaseModel):
         self,
         name="Single Particle Model with Electrolyte",
         eis: bool = False,
-        jax: bool = False,
         **model_kwargs,
     ):
         super().__init__(
             pybamm_model=pybamm_lithium_ion.SPMe,
             name=name,
             eis=eis,
-            jax=jax,
             **model_kwargs,
         )
 
@@ -123,8 +115,6 @@ class DFN(EChemBaseModel):
         The name for the model instance, defaulting to "Doyle-Fuller-Newman".
     eis : bool, optional
         A flag to build the forward model for EIS predictions. Defaults to False.
-    jax : bool, optional
-        A flag to build the forward model in preparation for the JAX solvers. Defaults to False.
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values, for example:
         parameter_set : pybamm.ParameterValues or dict, optional
@@ -149,14 +139,12 @@ class DFN(EChemBaseModel):
         self,
         name="Doyle-Fuller-Newman",
         eis: bool = False,
-        jax: bool = False,
         **model_kwargs,
     ):
         super().__init__(
             pybamm_model=pybamm_lithium_ion.DFN,
             name=name,
             eis=eis,
-            jax=jax,
             **model_kwargs,
         )
 
@@ -174,8 +162,6 @@ class MPM(EChemBaseModel):
         The name for the model instance, defaulting to "Many Particle Model".
     eis : bool, optional
         A flag to build the forward model for EIS predictions. Defaults to False.
-    jax : bool, optional
-        A flag to build the forward model in preparation for the JAX solvers. Defaults to False.
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values, for example:
         parameter_set : pybamm.ParameterValues or dict, optional
@@ -200,13 +186,11 @@ class MPM(EChemBaseModel):
         self,
         name="Many Particle Model",
         eis: bool = False,
-        jax: bool = False,
         **model_kwargs,
     ):
         super().__init__(
             pybamm_model=pybamm_lithium_ion.MPM,
             eis=eis,
-            jax=jax,
             name=name,
             **model_kwargs,
         )
@@ -225,8 +209,6 @@ class MSMR(EChemBaseModel):
         The name for the model instance, defaulting to "Multi Species Multi Reactions Model".
     eis : bool, optional
         A flag to build the forward model for EIS predictions. Defaults to False.
-    jax : bool, optional
-        A flag to build the forward model in preparation for the JAX solvers. Defaults to False.
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values, for example:
         parameter_set : pybamm.ParameterValues or dict, optional
@@ -251,14 +233,12 @@ class MSMR(EChemBaseModel):
         self,
         name="Multi Species Multi Reactions Model",
         eis: bool = False,
-        jax: bool = False,
         **model_kwargs,
     ):
         super().__init__(
             pybamm_model=pybamm_lithium_ion.MSMR,
             name=name,
             eis=eis,
-            jax=jax,
             **model_kwargs,
         )
 
@@ -273,8 +253,6 @@ class WeppnerHuggins(EChemBaseModel):
         A name for the model instance, defaults to "Weppner & Huggins model".
     eis : bool, optional
         A flag to build the forward model for EIS predictions. Defaults to False.
-    jax : bool, optional
-        A flag to build the forward model in preparation for the JAX solvers. Defaults to False.
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values, for example:
         parameter_set : pybamm.ParameterValues or dict, optional
@@ -295,9 +273,8 @@ class WeppnerHuggins(EChemBaseModel):
         self,
         name="Weppner & Huggins model",
         eis: bool = False,
-        jax: bool = False,
         **model_kwargs,
     ):
         super().__init__(
-            pybamm_model=BaseWeppnerHuggins, name=name, eis=eis, jax=jax, **model_kwargs
+            pybamm_model=BaseWeppnerHuggins, name=name, eis=eis, **model_kwargs
         )

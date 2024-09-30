@@ -16,7 +16,7 @@ class TestCosts:
     @pytest.fixture
     def model(self, ground_truth):
         solver = pybamm.IDAKLUSolver()
-        model = pybop.lithium_ion.SPM(solver=solver, jax=True)
+        model = pybop.lithium_ion.SPM(solver=solver)
         model.parameter_set["Negative electrode active material volume fraction"] = (
             ground_truth
         )
@@ -103,8 +103,20 @@ class TestCosts:
         assert de.dtype == np.float64
 
     @pytest.mark.unit
-    def test_solver_property(self, problem):
-        model = problem.model
+    def test_non_mutated_problem(self, problem):
+        # Run Jax Cost
+        cost = pybop.JaxSumSquaredError(problem)
+        e_jax = cost([0.5])
+
+        # Change cost and assert
+        cost = pybop.SumSquaredError(problem)
+        cost.problem.model.solver = pybamm.CasadiSolver()
+        e_casadi = cost([0.5])
+        np.testing.assert_almost_equal(e_jax, e_casadi)
+
+    @pytest.mark.unit
+    def test_solver_property(self, cost):
+        model = cost.problem.model
 
         # Test getter
         assert isinstance(model.solver, pybamm.IDAKLUJax)

@@ -12,7 +12,7 @@ parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 # The IDAKLU, and it's jaxified version perform very well on the DFN with and without
 # gradient calculations
 solver = pybamm.IDAKLUSolver()
-model = pybop.lithium_ion.DFN(parameter_set=parameter_set, solver=solver, jax=True)
+model = pybop.lithium_ion.DFN(parameter_set=parameter_set, solver=solver)
 
 # Fitting parameters
 parameters = pybop.Parameters(

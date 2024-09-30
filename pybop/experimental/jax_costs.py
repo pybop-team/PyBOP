@@ -3,6 +3,7 @@ from typing import Union
 import jax
 import jax.numpy as jnp
 import numpy as np
+from pybamm import IDAKLUSolver
 
 from pybop import BaseCost, BaseLikelihood, BaseProblem, Inputs
 
@@ -14,6 +15,9 @@ class BaseJaxCost(BaseCost):
 
     def __init__(self, problem: BaseProblem):
         super().__init__(problem)
+
+        if isinstance(self.problem.model.solver, IDAKLUSolver):
+            self.problem.model.jaxify_solver(t_eval=self.problem.domain_data)
 
     def __call__(
         self,

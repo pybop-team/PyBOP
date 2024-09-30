@@ -73,7 +73,6 @@ class BaseModel:
         parameter_set: Optional[ParameterSet] = None,
         check_params: Callable = None,
         eis: bool = False,
-        jax: bool = False,
     ):
         """
         Initialise the BaseModel with an optional name and a parameter set.
@@ -108,7 +107,6 @@ class BaseModel:
         """
         self.name = name
         self.eis = eis
-        self.jax = jax
         self._calculate_sensitivities = False
 
         if parameter_set is None:

@@ -90,7 +90,7 @@ for solver in solvers:
 
 # Recreate for Jax IDAKLU solver
 ida_solver = pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6)
-model = pybop.lithium_ion.DFN(parameter_set=parameter_set, solver=ida_solver, jax=True)
+model = pybop.lithium_ion.DFN(parameter_set=parameter_set, solver=ida_solver)
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.JaxSumSquaredError(problem)
 
