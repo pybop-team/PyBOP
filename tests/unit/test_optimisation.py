@@ -277,7 +277,8 @@ class TestOptimisation:
     def test_scipy_minimize_with_jac(self, cost):
         # Check a method that uses gradient information
         optim = pybop.SciPyMinimize(cost=cost, method="L-BFGS-B", jac=True, maxiter=10)
-        optim.run()
+        results = optim.run()
+        assert results.get_scipy_result() == optim.result.scipy_result
         assert optim.result.scipy_result.success is True
         # Check constraint-based methods, which have different callbacks / returns
         for method in ["trust-constr", "SLSQP", "COBYLA"]:
@@ -541,3 +542,19 @@ class TestOptimisation:
         optim = pybop.Optimisation(cost=cost, max_iterations=1)
         results = optim.run()
         results.check_physical_viability(np.array([2]))
+
+    @pytest.mark.unit
+    def test_optimsation_results(self, cost):
+        # Construct OptimisationResult
+        results = pybop.OptimisationResult(x=[0.55], cost=cost, n_iterations=1)
+
+        # Asserts
+        assert results.x[0] == 0.55
+        assert results.final_cost == cost([0.55])
+        assert results.n_iterations == 1
+
+        # Test non-finite results
+        with pytest.raises(
+            ValueError, match="Optimised parameters do not produce a finite cost value"
+        ):
+            pybop.OptimisationResult(x=[1e-5], cost=cost, n_iterations=1)
