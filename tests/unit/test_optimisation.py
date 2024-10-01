@@ -119,27 +119,27 @@ class TestOptimisation:
     @pytest.mark.parametrize(
         "optimiser",
         [
-            # pybop.SciPyMinimize,
-            # pybop.SciPyDifferentialEvolution,
-            # pybop.GradientDescent,
-            # pybop.Adam,
-            # pybop.AdamW,
+            pybop.SciPyMinimize,
+            pybop.SciPyDifferentialEvolution,
+            pybop.GradientDescent,
+            pybop.Adam,
+            pybop.AdamW,
             pybop.SNES,
             pybop.XNES,
-            # pybop.PSO,
-            # pybop.IRPropMin,
-            # pybop.NelderMead,
-            # pybop.CuckooSearch,
+            pybop.PSO,
+            pybop.IRPropMin,
+            pybop.NelderMead,
+            pybop.CuckooSearch,
         ],
     )
     @pytest.mark.unit
     def test_optimiser_kwargs(self, cost, optimiser):
-        optim = optimiser(cost=cost, maxiter=1)
+        optim = optimiser(cost=cost, maxiter=3, tol=1e-6)
         cost_bounds = cost.parameters.get_bounds()
 
         # Check maximum iterations
-        optim.run()
-        assert optim.result.n_iterations == 1
+        results = optim.run()
+        assert results.n_iterations == 3
 
         if optimiser in [pybop.GradientDescent, pybop.Adam, pybop.NelderMead]:
             # Ignored bounds
@@ -452,8 +452,16 @@ class TestOptimisation:
         optim = pybop.GradientDescent(
             cost=cost, max_unchanged_iterations=1, min_iterations=1
         )
-        optim.run()
+        results = optim.run()
         assert optim.result.n_iterations == 2
+
+        assert (
+            str(results) == f"OptimisationResult:\n"
+            f"  Optimised parameters: {results.x}\n"
+            f"  Final cost: {results.final_cost}\n"
+            f"  Number of iterations: {results.n_iterations}\n"
+            f"  SciPy result available: No"
+        )
 
         # Test guessed values
         optim.set_f_guessed_tracking(True)

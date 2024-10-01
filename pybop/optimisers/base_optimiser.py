@@ -280,7 +280,7 @@ class OptimisationResult:
     def __init__(
         self,
         x: Union[Inputs, np.ndarray] = None,
-        cost: BaseCost | None = None,
+        cost: Union[BaseCost, None] = None,
         final_cost: Optional[float] = None,
         n_iterations: Optional[int] = None,
         scipy_result=None,
