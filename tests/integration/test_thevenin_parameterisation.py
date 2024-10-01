@@ -90,17 +90,17 @@ class TestTheveninParameterisation:
             optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
 
         initial_cost = optim.cost(optim.parameters.initial_value())
-        x, final_cost = optim.run()
+        results = optim.run()
 
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
             if optim.minimising:
-                assert initial_cost > final_cost
+                assert initial_cost > results.final_cost
             else:
-                assert initial_cost < final_cost
+                assert initial_cost < results.final_cost
         else:
             raise ValueError("Initial value is the same as the ground truth value.")
-        np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
+        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
     def get_data(self, model):
         experiment = pybop.Experiment(

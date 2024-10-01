@@ -77,8 +77,8 @@ problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
 optim = pybop.CMAES(cost, max_iterations=100)
 
-x, final_cost = optim.run()
-print("Estimated parameters:", x)
+results = optim.run()
+print("Estimated parameters:", results.x)
 
 # Export the parameters to JSON
 parameter_set.export_parameters(
@@ -89,7 +89,7 @@ parameter_set.export_parameters(
 pybop.plot_dataset(dataset)
 
 # Plot the timeseries output
-pybop.quick_plot(problem, problem_inputs=x, title="Optimised Comparison")
+pybop.quick_plot(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)
