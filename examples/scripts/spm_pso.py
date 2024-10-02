@@ -20,7 +20,7 @@ parameters = pybop.Parameters(
     ),
 )
 
-sigma = 0.001
+sigma = 0.002
 t_eval = np.arange(0, 900, 3)
 values = model.predict(t_eval=t_eval)
 corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
@@ -37,7 +37,13 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.Optimisation(cost, optimiser=pybop.PSO, max_iterations=100)
+optim = pybop.Optimisation(
+    cost,
+    optimiser=pybop.PSO,
+    sigma0=0.05,
+    max_unchanged_iterations=50,
+    max_iterations=50,
+)
 
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
@@ -51,5 +57,9 @@ pybop.plot_convergence(optim)
 # Plot the parameter traces
 pybop.plot_parameters(optim)
 
+# Plot the voronoi surface
+bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
+pybop.plot_voronoi2d(optim, bounds)
+
 # Plot the cost landscape with optimisation path
-pybop.plot2d(optim, steps=15)
+pybop.plot2d(optim, steps=15, bounds=bounds)

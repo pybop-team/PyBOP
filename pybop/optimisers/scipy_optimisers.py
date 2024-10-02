@@ -70,7 +70,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
 
     def _run(self):
         """
-        Internal method to run the optimization using a PyBOP optimiser.
+        Internal method to run the optimisation using a PyBOP optimiser.
 
         Returns
         -------

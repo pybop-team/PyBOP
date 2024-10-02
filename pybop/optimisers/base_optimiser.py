@@ -63,9 +63,10 @@ class BaseOptimiser:
         self.bounds = None
         self.sigma0 = 0.02
         self.verbose = False
-        self.log = dict(x=[], x_best=[], cost=[])
+        self.log = dict(x=[], x_best=[], cost=[], cost_best=[])
         self.minimising = True
         self._transformation = None
+        self._needs_sensitivities = False
         self.physical_viability = False
         self.allow_infeasible_solutions = False
         self.default_max_iterations = 1000
@@ -198,7 +199,7 @@ class BaseOptimiser:
         """
         raise NotImplementedError
 
-    def log_update(self, x=None, x_best=None, cost=None):
+    def log_update(self, x=None, x_best=None, cost=None, cost_best=None):
         """
         Update the log with new values.
 
@@ -227,6 +228,8 @@ class BaseOptimiser:
 
         if cost is not None:
             self.log["cost"].append(cost)
+        if cost_best is not None:
+            self.log["cost_best"].append(cost_best)
 
     def check_optimal_parameters(self, x):
         """
@@ -285,6 +288,10 @@ class BaseOptimiser:
             # Turn off this feature as there is no model
             self.physical_viability = False
             self.allow_infeasible_solutions = False
+
+    @property
+    def needs_sensitivities(self):
+        return self._needs_sensitivities
 
 
 class Result:

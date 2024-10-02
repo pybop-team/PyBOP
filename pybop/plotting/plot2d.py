@@ -130,7 +130,7 @@ def plot2d(
         parameter_log = np.asarray(optim.log["x_best"])
         flat_x = np.concatenate((flat_x, parameter_log[:, 0]))
         flat_y = np.concatenate((flat_y, parameter_log[:, 1]))
-        flat_costs = np.concatenate((flat_costs, optim.log["cost"]))
+        flat_costs = np.concatenate((flat_costs, optim.log["cost_best"]))
 
         # Order the parameter values and estimate the cost using interpolation
         x = np.unique(flat_x)
