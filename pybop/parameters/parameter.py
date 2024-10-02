@@ -335,11 +335,12 @@ class Parameters:
         apply_transform : bool
             If True, the transformation is applied to the output (default: False).
         """
-        all_unbounded = True  # assumption
         bounds = {"lower": [], "upper": []}
-
         for param in self.param.values():
-            if param.bounds is not None:
+            if param.bounds is None:
+                lower, upper = -np.inf, np.inf
+            else:
+                lower, upper = param.bounds
                 if apply_transform and param.transformation is not None:
                     lower = float(param.transformation.to_search(param.bounds[0]))
                     upper = float(param.transformation.to_search(param.bounds[1]))
@@ -349,17 +350,9 @@ class Parameters:
                             "If you've not applied bounds, this is due to the defaults applied from the prior distribution,\n"
                             "consider bounding the parameters to avoid this error."
                         )
-                    bounds["lower"].append(lower)
-                    bounds["upper"].append(upper)
-                else:
-                    bounds["lower"].append(param.bounds[0])
-                    bounds["upper"].append(param.bounds[1])
-                all_unbounded = False
-            else:
-                bounds["lower"].append(-np.inf)
-                bounds["upper"].append(np.inf)
-        if all_unbounded:
-            bounds = None
+
+            bounds["lower"].append(lower)
+            bounds["upper"].append(upper)
 
         return bounds
 

@@ -230,9 +230,9 @@ class BaseOptimiser:
         Returns
         -------
         str
-            The name of the optimiser, which is "Optimisation" for this base class.
+            The name of the optimiser
         """
-        return "Optimisation"
+        raise NotImplementedError
 
     def set_allow_infeasible_solutions(self, allow: bool = True):
         """

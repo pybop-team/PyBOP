@@ -15,11 +15,11 @@ class Optimisation:
     cost : pybop.BaseCost or pints.ErrorMeasure
         An objective function to be optimized, which can be either a pybop.Cost
     optimiser : pybop.Optimiser or subclass of pybop.BaseOptimiser, optional
-        An optimiser from either the PINTS or PyBOP framework to perform the optimization (default: None).
+        An optimiser from either the PINTS or PyBOP framework to perform the optimisation (default: None).
     sigma0 : float or sequence, optional
         Initial step size or standard deviation for the optimiser (default: None).
     verbose : bool, optional
-        If True, the optimization progress is printed (default: False).
+        If True, the optimisation progress is printed (default: False).
     physical_viability : bool, optional
         If True, the feasibility of the optimised parameters is checked (default: True).
     allow_infeasible_solutions : bool, optional
