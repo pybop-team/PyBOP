@@ -1,4 +1,5 @@
 import warnings
+from functools import partial
 from typing import Union
 
 import numpy as np
@@ -8,9 +9,10 @@ from pybop import BaseCost, BaseOptimiser, Optimisation, PlotlyManager
 
 
 def plot2d(
-    cost_or_optim,
+    call_object: Union[BaseCost, BaseOptimiser],
     gradient: bool = False,
     bounds: Union[np.ndarray, None] = None,
+    apply_transform: bool = False,
     steps: int = 10,
     show: bool = True,
     use_optim_log: bool = False,
@@ -24,7 +26,7 @@ def plot2d(
 
     Parameters
     ----------
-    cost_or_optim : a callable cost function, pybop Cost or Optimisation object
+    call_object : Union([pybop.BaseCost,pybop.BaseOptimiser, pybop.BasePrior])
         Either:
         - the cost function to be evaluated. Must accept a list of parameter values and return a cost value.
         - an Optimisation object which provides a specific optimisation trace overlaid on the cost landscape.
@@ -54,15 +56,18 @@ def plot2d(
     ValueError
         If the cost function does not return a valid cost when called with a parameter list.
     """
+    plot_optim = False
+    cost = cost_call = call_object
 
     # Assign input as a cost or optimisation object
-    if isinstance(cost_or_optim, (BaseOptimiser, Optimisation)):
-        optim = cost_or_optim
+    if isinstance(call_object, (BaseOptimiser, Optimisation)):
         plot_optim = True
+        optim = call_object
         cost = optim.cost
-    else:
-        cost = cost_or_optim
-        plot_optim = False
+        cost_call = partial(optim.cost, apply_transform=apply_transform)
+    elif isinstance(call_object, BaseCost):
+        cost = call_object
+        cost_call = partial(cost, apply_transform=apply_transform)
 
     if isinstance(cost, BaseCost) and len(cost.parameters) < 2:
         raise ValueError("This cost function takes fewer than 2 parameters.")
@@ -85,7 +90,7 @@ def plot2d(
 
     # Set up parameter bounds
     if bounds is None:
-        bounds = cost.parameters.get_bounds_for_plotly()
+        bounds = cost.parameters.get_bounds_for_plotly(apply_transform=apply_transform)
 
     # Generate grid
     x = np.linspace(bounds[0, 0], bounds[0, 1], steps)
@@ -97,22 +102,28 @@ def plot2d(
     # Populate cost matrix
     for i, xi in enumerate(x):
         for j, yj in enumerate(y):
-            costs[j, i] = cost(np.asarray([xi, yj] + additional_values))
+            costs[j, i] = cost_call(
+                np.asarray([xi, yj] + additional_values),
+            )
 
     if gradient:
         grad_parameter_costs = []
 
         # Determine the number of gradient outputs from cost.compute
         num_gradients = len(
-            cost(np.asarray([x[0], y[0]] + additional_values), calculate_grad=True)[1]
+            cost_call(
+                np.asarray([x[0], y[0]] + additional_values),
+                calculate_grad=True,
+            )[1]
         )
 
         # Create an array to hold each gradient output & populate
         grads = [np.zeros((len(y), len(x))) for _ in range(num_gradients)]
         for i, xi in enumerate(x):
             for j, yj in enumerate(y):
-                (*current_grads,) = cost(
-                    np.asarray([xi, yj] + additional_values), calculate_grad=True
+                (*current_grads,) = cost_call(
+                    np.asarray([xi, yj] + additional_values),
+                    calculate_grad=True,
                 )[1]
                 for k, grad_output in enumerate(current_grads):
                     grads[k][j, i] = grad_output
