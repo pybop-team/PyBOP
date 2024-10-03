@@ -105,10 +105,11 @@ class TestPlots:
         pybop.plot2d(cost, gradient=True, steps=5)
 
         # Test without bounds
-        for param in cost.problem.parameters:
+        for param in cost.parameters:
             param.bounds = None
-        with pytest.raises(ValueError):
-            pybop.plot2d(cost, steps=5)
+        pybop.plot2d(cost, steps=5)
+
+        # Test with bounds
         pybop.plot2d(cost, bounds=np.array([[0.5, 0.8], [0.4, 0.7]]), steps=5)
 
     @pytest.fixture
