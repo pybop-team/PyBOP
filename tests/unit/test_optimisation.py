@@ -329,6 +329,12 @@ class TestOptimisation:
         ):
             pybop.Optimisation(cost=invalid_cost)
 
+        # Test valid cost
+        def valid_cost(x):
+            return x[0] ** 2
+
+        pybop.Optimisation(cost=valid_cost, x0=np.asarray([0.1]))
+
     @pytest.mark.unit
     def test_default_optimiser(self, cost):
         optim = pybop.Optimisation(cost=cost)
