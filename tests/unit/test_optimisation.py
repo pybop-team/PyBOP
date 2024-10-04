@@ -18,7 +18,7 @@ class TestOptimisation:
         return pybop.Dataset(
             {
                 "Time [s]": np.linspace(0, 360, 10),
-                "Current function [A]": 1e-3 * np.ones(10),
+                "Current function [A]": 1e-2 * np.ones(10),
                 "Voltage [V]": np.ones(10),
             }
         )
@@ -134,12 +134,12 @@ class TestOptimisation:
     )
     @pytest.mark.unit
     def test_optimiser_kwargs(self, cost, optimiser):
-        optim = optimiser(cost=cost, maxiter=1, tol=1e-6)
+        optim = optimiser(cost=cost, maxiter=3, tol=1e-6)
         cost_bounds = cost.parameters.get_bounds()
 
         # Check maximum iterations
         results = optim.run()
-        assert results.n_iterations == 1
+        assert results.n_iterations == 3
 
         if optimiser in [pybop.GradientDescent, pybop.Adam, pybop.NelderMead]:
             # Ignored bounds
