@@ -47,15 +47,11 @@ class TestTheveninParameterisation:
             ),
         )
 
-    @pytest.fixture(params=[pybop.RootMeanSquaredError, pybop.SumSquaredError])
-    def cost_class(self, request):
-        return request.param
-
     @pytest.fixture
-    def cost(self, model, parameters, cost_class):
+    def dataset(self, model):
         # Form dataset
         solution = self.get_data(model)
-        dataset = pybop.Dataset(
+        return pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current function [A]": solution["Current [A]"].data,
@@ -63,29 +59,34 @@ class TestTheveninParameterisation:
             }
         )
 
-        # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset)
-        return cost_class(problem)
-
     @pytest.mark.parametrize(
-        "optimiser",
-        [pybop.SciPyMinimize, pybop.GradientDescent, pybop.PSO],
+        "cost_class", [pybop.RootMeanSquaredError, pybop.SumSquaredError]
+    )
+    @pytest.mark.parametrize(
+        "optimiser, method",
+        [
+            (pybop.SciPyMinimize, "trust-constr"),
+            (pybop.SciPyMinimize, "SLSQP"),
+            (pybop.SciPyMinimize, "COBYLA"),
+            (pybop.GradientDescent, ""),
+            (pybop.PSO, ""),
+        ],
     )
     @pytest.mark.integration
-    def test_optimisers_on_simple_model(self, optimiser, cost):
+    def test_optimisers_on_simple_model(
+        self, model, parameters, dataset, cost_class, optimiser, method
+    ):
+        # Define the cost to optimise
+        problem = pybop.FittingProblem(model, parameters, dataset)
+        cost = cost_class(problem)
+
         x0 = cost.parameters.initial_value()
         if optimiser in [pybop.GradientDescent]:
             optim = optimiser(
-                cost=cost,
-                sigma0=2.5e-4,
-                max_iterations=250,
+                cost=cost, sigma0=2.5e-4, max_iterations=250, method=method
             )
         else:
-            optim = optimiser(
-                cost=cost,
-                sigma0=0.03,
-                max_iterations=250,
-            )
+            optim = optimiser(cost=cost, sigma0=0.03, max_iterations=250, method=method)
         if isinstance(optimiser, pybop.BasePintsOptimiser):
             optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
 
@@ -101,6 +102,9 @@ class TestTheveninParameterisation:
         else:
             raise ValueError("Initial value is the same as the ground truth value.")
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
+
+        if isinstance(optimiser, pybop.SciPyMinimize):
+            assert results.scipy_result.success is True
 
     def get_data(self, model):
         experiment = pybop.Experiment(

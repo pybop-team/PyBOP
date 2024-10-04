@@ -128,7 +128,7 @@ class TestEISParameterisation:
             "max_unchanged_iterations": 35,
             "sigma0": [0.05, 0.05, 1e-3]
             if isinstance(cost, pybop.GaussianLogLikelihood)
-            else 0.05,
+            else 0.02,
         }
 
         if isinstance(cost, pybop.LogPosterior):

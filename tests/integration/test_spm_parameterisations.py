@@ -124,7 +124,7 @@ class Test_SPM_Parameterisation:
             "max_unchanged_iterations": 55,
             "sigma0": [0.05, 0.05, 1e-3]
             if isinstance(cost, pybop.GaussianLogLikelihood)
-            else 0.05,
+            else 0.02,
         }
 
         if isinstance(cost, pybop.LogPosterior):
@@ -217,7 +217,7 @@ class Test_SPM_Parameterisation:
             "max_unchanged_iterations": 55,
             "sigma0": [0.035, 0.035, 6e-3, 6e-3]
             if isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood)
-            else None,
+            else 0.02,
         }
 
         # Test each optimiser
