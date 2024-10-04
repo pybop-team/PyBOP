@@ -107,7 +107,10 @@ class TestPlots:
         # Test without bounds
         for param in cost.parameters:
             param.bounds = None
-        pybop.plot2d(cost, steps=5)
+        with pytest.raises(
+            ValueError, match="All parameters require bounds for plotting."
+        ):
+            pybop.plot2d(cost, steps=5)
 
         # Test with bounds
         pybop.plot2d(cost, bounds=np.array([[0.5, 0.8], [0.4, 0.7]]), steps=5)

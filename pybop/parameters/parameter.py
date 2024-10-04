@@ -539,7 +539,7 @@ class Parameters:
         bounds = self.get_bounds(apply_transform=apply_transform)
 
         # Validate that all parameters have bounds
-        if bounds is None:
+        if bounds is None or not np.isfinite(list(bounds.values())).all():
             raise ValueError("All parameters require bounds for plotting.")
 
         return np.asarray(list(bounds.values())).T
