@@ -31,7 +31,7 @@ parameters = pybop.Parameters(
 
 # Generate data
 init_soc = 0.5
-sigma = 0.002
+sigma = 0.005
 experiment = pybop.Experiment(
     [
         ("Discharge at 0.5C for 6 minutes (5 second period)",),
@@ -63,7 +63,7 @@ signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 
 # Generate problem, likelihood, and sampler
 problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
-likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002)
+likelihood = pybop.GaussianLogLikelihood(problem)
 posterior = pybop.LogPosterior(likelihood)
 
 optim = pybop.DifferentialEvolutionMCMC(
@@ -82,3 +82,4 @@ print(posterior_summary.get_summary_statistics())
 posterior_summary.plot_trace()
 posterior_summary.summary_table()
 posterior_summary.plot_posterior()
+posterior_summary.plot_chains()
