@@ -149,3 +149,41 @@ class PosteriorSummary:
 
         fig.update_layout(title="Summary Statistics")
         fig.show()
+
+    def autocorrelation(self, x: np.ndarray) -> np.ndarray:
+        """
+        Computes the autocorrelation (Pearson correlation coefficient)
+        of a numpy array representing samples.
+        """
+        x = (x - x.mean()) / (x.std() * np.sqrt(len(x)))
+        cor = np.correlate(x, x, mode="full")
+        return cor[len(x) : -1]
+
+    def _autocorrelate_negative(self, autocorrelation):
+        """
+        Returns the index of the first negative entry in ``autocorrelation``, or
+        ``len(autocorrelation)`` if a negative entry is not found.
+        """
+        negative_indices = np.where(autocorrelation < 0)[0]
+        return (
+            negative_indices[0] if negative_indices.size > 0 else len(autocorrelation)
+        )
+
+    def effective_sample_size(self):
+        """
+        Computes the effective sample size for each parameter in each chain.
+        """
+
+        if not isinstance(self.all_samples, np.ndarray) or self.all_samples.ndim != 2:
+            raise ValueError("Samples must be of type np.ndarray with dims == 2")
+        if self.all_samples.shape[0] < 2:
+            raise ValueError("At least two samples must be given.")
+
+        ess = []
+        for _, chain in enumerate(self.chains):
+            for j in range(self.num_parameters):
+                rho = self.autocorrelation(chain[:, j])
+                T = self._autocorrelate_negative(rho)
+                ess.append(len(chain[:, j]) / (1 + 2 * rho[:T].sum()))
+
+        print(f"Effective sampling sizes are: {ess}")
