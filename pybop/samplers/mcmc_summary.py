@@ -13,6 +13,7 @@ class PosteriorSummary:
         """
         self.chains = chains
         self.all_samples = np.concatenate(chains, axis=0)
+        self.num_parameters = self.chains.shape[2]
 
     def get_summary_statistics(self):
         """
@@ -43,15 +44,21 @@ class PosteriorSummary:
         """
         Plot trace plots for the posterior samples.
         """
-        fig = go.Figure()
 
-        for i, chain in enumerate(self.chains):
-            fig.add_trace(go.Scatter(y=chain, mode="lines", name=f"Chain {i+1}"))
+        for i in range(self.num_parameters):
+            fig = go.Figure()
 
-        fig.update_layout(
-            title="Trace Plot", xaxis_title="Sample Index", yaxis_title="Value"
-        )
-        fig.show()
+            for j, chain in enumerate(self.chains):
+                fig.add_trace(
+                    go.Scatter(y=chain[:, i], mode="lines", name=f"Chain {j+1}")
+                )
+
+            fig.update_layout(
+                title=f"Parameter {i} Trace Plot",
+                xaxis_title="Sample Index",
+                yaxis_title="Value",
+            )
+            fig.show()
 
     def plot_chains(self):
         """
