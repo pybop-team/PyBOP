@@ -105,17 +105,17 @@ class TestOptimisation:
             optim.set_parallel(1)
 
         initial_cost = optim.cost(x0)
-        x, final_cost = optim.run()
+        results = optim.run()
 
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
             if optim.minimising:
-                assert initial_cost > final_cost
+                assert initial_cost > results.final_cost
             else:
-                assert initial_cost < final_cost
+                assert initial_cost < results.final_cost
         else:
             raise ValueError("Initial value is the same as the ground truth value.")
-        np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
+        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
     def get_data(self, model, initial_state):
         # Update the initial state and save the ground truth initial concentrations

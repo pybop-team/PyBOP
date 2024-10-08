@@ -105,8 +105,8 @@ class TestModelAndExperimentChanges:
         problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
         cost = pybop.RootMeanSquaredError(problem)
         optim = pybop.PSO(cost)
-        x, final_cost = optim.run()
-        return final_cost
+        results = optim.run()
+        return results.final_cost
 
     @pytest.mark.integration
     def test_multi_fitting_problem(self):
@@ -154,6 +154,6 @@ class TestModelAndExperimentChanges:
         # Test with a gradient and non-gradient-based optimiser
         for optimiser in [pybop.SNES, pybop.IRPropMin]:
             optim = optimiser(cost)
-            x, final_cost = optim.run()
-            np.testing.assert_allclose(x, parameters.true_value, atol=2e-5)
-            np.testing.assert_allclose(final_cost, 0, atol=2e-5)
+            results = optim.run()
+            np.testing.assert_allclose(results.x, parameters.true_value, atol=2e-5)
+            np.testing.assert_allclose(results.final_cost, 0, atol=2e-5)

@@ -123,5 +123,5 @@ class BenchmarkTrackParameterisation:
             parameter_set (str): The name of the parameter set being used (unused).
             optimiser (pybop.Optimiser): The optimizer class being used (unused).
         """
-        x, _ = self.optim.run()
-        return x
+        results = self.optim.run()
+        return results.x

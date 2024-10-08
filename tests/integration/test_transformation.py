@@ -129,7 +129,7 @@ class TestTransformation:
         )
 
         initial_cost = optim.cost(x0)
-        x, final_cost = optim.run()
+        results = optim.run()
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
         if isinstance(optim.cost, (pybop.GaussianLogLikelihood, pybop.LogPosterior)):
@@ -142,15 +142,15 @@ class TestTransformation:
             raise AssertionError("Initial guess is too close to ground truth")
 
         if isinstance(cost, pybop.GaussianLogLikelihood):
-            np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
-            np.testing.assert_allclose(x[-1], self.sigma0, atol=5e-4)
+            np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
+            np.testing.assert_allclose(results.x[-1], self.sigma0, atol=5e-4)
         else:
             assert (
-                (initial_cost > final_cost)
+                (initial_cost > results.final_cost)
                 if optim.minimising
-                else (initial_cost < final_cost)
+                else (initial_cost < results.final_cost)
             )
-            np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
+            np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
     def get_data(self, model, init_soc):
         initial_state = {"Initial SoC": init_soc}
