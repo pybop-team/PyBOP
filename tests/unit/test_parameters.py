@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 import pybop
@@ -196,6 +197,23 @@ class TestParameters:
             params["Positive electrode active material volume fraction"]
 
     @pytest.mark.unit
+    def test_parameters_transformation(self):
+        # Test unbounded transformation causes ValueError due to NaN
+        params = pybop.Parameters(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.01, 0.2),
+                transformation=pybop.LogTransformation(),
+            )
+        )
+
+        with pytest.raises(
+            ValueError,
+            match="Transformed bounds resulted in NaN values.\nIf you've not applied bounds",
+        ):
+            params.get_bounds(apply_transform=True)
+
+    @pytest.mark.unit
     def test_parameters_update(self, parameter):
         params = pybop.Parameters(parameter)
         params.update(values=[0.5])
@@ -206,9 +224,44 @@ class TestParameters:
         assert parameter.bounds == [0.37, 0.7]
 
     @pytest.mark.unit
+    def test_parameters_rvs(self, parameter):
+        parameter.transformation = pybop.ScaledTransformation(
+            coefficient=0.2, intercept=-1
+        )
+        params = pybop.Parameters(parameter)
+        params.construct_transformation()
+        samples = params.rvs(n_samples=500, apply_transform=True)
+        assert (samples >= -0.125).all() and (samples <= -0.06).all()
+        parameter.transformation = None
+
+    @pytest.mark.unit
     def test_get_sigma(self, parameter):
         params = pybop.Parameters(parameter)
         assert params.get_sigma0() == [0.02]
 
         parameter.prior = None
         assert params.get_sigma0() is None
+
+    @pytest.mark.unit
+    def test_initial_values_without_attributes(self):
+        # Test without initial values
+        parameter = pybop.Parameters(
+            pybop.Parameter(
+                "Negative electrode conductivity [S.m-1]",
+            )
+        )
+        with pytest.warns(
+            UserWarning,
+            match="Initial value and prior are None, proceeding without an initial value.",
+        ):
+            sample = parameter.initial_value()
+
+        np.testing.assert_equal(sample, np.array([None]))
+
+    @pytest.mark.unit
+    def test_parameters_repr(self, parameter):
+        params = pybop.Parameters(parameter)
+        assert (
+            repr(params)
+            == "Parameters(1):\n Negative electrode active material volume fraction: prior= Gaussian, loc: 0.6, scale: 0.02, value=0.6, bounds=[0.375, 0.7]"
+        )

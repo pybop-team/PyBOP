@@ -19,7 +19,6 @@ parameters = pybop.Parameters(
 )
 
 # Generate data
-init_soc = 0.5
 sigma = 0.003
 experiment = pybop.Experiment(
     [
@@ -30,7 +29,7 @@ experiment = pybop.Experiment(
     ]
     * 2
 )
-values = model.predict(init_soc=init_soc, experiment=experiment)
+values = model.predict(initial_state={"Initial SoC": 0.5}, experiment=experiment)
 
 
 def noise(sigma):
@@ -48,11 +47,9 @@ dataset = pybop.Dataset(
     }
 )
 
-signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 # Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(
-    model, parameters, dataset, signal=signal, init_soc=init_soc
-)
+signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
+problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 cost = pybop.RootMeanSquaredError(problem)
 optim = pybop.NelderMead(
     cost,

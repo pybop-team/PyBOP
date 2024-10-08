@@ -314,3 +314,6 @@ $RECYCLE.BIN/
 # Airspeed Velocity
 *.asv/
 results/
+
+# Pycharm
+*.idea/

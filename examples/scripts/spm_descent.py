@@ -1,10 +1,12 @@
 import numpy as np
+import pybamm
 
 import pybop
 
-# Parameter set and model definition
+# Define model and use high-performant solver for sensitivities
+solver = pybamm.IDAKLUSolver()
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -35,10 +37,10 @@ dataset = pybop.Dataset(
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.SumSquaredError(problem)
+cost = pybop.RootMeanSquaredError(problem)
 optim = pybop.GradientDescent(
     cost,
-    sigma0=0.011,
+    sigma0=0.05,
     verbose=True,
     max_iterations=125,
 )

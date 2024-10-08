@@ -27,7 +27,7 @@ parameters = pybop.Parameters(
 
 # Generate data
 sigma = 0.001
-t_eval = np.arange(0, 900, 2)
+t_eval = np.arange(0, 900, 5)
 values = model.predict(t_eval=t_eval)
 corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
 
@@ -43,7 +43,7 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.CMAES(cost, max_iterations=100)
+optim = pybop.CMAES(cost, max_iterations=40)
 
 # Run the optimisation
 x, final_cost = optim.run()
@@ -60,4 +60,4 @@ pybop.plot_convergence(optim)
 pybop.plot_parameters(optim)
 
 # Plot the cost landscape with optimisation path and updated bounds
-pybop.plot2d(optim, steps=15)
+pybop.plot2d(optim, steps=5)

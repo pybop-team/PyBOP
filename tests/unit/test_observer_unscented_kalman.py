@@ -93,6 +93,15 @@ class TestUKF:
         SquareRootUKF.cholupdate(R1_, u.copy(), 1.0)
         np.testing.assert_array_almost_equal(R1, R1_)
 
+        # Test hypot
+        f = 10.0
+        j = 20.0
+        out_1 = f * np.sqrt(1 + 1.0 * f**2 / j**2)
+        np.testing.assert_allclose(SquareRootUKF.hypot(f, j, 1.0), out_1)
+
+        j = 10.0
+        np.testing.assert_allclose(SquareRootUKF.hypot(f, j, 1.0), float(0))
+
     @pytest.mark.unit
     def test_unscented_kalman_filter(self, dataset, observer):
         t_eval = dataset["Time [s]"]
@@ -115,6 +124,11 @@ class TestUKF:
                 np.array([2 * y[0]]),
                 decimal=4,
             )
+
+        # Test get covariance
+        cov = observer.get_current_measure()
+        assert cov.shape == (1, 1)
+        assert float(0) <= cov[0]
 
     @pytest.mark.unit
     def test_observe_no_measurement(self, observer):

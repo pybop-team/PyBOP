@@ -8,7 +8,7 @@
         "python -m build --wheel -o {build_cache_dir} {build_dir}"
     ],
     "default_benchmark_timeout": 180,
-    "branches": ["develop"],
+    "branches": ["HEAD"],
     "environment_type": "virtualenv",
     "matrix": {
         "req":{

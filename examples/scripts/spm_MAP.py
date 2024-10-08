@@ -4,7 +4,6 @@ import pybop
 
 # Set variables
 sigma = 0.002
-init_soc = 0.7
 
 # Construct and update initial parameter values
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
@@ -26,6 +25,7 @@ parameters = pybop.Parameters(
         bounds=[0.3, 0.8],
         initial_value=0.653,
         true_value=parameter_set["Negative electrode active material volume fraction"],
+        transformation=pybop.LogTransformation(),
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
@@ -33,6 +33,7 @@ parameters = pybop.Parameters(
         bounds=[0.4, 0.7],
         initial_value=0.657,
         true_value=parameter_set["Positive electrode active material volume fraction"],
+        transformation=pybop.LogTransformation(),
     ),
 )
 
@@ -45,9 +46,7 @@ experiment = pybop.Experiment(
         ),
     ]
 )
-values = model.predict(
-    init_soc=init_soc, experiment=experiment, inputs=parameters.true_value()
-)
+values = model.predict(initial_state={"Initial SoC": 0.5}, experiment=experiment)
 corrupt_values = values["Voltage [V]"].data + np.random.normal(
     0, sigma, len(values["Voltage [V]"].data)
 )
@@ -62,9 +61,9 @@ dataset = pybop.Dataset(
 )
 
 # Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
-cost = pybop.MAP(problem, pybop.GaussianLogLikelihoodKnownSigma, sigma0=sigma)
-optim = pybop.AdamW(
+problem = pybop.FittingProblem(model, parameters, dataset)
+cost = pybop.LogPosterior(pybop.GaussianLogLikelihood(problem))
+optim = pybop.IRPropMin(
     cost,
     sigma0=0.05,
     max_unchanged_iterations=20,

@@ -1,8 +1,10 @@
 import copy
-from unittest.mock import MagicMock, patch
+import logging
+from unittest.mock import call, patch
 
 import numpy as np
 import pytest
+from pints import ParallelEvaluator
 
 import pybop
 from pybop import (
@@ -43,8 +45,8 @@ class TestPintsSamplers:
         )
 
     @pytest.fixture
-    def two_parameters(self):
-        return [
+    def parameters(self):
+        return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.6, 0.2),
@@ -55,47 +57,41 @@ class TestPintsSamplers:
                 prior=pybop.Gaussian(0.55, 0.05),
                 bounds=[0.53, 0.57],
             ),
-        ]
+        )
 
     @pytest.fixture
     def model(self):
         return pybop.lithium_ion.SPM()
 
     @pytest.fixture
-    def cost(self, model, one_parameter, dataset):
+    def log_posterior(self, model, parameters, dataset):
         problem = pybop.FittingProblem(
             model,
-            one_parameter,
-            dataset,
-        )
-        return pybop.SumSquaredError(problem)
-
-    @pytest.fixture
-    def log_posterior(self, model, two_parameters, dataset):
-        problem = pybop.FittingProblem(
-            model,
-            two_parameters,
+            parameters,
             dataset,
         )
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.01)
         prior1 = pybop.Gaussian(0.7, 0.02)
         prior2 = pybop.Gaussian(0.6, 0.02)
-        composed_prior = pybop.ComposedLogPrior(prior1, prior2)
+        composed_prior = pybop.JointLogPrior(prior1, prior2)
         log_posterior = pybop.LogPosterior(likelihood, composed_prior)
 
         return log_posterior
 
     @pytest.fixture
     def x0(self):
-        return [[0.68, 0.58], [0.68, 0.58], [0.68, 0.58]]
+        return [0.68, 0.58]
 
     @pytest.fixture
     def chains(self):
         return 3
 
-    @pytest.mark.parametrize(
-        "MCMC",
-        [
+    @pytest.fixture
+    def multi_samplers(self):
+        return (pybop.DREAM, pybop.EmceeHammerMCMC, pybop.DifferentialEvolutionMCMC)
+
+    @pytest.fixture(
+        params=[
             NUTS,
             DREAM,
             AdaptiveCovarianceMCMC,
@@ -114,10 +110,15 @@ class TestPintsSamplers:
             SliceDoublingMCMC,
             SliceRankShrinkingMCMC,
             SliceStepoutMCMC,
-        ],
+        ]
     )
+    def MCMC(self, request):
+        return request.param
+
     @pytest.mark.unit
-    def test_initialization_and_run(self, log_posterior, x0, chains, MCMC):
+    def test_initialisation_and_run(
+        self, log_posterior, x0, chains, MCMC, multi_samplers
+    ):
         sampler = pybop.MCMCSampler(
             log_pdf=log_posterior,
             chains=chains,
@@ -128,7 +129,10 @@ class TestPintsSamplers:
         )
         assert sampler._n_chains == chains
         assert sampler._log_pdf == log_posterior
-        assert (sampler._samplers[0]._x0 == x0[0]).all()
+        if isinstance(sampler.sampler, multi_samplers):
+            np.testing.assert_allclose(sampler._samplers[0]._x0[0], x0)
+        else:
+            np.testing.assert_allclose(sampler._samplers[0]._x0, x0)
 
         # Test incorrect __getattr__
         with pytest.raises(
@@ -146,6 +150,37 @@ class TestPintsSamplers:
         samples = sampler.run()
         assert samples is not None
         assert samples.shape == (chains, 1, 2)
+
+    @pytest.mark.unit
+    def test_single_parameter_sampling(self, model, dataset, MCMC, chains):
+        parameters = pybop.Parameters(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.6, 0.2),
+                bounds=[0.58, 0.62],
+            )
+        )
+        problem = pybop.FittingProblem(
+            model,
+            parameters,
+            dataset,
+        )
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.01)
+        log_posterior = pybop.LogPosterior(likelihood)
+
+        # Skip RelativisticMCMC as it requires > 1 parameter
+        if issubclass(MCMC, RelativisticMCMC):
+            return
+
+        # Construct and run
+        sampler = pybop.MCMCSampler(
+            log_pdf=log_posterior,
+            chains=chains,
+            sampler=MCMC,
+            max_iterations=1,
+            verbose=True,
+        )
+        sampler.run()
 
     @pytest.mark.unit
     def test_multi_log_pdf(self, log_posterior, x0, chains):
@@ -179,12 +214,14 @@ class TestPintsSamplers:
             )
 
         # Test incorrect number of parameters
-        new_multi_log_posterior = copy.copy(log_posterior)
-        new_multi_log_posterior.parameters = [
-            new_multi_log_posterior.parameters[
+        likelihood_copy = copy.copy(log_posterior.likelihood)
+        likelihood_copy.parameters = pybop.Parameters(
+            likelihood_copy.parameters[
                 "Positive electrode active material volume fraction"
             ]
-        ]
+        )
+        new_multi_log_posterior = pybop.LogPosterior(likelihood_copy)
+
         with pytest.raises(
             ValueError, match="All log pdf's must have the same number of parameters"
         ):
@@ -197,7 +234,7 @@ class TestPintsSamplers:
             )
 
     @pytest.mark.unit
-    def test_invalid_initialization(self, log_posterior, x0):
+    def test_invalid_initialisation(self, log_posterior, x0):
         with pytest.raises(ValueError, match="Number of chains must be greater than 0"):
             AdaptiveCovarianceMCMC(
                 log_pdf=log_posterior,
@@ -214,9 +251,26 @@ class TestPintsSamplers:
                 x0=x0,
             )
 
+        with pytest.raises(
+            ValueError, match="x0 must have the same number of parameters as log_pdf"
+        ):
+            AdaptiveCovarianceMCMC(
+                log_pdf=[log_posterior, log_posterior, log_posterior],
+                chains=3,
+                x0=[0.4, 0.4, 0.4, 0.4],
+            )
+
+    # SingleChain & MultiChain Sampler
+    @pytest.mark.parametrize(
+        "sampler",
+        [
+            AdaptiveCovarianceMCMC,
+            DifferentialEvolutionMCMC,
+        ],
+    )
     @pytest.mark.unit
-    def test_no_chains_in_memory(self, log_posterior, x0, chains):
-        sampler = AdaptiveCovarianceMCMC(
+    def test_no_chains_in_memory(self, log_posterior, x0, chains, sampler):
+        sampler = sampler(
             log_pdf=log_posterior,
             chains=chains,
             x0=x0,
@@ -227,29 +281,47 @@ class TestPintsSamplers:
 
         # Run the sampler
         samples = sampler.run()
+        assert sampler._samples is not None
         assert samples is None
 
+    @patch("logging.basicConfig")
+    @patch("logging.info")
     @pytest.mark.unit
-    def test_apply_transformation(self, log_posterior, x0, chains):
-        sampler = AdaptiveCovarianceMCMC(
-            log_pdf=log_posterior, chains=chains, x0=x0, transformation=MagicMock()
-        )
-
-        with patch.object(sampler, "_apply_transformation") as mock_method:
-            sampler._apply_transformation(sampler._transformation)
-            mock_method.assert_called_once_with(sampler._transformation)
-
-    @pytest.mark.unit
-    def test_logging_initialisation(self, log_posterior, x0, chains):
+    def test_initialise_logging(
+        self, mock_info, mock_basicConfig, log_posterior, x0, chains
+    ):
         sampler = AdaptiveCovarianceMCMC(
             log_pdf=log_posterior,
             chains=chains,
             x0=x0,
+            parallel=True,
+            evaluation_files=["eval1.txt", "eval2.txt"],
+            chain_files=["chain1.txt", "chain2.txt"],
         )
 
-        with patch("logging.basicConfig"), patch("logging.info") as mock_info:
-            sampler._initialise_logging()
-            assert mock_info.call_count > 0
+        # Set parallel workers
+        sampler.set_parallel(parallel=2)
+        sampler._initialise_logging()
+
+        # Check if basicConfig was called with correct arguments
+        mock_basicConfig.assert_called_once_with(
+            format="%(message)s", level=logging.INFO
+        )
+
+        # Check if correct messages were called
+        expected_calls = [
+            call("Using Haario-Bardenet adaptive covariance MCMC"),
+            call("Generating 3 chains."),
+            call("Running in parallel with 2 worker processes."),
+            call("Writing chains to chain1.txt etc."),
+            call("Writing evaluations to eval1.txt etc."),
+        ]
+        mock_info.assert_has_calls(expected_calls, any_order=False)
+
+        # Test when _log_to_screen is False
+        sampler._log_to_screen = False
+        sampler._initialise_logging()
+        assert mock_info.call_count == len(expected_calls)  # No additional calls
 
     @pytest.mark.unit
     def test_check_stopping_criteria(self, log_posterior, x0, chains):
@@ -297,15 +369,20 @@ class TestPintsSamplers:
         assert sampler._parallel is True
         assert sampler._n_workers == 2
 
+        # Test evaluator construction
+        sampler.set_parallel(2)
+        evaluator = sampler._create_evaluator()
+        assert isinstance(evaluator, ParallelEvaluator)
+
     @pytest.mark.unit
-    def test_base_sampler(self, x0):
-        sampler = pybop.BaseSampler(x0=x0, cov0=0.1)
+    def test_base_sampler(self, log_posterior, x0):
+        sampler = pybop.BaseSampler(log_posterior, x0, cov0=0.1)
         with pytest.raises(NotImplementedError):
             sampler.run()
 
     @pytest.mark.unit
     def test_MCMC_sampler(self, log_posterior, x0, chains):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             pybop.MCMCSampler(
                 log_pdf=log_posterior,
                 chains=chains,

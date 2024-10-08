@@ -1,7 +1,7 @@
 {
     "Header": {
-          "BPX": 0.1,
-          "Title": "Parameterisation example of an LFP|graphite 2 Ah cylindrical 18650 cell.",
+          "BPX": 0.4,
+          "Title": "Parameterisation example of an LFP|graphite 2 Ah cylindrical 18650 cell. File downloaded on 19/3/24 from https://github.com/FaradayInstitution/BPX/blob/main/examples/lfp_18650_cell_BPX.json",
           "Description": "LFP|graphite 2 Ah cylindrical 18650 cell. Parameterisation by About:Energy Limited (aboutenergy.io), December 2022, based on cell cycling data, and electrode data gathered after cell teardown. Electrolyte properties from Nyman et al. 2008 (doi:10.1016/j.electacta.2008.04.023). Negative electrode entropic coefficient data are from O'Regan et al. 2022 (doi:10.1016/j.electacta.2022.140700). Positive electrode entropic coefficient data are from Gerver and Meyers 2011 (doi:10.1149/1.3591799). Other thermal properties are estimated.",
           "Model": "DFN"
     },
@@ -70,9 +70,6 @@
                 "Thickness [m]": 2e-05,
                 "Porosity": 0.47,
                 "Transport efficiency": 0.3222
-          },
-          "User-defined": {
-                "Source:": "An example BPX json file downloaded on 19/3/24 from https://github.com/FaradayInstitution/BPX/blob/main/examples/lfp_18650_cell_BPX.json"
           }
     }
 }

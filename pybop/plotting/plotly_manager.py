@@ -71,14 +71,13 @@ class PlotlyManager:
             print("Installation cancelled by user.")
             sys.exit(1)  # Exit if user cancels installation
 
-    def install_plotly(self):
+    @staticmethod
+    def install_plotly():
         """
         Install the Plotly package using pip. Exit if installation fails.
         """
         try:
-            subprocess.check_call(
-                [sys.executable, "-m", "pip", "install", "plotly", "kaleido"]
-            )
+            subprocess.check_call([sys.executable, "-m", "pip", "install", "plotly"])
         except subprocess.CalledProcessError as e:
             print(f"Error installing plotly: {e}")
             sys.exit(1)  # Exit if installation fails

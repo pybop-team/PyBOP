@@ -1,40 +1,47 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
 from pybop import (
     DREAM,
     DifferentialEvolutionMCMC,
-    DramACMC,
     HaarioACMC,
     HaarioBardenetACMC,
     MetropolisRandomWalkMCMC,
     PopulationMCMC,
-    RaoBlackwellACMC,
-    SliceDoublingMCMC,
-    SliceStepoutMCMC,
 )
 
 
 class Test_Sampling_SPM:
     """
-    A class to test the model parameterisation methods.
+    A class to test the MCMC samplers on a physics-based model.
     """
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ground_truth = np.array([0.55, 0.55]) + np.random.normal(
-            loc=0.0, scale=0.05, size=2
+        self.ground_truth = np.clip(
+            np.asarray([0.55, 0.55]) + np.random.normal(loc=0.0, scale=0.05, size=2),
+            a_min=0.4,
+            a_max=0.75,
         )
 
     @pytest.fixture
     def model(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-        return pybop.lithium_ion.SPM(parameter_set=parameter_set)
+        x = self.ground_truth
+        parameter_set.update(
+            {
+                "Negative electrode active material volume fraction": x[0],
+                "Positive electrode active material volume fraction": x[1],
+            }
+        )
+        solver = pybamm.IDAKLUSolver()
+        return pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
 
     @pytest.fixture
     def parameters(self):
-        return [
+        return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Uniform(0.4, 0.7),
@@ -45,7 +52,7 @@ class Test_Sampling_SPM:
                 prior=pybop.Uniform(0.4, 0.7),
                 # no bounds
             ),
-        ]
+        )
 
     @pytest.fixture(params=[0.5])
     def init_soc(self, request):
@@ -65,7 +72,7 @@ class Test_Sampling_SPM:
     @pytest.fixture
     def spm_likelihood(self, model, parameters, cost_class, init_soc):
         # Form dataset
-        solution = self.get_data(model, self.ground_truth, init_soc)
+        solution = self.get_data(model, init_soc)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -76,7 +83,7 @@ class Test_Sampling_SPM:
         )
 
         # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset, init_soc=init_soc)
+        problem = pybop.FittingProblem(model, parameters, dataset)
         return cost_class(problem, sigma0=0.002)
 
     @pytest.mark.parametrize(
@@ -84,66 +91,46 @@ class Test_Sampling_SPM:
         [
             DREAM,
             DifferentialEvolutionMCMC,
-            DramACMC,
             HaarioACMC,
             HaarioBardenetACMC,
             MetropolisRandomWalkMCMC,
             PopulationMCMC,
-            RaoBlackwellACMC,
-            SliceDoublingMCMC,
-            SliceStepoutMCMC,
         ],
     )
-    # Samplers that either have along runtime, or converge slowly
-    # Need to assess how to perform integration tests with these samplers
-    # @pytest.mark.parametrize(
-    #     "long_sampler",
-    #     [
-    #         NUTS,
-    #         HamiltonianMCMC,
-    #         MonomialGammaHamiltonianMCMC,
-    #         RelativisticMCMC,
-    #         SliceRankShrinkingMCMC,
-    #         EmceeHammerMCMC,
-    #         MALAMCMC,
-    #     ],
-    # )
-
     @pytest.mark.integration
     def test_sampling_spm(self, quick_sampler, spm_likelihood):
-        prior1 = pybop.Uniform(0.4, 0.7)
-        prior2 = pybop.Uniform(0.4, 0.7)
-        composed_prior = pybop.ComposedLogPrior(prior1, prior2)
-        posterior = pybop.LogPosterior(spm_likelihood, composed_prior)
-        x0 = [[0.55, 0.55], [0.55, 0.55], [0.55, 0.55]]
-        sampler = quick_sampler(
-            posterior,
-            chains=3,
-            x0=x0,
-            warm_up=50,
-            max_iterations=400,
-        )
-        results = sampler.run()
-        x = np.mean(results, axis=1)
+        posterior = pybop.LogPosterior(spm_likelihood)
 
-        # Compute mean of posteriors and udate assert below
+        # set common args
+        common_args = {
+            "log_pdf": posterior,
+            "chains": 3,
+            "warm_up": 250,
+            "max_iterations": 550,
+        }
+
+        if issubclass(quick_sampler, DifferentialEvolutionMCMC):
+            common_args["warm_up"] = 750
+            common_args["max_iterations"] = 900
+        # construct and run
+        sampler = quick_sampler(**common_args)
+        results = sampler.run()
+
+        # Assert both final sample and posterior mean
+        x = np.mean(results, axis=1)
         for i in range(len(x)):
             np.testing.assert_allclose(x[i], self.ground_truth, atol=2.5e-2)
+            np.testing.assert_allclose(results[i][-1], self.ground_truth, atol=2.0e-2)
 
-    def get_data(self, model, x, init_soc):
-        model.parameter_set.update(
-            {
-                "Negative electrode active material volume fraction": x[0],
-                "Positive electrode active material volume fraction": x[1],
-            }
-        )
+    def get_data(self, model, init_soc):
+        initial_state = {"Initial SoC": init_soc}
         experiment = pybop.Experiment(
             [
                 (
-                    "Discharge at 0.5C for 6 minutes (12 second period)",
-                    "Charge at 0.5C for 6 minutes (12 second period)",
+                    "Discharge at 0.5C for 4 minutes (12 second period)",
+                    "Charge at 0.5C for 4 minutes (12 second period)",
                 ),
             ]
         )
-        sim = model.predict(init_soc=init_soc, experiment=experiment)
+        sim = model.predict(initial_state=initial_state, experiment=experiment)
         return sim

@@ -1,5 +1,6 @@
 import logging
-from typing import Optional, Union
+from functools import partial
+from typing import Optional
 
 import numpy as np
 from pints import (
@@ -9,7 +10,7 @@ from pints import (
     SingleChainMCMC,
 )
 
-from pybop import BaseCost, BaseSampler
+from pybop import BaseCost, BaseSampler, LogPosterior
 
 
 class BasePintsSampler(BaseSampler):
@@ -23,28 +24,26 @@ class BasePintsSampler(BaseSampler):
 
     def __init__(
         self,
-        log_pdf: Union[BaseCost, list[BaseCost]],
-        chains: int,
+        log_pdf: LogPosterior,
         sampler,
+        chains: int = 1,
         warm_up=None,
         x0=None,
-        cov0=None,
-        transformation=None,
+        cov0=0.1,
         **kwargs,
     ):
         """
         Initialise the base PINTS sampler.
 
         Args:
-            log_pdf (pybop.BaseCost or List[pybop.BaseCost]): The cost distribution(s) to be sampled.
+            log_pdf (pybop.LogPosterior or List[pybop.LogPosterior]): The distribution(s) to be sampled.
             chains (int): Number of chains to be used.
             sampler: The sampler class to be used.
             x0 (list): Initial states for the chains.
             cov0: Initial standard deviation for the chains.
-            transformation: Transformation to be applied to the samples.
             kwargs: Additional keyword arguments.
         """
-        super().__init__(x0, cov0)
+        super().__init__(log_pdf, x0, cov0)
 
         # Set kwargs
         self._max_iterations = kwargs.get("max_iterations", 500)
@@ -56,23 +55,23 @@ class BasePintsSampler(BaseSampler):
         self._evaluation_files = kwargs.get("evaluation_files", None)
         self._parallel = kwargs.get("parallel", False)
         self._verbose = kwargs.get("verbose", False)
-        self.warm_up = warm_up
+        self._iteration = 0
+        self._warm_up = warm_up
         self.n_parameters = (
-            log_pdf[0].n_parameters
-            if isinstance(log_pdf, list)
-            else log_pdf.n_parameters
+            self._log_pdf[0].n_parameters
+            if isinstance(self._log_pdf, list)
+            else self._log_pdf.n_parameters
         )
-        self._transformation = transformation
 
         # Check log_pdf
-        if isinstance(log_pdf, BaseCost):
+        if isinstance(self._log_pdf, BaseCost):
             self._multi_log_pdf = False
         else:
-            if len(log_pdf) != chains:
+            if len(self._log_pdf) != chains:
                 raise ValueError("Number of log pdf's must match number of chains")
 
-            first_pdf_parameters = log_pdf[0].n_parameters
-            for pdf in log_pdf:
+            first_pdf_parameters = self._log_pdf[0].n_parameters
+            for pdf in self._log_pdf:
                 if not isinstance(pdf, BaseCost):
                     raise ValueError("All log pdf's must be instances of BaseCost")
                 if pdf.n_parameters != first_pdf_parameters:
@@ -82,33 +81,27 @@ class BasePintsSampler(BaseSampler):
 
             self._multi_log_pdf = True
 
-        # Transformations
-        if transformation is not None:
-            self._apply_transformation(transformation)
-
-        self._log_pdf = log_pdf
-
         # Number of chains
         self._n_chains = chains
         if self._n_chains < 1:
             raise ValueError("Number of chains must be greater than 0")
 
         # Check initial conditions
-        # len of x0 matching number of chains, number of parameters, etc.
+        if self._x0.size != self.n_parameters:
+            raise ValueError("x0 must have the same number of parameters as log_pdf")
+        if len(self._x0) != self._n_chains or len(self._x0) == 1:
+            self._x0 = np.tile(self._x0, (self._n_chains, 1))
 
         # Single chain vs multiple chain samplers
         self._single_chain = issubclass(sampler, SingleChainMCMC)
 
         # Construct the samplers object
-        try:
-            if self._single_chain:
-                self._n_samplers = self._n_chains
-                self._samplers = [sampler(x0, sigma0=self._cov0) for x0 in self._x0]
-            else:
-                self._n_samplers = 1
-                self._samplers = [sampler(self._n_chains, self._x0, self._cov0)]
-        except Exception as e:
-            raise ValueError(f"Error constructing samplers: {e}") from e
+        if self._single_chain:
+            self._n_samplers = self._n_chains
+            self._samplers = [sampler(x0, sigma0=self._cov0) for x0 in self._x0]
+        else:
+            self._n_samplers = 1
+            self._samplers = [sampler(self._n_chains, self._x0, self._cov0)]
 
         # Check for sensitivities from sampler and set evaluation
         self._needs_sensitivities = self._samplers[0].needs_sensitivities()
@@ -121,10 +114,6 @@ class BasePintsSampler(BaseSampler):
         # Parallelisation (Might be able to move into parent class)
         self._n_workers = 1
         self.set_parallel(self._parallel)
-
-    def _apply_transformation(self, transformation):
-        # TODO: Implement transformation logic (alongside #357)
-        pass
 
     def run(self) -> Optional[np.ndarray]:
         """
@@ -167,7 +156,6 @@ class BasePintsSampler(BaseSampler):
 
         # Initialise iterations and evaluations
         self._iteration = 0
-        self._evaluations = 0
 
         evaluator = self._create_evaluator()
         self._check_initial_phase()
@@ -203,8 +191,8 @@ class BasePintsSampler(BaseSampler):
 
         self._finalise_logging()
 
-        if self.warm_up:
-            self._samples = self._samples[:, self.warm_up :, :]
+        if self._warm_up:
+            self._samples = self._samples[:, self._warm_up :, :]
 
         return self._samples if self._chains_in_memory else None
 
@@ -214,7 +202,9 @@ class BasePintsSampler(BaseSampler):
             reply = self._samplers[i].tell(next(self.fxs_iterator))
             if reply:
                 y, fy, accepted = reply
-                y_store = self._inverse_transform(y)
+                y_store = self._inverse_transform(
+                    y, self._log_pdf[i] if self._multi_log_pdf else self._log_pdf
+                )
                 if self._chains_in_memory:
                     self._samples[i][self._n_samples[i]] = y_store
                 else:
@@ -245,7 +235,9 @@ class BasePintsSampler(BaseSampler):
         self._intermediate_step = reply is None
         if reply:
             ys, fys, accepted = reply
-            ys_store = np.array([self._inverse_transform(y) for y in ys])
+            ys_store = np.asarray(
+                [self._inverse_transform(y, self._log_pdf) for y in ys]
+            )
             if self._chains_in_memory:
                 self._samples[:, self._iteration] = ys_store
             else:
@@ -282,9 +274,9 @@ class BasePintsSampler(BaseSampler):
         # Check for sensitivities from sampler and set evaluator
         if self._needs_sensitivities:
             if not self._multi_log_pdf:
-                f = f.evaluateS1
+                f = partial(f, calculate_grad=True)
             else:
-                f = [pdf.evaluateS1 for pdf in f]
+                f = [partial(pdf, calculate_grad=True) for pdf in f]
 
         if self._parallel:
             if not self._multi_log_pdf:
@@ -296,3 +288,6 @@ class BasePintsSampler(BaseSampler):
                 if not self._multi_log_pdf
                 else MultiSequentialEvaluator(f)
             )
+
+    def _inverse_transform(self, y, log_pdf):
+        return log_pdf.transformation.to_model(y) if log_pdf.transformation else y

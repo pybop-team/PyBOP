@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import scipy.stats as st
 
 import pybop
 
@@ -36,8 +37,8 @@ class TestLogPosterior:
 
     @pytest.fixture
     def dataset(self, model, experiment, ground_truth):
-        model.parameter_set = model.pybamm_model.default_parameter_values
-        model.parameter_set.update(
+        model._parameter_set = model.pybamm_model.default_parameter_values
+        model._parameter_set.update(
             {
                 "Negative electrode active material volume fraction": ground_truth,
             }
@@ -53,7 +54,7 @@ class TestLogPosterior:
 
     @pytest.fixture
     def one_signal_problem(self, model, parameters, dataset):
-        return pybop.FittingProblem(model, parameters, dataset, init_soc=1.0)
+        return pybop.FittingProblem(model, parameters, dataset)
 
     @pytest.fixture
     def likelihood(self, one_signal_problem):
@@ -67,17 +68,13 @@ class TestLogPosterior:
     def test_log_posterior_construction(self, likelihood, prior):
         # Test log posterior construction
         posterior = pybop.LogPosterior(likelihood, prior)
+        keys = likelihood.parameters.keys()
 
         assert posterior._log_likelihood == likelihood
         assert posterior._prior == prior
-
-        # Test log posterior construction without parameters
-        likelihood.problem.parameters.priors = None
-
-        with pytest.raises(
-            ValueError, match="An error occurred when constructing the Prior class:"
-        ):
-            pybop.LogPosterior(likelihood, log_prior=None)
+        assert posterior.parameters[keys[0]] == likelihood.parameters[keys[0]]
+        assert posterior.has_separable_problem == likelihood.has_separable_problem
+        assert posterior.transformation == likelihood.transformation
 
     @pytest.mark.unit
     def test_log_posterior_construction_no_prior(self, likelihood):
@@ -85,7 +82,9 @@ class TestLogPosterior:
         posterior = pybop.LogPosterior(likelihood, None)
 
         assert posterior._prior is not None
-        for i, p in enumerate(posterior._prior):
+        assert isinstance(posterior._prior, pybop.JointLogPrior)
+
+        for i, p in enumerate(posterior._prior._priors):
             assert p == posterior._log_likelihood.problem.parameters.priors()[i]
 
     @pytest.fixture
@@ -96,16 +95,16 @@ class TestLogPosterior:
     def test_log_posterior(self, posterior):
         # Test log posterior
         x = np.array([0.50])
-        assert np.allclose(posterior(x), -3318.34, atol=2e-2)
+        assert np.allclose(posterior(x), 51.5236, atol=2e-2)
 
         # Test log posterior evaluateS1
-        p, dp = posterior.evaluateS1(x)
-        assert np.allclose(p, -3318.34, atol=2e-2)
-        assert np.allclose(dp, -1736.05, atol=2e-2)
+        p, dp = posterior(x, calculate_grad=True)
+        assert np.allclose(p, 51.5236, atol=2e-2)
+        assert np.allclose(dp, 2.0, atol=2e-2)
 
         # Get log likelihood and log prior
-        likelihood = posterior.likelihood()
-        prior = posterior.prior()
+        likelihood = posterior.likelihood
+        prior = posterior.prior
 
         assert likelihood == posterior._log_likelihood
         assert prior == posterior._prior
@@ -117,7 +116,16 @@ class TestLogPosterior:
     @pytest.mark.unit
     def test_log_posterior_inf(self, posterior_uniform_prior):
         # Test prior np.inf
-        p1 = posterior_uniform_prior([1])
-        p2, _ = posterior_uniform_prior.evaluateS1([1])
-        assert p1 == -np.inf
-        assert p2 == -np.inf
+        assert not np.isfinite(posterior_uniform_prior([1]))
+        assert not np.isfinite(posterior_uniform_prior([1], calculate_grad=True)[0])
+
+    @pytest.mark.unit
+    def test_non_logpdfS1_prior(self, likelihood):
+        # Scipy distribution
+        prior = st.norm(0.8, 0.01)
+        posterior = pybop.LogPosterior(likelihood, log_prior=prior)
+        p, dp = posterior([0.6], calculate_grad=True)
+
+        # Assert to PyBOP.Gaussian
+        p2, dp2 = pybop.Gaussian(0.8, 0.01).logpdfS1(0.6)
+        np.testing.assert_allclose(dp, dp2, atol=2e-3)

@@ -21,7 +21,7 @@ pip install -e .[all,dev]
 
 Before you commit any code, please perform the following checks using [Nox](https://nox.thea.codes/en/stable/index.html):
 
-- [All tests pass](#testing): `$ nox -s unit`
+- [All tests pass](#testing): `$ nox -s quick`
 
 ### Installing and using pre-commit
 
@@ -83,16 +83,20 @@ PyBOP follows the [PEP8 recommendations](https://www.python.org/dev/peps/pep-000
 
 ### Ruff
 
-We use [ruff](https://github.com/charliermarsh/ruff) to check our PEP8 adherence. To try this on your system, navigate to the PyBOP directory in a console and type
+We use [ruff](https://github.com/charliermarsh/ruff) to lint and ensure adherence to Python PEP standards. To manually trigger `ruff`, navigate to the PyBOP directory in a console and type
 
 ```bash
 python -m pip install pre-commit
 pre-commit run ruff
 ```
 
-ruff is configured inside the file `pre-commit-config.yaml`, allowing us to ignore some errors. If you think this should be added or removed, please submit an [issue](https://guides.github.com/features/issues/).
+ruff is configured inside the file `pyproject.toml`, allowing us to ignore some errors. If you think a rule should be added or removed, please submit an [issue](https://guides.github.com/features/issues/).
 
-When you commit your changes they will be checked against ruff automatically (see [Pre-commit checks](#pre-commit-checks)).
+When you commit your changes they will be checked against ruff automatically (see [Pre-commit checks](#pre-commit-checks)). If you are having issues getting your commit to pass the linting, it
+is possible to skip linting for single lines (this should only be done as a **last resort**) by adding a line comment of `#noqa: $ruff_rule` where the `$ruff_rule` is replaced with the rule in question.
+It is also possible to skip linting altogether by committing your changes by using the
+`--no-verify` command-line flag.
+These rules can be found in the ruff configuration in `pyproject.toml` or in the failed pre-commit output. Please note the lint skipping in the pull request for reviewers.
 
 ### Naming
 
@@ -158,16 +162,24 @@ If you have nox installed, to run unit tests, type
 nox -s unit
 ```
 
-Alternatively, to run tests standalone with pytest, run,
+For individual tests, use:
+
+```bash
+nox -s tests -- tests/unit/test_costs.py::TestCosts::test_costs
+```
+
+which will run the specified test, alternatively you can run all tests within a file by removing the trailing `::test_costs` in the above command.
+
+Alternatively, to run tests standalone with pytest, use:
 
 ```bash
 pytest --unit -v
 ```
 
-To run individual test files, you can use
+To run individual test files with nox, you can use
 
 ```bash
-pytest tests/unit/path/to/test --unit -v
+pytest tests/unit/path/to/test.py --unit -v
 ```
 
 And for individual tests,

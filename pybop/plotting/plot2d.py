@@ -1,17 +1,18 @@
-import sys
 import warnings
+from functools import partial
 from typing import Union
 
 import numpy as np
 from scipy.interpolate import griddata
 
-from pybop import BaseOptimiser, Optimisation, PlotlyManager
+from pybop import BaseCost, BaseOptimiser, Optimisation, PlotlyManager
 
 
 def plot2d(
-    cost_or_optim,
+    call_object: Union[BaseCost, BaseOptimiser],
     gradient: bool = False,
     bounds: Union[np.ndarray, None] = None,
+    apply_transform: bool = False,
     steps: int = 10,
     show: bool = True,
     use_optim_log: bool = False,
@@ -25,7 +26,7 @@ def plot2d(
 
     Parameters
     ----------
-    cost_or_optim : a callable cost function, pybop Cost or Optimisation object
+    call_object : Union([pybop.BaseCost,pybop.BaseOptimiser, pybop.BasePrior])
         Either:
         - the cost function to be evaluated. Must accept a list of parameter values and return a cost value.
         - an Optimisation object which provides a specific optimisation trace overlaid on the cost landscape.
@@ -55,21 +56,24 @@ def plot2d(
     ValueError
         If the cost function does not return a valid cost when called with a parameter list.
     """
+    plot_optim = False
+    cost = cost_call = call_object
 
     # Assign input as a cost or optimisation object
-    if isinstance(cost_or_optim, (BaseOptimiser, Optimisation)):
-        optim = cost_or_optim
+    if isinstance(call_object, (BaseOptimiser, Optimisation)):
         plot_optim = True
+        optim = call_object
         cost = optim.cost
-    else:
-        cost = cost_or_optim
-        plot_optim = False
+        cost_call = partial(optim.cost, apply_transform=apply_transform)
+    elif isinstance(call_object, BaseCost):
+        cost = call_object
+        cost_call = partial(cost, apply_transform=apply_transform)
 
-    if len(cost.parameters) < 2:
+    if isinstance(cost, BaseCost) and len(cost.parameters) < 2:
         raise ValueError("This cost function takes fewer than 2 parameters.")
 
     additional_values = []
-    if len(cost.parameters) > 2:
+    if isinstance(cost, BaseCost) and len(cost.parameters) > 2:
         warnings.warn(
             "This cost function requires more than 2 parameters. "
             "Plotting in 2d with fixed values for the additional parameters.",
@@ -86,7 +90,7 @@ def plot2d(
 
     # Set up parameter bounds
     if bounds is None:
-        bounds = cost.parameters.get_bounds_for_plotly()
+        bounds = cost.parameters.get_bounds_for_plotly(apply_transform=apply_transform)
 
     # Generate grid
     x = np.linspace(bounds[0, 0], bounds[0, 1], steps)
@@ -98,22 +102,28 @@ def plot2d(
     # Populate cost matrix
     for i, xi in enumerate(x):
         for j, yj in enumerate(y):
-            costs[j, i] = cost(np.asarray([xi, yj] + additional_values))
+            costs[j, i] = cost_call(
+                np.asarray([xi, yj] + additional_values),
+            )
 
     if gradient:
         grad_parameter_costs = []
 
-        # Determine the number of gradient outputs from cost.evaluateS1
+        # Determine the number of gradient outputs from cost.compute
         num_gradients = len(
-            cost.evaluateS1(np.asarray([x[0], y[0]] + additional_values))[1]
+            cost_call(
+                np.asarray([x[0], y[0]] + additional_values),
+                calculate_grad=True,
+            )[1]
         )
 
         # Create an array to hold each gradient output & populate
         grads = [np.zeros((len(y), len(x))) for _ in range(num_gradients)]
         for i, xi in enumerate(x):
             for j, yj in enumerate(y):
-                (*current_grads,) = cost.evaluateS1(
-                    np.asarray([xi, yj] + additional_values)
+                (*current_grads,) = cost_call(
+                    np.asarray([xi, yj] + additional_values),
+                    calculate_grad=True,
                 )[1]
                 for k, grad_output in enumerate(current_grads):
                     grads[k][j, i] = grad_output
@@ -149,8 +159,8 @@ def plot2d(
         title_y=0.9,
         width=600,
         height=600,
-        xaxis=dict(range=bounds[0]),
-        yaxis=dict(range=bounds[1]),
+        xaxis=dict(range=bounds[0], showexponent="last", exponentformat="e"),
+        yaxis=dict(range=bounds[1], showexponent="last", exponentformat="e"),
     )
     if hasattr(cost, "parameters"):
         name = cost.parameters.keys()
@@ -204,9 +214,7 @@ def plot2d(
 
     # Update the layout and display the figure
     fig.update_layout(**layout_kwargs)
-    if "ipykernel" in sys.modules and show:
-        fig.show("svg")
-    elif show:
+    if show:
         fig.show()
 
     if gradient:
@@ -225,9 +233,7 @@ def plot2d(
             )
             grad_fig.update_layout(**layout_kwargs)
 
-            if "ipykernel" in sys.modules and show:
-                grad_fig.show("svg")
-            elif show:
+            if show:
                 grad_fig.show()
 
             # append grad_fig to list

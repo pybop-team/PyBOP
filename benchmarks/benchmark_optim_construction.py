@@ -28,7 +28,7 @@ class BenchmarkOptimisationConstruction:
         model_instance = model(parameter_set=pybop.ParameterSet.pybamm(parameter_set))
 
         # Define fitting parameters
-        parameters = [
+        parameters = pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.6, 0.02),
@@ -41,7 +41,7 @@ class BenchmarkOptimisationConstruction:
                 bounds=[0.375, 0.625],
                 initial_value=0.51,
             ),
-        ]
+        )
 
         # Generate synthetic data
         sigma = 0.001
@@ -75,7 +75,7 @@ class BenchmarkOptimisationConstruction:
         Args:
             model (pybop.Model): The model class being benchmarked.
             parameter_set (str): The name of the parameter set being used.
-            optimiser (pybop.Optimiser): The optimizer class being used.
+            optimiser (pybop.Optimiser): The optimiser class being used.
         """
         self.optim = pybop.Optimisation(self.cost, optimiser=optimiser)
 
@@ -86,6 +86,6 @@ class BenchmarkOptimisationConstruction:
         Args:
             model (pybop.Model): The model class being benchmarked.
             parameter_set (str): The name of the parameter set being used.
-            optimiser (pybop.Optimiser): The optimizer class being used.
+            optimiser (pybop.Optimiser): The optimiser class being used.
         """
         self.cost([0.63, 0.51])

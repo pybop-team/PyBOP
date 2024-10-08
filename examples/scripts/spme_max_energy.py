@@ -9,12 +9,6 @@ import pybop
 # electrode widths, particle radii, volume fractions and
 # separator width.
 
-# NOTE: This script can be easily adjusted to consider the volumetric
-# (instead of gravimetric) energy density by changing the line which
-# defines the cost and changing the output to:
-# print(f"Initial volumetric energy density: {cost(optim.x0):.2f} Wh.m-3")
-# print(f"Optimised volumetric energy density: {final_cost:.2f} Wh.m-3")
-
 # Define parameter set and model
 parameter_set = pybop.ParameterSet.pybamm("Chen2020", formation_concentrations=True)
 model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
@@ -37,31 +31,36 @@ parameters = pybop.Parameters(
 experiment = pybop.Experiment(
     ["Discharge at 1C until 2.5 V (5 seconds period)"],
 )
-init_soc = 1  # start from full charge
 signal = ["Voltage [V]", "Current [A]"]
 
 # Generate problem
 problem = pybop.DesignProblem(
-    model, parameters, experiment, signal=signal, init_soc=init_soc
+    model,
+    parameters,
+    experiment,
+    signal=signal,
+    initial_state={"Initial SoC": 1.0},
+    update_capacity=True,
 )
 
-# Generate cost function and optimisation class:
-cost = pybop.GravimetricEnergyDensity(problem)
-optim = pybop.PSO(
-    cost, verbose=True, allow_infeasible_solutions=False, max_iterations=15
-)
+# Generate multiple cost functions and combine them
+cost1 = pybop.GravimetricEnergyDensity(problem)
+cost2 = pybop.VolumetricEnergyDensity(problem)
+cost = pybop.WeightedCost(cost1, cost2, weights=[1, 1e-3])
 
 # Run optimisation
+optim = pybop.PSO(
+    cost, verbose=True, allow_infeasible_solutions=False, max_iterations=10
+)
 x, final_cost = optim.run()
 print("Estimated parameters:", x)
-print(f"Initial gravimetric energy density: {cost(optim.x0):.2f} Wh.kg-1")
-print(f"Optimised gravimetric energy density: {final_cost:.2f} Wh.kg-1")
+print(f"Initial gravimetric energy density: {cost1(optim.x0):.2f} Wh.kg-1")
+print(f"Optimised gravimetric energy density: {cost1(x):.2f} Wh.kg-1")
+print(f"Initial volumetric energy density: {cost2(optim.x0):.2f} Wh.m-3")
+print(f"Optimised volumetric energy density: {cost2(x):.2f} Wh.m-3")
 
 # Plot the timeseries output
-if cost.update_capacity:
-    problem._model.approximate_capacity(x)
 pybop.quick_plot(problem, problem_inputs=x, title="Optimised Comparison")
 
 # Plot the cost landscape with optimisation path
-if len(x) == 2:
-    pybop.plot2d(optim, steps=3)
+pybop.plot2d(optim, steps=5)

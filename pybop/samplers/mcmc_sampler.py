@@ -43,12 +43,7 @@ class MCMCSampler:
             If the sampler could not be constructed due to an exception.
         """
 
-        try:
-            self.sampler = sampler(log_pdf, chains, x0=x0, sigma0=cov0, **kwargs)
-        except Exception as e:
-            raise ValueError(
-                f"Sampler could not be constructed, raised an exception: {e}"
-            ) from e
+        self.sampler = sampler(log_pdf, chains, x0=x0, sigma0=cov0, **kwargs)
 
     def run(self):
         """

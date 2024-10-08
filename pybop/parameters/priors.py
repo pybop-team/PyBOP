@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 import scipy.stats as stats
 
@@ -136,42 +138,10 @@ class BasePrior:
         float
             The value(s) of the distribution at x.
         """
-        return self.evaluate(x)
-
-    def evaluate(self, x):
-        """
-        Evaluates the distribution at x.
-
-        Parameters
-        ----------
-        x : float
-            The point(s) at which to evaluate the distribution.
-
-        Returns
-        -------
-        float
-            The value(s) of the distribution at x.
-        """
         inputs = self.verify(x)
-        return self._evaluate(inputs)
+        return self.logpdf(inputs)
 
-    def _evaluate(self, x):
-        """
-        Evaluates the distribution at x.
-
-        Parameters
-        ----------
-        x : float
-            The point(s) at which to evaluate the distribution.
-
-        Returns
-        -------
-        float
-            The value(s) of the distribution at x.
-        """
-        return self.logpdf(x)
-
-    def evaluateS1(self, x):
+    def logpdfS1(self, x):
         """
         Evaluates the first derivative of the distribution at x.
 
@@ -186,9 +156,9 @@ class BasePrior:
             The value(s) of the first derivative at x.
         """
         inputs = self.verify(x)
-        return self._evaluateS1(inputs)
+        return self._logpdfS1(inputs)
 
-    def _evaluateS1(self, x):
+    def _logpdfS1(self, x):
         """
         Evaluates the first derivative of the distribution at x.
 
@@ -244,10 +214,6 @@ class BasePrior:
         """
         return self.scale
 
-    @property
-    def n_parameters(self):
-        return self._n_parameters
-
 
 class Gaussian(BasePrior):
     """
@@ -265,6 +231,7 @@ class Gaussian(BasePrior):
     """
 
     def __init__(self, mean, sigma, random_state=None):
+        super().__init__()
         self.name = "Gaussian"
         self.loc = mean
         self.scale = sigma
@@ -274,7 +241,7 @@ class Gaussian(BasePrior):
         self._multip = -1 / (2.0 * self.sigma2)
         self._n_parameters = 1
 
-    def _evaluateS1(self, x):
+    def _logpdfS1(self, x):
         """
         Evaluates the first derivative of the gaussian (log) distribution at x.
 
@@ -288,9 +255,7 @@ class Gaussian(BasePrior):
         float
             The value(s) of the first derivative at x.
         """
-        if not isinstance(x, np.ndarray):
-            x = np.asarray(x)
-        return self(x), -(x - self.loc) * self._multip
+        return self.__call__(x), -(x - self.loc) * self._multip
 
 
 class Uniform(BasePrior):
@@ -309,6 +274,7 @@ class Uniform(BasePrior):
     """
 
     def __init__(self, lower, upper, random_state=None):
+        super().__init__()
         self.name = "Uniform"
         self.lower = lower
         self.upper = upper
@@ -317,7 +283,7 @@ class Uniform(BasePrior):
         self.prior = stats.uniform
         self._n_parameters = 1
 
-    def _evaluateS1(self, x):
+    def _logpdfS1(self, x):
         """
         Evaluates the first derivative of the log uniform distribution at x.
 
@@ -364,13 +330,14 @@ class Exponential(BasePrior):
     """
 
     def __init__(self, scale, loc=0, random_state=None):
+        super().__init__()
         self.name = "Exponential"
         self.loc = loc
         self.scale = scale
         self.prior = stats.expon
         self._n_parameters = 1
 
-    def _evaluateS1(self, x):
+    def _logpdfS1(self, x):
         """
         Evaluates the first derivative of the log exponential distribution at x.
 
@@ -389,66 +356,80 @@ class Exponential(BasePrior):
         return log_pdf, dlog_pdf
 
 
-class ComposedLogPrior(BasePrior):
+class JointLogPrior(BasePrior):
     """
-    Represents a composition of multiple prior distributions.
+    Represents a joint prior distribution composed of multiple prior distributions.
+
+    Parameters
+    ----------
+    priors : BasePrior
+        One or more prior distributions to combine into a joint distribution.
     """
 
-    def __init__(self, *priors):
-        self._priors = priors
-        for prior in priors:
-            if not isinstance(prior, BasePrior):
-                raise ValueError("All priors must be instances of BasePrior")
+    def __init__(self, *priors: BasePrior):
+        super().__init__()
 
-        self._n_parameters = len(priors)  # Needs to be updated
+        if not all(isinstance(prior, BasePrior) for prior in priors):
+            raise ValueError("All priors must be instances of BasePrior")
 
-    def _evaluate(self, x):
+        self._n_parameters = len(priors)
+        self._priors: list[BasePrior] = list(priors)
+
+    def logpdf(self, x: Union[float, np.ndarray]) -> float:
         """
-        Evaluates the composed prior distribution at x.
+        Evaluates the joint log-prior distribution at a given point.
 
         Parameters
         ----------
-        x : float
-            The point(s) at which to evaluate the distribution.
+        x : Union[float, np.ndarray]
+            The point(s) at which to evaluate the distribution. The length of `x`
+            should match the total number of parameters in the joint distribution.
 
         Returns
         -------
         float
-            The value(s) of the distribution at x.
+            The joint log-probability density of the distribution at `x`.
         """
+        if len(x) != self._n_parameters:
+            raise ValueError(
+                f"Input x must have length {self._n_parameters}, got {len(x)}"
+            )
+
         return sum(prior(x) for prior, x in zip(self._priors, x))
 
-    def _evaluateS1(self, x):
+    def _logpdfS1(self, x: Union[float, np.ndarray]) -> tuple[float, np.ndarray]:
         """
-        Evaluates the first derivative of the composed prior distribution at x.
-        Inspired by PINTS implementation.
-
-        *This method only works if the underlying :class:`LogPrior` classes all
-        implement the optional method :class:`LogPDF.evaluateS1().`.*
+        Evaluates the first derivative of the joint log-prior distribution at a given point.
 
         Parameters
         ----------
-        x : float
-            The point(s) at which to evaluate the first derivative.
+        x : Union[float, np.ndarray]
+            The point(s) at which to evaluate the first derivative. The length of `x`
+            should match the total number of parameters in the joint distribution.
 
         Returns
         -------
-        float
-            The value(s) of the first derivative at x.
+        Tuple[float, np.ndarray]
+            A tuple containing the log-probability density and its first derivative at `x`.
         """
-        output = 0
-        doutput = np.zeros(self.n_parameters)
-        index = 0
+        if len(x) != self._n_parameters:
+            raise ValueError(
+                f"Input x must have length {self._n_parameters}, got {len(x)}"
+            )
 
-        for prior in self._priors:
-            num_params = prior.n_parameters
-            x_subset = x[index : index + num_params]
-            p, dp = prior.evaluateS1(x_subset)
-            output += p
-            doutput[index : index + num_params] = dp
-            index += num_params
+        log_probs = []
+        derivatives = []
+
+        for prior, xi in zip(self._priors, x):
+            p, dp = prior.logpdfS1(xi)
+            log_probs.append(p)
+            derivatives.append(dp)
+
+        output = sum(log_probs)
+        doutput = np.array(derivatives)
 
         return output, doutput
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}, priors: {self._priors}"
+    def __repr__(self) -> str:
+        priors_repr = ", ".join([repr(prior) for prior in self._priors])
+        return f"{self.__class__.__name__}(priors: [{priors_repr}])"
