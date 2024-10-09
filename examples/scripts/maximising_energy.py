@@ -3,8 +3,8 @@ import pybop
 # A design optimisation example loosely based on work by L.D. Couto
 # available at https://doi.org/10.1016/j.energy.2022.125966.
 
-# The target is to maximise the gravimetric energy density over a
-# range of possible design parameter values, including for example:
+# The target is to maximise the energy density over a range of
+# possible design parameter values, including for example:
 # cross-sectional area = height x width (only need change one)
 # electrode widths, particle radii, volume fractions and
 # separator width.
@@ -29,7 +29,10 @@ parameters = pybop.Parameters(
 
 # Define test protocol
 experiment = pybop.Experiment(
-    ["Discharge at 1C until 2.5 V (5 seconds period)"],
+    [
+        "Discharge at 1C until 2.5 V (5 seconds period)",
+        "Hold at 2.5 V for 30 minutes or until 10 mA (5 seconds period)",
+    ],
 )
 signal = ["Voltage [V]", "Current [A]"]
 
@@ -63,4 +66,4 @@ print(f"Optimised volumetric energy density: {cost2(x):.2f} Wh.m-3")
 pybop.quick_plot(problem, problem_inputs=x, title="Optimised Comparison")
 
 # Plot the cost landscape with optimisation path
-pybop.plot2d(optim, steps=5)
+pybop.plot2d(optim, steps=15)
