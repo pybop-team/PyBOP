@@ -59,4 +59,4 @@ print(f"Optimised discharge rate: {x[-1]:.2f} A = {x[-1]/nominal_capacity:.2f} C
 pybop.quick_plot(problem, problem_inputs=x, title="Optimised Comparison")
 
 # Plot the cost landscape with optimisation path
-pybop.plot2d(optim, steps=15)
+pybop.plot2d(optim, steps=5)

@@ -66,4 +66,4 @@ print(f"Optimised volumetric energy density: {cost2(x):.2f} Wh.m-3")
 pybop.quick_plot(problem, problem_inputs=x, title="Optimised Comparison")
 
 # Plot the cost landscape with optimisation path
-pybop.plot2d(optim, steps=15)
+pybop.plot2d(optim, steps=5)
