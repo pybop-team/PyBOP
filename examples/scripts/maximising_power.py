@@ -39,8 +39,8 @@ problem = pybop.DesignProblem(
 )
 
 # Generate multiple cost functions and combine them
-cost1 = pybop.GravimetricPowerDensity(problem, target_time=3600/target_c_rate)
-cost2 = pybop.VolumetricPowerDensity(problem, target_time=3600/target_c_rate)
+cost1 = pybop.GravimetricPowerDensity(problem, target_time=3600 / target_c_rate)
+cost2 = pybop.VolumetricPowerDensity(problem, target_time=3600 / target_c_rate)
 cost = pybop.WeightedCost(cost1, cost2, weights=[1, 1e-3])
 
 # Run optimisation
