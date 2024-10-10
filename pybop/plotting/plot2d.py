@@ -141,7 +141,7 @@ def plot2d(
         parameter_log = np.asarray(optim.log["x_best"])
         flat_x = np.concatenate((flat_x, parameter_log[:, 0]))
         flat_y = np.concatenate((flat_y, parameter_log[:, 1]))
-        flat_costs = np.concatenate((flat_costs, optim.log["cost"]))
+        flat_costs = np.concatenate((flat_costs, optim.log["cost_best"]))
 
         # Order the parameter values and estimate the cost using interpolation
         x = np.unique(flat_x)
@@ -175,9 +175,7 @@ def plot2d(
 
     if plot_optim:
         # Plot the optimisation trace
-        optim_trace = np.asarray(
-            [item[:2] for sublist in optim.log["x"] for item in sublist]
-        )
+        optim_trace = np.asarray([item[:2] for item in optim.log["x"]])
         optim_trace = optim_trace.reshape(-1, 2)
         fig.add_trace(
             go.Scatter(

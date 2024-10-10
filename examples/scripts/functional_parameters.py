@@ -78,7 +78,7 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.RootMeanSquaredError(problem)
-optim = pybop.SciPyMinimize(cost, max_iterations=125)
+optim = pybop.SciPyMinimize(cost, sigma0=0.1, max_iterations=125)
 
 # Run optimisation
 x, final_cost = optim.run()

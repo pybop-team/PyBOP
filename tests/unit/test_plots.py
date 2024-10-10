@@ -137,6 +137,9 @@ class TestPlots:
         # Plot gradient cost landscape
         pybop.plot2d(optim, gradient=True, steps=5)
 
+        # Plot voronoi
+        pybop.plot_voronoi2d(optim)
+
     @pytest.mark.unit
     def test_with_ipykernel(self, dataset, cost, optim):
         import ipykernel

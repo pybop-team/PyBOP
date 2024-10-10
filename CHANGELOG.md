@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#531](https://github.com/pybop-team/PyBOP/pull/531) - Adds Voronoi 2d cost landscape plot (`pybop.plot_voronoi2d`) for fast optimiser aligned cost visualisation.
 - [#529](https://github.com/pybop-team/PyBOP/issues/529) - Adds `GravimetricPowerDensity` and `VolumetricPowerDensity` costs, along with the mathjax extension for Sphinx.
 
 ## Optimisations
