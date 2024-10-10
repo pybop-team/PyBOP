@@ -101,18 +101,6 @@ class DesignProblem(BaseProblem):
 
         self.initial_state = initial_state
 
-    def update_linked_parameters(self, parameter_set: None):
-        """
-        A placeholder function that may be overwritten by the user in order to
-        update model parameters as a function of the optimisation parameters.
-
-        Parameters
-        ----------
-        parameter_set : pybamm.ParameterValues
-            A PyBaMM parameter set containing standard lithium ion parameters.
-        """
-        pass
-
     def update_parameter_set(self, inputs: Inputs):
         """
         Update any linked parameters in the active parameter set.
