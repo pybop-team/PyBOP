@@ -36,6 +36,7 @@ class GravimetricEnergyDensity(DesignCost):
     in the optimiser settings.
 
     The gravimetric energy density [Wh.kg-1] is calculated as
+
     .. math::
         \\frac{1}{3600 m} \\int_{t=0}^{t=T} I(t) V(t) \\mathrm{d}t
 
@@ -93,6 +94,7 @@ class VolumetricEnergyDensity(DesignCost):
     settings.
 
     The volumetric energy density [Wh.m-3] is calculated as
+
     .. math::
         \\frac{1}{3600 v} \\int_{t=0}^{t=T} I(t) V(t) \\mathrm{d}t
 
@@ -150,6 +152,7 @@ class GravimetricPowerDensity(DesignCost):
     optimiser settings.
 
     The time-averaged gravimetric power density [W.kg-1] is calculated as
+
     .. math::
         \\frac{1}{3600 m T} \\int_{t=0}^{t=T} I(t) V(t) \\mathrm{d}t
 
@@ -212,6 +215,7 @@ class VolumetricPowerDensity(DesignCost):
     density is achieved by setting minimising = False in the optimiser settings.
 
     The time-averaged volumetric power density [W.m-3] is calculated as
+
     .. math::
         \\frac{1}{3600 v T} \\int_{t=0}^{t=T} I(t) V(t) \\mathrm{d}t
 
