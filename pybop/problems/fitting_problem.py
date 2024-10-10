@@ -101,11 +101,7 @@ class FittingProblem(BaseProblem):
 
         self.initial_state = initial_state
 
-    def evaluate(
-        self,
-        inputs: Inputs,
-        update_capacity=False,
-    ) -> dict[str, np.ndarray[np.float64]]:
+    def evaluate(self, inputs: Inputs) -> dict[str, np.ndarray[np.float64]]:
         """
         Evaluate the model with the given parameters and return the signal.
 
@@ -121,7 +117,7 @@ class FittingProblem(BaseProblem):
         """
         inputs = self.parameters.verify(inputs)
         if self.eis:
-            return self._evaluateEIS(inputs, update_capacity=update_capacity)
+            return self._evaluateEIS(inputs)
         else:
             try:
                 sol = self._model.simulate(
@@ -139,9 +135,7 @@ class FittingProblem(BaseProblem):
                 for signal in (self.signal + self.additional_variables)
             }
 
-    def _evaluateEIS(
-        self, inputs: Inputs, update_capacity=False
-    ) -> dict[str, np.ndarray[np.float64]]:
+    def _evaluateEIS(self, inputs: Inputs) -> dict[str, np.ndarray[np.float64]]:
         """
         Evaluate the model with the given parameters and return the signal.
 
