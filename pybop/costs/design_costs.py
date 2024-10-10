@@ -30,10 +30,18 @@ class DesignCost(BaseCost):
 
 class GravimetricEnergyDensity(DesignCost):
     """
-    Represents the gravimetric energy density of a battery cell, calculated based
-    on a normalised discharge from upper to lower voltage limits. The goal is to
-    maximise the energy density, which is achieved by setting minimising = False
+    Calculates the gravimetric energy density (specific energy) of a battery cell,
+    when applied to a normalised discharge from upper to lower voltage limits. The
+    goal of maximising the energy density is achieved by setting minimising = False
     in the optimiser settings.
+
+    The gravimetric energy density [Wh.kg-1] is calculated as
+    $$
+    \displaystyle \frac{1}{3600 m} \int_{t=0}^{t=T} I(t) V(t) dt
+    $$
+    where $m$ is the cell mass, $t$ is the time, $T$ is the total time, $I$ is the
+    current and $V$ is the voltage. The factor of 1/3600 is included to convert
+    from seconds to hours.
 
     Inherits all parameters and attributes from ``DesignCost``.
     """
@@ -79,10 +87,18 @@ class GravimetricEnergyDensity(DesignCost):
 
 class VolumetricEnergyDensity(DesignCost):
     """
-    Represents the volumetric energy density of a battery cell, calculated based
-    on a normalised discharge from upper to lower voltage limits. The goal is to
-    maximise the energy density, which is achieved by setting minimising = False
-    in the optimiser settings.
+    Calculates the (volumetric) energy density of a battery cell, when applied to a
+    normalised discharge from upper to lower voltage limits. The goal of maximising
+    the energy density is achieved by setting minimising = False in the optimiser
+    settings.
+
+    The volumetric energy density [Wh.m-3] is calculated as
+    $$
+    \displaystyle \frac{1}{3600 v} \int_{t=0}^{t=T} I(t) V(t) dt
+    $$
+    where $v$ is the cell volume, $t$ is the time, $T$ is the total time, $I$ is
+    the current and $V$ is the voltage. The factor of 1/3600 is included to convert
+    from seconds to hours.
 
     Inherits all parameters and attributes from ``DesignCost``.
     """
@@ -128,10 +144,18 @@ class VolumetricEnergyDensity(DesignCost):
 
 class GravimetricPowerDensity(DesignCost):
     """
-    Represents the gravimetric power density of a battery cell, calculated based
-    on a normalised discharge from upper to lower voltage limits. The goal is to
-    maximise the power density, which is achieved by setting minimising = False
-    in the optimiser settings.
+    Calculates the gravimetric power density (specific power) of a battery cell,
+    when applied to a discharge from upper to lower voltage limits. The goal of
+    maximising the power density is achieved by setting minimising = False in the
+    optimiser settings.
+
+    The time-averaged gravimetric power density [W.kg-1] is calculated as
+    $$
+    \displaystyle \frac{1}{3600 m T} \int_{t=0}^{t=T} I(t) V(t) dt
+    $$
+    where $m$ is the cell mass, $t$ is the time, $T$ is the total time, $I$ is the
+    current and $V$ is the voltage. The factor of 1/3600 is included to convert
+    from seconds to hours.
 
     Inherits all parameters and attributes from ``DesignCost``.
 
@@ -183,10 +207,17 @@ class GravimetricPowerDensity(DesignCost):
 
 class VolumetricPowerDensity(DesignCost):
     """
-    Represents the volumetric power density of a battery cell, calculated based
-    on a normalised discharge from upper to lower voltage limits. The goal is to
-    maximise the power density, which is achieved by setting minimising = False
-    in the optimiser settings.
+    Calculates the (volumetric) power density of a battery cell, when applied to a
+    discharge from upper to lower voltage limits. The goal of maximising the power
+    density is achieved by setting minimising = False in the optimiser settings.
+
+    The time-averaged volumetric power density [W.m-3] is calculated as
+    $$
+    \displaystyle \frac{1}{3600 v T} \int_{t=0}^{t=T} I(t) V(t) dt
+    $$
+    where $v$ is the cell volume, $t$ is the time, $T$ is the total time, $I$ is
+    the current and $V$ is the voltage. The factor of 1/3600 is included to convert
+    from seconds to hours.
 
     Inherits all parameters and attributes from ``DesignCost``.
 
