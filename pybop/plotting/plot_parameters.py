@@ -24,24 +24,8 @@ def plot_parameters(optim, show=True, **layout_kwargs):
 
     # Extract parameters and log from the optimisation object
     parameters = optim.cost.parameters
-    log = optim.log["x"]
-
-    # Create a list of sequential integers for the x-axis
-    x = list(range(1, len(log[0]) * len(log) + 1))
-
-    # Determine the number of elements in the smallest arrays
-    num_elements = len(log[0][0])
-
-    # Initialize a list of lists to store our columns
-    y = [[] for _ in range(num_elements)]
-
-    # Loop through each numpy array in y
-    for array in log:
-        # Loop through each item (which is a n-element array) in the numpy array
-        for item in array:
-            # Loop through each element in the item and append to the corresponding column
-            for i in range(num_elements):
-                y[i].append(item[i])
+    x = list(range(len(optim.log["x"])))
+    y = [list(item) for item in zip(*optim.log["x"])]
 
     # Create lists of axis titles and trace names
     axis_titles = []

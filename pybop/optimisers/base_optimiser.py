@@ -208,27 +208,42 @@ class BaseOptimiser:
         x : list or array-like, optional
             Parameter values (default: None).
         x_best : list or array-like, optional
-            Paraneter values corresponding to the best cost yet (default: None).
-        cost : float, optional
+            Parameter values corresponding to the best cost yet (default: None).
+        cost : list, optional
             Cost value (default: None).
         """
-        if x is not None:
+
+        def convert_to_list(array_like):
+            """Helper function to convert input to a list, if necessary."""
+            if isinstance(array_like, (list, tuple, np.ndarray)):
+                return list(array_like)
+            elif isinstance(array_like, (int, float)):
+                return [array_like]
+            else:
+                raise TypeError("Input must be a list, tuple, or numpy array")
+
+        def apply_transformation(values):
+            """Apply transformation if it exists."""
             if self._transformation:
-                x = list(x)
-                for i, xi in enumerate(x):
-                    x[i] = self._transformation.to_model(xi)
-            self.log["x"].append(x)
+                return [self._transformation.to_model(value) for value in values]
+            return values
+
+        if x is not None:
+            x = convert_to_list(x)
+            x = apply_transformation(x)
+            self.log["x"].extend(x)
 
         if x_best is not None:
-            if self._transformation:
-                x_best = list(x_best)
-                for i, xi in enumerate(x_best):
-                    x_best[i] = self._transformation.to_model(xi)
-            self.log["x_best"].append(x_best)
+            x_best = convert_to_list(x_best)
+            x_best = apply_transformation(x_best)
+            self.log["x_best"].extend([x_best])
 
         if cost is not None:
+            cost = convert_to_list(cost)
             self.log["cost"].extend(cost)
+
         if cost_best is not None:
+            cost_best = convert_to_list(cost_best)
             self.log["cost_best"].extend(cost_best)
 
     def check_optimal_parameters(self, x):

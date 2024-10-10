@@ -167,11 +167,11 @@ class SciPyMinimize(BaseSciPyOptimiser):
             if np.isinf(cost):
                 self.inf_count += 1
                 cost = 1 + 0.9**self.inf_count  # for fake finite gradient
-            self.log_update(x=[x], cost=[cost])
+            self.log_update(x=[x], cost=cost)
             return cost if self.minimising else -cost
 
         L, dl = self.cost(x, calculate_grad=True, apply_transform=True)
-        self.log_update(x=[x], cost=[L])
+        self.log_update(x=[x], cost=L)
         return (L, dl) if self.minimising else (-L, -dl)
 
     def _run_optimiser(self):
@@ -348,14 +348,14 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             cost = (
                 intermediate_result.fun if self.minimising else -intermediate_result.fun
             )
-            self.log_update(x_best=intermediate_result.x, cost=[cost], cost_best=[cost])
+            self.log_update(x_best=intermediate_result.x, cost=cost, cost_best=cost)
 
         def cost_wrapper(x):
             if self.minimising:
                 cost = self.cost(x, apply_transform=True)
             else:
                 cost = -self.cost(x, apply_transform=True)
-            self.log_update(x=[x], cost=[cost])
+            self.log_update(x=[x], cost=cost)
             return cost
 
         return differential_evolution(

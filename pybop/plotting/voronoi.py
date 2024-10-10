@@ -210,7 +210,7 @@ def plot_voronoi2d(
     """
 
     # Append the optimisation trace to the data
-    points = np.vstack([x for x in optim.log["x"]]).tolist()
+    points = optim.log["x"]
     x_optim, y_optim = map(list, zip(*points))
     f = optim.log["cost"]
 

@@ -164,9 +164,7 @@ def plot2d(
 
     if plot_optim:
         # Plot the optimisation trace
-        optim_trace = np.asarray(
-            [item[:2] for sublist in optim.log["x"] for item in sublist]
-        )
+        optim_trace = np.asarray([item[:2] for item in optim.log["x"]])
         optim_trace = optim_trace.reshape(-1, 2)
         fig.add_trace(
             go.Scatter(
