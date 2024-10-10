@@ -41,8 +41,8 @@ optim = pybop.Optimisation(
     cost,
     optimiser=pybop.PSO,
     sigma0=0.05,
-    max_unchanged_iterations=50,
-    max_iterations=50,
+    max_unchanged_iterations=20,
+    max_iterations=100,
 )
 
 x, final_cost = optim.run()

@@ -203,8 +203,9 @@ def plot_voronoi2d(
     -----------
     optim : pybop.BaseOptimiser | pybop.Optimisation
         Solved optimisation object
-    xlim, ylim : tuple
-        Limits for x and y axes.
+    bounds : numpy.ndarray, optional
+        A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
+        `cost.parameters.get_bounds_for_plotly`.
     resolution : int, optional
         Resolution of the plot. Default is 500.
     """
