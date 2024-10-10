@@ -251,7 +251,6 @@ def plot_voronoi2d(
             y=yi[:, 0],
             z=zi,
             colorscale="Viridis",
-            colorbar=dict(title="f value"),
             zsmooth="best",
         )
     )
@@ -307,15 +306,17 @@ def plot_voronoi2d(
                 showlegend=False,
             )
         )
-
+    names = optim.cost.parameters.keys()
     fig.update_layout(
-        xaxis_title="X",
-        yaxis_title="Y",
-        xaxis_range=xlim,
-        yaxis_range=ylim,
-        title="Voronoi Diagram (2D Color-coded Representation)",
-        width=800,
-        height=800,
+        title="Voronoi Cost Landscape",
+        title_x=0.5,
+        title_y=0.9,
+        xaxis_title=names[0],
+        yaxis_title=names[1],
+        width=600,
+        height=600,
+        xaxis=dict(range=xlim, showexponent="last", exponentformat="e"),
+        yaxis=dict(range=ylim, showexponent="last", exponentformat="e"),
     )
 
     fig.show()

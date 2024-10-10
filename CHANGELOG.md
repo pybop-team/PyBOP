@@ -2,6 +2,8 @@
 
 ## Features
 
+- [#531](https://github.com/pybop-team/PyBOP/pull/531) - Adds Voronoi 2d cost landscape plot (`pybop.plot_voronoi2d`) for fast optimiser aligned cost visualisation.
+
 ## Optimisations
 
 - [#512](https://github.com/pybop-team/PyBOP/pull/513) - Refactors `LogPosterior` with attributes pointing to composed likelihood object.
