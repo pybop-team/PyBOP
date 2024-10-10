@@ -37,7 +37,7 @@ class GravimetricEnergyDensity(DesignCost):
 
     The gravimetric energy density [Wh.kg-1] is calculated as
     $$
-    \displaystyle \frac{1}{3600 m} \int_{t=0}^{t=T} I(t) V(t) dt
+    \\displaystyle \frac{1}{3600 m} \\int_{t=0}^{t=T} I(t) V(t) dt
     $$
     where $m$ is the cell mass, $t$ is the time, $T$ is the total time, $I$ is the
     current and $V$ is the voltage. The factor of 1/3600 is included to convert
@@ -94,7 +94,7 @@ class VolumetricEnergyDensity(DesignCost):
 
     The volumetric energy density [Wh.m-3] is calculated as
     $$
-    \displaystyle \frac{1}{3600 v} \int_{t=0}^{t=T} I(t) V(t) dt
+    \\displaystyle \frac{1}{3600 v} \\int_{t=0}^{t=T} I(t) V(t) dt
     $$
     where $v$ is the cell volume, $t$ is the time, $T$ is the total time, $I$ is
     the current and $V$ is the voltage. The factor of 1/3600 is included to convert
@@ -151,7 +151,7 @@ class GravimetricPowerDensity(DesignCost):
 
     The time-averaged gravimetric power density [W.kg-1] is calculated as
     $$
-    \displaystyle \frac{1}{3600 m T} \int_{t=0}^{t=T} I(t) V(t) dt
+    \\displaystyle \frac{1}{3600 m T} \\int_{t=0}^{t=T} I(t) V(t) dt
     $$
     where $m$ is the cell mass, $t$ is the time, $T$ is the total time, $I$ is the
     current and $V$ is the voltage. The factor of 1/3600 is included to convert
@@ -213,7 +213,7 @@ class VolumetricPowerDensity(DesignCost):
 
     The time-averaged volumetric power density [W.m-3] is calculated as
     $$
-    \displaystyle \frac{1}{3600 v T} \int_{t=0}^{t=T} I(t) V(t) dt
+    \\displaystyle \frac{1}{3600 v T} \\int_{t=0}^{t=T} I(t) V(t) dt
     $$
     where $v$ is the cell volume, $t$ is the time, $T$ is the total time, $I$ is
     the current and $V$ is the voltage. The factor of 1/3600 is included to convert
