@@ -105,6 +105,8 @@ from .costs.design_costs import (
     DesignCost,
     GravimetricEnergyDensity,
     VolumetricEnergyDensity,
+    GravimetricPowerDensity,
+    VolumetricPowerDensity,
 )
 from .costs._likelihoods import (
     BaseLikelihood,

@@ -525,7 +525,7 @@ class Parameters:
         ]
         return ComposedTransformation(valid_transformations)
 
-    def get_bounds_for_plotly(self):
+    def get_bounds_for_plotly(self, apply_transform: bool = False) -> np.ndarray:
         """
         Retrieve parameter bounds in the format expected by Plotly.
 
@@ -534,9 +534,7 @@ class Parameters:
         bounds : numpy.ndarray
             An array of shape (n_parameters, 2) containing the bounds for each parameter.
         """
-        bounds = np.zeros((len(self), 2))
-
-        for i, param in enumerate(self.param.values()):
+        for param in self.param.values():
             if param.applied_prior_bounds:
                 warnings.warn(
                     "Bounds were created from prior distributions. "
@@ -544,12 +542,14 @@ class Parameters:
                     UserWarning,
                     stacklevel=2,
                 )
-            if param.bounds is not None:
-                bounds[i] = param.bounds
-            else:
-                raise ValueError("All parameters require bounds for plotting.")
 
-        return bounds
+        bounds = self.get_bounds(apply_transform=apply_transform)
+
+        # Validate that all parameters have bounds
+        if bounds is None:
+            raise ValueError("All parameters require bounds for plotting.")
+
+        return np.asarray(list(bounds.values())).T
 
     def as_dict(self, values=None) -> dict:
         """
