@@ -2,6 +2,8 @@
 
 ## Features
 
+- [#529](https://github.com/pybop-team/PyBOP/issues/529) - Adds `GravimetricPowerDensity` and `VolumetricPowerDensity` costs, along with the mathjax extension for Sphinx.
+
 ## Optimisations
 
 - [#512](https://github.com/pybop-team/PyBOP/pull/513) - Refactors `LogPosterior` with attributes pointing to composed likelihood object.
@@ -13,7 +15,6 @@
 ## Breaking Changes
 
 # [v24.9.1](https://github.com/pybop-team/PyBOP/tree/v24.9.0) - 2024-09-16
-
 
 ## Features
 
