@@ -101,6 +101,50 @@ class DesignProblem(BaseProblem):
 
         self.initial_state = initial_state
 
+    def update_linked_parameters(self, parameter_set: None):
+        """
+        A placeholder function that may be overwritten by the user in order to
+        update model parameters as a function of the optimisation parameters.
+
+        Parameters
+        ----------
+        parameter_set : pybamm.ParameterValues
+            A PyBaMM parameter set containing standard lithium ion parameters.
+        """
+        pass
+
+    def update_parameter_set(self, inputs: Inputs):
+        """
+        Update any linked parameters in the active parameter set.
+
+        Parameters
+        ----------
+        inputs : Inputs
+            Parameters for evaluation of the model.
+
+        Returns
+        -------
+        parameter_set : pybamm.ParameterValues
+            An updated version of the parameter set.
+        """
+        parameter_set = self.model.parameter_set
+
+        # Reset the initial concentrations to the formation concentrations
+        if isinstance(self._model, EChemBaseModel):
+            set_formation_concentrations(parameter_set)
+
+        # Update the parameter set and any linked parameters
+        parameter_set.update(inputs)
+        if self._model is not None:
+            self._model.update_linked_parameters(parameter_set)
+
+        # Update the nominal capacity in order to update the C-rate
+        if self.update_capacity:
+            approximate_capacity = self.model.approximate_capacity(parameter_set)
+            parameter_set.update({"Nominal cell capacity [A.h]": approximate_capacity})
+
+        return parameter_set
+
     def evaluate(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal.
@@ -117,14 +161,8 @@ class DesignProblem(BaseProblem):
         """
         inputs = self.parameters.verify(inputs)
 
-        # Update the active parameter set
-        parameter_set = self.model.parameter_set
-        if isinstance(self._model, EChemBaseModel):
-            set_formation_concentrations(parameter_set)
-        parameter_set.update(inputs)
-        if self.update_capacity:
-            approximate_capacity = self.model.approximate_capacity(parameter_set)
-            parameter_set.update({"Nominal cell capacity [A.h]": approximate_capacity})
+        # Update the active parameter set including any linked parameters
+        parameter_set = self.update_parameter_set(inputs)
 
         try:
             with warnings.catch_warnings():
