@@ -84,6 +84,3 @@ pybop.plot2d(likelihood, steps=15)
 # Plot the cost landscape with optimisation path
 bounds = np.asarray([[0.55, 0.77], [0.48, 0.68]])
 pybop.plot2d(optim, bounds=bounds, steps=15)
-
-# Plot voronoi
-pybop.plot_voronoi2d(optim, bounds=bounds)

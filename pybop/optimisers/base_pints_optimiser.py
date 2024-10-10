@@ -257,7 +257,7 @@ class BasePintsOptimiser(BaseOptimiser):
                     x=xs,
                     x_best=self.pints_optimiser.x_best(),
                     cost=_fs if self.minimising else [-x for x in _fs],
-                    cost_best=fb if self.minimising else -fb,
+                    cost_best=[fb] if self.minimising else [-fb],
                 )
 
                 # Check stopping criteria:

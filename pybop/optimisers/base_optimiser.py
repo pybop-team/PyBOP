@@ -227,9 +227,9 @@ class BaseOptimiser:
             self.log["x_best"].append(x_best)
 
         if cost is not None:
-            self.log["cost"].append(cost)
+            self.log["cost"].extend(cost)
         if cost_best is not None:
-            self.log["cost_best"].append(cost_best)
+            self.log["cost_best"].extend(cost_best)
 
     def check_optimal_parameters(self, x):
         """

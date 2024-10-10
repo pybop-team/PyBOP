@@ -212,7 +212,7 @@ def plot_voronoi2d(
     # Append the optimisation trace to the data
     points = np.vstack([x for x in optim.log["x"]]).tolist()
     x_optim, y_optim = map(list, zip(*points))
-    f = np.concatenate(optim.log["cost"]).tolist()
+    f = optim.log["cost"]
 
     # Translate bounds, taking only the first two elements
     xlim, ylim = (
