@@ -105,6 +105,8 @@ from .costs.design_costs import (
     DesignCost,
     GravimetricEnergyDensity,
     VolumetricEnergyDensity,
+    GravimetricPowerDensity,
+    VolumetricPowerDensity,
 )
 from .costs._likelihoods import (
     BaseLikelihood,
@@ -120,7 +122,7 @@ from .costs._weighted_cost import WeightedCost
 
 from .optimisers._cuckoo import CuckooSearchImpl
 from .optimisers._adamw import AdamWImpl
-from .optimisers.base_optimiser import BaseOptimiser, Result
+from .optimisers.base_optimiser import BaseOptimiser, OptimisationResult
 from .optimisers.base_pints_optimiser import BasePintsOptimiser
 from .optimisers.scipy_optimisers import (
     BaseSciPyOptimiser,

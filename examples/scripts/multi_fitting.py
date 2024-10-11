@@ -60,13 +60,13 @@ optim = pybop.IRPropMin(
 )
 
 # Run optimisation
-x, final_cost = optim.run()
+results = optim.run()
 print("True parameters:", parameters.true_value())
-print("Estimated parameters:", x)
+print("Estimated parameters:", results.x)
 
 # Plot the timeseries output
-pybop.quick_plot(problem_1, problem_inputs=x, title="Optimised Comparison")
-pybop.quick_plot(problem_2, problem_inputs=x, title="Optimised Comparison")
+pybop.quick_plot(problem_1, problem_inputs=results.x, title="Optimised Comparison")
+pybop.quick_plot(problem_2, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)

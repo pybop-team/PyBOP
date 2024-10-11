@@ -20,12 +20,13 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
+    "sphinx.ext.mathjax",
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
     "sphinx_design",
     "sphinx_copybutton",
     "autoapi.extension",
-    # custom extentions
+    # custom extensions
     "_extension.gallery_directive",
     # For extension examples and demos
     "myst_parser",

@@ -60,11 +60,11 @@ optim = pybop.XNES(cost, verbose=True)
 optim.set_max_iterations(5)
 
 # Run optimisation
-x, final_cost = optim.run()
-print("Estimated parameters:", x)
+results = optim.run()
+print("Estimated parameters:", results.x)
 
 # Plot the timeseries output (requires model that returns Voltage)
-pybop.quick_plot(observer, problem_inputs=x, title="Optimised Comparison")
+pybop.quick_plot(observer, problem_inputs=results.x, title="Optimised Comparison")
 
 # # Plot convergence
 # pybop.plot_convergence(optim)
