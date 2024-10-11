@@ -219,6 +219,8 @@ class TestCosts:
             pybop.DesignCost,
             pybop.GravimetricEnergyDensity,
             pybop.VolumetricEnergyDensity,
+            pybop.GravimetricPowerDensity,
+            pybop.VolumetricPowerDensity,
         ],
     )
     @pytest.mark.unit
