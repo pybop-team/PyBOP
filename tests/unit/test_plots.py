@@ -120,6 +120,8 @@ class TestPlots:
 
     @pytest.mark.unit
     def test_optim_plots(self, optim):
+        bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
+
         # Plot convergence
         pybop.plot_convergence(optim)
         optim._minimising = False
@@ -129,16 +131,22 @@ class TestPlots:
         pybop.plot_parameters(optim)
 
         # Plot the cost landscape with optimisation path
-        pybop.plot2d(optim, steps=5)
+        pybop.plot2d(optim, steps=3)
+
+        # Plot the cost landscape w/ optim & bounds
+        pybop.plot2d(optim, steps=3, bounds=bounds)
 
         # Plot the cost landscape using optimisation path
-        pybop.plot2d(optim, steps=5, use_optim_log=True)
+        pybop.plot2d(optim, steps=3, use_optim_log=True)
 
         # Plot gradient cost landscape
         pybop.plot2d(optim, gradient=True, steps=5)
 
         # Plot voronoi
         pybop.plot_voronoi2d(optim)
+
+        # Plot voronoi w/ bounds
+        pybop.plot_voronoi2d(optim, bounds=bounds)
 
     @pytest.mark.unit
     def test_with_ipykernel(self, dataset, cost, optim):
