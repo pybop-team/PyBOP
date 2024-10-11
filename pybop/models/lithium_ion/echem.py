@@ -15,6 +15,8 @@ class SPM(EChemBaseModel):
     ----------
     name : str, optional
         The name for the model instance, defaulting to "Single Particle Model".
+    eis : bool, optional
+        A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values, for example:
         parameter_set : pybamm.ParameterValues or dict, optional
@@ -38,7 +40,7 @@ class SPM(EChemBaseModel):
     def __init__(
         self,
         name="Single Particle Model",
-        eis=False,
+        eis: bool = False,
         **model_kwargs,
     ):
         super().__init__(
@@ -62,6 +64,8 @@ class SPMe(EChemBaseModel):
     ----------
     name: str, optional
         A name for the model instance, defaults to "Single Particle Model with Electrolyte".
+    eis : bool, optional
+        A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values, for example:
         parameter_set : pybamm.ParameterValues or dict, optional
@@ -85,11 +89,14 @@ class SPMe(EChemBaseModel):
     def __init__(
         self,
         name="Single Particle Model with Electrolyte",
-        eis=False,
+        eis: bool = False,
         **model_kwargs,
     ):
         super().__init__(
-            pybamm_model=pybamm_lithium_ion.SPMe, name=name, eis=eis, **model_kwargs
+            pybamm_model=pybamm_lithium_ion.SPMe,
+            name=name,
+            eis=eis,
+            **model_kwargs,
         )
 
 
@@ -106,6 +113,8 @@ class DFN(EChemBaseModel):
     ----------
     name : str, optional
         The name for the model instance, defaulting to "Doyle-Fuller-Newman".
+    eis : bool, optional
+        A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values, for example:
         parameter_set : pybamm.ParameterValues or dict, optional
@@ -129,11 +138,14 @@ class DFN(EChemBaseModel):
     def __init__(
         self,
         name="Doyle-Fuller-Newman",
-        eis=False,
+        eis: bool = False,
         **model_kwargs,
     ):
         super().__init__(
-            pybamm_model=pybamm_lithium_ion.DFN, name=name, eis=eis, **model_kwargs
+            pybamm_model=pybamm_lithium_ion.DFN,
+            name=name,
+            eis=eis,
+            **model_kwargs,
         )
 
 
@@ -148,6 +160,8 @@ class MPM(EChemBaseModel):
     ----------
     name : str, optional
         The name for the model instance, defaulting to "Many Particle Model".
+    eis : bool, optional
+        A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values, for example:
         parameter_set : pybamm.ParameterValues or dict, optional
@@ -171,7 +185,7 @@ class MPM(EChemBaseModel):
     def __init__(
         self,
         name="Many Particle Model",
-        eis=False,
+        eis: bool = False,
         **model_kwargs,
     ):
         super().__init__(
@@ -193,6 +207,8 @@ class MSMR(EChemBaseModel):
     ----------
     name : str, optional
         The name for the model instance, defaulting to "Multi Species Multi Reactions Model".
+    eis : bool, optional
+        A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values, for example:
         parameter_set : pybamm.ParameterValues or dict, optional
@@ -216,7 +232,7 @@ class MSMR(EChemBaseModel):
     def __init__(
         self,
         name="Multi Species Multi Reactions Model",
-        eis=False,
+        eis: bool = False,
         **model_kwargs,
     ):
         super().__init__(
@@ -235,6 +251,8 @@ class WeppnerHuggins(EChemBaseModel):
     ----------
     name: str, optional
         A name for the model instance, defaults to "Weppner & Huggins model".
+    eis : bool, optional
+        A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values, for example:
         parameter_set : pybamm.ParameterValues or dict, optional
@@ -251,7 +269,12 @@ class WeppnerHuggins(EChemBaseModel):
             The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
     """
 
-    def __init__(self, name="Weppner & Huggins model", eis=False, **model_kwargs):
+    def __init__(
+        self,
+        name="Weppner & Huggins model",
+        eis: bool = False,
+        **model_kwargs,
+    ):
         super().__init__(
             pybamm_model=BaseWeppnerHuggins, name=name, eis=eis, **model_kwargs
         )

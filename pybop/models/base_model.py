@@ -72,7 +72,7 @@ class BaseModel:
         name: str = "Base Model",
         parameter_set: Optional[ParameterSet] = None,
         check_params: Callable = None,
-        eis=False,
+        eis: bool = False,
     ):
         """
         Initialise the BaseModel with an optional name and a parameter set.
@@ -107,6 +107,8 @@ class BaseModel:
         """
         self.name = name
         self.eis = eis
+        self._calculate_sensitivities = False
+
         if parameter_set is None:
             self._parameter_set = None
         elif isinstance(parameter_set, dict):
@@ -765,6 +767,30 @@ class BaseModel:
                 "to be specified."
             )
 
+    def jaxify_solver(self, t_eval, calculate_sensitivities=False):
+        """
+        Jaxify the IDAKLU Solver and store a copy for reconstructing
+        the jax'ed solver in the future. This is helpful for reconstructing
+        the solver with `calculate_sensitivities=True` as this solver requires
+        casting sensitivity information on construction.
+        """
+        self._calculate_sensitivities = calculate_sensitivities
+        if isinstance(self._solver, pybamm.IDAKLUSolver):
+            self._IDAKLU_stored = self._solver.copy()
+            self._solver = self._solver.jaxify(
+                model=self._built_model,
+                t_eval=t_eval,
+                calculate_sensitivities=calculate_sensitivities,
+            )
+        elif isinstance(self._solver, pybamm.IDAKLUJax):
+            self._solver = self._IDAKLU_stored.jaxify(
+                model=self._built_model,
+                t_eval=t_eval,
+                calculate_sensitivities=calculate_sensitivities,
+            )
+        else:
+            raise ValueError("Solver is not pybamm.IDAKLUSolver, cannot jaxify it.")
+
     def check_params(
         self,
         inputs: Optional[Inputs] = None,
@@ -983,6 +1009,15 @@ class BaseModel:
     def solver(self):
         return self._solver
 
+    @property
+    def calculate_sensitivities(self):
+        return self._calculate_sensitivities
+
     @solver.setter
     def solver(self, solver):
-        self._solver = solver.copy() if solver is not None else None
+        if isinstance(solver, pybamm.solvers.idaklu_jax.IDAKLUJax):
+            self._solver = solver
+        elif isinstance(solver, pybamm.BaseSolver):
+            self._solver = solver.copy()
+        else:
+            self._solver = None

@@ -192,30 +192,25 @@ class FittingProblem(BaseProblem):
                 t_eval=self._domain_data,
                 initial_state=self.initial_state,
             )
+
         except Exception as e:
             print(f"Error: {e}")
             return {
                 signal: self.failure_output for signal in self.signal
             }, self.failure_output
 
-        y = {signal: sol[signal].data for signal in self.signal}
+        y = {sig: sol[sig].data for sig in (self.signal + self.additional_variables)}
 
-        # Extract the sensitivities and stack them along a new axis for each signal
-        dy = np.empty(
-            (
-                sol[self.signal[0]].data.shape[0],
-                self.n_outputs,
-                self._n_parameters,
-            )
-        )
+        # Pre-allocate sensitivities array
+        y_dims = sol[self.signal[0]].data.shape[0]
+        dy = np.empty((y_dims, self.n_outputs, self._n_parameters))
 
+        # Extract the sensitivities for all signals at once
+        param_keys = self.parameters.keys()
         for i, signal in enumerate(self.signal):
-            dy[:, i, :] = np.stack(
-                [
-                    sol[signal].sensitivities[key].toarray()[:, 0]
-                    for key in self.parameters.keys()
-                ],
-                axis=-1,
+            sensitivities = sol[signal].sensitivities
+            dy[:, i, :] = np.column_stack(
+                [sensitivities[key].toarray()[:, 0] for key in param_keys]
             )
 
-        return y, np.asarray(dy)
+        return y, dy

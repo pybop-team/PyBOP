@@ -1,5 +1,6 @@
 from typing import Optional
 
+import jax.numpy as jnp
 import numpy as np
 from pybamm import IDAKLUSolver
 
@@ -62,14 +63,13 @@ class BaseProblem:
         self.parameters = parameters
         self.parameters.reset_initial_value()
 
-        self._model = model
+        self._model = model.copy() if model is not None else None
         self.eis = False
         self.domain = "Time [s]"
         self.check_model = check_model
         self.signal = signal or ["Voltage [V]"]
         self.set_initial_state(initial_state)
         self._dataset = None
-        self._domain_data = None
         self._target = None
         self.verbose = False
         self.failure_output = np.asarray([np.inf])
@@ -147,6 +147,30 @@ class BaseProblem:
             This method must be implemented by subclasses.
         """
         raise NotImplementedError
+
+    def jax_evaluate(
+        self,
+        inputs: Inputs,
+    ) -> jnp.ndarray:
+        """
+        Evaluate the model with the given parameters and return the signal
+        with a Jax model and solver.
+
+        Parameters
+        ----------
+        inputs : Inputs
+            Parameters for evaluation of the model.
+
+        Returns
+        -------
+        y : jnp.ndarray
+            The model output y(t) simulated with given inputs.
+        """
+
+        y = jnp.squeeze(
+            self.model.solver.get_vars(self.signal)(self.domain_data, inputs)
+        )
+        return y
 
     def get_target(self):
         """
