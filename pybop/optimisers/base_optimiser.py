@@ -232,7 +232,7 @@ class BaseOptimiser:
         str
             The name of the optimiser
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def set_allow_infeasible_solutions(self, allow: bool = True):
         """
