@@ -3,6 +3,7 @@
 ## Features
 
 - [#481](https://github.com/pybop-team/PyBOP/pull/481) - Adds experimental support for PyBaMM's jaxified IDAKLU solver. Includes Jax-specific cost functions `pybop.JaxSumSquareError` and `pybop.JaxLogNormalLikelihood`. Adds `Jax` optional dependency to PyBaMM dependency.
+- [#529](https://github.com/pybop-team/PyBOP/issues/529) - Adds `GravimetricPowerDensity` and `VolumetricPowerDensity` costs, along with the mathjax extension for Sphinx.
 
 ## Optimisations
 
@@ -15,7 +16,6 @@
 ## Breaking Changes
 
 # [v24.9.1](https://github.com/pybop-team/PyBOP/tree/v24.9.0) - 2024-09-16
-
 
 ## Features
 
@@ -59,6 +59,7 @@
 
 ## Breaking Changes
 
+- [#499](https://github.com/pybop-team/PyBOP/pull/499) - BPX is added as an optional dependency.
 - [#483](https://github.com/pybop-team/PyBOP/pull/483) - Replaces `pybop.MAP` with `pybop.LogPosterior` with an updated call args and bugfixes.
 - [#436](https://github.com/pybop-team/PyBOP/pull/436) - **API Change:** The functionality from `BaseCost.evaluate/S1` & `BaseCost._evaluate/S1` is represented in `BaseCost.__call__` & `BaseCost.compute`. `BaseCost.compute` directly acts on the predictions, while `BaseCost.__call__` calls `BaseProblem.evaluate/S1` before `BaseCost.compute`. `compute` has optional args for gradient cost calculations.
 - [#424](https://github.com/pybop-team/PyBOP/issues/424) - Replaces the `init_soc` input to `FittingProblem` with the option to pass an initial OCV value, updates `BaseModel` and fixes `multi_model_identification.ipynb` and `spm_electrode_design.ipynb`.
