@@ -66,7 +66,7 @@ def _voronoi_regions(x, y, f, xlim, ylim):
     for k, region in enumerate(regions):
         # Check for empty regions
         if not region:
-            continue
+            continue  # pragma: no cover
 
         # Check for regions completely outside of limits, skip if so.
         region = np.asarray(list(region))
@@ -75,7 +75,7 @@ def _voronoi_regions(x, y, f, xlim, ylim):
         )
 
         if all_outside:
-            continue
+            continue  # pragma: no cover
 
         # Sort the vertices
         regions[k] = _sort_region_vertices(region, vor.points[k])
@@ -161,7 +161,7 @@ def truncate_region_by_axis(region, axis, min_val, max_val):
                 new_region.append(interpolate_point(p, r, axis, min_val))
         elif p[axis] > max_val:
             if q[axis] > max_val and r[axis] > max_val:
-                continue
+                continue  # pragma: no cover
             if q[axis] <= max_val:
                 new_region.append(interpolate_point(p, q, axis, max_val))
             if r[axis] <= max_val:
