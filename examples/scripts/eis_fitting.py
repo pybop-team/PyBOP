@@ -66,11 +66,11 @@ problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 cost = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=sigma0)
 optim = pybop.CMAES(cost, max_iterations=100, sigma0=0.25, max_unchanged_iterations=30)
 
-x, final_cost = optim.run()
-print("Estimated parameters:", x)
+results = optim.run()
+print("Estimated parameters:", results.x)
 
 # Plot the nyquist
-pybop.nyquist(problem, problem_inputs=x, title="Optimised Comparison")
+pybop.nyquist(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)

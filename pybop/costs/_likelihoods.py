@@ -232,18 +232,12 @@ class LogPosterior(BaseLikelihood):
         log_prior: Optional[Union[pybop.BasePrior, stats.rv_continuous]] = None,
         gradient_step: float = 1e-3,
     ):
-        super().__init__(problem=log_likelihood.problem)
-        self.gradient_step = gradient_step
-
-        # Store the likelihood, prior, update parameters and transformation
-        self.join_parameters(log_likelihood.parameters)
         self._log_likelihood = log_likelihood
-
-        for attr in ["transformation", "_has_separable_problem"]:
-            setattr(self, attr, getattr(log_likelihood, attr))
+        self.gradient_step = gradient_step
+        super().__init__(problem=log_likelihood.problem)
 
         if log_prior is None:
-            self._prior = JointLogPrior(*self._parameters.priors())
+            self._prior = JointLogPrior(*self.parameters.priors())
         else:
             self._prior = log_prior
 
@@ -275,16 +269,16 @@ class LogPosterior(BaseLikelihood):
 
         if calculate_grad:
             if isinstance(self._prior, BasePrior):
-                log_prior, dp = self._prior.logpdfS1(self._parameters.current_value())
+                log_prior, dp = self._prior.logpdfS1(self.parameters.current_value())
             else:
                 # Compute log prior first
-                log_prior = self._prior.logpdf(self._parameters.current_value())
+                log_prior = self._prior.logpdf(self.parameters.current_value())
 
                 # Compute a finite difference approximation of the gradient of the log prior
-                delta = self._parameters.initial_value() * self.gradient_step
+                delta = self.parameters.initial_value() * self.gradient_step
                 dp = []
 
-                for parameter, step_size in zip(self._parameters, delta):
+                for parameter, step_size in zip(self.parameters, delta):
                     param_value = parameter.value
                     upper_value = param_value * (1 + step_size)
                     lower_value = param_value * (1 - step_size)
@@ -297,7 +291,7 @@ class LogPosterior(BaseLikelihood):
                     )
                     dp.append(gradient)
         else:
-            log_prior = self._prior.logpdf(self._parameters.current_value())
+            log_prior = self._prior.logpdf(self.parameters.current_value())
 
         if not np.isfinite(log_prior).any():
             return (-np.inf, -self.grad_fail) if calculate_grad else -np.inf
@@ -315,6 +309,22 @@ class LogPosterior(BaseLikelihood):
         log_likelihood = self._log_likelihood.compute(y)
         posterior = log_likelihood + log_prior
         return posterior
+
+    @property
+    def transformation(self):
+        return self._log_likelihood.transformation
+
+    @property
+    def has_separable_problem(self):
+        return self._log_likelihood.has_separable_problem
+
+    @property
+    def parameters(self):
+        return self._log_likelihood.parameters
+
+    @property
+    def n_parameters(self):
+        return self._log_likelihood.n_parameters
 
     @property
     def prior(self) -> BasePrior:

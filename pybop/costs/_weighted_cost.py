@@ -10,10 +10,8 @@ class WeightedCost(BaseCost):
     A subclass for constructing a linear combination of cost functions as
     a single weighted cost function.
 
-    Inherits all parameters and attributes from ``BaseCost``.
-
-    Attributes
-    ---------------------
+    Parameters
+    ----------
     costs : pybop.BaseCost
         The individual PyBOP cost objects.
     weights : list[float]
@@ -101,10 +99,10 @@ class WeightedCost(BaseCost):
         de = np.empty((len(self.parameters), len(self.costs)))
 
         for i, cost in enumerate(self.costs):
-            inputs = cost.parameters.as_dict()
             if self._has_identical_problems:
                 y, dy = (y, dy)
             elif cost.has_separable_problem:
+                inputs = cost.parameters.as_dict()
                 if calculate_grad:
                     y, dy = cost.problem.evaluateS1(inputs)
                 else:
