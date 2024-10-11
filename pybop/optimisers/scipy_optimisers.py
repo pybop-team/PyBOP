@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 from scipy.optimize import Bounds, OptimizeResult, differential_evolution, minimize
 
-from pybop import BaseOptimiser, Result
+from pybop import BaseOptimiser, OptimisationResult
 
 
 class BaseSciPyOptimiser(BaseOptimiser):
@@ -84,10 +84,11 @@ class BaseSciPyOptimiser(BaseOptimiser):
         except AttributeError:
             nit = -1
 
-        return Result(
+        return OptimisationResult(
             x=self._transformation.to_model(result.x)
             if self._transformation
             else result.x,
+            cost=self.cost,
             final_cost=self.cost(result.x, apply_transform=True),
             n_iterations=nit,
             scipy_result=result,
