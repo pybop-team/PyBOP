@@ -63,6 +63,11 @@ class TestParameter:
         )
         assert parameter.bounds is None
 
+        # Test get_bounds with bounds == None
+        parameters = pybop.Parameters(parameter)
+        bounds = parameters.get_bounds()
+        assert not np.isfinite(list(bounds.values())).all()
+
     @pytest.mark.unit
     def test_invalid_inputs(self, parameter):
         # Test error with invalid value

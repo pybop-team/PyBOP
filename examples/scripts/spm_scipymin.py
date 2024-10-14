@@ -41,11 +41,11 @@ cost = pybop.RootMeanSquaredError(problem)
 optim = pybop.SciPyMinimize(cost)
 
 # Run the optimisation problem
-x, final_cost = optim.run()
-print("Estimated parameters:", x)
+results = optim.run()
+print("Estimated parameters:", results.x)
 
 # Plot the timeseries output
-pybop.quick_plot(problem, problem_inputs=x, title="Optimised Comparison")
+pybop.quick_plot(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot_convergence(optim)
