@@ -138,12 +138,12 @@ class EChemBaseModel(BaseModel):
         }
 
         for material_vol_fraction, porosity in electrode_params:
-            mat_fract_plus_porosity = (
+            total_vol_fraction = (
                 related_parameters[material_vol_fraction] + related_parameters[porosity]
             )
             if (
-                not isinstance(mat_fract_plus_porosity, Symbol)
-                and mat_fract_plus_porosity > 1 + sys.float_info.epsilon
+                ParameterSet.evaluate_symbol(total_vol_fraction, parameter_set)
+                > 1 + sys.float_info.epsilon
             ):
                 if self.param_check_counter <= len(electrode_params):
                     infeasibility_warning = "Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
