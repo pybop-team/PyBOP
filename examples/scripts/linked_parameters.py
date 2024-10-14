@@ -1,5 +1,6 @@
-import pybop
 import pybamm
+
+import pybop
 
 # The aim of this script is to show how to systematically update
 # design parameters which depend on the optimisation parameters.

@@ -1,13 +1,11 @@
 import json
 import types
-from typing import Union
-import pybamm
 from numbers import Number
+from typing import Union
+
 import numpy as np
-
-
+import pybamm
 from pybamm import LithiumIonParameters, ParameterValues, parameter_sets
-
 
 
 class ParameterSet:
@@ -39,7 +37,7 @@ class ParameterSet:
 
     def __getitem__(self, key):
         return self.params[key]
-    
+
     @staticmethod
     def replace_parameters(symbol: Union[pybamm.Symbol, Number], params: dict):
         if isinstance(symbol, (Number, np.float64)):
@@ -48,7 +46,10 @@ class ParameterSet:
             return symbol.value
         if isinstance(symbol, (pybamm.Parameter, pybamm.FunctionParameter)):
             return ParameterSet.replace_parameters(params[symbol.name], params)
-        new_children = [pybamm.Scalar(ParameterSet.replace_parameters(child, params)) for child in symbol.children]
+        new_children = [
+            pybamm.Scalar(ParameterSet.replace_parameters(child, params))
+            for child in symbol.children
+        ]
         return symbol.create_copy(new_children).evaluate()
 
     def keys(self) -> list:
