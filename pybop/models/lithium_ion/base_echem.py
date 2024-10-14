@@ -2,7 +2,7 @@ import sys
 import warnings
 from typing import Optional
 
-import pybamm
+from pybamm import Symbol
 from pybamm import lithium_ion as pybamm_lithium_ion
 
 from pybop.models.base_model import BaseModel, Inputs
@@ -142,7 +142,7 @@ class EChemBaseModel(BaseModel):
                 related_parameters[material_vol_fraction] + related_parameters[porosity]
             )
             if (
-                not isinstance(mat_fract_plus_porosity, pybamm.Symbol)
+                not isinstance(mat_fract_plus_porosity, Symbol)
                 and mat_fract_plus_porosity > 1 + sys.float_info.epsilon
             ):
                 if self.param_check_counter <= len(electrode_params):
@@ -187,8 +187,10 @@ class EChemBaseModel(BaseModel):
             parameter_set["Electrode height [m]"] * parameter_set["Electrode width [m]"]
         )
 
-        # Calculate and return total cell volume
-        return cross_sectional_area * cell_thickness
+        # Calculate total cell volume
+        cell_volume = cross_sectional_area * cell_thickness
+
+        return ParameterSet.evaluate_symbol(cell_volume, parameter_set)
 
     def cell_mass(self, parameter_set: Optional[ParameterSet] = None):
         """
@@ -263,7 +265,7 @@ class EChemBaseModel(BaseModel):
             parameter_set["Electrode height [m]"] * parameter_set["Electrode width [m]"]
         )
 
-        # Calculate and return total cell mass
+        # Calculate total cell mass
         total_area_density = (
             positive_area_density
             + negative_area_density
@@ -271,9 +273,9 @@ class EChemBaseModel(BaseModel):
             + positive_cc_area_density
             + negative_cc_area_density
         )
-        return ParameterSet.replace_parameters(
-            cross_sectional_area * total_area_density, parameter_set
-        )
+        cell_mass = cross_sectional_area * total_area_density
+
+        return ParameterSet.evaluate_symbol(cell_mass, parameter_set)
 
     def approximate_capacity(self, parameter_set: Optional[ParameterSet] = None):
         """
@@ -321,7 +323,7 @@ class EChemBaseModel(BaseModel):
         # Calculate the capacity estimate
         approximate_capacity = theoretical_energy / average_voltage
 
-        return approximate_capacity
+        return ParameterSet.evaluate_symbol(approximate_capacity, parameter_set)
 
     def set_geometric_parameters(self):
         """

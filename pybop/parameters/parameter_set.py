@@ -4,8 +4,15 @@ from numbers import Number
 from typing import Union
 
 import numpy as np
-import pybamm
-from pybamm import LithiumIonParameters, ParameterValues, parameter_sets
+from pybamm import (
+    FunctionParameter,
+    LithiumIonParameters,
+    Parameter,
+    ParameterValues,
+    Scalar,
+    Symbol,
+    parameter_sets,
+)
 
 
 class ParameterSet:
@@ -39,15 +46,28 @@ class ParameterSet:
         return self.params[key]
 
     @staticmethod
-    def replace_parameters(symbol: Union[pybamm.Symbol, Number], params: dict):
+    def evaluate_symbol(symbol: Union[Symbol, Number], params: dict):
+        """
+        Evaluate a parameter in the parameter set.
+
+        Parameters
+        ----------
+        symbol : pybamm.Symbol or Number
+            The parameter to evaluate.
+
+        Returns
+        -------
+        float
+            The value of the parameter.
+        """
         if isinstance(symbol, (Number, np.float64)):
             return symbol
-        if isinstance(symbol, pybamm.Scalar):
+        if isinstance(symbol, Scalar):
             return symbol.value
-        if isinstance(symbol, (pybamm.Parameter, pybamm.FunctionParameter)):
-            return ParameterSet.replace_parameters(params[symbol.name], params)
+        if isinstance(symbol, (Parameter, FunctionParameter)):
+            return ParameterSet.evaluate_symbol(params[symbol.name], params)
         new_children = [
-            pybamm.Scalar(ParameterSet.replace_parameters(child, params))
+            Scalar(ParameterSet.evaluate_symbol(child, params))
             for child in symbol.children
         ]
         return symbol.create_copy(new_children).evaluate()
