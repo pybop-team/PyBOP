@@ -417,20 +417,6 @@ class BaseModel:
 
         return standard_parameters
 
-    def update_linked_parameters(self, parameter_set: None):
-        """
-        A placeholder function that may be overwritten by the user in order to
-        update model parameters as a function of the optimisation parameters.
-
-        ***Warning: Currently only for use in design problems.
-
-        Parameters
-        ----------
-        parameter_set : pybamm.ParameterValues
-            A PyBaMM parameter set containing standard lithium ion parameters.
-        """
-        pass
-
     def reinit(
         self, inputs: Inputs, t: float = 0.0, x: Optional[np.ndarray] = None
     ) -> TimeSeriesState:
