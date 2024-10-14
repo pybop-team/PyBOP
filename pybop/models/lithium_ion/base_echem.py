@@ -1,7 +1,9 @@
 import warnings
 from typing import Optional
+import sys
 
 from pybamm import lithium_ion as pybamm_lithium_ion
+import pybamm
 
 from pybop.models.base_model import BaseModel, Inputs
 from pybop.parameters.parameter_set import ParameterSet
@@ -136,9 +138,9 @@ class EChemBaseModel(BaseModel):
         }
 
         for material_vol_fraction, porosity in electrode_params:
+            mat_fract_plus_porosity = related_parameters[material_vol_fraction] + related_parameters[porosity]
             if (
-                related_parameters[material_vol_fraction] + related_parameters[porosity]
-                > 1
+               not isinstance(mat_fract_plus_porosity, pybamm.Symbol) and mat_fract_plus_porosity > 1 + sys.float_info.epsilon
             ):
                 if self.param_check_counter <= len(electrode_params):
                     infeasibility_warning = "Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
@@ -266,7 +268,7 @@ class EChemBaseModel(BaseModel):
             + positive_cc_area_density
             + negative_cc_area_density
         )
-        return cross_sectional_area * total_area_density
+        return ParameterSet.replace_parameters(cross_sectional_area * total_area_density, parameter_set)
 
     def approximate_capacity(self, parameter_set: Optional[ParameterSet] = None):
         """

@@ -1,10 +1,17 @@
 import pybop
+import pybamm
 
 # The aim of this script is to show how to systematically update
 # design parameters which depend on the optimisation parameters.
 
 # Define parameter set and model
 parameter_set = pybop.ParameterSet.pybamm("Chen2020", formation_concentrations=True)
+parameter_set.update(
+    {
+        "Positive electrode porosity": 1
+        - pybamm.Parameter("Positive electrode active material volume fraction")
+    }
+)
 model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
 # Fitting parameters
@@ -20,16 +27,6 @@ parameters = pybop.Parameters(
         bounds=[0.1, 0.9],
     ),
 )
-
-
-# Define a function to update the linked parameters
-def update_porosity(parameter_set):
-    parameter_set["Positive electrode porosity"] = (
-        1 - parameter_set["Positive electrode active material volume fraction"]
-    )
-
-
-model.update_linked_parameters = update_porosity
 
 # Define test protocol
 experiment = pybop.Experiment(
