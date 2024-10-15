@@ -141,6 +141,29 @@ class TestPlots:
         # Plot gradient cost landscape
         pybop.plot2d(optim, gradient=True, steps=5)
 
+    @pytest.fixture
+    def posterior_summary(self, fitting_problem):
+        posterior = pybop.LogPosterior(
+            pybop.GaussianLogLikelihoodKnownSigma(fitting_problem, sigma0=2e-3)
+        )
+        sampler = pybop.SliceStepoutMCMC(posterior, chains=1, iterations=1)
+        results = sampler.run()
+        return pybop.PosteriorSummary(results)
+
+    @pytest.mark.unit
+    def test_posterior_plots(self, posterior_summary):
+        # Plot trace
+        posterior_summary.plot_trace()
+
+        # Plot posterior
+        posterior_summary.plot_posterior()
+
+        # Plot chains
+        posterior_summary.plot_chains()
+
+        # Plot summary table
+        posterior_summary.summary_table()
+
     @pytest.mark.unit
     def test_with_ipykernel(self, dataset, cost, optim):
         import ipykernel
