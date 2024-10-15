@@ -3,17 +3,37 @@ import plotly.graph_objects as go
 
 
 class PosteriorSummary:
-    def __init__(self, chains: np.ndarray):
+    def __init__(self, chains: np.ndarray, significant_digits: int = 4):
         """
         Initialize with chains of posterior samples.
 
         Parameters:
         chains (np.ndarray): List where each element is a NumPy array representing
                                      a chain of posterior samples for a parameter.
+        significant_digits (int): Number of significant digits to display for summary statistics.
         """
         self.chains = chains
         self.all_samples = np.concatenate(chains, axis=0)
         self.num_parameters = self.chains.shape[2]
+        self.sig_digits = significant_digits
+        self.get_summary_statistics()
+
+    def signif(self, x, p: int):
+        """
+        Rounds array `x` to `p` significant digits.
+        """
+        x = np.asarray(x)
+        x_positive = np.where(np.isfinite(x) & (x != 0), np.abs(x), 10 ** (p - 1))
+        mags = 10 ** (p - 1 - np.floor(np.log10(x_positive)))
+        return np.round(x * mags) / mags
+
+    def _calculate_statistics(self, fun, attr_name, *args, **kwargs):
+        """
+        Calculate statistics from callable `fun`.
+        """
+        stat = fun(self.all_samples, *args, **kwargs)
+        setattr(self, attr_name, stat)
+        return self.signif(stat, self.sig_digits)
 
     def get_summary_statistics(self):
         """
@@ -22,22 +42,19 @@ class PosteriorSummary:
         Returns:
         dict: Summary statistics including mean, median, standard deviation, and 95% credible interval.
         """
-        self.mean = np.mean(self.all_samples, axis=0)
-        self.median = np.median(self.all_samples, axis=0)
-        self.max = np.max(self.all_samples, axis=0)
-        self.min = np.min(self.all_samples, axis=0)
-        self.std = np.std(self.all_samples, axis=0)
-        self.ci_lower = np.percentile(self.all_samples, 2.5, axis=0)
-        self.ci_upper = np.percentile(self.all_samples, 97.5, axis=0)
+        summary_funs = {
+            "mean": np.mean,
+            "median": np.median,
+            "max": np.max,
+            "min": np.min,
+            "std": np.std,
+            "ci_lower": lambda x, axis: np.percentile(x, 2.5, axis=axis),
+            "ci_upper": lambda x, axis: np.percentile(x, 97.5, axis=axis),
+        }
 
         return {
-            "mean": self.mean,
-            "median": self.median,
-            "std": self.std,
-            "max": self.max,
-            "min": self.min,
-            "ci_lower": self.ci_lower,
-            "ci_upper": self.ci_upper,
+            key: self._calculate_statistics(func, key, axis=0)
+            for key, func in summary_funs.items()
         }
 
     def plot_trace(self):
@@ -50,7 +67,7 @@ class PosteriorSummary:
 
             for j, chain in enumerate(self.chains):
                 fig.add_trace(
-                    go.Scatter(y=chain[:, i], mode="lines", name=f"Chain {j+1}")
+                    go.Scatter(y=chain[:, i], mode="lines", name=f"Chain {j}")
                 )
 
             fig.update_layout(
@@ -71,8 +88,7 @@ class PosteriorSummary:
                 fig.add_trace(
                     go.Histogram(
                         x=chain[:, j],
-                        name=f"Chain {i+1} - Parameter {j+1}",
-                        histnorm="probability density",
+                        name=f"Chain {i} - Parameter {j}",
                         opacity=0.75,
                     )
                 )
@@ -83,7 +99,7 @@ class PosteriorSummary:
                     y0=0,
                     x1=self.mean[j],
                     y1=self.max[j],
-                    name=f"Mean - Parameter {j+1}",
+                    name=f"Mean - Parameter {j}",
                     line=dict(color="Black", width=1.5, dash="dash"),
                 )
 
@@ -104,8 +120,7 @@ class PosteriorSummary:
         for j in range(self.all_samples.shape[1]):
             histogram = go.Histogram(
                 x=self.all_samples[:, j],
-                name=f"Parameter {j+1}",
-                histnorm="probability density",
+                name=f"Parameter {j}",
                 opacity=0.75,
             )
             fig.add_trace(histogram)

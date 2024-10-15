@@ -1,4 +1,5 @@
 import logging
+import time
 from functools import partial
 from typing import Optional
 
@@ -55,7 +56,10 @@ class BasePintsSampler(BaseSampler):
         self._evaluation_files = kwargs.get("evaluation_files", None)
         self._parallel = kwargs.get("parallel", False)
         self._verbose = kwargs.get("verbose", False)
+        self.sampler = sampler
+        self.iter_time = float(0)
         self._iteration = 0
+        self._loop_iters = 0
         self._warm_up = warm_up
         self.n_parameters = (
             self._log_pdf[0].n_parameters
@@ -93,15 +97,15 @@ class BasePintsSampler(BaseSampler):
             self._x0 = np.tile(self._x0, (self._n_chains, 1))
 
         # Single chain vs multiple chain samplers
-        self._single_chain = issubclass(sampler, SingleChainMCMC)
+        self._single_chain = issubclass(self.sampler, SingleChainMCMC)
 
         # Construct the samplers object
         if self._single_chain:
             self._n_samplers = self._n_chains
-            self._samplers = [sampler(x0, sigma0=self._cov0) for x0 in self._x0]
+            self._samplers = [self.sampler(x0, sigma0=self._cov0) for x0 in self._x0]
         else:
             self._n_samplers = 1
-            self._samplers = [sampler(self._n_chains, self._x0, self._cov0)]
+            self._samplers = [self.sampler(self._n_chains, self._x0, self._cov0)]
 
         # Check for sensitivities from sampler and set evaluation
         self._needs_sensitivities = self._samplers[0].needs_sensitivities()
@@ -184,8 +188,17 @@ class BasePintsSampler(BaseSampler):
 
             self._iteration += 1
             if self._log_to_screen and self._verbose:
-                logging.info(f"Iteration: {self._iteration}")  # TODO: Add more info
-
+                if self._iteration <= 10 or self._iteration % 50 == 0:
+                    timing_iterations = self._iteration - self._loop_iters
+                    elapsed_time = time.time() - self.iter_time
+                    iterations_per_second = (
+                        timing_iterations / elapsed_time if elapsed_time > 0 else 0
+                    )
+                    logging.info(
+                        f"| Iteration: {self._iteration} | Iter/s: {iterations_per_second: .2f} |"
+                    )
+                    self.iter_time = time.time()
+                    self._loop_iters = self._iteration
             if self._max_iterations and self._iteration >= self._max_iterations:
                 running = False
 
