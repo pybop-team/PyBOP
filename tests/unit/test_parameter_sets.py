@@ -146,7 +146,7 @@ class TestParameterSets:
             1.0,
             Scalar(0),
             Parameter("Positive electrode porosity"),
-            1.0 - FunctionParameter("Positive electrode porosity")
+            1.0 - FunctionParameter("Positive electrode porosity"),
         ]:
             assert isinstance(
                 pybop.ParameterSet.evaluate_symbol(param, parameter_set), float
