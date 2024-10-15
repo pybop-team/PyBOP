@@ -2,7 +2,6 @@ import sys
 import warnings
 from typing import Optional
 
-from pybamm import Symbol
 from pybamm import lithium_ion as pybamm_lithium_ion
 
 from pybop.models.base_model import BaseModel, Inputs
