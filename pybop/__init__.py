@@ -160,7 +160,6 @@ from .samplers.pints_samplers import (
     SliceRankShrinkingMCMC, SliceStepoutMCMC,
 )
 from .samplers.mcmc_sampler import MCMCSampler
-from .samplers.mcmc_summary import PosteriorSummary
 
 #
 # Observer classes
@@ -179,6 +178,7 @@ from .plotting.plot_convergence import plot_convergence
 from .plotting.plot_parameters import plot_parameters
 from .plotting.plot_problem import quick_plot
 from .plotting.nyquist import nyquist
+from .samplers.mcmc_summary import PosteriorSummary
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop

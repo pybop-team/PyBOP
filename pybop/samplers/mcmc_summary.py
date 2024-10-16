@@ -1,5 +1,6 @@
 import numpy as np
-import plotly.graph_objects as go
+
+from pybop import PlotlyManager
 
 
 class PosteriorSummary:
@@ -17,6 +18,7 @@ class PosteriorSummary:
         self.num_parameters = self.chains.shape[2]
         self.sig_digits = significant_digits
         self.get_summary_statistics()
+        self.go = PlotlyManager().go
 
     def signif(self, x, p: int):
         """
@@ -63,11 +65,11 @@ class PosteriorSummary:
         """
 
         for i in range(self.num_parameters):
-            fig = go.Figure()
+            fig = self.go.Figure()
 
             for j, chain in enumerate(self.chains):
                 fig.add_trace(
-                    go.Scatter(y=chain[:, i], mode="lines", name=f"Chain {j}")
+                    self.go.Scatter(y=chain[:, i], mode="lines", name=f"Chain {j}")
                 )
 
             fig.update_layout(
@@ -81,12 +83,12 @@ class PosteriorSummary:
         """
         Plot posterior distributions for each chain.
         """
-        fig = go.Figure()
+        fig = self.go.Figure()
 
         for i, chain in enumerate(self.chains):
             for j in range(chain.shape[1]):
                 fig.add_trace(
-                    go.Histogram(
+                    self.go.Histogram(
                         x=chain[:, j],
                         name=f"Chain {i} - Parameter {j}",
                         opacity=0.75,
@@ -115,10 +117,10 @@ class PosteriorSummary:
         """
         Plot the summed posterior distribution across chains.
         """
-        fig = go.Figure()
+        fig = self.go.Figure()
 
         for j in range(self.all_samples.shape[1]):
-            histogram = go.Histogram(
+            histogram = self.go.Histogram(
                 x=self.all_samples[:, j],
                 name=f"Parameter {j}",
                 opacity=0.75,
@@ -151,9 +153,9 @@ class PosteriorSummary:
             ["95% CI Upper", summary_stats["ci_upper"]],
         ]
 
-        fig = go.Figure(
+        fig = self.go.Figure(
             data=[
-                go.Table(
+                self.go.Table(
                     header=dict(values=header),
                     cells=dict(
                         values=[[row[0] for row in values], [row[1] for row in values]]
