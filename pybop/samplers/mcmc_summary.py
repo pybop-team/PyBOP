@@ -191,8 +191,6 @@ class PosteriorSummary:
         Computes the effective sample size for each parameter in each chain.
         """
 
-        if not isinstance(self.all_samples, np.ndarray) or self.all_samples.ndim != 2:
-            raise ValueError("Samples must be of type np.ndarray with dims == 2")
         if self.all_samples.shape[0] < 2:
             raise ValueError("At least two samples must be given.")
 

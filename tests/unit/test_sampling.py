@@ -152,6 +152,19 @@ class TestPintsSamplers:
         assert samples.shape == (chains, 1, 2)
 
     @pytest.mark.unit
+    def test_effectie_sample_size(self, log_posterior):
+        sampler = pybop.SliceStepoutMCMC(
+            log_pdf=log_posterior,
+            chains=1,
+            max_iterations=1,
+        )
+        results = sampler.run()
+        summary = pybop.PosteriorSummary(results)
+
+        with pytest.raises(ValueError, match="At least two samples must be given."):
+            summary.effective_sample_size()
+
+    @pytest.mark.unit
     def test_single_parameter_sampling(self, model, dataset, MCMC, chains):
         parameters = pybop.Parameters(
             pybop.Parameter(
