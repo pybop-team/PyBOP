@@ -177,10 +177,13 @@ class TestPintsSamplers:
             log_pdf=log_posterior,
             chains=chains,
             sampler=MCMC,
-            max_iterations=1,
+            max_iterations=3,
             verbose=True,
         )
-        sampler.run()
+        result = sampler.run()
+        summary = pybop.PosteriorSummary(result)
+        autocorr = summary.autocorrelation(result[0, :, 0])
+        assert autocorr.shape == (result[0, :, 0].shape[0] - 2,)
 
     @pytest.mark.unit
     def test_multi_log_pdf(self, log_posterior, x0, chains):
