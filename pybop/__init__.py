@@ -160,7 +160,6 @@ from .samplers.pints_samplers import (
     SliceRankShrinkingMCMC, SliceStepoutMCMC,
 )
 from .samplers.mcmc_sampler import MCMCSampler
-from .samplers.mcmc_summary import PosteriorSummary
 
 #
 # Observer classes
@@ -172,6 +171,7 @@ from .observers.observer import Observer
 # Plotting classes
 #
 from . import plot as plot
+from .samplers.mcmc_summary import PosteriorSummary
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop
