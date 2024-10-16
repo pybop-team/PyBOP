@@ -126,6 +126,11 @@ class TestSamplingThevenin:
             sampler._samplers[0].set_hyper_parameters([1e-3])
         results = sampler.run()
 
+        # Test PosteriorSummary
+        summary = pybop.PosteriorSummary(results)
+        ess = summary.effective_sample_size()
+        np.testing.assert_array_less(0, ess)
+
         # Assert both final sample and posterior mean
         x = np.mean(results, axis=1)
         for i in range(len(x)):

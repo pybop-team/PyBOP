@@ -203,4 +203,4 @@ class PosteriorSummary:
                 T = self._autocorrelate_negative(rho)
                 ess.append(len(chain[:, j]) / (1 + 2 * rho[:T].sum()))
 
-        print(f"Effective sampling sizes are: {ess}")
+        return ess
