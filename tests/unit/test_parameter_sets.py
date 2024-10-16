@@ -145,12 +145,11 @@ class TestParameterSets:
         assert isinstance(porosity, float)
 
         for param in [
-            porosity,
-            Scalar(porosity),
-            Parameter("Positive electrode porosity"),
-            FunctionParameter("Positive electrode porosity", inputs={}),
-            0.0 + Parameter("Positive electrode porosity"),
+            1.0 + porosity,
+            1.0 + Scalar(porosity),
+            1.0 + Parameter("Positive electrode porosity"),
+            1.0 + FunctionParameter("Positive electrode porosity", inputs={}),
         ]:
             value = pybop.ParameterSet.evaluate_symbol(param, parameter_set)
             assert isinstance(value, float)
-            np.testing.assert_allclose(value, porosity)
+            np.testing.assert_allclose(value, 1.0 + porosity)
