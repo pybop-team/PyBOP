@@ -108,15 +108,15 @@ class TestWeightedCost:
         )
 
         initial_cost = optim.cost(optim.parameters.initial_value())
-        x, final_cost = optim.run()
+        results = optim.run()
 
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
             if optim.minimising:
-                assert initial_cost > final_cost
+                assert initial_cost > results.final_cost
             else:
-                assert initial_cost < final_cost
-        np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
+                assert initial_cost < results.final_cost
+        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
     @pytest.fixture(
         params=[
@@ -165,12 +165,12 @@ class TestWeightedCost:
         )
         initial_values = optim.parameters.initial_value()
         initial_cost = optim.cost(initial_values)
-        x, final_cost = optim.run()
+        results = optim.run()
 
         # Assertions
-        assert initial_cost < final_cost
-        for i, _ in enumerate(x):
-            assert x[i] > initial_values[i]
+        assert initial_cost < results.final_cost
+        for i, _ in enumerate(results.x):
+            assert results.x[i] > initial_values[i]
 
     def get_data(self, model, init_soc):
         initial_state = {"Initial SoC": init_soc}

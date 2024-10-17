@@ -3,6 +3,7 @@
 ## Features
 
 - [#531](https://github.com/pybop-team/PyBOP/pull/531) - Adds Voronoi 2d cost landscape plot (`pybop.plot_voronoi2d`) for fast optimiser aligned cost visualisation.
+- [#532](https://github.com/pybop-team/PyBOP/issues/532) - Adds `linked_parameters` example script which shows how to update linked parameters during design optimisation.
 - [#529](https://github.com/pybop-team/PyBOP/issues/529) - Adds `GravimetricPowerDensity` and `VolumetricPowerDensity` costs, along with the mathjax extension for Sphinx.
 
 ## Optimisations
@@ -14,6 +15,8 @@
 - [#505](https://github.com/pybop-team/PyBOP/pull/505) - Bug fixes for `LogPosterior` with transformed `GaussianLogLikelihood` likelihood.
 
 ## Breaking Changes
+
+- [#526](https://github.com/pybop-team/PyBOP/pull/526) - Refactor `OptimisationResults` classes, with `optim.run()` now return the full object. Adds finite cost value check for optimised parameters.
 
 # [v24.9.1](https://github.com/pybop-team/PyBOP/tree/v24.9.0) - 2024-09-16
 

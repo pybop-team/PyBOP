@@ -1,12 +1,14 @@
 import warnings
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
+from scipy.optimize import OptimizeResult
 
 from pybop import (
     BaseCost,
     BaseLikelihood,
     DesignCost,
+    Inputs,
     Parameter,
     Parameters,
     WeightedCost,
@@ -45,7 +47,7 @@ class BaseOptimiser:
         If True, the target is to minimise the cost, else target is to maximise by minimising
         the negative cost (default: True).
     physical_viability : bool, optional
-        If True, the feasibility of the optimised parameters is checked (default: True).
+        If True, the feasibility of the optimised parameters is checked (default: False).
     allow_infeasible_solutions : bool, optional
         If True, infeasible parameter values will be allowed in the optimisation (default: True).
     log : dict
@@ -169,22 +171,15 @@ class BaseOptimiser:
 
         Returns
         -------
-        x : numpy.ndarray
-            The best parameter set found by the optimisation.
-        final_cost : float
-            The final cost associated with the best parameters.
+        results: OptimisationResult
+            The pybop optimisation result class.
         """
         self.result = self._run()
 
         # Store the optimised parameters
-        x = self.result.x
-        self.parameters.update(values=x)
+        self.parameters.update(values=self.result.x)
 
-        # Check if parameters are viable
-        if self.physical_viability:
-            self.check_optimal_parameters(x)
-
-        return x, self.result.final_cost
+        return self.result
 
     def _run(self):
         """
@@ -248,27 +243,6 @@ class BaseOptimiser:
             cost_best = convert_to_list(cost_best)
             self.log["cost_best"].extend(cost_best)
 
-    def check_optimal_parameters(self, x):
-        """
-        Check if the optimised parameters are physically viable.
-
-        Parameters
-        ----------
-        x : array-like
-            Optimised parameter values.
-        """
-        if self.cost.problem.model.check_params(
-            inputs=x, allow_infeasible_solutions=False
-        ):
-            return
-        else:
-            warnings.warn(
-                "Optimised parameters are not physically viable! \nConsider retrying the optimisation"
-                " with a non-gradient-based optimiser and the option allow_infeasible_solutions=False",
-                UserWarning,
-                stacklevel=2,
-            )
-
     def name(self):
         """
         Returns the name of the optimiser, to be overwritten by child classes.
@@ -276,11 +250,11 @@ class BaseOptimiser:
         Returns
         -------
         str
-            The name of the optimiser, which is "Optimisation" for this base class.
+            The name of the optimiser
         """
-        return "Optimisation"
+        raise NotImplementedError  # pragma: no cover
 
-    def set_allow_infeasible_solutions(self, allow=True):
+    def set_allow_infeasible_solutions(self, allow: bool = True):
         """
         Set whether to allow infeasible solutions or not.
 
@@ -311,7 +285,7 @@ class BaseOptimiser:
         return self._needs_sensitivities
 
 
-class Result:
+class OptimisationResult:
     """
     Stores the result of the optimisation.
 
@@ -329,12 +303,92 @@ class Result:
 
     def __init__(
         self,
-        x: np.ndarray = None,
+        x: Union[Inputs, np.ndarray] = None,
+        cost: Union[BaseCost, None] = None,
         final_cost: Optional[float] = None,
         n_iterations: Optional[int] = None,
         scipy_result=None,
     ):
         self.x = x
-        self.final_cost = final_cost
+        self.cost = cost
+        self.final_cost = (
+            final_cost if final_cost is not None else self._calculate_final_cost()
+        )
         self.n_iterations = n_iterations
         self.scipy_result = scipy_result
+
+        # Check that the parameters produce finite cost, and are physically viable
+        self._validate_parameters()
+        self.check_physical_viability(self.x)
+
+    def _calculate_final_cost(self) -> float:
+        """
+        Calculate the final cost using the cost function and optimised parameters.
+
+        Returns:
+            float: The calculated final cost.
+        """
+        return self.cost(self.x)
+
+    def get_scipy_result(self) -> Optional[OptimizeResult]:
+        """
+        Get the SciPy optimisation result object.
+
+        Returns:
+            OptimizeResult or None: The SciPy optimisation result object if available, None otherwise.
+        """
+        return self.scipy_result
+
+    def _validate_parameters(self) -> None:
+        """
+        Validate the optimised parameters and ensure they produce a finite cost value.
+
+        Raises:
+            ValueError: If the optimized parameters do not produce a finite cost value.
+        """
+        if not np.isfinite(self.final_cost):
+            raise ValueError("Optimised parameters do not produce a finite cost value")
+
+    def check_physical_viability(self, x):
+        """
+        Check if the optimised parameters are physically viable.
+
+        Parameters
+        ----------
+        x : array-like
+            Optimised parameter values.
+        """
+        if self.cost.problem.model is None:
+            warnings.warn(
+                "No model within problem class, can't check physical viability.",
+                UserWarning,
+                stacklevel=2,
+            )
+            return
+
+        if self.cost.problem.model.check_params(
+            inputs=x, allow_infeasible_solutions=False
+        ):
+            return
+        else:
+            warnings.warn(
+                "Optimised parameters are not physically viable! \nConsider retrying the optimisation"
+                " with a non-gradient-based optimiser and the option allow_infeasible_solutions=False",
+                UserWarning,
+                stacklevel=2,
+            )
+
+    def __str__(self) -> str:
+        """
+        A string representation of the OptimisationResult object.
+
+        Returns:
+            str: A formatted string containing optimisation result information.
+        """
+        return (
+            f"OptimisationResult:\n"
+            f"  Optimised parameters: {self.x}\n"
+            f"  Final cost: {self.final_cost}\n"
+            f"  Number of iterations: {self.n_iterations}\n"
+            f"  SciPy result available: {'Yes' if self.scipy_result else 'No'}"
+        )

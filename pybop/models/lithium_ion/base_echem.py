@@ -1,3 +1,4 @@
+import sys
 import warnings
 from typing import Optional
 
@@ -136,9 +137,12 @@ class EChemBaseModel(BaseModel):
         }
 
         for material_vol_fraction, porosity in electrode_params:
-            if (
+            total_vol_fraction = (
                 related_parameters[material_vol_fraction] + related_parameters[porosity]
-                > 1
+            )
+            if (
+                ParameterSet.evaluate_symbol(total_vol_fraction, parameter_set)
+                > 1 + sys.float_info.epsilon
             ):
                 if self.param_check_counter <= len(electrode_params):
                     infeasibility_warning = "Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
@@ -182,8 +186,10 @@ class EChemBaseModel(BaseModel):
             parameter_set["Electrode height [m]"] * parameter_set["Electrode width [m]"]
         )
 
-        # Calculate and return total cell volume
-        return cross_sectional_area * cell_thickness
+        # Calculate total cell volume
+        cell_volume = cross_sectional_area * cell_thickness
+
+        return ParameterSet.evaluate_symbol(cell_volume, parameter_set)
 
     def cell_mass(self, parameter_set: Optional[ParameterSet] = None):
         """
@@ -258,7 +264,7 @@ class EChemBaseModel(BaseModel):
             parameter_set["Electrode height [m]"] * parameter_set["Electrode width [m]"]
         )
 
-        # Calculate and return total cell mass
+        # Calculate total cell mass
         total_area_density = (
             positive_area_density
             + negative_area_density
@@ -266,7 +272,9 @@ class EChemBaseModel(BaseModel):
             + positive_cc_area_density
             + negative_cc_area_density
         )
-        return cross_sectional_area * total_area_density
+        cell_mass = cross_sectional_area * total_area_density
+
+        return ParameterSet.evaluate_symbol(cell_mass, parameter_set)
 
     def approximate_capacity(self, parameter_set: Optional[ParameterSet] = None):
         """
@@ -314,7 +322,7 @@ class EChemBaseModel(BaseModel):
         # Calculate the capacity estimate
         approximate_capacity = theoretical_energy / average_voltage
 
-        return approximate_capacity
+        return ParameterSet.evaluate_symbol(approximate_capacity, parameter_set)
 
     def set_geometric_parameters(self):
         """

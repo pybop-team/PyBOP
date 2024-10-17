@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from pybamm import FunctionParameter, Parameter, Scalar
 
 import pybop
 
@@ -136,3 +137,19 @@ class TestParameterSets:
         assert (
             parameter_set["Initial concentration in positive electrode [mol.m-3]"] > 0
         )
+
+    @pytest.mark.unit
+    def test_evaluate_symbol(self):
+        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        porosity = parameter_set["Positive electrode porosity"]
+        assert isinstance(porosity, float)
+
+        for param in [
+            1.0 + porosity,
+            1.0 + Scalar(porosity),
+            1.0 + Parameter("Positive electrode porosity"),
+            1.0 + FunctionParameter("Positive electrode porosity", inputs={}),
+        ]:
+            value = pybop.ParameterSet.evaluate_symbol(param, parameter_set)
+            assert isinstance(value, float)
+            np.testing.assert_allclose(value, 1.0 + porosity)

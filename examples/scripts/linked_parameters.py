@@ -1,16 +1,18 @@
+import pybamm
+
 import pybop
 
-# A design optimisation example loosely based on work by L.D. Couto
-# available at https://doi.org/10.1016/j.energy.2022.125966.
-
-# The target is to maximise the energy density over a range of
-# possible design parameter values, including for example:
-# cross-sectional area = height x width (only need change one)
-# electrode widths, particle radii, volume fractions and
-# separator width.
+# The aim of this script is to show how to systematically update
+# design parameters which depend on the optimisation parameters.
 
 # Define parameter set and model
 parameter_set = pybop.ParameterSet.pybamm("Chen2020", formation_concentrations=True)
+parameter_set.update(
+    {
+        "Positive electrode porosity": 1
+        - pybamm.Parameter("Positive electrode active material volume fraction")
+    }
+)
 model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
 # Fitting parameters
@@ -21,9 +23,9 @@ parameters = pybop.Parameters(
         bounds=[65e-06, 10e-05],
     ),
     pybop.Parameter(
-        "Positive particle radius [m]",
-        prior=pybop.Gaussian(5.22e-06, 0.1e-06),
-        bounds=[2e-06, 9e-06],
+        "Positive electrode active material volume fraction",
+        prior=pybop.Gaussian(0.6, 0.15),
+        bounds=[0.1, 0.9],
     ),
 )
 
@@ -46,21 +48,17 @@ problem = pybop.DesignProblem(
     update_capacity=True,
 )
 
-# Generate multiple cost functions and combine them
-cost1 = pybop.GravimetricEnergyDensity(problem)
-cost2 = pybop.VolumetricEnergyDensity(problem)
-cost = pybop.WeightedCost(cost1, cost2, weights=[1, 1e-3])
+# Define the cost
+cost = pybop.GravimetricEnergyDensity(problem)
 
 # Run optimisation
-optim = pybop.PSO(
+optim = pybop.XNES(
     cost, verbose=True, allow_infeasible_solutions=False, max_iterations=10
 )
 results = optim.run()
 print("Estimated parameters:", results.x)
-print(f"Initial gravimetric energy density: {cost1(optim.x0):.2f} Wh.kg-1")
-print(f"Optimised gravimetric energy density: {cost1(results.x):.2f} Wh.kg-1")
-print(f"Initial volumetric energy density: {cost2(optim.x0):.2f} Wh.m-3")
-print(f"Optimised volumetric energy density: {cost2(results.x):.2f} Wh.m-3")
+print(f"Initial gravimetric energy density: {cost(optim.x0):.2f} Wh.kg-1")
+print(f"Optimised gravimetric energy density: {cost(results.x):.2f} Wh.kg-1")
 
 # Plot the timeseries output
 pybop.quick_plot(problem, problem_inputs=results.x, title="Optimised Comparison")
