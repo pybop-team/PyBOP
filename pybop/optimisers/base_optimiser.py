@@ -210,7 +210,9 @@ class BaseOptimiser:
         x_best : list or array-like, optional
             Parameter values corresponding to the best cost yet (default: None).
         cost : list, optional
-            Cost value (default: None).
+            Cost values corresponding to x (default: None).
+        cost_best
+            Cost values corresponding to x_best (default: None).
         """
 
         def convert_to_list(array_like):
