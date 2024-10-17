@@ -198,12 +198,12 @@ class SciPyMinimize(BaseSciPyOptimiser):
             """
             if isinstance(intermediate_result, OptimizeResult):
                 x_best = intermediate_result.x
-                cost = intermediate_result.fun
+                cost_best = intermediate_result.fun
             else:
                 x_best = intermediate_result
-                cost = self.cost(x_best, apply_transform=True)
+                cost_best = self.cost(x_best, apply_transform=True)
 
-            cost_log = (-1 if not self.minimising else 1) * cost * self._cost0
+            cost_log = (-1 if not self.minimising else 1) * cost_best * self._cost0
             self.log_update(
                 x_best=x_best,
                 cost_best=cost_log,
