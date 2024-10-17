@@ -99,46 +99,45 @@ def plot2d(
     # Initialize cost matrix
     costs = np.zeros((len(y), len(x)))
 
-    # Populate cost matrix
-    for i, xi in enumerate(x):
-        for j, yj in enumerate(y):
-            costs[j, i] = cost_call(
-                np.asarray([xi, yj] + additional_values),
-            )
-
     if gradient:
         grad_parameter_costs = []
 
         # Determine the number of gradient outputs from cost.compute
-        num_gradients = len(
-            cost_call(
-                np.asarray([x[0], y[0]] + additional_values),
-                calculate_grad=True,
-            )[1]
-        )
+        num_gradients = cost_call(
+            np.asarray([x[0], y[0]] + additional_values),
+            calculate_grad=True,
+        )[1].shape[0]
 
-        # Create an array to hold each gradient output & populate
+        # Create an array to hold each gradient output
         grads = [np.zeros((len(y), len(x))) for _ in range(num_gradients)]
-        for i, xi in enumerate(x):
-            for j, yj in enumerate(y):
-                (*current_grads,) = cost_call(
+
+    # Populate cost matrix
+    for i, xi in enumerate(x):
+        for j, yj in enumerate(y):
+            if gradient:
+                costs[j, i], (*current_grads,) = cost_call(
                     np.asarray([xi, yj] + additional_values),
                     calculate_grad=True,
-                )[1]
+                )
                 for k, grad_output in enumerate(current_grads):
                     grads[k][j, i] = grad_output
+            else:
+                costs[j, i] = cost_call(
+                    np.asarray([xi, yj] + additional_values),
+                )
 
-        # Append the arrays to the grad_parameter_costs list
+    # Append the arrays to the grad_parameter_costs list
+    if gradient:
         grad_parameter_costs.extend(grads)
 
-    elif plot_optim and use_optim_log:
+    if plot_optim and use_optim_log:
         # Flatten the cost matrix and parameter values
         flat_x = np.tile(x, len(y))
         flat_y = np.repeat(y, len(x))
         flat_costs = costs.flatten()
 
         # Append the optimisation trace to the data
-        parameter_log = np.asarray(optim.log["x_best"])
+        parameter_log = np.asarray(optim.log["x"])
         flat_x = np.concatenate((flat_x, parameter_log[:, 0]))
         flat_y = np.concatenate((flat_y, parameter_log[:, 1]))
         flat_costs = np.concatenate((flat_costs, optim.log["cost"]))
@@ -175,9 +174,7 @@ def plot2d(
 
     if plot_optim:
         # Plot the optimisation trace
-        optim_trace = np.asarray(
-            [item[:2] for sublist in optim.log["x"] for item in sublist]
-        )
+        optim_trace = np.asarray([item[:2] for item in optim.log["x"]])
         optim_trace = optim_trace.reshape(-1, 2)
         fig.add_trace(
             go.Scatter(
