@@ -1,7 +1,7 @@
-from pybop import StandardPlot
+from pybop.plot.standard_plots import StandardPlot
 
 
-def plot_convergence(optim, show=True, **layout_kwargs):
+def convergence(optim, show=True, **layout_kwargs):
     """
     Plot the convergence of the optimisation algorithm.
 
@@ -28,7 +28,7 @@ def plot_convergence(optim, show=True, **layout_kwargs):
     # Generate a list of iteration numbers
     iteration_numbers = list(range(1, len(cost_log) + 1))
 
-    # Create a plotting dictionary
+    # Create a plot dictionary
     plot_dict = StandardPlot(
         x=iteration_numbers,
         y=cost_log,

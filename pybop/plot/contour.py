@@ -5,10 +5,11 @@ from typing import Union
 import numpy as np
 from scipy.interpolate import griddata
 
-from pybop import BaseCost, BaseOptimiser, Optimisation, PlotlyManager
+from pybop import BaseCost, BaseOptimiser, Optimisation
+from pybop.plot.plotly_manager import PlotlyManager
 
 
-def plot2d(
+def contour(
     call_object: Union[BaseCost, BaseOptimiser],
     gradient: bool = False,
     bounds: Union[np.ndarray, None] = None,

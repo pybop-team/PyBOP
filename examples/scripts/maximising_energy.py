@@ -63,7 +63,7 @@ print(f"Initial volumetric energy density: {cost2(optim.x0):.2f} Wh.m-3")
 print(f"Optimised volumetric energy density: {cost2(results.x):.2f} Wh.m-3")
 
 # Plot the timeseries output
-pybop.quick_plot(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot the cost landscape with optimisation path
-pybop.plot2d(optim, steps=5)
+pybop.plot.surface(optim)

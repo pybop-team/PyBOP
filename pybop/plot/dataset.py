@@ -1,7 +1,7 @@
-from pybop import StandardPlot, plot_trajectories
+from pybop.plot.standard_plots import StandardPlot, trajectories
 
 
-def plot_dataset(dataset, signal=None, trace_names=None, show=True, **layout_kwargs):
+def dataset(dataset, signal=None, trace_names=None, show=True, **layout_kwargs):
     """
     Quickly plot a PyBOP Dataset using Plotly.
 
@@ -43,7 +43,7 @@ def plot_dataset(dataset, signal=None, trace_names=None, show=True, **layout_kwa
             trace_names = StandardPlot.remove_brackets(signal)
 
     # Create the figure
-    fig = plot_trajectories(
+    fig = trajectories(
         x=dataset["Time [s]"],
         y=y,
         trace_names=trace_names,

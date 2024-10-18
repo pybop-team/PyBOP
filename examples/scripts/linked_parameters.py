@@ -61,7 +61,7 @@ print(f"Initial gravimetric energy density: {cost(optim.x0):.2f} Wh.kg-1")
 print(f"Optimised gravimetric energy density: {cost(results.x):.2f} Wh.kg-1")
 
 # Plot the timeseries output
-pybop.quick_plot(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot the cost landscape with optimisation path
-pybop.plot2d(optim, steps=5)
+pybop.plot.surface(optim)

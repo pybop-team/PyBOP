@@ -1,10 +1,11 @@
 import numpy as np
 
-from pybop import DesignProblem, FittingProblem, StandardPlot
+from pybop import DesignProblem, FittingProblem
 from pybop.parameters.parameter import Inputs
+from pybop.plot.standard_plots import StandardPlot
 
 
-def quick_plot(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
+def quick(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
     """
     Quickly plot the target dataset against optimised model output.
 
@@ -48,7 +49,7 @@ def quick_plot(problem, problem_inputs: Inputs = None, show=True, **layout_kwarg
             yaxis_title=StandardPlot.remove_brackets(i),
         )
 
-        # Create a plotting dictionary
+        # Create a plot dictionary
         if isinstance(problem, DesignProblem):
             trace_name = "Optimised"
             opt_domain_data = model_output["Time [s]"]

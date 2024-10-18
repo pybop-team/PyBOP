@@ -170,15 +170,7 @@ from .observers.observer import Observer
 #
 # Plotting classes
 #
-from .plotting.plotly_manager import PlotlyManager
-from .plotting.standard_plots import StandardPlot, StandardSubplot, plot_trajectories
-from .plotting.plot2d import plot2d
-from .plotting.plot_dataset import plot_dataset
-from .plotting.plot_convergence import plot_convergence
-from .plotting.plot_parameters import plot_parameters
-from .plotting.plot_problem import quick_plot
-from .plotting.nyquist import nyquist
-from .plotting.voronoi import plot_voronoi2d
+from . import plot as plot
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop

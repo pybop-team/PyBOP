@@ -20,7 +20,7 @@ def pytest_addoption(parser):
         "--examples", action="store_true", default=False, help="run examples tests"
     )
     parser.addoption(
-        "--plots", action="store_true", default=False, help="run plotting tests"
+        "--plots", action="store_true", default=False, help="run plot tests"
     )
     parser.addoption(
         "--notebooks", action="store_true", default=False, help="run notebook tests"

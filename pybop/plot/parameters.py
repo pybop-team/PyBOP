@@ -1,7 +1,8 @@
-from pybop import GaussianLogLikelihood, StandardSubplot
+from pybop import GaussianLogLikelihood
+from pybop.plot.standard_plots import StandardSubplot
 
 
-def plot_parameters(optim, show=True, **layout_kwargs):
+def parameters(optim, show=True, **layout_kwargs):
     """
     Plot the evolution of parameters during the optimization process using Plotly.
 
@@ -45,7 +46,7 @@ def plot_parameters(optim, show=True, **layout_kwargs):
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
     )
 
-    # Create a plotting dictionary
+    # Create a plot dictionary
     plot_dict = StandardSubplot(
         x=x,
         y=y,

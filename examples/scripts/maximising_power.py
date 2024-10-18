@@ -58,7 +58,7 @@ print(
 )
 
 # Plot the timeseries output
-pybop.quick_plot(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot the cost landscape with optimisation path
-pybop.plot2d(optim, steps=5)
+pybop.plot.surface(optim)

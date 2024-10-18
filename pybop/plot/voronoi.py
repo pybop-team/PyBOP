@@ -3,7 +3,8 @@ from typing import Union
 import numpy as np
 from scipy.spatial import Voronoi, cKDTree
 
-from pybop import BaseOptimiser, Optimisation, PlotlyManager
+from pybop import BaseOptimiser, Optimisation
+from pybop.plot.plotly_manager import PlotlyManager
 
 
 def _voronoi_regions(x, y, f, xlim, ylim):
@@ -193,8 +194,12 @@ def interpolate_point(p, q, axis, boundary_val):
     return np.array([boundary_val, s]) if axis == 0 else np.array([s, boundary_val])
 
 
-def plot_voronoi2d(
-    optim: Union[BaseOptimiser, Optimisation], bounds=None, resolution=500
+def surface(
+    optim: Union[BaseOptimiser, Optimisation],
+    bounds=None,
+    resolution=500,
+    show=True,
+    **layout_kwargs,
 ):
     """
     Plot a 2D representation of the Voronoi diagram with color-coded regions.
@@ -208,10 +213,20 @@ def plot_voronoi2d(
         `cost.parameters.get_bounds_for_plotly`.
     resolution : int, optional
         Resolution of the plot. Default is 500.
+    show : bool, optional
+        If True, the figure is shown upon creation (default: True).
+    **layout_kwargs : optional
+        Valid Plotly layout keys and their values,
+        e.g. `xaxis_title="Time [s]"` or
+        `xaxis={"title": "Time [s]", "titlefont_size": 18}`.
     """
 
     # Append the optimisation trace to the data
     points = optim.log["x"]
+
+    if points[0].shape[0] != 2:
+        raise ValueError("This plot method requires two parameters.")
+
     x_optim, y_optim = map(list, zip(*points))
     f = optim.log["cost"]
 
@@ -223,7 +238,7 @@ def plot_voronoi2d(
     # Compute regions
     x, y, f, regions = _voronoi_regions(x_optim, y_optim, f, xlim, ylim)
 
-    # Create a grid for plotting
+    # Create a grid for plot
     xi = np.linspace(xlim[0], xlim[1], resolution)
     yi = np.linspace(ylim[0], ylim[1], resolution)
     xi, yi = np.meshgrid(xi, yi)
@@ -319,5 +334,6 @@ def plot_voronoi2d(
         xaxis=dict(range=xlim, showexponent="last", exponentformat="e"),
         yaxis=dict(range=ylim, showexponent="last", exponentformat="e"),
     )
-
-    fig.show()
+    fig.update_layout(**layout_kwargs)
+    if show:
+        fig.show()

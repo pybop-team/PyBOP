@@ -3,7 +3,7 @@ import textwrap
 
 import numpy as np
 
-from pybop import PlotlyManager
+from pybop.plot.plotly_manager import PlotlyManager
 
 DEFAULT_LAYOUT_OPTIONS = dict(
     title=None,
@@ -330,7 +330,7 @@ class StandardSubplot(StandardPlot):
         return fig
 
 
-def plot_trajectories(x, y, trace_names=None, show=True, **layout_kwargs):
+def trajectories(x, y, trace_names=None, show=True, **layout_kwargs):
     """
     Quickly plot one or more trajectories using Plotly.
 
@@ -352,7 +352,7 @@ def plot_trajectories(x, y, trace_names=None, show=True, **layout_kwargs):
     plotly.graph_objs.Figure
         The Plotly figure object for the scatter plot.
     """
-    # Create a plotting dictionary
+    # Create a plot dictionary
     plot_dict = StandardPlot(
         x=x,
         y=y,
