@@ -183,13 +183,13 @@ print("Estimated parameters:", results.x)
 
 
 # Plot the time series
-pybop.plot_dataset(dataset)
+pybop.plot.dataset(dataset)
 
 # Plot the timeseries output
-pybop.quick_plot(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
-pybop.plot_convergence(optim)
+pybop.plot.convergence(optim)
 
 # Plot the parameter traces
-pybop.plot_parameters(optim)
+pybop.plot.parameters(optim)

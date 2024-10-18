@@ -86,20 +86,16 @@ parameter_set.export_parameters(
 )
 
 # Plot the time series
-pybop.plot_dataset(dataset)
+pybop.plot.dataset(dataset)
 
 # Plot the timeseries output
-pybop.quick_plot(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
-pybop.plot_convergence(optim)
+pybop.plot.convergence(optim)
 
 # Plot the parameter traces
-pybop.plot_parameters(optim)
+pybop.plot.parameters(optim)
 
 # Plot the cost landscape
-pybop.plot2d(cost, steps=15)
-
-# Plot the cost landscape with optimisation path and updated bounds
-bounds = np.asarray([[1e-4, 1e-2], [1e-5, 1e-2]])
-pybop.plot2d(optim, bounds=bounds, steps=15)
+pybop.plot.surface(optim)

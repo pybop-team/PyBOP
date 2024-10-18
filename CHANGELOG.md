@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#531](https://github.com/pybop-team/PyBOP/pull/531) - Adds Voronoi optimiser surface plot (`pybop.plot.surface`) for fast optimiser aligned cost visualisation.
 - [#532](https://github.com/pybop-team/PyBOP/issues/532) - Adds `linked_parameters` example script which shows how to update linked parameters during design optimisation.
 - [#529](https://github.com/pybop-team/PyBOP/issues/529) - Adds `GravimetricPowerDensity` and `VolumetricPowerDensity` costs, along with the mathjax extension for Sphinx.
 
@@ -15,6 +16,7 @@
 
 ## Breaking Changes
 
+- [#531](https://github.com/pybop-team/PyBOP/pull/531) - Plot methods moved to `pybop.plot` with mostly minimal renaming. For example, `pybop.plot_parameters` is now `pybop.plot.parameters`. Other breaking changes include: `pybop.plot2d` to `pybop.plot.contour`.
 - [#526](https://github.com/pybop-team/PyBOP/pull/526) - Refactor `OptimisationResults` classes, with `optim.run()` now return the full object. Adds finite cost value check for optimised parameters.
 
 # [v24.9.1](https://github.com/pybop-team/PyBOP/tree/v24.9.0) - 2024-09-16

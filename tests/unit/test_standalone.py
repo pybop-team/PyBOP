@@ -74,7 +74,7 @@ class TestStandalone:
         optim = pybop.SciPyDifferentialEvolution(cost=cost)
         results = optim.run()
 
-        optim.x0 = optim.log["x"][0][0]
+        optim.x0 = optim.log["x"][0]
         initial_cost = optim.cost(optim.x0)
         assert initial_cost > results.final_cost
         np.testing.assert_allclose(results.final_cost, 1460, atol=1)

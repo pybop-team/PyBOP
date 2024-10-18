@@ -531,7 +531,7 @@ class Parameters:
             if param.applied_prior_bounds:
                 warnings.warn(
                     "Bounds were created from prior distributions. "
-                    "Please provide bounds for better plotting results.",
+                    "Please provide bounds for better plot results.",
                     UserWarning,
                     stacklevel=2,
                 )
@@ -540,7 +540,7 @@ class Parameters:
 
         # Validate that all parameters have bounds
         if bounds is None or not np.isfinite(list(bounds.values())).all():
-            raise ValueError("All parameters require bounds for plotting.")
+            raise ValueError("All parameters require bounds for plot.")
 
         return np.asarray(list(bounds.values())).T
 

@@ -70,13 +70,13 @@ results = optim.run()
 print("Estimated parameters:", results.x)
 
 # Plot the nyquist
-pybop.nyquist(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.nyquist(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
-pybop.plot_convergence(optim)
+pybop.plot.convergence(optim)
 
 # Plot the parameter traces
-pybop.plot_parameters(optim)
+pybop.plot.parameters(optim)
 
 # Plot 2d landscape
-pybop.plot2d(optim, steps=10)
+pybop.plot.surface(optim)
