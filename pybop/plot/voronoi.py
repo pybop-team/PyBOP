@@ -197,7 +197,7 @@ def interpolate_point(p, q, axis, boundary_val):
 def surface(
     optim: Union[BaseOptimiser, Optimisation],
     bounds=None,
-    resolution=500,
+    resolution=250,
     show=True,
     **layout_kwargs,
 ):
