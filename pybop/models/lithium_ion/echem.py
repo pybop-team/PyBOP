@@ -1,6 +1,7 @@
 from pybamm import lithium_ion as pybamm_lithium_ion
 
 from pybop.models.lithium_ion.base_echem import EChemBaseModel
+from pybop.models.lithium_ion.basic_SPMe import BaseGroupedSPMe
 from pybop.models.lithium_ion.weppner_huggins import BaseWeppnerHuggins
 
 
@@ -254,4 +255,59 @@ class WeppnerHuggins(EChemBaseModel):
     def __init__(self, name="Weppner & Huggins model", eis=False, **model_kwargs):
         super().__init__(
             pybamm_model=BaseWeppnerHuggins, name=name, eis=eis, **model_kwargs
+        )
+
+
+class GroupedSPMe(EChemBaseModel):
+    """
+    Represents the grouped-parameter version of the SPMe.
+
+    Parameters
+    ----------
+    name: str, optional
+        A name for the model instance, defaults to "Grouped SPMe".
+    **model_kwargs : optional
+        Valid PyBaMM model option keys and their values, for example:
+        parameter_set : pybamm.ParameterValues or dict, optional
+            The parameters for the model. If None, default parameters provided by PyBaMM are used.
+        geometry : dict, optional
+            The geometry definitions for the model. If None, default geometry from PyBaMM is used.
+        submesh_types : dict, optional
+            The types of submeshes to use. If None, default submesh types from PyBaMM are used.
+        var_pts : dict, optional
+            The discretization points for each variable in the model. If None, default points from PyBaMM are used.
+        spatial_methods : dict, optional
+            The spatial methods used for discretization. If None, default spatial methods from PyBaMM are used.
+        solver : pybamm.Solver, optional
+            The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
+    """
+
+    def __init__(self, name="Grouped SPMe", eis=False, **model_kwargs):
+        super().__init__(
+            pybamm_model=BaseGroupedSPMe, name=name, eis=eis, **model_kwargs
+        )
+        self._unprocessed_model.param.ocv_init = self._unprocessed_model._ocv_init
+
+    def _check_params(self, inputs, parameter_set, allow_infeasible_solutions):
+        # Skip the usual electrochemical checks for this dimensionless model
+        return True
+
+    def set_initial_state(self, initial_state: dict, inputs=None):
+        """
+        Set the initial state of charge or stoichiometries for the grouped SPMe.
+
+        Parameters
+        ----------
+        initial_state : dict
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+        inputs : Inputs
+            The input parameters to be used when building the model.
+        """
+        self.clear()
+
+        if list(initial_state.keys()) != ["Initial SoC"] or inputs is not None:
+            raise ValueError("GroupedSPMe can currently only accept an initial SoC.")
+
+        self._unprocessed_parameter_set.update(
+            {"Initial SoC": initial_state["Initial SoC"]}
         )

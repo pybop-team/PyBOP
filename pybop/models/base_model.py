@@ -332,11 +332,11 @@ class BaseModel:
             model.param, None, model.options, control="algebraic"
         ).get_fundamental_variables()
 
-        # Perform the replacement
-        symbol_replacement_map = {
-            model.variables[name]: variable
-            for name, variable in external_circuit_variables.items()
-        }
+        # Define the variables to replace
+        symbol_replacement_map = {}
+        for name, variable in external_circuit_variables.items():
+            if name in model.variables.keys():
+                symbol_replacement_map[model.variables[name]] = variable
 
         # Don't replace initial conditions, as these should not contain
         # Variable objects
