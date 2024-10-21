@@ -1,4 +1,6 @@
 import numpy as np
+import pints
+import scipy
 
 from pybop import PlotlyManager
 
@@ -34,7 +36,10 @@ class PosteriorSummary:
         Calculate statistics from callable `fun`.
         """
         stat = fun(self.all_samples, *args, **kwargs)
-        setattr(self, attr_name, stat)
+        if fun is scipy.stats.mode:
+            setattr(self, attr_name, stat[0])
+        else:
+            setattr(self, attr_name, stat)
         return self.signif(stat, self.sig_digits)
 
     def get_summary_statistics(self):
@@ -47,6 +52,7 @@ class PosteriorSummary:
         summary_funs = {
             "mean": np.mean,
             "median": np.median,
+            "mode": scipy.stats.mode,
             "max": np.max,
             "min": np.min,
             "std": np.std,
@@ -202,3 +208,6 @@ class PosteriorSummary:
                 ess.append(len(chain[:, j]) / (1 + 2 * rho[:T].sum()))
 
         return ess
+
+    def rhat(self):
+        return pints.rhat(self.chains)
