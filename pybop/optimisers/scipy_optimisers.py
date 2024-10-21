@@ -1,4 +1,5 @@
 import warnings
+from time import time
 from typing import Union
 
 import numpy as np
@@ -77,7 +78,10 @@ class BaseSciPyOptimiser(BaseOptimiser):
         result : pybop.Result
             The result of the optimisation including the optimised parameter values and cost.
         """
+        # Run with timing
+        start_time = time()
         result = self._run_optimiser()
+        total_time = time() - start_time
 
         try:
             nit = result.nit
@@ -93,6 +97,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
             n_iterations=nit,
             scipy_result=result,
             optim=self,
+            time=total_time,
         )
 
 

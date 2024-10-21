@@ -61,7 +61,6 @@ optim = pybop.IRPropMin(
 
 # Run optimisation
 results = optim.run()
-print(results)
 print("True parameters:", parameters.true_value())
 
 # Plot the timeseries output

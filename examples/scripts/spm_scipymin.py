@@ -42,7 +42,6 @@ optim = pybop.SciPyMinimize(cost)
 
 # Run the optimisation problem
 results = optim.run()
-print(results)
 
 # Plot the timeseries output
 pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")

@@ -64,7 +64,7 @@ class BaseOptimiser:
         self.x0 = None
         self.bounds = None
         self.sigma0 = 0.02
-        self.verbose = False
+        self.verbose = True
         self.log = dict(x=[], x_best=[], cost=[], cost_best=[])
         self.minimising = True
         self._transformation = None
@@ -175,6 +175,9 @@ class BaseOptimiser:
             The pybop optimisation result class.
         """
         self.result = self._run()
+
+        if self.verbose:
+            print(self.result)
 
         # Store the optimised parameters
         self.parameters.update(values=self.result.x)
@@ -308,6 +311,7 @@ class OptimisationResult:
         final_cost: Optional[float] = None,
         n_iterations: Optional[int] = None,
         optim: Optional[BaseOptimiser] = None,
+        time: Optional[float] = None,
         scipy_result=None,
     ):
         self.x = x
@@ -318,6 +322,7 @@ class OptimisationResult:
         self.n_iterations = n_iterations
         self.scipy_result = scipy_result
         self.optim = optim
+        self.time = time
         if isinstance(self.optim, BaseOptimiser):
             self.x0 = self.optim.parameters.initial_value()
         else:
@@ -396,6 +401,7 @@ class OptimisationResult:
             f"  Initial parameters: {self.x0}\n"
             f"  Optimised parameters: {self.x}\n"
             f"  Final cost: {self.final_cost}\n"
+            f"  Optimisation time: {self.time} seconds\n"
             f"  Number of iterations: {self.n_iterations}\n"
             f"  SciPy result available: {'Yes' if self.scipy_result else 'No'}"
         )

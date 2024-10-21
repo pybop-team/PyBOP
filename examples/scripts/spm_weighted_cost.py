@@ -60,7 +60,6 @@ for cost in [weighted_cost, cost1, cost2]:
 
     # Run the optimisation
     results = optim.run()
-    print(results)
     print("True parameters:", parameters.true_value())
 
     # Plot the timeseries output

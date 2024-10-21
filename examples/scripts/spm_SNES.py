@@ -39,8 +39,6 @@ cost = pybop.SumofPower(problem, p=2)
 optim = pybop.SNES(cost, max_iterations=100)
 
 results = optim.run()
-print(results)
-
 # Plot the timeseries output
 pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
 
