@@ -56,7 +56,7 @@ optim = pybop.XNES(
     cost, verbose=True, allow_infeasible_solutions=False, max_iterations=10
 )
 results = optim.run()
-print("Estimated parameters:", results.x)
+print(results)
 print(f"Initial gravimetric energy density: {cost(optim.x0):.2f} Wh.kg-1")
 print(f"Optimised gravimetric energy density: {cost(results.x):.2f} Wh.kg-1")
 

@@ -48,8 +48,8 @@ optim = pybop.CMAES(cost, sigma0=0.25, max_unchanged_iterations=10, max_iteratio
 
 # Run the optimisation
 results = optim.run()
+print(results)
 print("True parameters:", parameters.true_value())
-print("Estimated parameters:", results.x)
 
 # Plot the time series
 pybop.plot.dataset(dataset)

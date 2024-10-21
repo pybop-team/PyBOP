@@ -82,7 +82,7 @@ optim = pybop.SciPyMinimize(cost, sigma0=0.1, max_iterations=125)
 
 # Run optimisation
 results = optim.run()
-print("Estimated parameters:", results.x)
+print(results)
 
 # Plot the timeseries output
 pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")

@@ -92,6 +92,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
             final_cost=self.cost(result.x, apply_transform=True),
             n_iterations=nit,
             scipy_result=result,
+            optim=self,
         )
 
 

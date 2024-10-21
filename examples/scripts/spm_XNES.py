@@ -40,7 +40,7 @@ cost = pybop.SumSquaredError(problem)
 optim = pybop.XNES(cost, max_iterations=100)
 
 results = optim.run()
-print("Estimated parameters:", results.x)
+print(results)
 
 # Plot the timeseries output
 pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")

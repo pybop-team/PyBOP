@@ -60,8 +60,8 @@ for cost in [weighted_cost, cost1, cost2]:
 
     # Run the optimisation
     results = optim.run()
+    print(results)
     print("True parameters:", parameters.true_value())
-    print("Estimated parameters:", results.x)
 
     # Plot the timeseries output
     pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")

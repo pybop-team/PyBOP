@@ -47,7 +47,7 @@ parameters = pybop.Parameters(
 )
 
 # Generate synthetic data
-sigma = 5e-4 # Volts
+sigma = 5e-4  # Volts
 experiment = pybop.Experiment(
     [
         (

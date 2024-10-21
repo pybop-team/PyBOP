@@ -67,7 +67,7 @@ cost = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=sigma0)
 optim = pybop.CMAES(cost, max_iterations=100, sigma0=0.25, max_unchanged_iterations=30)
 
 results = optim.run()
-print("Estimated parameters:", results.x)
+print(results)
 
 # Plot the nyquist
 pybop.plot.nyquist(problem, problem_inputs=results.x, title="Optimised Comparison")

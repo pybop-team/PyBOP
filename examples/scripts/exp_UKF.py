@@ -98,7 +98,7 @@ optim = pybop.CMAES(cost, verbose=True)
 
 # Run optimisation
 results = optim.run()
-print("Estimated parameters:", results.x)
+print(results)
 
 # Plot the timeseries output (requires model that returns Voltage)
 pybop.plot.quick(observer, problem_inputs=results.x, title="Optimised Comparison")

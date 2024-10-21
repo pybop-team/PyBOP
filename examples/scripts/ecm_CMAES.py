@@ -78,7 +78,7 @@ cost = pybop.SumSquaredError(problem)
 optim = pybop.CMAES(cost, max_iterations=100)
 
 results = optim.run()
-print("Estimated parameters:", results.x)
+print(results)
 
 # Export the parameters to JSON
 parameter_set.export_parameters(

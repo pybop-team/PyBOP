@@ -179,7 +179,7 @@ optim = pybop.XNES(
 )
 
 results = optim.run()
-print("Estimated parameters:", results.x)
+print(results)
 
 
 # Plot the time series
