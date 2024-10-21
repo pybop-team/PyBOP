@@ -64,10 +64,10 @@ for cost in [weighted_cost, cost1, cost2]:
     print("Estimated parameters:", results.x)
 
     # Plot the timeseries output
-    pybop.quick_plot(problem, problem_inputs=results.x, title="Optimised Comparison")
+    pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
 
     # Plot convergence
-    pybop.plot_convergence(optim)
+    pybop.plot.convergence(optim)
 
     # Plot the cost landscape with optimisation path
-    pybop.plot2d(optim, steps=15)
+    pybop.plot.surface(optim)

@@ -65,9 +65,10 @@ class BaseOptimiser:
         self.bounds = None
         self.sigma0 = 0.02
         self.verbose = False
-        self.log = dict(x=[], x_best=[], cost=[])
+        self.log = dict(x=[], x_best=[], cost=[], cost_best=[])
         self.minimising = True
         self._transformation = None
+        self._needs_sensitivities = False
         self.physical_viability = False
         self.allow_infeasible_solutions = False
         self.default_max_iterations = 1000
@@ -193,7 +194,7 @@ class BaseOptimiser:
         """
         raise NotImplementedError
 
-    def log_update(self, x=None, x_best=None, cost=None):
+    def log_update(self, x=None, x_best=None, cost=None, cost_best=None):
         """
         Update the log with new values.
 
@@ -202,26 +203,45 @@ class BaseOptimiser:
         x : list or array-like, optional
             Parameter values (default: None).
         x_best : list or array-like, optional
-            Paraneter values corresponding to the best cost yet (default: None).
-        cost : float, optional
-            Cost value (default: None).
+            Parameter values corresponding to the best cost yet (default: None).
+        cost : list, optional
+            Cost values corresponding to x (default: None).
+        cost_best
+            Cost values corresponding to x_best (default: None).
         """
-        if x is not None:
+
+        def convert_to_list(array_like):
+            """Helper function to convert input to a list, if necessary."""
+            if isinstance(array_like, (list, tuple, np.ndarray)):
+                return list(array_like)
+            elif isinstance(array_like, (int, float)):
+                return [array_like]
+            else:
+                raise TypeError("Input must be a list, tuple, or numpy array")
+
+        def apply_transformation(values):
+            """Apply transformation if it exists."""
             if self._transformation:
-                x = list(x)
-                for i, xi in enumerate(x):
-                    x[i] = self._transformation.to_model(xi)
-            self.log["x"].append(x)
+                return [self._transformation.to_model(value) for value in values]
+            return values
+
+        if x is not None:
+            x = convert_to_list(x)
+            x = apply_transformation(x)
+            self.log["x"].extend(x)
 
         if x_best is not None:
-            if self._transformation:
-                x_best = list(x_best)
-                for i, xi in enumerate(x_best):
-                    x_best[i] = self._transformation.to_model(xi)
-            self.log["x_best"].append(x_best)
+            x_best = convert_to_list(x_best)
+            x_best = apply_transformation(x_best)
+            self.log["x_best"].extend([x_best])
 
         if cost is not None:
-            self.log["cost"].append(cost)
+            cost = convert_to_list(cost)
+            self.log["cost"].extend(cost)
+
+        if cost_best is not None:
+            cost_best = convert_to_list(cost_best)
+            self.log["cost_best"].extend(cost_best)
 
     def name(self):
         """
@@ -259,6 +279,10 @@ class BaseOptimiser:
             # Turn off this feature as there is no model
             self.physical_viability = False
             self.allow_infeasible_solutions = False
+
+    @property
+    def needs_sensitivities(self):
+        return self._needs_sensitivities
 
 
 class OptimisationResult:

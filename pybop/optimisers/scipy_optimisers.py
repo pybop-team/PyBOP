@@ -70,7 +70,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
 
     def _run(self):
         """
-        Internal method to run the optimization using a PyBOP optimiser.
+        Internal method to run the optimisation using a PyBOP optimiser.
 
         Returns
         -------
@@ -163,17 +163,19 @@ class SciPyMinimize(BaseSciPyOptimiser):
         """
         Scale the cost function, preserving the sign convention, and eliminate nan values
         """
-        self.log_update(x=[x])
-
         if not self._options["jac"]:
-            cost = self.cost(x, apply_transform=True) / self._cost0
-            if np.isinf(cost):
+            cost = self.cost(x, apply_transform=True)
+            self.log_update(x=[x], cost=cost if self.minimising else -cost)
+            scaled_cost = cost / self._cost0
+            if np.isinf(scaled_cost):
                 self.inf_count += 1
-                cost = 1 + 0.9**self.inf_count  # for fake finite gradient
-            return cost if self.minimising else -cost
+                scaled_cost = 1 + 0.9**self.inf_count  # for fake finite gradient
+            return scaled_cost if self.minimising else -scaled_cost
 
         L, dl = self.cost(x, calculate_grad=True, apply_transform=True)
-        return (L, dl) if self.minimising else (-L, -dl)
+        self.log_update(x=[x], cost=L if self.minimising else -L)
+        scaled_L = L / self._cost0
+        return (scaled_L, dl) if self.minimising else (-scaled_L, -dl)
 
     def _run_optimiser(self):
         """
@@ -196,14 +198,15 @@ class SciPyMinimize(BaseSciPyOptimiser):
             """
             if isinstance(intermediate_result, OptimizeResult):
                 x_best = intermediate_result.x
-                cost = intermediate_result.fun
+                cost_best = intermediate_result.fun
             else:
                 x_best = intermediate_result
-                cost = self.cost(x_best, apply_transform=True)
+                cost_best = self.cost(x_best, apply_transform=True)
 
+            cost_log = (-1 if not self.minimising else 1) * cost_best * self._cost0
             self.log_update(
                 x_best=x_best,
-                cost=(-1 if not self.minimising else 1) * cost * self._cost0,
+                cost_best=cost_log,
             )
 
         callback = (
@@ -344,20 +347,18 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
         # Add callback storing history of parameter values
         def callback(intermediate_result: OptimizeResult):
-            self.log_update(
-                x_best=intermediate_result.x,
-                cost=intermediate_result.fun
-                if self.minimising
-                else -intermediate_result.fun,
+            cost = (
+                intermediate_result.fun if self.minimising else -intermediate_result.fun
             )
+            self.log_update(x_best=intermediate_result.x, cost_best=cost)
 
         def cost_wrapper(x):
-            self.log_update(x=[x])
-            return (
-                self.cost(x, apply_transform=True)
-                if self.minimising
-                else -self.cost(x, apply_transform=True)
-            )
+            if self.minimising:
+                cost = self.cost(x, apply_transform=True)
+            else:
+                cost = -self.cost(x, apply_transform=True)
+            self.log_update(x=[x], cost=cost)
+            return cost
 
         return differential_evolution(
             cost_wrapper,

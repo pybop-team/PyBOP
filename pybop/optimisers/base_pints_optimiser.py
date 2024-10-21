@@ -252,10 +252,12 @@ class BasePintsOptimiser(BaseOptimiser):
                 # Update counts
                 evaluations += len(fs)
                 iteration += 1
+                _fs = [x[0] for x in fs] if self._needs_sensitivities else fs
                 self.log_update(
                     x=xs,
                     x_best=self.pints_optimiser.x_best(),
-                    cost=fb if self.minimising else -fb,
+                    cost=_fs if self.minimising else [-x for x in _fs],
+                    cost_best=fb if self.minimising else -fb,
                 )
 
                 # Check stopping criteria:
