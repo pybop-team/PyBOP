@@ -85,7 +85,7 @@ class JaxSumSquaredError(BaseJaxCost):
         # Calculate residuals and error
         y = self.problem.jax_evaluate(inputs)
         r = jnp.asarray([y - self._target[signal] for signal in self.signal])
-        return jnp.sum(jnp.sum(r**2, axis=0), axis=0)
+        return jnp.sum(r**2, axis=1).item()
 
 
 class JaxLogNormalLikelihood(BaseJaxCost, BaseLikelihood):
@@ -123,4 +123,7 @@ class JaxLogNormalLikelihood(BaseJaxCost, BaseLikelihood):
         """
         y = self.problem.jax_evaluate(inputs)
         e = jnp.log(self._target_as_array) - jnp.log(y)
-        return self._constant_term - jnp.sum(jnp.square(e)) / (2 * self.sigma2)
+        likelihood = self._constant_term - jnp.sum(jnp.square(e), axis=1) / (
+            2 * self.sigma2
+        )
+        return likelihood.item()

@@ -8,11 +8,10 @@ import pybop
 # Parameter set and model definition
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 
-# Set up the IDAKLU Solver, and enable jax compilation via the pybop.model arg 'jax'
 # The IDAKLU, and it's jaxified version perform very well on the DFN with and without
 # gradient calculations
 solver = pybamm.IDAKLUSolver()
-model = pybop.lithium_ion.DFN(parameter_set=parameter_set, solver=solver)
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -39,16 +38,19 @@ dataset = pybop.Dataset(
     }
 )
 
+# Construct the Problem
 problem = pybop.FittingProblem(model, parameters, dataset)
+
+# By selecting a Jax based cost function, the IDAKLU solver will be
+# jaxified (wrapped in a Jax compiled expression) and used for optimisation
 cost = pybop.JaxLogNormalLikelihood(problem, sigma0=0.002)
 
 # Non-gradient optimiser, change to `pybop.AdamW` for gradient-based example
 optim = pybop.XNES(
     cost,
-    max_unchanged_iterations=100,
+    max_unchanged_iterations=20,
     max_iterations=100,
 )
-optim.pints_optimiser.set_population_size(2)
 
 start_time = time.time()
 x = optim.run()

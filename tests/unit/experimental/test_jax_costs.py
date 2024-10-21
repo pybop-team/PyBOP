@@ -1,6 +1,5 @@
 import copy
 
-import jax.numpy as jnp
 import numpy as np
 import pybamm
 import pytest
@@ -81,8 +80,7 @@ class TestCosts:
 
         # Test type of returned value
         out = cost([0.5])
-        assert isinstance(out, jnp.ndarray)
-        assert out.dtype == jnp.float64
+        assert np.isscalar(out)
 
         # Test option setting
         cost.set_fail_gradient(10)
@@ -95,11 +93,9 @@ class TestCosts:
 
         # Test grad
         e, de = cost([0.5], calculate_grad=True)
-        assert e.shape == ()
+        assert np.isscalar(e)
         assert de.shape == (1,)
-        assert isinstance(e, jnp.ndarray)
         assert isinstance(de, np.ndarray)
-        assert e.dtype == jnp.float64
         assert de.dtype == np.float64
 
     @pytest.mark.unit
