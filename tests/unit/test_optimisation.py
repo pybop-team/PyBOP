@@ -477,6 +477,7 @@ class TestOptimisation:
 
         assert (
             str(results) == f"OptimisationResult:\n"
+            f"  Initial parameters: {results.x0}\n"
             f"  Optimised parameters: {results.x}\n"
             f"  Final cost: {results.final_cost}\n"
             f"  Number of iterations: {results.n_iterations}\n"
@@ -563,7 +564,7 @@ class TestOptimisation:
         results.check_physical_viability(np.array([2]))
 
     @pytest.mark.unit
-    def test_optimsation_results(self, cost):
+    def test_optimisation_results(self, cost):
         # Construct OptimisationResult
         results = pybop.OptimisationResult(x=[1e-3], cost=cost, n_iterations=1)
 

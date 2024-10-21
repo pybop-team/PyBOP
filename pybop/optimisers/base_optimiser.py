@@ -307,6 +307,7 @@ class OptimisationResult:
         cost: Union[BaseCost, None] = None,
         final_cost: Optional[float] = None,
         n_iterations: Optional[int] = None,
+        optim: Optional[BaseOptimiser] = None,
         scipy_result=None,
     ):
         self.x = x
@@ -316,6 +317,11 @@ class OptimisationResult:
         )
         self.n_iterations = n_iterations
         self.scipy_result = scipy_result
+        self.optim = optim
+        if isinstance(self.optim, BaseOptimiser):
+            self.x0 = self.optim.parameters.initial_value()
+        else:
+            self.x0 = None
 
         # Check that the parameters produce finite cost, and are physically viable
         self._validate_parameters()
@@ -387,6 +393,7 @@ class OptimisationResult:
         """
         return (
             f"OptimisationResult:\n"
+            f"  Initial parameters: {self.x0}\n"
             f"  Optimised parameters: {self.x}\n"
             f"  Final cost: {self.final_cost}\n"
             f"  Number of iterations: {self.n_iterations}\n"

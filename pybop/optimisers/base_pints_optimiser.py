@@ -356,6 +356,7 @@ class BasePintsOptimiser(BaseOptimiser):
             cost=self.cost,
             final_cost=f if self.minimising else -f,
             n_iterations=self._iterations,
+            optim=self,
         )
 
     def f_guessed_tracking(self):
