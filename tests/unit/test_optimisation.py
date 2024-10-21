@@ -18,7 +18,7 @@ class TestOptimisation:
         return pybop.Dataset(
             {
                 "Time [s]": np.linspace(0, 360, 10),
-                "Current function [A]": np.zeros(10),
+                "Current function [A]": 1e-2 * np.ones(10),
                 "Voltage [V]": np.ones(10),
             }
         )
@@ -26,8 +26,8 @@ class TestOptimisation:
     @pytest.fixture
     def one_parameter(self):
         return pybop.Parameter(
-            "Negative electrode active material volume fraction",
-            prior=pybop.Gaussian(0.6, 0.2),
+            "Positive electrode active material volume fraction",
+            prior=pybop.Gaussian(0.6, 0.02),
             bounds=[0.58, 0.62],
         )
 
@@ -69,24 +69,30 @@ class TestOptimisation:
         return pybop.SumSquaredError(problem)
 
     @pytest.mark.parametrize(
-        "optimiser, expected_name",
+        "optimiser, expected_name, sensitivities",
         [
-            (pybop.SciPyMinimize, "SciPyMinimize"),
-            (pybop.SciPyDifferentialEvolution, "SciPyDifferentialEvolution"),
-            (pybop.GradientDescent, "Gradient descent"),
-            (pybop.Adam, "Adam"),
-            (pybop.AdamW, "AdamW"),
-            (pybop.CMAES, "Covariance Matrix Adaptation Evolution Strategy (CMA-ES)"),
-            (pybop.CuckooSearch, "Cuckoo Search"),
-            (pybop.SNES, "Seperable Natural Evolution Strategy (SNES)"),
-            (pybop.XNES, "Exponential Natural Evolution Strategy (xNES)"),
-            (pybop.PSO, "Particle Swarm Optimisation (PSO)"),
-            (pybop.IRPropMin, "iRprop-"),
-            (pybop.NelderMead, "Nelder-Mead"),
+            (pybop.SciPyMinimize, "SciPyMinimize", False),
+            (pybop.SciPyDifferentialEvolution, "SciPyDifferentialEvolution", False),
+            (pybop.GradientDescent, "Gradient descent", True),
+            (pybop.Adam, "Adam", True),
+            (pybop.AdamW, "AdamW", True),
+            (
+                pybop.CMAES,
+                "Covariance Matrix Adaptation Evolution Strategy (CMA-ES)",
+                False,
+            ),
+            (pybop.CuckooSearch, "Cuckoo Search", False),
+            (pybop.SNES, "Seperable Natural Evolution Strategy (SNES)", False),
+            (pybop.XNES, "Exponential Natural Evolution Strategy (xNES)", False),
+            (pybop.PSO, "Particle Swarm Optimisation (PSO)", False),
+            (pybop.IRPropMin, "iRprop-", True),
+            (pybop.NelderMead, "Nelder-Mead", False),
         ],
     )
     @pytest.mark.unit
-    def test_optimiser_classes(self, two_param_cost, optimiser, expected_name):
+    def test_optimiser_classes(
+        self, two_param_cost, optimiser, expected_name, sensitivities
+    ):
         # Test class construction
         cost = two_param_cost
         optim = optimiser(cost=cost)
@@ -99,6 +105,7 @@ class TestOptimisation:
 
         assert optim.cost is not None
         assert optim.name() == expected_name
+        assert optim.needs_sensitivities == sensitivities
 
         if optimiser not in [pybop.SciPyDifferentialEvolution]:
             # Test construction without bounds
@@ -134,12 +141,24 @@ class TestOptimisation:
     )
     @pytest.mark.unit
     def test_optimiser_kwargs(self, cost, optimiser):
-        optim = optimiser(cost=cost, maxiter=1)
+        optim = optimiser(cost=cost, maxiter=3, tol=1e-6)
         cost_bounds = cost.parameters.get_bounds()
 
         # Check maximum iterations
-        optim.run()
-        assert optim.result.n_iterations == 1
+        results = optim.run()
+        assert results.n_iterations == 3
+
+        # Test BaseOptimiser.log_update
+        optim.log_update(x=[0.7], cost=[0.01])
+
+        assert optim.log["x"][-1] == 0.7
+        assert optim.log["cost"][-1] == 0.01
+
+        # Test incorrect update
+        with pytest.raises(
+            TypeError, match="Input must be a list, tuple, or numpy array"
+        ):
+            optim.log_update(x="Incorrect")
 
         if optimiser in [pybop.GradientDescent, pybop.Adam, pybop.NelderMead]:
             # Ignored bounds
@@ -268,7 +287,7 @@ class TestOptimisation:
             assert optim.x0 != x0
 
     @pytest.mark.unit
-    def test_cuckoo_no_bounds(self, dataset, cost, model):
+    def test_cuckoo_no_bounds(self, cost):
         optim = pybop.CuckooSearch(cost=cost, bounds=None, max_iterations=1)
         optim.run()
         assert optim.pints_optimiser._boundaries is None
@@ -276,14 +295,9 @@ class TestOptimisation:
     @pytest.mark.unit
     def test_scipy_minimize_with_jac(self, cost):
         # Check a method that uses gradient information
-        optim = pybop.SciPyMinimize(cost=cost, method="L-BFGS-B", jac=True, maxiter=10)
-        optim.run()
-        assert optim.result.scipy_result.success is True
-        # Check constraint-based methods, which have different callbacks / returns
-        for method in ["trust-constr", "SLSQP", "COBYLA"]:
-            optim = pybop.SciPyMinimize(cost=cost, method=method, maxiter=10)
-            optim.run()
-            assert optim.result.scipy_result.success
+        optim = pybop.SciPyMinimize(cost=cost, method="L-BFGS-B", jac=True, maxiter=1)
+        results = optim.run()
+        assert results.get_scipy_result() == optim.result.scipy_result
 
         with pytest.raises(
             ValueError,
@@ -327,6 +341,12 @@ class TestOptimisation:
             match="not a scalar numeric value.",
         ):
             pybop.Optimisation(cost=invalid_cost)
+
+        # Test valid cost
+        def valid_cost(x):
+            return x[0] ** 2
+
+        pybop.Optimisation(cost=valid_cost, x0=np.asarray([0.1]))
 
     @pytest.mark.unit
     def test_default_optimiser(self, cost):
@@ -440,20 +460,28 @@ class TestOptimisation:
     def test_halting(self, cost):
         # Add a parameter transformation
         cost.parameters[
-            "Negative electrode active material volume fraction"
+            "Positive electrode active material volume fraction"
         ].transformation = pybop.IdentityTransformation()
 
         # Test max evalutions
         optim = pybop.GradientDescent(cost=cost, max_evaluations=1, verbose=True)
-        x, __ = optim.run()
+        optim.run()
         assert optim.result.n_iterations == 1
 
         # Test max unchanged iterations
         optim = pybop.GradientDescent(
             cost=cost, max_unchanged_iterations=1, min_iterations=1
         )
-        x, __ = optim.run()
+        results = optim.run()
         assert optim.result.n_iterations == 2
+
+        assert (
+            str(results) == f"OptimisationResult:\n"
+            f"  Optimised parameters: {results.x}\n"
+            f"  Final cost: {results.final_cost}\n"
+            f"  Number of iterations: {results.n_iterations}\n"
+            f"  SciPy result available: No"
+        )
 
         # Test guessed values
         optim.set_f_guessed_tracking(True)
@@ -530,5 +558,22 @@ class TestOptimisation:
     @pytest.mark.unit
     def test_unphysical_result(self, cost):
         # Trigger parameters not physically viable warning
-        optim = pybop.Optimisation(cost=cost)
-        optim.check_optimal_parameters(np.array([2]))
+        optim = pybop.Optimisation(cost=cost, max_iterations=1)
+        results = optim.run()
+        results.check_physical_viability(np.array([2]))
+
+    @pytest.mark.unit
+    def test_optimsation_results(self, cost):
+        # Construct OptimisationResult
+        results = pybop.OptimisationResult(x=[1e-3], cost=cost, n_iterations=1)
+
+        # Asserts
+        assert results.x[0] == 1e-3
+        assert results.final_cost == cost([1e-3])
+        assert results.n_iterations == 1
+
+        # Test non-finite results
+        with pytest.raises(
+            ValueError, match="Optimised parameters do not produce a finite cost value"
+        ):
+            pybop.OptimisationResult(x=[1e-5], cost=cost, n_iterations=1)

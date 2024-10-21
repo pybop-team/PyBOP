@@ -16,10 +16,14 @@ model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
 # Fitting parameters
 parameters = pybop.Parameters(
     pybop.Parameter(
-        "Negative electrode active material volume fraction", initial_value=0.55
+        "Negative electrode active material volume fraction",
+        initial_value=0.55,
+        bounds=[0.5, 0.8],
     ),
     pybop.Parameter(
-        "Positive electrode active material volume fraction", initial_value=0.55
+        "Positive electrode active material volume fraction",
+        initial_value=0.55,
+        bounds=[0.5, 0.8],
     ),
 )
 
@@ -53,10 +57,15 @@ optim = pybop.XNES(
 )
 
 start_time = time.time()
-x = optim.run()
+results = optim.run()
+print(results)
 print(f"Total time: {time.time() - start_time}")
-print(f"x:{x}")
-print(f"{optim.result.n_iterations}")
 
-pybop.plot_convergence(optim)
-pybop.plot_parameters(optim)
+# Plot convergence
+pybop.plot.convergence(optim)
+
+# Plot parameter trace
+pybop.plot.parameters(optim)
+
+# Plot voronoi optimiser surface
+pybop.plot.surface(optim)

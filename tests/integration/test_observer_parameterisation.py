@@ -89,15 +89,15 @@ class TestObservers:
         initial_cost = optim.cost(x0)
 
         # Run optimisation
-        x, final_cost = optim.run()
-        print("Estimated parameters:", x)
+        results = optim.run()
+        print("Estimated parameters:", results.x)
 
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
             if optim.minimising:
-                assert initial_cost > final_cost
+                assert initial_cost > results.final_cost
             else:
-                assert initial_cost < final_cost
+                assert initial_cost < results.final_cost
         else:
             raise ValueError("Initial value is the same as the ground truth value.")
-        np.testing.assert_allclose(x, parameters.true_value(), atol=1.5e-2)
+        np.testing.assert_allclose(results.x, parameters.true_value(), atol=1.5e-2)

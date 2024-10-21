@@ -59,15 +59,15 @@ for cost in [weighted_cost, cost1, cost2]:
     optim = pybop.IRPropMin(cost, max_iterations=60)
 
     # Run the optimisation
-    x, final_cost = optim.run()
+    results = optim.run()
     print("True parameters:", parameters.true_value())
-    print("Estimated parameters:", x)
+    print("Estimated parameters:", results.x)
 
     # Plot the timeseries output
-    pybop.quick_plot(problem, problem_inputs=x, title="Optimised Comparison")
+    pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
 
     # Plot convergence
-    pybop.plot_convergence(optim)
+    pybop.plot.convergence(optim)
 
     # Plot the cost landscape with optimisation path
-    pybop.plot2d(optim, steps=15)
+    pybop.plot.surface(optim)

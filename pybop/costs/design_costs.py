@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 
 from pybop.costs.base_cost import BaseCost
@@ -168,7 +170,7 @@ class GravimetricPowerDensity(DesignCost):
         The length of time (seconds) over which the power should be sustained.
     """
 
-    def __init__(self, problem, target_time: int = 3600):
+    def __init__(self, problem, target_time: Union[int, float] = 3600):
         super().__init__(problem)
         self.target_time = target_time
 
@@ -231,7 +233,7 @@ class VolumetricPowerDensity(DesignCost):
         The length of time (seconds) over which the power should be sustained.
     """
 
-    def __init__(self, problem, target_time: int = 3600):
+    def __init__(self, problem, target_time: Union[int, float] = 3600):
         super().__init__(problem)
         self.target_time = target_time
 

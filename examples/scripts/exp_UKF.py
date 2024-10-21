@@ -42,8 +42,8 @@ simulator = pybop.Observer(parameters, model, signal=["2y"])
 simulator.domain_data = t_eval
 measurements = simulator.evaluate(true_inputs)
 
-# Verification step: Compare by plotting
-go = pybop.PlotlyManager().go
+# Verification step: Compare by plot
+go = pybop.plot.PlotlyManager().go
 line1 = go.Scatter(x=t_eval, y=corrupt_values, name="Corrupt values", mode="markers")
 line2 = go.Scatter(
     x=t_eval, y=expected_values, name="Expected trajectory", mode="lines"
@@ -97,17 +97,17 @@ cost = pybop.ObserverCost(observer)
 optim = pybop.CMAES(cost, verbose=True)
 
 # Run optimisation
-x, final_cost = optim.run()
-print("Estimated parameters:", x)
+results = optim.run()
+print("Estimated parameters:", results.x)
 
 # Plot the timeseries output (requires model that returns Voltage)
-pybop.quick_plot(observer, problem_inputs=x, title="Optimised Comparison")
+pybop.plot.quick(observer, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
-pybop.plot_convergence(optim)
+pybop.plot.convergence(optim)
 
 # Plot the parameter traces
-pybop.plot_parameters(optim)
+pybop.plot.parameters(optim)
 
 # Plot the cost landscape with optimisation path
-pybop.plot2d(optim, steps=15)
+pybop.plot.surface(optim)

@@ -10,7 +10,7 @@ from pints import RectangularBoundaries as PintsRectangularBoundaries
 from pints import SequentialEvaluator as PintsSequentialEvaluator
 from pints import strfloat as PintsStrFloat
 
-from pybop import BaseOptimiser, Result
+from pybop import BaseOptimiser, OptimisationResult
 
 
 class BasePintsOptimiser(BaseOptimiser):
@@ -252,10 +252,12 @@ class BasePintsOptimiser(BaseOptimiser):
                 # Update counts
                 evaluations += len(fs)
                 iteration += 1
+                _fs = [x[0] for x in fs] if self._needs_sensitivities else fs
                 self.log_update(
                     x=xs,
                     x_best=self.pints_optimiser.x_best(),
-                    cost=fb if self.minimising else -fb,
+                    cost=_fs if self.minimising else [-x for x in _fs],
+                    cost_best=fb if self.minimising else -fb,
                 )
 
                 # Check stopping criteria:
@@ -349,8 +351,11 @@ class BasePintsOptimiser(BaseOptimiser):
         if self._transformation:
             x = self._transformation.to_model(x)
 
-        return Result(
-            x=x, final_cost=f if self.minimising else -f, n_iterations=self._iterations
+        return OptimisationResult(
+            x=x,
+            cost=self.cost,
+            final_cost=f if self.minimising else -f,
+            n_iterations=self._iterations,
         )
 
     def f_guessed_tracking(self):
