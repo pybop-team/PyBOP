@@ -44,7 +44,7 @@ class BasePintsSampler(BaseSampler):
             cov0: Initial standard deviation for the chains.
             kwargs: Additional keyword arguments.
         """
-        super().__init__(log_pdf, x0, cov0)
+        super().__init__(log_pdf, x0, chains, cov0)
 
         # Set kwargs
         self._max_iterations = kwargs.get("max_iterations", 500)
@@ -61,11 +61,6 @@ class BasePintsSampler(BaseSampler):
         self._iteration = 0
         self._loop_iters = 0
         self._warm_up = warm_up
-        self.n_parameters = (
-            self._log_pdf[0].n_parameters
-            if isinstance(self._log_pdf, list)
-            else self._log_pdf.n_parameters
-        )
 
         # Check log_pdf
         if isinstance(self._log_pdf, BaseCost):
@@ -84,17 +79,6 @@ class BasePintsSampler(BaseSampler):
                     )
 
             self._multi_log_pdf = True
-
-        # Number of chains
-        self._n_chains = chains
-        if self._n_chains < 1:
-            raise ValueError("Number of chains must be greater than 0")
-
-        # Check initial conditions
-        if self._x0.size != self.n_parameters:
-            raise ValueError("x0 must have the same number of parameters as log_pdf")
-        if len(self._x0) != self._n_chains or len(self._x0) == 1:
-            self._x0 = np.tile(self._x0, (self._n_chains, 1))
 
         # Single chain vs multiple chain samplers
         self._single_chain = issubclass(self.sampler, SingleChainMCMC)
@@ -283,13 +267,14 @@ class BasePintsSampler(BaseSampler):
             raise ValueError("At least one stopping criterion must be set.")
 
     def _create_evaluator(self):
-        f = self._log_pdf
-        # Check for sensitivities from sampler and set evaluator
+        common_args = {"apply_transform": True}
+
         if self._needs_sensitivities:
-            if not self._multi_log_pdf:
-                f = partial(f, calculate_grad=True)
-            else:
-                f = [partial(pdf, calculate_grad=True) for pdf in f]
+            common_args["calculate_grad"] = True
+        if not self._multi_log_pdf:
+            f = partial(self._log_pdf, **common_args)
+        else:
+            f = [partial(pdf, **common_args) for pdf in self._log_pdf]
 
         if self._parallel:
             if not self._multi_log_pdf:

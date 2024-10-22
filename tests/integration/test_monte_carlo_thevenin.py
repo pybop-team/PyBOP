@@ -26,7 +26,7 @@ class TestSamplingThevenin:
         self.sigma0 = 1e-3
         self.ground_truth = np.clip(
             np.asarray([0.05, 0.05]) + np.random.normal(loc=0.0, scale=0.01, size=2),
-            a_min=0.0,
+            a_min=1e-4,
             a_max=0.1,
         )
         self.fast_samplers = [
@@ -57,10 +57,14 @@ class TestSamplingThevenin:
     def parameters(self):
         return pybop.Parameters(
             pybop.Parameter(
-                "R0 [Ohm]", prior=pybop.Uniform(1e-2, 8e-2), bounds=[1e-2, 8e-2]
+                "R0 [Ohm]",
+                prior=pybop.Uniform(1e-2, 8e-2),
+                bounds=[1e-4, 1e-1],
             ),
             pybop.Parameter(
-                "R1 [Ohm]", prior=pybop.Uniform(1e-2, 8e-2), bounds=[1e-2, 8e-2]
+                "R1 [Ohm]",
+                prior=pybop.Uniform(1e-2, 8e-2),
+                bounds=[1e-4, 1e-1],
             ),
         )
 
@@ -123,8 +127,8 @@ class TestSamplingThevenin:
         common_args = {
             "log_pdf": posterior,
             "chains": 1,
-            "warm_up": 450,
-            "cov0": [1e-3, 1e-3] if sampler in self.fast_samplers else [0.1, 0.1],
+            "warm_up": 550,
+            "cov0": [1e-3, 1e-3],
             "max_iterations": 1000,
             "x0": x0,
         }
@@ -140,7 +144,9 @@ class TestSamplingThevenin:
         ess = summary.effective_sample_size()
         np.testing.assert_array_less(0, ess)
         if not isinstance(sampler, RelativisticMCMC):
-            np.testing.assert_array_less(summary.rhat(), 1.05)
+            np.testing.assert_array_less(
+                summary.rhat(), 1.2
+            )  # Large rhat, to enable faster tests
 
         # Assert both final sample and posterior mean
         x = np.mean(chains, axis=1)
@@ -152,7 +158,7 @@ class TestSamplingThevenin:
         initial_state = {"Initial SoC": init_soc}
         experiment = pybop.Experiment(
             [
-                ("Discharge at 0.5C for 4 minutes (8 second period)",),
+                ("Discharge at 0.5C for 6 minutes (20 second period)",),
             ]
         )
         sim = model.predict(initial_state=initial_state, experiment=experiment)

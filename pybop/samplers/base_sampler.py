@@ -12,30 +12,50 @@ class BaseSampler:
     Base class for Monte Carlo samplers.
     """
 
-    def __init__(self, log_pdf: LogPosterior, x0, cov0: Union[np.ndarray, float]):
+    def __init__(
+        self, log_pdf: LogPosterior, x0, chains: int, cov0: Union[np.ndarray, float]
+    ):
         """
         Initialise the base sampler.
 
         Parameters
         ----------------
         log_pdf (pybop.LogPosterior or List[pybop.LogPosterior]): The posterior or PDF to be sampled.
+        chains (int): Number of chains to be used.
         x0: List-like initial condition for Monte Carlo sampling.
         cov0: The covariance matrix to be sampled.
         """
         self._log_pdf = log_pdf
         self._cov0 = cov0
 
-        # Set up parameters based on log_pdf
-        self.parameters = (
-            log_pdf.parameters if isinstance(log_pdf, LogPosterior) else Parameters()
-        )
+        # Number of chains
+        self._n_chains = chains
+        if self._n_chains < 1:
+            raise ValueError("Number of chains must be greater than 0")
 
-        # Initialize x0
-        self._x0 = (
-            self.parameters.initial_value()
-            if x0 is None
-            else np.asarray([x0], dtype=float)
-        )
+        # Set up parameters based on log_pdf
+        if isinstance(log_pdf, LogPosterior):
+            self.parameters = log_pdf.parameters
+            self.n_parameters = log_pdf.n_parameters
+        elif isinstance(log_pdf, (list, np.ndarray)) and isinstance(
+            log_pdf[0], LogPosterior
+        ):
+            self.parameters = log_pdf[0].parameters
+            self.n_parameters = log_pdf[0].n_parameters
+        else:
+            self.parameters = Parameters()
+            self.n_parameters = 0
+
+        # Check initial conditions
+        if x0 is not None and len(x0) != self.n_parameters:
+            raise ValueError("x0 must have the same number of parameters as log_pdf")
+
+        # Set initial values, if x0 is None, initial values are unmodified.
+        self.parameters.update(initial_values=x0 if x0 is not None else None)
+        self._x0 = self.parameters.reset_initial_value(apply_transform=True)
+
+        if len(self._x0) != self._n_chains or len(self._x0) == 1:
+            self._x0 = np.tile(self._x0, (self._n_chains, 1))
 
     def run(self) -> np.ndarray:
         """

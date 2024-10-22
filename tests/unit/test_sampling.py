@@ -392,7 +392,7 @@ class TestPintsSamplers:
 
     @pytest.mark.unit
     def test_base_sampler(self, log_posterior, x0):
-        sampler = pybop.BaseSampler(log_posterior, x0, cov0=0.1)
+        sampler = pybop.BaseSampler(log_posterior, x0, chains=1, cov0=0.1)
         with pytest.raises(NotImplementedError):
             sampler.run()
 
