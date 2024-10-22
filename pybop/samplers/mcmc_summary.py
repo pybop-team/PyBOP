@@ -178,7 +178,7 @@ class PosteriorSummary:
         Computes the autocorrelation (Pearson correlation coefficient)
         of a numpy array representing samples.
         """
-        x = (x - x.mean()) / (x.std() * np.sqrt(len(x)))
+        x = (x - x.mean()) / (x.std() * np.sqrt(len(x)) + np.finfo(float).eps)
         cor = np.correlate(x, x, mode="full")
         return cor[len(x) : -1]
 

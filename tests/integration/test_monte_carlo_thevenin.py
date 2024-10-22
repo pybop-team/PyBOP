@@ -72,7 +72,7 @@ class TestSamplingThevenin:
         return np.random.normal(0, sigma, values)
 
     @pytest.fixture
-    def likelihood(self, model, parameters, init_soc):
+    def posterior(self, model, parameters, init_soc):
         # Form dataset
         solution = self.get_data(model, init_soc)
         dataset = pybop.Dataset(
@@ -86,7 +86,20 @@ class TestSamplingThevenin:
 
         # Define the cost to optimise
         problem = pybop.FittingProblem(model, parameters, dataset)
-        return pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.0075)
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
+        return pybop.LogPosterior(likelihood)
+
+    @pytest.fixture
+    def map_estimate(self, posterior):
+        common_args = {
+            "max_iterations": 100,
+            "max_unchanged_iterations": 35,
+            "sigma0": [3e-4, 3e-4],
+        }
+        optim = pybop.CMAES(posterior, **common_args)
+        results = optim.run()
+
+        return results.x
 
     # Parameterize the samplers
     @pytest.mark.parametrize(
@@ -105,46 +118,41 @@ class TestSamplingThevenin:
         ],
     )
     @pytest.mark.integration
-    def test_sampling_thevenin(self, sampler, likelihood):
-        posterior = pybop.LogPosterior(likelihood)
-
-        # set common args
+    def test_sampling_thevenin(self, sampler, posterior, map_estimate):
+        x0 = np.clip(map_estimate + np.random.normal(0, 1e-3, size=2), 1e-3, 1e-1)
         common_args = {
             "log_pdf": posterior,
             "chains": 1,
-            "warm_up": 250,
-            "max_iterations": 500,
-            "cov0": [3e-4, 3e-4],
+            "warm_up": 450,
+            "cov0": [1e-3, 1e-3] if sampler in self.fast_samplers else [0.1, 0.1],
+            "max_iterations": 1000,
+            "x0": x0,
         }
-        if sampler in self.fast_samplers:
-            common_args["warm_up"] = 600
-            common_args["max_iterations"] = 1200
 
         # construct and run
         sampler = sampler(**common_args)
         if isinstance(sampler, SliceRankShrinkingMCMC):
             sampler._samplers[0].set_hyper_parameters([1e-3])
-        results = sampler.run()
+        chains = sampler.run()
 
         # Test PosteriorSummary
-        summary = pybop.PosteriorSummary(results)
+        summary = pybop.PosteriorSummary(chains)
         ess = summary.effective_sample_size()
         np.testing.assert_array_less(0, ess)
+        if not isinstance(sampler, RelativisticMCMC):
+            np.testing.assert_array_less(summary.rhat(), 1.05)
 
         # Assert both final sample and posterior mean
-        x = np.mean(results, axis=1)
+        x = np.mean(chains, axis=1)
         for i in range(len(x)):
-            np.testing.assert_allclose(x[i], self.ground_truth, atol=1.5e-2)
-            np.testing.assert_allclose(results[i][-1], self.ground_truth, atol=1e-2)
+            np.testing.assert_allclose(x[i], self.ground_truth, atol=5e-3)
+            np.testing.assert_allclose(chains[i][-1], self.ground_truth, atol=1e-2)
 
     def get_data(self, model, init_soc):
         initial_state = {"Initial SoC": init_soc}
         experiment = pybop.Experiment(
             [
-                (
-                    "Discharge at 0.5C for 2 minutes (4 second period)",
-                    "Rest for 1 minute (4 second period)",
-                ),
+                ("Discharge at 0.5C for 4 minutes (8 second period)",),
             ]
         )
         sim = model.predict(initial_state=initial_state, experiment=experiment)
