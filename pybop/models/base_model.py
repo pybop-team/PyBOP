@@ -252,7 +252,7 @@ class BaseModel:
                 self.pybamm_model.build_model()
 
             # Temporary construction of attributes for PyBaMM
-            self.model = self._model = self.pybamm_model
+            self._model = self.pybamm_model
             self._unprocessed_parameter_values = self._unprocessed_parameter_set
 
             # Set initial state via PyBaMM's Simulation class
@@ -262,7 +262,6 @@ class BaseModel:
             self._unprocessed_parameter_set = self._parameter_values
 
             # Clear the pybamm objects
-            del self.model  # can be removed after PyBaMM's next release, fixed with pybamm-team/PyBaMM#4319
             del self._model
             del self._unprocessed_parameter_values
             del self._parameter_values

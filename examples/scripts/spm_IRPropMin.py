@@ -41,7 +41,6 @@ cost = pybop.Minkowski(problem, p=2)
 optim = pybop.IRPropMin(cost, max_iterations=100)
 
 results = optim.run()
-print("Estimated parameters:", results.x)
 
 # Plot the timeseries output
 pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")

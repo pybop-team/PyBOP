@@ -477,8 +477,10 @@ class TestOptimisation:
 
         assert (
             str(results) == f"OptimisationResult:\n"
+            f"  Initial parameters: {results.x0}\n"
             f"  Optimised parameters: {results.x}\n"
             f"  Final cost: {results.final_cost}\n"
+            f"  Optimisation time: {results.time} seconds\n"
             f"  Number of iterations: {results.n_iterations}\n"
             f"  SciPy result available: No"
         )
@@ -513,11 +515,19 @@ class TestOptimisation:
         captured_output = io.StringIO()
         sys.stdout = captured_output
         optim.set_threshold(np.inf)
-        optim.run()
+        results = optim.run()
         assert (
             captured_output.getvalue().strip()
-            == "Halt: Objective function crossed threshold: inf."
+            == f"Halt: Objective function crossed threshold: inf.\n"
+            f"OptimisationResult:\n"
+            f"  Initial parameters: {results.x0}\n"
+            f"  Optimised parameters: {results.x}\n"
+            f"  Final cost: {results.final_cost}\n"
+            f"  Optimisation time: {results.time} seconds\n"
+            f"  Number of iterations: {results.n_iterations}\n"
+            f"  SciPy result available: No"
         )
+
         optim.set_max_unchanged_iterations()
 
         # Test callback and halting output
@@ -558,12 +568,12 @@ class TestOptimisation:
     @pytest.mark.unit
     def test_unphysical_result(self, cost):
         # Trigger parameters not physically viable warning
-        optim = pybop.Optimisation(cost=cost, max_iterations=1)
+        optim = pybop.Optimisation(cost=cost, max_iterations=3)
         results = optim.run()
         results.check_physical_viability(np.array([2]))
 
     @pytest.mark.unit
-    def test_optimsation_results(self, cost):
+    def test_optimisation_results(self, cost):
         # Construct OptimisationResult
         results = pybop.OptimisationResult(x=[1e-3], cost=cost, n_iterations=1)
 

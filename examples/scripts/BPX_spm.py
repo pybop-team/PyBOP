@@ -48,7 +48,6 @@ optim = pybop.CMAES(cost, max_iterations=40)
 # Run the optimisation
 results = optim.run()
 print("True parameters:", parameters.true_value())
-print("Estimated parameters:", results.x)
 
 # Plot the timeseries output
 pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
