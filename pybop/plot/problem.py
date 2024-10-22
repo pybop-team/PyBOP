@@ -73,8 +73,8 @@ def quick(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
         )
         plot_dict.traces.append(target_trace)
 
-        if isinstance(problem, FittingProblem) and len(model_output) == len(
-            target_output
+        if isinstance(problem, FittingProblem) and len(model_output[i]) == len(
+            target_output[i]
         ):
             # Compute the standard deviation as proxy for uncertainty
             plot_dict.sigma = np.std(model_output[i] - target_output[i])
