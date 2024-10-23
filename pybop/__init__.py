@@ -173,6 +173,11 @@ from .observers.observer import Observer
 from . import plot as plot
 
 #
+# Experimental
+#
+from .experimental import BaseJaxCost, JaxSumSquaredError, JaxLogNormalLikelihood
+
+#
 # Remove any imported modules, so we don't expose them as part of pybop
 #
 del sys
