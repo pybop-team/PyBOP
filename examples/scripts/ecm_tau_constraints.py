@@ -179,8 +179,6 @@ optim = pybop.XNES(
 )
 
 results = optim.run()
-print("Estimated parameters:", results.x)
-
 
 # Plot the time series
 pybop.plot.dataset(dataset)
