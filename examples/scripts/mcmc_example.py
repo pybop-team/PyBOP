@@ -65,18 +65,18 @@ problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 likelihood = pybop.GaussianLogLikelihood(problem)
 posterior = pybop.LogPosterior(likelihood)
 
-optim = pybop.DifferentialEvolutionMCMC(
+sampler = pybop.DifferentialEvolutionMCMC(
     posterior,
     chains=3,
     max_iterations=300,
     warm_up=100,
     verbose=True,
-    # parallel=True,  # uncomment to enable parallelisation (MacOS/WSL/Linux only)
+    # parallel=True,  # uncomment to enable parallelisation (macOS/WSL/Linux only)
 )
-result = optim.run()
+chains = sampler.run()
 
 # Summary statistics
-posterior_summary = pybop.PosteriorSummary(result)
+posterior_summary = pybop.PosteriorSummary(chains)
 print(posterior_summary.get_summary_statistics())
 posterior_summary.plot_trace()
 posterior_summary.summary_table()
