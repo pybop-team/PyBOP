@@ -98,6 +98,7 @@ class TestSamplingThevenin:
         common_args = {
             "max_iterations": 100,
             "max_unchanged_iterations": 35,
+            "absolute_tolerance": 1e-7,
             "sigma0": [3e-4, 3e-4],
         }
         optim = pybop.CMAES(posterior, **common_args)
@@ -123,7 +124,7 @@ class TestSamplingThevenin:
     )
     @pytest.mark.integration
     def test_sampling_thevenin(self, sampler, posterior, map_estimate):
-        x0 = np.clip(map_estimate + np.random.normal(0, 1e-3, size=2), 1e-3, 1e-1)
+        x0 = np.clip(map_estimate + np.random.normal(0, 1e-3, size=2), 1e-4, 1e-1)
         common_args = {
             "log_pdf": posterior,
             "chains": 1,

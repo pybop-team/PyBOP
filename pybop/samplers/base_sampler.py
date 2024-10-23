@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 from pints import ParallelEvaluator
 
-from pybop import LogPosterior, Parameters
+from pybop import LogPosterior
 
 
 class BaseSampler:
@@ -43,8 +43,9 @@ class BaseSampler:
             self.parameters = log_pdf[0].parameters
             self.n_parameters = log_pdf[0].n_parameters
         else:
-            self.parameters = Parameters()
-            self.n_parameters = 0
+            raise ValueError(
+                "log_pdf must be a LogPosterior or List[LogPosterior]"
+            )  # TODO: Update for more general sampling
 
         # Check initial conditions
         if x0 is not None and len(x0) != self.n_parameters:

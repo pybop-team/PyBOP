@@ -1,5 +1,6 @@
 import copy
 import logging
+import re
 from unittest.mock import call, patch
 
 import numpy as np
@@ -395,6 +396,12 @@ class TestPintsSamplers:
         sampler = pybop.BaseSampler(log_posterior, x0, chains=1, cov0=0.1)
         with pytest.raises(NotImplementedError):
             sampler.run()
+
+        with pytest.raises(
+            ValueError,
+            match=re.escape("log_pdf must be a LogPosterior or List[LogPosterior]"),
+        ):
+            pybop.BaseSampler(pybop.WeightedCost(log_posterior), x0, chains=1, cov0=0.1)
 
     @pytest.mark.unit
     def test_MCMC_sampler(self, log_posterior, x0, chains):
