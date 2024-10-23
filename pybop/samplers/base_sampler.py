@@ -53,7 +53,9 @@ class BaseSampler:
 
         # Set initial values, if x0 is None, initial values are unmodified.
         self.parameters.update(initial_values=x0 if x0 is not None else None)
-        self._x0 = self.parameters.reset_initial_value(apply_transform=True)
+        self._x0 = self.parameters.reset_initial_value(apply_transform=True).reshape(
+            1, -1
+        )
 
         if len(self._x0) != self._n_chains or len(self._x0) == 1:
             self._x0 = np.tile(self._x0, (self._n_chains, 1))
