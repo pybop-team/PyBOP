@@ -1,5 +1,4 @@
 import numpy as np
-import plotly.graph_objects as go
 import pybamm
 
 import pybop
@@ -31,7 +30,7 @@ parameters = pybop.Parameters(
 
 # Generate data
 init_soc = 0.5
-sigma = 0.002
+sigma = 0.005
 experiment = pybop.Experiment(
     [
         ("Discharge at 0.5C for 6 minutes (5 second period)",),
@@ -63,32 +62,25 @@ signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 
 # Generate problem, likelihood, and sampler
 problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
-likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002)
+likelihood = pybop.GaussianLogLikelihood(problem)
 posterior = pybop.LogPosterior(likelihood)
 
-optim = pybop.DifferentialEvolutionMCMC(
+sampler = pybop.DifferentialEvolutionMCMC(
     posterior,
     chains=3,
     max_iterations=300,
     warm_up=100,
     verbose=True,
-    # parallel=True,  # uncomment to enable parallelisation (MacOS/WSL/Linux only)
+    # parallel=True,  # uncomment to enable parallelisation (macOS/WSL/Linux only)
 )
-result = optim.run()
+chains = sampler.run()
 
-# Create a histogram
-fig = go.Figure()
-for _i, data in enumerate(result):
-    fig.add_trace(go.Histogram(x=data[:, 0], name="Neg", opacity=0.75))
-    fig.add_trace(go.Histogram(x=data[:, 1], name="Pos", opacity=0.75))
-
-# Update layout for better visualization
-fig.update_layout(
-    title="Posterior distribution of volume fractions",
-    xaxis_title="Value",
-    yaxis_title="Count",
-    barmode="overlay",
-)
-
-# Show the plot
-fig.show()
+# Summary statistics
+posterior_summary = pybop.PosteriorSummary(chains)
+print(posterior_summary.get_summary_statistics())
+posterior_summary.plot_trace()
+posterior_summary.summary_table()
+posterior_summary.plot_posterior()
+posterior_summary.plot_chains()
+posterior_summary.effective_sample_size()
+print(f"rhat: {posterior_summary.rhat()}")

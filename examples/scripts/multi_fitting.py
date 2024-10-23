@@ -6,6 +6,13 @@ import pybop
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
+# Create initial SOC, experiment objects
+init_soc = [{"Initial SoC": 0.8}, {"Initial SoC": 0.6}]
+experiment = [
+    pybop.Experiment([("Discharge at 0.5C for 2 minutes (4 second period)")]),
+    pybop.Experiment([("Discharge at 1C for 1 minutes (4 second period)")]),
+]
+
 # Fitting parameters
 parameters = pybop.Parameters(
     pybop.Parameter(
@@ -21,9 +28,8 @@ parameters = pybop.Parameters(
 )
 
 # Generate a dataset and a fitting problem
-sigma = 0.001
-experiment = pybop.Experiment([("Discharge at 0.5C for 2 minutes (4 second period)")])
-values = model.predict(initial_state={"Initial SoC": 0.8}, experiment=experiment)
+sigma = 0.002
+values = model.predict(initial_state=init_soc[0], experiment=experiment[0])
 dataset_1 = pybop.Dataset(
     {
         "Time [s]": values["Time [s]"].data,
@@ -36,8 +42,7 @@ problem_1 = pybop.FittingProblem(model, parameters, dataset_1)
 
 # Generate a second dataset and problem
 model = model.new_copy()
-experiment = pybop.Experiment([("Discharge at 1C for 1 minutes (4 second period)")])
-values = model.predict(initial_state={"Initial SoC": 0.8}, experiment=experiment)
+values = model.predict(initial_state=init_soc[1], experiment=experiment[1])
 dataset_2 = pybop.Dataset(
     {
         "Time [s]": values["Time [s]"].data,
@@ -53,9 +58,11 @@ problem = pybop.MultiFittingProblem(problem_1, problem_2)
 
 # Generate the cost function and optimisation class
 cost = pybop.SumSquaredError(problem)
-optim = pybop.IRPropMin(
+optim = pybop.CuckooSearch(
     cost,
     verbose=True,
+    sigma0=0.05,
+    max_unchanged_iterations=20,
     max_iterations=100,
 )
 

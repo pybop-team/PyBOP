@@ -1,5 +1,6 @@
 import copy
 import logging
+import re
 from unittest.mock import call, patch
 
 import numpy as np
@@ -152,6 +153,19 @@ class TestPintsSamplers:
         assert samples.shape == (chains, 1, 2)
 
     @pytest.mark.unit
+    def test_effectie_sample_size(self, log_posterior):
+        sampler = pybop.SliceStepoutMCMC(
+            log_pdf=log_posterior,
+            chains=1,
+            max_iterations=1,
+        )
+        results = sampler.run()
+        summary = pybop.PosteriorSummary(results)
+
+        with pytest.raises(ValueError, match="At least two samples must be given."):
+            summary.effective_sample_size()
+
+    @pytest.mark.unit
     def test_single_parameter_sampling(self, model, dataset, MCMC, chains):
         parameters = pybop.Parameters(
             pybop.Parameter(
@@ -177,10 +191,13 @@ class TestPintsSamplers:
             log_pdf=log_posterior,
             chains=chains,
             sampler=MCMC,
-            max_iterations=1,
+            max_iterations=3,
             verbose=True,
         )
-        sampler.run()
+        result = sampler.run()
+        summary = pybop.PosteriorSummary(result)
+        autocorr = summary.autocorrelation(result[0, :, 0])
+        assert autocorr.shape == (result[0, :, 0].shape[0] - 2,)
 
     @pytest.mark.unit
     def test_multi_log_pdf(self, log_posterior, x0, chains):
@@ -376,9 +393,15 @@ class TestPintsSamplers:
 
     @pytest.mark.unit
     def test_base_sampler(self, log_posterior, x0):
-        sampler = pybop.BaseSampler(log_posterior, x0, cov0=0.1)
+        sampler = pybop.BaseSampler(log_posterior, x0, chains=1, cov0=0.1)
         with pytest.raises(NotImplementedError):
             sampler.run()
+
+        with pytest.raises(
+            ValueError,
+            match=re.escape("log_pdf must be a LogPosterior or List[LogPosterior]"),
+        ):
+            pybop.BaseSampler(pybop.WeightedCost(log_posterior), x0, chains=1, cov0=0.1)
 
     @pytest.mark.unit
     def test_MCMC_sampler(self, log_posterior, x0, chains):
