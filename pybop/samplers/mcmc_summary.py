@@ -2,7 +2,7 @@ import numpy as np
 import pints
 import scipy
 
-from pybop import PlotlyManager
+from pybop.plot import PlotlyManager
 
 
 class PosteriorSummary:
