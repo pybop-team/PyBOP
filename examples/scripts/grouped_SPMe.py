@@ -14,6 +14,29 @@ import pybop
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 parameter_set["Contact resistance [Ohm]"] = 0.01
 
+# Run an example SPMe simulation
+model_options = {"surface form": "differential", "contact resistance": "true"}
+time_domain_SPMe = pybop.lithium_ion.SPMe(
+    parameter_set=parameter_set, options=model_options
+)
+time_domain_SPMe.build(initial_state={"Initial SoC": 0.9})
+experiment = pybop.Experiment(
+    [
+        "Rest for 1 minute",
+        "Discharge at 1C until 2.5 V (5 seconds period)",
+    ],
+)
+simulation = time_domain_SPMe.predict(experiment=experiment)
+dataset = pybop.Dataset(
+    {
+        "Time [s]": simulation["Time [s]"].data,
+        "Current function [A]": simulation["Current [A]"].data,
+        "Voltage [V]": simulation["Voltage [V]"].data,
+    }
+)
+pybop.plot.dataset(dataset)
+
+# Convert to grouped parameters
 F = parameter_set["Faraday constant [C.mol-1]"]
 T = parameter_set["Ambient temperature [K]"]
 alpha_p = parameter_set["Positive electrode active material volume fraction"]
@@ -107,25 +130,20 @@ grouped_parameter_set = {
     "Series resistance [Ohm]": R0,
 }
 
-# Test model in the time domain
-model_options = {"surface form": "differential", "contact resistance": "true"}
-time_domain_SPMe = pybop.lithium_ion.SPMe(
-    parameter_set=parameter_set, options=model_options
-)
+# Test model in the time domain *** start from zero current ***
 time_domain_grouped = pybop.lithium_ion.GroupedSPMe(parameter_set=grouped_parameter_set)
-for model in [time_domain_SPMe, time_domain_grouped]:
-    model.build(initial_state={"Initial SoC": 0.9})
-    simulation = model.predict(t_eval=np.linspace(0, 3600, 100))
-    dataset = pybop.Dataset(
-        {
-            "Time [s]": simulation["Time [s]"].data,
-            "Current function [A]": simulation["Current [A]"].data,
-            "Voltage [V]": simulation["Voltage [V]"].data,
-        }
-    )
-    pybop.plot.dataset(dataset)
+time_domain_grouped.build(initial_state={"Initial SoC": 0.9})
+time_domain_grouped.set_current_function(dataset=dataset)
+dataset = pybop.Dataset(
+    {
+        "Time [s]": simulation["Time [s]"].data,
+        "Current function [A]": simulation["Current [A]"].data,
+        "Voltage [V]": simulation["Voltage [V]"].data,
+    }
+)
+pybop.plot.dataset(dataset)
 
-# Continue with frequency domain model
+# Compare models in the frequency domain
 freq_domain_SPMe = pybop.lithium_ion.SPMe(
     parameter_set=parameter_set, options=model_options, eis=True
 )
