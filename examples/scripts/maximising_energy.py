@@ -56,14 +56,13 @@ optim = pybop.PSO(
     cost, verbose=True, allow_infeasible_solutions=False, max_iterations=10
 )
 results = optim.run()
-print("Estimated parameters:", results.x)
 print(f"Initial gravimetric energy density: {cost1(optim.x0):.2f} Wh.kg-1")
 print(f"Optimised gravimetric energy density: {cost1(results.x):.2f} Wh.kg-1")
 print(f"Initial volumetric energy density: {cost2(optim.x0):.2f} Wh.m-3")
 print(f"Optimised volumetric energy density: {cost2(results.x):.2f} Wh.m-3")
 
 # Plot the timeseries output
-pybop.quick_plot(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot the cost landscape with optimisation path
-pybop.plot2d(optim, steps=5)
+pybop.plot.surface(optim)

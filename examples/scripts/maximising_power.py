@@ -48,7 +48,6 @@ optim = pybop.XNES(
     cost, verbose=True, allow_infeasible_solutions=False, max_iterations=10
 )
 results = optim.run()
-print("Estimated parameters:", results.x)
 print(f"Initial gravimetric power density: {cost1(optim.x0):.2f} W.kg-1")
 print(f"Optimised gravimetric power density: {cost1(results.x):.2f} W.kg-1")
 print(f"Initial volumetric power density: {cost2(optim.x0):.2f} W.m-3")
@@ -58,7 +57,7 @@ print(
 )
 
 # Plot the timeseries output
-pybop.quick_plot(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot the cost landscape with optimisation path
-pybop.plot2d(optim, steps=5)
+pybop.plot.surface(optim)

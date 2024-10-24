@@ -49,22 +49,18 @@ optim = pybop.CMAES(cost, sigma0=0.25, max_unchanged_iterations=10, max_iteratio
 # Run the optimisation
 results = optim.run()
 print("True parameters:", parameters.true_value())
-print("Estimated parameters:", results.x)
 
 # Plot the time series
-pybop.plot_dataset(dataset)
+pybop.plot.dataset(dataset)
 
 # Plot the timeseries output
-pybop.quick_plot(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
-pybop.plot_convergence(optim)
+pybop.plot.convergence(optim)
 
 # Plot the parameter traces
-pybop.plot_parameters(optim)
+pybop.plot.parameters(optim)
 
 # Plot the cost landscape
-pybop.plot2d(cost, steps=5)
-
-# Plot the cost landscape with optimisation path
-pybop.plot2d(optim, steps=5)
+pybop.plot.surface(optim)

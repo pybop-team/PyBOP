@@ -64,10 +64,11 @@ class BaseOptimiser:
         self.x0 = None
         self.bounds = None
         self.sigma0 = 0.02
-        self.verbose = False
-        self.log = dict(x=[], x_best=[], cost=[])
+        self.verbose = True
+        self.log = dict(x=[], x_best=[], cost=[], cost_best=[])
         self.minimising = True
         self._transformation = None
+        self._needs_sensitivities = False
         self.physical_viability = False
         self.allow_infeasible_solutions = False
         self.default_max_iterations = 1000
@@ -175,6 +176,9 @@ class BaseOptimiser:
         """
         self.result = self._run()
 
+        if self.verbose:
+            print(self.result)
+
         # Store the optimised parameters
         self.parameters.update(values=self.result.x)
 
@@ -193,7 +197,7 @@ class BaseOptimiser:
         """
         raise NotImplementedError
 
-    def log_update(self, x=None, x_best=None, cost=None):
+    def log_update(self, x=None, x_best=None, cost=None, cost_best=None):
         """
         Update the log with new values.
 
@@ -202,26 +206,45 @@ class BaseOptimiser:
         x : list or array-like, optional
             Parameter values (default: None).
         x_best : list or array-like, optional
-            Paraneter values corresponding to the best cost yet (default: None).
-        cost : float, optional
-            Cost value (default: None).
+            Parameter values corresponding to the best cost yet (default: None).
+        cost : list, optional
+            Cost values corresponding to x (default: None).
+        cost_best
+            Cost values corresponding to x_best (default: None).
         """
-        if x is not None:
+
+        def convert_to_list(array_like):
+            """Helper function to convert input to a list, if necessary."""
+            if isinstance(array_like, (list, tuple, np.ndarray)):
+                return list(array_like)
+            elif isinstance(array_like, (int, float)):
+                return [array_like]
+            else:
+                raise TypeError("Input must be a list, tuple, or numpy array")
+
+        def apply_transformation(values):
+            """Apply transformation if it exists."""
             if self._transformation:
-                x = list(x)
-                for i, xi in enumerate(x):
-                    x[i] = self._transformation.to_model(xi)
-            self.log["x"].append(x)
+                return [self._transformation.to_model(value) for value in values]
+            return values
+
+        if x is not None:
+            x = convert_to_list(x)
+            x = apply_transformation(x)
+            self.log["x"].extend(x)
 
         if x_best is not None:
-            if self._transformation:
-                x_best = list(x_best)
-                for i, xi in enumerate(x_best):
-                    x_best[i] = self._transformation.to_model(xi)
-            self.log["x_best"].append(x_best)
+            x_best = convert_to_list(x_best)
+            x_best = apply_transformation(x_best)
+            self.log["x_best"].extend([x_best])
 
         if cost is not None:
-            self.log["cost"].append(cost)
+            cost = convert_to_list(cost)
+            self.log["cost"].extend(cost)
+
+        if cost_best is not None:
+            cost_best = convert_to_list(cost_best)
+            self.log["cost_best"].extend(cost_best)
 
     def name(self):
         """
@@ -260,6 +283,10 @@ class BaseOptimiser:
             self.physical_viability = False
             self.allow_infeasible_solutions = False
 
+    @property
+    def needs_sensitivities(self):
+        return self._needs_sensitivities
+
 
 class OptimisationResult:
     """
@@ -283,6 +310,8 @@ class OptimisationResult:
         cost: Union[BaseCost, None] = None,
         final_cost: Optional[float] = None,
         n_iterations: Optional[int] = None,
+        optim: Optional[BaseOptimiser] = None,
+        time: Optional[float] = None,
         scipy_result=None,
     ):
         self.x = x
@@ -292,6 +321,12 @@ class OptimisationResult:
         )
         self.n_iterations = n_iterations
         self.scipy_result = scipy_result
+        self.optim = optim
+        self.time = time
+        if isinstance(self.optim, BaseOptimiser):
+            self.x0 = self.optim.parameters.initial_value()
+        else:
+            self.x0 = None
 
         # Check that the parameters produce finite cost, and are physically viable
         self._validate_parameters()
@@ -363,8 +398,10 @@ class OptimisationResult:
         """
         return (
             f"OptimisationResult:\n"
+            f"  Initial parameters: {self.x0}\n"
             f"  Optimised parameters: {self.x}\n"
             f"  Final cost: {self.final_cost}\n"
+            f"  Optimisation time: {self.time} seconds\n"
             f"  Number of iterations: {self.n_iterations}\n"
             f"  SciPy result available: {'Yes' if self.scipy_result else 'No'}"
         )
