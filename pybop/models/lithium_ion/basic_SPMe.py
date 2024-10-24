@@ -47,6 +47,10 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         ######################
         # Variables that depend on time only are created without a domain
         Q = Variable("Discharge capacity [A.h]")
+        v_n = Variable("Negative electrode voltage [V]")
+        v_p = Variable("Positive electrode voltage [V]")
+        j_n = Variable("Negative molar flux")
+        j_p = Variable("Positive molar flux")
 
         # Variables that vary spatially are created with a domain
         sto_n = Variable(
@@ -73,14 +77,10 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         # implementing equations that hold over several domains
         sto_e = pybamm.concatenation(sto_e_n, sto_e_s, sto_e_p)
 
-        # *** ignore the double-layer for now ***
-        # v_n = Variable("Negative electrode voltage [V]")
-        # v_p = Variable("Positive electrode voltage [V]")
-
         # Surf takes the surface value of a variable, i.e. its boundary value on the
         # right side. This is also accessible via `boundary_value(x, "right")`, with
         # "left" providing the boundary value of the left side
-        sto_n_surf = pybamm.surf(sto_n)  # How is it imposed that this is at r = 1????
+        sto_n_surf = pybamm.surf(sto_n)
         sto_p_surf = pybamm.surf(sto_p)
 
         ######################
@@ -92,7 +92,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         F = self.param.F  # Faraday constant
         Rg = self.param.R  # Universal gas constant
         T = self.param.T_init  # Temperature
-        RT_F = Rg * T / F
+        RT_F = Rg * T / F  # Thermal voltage
 
         soc_init = Parameter("Initial SoC")
         x_0 = Parameter("Minimum negative stoichiometry")
@@ -117,6 +117,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
 
         l_p = Parameter("Positive electrode relative thickness")
         l_n = Parameter("Negative electrode relative thickness")
+
         R0 = Parameter("Series resistance [Ohm]")
 
         # Primary broadcasts are used to broadcast scalar quantities across a domain
@@ -163,21 +164,8 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         self.initial_conditions[Q] = Scalar(0)
 
         ######################
-        # Double-layer
-        ######################
-        # *** ignore the double-layer for now ***
-        # self.rhs[v_n] = 1 / C_n * (Q_th_n * j_n - I / 3)
-        # self.rhs[v_p] = 1 / C_p * (Q_th_p * j_p + I / 3)
-        # self.initial_conditions[v_n] = Scalar(0)
-        # self.initial_conditions[v_p] = Scalar(0)
-
-        ######################
         # Overpotentials
         ######################
-        # *** ignore the double-layer for now ***
-        j_p = 1 / Q_th_p * (-I / 3)  # 1 / Q_th_p * (I / 3 - C_n * v_p.diff(pybamm_t))
-        j_n = 1 / Q_th_n * (I / 3)  # 1 / Q_th_n * (-I / 3 - C_p * v_n.diff(pybamm_t))
-
         j0_n = pybamm.sqrt(sto_n_surf * (1 - sto_n_surf)) * (
             pybamm.x_average(pybamm.sqrt(sto_e_n)) * l_n
         )
@@ -191,8 +179,53 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             pybamm.x_average(sto_e_p) / pybamm.x_average(sto_e_n)
         )
 
-        v_n = self.U(sto_n_surf, "negative") + eta_n
-        v_p = self.U(sto_p_surf, "positive") + eta_p
+        # The `algebraic` dictionary contains differential equations, with the key being
+        # the main scalar variable of interest in the equation
+        self.algebraic[j_n] = self.U(sto_n_surf, "negative") + eta_n - v_n
+        self.algebraic[j_p] = self.U(sto_p_surf, "positive") + eta_p - v_p
+
+        # Initial conditions must also be provided for algebraic equations, as an
+        # initial guess for a root-finding algorithm which calculates consistent
+        # initial conditions
+        j_n_init = I / (3 * Q_th_n)  # estimating dv_n/dt=0
+        j_p_init = -I / (3 * Q_th_p)  # estimating dv_p/dt=0
+        self.initial_conditions[j_n] = j_n_init
+        self.initial_conditions[j_p] = j_p_init
+        # self.initial_conditions[j_n] = Scalar(0)  # j_n_init
+        # self.initial_conditions[j_p] = Scalar(0)  # j_p_init
+
+        ######################
+        # Double-layer
+        ######################
+        self.rhs[v_n] = 1 / C_n * (-Q_th_n * j_n + I / 3)
+        self.rhs[v_p] = 1 / C_p * (-Q_th_p * j_p - I / 3)
+
+        sto_n_init = x_0 + (x_100 - x_0) * soc_init
+        sto_p_init = y_0 + (y_100 - y_0) * soc_init
+        U_n_init = self.U(sto_n_init, "negative")
+        U_p_init = self.U(sto_p_init, "positive")
+        eta_n_init = (
+            2
+            * RT_F
+            * pybamm.arcsinh(
+                tau_r_n
+                * j_n_init
+                / (2 * pybamm.sqrt(sto_n_init * (1 - sto_n_init)) * l_n)
+            )
+        )
+        eta_p_init = (
+            -2
+            * RT_F
+            * pybamm.arcsinh(
+                tau_r_p
+                * j_p_init
+                / (2 * pybamm.sqrt(sto_p_init * (1 - sto_p_init)) * l_p)
+            )
+        )
+        self.initial_conditions[v_n] = U_n_init + eta_n_init
+        self.initial_conditions[v_p] = U_p_init + eta_p_init
+        # self.initial_conditions[v_n] = U_n_init  # + eta_n_init
+        # self.initial_conditions[v_p] = U_p_init  # + eta_p_init
 
         ######################
         # Particles
@@ -212,8 +245,6 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "right": (-tau_d_p * j_p, "Neumann"),
         }
 
-        sto_n_init = x_0 + (x_100 - x_0) * soc_init
-        sto_p_init = y_0 + (y_100 - y_0) * soc_init
         self.initial_conditions[sto_n] = sto_n_init
         self.initial_conditions[sto_p] = sto_p_init
 
@@ -259,7 +290,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         V = v_p - v_n + eta_e - R0 * I
 
         # Save the initial OCV
-        self.ocv_init = self.U(sto_p_init, "positive") - self.U(sto_n_init, "negative")
+        self.ocv_init = U_p_init - U_n_init
 
         # Events specify points at which a solution should terminate
         self.events += [
@@ -302,7 +333,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
     @property
     def default_parameter_values(self):
         parameter_dictionary = {
-            "Current function [A]": 3,
+            "Current function [A]": 0,
             "Nominal cell capacity [A.h]": 3,
             "Initial temperature [K]": 298,
             "Initial SoC": 0.5,

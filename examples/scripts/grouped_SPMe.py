@@ -108,7 +108,7 @@ grouped_parameter_set = {
 }
 
 # Test model in the time domain
-model_options = {"contact resistance": "true"}
+model_options = {"surface form": "differential", "contact resistance": "true"}
 time_domain_SPMe = pybop.lithium_ion.SPMe(
     parameter_set=parameter_set, options=model_options
 )
