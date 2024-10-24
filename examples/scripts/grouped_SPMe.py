@@ -80,9 +80,9 @@ grouped_parameter_set = {
     "Maximum positive stoichiometry": y_0,
     "Lower voltage cut-off [V]": parameter_set["Lower voltage cut-off [V]"],
     "Upper voltage cut-off [V]": parameter_set["Upper voltage cut-off [V]"],
-    "Positive electrode thickness [m]": 1,  # normalised
-    "Negative electrode thickness [m]": 1,  # normalised
-    "Separator thickness [m]": 1,  # normalised
+    "Positive electrode thickness [m]": l_p,  # normalised
+    "Negative electrode thickness [m]": l_n,  # normalised
+    "Separator thickness [m]": 1-l_p-l_n,  # normalised
     "Positive particle radius [m]": 1,  # normalised
     "Negative particle radius [m]": 1,  # normalised
     "Positive electrode OCP [V]": nmc_LGM50_ocp_Chen2020,
@@ -120,7 +120,7 @@ for model in [time_domain_SPMe, time_domain_grouped]:
             "Voltage [V]": simulation["Voltage [V]"].data,
         }
     )
-    pybop.plot_dataset(dataset)
+    pybop.plot.dataset(dataset)
 
 # Continue with frequency domain model
 freq_domain_SPMe = pybop.lithium_ion.SPMe(parameter_set=parameter_set, options=model_options, eis=True)

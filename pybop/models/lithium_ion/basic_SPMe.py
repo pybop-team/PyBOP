@@ -297,9 +297,9 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "Maximum negative stoichiometry": 0.911,
             "Minimum positive stoichiometry": 0.264,
             "Maximum positive stoichiometry": 0.854,
-            "Positive electrode thickness [m]": 1,  # normalised
-            "Negative electrode thickness [m]": 1,  # normalised
-            "Separator thickness [m]": 1,  # normalised
+            "Positive electrode thickness [m]": 0.438,  # normalised
+            "Negative electrode thickness [m]": 0.493,  # normalised
+            "Separator thickness [m]": 0.069,  # normalised
             "Positive particle radius [m]": 1,  # normalised
             "Negative particle radius [m]": 1,  # normalised
             "Lower voltage cut-off [V]": 2.5,
