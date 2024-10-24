@@ -92,6 +92,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         F = self.param.F  # Faraday constant
         Rg = self.param.R  # Universal gas constant
         T = self.param.T_init  # Temperature
+        RT_F = Rg * T / F
 
         soc_init = Parameter("Initial SoC")
         x_0 = Parameter("Minimum negative stoichiometry")
@@ -177,15 +178,17 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         j_p = 1 / Q_th_p * (-I / 3)  # 1 / Q_th_p * (I / 3 - C_n * v_p.diff(pybamm_t))
         j_n = 1 / Q_th_n * (I / 3)  # 1 / Q_th_n * (-I / 3 - C_p * v_n.diff(pybamm_t))
 
-        j0_n = pybamm.sqrt(sto_n_surf * (1 - sto_n_surf))  # Lacking integral ce!!!!
-        j0_p = pybamm.sqrt(sto_p_surf * (1 - sto_p_surf))  # Lacking integral ce!!!!
+        j0_n = pybamm.sqrt(sto_n_surf * (1 - sto_n_surf)) * (
+            pybamm.x_average(pybamm.sqrt(sto_e_n)) * l_n
+        )
+        j0_p = pybamm.sqrt(sto_p_surf * (1 - sto_p_surf)) * (
+            pybamm.x_average(pybamm.sqrt(sto_e_p)) * l_p
+        )
 
-        eta_n = (2 * Rg * T / F) * pybamm.arcsinh(tau_r_n * j_n / (2 * j0_n))
-        eta_p = -(2 * Rg * T / F) * pybamm.arcsinh(tau_r_p * j_p / (2 * j0_p))
-        eta_e = (
-            (2 * Rg * T / F)
-            * (1 - t_plus)
-            * (pybamm.log(l_n) - pybamm.log(l_p) + pybamm.log(1))
+        eta_n = 2 * RT_F * pybamm.arcsinh(tau_r_n * j_n / (2 * j0_n))
+        eta_p = 2 * RT_F * pybamm.arcsinh(tau_r_p * j_p / (2 * j0_p))
+        eta_e = (2 * RT_F * (1 - t_plus)) * pybamm.log(
+            pybamm.x_average(sto_e_p) / pybamm.x_average(sto_e_n)
         )
 
         v_n = self.U(sto_n_surf, "negative") + eta_n
@@ -256,7 +259,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         V = v_p - v_n + eta_e - R0 * I
 
         # Save the initial OCV
-        self._ocv_init = self.U(sto_p_init, "positive") - self.U(sto_n_init, "negative")
+        self.ocv_init = self.U(sto_p_init, "positive") - self.U(sto_n_init, "negative")
 
         # Events specify points at which a solution should terminate
         self.events += [
