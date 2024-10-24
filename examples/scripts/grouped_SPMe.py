@@ -1,13 +1,14 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import pybop
 from pybamm.input.parameters.lithium_ion.Chen2020 import (
     graphite_LGM50_ocp_Chen2020,
     nmc_LGM50_ocp_Chen2020,
 )
-from pybamm.models.full_battery_models.lithium_ion.electrode_soh import get_min_max_stoichiometries
-from scipy.io import savemat
+from pybamm.models.full_battery_models.lithium_ion.electrode_soh import (
+    get_min_max_stoichiometries,
+)
 
+import pybop
 
 # Unpack parameter values from Chen2020
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
@@ -82,7 +83,7 @@ grouped_parameter_set = {
     "Upper voltage cut-off [V]": parameter_set["Upper voltage cut-off [V]"],
     "Positive electrode thickness [m]": l_p,  # normalised
     "Negative electrode thickness [m]": l_n,  # normalised
-    "Separator thickness [m]": 1-l_p-l_n,  # normalised
+    "Separator thickness [m]": 1 - l_p - l_n,  # normalised
     "Positive particle radius [m]": 1,  # normalised
     "Negative particle radius [m]": 1,  # normalised
     "Positive electrode OCP [V]": nmc_LGM50_ocp_Chen2020,
@@ -108,11 +109,13 @@ grouped_parameter_set = {
 
 # Test model in the time domain
 model_options = {"contact resistance": "true"}
-time_domain_SPMe = pybop.lithium_ion.SPMe(parameter_set=parameter_set, options=model_options)
+time_domain_SPMe = pybop.lithium_ion.SPMe(
+    parameter_set=parameter_set, options=model_options
+)
 time_domain_grouped = pybop.lithium_ion.GroupedSPMe(parameter_set=grouped_parameter_set)
 for model in [time_domain_SPMe, time_domain_grouped]:
     model.build(initial_state={"Initial SoC": 0.9})
-    simulation = model.predict(t_eval=np.linspace(0,3600,100))
+    simulation = model.predict(t_eval=np.linspace(0, 3600, 100))
     dataset = pybop.Dataset(
         {
             "Time [s]": simulation["Time [s]"].data,
@@ -123,8 +126,12 @@ for model in [time_domain_SPMe, time_domain_grouped]:
     pybop.plot.dataset(dataset)
 
 # Continue with frequency domain model
-freq_domain_SPMe = pybop.lithium_ion.SPMe(parameter_set=parameter_set, options=model_options, eis=True)
-freq_domain_grouped = pybop.lithium_ion.GroupedSPMe(parameter_set=grouped_parameter_set, eis=True)
+freq_domain_SPMe = pybop.lithium_ion.SPMe(
+    parameter_set=parameter_set, options=model_options, eis=True
+)
+freq_domain_grouped = pybop.lithium_ion.GroupedSPMe(
+    parameter_set=grouped_parameter_set, eis=True
+)
 
 for model in [freq_domain_SPMe, freq_domain_grouped]:
     NSOC = 11
@@ -143,7 +150,7 @@ for model in [freq_domain_SPMe, freq_domain_grouped]:
     fig, ax = plt.subplots()
     for ii in range(len(SOCs)):
         ax.plot(np.real(impedances[:, ii]), -np.imag(impedances[:, ii]))
-    ax.set(xlabel="$Z_r(\omega)$ [$\Omega$]", ylabel="$-Z_j(\omega)$ [$\Omega$]")
+    ax.set(xlabel=r"$Z_r(\omega)$ [$\Omega$]", ylabel=r"$-Z_j(\omega)$ [$\Omega$]")
     ax.grid()
     ax.set_aspect("equal", "box")
     plt.show()

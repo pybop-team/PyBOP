@@ -1,12 +1,21 @@
-import pybamm
 import warnings
-from pybamm import Event, FunctionParameter, Parameter, ParameterValues, PrimaryBroadcast, Scalar, Variable
+
+import pybamm
+from pybamm import (
+    Event,
+    FunctionParameter,
+    Parameter,
+    ParameterValues,
+    PrimaryBroadcast,
+    Scalar,
+    Variable,
+)
 from pybamm import lithium_ion as pybamm_lithium_ion
+from pybamm import t as pybamm_t
 from pybamm.input.parameters.lithium_ion.Chen2020 import (
     graphite_LGM50_ocp_Chen2020,
     nmc_LGM50_ocp_Chen2020,
 )
-from pybamm import t as pybamm_t
 
 
 class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
@@ -21,9 +30,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
 
     def __init__(self, name="Single particle model with electrolyte", **model_kwargs):
         if model_kwargs is not dict(build=True):
-            unused_kwargs_warning = (
-                f"The input model_kwargs {list(model_kwargs.keys())} are not currently used by the SPMe."
-            )
+            unused_kwargs_warning = f"The input model_kwargs {list(model_kwargs.keys())} are not currently used by the SPMe."
             warnings.warn(unused_kwargs_warning, UserWarning, stacklevel=2)
 
         super().__init__({}, name=name)
@@ -127,7 +134,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         )
         tau_e = pybamm.concatenation(tau_e_n, tau_e_sep, tau_e_p)
 
-        beta_n  = PrimaryBroadcast(
+        beta_n = PrimaryBroadcast(
             Parameter("Negative relative concentration"),
             "negative electrode",
         )
@@ -135,7 +142,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             Scalar(0),
             "separator",
         )
-        beta_p  = PrimaryBroadcast(
+        beta_p = PrimaryBroadcast(
             Parameter("Positive relative concentration"),
             "positive electrode",
         )
@@ -172,10 +179,14 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
 
         j0_n = pybamm.sqrt(sto_n_surf * (1 - sto_n_surf))  # Lacking integral ce!!!!
         j0_p = pybamm.sqrt(sto_p_surf * (1 - sto_p_surf))  # Lacking integral ce!!!!
-        
+
         eta_n = (2 * Rg * T / F) * pybamm.arcsinh(tau_r_n * j_n / (2 * j0_n))
         eta_p = -(2 * Rg * T / F) * pybamm.arcsinh(tau_r_p * j_p / (2 * j0_p))
-        eta_e = (2 * Rg * T / F) * (1-t_plus) * (pybamm.log(l_n) - pybamm.log(l_p) + pybamm.log(1))
+        eta_e = (
+            (2 * Rg * T / F)
+            * (1 - t_plus)
+            * (pybamm.log(l_n) - pybamm.log(l_p) + pybamm.log(1))
+        )
 
         v_n = self.U(sto_n_surf, "negative") + eta_n
         v_p = self.U(sto_p_surf, "positive") + eta_p
@@ -191,15 +202,15 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         # Boundary conditions must be provided for equations with spatial derivatives
         self.boundary_conditions[sto_n] = {
             "left": (Scalar(0), "Neumann"),
-            "right": (- tau_d_n * j_n, "Neumann"),
+            "right": (-tau_d_n * j_n, "Neumann"),
         }
         self.boundary_conditions[sto_p] = {
             "left": (Scalar(0), "Neumann"),
-            "right": (- tau_d_p * j_p, "Neumann"),
+            "right": (-tau_d_p * j_p, "Neumann"),
         }
 
-        sto_n_init = x_0 + (x_100-x_0) * soc_init
-        sto_p_init = y_0 + (y_100-y_0) * soc_init
+        sto_n_init = x_0 + (x_100 - x_0) * soc_init
+        sto_p_init = y_0 + (y_100 - y_0) * soc_init
         self.initial_conditions[sto_n] = sto_n_init
         self.initial_conditions[sto_p] = sto_p_init
 
@@ -285,7 +296,6 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "Voltage [V]": V,
         }
 
-
     @property
     def default_parameter_values(self):
         parameter_dictionary = {
@@ -325,7 +335,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "Series resistance [Ohm]": 0.01,
         }
         return ParameterValues(values=parameter_dictionary)
-    
+
     def build_model(self):
         # Build model variables and equations
         self._build_model()
