@@ -13,6 +13,7 @@ import pybop
 # Unpack parameter values from Chen2020
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 parameter_set["Contact resistance [Ohm]"] = 0.01
+parameter_set["Electrolyte diffusivity [m2.s-1]"] = 1.769e-10
 
 # Run an example SPMe simulation
 model_options = {"surface form": "differential", "contact resistance": "true"}
@@ -61,7 +62,7 @@ m_n = 6.48e-7  # (A/m2)(m3/mol)**1.5
 A = parameter_set["Electrode height [m]"] * parameter_set["Electrode width [m]"]
 L = L_p + L_n + parameter_set["Separator thickness [m]"]
 ce0 = parameter_set["Initial concentration in electrolyte [mol.m-3]"]
-De = parameter_set["Electrolyte diffusivity [m2.s-1]"](ce0, T)
+De = parameter_set["Electrolyte diffusivity [m2.s-1]"]  # (ce0, T)
 epsilon_sep = parameter_set["Separator porosity"]
 b_sep = parameter_set["Separator Bruggeman coefficient (electrolyte)"]
 t_plus = parameter_set["Cation transference number"]
@@ -104,11 +105,6 @@ grouped_parameter_set = {
     "Maximum positive stoichiometry": y_0,
     "Lower voltage cut-off [V]": parameter_set["Lower voltage cut-off [V]"],
     "Upper voltage cut-off [V]": parameter_set["Upper voltage cut-off [V]"],
-    "Positive electrode thickness [m]": l_p,  # normalised
-    "Negative electrode thickness [m]": l_n,  # normalised
-    "Separator thickness [m]": 1 - l_p - l_n,  # normalised
-    "Positive particle radius [m]": 1,  # normalised
-    "Negative particle radius [m]": 1,  # normalised
     "Positive electrode OCP [V]": nmc_LGM50_ocp_Chen2020,
     "Negative electrode OCP [V]": graphite_LGM50_ocp_Chen2020,
     "Positive theoretical electrode capacity [As]": Q_th_p,

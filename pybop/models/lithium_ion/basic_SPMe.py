@@ -325,11 +325,6 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "Maximum negative stoichiometry": 0.911,
             "Minimum positive stoichiometry": 0.264,
             "Maximum positive stoichiometry": 0.854,
-            "Positive electrode thickness [m]": 0.438,  # normalised
-            "Negative electrode thickness [m]": 0.493,  # normalised
-            "Separator thickness [m]": 0.069,  # normalised
-            "Positive particle radius [m]": 1,  # normalised
-            "Negative particle radius [m]": 1,  # normalised
             "Lower voltage cut-off [V]": 2.5,
             "Upper voltage cut-off [V]": 4.2,
             "Positive electrode OCP [V]": nmc_LGM50_ocp_Chen2020,
@@ -350,6 +345,11 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "Cation transference number": 0.25,
             "Positive electrode relative thickness": 0.47,
             "Negative electrode relative thickness": 0.47,
+            "Positive electrode thickness [m]": 0.47,  # normalised
+            "Negative electrode thickness [m]": 0.47,  # normalised
+            "Separator thickness [m]": 0.06,  # normalised
+            "Positive particle radius [m]": 1,  # normalised
+            "Negative particle radius [m]": 1,  # normalised
             "Series resistance [Ohm]": 0.01,
         }
         return ParameterValues(values=parameter_dictionary)

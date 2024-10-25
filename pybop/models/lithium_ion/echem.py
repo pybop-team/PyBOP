@@ -283,6 +283,24 @@ class GroupedSPMe(EChemBaseModel):
     """
 
     def __init__(self, name="Grouped SPMe", eis=False, **model_kwargs):
+        # Update normalised lengthscales
+        parameter_set = model_kwargs.pop("parameter_set", None)
+        if parameter_set:
+            parameter_set["Positive electrode thickness [m]"] = parameter_set[
+                "Positive electrode relative thickness"
+            ]
+            parameter_set["Negative electrode thickness [m]"] = parameter_set[
+                "Negative electrode relative thickness"
+            ]
+            parameter_set["Separator thickness [m]"] = (
+                1
+                - parameter_set["Positive electrode relative thickness"]
+                - parameter_set["Negative electrode relative thickness"]
+            )
+            parameter_set["Positive particle radius [m]"] = 1
+            parameter_set["Negative particle radius [m]"] = 1
+            model_kwargs["parameter_set"] = parameter_set
+
         super().__init__(
             pybamm_model=BaseGroupedSPMe, name=name, eis=eis, **model_kwargs
         )
