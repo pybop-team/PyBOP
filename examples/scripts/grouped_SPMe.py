@@ -134,6 +134,7 @@ grouped_parameter_set = {
 time_domain_grouped = pybop.lithium_ion.GroupedSPMe(parameter_set=grouped_parameter_set)
 time_domain_grouped.build(initial_state={"Initial SoC": 0.9})
 time_domain_grouped.set_current_function(dataset=dataset)
+simulation = time_domain_grouped.predict(t_eval=dataset["Time [s]"])
 dataset = pybop.Dataset(
     {
         "Time [s]": simulation["Time [s]"].data,
