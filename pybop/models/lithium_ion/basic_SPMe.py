@@ -167,10 +167,10 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         # Overpotentials
         ######################
         j0_n = pybamm.sqrt(sto_n_surf * (1 - sto_n_surf)) * (
-            pybamm.x_average(pybamm.sqrt(sto_e_n)) * l_n
+            pybamm.x_average(pybamm.sqrt(sto_e_n))
         )
         j0_p = pybamm.sqrt(sto_p_surf * (1 - sto_p_surf)) * (
-            pybamm.x_average(pybamm.sqrt(sto_e_p)) * l_p
+            pybamm.x_average(pybamm.sqrt(sto_e_p))
         )
 
         eta_n = 2 * RT_F * pybamm.arcsinh(tau_r_n * j_n / (2 * j0_n))
@@ -191,8 +191,6 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         j_p_init = -I / (3 * Q_th_p)  # estimating dv_p/dt=0
         self.initial_conditions[j_n] = j_n_init
         self.initial_conditions[j_p] = j_p_init
-        # self.initial_conditions[j_n] = Scalar(0)  # j_n_init
-        # self.initial_conditions[j_p] = Scalar(0)  # j_p_init
 
         ######################
         # Double-layer
@@ -204,28 +202,14 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         sto_p_init = y_0 + (y_100 - y_0) * soc_init
         U_n_init = self.U(sto_n_init, "negative")
         U_p_init = self.U(sto_p_init, "positive")
-        eta_n_init = (
-            2
-            * RT_F
-            * pybamm.arcsinh(
-                tau_r_n
-                * j_n_init
-                / (2 * pybamm.sqrt(sto_n_init * (1 - sto_n_init)) * l_n)
-            )
+        eta_n_init = (2 * RT_F) * pybamm.arcsinh(
+            (tau_r_n * j_n_init) / (2 * pybamm.sqrt(sto_n_init * (1 - sto_n_init)))
         )
-        eta_p_init = (
-            -2
-            * RT_F
-            * pybamm.arcsinh(
-                tau_r_p
-                * j_p_init
-                / (2 * pybamm.sqrt(sto_p_init * (1 - sto_p_init)) * l_p)
-            )
+        eta_p_init = -(2 * RT_F) * pybamm.arcsinh(
+            (tau_r_p * j_p_init) / (2 * pybamm.sqrt(sto_p_init * (1 - sto_p_init)))
         )
         self.initial_conditions[v_n] = U_n_init + eta_n_init
         self.initial_conditions[v_p] = U_p_init + eta_p_init
-        # self.initial_conditions[v_n] = U_n_init  # + eta_n_init
-        # self.initial_conditions[v_p] = U_p_init  # + eta_p_init
 
         ######################
         # Particles

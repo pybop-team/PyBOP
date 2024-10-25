@@ -84,8 +84,8 @@ tau_e_p = L**2 / (epsilon_p ** (b_p - 1) * De)
 tau_e_n = L**2 / (epsilon_n ** (b_n - 1) * De)
 tau_e_sep = L**2 / (epsilon_sep ** (b_sep - 1) * De)
 
-tau_ct_p = F * R_p * L_p / (m_p * L * np.sqrt(ce0))
-tau_ct_n = F * R_n * L_n / (m_n * L * np.sqrt(ce0))
+tau_ct_p = F * R_p / (m_p * np.sqrt(ce0))
+tau_ct_n = F * R_n / (m_n * np.sqrt(ce0))
 
 C_p = Cdl_p * alpha_p * L_p * A / R_p
 C_n = Cdl_n * alpha_n * L_n * A / R_n
