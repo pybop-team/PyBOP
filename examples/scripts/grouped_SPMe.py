@@ -69,9 +69,9 @@ b_sep = parameter_set["Separator Bruggeman coefficient (electrolyte)"]
 t_plus = parameter_set["Cation transference number"]
 
 Re = (
-    L_p / (3 *epsilon_p ** b_p)
-    + (L - L_p - L_n) / (3 *epsilon_sep ** b_sep)
-    + L_n / (3 *epsilon_n ** b_n)
+    L_p / (3 * epsilon_p**b_p)
+    + (L - L_p - L_n) / (epsilon_sep**b_sep)
+    + L_n / (3 * epsilon_n**b_n)
 ) / parameter_set["Electrolyte conductivity [S.m-1]"]
 Rs = (
     L_p / parameter_set["Positive electrode conductivity [S.m-1]"]
