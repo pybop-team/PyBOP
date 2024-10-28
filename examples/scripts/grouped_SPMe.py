@@ -66,7 +66,17 @@ De = parameter_set["Electrolyte diffusivity [m2.s-1]"]  # (ce0, T)
 epsilon_sep = parameter_set["Separator porosity"]
 b_sep = parameter_set["Separator Bruggeman coefficient (electrolyte)"]
 t_plus = parameter_set["Cation transference number"]
-R0 = parameter_set["Contact resistance [Ohm]"]
+
+Re = (
+    L_p / (3 *epsilon_p ** b_p)
+    + (L - L_p - L_n) / (3 *epsilon_sep ** b_sep)
+    + L_n / (3 *epsilon_n ** b_n)
+) / parameter_set["Electrolyte conductivity [S.m-1]"]
+Rs = (
+    L_p / parameter_set["Positive electrode conductivity [S.m-1]"]
+    + L_n / parameter_set["Negative electrode conductivity [S.m-1]"]
+) / 3
+R0 = Re + Rs + parameter_set["Contact resistance [Ohm]"]
 
 # Compute the stoichiometry limits and initial SOC
 x_0, x_100, y_100, y_0 = get_min_max_stoichiometries(parameter_set)

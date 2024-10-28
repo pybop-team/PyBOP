@@ -47,10 +47,9 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         ######################
         # Variables that depend on time only are created without a domain
         Q = Variable("Discharge capacity [A.h]")
+        Qt = Variable("Throughput capacity [A.h]")
         v_n = Variable("Negative electrode voltage [V]")
         v_p = Variable("Positive electrode voltage [V]")
-        j_n = Variable("Negative molar flux")
-        j_p = Variable("Positive molar flux")
 
         # Variables that vary spatially are created with a domain
         sto_n = Variable(
@@ -115,9 +114,6 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
 
         t_plus = Parameter("Cation transference number")
 
-        l_p = Parameter("Positive electrode relative thickness")
-        l_n = Parameter("Negative electrode relative thickness")
-
         R0 = Parameter("Series resistance [Ohm]")
 
         # Primary broadcasts are used to broadcast scalar quantities across a domain
@@ -160,8 +156,10 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         # The `rhs` dictionary contains differential equations, with the key being the
         # variable in the d/dt
         self.rhs[Q] = I / 3600
+        self.rhs[Qt] = abs(I) / 3600
         # Initial conditions must be provided for the ODEs
         self.initial_conditions[Q] = Scalar(0)
+        self.initial_conditions[Qt] = Scalar(0)
 
         ######################
         # Overpotentials
@@ -173,24 +171,13 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             pybamm.x_average(pybamm.sqrt(sto_e_p))
         )
 
-        eta_n = 2 * RT_F * pybamm.arcsinh(tau_r_n * j_n / (2 * j0_n))
-        eta_p = 2 * RT_F * pybamm.arcsinh(tau_r_p * j_p / (2 * j0_p))
+        eta_n = v_n - self.U(sto_n_surf, "negative")
+        eta_p = v_p - self.U(sto_p_surf, "positive")
+        j_n = 2 * j0_n * pybamm.sinh(eta_n / (2 * RT_F)) / tau_r_n
+        j_p = 2 * j0_p * pybamm.sinh(eta_p / (2 * RT_F)) / tau_r_p
         eta_e = (2 * RT_F * (1 - t_plus)) * pybamm.log(
             pybamm.x_average(sto_e_p) / pybamm.x_average(sto_e_n)
         )
-
-        # The `algebraic` dictionary contains differential equations, with the key being
-        # the main scalar variable of interest in the equation
-        self.algebraic[j_n] = self.U(sto_n_surf, "negative") + eta_n - v_n
-        self.algebraic[j_p] = self.U(sto_p_surf, "positive") + eta_p - v_p
-
-        # Initial conditions must also be provided for algebraic equations, as an
-        # initial guess for a root-finding algorithm which calculates consistent
-        # initial conditions
-        j_n_init = I / (3 * Q_th_n)  # estimating dv_n/dt=0
-        j_p_init = -I / (3 * Q_th_p)  # estimating dv_p/dt=0
-        self.initial_conditions[j_n] = j_n_init
-        self.initial_conditions[j_p] = j_p_init
 
         ######################
         # Double-layer
@@ -202,6 +189,8 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         sto_p_init = y_0 + (y_100 - y_0) * soc_init
         U_n_init = self.U(sto_n_init, "negative")
         U_p_init = self.U(sto_p_init, "positive")
+        j_n_init = I / (3 * Q_th_n)  # estimating dv_n/dt=0
+        j_p_init = -I / (3 * Q_th_p)  # estimating dv_p/dt=0
         eta_n_init = (2 * RT_F) * pybamm.arcsinh(
             (tau_r_n * j_n_init) / (2 * pybamm.sqrt(sto_n_init * (1 - sto_n_init)))
         )
@@ -311,6 +300,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "Current [A]": I,
             "Current variable [A]": I,  # for compatibility with pybamm.Experiment
             "Discharge capacity [A.h]": Q,
+            "Throughput capacity [A.h]": Qt,
             "Voltage [V]": V,
         }
 
@@ -343,8 +333,6 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "Positive electrode capacitance [F]": 1,
             "Negative electrode capacitance [F]": 1,
             "Cation transference number": 0.25,
-            "Positive electrode relative thickness": 0.47,
-            "Negative electrode relative thickness": 0.47,
             "Positive electrode thickness [m]": 0.47,  # normalised
             "Negative electrode thickness [m]": 0.47,  # normalised
             "Separator thickness [m]": 0.06,  # normalised
