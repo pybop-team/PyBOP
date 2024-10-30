@@ -2,6 +2,8 @@ import sys
 import warnings
 from typing import Optional
 
+import numpy as np
+from pybamm import LithiumIonParameters
 from pybamm import lithium_ion as pybamm_lithium_ion
 
 from pybop.models.base_model import BaseModel, Inputs
@@ -213,30 +215,31 @@ class EChemBaseModel(BaseModel):
         parameter_set = parameter_set or self._parameter_set
 
         def mass_density(
-            active_material_vol_frac, density, porosity, electrolyte_density
+            active_material_vol_frac, density, porosity, electrolyte_density, cb_density
         ):
-            return (active_material_vol_frac * density) + (
-                porosity * electrolyte_density
+            return (
+                (active_material_vol_frac * density)
+                + (porosity * electrolyte_density)
+                + (1.0 - active_material_vol_frac - porosity) * cb_density
             )
 
         def area_density(thickness, mass_density):
             return thickness * mass_density
 
-        # Approximations due to SPM(e) parameter set limitations
-        electrolyte_density = parameter_set["Separator density [kg.m-3]"]
-
         # Calculate mass densities
         positive_mass_density = mass_density(
             parameter_set["Positive electrode active material volume fraction"],
-            parameter_set["Positive electrode density [kg.m-3]"],
+            parameter_set["Positive electrode active material density [kg.m-3]"],
             parameter_set["Positive electrode porosity"],
-            electrolyte_density,
+            parameter_set["Electrolyte density [kg.m-3]"],
+            parameter_set["Positive electrode carbon-binder density [kg.m-3]"],
         )
         negative_mass_density = mass_density(
             parameter_set["Negative electrode active material volume fraction"],
-            parameter_set["Negative electrode density [kg.m-3]"],
+            parameter_set["Negative electrode active material density [kg.m-3]"],
             parameter_set["Negative electrode porosity"],
-            electrolyte_density,
+            parameter_set["Electrolyte density [kg.m-3]"],
+            parameter_set["Negative electrode carbon-binder density [kg.m-3]"],
         )
 
         # Calculate area densities
@@ -248,7 +251,7 @@ class EChemBaseModel(BaseModel):
         )
         separator_area_density = area_density(
             parameter_set["Separator thickness [m]"],
-            parameter_set["Separator porosity"] * electrolyte_density,
+            parameter_set["Separator density [kg.m-3]"],
         )
         positive_cc_area_density = area_density(
             parameter_set["Positive current collector thickness [m]"],
