@@ -82,7 +82,7 @@ class TestObservers:
 
         # Generate cost function, and optimisation class
         cost = pybop.ObserverCost(observer)
-        optim = pybop.CMAES(cost, verbose=True)
+        optim = pybop.CMAES(cost, max_unchanged_iterations=25, verbose=True)
 
         # Initial Cost
         x0 = cost.parameters.initial_value()
@@ -90,7 +90,6 @@ class TestObservers:
 
         # Run optimisation
         results = optim.run()
-        print("Estimated parameters:", results.x)
 
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
