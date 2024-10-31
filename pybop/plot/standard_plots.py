@@ -99,7 +99,7 @@ class StandardPlot:
             self.layout = self.go.Layout(**self.layout_options)
 
         # Add traces
-        if self.x is not None:
+        if x and y is not None:
             self.add_traces(x, y, trace_names)
 
     def __call__(self, show=True):
