@@ -2,7 +2,6 @@ import sys
 import warnings
 from typing import Optional
 
-import numpy as np
 from pybamm import LithiumIonParameters
 from pybamm import lithium_ion as pybamm_lithium_ion
 
@@ -88,6 +87,7 @@ class EChemBaseModel(BaseModel):
         self._disc = None
 
         self._electrode_soh = pybamm_lithium_ion.electrode_soh
+        self._electrode_soh_half_cell = pybamm_lithium_ion.electrode_soh_half_cell
         self.geometric_parameters = self.set_geometric_parameters()
 
     def _check_params(
@@ -282,8 +282,8 @@ class EChemBaseModel(BaseModel):
     def approximate_capacity(self, parameter_set: Optional[ParameterSet] = None):
         """
         Calculate an estimate for the nominal cell capacity. The estimate is computed
-        by dividing the theoretical energy (in watt-hours) by the average open circuit
-        potential (voltage) of the cell.
+        by estimating the capacity of the positive electrode that lies between the
+        stoichiometric limits corresponding to the upper and lower voltage limits.
 
         Parameters
         ----------
@@ -293,39 +293,27 @@ class EChemBaseModel(BaseModel):
         Returns
         -------
         float
-            The estimate of the nominal cell capacity.
+            The estimate of the nominal cell capacity [A.h].
         """
         parameter_set = parameter_set or self._parameter_set
 
-        # Calculate theoretical energy density
-        theoretical_energy = self._electrode_soh.calculate_theoretical_energy(
-            parameter_set
-        )
+        # Calculate the theoretical capacity in the limit of low current
+        if self.pybamm_model.options["working electrode"] == "positive":
+            (
+                max_sto_p,
+                min_sto_p,
+            ) = self._electrode_soh_half_cell.get_min_max_stoichiometries(parameter_set)
+        else:
+            (
+                min_sto_n,
+                max_sto_n,
+                max_sto_p,
+                min_sto_p,
+            ) = self._electrode_soh.get_min_max_stoichiometries(parameter_set)
 
-        # Extract stoichiometries and compute mean values
-        (
-            min_sto_neg,
-            max_sto_neg,
-            min_sto_pos,
-            max_sto_pos,
-        ) = self._electrode_soh.get_min_max_stoichiometries(parameter_set)
-        mean_sto_neg = (min_sto_neg + max_sto_neg) / 2
-        mean_sto_pos = (min_sto_pos + max_sto_pos) / 2
-
-        # Calculate average voltage
-        positive_electrode_ocp = parameter_set["Positive electrode OCP [V]"]
-        negative_electrode_ocp = parameter_set["Negative electrode OCP [V]"]
-        try:
-            average_voltage = positive_electrode_ocp(
-                mean_sto_pos
-            ) - negative_electrode_ocp(mean_sto_neg)
-        except Exception as e:
-            raise ValueError(f"Error in average voltage calculation: {e}") from e
-
-        # Calculate the capacity estimate
-        approximate_capacity = theoretical_energy / average_voltage
-
-        return ParameterSet.evaluate_symbol(approximate_capacity, parameter_set)
+        Q_p = LithiumIonParameters().p.prim.Q_init
+        theoretical_capacity = Q_p * (max_sto_p - min_sto_p)
+        return ParameterSet.evaluate_symbol(theoretical_capacity, parameter_set)
 
     def set_geometric_parameters(self):
         """
