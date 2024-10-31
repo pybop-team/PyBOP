@@ -74,8 +74,6 @@ class StandardPlot:
         trace_names=None,
         trace_name_width=40,
     ):
-        self.x = x
-        self.y = y
         self.traces = []
         self.layout = layout
         self.trace_name_width = trace_name_width
