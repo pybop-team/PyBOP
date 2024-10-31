@@ -307,8 +307,8 @@ class EChemBaseModel(BaseModel):
             (
                 min_sto_n,
                 max_sto_n,
-                max_sto_p,
                 min_sto_p,
+                max_sto_p,
             ) = self._electrode_soh.get_min_max_stoichiometries(parameter_set)
 
         Q_p = LithiumIonParameters().p.prim.Q_init
