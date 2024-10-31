@@ -24,9 +24,7 @@ class TestWeightedCost:
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
         parameter_set.update(
             {
-                "Electrolyte density [kg.m-3]": Parameter(
-                    "Separator density [kg.m-3]"
-                ),
+                "Electrolyte density [kg.m-3]": Parameter("Separator density [kg.m-3]"),
                 "Negative electrode active material density [kg.m-3]": Parameter(
                     "Negative electrode density [kg.m-3]"
                 ),
