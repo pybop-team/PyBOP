@@ -22,8 +22,10 @@ class BaseLikelihood(BaseCost):
 
 class BaseMetaLikelihood(BaseLikelihood):
     """
-    Base class for likelihood classes with a meta-likelihood
-    such as `LogPosterior` or `ScaledLoglikelihood`.
+    Base class for likelihood classes which have a meta-likelihood
+    such as `LogPosterior` or `ScaledLoglikelihood`. This class
+    points the required attributes towards the composed likelihood
+    class.
     """
 
     def __init__(self, log_likelihood: BaseLikelihood):
@@ -239,13 +241,15 @@ class GaussianLogLikelihood(BaseLikelihood):
 
 class ScaledLogLikelihood(BaseMetaLikelihood):
     r"""
-    This class represents a Scaled Log Likelihood, which assumes that the
-    data follows a Gaussian distribution and computes the log-likelihood of
-    observed data under this assumption. This class is scaled by the number
-    of observations.
+    This class scaled a `BaseLogLikelihood` class by the number of observations.
+    The scaling factor is given below:
 
     .. math::
        \mathcal{\hat{L(\theta)}} = \frac{1}{N} \mathcal{L(\theta)}
+
+    This class aims to provide numerical values with lower magnitude than the
+    canonical likelihoods, which can improve optimiser convergence in certain
+    cases.
     """
 
     def __init__(self, log_likelihood: BaseLikelihood):
@@ -257,12 +261,13 @@ class ScaledLogLikelihood(BaseMetaLikelihood):
         dy: np.ndarray = None,
         calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        l = self._log_likelihood.compute(y, dy, calculate_grad)
-        return (
-            tuple(i / self.n_data for i in l)
-            if isinstance(l, tuple)
-            else l / self.n_data
-        )
+        likelihood = self._log_likelihood.compute(y, dy, calculate_grad)
+        normalised_val = 1 / self.n_data
+
+        if isinstance(likelihood, tuple):
+            return tuple(val * normalised_val for val in likelihood)
+
+        return likelihood * normalised_val
 
 
 class LogPosterior(BaseMetaLikelihood):
