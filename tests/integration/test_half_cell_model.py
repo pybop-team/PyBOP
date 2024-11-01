@@ -125,7 +125,11 @@ class TestHalfCellModel:
         )
 
         problem = pybop.DesignProblem(
-            model, parameters, experiment=experiment, initial_state=initial_state
+            model,
+            parameters,
+            experiment=experiment,
+            initial_state=initial_state,
+            update_capacity=True,
         )
         return pybop.GravimetricEnergyDensity(problem)
 
@@ -143,7 +147,7 @@ class TestHalfCellModel:
         # Assertions
         assert initial_cost < results.final_cost
         for i, _ in enumerate(results.x):
-            assert results.x[i] > initial_values[i]
+            assert results.x[i] < initial_values[i]
 
     def get_data(self, model, init_soc):
         initial_state = {"Initial SoC": init_soc}
