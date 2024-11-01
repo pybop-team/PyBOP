@@ -5,58 +5,59 @@ from pybamm import Parameter
 import pybop
 
 
-class TestWeightedCost:
+class TestHalfCellModel:
     """
-    A class to test the weighted cost function.
+    A class to test optimisation of a PyBaMM half-cell model.
     """
 
     @pytest.fixture(autouse=True)
     def setup(self):
         self.sigma0 = 0.002
         self.ground_truth = np.clip(
-            np.asarray([0.55, 0.55]) + np.random.normal(loc=0.0, scale=0.05, size=2),
+            np.asarray([0.5]) + np.random.normal(loc=0.0, scale=0.05, size=1),
             a_min=0.4,
             a_max=0.75,
         )
 
     @pytest.fixture
     def model(self):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        options = {"working electrode": "positive"}
+        parameter_set = pybop.lithium_ion.SPM(options=options).default_parameter_values
         parameter_set.update(
             {
-                "Electrolyte density [kg.m-3]": Parameter("Separator density [kg.m-3]"),
-                "Negative electrode active material density [kg.m-3]": Parameter(
-                    "Negative electrode density [kg.m-3]"
+                "Electrolyte density [kg.m-3]": Parameter(
+                    "Positive electrode density [kg.m-3]"
                 ),
-                "Negative electrode carbon-binder density [kg.m-3]": Parameter(
-                    "Negative electrode density [kg.m-3]"
-                ),
+                "Negative current collector density [kg.m-3]": 0.0,
+                "Negative current collector thickness [m]": 0.0,
+                "Negative electrode active material density [kg.m-3]": 0.0,
+                "Negative electrode active material volume fraction": 0.0,
+                "Negative electrode porosity": 0.0,
+                "Negative electrode carbon-binder density [kg.m-3]": 0.0,
+                "Positive current collector density [kg.m-3]": 0.0,
+                "Positive current collector thickness [m]": 0.0,
                 "Positive electrode active material density [kg.m-3]": Parameter(
                     "Positive electrode density [kg.m-3]"
                 ),
                 "Positive electrode carbon-binder density [kg.m-3]": Parameter(
                     "Positive electrode density [kg.m-3]"
                 ),
+                "Positive electrode density [kg.m-3]": 3262.0,
+                "Separator density [kg.m-3]": 0.0,
             },
             check_already_exists=False,
         )
         x = self.ground_truth
         parameter_set.update(
             {
-                "Negative electrode active material volume fraction": x[0],
-                "Positive electrode active material volume fraction": x[1],
+                "Positive electrode active material volume fraction": x[0],
             }
         )
-        return pybop.lithium_ion.SPM(parameter_set=parameter_set)
+        return pybop.lithium_ion.SPM(parameter_set=parameter_set, options=options)
 
     @pytest.fixture
     def parameters(self):
         return pybop.Parameters(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Uniform(0.4, 0.75),
-                bounds=[0.375, 0.75],
-            ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
                 prior=pybop.Uniform(0.4, 0.75),
@@ -68,24 +69,11 @@ class TestWeightedCost:
     def init_soc(self, request):
         return request.param
 
-    @pytest.fixture(
-        params=[
-            (
-                pybop.GaussianLogLikelihoodKnownSigma,
-                pybop.RootMeanSquaredError,
-                pybop.SumSquaredError,
-                pybop.LogPosterior,
-            )
-        ]
-    )
-    def cost_class(self, request):
-        return request.param
-
     def noise(self, sigma, values):
         return np.random.normal(0, sigma, values)
 
     @pytest.fixture
-    def weighted_fitting_cost(self, model, parameters, cost_class, init_soc):
+    def fitting_cost(self, model, parameters, init_soc):
         # Form dataset
         solution = self.get_data(model, init_soc)
         dataset = pybop.Dataset(
@@ -99,28 +87,13 @@ class TestWeightedCost:
 
         # Define the cost to optimise
         problem = pybop.FittingProblem(model, parameters, dataset)
-        costs = []
-        for cost in cost_class:
-            if issubclass(cost, pybop.LogPosterior):
-                costs.append(
-                    cost(
-                        pybop.GaussianLogLikelihoodKnownSigma(
-                            problem, sigma0=self.sigma0
-                        ),
-                    )
-                )
-            elif issubclass(cost, pybop.BaseLikelihood):
-                costs.append(cost(problem, sigma0=self.sigma0))
-            else:
-                costs.append(cost(problem))
-
-        return pybop.WeightedCost(*costs, weights=[0.1, 1, 0.5, 0.6])
+        return pybop.SumSquaredError(problem)
 
     @pytest.mark.integration
-    def test_fitting_costs(self, weighted_fitting_cost):
-        x0 = weighted_fitting_cost.parameters.initial_value()
+    def test_fitting_costs(self, fitting_cost):
+        x0 = fitting_cost.parameters.initial_value()
         optim = pybop.CuckooSearch(
-            cost=weighted_fitting_cost,
+            cost=fitting_cost,
             sigma0=0.03,
             max_iterations=250,
             max_unchanged_iterations=35,
@@ -137,28 +110,12 @@ class TestWeightedCost:
                 assert initial_cost < results.final_cost
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
-    @pytest.fixture(
-        params=[
-            (
-                pybop.GravimetricEnergyDensity,
-                pybop.VolumetricEnergyDensity,
-            )
-        ]
-    )
-    def design_cost(self, request):
-        return request.param
-
     @pytest.fixture
-    def weighted_design_cost(self, model, design_cost):
+    def design_cost(self, model):
         initial_state = {"Initial SoC": 1.0}
         parameters = pybop.Parameters(
             pybop.Parameter(
                 "Positive electrode thickness [m]",
-                prior=pybop.Gaussian(5e-05, 5e-06),
-                bounds=[2e-06, 10e-05],
-            ),
-            pybop.Parameter(
-                "Negative electrode thickness [m]",
                 prior=pybop.Gaussian(5e-05, 5e-06),
                 bounds=[2e-06, 10e-05],
             ),
@@ -168,17 +125,18 @@ class TestWeightedCost:
         )
 
         problem = pybop.DesignProblem(
-            model, parameters, experiment=experiment, initial_state=initial_state
+            model,
+            parameters,
+            experiment=experiment,
+            initial_state=initial_state,
+            update_capacity=True,
         )
-        costs = [cost(problem) for cost in design_cost]
-
-        return pybop.WeightedCost(*costs, weights=[1.0, 0.1])
+        return pybop.GravimetricEnergyDensity(problem)
 
     @pytest.mark.integration
-    def test_design_costs(self, weighted_design_cost):
-        cost = weighted_design_cost
+    def test_design_costs(self, design_cost):
         optim = pybop.CuckooSearch(
-            cost,
+            design_cost,
             max_iterations=15,
             allow_infeasible_solutions=False,
         )
@@ -189,7 +147,7 @@ class TestWeightedCost:
         # Assertions
         assert initial_cost < results.final_cost
         for i, _ in enumerate(results.x):
-            assert results.x[i] > initial_values[i]
+            assert results.x[i] < initial_values[i]
 
     def get_data(self, model, init_soc):
         initial_state = {"Initial SoC": init_soc}

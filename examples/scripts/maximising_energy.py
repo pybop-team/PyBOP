@@ -1,3 +1,5 @@
+from pybamm import Parameter
+
 import pybop
 
 # A design optimisation example loosely based on work by L.D. Couto
@@ -9,8 +11,28 @@ import pybop
 # electrode widths, particle radii, volume fractions and
 # separator width.
 
-# Define parameter set and model
+# Define parameter set and additional parameters needed for the cost function
 parameter_set = pybop.ParameterSet.pybamm("Chen2020", formation_concentrations=True)
+parameter_set.update(
+    {
+        "Electrolyte density [kg.m-3]": Parameter("Separator density [kg.m-3]"),
+        "Negative electrode active material density [kg.m-3]": Parameter(
+            "Negative electrode density [kg.m-3]"
+        ),
+        "Negative electrode carbon-binder density [kg.m-3]": Parameter(
+            "Negative electrode density [kg.m-3]"
+        ),
+        "Positive electrode active material density [kg.m-3]": Parameter(
+            "Positive electrode density [kg.m-3]"
+        ),
+        "Positive electrode carbon-binder density [kg.m-3]": Parameter(
+            "Positive electrode density [kg.m-3]"
+        ),
+    },
+    check_already_exists=False,
+)
+
+# Define model
 model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
 # Fitting parameters
