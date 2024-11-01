@@ -84,7 +84,7 @@ class ECircuitModel(BaseModel):
         self._spatial_methods = (
             spatial_methods or self.pybamm_model.default_spatial_methods
         )
-        self._solver = solver or self.pybamm_model.default_solver
+        self._solver = solver or pybamm.IDAKLUSolver()
 
         # Internal attributes for the built model are initialized but not set
         self._model_with_set_params = None

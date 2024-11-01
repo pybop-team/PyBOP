@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 import pytest
 import scipy.stats as st
 
@@ -12,7 +13,7 @@ class TestLogPosterior:
 
     @pytest.fixture
     def model(self):
-        return pybop.lithium_ion.SPM()
+        return pybop.lithium_ion.SPM(solver=pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6))
 
     @pytest.fixture
     def ground_truth(self):

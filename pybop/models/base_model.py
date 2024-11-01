@@ -318,6 +318,14 @@ class BaseModel:
         model : pybamm.Model
             The PyBaMM model to be used for EIS simulations.
         """
+        if not isinstance(self._solver, pybamm.CasadiSolver):
+            print(
+                "CasadiSolver is required for EIS predictions, the solver has been changed."
+            )
+            self._solver = pybamm.CasadiSolver(
+                atol=self._solver.atol, rtol=self._solver.rtol
+            )
+
         V_cell = pybamm.Variable("Voltage variable [V]")
         model.variables["Voltage variable [V]"] = V_cell
         V = model.variables["Voltage [V]"]

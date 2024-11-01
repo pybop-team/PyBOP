@@ -2,6 +2,7 @@ import sys
 import warnings
 from typing import Optional
 
+import pybamm
 from pybamm import lithium_ion as pybamm_lithium_ion
 
 from pybop.models.base_model import BaseModel, Inputs
@@ -72,9 +73,7 @@ class EChemBaseModel(BaseModel):
             spatial_methods or self.pybamm_model.default_spatial_methods
         )
         if solver is None:
-            self._solver = self.pybamm_model.default_solver
-            self._solver.mode = "fast with events"
-            self._solver.max_step_decrease_count = 1
+            self._solver = pybamm.IDAKLUSolver(atol=1e-5, rtol=1e-5)
         else:
             self._solver = solver
 
