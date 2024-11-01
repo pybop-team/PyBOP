@@ -315,6 +315,10 @@ class EChemBaseModel(BaseModel):
                 min_sto_p,
                 max_sto_p,
             ) = self._electrode_soh.get_min_max_stoichiometries(parameter_set)
+            # Note that the stoichiometric limits correspond to 0 and 100% SOC.
+            # Stoichiometric balancing is performed within get_min_max_stoichiometries
+            # such that the capacity accessible between the limits should be the same
+            # for both electrodes, so we consider just the positive electrode below.
 
         Q_p = LithiumIonParameters().p.prim.Q_init
         theoretical_capacity = Q_p * (max_sto_p - min_sto_p)
