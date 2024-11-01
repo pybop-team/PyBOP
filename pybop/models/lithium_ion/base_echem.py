@@ -215,12 +215,17 @@ class EChemBaseModel(BaseModel):
         parameter_set = parameter_set or self._parameter_set
 
         def mass_density(
-            active_material_vol_frac, density, porosity, electrolyte_density, cb_density
+            active_material_vol_frac,
+            density,
+            porosity,
+            electrolyte_density,
+            carbon_binder_domain_density,
         ):
             return (
                 (active_material_vol_frac * density)
                 + (porosity * electrolyte_density)
-                + (1.0 - active_material_vol_frac - porosity) * cb_density
+                + (1.0 - active_material_vol_frac - porosity)
+                * carbon_binder_domain_density
             )
 
         def area_density(thickness, mass_density):
