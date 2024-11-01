@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#452](https://github.com/pybop-team/PyBOP/issues/452) - Extends `cell_mass` and `approximate_capacity` for half-cell models.
 - [#544](https://github.com/pybop-team/PyBOP/issues/544) - Allows iterative plotting using `StandardPlot`.
 - [#541](https://github.com/pybop-team/PyBOP/pull/541) - Adds `ScaledLogLikelihood` and `BaseMetaLikelihood` classes.
 - [#409](https://github.com/pybop-team/PyBOP/pull/409) - Adds plotting and convergence methods for Monte Carlo sampling. Includes open-access Tesla 4680 dataset for Bayesian inference example. Fixes transformations for sampling.
