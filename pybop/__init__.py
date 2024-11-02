@@ -112,6 +112,7 @@ from .costs._likelihoods import (
     BaseLikelihood,
     GaussianLogLikelihood,
     GaussianLogLikelihoodKnownSigma,
+    ScaledLogLikelihood,
     LogPosterior,
 )
 from .costs._weighted_cost import WeightedCost
@@ -171,6 +172,7 @@ from .observers.observer import Observer
 # Plotting classes
 #
 from . import plot as plot
+from .samplers.mcmc_summary import PosteriorSummary
 
 #
 # Experimental
