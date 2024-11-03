@@ -4,6 +4,13 @@ import numpy as np
 import pybop
 from pybop.models.lithium_ion.basic_SPMe import convert_physical_to_grouped_parameters
 
+# Prepare figure
+layout_options = dict(
+    xaxis_title="Time / s",
+    yaxis_title="Voltage / V",
+)
+plot_dict = pybop.plot.StandardPlot(layout_options=layout_options)
+
 # Unpack parameter values from Chen2020
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 parameter_set["Electrolyte diffusivity [m2.s-1]"] = 1.769e-10
@@ -29,7 +36,7 @@ dataset = pybop.Dataset(
         "Voltage [V]": simulation["Voltage [V]"].data,
     }
 )
-pybop.plot.dataset(dataset)
+plot_dict.add_traces(dataset["Time [s]"], dataset["Voltage [V]"])
 
 # Test model in the time domain
 grouped_parameter_set = convert_physical_to_grouped_parameters(parameter_set)
@@ -44,7 +51,12 @@ dataset = pybop.Dataset(
         "Voltage [V]": simulation["Voltage [V]"].data,
     }
 )
-pybop.plot.dataset(dataset)
+plot_dict.add_traces(dataset["Time [s]"], dataset["Voltage [V]"])
+plot_dict()
+
+# Set up figure
+fig, ax = plt.subplots()
+ax.grid()
 
 # Compare models in the frequency domain
 freq_domain_SPMe = pybop.lithium_ion.SPMe(
@@ -54,7 +66,7 @@ freq_domain_grouped = pybop.lithium_ion.GroupedSPMe(
     parameter_set=grouped_parameter_set, eis=True
 )
 
-for model in [freq_domain_SPMe, freq_domain_grouped]:
+for i, model in enumerate([freq_domain_SPMe, freq_domain_grouped]):
     NSOC = 11
     Nfreq = 60
     fmin = 4e-4
@@ -68,14 +80,15 @@ for model in [freq_domain_SPMe, freq_domain_grouped]:
         simulation = model.simulateEIS(inputs=None, f_eval=frequencies)
         impedances[:, ii] = simulation["Impedance"]
 
-    fig, ax = plt.subplots()
-    for ii in range(len(SOCs)):
-        ax.plot(np.real(impedances[:, ii]), -np.imag(impedances[:, ii]))
-    ax.set(xlabel=r"$Z_r(\omega)$ [$\Omega$]", ylabel=r"$-Z_j(\omega)$ [$\Omega$]")
-    ax.grid()
-    ax.set_aspect("equal", "box")
-    plt.show()
+        if i == 0:
+            ax.plot(np.real(impedances[:, ii]), -np.imag(impedances[:, ii]), "b")
+        if i == 1:
+            ax.plot(np.real(impedances[:, ii]), -np.imag(impedances[:, ii]), "r--")
 
+# Show figure
+ax.set(xlabel=r"$Z_r(\omega)$ [$\Omega$]", ylabel=r"$-Z_j(\omega)$ [$\Omega$]")
+ax.set_aspect("equal", "box")
+plt.show()
 fig.savefig("Nyquist.png")
 
 # mdic = {"Z": impedances, "f": frequencies, "SOC": SOCs}
