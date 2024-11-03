@@ -57,8 +57,8 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         # Variables that depend on time only are created without a domain
         Q = Variable("Discharge capacity [A.h]")
         Qt = Variable("Throughput capacity [A.h]")
-        v_n = Variable("Negative electrode voltage [V]")
-        v_p = Variable("Positive electrode voltage [V]")
+        av_v_n = Variable("Negative electrode voltage [V]")
+        av_v_p = Variable("Positive electrode voltage [V]")
 
         # Variables that vary spatially are created with a domain
         sto_n = Variable(
@@ -91,6 +91,26 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         sto_n_surf = pybamm.surf(sto_n)
         sto_p_surf = pybamm.surf(sto_p)
 
+        # Events specify points at which a solution should terminate
+        self.events += [
+            Event(
+                "Minimum negative particle surface stoichiometry",
+                pybamm.min(sto_n_surf) - 0.01,
+            ),
+            Event(
+                "Maximum negative particle surface stoichiometry",
+                (1 - 0.01) - pybamm.max(sto_n_surf),
+            ),
+            Event(
+                "Minimum positive particle surface stoichiometry",
+                pybamm.min(sto_p_surf) - 0.01,
+            ),
+            Event(
+                "Maximum positive particle surface stoichiometry",
+                (1 - 0.01) - pybamm.max(sto_p_surf),
+            ),
+        ]
+
         ######################
         # Parameters
         ######################
@@ -109,8 +129,8 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         y_0 = Parameter("Maximum positive stoichiometry")
 
         # Grouped parameters
-        Q_th_p = Parameter("Positive theoretical electrode capacity [As]")
-        Q_th_n = Parameter("Negative theoretical electrode capacity [As]")
+        Q_th_p = Parameter("Positive electrode theoretical capacity [A.s]")
+        Q_th_n = Parameter("Negative electrode theoretical capacity [A.s]")
 
         tau_d_p = Parameter("Positive particle diffusion time scale [s]")
         tau_d_n = Parameter("Negative particle diffusion time scale [s]")
@@ -155,7 +175,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         )
 
         ######################
-        # Input current
+        # Input current (positive on discharge)
         ######################
         I = self.param.current_with_time
 
@@ -180,8 +200,8 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             pybamm.x_average(pybamm.sqrt(sto_e_p))
         )
 
-        eta_n = v_n - self.U(sto_n_surf, "negative")
-        eta_p = v_p - self.U(sto_p_surf, "positive")
+        eta_n = av_v_n - self.U(sto_n_surf, "negative")
+        eta_p = av_v_p - self.U(sto_p_surf, "positive")
         j_n = 2 * j0_n * pybamm.sinh(eta_n / (2 * RT_F)) / tau_r_n
         j_p = 2 * j0_p * pybamm.sinh(eta_p / (2 * RT_F)) / tau_r_p
         eta_e = (2 * RT_F * (1 - t_plus)) * pybamm.log(
@@ -191,23 +211,15 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         ######################
         # Double-layer
         ######################
-        self.rhs[v_n] = 1 / C_n * (-Q_th_n * j_n + I / 3)
-        self.rhs[v_p] = 1 / C_p * (-Q_th_p * j_p - I / 3)
+        self.rhs[av_v_n] = 1 / C_n * (-Q_th_n * j_n + I / 3)
+        self.rhs[av_v_p] = 1 / C_p * (-Q_th_p * j_p - I / 3)
 
         sto_n_init = x_0 + (x_100 - x_0) * soc_init
         sto_p_init = y_0 + (y_100 - y_0) * soc_init
         U_n_init = self.U(sto_n_init, "negative")
         U_p_init = self.U(sto_p_init, "positive")
-        j_n_init = I / (3 * Q_th_n)  # estimating dv_n/dt=0
-        j_p_init = -I / (3 * Q_th_p)  # estimating dv_p/dt=0
-        eta_n_init = (2 * RT_F) * pybamm.arcsinh(
-            (tau_r_n * j_n_init) / (2 * pybamm.sqrt(sto_n_init * (1 - sto_n_init)))
-        )
-        eta_p_init = -(2 * RT_F) * pybamm.arcsinh(
-            (tau_r_p * j_p_init) / (2 * pybamm.sqrt(sto_p_init * (1 - sto_p_init)))
-        )
-        self.initial_conditions[v_n] = U_n_init + eta_n_init
-        self.initial_conditions[v_p] = U_p_init + eta_p_init
+        self.initial_conditions[av_v_n] = U_n_init
+        self.initial_conditions[av_v_p] = U_p_init
 
         ######################
         # Particles
@@ -230,26 +242,6 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         self.initial_conditions[sto_n] = sto_n_init
         self.initial_conditions[sto_p] = sto_p_init
 
-        # Events specify points at which a solution should terminate
-        self.events += [
-            Event(
-                "Minimum negative particle surface stoichiometry",
-                pybamm.min(sto_n_surf) - 0.01,
-            ),
-            Event(
-                "Maximum negative particle surface stoichiometry",
-                (1 - 0.01) - pybamm.max(sto_n_surf),
-            ),
-            Event(
-                "Minimum positive particle surface stoichiometry",
-                pybamm.min(sto_p_surf) - 0.01,
-            ),
-            Event(
-                "Maximum positive particle surface stoichiometry",
-                (1 - 0.01) - pybamm.max(sto_p_surf),
-            ),
-        ]
-
         ######################
         # Electrolyte
         ######################
@@ -269,7 +261,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         ######################
         # Cell voltage
         ######################
-        V = v_p - v_n + eta_e - R0 * I
+        V = av_v_p - av_v_n + eta_e - R0 * I
 
         # Save the initial OCV
         self.ocv_init = U_p_init - U_n_init
@@ -285,16 +277,14 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         ######################
         # The `variables` dictionary contains all variables that might be useful for
         # visualising the solution of the model
-        # Primary broadcasts are used to broadcast scalar quantities across a domain
-        # into a vector of the right shape, for multiplying with other vectors
         self.variables = {
             "Negative particle stoichiometry": sto_n,
             "Negative particle surface stoichiomtry": PrimaryBroadcast(
                 sto_n_surf, "negative electrode"
             ),
-            # "Negative electrode voltage [V]": PrimaryBroadcast(
-            #     v_n, "negative electrode"
-            # ),
+            "Negative electrode voltage [V]": PrimaryBroadcast(
+                av_v_n, "negative electrode"
+            ),
             "Negative electrolyte stoichiometry": sto_e_n,
             "Separator electrolyte stoichiometry": sto_e_s,
             "Positive electrolyte stoichiometry": sto_e_p,
@@ -302,9 +292,9 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "Positive particle surface stoichiometry": PrimaryBroadcast(
                 sto_p_surf, "positive electrode"
             ),
-            # "Positive electrode voltage [V]": PrimaryBroadcast(
-            #     v_p, "positive electrode"
-            # ),
+            "Positive electrode voltage [V]": PrimaryBroadcast(
+                av_v_p, "positive electrode"
+            ),
             "Time [s]": pybamm_t,
             "Current [A]": I,
             "Current variable [A]": I,  # for compatibility with pybamm.Experiment
@@ -316,10 +306,10 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
     @property
     def default_parameter_values(self):
         parameter_dictionary = {
-            "Current function [A]": 0,
             "Nominal cell capacity [A.h]": 3,
             "Initial temperature [K]": 298,
             "Initial SoC": 0.5,
+            "Current function [A]": 3,
             "Minimum negative stoichiometry": 0.026,
             "Maximum negative stoichiometry": 0.911,
             "Minimum positive stoichiometry": 0.264,
@@ -328,8 +318,8 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "Upper voltage cut-off [V]": 4.2,
             "Positive electrode OCP [V]": nmc_LGM50_ocp_Chen2020,
             "Negative electrode OCP [V]": graphite_LGM50_ocp_Chen2020,
-            "Positive theoretical electrode capacity [As]": 3000,
-            "Negative theoretical electrode capacity [As]": 3000,
+            "Positive electrode theoretical capacity [A.s]": 3000,
+            "Negative electrode theoretical capacity [A.s]": 3000,
             "Positive relative concentration": 1,
             "Negative relative concentration": 1,
             "Positive particle diffusion time scale [s]": 2000,
@@ -352,7 +342,10 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         return ParameterValues(values=parameter_dictionary)
 
     def build_model(self):
-        # Build model variables and equations
+        """
+        Build model variables and equations
+        Credit: PyBaMM
+        """
         self._build_model()
 
         # # Set battery specific variables
@@ -385,7 +378,6 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
 
         # add a term to ensure that the OCP goes to infinity at 0 and -infinity at 1
         # this will not affect the OCP for most values of sto
-        # see #1435
         out = u_ref + 1e-6 * (1 / sto + 1 / (sto - 1))
 
         if domain == "negative":
@@ -490,8 +482,8 @@ def convert_physical_to_grouped_parameters(parameter_set):
         "Upper voltage cut-off [V]": parameter_set["Upper voltage cut-off [V]"],
         "Positive electrode OCP [V]": nmc_LGM50_ocp_Chen2020,
         "Negative electrode OCP [V]": graphite_LGM50_ocp_Chen2020,
-        "Positive theoretical electrode capacity [As]": Q_th_p,
-        "Negative theoretical electrode capacity [As]": Q_th_n,
+        "Positive electrode theoretical capacity [A.s]": Q_th_p,
+        "Negative electrode theoretical capacity [A.s]": Q_th_n,
         "Positive relative concentration": beta_p,
         "Negative relative concentration": beta_n,
         "Positive particle diffusion time scale [s]": tau_d_p,
