@@ -33,8 +33,13 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
     """
 
     def __init__(self, name="Single particle model with electrolyte", **model_kwargs):
-        if model_kwargs is not dict(build=True):
-            unused_kwargs_warning = f"The input model_kwargs {list(model_kwargs.keys())} are not currently used by the SPMe."
+        unused_keys = [
+            key not in ["build", "parameter_set"] for key in model_kwargs.keys()
+        ]
+        if model_kwargs.pop("build", True) is False:
+            unused_keys.append("build")
+        if any(unused_keys):
+            unused_kwargs_warning = f"The input model_kwargs {unused_keys} are not currently used by the SPMe."
             warnings.warn(unused_kwargs_warning, UserWarning, stacklevel=2)
 
         super().__init__({}, name=name)

@@ -16,19 +16,26 @@ parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 parameter_set["Electrolyte diffusivity [m2.s-1]"] = 1.769e-10
 parameter_set["Electrolyte conductivity [S.m-1]"] = 0.9487
 
-# Run an example SPMe simulation
-model_options = {"surface form": "differential", "contact resistance": "true"}
-time_domain_SPMe = pybop.lithium_ion.SPMe(
-    parameter_set=parameter_set, options=model_options
-)
-time_domain_SPMe.build(initial_state={"Initial SoC": 0.9})
+
+# Define a test protocol
+initial_state = {"Initial SoC": 0.9}
 experiment = pybop.Experiment(
     [
         "Rest for 1 minute",
         "Discharge at 1C until 2.5 V (5 seconds period)",
+        "Rest for 30 minutes (5 seconds period)",
     ],
 )
-simulation = time_domain_SPMe.predict(experiment=experiment)
+
+# Run an example SPMe simulation
+model_options = {"surface form": "differential", "contact resistance": "true"}
+time_domain_SPMe = pybop.lithium_ion.SPMe(
+    parameter_set=parameter_set,
+    options=model_options,
+)
+simulation = time_domain_SPMe.predict(
+    initial_state=initial_state, experiment=experiment
+)
 dataset = pybop.Dataset(
     {
         "Time [s]": simulation["Time [s]"].data,
@@ -40,9 +47,12 @@ plot_dict.add_traces(dataset["Time [s]"], dataset["Voltage [V]"])
 
 # Test model in the time domain
 grouped_parameter_set = convert_physical_to_grouped_parameters(parameter_set)
-time_domain_grouped = pybop.lithium_ion.GroupedSPMe(parameter_set=grouped_parameter_set)
-time_domain_grouped.build(initial_state={"Initial SoC": 0.9})
-time_domain_grouped.set_current_function(dataset=dataset)
+time_domain_grouped = pybop.lithium_ion.GroupedSPMe(
+    parameter_set=grouped_parameter_set,
+    build=True,
+)
+time_domain_grouped.set_initial_state(initial_state)
+time_domain_grouped.set_current_function(dataset)
 simulation = time_domain_grouped.predict(t_eval=dataset["Time [s]"])
 dataset = pybop.Dataset(
     {
@@ -63,7 +73,7 @@ freq_domain_SPMe = pybop.lithium_ion.SPMe(
     parameter_set=parameter_set, options=model_options, eis=True
 )
 freq_domain_grouped = pybop.lithium_ion.GroupedSPMe(
-    parameter_set=grouped_parameter_set, eis=True
+    parameter_set=grouped_parameter_set, eis=True, build=True
 )
 
 for i, model in enumerate([freq_domain_SPMe, freq_domain_grouped]):
@@ -76,7 +86,7 @@ for i, model in enumerate([freq_domain_SPMe, freq_domain_grouped]):
 
     impedances = 1j * np.zeros((Nfreq, NSOC))
     for ii, SOC in enumerate(SOCs):
-        model.build(initial_state={"Initial SoC": SOC})
+        model.set_initial_state({"Initial SoC": SOC})
         simulation = model.simulateEIS(inputs=None, f_eval=frequencies)
         impedances[:, ii] = simulation["Impedance"]
 
