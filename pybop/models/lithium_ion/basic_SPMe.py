@@ -236,8 +236,8 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         ######################
         # The div and grad operators will be converted to the appropriate matrix
         # multiplication at the discretisation stage
-        self.rhs[sto_n] = pybamm.div(1 / tau_d_n * pybamm.grad(sto_n))
-        self.rhs[sto_p] = pybamm.div(1 / tau_d_p * pybamm.grad(sto_p))
+        self.rhs[sto_n] = pybamm.div(pybamm.grad(sto_n)) / tau_d_n
+        self.rhs[sto_p] = pybamm.div(pybamm.grad(sto_p)) / tau_d_p
 
         # Boundary conditions must be provided for equations with spatial derivatives
         self.boundary_conditions[sto_n] = {
@@ -259,7 +259,9 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         b_e_sep = beta_sep
         b_e_p = 3 * beta_p * (1 - t_plus) * j_p
         beta = pybamm.concatenation(b_e_n, b_e_sep, b_e_p)
-        self.rhs[sto_e] = pybamm.div(1 / tau_e * pybamm.grad(sto_e)) + beta
+        self.rhs[sto_e] = (
+            pybamm.div(pybamm.grad(sto_e)) + beta * tau_e
+        ) / tau_e
 
         self.boundary_conditions[sto_e] = {
             "left": (Scalar(0), "Neumann"),
