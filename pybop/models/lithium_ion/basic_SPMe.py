@@ -307,7 +307,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
     def default_parameter_values(self):
         parameter_dictionary = {
             "Nominal cell capacity [A.h]": 3,
-            "Initial temperature [K]": 298,
+            "Initial temperature [K]": 298.15,
             "Initial SoC": 0.5,
             "Current function [A]": 3,
             "Minimum negative stoichiometry": 0.026,
@@ -404,7 +404,6 @@ def convert_physical_to_grouped_parameters(parameter_set):
     """
     # Unpack physical parameters
     F = parameter_set["Faraday constant [C.mol-1]"]
-    T = parameter_set["Ambient temperature [K]"]
     alpha_p = parameter_set["Positive electrode active material volume fraction"]
     alpha_n = parameter_set["Negative electrode active material volume fraction"]
     c_max_p = parameter_set["Maximum concentration in positive electrode [mol.m-3]"]
@@ -423,28 +422,37 @@ def convert_physical_to_grouped_parameters(parameter_set):
     Cdl_n = parameter_set["Negative electrode double-layer capacity [F.m-2]"]
     m_p = 3.42e-6  # (A/m2)(m3/mol)**1.5
     m_n = 6.48e-7  # (A/m2)(m3/mol)**1.5
+    sigma_p = parameter_set["Positive electrode conductivity [S.m-1]"]
+    sigma_n = parameter_set["Negative electrode conductivity [S.m-1]"]
 
-    A = parameter_set["Electrode height [m]"] * parameter_set["Electrode width [m]"]
-    L = L_p + L_n + parameter_set["Separator thickness [m]"]
+    # Separator and electrolyte properties
     ce0 = parameter_set["Initial concentration in electrolyte [mol.m-3]"]
     De = parameter_set["Electrolyte diffusivity [m2.s-1]"]  # (ce0, T)
+    L_s = parameter_set["Separator thickness [m]"]
     epsilon_sep = parameter_set["Separator porosity"]
     b_sep = parameter_set["Separator Bruggeman coefficient (electrolyte)"]
     t_plus = parameter_set["Cation transference number"]
+    sigma_e = parameter_set["Electrolyte conductivity [S.m-1]"]
 
+    # Compute the cell area and thickness
+    A = parameter_set["Electrode height [m]"] * parameter_set["Electrode width [m]"]
+    L = L_p + L_n + L_s
+
+    # Compute the series resistance
     Re = (
         L_p / (3 * epsilon_p**b_p)
-        + (L - L_p - L_n) / (epsilon_sep**b_sep)
+        + L_s / (epsilon_sep**b_sep)
         + L_n / (3 * epsilon_n**b_n)
-    ) / parameter_set["Electrolyte conductivity [S.m-1]"]
-    Rs = (
-        L_p / parameter_set["Positive electrode conductivity [S.m-1]"]
-        + L_n / parameter_set["Negative electrode conductivity [S.m-1]"]
-    ) / 3
+    ) / sigma_e
+    Rs = (L_p / sigma_p + L_n / sigma_n) / 3
     R0 = Re + Rs + parameter_set["Contact resistance [Ohm]"]
 
     # Compute the stoichiometry limits and initial SOC
     x_0, x_100, y_100, y_0 = get_min_max_stoichiometries(parameter_set)
+    sto_p_init = (
+        parameter_set["Initial concentration in positive electrode [mol.m-3]"] / c_max_p
+    )
+    soc_init = (sto_p_init - y_0) / (y_100 - y_0)
 
     # Grouped parameters
     Q_th_p = F * alpha_p * c_max_p * L_p * A
@@ -472,16 +480,16 @@ def convert_physical_to_grouped_parameters(parameter_set):
     return {
         "Current function [A]": parameter_set["Current function [A]"],
         "Nominal cell capacity [A.h]": parameter_set["Nominal cell capacity [A.h]"],
-        "Initial temperature [K]": T,
-        "Initial SoC": 0.5,
+        "Initial temperature [K]": parameter_set["Ambient temperature [K]"],
+        "Initial SoC": soc_init,
         "Minimum negative stoichiometry": x_0,
         "Maximum negative stoichiometry": x_100,
         "Minimum positive stoichiometry": y_100,
         "Maximum positive stoichiometry": y_0,
         "Lower voltage cut-off [V]": parameter_set["Lower voltage cut-off [V]"],
         "Upper voltage cut-off [V]": parameter_set["Upper voltage cut-off [V]"],
-        "Positive electrode OCP [V]": nmc_LGM50_ocp_Chen2020,
-        "Negative electrode OCP [V]": graphite_LGM50_ocp_Chen2020,
+        "Positive electrode OCP [V]": parameter_set["Positive electrode OCP [V]"],
+        "Negative electrode OCP [V]": parameter_set["Negative electrode OCP [V]"],
         "Positive electrode theoretical capacity [A.s]": Q_th_p,
         "Negative electrode theoretical capacity [A.s]": Q_th_n,
         "Positive relative concentration": beta_p,
