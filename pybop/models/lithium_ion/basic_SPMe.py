@@ -85,6 +85,10 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         # implementing equations that hold over several domains
         sto_e = pybamm.concatenation(sto_e_n, sto_e_s, sto_e_p)
 
+        # Spatial variables
+        x_n = pybamm.SpatialVariable("x_n", ["negative electrode"])
+        x_p = pybamm.SpatialVariable("x_p", ["positive electrode"])
+
         # Surf takes the surface value of a variable, i.e. its boundary value on the
         # right side. This is also accessible via `boundary_value(x, "right")`, with
         # "left" providing the boundary value of the left side
@@ -259,13 +263,18 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         ######################
         # Electrolyte
         ######################
+        j_flux = (t_plus * I) * pybamm.concatenation(
+            x_n / l_n,
+            PrimaryBroadcast(Scalar(1), "separator"),
+            (1 - x_p) / l_p,
+        )
         j_source = pybamm.concatenation(
             3 * Q_th_n * j_n / l_n,
             PrimaryBroadcast(Scalar(0), "separator"),
             3 * Q_th_p * j_p / l_p,
         )
         self.rhs[sto_e] = (
-            pybamm.div(pybamm.grad(sto_e)) + (1 - t_plus) * j_source / j_beta
+            pybamm.div(pybamm.grad(sto_e) - j_flux / j_beta) + j_source / j_beta
         ) / tau_e
 
         self.boundary_conditions[sto_e] = {
