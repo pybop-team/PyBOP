@@ -15,9 +15,10 @@ class BaseJaxCost(BaseCost):
 
     def __init__(self, problem: BaseProblem):
         super().__init__(problem)
-
-        if isinstance(self.problem.model.solver, IDAKLUSolver):
-            self.problem.model.jaxify_solver(t_eval=self.problem.domain_data)
+        self.model = self.problem.model
+        self.n_data = self.problem.n_data
+        if isinstance(self.model.solver, IDAKLUSolver):
+            self.model.jaxify_solver(t_eval=self.problem.domain_data)
 
     def __call__(
         self,
@@ -43,7 +44,8 @@ class BaseJaxCost(BaseCost):
             The Sum of Squared Error.
         """
         inputs = self.parameters.verify(inputs)
-        self._update_solver_sensitivities(calculate_grad)
+        if calculate_grad != self.model.calculate_sensitivities:
+            self._update_solver_sensitivities(calculate_grad)
 
         if calculate_grad:
             y, dy = jax.value_and_grad(self.evaluate)(inputs)
@@ -51,7 +53,7 @@ class BaseJaxCost(BaseCost):
                 list(dy.values())
             )  # Convert grad to numpy for optimisers
         else:
-            return self.evaluate(inputs)
+            return np.asarray(self.evaluate(inputs))
 
     def _update_solver_sensitivities(self, calculate_grad: bool) -> None:
         """
@@ -60,17 +62,25 @@ class BaseJaxCost(BaseCost):
         Args:
             calculate_grad (bool): Whether gradient calculation is required.
         """
-        model = self.problem.model
-        if calculate_grad != model.calculate_sensitivities:
-            model.jaxify_solver(
-                t_eval=self.problem.domain_data, calculate_sensitivities=calculate_grad
-            )
+
+        self.model.jaxify_solver(
+            t_eval=self.problem.domain_data, calculate_sensitivities=calculate_grad
+        )
 
     @staticmethod
     def check_sigma0(sigma0):
         if not isinstance(sigma0, (int, float)) or sigma0 <= 0:
             raise ValueError("sigma0 must be a positive number")
         return float(sigma0)
+
+    def observed_fisher(self, inputs: Inputs):
+        """
+        Compute the observed fisher information matrix (FIM)
+        for the given inputs. This is done with the gradient
+        as the Hessian is not available.
+        """
+        _, grad = self.__call__(inputs, calculate_grad=True)
+        return jnp.square(grad) / self.n_data
 
 
 class JaxSumSquaredError(BaseJaxCost):
@@ -83,9 +93,9 @@ class JaxSumSquaredError(BaseJaxCost):
 
     def evaluate(self, inputs):
         # Calculate residuals and error
-        y = self.problem.jax_evaluate(inputs)
-        r = jnp.asarray([y - self._target[signal] for signal in self.signal])
-        return jnp.sum(r**2, axis=1).item()
+        y = self.problem.evaluate(inputs)
+        r = jnp.asarray([y[s] - self._target[s] for s in self.signal])
+        return jnp.sum(r**2)
 
 
 class JaxLogNormalLikelihood(BaseJaxCost, BaseLikelihood):
@@ -106,9 +116,7 @@ class JaxLogNormalLikelihood(BaseJaxCost, BaseLikelihood):
         self.sigma = self.check_sigma0(sigma0)
         self.sigma2 = jnp.square(self.sigma)
         self._offset = 0.5 * self.n_data * jnp.log(2 * jnp.pi)
-        self._target_as_array = jnp.asarray(
-            [self._target[signal] for signal in self.signal]
-        )
+        self._target_as_array = jnp.asarray([self._target[s] for s in self.signal])
         self._log_target_sum = jnp.sum(jnp.log(self._target_as_array))
         self._precompute()
 
@@ -121,9 +129,38 @@ class JaxLogNormalLikelihood(BaseJaxCost, BaseLikelihood):
         """
         Evaluates the log-normal likelihood.
         """
-        y = self.problem.jax_evaluate(inputs)
-        e = jnp.log(self._target_as_array) - jnp.log(y)
-        likelihood = self._constant_term - jnp.sum(jnp.square(e), axis=1) / (
-            2 * self.sigma2
-        )
-        return likelihood.item()
+        y = self.problem.evaluate(inputs)
+        e = jnp.asarray([jnp.log(y[s]) - jnp.log(self._target[s]) for s in self.signal])
+        likelihood = self._constant_term - jnp.sum(jnp.square(e)) / (2 * self.sigma2)
+        return likelihood
+
+
+class JaxGaussianLogLikelihoodKnownSigma(BaseJaxCost, BaseLikelihood):
+    """
+    A Jax implementation of the Gaussian Likelihood function.
+    This function represents the underlining observed data sampled
+    from a Gaussian distribution with known noise, `sigma0`.
+
+    Parameters
+    -----------
+    problem: BaseProblem
+        The problem to fit of type `pybop.BaseProblem`
+    sigma0: float, optional
+        The variance in the measured data
+    """
+
+    def __init__(self, problem: BaseProblem, sigma0=0.02):
+        super().__init__(problem)
+        self.sigma = self.check_sigma0(sigma0)
+        self.sigma2 = jnp.square(self.sigma)
+        self._offset = -0.5 * self.n_data * jnp.log(2 * jnp.pi * self.sigma2)
+        self._multip = -1 / (2.0 * self.sigma2)
+
+    def evaluate(self, inputs):
+        """
+        Evaluates the log-normal likelihood.
+        """
+        y = self.problem.evaluate(inputs)
+        e = jnp.asarray([y[s] - self._target[s] for s in self.signal])
+        likelihood = jnp.sum(self._offset + self._multip * jnp.sum(jnp.square(e)))
+        return likelihood

@@ -1,6 +1,5 @@
 from typing import Optional
 
-import jax.numpy as jnp
 import numpy as np
 from pybamm import IDAKLUSolver
 
@@ -73,6 +72,9 @@ class BaseProblem:
         self._target = None
         self.verbose = False
         self.failure_output = np.asarray([np.inf])
+        self.exception = [
+            "These parameter values are infeasible."
+        ]  # TODO: Update to a utility function and add to it on exception creation
         if isinstance(self._model, BaseModel):
             self.eis = self.model.eis
             self.domain = "Frequency [Hz]" if self.eis else "Time [s]"
@@ -147,30 +149,6 @@ class BaseProblem:
             This method must be implemented by subclasses.
         """
         raise NotImplementedError
-
-    def jax_evaluate(
-        self,
-        inputs: Inputs,
-    ) -> jnp.ndarray:
-        """
-        Evaluate the model with the given parameters and return the signal
-        with a Jax model and solver.
-
-        Parameters
-        ----------
-        inputs : Inputs
-            Parameters for evaluation of the model.
-
-        Returns
-        -------
-        y : jnp.ndarray
-            The model output y(t) simulated with given inputs.
-        """
-
-        y = jnp.squeeze(
-            self.model.solver.get_vars(self.signal)(self.domain_data, inputs)
-        )
-        return y
 
     def get_target(self):
         """

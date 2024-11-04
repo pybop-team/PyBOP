@@ -1,1 +1,1 @@
-from .jax_costs import BaseJaxCost, JaxLogNormalLikelihood, JaxSumSquaredError
+from .jax_costs import BaseJaxCost, JaxLogNormalLikelihood, JaxSumSquaredError, JaxGaussianLogLikelihoodKnownSigma

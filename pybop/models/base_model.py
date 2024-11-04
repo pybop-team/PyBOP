@@ -778,13 +778,15 @@ class BaseModel:
             self._IDAKLU_stored = self._solver.copy()
             self._solver = self._solver.jaxify(
                 model=self._built_model,
-                t_eval=t_eval,
+                t_eval=[t_eval[0], t_eval[-1]],
+                t_interp=t_eval,
                 calculate_sensitivities=calculate_sensitivities,
             )
         elif isinstance(self._solver, pybamm.IDAKLUJax):
             self._solver = self._IDAKLU_stored.jaxify(
                 model=self._built_model,
-                t_eval=t_eval,
+                t_eval=[t_eval[0], t_eval[-1]],
+                t_interp=t_eval,
                 calculate_sensitivities=calculate_sensitivities,
             )
         else:

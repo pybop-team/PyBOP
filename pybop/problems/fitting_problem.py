@@ -2,6 +2,7 @@ import warnings
 from typing import Optional
 
 import numpy as np
+from pybamm import IDAKLUJax, SolverError
 
 from pybop import BaseModel, BaseProblem, Dataset
 from pybop.parameters.parameter import Inputs, Parameters
@@ -117,50 +118,57 @@ class FittingProblem(BaseProblem):
         """
         inputs = self.parameters.verify(inputs)
         if self.eis:
-            return self._evaluateEIS(inputs)
-        else:
-            try:
-                sol = self._model.simulate(
-                    inputs=inputs,
-                    t_eval=self._domain_data,
-                    initial_state=self.initial_state,
-                )
-            except Exception as e:
-                if self.verbose:
-                    print(f"Simulation error: {e}")
-                return {signal: self.failure_output for signal in self.signal}
+            return self._evaluate(self._model.simulateEIS, inputs)
 
-            return {
-                signal: sol[signal].data
-                for signal in (self.signal + self.additional_variables)
-            }
+        return self._evaluate(self._model.simulate, inputs)
 
-    def _evaluateEIS(self, inputs: Inputs) -> dict[str, np.ndarray[np.float64]]:
+    def _evaluate(
+        self, func, inputs, calculate_grad=False
+    ) -> dict[str, np.ndarray[np.float64]]:
         """
-        Evaluate the model with the given parameters and return the signal.
+        Perform simulation using the specified method and handle exceptions.
 
         Parameters
         ----------
+        func : callable
+            The method to be used for simulation.
         inputs : Inputs
             Parameters for evaluation of the model.
 
         Returns
         -------
-        y : np.ndarray
-            The simulated model output y(ω) for the given inputs.
+        dict[str, np.ndarray[np.float64]]
+            The simulated model output.
         """
         try:
-            sol = self._model.simulateEIS(
-                inputs=inputs,
-                f_eval=self._domain_data,
-                initial_state=self.initial_state,
-            )
-        except Exception as e:
-            if self.verbose:
-                print(f"Simulation error: {e}")
-            return {signal: self.failure_output for signal in self.signal}
+            if isinstance(self.model.solver, IDAKLUJax):
+                sol = self._model.solver.get_vars(self.signal)(
+                    self.domain_data, inputs
+                )  # TODO: Add initial_state capabilities
+            else:
+                sol = func(
+                    inputs,
+                    self._domain_data,
+                    initial_state=self.initial_state,
+                )
+        except (SolverError, ZeroDivisionError, RuntimeError, ValueError) as e:
+            if isinstance(e, ValueError) and str(e) not in self.exception:
+                raise  # Raise the error if it doesn't match the expected list
+            error_out = {s: self.failure_output for s in self.signal}
+            return (error_out, self.failure_output) if calculate_grad else error_out
 
-        return sol
+        if self.eis:
+            return sol
+        if isinstance(self.model.solver, IDAKLUJax):
+            return {signal: sol[:, i] for i, signal in enumerate(self.signal)}
+        if calculate_grad:
+            signals = self.signal + self.additional_variables
+            return (
+                {s: sol[s].data for s in signals},
+                {s: sol[s].sensitivities for s in signals},
+            )
+
+        return {s: sol[s].data for s in (self.signal + self.additional_variables)}
 
     def evaluateS1(self, inputs: Inputs):
         """
@@ -179,32 +187,21 @@ class FittingProblem(BaseProblem):
         """
         inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(inputs.values()))
+        y, sens = self._evaluate(self._model.simulateS1, inputs, calculate_grad=True)
 
-        try:
-            sol = self._model.simulateS1(
-                inputs=inputs,
-                t_eval=self._domain_data,
-                initial_state=self.initial_state,
-            )
-
-        except Exception as e:
-            print(f"Error: {e}")
-            return {
-                signal: self.failure_output for signal in self.signal
-            }, self.failure_output
-
-        y = {sig: sol[sig].data for sig in (self.signal + self.additional_variables)}
-
-        # Pre-allocate sensitivities array
-        y_dims = sol[self.signal[0]].data.shape[0]
-        dy = np.empty((y_dims, self.n_outputs, self._n_parameters))
+        if not any([np.isfinite(y[s]).any() for s in self.signal]):
+            return y, sens
 
         # Extract the sensitivities for all signals at once
         param_keys = self.parameters.keys()
-        for i, signal in enumerate(self.signal):
-            sensitivities = sol[signal].sensitivities
-            dy[:, i, :] = np.column_stack(
-                [sensitivities[key].toarray()[:, 0] for key in param_keys]
-            )
+        dy = np.stack(
+            [
+                np.column_stack(
+                    [sens[signal][key].toarray()[:, 0] for key in param_keys]
+                )
+                for signal in self.signal
+            ],
+            axis=1,
+        )
 
         return y, dy

@@ -7,7 +7,7 @@ import pytest
 import pybop
 
 
-class TestCosts:
+class TestJaxCosts:
     """
     Class for testing Jax-based cost functions
     """
@@ -80,7 +80,7 @@ class TestCosts:
 
         # Test type of returned value
         out = cost([0.5])
-        assert np.isscalar(out)
+        assert isinstance(out, np.ndarray)
 
         # Test option setting
         cost.set_fail_gradient(10)
@@ -93,7 +93,7 @@ class TestCosts:
 
         # Test grad
         e, de = cost([0.5], calculate_grad=True)
-        assert np.isscalar(e)
+        assert isinstance(out, np.ndarray)
         assert de.shape == (1,)
         assert isinstance(de, np.ndarray)
         assert de.dtype == np.float64

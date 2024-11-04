@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 
 import pybop
 
@@ -7,10 +8,12 @@ parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 parameter_set.update(
     {
         "Negative electrode active material volume fraction": 0.63,
-        "Positive electrode active material volume fraction": 0.51,
+        "Positive electrode active material volume fraction": 0.62,
     }
 )
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+options = {"max_num_steps": int(1e6), "max_error_test_failures": 60}
+solver = pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6, options=options)
+model = pybop.lithium_ion.DFN(parameter_set=parameter_set, solver=solver)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -57,8 +60,8 @@ dataset = pybop.Dataset(
 signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
-likelihood = pybop.GaussianLogLikelihood(problem, sigma0=sigma * 4)
-optim = pybop.IRPropMin(
+likelihood = pybop.JaxGaussianLogLikelihoodKnownSigma(problem, sigma0=sigma)
+optim = pybop.XNES(
     likelihood,
     max_unchanged_iterations=20,
     min_iterations=20,

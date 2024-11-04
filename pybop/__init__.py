@@ -118,6 +118,11 @@ from .costs._likelihoods import (
 from .costs._weighted_cost import WeightedCost
 
 #
+# Experimental
+#
+from .experimental import BaseJaxCost, JaxSumSquaredError, JaxLogNormalLikelihood, JaxGaussianLogLikelihoodKnownSigma
+
+#
 # Optimiser classes
 #
 
@@ -173,11 +178,6 @@ from .observers.observer import Observer
 #
 from . import plot as plot
 from .samplers.mcmc_summary import PosteriorSummary
-
-#
-# Experimental
-#
-from .experimental import BaseJaxCost, JaxSumSquaredError, JaxLogNormalLikelihood
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop

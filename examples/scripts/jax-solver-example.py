@@ -1,5 +1,3 @@
-import time
-
 import numpy as np
 import pybamm
 
@@ -10,8 +8,8 @@ parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 
 # The IDAKLU, and it's jaxified version perform very well on the DFN with and without
 # gradient calculations
-solver = pybamm.IDAKLUSolver()
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
+solver = pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6)
+model = pybop.lithium_ion.DFN(parameter_set=parameter_set, solver=solver)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -28,7 +26,7 @@ parameters = pybop.Parameters(
 )
 
 # Define test protocol and generate data
-t_eval = np.linspace(0, 300, 100)
+t_eval = np.linspace(0, 600, 600)
 values = model.predict(
     initial_state={"Initial open-circuit voltage [V]": 4.2}, t_eval=t_eval
 )
@@ -47,19 +45,16 @@ problem = pybop.FittingProblem(model, parameters, dataset)
 
 # By selecting a Jax based cost function, the IDAKLU solver will be
 # jaxified (wrapped in a Jax compiled expression) and used for optimisation
-cost = pybop.JaxLogNormalLikelihood(problem, sigma0=0.002)
+cost = pybop.JaxLogNormalLikelihood(problem, sigma0=2e-3)
 
 # Non-gradient optimiser, change to `pybop.AdamW` for gradient-based example
-optim = pybop.XNES(
+optim = pybop.IRPropMin(
     cost,
     max_unchanged_iterations=20,
     max_iterations=100,
 )
 
-start_time = time.time()
 results = optim.run()
-print(results)
-print(f"Total time: {time.time() - start_time}")
 
 # Plot convergence
 pybop.plot.convergence(optim)
