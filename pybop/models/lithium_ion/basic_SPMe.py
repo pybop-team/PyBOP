@@ -193,26 +193,36 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         ######################
         # Overpotentials
         ######################
-        j0_n = pybamm.sqrt(sto_n_surf * (1 - sto_n_surf)) * (
-            pybamm.x_average(pybamm.sqrt(sto_e_n))
+        eta_n = (
+            av_v_n
+            + (2 * RT_F * (1 - t_plus))
+            * (pybamm.x_average(pybamm.log(sto_e_n)) - pybamm.log(sto_e_n))
+            - self.U(sto_n_surf, "negative")
         )
-        j0_p = pybamm.sqrt(sto_p_surf * (1 - sto_p_surf)) * (
-            pybamm.x_average(pybamm.sqrt(sto_e_p))
+        eta_p = (
+            av_v_p
+            + (2 * RT_F * (1 - t_plus))
+            * (pybamm.x_average(pybamm.log(sto_e_p)) - pybamm.log(sto_e_p))
+            - self.U(sto_p_surf, "positive")
+        )
+        eta_e = (2 * RT_F * (1 - t_plus)) * (
+            pybamm.x_average(pybamm.log(sto_e_p))
+            - pybamm.x_average(pybamm.log(sto_e_n))
         )
 
-        eta_n = av_v_n - self.U(sto_n_surf, "negative")
-        eta_p = av_v_p - self.U(sto_p_surf, "positive")
+        ######################
+        # Exchange current
+        ######################
+        j0_n = pybamm.sqrt(sto_n_surf * (1 - sto_n_surf) * sto_e_n)
+        j0_p = pybamm.sqrt(sto_p_surf * (1 - sto_p_surf) * sto_e_p)
         j_n = 2 * j0_n * pybamm.sinh(eta_n / (2 * RT_F)) / tau_r_n
         j_p = 2 * j0_p * pybamm.sinh(eta_p / (2 * RT_F)) / tau_r_p
-        eta_e = (2 * RT_F * (1 - t_plus)) * pybamm.log(
-            pybamm.x_average(sto_e_p) / pybamm.x_average(sto_e_n)
-        )
 
         ######################
-        # Double-layer
+        # Double layer
         ######################
-        self.rhs[av_v_n] = 1 / C_n * (-Q_th_n * j_n + I / 3)
-        self.rhs[av_v_p] = 1 / C_p * (-Q_th_p * j_p - I / 3)
+        self.rhs[av_v_n] = 1 / C_n * (-Q_th_n * pybamm.x_average(j_n) + I / 3)
+        self.rhs[av_v_p] = 1 / C_p * (-Q_th_p * pybamm.x_average(j_p) - I / 3)
 
         sto_n_init = x_0 + (x_100 - x_0) * soc_init
         sto_p_init = y_0 + (y_100 - y_0) * soc_init
@@ -232,11 +242,11 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         # Boundary conditions must be provided for equations with spatial derivatives
         self.boundary_conditions[sto_n] = {
             "left": (Scalar(0), "Neumann"),
-            "right": (-tau_d_n * j_n, "Neumann"),
+            "right": (-tau_d_n * pybamm.x_average(j_n), "Neumann"),
         }
         self.boundary_conditions[sto_p] = {
             "left": (Scalar(0), "Neumann"),
-            "right": (-tau_d_p * j_p, "Neumann"),
+            "right": (-tau_d_p * pybamm.x_average(j_p), "Neumann"),
         }
 
         self.initial_conditions[sto_n] = sto_n_init
