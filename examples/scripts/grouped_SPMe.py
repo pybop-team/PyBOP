@@ -14,8 +14,9 @@ plot_dict = pybop.plot.StandardPlot(layout_options=layout_options)
 # Unpack parameter values from Chen2020
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 parameter_set["Electrolyte diffusivity [m2.s-1]"] = 1.769e-10
-parameter_set["Electrolyte conductivity [S.m-1]"] = 0.9487
-
+parameter_set["Electrolyte conductivity [S.m-1]"] = 1e16  # 0.9487
+parameter_set["Negative electrode conductivity [S.m-1]"] = 1e16
+parameter_set["Positive electrode conductivity [S.m-1]"] = 1e16
 
 # Define a test protocol
 initial_state = {"Initial SoC": 0.9}
