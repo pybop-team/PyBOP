@@ -141,6 +141,9 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         C_p = Parameter("Positive electrode capacitance [F]")
         C_n = Parameter("Negative electrode capacitance [F]")
 
+        l_p = Parameter("Positive electrode thickness [m]")  # normalised
+        l_n = Parameter("Negative electrode thickness [m]")  # normalised
+
         t_plus = Parameter("Cation transference number")
 
         R0 = Parameter("Series resistance [Ohm]")
@@ -161,18 +164,19 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         )
         tau_e = pybamm.concatenation(tau_e_n, tau_e_sep, tau_e_p)
 
-        beta_n = PrimaryBroadcast(
-            Parameter("Negative relative concentration"),
+        j_beta_n = PrimaryBroadcast(
+            Parameter("Negative electrode reference electrolyte current [A]"),
             "negative electrode",
         )
-        beta_sep = PrimaryBroadcast(
-            Scalar(0),
+        j_beta_sep = PrimaryBroadcast(
+            Parameter("Separator reference electrolyte current [A]"),
             "separator",
         )
-        beta_p = PrimaryBroadcast(
-            Parameter("Positive relative concentration"),
+        j_beta_p = PrimaryBroadcast(
+            Parameter("Positive electrode reference electrolyte current [A]"),
             "positive electrode",
         )
+        j_beta = pybamm.concatenation(j_beta_n, j_beta_sep, j_beta_p)
 
         ######################
         # Input current (positive on discharge)
@@ -255,12 +259,13 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         ######################
         # Electrolyte
         ######################
-        b_e_n = 3 * beta_n * (1 - t_plus) * j_n
-        b_e_sep = beta_sep
-        b_e_p = 3 * beta_p * (1 - t_plus) * j_p
-        beta = pybamm.concatenation(b_e_n, b_e_sep, b_e_p)
+        j_source = pybamm.concatenation(
+            3 * Q_th_n * j_n / l_n,
+            PrimaryBroadcast(Scalar(0), "separator"),
+            3 * Q_th_p * j_p / l_p,
+        )
         self.rhs[sto_e] = (
-            pybamm.div(pybamm.grad(sto_e)) + beta * tau_e
+            pybamm.div(pybamm.grad(sto_e)) + (1 - t_plus) * j_source / j_beta
         ) / tau_e
 
         self.boundary_conditions[sto_e] = {
@@ -334,6 +339,9 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "Negative electrode theoretical capacity [A.s]": 3000,
             "Positive relative concentration": 1,
             "Negative relative concentration": 1,
+            "Positive electrode reference electrolyte current [A]": 1,
+            "Negative electrode reference electrolyte current [A]": 1,
+            "Separator reference electrolyte current [A]": 1,
             "Positive particle diffusion time scale [s]": 2000,
             "Negative particle diffusion time scale [s]": 2000,
             "Positive electrode electrolyte diffusion time scale [s]": 300,
@@ -470,8 +478,9 @@ def convert_physical_to_grouped_parameters(parameter_set):
     Q_th_p = F * alpha_p * c_max_p * L_p * A
     Q_th_n = F * alpha_n * c_max_n * L_n * A
 
-    beta_p = alpha_p * c_max_p / (epsilon_p * ce0)
-    beta_n = alpha_n * c_max_n / (epsilon_n * ce0)
+    j_beta_p = F * ce0 * epsilon_p**b_p * De * A / L
+    j_beta_n = F * ce0 * epsilon_n**b_n * De * A / L
+    j_beta_sep = F * ce0 * epsilon_sep**b_sep * De * A / L
 
     tau_d_p = R_p**2 / D_p
     tau_d_n = R_n**2 / D_n
@@ -504,8 +513,9 @@ def convert_physical_to_grouped_parameters(parameter_set):
         "Negative electrode OCP [V]": parameter_set["Negative electrode OCP [V]"],
         "Positive electrode theoretical capacity [A.s]": Q_th_p,
         "Negative electrode theoretical capacity [A.s]": Q_th_n,
-        "Positive relative concentration": beta_p,
-        "Negative relative concentration": beta_n,
+        "Positive electrode reference electrolyte current [A]": j_beta_p,
+        "Negative electrode reference electrolyte current [A]": j_beta_n,
+        "Separator reference electrolyte current [A]": j_beta_sep,
         "Positive particle diffusion time scale [s]": tau_d_p,
         "Negative particle diffusion time scale [s]": tau_d_n,
         "Positive electrode electrolyte diffusion time scale [s]": tau_e_p,
