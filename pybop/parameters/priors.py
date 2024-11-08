@@ -430,6 +430,41 @@ class JointLogPrior(BasePrior):
 
         return output, doutput
 
+    def rvs(self, size=1, random_state=None):
+        """
+        Generates random variates from the joint distribution.
+
+        Parameters
+        ----------
+        size : int
+            The number of random variates to generate.
+        random_state : int, optional
+            The random state seed for reproducibility. Default is None.
+
+        Returns
+        -------
+        array_like
+            An array of random variates from the distribution.
+
+        Raises
+        ------
+        ValueError
+            If the size parameter is negative.
+        """
+        if not isinstance(size, (int, tuple)):
+            raise ValueError(
+                "size must be a positive integer or tuple of positive integers"
+            )
+        if isinstance(size, int) and size < 1:
+            raise ValueError("size must be a positive integer")
+        if isinstance(size, tuple) and any(s < 1 for s in size):
+            raise ValueError("size must be a tuple of positive integers")
+
+        samples = []
+        for prior in self._priors:
+            samples.append(prior.rvs(size=size, random_state=random_state)[0])
+        return samples
+
     def __repr__(self) -> str:
         priors_repr = ", ".join([repr(prior) for prior in self._priors])
         return f"{self.__class__.__name__}(priors: [{priors_repr}])"

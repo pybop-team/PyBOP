@@ -161,6 +161,7 @@ from .samplers.pints_samplers import (
     SliceRankShrinkingMCMC, SliceStepoutMCMC,
 )
 from .samplers.mcmc_sampler import MCMCSampler
+from .samplers.annealed_importance import AnnealedImportanceSampler
 
 #
 # Observer classes
