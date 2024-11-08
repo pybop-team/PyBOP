@@ -305,7 +305,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         # visualising the solution of the model
         self.variables = {
             "Negative particle stoichiometry": sto_n,
-            "Negative particle surface stoichiomtry": PrimaryBroadcast(
+            "Negative particle surface stoichiometry": PrimaryBroadcast(
                 sto_n_surf, "negative electrode"
             ),
             "Negative electrode voltage [V]": PrimaryBroadcast(
