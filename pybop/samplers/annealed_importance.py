@@ -85,10 +85,9 @@ class AnnealedImportanceSampler:
             ValueError: If starting position has non-finite log-likelihood
         """
         log_w = np.zeros(self._iterations)
+        current = self._x0.copy()
 
         for i in range(self._iterations):
-            current = self._x0.copy()
-
             if not np.isfinite(self._log_likelihood(current)):
                 raise ValueError("Starting position has non-finite log-likelihood.")
 
@@ -124,11 +123,12 @@ class AnnealedImportanceSampler:
 
                 log_density_previous[j] = current_f
 
-                # Final state
-                log_density_current[self._num_beta - 1] = self._log_prior(
-                    current
-                ) + self._log_likelihood(current)
+            # Final state
+            log_density_current[self._num_beta - 1] = self._log_prior(
+                current
+            ) + self._log_likelihood(current)
             log_w[i] = np.sum(log_density_current) - np.sum(log_density_previous)
 
-        # Return moments of generated chain
+        # Filter out zeros and return moments of generated chain
+        log_w = log_w[log_w != 0.0]
         return np.mean(log_w), np.median(log_w), np.std(log_w), np.var(log_w)
