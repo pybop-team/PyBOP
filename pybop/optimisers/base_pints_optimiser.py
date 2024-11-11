@@ -80,6 +80,11 @@ class BasePintsOptimiser(BaseOptimiser):
         self._threshold = None
         self._evaluations = None
         self._iterations = None
+        self.option_methods = {
+            "use_f_guessed": self.set_f_guessed_tracking,
+            "max_evaluations": self.set_max_evaluations,
+            "threshold": self.set_threshold,
+        }
 
         self.optimiser = pints_optimiser
         super().__init__(cost, **optimiser_kwargs)
@@ -103,25 +108,15 @@ class BasePintsOptimiser(BaseOptimiser):
         self._needs_sensitivities = self.optimiser.needs_sensitivities()
 
         # Apply additional options and remove them from options
-        key_list = list(self.unset_options.keys())
-        for key in key_list:
-            if key == "use_f_guessed":
-                self.set_f_guessed_tracking(self.unset_options.pop(key))
-            elif key == "max_unchanged_iterations":
-                max_unchanged_kwargs = {"iterations": self.unset_options.pop(key)}
-                if "absolute_tolerance" in self.unset_options.keys():
-                    max_unchanged_kwargs["absolute_tolerance"] = self.unset_options.pop(
-                        "absolute_tolerance"
-                    )
-                if "relative_tolerance" in self.unset_options.keys():
-                    max_unchanged_kwargs["relative_tolerance"] = self.unset_options.pop(
-                        "relative_tolerance"
-                    )
-                self.set_max_unchanged_iterations(**max_unchanged_kwargs)
-            elif key == "max_evaluations":
-                self.set_max_evaluations(self.unset_options.pop(key))
-            elif key == "threshold":
-                self.set_threshold(self.unset_options.pop(key))
+        max_unchanged_kwargs = {"iterations": self._unchanged_max_iterations}
+        for key, method in self.option_methods.items():
+            if key in self.unset_options:
+                method(self.unset_options.pop(key))
+
+        # Capture tolerance options
+        for tol_key in ["absolute_tolerance", "relative_tolerance"]:
+            if tol_key in self.unset_options:
+                max_unchanged_kwargs[tol_key] = self.unset_options.pop(tol_key)
 
     def _sanitise_inputs(self):
         """

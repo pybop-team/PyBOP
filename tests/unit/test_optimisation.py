@@ -222,6 +222,14 @@ class TestOptimisation:
                     cost=cost, max_evaluations=5, options=dict(max_evaluations=10)
                 )
 
+            if optimiser in [pybop.SciPyDifferentialEvolution, pybop.SciPyMinimize]:
+                # Pass duplicate keywords
+                with pytest.raises(
+                    Exception,
+                    match="option was passed in addition to the expected",
+                ):
+                    optimiser(cost=cost, maxiter=5, max_iterations=10)
+
         if optimiser in [pybop.SciPyDifferentialEvolution]:
             # Update population size, test maxiter arg
             pop_maxiter_optim = optimiser(cost=cost, maxiter=3, popsize=5)
