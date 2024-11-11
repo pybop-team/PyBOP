@@ -29,7 +29,7 @@ class BenchmarkTrackParameterisation:
         Args:
             model (pybop.Model): The model class to be benchmarked.
             parameter_set (str): The name of the parameter set to be used.
-            optimiser (pybop.Optimiser): The optimizer class to be used.
+            optimiser (pybop.Optimiser): The optimiser class to be used.
         """
         # Set random seed
         set_random_seed()
@@ -121,7 +121,7 @@ class BenchmarkTrackParameterisation:
         Args:
             model (pybop.Model): The model class being benchmarked (unused).
             parameter_set (str): The name of the parameter set being used (unused).
-            optimiser (pybop.Optimiser): The optimizer class being used (unused).
+            optimiser (pybop.Optimiser): The optimiser class being used (unused).
         """
         results = self.optim.run()
         return results.x
