@@ -22,7 +22,7 @@ class AnnealedImportanceSampler:
         x0=None,
         cov0=None,
         num_beta: int = 30,
-        iterations: Optional[int] = None,
+        chains: Optional[int] = None,
     ):
         self._log_likelihood = log_likelihood
         self._log_prior = log_prior
@@ -36,8 +36,8 @@ class AnnealedImportanceSampler:
         )
 
         # Total number of iterations
-        self._iterations = (
-            iterations if iterations is not None else log_likelihood.n_parameters * 1000
+        self._chains = (
+            chains if chains is not None else log_likelihood.n_parameters * 1000
         )
 
         # Number of beta divisions to consider 0 = beta_n <
@@ -47,18 +47,18 @@ class AnnealedImportanceSampler:
         self.set_num_beta(num_beta)
 
     @property
-    def iterations(self) -> int:
+    def chains(self) -> int:
         """Returns the total number of iterations."""
-        return self._iterations
+        return self._chains
 
-    @iterations.setter
+    @chains.setter
     def iterations(self, value: int) -> None:
         """Sets the total number of iterations."""
         if not isinstance(value, (int, np.integer)):
             raise TypeError("iterations must be an integer")
         if value <= 0:
             raise ValueError("iterations must be positive")
-        self._iterations = int(value)
+        self._chains = int(value)
 
     @property
     def num_beta(self) -> int:
@@ -72,7 +72,7 @@ class AnnealedImportanceSampler:
         if num_beta <= 1:
             raise ValueError("num_beta must be greater than 1")
         self._num_beta = num_beta
-        self._beta = np.linspace(0, 1, num_beta)
+        self._beta = np.linspace(1, 0, num_beta)
 
     def run(self) -> tuple[float, float, float, float]:
         """
@@ -84,10 +84,10 @@ class AnnealedImportanceSampler:
         Raises:
             ValueError: If starting position has non-finite log-likelihood
         """
-        log_w = np.zeros(self._iterations)
-        current = self._x0.copy()
+        log_w = np.zeros(self._chains)
 
-        for i in range(self._iterations):
+        for i in range(self._chains):
+            current = self._x0.copy()
             if not np.isfinite(self._log_likelihood(current)):
                 raise ValueError("Starting position has non-finite log-likelihood.")
 
@@ -113,22 +113,20 @@ class AnnealedImportanceSampler:
                 # Metropolis sampling step
                 if np.isfinite(log_likelihood_proposed):
                     proposed_f = (
-                        log_prior_proposed + self._beta[j] * log_likelihood_proposed
-                    )
+                        1.0 - self._beta[j]
+                    ) * log_prior_proposed + self._beta[j] * log_likelihood_proposed
                     acceptance_log_prob = proposed_f - current_f
 
                     if np.log(np.random.rand()) < acceptance_log_prob:
                         current = proposed
                         current_f = proposed_f
 
-                log_density_previous[j] = current_f
+                    log_density_previous[j] = (
+                        1.0 - self._beta[j - 1]
+                    ) * log_prior_proposed + self._beta[j - 1] * log_likelihood_proposed
 
-            # Final state
-            log_density_current[self._num_beta - 1] = self._log_prior(
-                current
-            ) + self._log_likelihood(current)
+            # Sum for weights
             log_w[i] = np.sum(log_density_current) - np.sum(log_density_previous)
 
-        # Filter out zeros and return moments of generated chain
-        log_w = log_w[log_w != 0.0]
+        # Return moments of generated chain
         return np.mean(log_w), np.median(log_w), np.std(log_w), np.var(log_w)

@@ -18,11 +18,11 @@ synth_model = pybop.lithium_ion.DFN(parameter_set=parameter_set, solver=solver)
 parameters = pybop.Parameters(
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.65, 0.05),
+        prior=pybop.Gaussian(0.55, 0.02),
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.65, 0.05),
+        prior=pybop.Gaussian(0.55, 0.02),
     ),
 )
 
@@ -40,7 +40,6 @@ experiment = pybop.Experiment(
         (
             "Discharge at 0.5C for 1 minutes (5 second period)",
             "Charge at 0.5C for 1 minutes (5 second period)",
-            "Discharge at 3C for 20 seconds (1 second period)",
         ),
     ]
 )
@@ -58,14 +57,14 @@ dataset = pybop.Dataset(
 )
 
 # Generate problem, likelihood, and sampler
-model = pybop.lithium_ion.DFN(parameter_set=parameter_set, solver=pybamm.IDAKLUSolver())
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=pybamm.IDAKLUSolver())
 model.build(initial_state={"Initial SoC": init_soc})
 problem = pybop.FittingProblem(model, parameters, dataset)
 likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=sigma)
 prior = pybop.JointLogPrior(*parameters.priors())
 
 sampler = pybop.AnnealedImportanceSampler(
-    likelihood, prior, iterations=10, num_beta=300, cov0=np.eye(2) * 1e-2
+    likelihood, prior, chains=10, num_beta=250, cov0=np.eye(2) * 4e-4
 )
 mean, median, std, var = sampler.run()
 
