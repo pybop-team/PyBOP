@@ -68,7 +68,7 @@ class AnnealedImportanceSampler:
 
     def transition_distribution(self, x, j):
         """
-        Annealed Importance Sampling - Equation 3.
+        Transition distribution for each beta value [j] - Eqn 3.
         """
         return (1.0 - self._beta[j]) * self._log_prior(x) + self._beta[
             j
@@ -79,7 +79,7 @@ class AnnealedImportanceSampler:
         Run the annealed importance sampling algorithm.
 
         Returns:
-            Tuple containing (mean, std, median, variance) of the log weights
+            Tuple containing (mean, median, std, variance) of the log weights
 
         Raises:
             ValueError: If starting position has non-finite log-likelihood
@@ -100,7 +100,7 @@ class AnnealedImportanceSampler:
 
             # Main sampling loop
             for j in range(1, self._num_beta):
-                # Compute transition with current sample
+                # Compute jth transition with current sample
                 log_density_current[j] = self.transition_distribution(current, j)
 
                 # Calculate the previous transition with current sample
@@ -124,5 +124,5 @@ class AnnealedImportanceSampler:
                 np.sum(log_density_current - log_density_previous) / self._num_beta
             )
 
-        # Return moments of generated chain
+        # Return moments across chains
         return np.mean(log_w), np.median(log_w), np.std(log_w), np.var(log_w)

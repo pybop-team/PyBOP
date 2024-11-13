@@ -248,8 +248,8 @@ class TestProblem:
             problem_1._dataset["Time [s]"]
         ) + len(problem_2._dataset["Time [s]"])
         assert len(combined_problem._dataset["Combined signal"]) == len(
-            problem_1._dataset[signal]
-        ) + len(problem_2._dataset[signal])
+            problem_1._dataset[signal[0]]
+        ) + len(problem_2._dataset[signal[0]])
 
         y = combined_problem.evaluate(inputs=[1e-5, 1e-5])
         assert len(y["Combined signal"]) == len(
