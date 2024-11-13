@@ -63,7 +63,7 @@ class TestProblem:
 
     @pytest.fixture
     def signal(self):
-        return "Voltage [V]"
+        return ["Voltage [V]"]
 
     @pytest.mark.unit
     def test_base_problem(self, parameters, model, dataset):

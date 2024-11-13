@@ -19,31 +19,23 @@ class AnnealedImportanceSampler:
         self,
         log_likelihood: BaseLikelihood,
         log_prior: BasePrior,
-        x0=None,
         cov0=None,
         num_beta: int = 30,
         chains: Optional[int] = None,
     ):
         self._log_likelihood = log_likelihood
         self._log_prior = log_prior
-
-        # Set defaults for x0, cov0
-        self._x0 = (
-            x0 if x0 is not None else log_likelihood.parameters.initial_value()
-        )  # Needs transformation
         self._cov0 = (
             cov0 if cov0 is not None else np.eye(log_likelihood.n_parameters) * 0.1
         )
 
         # Total number of iterations
         self._chains = (
-            chains if chains is not None else log_likelihood.n_parameters * 1000
+            chains if chains is not None else log_likelihood.n_parameters * 300
         )
 
         # Number of beta divisions to consider 0 = beta_n <
         # beta_n-1 < ... < beta_0 = 1
-        self._num_beta = 30
-
         self.set_num_beta(num_beta)
 
     @property
@@ -52,7 +44,7 @@ class AnnealedImportanceSampler:
         return self._chains
 
     @chains.setter
-    def iterations(self, value: int) -> None:
+    def chains(self, value: int) -> None:
         """Sets the total number of iterations."""
         if not isinstance(value, (int, np.integer)):
             raise TypeError("iterations must be an integer")
@@ -72,7 +64,15 @@ class AnnealedImportanceSampler:
         if num_beta <= 1:
             raise ValueError("num_beta must be greater than 1")
         self._num_beta = num_beta
-        self._beta = np.linspace(1, 0, num_beta)
+        self._beta = np.linspace(0, 1, num_beta)
+
+    def transition_distribution(self, x, j):
+        """
+        Annealed Importance Sampling - Equation 3.
+        """
+        return (1.0 - self._beta[j]) * self._log_prior(x) + self._beta[
+            j
+        ] * self._log_likelihood(x)
 
     def run(self) -> tuple[float, float, float, float]:
         """
@@ -87,46 +87,42 @@ class AnnealedImportanceSampler:
         log_w = np.zeros(self._chains)
 
         for i in range(self._chains):
-            current = self._x0.copy()
+            current = self._log_prior.rvs()
             if not np.isfinite(self._log_likelihood(current)):
                 raise ValueError("Starting position has non-finite log-likelihood.")
 
-            log_likelihood_current = self._log_likelihood(current)
-            log_prior_current = self._log_prior(current)
-            current_f = log_prior_current + self._beta[0] * log_likelihood_current
+            current_f = self._log_prior(current)
 
             log_density_current = np.zeros(self._num_beta)
+            log_density_current[0] = current_f
             log_density_previous = np.zeros(self._num_beta)
             log_density_previous[0] = current_f
 
             # Main sampling loop
             for j in range(1, self._num_beta):
+                # Compute transition with current sample
+                log_density_current[j] = self.transition_distribution(current, j)
+
+                # Calculate the previous transition with current sample
+                log_density_previous[j] = self.transition_distribution(current, j - 1)
+
+                # Generate new sample from current (eqn.4)
                 proposed = np.random.multivariate_normal(current, self._cov0)
 
-                # Evaluate proposed state
-                log_likelihood_proposed = self._log_likelihood(proposed)
-                log_prior_proposed = self._log_prior(proposed)
+                # Evaluate proposed sample
+                if np.isfinite(self._log_likelihood(proposed)):
+                    proposed_f = self.transition_distribution(proposed, j)
 
-                # Store proposed
-                log_density_current[j - 1] = current_f
-
-                # Metropolis sampling step
-                if np.isfinite(log_likelihood_proposed):
-                    proposed_f = (
-                        1.0 - self._beta[j]
-                    ) * log_prior_proposed + self._beta[j] * log_likelihood_proposed
+                    # Metropolis acceptance
                     acceptance_log_prob = proposed_f - current_f
-
                     if np.log(np.random.rand()) < acceptance_log_prob:
                         current = proposed
                         current_f = proposed_f
 
-                    log_density_previous[j] = (
-                        1.0 - self._beta[j - 1]
-                    ) * log_prior_proposed + self._beta[j - 1] * log_likelihood_proposed
-
-            # Sum for weights
-            log_w[i] = np.sum(log_density_current) - np.sum(log_density_previous)
+            # Sum for weights (eqn.24)
+            log_w[i] = (
+                np.sum(log_density_current - log_density_previous) / self._num_beta
+            )
 
         # Return moments of generated chain
         return np.mean(log_w), np.median(log_w), np.std(log_w), np.var(log_w)
