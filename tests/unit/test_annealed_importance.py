@@ -20,9 +20,9 @@ class TestPintsSamplers:
 
         # Sample
         sampler = pybop.AnnealedImportanceSampler(
-            scaled_likelihood, prior, chains=15, num_beta=200, cov0=np.eye(1) * 5e-2
+            scaled_likelihood, prior, chains=15, num_beta=500, cov0=np.eye(1) * 1e-2
         )
-        mean, median, std, var = sampler.run()
+        log_w, I, samples = sampler.run()
 
         # Assertions to be added
-        print(f"mean: {mean}, std: {std}, median: {median}, var: {var}")
+        print(f"Integral: {np.mean(I)}, std: {np.std(I)}")

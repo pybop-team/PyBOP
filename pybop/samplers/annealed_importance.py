@@ -74,7 +74,7 @@ class AnnealedImportanceSampler:
             j
         ] * self._log_likelihood(x)
 
-    def run(self) -> tuple[float, float, float, float]:
+    def run(self) -> tuple[float, float, float]:
         """
         Run the annealed importance sampling algorithm.
 
@@ -85,6 +85,8 @@ class AnnealedImportanceSampler:
             ValueError: If starting position has non-finite log-likelihood
         """
         log_w = np.zeros(self._chains)
+        I = np.zeros(self._chains)
+        samples = np.zeros(self._num_beta)
 
         for i in range(self._chains):
             current = self._log_prior.rvs()
@@ -119,10 +121,18 @@ class AnnealedImportanceSampler:
                         current = proposed
                         current_f = proposed_f
 
+                samples[j] = current
+
             # Sum for weights (eqn.24)
             log_w[i] = (
                 np.sum(log_density_current - log_density_previous) / self._num_beta
             )
 
-        # Return moments across chains
-        return np.mean(log_w), np.median(log_w), np.std(log_w), np.var(log_w)
+            # Compute integral using weights and samples
+            I[i] = np.mean(
+                self._log_likelihood(samples)
+                * np.exp((log_density_current - log_density_previous) / self._num_beta)
+            )
+
+        # Return log weights, integral, samples
+        return log_w, I, samples
