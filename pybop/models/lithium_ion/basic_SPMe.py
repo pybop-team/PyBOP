@@ -221,10 +221,11 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         ######################
         # Exchange current
         ######################
-        j0_n = pybamm.sqrt(sto_n_surf * (1 - sto_n_surf) * sto_e_n)
-        j0_p = pybamm.sqrt(sto_p_surf * (1 - sto_p_surf) * sto_e_p)
-        j_n = 2 * j0_n * pybamm.sinh(eta_n / (2 * RT_F)) / tau_r_n
-        j_p = 2 * j0_p * pybamm.sinh(eta_p / (2 * RT_F)) / tau_r_p
+        alpha = 0.5  # cathodic transfer coefficient
+        j0_n = sto_n_surf**alpha * (sto_e_n * (1 - sto_n_surf))**(1 - alpha) / tau_r_n
+        j0_p = sto_p_surf**alpha * (sto_e_p * (1 - sto_p_surf))**(1 - alpha) / tau_r_p
+        j_n = j0_n * (pybamm.exp((1 - alpha) * eta_n / RT_F) - pybamm.exp(- alpha * eta_n / RT_F))
+        j_p = j0_p * (pybamm.exp((1 - alpha) * eta_p / RT_F) - pybamm.exp(- alpha * eta_p / RT_F))
 
         ######################
         # Double layer
