@@ -13,7 +13,16 @@ plot_dict = pybop.plot.StandardPlot(layout_options=layout_options)
 
 # Unpack parameter values from Chen2020
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-parameter_set["Electrolyte diffusivity [m2.s-1]"] = 1.769e-10
+ce0 = parameter_set["Initial concentration in electrolyte [mol.m-3]"]
+T = parameter_set["Ambient temperature [K]"]
+parameter_set["Electrolyte diffusivity [m2.s-1]"] = parameter_set[
+    "Electrolyte diffusivity [m2.s-1]"
+](ce0, T)
+parameter_set["Electrolyte conductivity [S.m-1]"] = parameter_set[
+    "Electrolyte conductivity [S.m-1]"
+](ce0, T)
+
+# Make the conductivities artificially large
 parameter_set["Electrolyte conductivity [S.m-1]"] = 1e16  # 0.9487
 parameter_set["Negative electrode conductivity [S.m-1]"] = 1e16
 parameter_set["Positive electrode conductivity [S.m-1]"] = 1e16
@@ -22,9 +31,10 @@ parameter_set["Positive electrode conductivity [S.m-1]"] = 1e16
 initial_state = {"Initial SoC": 0.9}
 experiment = pybop.Experiment(
     [
-        "Rest for 1 minute",
         "Discharge at 1C until 2.5 V (5 seconds period)",
         "Rest for 30 minutes (5 seconds period)",
+        # "Charge at 2C until 4.1 V (5 seconds period)",
+        # "Rest for 30 minutes (5 seconds period)",
     ],
 )
 
@@ -62,7 +72,7 @@ dataset = pybop.Dataset(
         "Voltage [V]": simulation["Voltage [V]"].data,
     }
 )
-plot_dict.add_traces(dataset["Time [s]"], dataset["Voltage [V]"])
+plot_dict.add_traces(dataset["Time [s]"], dataset["Voltage [V]"], line_dash="dash")
 plot_dict()
 
 # Set up figure
