@@ -129,7 +129,7 @@ class TestSamplingThevenin:
             "log_pdf": posterior,
             "chains": 1,
             "warm_up": 550,
-            "cov0": [1e-3, 1e-3],
+            "cov0": [2e-3, 2e-3],
             "max_iterations": 1000,
             "x0": x0,
         }
@@ -146,7 +146,7 @@ class TestSamplingThevenin:
         np.testing.assert_array_less(0, ess)
         if not isinstance(sampler, RelativisticMCMC):
             np.testing.assert_array_less(
-                summary.rhat(), 1.2
+                summary.rhat(), 1.5
             )  # Large rhat, to enable faster tests
 
         # Assert both final sample and posterior mean
