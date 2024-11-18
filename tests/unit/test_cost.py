@@ -204,7 +204,28 @@ class TestCosts:
 
     @pytest.fixture
     def design_problem(self, parameters, experiment, signal):
-        model = pybop.lithium_ion.SPM()
+        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set.update(
+            {
+                "Electrolyte density [kg.m-3]": pybamm.Parameter(
+                    "Separator density [kg.m-3]"
+                ),
+                "Negative electrode active material density [kg.m-3]": pybamm.Parameter(
+                    "Negative electrode density [kg.m-3]"
+                ),
+                "Negative electrode carbon-binder density [kg.m-3]": pybamm.Parameter(
+                    "Negative electrode density [kg.m-3]"
+                ),
+                "Positive electrode active material density [kg.m-3]": pybamm.Parameter(
+                    "Positive electrode density [kg.m-3]"
+                ),
+                "Positive electrode carbon-binder density [kg.m-3]": pybamm.Parameter(
+                    "Positive electrode density [kg.m-3]"
+                ),
+            },
+            check_already_exists=False,
+        )
+        model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
         return pybop.DesignProblem(
             model,
             parameters,

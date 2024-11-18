@@ -185,3 +185,30 @@ class TestLikelihoods:
         assert (
             likelihood(np.array([0.01]), calculate_grad=True)[0] == -np.inf
         )  # parameter value too small
+
+    @pytest.mark.unit
+    def test_scaled_log_likelihood(self, one_signal_problem):
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(
+            one_signal_problem, sigma0=0.02
+        )
+        scaled_likelihood = pybop.ScaledLogLikelihood(likelihood)
+
+        assert scaled_likelihood._log_likelihood == likelihood
+        assert (
+            scaled_likelihood(np.array([0.01])) == -np.inf
+        )  # parameter value too small
+        assert (
+            likelihood(np.array([0.01]), calculate_grad=True)[0] == -np.inf
+        )  # parameter value too small
+
+        # Test scaling
+        scaled_values = likelihood([0.6]) / likelihood.n_data
+        np.testing.assert_allclose(scaled_values, scaled_likelihood([0.6]))
+
+        # Test w/ gradient
+        values, grad = tuple(
+            i / likelihood.n_data for i in likelihood([0.6], calculate_grad=True)
+        )
+        np.testing.assert_allclose(
+            grad, scaled_likelihood([0.6], calculate_grad=True)[1]
+        )

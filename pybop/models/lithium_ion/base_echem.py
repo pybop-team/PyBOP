@@ -1,6 +1,8 @@
+import sys
 import warnings
 from typing import Optional
 
+from pybamm import LithiumIonParameters
 from pybamm import lithium_ion as pybamm_lithium_ion
 
 from pybop.models.base_model import BaseModel, Inputs
@@ -85,6 +87,7 @@ class EChemBaseModel(BaseModel):
         self._disc = None
 
         self._electrode_soh = pybamm_lithium_ion.electrode_soh
+        self._electrode_soh_half_cell = pybamm_lithium_ion.electrode_soh_half_cell
         self.geometric_parameters = self.set_geometric_parameters()
 
     def _check_params(
@@ -136,9 +139,12 @@ class EChemBaseModel(BaseModel):
         }
 
         for material_vol_fraction, porosity in electrode_params:
-            if (
+            total_vol_fraction = (
                 related_parameters[material_vol_fraction] + related_parameters[porosity]
-                > 1
+            )
+            if (
+                ParameterSet.evaluate_symbol(total_vol_fraction, parameter_set)
+                > 1 + sys.float_info.epsilon
             ):
                 if self.param_check_counter <= len(electrode_params):
                     infeasibility_warning = "Non-physical point encountered - [{material_vol_fraction} + {porosity}] > 1.0!"
@@ -182,8 +188,10 @@ class EChemBaseModel(BaseModel):
             parameter_set["Electrode height [m]"] * parameter_set["Electrode width [m]"]
         )
 
-        # Calculate and return total cell volume
-        return cross_sectional_area * cell_thickness
+        # Calculate total cell volume
+        cell_volume = cross_sectional_area * cell_thickness
+
+        return ParameterSet.evaluate_symbol(cell_volume, parameter_set)
 
     def cell_mass(self, parameter_set: Optional[ParameterSet] = None):
         """
@@ -207,30 +215,36 @@ class EChemBaseModel(BaseModel):
         parameter_set = parameter_set or self._parameter_set
 
         def mass_density(
-            active_material_vol_frac, density, porosity, electrolyte_density
+            active_material_vol_frac,
+            density,
+            porosity,
+            electrolyte_density,
+            carbon_binder_domain_density,
         ):
-            return (active_material_vol_frac * density) + (
-                porosity * electrolyte_density
+            return (
+                (active_material_vol_frac * density)
+                + (porosity * electrolyte_density)
+                + (1.0 - active_material_vol_frac - porosity)
+                * carbon_binder_domain_density
             )
 
         def area_density(thickness, mass_density):
             return thickness * mass_density
 
-        # Approximations due to SPM(e) parameter set limitations
-        electrolyte_density = parameter_set["Separator density [kg.m-3]"]
-
         # Calculate mass densities
         positive_mass_density = mass_density(
             parameter_set["Positive electrode active material volume fraction"],
-            parameter_set["Positive electrode density [kg.m-3]"],
+            parameter_set["Positive electrode active material density [kg.m-3]"],
             parameter_set["Positive electrode porosity"],
-            electrolyte_density,
+            parameter_set["Electrolyte density [kg.m-3]"],
+            parameter_set["Positive electrode carbon-binder density [kg.m-3]"],
         )
         negative_mass_density = mass_density(
             parameter_set["Negative electrode active material volume fraction"],
-            parameter_set["Negative electrode density [kg.m-3]"],
+            parameter_set["Negative electrode active material density [kg.m-3]"],
             parameter_set["Negative electrode porosity"],
-            electrolyte_density,
+            parameter_set["Electrolyte density [kg.m-3]"],
+            parameter_set["Negative electrode carbon-binder density [kg.m-3]"],
         )
 
         # Calculate area densities
@@ -242,7 +256,7 @@ class EChemBaseModel(BaseModel):
         )
         separator_area_density = area_density(
             parameter_set["Separator thickness [m]"],
-            parameter_set["Separator porosity"] * electrolyte_density,
+            parameter_set["Separator density [kg.m-3]"],
         )
         positive_cc_area_density = area_density(
             parameter_set["Positive current collector thickness [m]"],
@@ -258,7 +272,7 @@ class EChemBaseModel(BaseModel):
             parameter_set["Electrode height [m]"] * parameter_set["Electrode width [m]"]
         )
 
-        # Calculate and return total cell mass
+        # Calculate total cell mass
         total_area_density = (
             positive_area_density
             + negative_area_density
@@ -266,13 +280,15 @@ class EChemBaseModel(BaseModel):
             + positive_cc_area_density
             + negative_cc_area_density
         )
-        return cross_sectional_area * total_area_density
+        cell_mass = cross_sectional_area * total_area_density
+
+        return ParameterSet.evaluate_symbol(cell_mass, parameter_set)
 
     def approximate_capacity(self, parameter_set: Optional[ParameterSet] = None):
         """
         Calculate an estimate for the nominal cell capacity. The estimate is computed
-        by dividing the theoretical energy (in watt-hours) by the average open circuit
-        potential (voltage) of the cell.
+        by estimating the capacity of the positive electrode that lies between the
+        stoichiometric limits corresponding to the upper and lower voltage limits.
 
         Parameters
         ----------
@@ -282,39 +298,31 @@ class EChemBaseModel(BaseModel):
         Returns
         -------
         float
-            The estimate of the nominal cell capacity.
+            The estimate of the nominal cell capacity [A.h].
         """
         parameter_set = parameter_set or self._parameter_set
 
-        # Calculate theoretical energy density
-        theoretical_energy = self._electrode_soh.calculate_theoretical_energy(
-            parameter_set
-        )
+        # Calculate the theoretical capacity in the limit of low current
+        if self.pybamm_model.options["working electrode"] == "positive":
+            (
+                max_sto_p,
+                min_sto_p,
+            ) = self._electrode_soh_half_cell.get_min_max_stoichiometries(parameter_set)
+        else:
+            (
+                min_sto_n,
+                max_sto_n,
+                min_sto_p,
+                max_sto_p,
+            ) = self._electrode_soh.get_min_max_stoichiometries(parameter_set)
+            # Note that the stoichiometric limits correspond to 0 and 100% SOC.
+            # Stoichiometric balancing is performed within get_min_max_stoichiometries
+            # such that the capacity accessible between the limits should be the same
+            # for both electrodes, so we consider just the positive electrode below.
 
-        # Extract stoichiometries and compute mean values
-        (
-            min_sto_neg,
-            max_sto_neg,
-            min_sto_pos,
-            max_sto_pos,
-        ) = self._electrode_soh.get_min_max_stoichiometries(parameter_set)
-        mean_sto_neg = (min_sto_neg + max_sto_neg) / 2
-        mean_sto_pos = (min_sto_pos + max_sto_pos) / 2
-
-        # Calculate average voltage
-        positive_electrode_ocp = parameter_set["Positive electrode OCP [V]"]
-        negative_electrode_ocp = parameter_set["Negative electrode OCP [V]"]
-        try:
-            average_voltage = positive_electrode_ocp(
-                mean_sto_pos
-            ) - negative_electrode_ocp(mean_sto_neg)
-        except Exception as e:
-            raise ValueError(f"Error in average voltage calculation: {e}") from e
-
-        # Calculate the capacity estimate
-        approximate_capacity = theoretical_energy / average_voltage
-
-        return approximate_capacity
+        Q_p = LithiumIonParameters().p.prim.Q_init
+        theoretical_capacity = Q_p * (max_sto_p - min_sto_p)
+        return ParameterSet.evaluate_symbol(theoretical_capacity, parameter_set)
 
     def set_geometric_parameters(self):
         """
@@ -336,6 +344,10 @@ class EChemBaseModel(BaseModel):
                 "Positive electrode thickness [m]",
                 "Separator porosity",
                 "Separator thickness [m]",
+                "Open-circuit voltage at 100% SOC [V]",
+                "Open-circuit voltage at 0% SOC [V]"
+                "Maximum concentration in positive electrode [mol.m-3]",
+                "Maximum concentration in negative electrode [mol.m-3]",
             ]
         )
 

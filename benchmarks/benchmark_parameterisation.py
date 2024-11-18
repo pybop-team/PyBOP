@@ -124,4 +124,4 @@ class BenchmarkParameterisation:
             optimiser (pybop.Optimiser): The optimizer class being used.
         """
         if optimiser not in [pybop.SciPyMinimize, pybop.SciPyDifferentialEvolution]:
-            self.optim.pints_optimiser.ask()
+            self.optim.optimiser.ask()

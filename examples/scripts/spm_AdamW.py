@@ -57,24 +57,22 @@ optim = pybop.AdamW(
     cost,
     verbose=True,
     allow_infeasible_solutions=True,
-    sigma0=0.05,
+    sigma0=0.02,
     max_iterations=100,
     max_unchanged_iterations=20,
 )
 
 # Run optimisation
 results = optim.run()
-print("Estimated parameters:", results.x)
 
 # Plot the timeseries output
-pybop.quick_plot(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
-pybop.plot_convergence(optim)
+pybop.plot.convergence(optim)
 
 # Plot the parameter traces
-pybop.plot_parameters(optim)
+pybop.plot.parameters(optim)
 
 # Plot the cost landscape with optimisation path
-bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
-pybop.plot2d(optim, bounds=bounds, steps=15)
+pybop.plot.surface(optim)
