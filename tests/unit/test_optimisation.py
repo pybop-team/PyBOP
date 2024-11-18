@@ -141,7 +141,7 @@ class TestOptimisation:
     )
     @pytest.mark.unit
     def test_optimiser_kwargs(self, cost, optimiser):
-        optim = optimiser(cost=cost, maxiter=3, tol=1e-6)
+        optim = optimiser(cost=cost, max_iterations=3, tol=1e-6)
         cost_bounds = cost.parameters.get_bounds()
 
         # Check maximum iterations
@@ -198,7 +198,7 @@ class TestOptimisation:
             ):
                 warnings.simplefilter("always")
                 optim = optimiser(cost=cost, unrecognised=10)
-            assert not optim.pints_optimiser.running()
+            assert not optim.optimiser.running()
         else:
             # Check bounds in list format and update tol
             bounds = [
@@ -213,23 +213,28 @@ class TestOptimisation:
             pybop.XNES,
         ]:
             # Pass nested options
-            optim = optimiser(cost=cost, options=dict(maxiter=10))
+            optim = optimiser(cost=cost, options=dict(max_iterations=10))
             with pytest.raises(
                 Exception,
-                match="A duplicate maxiter option was found in the options dictionary.",
+                match="A duplicate max_evaluations option was found in the options dictionary.",
             ):
-                optimiser(cost=cost, maxiter=5, options=dict(maxiter=10))
+                optimiser(
+                    cost=cost, max_evaluations=5, options=dict(max_evaluations=10)
+                )
 
-            # Pass similar keywords
-            with pytest.raises(
-                Exception,
-                match="option was passed in addition to the expected",
-            ):
-                optimiser(cost=cost, maxiter=5, max_iterations=10)
+            if optimiser in [pybop.SciPyDifferentialEvolution, pybop.SciPyMinimize]:
+                # Pass duplicate keywords
+                with pytest.raises(
+                    Exception,
+                    match="option was passed in addition to the expected",
+                ):
+                    optimiser(cost=cost, maxiter=5, max_iterations=10)
 
         if optimiser in [pybop.SciPyDifferentialEvolution]:
-            # Update population size
-            optimiser(cost=cost, popsize=5)
+            # Update population size, test maxiter arg
+            pop_maxiter_optim = optimiser(cost=cost, maxiter=3, popsize=5)
+            assert pop_maxiter_optim._options["maxiter"] == 3
+            assert pop_maxiter_optim._options["popsize"] == 5
 
             # Test invalid bounds
             with pytest.raises(
@@ -248,34 +253,34 @@ class TestOptimisation:
         # Test AdamW hyperparameters
         if optimiser in [pybop.AdamW]:
             optim = optimiser(cost=cost, b1=0.9, b2=0.999, lam=0.1)
-            optim.pints_optimiser.b1 = 0.9
-            optim.pints_optimiser.b2 = 0.9
-            optim.pints_optimiser.lam = 0.1
+            optim.optimiser.b1 = 0.9
+            optim.optimiser.b2 = 0.9
+            optim.optimiser.lam = 0.1
 
-            assert optim.pints_optimiser.b1 == 0.9
-            assert optim.pints_optimiser.b2 == 0.9
-            assert optim.pints_optimiser.lam == 0.1
+            assert optim.optimiser.b1 == 0.9
+            assert optim.optimiser.b2 == 0.9
+            assert optim.optimiser.lam == 0.1
 
             # Incorrect values
             for i, _match in (("Value", -1),):
                 with pytest.raises(
                     Exception, match="must be a numeric value between 0 and 1."
                 ):
-                    optim.pints_optimiser.b1 = i
+                    optim.optimiser.b1 = i
                 with pytest.raises(
                     Exception, match="must be a numeric value between 0 and 1."
                 ):
-                    optim.pints_optimiser.b2 = i
+                    optim.optimiser.b2 = i
                 with pytest.raises(
                     Exception, match="must be a numeric value between 0 and 1."
                 ):
-                    optim.pints_optimiser.lam = i
+                    optim.optimiser.lam = i
 
             # Check defaults
-            assert optim.pints_optimiser.n_hyper_parameters() == 5
-            assert optim.pints_optimiser.x_guessed() == optim.pints_optimiser._x0
+            assert optim.optimiser.n_hyper_parameters() == 5
+            assert optim.optimiser.x_guessed() == optim.optimiser._x0
             with pytest.raises(RuntimeError):
-                optim.pints_optimiser.tell([0.1])
+                optim.optimiser.tell([0.1])
 
         else:
             # Check and update initial values
@@ -290,12 +295,14 @@ class TestOptimisation:
     def test_cuckoo_no_bounds(self, cost):
         optim = pybop.CuckooSearch(cost=cost, bounds=None, max_iterations=1)
         optim.run()
-        assert optim.pints_optimiser._boundaries is None
+        assert optim.optimiser._boundaries is None
 
     @pytest.mark.unit
     def test_scipy_minimize_with_jac(self, cost):
         # Check a method that uses gradient information
-        optim = pybop.SciPyMinimize(cost=cost, method="L-BFGS-B", jac=True, maxiter=1)
+        optim = pybop.SciPyMinimize(
+            cost=cost, method="L-BFGS-B", jac=True, max_iterations=1
+        )
         results = optim.run()
         assert results.get_scipy_result() == optim.result.scipy_result
 
@@ -310,7 +317,10 @@ class TestOptimisation:
         # Check a starting point that returns an infinite cost
         invalid_x0 = np.array([1.1])
         optim = pybop.SciPyMinimize(
-            cost=cost, x0=invalid_x0, maxiter=10, allow_infeasible_solutions=False
+            cost=cost,
+            x0=invalid_x0,
+            max_iterations=10,
+            allow_infeasible_solutions=False,
         )
         optim.run()
         assert abs(optim._cost0) != np.inf
@@ -363,7 +373,7 @@ class TestOptimisation:
 
         with pytest.raises(
             ValueError,
-            match="The pints_optimiser is not a recognised PINTS optimiser class.",
+            match="The optimiser is not a recognised PINTS optimiser class.",
         ):
             pybop.BasePintsOptimiser(cost=cost, pints_optimiser=RandomClass)
 
@@ -543,7 +553,7 @@ class TestOptimisation:
         def optimiser_error():
             return "Optimiser error message"
 
-        optim.pints_optimiser.stop = optimiser_error
+        optim.optimiser.stop = optimiser_error
         optim.run()
         assert optim.result.n_iterations == 1
 
@@ -561,7 +571,9 @@ class TestOptimisation:
     def test_infeasible_solutions(self, cost):
         # Test infeasible solutions
         for optimiser in [pybop.SciPyMinimize, pybop.GradientDescent]:
-            optim = optimiser(cost=cost, allow_infeasible_solutions=False, maxiter=1)
+            optim = optimiser(
+                cost=cost, allow_infeasible_solutions=False, max_iterations=1
+            )
             optim.run()
             assert optim.result.n_iterations == 1
 

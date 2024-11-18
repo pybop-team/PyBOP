@@ -19,7 +19,7 @@ class BenchmarkOptimisationConstruction:
         Args:
             model (pybop.Model): The model class to be benchmarked.
             parameter_set (str): The name of the parameter set to be used.
-            optimiser (pybop.Optimiser): The optimizer class to be used.
+            optimiser (pybop.Optimiser): The optimiser class to be used.
         """
         # Set random seed
         set_random_seed()
