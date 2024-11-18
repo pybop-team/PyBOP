@@ -314,6 +314,31 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "right": (Scalar(0), "Neumann"),
         }
 
+        self.boundary_conditions[sto_e_n] = {
+            "left": (Scalar(0), "Neumann"),
+            "right": (
+                (
+                    pybamm.boundary_value(tau_e_n, "right")
+                    * pybamm.boundary_gradient(sto_e_sep, "left")
+                    / pybamm.boundary_value(tau_e_sep, "left")
+                ),
+                "Neumann",
+            ),
+        }
+        self.boundary_conditions[sto_e_sep] = {
+            "left": (pybamm.boundary_value(sto_e_n, "right"), "Dirichlet"),
+            "right": (pybamm.boundary_value(sto_e_p, "left"), "Dirichlet"),
+        }
+        self.boundary_conditions[sto_e_p] = {
+            "left": (
+                pybamm.boundary_value(tau_e_p, "left")
+                * pybamm.boundary_gradient(sto_e_sep, "right")
+                / pybamm.boundary_value(tau_e_sep, "right"),
+                "Neumann",
+            ),
+            "right": (Scalar(0), "Neumann"),
+        }
+
         self.initial_conditions[sto_e] = Scalar(1)
 
         ######################
@@ -329,6 +354,16 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             Event("Minimum voltage [V]", V - self.param.voltage_low_cut),
             Event("Maximum voltage [V]", self.param.voltage_high_cut - V),
         ]
+
+        # Additionally compute the voltage across the cell
+        # v_n = av_v_n + 2 * RT_F * (1 - t_plus) * (
+        #     pybamm.x_average(pybamm.log(sto_e_n)) - pybamm.log(sto_e_n)
+        # )
+        # v_e = PrimaryBroadcast(Scalar(0),"separator")  ##################
+        # v_p = av_v_p + 2 * RT_F * (1 - t_plus) * (
+        #     pybamm.x_average(pybamm.log(sto_e_p)) - pybamm.log(sto_e_p)
+        # )
+        # surface_voltage = pybamm.concatenation(v_n, v_e, v_p)
 
         ######################
         # (Some) variables
@@ -354,6 +389,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "Positive particle surface voltage [V]": PrimaryBroadcast(
                 av_v_p, "positive electrode"
             ),
+            # "Surface voltage [V]": sto_e,  ######surface_voltage,
             "Time [s]": pybamm_t,
             "Current [A]": I,
             "Current variable [A]": I,  # for compatibility with pybamm.Experiment
