@@ -3,7 +3,7 @@ import pandas as pd
 import pybop
 
 # Form dataset
-Measurements = pd.read_csv("examples/scripts/Chen_example.csv", comment="#").to_numpy()
+Measurements = pd.read_csv("examples/data/Chen_example.csv", comment="#").to_numpy()
 dataset = pybop.Dataset(
     {
         "Time [s]": Measurements[:, 0],

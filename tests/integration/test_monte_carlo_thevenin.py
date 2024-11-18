@@ -40,7 +40,7 @@ class TestSamplingThevenin:
     @pytest.fixture
     def model(self):
         parameter_set = pybop.ParameterSet(
-            json_path="examples/scripts/parameters/initial_ecm_parameters.json"
+            json_path="examples/parameters/initial_ecm_parameters.json"
         )
         parameter_set.import_parameters()
         parameter_set.params.update(
