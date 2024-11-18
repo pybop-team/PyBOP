@@ -109,16 +109,16 @@ print(
         parameter_set["R0 [Ohm]"],
         parameter_set["R1 [Ohm]"],
         parameter_set["tau1 [s]"],
+        parameter_set.evaluate(pybamm.Parameter("C1 [F]")),
     ],
-    [parameter_set.evaluate(pybamm.Parameter("C1 [F]"))],
 )
-print("Estimated parameters:", results.x.tolist(), [results.x[2]/results.x[1]])
+print("Estimated parameters:", results.x.tolist() + [results.x[2] / results.x[1]])
 
 # Plot the timeseries output
-pybop.quick_plot(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
-pybop.plot_convergence(optim)
+pybop.plot.convergence(optim)
 
 # Plot the parameter traces
-pybop.plot_parameters(optim)
+pybop.plot.parameters(optim)
