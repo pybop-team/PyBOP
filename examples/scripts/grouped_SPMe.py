@@ -60,6 +60,7 @@ plot_dict.add_traces(dataset["Time [s]"], dataset["Voltage [V]"])
 grouped_parameter_set = convert_physical_to_grouped_parameters(parameter_set)
 time_domain_grouped = pybop.lithium_ion.GroupedSPMe(
     parameter_set=grouped_parameter_set,
+    options=model_options,
     build=True,
 )
 time_domain_grouped.set_initial_state(initial_state)
@@ -84,7 +85,10 @@ freq_domain_SPMe = pybop.lithium_ion.SPMe(
     parameter_set=parameter_set, options=model_options, eis=True
 )
 freq_domain_grouped = pybop.lithium_ion.GroupedSPMe(
-    parameter_set=grouped_parameter_set, eis=True, build=True
+    parameter_set=grouped_parameter_set,
+    options=model_options,
+    eis=True,
+    build=True,
 )
 
 for i, model in enumerate([freq_domain_SPMe, freq_domain_grouped]):
