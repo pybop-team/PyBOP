@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#396](https://github.com/pybop-team/PyBOP/issues/396) - Adds `ecm_with_tau.py` example script.
 - [#452](https://github.com/pybop-team/PyBOP/issues/452) - Extends `cell_mass` and `approximate_capacity` for half-cell models.
 - [#544](https://github.com/pybop-team/PyBOP/issues/544) - Allows iterative plotting using `StandardPlot`.
 - [#541](https://github.com/pybop-team/PyBOP/pull/541) - Adds `ScaledLogLikelihood` and `BaseMetaLikelihood` classes.
