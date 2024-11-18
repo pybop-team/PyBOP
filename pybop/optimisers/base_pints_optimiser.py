@@ -1,3 +1,5 @@
+from time import time
+
 import numpy as np
 from pints import PSO as PintsPSO
 from pints import Adam as PintsAdam
@@ -173,6 +175,9 @@ class BasePintsOptimiser(BaseOptimiser):
         --------
         This method is heavily based on the run method in the PINTS.OptimisationController class.
         """
+        # Timing
+        start_time = time()
+
         # Check stopping criteria
         has_stopping_criterion = False
         has_stopping_criterion |= self._max_iterations is not None
@@ -252,10 +257,12 @@ class BasePintsOptimiser(BaseOptimiser):
                 # Update counts
                 evaluations += len(fs)
                 iteration += 1
+                _fs = [x[0] for x in fs] if self._needs_sensitivities else fs
                 self.log_update(
                     x=xs,
                     x_best=self.pints_optimiser.x_best(),
-                    cost=fb if self.minimising else -fb,
+                    cost=_fs if self.minimising else [-x for x in _fs],
+                    cost_best=fb if self.minimising else -fb,
                 )
 
                 # Check stopping criteria:
@@ -330,6 +337,7 @@ class BasePintsOptimiser(BaseOptimiser):
             print("-" * 40)
             raise
 
+        total_time = time() - start_time
         if self.verbose:
             print("Halt: " + halt_message)
 
@@ -354,6 +362,8 @@ class BasePintsOptimiser(BaseOptimiser):
             cost=self.cost,
             final_cost=f if self.minimising else -f,
             n_iterations=self._iterations,
+            optim=self,
+            time=total_time,
         )
 
     def f_guessed_tracking(self):

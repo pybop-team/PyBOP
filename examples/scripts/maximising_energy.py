@@ -1,3 +1,5 @@
+from pybamm import Parameter
+
 import pybop
 
 # A design optimisation example loosely based on work by L.D. Couto
@@ -9,8 +11,28 @@ import pybop
 # electrode widths, particle radii, volume fractions and
 # separator width.
 
-# Define parameter set and model
+# Define parameter set and additional parameters needed for the cost function
 parameter_set = pybop.ParameterSet.pybamm("Chen2020", formation_concentrations=True)
+parameter_set.update(
+    {
+        "Electrolyte density [kg.m-3]": Parameter("Separator density [kg.m-3]"),
+        "Negative electrode active material density [kg.m-3]": Parameter(
+            "Negative electrode density [kg.m-3]"
+        ),
+        "Negative electrode carbon-binder density [kg.m-3]": Parameter(
+            "Negative electrode density [kg.m-3]"
+        ),
+        "Positive electrode active material density [kg.m-3]": Parameter(
+            "Positive electrode density [kg.m-3]"
+        ),
+        "Positive electrode carbon-binder density [kg.m-3]": Parameter(
+            "Positive electrode density [kg.m-3]"
+        ),
+    },
+    check_already_exists=False,
+)
+
+# Define model
 model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
 # Fitting parameters
@@ -56,14 +78,13 @@ optim = pybop.PSO(
     cost, verbose=True, allow_infeasible_solutions=False, max_iterations=10
 )
 results = optim.run()
-print("Estimated parameters:", results.x)
 print(f"Initial gravimetric energy density: {cost1(optim.x0):.2f} Wh.kg-1")
 print(f"Optimised gravimetric energy density: {cost1(results.x):.2f} Wh.kg-1")
 print(f"Initial volumetric energy density: {cost2(optim.x0):.2f} Wh.m-3")
 print(f"Optimised volumetric energy density: {cost2(results.x):.2f} Wh.m-3")
 
 # Plot the timeseries output
-pybop.quick_plot(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot the cost landscape with optimisation path
-pybop.plot2d(optim, steps=5)
+pybop.plot.surface(optim)

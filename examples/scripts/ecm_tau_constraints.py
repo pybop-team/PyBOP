@@ -170,22 +170,12 @@ optim = pybop.XNES(
 )
 
 results = optim.run()
-print(
-    "True parameters:",
-    [
-        parameter_set["R0 [Ohm]"],
-        parameter_set["R1 [Ohm]"],
-        parameter_set["C1 [F]"],
-    ],
-    [parameter_set["R1 [Ohm]"] * parameter_set["C1 [F]"]],
-)
-print("Estimated parameters:", results.x.tolist(), [results.x[1] * results.x[2]])
 
 # Plot the timeseries output
-pybop.quick_plot(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
-pybop.plot_convergence(optim)
+pybop.plot.convergence(optim)
 
 # Plot the parameter traces
-pybop.plot_parameters(optim)
+pybop.plot.parameters(optim)

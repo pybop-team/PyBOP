@@ -61,16 +61,15 @@ optim.set_max_iterations(5)
 
 # Run optimisation
 results = optim.run()
-print("Estimated parameters:", results.x)
 
 # Plot the timeseries output (requires model that returns Voltage)
-pybop.quick_plot(observer, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.quick(observer, problem_inputs=results.x, title="Optimised Comparison")
 
 # # Plot convergence
-# pybop.plot_convergence(optim)
+# pybop.plot.convergence(optim)
 
 # # Plot the parameter traces
-# pybop.plot_parameters(optim)
+# pybop.plot.parameters(optim)
 
 # # Plot the cost landscape with optimisation path
-# pybop.plot2d(optim, steps=15)
+# pybop.plot.surface(optim)

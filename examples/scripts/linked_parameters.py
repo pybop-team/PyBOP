@@ -1,18 +1,40 @@
-import pybamm
+from pybamm import Parameter
 
 import pybop
 
 # The aim of this script is to show how to systematically update
 # design parameters which depend on the optimisation parameters.
 
-# Define parameter set and model
+# Define parameter set and additional parameters needed for the cost function
 parameter_set = pybop.ParameterSet.pybamm("Chen2020", formation_concentrations=True)
 parameter_set.update(
     {
+        "Electrolyte density [kg.m-3]": Parameter("Separator density [kg.m-3]"),
+        "Negative electrode active material density [kg.m-3]": Parameter(
+            "Negative electrode density [kg.m-3]"
+        ),
+        "Negative electrode carbon-binder density [kg.m-3]": Parameter(
+            "Negative electrode density [kg.m-3]"
+        ),
+        "Positive electrode active material density [kg.m-3]": Parameter(
+            "Positive electrode density [kg.m-3]"
+        ),
+        "Positive electrode carbon-binder density [kg.m-3]": Parameter(
+            "Positive electrode density [kg.m-3]"
+        ),
+    },
+    check_already_exists=False,
+)
+
+# Link parameters
+parameter_set.update(
+    {
         "Positive electrode porosity": 1
-        - pybamm.Parameter("Positive electrode active material volume fraction")
+        - Parameter("Positive electrode active material volume fraction")
     }
 )
+
+# Define model
 model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
 # Fitting parameters
@@ -56,12 +78,11 @@ optim = pybop.XNES(
     cost, verbose=True, allow_infeasible_solutions=False, max_iterations=10
 )
 results = optim.run()
-print("Estimated parameters:", results.x)
 print(f"Initial gravimetric energy density: {cost(optim.x0):.2f} Wh.kg-1")
 print(f"Optimised gravimetric energy density: {cost(results.x):.2f} Wh.kg-1")
 
 # Plot the timeseries output
-pybop.quick_plot(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot the cost landscape with optimisation path
-pybop.plot2d(optim, steps=5)
+pybop.plot.surface(optim)
