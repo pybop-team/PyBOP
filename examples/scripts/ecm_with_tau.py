@@ -112,7 +112,7 @@ print(
     ],
     [parameter_set.evaluate(pybamm.Parameter("C1 [F]"))],
 )
-print("Estimated parameters:", results.x.tolist(), [results.x[2]/results.x[1]])
+print("Estimated parameters:", results.x.tolist(), [results.x[2] / results.x[1]])
 
 # Plot the timeseries output
 pybop.quick_plot(problem, problem_inputs=results.x, title="Optimised Comparison")
