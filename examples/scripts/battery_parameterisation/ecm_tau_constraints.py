@@ -21,41 +21,34 @@ which can lead to better results and higher optimisation efficiency
 when good timescale guesses are available.
 """
 
-# Import the ECM parameter set from JSON
-# parameter_set = pybop.ParameterSet(
-#     json_path="examples/scripts/parameters/initial_ecm_parameters.json"
-# )
-# parameter_set.import_parameters()
-
-
-# Alternatively, define the initial parameter set with a dictionary
+# Define the initial parameter set
+parameter_set = pybop.ParameterSet.pybamm("ECM_Example")
+parameter_set.update(
+    {
+        "Initial SoC": 0.75,
+        "Cell capacity [A.h]": 5,
+        "Nominal cell capacity [A.h]": 5,
+        "Current function [A]": 5,
+        "Upper voltage cut-off [V]": 4.2,
+        "Lower voltage cut-off [V]": 3.0,
+        "Open-circuit voltage [V]": pybop.empirical.Thevenin().default_parameter_values[
+            "Open-circuit voltage [V]"
+        ],
+        "R0 [Ohm]": 0.001,
+        "R1 [Ohm]": 0.0002,
+        "C1 [F]": 10000,
+        "Element-1 initial overpotential [V]": 0,
+    }
+)
 # Add definitions for R's, C's, and initial overpotentials for any additional RC elements
-parameter_set = {
-    "chemistry": "ecm",
-    "Initial SoC": 0.75,
-    "Initial temperature [K]": 25 + 273.15,
-    "Cell capacity [A.h]": 5,
-    "Nominal cell capacity [A.h]": 5,
-    "Ambient temperature [K]": 25 + 273.15,
-    "Current function [A]": 5,
-    "Upper voltage cut-off [V]": 4.2,
-    "Lower voltage cut-off [V]": 3.0,
-    "Cell thermal mass [J/K]": 1000,
-    "Cell-jig heat transfer coefficient [W/K]": 10,
-    "Jig thermal mass [J/K]": 500,
-    "Jig-air heat transfer coefficient [W/K]": 10,
-    "Open-circuit voltage [V]": pybop.empirical.Thevenin().default_parameter_values[
-        "Open-circuit voltage [V]"
-    ],
-    "R0 [Ohm]": 0.001,
-    "Element-1 initial overpotential [V]": 0,
-    "Element-2 initial overpotential [V]": 0,
-    "R1 [Ohm]": 0.0002,
-    "R2 [Ohm]": 0.0003,
-    "C1 [F]": 10000,
-    "C2 [F]": 5000,
-    "Entropic change [V/K]": 0.0004,
-}
+parameter_set.update(
+    {
+        "R2 [Ohm]": 0.0003,
+        "C2 [F]": 5000,
+        "Element-2 initial overpotential [V]": 0,
+    },
+    check_already_exists=False,
+)
 
 
 def get_parameter_checker(
@@ -86,7 +79,6 @@ def get_parameter_checker(
         requested constraints
 
     """
-
     # Ensure inputs are lists
     tau_mins = [tau_mins] if not isinstance(tau_mins, list) else tau_mins
     tau_maxs = [tau_maxs] if not isinstance(tau_maxs, list) else tau_maxs
@@ -125,11 +117,10 @@ def get_parameter_checker(
 
 
 # Define the model
-params = pybop.ParameterSet(params_dict=parameter_set)
 model = pybop.empirical.Thevenin(
-    parameter_set=params,
+    parameter_set=parameter_set,
     check_params=get_parameter_checker(
-        0, 1.0, 1
+        0, 3.0, 1
     ),  # Set the model up to automatically check parameters
     options={"number of rc elements": 2},
 )
@@ -179,9 +170,6 @@ optim = pybop.XNES(
 )
 
 results = optim.run()
-
-# Plot the time series
-pybop.plot.dataset(dataset)
 
 # Plot the timeseries output
 pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
