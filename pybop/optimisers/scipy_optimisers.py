@@ -92,7 +92,8 @@ class BaseSciPyOptimiser(BaseOptimiser):
             if self._transformation
             else result.x,
             cost=self.cost,
-            final_cost=self.cost(result.x, apply_transform=True),
+            final_cost=self.cost(result.x, apply_transform=True)
+            * (1 if self.minimising else -1),
             n_iterations=nit,
             scipy_result=result,
             optim=self,
@@ -201,17 +202,20 @@ class SciPyMinimize(BaseSciPyOptimiser):
         """
         if not self._options["jac"]:
             cost = self.cost(x, apply_transform=True)
-            self.log_update(x=[x], cost=cost if self.minimising else -cost)
+            self.log_update(x=[x], cost=cost)
             scaled_cost = cost / self._cost0
             if np.isinf(scaled_cost):
                 self.inf_count += 1
-                scaled_cost = 1 + 0.9**self.inf_count  # for fake finite gradient
-            return scaled_cost if self.minimising else -scaled_cost
+                scaled_cost = np.sign(cost) * (
+                    1 + 0.9**self.inf_count
+                )  # for fake finite gradient
+            return scaled_cost * (1 if self.minimising else -1)
 
         L, dl = self.cost(x, calculate_grad=True, apply_transform=True)
-        self.log_update(x=[x], cost=L if self.minimising else -L)
-        scaled_L = L / self._cost0
-        return (scaled_L, dl) if self.minimising else (-scaled_L, -dl)
+        self.log_update(x=[x], cost=L)
+        scaled_L = L / self._cost0 * (1 if self.minimising else -1)
+        scaled_dl = dl / self._cost0 * (1 if self.minimising else -1)
+        return (scaled_L, scaled_dl)
 
     def _run_optimiser(self):
         """
@@ -229,20 +233,19 @@ class SciPyMinimize(BaseSciPyOptimiser):
             """
             Log intermediate optimisation solutions. Depending on the
             optimisation algorithm, intermediate_result may be either
-            a OptimizeResult or an array of parameter values, with a
+            an OptimizeResult or an array of parameter values, with a
             try/except ensuring both cases are handled correctly.
             """
             if isinstance(intermediate_result, OptimizeResult):
                 x_best = intermediate_result.x
-                cost_best = intermediate_result.fun
+                cost_best = intermediate_result.fun * (1 if self.minimising else -1)
             else:
                 x_best = intermediate_result
                 cost_best = self.cost(x_best, apply_transform=True)
 
-            cost_log = (-1 if not self.minimising else 1) * cost_best * self._cost0
             self.log_update(
                 x_best=x_best,
-                cost_best=cost_log,
+                cost_best=cost_best * self._cost0,
             )
 
         callback = (
@@ -428,18 +431,15 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
         # Add callback storing history of parameter values
         def callback(intermediate_result: OptimizeResult):
-            cost = (
-                intermediate_result.fun if self.minimising else -intermediate_result.fun
+            self.log_update(
+                x_best=intermediate_result.x,
+                cost_best=intermediate_result.fun * (1 if self.minimising else -1),
             )
-            self.log_update(x_best=intermediate_result.x, cost_best=cost)
 
         def cost_wrapper(x):
-            if self.minimising:
-                cost = self.cost(x, apply_transform=True)
-            else:
-                cost = -self.cost(x, apply_transform=True)
+            cost = self.cost(x, apply_transform=True)
             self.log_update(x=[x], cost=cost)
-            return cost
+            return cost * (1 if self.minimising else -1)
 
         return differential_evolution(
             cost_wrapper,
