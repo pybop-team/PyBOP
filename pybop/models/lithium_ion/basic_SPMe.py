@@ -347,7 +347,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         V = av_v_p - av_v_n + eta_e - R0 * I
 
         # Save the initial OCV
-        self.ocv_init = U_p_init - U_n_init
+        self.param.ocv_init = U_p_init - U_n_init
 
         # Events specify points at which a solution should terminate
         self.events += [

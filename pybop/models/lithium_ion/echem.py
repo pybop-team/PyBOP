@@ -308,7 +308,6 @@ class GroupedSPMe(EChemBaseModel):
         super().__init__(
             pybamm_model=BaseGroupedSPMe, name=name, eis=eis, **model_kwargs
         )
-        self._unprocessed_model.param.ocv_init = self._unprocessed_model.ocv_init
 
     def _check_params(self, inputs, parameter_set, allow_infeasible_solutions):
         # Skip the usual electrochemical checks for this dimensionless model
