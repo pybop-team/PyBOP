@@ -100,6 +100,7 @@ class TestSamplingThevenin:
             "max_unchanged_iterations": 35,
             "absolute_tolerance": 1e-7,
             "sigma0": [3e-4, 3e-4],
+            "verbose": True,
         }
         optim = pybop.CMAES(posterior, **common_args)
         results = optim.run()
@@ -127,17 +128,18 @@ class TestSamplingThevenin:
         x0 = np.clip(map_estimate + np.random.normal(0, 1e-3, size=2), 1e-4, 1e-1)
         common_args = {
             "log_pdf": posterior,
-            "chains": 1,
-            "warm_up": 550,
+            "chains": 2,
+            "warm_up": 100,
             "cov0": [2e-3, 2e-3],
-            "max_iterations": 1000,
+            "max_iterations": 1050,
             "x0": x0,
         }
 
         # construct and run
         sampler = sampler(**common_args)
         if isinstance(sampler, SliceRankShrinkingMCMC):
-            sampler._samplers[0].set_hyper_parameters([1e-3])
+            for i, _j in enumerate(sampler._samplers):
+                sampler._samplers[i].set_hyper_parameters([1e-3])
         chains = sampler.run()
 
         # Test PosteriorSummary

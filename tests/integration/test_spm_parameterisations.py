@@ -15,7 +15,7 @@ class Test_SPM_Parameterisation:
         self.sigma0 = 0.002
         self.ground_truth = np.clip(
             np.asarray([0.55, 0.55]) + np.random.normal(loc=0.0, scale=0.05, size=2),
-            a_min=0.4,
+            a_min=0.425,
             a_max=0.75,
         )
 
@@ -116,6 +116,7 @@ class Test_SPM_Parameterisation:
         else:
             cost = cost(problem)
 
+        sigma0 = 0.05 if optimiser == pybop.CuckooSearch else 0.02
         # Construct optimisation object
         common_args = {
             "cost": cost,
@@ -124,7 +125,7 @@ class Test_SPM_Parameterisation:
             "max_unchanged_iterations": 55,
             "sigma0": [0.05, 0.05, 1e-3]
             if isinstance(cost, pybop.GaussianLogLikelihood)
-            else 0.02,
+            else sigma0,
         }
 
         if isinstance(cost, pybop.LogPosterior):
