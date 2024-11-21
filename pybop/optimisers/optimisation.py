@@ -32,24 +32,24 @@ class Optimisation:
     """
 
     def __init__(self, cost, optimiser=None, **optimiser_kwargs):
-        self.__dict__["optimiser"] = (
+        self.__dict__["optim"] = (
             None  # Pre-define optimiser to avoid recursion during initialisation
         )
         if optimiser is None:
-            self.optimiser = XNES(cost, **optimiser_kwargs)
+            self.optim = XNES(cost, **optimiser_kwargs)
         elif issubclass(optimiser, BasePintsOptimiser):
-            self.optimiser = optimiser(cost, **optimiser_kwargs)
+            self.optim = optimiser(cost, **optimiser_kwargs)
         elif issubclass(optimiser, BaseSciPyOptimiser):
-            self.optimiser = optimiser(cost, **optimiser_kwargs)
+            self.optim = optimiser(cost, **optimiser_kwargs)
         else:
             raise ValueError("Unknown optimiser type")
 
     def run(self):
-        return self.optimiser.run()
+        return self.optim.run()
 
     def __getattr__(self, attr):
-        if "optimiser" in self.__dict__ and hasattr(self.optimiser, attr):
-            return getattr(self.optimiser, attr)
+        if "optim" in self.__dict__ and hasattr(self.optim, attr):
+            return getattr(self.optim, attr)
         raise AttributeError(
             f"'{self.__class__.__name__}' object has no attribute '{attr}'"
         )
@@ -57,9 +57,9 @@ class Optimisation:
     def __setattr__(self, name: str, value) -> None:
         if (
             name in self.__dict__
-            or "optimiser" not in self.__dict__
-            or not hasattr(self.optimiser, name)
+            or "optim" not in self.__dict__
+            or not hasattr(self.optim, name)
         ):
             object.__setattr__(self, name, value)
         else:
-            setattr(self.optimiser, name, value)
+            setattr(self.optim, name, value)
