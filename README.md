@@ -64,7 +64,7 @@ These include a wide variety of optimisation problems that require careful consi
 
 Explore our [example notebooks](https://github.com/pybop-team/PyBOP/blob/develop/examples) for hands-on demonstrations:
 
-- [Gravimetric design optimisation (SPM)](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/design_optimisation/energy_based_electrode_design.ipynb)
+- [Gravimetric design optimisation (SPMe)](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/design_optimisation/energy_based_electrode_design.ipynb)
 - [Non-linear constrained ECM parameter identification](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/battery_parameterisation/ecm_trust-constr.ipynb)
 - [Optimiser comparison for parameter identification](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/comparison_examples/multi_optimiser_identification.ipynb)
 - [Parameter identification for spatial pouch cell model](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/battery_parameterisation/pouch_cell_identification.ipynb)
