@@ -11,8 +11,11 @@
 
 python_version=("3.9" "3.10" "3.11" "3.12")
 os=("ubuntu-latest" "windows-latest" "macos-13" "macos-14")
-# This command fetches the last two PyBaMM versions excluding release candidates from PyPI
-pybamm_version=($(curl -s https://pypi.org/pypi/pybamm/json | jq -r '.releases | keys[]' | grep -v rc | tail -n 2 | paste -sd " " -))
+# This command fetches the last PyBaMM version excluding release candidates from PyPI
+pybamm_version=($(curl -s https://pypi.org/pypi/pybamm/json | jq -r '.releases | keys[]' | grep -v rc | tail -n 1 | paste -sd " " -))
+
+# This command fetches the last PyBaMM versions including release candidates from PyPI
+#pybamm_version=($(curl -s https://pypi.org/pypi/pybamm/json | jq -r '.releases | keys[]' | tail -n 1 | paste -sd " " -))
 
 # open dict
 json='{
@@ -40,7 +43,7 @@ json+='
   ]
 }'
 
-# Filter out incompatible combinations
-json=$(echo "$json" | jq -c 'del(.include[] | select(.pybamm_version == "23.9" and .python_version == "3.12"))')
+# Example for filtering out incompatible combinations
+#json=$(echo "$json" | jq -c 'del(.include[] | select(.pybamm_version == "23.9" and .python_version == "3.12"))')
 
 echo "$json" | jq -c .

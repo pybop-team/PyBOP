@@ -18,7 +18,8 @@ class ExponentialDecay(BaseModel):
         parameter_set: pybamm.ParameterValues = None,
         n_states: int = 1,
     ):
-        super().__init__()
+        super().__init__(name=name, parameter_set=parameter_set)
+
         self.n_states = n_states
         if n_states < 1:
             raise ValueError("The number of states (n_states) must be greater than 0")
@@ -38,19 +39,20 @@ class ExponentialDecay(BaseModel):
         )
 
         self._unprocessed_model = self.pybamm_model
-        self.name = name
 
         self.default_parameter_values = (
-            default_parameter_values if parameter_set is None else parameter_set
+            default_parameter_values
+            if self._parameter_set is None
+            else self._parameter_set
         )
         self._parameter_set = self.default_parameter_values
         self._unprocessed_parameter_set = self._parameter_set
 
-        self.geometry = self.pybamm_model.default_geometry
-        self.submesh_types = self.pybamm_model.default_submesh_types
-        self.var_pts = self.pybamm_model.default_var_pts
-        self.spatial_methods = self.pybamm_model.default_spatial_methods
-        self.solver = pybamm.CasadiSolver(mode="fast")
+        self._geometry = self.pybamm_model.default_geometry
+        self._submesh_types = self.pybamm_model.default_submesh_types
+        self._var_pts = self.pybamm_model.default_var_pts
+        self._spatial_methods = self.pybamm_model.default_spatial_methods
+        self._solver = pybamm.CasadiSolver(mode="fast")
         self._model_with_set_params = None
         self._built_model = None
         self._built_initial_soc = None

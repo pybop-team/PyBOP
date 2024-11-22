@@ -1,8 +1,7 @@
-import warnings
+from typing import Union
 
 import numpy as np
 
-from pybop import is_numeric
 from pybop.costs.base_cost import BaseCost
 
 
@@ -16,13 +15,9 @@ class DesignCost(BaseCost):
     ---------------------
     problem : object
         The associated problem containing model and evaluation methods.
-    parameter_set : object)
-        The set of parameters from the problem's model.
-    dt : float
-        The time step size used in the simulation.
     """
 
-    def __init__(self, problem, update_capacity=False):
+    def __init__(self, problem):
         """
         Initialises the gravimetric energy density calculator with a problem.
 
@@ -31,173 +26,248 @@ class DesignCost(BaseCost):
         problem : object
             The problem instance containing the model and data.
         """
-        super(DesignCost, self).__init__(problem)
+        super().__init__(problem)
         self.problem = problem
-        if update_capacity is True:
-            nominal_capacity_warning = (
-                "The nominal capacity is approximated for each iteration."
-            )
-        else:
-            nominal_capacity_warning = (
-                "The nominal capacity is fixed at the initial model value."
-            )
-        warnings.warn(nominal_capacity_warning, UserWarning)
-        self.update_capacity = update_capacity
-        self.parameter_set = problem.model.parameter_set
-        self.update_simulation_data(self.x0)
-
-    def update_simulation_data(self, x0):
-        """
-        Updates the simulation data based on the initial parameter values.
-
-        Parameters
-        ----------
-        x0 : array
-            The initial parameter values for the simulation.
-        """
-        if self.update_capacity:
-            self.problem.model.approximate_capacity(x0)
-        solution = self.problem.evaluate(x0)
-
-        if "Time [s]" not in solution:
-            raise ValueError("The solution does not contain time data.")
-        self.problem._time_data = solution["Time [s]"]
-        self.problem._target = {key: solution[key] for key in self.problem.signal}
-        self.dt = solution["Time [s]"][1] - solution["Time [s]"][0]
-
-    def _evaluate(self, x, grad=None):
-        """
-        Computes the value of the cost function.
-
-        This method must be implemented by subclasses.
-
-        Parameters
-        ----------
-        x : array
-            The parameter set for which to compute the cost.
-        grad : array, optional
-            Gradient information, not used in this method.
-
-        Raises
-        ------
-        NotImplementedError
-            If the method has not been implemented by the subclass.
-        """
-        raise NotImplementedError
 
 
 class GravimetricEnergyDensity(DesignCost):
     """
-    Represents the gravimetric energy density of a battery cell, calculated based
-    on a normalised discharge from upper to lower voltage limits. The goal is to
-    maximise the energy density, which is achieved by setting minimising = False
+    Calculates the gravimetric energy density (specific energy) of a battery cell,
+    when applied to a normalised discharge from upper to lower voltage limits. The
+    goal of maximising the energy density is achieved by setting minimising = False
     in the optimiser settings.
+
+    The gravimetric energy density [Wh.kg-1] is calculated as
+
+    .. math::
+        \\frac{1}{3600 m} \\int_{t=0}^{t=T} I(t) V(t) \\mathrm{d}t
+
+    where m is the cell mass, t is the time, T is the total time, I is the current
+    and V is the voltage. The factor of 1/3600 is included to convert from seconds
+    to hours.
 
     Inherits all parameters and attributes from ``DesignCost``.
     """
 
-    def __init__(self, problem, update_capacity=False):
-        super(GravimetricEnergyDensity, self).__init__(problem, update_capacity)
+    def __init__(self, problem):
+        super().__init__(problem)
 
-    def _evaluate(self, x, grad=None):
+    def compute(
+        self,
+        y: dict,
+        dy: np.ndarray = None,
+        calculate_grad: bool = False,
+    ) -> float:
         """
-        Computes the cost function for the energy density.
+        Computes the cost function for the given predictions.
 
         Parameters
         ----------
-        x : array
-            The parameter set for which to compute the cost.
-        grad : array, optional
-            Gradient information, not used in this method.
+        y : dict
+            The dictionary of predictions with keys designating the signals for fitting.
+        dy : np.ndarray, optional
+            The corresponding gradient with respect to the parameters for each signal.
+            Note: not used in design optimisation classes.
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
         float
             The gravimetric energy density or -infinity in case of infeasible parameters.
         """
-        if not all(is_numeric(i) for i in x):
-            raise ValueError("Input must be a numeric array.")
-
-        try:
-            with warnings.catch_warnings():
-                # Convert UserWarning to an exception
-                warnings.filterwarnings("error", category=UserWarning)
-
-                if self.update_capacity:
-                    self.problem.model.approximate_capacity(x)
-                solution = self.problem.evaluate(x)
-
-                voltage, current = solution["Voltage [V]"], solution["Current [A]"]
-                energy_density = np.trapz(voltage * current, dx=self.dt) / (
-                    3600 * self.problem.model.cell_mass(self.parameter_set)
-                )
-
-                return energy_density
-
-        # Catch infeasible solutions and return infinity
-        except UserWarning as e:
-            print(f"Ignoring this sample due to: {e}")
+        if not any(np.isfinite(y[signal][0]) for signal in self.signal):
             return -np.inf
 
-        # Catch any other exception and return infinity
-        except Exception as e:
-            print(f"An error occurred during the evaluation: {e}")
-            return -np.inf
+        voltage, current = y["Voltage [V]"], y["Current [A]"]
+        dt = y["Time [s]"][1] - y["Time [s]"][0]
+        energy_density = np.trapz(voltage * current, dx=dt) / (
+            3600 * self.problem.model.cell_mass()
+        )
+
+        return energy_density
 
 
 class VolumetricEnergyDensity(DesignCost):
     """
-    Represents the volumetric energy density of a battery cell, calculated based
-    on a normalised discharge from upper to lower voltage limits. The goal is to
-    maximise the energy density, which is achieved by setting minimising = False
-    in the optimiser settings.
+    Calculates the (volumetric) energy density of a battery cell, when applied to a
+    normalised discharge from upper to lower voltage limits. The goal of maximising
+    the energy density is achieved by setting minimising = False in the optimiser
+    settings.
+
+    The volumetric energy density [Wh.m-3] is calculated as
+
+    .. math::
+        \\frac{1}{3600 v} \\int_{t=0}^{t=T} I(t) V(t) \\mathrm{d}t
+
+    where v is the cell volume, t is the time, T is the total time, I is the current
+    and V is the voltage. The factor of 1/3600 is included to convert from seconds
+    to hours.
 
     Inherits all parameters and attributes from ``DesignCost``.
     """
 
-    def __init__(self, problem, update_capacity=False):
-        super(VolumetricEnergyDensity, self).__init__(problem, update_capacity)
+    def __init__(self, problem):
+        super().__init__(problem)
 
-    def _evaluate(self, x, grad=None):
+    def compute(
+        self,
+        y: dict,
+        dy: np.ndarray = None,
+        calculate_grad: bool = False,
+    ) -> float:
         """
-        Computes the cost function for the energy density.
+        Computes the cost function for the given predictions.
 
         Parameters
         ----------
-        x : array
-            The parameter set for which to compute the cost.
-        grad : array, optional
-            Gradient information, not used in this method.
+        y : dict
+            The dictionary of predictions with keys designating the signals for fitting.
+        dy : np.ndarray, optional
+            The corresponding gradient with respect to the parameters for each signal.
+            Note: not used in design optimisation classes.
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
         float
             The volumetric energy density or -infinity in case of infeasible parameters.
         """
-        if not all(is_numeric(i) for i in x):
-            raise ValueError("Input must be a numeric array.")
-        try:
-            with warnings.catch_warnings():
-                # Convert UserWarning to an exception
-                warnings.filterwarnings("error", category=UserWarning)
-
-                if self.update_capacity:
-                    self.problem.model.approximate_capacity(x)
-                solution = self.problem.evaluate(x)
-
-                voltage, current = solution["Voltage [V]"], solution["Current [A]"]
-                energy_density = np.trapz(voltage * current, dx=self.dt) / (
-                    3600 * self.problem.model.cell_volume(self.parameter_set)
-                )
-
-                return energy_density
-
-        # Catch infeasible solutions and return infinity
-        except UserWarning as e:
-            print(f"Ignoring this sample due to: {e}")
+        if not any(np.isfinite(y[signal][0]) for signal in self.signal):
             return -np.inf
 
-        # Catch any other exception and return infinity
-        except Exception as e:
-            print(f"An error occurred during the evaluation: {e}")
+        voltage, current = y["Voltage [V]"], y["Current [A]"]
+        dt = y["Time [s]"][1] - y["Time [s]"][0]
+        energy_density = np.trapz(voltage * current, dx=dt) / (
+            3600 * self.problem.model.cell_volume()
+        )
+
+        return energy_density
+
+
+class GravimetricPowerDensity(DesignCost):
+    """
+    Calculates the gravimetric power density (specific power) of a battery cell,
+    when applied to a discharge from upper to lower voltage limits. The goal of
+    maximising the power density is achieved by setting minimising = False in the
+    optimiser settings.
+
+    The time-averaged gravimetric power density [W.kg-1] is calculated as
+
+    .. math::
+        \\frac{1}{3600 m T} \\int_{t=0}^{t=T} I(t) V(t) \\mathrm{d}t
+
+    where m is the cell mass, t is the time, T is the total time, I is the current
+    and V is the voltage. The factor of 1/3600 is included to convert from seconds
+    to hours.
+
+    Inherits all parameters and attributes from ``DesignCost``.
+
+    Additional parameters
+    ---------------------
+    target_time : int
+        The length of time (seconds) over which the power should be sustained.
+    """
+
+    def __init__(self, problem, target_time: Union[int, float] = 3600):
+        super().__init__(problem)
+        self.target_time = target_time
+
+    def compute(
+        self,
+        y: dict,
+        dy: np.ndarray = None,
+        calculate_grad: bool = False,
+    ) -> float:
+        """
+        Computes the cost function for the given predictions.
+
+        Parameters
+        ----------
+        y : dict
+            The dictionary of predictions with keys designating the signals for fitting.
+        dy : np.ndarray, optional
+            The corresponding gradient with respect to the parameters for each signal.
+            Note: not used in design optimisation classes.
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
+
+        Returns
+        -------
+        float
+            The gravimetric power density or -infinity in case of infeasible parameters.
+        """
+        if not any(np.isfinite(y[signal][0]) for signal in self.signal):
             return -np.inf
+
+        voltage, current = y["Voltage [V]"], y["Current [A]"]
+        dt = y["Time [s]"][1] - y["Time [s]"][0]
+        time_averaged_power_density = np.trapz(voltage * current, dx=dt) / (
+            self.target_time * 3600 * self.problem.model.cell_mass()
+        )
+
+        return time_averaged_power_density
+
+
+class VolumetricPowerDensity(DesignCost):
+    """
+    Calculates the (volumetric) power density of a battery cell, when applied to a
+    discharge from upper to lower voltage limits. The goal of maximising the power
+    density is achieved by setting minimising = False in the optimiser settings.
+
+    The time-averaged volumetric power density [W.m-3] is calculated as
+
+    .. math::
+        \\frac{1}{3600 v T} \\int_{t=0}^{t=T} I(t) V(t) \\mathrm{d}t
+
+    where v is the cell volume, t is the time, T is the total time, I is the current
+    and V is the voltage. The factor of 1/3600 is included to convert from seconds
+    to hours.
+
+    Inherits all parameters and attributes from ``DesignCost``.
+
+    Additional parameters
+    ---------------------
+    target_time : int
+        The length of time (seconds) over which the power should be sustained.
+    """
+
+    def __init__(self, problem, target_time: Union[int, float] = 3600):
+        super().__init__(problem)
+        self.target_time = target_time
+
+    def compute(
+        self,
+        y: dict,
+        dy: np.ndarray = None,
+        calculate_grad: bool = False,
+    ) -> float:
+        """
+        Computes the cost function for the given predictions.
+
+        Parameters
+        ----------
+        y : dict
+            The dictionary of predictions with keys designating the signals for fitting.
+        dy : np.ndarray, optional
+            The corresponding gradient with respect to the parameters for each signal.
+            Note: not used in design optimisation classes.
+        calculate_grad : bool, optional
+            A bool condition designating whether to calculate the gradient.
+
+        Returns
+        -------
+        float
+            The volumetric power density or -infinity in case of infeasible parameters.
+        """
+        if not any(np.isfinite(y[signal][0]) for signal in self.signal):
+            return -np.inf
+
+        voltage, current = y["Voltage [V]"], y["Current [A]"]
+        dt = y["Time [s]"][1] - y["Time [s]"][0]
+        time_averaged_power_density = np.trapz(voltage * current, dx=dt) / (
+            self.target_time * 3600 * self.problem.model.cell_volume()
+        )
+
+        return time_averaged_power_density

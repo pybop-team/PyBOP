@@ -7,7 +7,7 @@ import plotly
 import pytest
 
 import pybop
-from pybop import PlotlyManager
+from pybop.plot import PlotlyManager
 
 # Find the Python executable
 python_executable = which("python")
@@ -21,7 +21,7 @@ def plotly_installed():
 
     # If Plotly is not installed initially, install it
     if not initially_installed:
-        subprocess.check_call([python_executable, "-m", "pip", "install", "plotly"])
+        PlotlyManager.install_plotly()
 
     # Yield control back to the tests
     yield
@@ -50,7 +50,7 @@ def uninstall_plotly_if_installed():
 
     # If Plotly was uninstalled for the test, reinstall it afterwards
     if was_installed:
-        subprocess.check_call([python_executable, "-m", "pip", "install", "plotly"])
+        PlotlyManager.install_plotly()
 
     # Reset the default renderer for tests
     plotly.io.renderers.default = None
@@ -95,7 +95,7 @@ def test_cancel_installation(mocker, uninstall_plotly_if_installed):
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         PlotlyManager().prompt_for_plotly_installation()
 
-    assert pytest_wrapped_e.type == SystemExit
+    assert pytest_wrapped_e.type is SystemExit
     assert pytest_wrapped_e.value.code == 1
     assert not is_package_installed("plotly")
 
@@ -121,7 +121,6 @@ def is_package_installed(package_name):
 def dataset(plotly_installed):
     # Construct and simulate model
     model = pybop.lithium_ion.SPM()
-    model.parameter_set = model.pybamm_model.default_parameter_values
     solution = model.predict(t_eval=np.linspace(0, 10, 100))
 
     # Form dataset
@@ -136,37 +135,37 @@ def dataset(plotly_installed):
 @pytest.mark.unit
 def test_standard_plot(dataset, plotly_installed):
     # Check the StandardPlot class
-    pybop.StandardPlot(dataset["Time [s]"], dataset["Terminal voltage [V]"])
+    pybop.plot.StandardPlot(dataset["Time [s]"], dataset["Terminal voltage [V]"])
 
     # Check the StandardSubplot class
-    pybop.StandardSubplot(
+    pybop.plot.StandardSubplot(
         dataset["Time [s]"],
         [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
         num_rows=1,
     )
-    pybop.StandardSubplot(
+    pybop.plot.StandardSubplot(
         dataset["Time [s]"],
         [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
         num_cols=1,
     )
 
-    # Check plotting numpy arrays, lists, and lists of numpy arrays
-    pybop.plot_trajectories(dataset["Time [s]"], dataset["Terminal voltage [V]"])
-    pybop.plot_trajectories(
+    # Check plot numpy arrays, lists, and lists of numpy arrays
+    pybop.plot.trajectories(dataset["Time [s]"], dataset["Terminal voltage [V]"])
+    pybop.plot.trajectories(
         dataset["Time [s]"].tolist(), dataset["Terminal voltage [V]"].tolist()
     )
-    pybop.plot_trajectories(
+    pybop.plot.trajectories(
         [dataset["Time [s]"]],
         [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
     )
-    pybop.plot_trajectories(
+    pybop.plot.trajectories(
         [dataset["Time [s]"], dataset["Time [s]"]],
         [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
     )
 
     # Test incorrect dimensions
     with pytest.raises(ValueError):
-        pybop.plot_trajectories(
+        pybop.plot.trajectories(
             [dataset["Time [s]"], dataset["Current [A]"]],
             dataset["Terminal voltage [V]"],
         )
@@ -174,6 +173,6 @@ def test_standard_plot(dataset, plotly_installed):
 
 @pytest.mark.unit
 def test_plot_dataset(dataset, plotly_installed):
-    # Test plotting of a dataset
-    pybop.plot_dataset(dataset, signal=["Terminal voltage [V]"])
-    pybop.plot_dataset(dataset, signal=["Terminal voltage [V]", "Current [A]"])
+    # Test plot of a dataset
+    pybop.plot.dataset(dataset, signal=["Terminal voltage [V]"])
+    pybop.plot.dataset(dataset, signal=["Terminal voltage [V]", "Current [A]"])

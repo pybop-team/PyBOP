@@ -1,8 +1,7 @@
 from pybamm import lithium_ion as pybamm_lithium_ion
 
 from pybop.models.lithium_ion.base_echem import EChemBaseModel
-
-from .weppner_huggins import BaseWeppnerHuggins
+from pybop.models.lithium_ion.weppner_huggins import BaseWeppnerHuggins
 
 
 class SPM(EChemBaseModel):
@@ -39,11 +38,13 @@ class SPM(EChemBaseModel):
     def __init__(
         self,
         name="Single Particle Model",
+        eis=False,
         **model_kwargs,
     ):
         super().__init__(
             pybamm_model=pybamm_lithium_ion.SPM,
             name=name,
+            eis=eis,
             **model_kwargs,
         )
 
@@ -84,10 +85,11 @@ class SPMe(EChemBaseModel):
     def __init__(
         self,
         name="Single Particle Model with Electrolyte",
+        eis=False,
         **model_kwargs,
     ):
         super().__init__(
-            pybamm_model=pybamm_lithium_ion.SPMe, name=name, **model_kwargs
+            pybamm_model=pybamm_lithium_ion.SPMe, name=name, eis=eis, **model_kwargs
         )
 
 
@@ -127,9 +129,12 @@ class DFN(EChemBaseModel):
     def __init__(
         self,
         name="Doyle-Fuller-Newman",
+        eis=False,
         **model_kwargs,
     ):
-        super().__init__(pybamm_model=pybamm_lithium_ion.DFN, name=name, **model_kwargs)
+        super().__init__(
+            pybamm_model=pybamm_lithium_ion.DFN, name=name, eis=eis, **model_kwargs
+        )
 
 
 class MPM(EChemBaseModel):
@@ -166,10 +171,12 @@ class MPM(EChemBaseModel):
     def __init__(
         self,
         name="Many Particle Model",
+        eis=False,
         **model_kwargs,
     ):
         super().__init__(
             pybamm_model=pybamm_lithium_ion.MPM,
+            eis=eis,
             name=name,
             **model_kwargs,
         )
@@ -209,11 +216,13 @@ class MSMR(EChemBaseModel):
     def __init__(
         self,
         name="Multi Species Multi Reactions Model",
+        eis=False,
         **model_kwargs,
     ):
         super().__init__(
             pybamm_model=pybamm_lithium_ion.MSMR,
             name=name,
+            eis=eis,
             **model_kwargs,
         )
 
@@ -242,5 +251,7 @@ class WeppnerHuggins(EChemBaseModel):
             The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
     """
 
-    def __init__(self, name="Weppner & Huggins model", **model_kwargs):
-        super().__init__(pybamm_model=BaseWeppnerHuggins, name=name, **model_kwargs)
+    def __init__(self, name="Weppner & Huggins model", eis=False, **model_kwargs):
+        super().__init__(
+            pybamm_model=BaseWeppnerHuggins, name=name, eis=eis, **model_kwargs
+        )

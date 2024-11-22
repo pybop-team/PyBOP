@@ -3,7 +3,7 @@
 Installation
 *****************************
 
-PyBOP is a versatile Python package designed for optimization and parameterization of battery models. Follow the instructions below to install PyBOP and set up your environment to begin utilizing its capabilities.
+PyBOP is a versatile Python package designed for optimisation and parameterisation of battery models. Follow the instructions below to install PyBOP and set up your environment to begin utilising its capabilities.
 
 Installing PyBOP with pip
 -------------------------
@@ -42,6 +42,28 @@ For those who prefer to install PyBOP from a local clone of the repository or wi
 
 In editable mode, changes you make to the source code will immediately affect the PyBOP installation without the need for reinstallation.
 
+Optional Dependencies
+-----------------
+``plotly`` - For plotting, PyBOP uses plotly. It can be installed with:
+
+.. code-block:: console
+
+    pip install pybop[plot]
+
+``scikit-fem`` - This is a dependency for the multi-dimensional pybamm models, and can be installed using:
+
+.. code-block:: console
+
+    pip install pybop[scifem]
+
+``bpx`` - To use the Faraday Institution's Battery Parameter eXchange (BPX) package install the optional requirement:
+
+.. code-block:: console
+
+    pip install pybop[bpx]
+
+To install all the optional dependencies, the command ``pip install pybop[all]`` is available. For more information on the optional packages, users are directed towards the `pyproject.toml <https://github.com/pybop-team/PyBOP/blob/develop/pyproject.toml>`_.
+
 Verifying Installation
 ----------------------
 
@@ -55,7 +77,7 @@ To verify that PyBOP has been installed successfully, try running one of the pro
 For Developers
 --------------
 
-If you are installing PyBOP for development purposes, such as contributing to the project, please ensure that you follow the guidelines outlined in the `Contributing Guide <../Contributing.html>`_. It includes additional steps that might be necessary for setting up a development environment, including the installation of dependencies and setup of pre-commit hooks.
+If you are installing PyBOP for development purposes, such as contributing to the project, please ensure that you follow the guidelines outlined in the `Contributing Guide <Contributing.html>`_. It includes additional steps that might be necessary for setting up a development environment, including the installation of dependencies and setup of pre-commit hooks.
 
 Further Assistance
 ------------------
@@ -68,4 +90,4 @@ Next Steps
 After installing PyBOP, you might want to:
 
 * Explore the `Quick Start Guide <quick_start.html>`_ to begin using PyBOP.
-* Check out the `API Reference <../api/index.html>`_ for detailed information on PyBOP's programming interface.
+* Check out the `API Reference <api/index.html>`_ for detailed information on PyBOP's programming interface.

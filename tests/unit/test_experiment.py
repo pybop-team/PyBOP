@@ -18,9 +18,9 @@ class TestExperiment:
         pybop_experiment = pybop.Experiment(protocol)
         pybamm_experiment = pybamm.Experiment(protocol)
 
-        assert [
-            step.to_dict() for step in pybop_experiment.operating_conditions_steps
-        ] == [step.to_dict() for step in pybamm_experiment.operating_conditions_steps]
+        assert [step.to_dict() for step in pybop_experiment.steps] == [
+            step.to_dict() for step in pybamm_experiment.steps
+        ]
 
         assert pybop_experiment.cycle_lengths == pybamm_experiment.cycle_lengths
 

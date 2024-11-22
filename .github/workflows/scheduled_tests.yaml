@@ -6,13 +6,14 @@ on:
     branches:
       - main
 
-  # runs every day at 09:00 UTC
+  # runs every day at 03:00 UTC
   schedule:
-    - cron: '0 9 * * *'
+    - cron: '0 3 * * *'
 
 # Check noxfile.py for associated environment variables
 env:
   PYBOP_SCHEDULED: 1
+  FORCE_COLOR: 3
 
 jobs:
   # Dynamically create a matrix of OS, Python, and PyBaMM versions
