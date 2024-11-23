@@ -143,8 +143,8 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         y_0 = Parameter("Maximum positive stoichiometry")
 
         # Grouped parameters
-        Q_th_p = Parameter("Positive electrode theoretical capacity [A.s]")
-        Q_th_n = Parameter("Negative electrode theoretical capacity [A.s]")
+        Q_th_p = Parameter("Measured cell capacity [A.s]") / (y_0 - y_100)
+        Q_th_n = Parameter("Measured cell capacity [A.s]") / (x_100 - x_0)
         Q_e = Parameter("Reference electrolyte capacity [A.s]")
 
         tau_d_p = Parameter("Positive particle diffusion time scale [s]")
@@ -385,8 +385,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "Upper voltage cut-off [V]": 4.2,
             "Positive electrode OCP [V]": nmc_LGM50_ocp_Chen2020,
             "Negative electrode OCP [V]": graphite_LGM50_ocp_Chen2020,
-            "Positive electrode theoretical capacity [A.s]": 3000,
-            "Negative electrode theoretical capacity [A.s]": 3000,
+            "Measured cell capacity [A.s]": 3000,
             "Reference electrolyte capacity [A.s]": 1000,
             "Positive relative concentration": 1,
             "Negative relative concentration": 1,
@@ -534,9 +533,16 @@ def convert_physical_to_grouped_parameters(parameter_set):
     )
     soc_init = (sto_p_init - y_0) / (y_100 - y_0)
 
-    # Grouped parameters
+    # Compute the capacity within the stoichiometry limits
     Q_th_p = F * alpha_p * c_max_p * L_p * A
     Q_th_n = F * alpha_n * c_max_n * L_n * A
+    Q_meas_p = (y_0 - y_100) * Q_th_p
+    Q_meas_n = (x_100 - x_0) * Q_th_n
+    if abs(Q_meas_n / Q_meas_p - 1) > 1e-6:
+        raise ValueError("The measured capacity should be the same for both electrodes.")
+
+    # Grouped parameters
+    Q_meas = (Q_meas_n + Q_meas_p) / 2
     Q_e = F * ce0 * L * A
 
     zeta_p = epsilon_p / epsilon_sep
@@ -571,8 +577,7 @@ def convert_physical_to_grouped_parameters(parameter_set):
         "Upper voltage cut-off [V]": parameter_set["Upper voltage cut-off [V]"],
         "Positive electrode OCP [V]": parameter_set["Positive electrode OCP [V]"],
         "Negative electrode OCP [V]": parameter_set["Negative electrode OCP [V]"],
-        "Positive electrode theoretical capacity [A.s]": Q_th_p,
-        "Negative electrode theoretical capacity [A.s]": Q_th_n,
+        "Measured cell capacity [A.s]": Q_meas,
         "Reference electrolyte capacity [A.s]": Q_e,
         "Positive electrode relative porosity": zeta_p,
         "Negative electrode relative porosity": zeta_n,
