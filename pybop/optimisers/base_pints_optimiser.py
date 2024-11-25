@@ -12,7 +12,7 @@ from pints import RectangularBoundaries as PintsRectangularBoundaries
 from pints import SequentialEvaluator as PintsSequentialEvaluator
 from pints import strfloat as PintsStrFloat
 
-from pybop import BaseOptimiser, OptimisationResult
+from pybop import BaseJaxCost, BaseOptimiser, OptimisationResult, SequentialJaxEvaluator
 
 
 class BasePintsOptimiser(BaseOptimiser):
@@ -205,17 +205,20 @@ class BasePintsOptimiser(BaseOptimiser):
             return (sign * L, sign * dl) if dl is not None else sign * L
 
         # Create evaluator object
-        if self._parallel:
-            # Get number of workers
-            n_workers = self._n_workers
-
-            # For population based optimisers, don't use more workers than
-            # particles!
-            if isinstance(self.pints_optimiser, PintsPopulationBasedOptimiser):
-                n_workers = min(n_workers, self.pints_optimiser.population_size())
-            evaluator = PintsParallelEvaluator(fun, n_workers=n_workers)
+        if isinstance(self.cost, BaseJaxCost):
+            evaluator = SequentialJaxEvaluator(fun)
         else:
-            evaluator = PintsSequentialEvaluator(fun)
+            if self._parallel:
+                # Get number of workers
+                n_workers = self._n_workers
+
+                # For population based optimisers, don't use more workers than
+                # particles!
+                if isinstance(self.pints_optimiser, PintsPopulationBasedOptimiser):
+                    n_workers = min(n_workers, self.pints_optimiser.population_size())
+                evaluator = PintsParallelEvaluator(fun, n_workers=n_workers)
+            else:
+                evaluator = PintsSequentialEvaluator(fun)
 
         # Keep track of current best and best-guess scores.
         fb = fg = np.inf

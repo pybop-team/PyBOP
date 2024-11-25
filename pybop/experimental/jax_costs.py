@@ -49,11 +49,9 @@ class BaseJaxCost(BaseCost):
 
         if calculate_grad:
             y, dy = jax.value_and_grad(self.evaluate)(inputs)
-            return y, np.asarray(
-                list(dy.values())
-            )  # Convert grad to numpy for optimisers
+            return y, np.asarray(list(dy.values()))
         else:
-            return np.asarray(self.evaluate(inputs))
+            return self.evaluate(inputs)
 
     def _update_solver_sensitivities(self, calculate_grad: bool) -> None:
         """

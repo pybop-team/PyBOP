@@ -120,7 +120,8 @@ from .costs._weighted_cost import WeightedCost
 #
 # Experimental
 #
-from .experimental import BaseJaxCost, JaxSumSquaredError, JaxLogNormalLikelihood, JaxGaussianLogLikelihoodKnownSigma
+from .experimental.jax_costs import BaseJaxCost, JaxSumSquaredError, JaxLogNormalLikelihood, JaxGaussianLogLikelihoodKnownSigma
+from .experimental._evaluation import SequentialJaxEvaluator
 
 #
 # Optimiser classes

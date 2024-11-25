@@ -59,6 +59,7 @@ class Test_SPM_Parameterisation:
             pybop.SumofPower,
             pybop.Minkowski,
             pybop.LogPosterior,
+            pybop.JaxSumSquaredError,
         ]
     )
     def cost(self, request):
@@ -96,8 +97,11 @@ class Test_SPM_Parameterisation:
         )
 
         # IDAKLU Solver for Gradient-based optimisers
-        if optimiser in [pybop.AdamW, pybop.IRPropMin]:
-            model.solver = pybamm.IDAKLUSolver()
+        if (
+            optimiser in [pybop.AdamW, pybop.IRPropMin]
+            or cost is pybop.JaxSumSquaredError
+        ):
+            model.solver = pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6)
 
         # Define the problem
         problem = pybop.FittingProblem(model, parameters, dataset)
