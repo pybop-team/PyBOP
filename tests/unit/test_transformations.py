@@ -26,6 +26,9 @@ class TestTransformation:
                 "Log",
                 transformation=pybop.LogTransformation(),
             ),
+            pybop.Parameter(
+                "UnitHyperCube", transformation=pybop.UnitHyperCube(10, 100)
+            ),
         )
 
     @pytest.mark.unit
@@ -79,6 +82,29 @@ class TestTransformation:
         # Test incorrect transform
         with pytest.raises(ValueError, match="Unknown method:"):
             transformation._transform(q, "bad-string")
+
+    @pytest.mark.unit
+    def test_hypercube_transformation(self, parameters):
+        q = np.asarray([0.5])
+        coeff = 1 / (100 - 10)
+        transformation = parameters["UnitHyperCube"].transformation
+        p = transformation.to_model(q)
+        assert np.allclose(p, (q / coeff) + 10)
+        assert transformation.n_parameters == 1
+        assert transformation.is_elementwise()
+
+        q_transformed = transformation.to_search(p)
+        assert np.allclose(q_transformed, q)
+        assert np.allclose(
+            transformation.log_jacobian_det(q), np.sum(np.log(np.abs(coeff)))
+        )
+        log_jac_det_S1 = transformation.log_jacobian_det_S1(q)
+        assert log_jac_det_S1[0] == np.sum(np.log(np.abs(coeff)))
+        assert log_jac_det_S1[1] == np.zeros(1)
+
+        jac, jac_S1 = transformation.jacobian_S1(q)
+        assert np.array_equal(jac, np.diag([1 / coeff]))
+        assert np.array_equal(jac_S1, np.zeros((1, 1, 1)))
 
     @pytest.mark.unit
     def test_log_transformation(self, parameters):
