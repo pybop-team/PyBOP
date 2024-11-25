@@ -106,6 +106,13 @@ class TestTransformation:
         assert np.array_equal(jac, np.diag([1 / coeff]))
         assert np.array_equal(jac_S1, np.zeros((1, 1, 1)))
 
+        # Test incorrect scaling bounds
+        with pytest.raises(
+            ValueError,
+            match="All elements of upper bounds must be greater than lower bounds.",
+        ):
+            pybop.UnitHyperCube(100, 1)
+
     @pytest.mark.unit
     def test_log_transformation(self, parameters):
         q = np.asarray([10])
