@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#566](https://github.com/pybop-team/PyBOP/pull/566) - Adds `UnitHyperCube` transformation class, fixes incorrect application of gradient transformation.
 - [#282](https://github.com/pybop-team/PyBOP/issues/282) - Restructures the examples directory.
 - [#396](https://github.com/pybop-team/PyBOP/issues/396) - Adds `ecm_with_tau.py` example script.
 - [#452](https://github.com/pybop-team/PyBOP/issues/452) - Extends `cell_mass` and `approximate_capacity` for half-cell models.
