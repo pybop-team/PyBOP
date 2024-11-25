@@ -14,8 +14,6 @@ def transformation_id(val):
         return "UnitHyperCube"
     elif isinstance(val, pybop.LogTransformation):
         return "Log"
-    elif isinstance(val, pybop.ScaledTransformation):
-        return f"Scaled(c={val.coefficient}, i={val.intercept})"
     else:
         return str(val)
 
