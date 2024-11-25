@@ -57,45 +57,58 @@ class BaseCost:
         inputs: Union[Inputs, list],
         calculate_grad: bool = False,
         apply_transform: bool = False,
-    ):
+    ) -> Union[float, tuple[float, np.ndarray]]:
         """
         This method calls the forward model via problem.evaluate(inputs),
         and computes the cost for the given output by calling self.compute().
 
         Parameters
         ----------
-        inputs : Inputs or array-like
-            The parameters for which to compute the cost and gradient.
-        calculate_grad : bool, optional
-            A bool condition designating whether to calculate the gradient.
+        inputs : Inputs or list-like
+            The input parameters for which the cost and optionally the gradient
+            will be computed.
+        calculate_grad : bool, optional, default=False
+            If True, both the cost and gradient will be computed. Otherwise, only the
+            cost is computed.
+        apply_transform : bool, optional, default=False
+            If True, applies a transformation to the inputs before evaluating the model.
 
         Returns
         -------
-        float
-            The calculated cost function value.
+        float or tuple
+            - If `calculate_grad` is False, returns the computed cost (float).
+            - If `calculate_grad` is True, returns a tuple containing the cost (float)
+              and the gradient (np.ndarray).
 
         Raises
         ------
         ValueError
             If an error occurs during the calculation of the cost.
         """
-        # Apply transformation if needed
         # Note, we use the transformation and parameter properties here to enable
         # differing attributes within the `LogPosterior` class
+
+        # Apply transformation if needed
         self.has_transform = self.transformation is not None and apply_transform
         if self.has_transform:
-            inputs = self.transformation.to_model(inputs)
-        inputs = self.parameters.verify(inputs)
-        self.parameters.update(values=list(inputs.values()))
+            model_inputs = self.transformation.to_model(inputs)
+        else:
+            model_inputs = inputs
+
+        # Validate inputs, update parameters
+        model_inputs = self.parameters.verify(model_inputs)
+        self.parameters.update(values=list(model_inputs.values()))
 
         y, dy = None, None
         if self._has_separable_problem:
             if calculate_grad:
                 y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
                 cost, grad = self.compute(y, dy=dy, calculate_grad=calculate_grad)
+
                 if self.has_transform and np.isfinite(cost):
                     jac = self.transformation.jacobian(inputs)
                     grad = np.matmul(grad, jac)
+
                 return cost, grad
 
             y = self.problem.evaluate(self.problem.parameters.as_dict())
