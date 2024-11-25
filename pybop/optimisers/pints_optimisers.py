@@ -5,11 +5,15 @@ from pints import PSO as PintsPSO
 from pints import SNES as PintsSNES
 from pints import XNES as PintsXNES
 from pints import Adam as PintsAdam
-from pints import GradientDescent as PintsGradientDescent
 from pints import IRPropMin as PintsIRPropMin
 from pints import NelderMead as PintsNelderMead
 
-from pybop import AdamWImpl, BasePintsOptimiser, CuckooSearchImpl
+from pybop import (
+    AdamWImpl,
+    BasePintsOptimiser,
+    CuckooSearchImpl,
+    GradientDescentImpl,
+)
 
 
 class GradientDescent(BasePintsOptimiser):
@@ -69,7 +73,7 @@ class GradientDescent(BasePintsOptimiser):
     ):
         super().__init__(
             cost,
-            PintsGradientDescent,
+            GradientDescentImpl,
             max_iterations,
             min_iterations,
             max_unchanged_iterations,
