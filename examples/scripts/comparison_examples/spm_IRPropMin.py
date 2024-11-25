@@ -12,11 +12,11 @@ model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
 parameters = pybop.Parameters(
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.6, 0.05),
+        prior=pybop.Gaussian(0.6, 0.02),
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.48, 0.05),
+        prior=pybop.Gaussian(0.48, 0.02),
     ),
 )
 
@@ -38,7 +38,7 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.Minkowski(problem, p=2)
-optim = pybop.IRPropMin(cost, max_iterations=100)
+optim = pybop.IRPropMin(cost, max_iterations=100, sigma0=0.1)
 
 results = optim.run()
 

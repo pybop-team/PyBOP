@@ -150,9 +150,12 @@ class Parameter:
 
         self.margin = margin
 
-    def set_bounds(self, bounds=None, boundary_multiplier=6):
+    def set_bounds(self, bounds=None, boundary_multiplier=15):
         """
-        Set the upper and lower bounds.
+        Set the upper and lower bounds and applies default values
+        from the prior if no bounds are provided. The default values
+        are calculated using the boundary_multiplier and the parameters
+        prior sigma value.
 
         Parameters
         ----------
@@ -161,7 +164,7 @@ class Parameter:
             Defaults to None.
         boundary_multiplier : float, optional
             Used to define the bounds when no bounds are passed but the parameter has
-            a prior distribution (default: 6).
+            a prior distribution (default: 15).
 
         Raises
         ------
