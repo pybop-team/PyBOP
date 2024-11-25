@@ -40,10 +40,10 @@ problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.RootMeanSquaredError(problem)
 optim = pybop.GradientDescent(
     cost,
-    sigma0=[0.18, 0.03],
+    sigma0=0.05,
     verbose=True,
     max_iterations=125,
-    max_unchanged_iterations=125,
+    max_unchanged_iterations=25,
 )
 
 # Run optimisation
