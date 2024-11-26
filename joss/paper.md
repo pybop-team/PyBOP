@@ -152,6 +152,8 @@ Furthermore, we can also compare the performance of the various optimisation alg
 
 ![Convergence in the parameter values obtained for various (meta)heuristics.  \label{fig:optimiser-inference}](figures/joss/optimisers_parameters.png){ width=100% }
 
+![Counter plot for all optimisers.  \label{fig:optimiser-inference}](figures/joss/contour_total.png){ width=100% }
+
 This parameterisation task can also be approached from the Bayesian perspective, which we will present below using PyBOP's sampler methods. The optimisation equation presented in equation \autoref{eqn:parameterisation} does not represent the Bayesian parameter identification task, and as such we introduce Bayes Theorem as,
 
 \begin{equation}

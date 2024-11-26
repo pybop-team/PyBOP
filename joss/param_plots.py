@@ -185,7 +185,6 @@ if create_plot["minimising"]:
         # Run optimisation
         results = optim.run()
         print("True parameter values:", parameters.true_value())
-        print("Estimated parameters:", results.x)
 
         # Plot convergence
         cost_log = optim.log["cost_best"]
@@ -220,13 +219,7 @@ if create_plot["maximising"]:
     ## Do the same for the maximising cost functions
     convergence_traces = []
     first_MAP = True
-    # sigma0 = pybop.Parameter(
-    #     "Sigma",
-    #     initial_value=0.012,
-    #     prior=pybop.Gaussian(0.012, 0.005),
-    #     bounds=[0, 0.05],
-    # )
-    # sigma0 = 0.02
+
     for cost in maximising_cost_classes:
         if cost is pybop.GaussianLogLikelihoodKnownSigma:
             cost = cost(problem, sigma0=sigma)
@@ -246,14 +239,13 @@ if create_plot["maximising"]:
         optim = pybop.CMAES(
             cost,
             verbose=True,
-            max_iterations=500,
+            max_iterations=125,
             max_unchanged_iterations=25,
         )
 
         # Run optimisation
         results = optim.run()
         print("True parameter values:", parameters.true_value())
-        print("Estimated parameters:", results.x)
 
         # Plot convergence
         cost_log = optim.log["cost_best"]
@@ -342,7 +334,6 @@ if create_plot["gradient"]:
         # Run optimisation
         results = optim.run()
         print("True parameter values:", parameters.true_value())
-        print("Estimated parameters:", results.x)
 
         # Plot the parameter traces
         parameter_fig = pybop.plot.parameters(optim, show=False, title=None)
@@ -354,6 +345,12 @@ if create_plot["gradient"]:
             if j > 0:
                 parameter_fig.data[j].showlegend = False
         parameter_traces.extend(parameter_fig.data)
+
+        # Plot the cost landscape with optimisation path
+        contour = pybop.plot.contour(
+            optim, steps=25, title="", margin=dict(l=30, r=30, t=30, b=30)
+        )
+        contour.write_image(f"joss/figures/contour_gradient_{i}.png")
 
     # Plot the parameter traces together
     parameter_fig.update_layout(width=576, height=1024, plot_bgcolor="white")
@@ -396,7 +393,6 @@ if create_plot["evolution"]:
         # Run optimisation
         results = optim.run()
         print("True parameter values:", parameters.true_value())
-        print("Estimated parameters:", results.x)
 
         # Plot the parameter traces
         parameter_fig = pybop.plot.parameters(optim, show=False, title=None)
@@ -408,6 +404,12 @@ if create_plot["evolution"]:
             if j > 0:
                 parameter_fig.data[j].showlegend = False
         parameter_traces.extend(parameter_fig.data)
+
+        # Plot the cost landscape with optimisation path
+        contour = pybop.plot.contour(
+            optim, steps=25, title="", margin=dict(l=30, r=30, t=30, b=30)
+        )
+        contour.write_image(f"joss/figures/contour_evolution_{i}.png")
 
     # Plot the parameter traces together
     parameter_fig.update_layout(width=576, height=1024, plot_bgcolor="white")
@@ -440,7 +442,6 @@ if create_plot["heuristic"]:
         # Run optimisation
         results = optim.run()
         print("True parameter values:", parameters.true_value())
-        print("Estimated parameters:", results.x)
 
         # Plot the parameter traces
         parameter_fig = pybop.plot.parameters(optim, show=False, title=None)
@@ -453,8 +454,11 @@ if create_plot["heuristic"]:
                 parameter_fig.data[j].showlegend = False
         parameter_traces.extend(parameter_fig.data)
 
-        # # Plot the cost landscape with optimisation path
-        # pybop.plot.contour(optim, steps=15)
+        # Plot the cost landscape with optimisation path
+        contour = pybop.plot.contour(
+            optim, steps=25, title="", margin=dict(l=30, r=30, t=30, b=30)
+        )
+        contour.write_image(f"joss/figures/contour_heuristic_{i}.png")
 
     # Plot the parameter traces together
     parameter_fig.update_layout(width=576, height=1024, plot_bgcolor="white")
