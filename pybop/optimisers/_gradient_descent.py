@@ -19,6 +19,9 @@ class GradientDescentImpl(pints.Optimiser):
         - \nabla f(x_t) is the gradient of the function at x_t,
         - \\eta is the learning rate, which controls the step size.
 
+    This class reimplements the Pints' Gradient Descent, but with multidimensional,
+    fixed learning rates. Original creation and credit is attributed to Pints.
+
     Parameters
     ----------
     x0 : array-like
