@@ -266,6 +266,11 @@ class TestOptimisation:
                 optim.optimiser.set_hyper_parameters([0.1, 0.3])
                 np.testing.assert_allclose(optim.optimiser.learning_rate(), [0.1, 0.3])
 
+                with pytest.raises(
+                    ValueError, match=re.escape("Learning rate(s) must be positive.")
+                ):
+                    optim.optimiser.set_learning_rate(-0.1)
+
             if optimiser is pybop.AdamW:
                 optim = optimiser(cost=cost, b1=0.9, b2=0.999, lam=0.1)
                 optim.optimiser.b1 = 0.9
