@@ -40,7 +40,7 @@ class TestSamplingThevenin:
     @pytest.fixture
     def model(self):
         parameter_set = pybop.ParameterSet(
-            json_path="examples/scripts/parameters/initial_ecm_parameters.json"
+            json_path="examples/parameters/initial_ecm_parameters.json"
         )
         parameter_set.import_parameters()
         parameter_set.params.update(
@@ -58,12 +58,12 @@ class TestSamplingThevenin:
         return pybop.Parameters(
             pybop.Parameter(
                 "R0 [Ohm]",
-                prior=pybop.Uniform(1e-2, 8e-2),
+                prior=pybop.Uniform(1e-3, 9e-2),
                 bounds=[1e-4, 1e-1],
             ),
             pybop.Parameter(
                 "R1 [Ohm]",
-                prior=pybop.Uniform(1e-2, 8e-2),
+                prior=pybop.Uniform(1e-3, 9e-2),
                 bounds=[1e-4, 1e-1],
             ),
         )
@@ -100,6 +100,7 @@ class TestSamplingThevenin:
             "max_unchanged_iterations": 35,
             "absolute_tolerance": 1e-7,
             "sigma0": [3e-4, 3e-4],
+            "verbose": True,
         }
         optim = pybop.CMAES(posterior, **common_args)
         results = optim.run()
@@ -127,17 +128,18 @@ class TestSamplingThevenin:
         x0 = np.clip(map_estimate + np.random.normal(0, 1e-3, size=2), 1e-4, 1e-1)
         common_args = {
             "log_pdf": posterior,
-            "chains": 1,
-            "warm_up": 550,
-            "cov0": [1e-3, 1e-3],
-            "max_iterations": 1000,
+            "chains": 2,
+            "warm_up": 100,
+            "cov0": [2e-3, 2e-3],
+            "max_iterations": 1050,
             "x0": x0,
         }
 
         # construct and run
         sampler = sampler(**common_args)
         if isinstance(sampler, SliceRankShrinkingMCMC):
-            sampler._samplers[0].set_hyper_parameters([1e-3])
+            for i, _j in enumerate(sampler._samplers):
+                sampler._samplers[i].set_hyper_parameters([1e-3])
         chains = sampler.run()
 
         # Test PosteriorSummary
@@ -146,7 +148,7 @@ class TestSamplingThevenin:
         np.testing.assert_array_less(0, ess)
         if not isinstance(sampler, RelativisticMCMC):
             np.testing.assert_array_less(
-                summary.rhat(), 1.2
+                summary.rhat(), 1.5
             )  # Large rhat, to enable faster tests
 
         # Assert both final sample and posterior mean

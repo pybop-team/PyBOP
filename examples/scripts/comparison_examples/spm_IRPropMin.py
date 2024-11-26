@@ -12,11 +12,11 @@ model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
 parameters = pybop.Parameters(
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.68, 0.05),
+        prior=pybop.Gaussian(0.6, 0.02),
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.58, 0.05),
+        prior=pybop.Gaussian(0.48, 0.02),
     ),
 )
 
@@ -37,15 +37,9 @@ dataset = pybop.Dataset(
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.RootMeanSquaredError(problem)
-optim = pybop.GradientDescent(
-    cost,
-    sigma0=0.05,
-    verbose=True,
-    max_iterations=125,
-)
+cost = pybop.Minkowski(problem, p=2)
+optim = pybop.IRPropMin(cost, max_iterations=100, sigma0=0.1)
 
-# Run optimisation
 results = optim.run()
 
 # Plot the timeseries output
@@ -57,5 +51,6 @@ pybop.plot.convergence(optim)
 # Plot the parameter traces
 pybop.plot.parameters(optim)
 
-# Plot the cost landscape with optimisation path
-pybop.plot.surface(optim)
+# Contour plot with optimisation path
+bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
+pybop.plot.surface(optim, bounds=bounds)

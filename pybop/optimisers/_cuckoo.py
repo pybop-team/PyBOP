@@ -105,6 +105,9 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
         previously specified by `self.ask()`, and updates the optimiser state
         accordingly.
         """
+        if not self._ready_for_tell:
+            raise RuntimeError("ask() must be called before tell().")
+
         # Update iteration count
         self._iterations += 1
 
