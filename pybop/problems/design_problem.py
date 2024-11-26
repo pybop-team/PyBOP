@@ -68,7 +68,7 @@ class DesignProblem(BaseProblem):
         warnings.warn(nominal_capacity_warning, UserWarning, stacklevel=2)
         self.update_capacity = update_capacity
 
-        # Add an example dataset for plotting comparison
+        # Add an example dataset for plot comparison
         sol = self.evaluate(self.parameters.as_dict("initial"))
         self._domain_data = sol["Time [s]"]
         self._target = {key: sol[key] for key in self.signal}

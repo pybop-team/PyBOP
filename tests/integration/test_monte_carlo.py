@@ -21,9 +21,10 @@ class Test_Sampling_SPM:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ground_truth = np.clip(
-            np.asarray([0.55, 0.55]) + np.random.normal(loc=0.0, scale=0.05, size=2),
-            a_min=0.4,
-            a_max=0.75,
+            np.asarray([0.55, 0.55, 3e-3])
+            + np.random.normal(0, [5e-2, 5e-2, 1e-4], size=3),
+            [0.4, 0.4, 1e-5],
+            [0.7, 0.7, 1e-2],
         )
 
     @pytest.fixture
@@ -58,19 +59,11 @@ class Test_Sampling_SPM:
     def init_soc(self, request):
         return request.param
 
-    @pytest.fixture(
-        params=[
-            pybop.GaussianLogLikelihoodKnownSigma,
-        ]
-    )
-    def cost_class(self, request):
-        return request.param
-
     def noise(self, sigma, values):
         return np.random.normal(0, sigma, values)
 
     @pytest.fixture
-    def spm_likelihood(self, model, parameters, cost_class, init_soc):
+    def log_posterior(self, model, parameters, init_soc):
         # Form dataset
         solution = self.get_data(model, init_soc)
         dataset = pybop.Dataset(
@@ -82,9 +75,22 @@ class Test_Sampling_SPM:
             }
         )
 
-        # Define the cost to optimise
+        # Define the posterior to optimise
         problem = pybop.FittingProblem(model, parameters, dataset)
-        return cost_class(problem, sigma0=0.002)
+        likelihood = pybop.GaussianLogLikelihood(problem, sigma0=0.002 * 1.2)
+        return pybop.LogPosterior(likelihood)
+
+    @pytest.fixture
+    def map_estimate(self, log_posterior):
+        common_args = {
+            "max_iterations": 100,
+            "max_unchanged_iterations": 35,
+            "absolute_tolerance": 1e-7,
+        }
+        optim = pybop.CMAES(log_posterior, **common_args)
+        results = optim.run()
+
+        return results.x
 
     @pytest.mark.parametrize(
         "quick_sampler",
@@ -98,29 +104,29 @@ class Test_Sampling_SPM:
         ],
     )
     @pytest.mark.integration
-    def test_sampling_spm(self, quick_sampler, spm_likelihood):
-        posterior = pybop.LogPosterior(spm_likelihood)
-
+    def test_sampling_spm(self, quick_sampler, log_posterior, map_estimate):
+        x0 = np.clip(
+            map_estimate + np.random.normal(0, [5e-3, 5e-3, 1e-4], size=3),
+            [0.4, 0.4, 1e-5],
+            [0.75, 0.75, 5e-2],
+        )
         # set common args
         common_args = {
-            "log_pdf": posterior,
+            "log_pdf": log_posterior,
             "chains": 3,
-            "warm_up": 250,
+            "x0": x0,
+            "warm_up": 150,
             "max_iterations": 550,
         }
 
-        if issubclass(quick_sampler, DifferentialEvolutionMCMC):
-            common_args["warm_up"] = 750
-            common_args["max_iterations"] = 900
         # construct and run
         sampler = quick_sampler(**common_args)
-        results = sampler.run()
+        chains = sampler.run()
 
         # Assert both final sample and posterior mean
-        x = np.mean(results, axis=1)
+        x = np.mean(chains, axis=1)
         for i in range(len(x)):
-            np.testing.assert_allclose(x[i], self.ground_truth, atol=2.5e-2)
-            np.testing.assert_allclose(results[i][-1], self.ground_truth, atol=2.0e-2)
+            np.testing.assert_allclose(x[i], self.ground_truth, atol=1.5e-2)
 
     def get_data(self, model, init_soc):
         initial_state = {"Initial SoC": init_soc}

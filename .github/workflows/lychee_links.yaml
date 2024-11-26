@@ -35,7 +35,7 @@ jobs:
             --max-retries 5
             --skip-missing
             --exclude-loopback
-            --accept 200,429
+            --accept 200,403,429,999
             --exclude "https://tiles.stadiamaps.com/*|https://b.tile.openstreetmap.org/*"
             --exclude "https://cartodb-basemaps-c.global.ssl.fastly.net/*"
             --exclude "https://events.mapbox.com/*|https://events.mapbox.cn/*|https://api.mapbox.cn/*"

@@ -64,21 +64,21 @@ These include a wide variety of optimisation problems that require careful consi
 
 Explore our [example notebooks](https://github.com/pybop-team/PyBOP/blob/develop/examples) for hands-on demonstrations:
 
-- [Gravimetric design optimisation (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/spm_electrode_design.ipynb)
-- [Non-linear constrained ECM parameter identification](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/ecm_trust-constr.ipynb)
-- [Optimiser comparison for parameter identification](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/multi_optimiser_identification.ipynb)
-- [Parameter identification for spatial pouch cell model](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/pouch_cell_identification.ipynb)
-- [Estimating ECM parameters from HPPC pulse](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/equivalent_circuit_identification_hppc.ipynb)
+- [Gravimetric design optimisation (SPMe)](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/design_optimisation/energy_based_electrode_design.ipynb)
+- [Non-linear constrained ECM parameter identification](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/battery_parameterisation/ecm_trust-constr.ipynb)
+- [Optimiser comparison for parameter identification](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/comparison_examples/multi_optimiser_identification.ipynb)
+- [Parameter identification for spatial pouch cell model](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/battery_parameterisation/pouch_cell_identification.ipynb)
+- [Estimating ECM parameters from HPPC pulse](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/battery_parameterisation/equivalent_circuit_identification_hppc.ipynb)
 
 ### Python Scripts
 
 Find additional script-based examples in the [examples directory](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/):
 
-- [UKF parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_UKF.py)
-- [BPX format parameter import/export](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/BPX_spm.py)
-- [Electrochemical Impendence Spectroscopy (EIS) parameter identification](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/eis_fitting.py)
-- [Maximum a Posteriori parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/BPX_spm.py)
-- [Gradient-based parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_AdamW.py)
+- [UKF parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/comparison_examples/spm_UKF.py)
+- [BPX format parameter import/export](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/getting_started/BPX_spm.py)
+- [Electrochemical Impendence Spectroscopy (EIS) parameter identification](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/battery_parameterisation/eis_fitting.py)
+- [Maximum a Posteriori parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/getting_started/BPX_spm.py)
+- [Gradient-based parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/comparison_examples/spm_AdamW.py)
 
 
 ### Supported Methods

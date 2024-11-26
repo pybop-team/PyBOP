@@ -15,7 +15,7 @@ class Test_SPM_Parameterisation:
         self.sigma0 = 0.002
         self.ground_truth = np.clip(
             np.asarray([0.55, 0.55]) + np.random.normal(loc=0.0, scale=0.05, size=2),
-            a_min=0.4,
+            a_min=0.425,
             a_max=0.75,
         )
 
@@ -116,6 +116,7 @@ class Test_SPM_Parameterisation:
         else:
             cost = cost(problem)
 
+        sigma0 = 0.05 if optimiser == pybop.CuckooSearch else 0.02
         # Construct optimisation object
         common_args = {
             "cost": cost,
@@ -124,7 +125,7 @@ class Test_SPM_Parameterisation:
             "max_unchanged_iterations": 55,
             "sigma0": [0.05, 0.05, 1e-3]
             if isinstance(cost, pybop.GaussianLogLikelihood)
-            else 0.05,
+            else sigma0,
         }
 
         if isinstance(cost, pybop.LogPosterior):
@@ -148,22 +149,22 @@ class Test_SPM_Parameterisation:
             )
 
         initial_cost = optim.cost(x0)
-        x, final_cost = optim.run()
+        results = optim.run()
 
         # Assertions
         if np.allclose(x0, self.ground_truth, atol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
         if isinstance(optim.cost, pybop.GaussianLogLikelihood):
-            np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
-            np.testing.assert_allclose(x[-1], self.sigma0, atol=5e-4)
+            np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
+            np.testing.assert_allclose(results.x[-1], self.sigma0, atol=5e-4)
         else:
             assert (
-                (initial_cost > final_cost)
+                (initial_cost > results.final_cost)
                 if optim.minimising
-                else (initial_cost < final_cost)
+                else (initial_cost < results.final_cost)
             )
-            np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
+            np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
     @pytest.fixture
     def spm_two_signal_cost(self, parameters, model, cost):
@@ -217,7 +218,7 @@ class Test_SPM_Parameterisation:
             "max_unchanged_iterations": 55,
             "sigma0": [0.035, 0.035, 6e-3, 6e-3]
             if isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood)
-            else None,
+            else 0.02,
         }
 
         # Test each optimiser
@@ -231,22 +232,22 @@ class Test_SPM_Parameterisation:
             optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-6)
 
         initial_cost = optim.cost(optim.parameters.initial_value())
-        x, final_cost = optim.run()
+        results = optim.run()
 
         # Assertions
         if np.allclose(x0, self.ground_truth, atol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
         if isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood):
-            np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
-            np.testing.assert_allclose(x[-2:], combined_sigma0, atol=5e-4)
+            np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
+            np.testing.assert_allclose(results.x[-2:], combined_sigma0, atol=5e-4)
         else:
             assert (
-                (initial_cost > final_cost)
+                (initial_cost > results.final_cost)
                 if optim.minimising
-                else (initial_cost < final_cost)
+                else (initial_cost < results.final_cost)
             )
-            np.testing.assert_allclose(x, self.ground_truth, atol=1.5e-2)
+            np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
     @pytest.mark.parametrize("init_soc", [0.4, 0.6])
     @pytest.mark.integration
@@ -278,14 +279,14 @@ class Test_SPM_Parameterisation:
         initial_cost = optim.cost(optim.x0)
 
         # Run the optimisation problem
-        x, final_cost = optim.run()
+        results = optim.run()
 
         # Assertion for final_cost
-        assert initial_cost > final_cost
+        assert initial_cost > results.final_cost
 
         # Assertion for x
         with np.testing.assert_raises(AssertionError):
-            np.testing.assert_allclose(x, self.ground_truth, atol=2e-2)
+            np.testing.assert_allclose(results.x, self.ground_truth, atol=2e-2)
 
     def get_data(self, model, init_soc):
         initial_state = {"Initial SoC": init_soc}

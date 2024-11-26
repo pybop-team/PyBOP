@@ -1,7 +1,18 @@
 import json
 import types
+from numbers import Number
+from typing import Union
 
-from pybamm import LithiumIonParameters, ParameterValues, parameter_sets
+import numpy as np
+from pybamm import (
+    FunctionParameter,
+    LithiumIonParameters,
+    Parameter,
+    ParameterValues,
+    Scalar,
+    Symbol,
+    parameter_sets,
+)
 
 
 class ParameterSet:
@@ -33,6 +44,33 @@ class ParameterSet:
 
     def __getitem__(self, key):
         return self.params[key]
+
+    @staticmethod
+    def evaluate_symbol(symbol: Union[Symbol, Number], params: dict):
+        """
+        Evaluate a parameter in the parameter set.
+
+        Parameters
+        ----------
+        symbol : pybamm.Symbol or Number
+            The parameter to evaluate.
+
+        Returns
+        -------
+        float
+            The value of the parameter.
+        """
+        if isinstance(symbol, (Number, np.float64)):
+            return symbol
+        if isinstance(symbol, Scalar):
+            return symbol.value
+        if isinstance(symbol, (Parameter, FunctionParameter)):
+            return ParameterSet.evaluate_symbol(params[symbol.name], params)
+        new_children = [
+            Scalar(ParameterSet.evaluate_symbol(child, params))
+            for child in symbol.children
+        ]
+        return symbol.create_copy(new_children).evaluate()
 
     def keys(self) -> list:
         """

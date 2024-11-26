@@ -20,6 +20,39 @@ class BaseLikelihood(BaseCost):
         self.n_data = problem.n_data
 
 
+class BaseMetaLikelihood(BaseLikelihood):
+    """
+    Base class for likelihood classes which have a meta-likelihood
+    such as `LogPosterior` or `ScaledLoglikelihood`. This class
+    points the required attributes towards the composed likelihood
+    class.
+    """
+
+    def __init__(self, log_likelihood: BaseLikelihood):
+        self._log_likelihood = log_likelihood
+        super().__init__(log_likelihood.problem)
+
+    @property
+    def transformation(self):
+        return self._log_likelihood.transformation
+
+    @property
+    def has_separable_problem(self):
+        return self._log_likelihood.has_separable_problem
+
+    @property
+    def parameters(self):
+        return self._log_likelihood.parameters
+
+    @property
+    def n_parameters(self):
+        return self._log_likelihood.n_parameters
+
+    @property
+    def likelihood(self) -> BaseLikelihood:
+        return self._log_likelihood
+
+
 class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
     """
     This class represents a Gaussian Log Likelihood with a known sigma,
@@ -141,7 +174,7 @@ class GaussianLogLikelihood(BaseLikelihood):
                 Parameter(
                     f"Sigma for output {index+1}",
                     initial_value=value,
-                    prior=Uniform(1e-3 * value, 1e3 * value),
+                    prior=Uniform(1e-8 * value, 3 * value),
                     bounds=[1e-8, 3 * value],
                 )
             )
@@ -206,7 +239,38 @@ class GaussianLogLikelihood(BaseLikelihood):
         return e
 
 
-class LogPosterior(BaseLikelihood):
+class ScaledLogLikelihood(BaseMetaLikelihood):
+    r"""
+    This class scaled a `BaseLogLikelihood` class by the number of observations.
+    The scaling factor is given below:
+
+    .. math::
+       \mathcal{\hat{L(\theta)}} = \frac{1}{N} \mathcal{L(\theta)}
+
+    This class aims to provide numerical values with lower magnitude than the
+    canonical likelihoods, which can improve optimiser convergence in certain
+    cases.
+    """
+
+    def __init__(self, log_likelihood: BaseLikelihood):
+        super().__init__(log_likelihood)
+
+    def compute(
+        self,
+        y: dict,
+        dy: np.ndarray = None,
+        calculate_grad: bool = False,
+    ) -> Union[float, tuple[float, np.ndarray]]:
+        likelihood = self._log_likelihood.compute(y, dy, calculate_grad)
+        normalised_val = 1 / self.n_data
+
+        if isinstance(likelihood, tuple):
+            return tuple(val * normalised_val for val in likelihood)
+
+        return likelihood * normalised_val
+
+
+class LogPosterior(BaseMetaLikelihood):
     """
     The Log Posterior for a given problem.
 
@@ -232,18 +296,11 @@ class LogPosterior(BaseLikelihood):
         log_prior: Optional[Union[pybop.BasePrior, stats.rv_continuous]] = None,
         gradient_step: float = 1e-3,
     ):
-        super().__init__(problem=log_likelihood.problem)
         self.gradient_step = gradient_step
-
-        # Store the likelihood, prior, update parameters and transformation
-        self.join_parameters(log_likelihood.parameters)
-        self._log_likelihood = log_likelihood
-
-        for attr in ["transformation", "_has_separable_problem"]:
-            setattr(self, attr, getattr(log_likelihood, attr))
+        super().__init__(log_likelihood)
 
         if log_prior is None:
-            self._prior = JointLogPrior(*self._parameters.priors())
+            self._prior = JointLogPrior(*self.parameters.priors())
         else:
             self._prior = log_prior
 
@@ -275,16 +332,16 @@ class LogPosterior(BaseLikelihood):
 
         if calculate_grad:
             if isinstance(self._prior, BasePrior):
-                log_prior, dp = self._prior.logpdfS1(self._parameters.current_value())
+                log_prior, dp = self._prior.logpdfS1(self.parameters.current_value())
             else:
                 # Compute log prior first
-                log_prior = self._prior.logpdf(self._parameters.current_value())
+                log_prior = self._prior.logpdf(self.parameters.current_value())
 
                 # Compute a finite difference approximation of the gradient of the log prior
-                delta = self._parameters.initial_value() * self.gradient_step
+                delta = self.parameters.initial_value() * self.gradient_step
                 dp = []
 
-                for parameter, step_size in zip(self._parameters, delta):
+                for parameter, step_size in zip(self.parameters, delta):
                     param_value = parameter.value
                     upper_value = param_value * (1 + step_size)
                     lower_value = param_value * (1 - step_size)
@@ -297,7 +354,7 @@ class LogPosterior(BaseLikelihood):
                     )
                     dp.append(gradient)
         else:
-            log_prior = self._prior.logpdf(self._parameters.current_value())
+            log_prior = self._prior.logpdf(self.parameters.current_value())
 
         if not np.isfinite(log_prior).any():
             return (-np.inf, -self.grad_fail) if calculate_grad else -np.inf
@@ -319,7 +376,3 @@ class LogPosterior(BaseLikelihood):
     @property
     def prior(self) -> BasePrior:
         return self._prior
-
-    @property
-    def likelihood(self) -> BaseLikelihood:
-        return self._log_likelihood

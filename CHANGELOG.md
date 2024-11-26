@@ -2,14 +2,31 @@
 
 ## Features
 
+- [#282](https://github.com/pybop-team/PyBOP/issues/282) - Restructures the examples directory.
+- [#396](https://github.com/pybop-team/PyBOP/issues/396) - Adds `ecm_with_tau.py` example script.
+- [#452](https://github.com/pybop-team/PyBOP/issues/452) - Extends `cell_mass` and `approximate_capacity` for half-cell models.
+- [#544](https://github.com/pybop-team/PyBOP/issues/544) - Allows iterative plotting using `StandardPlot`.
+- [#541](https://github.com/pybop-team/PyBOP/pull/541) - Adds `ScaledLogLikelihood` and `BaseMetaLikelihood` classes.
+- [#409](https://github.com/pybop-team/PyBOP/pull/409) - Adds plotting and convergence methods for Monte Carlo sampling. Includes open-access Tesla 4680 dataset for Bayesian inference example. Fixes transformations for sampling.
+- [#531](https://github.com/pybop-team/PyBOP/pull/531) - Adds Voronoi optimiser surface plot (`pybop.plot.surface`) for fast optimiser aligned cost visualisation.
+- [#532](https://github.com/pybop-team/PyBOP/issues/532) - Adds `linked_parameters` example script which shows how to update linked parameters during design optimisation.
+- [#529](https://github.com/pybop-team/PyBOP/issues/529) - Adds `GravimetricPowerDensity` and `VolumetricPowerDensity` costs, along with the mathjax extension for Sphinx.
+
+## Optimisations
+
+- [#512](https://github.com/pybop-team/PyBOP/pull/513) - Refactors `LogPosterior` with attributes pointing to composed likelihood object.
+- [#551](https://github.com/pybop-team/PyBOP/pull/551) - Refactors Optimiser arguments, `population_size` and `max_iterations` as default args, improves optimiser docstrings
+
 ## Bug Fixes
 
 - [#505](https://github.com/pybop-team/PyBOP/pull/505) - Bug fixes for `LogPosterior` with transformed `GaussianLogLikelihood` likelihood.
 
 ## Breaking Changes
 
-# [v24.9.1](https://github.com/pybop-team/PyBOP/tree/v24.9.0) - 2024-09-16
+- [#531](https://github.com/pybop-team/PyBOP/pull/531) - Plot methods moved to `pybop.plot` with mostly minimal renaming. For example, `pybop.plot_parameters` is now `pybop.plot.parameters`. Other breaking changes include: `pybop.plot2d` to `pybop.plot.contour`.
+- [#526](https://github.com/pybop-team/PyBOP/pull/526) - Refactor `OptimisationResults` classes, with `optim.run()` now return the full object. Adds finite cost value check for optimised parameters.
 
+# [v24.9.1](https://github.com/pybop-team/PyBOP/tree/v24.9.0) - 2024-09-16
 
 ## Features
 
@@ -53,6 +70,7 @@
 
 ## Breaking Changes
 
+- [#499](https://github.com/pybop-team/PyBOP/pull/499) - BPX is added as an optional dependency.
 - [#483](https://github.com/pybop-team/PyBOP/pull/483) - Replaces `pybop.MAP` with `pybop.LogPosterior` with an updated call args and bugfixes.
 - [#436](https://github.com/pybop-team/PyBOP/pull/436) - **API Change:** The functionality from `BaseCost.evaluate/S1` & `BaseCost._evaluate/S1` is represented in `BaseCost.__call__` & `BaseCost.compute`. `BaseCost.compute` directly acts on the predictions, while `BaseCost.__call__` calls `BaseProblem.evaluate/S1` before `BaseCost.compute`. `compute` has optional args for gradient cost calculations.
 - [#424](https://github.com/pybop-team/PyBOP/issues/424) - Replaces the `init_soc` input to `FittingProblem` with the option to pass an initial OCV value, updates `BaseModel` and fixes `multi_model_identification.ipynb` and `spm_electrode_design.ipynb`.

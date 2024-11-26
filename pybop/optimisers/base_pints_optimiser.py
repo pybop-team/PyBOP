@@ -1,3 +1,5 @@
+from time import time
+
 import numpy as np
 from pints import PSO as PintsPSO
 from pints import Adam as PintsAdam
@@ -10,7 +12,7 @@ from pints import RectangularBoundaries as PintsRectangularBoundaries
 from pints import SequentialEvaluator as PintsSequentialEvaluator
 from pints import strfloat as PintsStrFloat
 
-from pybop import BaseOptimiser, Result
+from pybop import BaseOptimiser, OptimisationResult
 
 
 class BasePintsOptimiser(BaseOptimiser):
@@ -19,6 +21,18 @@ class BasePintsOptimiser(BaseOptimiser):
 
     Parameters
     ----------
+    cost : callable
+        The cost function to be minimized.
+    pints_optimiser : class
+        The PINTS optimiser class to be used.
+    max_iterations : int, optional
+        Maximum number of iterations for the optimisation.
+    min_iterations : int, optional (default=2)
+        Minimum number of iterations before termination.
+    max_unchanged_iterations : int, optional (default=15)
+        Maximum number of iterations without improvement before termination.
+    parallel : bool, optional (default=False)
+        Whether to run the optimisation in parallel.
     **optimiser_kwargs : optional
         Valid PINTS option keys and their values, for example:
         x0 : array_like
@@ -28,27 +42,51 @@ class BasePintsOptimiser(BaseOptimiser):
         bounds : dict
             A dictionary with 'lower' and 'upper' keys containing arrays for lower and
             upper bounds on the parameters.
+        use_f_guessed : bool
+            Whether to track guessed function values.
+        absolute_tolerance : float
+            Absolute tolerance for convergence checking.
+        relative_tolerance : float
+            Relative tolerance for convergence checking.
+        max_evaluations : int
+            Maximum number of function evaluations.
+        threshold : float
+            Threshold value for early termination.
     """
 
-    def __init__(self, cost, pints_optimiser, **optimiser_kwargs):
+    def __init__(
+        self,
+        cost,
+        pints_optimiser,
+        max_iterations: int = None,
+        min_iterations: int = 2,
+        max_unchanged_iterations: int = 15,
+        parallel: bool = False,
+        **optimiser_kwargs,
+    ):
         # First set attributes to default values
         self._boundaries = None
         self._needs_sensitivities = None
         self._use_f_guessed = None
-        self._parallel = False
         self._n_workers = 1
         self._callback = None
-        self._max_iterations = None
-        self._min_iterations = 2
-        self._unchanged_max_iterations = 15
+        self.set_parallel(parallel)
+        self.set_max_iterations(max_iterations)
+        self.set_min_iterations(min_iterations)
+        self._unchanged_max_iterations = max_unchanged_iterations
         self._absolute_tolerance = 1e-5
         self._relative_tolerance = 1e-2
         self._max_evaluations = None
         self._threshold = None
         self._evaluations = None
         self._iterations = None
+        self.option_methods = {
+            "use_f_guessed": self.set_f_guessed_tracking,
+            "max_evaluations": self.set_max_evaluations,
+            "threshold": self.set_threshold,
+        }
 
-        self.pints_optimiser = pints_optimiser
+        self.optimiser = pints_optimiser
         super().__init__(cost, **optimiser_kwargs)
 
     def _set_up_optimiser(self):
@@ -59,47 +97,26 @@ class BasePintsOptimiser(BaseOptimiser):
         self._sanitise_inputs()
 
         # Create an instance of the PINTS optimiser class
-        if issubclass(self.pints_optimiser, PintsOptimiser):
-            self.pints_optimiser = self.pints_optimiser(
+        if issubclass(self.optimiser, PintsOptimiser):
+            self.optimiser = self.optimiser(
                 self.x0, sigma0=self.sigma0, boundaries=self._boundaries
             )
         else:
-            raise ValueError(
-                "The pints_optimiser is not a recognised PINTS optimiser class."
-            )
+            raise ValueError("The optimiser is not a recognised PINTS optimiser class.")
 
         # Check if sensitivities are required
-        self._needs_sensitivities = self.pints_optimiser.needs_sensitivities()
-
-        # Apply default maxiter
-        self.set_max_iterations()
+        self._needs_sensitivities = self.optimiser.needs_sensitivities()
 
         # Apply additional options and remove them from options
-        key_list = list(self.unset_options.keys())
-        for key in key_list:
-            if key == "use_f_guessed":
-                self.set_f_guessed_tracking(self.unset_options.pop(key))
-            elif key == "parallel":
-                self.set_parallel(self.unset_options.pop(key))
-            elif key == "max_iterations":
-                self.set_max_iterations(self.unset_options.pop(key))
-            elif key == "min_iterations":
-                self.set_min_iterations(self.unset_options.pop(key))
-            elif key == "max_unchanged_iterations":
-                max_unchanged_kwargs = {"iterations": self.unset_options.pop(key)}
-                if "absolute_tolerance" in self.unset_options.keys():
-                    max_unchanged_kwargs["absolute_tolerance"] = self.unset_options.pop(
-                        "absolute_tolerance"
-                    )
-                if "relative_tolerance" in self.unset_options.keys():
-                    max_unchanged_kwargs["relative_tolerance"] = self.unset_options.pop(
-                        "relative_tolerance"
-                    )
-                self.set_max_unchanged_iterations(**max_unchanged_kwargs)
-            elif key == "max_evaluations":
-                self.set_max_evaluations(self.unset_options.pop(key))
-            elif key == "threshold":
-                self.set_threshold(self.unset_options.pop(key))
+        max_unchanged_kwargs = {"iterations": self._unchanged_max_iterations}
+        for key, method in self.option_methods.items():
+            if key in self.unset_options:
+                method(self.unset_options.pop(key))
+
+        # Capture tolerance options
+        for tol_key in ["absolute_tolerance", "relative_tolerance"]:
+            if tol_key in self.unset_options:
+                max_unchanged_kwargs[tol_key] = self.unset_options.pop(tol_key)
 
     def _sanitise_inputs(self):
         """
@@ -117,48 +134,29 @@ class BasePintsOptimiser(BaseOptimiser):
                     )
             self.unset_options.pop("options")
 
-        # Check for duplicate keywords
-        expected_keys = ["max_iterations", "popsize"]
-        alternative_keys = ["maxiter", "population_size"]
-        for exp_key, alt_key in zip(expected_keys, alternative_keys):
-            if alt_key in self.unset_options.keys():
-                if exp_key in self.unset_options.keys():
-                    raise Exception(
-                        "The alternative {alt_key} option was passed in addition to the expected {exp_key} option."
-                    )
-                else:  # rename
-                    self.unset_options[exp_key] = self.unset_options.pop(alt_key)
-
         # Convert bounds to PINTS boundaries
         if self.bounds is not None:
             ignored_optimisers = (PintsGradientDescent, PintsAdam, PintsNelderMead)
-            if issubclass(self.pints_optimiser, ignored_optimisers):
-                print(f"NOTE: Boundaries ignored by {self.pints_optimiser}")
+            if issubclass(self.optimiser, ignored_optimisers):
+                print(f"NOTE: Boundaries ignored by {self.optimiser}")
                 self.bounds = None
             else:
-                if issubclass(self.pints_optimiser, PintsPSO):
+                if issubclass(self.optimiser, PintsPSO):
                     if not all(
                         np.isfinite(value)
                         for sublist in self.bounds.values()
                         for value in sublist
                     ):
                         raise ValueError(
-                            f"Either all bounds or no bounds must be set for {self.pints_optimiser.__name__}."
+                            f"Either all bounds or no bounds must be set for {self.optimiser.__name__}."
                         )
                 self._boundaries = PintsRectangularBoundaries(
                     self.bounds["lower"], self.bounds["upper"]
                 )
 
     def name(self):
-        """
-        Provides the name of the optimisation strategy.
-
-        Returns
-        -------
-        str
-            The name given by PINTS.
-        """
-        return self.pints_optimiser.name()
+        """Returns the name of the PINTS optimisation strategy."""
+        return self.optimiser.name()
 
     def _run(self):
         """
@@ -173,6 +171,9 @@ class BasePintsOptimiser(BaseOptimiser):
         --------
         This method is heavily based on the run method in the PINTS.OptimisationController class.
         """
+        # Timing
+        start_time = time()
+
         # Check stopping criteria
         has_stopping_criterion = False
         has_stopping_criterion |= self._max_iterations is not None
@@ -206,8 +207,8 @@ class BasePintsOptimiser(BaseOptimiser):
 
             # For population based optimisers, don't use more workers than
             # particles!
-            if isinstance(self.pints_optimiser, PintsPopulationBasedOptimiser):
-                n_workers = min(n_workers, self.pints_optimiser.population_size())
+            if isinstance(self.optimiser, PintsPopulationBasedOptimiser):
+                n_workers = min(n_workers, self.optimiser.population_size())
             evaluator = PintsParallelEvaluator(fun, n_workers=n_workers)
         else:
             evaluator = PintsSequentialEvaluator(fun)
@@ -226,17 +227,17 @@ class BasePintsOptimiser(BaseOptimiser):
         try:
             while running:
                 # Ask optimiser for new points
-                xs = self.pints_optimiser.ask()
+                xs = self.optimiser.ask()
 
                 # Evaluate points
                 fs = evaluator.evaluate(xs)
 
                 # Tell optimiser about function values
-                self.pints_optimiser.tell(fs)
+                self.optimiser.tell(fs)
 
                 # Update the scores
-                fb = self.pints_optimiser.f_best()
-                fg = self.pints_optimiser.f_guessed()
+                fb = self.optimiser.f_best()
+                fg = self.optimiser.f_guessed()
                 fg_user = (fb, fg) if self.minimising else (-fb, -fg)
 
                 # Check for significant changes against the absolute and relative tolerance
@@ -252,10 +253,12 @@ class BasePintsOptimiser(BaseOptimiser):
                 # Update counts
                 evaluations += len(fs)
                 iteration += 1
+                _fs = [x[0] for x in fs] if self._needs_sensitivities else fs
                 self.log_update(
                     x=xs,
-                    x_best=self.pints_optimiser.x_best(),
-                    cost=fb if self.minimising else -fb,
+                    x_best=self.optimiser.x_best(),
+                    cost=_fs if self.minimising else [-x for x in _fs],
+                    cost_best=fb if self.minimising else -fb,
                 )
 
                 # Check stopping criteria:
@@ -306,7 +309,7 @@ class BasePintsOptimiser(BaseOptimiser):
                     )
 
                 # Error in optimiser
-                error = self.pints_optimiser.stop()
+                error = self.optimiser.stop()
                 if error:
                     running = False
                     halt_message = str(error)
@@ -322,7 +325,7 @@ class BasePintsOptimiser(BaseOptimiser):
             print("Current position:")
 
             # Show current parameters
-            x_user = self.pints_optimiser.x_guessed()
+            x_user = self.optimiser.x_guessed()
             if self._transformation:
                 x_user = self._transformation.to_model(x_user)
             for p in x_user:
@@ -330,6 +333,7 @@ class BasePintsOptimiser(BaseOptimiser):
             print("-" * 40)
             raise
 
+        total_time = time() - start_time
         if self.verbose:
             print("Halt: " + halt_message)
 
@@ -339,18 +343,23 @@ class BasePintsOptimiser(BaseOptimiser):
 
         # Get best parameters
         if self._use_f_guessed:
-            x = self.pints_optimiser.x_guessed()
-            f = self.pints_optimiser.f_guessed()
+            x = self.optimiser.x_guessed()
+            f = self.optimiser.f_guessed()
         else:
-            x = self.pints_optimiser.x_best()
-            f = self.pints_optimiser.f_best()
+            x = self.optimiser.x_best()
+            f = self.optimiser.f_best()
 
         # Inverse transform search parameters
         if self._transformation:
             x = self._transformation.to_model(x)
 
-        return Result(
-            x=x, final_cost=f if self.minimising else -f, n_iterations=self._iterations
+        return OptimisationResult(
+            x=x,
+            cost=self.cost,
+            final_cost=f if self.minimising else -f,
+            n_iterations=self._iterations,
+            optim=self,
+            time=total_time,
         )
 
     def f_guessed_tracking(self):

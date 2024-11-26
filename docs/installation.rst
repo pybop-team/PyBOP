@@ -42,6 +42,28 @@ For those who prefer to install PyBOP from a local clone of the repository or wi
 
 In editable mode, changes you make to the source code will immediately affect the PyBOP installation without the need for reinstallation.
 
+Optional Dependencies
+-----------------
+``plotly`` - For plotting, PyBOP uses plotly. It can be installed with:
+
+.. code-block:: console
+
+    pip install pybop[plot]
+
+``scikit-fem`` - This is a dependency for the multi-dimensional pybamm models, and can be installed using:
+
+.. code-block:: console
+
+    pip install pybop[scifem]
+
+``bpx`` - To use the Faraday Institution's Battery Parameter eXchange (BPX) package install the optional requirement:
+
+.. code-block:: console
+
+    pip install pybop[bpx]
+
+To install all the optional dependencies, the command ``pip install pybop[all]`` is available. For more information on the optional packages, users are directed towards the `pyproject.toml <https://github.com/pybop-team/PyBOP/blob/develop/pyproject.toml>`_.
+
 Verifying Installation
 ----------------------
 

@@ -30,7 +30,6 @@ dependencies = [
   "numpy>=1.16, <2.0",
   "scipy>=1.3",
   "pints>=0.5",
-  "bpx>=0.4",
 ]
 
 [project.optional-dependencies]
@@ -58,7 +57,10 @@ dev = [
 scifem = [
   "scikit-fem>=8.1.0" # scikit-fem is a dependency for the multi-dimensional pybamm models
 ]
-all = ["pybop[plot]", "pybop[scifem]"]
+bpx = [
+    "bpx>=0.4",
+]
+all = ["pybop[plot,scifem,bpx]"]
 
 [tool.setuptools.packages.find]
 include = ["pybop", "pybop.*"]

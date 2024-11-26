@@ -105,11 +105,14 @@ from .costs.design_costs import (
     DesignCost,
     GravimetricEnergyDensity,
     VolumetricEnergyDensity,
+    GravimetricPowerDensity,
+    VolumetricPowerDensity,
 )
 from .costs._likelihoods import (
     BaseLikelihood,
     GaussianLogLikelihood,
     GaussianLogLikelihoodKnownSigma,
+    ScaledLogLikelihood,
     LogPosterior,
 )
 from .costs._weighted_cost import WeightedCost
@@ -120,7 +123,7 @@ from .costs._weighted_cost import WeightedCost
 
 from .optimisers._cuckoo import CuckooSearchImpl
 from .optimisers._adamw import AdamWImpl
-from .optimisers.base_optimiser import BaseOptimiser, Result
+from .optimisers.base_optimiser import BaseOptimiser, OptimisationResult
 from .optimisers.base_pints_optimiser import BasePintsOptimiser
 from .optimisers.scipy_optimisers import (
     BaseSciPyOptimiser,
@@ -168,14 +171,8 @@ from .observers.observer import Observer
 #
 # Plotting classes
 #
-from .plotting.plotly_manager import PlotlyManager
-from .plotting.standard_plots import StandardPlot, StandardSubplot, plot_trajectories
-from .plotting.plot2d import plot2d
-from .plotting.plot_dataset import plot_dataset
-from .plotting.plot_convergence import plot_convergence
-from .plotting.plot_parameters import plot_parameters
-from .plotting.plot_problem import quick_plot
-from .plotting.nyquist import nyquist
+from . import plot as plot
+from .samplers.mcmc_summary import PosteriorSummary
 
 #
 # Remove any imported modules, so we don't expose them as part of pybop
