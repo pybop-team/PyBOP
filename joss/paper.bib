@@ -231,3 +231,102 @@
   url       = {https://doi.org/10.1016/j.energy.2022.125966},
 }
 
+@article{numpyro:2019,
+  title={Composable Effects for Flexible and Accelerated Probabilistic Programming in NumPyro},
+  author={Phan, Du and Pradhan, Neeraj and Jankowiak, Martin},
+  journal={arXiv preprint arXiv:1912.11554},
+  year={2019}
+}
+
+@software{jax:2018,
+  author = {James Bradbury and Roy Frostig and Peter Hawkins and Matthew James Johnson and Chris Leary and Dougal Maclaurin and George Necula and Adam Paszke and Jake Vander{P}las and Skye Wanderman-{M}ilne and Qiao Zhang},
+  title = {{JAX}: composable transformations of {P}ython+{N}um{P}y programs},
+  url = {http://github.com/jax-ml/jax},
+  version = {0.3.13},
+  year = {2018},
+}
+
+@misc{blackjax:2024,
+      title={BlackJAX: Composable {B}ayesian inference in {JAX}},
+      author={Alberto Cabezas and Adrien Corenflos and Junpeng Lao and Rémi Louf},
+      year={2024},
+      eprint={2402.10797},
+      archivePrefix={arXiv},
+      primaryClass={cs.MS}
+}
+
+@software{optax:2020,
+  title = {The {D}eep{M}ind {JAX} {E}cosystem},
+  author = {DeepMind and Babuschkin, Igor and Baumli, Kate and Bell, Alison and Bhupatiraju, Surya and Bruce, Jake and Buchlovsky, Peter and Budden, David and Cai, Trevor and Clark, Aidan and Danihelka, Ivo and Dedieu, Antoine and Fantacci, Claudio and Godwin, Jonathan and Jones, Chris and Hemsley, Ross and Hennigan, Tom and Hessel, Matteo and Hou, Shaobo and Kapturowski, Steven and Keck, Thomas and Kemaev, Iurii and King, Michael and Kunesch, Markus and Martens, Lena and Merzic, Hamza and Mikulik, Vladimir and Norman, Tamara and Papamakarios, George and Quan, John and Ring, Roman and Ruiz, Francisco and Sanchez, Alvaro and Sartran, Laurent and Schneider, Rosalia and Sezener, Eren and Spencer, Stephen and Srinivasan, Srivatsan and Stanojevi\'{c}, Milo\v{s} and Stokowiec, Wojciech and Wang, Luyu and Zhou, Guangyao and Viola, Fabio},
+  url = {http://github.com/google-deepmind},
+  year = {2020},
+}
+
+@misc{NUTS:2011,
+      title={The No-U-Turn Sampler: Adaptively Setting Path Lengths in Hamiltonian Monte Carlo},
+      author={Matthew D. Hoffman and Andrew Gelman},
+      year={2011},
+      eprint={1111.4246},
+      archivePrefix={arXiv},
+      primaryClass={stat.CO},
+      url={https://arxiv.org/abs/1111.4246},
+}
+
+@book{Hamiltonian:2011,
+   title={Handbook of Markov Chain Monte Carlo},
+   ISBN={9780429138508},
+   url={http://dx.doi.org/10.1201/b10905},
+   DOI={10.1201/b10905},
+   publisher={Chapman and Hall/CRC},
+   author={Brooks, Steve and Gelman, Andrew and Jones, Galin and Meng, Xiao-Li},
+   year={2011},
+   month=may }
+
+@article{Haario:2001,
+	title = {An {Adaptive} {Metropolis} {Algorithm}},
+	volume = {7},
+	issn = {13507265},
+	url = {https://www.jstor.org/stable/3318737?origin=crossref},
+	doi = {10.2307/3318737},
+	number = {2},
+	urldate = {2024-11-22},
+	journal = {Bernoulli},
+	author = {Haario, Heikki and Saksman, Eero and Tamminen, Johanna},
+	month = apr,
+	year = {2001},
+	pages = {223},
+	file = {Submitted Version:/Users/engs2510/Zotero/storage/LHLUPGSX/Haario et al. - 2001 - An Adaptive Metropolis Algorithm.pdf:application/pdf},
+}
+
+@article{DiffEvolution:2006,
+	title = {A {Markov} {Chain} {Monte} {Carlo} version of the genetic algorithm {Differential} {Evolution}: easy {Bayesian} computing for real parameter spaces},
+	volume = {16},
+	issn = {1573-1375},
+	url = {https://doi.org/10.1007/s11222-006-8769-1},
+	doi = {10.1007/s11222-006-8769-1},
+	abstract = {Differential Evolution (DE) is a simple genetic algorithm for numerical optimization in real parameter spaces. In a statistical context one would not just want the optimum but also its uncertainty. The uncertainty distribution can be obtained by a Bayesian analysis (after specifying prior and likelihood) using Markov Chain Monte Carlo (MCMC) simulation. This paper integrates the essential ideas of DE and MCMC, resulting in Differential Evolution Markov Chain (DE-MC). DE-MC is a population MCMC algorithm, in which multiple chains are run in parallel. DE-MC solves an important problem in MCMC, namely that of choosing an appropriate scale and orientation for the jumping distribution. In DE-MC the jumps are simply a fixed multiple of the differences of two random parameter vectors that are currently in the population. The selection process of DE-MC works via the usual Metropolis ratio which defines the probability with which a proposal is accepted. In tests with known uncertainty distributions, the efficiency of DE-MC with respect to random walk Metropolis with optimal multivariate Normal jumps ranged from 68\% for small population sizes to 100\% for large population sizes and even to 500\% for the 97.5\% point of a variable from a 50-dimensional Student distribution. Two Bayesian examples illustrate the potential of DE-MC in practice. DE-MC is shown to facilitate multidimensional updates in a multi-chain “Metropolis-within-Gibbs” sampling approach. The advantage of DE-MC over conventional MCMC are simplicity, speed of calculation and convergence, even for nearly collinear parameters and multimodal densities.},
+	number = {3},
+	journal = {Statistics and Computing},
+	author = {Braak, Cajo J. F. Ter},
+	month = sep,
+	year = {2006},
+	pages = {239--249},
+}
+
+@article{metropolis:1953,
+	title = {Equation of {State} {Calculations} by {Fast} {Computing} {Machines}},
+	volume = {21},
+	issn = {0021-9606, 1089-7690},
+	url = {https://pubs.aip.org/jcp/article/21/6/1087/202680/Equation-of-State-Calculations-by-Fast-Computing},
+	doi = {10.1063/1.1699114},
+	abstract = {A general method, suitable for fast computing machines, for investigating such properties as equations of state for substances consisting of interacting individual molecules is described. The method consists of a modified Monte Carlo integration over configuration space. Results for the two-dimensional rigid-sphere system have been obtained on the Los Alamos MANIAC and are presented here. These results are compared to the free volume equation of state and to a four-term virial coefficient expansion.},
+	language = {en},
+	number = {6},
+	urldate = {2024-11-22},
+	journal = {The Journal of Chemical Physics},
+	author = {Metropolis, Nicholas and Rosenbluth, Arianna W. and Rosenbluth, Marshall N. and Teller, Augusta H. and Teller, Edward},
+	month = jun,
+	year = {1953},
+	pages = {1087--1092},
+	file = {Submitted Version:/Users/engs2510/Zotero/storage/LKZVAGE4/Metropolis et al. - 1953 - Equation of State Calculations by Fast Computing M.pdf:application/pdf},
+}

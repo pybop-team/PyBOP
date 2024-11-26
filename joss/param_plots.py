@@ -2,9 +2,10 @@
 
 import numpy as np
 import plotly
+import pybamm
 
 import pybop
-from pybop import PlotlyManager
+from pybop.plot import PlotlyManager
 
 go = PlotlyManager().go
 np.random.seed(8)
@@ -24,7 +25,10 @@ create_plot["heuristic"] = True
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 options = {"contact resistance": "true"}
 parameter_set["Contact resistance [Ohm]"] = 0.01
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set, options=options)
+solver = pybamm.IDAKLUSolver(rtol=1e-7, atol=1e-7)
+model = pybop.lithium_ion.SPM(
+    parameter_set=parameter_set, options=options, solver=solver
+)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -40,8 +44,9 @@ parameters = pybop.Parameters(
         "Contact resistance [Ohm]",
         initial_value=0.02,
         prior=pybop.Gaussian(0.02, 0.005),
-        transformation=pybop.ScaledTransformation(coefficient=100),
-        bounds=[0.0049, 0.025],
+        # transformation=pybop.ScaledTransformation(coefficient=100),
+        transformation=pybop.LogTransformation(),
+        bounds=[0.005, 0.025],
         true_value=parameter_set["Contact resistance [Ohm]"],
     ),
 )
@@ -50,21 +55,21 @@ parameters = pybop.Parameters(
 experiment = pybop.Experiment(
     [
         (
-            "Discharge at 1C until 2.5 V (10 second period)",
-            "Rest for 30 minutes (10 second period)",
+            "Discharge at 1C until 2.8 V (20 second period)",
+            "Rest for 30 minutes (20 second period)",
         )
     ]
 )
 
 # Generate synthetic data and add Gaussian noise
 solution = model.predict(experiment=experiment)
-sigma = 0.01
+sigma = 0.005
 values = solution["Voltage [V]"].data
 corrupt_values = values + np.random.normal(0, sigma, len(values))
 
 if create_plot["simulation"]:
     # Plot the data and the simulation
-    simulation_plot_dict = pybop.StandardPlot(
+    simulation_plot_dict = pybop.plot.StandardPlot(
         x=solution["Time [s]"].data,
         y=[values, corrupt_values, solution["Battery open-circuit voltage [V]"].data],
         trace_names=[
@@ -99,7 +104,7 @@ problem = pybop.FittingProblem(model, parameters, dataset)
 if create_plot["landscape"]:
     # Plot the cost landscape with the initial and true values
     cost = pybop.RootMeanSquaredError(problem)
-    landscape_fig = pybop.plot2d(
+    landscape_fig = pybop.plot.contour(
         cost,
         steps=25,
         show=False,
@@ -174,18 +179,18 @@ if create_plot["minimising"]:
             cost,
             verbose=True,
             max_iterations=500,
-            max_unchanged_iterations=50,
+            max_unchanged_iterations=25,
         )
 
         # Run optimisation
-        x, final_cost = optim.run()
+        results = optim.run()
         print("True parameter values:", parameters.true_value())
-        print("Estimated parameters:", x)
+        print("Estimated parameters:", results.x)
 
         # Plot convergence
-        cost_log = optim.log["cost"]
+        cost_log = optim.log["cost_best"]
         iteration_numbers = list(range(1, len(cost_log) + 1))
-        convergence_plot_dict = pybop.StandardPlot(
+        convergence_plot_dict = pybop.plot.StandardPlot(
             x=iteration_numbers,
             y=cost_log,
             trace_names=type(cost).__name__,
@@ -242,18 +247,18 @@ if create_plot["maximising"]:
             cost,
             verbose=True,
             max_iterations=500,
-            max_unchanged_iterations=50,
+            max_unchanged_iterations=25,
         )
 
         # Run optimisation
-        x, final_cost = optim.run()
+        results = optim.run()
         print("True parameter values:", parameters.true_value())
-        print("Estimated parameters:", x)
+        print("Estimated parameters:", results.x)
 
         # Plot convergence
-        cost_log = optim.log["cost"]
+        cost_log = optim.log["cost_best"]
         iteration_numbers = list(range(1, len(cost_log) + 1))
-        convergence_plot_dict = pybop.StandardPlot(
+        convergence_plot_dict = pybop.plot.StandardPlot(
             x=iteration_numbers,
             y=cost_log,
             trace_names=type(cost).__name__
@@ -296,12 +301,12 @@ evolution_optimiser_classes = [
     pybop.SciPyDifferentialEvolution,  # most iterations
     pybop.XNES,
     pybop.CMAES,
-    pybop.CuckooSearch,
     pybop.SNES,  # least iterations
 ]
 heuristic_optimiser_classes = [
     pybop.PSO,
     pybop.NelderMead,
+    pybop.CuckooSearch,
     # pybop.SciPyMinimize,  # with NelderMead
 ]
 
@@ -311,30 +316,36 @@ if create_plot["gradient"]:
     parameter_traces = []
     for i, optimiser in enumerate(gradient_optimiser_classes):
         # Define keyword arguments for the optimiser class
-        kwargs = {}
+        kwargs = {"sigma0": [0.08, 0.05]}
         if optimiser is pybop.SciPyMinimize:
             kwargs["method"] = "L-BFGS-B"
             kwargs["jac"] = True
-        # elif optimiser is pybop.GradientDescent:
-        #     kwargs["sigma0"] = 1e-4  # without ScaledTransformation
+            kwargs["tol"] = 1e-9
+        elif optimiser is pybop.GradientDescent:
+            kwargs["sigma0"] = [1.2, 0.3]
+        elif optimiser is pybop.AdamW:
+            kwargs["sigma0"] = [0.25, 0.08]
+        # elif optimiser is pybop.IRPropMin:
+        #     kwargs["sigma0"] = [4e-3,2e-2]
 
         # Define the cost and optimiser
         cost = pybop.SumSquaredError(problem)
         optim = optimiser(
             cost,
             verbose=True,
-            max_iterations=200,
-            max_unchanged_iterations=20,
+            max_evaluations=60,
+            maxfev=60,
+            max_unchanged_iterations=60,
             **kwargs,
         )
 
         # Run optimisation
-        x, final_cost = optim.run()
+        results = optim.run()
         print("True parameter values:", parameters.true_value())
-        print("Estimated parameters:", x)
+        print("Estimated parameters:", results.x)
 
         # Plot the parameter traces
-        parameter_fig = pybop.plot_parameters(optim, show=False, title=None)
+        parameter_fig = pybop.plot.parameters(optim, show=False, title=None)
         parameter_fig.update_traces(dict(mode="markers"))
         colours = parameter_fig.layout.template.layout.colorway
         for j in range(len(parameter_fig.data)):
@@ -362,21 +373,33 @@ if create_plot["evolution"]:
 
         # Define the cost and optimiser
         cost = pybop.SumSquaredError(problem)
-        optim = optimiser(
-            cost,
-            verbose=True,
-            max_iterations=500,
-            max_unchanged_iterations=50,
-            **kwargs,
-        )
+        if optimiser is pybop.SciPyDifferentialEvolution:
+            optim = optimiser(
+                cost,
+                verbose=True,
+                max_iterations=50,
+                max_unchanged_iterations=25,
+                popsize=3,
+                **kwargs,
+            )
+        else:
+            optim = optimiser(
+                cost,
+                verbose=True,
+                max_iterations=300,
+                max_unchanged_iterations=300,
+                max_evaluations=338,
+                popsize=6,
+                **kwargs,
+            )
 
         # Run optimisation
-        x, final_cost = optim.run()
+        results = optim.run()
         print("True parameter values:", parameters.true_value())
-        print("Estimated parameters:", x)
+        print("Estimated parameters:", results.x)
 
         # Plot the parameter traces
-        parameter_fig = pybop.plot_parameters(optim, show=False, title=None)
+        parameter_fig = pybop.plot.parameters(optim, show=False, title=None)
         parameter_fig.update_traces(dict(mode="markers"))
         colours = parameter_fig.layout.template.layout.colorway
         for j in range(len(parameter_fig.data)):
@@ -407,18 +430,20 @@ if create_plot["heuristic"]:
         optim = optimiser(
             cost,
             verbose=True,
+            sigma0=0.02,
             max_iterations=500,
-            max_unchanged_iterations=50,
+            max_unchanged_iterations=25,
+            max_evaluations=300,
             **kwargs,
         )
 
         # Run optimisation
-        x, final_cost = optim.run()
+        results = optim.run()
         print("True parameter values:", parameters.true_value())
-        print("Estimated parameters:", x)
+        print("Estimated parameters:", results.x)
 
         # Plot the parameter traces
-        parameter_fig = pybop.plot_parameters(optim, show=False, title=None)
+        parameter_fig = pybop.plot.parameters(optim, show=False, title=None)
         parameter_fig.update_traces(dict(mode="markers"))
         colours = parameter_fig.layout.template.layout.colorway
         for j in range(len(parameter_fig.data)):
@@ -429,7 +454,7 @@ if create_plot["heuristic"]:
         parameter_traces.extend(parameter_fig.data)
 
         # # Plot the cost landscape with optimisation path
-        # pybop.plot2d(optim, steps=15)
+        # pybop.plot.contour(optim, steps=15)
 
     # Plot the parameter traces together
     parameter_fig.update_layout(width=576, height=1024, plot_bgcolor="white")
