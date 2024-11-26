@@ -3,7 +3,6 @@ from time import time
 import numpy as np
 from pints import PSO as PintsPSO
 from pints import Adam as PintsAdam
-from pints import GradientDescent as PintsGradientDescent
 from pints import NelderMead as PintsNelderMead
 from pints import Optimiser as PintsOptimiser
 from pints import ParallelEvaluator as PintsParallelEvaluator
@@ -12,7 +11,7 @@ from pints import RectangularBoundaries as PintsRectangularBoundaries
 from pints import SequentialEvaluator as PintsSequentialEvaluator
 from pints import strfloat as PintsStrFloat
 
-from pybop import BaseOptimiser, OptimisationResult
+from pybop import BaseOptimiser, GradientDescentImpl, OptimisationResult
 
 
 class BasePintsOptimiser(BaseOptimiser):
@@ -136,7 +135,7 @@ class BasePintsOptimiser(BaseOptimiser):
 
         # Convert bounds to PINTS boundaries
         if self.bounds is not None:
-            ignored_optimisers = (PintsGradientDescent, PintsAdam, PintsNelderMead)
+            ignored_optimisers = (GradientDescentImpl, PintsAdam, PintsNelderMead)
             if issubclass(self.optimiser, ignored_optimisers):
                 print(f"NOTE: Boundaries ignored by {self.optimiser}")
                 self.bounds = None
