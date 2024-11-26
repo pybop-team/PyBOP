@@ -152,6 +152,9 @@ class BaseOptimiser:
                 self.unset_options.pop("allow_infeasible_solutions")
             )
 
+        # Set multistart
+        self.multistart = self.unset_options.pop("multistart", 1)
+
     def _set_up_optimiser(self):
         """
         Parse optimiser options and prepare the optimiser.
@@ -174,13 +177,19 @@ class BaseOptimiser:
         results: OptimisationResult
             The pybop optimisation result class.
         """
-        self.result = self._run()
+        for i in range(self.multistart):
+            if i >= 1:
+                self.x0 = self.parameters.rvs(1, apply_transform=True)
+                self.parameters.update(initial_values=self.x0)
+                self._set_up_optimiser()
 
-        if self.verbose:
-            print(self.result)
+            self.result = self._run()
 
-        # Store the optimised parameters
-        self.parameters.update(values=self.result.x)
+            if self.verbose:
+                print(self.result)
+
+            # Store the optimised parameters
+            self.parameters.update(values=self.result.x)
 
         return self.result
 
