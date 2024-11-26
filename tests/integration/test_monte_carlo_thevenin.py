@@ -40,7 +40,7 @@ class TestSamplingThevenin:
     @pytest.fixture
     def model(self):
         parameter_set = pybop.ParameterSet(
-            json_path="examples/scripts/parameters/initial_ecm_parameters.json"
+            json_path="examples/parameters/initial_ecm_parameters.json"
         )
         parameter_set.import_parameters()
         parameter_set.params.update(
@@ -58,12 +58,12 @@ class TestSamplingThevenin:
         return pybop.Parameters(
             pybop.Parameter(
                 "R0 [Ohm]",
-                prior=pybop.Uniform(1e-2, 8e-2),
+                prior=pybop.Uniform(1e-3, 9e-2),
                 bounds=[1e-4, 1e-1],
             ),
             pybop.Parameter(
                 "R1 [Ohm]",
-                prior=pybop.Uniform(1e-2, 8e-2),
+                prior=pybop.Uniform(1e-3, 9e-2),
                 bounds=[1e-4, 1e-1],
             ),
         )
