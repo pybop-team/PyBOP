@@ -12,12 +12,14 @@ class GradientDescentImpl(pints.Optimiser):
 
     The update rule for each iteration is given by:
 
-        x_{t+1} = x_t - \\eta * \nabla f(x_t)
+    .. math::
+
+        x_{t+1} = x_t - \\eta * \\nabla f(x_t)
 
     where:
-        - x_t are the current parameter values at iteration t,
-        - \nabla f(x_t) is the gradient of the function at x_t,
-        - \\eta is the learning rate, which controls the step size.
+        - :math:`x_t` are the current parameter values at iteration t,
+        - :math:`\\nabla f(x_t)` is the gradient of the function at :math:`x_t`,
+        - :math:`\\eta` is the learning rate, which controls the step size.
 
     This class reimplements the Pints' Gradient Descent, but with multidimensional,
     fixed learning rates. Original creation and credit is attributed to Pints.
