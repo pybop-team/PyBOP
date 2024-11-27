@@ -19,6 +19,7 @@ create_plot["maximising"] = True
 create_plot["gradient"] = True  # takes longest
 create_plot["evolution"] = True
 create_plot["heuristic"] = True
+create_plot["posteriors"] = True
 
 
 # Parameter set and model definition
@@ -467,3 +468,25 @@ if create_plot["heuristic"]:
     parameter_fig = plotly.subplots.make_subplots(figure=parameter_fig, rows=2, cols=1)
     parameter_fig.show()
     parameter_fig.write_image("joss/figures/heuristic_parameters.png")
+
+
+if create_plot["posteriors"]:
+    likelihood = pybop.GaussianLogLikelihood(problem)
+    posterior = pybop.LogPosterior(likelihood)
+
+    sampler = pybop.HaarioBardenetACMC(
+        posterior,
+        chains=5,
+        verbose=True,
+        max_iterations=3500,
+        warm_up=1500,
+        parallel=True,
+    )
+
+    samples = sampler.run()
+    summary = pybop.PosteriorSummary(samples)
+    print(summary.rhat())
+    print(summary.effective_sample_size(mixed_chains=True))
+    summary.plot_trace()
+    summary.plot_chains()
+    summary.plot_posterior()
