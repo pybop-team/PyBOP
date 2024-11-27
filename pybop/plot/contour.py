@@ -230,7 +230,7 @@ def contour(
                         size=14,
                         showscale=False,
                     ),
-                    name="True values",
+                    name="Final values",
                 )
             )
 
