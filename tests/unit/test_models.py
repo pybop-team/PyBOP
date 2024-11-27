@@ -355,7 +355,7 @@ class TestModels:
     @pytest.mark.unit
     def test_thevenin_model(self):
         parameter_set = pybop.ParameterSet(
-            json_path="examples/scripts/parameters/initial_ecm_parameters.json"
+            json_path="examples/parameters/initial_ecm_parameters.json"
         )
         parameter_set.import_parameters()
         assert parameter_set["Open-circuit voltage [V]"] == "default"
