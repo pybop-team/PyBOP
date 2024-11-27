@@ -293,9 +293,9 @@ def surface(
             y=y_optim,
             mode="markers",
             marker=dict(
+                color=[i / len(x_optim) for i in range(len(x_optim))],
+                colorscale="Greys",
                 size=8,
-                symbol="x-thin",
-                line=dict(color="white", width=1),
                 showscale=False,
             ),
             text=[f"f={val:.2f}" for val in f],
@@ -308,31 +308,52 @@ def surface(
     if optim.x0 is not None:
         fig.add_trace(
             go.Scatter(
-                x=[optim.x0[0]],
-                y=[optim.x0[1]],
+                x=[optim.log["x0"][0]],
+                y=[optim.log["x0"][1]],
                 mode="markers",
-                marker_symbol="circle",
+                marker_symbol="x",
                 marker=dict(
-                    color="mediumspringgreen",
-                    line_color="mediumspringgreen",
+                    color="white",
+                    line_color="black",
                     line_width=1,
                     size=14,
                     showscale=False,
                 ),
-                showlegend=False,
+                name="Initial values",
             )
         )
+
+        # Plot optimised value
+        if optim.log["x_best"] is not None:
+            fig.add_trace(
+                go.Scatter(
+                    x=[optim.log["x_best"][-1][0]],
+                    y=[optim.log["x_best"][-1][1]],
+                    mode="markers",
+                    marker_symbol="cross",
+                    marker=dict(
+                        color="black",
+                        line_color="white",
+                        line_width=1,
+                        size=14,
+                        showscale=False,
+                    ),
+                    name="True values",
+                )
+            )
+
     names = optim.cost.parameters.keys()
     fig.update_layout(
         title="Voronoi Cost Landscape",
         title_x=0.5,
-        title_y=0.9,
+        title_y=0.905,
         xaxis_title=names[0],
         yaxis_title=names[1],
         width=600,
         height=600,
         xaxis=dict(range=xlim, showexponent="last", exponentformat="e"),
         yaxis=dict(range=ylim, showexponent="last", exponentformat="e"),
+        legend=dict(orientation="h", yanchor="bottom", y=1, xanchor="right", x=1),
     )
     fig.update_layout(**layout_kwargs)
     if show:

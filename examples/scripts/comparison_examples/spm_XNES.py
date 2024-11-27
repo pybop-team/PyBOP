@@ -52,3 +52,6 @@ pybop.plot.parameters(optim)
 
 # Plot the cost landscape with optimisation path
 pybop.plot.surface(optim)
+
+# Plot contour
+pybop.plot.contour(optim)
