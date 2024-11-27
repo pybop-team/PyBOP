@@ -65,7 +65,7 @@ class PosteriorSummary:
             for key, func in summary_funs.items()
         }
 
-    def plot_trace(self):
+    def plot_trace(self, **kwargs):
         """
         Plot trace plots for the posterior samples.
         """
@@ -83,9 +83,10 @@ class PosteriorSummary:
                 xaxis_title="Sample Index",
                 yaxis_title="Value",
             )
+            fig.update_layout(**kwargs)
             fig.show()
 
-    def plot_chains(self):
+    def plot_chains(self, **kwargs):
         """
         Plot posterior distributions for each chain.
         """
@@ -117,9 +118,10 @@ class PosteriorSummary:
             xaxis_title="Value",
             yaxis_title="Density",
         )
+        fig.update_layout(**kwargs)
         fig.show()
 
-    def plot_posterior(self):
+    def plot_posterior(self, **kwargs):
         """
         Plot the summed posterior distribution across chains.
         """
@@ -142,7 +144,9 @@ class PosteriorSummary:
             xaxis_title="Value",
             yaxis_title="Density",
         )
+        fig.update_layout(**kwargs)
         fig.show()
+        return fig
 
     def summary_table(self):
         """
@@ -192,15 +196,28 @@ class PosteriorSummary:
             negative_indices[0] if negative_indices.size > 0 else len(autocorrelation)
         )
 
-    def effective_sample_size(self):
+    def effective_sample_size(self, mixed_chains=False):
         """
         Computes the effective sample size for each parameter in each chain.
+
+        Parameters
+        -----------
+        mixed_chains : bool, optional
+            If true, the effective sample size is computed for all samplers mixed
+            into a single chain.
         """
 
         if self.all_samples.shape[0] < 2:
             raise ValueError("At least two samples must be given.")
 
         ess = []
+        if mixed_chains:
+            for j in range(self.num_parameters):
+                rho = self.autocorrelation(self.all_samples[:, j])
+                T = self._autocorrelate_negative(rho)
+                ess.append(len(self.all_samples[:, j]) / (1 + 2 * rho[:T].sum()))
+            return ess
+
         for _, chain in enumerate(self.chains):
             for j in range(self.num_parameters):
                 rho = self.autocorrelation(chain[:, j])
