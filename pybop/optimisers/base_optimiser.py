@@ -115,6 +115,7 @@ class BaseOptimiser:
             raise ValueError("There are no parameters to optimise.")
 
         self.unset_options = optimiser_kwargs
+        self.unset_options_store = optimiser_kwargs.copy()
         self.set_base_options()
         self._set_up_optimiser()
 
@@ -179,6 +180,7 @@ class BaseOptimiser:
         """
         for i in range(self.multistart):
             if i >= 1:
+                self.unset_options = self.unset_options_store.copy()
                 self.x0 = self.parameters.rvs(1, apply_transform=True)
                 self.parameters.update(initial_values=self.x0)
                 self._set_up_optimiser()
