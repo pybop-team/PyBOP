@@ -1,8 +1,10 @@
 # A script to generate parameterisation plots for the JOSS paper.
 
+import matplotlib.pyplot as plt
 import numpy as np
 import plotly
 import pybamm
+from matplotlib.ticker import ScalarFormatter
 
 import pybop
 from pybop.plot import PlotlyManager
@@ -12,14 +14,14 @@ np.random.seed(8)
 
 # Choose which plots to show and save
 create_plot = {}
-create_plot["simulation"] = True
-create_plot["landscape"] = True
-create_plot["minimising"] = True
-create_plot["maximising"] = True
-create_plot["gradient"] = True  # takes longest
+create_plot["simulation"] = False
+create_plot["landscape"] = False
+create_plot["minimising"] = False
+create_plot["maximising"] = False
+create_plot["gradient"] = True
 create_plot["evolution"] = True
 create_plot["heuristic"] = True
-create_plot["posteriors"] = True
+create_plot["posteriors"] = False
 
 
 # Parameter set and model definition
@@ -286,15 +288,15 @@ if create_plot["maximising"]:
 # Categorise the optimisers
 gradient_optimiser_classes = [
     pybop.AdamW,
-    pybop.GradientDescent,
     pybop.IRPropMin,
+    pybop.GradientDescent,
     pybop.SciPyMinimize,  # with L-BFGS-B and jac=True
 ]
 evolution_optimiser_classes = [
-    pybop.SciPyDifferentialEvolution,  # most iterations
-    pybop.XNES,
     pybop.CMAES,
-    pybop.SNES,  # least iterations
+    pybop.XNES,
+    pybop.SNES,
+    pybop.SciPyDifferentialEvolution,
 ]
 heuristic_optimiser_classes = [
     pybop.PSO,
@@ -317,7 +319,7 @@ if create_plot["gradient"]:
         elif optimiser is pybop.GradientDescent:
             kwargs["sigma0"] = [1.2, 0.3]
         elif optimiser is pybop.AdamW:
-            kwargs["sigma0"] = [0.25, 0.08]
+            kwargs["sigma0"] = 0.2
         # elif optimiser is pybop.IRPropMin:
         #     kwargs["sigma0"] = [4e-3,2e-2]
 
@@ -331,6 +333,11 @@ if create_plot["gradient"]:
             max_unchanged_iterations=60,
             **kwargs,
         )
+
+        if optimiser is pybop.AdamW:
+            optim.optimiser.b1 = 0.8
+            optim.optimiser.b2 = 0.9
+            optim.optimiser.lam = 0.01
 
         # Run optimisation
         results = optim.run()
@@ -490,3 +497,111 @@ if create_plot["posteriors"]:
     summary.plot_trace()
     summary.plot_chains()
     summary.plot_posterior()
+
+    # Enable LaTeX for text rendering
+    plt.rcParams.update(
+        {
+            "text.usetex": True,
+            "font.family": "serif",  # Use a LaTeX-compatible font
+            "font.serif": ["Computer Modern"],  # Default LaTeX font
+        }
+    )
+
+    # Sample from the distributions
+    neg_particle_samples = summary.all_samples[:, 0]
+    contact_samples = summary.all_samples[:, 1]
+    sigma_samples = summary.all_samples[:, 2]
+
+    # Create a grid for subplots
+    fig = plt.figure(figsize=(13, 6))
+    gs = fig.add_gridspec(1, 3, height_ratios=[1])
+
+    # Function to format axis
+    def format_axis(ax):
+        formatter = ScalarFormatter(useMathText=True)
+        formatter.set_powerlimits((-1, 1))  # Set limits to use scientific notation
+        formatter.set_scientific(True)  # Ensure scientific notation
+        ax.xaxis.set_major_formatter(formatter)
+        ax.yaxis.set_major_formatter(formatter)
+        ax.tick_params(axis="both", which="major", labelsize=14)
+
+    # Top subplot for Neg Particle
+    ax1 = fig.add_subplot(gs[0, 0])
+    ax1.hist(
+        neg_particle_samples,
+        bins=50,
+        density=False,
+        alpha=0.6,
+        color="tab:red",
+        label="$R_n$",
+    )
+    ax1.set_title("Negative Particle Radius", fontsize=22)
+    ax1.set_xlabel(r"m", fontsize=18)
+    ax1.set_ylabel("Density", fontsize=18)
+    ax1.set_xlim(
+        parameter_set["Negative particle diffusivity [m2.s-1]"] * 0.95,
+        parameter_set["Negative particle diffusivity [m2.s-1]"] * 1.07,
+    )
+    # ax1.set_ylim(0, 1e4)
+    ax1.tick_params(axis="both", which="major", labelsize=18)
+    ax1.axvspan(
+        summary.get_summary_statistics()[("ci_lower")][0],
+        summary.get_summary_statistics()[("ci_upper")][0],
+        alpha=0.1,
+        color="tab:red",
+    )
+    format_axis(ax1)
+
+    # Top right subplot for Contact Resistance
+    ax2 = fig.add_subplot(gs[0, 1])
+    ax2.hist(
+        contact_samples,
+        bins=50,
+        density=False,
+        alpha=0.6,
+        color="tab:blue",
+        label="$R_c$",
+    )
+    ax2.set_title("Contact Resistance", fontsize=22)
+    ax2.set_xlabel(r"$\Omega$", fontsize=18)
+    ax2.set_xlim(
+        parameter_set["Contact resistance [Ohm]"] * 0.95,
+        parameter_set["Contact resistance [Ohm]"] * 1.05,
+    )
+    # ax2.set_ylim(0, 1e3)
+    ax2.tick_params(axis="both", which="major", labelsize=18)
+    ax2.axvspan(
+        summary.get_summary_statistics()[("ci_lower")][1],
+        summary.get_summary_statistics()[("ci_upper")][1],
+        alpha=0.1,
+        color="tab:blue",
+    )
+    format_axis(ax2)
+
+    # Bottom right subplot for sigma
+    ax3 = fig.add_subplot(gs[0, 2])
+    ax3.hist(
+        sigma_samples,
+        bins=50,
+        density=False,
+        alpha=0.6,
+        color="tab:purple",
+        label=r"$\sigma$",
+    )
+    ax3.set_title(r"Observation Noise, $\sigma$", fontsize=22)
+    ax3.set_xlabel("V", fontsize=18)
+    ax3.set_xlim(4e-3, 5.5e-3)
+    # ax3.set_ylim(0, 10 * 1.1)
+    ax3.tick_params(axis="both", which="major", labelsize=18)
+    ax3.axvspan(
+        summary.get_summary_statistics()[("ci_lower")][2],
+        summary.get_summary_statistics()[("ci_upper")][2],
+        alpha=0.1,
+        color="tab:purple",
+    )
+    format_axis(ax3)
+
+    # Adjust layout
+    plt.tight_layout()
+    plt.savefig("joss/figures/joss/posteriors.png")
+    plt.show()
