@@ -19,8 +19,8 @@ create_plot["landscape"] = False
 create_plot["minimising"] = False
 create_plot["maximising"] = False
 create_plot["gradient"] = True
-create_plot["evolution"] = True
-create_plot["heuristic"] = True
+create_plot["evolution"] = False
+create_plot["heuristic"] = False
 create_plot["posteriors"] = False
 
 
@@ -74,20 +74,21 @@ if create_plot["simulation"]:
     # Plot the data and the simulation
     simulation_plot_dict = pybop.plot.StandardPlot(
         x=solution["Time [s]"].data,
-        y=[values, corrupt_values, solution["Battery open-circuit voltage [V]"].data],
+        y=[corrupt_values, solution["Battery open-circuit voltage [V]"].data, values],
         trace_names=[
-            "Voltage [V]",
-            "Voltage with Gaussian noise [V]",
+            "Voltage w/ Gaussian noise [V]",
             "Open-circuit voltage [V]",
+            "Voltage [V]",
         ],
     )
-    simulation_plot_dict.traces[1].mode = "markers"
+    simulation_plot_dict.traces[0].mode = "markers"
     simulation_fig = simulation_plot_dict(show=False)
     simulation_fig.update_layout(
         xaxis_title="Time / s",
         yaxis_title="Voltage / V",
         width=576,
         height=576,
+        legend_traceorder="reversed",
     )
     simulation_fig.show()
     simulation_fig.write_image("joss/figures/simulation.png")
@@ -121,10 +122,10 @@ if create_plot["landscape"]:
             x=[initial_value[0]],
             y=[initial_value[1]],
             mode="markers",
-            marker_symbol="circle",
+            marker_symbol="x",
             marker=dict(
-                color="mediumspringgreen",
-                line_color="mediumspringgreen",
+                color="white",
+                line_color="black",
                 line_width=1,
                 size=14,
                 showscale=False,
@@ -139,8 +140,8 @@ if create_plot["landscape"]:
             mode="markers",
             marker_symbol="cross",
             marker=dict(
-                color="white",
-                line_color=None,
+                color="black",
+                line_color="white",
                 line_width=1,
                 size=14,
                 showscale=False,
@@ -305,6 +306,9 @@ heuristic_optimiser_classes = [
     # pybop.SciPyMinimize,  # with NelderMead
 ]
 
+# Define the cost
+cost = pybop.RootMeanSquaredError(problem)
+
 
 if create_plot["gradient"]:
     ## Show parameter convergence for difference optimisers and same cost function
@@ -317,20 +321,19 @@ if create_plot["gradient"]:
             kwargs["jac"] = True
             kwargs["tol"] = 1e-9
         elif optimiser is pybop.GradientDescent:
-            kwargs["sigma0"] = [1.2, 0.3]
+            kwargs["sigma0"] = [11, 2.25]  # [1.2, 0.3]
         elif optimiser is pybop.AdamW:
             kwargs["sigma0"] = 0.2
         # elif optimiser is pybop.IRPropMin:
         #     kwargs["sigma0"] = [4e-3,2e-2]
 
-        # Define the cost and optimiser
-        cost = pybop.SumSquaredError(problem)
+        # Construct the optimiser
         optim = optimiser(
             cost,
             verbose=True,
-            max_evaluations=60,
-            maxfev=60,
-            max_unchanged_iterations=60,
+            max_evaluations=50,
+            maxfev=50,
+            max_unchanged_iterations=50,
             **kwargs,
         )
 
@@ -376,8 +379,7 @@ if create_plot["evolution"]:
         # Define keyword arguments for the optimiser class
         kwargs = {}
 
-        # Define the cost and optimiser
-        cost = pybop.SumSquaredError(problem)
+        # Construct the optimiser
         if optimiser is pybop.SciPyDifferentialEvolution:
             optim = optimiser(
                 cost,
@@ -435,8 +437,7 @@ if create_plot["heuristic"]:
         # Define keyword arguments for the optimiser class
         kwargs = {}
 
-        # Define the cost and optimiser
-        cost = pybop.SumSquaredError(problem)
+        # Construct the optimiser
         optim = optimiser(
             cost,
             verbose=True,
