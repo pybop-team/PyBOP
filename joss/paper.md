@@ -1,7 +1,7 @@
 ---
 title: 'PyBOP: A Python package for battery model optimisation and parameterisation'
 tags:
-  - Python
+  - python
   - batteries
   - battery models
   - parameterisation
@@ -192,7 +192,7 @@ As an example, we consider the problem of maximising the gravimetric energy dens
 
 We gratefully acknowledge all [contributors](https://github.com/pybop-team/PyBOP?tab=readme-ov-file#contributors-) to this package. This work was supported by the Faraday Institution Multiscale Modelling (MSM) project (ref. FIRG059), UKRI's Horizon Europe Guarantee (ref. 10038031), and EU IntelLiGent project (ref. 101069765).
 
-[//]: # (# Discussion Points)
+[//]: # (# Open Discussion Points)
 
 [//]: # (EIS numerical identification)
 

@@ -18,9 +18,9 @@ create_plot["simulation"] = False
 create_plot["landscape"] = False
 create_plot["minimising"] = False
 create_plot["maximising"] = False
-create_plot["gradient"] = True
+create_plot["gradient"] = False
 create_plot["evolution"] = False
-create_plot["heuristic"] = False
+create_plot["heuristic"] = True
 create_plot["posteriors"] = False
 
 
@@ -441,10 +441,10 @@ if create_plot["heuristic"]:
         optim = optimiser(
             cost,
             verbose=True,
-            sigma0=0.02,
-            max_iterations=500,
-            max_unchanged_iterations=25,
-            max_evaluations=300,
+            sigma0=0.05,
+            max_iterations=150,
+            max_unchanged_iterations=150,
+            max_evaluations=150,
             **kwargs,
         )
 
@@ -474,6 +474,7 @@ if create_plot["heuristic"]:
     parameter_fig.data = []
     parameter_fig.add_traces(parameter_traces)
     parameter_fig = plotly.subplots.make_subplots(figure=parameter_fig, rows=2, cols=1)
+    parameter_fig.update_layout(yaxis1=dict(range=[1e-14, 10e-14]))
     parameter_fig.show()
     parameter_fig.write_image("joss/figures/heuristic_parameters.png")
 
