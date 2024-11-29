@@ -112,8 +112,8 @@
 \hypersetup{
   pdftitle={PyBOP: A Python package for battery model optimisation and
 parameterisation},
-  pdfauthor={Brady Planden, Nicola E. Courtier, Martin Robinson, Ferran
-Brosa Planella, David A. Howey},
+  pdfauthor={Brady Planden, Nicola E. Courtier, Martin Robinson, Agriya
+Khetarpal, Ferran Brosa Planella, David A. Howey},
   pdflang={en-US},
   colorlinks=true,
   linkcolor={Maroon},
@@ -165,7 +165,12 @@ parameterisation}
   ]{Martin Robinson%
     \,\orcidlink{0000-0002-1572-6782}\,%
     }
-\author[2,4%
+\author[4%
+  %
+  ]{Agriya Khetarpal%
+    \,\orcidlink{0000-0002-1112-1786}\,%
+    }
+\author[2,5%
   %
   ]{Ferran Brosa Planella%
     \,\orcidlink{0000-0001-6363-2812}\,%
@@ -184,13 +189,15 @@ Oxford, UK%
 \affil[3]{Research Software Engineering Group, University of Oxford,
 Oxford, UK%
   }
-\affil[4]{Mathematics Institute, University of Warwick, Coventry, UK%
+\affil[4]{Quansight Labs%
+  }
+\affil[5]{Mathematics Institute, University of Warwick, Coventry, UK%
   }
 \affil[$\mathparagraph$]{Corresponding author: %
    %
 }
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\date{28 November 2024}
+\date{29 November 2024}
 
 \begin{document}
 \maketitle
@@ -230,7 +237,7 @@ These methods are provided through interfaces to \texttt{PINTS}
 (\citeproc{ref-Clerx:2019}{Clerx et al., 2019}), \texttt{SciPy}
 (\citeproc{ref-SciPy:2020}{Virtanen et al., 2020}), in addition to the
 PyBOP's own algorithms such as Adaptive Moment Estimation with Weight
-Decay (AdamW), and Cuckoo search.
+Decay (AdamW), Gradient descent, and Cuckoo search.
 
 \texttt{PyBOP} supports the Battery Parameter eXchange (BPX) standard
 (\citeproc{ref-BPX:2023}{Korotkin et al., 2023}) for sharing battery
@@ -559,10 +566,33 @@ The underlying cost landscape explored by the optimiser is shown in
 \begin{figure}
 \centering
 \includegraphics[width=1\textwidth,height=\textheight]{figures/joss/sim-landscape.png}
-\caption{The cost landscape for the parameterisation problem with a root
-mean squared error cost function. \label{fig:inference-time-landscape}}
+\caption{The cost landscape for the time-series parameterisation problem
+with a root mean squared error cost function.
+\label{fig:inference-time-landscape}}
 \end{figure}
 
+As mentioned above, \texttt{PyBOP} also provides inference and
+optimisation capabilities through numerical impedance spectroscopy. This
+is based on the methods presented in the \texttt{pybamm-eis} package and
+allows fast impedance computation by inversion of the sparse PyBaMM mass
+matrix after scaling and subtraction of the auto-differentiated Jacobian
+matrix. More information about this procedure is available in
+(\citeproc{ref-pybamm-eis}{Dhoot et al., n.d.}). The
+\autoref{fig:impedance-landscape} below shows the numerical impedance
+prediction available in \texttt{PyBOP} alongside the cost landscape
+constructed for the inference task. At the time of publication,
+gradient-based optimisation and sampling methods are not available when
+using an impedance workflow.
+
+\begin{figure}
+\centering
+\includegraphics[width=1\textwidth,height=\textheight]{figures/joss/impedance.png}
+\caption{The cost landscape for the frequency domain impedance
+parameterisation problem with a root mean squared error cost function at
+5\% SOC. \label{fig:impedance-landscape}}
+\end{figure}
+
+Moving forward, we will continue with identification in the time-domain.
 As gradient information is available for this problem, the choice of
 distance-based cost function and optimiser is not constrained. Due to
 the different magnitudes of the two parameters, we apply the logarithmic
@@ -782,6 +812,11 @@ J., Buchlovsky, P., Budden, D., Cai, T., Clark, A., Danihelka, I.,
 Dedieu, A., Fantacci, C., Godwin, J., Jones, C., Hemsley, R., Hennigan,
 T., Hessel, M., Hou, S., \ldots{} Viola, F. (2020). \emph{The
 {D}eep{M}ind {JAX} {E}cosystem}. \url{http://github.com/google-deepmind}
+
+\bibitem[\citeproctext]{ref-pybamm-eis}
+Dhoot, R., Timms, R., \& Please, C. (n.d.). \emph{PyBaMM EIS: Efficient
+linear algebra methods to determine li-ion battery behaviour} (Version
+0.1.4). \url{https://www.github.com/pybamm-team/pybamm-eis}
 
 \bibitem[\citeproctext]{ref-Doyle:1993}
 Doyle, M., Fuller, T. F., \& Newman, J. (1993). {Modeling of

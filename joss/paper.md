@@ -20,9 +20,9 @@ authors:
     affiliation: 3
   - name: Agriya Khetarpal
     orcid: 0000-0002-1112-1786
-    affiliation: 5
+    affiliation: 4
   - name: Ferran Brosa Planella
-    affiliation: "2, 4"
+    affiliation: "2, 5"
     orcid: 0000-0001-6363-2812
   - name: David A. Howey
     affiliation: "1, 2"
@@ -34,11 +34,11 @@ affiliations:
    index: 2
  - name: Research Software Engineering Group, University of Oxford, Oxford, UK
    index: 3
- - name:  Mathematics Institute, University of Warwick, Coventry, UK
+ - name: Quansight Labs
    index: 4
- - name: New delhi?
+ - name:  Mathematics Institute, University of Warwick, Coventry, UK
    index: 5
-date: 28 November 2024
+date: 29 November 2024
 bibliography: paper.bib
 repository: https://github.com/pybop-team/PyBOP
 ---
@@ -203,9 +203,9 @@ We gratefully acknowledge all [contributors](https://github.com/pybop-team/PyBOP
 
 [//]: # (# Open Discussion Points)
 
-[//]: # (EIS numerical identification)
-
 [//]: # (- Performance discussion &#40;multiprocessing / JAX&#41;)
+
+[//]: # (- Update pybop high level figure for new contour colors)
 
 [//]: # (- Feasibility checks on identified parameters)
 
