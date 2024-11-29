@@ -64,6 +64,7 @@ from .transformation.transformations import (
     ScaledTransformation,
     LogTransformation,
     ComposedTransformation,
+    UnitHyperCube,
 )
 
 #
