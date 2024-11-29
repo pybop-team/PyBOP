@@ -543,7 +543,7 @@ def convert_physical_to_grouped_parameters(parameter_set):
 
     # Grouped parameters
     Q_meas = (Q_meas_n + Q_meas_p) / 2
-    Q_e = F * ce0 * L * A
+    Q_e = F * epsilon_sep * ce0 * L * A
 
     zeta_p = epsilon_p / epsilon_sep
     zeta_n = epsilon_n / epsilon_sep
@@ -551,9 +551,9 @@ def convert_physical_to_grouped_parameters(parameter_set):
     tau_d_p = R_p**2 / D_p
     tau_d_n = R_n**2 / D_n
 
-    tau_e_p = L**2 / (epsilon_p**b_p * De)
-    tau_e_n = L**2 / (epsilon_n**b_n * De)
-    tau_e_sep = L**2 / (epsilon_sep**b_sep * De)
+    tau_e_p = epsilon_sep * L**2 / (epsilon_p**b_p * De)
+    tau_e_n = epsilon_sep * L**2 / (epsilon_n**b_n * De)
+    tau_e_sep = epsilon_sep * L**2 / (epsilon_sep**b_sep * De)
 
     tau_ct_p = F * R_p / (m_p * np.sqrt(ce0))
     tau_ct_n = F * R_n / (m_n * np.sqrt(ce0))
