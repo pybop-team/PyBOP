@@ -15,13 +15,14 @@ np.random.seed(8)
 # Choose which plots to show and save
 create_plot = {}
 create_plot["simulation"] = False
-create_plot["landscape"] = False
+create_plot["landscape"] = True
 create_plot["minimising"] = False
 create_plot["maximising"] = False
 create_plot["gradient"] = False
 create_plot["evolution"] = False
-create_plot["heuristic"] = True
+create_plot["heuristic"] = False
 create_plot["posteriors"] = False
+create_plot["eis"] = True
 
 
 # Parameter set and model definition
@@ -127,7 +128,7 @@ if create_plot["landscape"]:
                 color="white",
                 line_color="black",
                 line_width=1,
-                size=14,
+                size=16,
                 showscale=False,
             ),
             name="Initial values",
@@ -143,7 +144,7 @@ if create_plot["landscape"]:
                 color="black",
                 line_color="white",
                 line_width=1,
-                size=14,
+                size=16,
                 showscale=False,
             ),
             name="True values",
@@ -607,3 +608,101 @@ if create_plot["posteriors"]:
     plt.tight_layout()
     plt.savefig("joss/figures/joss/posteriors.png")
     plt.show()
+
+
+if create_plot["eis"]:
+
+    def noise(sigma, values):
+        # Generate real part noise
+        real_noise = np.random.normal(0, sigma, values)
+
+        # Generate imaginary part noise
+        imag_noise = np.random.normal(0, sigma, values)
+
+        # Combine them into a complex noise
+        return real_noise + 1j * imag_noise
+
+    var = pybamm.standard_spatial_vars
+    var_pts = {var.x_n: 10, var.x_s: 10, var.x_p: 10, var.r_n: 30, var.r_p: 30}
+
+    # Construct model
+    model = pybop.lithium_ion.SPMe(
+        parameter_set=parameter_set,
+        eis=True,
+        options={"surface form": "differential", "contact resistance": "true"},
+        var_pts=var_pts,
+    )
+
+    initial_state = {"Initial SoC": 0.05}
+    n_frequency = 35
+    sigma0 = 5e-4
+    f_eval = np.logspace(-3.75, 4, n_frequency)
+
+    # Create synthetic data for parameter inference
+    sim = model.simulateEIS(
+        inputs={
+            "Negative particle diffusivity [m2.s-1]": parameter_set[
+                "Negative particle diffusivity [m2.s-1]"
+            ],
+            "Contact resistance [Ohm]": 0.01,
+        },
+        f_eval=f_eval,
+        initial_state=initial_state,
+    )
+
+    # Form dataset
+    dataset = pybop.Dataset(
+        {
+            "Frequency [Hz]": f_eval,
+            "Current function [A]": np.zeros(len(f_eval)),
+            "Impedance": sim["Impedance"] + noise(sigma0, len(sim["Impedance"])),
+        }
+    )
+
+    signal = ["Impedance"]
+    problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
+    cost = pybop.RootMeanSquaredError(problem)
+
+    optim = pybop.CMAES(cost, max_iterations=75, min_iterations=75, sigma0=0.25)
+    results = optim.run()
+
+    parameter_fig = pybop.plot.nyquist(problem, results.x, title="")
+    parameter_fig[0].write_image("joss/figures/impedance_spectrum.png")
+
+    landscape_fig = pybop.plot.contour(cost, steps=30, title="")
+    initial_value = parameters.initial_value()
+    true_value = parameters.true_value()
+    landscape_fig.add_trace(
+        go.Scatter(
+            x=[initial_value[0]],
+            y=[initial_value[1]],
+            mode="markers",
+            marker_symbol="x",
+            marker=dict(
+                color="white",
+                line_color="black",
+                line_width=1,
+                size=16,
+                showscale=False,
+            ),
+            name="Initial values",
+        )
+    )
+    landscape_fig.add_trace(
+        go.Scatter(
+            x=[true_value[0]],
+            y=[true_value[1]],
+            mode="markers",
+            marker_symbol="cross",
+            marker=dict(
+                color="black",
+                line_color="white",
+                line_width=1,
+                size=16,
+                showscale=False,
+            ),
+            name="True values",
+        )
+    )
+    landscape_fig.show()
+    landscape_fig.write_image("joss/figures/impedance_contour.png")

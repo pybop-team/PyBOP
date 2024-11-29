@@ -18,6 +18,9 @@ authors:
   - name: Martin Robinson
     orcid: 0000-0002-1572-6782
     affiliation: 3
+  - name: Agriya Khetarpal
+    orcid: 0000-0002-1112-1786
+    affiliation: 5
   - name: Ferran Brosa Planella
     affiliation: "2, 4"
     orcid: 0000-0001-6363-2812
@@ -33,6 +36,8 @@ affiliations:
    index: 3
  - name:  Mathematics Institute, University of Warwick, Coventry, UK
    index: 4
+ - name: New delhi?
+   index: 5
 date: 28 November 2024
 bibliography: paper.bib
 repository: https://github.com/pybop-team/PyBOP
@@ -46,7 +51,7 @@ Similarly, `PyBOP` can be used for parameter design optimisation under user-defi
 
 # Statement of need
 
-`PyBOP` is a Python package designed to provide a user-friendly, object-oriented interface for optimising battery models. `PyBOP` leverages the open-source `PyBaMM` package [@Sulzer:2021] to formulate and solve of these battery models. `PyBOP` is intended to serve a broad audience of students, engineers, and researchers in both academia and the battery industry by enabling the use of predictive battery models where previously this was not possible. `PyBOP` emphasises clear and informative diagnostics and workflows for users of varying expertise, by providing advanced optimisation and sampling algorithms. These methods are provided through interfaces to `PINTS` [@Clerx:2019], `SciPy` [@SciPy:2020], in addition to the PyBOP's own algorithms such as Adaptive Moment Estimation with Weight Decay (AdamW), and Cuckoo search.
+`PyBOP` is a Python package designed to provide a user-friendly, object-oriented interface for optimising battery models. `PyBOP` leverages the open-source `PyBaMM` package [@Sulzer:2021] to formulate and solve of these battery models. `PyBOP` is intended to serve a broad audience of students, engineers, and researchers in both academia and the battery industry by enabling the use of predictive battery models where previously this was not possible. `PyBOP` emphasises clear and informative diagnostics and workflows for users of varying expertise, by providing advanced optimisation and sampling algorithms. These methods are provided through interfaces to `PINTS` [@Clerx:2019], `SciPy` [@SciPy:2020], in addition to the PyBOP's own algorithms such as Adaptive Moment Estimation with Weight Decay (AdamW), Gradient descent, and Cuckoo search.
 
 `PyBOP` supports the Battery Parameter eXchange (BPX) standard [@BPX:2023] for sharing battery parameter sets. As these parameter sets are costly to obtain due to: the equipment and time required for characterisation experiments, the need for battery domain knowledge, and the computational cost of parameter estimation. `PyBOP` reduces these costs by providing fast computational estimation with parameter set interoperability.
 
@@ -144,9 +149,13 @@ where $\mathcal{L} : \mathbf{\theta} \mapsto [0,\infty)$ is a cost (or likelihoo
 
 Next, we demonstrate the fitting of synthetic data where the system parameters are known. In this example problem, we use `PyBaMM`'s implementation of the single particle model (SPM) with an added contact resistance submodel. We assume that the battery model is already parameterised except for two dynamic parameters, namely the lithium diffusivity of the negative electrode active material particle (denoted "negative particle diffusivity") and the contact resistance. We generate synthetic data from a one-hour discharge from 100% state of charge, to 0% (denoted as 1C rate), followed by 30 minutes of relaxation. This data is then corrupted with zero mean Gaussian noise of amplitude 2mV, shown by the dots in \autoref{fig:inference-time-landscape} (left). The initial states are assumed known, although such an assumption is not generally necessary. The underlying cost landscape explored by the optimiser is shown in \autoref{fig:inference-time-landscape} (right).
 
-![The cost landscape for the parameterisation problem with a root mean squared error cost function. \label{fig:inference-time-landscape}](figures/joss/sim-landscape.png){ width=100% }
+![The cost landscape for the time-series parameterisation problem with a root mean squared error cost function. \label{fig:inference-time-landscape}](figures/joss/sim-landscape.png){ width=100% }
 
- As gradient information is available for this problem, the choice of distance-based cost function and optimiser is not constrained. Due to the different magnitudes of the two parameters, we apply  the logarithmic parameter transformation offered by `PyBOP`. This transforms the optimisers search space of the optimiser to allow for a common step size between the parameters, which is generally is not required, but improves convergence in this problem. As a demonstration of the parameterisation capabilities of `PyBOP`, \autoref{fig:convergence-min-max} (left) shows the rate of convergence for each of the distance-minimising cost functions, while \autoref{fig:convergence-min-max} (right) shows analogous results for maximising a likelihood. The optimisation is performed with SciPy Minimize using the gradient-based L-BFGS-B method.
+As mentioned above, `PyBOP` also provides inference and optimisation capabilities through numerical impedance spectroscopy. This is based on the methods presented in the `pybamm-eis` package and allows fast impedance computation by inversion of the sparse PyBaMM mass matrix after scaling and subtraction of the auto-differentiated Jacobian matrix. More information about this procedure is available in [@pybamm-eis]. The \autoref{fig:impedance-landscape} below shows the numerical impedance prediction available in `PyBOP` alongside the cost landscape constructed for the inference task. At the time of publication, gradient-based optimisation and sampling methods are not available when using an impedance workflow.
+
+![The cost landscape for the frequency domain impedance parameterisation problem with a root mean squared error cost function at 5% SOC. \label{fig:impedance-landscape}](figures/joss/impedance.png){ width=100% }
+
+ Moving forward, we will continue with identification in the time-domain. As gradient information is available for this problem, the choice of distance-based cost function and optimiser is not constrained. Due to the different magnitudes of the two parameters, we apply  the logarithmic parameter transformation offered by `PyBOP`. This transforms the optimisers search space of the optimiser to allow for a common step size between the parameters, which is generally is not required, but improves convergence in this problem. As a demonstration of the parameterisation capabilities of `PyBOP`, \autoref{fig:convergence-min-max} (left) shows the rate of convergence for each of the distance-minimising cost functions, while \autoref{fig:convergence-min-max} (right) shows analogous results for maximising a likelihood. The optimisation is performed with SciPy Minimize using the gradient-based L-BFGS-B method.
 
 ![Convergence in the likelihood functions obtained using various likelihood functions and the L-BFGS-B algorithm. \label{fig:convergence-min-max}](figures/joss/converge.png){ width=100% }
 

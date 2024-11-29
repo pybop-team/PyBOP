@@ -120,13 +120,13 @@ def nyquist(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
             showgrid=True,
             gridwidth=1,
             gridcolor="lightgray",
-            minor=dict(showgrid=True, gridwidth=0.5, gridcolor="lightgray"),
+            zerolinecolor="lightgray",
         )
         fig.update_yaxes(
             showgrid=True,
             gridwidth=1,
             gridcolor="lightgray",
-            minor=dict(showgrid=True, gridwidth=0.5, gridcolor="lightgray"),
+            zerolinecolor="lightgray",
         )
 
         # Overwrite with user-kwargs
