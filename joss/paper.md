@@ -2,10 +2,10 @@
 title: 'PyBOP: A Python package for battery model optimisation and parameterisation'
 tags:
   - python
-  - batteries
-  - battery models
-  - parameterisation
-  - parameter inference
+  - battery
+  - model
+  - parameter
+  - inference
   - design optimisation
 authors:
   - name: Brady Planden
@@ -45,21 +45,21 @@ repository: https://github.com/pybop-team/PyBOP
 
 # Summary
 
-The Python Battery Optimisation and Parameterisation (`PyBOP`) package provides a set of methods for the parameterisation and optimisation of battery models, offering both Bayesian and frequentist approaches with example workflows to assist the user. `PyBOP` has been developed to enable parameter identification of various battery models, including the electrochemical and equivalent circuit models provided by the popular open-source `PyBaMM` package [@Sulzer:2021].
+The Python Battery Optimisation and Parameterisation (`PyBOP`) package provides methods for parameterising and optimising battery models, offering both deterministic and stochastic approaches with example workflows to assist users. `PyBOP` enables parameter identification of various battery models, including the electrochemical and equivalent circuit models provided by the popular open-source `PyBaMM` package [@Sulzer:2021].
 
-Similarly, `PyBOP` can be used for parameter design optimisation under user-defined operating conditions across a variety of model structures. `PyBOP` allows battery model parameterisation using a range of methods with diagnostics on the performance and convergence of the identified or optimised parameters. The identified parameters can be used for prediction, on-line control and design optimisation, all of which support improved battery utilisation and development.
+Similarly, `PyBOP` can be used for design optimisation under user-defined operating conditions across a variety of model structures and design goals. `PyBOP` facilitates model parameterisation using a range of methods, with diagnostics for examining the performance and convergence of the resulting parameters. Identified parameters can be used for prediction, on-line control, and design optimisation, supporting improved battery utilisation and development.
 
 # Statement of need
 
-`PyBOP` is a Python package designed to provide a user-friendly, object-oriented interface for optimising battery models. `PyBOP` leverages the open-source `PyBaMM` package [@Sulzer:2021] to formulate and solve of these battery models. `PyBOP` is intended to serve a broad audience of students, engineers, and researchers in both academia and the battery industry by enabling the use of predictive battery models where previously this was not possible. `PyBOP` emphasises clear and informative diagnostics and workflows for users of varying expertise, by providing advanced optimisation and sampling algorithms. These methods are provided through interfaces to `PINTS` [@Clerx:2019], `SciPy` [@SciPy:2020], in addition to the `PyBOP`'s own algorithms such as Adaptive Moment Estimation with Weight Decay (AdamW), Gradient descent, and Cuckoo search.
+`PyBOP` is a Python package that provides a user-friendly, object-oriented interface for optimising battery model parameters. `PyBOP` leverages the open-source `PyBaMM` package [@Sulzer:2021] to formulate and solve battery models. `PyBOP` is intended to serve a broad audience including students, engineers, and researchers in academia and industry, enabling the use of battery models for performance prediction where previously this was not possible. `PyBOP` emphasises clear and informative diagnostics and workflows to support users with varying expertise, and provides access to a wide range of different optimisation and sampling algorithms. These methods are provided through interfaces to `PINTS` [@Clerx:2019], `SciPy` [@SciPy:2020], and `PyBOP`'s own algorithms such as adaptive moment estimation with weight decay (AdamW), gradient descent, and Cuckoo search.
 
-`PyBOP` supports the Battery Parameter eXchange (BPX) standard [@BPX:2023] for sharing battery parameter sets. As these parameter sets are costly to obtain due to: the equipment and time required for characterisation experiments, the need for battery domain knowledge, and the computational cost of parameter estimation. `PyBOP` reduces these costs by providing fast computational estimation with parameter set interoperability.
+`PyBOP` supports the battery parameter exchange (BPX) standard [@BPX:2023] for sharing battery parameter sets. These parameter sets are typically costly to obtain due to the specialised equipment and time required for characterisation experiments, the need for battery domain knowledge, and the computational cost of parameter estimation. `PyBOP` reduces these costs by providing fast parameter estimation, standardised workflows, and parameter set interoperability (via BPX).
 
-This package complements other lithium-ion battery modelling packages built around `PyBaMM`, such as `liionpack` for battery pack simulation [@Tranter2022] and `pybamm-eis` for numerical impedance spectroscopy, as the identified parameters from `PyBOP` are easily exportable.
+This package complements other lithium-ion battery modelling packages built around `PyBaMM`, such as `liionpack` for battery pack simulation [@Tranter2022] and `pybamm-eis` for numerical impedance spectroscopy, since the identified parameters from `PyBOP` are easily exportable to these other packages.
 
 # Architecture
 
-`PyBOP` has a layered data structure designed to compute and process the forward model predictions and to package the necessary information for the optimisation and sampling algorithms. The forward model is solved using the popular battery modelling package, `PyBaMM`, with construction, parameterisation, and discretisation managed by `PyBOP`'s model interface to `PyBaMM`. This approach provides a robust object construction process with a consistent interface between the models and optimisers. The statistical methods and optimisation algorithms are then constructed to interface cleanly with the forward model predictions. Furthermore, identifiability metrics are provided alongside the estimated parameters through Hessian approximation of the cost functions in the frequentist workflows and posterior moments in the Bayesian workflows.
+`PyBOP` has a layered structure designed to compute forward model predictions, process the results, and package the necessary information for the optimisation and sampling algorithms. The forward model is solved using the popular battery modelling package, `PyBaMM`, with construction, parameterisation, and discretisation managed by `PyBOP`'s model interface to `PyBaMM`. This provides a robust object construction process with a consistent interface between models and optimisers. The statistical methods and optimisation algorithms are constructed to interface cleanly with the forward model predictions. Furthermore, identifiability metrics are provided with the estimated parameters (through Hessian approximation of the cost functions in frequentist workflows, and posterior distributions in Bayesian workflows).
 
 ![PyBOP's interface to supporting funding agencies, alongside a visualisation of the general workflow for parameterisation and optimisation \label{fig:high-level}](figures/PyBOP-high-level.pdf){width=80%}
 
