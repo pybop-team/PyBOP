@@ -236,8 +236,8 @@ expertise, by providing advanced optimisation and sampling algorithms.
 These methods are provided through interfaces to \texttt{PINTS}
 (\citeproc{ref-Clerx:2019}{Clerx et al., 2019}), \texttt{SciPy}
 (\citeproc{ref-SciPy:2020}{Virtanen et al., 2020}), in addition to the
-PyBOP's own algorithms such as Adaptive Moment Estimation with Weight
-Decay (AdamW), Gradient descent, and Cuckoo search.
+\texttt{PyBOP}'s own algorithms such as Adaptive Moment Estimation with
+Weight Decay (AdamW), Gradient descent, and Cuckoo search.
 
 \texttt{PyBOP} supports the Battery Parameter eXchange (BPX) standard
 (\citeproc{ref-BPX:2023}{Korotkin et al., 2023}) for sharing battery
@@ -260,14 +260,14 @@ process the forward model predictions and to package the necessary
 information for the optimisation and sampling algorithms. The forward
 model is solved using the popular battery modelling package,
 \texttt{PyBaMM}, with construction, parameterisation, and discretisation
-managed by PyBOP's model interface to PyBaMM. This approach provides a
-robust object construction process with a consistent interface between
-the models and optimisers. The statistical methods and optimisation
-algorithms are then constructed to interface cleanly with the forward
-model predictions. Furthermore, identifiability metrics are provided
-alongside the estimated parameters through Hessian approximation of the
-cost functions in the frequentist workflows and posterior moments in the
-Bayesian workflows.
+managed by \texttt{PyBOP}'s model interface to \texttt{PyBaMM}. This
+approach provides a robust object construction process with a consistent
+interface between the models and optimisers. The statistical methods and
+optimisation algorithms are then constructed to interface cleanly with
+the forward model predictions. Furthermore, identifiability metrics are
+provided alongside the estimated parameters through Hessian
+approximation of the cost functions in the frequentist workflows and
+posterior moments in the Bayesian workflows.
 
 \begin{figure}
 \centering
@@ -292,7 +292,7 @@ is performed when geometric parameters are optimised. In this situation,
 \texttt{PyBOP} minimally rediscretises the \texttt{PyBaMM} model while
 maintaining the problem, cost, and optimiser objects, providing improved
 performance benefits to users. Alongside construction of the forward
-model, \texttt{PyBOP}`s model class provides methods for obtaining
+model, \texttt{PyBOP}'s model class provides methods for obtaining
 sensitivities from the prediction, enabling gradient-based optimisation
 algorithms. This prediction, along with it's corresponding
 sensitivities, is provided to the problem class for processing and
@@ -302,8 +302,8 @@ for optimisation. For deterministic optimisation, the optimisers
 minimise the corresponding cost function or the negative log-likelihood
 if a likelihood class is provided. Bayesian inference is provided by
 Monte Carlo sampling classes, which accept the LogPosterior class and
-sample from it using Pints' based Monte Carlo algorithms at the time of
-submission. In the typical workflow, the classes in
+sample from it using \texttt{PINTS} based Monte Carlo algorithms at the
+time of submission. In the typical workflow, the classes in
 \autoref{fig:classes} are constructed in sequence.
 
 In addition to the core architecture, \texttt{PyBOP} provides several
@@ -315,15 +315,15 @@ translated into the frequency domain with a linear solution used to
 compute the battery model impedance. In this situation, the forward
 models are constructed within the spatial rediscretisation workflow,
 allowing for geometric parameter inference from EIS forward model
-predictions. Furthermore, \texttt{PyBOP} builds on the JAX
+predictions. Furthermore, \texttt{PyBOP} builds on the \texttt{JAX}
 (\citeproc{ref-jax:2018}{Bradbury et al., 2018}) numerical solvers
-provided by \texttt{PyBaMM} by providing JAX-based cost functions for
-automatic forward model differentiation with respect to the parameters.
-This functionality provides a performance improvement alongside an
-interface to JAX-based inference packages, such as Numpyro
-(\citeproc{ref-numpyro:2019}{Phan et al., 2019}), BlackJAX
-(\citeproc{ref-blackjax:2024}{Cabezas et al., 2024}), and Optax
-(\citeproc{ref-optax:2020}{DeepMind et al., 2020}).
+provided by \texttt{PyBaMM} by providing \texttt{JAX}-based cost
+functions for automatic forward model differentiation with respect to
+the parameters. This functionality provides a performance improvement
+alongside an interface to JAX-based inference packages, such as
+\texttt{Numpyro} (\citeproc{ref-numpyro:2019}{Phan et al., 2019}),
+\texttt{BlackJAX} (\citeproc{ref-blackjax:2024}{Cabezas et al., 2024}),
+and \texttt{Optax} (\citeproc{ref-optax:2020}{DeepMind et al., 2020}).
 
 \begin{figure}
 \centering
@@ -334,9 +334,8 @@ optimisation workflow. \label{fig:classes}}
 \end{figure}
 
 The currently implemented subclasses for the model, problem, and cost
-classes are listed in \autoref{tab:subclasses}. The cost functions are
-grouped by problem type, while the model and optimiser classes can be
-selected in combination with any problem-cost pair.
+classes are listed in \autoref{tab:subclasses}. The model and optimiser
+classes can be selected in combination with any problem-cost pair.
 
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.4458}}
@@ -367,31 +366,33 @@ Cost / Likelihood Functions
 \bottomrule\noalign{}
 \endlastfoot
 Single particle model (SPM) & Fitting problem & Sum squared error \\
-SPM with electrolyte (SPMe) & & Root mean squared error \\
-Doyle-Fuller-Newman (DFN) & & Minkowski \\
+SPM with electrolyte (SPMe) & Design problem & Root mean squared
+error \\
+Doyle-Fuller-Newman (DFN) & Observer & Minkowski \\
 Many particle model (MPM) & & Sum of power \\
 Multi-species multi-reaction (MSMR) & & Gaussian log likelihood \\
 Weppner Huggins & & Maximum a posteriori \\
-Equivalent circuit model (ECM) & Observer & Unscented Kalman filter \\
-& Design problem & Gravimetric energy density \\
-& & Volumetric energy density \\
+Equivalent circuit model (ECM) & & Volumetric energy density \\
+& & Gravimetric energy density \\
+& & Unscented Kalman filter \\
 \end{longtable}
 
 Similarly, the current algorithms available for optimisation tasks are
-presented in \autoref{tab:optimisers}. From now on, the point-based
-parameterisation and design optimisation tasks will simply be referred
-to as optimisation tasks. This simplification can be justified by
-examining \autoref{eqn:parameterisation} and \autoref{eqn:design} and
-confirming that deterministic parameterisation can be viewed as an
-optimisation task to minimise a distance-based cost function.
+presented in \autoref{tab:optimisers}. It should be noted that
+\texttt{SciPy} minimize has gradient and non-gradient methods. From now
+on, the point-based parameterisation and design optimisation tasks will
+simply be referred to as optimisation tasks. This simplification can be
+justified by examining \autoref{eqn:parameterisation} and
+\autoref{eqn:design} and confirming that deterministic parameterisation
+can be viewed as an optimisation task to minimise a distance-based cost
+function.
 
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.4062}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.2604}}@{}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.4722}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.2963}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.2315}}@{}}
 \caption{The currently supported optimisation algorithms classified by
-candidate solution type, including gradient information. (*) Scipy
-minimize has gradient and non-gradient methods.
+candidate solution type, including gradient information.
 \label{tab:optimisers}}\tabularnewline
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
@@ -420,7 +421,7 @@ adaptation (CMA-ES) & Particle swarm (PSO) \\
 Improved resilient backpropagation (iRProp-) & Exponential natural
 (xNES) & Nelder-Mead \\
 Gradient descent & Separable natural (sNES) & Cuckoo search \\
-SciPy minimize (*) & SciPy differential evolution & \\
+SciPy minimize & SciPy differential evolution & \\
 & & \\
 \end{longtable}
 
@@ -442,8 +443,8 @@ are listed in \autoref{tab:samplers}.
   >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.1379}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2069}}
   >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2586}}@{}}
-\caption{Sampling methods supported by PyBOP, classified according to
-the proposed method. \label{tab:samplers}}\tabularnewline
+\caption{Sampling methods supported by \texttt{PyBOP}, classified
+according to the proposed method. \label{tab:samplers}}\tabularnewline
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 Gradient-based
@@ -474,7 +475,7 @@ Other
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-Monomial Gamma & Delayed Rejection Adaptive & Rank Shrinking &
+Monomial Gamma & Delayed Rejection Adaptive & Rank---Shrinking &
 Differential Evolution & Metropolis Random Walk \\
 No-U-Turn & Haario Bardenet & Doubling & & Emcee Hammer \\
 Hamiltonian & Haario & Stepout & & Metropolis Adjusted Langevin \\
@@ -642,8 +643,8 @@ The order from left to right corresponds to the entries in
 \end{figure}
 
 This parameterisation task can also be approached from a Bayesian
-perspective, which we will present below using PyBOP's sampler methods.
-The optimisation equation presented in equation
+perspective, which we will present below using \texttt{PyBOP}'s sampler
+methods. The optimisation equation presented in equation
 \autoref{eqn:parameterisation} does not represent the Bayesian parameter
 identification task, and as such we introduce the Bayes theorem as,
 
@@ -670,12 +671,12 @@ variety of methods, including gradient-based methods such as No-U-Turn
 heuristic methods such as Differential Evolution
 (\citeproc{ref-DiffEvolution:2006}{Braak, 2006}), and finally
 conventional methods based on random sampling with rejection criteria
-(\citeproc{ref-metropolis:1953}{Metropolis et al., 1953}). PyBOP offers
-a sampling class that provides an interface to these samplers, which are
-supported by the Probabilistic Inference of Noise Time-Series (PINTS)
-package. \autoref{fig:posteriors} below shows the sampled posterior for
-the synthetic workflow described above, using an adaptive
-covariance-based sampler, Haario Bardenet
+(\citeproc{ref-metropolis:1953}{Metropolis et al., 1953}).
+\texttt{PyBOP} offers a sampling class that provides an interface to
+these samplers, which are supported by the Probabilistic Inference of
+Noise Time-Series (\texttt{PINTS}) package. \autoref{fig:posteriors}
+below shows the sampled posterior for the synthetic workflow described
+above, using an adaptive covariance-based sampler, Haario Bardenet
 (\citeproc{ref-Haario:2001}{Haario et al., 2001}).
 
 \begin{figure}
