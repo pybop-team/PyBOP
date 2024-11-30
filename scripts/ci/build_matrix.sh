@@ -15,7 +15,7 @@ os=("ubuntu-latest" "windows-latest" "macos-13" "macos-14")
 pybamm_version=($(curl -s https://pypi.org/pypi/pybamm/json | jq -r '.releases | keys[]' | grep -v rc | sort -V | tail -n 1 | paste -sd " " -))
 
 # This command fetches the last PyBaMM versions including release candidates from PyPI
-#pybamm_version=($(curl -s https://pypi.org/pypi/pybamm/json | jq -r '.releases | keys[]' | tail -n 1 | paste -sd " " -))
+#pybamm_version=($(curl -s https://pypi.org/pypi/pybamm/json | jq -r '.releases | keys[]' | sort -V | tail -n 1 | paste -sd " " -))
 
 # open dict
 json='{
