@@ -94,14 +94,17 @@ class MultiFittingProblem(BaseProblem):
         self.parameters.update(values=list(inputs.values()))
 
         combined_signal = []
+        combined_solutions = []
 
         for problem in self.problems:
             problem_inputs = problem.parameters.as_dict()
             signal_values = problem.evaluate(problem_inputs)
+            combined_solutions.append(problem.solution)
 
             # Collect signals
             for signal in problem.signal:
                 combined_signal.extend(signal_values[signal])
+        self._solution = combined_solutions
 
         return {"Combined signal": np.asarray(combined_signal)}
 

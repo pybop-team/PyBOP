@@ -302,6 +302,8 @@ class OptimisationResult:
         Number of iterations performed by the optimiser.
     scipy_result : scipy.optimize.OptimizeResult, optional
         The result obtained from a SciPy optimiser.
+    pybamm_solution: pybamm.Solution or list[pybamm.Solution], optional
+        The final solution object(s) obtained from the optimisation.
     """
 
     def __init__(
@@ -313,6 +315,7 @@ class OptimisationResult:
         optim: Optional[BaseOptimiser] = None,
         time: Optional[float] = None,
         scipy_result=None,
+        pybamm_solution=None,
     ):
         self.x = x
         self.cost = cost
@@ -327,6 +330,8 @@ class OptimisationResult:
             self.x0 = self.optim.parameters.initial_value()
         else:
             self.x0 = None
+
+        self.pybamm_solution = pybamm_solution
 
         # Check that the parameters produce finite cost, and are physically viable
         self._validate_parameters()
@@ -403,5 +408,6 @@ class OptimisationResult:
             f"  Final cost: {self.final_cost}\n"
             f"  Optimisation time: {self.time} seconds\n"
             f"  Number of iterations: {self.n_iterations}\n"
-            f"  SciPy result available: {'Yes' if self.scipy_result else 'No'}"
+            f"  SciPy result available: {'Yes' if self.scipy_result else 'No'}\n"
+            f"  PyBaMM Solution available: {'Yes' if self.pybamm_solution else 'No'}"
         )

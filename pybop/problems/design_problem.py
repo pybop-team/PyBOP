@@ -148,6 +148,8 @@ class DesignProblem(BaseProblem):
                 for signal in [*self.signal, *self.additional_variables]
             }
 
+        self._solution = sol
+
         return {
             signal: sol[signal].data
             for signal in self.signal + self.additional_variables

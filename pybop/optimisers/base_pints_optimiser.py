@@ -359,6 +359,7 @@ class BasePintsOptimiser(BaseOptimiser):
             n_iterations=self._iterations,
             optim=self,
             time=total_time,
+            pybamm_solution=self.cost.problem.solution,
         )
 
     def f_guessed_tracking(self):

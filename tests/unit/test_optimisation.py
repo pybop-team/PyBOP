@@ -507,7 +507,8 @@ class TestOptimisation:
             f"  Final cost: {results.final_cost}\n"
             f"  Optimisation time: {results.time} seconds\n"
             f"  Number of iterations: {results.n_iterations}\n"
-            f"  SciPy result available: No"
+            f"  SciPy result available: No\n"
+            f"  PyBaMM Solution available: No"
         )
 
         # Test guessed values
@@ -550,7 +551,8 @@ class TestOptimisation:
             f"  Final cost: {results.final_cost}\n"
             f"  Optimisation time: {results.time} seconds\n"
             f"  Number of iterations: {results.n_iterations}\n"
-            f"  SciPy result available: No"
+            f"  SciPy result available: No\n"
+            f"  PyBaMM Solution available: Yes"
         )
 
         optim.set_max_unchanged_iterations()
