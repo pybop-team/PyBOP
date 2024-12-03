@@ -53,4 +53,3 @@ raw_limits:
     stable_current_soft: 4.0
     stable_voltage_hard: 2.0
     stable_voltage_soft: 4.0
-
