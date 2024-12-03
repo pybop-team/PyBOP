@@ -470,10 +470,7 @@ class MultiStartOptimisationResult:
 
     def best_x(self) -> Optional[float]:
         """Returns the best parameters, x across the optimisation"""
-        best_run = self.best_run()
-        if best_run is None:
-            return None
-        return best_run.x
+        return self.best_run().x
 
     def __str__(self) -> str:
         """
