@@ -167,9 +167,10 @@ class TestOptimisation:
                 assert optim.bounds == expected_bounds
 
         def check_multistart(optim, n_iters, multistarts):
-            optim.run()
+            results = optim.run()
             if isinstance(optim, pybop.BasePintsOptimiser):
                 assert len(optim.log["x_best"]) == n_iters * multistarts
+                assert results.average_iterations() == n_iters
 
         optim = optimiser(cost=cost, max_iterations=3, tol=1e-6)
         cost_bounds = cost.parameters.get_bounds()

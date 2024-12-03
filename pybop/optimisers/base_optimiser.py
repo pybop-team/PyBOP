@@ -451,8 +451,6 @@ class MultiStartOptimisationResult:
     def best_run(self) -> Optional[OptimisationResult]:
         """Returns the result with the best final cost."""
         valid_results = [res for res in self.results if res.final_cost is not None]
-        if not valid_results:
-            return None
         if self.results[0].optim.minimising is True:
             return min(valid_results, key=lambda res: res.final_cost)
 
@@ -463,15 +461,11 @@ class MultiStartOptimisationResult:
         valid_iterations = [
             res.n_iterations for res in self.results if res.n_iterations is not None
         ]
-        if not valid_iterations:
-            return None
         return np.mean(valid_iterations)
 
     def total_runtime(self) -> Optional[float]:
         """Calculates the total runtime across all runs."""
         valid_times = [res.time for res in self.results if res.time is not None]
-        if not valid_times:
-            return None
         return np.sum(valid_times)
 
     def best_x(self) -> Optional[float]:
