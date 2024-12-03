@@ -178,7 +178,7 @@ class BaseOptimiser:
         results: MultiOptimisationResult
             The pybop optimisation result class.
         """
-        self.result = MultiStartOptimisationResult()
+        self.result = MultiOptimisationResult()
 
         for i in range(self.multistart):
             if i >= 1:
@@ -420,7 +420,7 @@ class OptimisationResult:
         )
 
 
-class MultiStartOptimisationResult:
+class MultiOptimisationResult:
     """
     Multi run optimisation result class. Stores the results
     of multiple optimisation runs.
