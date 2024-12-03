@@ -1,0 +1,56 @@
+---
+formatters:
+    skiprows: 0
+    sep: ","
+    header: 0
+    encoding: ISO-8859-1  # options: ISO-8859-1 utf-8 cp1252
+    decimal: .
+    thousands:
+    comment_chars:
+        - '#'
+        - '!'
+post_processors:
+    split_capacity: false
+    split_current: false
+    set_index: false
+    rename_headers: true
+    set_cycle_number_not_zero: false
+    convert_date_time_to_datetime: true
+    convert_step_time_to_timedelta: false
+    convert_test_time_to_timedelta: false
+normal_headers_renaming_dict:
+    data_point_txt: "index"
+    datetime_txt: "date_stamp"
+    test_time_txt: "test_time"
+    step_time_txt: "step_time"
+    cycle_index_txt: "cycle_number"
+    step_index_txt: "step"
+    current_txt: "current"
+    voltage_txt: "voltage"
+    charge_capacity_txt: "charge_capacity"
+    discharge_capacity_txt: "discharge_Capacity"
+unit_labels:
+    resistance: Ohms
+    time: s
+    current: mA
+    voltage: V
+    power: W
+    capacity: mAh
+    energy: Wh
+    temperature: C
+raw_units:
+   current: A
+   charge: Ah
+   mass: mg
+   time: s
+raw_limits:
+    current_hard: 1.0e-13
+    current_soft: 1.0e-05
+    ir_change: 1.0e-05
+    stable_charge_hard: 0.9
+    stable_charge_soft: 5.0
+    stable_current_hard: 2.0
+    stable_current_soft: 4.0
+    stable_voltage_hard: 2.0
+    stable_voltage_soft: 4.0
+
