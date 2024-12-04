@@ -60,7 +60,8 @@ scifem = [
 bpx = [
     "bpx>=0.4",
 ]
-all = ["pybop[plot,scifem,bpx]"]
+cellpy = ["cellpy>=0.9.0"]  # cellpy is required to import cycler data directly to PyBOP
+all = ["pybop[plot,scifem,bpx,cellpy]"]
 
 [tool.setuptools.packages.find]
 include = ["pybop", "pybop.*"]
