@@ -48,10 +48,10 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             unused_kwargs_warning = f"The input model_kwargs {unused_keys} are not currently used by the SPMe."
             warnings.warn(unused_kwargs_warning, UserWarning, stacklevel=2)
 
-        # Unpack model options
-        include_double_layer = options["surface form"] == "differential"
+        super().__init__(options=options, name=name, build=True)
 
-        super().__init__({}, name=name)
+        # Unpack model options
+        include_double_layer = self.options["surface form"] == "differential"
 
         pybamm.citations.register("Chen2020")  # for the OCPs
         pybamm.citations.register("""

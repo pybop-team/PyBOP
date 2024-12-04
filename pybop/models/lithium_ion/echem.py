@@ -280,6 +280,8 @@ class GroupedSPMe(EChemBaseModel):
             The spatial methods used for discretization. If None, default spatial methods from PyBaMM are used.
         solver : pybamm.Solver, optional
             The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
+        options : dict, optional
+            A dictionary of options to customise the behaviour of the PyBaMM model.
     """
 
     def __init__(self, name="Grouped SPMe", eis=False, **model_kwargs):
@@ -315,18 +317,18 @@ class GroupedSPMe(EChemBaseModel):
 
     def set_initial_state(self, initial_state: dict, inputs=None):
         """
-        Set the initial state of charge or stoichiometries for the grouped SPMe.
+        Set the initial state of charge for the grouped SPMe. Inputs are not used.
 
         Parameters
         ----------
         initial_state : dict
             A valid initial state, e.g. the initial state of charge or open-circuit voltage.
-        inputs : Inputs
+        inputs : Inputs, optional
             The input parameters to be used when building the model.
         """
         self.clear()
 
-        if list(initial_state.keys()) != ["Initial SoC"] or inputs is not None:
+        if list(initial_state.keys()) != ["Initial SoC"]:
             raise ValueError("GroupedSPMe can currently only accept an initial SoC.")
 
         self._unprocessed_parameter_set.update(
