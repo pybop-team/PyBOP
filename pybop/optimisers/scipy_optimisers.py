@@ -23,8 +23,9 @@ class BaseSciPyOptimiser(BaseOptimiser):
     """
 
     def __init__(self, cost, **optimiser_kwargs):
-        super().__init__(cost, **optimiser_kwargs)
         self.num_resamples = 40
+        self.key_mapping = {"max_iterations": "maxiter", "population_size": "popsize"}
+        super().__init__(cost, **optimiser_kwargs)
 
     def _sanitise_inputs(self):
         """
@@ -42,17 +43,15 @@ class BaseSciPyOptimiser(BaseOptimiser):
                     )
             self.unset_options.pop("options")
 
-        # Check for duplicate keywords
-        expected_keys = ["maxiter", "popsize"]
-        alternative_keys = ["max_iterations", "population_size"]
-        for exp_key, alt_key in zip(expected_keys, alternative_keys):
-            if alt_key in self.unset_options.keys():
-                if exp_key in self.unset_options.keys():
+        # Convert PyBOP keys to SciPy
+        for pybop_key, scipy_key in self.key_mapping.items():
+            if pybop_key in self.unset_options:
+                if scipy_key in self.unset_options:
                     raise Exception(
-                        "The alternative {alt_key} option was passed in addition to the expected {exp_key} option."
+                        f"The alternative {pybop_key} option was passed in addition to the expected {scipy_key} option."
                     )
-                else:  # rename
-                    self.unset_options[exp_key] = self.unset_options.pop(alt_key)
+                # Rename the key
+                self.unset_options[scipy_key] = self.unset_options.pop(pybop_key)
 
         # Convert bounds to SciPy format
         if isinstance(self.bounds, dict):
@@ -103,27 +102,58 @@ class BaseSciPyOptimiser(BaseOptimiser):
 
 class SciPyMinimize(BaseSciPyOptimiser):
     """
-    Adapts SciPy's minimize function for use as an optimization strategy.
+    Adapts SciPy's minimize function for use as an optimisation strategy.
 
-    This class provides an interface to various scalar minimization algorithms implemented in SciPy,
-    allowing fine-tuning of the optimization process through method selection and option configuration.
+    This class provides an interface to various scalar minimisation algorithms implemented in SciPy,
+    allowing fine-tuning of the optimisation process through method selection and option configuration.
 
     Parameters
     ----------
     **optimiser_kwargs : optional
-        Valid SciPy Minimize option keys and their values, For example:
+        Valid SciPy Minimize option keys and their values:
         x0 : array_like
             Initial position from which optimisation will start.
-        bounds : dict, sequence or scipy.optimize.Bounds
-            Bounds for variables as supported by the selected method.
         method : str
             The optimisation method, options include:
             'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'L-BFGS-B', 'TNC', 'COBYLA',
             'SLSQP', 'trust-constr', 'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov'.
+        jac : {callable, '2-point', '3-point', 'cs', bool}, optional
+            Method for computing the gradient vector.
+        hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy}, optional
+            Method for computing the Hessian matrix.
+        hessp : callable, optional
+            Hessian of objective function times an arbitrary vector p.
+        bounds : sequence or scipy.optimize.Bounds, optional
+            Bounds on variables for L-BFGS-B, TNC, SLSQP, trust-constr methods.
+        constraints : {Constraint, dict} or List of {Constraint, dict}, optional
+            Constraints definition for constrained optimisation.
+        tol : float, optional
+            Tolerance for termination.
+        options : dict, optional
+            Method-specific options. Common options include:
+            maxiter : int
+                Maximum number of iterations.
+            disp : bool
+                Set to True to print convergence messages.
+            ftol : float
+                Function tolerance for termination.
+            gtol : float
+                Gradient tolerance for termination.
+            eps : float
+                Step size for finite difference approximation.
+            maxfev : int
+                Maximum number of function evaluations.
+            maxcor : int
+                Maximum number of variable metric corrections (L-BFGS-B).
 
     See Also
     --------
     scipy.optimize.minimize : The SciPy method this class is based on.
+
+    Notes
+    -----
+    Different optimisation methods may support different options. Consult SciPy's
+    documentation for method-specific options and constraints.
     """
 
     def __init__(self, cost, **optimiser_kwargs):
@@ -251,40 +281,85 @@ class SciPyMinimize(BaseSciPyOptimiser):
         )
 
     def name(self):
-        """
-        Provides the name of the optimization strategy.
-
-        Returns
-        -------
-        str
-            The name 'SciPyMinimize'.
-        """
+        """Provides the name of the optimisation strategy."""
         return "SciPyMinimize"
 
 
 class SciPyDifferentialEvolution(BaseSciPyOptimiser):
     """
-    Adapts SciPy's differential_evolution function for global optimization.
+    Adapts SciPy's differential_evolution function for global optimisation.
 
-    This class provides a global optimization strategy based on differential evolution, useful for
+    This class provides a global optimisation strategy based on differential evolution, useful for
     problems involving continuous parameters and potentially multiple local minima.
 
     Parameters
     ----------
     bounds : dict, sequence or scipy.optimize.Bounds
         Bounds for variables. Must be provided as it is essential for differential evolution.
+        Each element is a tuple (min, max) for the corresponding variable.
     **optimiser_kwargs : optional
-        Valid SciPy option keys and their values, for example:
-        strategy : str
-            The differential evolution strategy to use.
-        maxiter : int
-            Maximum number of iterations to perform.
-        popsize : int
-            The number of individuals in the population.
+        Valid SciPy differential_evolution options:
+        strategy : str, optional
+            The differential evolution strategy to use. Should be one of:
+            - 'best1bin'
+            - 'best1exp'
+            - 'rand1exp'
+            - 'randtobest1exp'
+            - 'currenttobest1exp'
+            - 'best2exp'
+            - 'rand2exp'
+            - 'randtobest1bin'
+            - 'currenttobest1bin'
+            - 'best2bin'
+            - 'rand2bin'
+            - 'rand1bin'
+            Default is 'best1bin'.
+        maxiter : int, optional
+            Maximum number of generations. Default is 1000.
+        popsize : int, optional
+            Multiplier for setting the total population size. The population has
+            popsize * len(x) individuals. Default is 15.
+        tol : float, optional
+            Relative tolerance for convergence. Default is 0.01.
+        mutation : float or tuple(float, float), optional
+            The mutation constant. If specified as a float, should be in [0, 2].
+            If specified as a tuple (min, max), dithering is used. Default is (0.5, 1.0).
+        recombination : float, optional
+            The recombination constant, should be in [0, 1]. Default is 0.7.
+        seed : int, optional
+            Random seed for reproducibility.
+        disp : bool, optional
+            Display status messages. Default is False.
+        callback : callable, optional
+            Called after each iteration with the current result as argument.
+        polish : bool, optional
+            If True, performs a local optimisation on the solution. Default is True.
+        init : str or array-like, optional
+            Specify initial population. Can be 'latinhypercube', 'random',
+            or an array of shape (M, len(x)).
+        atol : float, optional
+            Absolute tolerance for convergence. Default is 0.
+        updating : {'immediate', 'deferred'}, optional
+            If 'immediate', best solution vector is continuously updated within
+            a single generation. Default is 'immediate'.
+        workers : int or map-like callable, optional
+            If workers is an int the population is subdivided into workers
+            sections and evaluated in parallel. Default is 1.
+        constraints : {NonlinearConstraint, LinearConstraint, Bounds}, optional
+            Constraints on the solver.
 
     See Also
     --------
     scipy.optimize.differential_evolution : The SciPy method this class is based on.
+
+    Notes
+    -----
+    Differential Evolution is a stochastic population based method that is useful for
+    global optimisation problems. At each pass through the population the algorithm mutates
+    each candidate solution by mixing with other candidate solutions to create a trial
+    candidate. The fitness of all candidates is then evaluated and for each candidate if
+    the trial candidate is an improvement, it takes its place in the population for the next
+    iteration.
     """
 
     def __init__(self, cost, **optimiser_kwargs):
@@ -374,12 +449,5 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         )
 
     def name(self):
-        """
-        Provides the name of the optimization strategy.
-
-        Returns
-        -------
-        str
-            The name 'SciPyDifferentialEvolution'.
-        """
+        """Provides the name of the optimisation strategy."""
         return "SciPyDifferentialEvolution"

@@ -509,7 +509,7 @@ class BaseModel:
             t_eval=[t_eval[0], t_eval[-1]]
             if isinstance(self._solver, IDAKLUSolver)
             else t_eval,
-            t_interp=t_eval,
+            t_interp=t_eval if self._solver.supports_interp else None,
         )
 
     def simulateEIS(
@@ -670,7 +670,7 @@ class BaseModel:
             if isinstance(self._solver, IDAKLUSolver)
             else t_eval,
             calculate_sensitivities=True,
-            t_interp=t_eval,
+            t_interp=t_eval if self._solver.supports_interp else None,
         )
 
     def predict(

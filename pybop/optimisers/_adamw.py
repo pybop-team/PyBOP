@@ -156,7 +156,7 @@ class AdamWImpl(PintsOptimiser):
 
         # Check ask-tell pattern
         if not self._ready_for_tell:
-            raise RuntimeError("ask() not called before tell()")
+            raise RuntimeError("ask() must be called before tell().")
         self._ready_for_tell = False
 
         # Unpack reply
