@@ -54,11 +54,13 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         include_double_layer = self.options["surface form"] == "differential"
 
         pybamm.citations.register("Chen2020")  # for the OCPs
-        pybamm.citations.register("""
+        pybamm.citations.register(
+            """
             @article{HallemansPreprint,
             title={{Hallemans Preprint}},
             }
-        """)
+        """
+        )
 
         ######################
         # Variables
@@ -373,6 +375,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "Discharge capacity [A.h]": Q,
             "Throughput capacity [A.h]": Qt,
             "Voltage [V]": V,
+            "Battery voltage [V]": V,
             "Open-circuit voltage [V]": U_p - U_n,
         }
 
