@@ -141,7 +141,7 @@ Common battery models include various types of equivalent circuit models (e.g. t
 
 ## Parameterisation
 
-The parameterisation of battery models is challenging due to the large number of parameters that need to be identified compared to the measurable outputs [@Miguel:2021; @Wang:2022; @Andersson:2022]. A complete parameterisation often requires a stepwise identification of smaller sets of parameters from a variety of excitations and different data sets [@Chu:2019; @Chen:2020; @Kirk:2022].
+The parameterisation of battery models is challenging due to the large number of parameters that need to be identified compared to the measurable outputs [@Miguel:2021; @Wang:2022; @Andersson:2022]. A complete parameterisation often requires a stepwise identification of smaller sets of parameters from a variety of excitations and different data sets [@Chu:2019; @Chen:2020; @Lu:2021; @Kirk:2022].
 
 A generic data fitting optimisation problem may be formulated as:
 \begin{equation}
