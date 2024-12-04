@@ -60,10 +60,7 @@ scifem = [
 bpx = [
     "bpx>=0.4",
 ]
-cellpy = [
-    "cellpy",
-]
-all = ["pybop[plot,scifem,bpx,cellpy]"]
+all = ["pybop[plot,scifem,bpx]"]
 
 [tool.setuptools.packages.find]
 include = ["pybop", "pybop.*"]
