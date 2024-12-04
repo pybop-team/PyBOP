@@ -61,11 +61,11 @@ class BaseOptimiser:
     ):
         # First set attributes to default values
         self.parameters = Parameters()
-        self.x0 = None
+        self.x0 = optimiser_kwargs.get("x0", [])
+        self.log = dict(x=[], x_best=[], cost=[], cost_best=[], x0=[])
         self.bounds = None
         self.sigma0 = 0.02
         self.verbose = True
-        self.log = dict(x=[], x_best=[], cost=[], cost_best=[])
         self.minimising = True
         self._transformation = None
         self._needs_sensitivities = False
@@ -86,7 +86,6 @@ class BaseOptimiser:
 
         else:
             try:
-                self.x0 = optimiser_kwargs.get("x0", [])
                 cost_test = cost(self.x0)
                 warnings.warn(
                     "The cost is not an instance of pybop.BaseCost, but let's continue "
@@ -132,6 +131,7 @@ class BaseOptimiser:
         """
         # Set initial values, if x0 is None, initial values are unmodified.
         self.parameters.update(initial_values=self.unset_options.pop("x0", None))
+        self.log_update(x0=self.parameters.reset_initial_value())
         self.x0 = self.parameters.reset_initial_value(apply_transform=True)
 
         # Set default bounds (for all or no parameters)
@@ -197,7 +197,7 @@ class BaseOptimiser:
         """
         raise NotImplementedError
 
-    def log_update(self, x=None, x_best=None, cost=None, cost_best=None):
+    def log_update(self, x=None, x_best=None, cost=None, cost_best=None, x0=None):
         """
         Update the log with new values.
 
@@ -234,9 +234,8 @@ class BaseOptimiser:
             self.log["x"].extend(x)
 
         if x_best is not None:
-            x_best = convert_to_list(x_best)
-            x_best = apply_transformation(x_best)
-            self.log["x_best"].extend([x_best])
+            x_best = apply_transformation([x_best])
+            self.log["x_best"].extend(x_best)
 
         if cost is not None:
             cost = convert_to_list(cost)
@@ -245,6 +244,9 @@ class BaseOptimiser:
         if cost_best is not None:
             cost_best = convert_to_list(cost_best)
             self.log["cost_best"].extend(cost_best)
+
+        if x0 is not None:
+            self.log["x0"].extend(x0)
 
     def name(self):
         """

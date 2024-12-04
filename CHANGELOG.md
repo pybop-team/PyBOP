@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#570](https://github.com/pybop-team/PyBOP/pull/570) - Updates the contour and surface plots, adds mixed chain effective sample size computation, x0 to optim.log
 - [#566](https://github.com/pybop-team/PyBOP/pull/566) - Adds `UnitHyperCube` transformation class, fixes incorrect application of gradient transformation.
 - [#569](https://github.com/pybop-team/PyBOP/pull/569) - Adds parameter specific learning rate functionality to GradientDescent optimiser.
 - [#282](https://github.com/pybop-team/PyBOP/issues/282) - Restructures the examples directory.
