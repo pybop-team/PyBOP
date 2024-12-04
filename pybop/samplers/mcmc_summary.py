@@ -198,32 +198,43 @@ class PosteriorSummary:
 
     def effective_sample_size(self, mixed_chains=False):
         """
-        Computes the effective sample size for each parameter in each chain.
+        Computes the effective sample size (ESS) for each parameter in each chain.
 
         Parameters
-        -----------
+        ----------
         mixed_chains : bool, optional
-            If true, the effective sample size is computed for all samplers mixed
-            into a single chain.
-        """
+            If True, the ESS is computed for all samplers mixed into a single chain.
+            Defaults to False.
 
+        Returns
+        -------
+        list
+            A list of effective sample sizes for each parameter in each chain,
+            or for the mixed chain if `mixed_chains` is True.
+
+        Raises
+        ------
+        ValueError
+            If there are fewer than two samples in the data.
+        """
         if self.all_samples.shape[0] < 2:
             raise ValueError("At least two samples must be given.")
 
-        ess = []
-        if mixed_chains:
+        def compute_ess(samples):
+            """Helper function to compute the ESS for a single set of samples."""
+            ess = []
             for j in range(self.num_parameters):
-                rho = self.autocorrelation(self.all_samples[:, j])
+                rho = self.autocorrelation(samples[:, j])
                 T = self._autocorrelate_negative(rho)
-                ess.append(len(self.all_samples[:, j]) / (1 + 2 * rho[:T].sum()))
+                ess.append(len(samples[:, j]) / (1 + 2 * rho[:T].sum()))
             return ess
 
-        for _, chain in enumerate(self.chains):
-            for j in range(self.num_parameters):
-                rho = self.autocorrelation(chain[:, j])
-                T = self._autocorrelate_negative(rho)
-                ess.append(len(chain[:, j]) / (1 + 2 * rho[:T].sum()))
+        if mixed_chains:
+            return compute_ess(self.all_samples)
 
+        ess = []
+        for chain in self.chains:
+            ess.extend(compute_ess(chain))
         return ess
 
     def rhat(self):
