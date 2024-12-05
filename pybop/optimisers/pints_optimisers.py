@@ -684,6 +684,7 @@ class CuckooSearch(BasePintsOptimiser):
             **optimiser_kwargs,
         )
 
+
 class RandomSearch(BasePintsOptimiser):
     """
     Adapter for the Random Search optimiser in PyBOP.
@@ -736,7 +737,6 @@ class RandomSearch(BasePintsOptimiser):
         parallel: bool = False,
         **optimiser_kwargs,
     ):
-
         super().__init__(
             cost,
             RandomSearchImpl,

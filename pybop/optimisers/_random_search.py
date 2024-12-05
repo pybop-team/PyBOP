@@ -12,7 +12,7 @@ class RandomSearchImpl(PopulationBasedOptimiser):
     2. At each iteration, generate new random solutions within boundaries.
     3. Evaluate the quality/fitness of the solutions.
     4. Update the best solution found so far.
-    
+
     Parameters:
     - population_size (optional): Number of solutions to evaluate per iteration.
 
@@ -29,6 +29,7 @@ class RandomSearchImpl(PopulationBasedOptimiser):
         self._dim = len(x0)  # Initialize _dim first
 
         super().__init__(x0, sigma0, boundaries=boundaries)
+
 
         # Population size, defaulting to a suggested value
         self._population_size = population_size or self._suggested_population_size()
@@ -69,6 +70,7 @@ class RandomSearchImpl(PopulationBasedOptimiser):
         """
         if not self._ready_for_tell:
             raise RuntimeError("Optimiser not ready for tell()")
+
 
         self._iterations += 1
         self._ready_for_tell = False
