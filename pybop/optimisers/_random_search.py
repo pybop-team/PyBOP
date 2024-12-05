@@ -12,13 +12,13 @@ class RandomSearchImpl(PopulationBasedOptimiser):
     2. At each iteration, generate new random solutions within boundaries.
     3. Evaluate the quality/fitness of the solutions.
     4. Update the best solution found so far.
-    
+
     Parameters:
     - population_size (optional): Number of solutions to evaluate per iteration.
 
     References:
     - The Random Search algorithm implemented in this work is based on principles outlined
-    in: 
+    in:
     Introduction to Stochastic Search and Optimization: Estimation, Simulation, and Control
     - by Spall, J. C. (2003).
     The implementation leverages the pints library framework, which provides tools for
@@ -30,7 +30,7 @@ class RandomSearchImpl(PopulationBasedOptimiser):
         self._dim = len(x0)  # Initialize _dim first
 
         super().__init__(x0, sigma0, boundaries=boundaries)
-        
+
         # Population size, defaulting to a suggested value
         self._population_size = population_size or self._suggested_population_size()
         self.step_size = self._sigma0
@@ -70,7 +70,7 @@ class RandomSearchImpl(PopulationBasedOptimiser):
         """
         if not self._ready_for_tell:
             raise RuntimeError("Optimiser not ready for tell()")
-        
+
         self._iterations += 1
         self._ready_for_tell = False
 
