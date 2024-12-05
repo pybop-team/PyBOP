@@ -4,6 +4,7 @@ import sys
 import warnings
 
 import numpy as np
+import pints
 import pytest
 
 import pybop
@@ -206,6 +207,13 @@ class TestOptimisation:
                 warnings.simplefilter("always")
                 optimiser(cost=cost, unrecognised=10)
             assert not optim.optimiser.running()
+
+            # Check population setter
+            if isinstance(optim.optimiser, pints.PopulationBasedOptimiser):
+                optim = pybop.Optimisation(
+                    cost=cost, optimiser=optimiser, population_size=100
+                )
+                assert optim.optimiser.population_size() == 100
         else:
             bounds_list = [
                 (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])

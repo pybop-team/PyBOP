@@ -6,6 +6,7 @@ from pints import Adam as PintsAdam
 from pints import NelderMead as PintsNelderMead
 from pints import Optimiser as PintsOptimiser
 from pints import ParallelEvaluator as PintsParallelEvaluator
+from pints import PopulationBasedOptimiser
 from pints import PopulationBasedOptimiser as PintsPopulationBasedOptimiser
 from pints import RectangularBoundaries as PintsRectangularBoundaries
 from pints import SequentialEvaluator as PintsSequentialEvaluator
@@ -116,6 +117,9 @@ class BasePintsOptimiser(BaseOptimiser):
         for tol_key in ["absolute_tolerance", "relative_tolerance"]:
             if tol_key in self.unset_options:
                 max_unchanged_kwargs[tol_key] = self.unset_options.pop(tol_key)
+
+        # Set population size (if applicable)
+        self._set_population_size()
 
     def _sanitise_inputs(self):
         """
@@ -514,3 +518,13 @@ class BasePintsOptimiser(BaseOptimiser):
             self._threshold = None
         else:
             self._threshold = float(threshold)
+
+    def _set_population_size(self):
+        """
+        Set the population size for population-based optimisers, if specified.
+        """
+        if "population_size" in self.unset_options and isinstance(
+            self.optimiser, PopulationBasedOptimiser
+        ):
+            population_size = self.unset_options.pop("population_size")
+            self.optimiser.set_population_size(population_size)
