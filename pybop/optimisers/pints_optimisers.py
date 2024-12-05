@@ -688,9 +688,8 @@ class RandomSearch(BasePintsOptimiser):
     """
     Adapter for the Random Search optimiser in PyBOP.
 
-    Random Search is a simple optimisation algorithm that samples parameter 
-    sets randomly within the given boundaries and identifies the best solution 
-    based on fitness.
+    Random Search is a simple optimisation algorithm that samples parameter sets randomly
+    within the given boundaries and identifies the best solution based on fitness.
 
     Parameters
     ----------
