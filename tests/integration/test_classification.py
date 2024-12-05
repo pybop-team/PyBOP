@@ -2,7 +2,6 @@ import numpy as np
 import pytest
 
 import pybop
-from examples.standalone.cost import StandaloneCost
 from pybop._classification import classify_using_Hessian
 
 
@@ -38,7 +37,7 @@ class TestClassification:
     @pytest.fixture
     def model(self, parameters):
         parameter_set = pybop.ParameterSet(
-            json_path="examples/scripts/parameters/initial_ecm_parameters.json"
+            json_path="examples/parameters/initial_ecm_parameters.json"
         )
         parameter_set.import_parameters()
         parameter_set.params.update({"C1 [F]": 1000})
@@ -103,9 +102,11 @@ class TestClassification:
             assert message == "The optimiser has located a maximum."
 
     @pytest.mark.integration
-    def test_classify_using_Hessian_invalid(self):
-        cost = StandaloneCost()
-        optim = pybop.XNES(cost=cost)
+    def test_classify_using_Hessian_invalid(self, model, parameters, dataset):
+        parameters.remove("R0 [Ohm]")
+        problem = pybop.FittingProblem(model, parameters, dataset)
+        cost = pybop.SumSquaredError(problem)
+        optim = pybop.SNES(cost=cost)
         optim.run()
 
         with pytest.raises(
