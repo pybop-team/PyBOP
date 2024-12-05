@@ -30,7 +30,6 @@ class RandomSearchImpl(PopulationBasedOptimiser):
 
         super().__init__(x0, sigma0, boundaries=boundaries)
 
-
         # Population size, defaulting to a suggested value
         self._population_size = population_size or self._suggested_population_size()
         self.step_size = self._sigma0
@@ -70,7 +69,6 @@ class RandomSearchImpl(PopulationBasedOptimiser):
         """
         if not self._ready_for_tell:
             raise RuntimeError("Optimiser not ready for tell()")
-
 
         self._iterations += 1
         self._ready_for_tell = False
