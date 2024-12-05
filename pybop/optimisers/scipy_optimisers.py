@@ -92,8 +92,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
             if self._transformation
             else result.x,
             cost=self.cost,
-            final_cost=self.cost(result.x, apply_transform=True)
-            * (1 if self.minimising else -1),
+            final_cost=self.cost(result.x, apply_transform=True),
             n_iterations=nit,
             scipy_result=result,
             optim=self,
@@ -213,9 +212,9 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
         L, dl = self.cost(x, calculate_grad=True, apply_transform=True)
         self.log_update(x=[x], cost=L)
-        scaled_L = L / self._cost0 * (1 if self.minimising else -1)
-        scaled_dl = dl / self._cost0 * (1 if self.minimising else -1)
-        return (scaled_L, scaled_dl)
+        scaled_L = L / self._cost0
+        scaled_dl = dl / self._cost0
+        return (scaled_L, scaled_dl) if self.minimising else (-scaled_L, -scaled_dl)
 
     def _run_optimiser(self):
         """
@@ -238,15 +237,16 @@ class SciPyMinimize(BaseSciPyOptimiser):
             """
             if isinstance(intermediate_result, OptimizeResult):
                 x_best = intermediate_result.x
-                cost_best = intermediate_result.fun * (1 if self.minimising else -1)
+                cost_best = (
+                    intermediate_result.fun
+                    * self._cost0
+                    * (1 if self.minimising else -1)
+                )
             else:
                 x_best = intermediate_result
                 cost_best = self.cost(x_best, apply_transform=True)
 
-            self.log_update(
-                x_best=x_best,
-                cost_best=cost_best * self._cost0,
-            )
+            self.log_update(x_best=x_best, cost_best=cost_best)
 
         callback = (
             base_callback
