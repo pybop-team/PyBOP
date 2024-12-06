@@ -2,7 +2,7 @@ from typing import Optional
 
 import numpy as np
 import pybamm
-import regex as re
+import re
 
 
 def is_numeric(x):
