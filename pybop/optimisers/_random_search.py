@@ -24,14 +24,14 @@ class RandomSearchImpl(PopulationBasedOptimiser):
     population-based optimization methods.
     """
 
-    def __init__(self, x0, sigma0=0.05, boundaries=None, population_size=None):
+    def __init__(self, x0, sigma0=0.05, boundaries=None):
         # Problem dimensionality
         self._dim = len(x0)  # Initialize _dim first
 
         super().__init__(x0, sigma0, boundaries=boundaries)
 
         # Population size, defaulting to a suggested value
-        self._population_size = population_size or self._suggested_population_size()
+        self._population_size = self._suggested_population_size()
         self.step_size = self._sigma0
 
         # Initialise best solutions
@@ -107,4 +107,4 @@ class RandomSearchImpl(PopulationBasedOptimiser):
         """
         Returns a suggested population size based on the dimension of the parameter space.
         """
-        return 10 + int(2 * np.log(self._dim))
+        return 4 + int(3 * np.log(self._n_parameters))

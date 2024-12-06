@@ -733,7 +733,6 @@ class RandomSearch(BasePintsOptimiser):
         max_iterations: int = None,
         min_iterations: int = 20,
         max_unchanged_iterations: int = 100,
-        population_size: int = 10,
         parallel: bool = False,
         **optimiser_kwargs,
     ):
