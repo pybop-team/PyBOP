@@ -1,11 +1,11 @@
 import numpy as np
+import pybamm
 
 import pybop
-from examples.standalone.model import ExponentialDecay
 
 # Parameter set and model definition
-parameter_set = {"k": 0.1, "y0": 1.0}
-model = ExponentialDecay(parameter_set=parameter_set, n_states=1)
+parameter_set = pybamm.ParameterValues({"k": 0.1, "y0": 1.0})
+model = pybop.ExponentialDecay(parameter_set=parameter_set, n_states=1)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -28,17 +28,17 @@ sigma = 1e-2
 t_eval = np.linspace(0, 20, 10)
 true_inputs = parameters.as_dict("true")
 values = model.predict(t_eval=t_eval)
-values = values["2y"].data
+values = values["y_0"].data
 corrupt_values = values + np.random.normal(0, sigma, len(t_eval))
 
-# Verification step: compute the analytical solution for 2y
-expected_values = (
-    2 * parameters["y0"].true_value * np.exp(-parameters["k"].true_value * t_eval)
+# Verification step: compute the analytical solution for y
+expected_values = parameters["y0"].true_value * np.exp(
+    -parameters["k"].true_value * t_eval
 )
 
 # Verification step: make another prediction using the Observer class
 model.build(parameters=parameters)
-simulator = pybop.Observer(parameters, model, signal=["2y"])
+simulator = pybop.Observer(parameters, model, signal=["y_0"])
 simulator.domain_data = t_eval
 measurements = simulator.evaluate(true_inputs)
 
@@ -49,7 +49,7 @@ line2 = go.Scatter(
     x=t_eval, y=expected_values, name="Expected trajectory", mode="lines"
 )
 line3 = go.Scatter(
-    x=t_eval, y=measurements["2y"], name="Observed values", mode="markers"
+    x=t_eval, y=measurements["y_0"], name="Observed values", mode="markers"
 )
 fig = go.Figure(data=[line1, line2, line3])
 
@@ -58,7 +58,7 @@ dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
         "Current function [A]": 0 * t_eval,  # placeholder
-        "2y": corrupt_values,
+        "y_0": corrupt_values,
     }
 )
 
@@ -66,7 +66,7 @@ dataset = pybop.Dataset(
 model.build(dataset=dataset.data, parameters=parameters)
 
 # Define the UKF observer
-signal = ["2y"]
+signal = ["y_0"]
 n_states = model.n_states
 n_signals = len(signal)
 covariance = np.diag([sigma**2] * n_states)
@@ -87,7 +87,7 @@ estimation = observer.evaluate(true_inputs)
 
 # Verification step: Add the estimate to the plot
 line4 = go.Scatter(
-    x=t_eval, y=estimation["2y"], name="Estimated trajectory", mode="lines"
+    x=t_eval, y=estimation["y_0"], name="Estimated trajectory", mode="lines"
 )
 fig.add_trace(line4)
 fig.show()
