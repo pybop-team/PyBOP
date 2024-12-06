@@ -167,12 +167,21 @@ class TestOptimisation:
             else:
                 assert optim.bounds == expected_bounds
 
+        def check_multistart(optim, n_iters, multistarts):
+            results = optim.run()
+            if isinstance(optim, pybop.BasePintsOptimiser):
+                assert len(optim.log["x_best"]) == n_iters * multistarts
+                assert results.average_iterations() == n_iters
+
         optim = optimiser(cost=cost, max_iterations=3, tol=1e-6)
         cost_bounds = cost.parameters.get_bounds()
 
         check_max_iterations(optim)
         assert_log_update(optim)
         check_incorrect_update(optim)
+
+        multistart_optim = optimiser(cost, multistart=2, max_iterations=2)
+        check_multistart(multistart_optim, 2, 2)
 
         if optimiser in [pybop.GradientDescent, pybop.Adam, pybop.NelderMead]:
             optim = optimiser(cost=cost, bounds=cost_bounds)
