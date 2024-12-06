@@ -4,8 +4,8 @@ import sys
 import warnings
 
 import numpy as np
-import pints
 import pytest
+from pints import PopulationBasedOptimiser
 
 import pybop
 
@@ -209,7 +209,7 @@ class TestOptimisation:
             assert not optim.optimiser.running()
 
             # Check population setter
-            if isinstance(optim.optimiser, pints.PopulationBasedOptimiser):
+            if isinstance(optim.optimiser, PopulationBasedOptimiser):
                 optim = pybop.Optimisation(
                     cost=cost, optimiser=optimiser, population_size=100
                 )

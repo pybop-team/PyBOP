@@ -119,7 +119,9 @@ class BasePintsOptimiser(BaseOptimiser):
                 max_unchanged_kwargs[tol_key] = self.unset_options.pop(tol_key)
 
         # Set population size (if applicable)
-        self._set_population_size()
+        if "population_size" in self.unset_options:
+            population_size = self.unset_options.pop("population_size")
+            self.set_population_size(population_size)
 
     def _sanitise_inputs(self):
         """
@@ -519,12 +521,9 @@ class BasePintsOptimiser(BaseOptimiser):
         else:
             self._threshold = float(threshold)
 
-    def _set_population_size(self):
+    def set_population_size(self, population_size=None):
         """
         Set the population size for population-based optimisers, if specified.
         """
-        if "population_size" in self.unset_options and isinstance(
-            self.optimiser, PopulationBasedOptimiser
-        ):
-            population_size = self.unset_options.pop("population_size")
+        if isinstance(self.optimiser, PopulationBasedOptimiser):
             self.optimiser.set_population_size(population_size)
