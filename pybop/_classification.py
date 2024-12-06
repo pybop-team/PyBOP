@@ -54,11 +54,11 @@ def classify_using_Hessian(optim, x=None, epsilon=1e-2):
         bounds = optim.cost.parameters.get_bounds()
         if bounds is not None:
             for i, value in enumerate(x):
-                range = bounds["upper"][i] - bounds["lower"][i]
-                if value > bounds["upper"][i] - epsilon * range:
+                x_range = bounds["upper"][i] - bounds["lower"][i]
+                if value > bounds["upper"][i] - epsilon * x_range:
                     message += f" The result is near the upper bound of {names[i]}."
 
-                if value < bounds["lower"][i] + epsilon * range:
+                if value < bounds["lower"][i] + epsilon * x_range:
                     message += f" The result is near the lower bound of {names[i]}."
     else:
         # Estimate the Hessian using second-order accurate central finite differences
