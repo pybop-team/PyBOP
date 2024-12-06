@@ -7,6 +7,7 @@ import pytest
 
 import pybop
 from examples.standalone.model import ExponentialDecay
+from pybop.models.lithium_ion.basic_SPMe import convert_physical_to_grouped_parameters
 
 
 class TestModels:
@@ -583,3 +584,17 @@ class TestModels:
             dataset_2["Current function [A]"].data,
             atol=1e-8,
         )
+
+    @pytest.mark.unit
+    def test_grouped_SPMe(self):
+        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set["Electrolyte diffusivity [m2.s-1]"] = 1.769e-10
+        parameter_set["Electrolyte conductivity [S.m-1]"] = 0.9487
+
+        grouped_parameter_set = convert_physical_to_grouped_parameters(parameter_set)
+
+        model = pybop.lithium_ion.GroupedSPMe(parameter_set=grouped_parameter_set)
+        model.set_initial_state({"Initial SoC": 1.0})
+
+        res = model.predict(t_eval=np.linspace(0, 10, 100))
+        assert len(res["Voltage [V]"].data) == 100
