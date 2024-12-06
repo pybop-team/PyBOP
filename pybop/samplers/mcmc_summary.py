@@ -65,7 +65,7 @@ class PosteriorSummary:
             for key, func in summary_funs.items()
         }
 
-    def plot_trace(self):
+    def plot_trace(self, **kwargs):
         """
         Plot trace plots for the posterior samples.
         """
@@ -83,9 +83,10 @@ class PosteriorSummary:
                 xaxis_title="Sample Index",
                 yaxis_title="Value",
             )
+            fig.update_layout(**kwargs)
             fig.show()
 
-    def plot_chains(self):
+    def plot_chains(self, **kwargs):
         """
         Plot posterior distributions for each chain.
         """
@@ -117,9 +118,10 @@ class PosteriorSummary:
             xaxis_title="Value",
             yaxis_title="Density",
         )
+        fig.update_layout(**kwargs)
         fig.show()
 
-    def plot_posterior(self):
+    def plot_posterior(self, **kwargs):
         """
         Plot the summed posterior distribution across chains.
         """
@@ -142,7 +144,9 @@ class PosteriorSummary:
             xaxis_title="Value",
             yaxis_title="Density",
         )
+        fig.update_layout(**kwargs)
         fig.show()
+        return fig
 
     def summary_table(self):
         """
@@ -192,21 +196,45 @@ class PosteriorSummary:
             negative_indices[0] if negative_indices.size > 0 else len(autocorrelation)
         )
 
-    def effective_sample_size(self):
+    def effective_sample_size(self, mixed_chains=False):
         """
-        Computes the effective sample size for each parameter in each chain.
-        """
+        Computes the effective sample size (ESS) for each parameter in each chain.
 
+        Parameters
+        ----------
+        mixed_chains : bool, optional
+            If True, the ESS is computed for all samplers mixed into a single chain.
+            Defaults to False.
+
+        Returns
+        -------
+        list
+            A list of effective sample sizes for each parameter in each chain,
+            or for the mixed chain if `mixed_chains` is True.
+
+        Raises
+        ------
+        ValueError
+            If there are fewer than two samples in the data.
+        """
         if self.all_samples.shape[0] < 2:
             raise ValueError("At least two samples must be given.")
 
-        ess = []
-        for _, chain in enumerate(self.chains):
+        def compute_ess(samples):
+            """Helper function to compute the ESS for a single set of samples."""
+            ess = []
             for j in range(self.num_parameters):
-                rho = self.autocorrelation(chain[:, j])
+                rho = self.autocorrelation(samples[:, j])
                 T = self._autocorrelate_negative(rho)
-                ess.append(len(chain[:, j]) / (1 + 2 * rho[:T].sum()))
+                ess.append(len(samples[:, j]) / (1 + 2 * rho[:T].sum()))
+            return ess
 
+        if mixed_chains:
+            return compute_ess(self.all_samples)
+
+        ess = []
+        for chain in self.chains:
+            ess.extend(compute_ess(chain))
         return ess
 
     def rhat(self):

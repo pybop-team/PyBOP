@@ -36,6 +36,8 @@ def contour(
     bounds : numpy.ndarray, optional
         A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
         `cost.parameters.get_bounds_for_plotly`.
+    apply_transform : bool, optional
+        Converts contour landscape into transformed landscape that was used by the optimiser.
     steps : int, optional
         The number of grid points to divide the parameter space into along each dimension (default: 10).
     show : bool, optional
@@ -156,11 +158,12 @@ def contour(
     layout_options = dict(
         title="Cost Landscape",
         title_x=0.5,
-        title_y=0.9,
+        title_y=0.905,
         width=600,
         height=600,
         xaxis=dict(range=bounds[0], showexponent="last", exponentformat="e"),
         yaxis=dict(range=bounds[1], showexponent="last", exponentformat="e"),
+        legend=dict(orientation="h", yanchor="bottom", y=1, xanchor="right", x=1),
     )
     if hasattr(cost, "parameters"):
         name = cost.parameters.keys()
@@ -170,7 +173,8 @@ def contour(
 
     # Create contour plot and update the layout
     fig = go.Figure(
-        data=[go.Contour(x=x, y=y, z=costs, connectgaps=True)], layout=layout
+        data=[go.Contour(x=x, y=y, z=costs, colorscale="Viridis", connectgaps=True)],
+        layout=layout,
     )
 
     if plot_optim:
@@ -184,7 +188,8 @@ def contour(
                 mode="markers",
                 marker=dict(
                     color=[i / len(optim_trace) for i in range(len(optim_trace))],
-                    colorscale="YlOrBr",
+                    colorscale="Greys",
+                    size=8,
                     showscale=False,
                 ),
                 showlegend=False,
@@ -192,21 +197,40 @@ def contour(
         )
 
         # Plot the initial guess
-        if optim.x0 is not None:
+        if optim.log["x0"] is not None:
             fig.add_trace(
                 go.Scatter(
-                    x=[optim.x0[0]],
-                    y=[optim.x0[1]],
+                    x=[optim.log["x0"][0]],
+                    y=[optim.log["x0"][1]],
                     mode="markers",
-                    marker_symbol="circle",
+                    marker_symbol="x",
                     marker=dict(
-                        color="mediumspringgreen",
-                        line_color="mediumspringgreen",
+                        color="white",
+                        line_color="black",
                         line_width=1,
                         size=14,
                         showscale=False,
                     ),
-                    showlegend=False,
+                    name="Initial values",
+                )
+            )
+
+        # Plot optimised value
+        if optim.log["x_best"] is not None:
+            fig.add_trace(
+                go.Scatter(
+                    x=[optim.log["x_best"][-1][0]],
+                    y=[optim.log["x_best"][-1][1]],
+                    mode="markers",
+                    marker_symbol="cross",
+                    marker=dict(
+                        color="black",
+                        line_color="white",
+                        line_width=1,
+                        size=14,
+                        showscale=False,
+                    ),
+                    name="Final values",
                 )
             )
 
