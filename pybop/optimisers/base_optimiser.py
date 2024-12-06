@@ -427,6 +427,11 @@ class MultiOptimisationResult:
 
     Attributes
     ----------
+    results : list
+        The list of OptimisationResults for each optimisation run
+
+    Properties
+    ----------
     x : ndarray
         The solution of the best optimisation run.
     final_cost : float
