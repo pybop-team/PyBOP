@@ -28,6 +28,11 @@ class TestModels:
             ),
             (pybop.lithium_ion.WeppnerHuggins, "Weppner & Huggins model", None),
             (pybop.lithium_ion.GroupedSPMe, "Grouped SPMe", None),
+            (
+                pybop.lithium_ion.GroupedSPMe,
+                "Grouped SPMe",
+                {"surface form": "differential"},
+            ),
             (pybop.empirical.Thevenin, "Equivalent Circuit Thevenin Model", None),
         ],
     )
@@ -55,6 +60,7 @@ class TestModels:
             pybop.lithium_ion.MSMR(options={"number of MSMR reactions": ("6", "4")}),
             pybop.lithium_ion.WeppnerHuggins(),
             pybop.lithium_ion.GroupedSPMe(),
+            pybop.lithium_ion.GroupedSPMe(options={"surface form": "differential"}),
             pybop.empirical.Thevenin(),
         ]
     )
