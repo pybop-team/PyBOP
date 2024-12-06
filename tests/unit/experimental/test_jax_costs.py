@@ -61,7 +61,13 @@ class TestJaxCosts:
         problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
         return problem
 
-    @pytest.fixture(params=[pybop.JaxSumSquaredError, pybop.JaxLogNormalLikelihood])
+    @pytest.fixture(
+        params=[
+            pybop.JaxSumSquaredError,
+            pybop.JaxLogNormalLikelihood,
+            pybop.JaxGaussianLogLikelihoodKnownSigma,
+        ]
+    )
     def cost(self, problem, request):
         cls = request.param
         return cls(problem)
