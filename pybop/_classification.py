@@ -93,7 +93,6 @@ def classify_using_Hessian(optim, x=None, epsilon=1e-2):
         # Compute the eigenvalues, returned in ascending order
         eigr = np.linalg.eigh(cfd_hessian)
         eigenvalues = eigr.eigenvalues
-        print(eigr)
 
         # Classify the result
         cost_tolerance = epsilon**2 * final_cost
