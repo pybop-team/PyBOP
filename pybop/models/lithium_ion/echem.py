@@ -328,7 +328,7 @@ class GroupedSPMe(EChemBaseModel):
         """
         if list(initial_state.keys()) != ["Initial SoC"]:
             raise ValueError("GroupedSPMe can currently only accept an initial SoC.")
-        
+
         initial_state = self.convert_to_pybamm_initial_state(initial_state)
 
         self._unprocessed_parameter_set.update({"Initial SoC": initial_state})

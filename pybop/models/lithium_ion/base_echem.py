@@ -153,7 +153,7 @@ class EChemBaseModel(BaseModel):
                 return allow_infeasible_solutions
 
         return True
-    
+
     def _set_initial_state(self, initial_state: dict, inputs: Optional[Inputs] = None):
         """
         Set the initial state of charge or concentrations for the battery model.
