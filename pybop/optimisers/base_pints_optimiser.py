@@ -61,6 +61,7 @@ class BasePintsOptimiser(BaseOptimiser):
         max_iterations: int = None,
         min_iterations: int = 2,
         max_unchanged_iterations: int = 15,
+        multistart: int = 1,
         parallel: bool = False,
         **optimiser_kwargs,
     ):
@@ -86,7 +87,8 @@ class BasePintsOptimiser(BaseOptimiser):
             "threshold": self.set_threshold,
         }
 
-        self.optimiser = pints_optimiser
+        self._pints_optimiser = pints_optimiser
+        optimiser_kwargs["multistart"] = multistart
         super().__init__(cost, **optimiser_kwargs)
 
     def _set_up_optimiser(self):
@@ -97,8 +99,8 @@ class BasePintsOptimiser(BaseOptimiser):
         self._sanitise_inputs()
 
         # Create an instance of the PINTS optimiser class
-        if issubclass(self.optimiser, PintsOptimiser):
-            self.optimiser = self.optimiser(
+        if issubclass(self._pints_optimiser, PintsOptimiser):
+            self.optimiser = self._pints_optimiser(
                 self.x0, sigma0=self.sigma0, boundaries=self._boundaries
             )
         else:
@@ -142,18 +144,18 @@ class BasePintsOptimiser(BaseOptimiser):
         # Convert bounds to PINTS boundaries
         if self.bounds is not None:
             ignored_optimisers = (GradientDescentImpl, PintsAdam, PintsNelderMead)
-            if issubclass(self.optimiser, ignored_optimisers):
-                print(f"NOTE: Boundaries ignored by {self.optimiser}")
+            if issubclass(self._pints_optimiser, ignored_optimisers):
+                print(f"NOTE: Boundaries ignored by {self._pints_optimiser}")
                 self.bounds = None
             else:
-                if issubclass(self.optimiser, PintsPSO):
+                if issubclass(self._pints_optimiser, PintsPSO):
                     if not all(
                         np.isfinite(value)
                         for sublist in self.bounds.values()
                         for value in sublist
                     ):
                         raise ValueError(
-                            f"Either all bounds or no bounds must be set for {self.optimiser.__name__}."
+                            f"Either all bounds or no bounds must be set for {self._pints_optimiser.__name__}."
                         )
                 self._boundaries = PintsRectangularBoundaries(
                     self.bounds["lower"], self.bounds["upper"]
