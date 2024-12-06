@@ -315,7 +315,7 @@ class GroupedSPMe(EChemBaseModel):
         # Skip the usual electrochemical checks for this dimensionless model
         return True
 
-    def set_initial_state(self, initial_state: dict, inputs=None):
+    def _set_initial_state(self, initial_state: dict, inputs=None):
         """
         Set the initial state of charge for the grouped SPMe. Inputs are not used.
 
@@ -326,11 +326,9 @@ class GroupedSPMe(EChemBaseModel):
         inputs : Inputs, optional
             The input parameters to be used when building the model.
         """
-        self.clear()
-
         if list(initial_state.keys()) != ["Initial SoC"]:
             raise ValueError("GroupedSPMe can currently only accept an initial SoC.")
+        
+        initial_state = self.convert_to_pybamm_initial_state(initial_state)
 
-        self._unprocessed_parameter_set.update(
-            {"Initial SoC": initial_state["Initial SoC"]}
-        )
+        self._unprocessed_parameter_set.update({"Initial SoC": initial_state})

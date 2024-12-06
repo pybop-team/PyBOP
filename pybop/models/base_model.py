@@ -241,30 +241,7 @@ class BaseModel:
         """
         self.clear()
 
-        initial_state = self.convert_to_pybamm_initial_state(initial_state)
-
-        if isinstance(self.pybamm_model, pybamm.equivalent_circuit.Thevenin):
-            initial_state = self.get_initial_state(initial_state, inputs=inputs)
-            self._unprocessed_parameter_set.update({"Initial SoC": initial_state})
-
-        else:
-            if not self.pybamm_model._built:  # noqa: SLF001
-                self.pybamm_model.build_model()
-
-            # Temporary construction of attributes for PyBaMM
-            self._model = self.pybamm_model
-            self._unprocessed_parameter_values = self._unprocessed_parameter_set
-
-            # Set initial state via PyBaMM's Simulation class
-            pybamm.Simulation.set_initial_soc(self, initial_state, inputs=inputs)
-
-            # Update the default parameter set for consistency
-            self._unprocessed_parameter_set = self._parameter_values
-
-            # Clear the pybamm objects
-            del self._model
-            del self._unprocessed_parameter_values
-            del self._parameter_values
+        self._set_initial_state(initial_state=initial_state, inputs=inputs)
 
         # Use a copy of the updated default parameter set
         self._parameter_set = self._unprocessed_parameter_set.copy()
