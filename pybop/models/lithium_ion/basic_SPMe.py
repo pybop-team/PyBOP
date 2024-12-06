@@ -41,7 +41,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             unused_keys.append("build")
         options = {"surface form": "false", "contact resistance": "true"}
         if model_kwargs.get("options", None) is not None:
-            options.update(options)
+            options.update(model_kwargs["options"])
         for key in options.keys():
             if key not in ["surface form", "contact resistance"]:
                 unused_keys.append("options[" + key + "]")
