@@ -285,21 +285,35 @@ class GroupedSPMe(EChemBaseModel):
     """
 
     def __init__(self, name="Grouped SPMe", eis=False, **model_kwargs):
-        # Update normalised lengthscales
+        # Use normalised lengthscales
         parameter_set = model_kwargs.pop("parameter_set", None)
+        default_parameter_set = BaseGroupedSPMe().default_parameter_values
         if parameter_set:
             parameter_set.update(
                 {
-                    "Positive electrode thickness [m]": parameter_set[
-                        "Positive electrode relative thickness"
+                    "Positive electrode thickness [m]": default_parameter_set[
+                        "Positive electrode thickness [m]"
                     ],
-                    "Negative electrode thickness [m]": parameter_set[
-                        "Negative electrode relative thickness"
+                    "Negative electrode thickness [m]": default_parameter_set[
+                        "Negative electrode thickness [m]"
                     ],
+                }
+            )
+            # Update dimensions to equal their dimensionless values
+            if "Positive electrode relative thickness" in parameter_set.keys():
+                parameter_set["Positive electrode thickness [m]"] = parameter_set[
+                    "Positive electrode relative thickness"
+                ]
+            if "Negative electrode relative thickness" in parameter_set.keys():
+                parameter_set["Negative electrode thickness [m]"] = parameter_set[
+                    "Negative electrode relative thickness"
+                ]
+            parameter_set.update(
+                {
                     "Separator thickness [m]": (
                         1
-                        - parameter_set["Positive electrode relative thickness"]
-                        - parameter_set["Negative electrode relative thickness"]
+                        - parameter_set["Positive electrode thickness [m]"]
+                        - parameter_set["Negative electrode thickness [m]"]
                     ),
                     "Positive particle radius [m]": 1,
                     "Negative particle radius [m]": 1,

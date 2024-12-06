@@ -27,6 +27,7 @@ class TestModels:
                 {"number of MSMR reactions": ("6", "4")},
             ),
             (pybop.lithium_ion.WeppnerHuggins, "Weppner & Huggins model", None),
+            (pybop.lithium_ion.GroupedSPMe, "Grouped SPMe", None),
             (pybop.empirical.Thevenin, "Equivalent Circuit Thevenin Model", None),
         ],
     )
@@ -53,6 +54,7 @@ class TestModels:
             pybop.lithium_ion.MPM(),
             pybop.lithium_ion.MSMR(options={"number of MSMR reactions": ("6", "4")}),
             pybop.lithium_ion.WeppnerHuggins(),
+            pybop.lithium_ion.GroupedSPMe(),
             pybop.empirical.Thevenin(),
         ]
     )
@@ -83,7 +85,9 @@ class TestModels:
             model.predict(None, None)
 
         # Test new_copy() without pybamm_model
-        if not isinstance(model, pybop.lithium_ion.MSMR):
+        if not isinstance(
+            model, (pybop.lithium_ion.MSMR, pybop.lithium_ion.GroupedSPMe)
+        ):
             new_model = model.new_copy()
             assert new_model.pybamm_model is not None
             assert new_model.parameter_set is not None
@@ -92,7 +96,12 @@ class TestModels:
     def test_predict_with_inputs(self, model):
         # Define inputs
         t_eval = np.linspace(0, 10, 100)
-        if isinstance(model, (pybop.lithium_ion.EChemBaseModel)):
+        if isinstance(model, (pybop.lithium_ion.GroupedSPMe)):
+            inputs = {
+                "Negative electrode relative porosity": 0.52,
+                "Positive electrode relative porosity": 0.63,
+            }
+        elif isinstance(model, (pybop.lithium_ion.EChemBaseModel)):
             if model.pybamm_model.options["working electrode"] == "positive":
                 inputs = {
                     "Positive electrode active material volume fraction": 0.63,

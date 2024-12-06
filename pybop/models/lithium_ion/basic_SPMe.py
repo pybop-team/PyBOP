@@ -40,7 +40,8 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         if model_kwargs.get("build", True) is False:
             unused_keys.append("build")
         options = {"surface form": "false", "contact resistance": "true"}
-        options.update(model_kwargs.get("options", {}))
+        if model_kwargs.get("options", None) is not None:
+            options.update(options)
         for key in options.keys():
             if key not in ["surface form", "contact resistance"]:
                 unused_keys.append("options[" + key + "]")
@@ -383,9 +384,9 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
     def default_parameter_values(self):
         parameter_dictionary = {
             "Nominal cell capacity [A.h]": 3,
+            "Current function [A]": 3,
             "Initial temperature [K]": 298.15,
             "Initial SoC": 0.5,
-            "Current function [A]": 3,
             "Minimum negative stoichiometry": 0.026,
             "Maximum negative stoichiometry": 0.911,
             "Minimum positive stoichiometry": 0.264,
@@ -396,8 +397,8 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "Negative electrode OCP [V]": graphite_LGM50_ocp_Chen2020,
             "Measured cell capacity [A.s]": 3000,
             "Reference electrolyte capacity [A.s]": 1000,
-            "Positive relative concentration": 1,
-            "Negative relative concentration": 1,
+            "Positive electrode relative porosity": 1,
+            "Negative electrode relative porosity": 1,
             "Positive particle diffusion time scale [s]": 2000,
             "Negative particle diffusion time scale [s]": 2000,
             "Positive electrode electrolyte diffusion time scale [s]": 300,
@@ -583,8 +584,8 @@ def convert_physical_to_grouped_parameters(parameter_set):
     l_n = L_n / L
 
     return {
-        "Current function [A]": parameter_set["Current function [A]"],
         "Nominal cell capacity [A.h]": parameter_set["Nominal cell capacity [A.h]"],
+        "Current function [A]": parameter_set["Current function [A]"],
         "Initial temperature [K]": parameter_set["Ambient temperature [K]"],
         "Initial SoC": soc_init,
         "Minimum negative stoichiometry": x_0,
