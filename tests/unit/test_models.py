@@ -594,7 +594,15 @@ class TestModels:
         grouped_parameter_set = convert_physical_to_grouped_parameters(parameter_set)
 
         model = pybop.lithium_ion.GroupedSPMe(parameter_set=grouped_parameter_set)
-        model.set_initial_state({"Initial SoC": 1.0})
 
+        with pytest.raises(
+            ValueError, match="GroupedSPMe can currently only accept an initial SoC."
+        ):
+            model.set_initial_state({"Initial open-circuit voltage [V]": 3.7})
+
+        model.set_initial_state({"Initial SoC": 1.0})
         res = model.predict(t_eval=np.linspace(0, 10, 100))
         assert len(res["Voltage [V]"].data) == 100
+
+        variable_list = model.pybamm_model.default_quick_plot_variables
+        assert isinstance(variable_list, list)
