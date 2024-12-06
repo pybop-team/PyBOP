@@ -235,19 +235,20 @@ class TestCosts:
         )
 
     @pytest.mark.parametrize(
-        "cost_class",
+        "cost_class, expected_name",
         [
-            pybop.DesignCost,
-            pybop.GravimetricEnergyDensity,
-            pybop.VolumetricEnergyDensity,
-            pybop.GravimetricPowerDensity,
-            pybop.VolumetricPowerDensity,
+            (pybop.DesignCost, "Design Cost"),
+            (pybop.GravimetricEnergyDensity, "Gravimetric Energy Density"),
+            (pybop.VolumetricEnergyDensity, "Volumetric Energy Density"),
+            (pybop.GravimetricPowerDensity, "Gravimetric Power Density"),
+            (pybop.VolumetricPowerDensity, "Volumetric Power Density"),
         ],
     )
     @pytest.mark.unit
-    def test_design_costs(self, cost_class, design_problem):
+    def test_design_costs(self, cost_class, expected_name, design_problem):
         # Construct Cost
         cost = cost_class(design_problem)
+        assert cost.name == expected_name
 
         if cost_class in [pybop.DesignCost]:
             with pytest.raises(NotImplementedError):
