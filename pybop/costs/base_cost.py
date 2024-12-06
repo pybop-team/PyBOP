@@ -4,6 +4,7 @@ import numpy as np
 from numpy import ndarray
 
 from pybop import BaseProblem
+from pybop._utils import add_spaces
 from pybop.parameters.parameter import Inputs, Parameters
 
 
@@ -195,6 +196,10 @@ class BaseCost:
         self._parameters.join(parameters)
         if original_n_params != self.n_parameters:
             self.set_fail_gradient()
+
+    @property
+    def name(self):
+        return add_spaces(type(self).__name__)
 
     @property
     def n_parameters(self):
