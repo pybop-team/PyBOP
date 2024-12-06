@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from pybamm import Parameter
 
 import pybop
 from pybop._classification import classify_using_Hessian
@@ -35,12 +36,16 @@ class TestClassification:
         )
 
     @pytest.fixture
-    def model(self, parameters):
+    def parameter_set(self):
         parameter_set = pybop.ParameterSet(
             json_path="examples/parameters/initial_ecm_parameters.json"
         )
         parameter_set.import_parameters()
         parameter_set.params.update({"C1 [F]": 1000})
+        return parameter_set
+
+    @pytest.fixture
+    def model(self, parameter_set, parameters):
         parameter_set.params.update(parameters.as_dict(parameters.true_value()))
         return pybop.empirical.Thevenin(parameter_set=parameter_set)
 
@@ -100,6 +105,82 @@ class TestClassification:
 
             message = classify_using_Hessian(optim, x)
             assert message == "The optimiser has located a maximum."
+
+        # message = classify_using_Hessian(optim, x)
+        # assert message == "The optimiser has located a saddle point."
+
+    @pytest.mark.integration
+    def test_insensitive_classify_using_Hessian(self, parameter_set):
+        param_R0 = pybop.Parameter(
+            "R0 [Ohm]",
+            bounds=[0, 0.002],
+            true_value=0.001,
+        )
+        param_R0_mod = pybop.Parameter(
+            "R0 modification [Ohm]",
+            bounds=[-1e-4, 1e-4],
+            true_value=0,
+        )
+        param_R1_mod = pybop.Parameter(
+            "R1 modification [Ohm]",
+            bounds=[-1e-4, 1e-4],
+            true_value=0,
+        )
+        parameter_set.params.update(
+            {
+                "R0 modification [Ohm]": 0,
+                "R1 modification [Ohm]": 0,
+            },
+            check_already_exists=False,
+        )
+        R0, R1 = parameter_set["R0 [Ohm]"], parameter_set["R1 [Ohm]"]
+        parameter_set.params.update(
+            {
+                "R0 [Ohm]": R0 + Parameter("R0 modification [Ohm]"),
+                "R1 [Ohm]": R1 + Parameter("R1 modification [Ohm]"),
+            }
+        )
+        model = pybop.empirical.Thevenin(parameter_set=parameter_set)
+
+        experiment = pybop.Experiment(
+            ["Discharge at 0.5C for 2 minutes (4 seconds period)"]
+        )
+        solution = model.predict(experiment=experiment)
+        dataset = pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Voltage [V]": solution["Voltage [V]"].data,
+            }
+        )
+
+        for i, parameters in enumerate(
+            [
+                pybop.Parameters(param_R0_mod, param_R1_mod),
+                pybop.Parameters(param_R1_mod, param_R0),
+                pybop.Parameters(param_R0, param_R1_mod),
+            ]
+        ):
+            problem = pybop.FittingProblem(model, parameters, dataset)
+            cost = pybop.SumofPower(problem, p=3)
+            optim = pybop.XNES(cost=cost)
+
+            x = np.asarray(cost.parameters.true_value())
+            message = classify_using_Hessian(optim, x)
+
+            if i == 0:
+                assert message == "The cost is insensitive to these parameters."
+            elif i == 1 or i == 2:
+                assert message == "The cost is insensitive to R1 modification [Ohm]."
+
+        parameters = pybop.Parameters(param_R0, param_R0_mod)
+        problem = pybop.FittingProblem(model, parameters, dataset)
+        cost = pybop.SumofPower(problem, p=3)
+        optim = pybop.XNES(cost=cost)
+
+        x = np.asarray(cost.parameters.true_value())
+        message = classify_using_Hessian(optim, x)
+        assert message == "There may be a correlation between these parameters."
 
     @pytest.mark.integration
     def test_classify_using_Hessian_invalid(self, model, parameters, dataset):
