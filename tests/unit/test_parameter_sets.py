@@ -38,7 +38,7 @@ class TestParameterSets:
             json_params.import_parameters()
 
         json_params = pybop.ParameterSet(
-            json_path="examples/scripts/parameters/initial_ecm_parameters.json"
+            json_path="examples/parameters/initial_ecm_parameters.json"
         )
         json_params.import_parameters()
 
@@ -94,14 +94,14 @@ class TestParameterSets:
             ),
         )
         params.export_parameters(
-            "examples/scripts/parameters/fit_ecm_parameters.json", fit_params=parameters
+            "examples/parameters/fit_ecm_parameters.json", fit_params=parameters
         )
 
         # Test error when there no parameters to export
         empty_params = pybop.ParameterSet()
         with pytest.raises(ValueError):
             empty_params.export_parameters(
-                "examples/scripts/parameters/fit_ecm_parameters.json"
+                "examples/parameters/fit_ecm_parameters.json"
             )
 
     @pytest.mark.unit
@@ -115,7 +115,7 @@ class TestParameterSets:
             bpx_parameters.import_from_bpx()
 
         bpx_parameters = pybop.ParameterSet(
-            json_path="examples/scripts/parameters/example_BPX.json"
+            json_path="examples/parameters/example_BPX.json"
         )
         bpx_parameters.import_from_bpx()
 

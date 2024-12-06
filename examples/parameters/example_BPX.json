@@ -1,0 +1,75 @@
+{
+    "Header": {
+          "BPX": 0.4,
+          "Title": "Parameterisation example of an LFP|graphite 2 Ah cylindrical 18650 cell. File downloaded on 19/3/24 from https://github.com/FaradayInstitution/BPX/blob/main/examples/lfp_18650_cell_BPX.json",
+          "Description": "LFP|graphite 2 Ah cylindrical 18650 cell. Parameterisation by About:Energy Limited (aboutenergy.io), December 2022, based on cell cycling data, and electrode data gathered after cell teardown. Electrolyte properties from Nyman et al. 2008 (doi:10.1016/j.electacta.2008.04.023). Negative electrode entropic coefficient data are from O'Regan et al. 2022 (doi:10.1016/j.electacta.2022.140700). Positive electrode entropic coefficient data are from Gerver and Meyers 2011 (doi:10.1149/1.3591799). Other thermal properties are estimated.",
+          "Model": "DFN"
+    },
+    "Parameterisation": {
+          "Cell": {
+                "Ambient temperature [K]": 298.15,
+                "Initial temperature [K]": 298.15,
+                "Reference temperature [K]": 298.15,
+                "Lower voltage cut-off [V]": 2.0,
+                "Upper voltage cut-off [V]": 3.65,
+                "Nominal cell capacity [A.h]": 2,
+                "Specific heat capacity [J.K-1.kg-1]": 999,
+                "Thermal conductivity [W.m-1.K-1]": 1.89,
+                "Density [kg.m-3]": 1940,
+                "Electrode area [m2]": 0.08959998,
+                "Number of electrode pairs connected in parallel to make a cell": 1,
+                "External surface area [m2]": 0.00431,
+                "Volume [m3]": 1.7e-05
+          },
+          "Electrolyte": {
+                "Initial concentration [mol.m-3]": 1000,
+                "Cation transference number": 0.259,
+                "Conductivity [S.m-1]": "0.1297 * (x / 1000) ** 3 - 2.51 * (x / 1000) ** 1.5 + 3.329 * (x / 1000)",
+                "Diffusivity [m2.s-1]": "8.794e-11 * (x / 1000) ** 2 - 3.972e-10 * (x / 1000) + 4.862e-10",
+                "Conductivity activation energy [J.mol-1]": 17100,
+                "Diffusivity activation energy [J.mol-1]": 17100
+          },
+          "Negative electrode": {
+                "Particle radius [m]": 4.8e-06,
+                "Thickness [m]": 4.44e-05,
+                "Diffusivity [m2.s-1]": 9.6e-15,
+                "OCP [V]": "5.29210878e+01 * exp(-1.72699386e+02 * x) - 1.17963399e+03 + 1.20956356e+03 * tanh(6.72033948e+01 * (x + 2.44746396e-02)) + 4.52430314e-02 * tanh(-1.47542326e+01 * (x - 1.62746053e-01)) + 2.01855800e+01 * tanh(-2.46666302e+01 * (x - 1.12986136e+00)) + 2.01708039e-02 * tanh(-1.19900231e+01 * (x - 5.49773440e-01)) + 4.99616805e+01 * tanh(-6.11370883e+01 * (x + 4.69382558e-03))",
+                "Entropic change coefficient [V.K-1]": "(-0.1112 * x + 0.02914 + 0.3561 * exp(-((x - 0.08309) ** 2) / 0.004616)) / 1000",
+                "Conductivity [S.m-1]": 7.46,
+                "Surface area per unit volume [m-1]": 473004,
+                "Porosity": 0.20666,
+                "Transport efficiency": 0.09395,
+                "Reaction rate constant [mol.m-2.s-1]": 6.872e-06,
+                "Minimum stoichiometry": 0.0016261,
+                "Maximum stoichiometry": 0.82258,
+                "Maximum concentration [mol.m-3]": 31400,
+                "Diffusivity activation energy [J.mol-1]": 30000,
+                "Reaction rate constant activation energy [J.mol-1]": 55000
+          },
+          "Positive electrode": {
+                "Particle radius [m]": 5e-07,
+                "Thickness [m]": 6.43e-05,
+                "Diffusivity [m2.s-1]": 6.873e-17,
+                "OCP [V]": "3.41285712e+00 - 1.49721852e-02 * x + 3.54866018e+14 * exp(-3.95729493e+02 * x) - 1.45998465e+00 * exp(-1.10108622e+02 * (1 - x))",
+                "Entropic change coefficient [V.K-1]": {
+                      "x": [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1],
+                      "y": [0.0001, 4.7145e-05, 3.7666e-05, 2.0299e-05, 5.9833e-06, -4.6859e-06, -1.3966e-05, -2.3528e-05, -3.3593e-05, -4.3433e-05, -5.2311e-05, -6.0211e-05, -6.8006e-05, -7.6939e-05, -8.7641e-05, -9.913e-05, -0.00010855, -0.00011266, -0.00011238, -0.00010921, -0.00022539]
+                },
+                "Conductivity [S.m-1]": 0.80,
+                "Surface area per unit volume [m-1]": 4418460,
+                "Porosity": 0.20359,
+                "Transport efficiency": 0.09186,
+                "Reaction rate constant [mol.m-2.s-1]": 9.736e-07,
+                "Minimum stoichiometry": 0.0875,
+                "Maximum stoichiometry": 0.95038,
+                "Maximum concentration [mol.m-3]": 21200,
+                "Diffusivity activation energy [J.mol-1]": 80000,
+                "Reaction rate constant activation energy [J.mol-1]": 35000
+          },
+          "Separator": {
+                "Thickness [m]": 2e-05,
+                "Porosity": 0.47,
+                "Transport efficiency": 0.3222
+          }
+    }
+}

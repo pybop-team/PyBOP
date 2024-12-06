@@ -3,6 +3,12 @@
 ## Features
 
 - [#481](https://github.com/pybop-team/PyBOP/pull/481) - Adds experimental support for PyBaMM's jaxified IDAKLU solver. Includes Jax-specific cost functions `pybop.JaxSumSquareError` and `pybop.JaxLogNormalLikelihood`. Adds `Jax` optional dependency to PyBaMM dependency.
+- [#582](https://github.com/pybop-team/PyBOP/pull/582) - Fixes `population_size` arg for Pints' based optimisers, reshapes `parameters.rvs` to be parameter instances.
+- [#570](https://github.com/pybop-team/PyBOP/pull/570) - Updates the contour and surface plots, adds mixed chain effective sample size computation, x0 to optim.log
+- [#566](https://github.com/pybop-team/PyBOP/pull/566) - Adds `UnitHyperCube` transformation class, fixes incorrect application of gradient transformation.
+- [#569](https://github.com/pybop-team/PyBOP/pull/569) - Adds parameter specific learning rate functionality to GradientDescent optimiser.
+- [#282](https://github.com/pybop-team/PyBOP/issues/282) - Restructures the examples directory.
+- [#396](https://github.com/pybop-team/PyBOP/issues/396) - Adds `ecm_with_tau.py` example script.
 - [#452](https://github.com/pybop-team/PyBOP/issues/452) - Extends `cell_mass` and `approximate_capacity` for half-cell models.
 - [#544](https://github.com/pybop-team/PyBOP/issues/544) - Allows iterative plotting using `StandardPlot`.
 - [#541](https://github.com/pybop-team/PyBOP/pull/541) - Adds `ScaledLogLikelihood` and `BaseMetaLikelihood` classes.
@@ -14,6 +20,7 @@
 ## Optimisations
 
 - [#512](https://github.com/pybop-team/PyBOP/pull/513) - Refactors `LogPosterior` with attributes pointing to composed likelihood object.
+- [#551](https://github.com/pybop-team/PyBOP/pull/551) - Refactors Optimiser arguments, `population_size` and `max_iterations` as default args, improves optimiser docstrings
 
 ## Bug Fixes
 

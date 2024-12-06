@@ -1,6 +1,7 @@
 import warnings
 
 import numpy as np
+import pybamm
 import pytest
 from packaging import version
 
@@ -75,6 +76,13 @@ class TestPlots:
         return pybop.FittingProblem(model, parameters, dataset)
 
     @pytest.fixture
+    def jax_fitting_problem(self, model, parameters, dataset):
+        model.solver = pybamm.IDAKLUSolver()
+        problem = pybop.FittingProblem(model, parameters, dataset)
+        problem.model.jaxify_solver(t_eval=problem.domain_data)
+        return problem
+
+    @pytest.fixture
     def experiment(self):
         return pybop.Experiment(
             [
@@ -88,7 +96,7 @@ class TestPlots:
         return pybop.DesignProblem(model, parameters, experiment)
 
     @pytest.mark.unit
-    def test_problem_plots(self, fitting_problem, design_problem):
+    def test_problem_plots(self, fitting_problem, design_problem, jax_fitting_problem):
         # Test plot of Problem objects
         pybop.plot.quick(fitting_problem, title="Optimised Comparison")
         pybop.plot.quick(design_problem)
