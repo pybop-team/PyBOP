@@ -284,7 +284,12 @@ class GroupedSPMe(EChemBaseModel):
             A dictionary of options to customise the behaviour of the PyBaMM model.
     """
 
-    def __init__(self, name="Grouped SPMe", eis=False, **model_kwargs):
+    def __init__(
+        self,
+        name="Grouped Single Particle Model with Electrolyte",
+        eis=False,
+        **model_kwargs,
+    ):
         # Use normalised lengthscales
         parameter_set = model_kwargs.pop("parameter_set", None)
         default_parameter_set = BaseGroupedSPMe().default_parameter_values

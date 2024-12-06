@@ -28,10 +28,14 @@ class TestModels:
                 {"number of MSMR reactions": ("6", "4")},
             ),
             (pybop.lithium_ion.WeppnerHuggins, "Weppner & Huggins model", None),
-            (pybop.lithium_ion.GroupedSPMe, "Grouped SPMe", None),
             (
                 pybop.lithium_ion.GroupedSPMe,
-                "Grouped SPMe",
+                "Grouped Single Particle Model with Electrolyte",
+                None,
+            ),
+            (
+                pybop.lithium_ion.GroupedSPMe,
+                "Grouped Single Particle Model with Electrolyte",
                 {"surface form": "differential"},
             ),
             (pybop.empirical.Thevenin, "Equivalent Circuit Thevenin Model", None),
@@ -587,12 +591,20 @@ class TestModels:
 
     @pytest.mark.unit
     def test_grouped_SPMe(self):
+        with pytest.warns(UserWarning) as record:
+            model = pybop.lithium_ion.GroupedSPMe(
+                unused_kwarg=0, options={"unused option": 0}
+            )
+            assert "The input model_kwargs" in str(record[0].message)
+            assert "are not currently used by the GroupedSPMe." in str(
+                record[0].message
+            )
+
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
         parameter_set["Electrolyte diffusivity [m2.s-1]"] = 1.769e-10
         parameter_set["Electrolyte conductivity [S.m-1]"] = 0.9487
 
         grouped_parameter_set = convert_physical_to_grouped_parameters(parameter_set)
-
         model = pybop.lithium_ion.GroupedSPMe(parameter_set=grouped_parameter_set)
 
         with pytest.raises(
