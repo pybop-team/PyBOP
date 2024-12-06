@@ -153,17 +153,31 @@ class TestPintsSamplers:
         assert samples.shape == (chains, 1, 2)
 
     @pytest.mark.unit
-    def test_effectie_sample_size(self, log_posterior):
-        sampler = pybop.SliceStepoutMCMC(
-            log_pdf=log_posterior,
-            chains=1,
-            max_iterations=1,
-        )
-        results = sampler.run()
-        summary = pybop.PosteriorSummary(results)
+    def test_effective_sample_size(self, log_posterior):
+        chains = np.asarray([[[0, 0]]])
+        summary = pybop.PosteriorSummary(chains)
 
         with pytest.raises(ValueError, match="At least two samples must be given."):
             summary.effective_sample_size()
+
+        n_chains = 3
+        sampler = pybop.HaarioBardenetACMC(
+            log_pdf=log_posterior,
+            chains=n_chains,
+            max_iterations=3,
+        )
+        chains = sampler.run()
+        summary = pybop.PosteriorSummary(chains)
+
+        # Non mixed chains
+        ess = summary.effective_sample_size()
+        assert len(ess) == log_posterior.n_parameters * n_chains
+        assert all(e > 0 for e in ess)  # ESS should be positive
+
+        # Mixed chains
+        ess = summary.effective_sample_size(mixed_chains=True)
+        assert len(ess) == log_posterior.n_parameters
+        assert all(e > 0 for e in ess)
 
     @pytest.mark.unit
     def test_single_parameter_sampling(self, model, dataset, MCMC, chains):
