@@ -114,6 +114,7 @@ class BaseOptimiser:
             raise ValueError("There are no parameters to optimise.")
 
         self.unset_options = optimiser_kwargs
+        self.unset_options_store = optimiser_kwargs.copy()
         self.set_base_options()
         self._set_up_optimiser()
 
@@ -152,6 +153,9 @@ class BaseOptimiser:
                 self.unset_options.pop("allow_infeasible_solutions")
             )
 
+        # Set multistart
+        self.multistart = self.unset_options.pop("multistart", 1)
+
     def _set_up_optimiser(self):
         """
         Parse optimiser options and prepare the optimiser.
@@ -171,16 +175,25 @@ class BaseOptimiser:
 
         Returns
         -------
-        results: OptimisationResult
+        results: MultiOptimisationResult
             The pybop optimisation result class.
         """
-        self.result = self._run()
+        self.result = MultiOptimisationResult()
 
-        if self.verbose:
-            print(self.result)
+        for i in range(self.multistart):
+            if i >= 1:
+                self.unset_options = self.unset_options_store.copy()
+                self.x0 = self.parameters.rvs(1, apply_transform=True)
+                self.parameters.update(initial_values=self.x0)
+                self._set_up_optimiser()
+
+            self.result.add_run(self._run())
 
         # Store the optimised parameters
         self.parameters.update(values=self.result.x)
+
+        if self.verbose:
+            print(self.result)
 
         return self.result
 
@@ -300,7 +313,7 @@ class OptimisationResult:
         The solution of the optimisation.
     final_cost : float
         The cost associated with the solution x.
-    nit : int
+    n_iterations : int
         Number of iterations performed by the optimiser.
     scipy_result : scipy.optimize.OptimizeResult, optional
         The result obtained from a SciPy optimiser.
@@ -407,3 +420,104 @@ class OptimisationResult:
             f"  Number of iterations: {self.n_iterations}\n"
             f"  SciPy result available: {'Yes' if self.scipy_result else 'No'}"
         )
+
+
+class MultiOptimisationResult:
+    """
+    Multi run optimisation result class. Stores the results
+    of multiple optimisation runs.
+
+    Attributes
+    ----------
+    results : list
+        The list of OptimisationResults for each optimisation run
+
+    Properties
+    ----------
+    x : ndarray
+        The solution of the best optimisation run.
+    final_cost : float
+        The cost associated with the best solution x.
+    n_iterations : int
+        Number of iterations performed by the optimiser
+        for the best optimisation run.
+    scipy_result : scipy.optimize.OptimizeResult, optional
+        The result obtained from a SciPy optimiser for the
+        best optimisation run.
+    time : float
+        The total time across all optimisation runs.
+    """
+
+    def __init__(self):
+        self.results: list[OptimisationResult] = []
+
+    def add_run(self, result: OptimisationResult):
+        """Adds a new optimisation result."""
+        self.results.append(result)
+
+    def best_run(self) -> Optional[OptimisationResult]:
+        """Returns the result with the best final cost."""
+        valid_results = [res for res in self.results if res.final_cost is not None]
+        if self.results[0].optim.minimising is True:
+            return min(valid_results, key=lambda res: res.final_cost)
+
+        return max(valid_results, key=lambda res: res.final_cost)
+
+    def average_iterations(self) -> Optional[float]:
+        """Calculates the average number of iterations across all runs."""
+        valid_iterations = [
+            res.n_iterations for res in self.results if res.n_iterations is not None
+        ]
+        return np.mean(valid_iterations)
+
+    def total_runtime(self) -> Optional[float]:
+        """Calculates the total runtime across all runs."""
+        valid_times = [res.time for res in self.results if res.time is not None]
+        return np.sum(valid_times)
+
+    def best_x(self) -> Optional[float]:
+        """Returns the best parameters, x across the optimisation"""
+        return self.best_run().x
+
+    def __str__(self) -> str:
+        """
+        A string representation of the MultiOptimisationResult object.
+
+        Returns:
+            str: A formatted string containing optimisation result information.
+        """
+        result_strs = []
+        for res in self.results:
+            result_strs.append(str(res))
+
+        return "\n".join(result_strs)
+
+    def check_physical_viability(self, x):
+        return self.best_run().check_physical_viability(x)
+
+    def get_scipy_result(self):
+        return self.best_run().get_scipy_result()
+
+    @property
+    def x(self):
+        return self.best_x()
+
+    @property
+    def x0(self):
+        return self.best_run().x0
+
+    @property
+    def final_cost(self):
+        return self.best_run().final_cost
+
+    @property
+    def n_iterations(self):
+        return self.best_run().n_iterations
+
+    @property
+    def scipy_result(self):
+        return self.best_run().scipy_result
+
+    @property
+    def time(self):
+        return self.total_runtime()

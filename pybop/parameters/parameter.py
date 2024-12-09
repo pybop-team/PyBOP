@@ -399,6 +399,9 @@ class Parameters:
             samples = param.rvs(n_samples, apply_transform=apply_transform)
             all_samples.append(samples)
 
+        if n_samples > 1:
+            return np.asarray(all_samples).T
+
         return np.concatenate(all_samples)
 
     def get_sigma0(self, apply_transform: bool = False) -> list:
