@@ -147,7 +147,7 @@ class TestPlots:
         pybop.plot.contour(optim, gradient=True, steps=5)
 
         # Plot voronoi
-        pybop.plot.surface(optim)
+        pybop.plot.surface(optim, normalised_distance_metric=False)
 
         # Plot voronoi w/ bounds
         pybop.plot.surface(optim, bounds=bounds)
