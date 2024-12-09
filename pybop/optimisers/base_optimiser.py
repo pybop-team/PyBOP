@@ -62,7 +62,7 @@ class BaseOptimiser:
         # First set attributes to default values
         self.parameters = Parameters()
         self.x0 = optimiser_kwargs.get("x0", [])
-        self.log = dict(x=[], x_best=[], cost=[], cost_best=[], x0=[])
+        self.log = dict(x=[], x_best=[], x_search=[], x0=[], cost=[], cost_best=[])
         self.bounds = None
         self.sigma0 = 0.02
         self.verbose = True
@@ -80,9 +80,11 @@ class BaseOptimiser:
             self._transformation = self.cost.transformation
             self.set_allow_infeasible_solutions()
             if isinstance(cost, WeightedCost):
-                self.minimising = cost.minimising
-            if isinstance(cost, (BaseLikelihood, DesignCost)):
-                self.minimising = False
+                self.minimising = not isinstance(
+                    cost.costs[0], (BaseLikelihood, DesignCost)
+                )
+            else:
+                self.minimising = not isinstance(cost, (BaseLikelihood, DesignCost))
 
         else:
             try:
@@ -169,6 +171,38 @@ class BaseOptimiser:
         """
         raise NotImplementedError
 
+    def cost_call(
+        self,
+        x: Union[Inputs, list],
+        calculate_grad: bool = False,
+    ) -> Union[float, tuple[float, np.ndarray]]:
+        """
+        Call the cost function to minimise, applying any given transformation to the
+        input parameters.
+
+        Parameters
+        ----------
+        x : Inputs or list-like
+            The input parameters for which the cost and optionally the gradient
+            will be computed.
+        calculate_grad : bool, optional, default=False
+            If True, both the cost and gradient will be computed. Otherwise, only the
+            cost is computed.
+
+        Returns
+        -------
+        float or tuple
+            - If `calculate_grad` is False, returns the computed cost (float).
+            - If `calculate_grad` is True, returns a tuple containing the cost (float)
+              and the gradient (np.ndarray).
+        """
+        return self.cost(
+            x,
+            calculate_grad=calculate_grad,
+            apply_transform=True,
+            minimising=self.minimising,
+        )
+
     def run(self):
         """
         Run the optimisation and return the optimised parameters and final cost.
@@ -243,6 +277,7 @@ class BaseOptimiser:
 
         if x is not None:
             x = convert_to_list(x)
+            self.log["x_search"].extend(x)
             x = apply_transformation(x)
             self.log["x"].extend(x)
 
@@ -252,11 +287,15 @@ class BaseOptimiser:
 
         if cost is not None:
             cost = convert_to_list(cost)
-            self.log["cost"].extend(cost)
+            true_cost = [cost * (1 if self.minimising else -1) for cost in cost]
+            self.log["cost"].extend(true_cost)
 
         if cost_best is not None:
             cost_best = convert_to_list(cost_best)
-            self.log["cost_best"].extend(cost_best)
+            true_cost_best = [
+                cost * (1 if self.minimising else -1) for cost in cost_best
+            ]
+            self.log["cost_best"].extend(true_cost_best)
 
         if x0 is not None:
             self.log["x0"].extend(x0)
@@ -321,22 +360,26 @@ class OptimisationResult:
 
     def __init__(
         self,
+        optim: BaseOptimiser,
         x: Union[Inputs, np.ndarray] = None,
-        cost: Union[BaseCost, None] = None,
         final_cost: Optional[float] = None,
         n_iterations: Optional[int] = None,
-        optim: Optional[BaseOptimiser] = None,
         time: Optional[float] = None,
         scipy_result=None,
     ):
-        self.x = x
-        self.cost = cost
+        self.optim = optim
+        self.cost = self.optim.cost
+        self.minimising = self.optim.minimising
+        self._transformation = self.optim._transformation  # noqa: SLF001
+
+        self.x = self._transformation.to_model(x) if self._transformation else x
         self.final_cost = (
-            final_cost if final_cost is not None else self._calculate_final_cost()
+            final_cost * (1 if self.minimising else -1)
+            if final_cost is not None
+            else self._calculate_final_cost()
         )
         self.n_iterations = n_iterations
         self.scipy_result = scipy_result
-        self.optim = optim
         self.time = time
         if isinstance(self.optim, BaseOptimiser):
             self.x0 = self.optim.parameters.initial_value()

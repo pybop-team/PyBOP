@@ -199,13 +199,7 @@ class BasePintsOptimiser(BaseOptimiser):
 
         # Choose method to evaluate
         def fun(x):
-            if self._needs_sensitivities:
-                L, dl = self.cost(x, calculate_grad=True, apply_transform=True)
-            else:
-                L = self.cost(x, apply_transform=True)
-                dl = None
-            sign = -1 if not self.minimising else 1
-            return (sign * L, sign * dl) if dl is not None else sign * L
+            return self.cost_call(x, calculate_grad=self._needs_sensitivities)
 
         # Create evaluator object
         if self._parallel:
@@ -224,7 +218,7 @@ class BasePintsOptimiser(BaseOptimiser):
         fb = fg = np.inf
 
         # Internally we always minimise! Keep a 2nd value to show the user.
-        fg_user = (fb, fg) if self.minimising else (-fb, -fg)
+        fg_user = (fb, fg)
 
         # Keep track of the last significant change
         f_sig = np.inf
@@ -245,7 +239,7 @@ class BasePintsOptimiser(BaseOptimiser):
                 # Update the scores
                 fb = self.optimiser.f_best()
                 fg = self.optimiser.f_guessed()
-                fg_user = (fb, fg) if self.minimising else (-fb, -fg)
+                fg_user = (fb, fg)
 
                 # Check for significant changes against the absolute and relative tolerance
                 f_new = fg if self._use_f_guessed else fb
@@ -264,8 +258,8 @@ class BasePintsOptimiser(BaseOptimiser):
                 self.log_update(
                     x=xs,
                     x_best=self.optimiser.x_best(),
-                    cost=_fs if self.minimising else [-x for x in _fs],
-                    cost_best=fb if self.minimising else -fb,
+                    cost=_fs,
+                    cost_best=fb,
                 )
 
                 # Check stopping criteria:
@@ -331,11 +325,8 @@ class BasePintsOptimiser(BaseOptimiser):
             print("Current score: " + str(fg_user))
             print("Current position:")
 
-            # Show current parameters
-            x_user = self.optimiser.x_guessed()
-            if self._transformation:
-                x_user = self._transformation.to_model(x_user)
-            for p in x_user:
+            # Show current parameters (with any transformation applied)
+            for p in self.optimiser.x_guessed():
                 print(PintsStrFloat(p))
             print("-" * 40)
             raise
@@ -356,16 +347,11 @@ class BasePintsOptimiser(BaseOptimiser):
             x = self.optimiser.x_best()
             f = self.optimiser.f_best()
 
-        # Inverse transform search parameters
-        if self._transformation:
-            x = self._transformation.to_model(x)
-
         return OptimisationResult(
-            x=x,
-            cost=self.cost,
-            final_cost=f if self.minimising else -f,
-            n_iterations=self._iterations,
             optim=self,
+            x=x,
+            final_cost=f,
+            n_iterations=self._iterations,
             time=total_time,
         )
 

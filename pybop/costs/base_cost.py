@@ -58,6 +58,7 @@ class BaseCost:
         inputs: Union[Inputs, list],
         calculate_grad: bool = False,
         apply_transform: bool = False,
+        minimising: bool = True,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
         This method calls the forward model via problem.evaluate(inputs),
@@ -73,6 +74,9 @@ class BaseCost:
             cost is computed.
         apply_transform : bool, optional, default=False
             If True, applies a transformation to the inputs before evaluating the model.
+        minimsing : bool, optional, default=True
+            If False, switches the sign of the cost and gradient to perform maximisation
+            instead of minimisation.
 
         Returns
         -------
@@ -110,10 +114,15 @@ class BaseCost:
                     jac = self.transformation.jacobian(inputs)
                     grad = np.matmul(grad, jac)
 
-                return cost, grad
+                return cost * (1 if minimising else -1), grad * (
+                    1 if minimising else -1
+                )
 
             y = self.problem.evaluate(self.problem.parameters.as_dict())
-        return self.compute(y, dy=dy, calculate_grad=calculate_grad)
+
+        return self.compute(y, dy=dy, calculate_grad=calculate_grad) * (
+            1 if minimising else -1
+        )
 
     def compute(self, y: dict, dy: ndarray, calculate_grad: bool = False):
         """
