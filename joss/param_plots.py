@@ -10,19 +10,21 @@ import pybop
 from pybop.plot import PlotlyManager
 
 go = PlotlyManager().go
+px = PlotlyManager().px
+make_subplots = PlotlyManager().make_subplots
 np.random.seed(8)
 
 # Choose which plots to show and save
 create_plot = {}
 create_plot["simulation"] = False
-create_plot["landscape"] = True
+create_plot["landscape"] = False
 create_plot["minimising"] = False
 create_plot["maximising"] = False
-create_plot["gradient"] = False
-create_plot["evolution"] = False
-create_plot["heuristic"] = False
+create_plot["gradient"] = True
+create_plot["evolution"] = True
+create_plot["heuristic"] = True
 create_plot["posteriors"] = False
-create_plot["eis"] = True
+create_plot["eis"] = False
 
 
 # Parameter set and model definition
@@ -197,7 +199,7 @@ if create_plot["minimising"]:
         convergence_plot_dict = pybop.plot.StandardPlot(
             x=iteration_numbers,
             y=cost_log,
-            trace_names=type(cost).__name__,
+            trace_names=cost.name,
             trace_options={"line": {"width": 4, "dash": "dash"}},
         )
         convergence_traces.extend(convergence_plot_dict.traces)
@@ -212,8 +214,16 @@ if create_plot["minimising"]:
                 orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
             ),
             plot_bgcolor="white",
-            width=576,
-            height=576,
+            yaxis=dict(
+                gridcolor=px.colors.qualitative.Pastel2[7],
+                zerolinecolor=px.colors.qualitative.Pastel2[7],
+                zerolinewidth=1,
+                titlefont_size=14,
+                tickfont_size=14,
+            ),
+            xaxis=dict(titlefont_size=14, tickfont_size=14),
+            width=600,
+            height=600,
         ),
     )
     convergence_fig.show()
@@ -258,13 +268,9 @@ if create_plot["maximising"]:
         convergence_plot_dict = pybop.plot.StandardPlot(
             x=iteration_numbers,
             y=cost_log,
-            trace_names=type(cost).__name__
+            trace_names=cost.name
             + " "
-            + (
-                type(cost.likelihood).__name__
-                if isinstance(cost, pybop.LogPosterior)
-                else ""
-            ),
+            + (cost.likelihood.name if isinstance(cost, pybop.LogPosterior) else ""),
             trace_options={"line": {"width": 4, "dash": "dash"}},
         )
         convergence_traces.extend(convergence_plot_dict.traces)
@@ -276,11 +282,24 @@ if create_plot["maximising"]:
             xaxis_title="Iteration",
             yaxis_title="Likelihood",
             legend=dict(
-                orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1,
+                font_size=14,
             ),
             plot_bgcolor="white",
-            width=576,
-            height=576,
+            yaxis=dict(
+                gridcolor=px.colors.qualitative.Pastel2[7],
+                zerolinecolor=px.colors.qualitative.Pastel2[7],
+                zerolinewidth=1,
+                titlefont_size=14,
+                tickfont_size=14,
+            ),
+            xaxis=dict(titlefont_size=14, tickfont_size=14),
+            width=600,
+            height=600,
         ),
     )
     convergence_fig.show()
@@ -310,10 +329,36 @@ heuristic_optimiser_classes = [
 # Define the cost
 cost = pybop.RootMeanSquaredError(problem)
 
+# Create subplot figure
+max_optims = max(
+    len(gradient_optimiser_classes),
+    len(evolution_optimiser_classes),
+    len(heuristic_optimiser_classes),
+)
+subplot_contour_fig = make_subplots(
+    rows=3,
+    cols=max_optims,
+    shared_yaxes=True,
+    shared_xaxes=True,
+    x_title="Negative particle diffusivity [m2.s-1]",
+    y_title="Contact resistance [Ohm]",
+    horizontal_spacing=0.02,
+    vertical_spacing=0.04,
+    subplot_titles=[
+        cls.__name__
+        for cls in [
+            *gradient_optimiser_classes,
+            *evolution_optimiser_classes,
+            *heuristic_optimiser_classes,
+        ]
+    ],
+)
 
 if create_plot["gradient"]:
-    ## Show parameter convergence for difference optimisers and same cost function
+    # Create subplot structure
+    num_optimisers = len(gradient_optimiser_classes)
     parameter_traces = []
+
     for i, optimiser in enumerate(gradient_optimiser_classes):
         # Define keyword arguments for the optimiser class
         kwargs = {"sigma0": [0.08, 0.05]}
@@ -322,11 +367,9 @@ if create_plot["gradient"]:
             kwargs["jac"] = True
             kwargs["tol"] = 1e-9
         elif optimiser is pybop.GradientDescent:
-            kwargs["sigma0"] = [11, 2.25]  # [1.2, 0.3]
+            kwargs["sigma0"] = [11, 2.25]
         elif optimiser is pybop.AdamW:
             kwargs["sigma0"] = 0.2
-        # elif optimiser is pybop.IRPropMin:
-        #     kwargs["sigma0"] = [4e-3,2e-2]
 
         # Construct the optimiser
         optim = optimiser(
@@ -344,6 +387,7 @@ if create_plot["gradient"]:
             optim.optimiser.lam = 0.01
 
         # Run optimisation
+        optim = optimiser(cost, **kwargs)
         results = optim.run()
         print("True parameter values:", parameters.true_value())
 
@@ -358,50 +402,75 @@ if create_plot["gradient"]:
                 parameter_fig.data[j].showlegend = False
         parameter_traces.extend(parameter_fig.data)
 
-        # Plot the cost landscape with optimisation path
+        # Collect contour plot data
         contour = pybop.plot.contour(
-            optim, steps=25, title="", margin=dict(l=30, r=30, t=30, b=30)
+            optim,
+            steps=25,
+            title="",
+            showlegend=False,
+            show=False,
+            margin=dict(l=20, r=20, t=20, b=20),
         )
-        contour.write_image(f"joss/figures/contour_gradient_{i}.png")
+        contour.update_traces(
+            showscale=(i == num_optimisers - 1), selector=dict(type="contour")
+        )
+
+        # Add all traces from the contour figure to the subplot
+        for trace in contour.data:
+            subplot_contour_fig.add_trace(trace, row=1, col=i + 1)
 
     # Plot the parameter traces together
-    parameter_fig.update_layout(width=576, height=1024, plot_bgcolor="white")
+    parameter_fig.update_layout(
+        width=576,
+        height=1024,
+        plot_bgcolor="white",
+        yaxis=dict(
+            gridcolor=px.colors.qualitative.Pastel2[7],
+            zerolinecolor=px.colors.qualitative.Pastel2[7],
+            zerolinewidth=1,
+            titlefont_size=14,
+            tickfont_size=14,
+        ),
+        xaxis=dict(titlefont_size=14, tickfont_size=14),
+        yaxis2=dict(
+            gridcolor=px.colors.qualitative.Pastel2[7],
+            zerolinecolor=px.colors.qualitative.Pastel2[7],
+            zerolinewidth=1,
+            titlefont_size=14,
+            tickfont_size=14,
+        ),
+        xaxis2=dict(titlefont_size=14, tickfont_size=14),
+    )
     parameter_fig.data = []
     parameter_fig.add_traces(parameter_traces)
     parameter_fig = plotly.subplots.make_subplots(figure=parameter_fig, rows=2, cols=1)
     parameter_fig.show()
     parameter_fig.write_image("joss/figures/gradient_parameters.png")
 
-
 if create_plot["evolution"]:
-    ## Do the same for the evolution strategies
-    parameter_traces = []
-    for i, optimiser in enumerate(evolution_optimiser_classes):
-        # Define keyword arguments for the optimiser class
-        kwargs = {}
+    # Create subplot structure
+    num_optimisers = len(evolution_optimiser_classes)
 
-        # Construct the optimiser
+    # Define shared optimiser settings
+    default_kwargs = {
+        "verbose": True,
+        "max_iterations": 300,
+        "max_unchanged_iterations": 300,
+        "max_evaluations": 338,
+        "popsize": 6,
+    }
+    parameter_traces = []
+
+    for i, optimiser in enumerate(evolution_optimiser_classes):
+        # Set specific arguments for SciPyDifferentialEvolution
+        kwargs = default_kwargs.copy()
         if optimiser is pybop.SciPyDifferentialEvolution:
-            optim = optimiser(
-                cost,
-                verbose=True,
-                max_iterations=50,
-                max_unchanged_iterations=25,
-                popsize=3,
-                **kwargs,
-            )
-        else:
-            optim = optimiser(
-                cost,
-                verbose=True,
-                max_iterations=300,
-                max_unchanged_iterations=300,
-                max_evaluations=338,
-                popsize=6,
-                **kwargs,
+            kwargs.update(
+                {"max_iterations": 50, "max_unchanged_iterations": 25, "popsize": 3}
             )
 
         # Run optimisation
+        optim = optimiser(cost, **kwargs)
         results = optim.run()
         print("True parameter values:", parameters.true_value())
 
@@ -416,14 +485,45 @@ if create_plot["evolution"]:
                 parameter_fig.data[j].showlegend = False
         parameter_traces.extend(parameter_fig.data)
 
-        # Plot the cost landscape with optimisation path
+        # Collect contour plot data
         contour = pybop.plot.contour(
-            optim, steps=25, title="", margin=dict(l=30, r=30, t=30, b=30)
+            optim,
+            steps=25,
+            title="",
+            showlegend=False,
+            show=False,
+            margin=dict(l=20, r=20, t=20, b=20),
         )
-        contour.write_image(f"joss/figures/contour_evolution_{i}.png")
+        contour.update_traces(
+            showscale=(i == num_optimisers - 1), selector=dict(type="contour")
+        )
+
+        # Add all traces from the contour figure to the subplot
+        for trace in contour.data:
+            subplot_contour_fig.add_trace(trace, row=2, col=i + 1)
 
     # Plot the parameter traces together
-    parameter_fig.update_layout(width=576, height=1024, plot_bgcolor="white")
+    parameter_fig.update_layout(
+        width=576,
+        height=1024,
+        plot_bgcolor="white",
+        yaxis=dict(
+            gridcolor=px.colors.qualitative.Pastel2[7],
+            zerolinecolor=px.colors.qualitative.Pastel2[7],
+            zerolinewidth=1,
+            titlefont_size=14,
+            tickfont_size=14,
+        ),
+        xaxis=dict(titlefont_size=14, tickfont_size=14),
+        yaxis2=dict(
+            gridcolor=px.colors.qualitative.Pastel2[7],
+            zerolinecolor=px.colors.qualitative.Pastel2[7],
+            zerolinewidth=1,
+            titlefont_size=14,
+            tickfont_size=14,
+        ),
+        xaxis2=dict(titlefont_size=14, tickfont_size=14),
+    )
     parameter_fig.data = []
     parameter_fig.add_traces(parameter_traces)
     parameter_fig = plotly.subplots.make_subplots(figure=parameter_fig, rows=2, cols=1)
@@ -432,7 +532,17 @@ if create_plot["evolution"]:
 
 
 if create_plot["heuristic"]:
-    ## Do the same for the (meta)heuristics
+    # Create subplot structure
+    num_optimisers = len(evolution_optimiser_classes)
+
+    # Define shared optimiser settings
+    default_kwargs = {
+        "verbose": True,
+        "max_iterations": 300,
+        "max_unchanged_iterations": 300,
+        "max_evaluations": 338,
+        "popsize": 6,
+    }
     parameter_traces = []
     for i, optimiser in enumerate(heuristic_optimiser_classes):
         # Define keyword arguments for the optimiser class
@@ -464,14 +574,66 @@ if create_plot["heuristic"]:
                 parameter_fig.data[j].showlegend = False
         parameter_traces.extend(parameter_fig.data)
 
-        # Plot the cost landscape with optimisation path
+        # Collect contour plot data
         contour = pybop.plot.contour(
-            optim, steps=25, title="", margin=dict(l=30, r=30, t=30, b=30)
+            optim,
+            steps=25,
+            title="",
+            showlegend=False,
+            show=False,
+            margin=dict(l=20, r=20, t=20, b=20),
         )
-        contour.write_image(f"joss/figures/contour_heuristic_{i}.png")
+        contour.update_traces(
+            showscale=(i == num_optimisers - 1), selector=dict(type="contour")
+        )
+
+        # Add all traces from the contour figure to the subplot
+        for trace in contour.data:
+            subplot_contour_fig.add_trace(trace, row=3, col=i + 1)
+
+    # Update layout to configure the color bar and plot dimensions
+    bounds = cost.parameters.get_bounds_for_plotly()
+    subplot_contour_fig.update_xaxes(
+        dict(titlefont_size=14, tickfont_size=14, range=bounds[0])
+    )
+    subplot_contour_fig.update_yaxes(
+        dict(titlefont_size=14, tickfont_size=14, range=bounds[1])
+    )
+    subplot_contour_fig.update_layout(
+        showlegend=False,
+        height=450 * 3,
+        width=450 * max_optims,
+        coloraxis_colorbar=dict(
+            title="Cost", thickness=20, len=1, y=0.5, yanchor="middle"
+        ),
+    )
+
+    # Show figure and save image
+    subplot_contour_fig.show()
+    subplot_contour_fig.write_image("joss/figures/joss/contour_subplot.png")
 
     # Plot the parameter traces together
-    parameter_fig.update_layout(width=576, height=1024, plot_bgcolor="white")
+    parameter_fig.update_layout(
+        width=576,
+        height=1024,
+        plot_bgcolor="white",
+        yaxis=dict(
+            gridcolor=px.colors.qualitative.Pastel2[7],
+            zerolinecolor=px.colors.qualitative.Pastel2[7],
+            zerolinewidth=1,
+            titlefont_size=14,
+            tickfont_size=14,
+        ),
+        xaxis=dict(titlefont_size=14, tickfont_size=14),
+        yaxis2=dict(
+            gridcolor=px.colors.qualitative.Pastel2[7],
+            zerolinecolor=px.colors.qualitative.Pastel2[7],
+            zerolinewidth=1,
+            titlefont_size=14,
+            tickfont_size=14,
+        ),
+        xaxis2=dict(titlefont_size=14, tickfont_size=14),
+    )
     parameter_fig.data = []
     parameter_fig.add_traces(parameter_traces)
     parameter_fig = plotly.subplots.make_subplots(figure=parameter_fig, rows=2, cols=1)

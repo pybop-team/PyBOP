@@ -205,21 +205,22 @@ Oxford, UK%
 \section{Summary}\label{summary}
 
 The Python Battery Optimisation and Parameterisation (\texttt{PyBOP})
-package provides methods for parameterising and optimising battery
-models, offering both deterministic and stochastic approaches with
-example workflows to assist users. \texttt{PyBOP} enables parameter
-identification of various battery models, including the electrochemical
-and equivalent circuit models provided by the popular open-source
-\texttt{PyBaMM} package (\citeproc{ref-Sulzer:2021}{Sulzer et al.,
-2021}).
+package provides methods for estimating and optimising battery model
+parameters, offering both deterministic and stochastic approaches with
+example workflows to assist users.
 
-Similarly, \texttt{PyBOP} can be used for design optimisation under
-user-defined operating conditions across a variety of model structures
-and design goals. \texttt{PyBOP} facilitates model parameterisation
-using a range of methods, with diagnostics for examining the performance
-and convergence of the resulting parameters. Identified parameters can
-be used for prediction, on-line control, and design optimisation,
-supporting improved battery utilisation and development.
+\texttt{PyBOP} enables parameter identification from data for various
+battery models, including both the electrochemical and equivalent
+circuit models provided by the popular open-source \texttt{PyBaMM}
+package (\citeproc{ref-Sulzer:2021}{Sulzer et al., 2021}). Using the
+same workflow, \texttt{PyBOP} can also be used for design optimisation
+under user-defined operating conditions across a variety of model
+structures and design goals. \texttt{PyBOP} facilitates optimisation
+using a range of methods, with diagnostics for examining optimiser
+performance and convergence of the cost and corresponding parameters.
+Identified parameters can be used for prediction, on-line control, and
+design optimisation to accelerate research and development and improve
+battery utilisation.
 
 \section{Statement of need}\label{statement-of-need}
 
@@ -227,51 +228,53 @@ supporting improved battery utilisation and development.
 object-oriented interface for optimising battery model parameters.
 \texttt{PyBOP} leverages the open-source \texttt{PyBaMM} package
 (\citeproc{ref-Sulzer:2021}{Sulzer et al., 2021}) to formulate and solve
-battery models. \texttt{PyBOP} is intended to serve a broad audience
+battery models. Together, these packages serve a broad audience
 including students, engineers, and researchers in academia and industry,
-enabling the use of battery models for performance prediction where
-previously this was not possible without specialised knowledge of both
-modelling, parameter inference and software development. \texttt{PyBOP}
-emphasises clear and informative diagnostics and workflows to support
-users with varying expertise, and provides access to a wide range of
-different optimisation and sampling algorithms. These methods are
-provided through interfaces to \texttt{PINTS}
-(\citeproc{ref-Clerx:2019}{Clerx et al., 2019}), \texttt{SciPy}
-(\citeproc{ref-SciPy:2020}{Virtanen et al., 2020}), and \texttt{PyBOP}'s
-own algorithms such as adaptive moment estimation with weight decay
-(AdamW), gradient descent, and Cuckoo search.
+enabling the use of advanced models where previously this was not
+possible without specialised knowledge of battery modelling, parameter
+inference and software development. \texttt{PyBOP} emphasises clear and
+informative diagnostics and workflows to support users with varying
+levels of domain expertise, and provides access to a wide range of
+optimisation and sampling algorithms. These methods are provided through
+interfaces to \texttt{PINTS} (\citeproc{ref-Clerx:2019}{Clerx et al.,
+2019}), \texttt{SciPy} (\citeproc{ref-SciPy:2020}{Virtanen et al.,
+2020}), and \texttt{PyBOP}'s own implementations of algorithms such as
+adaptive moment estimation with weight decay (AdamW), gradient descent,
+and Cuckoo search.
 
 \texttt{PyBOP} supports the battery parameter exchange (BPX) standard
 (\citeproc{ref-BPX:2023}{Korotkin et al., 2023}) for sharing battery
 parameter sets. These parameter sets are typically costly to obtain due
 to the specialised equipment and time required for characterisation
 experiments, the need for battery domain knowledge, and the
-computational cost of parameter estimation. \texttt{PyBOP} reduces these
-costs by providing fast parameter estimation, standardised workflows,
-and parameter set interoperability (via BPX).
+computational cost of parameter estimation. \texttt{PyBOP} reduces the
+requirements for the latter two categories by providing fast parameter
+estimation, standardised workflows, and parameter set interoperability
+(via BPX).
 
 This package complements other lithium-ion battery modelling packages
 built around \texttt{PyBaMM}, such as \texttt{liionpack} for battery
 pack simulation (\citeproc{ref-Tranter2022}{Tranter et al., 2022}) and
-\texttt{pybamm-eis} for numerical impedance spectroscopy, since the
-identified parameters from \texttt{PyBOP} are easily exportable to these
-other packages.
+\texttt{pybamm-eis} for fast numerical computation of the
+electrochemical impedance for any battery model, since the identified
+parameters from \texttt{PyBOP} are easily exportable to these other
+packages.
 
 \section{Architecture}\label{architecture}
 
-\texttt{PyBOP} has a layered structure designed to compute forward model
-predictions, process the results, and package the necessary information
-for the optimisation and sampling algorithms. The forward model is
-solved using the popular battery modelling package, \texttt{PyBaMM},
-with construction, parameterisation, and discretisation managed by
-\texttt{PyBOP}'s model interface to \texttt{PyBaMM}. This provides a
-robust object construction process with a consistent interface between
-models and optimisers. The statistical methods and optimisation
-algorithms are constructed to interface cleanly with the forward model
-predictions. Furthermore, identifiability metrics are provided with the
-estimated parameters (through Hessian approximation of the cost
-functions in frequentist workflows, and posterior distributions in
-Bayesian workflows).
+\texttt{PyBOP} has a layered structure designed to package up the
+necessary functionality to compute forward predictions, process the
+results, and run the optimisation and sampling algorithms. The forward
+model is solved using the popular battery modelling package,
+\texttt{PyBaMM}, with construction, parameterisation, and discretisation
+managed by \texttt{PyBOP}'s model interface to \texttt{PyBaMM}. This
+provides a robust object construction process with a consistent
+interface between models and optimisers. The statistical methods and
+optimisation algorithms are constructed to interface cleanly with the
+forward model predictions. Furthermore, identifiability metrics are
+provided with the estimated parameters (through Hessian approximation of
+the cost functions in frequentist workflows, and posterior distributions
+in Bayesian workflows).
 
 \begin{figure}
 \centering
@@ -282,44 +285,44 @@ optimisation. \label{fig:high-level}}
 \end{figure}
 
 \texttt{PyBOP} formulates the inference process into four key classes,
-namely the model, the problem, the cost, and the optimiser/sampler, as
-shown in \autoref{fig:classes}. Each of these objects represents a base
-class with child classes constructing specialised functionality for
-inference or optimisation workflows. The model class constructs a
-\texttt{PyBaMM} forward model for a given set of model equations
-provided by \texttt{PyBaMM}, initial conditions, spatial discretisation,
-and numerical solver. By composing \texttt{PyBaMM} directly into
-\texttt{PyBOP}, specialised models can be constructed alongside the
-standard models, which can be modified, and optimally constructed for
-the inference tasks. One such example is spatial rediscretisation, which
-is performed when geometric parameters are optimised. In this situation,
-\texttt{PyBOP} minimally rediscretises the \texttt{PyBaMM} model while
-maintaining the problem, cost, and optimiser objects, providing improved
-performance benefits to users. Alongside construction of the forward
-model, \texttt{PyBOP}'s model class provides methods for obtaining
-sensitivities from the prediction, enabling gradient-based optimisation
-algorithms. This prediction, along with its corresponding sensitivities,
-is provided to the problem class for processing and exception control. A
-standardised data structure is then provided to the cost classes, which
-then computes a distance, design, or likelihood-based metric for
-optimisation. For deterministic optimisation, the optimisers minimise
-the corresponding cost function or the negative log-likelihood if a
-likelihood class is provided. Bayesian inference is provided by Monte
-Carlo sampling classes, which accept the LogPosterior class and sample
-from it using \texttt{PINTS} based Monte Carlo algorithms at the time of
-submission. In the typical workflow, the classes in
-\autoref{fig:classes} are constructed in sequence.
+namely, the model, the problem, the cost/likelihood, and the
+optimiser/sampler, as shown in \autoref{fig:classes}. Each of these
+objects represents a base class with child classes constructing
+specialised functionality for different workflows. The model class
+constructs a \texttt{PyBaMM} forward model for a given set of model
+equations, initial conditions, spatial discretisation, and numerical
+solver. By composing \texttt{PyBaMM} directly into \texttt{PyBOP},
+specialised models can be constructed alongside the standard models,
+which can be modified and purposefully constructed for different
+inference tasks. One such example is spatial re-discretisation, which is
+required when one or more geometric parameters are being optimised. In
+this situation, \texttt{PyBOP} rebuilds the \texttt{PyBaMM} model a
+minimum number of times while maintaining the problem, cost, and
+optimiser objects, providing improved performance benefits to users.
+Alongside construction of the forward model, \texttt{PyBOP}'s model
+class provides methods for obtaining sensitivities from the prediction,
+enabling gradient-based optimisation algorithms. A forward prediction,
+along with its corresponding sensitivities, is provided to the problem
+class for processing and exception control. A standardised data
+structure is then provided to the cost classes, which then computes a
+distance, design, or likelihood-based metric for optimisation. For
+deterministic optimisation, the optimisers minimise the cost function or
+the negative log-likelihood if a likelihood class is provided. Bayesian
+inference is provided by sampler classes, which accept the LogPosterior
+class and sample from it using \texttt{PINTS} based Monte Carlo
+algorithms at the time of submission. In the typical workflow, the
+classes in \autoref{fig:classes} are constructed in sequence.
 
 In addition to the core architecture, \texttt{PyBOP} provides several
 specialised inference and optimisation processes. One such instance is
-parameter inference from EIS forward model predicitions. PyBOP
-discretises the EIS forward model inso sparse mass matrix form with
-accompanying auto-differentiated Jacobian. These objects are then
-translated into the frequency domain with a linear solution used to
-compute the battery model impedance. In this situation, the forward
-models are constructed within the spatial rediscretisation workflow,
-allowing for geometric parameter inference from EIS forward model
-predictions. Furthermore, \texttt{PyBOP} builds on the \texttt{JAX}
+parameter inference from electrochemical impedance spectroscopy (EIS)
+simulations. PyBOP discretises the EIS forward model into a sparse mass
+matrix form with accompanying auto-differentiated Jacobian. These
+objects are then translated into the frequency domain with a linear
+solution used to compute the battery model impedance. In this situation,
+the forward models are constructed within the spatial re-discretisation
+workflow, allowing for geometric parameter inference from EIS
+simulations. Furthermore, \texttt{PyBOP} builds on the \texttt{JAX}
 (\citeproc{ref-jax:2018}{Bradbury et al., 2018}) numerical solvers
 provided by \texttt{PyBaMM} by providing \texttt{JAX}-based cost
 functions for automatic forward model differentiation with respect to
@@ -334,8 +337,8 @@ to optimise their cost function, such as \texttt{Numpyro}
 \centering
 \includegraphics[width=0.8\textwidth,height=\textheight]{figures/PyBOP_components.drawio.png}
 \caption{The core \texttt{PyBOP} architecture, showcasing the base class
-interfaces. Each class provide direct mapping to a classical step in the
-optimisation workflow. \label{fig:classes}}
+interfaces. Each class provides a direct mapping to a classical step in
+the optimisation workflow. \label{fig:classes}}
 \end{figure}
 
 The currently implemented subclasses for the model, problem, and cost
@@ -384,18 +387,18 @@ Equivalent circuit model (ECM) & & Volumetric energy density \\
 
 Similarly, the current algorithms available for optimisation tasks are
 presented in \autoref{tab:optimisers}. It should be noted that
-\texttt{SciPy} minimize has gradient and non-gradient methods. From now
-on, the point-based parameterisation and design optimisation tasks will
-simply be referred to as optimisation tasks. This simplification can be
-justified by examining \autoref{eqn:parameterisation} and
-\autoref{eqn:design} and confirming that deterministic parameterisation
-can be viewed as an optimisation task to minimise a distance-based cost
-function.
+\texttt{SciPy} minimize comprises a range of gradient and non-gradient
+methods. From now on, the point-based parameterisation and design
+optimisation tasks will simply be referred to as optimisation tasks.
+This simplification can be justified by examining
+\autoref{eqn:parameterisation} and \autoref{eqn:design} and confirming
+that deterministic parameterisation can be viewed as an optimisation
+task to minimise a distance-based cost function.
 
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.4722}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.2963}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.2315}}@{}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.4359}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.2308}}@{}}
 \caption{The currently supported optimisation algorithms classified by
 candidate solution type, including gradient information.
 \label{tab:optimisers}}\tabularnewline
@@ -427,27 +430,26 @@ Improved resilient backpropagation (iRProp-) & Exponential natural
 (xNES) & Nelder-Mead \\
 Gradient descent & Separable natural (sNES) & Cuckoo search \\
 SciPy minimize & SciPy differential evolution & \\
-& & \\
 \end{longtable}
 
-As discussed above, \texttt{PyBOP} provides both point-based
-optimisation estimates \autoref{tab:subclasses} in addition to Monte
-Carlo sampling routines in order to recover distributions of likely
-parameter values. The Monte Carlco methods construct a posterior
-distribution on the inference parameters, which can be used for
-uncertainty and practical identifiability. The individual sampler
-classes are currently composed within \texttt{PyBOP} from the
-\texttt{PINTS} library, with a base sampling class implemented for
-interoperability and direct integration with the \texttt{PyBOP} model,
-problem, and likelihood classes. The currently supported samplers are
-listed in \autoref{tab:samplers}.
+As discussed above, in addition to point-based optimisation estimates
+\autoref{tab:subclasses}, \texttt{PyBOP} also provides Monte Carlo
+sampling routines in order to recover distributions of likely parameter
+values. The Monte Carlo methods construct a posterior distribution on
+the inference parameters, which can be used to assess uncertainty and
+practical identifiability. The individual sampler classes are currently
+composed within \texttt{PyBOP} from the \texttt{PINTS} library, with a
+base sampler class implemented for interoperability and direct
+integration with the \texttt{PyBOP} model, problem, and likelihood
+classes. The currently supported samplers are listed in
+\autoref{tab:samplers}.
 
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.1810}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2155}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.1379}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2069}}
-  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2586}}@{}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.1624}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2393}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.1368}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2051}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2564}}@{}}
 \caption{Sampling methods supported by \texttt{PyBOP}, classified
 according to the proposed method. \label{tab:samplers}}\tabularnewline
 \toprule\noalign{}
@@ -500,7 +502,7 @@ in the form of a differential-algebraic system of equations:
 0 = g(t, \mathbf{x}, \mathbf{\theta})
 \label{algebraic}
 \end{equation} \begin{equation}
-\mathbf{y}(t) = h(t,\mathbf{x}),
+\mathbf{y}(t) = h(t, \mathbf{x}, \mathbf{\theta}),
 \label{output}
 \end{equation} with initial conditions \begin{equation}
 \mathbf{x}(0) = \mathbf{x}_0(\mathbf{\theta}).
@@ -539,24 +541,24 @@ parameterisation often requires a stepwise identification of smaller
 sets of parameters from a variety of excitations and different data sets
 (\citeproc{ref-Chen:2020}{Chen et al., 2020};
 \citeproc{ref-Chu:2019}{Chu et al., 2019}; \citeproc{ref-Kirk:2022}{Kirk
-et al., 2023}).
+et al., 2023}; \citeproc{ref-Lu:2021}{Lu et al., 2021}).
 
 A generic data fitting optimisation problem may be formulated as:
 \begin{equation}
-\min_{\mathbf{\theta}} ~ \mathcal{L}_{(\mathbf{y}_i)}(\mathbf{\theta}) ~~~
+\min_{\mathbf{\theta}} ~ \mathcal{L}_{(\hat{\mathbf{y}_i})}(\mathbf{\theta}) ~~~
 \textrm{subject to equations (\ref{dynamics})\textrm{-}(\ref{initial_conditions})}
 \label{eqn:parameterisation}
 \end{equation}
 
 where \(\mathcal{L} : \mathbf{\theta} \mapsto [0,\infty)\) is a cost
-function that quantifies the agreement between the model,
-\(\mathbf{y}(t_i)\) and a sequence of measured observations
-\(\hat{\mathbf{y}_i}\) measured at times \(t_i\). Within the
+function that quantifies the agreement between the model output
+\(\mathbf{y}(t)\) and a sequence of observations
+\((\hat{\mathbf{y}_i})\) measured at times \(t_i\). Within the
 \texttt{PyBOP} framework, the \texttt{FittingProblem} class packages the
 model output along with the measured observations, both of which are
-then passed to the \texttt{FittingCost} classes for the computation of
-the specific cost function. For gradient-based optimisers, the Jacobian
-of the cost function with respect to the unknown parameters,
+then passed to the cost classes for the computation of the specific cost
+function. For gradient-based optimisers, the Jacobian of the cost
+function with respect to the unknown parameters,
 \((\frac{\partial \mathcal{L}}{\partial \theta})\) is computed for step
 size and directional information.
 
@@ -591,17 +593,17 @@ with a root mean squared error cost function.
 \end{figure}
 
 As mentioned above, \texttt{PyBOP} also provides inference and
-optimisation capabilities through numerical impedance spectroscopy. This
-is based on the methods presented in the \texttt{pybamm-eis} package and
-allows fast impedance computation by inversion of the sparse PyBaMM mass
-matrix after scaling and subtraction of the auto-differentiated Jacobian
-matrix. More information about this procedure is available in
-(\citeproc{ref-pybamm-eis}{Dhoot et al., n.d.}). The
-\autoref{fig:impedance-landscape} below shows the numerical impedance
-prediction available in \texttt{PyBOP} alongside the cost landscape
-constructed for the inference task. At the time of publication,
-gradient-based optimisation and sampling methods are not available when
-using an impedance workflow.
+optimisation capabilities through numerical computation of the
+electrochemical impedance. This is based on the methods presented in the
+\texttt{pybamm-eis} package and allows fast impedance computation by
+inversion of a sparse mass matrix after scaling and subtraction of the
+auto-differentiated Jacobian matrix. More information about this
+procedure is available in (\citeproc{ref-pybamm-eis}{Dhoot et al.,
+n.d.}). The \autoref{fig:impedance-landscape} below shows the numerical
+impedance prediction available in \texttt{PyBOP} alongside the cost
+landscape constructed for the inference task. At the time of
+publication, gradient-based optimisation and sampling methods are not
+available when using an impedance workflow.
 
 \begin{figure}
 \centering
@@ -613,15 +615,15 @@ parameterisation problem with a root mean squared error cost function at
 
 To avoid over complicating this example, we will continue with
 identification in the time-domain; however, in general these two
-forward-model prediction methods can be combined for improved system
-excitation. As gradient information is available for this problem, the
-choice of distance-based cost function and optimiser is not constrained.
-Due to the different magnitudes of the two parameters, we apply the
+simulation methods can be combined for improved system excitation. As
+gradient information is available for this problem, the choice of
+distance-based cost function and optimiser is not constrained. Due to
+the difference in magnitude between the two parameters, we apply the
 logarithmic parameter transformation offered by \texttt{PyBOP}. This
-transforms the optimisers search space of the optimiser to allow for a
-common step size between the parameters, which is generally is not
-required, but improves convergence in this problem. As a demonstration
-of the parameterisation capabilities of \texttt{PyBOP},
+transforms the search space of the optimiser to allow for a common step
+size between the parameters, which is generally is not required, but
+improves convergence in this problem. As a demonstration of the
+parameterisation capabilities of \texttt{PyBOP},
 \autoref{fig:convergence-min-max} (left) shows the rate of convergence
 for each of the distance-minimising cost functions, while
 \autoref{fig:convergence-min-max} (right) shows analogous results for
@@ -637,7 +639,7 @@ likelihood functions and the L-BFGS-B algorithm.
 \end{figure}
 
 Next, the performance of the various optimisation algorithms is
-presented by category: gradient-based in
+presented by category: gradient-based methods in
 \autoref{fig:optimiser-inference} (left), evolutionary strategies in
 \autoref{fig:optimiser-inference} (middle) and (meta)heuristics in
 \autoref{fig:optimiser-inference} (right) for a mean squared error cost
@@ -655,46 +657,44 @@ optimisation algorithms provided by \texttt{PyBOP}.
 
 \begin{figure}
 \centering
-\includegraphics[width=1\textwidth,height=\textheight]{figures/joss/contour_total.png}
+\includegraphics[width=1\textwidth,height=\textheight]{figures/joss/contour_subplot.png}
 \caption{Cost landscape contour plot with corresponding optimisation
-traces. The top row represents the gradient-based optimisers, the middle
-row is the evolution-based, and the bottom row is the (meta)heuristics.
-The order from left to right corresponds to the entries in
-\autoref{tab:optimisers}. \label{fig:optimiser-inference}}
+traces. The three rows show the gradient-based optimisers (top),
+evolution strategies (middle), and (meta)heuristics (bottom).
+\label{fig:optimiser-inference}}
 \end{figure}
 
 This parameterisation task can also be approached from a Bayesian
-perspective, which we will present below using \texttt{PyBOP}'s sampler
+perspective, which we will present below using \texttt{PyBOP}`s sampler
 methods. The optimisation equation presented in
 \autoref{eqn:parameterisation} does not represent the Bayesian parameter
-identification task, and as such we introduce the Bayes theorem as,
+identification task, and as such we introduce Bayes' theorem as,
 
 \begin{equation}
 P(\theta|D) = \frac{P(D|\theta)P(\theta)}{P(D)}
 \label{eqn:bayes_theorem}
 \end{equation}
 
-where, \(P(\theta|D)\) is the posterior and represents the probability
+where, \(P(\theta|D)\) is the posterior, representing the probability
 density function of the parameter. \(P(D|\theta)\) is the likelihood
-function and assesses the parameter values alongside a noise model.
+function, which assesses the parameter values alongside a noise model.
 \(P(\theta)\) encapsulates the prior knowledge about the parameters, and
-finally \(P(D)\) is the model evidence and acts as a normalising
-constant so that the final posterior is a correctly scaled density
-function. Our goal in parameter inference is to identify the parameter
-values with the highest probability, which can be represented as a
-point-based metric or as the posterior distribution, which provides
+finally \(P(D)\) is the model evidence, which acts as a normalising
+constant. Our goal in parameter inference is to identify the parameter
+values with the highest probability, which can be represented either by
+a point-based metric or a posterior. The posterior distribution provides
 additional information about the uncertainty of the identified
-parameters. Monte Carlo sampling methods are available to obtain this
-posterior distribution. These methods sample from the posterior using a
-variety of methods, including gradient-based methods such as No-U-Turn
+parameters. Monte Carlo methods are used to sample from the posterior.
+The selection of Monte Carlo methods available in \texttt{PyBOP}
+includes gradient-based methods such as No-U-Turn
 (\citeproc{ref-NUTS:2011}{Hoffman \& Gelman, 2011}) and Hamiltonian
 (\citeproc{ref-Hamiltonian:2011}{Brooks et al., 2011}), as well as
 heuristic methods such as Differential Evolution
 (\citeproc{ref-DiffEvolution:2006}{Braak, 2006}), and finally
 conventional methods based on random sampling with rejection criteria
 (\citeproc{ref-metropolis:1953}{Metropolis et al., 1953}).
-\texttt{PyBOP} offers a sampling class that provides an interface to
-these samplers, which are supported by the Probabilistic Inference of
+\texttt{PyBOP} offers a sampler class that provides the interface to
+these samplers, which are provided by the Probabilistic Inference of
 Noise Time-Series (\texttt{PINTS}) package. \autoref{fig:posteriors}
 below shows the sampled posterior for the synthetic workflow described
 above, using an adaptive covariance-based sampler, Haario Bardenet
@@ -714,16 +714,18 @@ Design optimisation is supported within \texttt{PyBOP} to guide future
 battery design development by identifying parameter sensitivities that
 can unlock improvements in battery performance. This problem can be
 viewed in a similar way to the parameterisation workflows described
-above, but with the aim of maximising a distance metric rather than
-minimising it. In the case of design optimisation to maximise
-gravimetric energy density, \texttt{PyBOP} minimises the negative of the
-cost function, where the cost metric is no longer a distance between two
-time series vectors, but the integrated energy of the vector normalised
-by with the corresponding cell mass. This is typically quantified for
-operating conditions such as a 1C discharge, at a given temperature.
+above, but with the aim of maximising a cost function rather than
+minimising it. \texttt{PyBOP} performs maximisation by minimising the
+negative of the cost function. In design problems, the cost metric is no
+longer a distance between two time series, but a metric evaluated on a
+model prediction. For example, to maximise the gravimetric energy (or
+power) density, the cost is the integral of the discharge energy (or
+power) normalised by the cell mass. Such metrics are typically
+quantified for operating conditions such as a 1C discharge, at a given
+temperature.
 
-Design optimisation can be written in the form of a constrained
-optimisation problem as: \begin{equation}
+In general, design optimisation can be written in the form of a
+constrained optimisation problem as: \begin{equation}
 \min_{\mathbf{\theta} \in \Omega} ~ \mathcal{L}(\mathbf{\theta}) ~~~
 \textrm{subject to equations (\ref{dynamics})\textrm{-}(\ref{initial_conditions})}
 \label{eqn:design}
@@ -748,15 +750,15 @@ example, we employ the Particle Swarm Optimisation (PSO) algorithm.
 \begin{figure}
 \centering
 \includegraphics[width=1\textwidth,height=\textheight]{figures/joss/design.png}
-\caption{The gravimetric landscape alongside the corresponding initial
-and optimised voltage profiles for a 1C discharge.
+\caption{The gravimetric energy density landscape alongside the
+corresponding initial and optimised voltage profiles for a 1C discharge.
 \label{fig:design_gravimetric}}
 \end{figure}
 
 \autoref{fig:design_gravimetric} (left) shows the optimiser's search
-over the gravimetric energy density parameter space. The predicted
-improvement in the discharge profile between the initial and optimised
-parameter values (right) for their respective applied 1C current.
+over the parameter space and (right) the predicted improvement in the
+discharge profile between the initial and optimised parameter values,
+simulated at their respective 1C rates.
 
 \section{Acknowledgements}\label{acknowledgements}
 
@@ -881,6 +883,14 @@ Electrochemical Society}, \emph{170}(1), 010514.
 Korotkin, I., Timms, R., Foster, J. F., Dickinson, E., \& Robinson, M.
 (2023). Battery parameter eXchange. In \emph{GitHub repository}. The
 Faraday Institution. \url{https://github.com/FaradayInstitution/BPX}
+
+\bibitem[\citeproctext]{ref-Lu:2021}
+Lu, D., Scott Trimboli, M., Fan, G., Zhang, R., \& Plett, G. L. (2021).
+Implementation of a physics-based model for half-cell open-circuit
+potential and full-cell open-circuit voltage estimates: {P}art {II}.
+Processing full-cell data. \emph{Journal of The Electrochemical
+Society}, \emph{168}(7), 070533.
+\url{https://doi.org/10.1149/1945-7111/ac11a5}
 
 \bibitem[\citeproctext]{ref-metropolis:1953}
 Metropolis, N., Rosenbluth, A. W., Rosenbluth, M. N., Teller, A. H., \&

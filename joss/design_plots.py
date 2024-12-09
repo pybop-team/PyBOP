@@ -87,7 +87,13 @@ print(f"Optimised gravimetric energy density: {cost(result.x):.2f} Wh.kg-1")
 
 if create_plot["gravimetric"]:
     # Plot the cost landscape with optimisation path
-    gravimetric_fig = pybop.plot.contour(optim, steps=65, title=None)
+    gravimetric_fig = pybop.plot.contour(
+        optim,
+        steps=65,
+        title=None,
+        xaxis=dict(titlefont_size=14, tickfont_size=14),
+        yaxis=dict(titlefont_size=14, tickfont_size=14),
+    )
     gravimetric_fig.write_image("joss/figures/design_gravimetric.png")
 
 if create_plot["prediction"]:
@@ -99,6 +105,8 @@ if create_plot["prediction"]:
         width=576,
         height=576,
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        xaxis=dict(titlefont_size=14, tickfont_size=14),
+        yaxis=dict(titlefont_size=14, tickfont_size=14),
         show=False,
     )
     prediction_fig = figs[0]

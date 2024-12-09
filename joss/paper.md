@@ -168,7 +168,7 @@ Next, the performance of the various optimisation algorithms is presented by cat
 
 ![Convergence in the parameter values obtained for the various optimisation algorithms provided by `PyBOP`.  \label{fig:optimiser-inference}](figures/joss/optimisers_parameters.png){ width=100% }
 
-![Cost landscape contour plot with corresponding optimisation traces. The three rows show the gradient-based optimisers (top), evolution strategies (middle), and (meta)heuristics (bottom). The order from left to right corresponds to the entries in \autoref{tab:optimisers}.  \label{fig:optimiser-inference}](figures/joss/contour_total.png){ width=100% }
+![Cost landscape contour plot with corresponding optimisation traces. The three rows show the gradient-based optimisers (top), evolution strategies (middle), and (meta)heuristics (bottom).  \label{fig:optimiser-inference}](figures/joss/contour_subplot.png){ width=100% }
 
 This parameterisation task can also be approached from a Bayesian perspective, which we will present below using `PyBOP`'s sampler methods. The optimisation equation presented in \autoref{eqn:parameterisation} does not represent the Bayesian parameter identification task, and as such we introduce Bayes' theorem as,
 
