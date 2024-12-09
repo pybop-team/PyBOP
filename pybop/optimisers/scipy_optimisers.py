@@ -283,9 +283,9 @@ class SciPyMinimize(BaseSciPyOptimiser):
             **self._options,
         )
 
-    def name(self):
+    def __name__(self):
         """Provides the name of the optimisation strategy."""
-        return "SciPyMinimize"
+        return "SciPy Minimize"
 
 
 class SciPyDifferentialEvolution(BaseSciPyOptimiser):
@@ -448,6 +448,6 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             **self._options,
         )
 
-    def name(self):
+    def __name__(self):
         """Provides the name of the optimisation strategy."""
-        return "SciPyDifferentialEvolution"
+        return "SciPy Differential Evolution"

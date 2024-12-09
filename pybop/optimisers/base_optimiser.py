@@ -261,7 +261,7 @@ class BaseOptimiser:
         if x0 is not None:
             self.log["x0"].extend(x0)
 
-    def name(self):
+    def __name__(self):
         """
         Returns the name of the optimiser, to be overwritten by child classes.
 
@@ -301,6 +301,10 @@ class BaseOptimiser:
     @property
     def needs_sensitivities(self):
         return self._needs_sensitivities
+
+    @property
+    def name(self):
+        return self.__name__
 
 
 class OptimisationResult:

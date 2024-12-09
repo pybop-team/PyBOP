@@ -161,7 +161,7 @@ class BasePintsOptimiser(BaseOptimiser):
                     self.bounds["lower"], self.bounds["upper"]
                 )
 
-    def name(self):
+    def __name__(self):
         """Returns the name of the PINTS optimisation strategy."""
         return self.optimiser.name()
 
