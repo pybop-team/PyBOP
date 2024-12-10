@@ -4,7 +4,7 @@ import pybop
 
 # Import the ECM parameter set from JSON
 parameter_set = pybop.ParameterSet(
-    json_path="examples/scripts/parameters/initial_ecm_parameters.json"
+    json_path="examples/parameters/initial_ecm_parameters.json"
 )
 parameter_set.import_parameters()
 
@@ -81,7 +81,7 @@ results = optim.run()
 
 # Export the parameters to JSON
 parameter_set.export_parameters(
-    "examples/scripts/parameters/fit_ecm_parameters.json", fit_params=parameters
+    "examples/parameters/fit_ecm_parameters.json", fit_params=parameters
 )
 
 # Plot the time series
