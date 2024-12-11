@@ -228,7 +228,7 @@ def assign_nearest_value(x, y, f, xi, yi):
 def surface(
     optim: Union[BaseOptimiser, Optimisation],
     bounds=None,
-    normalised_distance_metric=True,
+    normalise=True,
     resolution=250,
     show=True,
     **layout_kwargs,
@@ -243,7 +243,7 @@ def surface(
     bounds : numpy.ndarray, optional
         A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
         `cost.parameters.get_bounds_for_plotly`.
-    normalised_distance_metric : bool, optional
+    normalise : bool, optional
         If True, the voronoi regions are computed using the Euclidean distance between
         points normalised with respect to the bounds (default: True).
     resolution : int, optional
@@ -275,11 +275,13 @@ def surface(
     yi = np.linspace(ylim[0], ylim[1], resolution)
     xi, yi = np.meshgrid(xi, yi)
 
-    if normalised_distance_metric:
-        # Normalise the region
-        x_range: float = xlim[1] - xlim[0]
-        y_range: float = ylim[1] - ylim[0]
+    if normalise:
+        if xlim[1] <= xlim[0] or ylim[1] <= ylim[0]:
+            raise ValueError("Lower bounds must be strictly less than upper bounds.")
 
+        # Normalise the region
+        x_range = xlim[1] - xlim[0]
+        y_range = ylim[1] - ylim[0]
         norm_x_optim = (np.asarray(x_optim) - xlim[0]) / x_range
         norm_y_optim = (np.asarray(y_optim) - ylim[0]) / y_range
 
@@ -296,8 +298,6 @@ def surface(
         zi = assign_nearest_value(norm_x, norm_y, f, norm_xi, norm_yi)
 
         # Rescale for plotting
-        x = norm_x * x_range + xlim[0]
-        y = norm_y * y_range + ylim[0]
         regions = []
         for norm_region in norm_regions:
             region = np.empty_like(norm_region)
@@ -314,7 +314,7 @@ def surface(
 
     # Calculate the size of each Voronoi region
     region_sizes = np.array([len(region) for region in regions])
-    normalized_sizes = (region_sizes - region_sizes.min()) / (
+    relative_sizes = (region_sizes - region_sizes.min()) / (
         region_sizes.max() - region_sizes.min()
     )
 
@@ -334,7 +334,7 @@ def surface(
     )
 
     # Add Voronoi edges
-    for region, size in zip(regions, normalized_sizes):
+    for region, size in zip(regions, relative_sizes):
         x_region = region[:, 0].tolist() + [region[0, 0]]
         y_region = region[:, 1].tolist() + [region[0, 1]]
 

@@ -147,10 +147,15 @@ class TestPlots:
         pybop.plot.contour(optim, gradient=True, steps=5)
 
         # Plot voronoi
-        pybop.plot.surface(optim, normalised_distance_metric=False)
+        pybop.plot.surface(optim, normalise=False)
 
         # Plot voronoi w/ bounds
         pybop.plot.surface(optim, bounds=bounds)
+
+        with pytest.raises(
+            ValueError, match="Lower bounds must be strictly less than upper bounds."
+        ):
+            pybop.plot.surface(optim, bounds=[[0.5, 0.8], [0.7, 0.4]])
 
     @pytest.fixture
     def posterior_summary(self, fitting_problem):
