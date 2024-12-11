@@ -218,6 +218,9 @@ class TestOptimisation:
                 optimiser(cost=cost, unrecognised=10)
             assert not optim.optimiser.running()
 
+            # Check default bounds setter
+            optim.set_max_iterations("default")
+
             # Check population setter
             if isinstance(optim.optimiser, PopulationBasedOptimiser):
                 optim = pybop.Optimisation(
