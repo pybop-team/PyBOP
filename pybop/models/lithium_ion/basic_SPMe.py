@@ -225,8 +225,8 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         ######################
         if include_double_layer:
             # Additional variables
-            v_s_n = Variable("Negative particle surface voltage [V]")
-            v_s_p = Variable("Positive particle surface voltage [V]")
+            v_s_n = Variable("Negative particle surface voltage variable [V]")
+            v_s_p = Variable("Positive particle surface voltage variable [V]")
 
             # Additional parameters
             C_p = Parameter("Positive electrode capacitance [F]")
@@ -345,6 +345,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "Negative particle surface stoichiometry": PrimaryBroadcast(
                 sto_n_surf, "negative electrode"
             ),
+            "Negative particle surface voltage variable [V]": v_s_n,
             "Negative particle surface voltage [V]": PrimaryBroadcast(
                 v_s_n, "negative electrode"
             ),
@@ -360,6 +361,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "Positive particle surface stoichiometry": PrimaryBroadcast(
                 sto_p_surf, "positive electrode"
             ),
+            "Positive particle surface voltage variable [V]": v_s_p,
             "Positive particle surface voltage [V]": PrimaryBroadcast(
                 v_s_p, "positive electrode"
             ),
