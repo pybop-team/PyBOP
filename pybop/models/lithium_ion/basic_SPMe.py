@@ -428,17 +428,6 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         """
         self._build_model()
 
-        # # Set battery specific variables
-        # pybamm.logger.debug(f"Setting voltage variables ({self.name})")
-        # self.set_voltage_variables()
-
-        # pybamm.logger.debug(f"Setting SoC variables ({self.name})")
-        # self.set_soc_variables()
-
-        # pybamm.logger.debug(f"Setting degradation variables ({self.name})")
-        # self.set_degradation_variables()
-        # self.set_summary_variables()
-
         self._built = True
         pybamm.logger.info(f"Finish building {self.name}")
 

@@ -13,6 +13,8 @@ plot_dict = pybop.plot.StandardPlot(layout_options=layout_options)
 
 # Unpack parameter values from Chen2020
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+
+# Fix the electrolyte diffusivity and conductivity
 ce0 = parameter_set["Initial concentration in electrolyte [mol.m-3]"]
 T = parameter_set["Ambient temperature [K]"]
 parameter_set["Electrolyte diffusivity [m2.s-1]"] = parameter_set[
@@ -21,11 +23,6 @@ parameter_set["Electrolyte diffusivity [m2.s-1]"] = parameter_set[
 parameter_set["Electrolyte conductivity [S.m-1]"] = parameter_set[
     "Electrolyte conductivity [S.m-1]"
 ](ce0, T)
-
-# Make the conductivities artificially large
-parameter_set["Electrolyte conductivity [S.m-1]"] = 1e16  # 0.9487
-parameter_set["Negative electrode conductivity [S.m-1]"] = 1e16
-parameter_set["Positive electrode conductivity [S.m-1]"] = 1e16
 
 # Define a test protocol
 initial_state = {"Initial SoC": 0.9}
@@ -114,7 +111,3 @@ for i, model in enumerate([freq_domain_SPMe, freq_domain_grouped]):
 ax.set(xlabel=r"$Z_r(\omega)$ [$\Omega$]", ylabel=r"$-Z_j(\omega)$ [$\Omega$]")
 ax.set_aspect("equal", "box")
 plt.show()
-fig.savefig("Nyquist.png")
-
-# mdic = {"Z": impedances, "f": frequencies, "SOC": SOCs}
-# savemat("Simulated data SPMe/Z_SPMe_SOC_Pybop_chen2020.mat", mdic)
