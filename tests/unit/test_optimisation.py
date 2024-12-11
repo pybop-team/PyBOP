@@ -163,7 +163,7 @@ class TestOptimisation:
                 with pytest.raises(
                     ValueError, match="Either all bounds or no bounds must be set"
                 ):
-                    optim = optimiser(cost=cost, bounds=expected_bounds)
+                    optimiser(cost=cost, bounds=expected_bounds)
             else:
                 assert optim.bounds == expected_bounds
 
@@ -180,8 +180,9 @@ class TestOptimisation:
         assert_log_update(optim)
         check_incorrect_update(optim)
 
-        multistart_optim = optimiser(cost, multistart=2, max_iterations=2)
-        check_multistart(multistart_optim, 2, 2)
+        # Test multistart
+        multistart_optim = optimiser(cost, multistart=2, max_iterations=6)
+        check_multistart(multistart_optim, 6, 2)
 
         if optimiser in [pybop.GradientDescent, pybop.Adam, pybop.NelderMead]:
             optim = optimiser(cost=cost, bounds=cost_bounds)
