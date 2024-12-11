@@ -1,9 +1,9 @@
-import numpy as np
-import pybop
-import pybamm
-from scipy.io import savemat
 import time as timer
-import matplotlib.pyplot as plt
+
+import numpy as np
+import pybamm
+
+import pybop
 
 ## Fixed parameters
 Nruns = 1

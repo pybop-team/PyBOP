@@ -1,9 +1,8 @@
-import numpy as np
 import matplotlib.pyplot as plt
-import pybop
-import pybamm
+import numpy as np
 from scipy.io import savemat
 
+import pybop
 
 Nfreq = 60
 SOC = 0.5
@@ -54,7 +53,7 @@ for ii in range(3):
         np.real(impedances[:, ii]),
         -np.imag(impedances[:, ii]),
     )
-ax.set(xlabel="$Z_r(\omega)$ [$\Omega$]", ylabel="$-Z_j(\omega)$ [$\Omega$]")
+ax.set(xlabel=r"$Z_r(\omega)$ [$\Omega$]", ylabel=r"$-Z_j(\omega)$ [$\Omega$]")
 ax.grid()
 ax.set_aspect("equal", "box")
 plt.show()
