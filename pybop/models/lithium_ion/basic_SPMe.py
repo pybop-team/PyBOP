@@ -72,9 +72,6 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         # Variables that depend on time only are created without a domain
         Q = Variable("Discharge capacity [A.h]")
         Qt = Variable("Throughput capacity [A.h]")
-        if include_double_layer:
-            v_s_n = Variable("Negative particle surface voltage [V]")
-            v_s_p = Variable("Positive particle surface voltage [V]")
 
         # Variables that vary spatially are created with a domain
         sto_n = Variable(
@@ -97,9 +94,6 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "Positive electrode electrolyte stoichiometry",
             domain="positive electrode",
         )
-        # Concatenations combine several variables into a single variable, to simplify
-        # implementing equations that hold over several domains
-        # sto_e = pybamm.concatenation(sto_e_n, sto_e_sep, sto_e_p)
 
         # Spatial variables
         x_n = pybamm.SpatialVariable("x_n", ["negative electrode"])
@@ -159,10 +153,6 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         tau_ct_p = Parameter("Positive electrode charge transfer time scale [s]")
         tau_ct_n = Parameter("Negative electrode charge transfer time scale [s]")
 
-        if include_double_layer:
-            C_p = Parameter("Positive electrode capacitance [F]")
-            C_n = Parameter("Negative electrode capacitance [F]")
-
         l_p = Parameter("Positive electrode thickness [m]")  # normalised
         l_n = Parameter("Negative electrode thickness [m]")  # normalised
 
@@ -194,17 +184,16 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         self.initial_conditions[Qt] = Scalar(0)
 
         ######################
-        # Overpotentials
+        # Potentials
         ######################
         U_n = self.U(sto_n_surf, "negative")
         U_p = self.U(sto_p_surf, "positive")
-        if include_double_layer:
-            eta_n = (v_s_n - U_n) + (2 * RT_F * (1 - t_plus)) * (
-                pybamm.x_average(pybamm.log(sto_e_n)) - pybamm.log(sto_e_n)
-            )
-            eta_p = (v_s_p - U_p) + (2 * RT_F * (1 - t_plus)) * (
-                pybamm.x_average(pybamm.log(sto_e_p)) - pybamm.log(sto_e_p)
-            )
+
+        sto_n_init = x_0 + (x_100 - x_0) * soc_init
+        sto_p_init = y_0 + (y_100 - y_0) * soc_init
+        U_n_init = self.U(sto_n_init, "negative")
+        U_p_init = self.U(sto_p_init, "positive")
+
         eta_e = (2 * RT_F * (1 - t_plus)) * (
             pybamm.x_average(pybamm.log(sto_e_p))
             - pybamm.x_average(pybamm.log(sto_e_n))
@@ -215,7 +204,6 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         ######################
         # Primary broadcasts are used to broadcast scalar quantities across a domain
         # into a vector of the right shape, for multiplying with other vectors
-
         alpha = 0.5  # cathodic transfer coefficient
         j0_n = (
             sto_n_surf**alpha * (sto_e_n * (1 - sto_n_surf)) ** (1 - alpha) / tau_ct_n
@@ -223,16 +211,7 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         j0_p = (
             sto_p_surf**alpha * (sto_e_p * (1 - sto_p_surf)) ** (1 - alpha) / tau_ct_p
         )
-        if include_double_layer:
-            j_n = j0_n * (
-                pybamm.exp((1 - alpha) * eta_n / RT_F)
-                - pybamm.exp(-alpha * eta_n / RT_F)
-            )
-            j_p = j0_p * (
-                pybamm.exp((1 - alpha) * eta_p / RT_F)
-                - pybamm.exp(-alpha * eta_p / RT_F)
-            )
-        else:
+        if not include_double_layer:
             # Assuming alpha = 0.5
             j_n = PrimaryBroadcast(I / (3 * Q_th_n), "negative electrode")
             j_p = PrimaryBroadcast(-I / (3 * Q_th_p), "positive electrode")
@@ -245,15 +224,35 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         # Double layer
         ######################
         if include_double_layer:
+            # Additional variables
+            v_s_n = Variable("Negative particle surface voltage [V]")
+            v_s_p = Variable("Positive particle surface voltage [V]")
+
+            # Additional parameters
+            C_p = Parameter("Positive electrode capacitance [F]")
+            C_n = Parameter("Negative electrode capacitance [F]")
+
+            # Overpotentials
+            eta_n = (v_s_n - U_n) + (2 * RT_F * (1 - t_plus)) * (
+                pybamm.x_average(pybamm.log(sto_e_n)) - pybamm.log(sto_e_n)
+            )
+            eta_p = (v_s_p - U_p) + (2 * RT_F * (1 - t_plus)) * (
+                pybamm.x_average(pybamm.log(sto_e_p)) - pybamm.log(sto_e_p)
+            )
+
+            # Exchange current
+            j_n = j0_n * (
+                pybamm.exp((1 - alpha) * eta_n / RT_F)
+                - pybamm.exp(-alpha * eta_n / RT_F)
+            )
+            j_p = j0_p * (
+                pybamm.exp((1 - alpha) * eta_p / RT_F)
+                - pybamm.exp(-alpha * eta_p / RT_F)
+            )
+
+            # Electrode surface potentials
             self.rhs[v_s_n] = 1 / C_n * (I - 3 * Q_th_n * pybamm.x_average(j_n))
             self.rhs[v_s_p] = 1 / C_p * (-I - 3 * Q_th_p * pybamm.x_average(j_p))
-
-        sto_n_init = x_0 + (x_100 - x_0) * soc_init
-        sto_p_init = y_0 + (y_100 - y_0) * soc_init
-        U_n_init = self.U(sto_n_init, "negative")
-        U_p_init = self.U(sto_p_init, "positive")
-
-        if include_double_layer:
             self.initial_conditions[v_s_n] = U_n_init
             self.initial_conditions[v_s_p] = U_p_init
 
