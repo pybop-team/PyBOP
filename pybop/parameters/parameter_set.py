@@ -141,17 +141,15 @@ class ParameterSet:
         """
         if isinstance(self.params, ParameterValues):
             self.params.update(params_dict, check_already_exists=check_already_exists)
-        elif check_already_exists is True:
-            for key, value in params_dict.items():
-                try:
-                    self.params.update({key: value})
-                except KeyError as err:
-                    raise KeyError(
-                        f"Cannot update parameter '{key}' as it does not have a default value. "
-                        f"({err.args[0]}). If you are sure you want to update this parameter, "
-                        "use param.update({name: value}, check_already_exists=False)"
-                    ) from err
         else:
+            if check_already_exists is True:
+                for key in params_dict.keys():
+                    if key not in self.params.keys():
+                        raise KeyError(
+                            f"Cannot update parameter '{key}' as it does not have a default "
+                            "value. If you are sure you want to update this parameter, use "
+                            "param.update({name: value}, check_already_exists=False)"
+                        )
             self.params.update(params_dict)
 
     def import_parameters(self, json_path: Optional[str] = None):
@@ -177,17 +175,19 @@ class ParameterSet:
         FileNotFoundError
             If the specified JSON file cannot be found.
         """
+        if self.params:
+            raise ValueError("Parameter set already constructed.")
+
         if json_path is not None:
             self.json_path = json_path
 
         # Read JSON file
-        if not self.params and self.json_path:
+        if self.json_path:
             with open(self.json_path) as file:
                 self.params = json.load(file)
         else:
-            raise ValueError(
-                "Parameter set already constructed, or path to json file not provided."
-            )
+            raise ValueError("No path was provided.")
+
         self.chemistry = self.params.get("chemistry", None)
 
         return self.params
@@ -216,16 +216,18 @@ class ParameterSet:
         FileNotFoundError
             If the specified JSON file cannot be found.
         """
+        if self.params:
+            raise ValueError("Parameter set already constructed.")
+
         if json_path is not None:
             self.json_path = json_path
 
         # Read JSON file
-        if not self.params and self.json_path:
+        if self.json_path:
             self.params = ParameterValues.create_from_bpx(self.json_path)
         else:
-            raise ValueError(
-                "Parameter set already constructed, or path to bpx file not provided."
-            )
+            raise ValueError("No path was provided.")
+
         self.chemistry = self.params.get("chemistry", None)
 
         return self.params
