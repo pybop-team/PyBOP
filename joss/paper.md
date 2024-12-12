@@ -81,7 +81,6 @@ The currently implemented subclasses for the model, problem, and cost classes ar
 | Weppner Huggins                     |                 | Maximum a posteriori        |
 | Equivalent circuit model (ECM)      |                 | Volumetric energy density   |
 |                                     |                 | Gravimetric energy density  |
-|                                     |                 | Unscented Kalman filter     |
 
 Similarly, the current algorithms available for optimisation are presented in \autoref{tab:optimisers}. It should be noted that SciPy minimize includes several gradient and non-gradient methods. From here on, the point-based parameterisation and design-optimisation tasks will simply be referred to as optimisation tasks. This simplification can be justified by comparing \autoref{eqn:parameterisation} and \autoref{eqn:design}; deterministic parameterisation is just an optimisation task to minimise a distance-based cost between model output and measured values.
 
@@ -161,7 +160,7 @@ To avoid confusion in the remainder of this section, we will continue with ident
 
 ![Optimiser convergence using various cost (left) and likelihood (right) functions and the L-BFGS-B algorithm. \label{fig:convergence-min-max}](figures/joss/converge.png){ width=100% }
 
-We now show example optimiser convergence of various algorithms against the same model and two parameters, across several categories: gradient-based methods in \autoref{fig:optimiser-inference} (left), evolutionary strategies in \autoref{fig:optimiser-inference1} (middle) and (meta)heuristics in \autoref{fig:optimiser-inference} (right) using a mean-squared-error cost function. We also show cost functions and solution iterations in \autoref{fig:optimiser-inference2}, with the three rows showing the gradient-based optimisers (top), evolution strategies (middle), and (meta)heuristics (bottom). Note that the performance of the optimiser depends on the cost environment, initial guess or prior, and corresponding hyperparameters for each specific problem.
+We now show example optimiser convergence of various algorithms against the same model and two parameters, across several categories: gradient-based methods in \autoref{fig:optimiser-inference1} (left), evolutionary strategies in \autoref{fig:optimiser-inference1} (middle) and (meta)heuristics in \autoref{fig:optimiser-inference1} (right) using a mean-squared-error cost function. We also show cost functions and solution iterations in \autoref{fig:optimiser-inference2}, with the three rows showing the gradient-based optimisers (top), evolution strategies (middle), and (meta)heuristics (bottom). Note that the performance of the optimiser depends on the cost environment, initial guess or prior, and corresponding hyperparameters for each specific problem.
 
 ![Convergence in parameter values for several optimisation algorithms provided by `PyBOP`.  \label{fig:optimiser-inference1}](figures/joss/optimisers_parameters.png){ width=100% }
 
@@ -182,26 +181,26 @@ To estimate the full posterior parameter distribution, however, one must use sam
 
 ## Design optimisation
 
-Design optimisation is supported within `PyBOP` to guide future battery design development by identifying parameter sensitivities that can unlock improvements in battery performance. This problem can be viewed in a similar way to the parameterisation workflows described previously, but with the aim of maximising a cost function rather than minimising it. `PyBOP` performs maximisation by minimising the negative of the cost function. In design problems, the cost metric is no longer a distance between two time series, but a metric evaluated on a model prediction. For example, to maximise the gravimetric energy (or power) density, the cost is the integral of the discharge energy (or power) normalised by the cell mass. Such metrics are typically quantified for operating conditions such as a 1C discharge, at a given temperature.
+Design optimisation is supported in `PyBOP` to guide device design development by identifying parameter sensitivities that can unlock improvements in performance. This problem can be viewed in a similar way to the parameterisation workflows described previously, but with the aim of maximising a design-objective cost function rather than minimising a distance cost function. `PyBOP` performs maximisation by minimising the negative of the cost function. In design problems, the cost metric is no longer a distance between two time series, but a metric evaluated on a model prediction. For example, to maximise the gravimetric energy (or power) density, the cost is the integral of the discharge energy (or power) normalised by the cell mass. Such metrics are typically quantified for operating conditions such as a 1C discharge, at a given temperature.
 
-In general, design optimisation can be written in the form of a constrained optimisation problem as:
+In general, design optimisation can be written as a constrained optimisation problem,
 \begin{equation}
 \min_{\mathbf{\theta} \in \Omega} ~ \mathcal{L}(\mathbf{\theta}) ~~~
-\textrm{subject to equations (\ref{dynamics})\textrm{-}(\ref{initial_conditions})}
+\textrm{subject to equations (\ref{dynamics})\textrm{-}(\ref{initial_conditions}),}
 \label{eqn:design}
 \end{equation}
 
 where $\mathcal{L} : \mathbf{\theta} \mapsto [0,\infty)$ is a cost function that quantifies the desirability of the design and $\Omega$ is the set of allowable parameter values.
 
-As an example, we consider the problem of maximising the gravimetric energy density subject to constraints on two of the geometric electrode parameters [@Couto:2023]. For this example, we use the`PyBaMM` implementation of the single particle model with electrolyte (SPMe) to investigate the effect of the positive electrode thickness and the active material volume fraction on the target cost. Since the active material volume fraction is related to the electrode porosity, the porosity is defined with a driven constraint from the volume fraction. In this problem, we estimate the 1C rate from the theoretical capacity for each iteration of the design. For this example, we employ the Particle Swarm Optimisation (PSO) algorithm.
+As an example, we consider the challenge of maximising the gravimetric energy density, subject to constraints on two of the geometric electrode parameters [@Couto:2023]. In this case we use the `PyBaMM` implementation of the single particle model with electrolyte (SPMe) to investigate the imapct of the positive electrode thickness and the active material volume fraction on the energy density. Since the active material volume fraction is related to the electrode porosity, the porosity is defined with a driven constraint from the volume fraction. In this problem, we estimate the 1C rate from the theoretical capacity for each iteration of the design and use the particle swarm optimisation algorithm.
 
-![The gravimetric energy density landscape alongside the corresponding initial and optimised voltage profiles for a 1C discharge. \label{fig:design_gravimetric}](figures/joss/design.png){ width=100% }
+![Gravimetric energy density cost landscape alongside the initial and optimised voltage profiles, for a 1C discharge. \label{fig:design_gravimetric}](figures/joss/design.png){ width=100% }
 
-\autoref{fig:design_gravimetric} (left) shows the optimiser's search over the parameter space and (right) the predicted improvement in the discharge profile between the initial and optimised parameter values, simulated at their respective 1C rates.
+\autoref{fig:design_gravimetric} (left) shows the optimiser search over the parameter space and (right) the predicted improvement in the discharge profile between the initial and optimised parameter values, simulated at their respective 1C rates.
 
 # Acknowledgements
 
-We gratefully acknowledge all [contributors](https://github.com/pybop-team/PyBOP?tab=readme-ov-file#contributors-) to this package. This work was supported by the Faraday Institution Multiscale Modelling (MSM) project (ref. FIRG059), UKRI's Horizon Europe Guarantee (ref. 10038031), and EU IntelLiGent project (ref. 101069765).
+We gratefully acknowledge all [contributors](https://github.com/pybop-team/PyBOP?tab=readme-ov-file#contributors-) to `PyBOP`. This work was supported by the Faraday Institution Multiscale Modelling project (ref. FIRG059), UKRI's Horizon Europe Guarantee (ref. 10038031), and EU IntelLiGent project (ref. 101069765).
 
 [//]: # (# Open Discussion Points)
 
