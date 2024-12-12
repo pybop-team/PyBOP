@@ -145,6 +145,11 @@ class TestParameterSets:
         ):
             bpx_parameters.import_from_bpx()
 
+        bpx_parameters = pybop.ParameterSet()
+        bpx_parameters.import_parameters(
+            json_path="examples/parameters/example_BPX.json"
+        )
+
     @pytest.mark.unit
     def test_set_formation_concentrations(self):
         parameter_set = pybop.ParameterSet.pybamm(
@@ -199,3 +204,7 @@ class TestParameterSets:
 
         parameter_set.update({"Unused parameter name": 3}, check_already_exists=False)
         np.testing.assert_allclose(parameter_set["Unused parameter name"], 3)
+
+        parameter_set = pybop.ParameterSet("Chen2020")
+        parameter_set.update({"Nominal cell capacity [A.h]": 3})
+        np.testing.assert_allclose(parameter_set["Nominal cell capacity [A.h]"], 3)
