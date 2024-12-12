@@ -51,9 +51,7 @@ class TestModels:
         if model_class is pybop.lithium_ion.MSMR:
             # Reset the options to cope with a bug in PyBaMM v23.9 msmr.py:23 which is fixed in v24.1
             options = {"number of MSMR reactions": ("6", "4")}
-        parameter_set = pybop.ParameterSet(
-            params_dict={"Nominal cell capacity [A.h]": 5}
-        )
+        parameter_set = pybop.ParameterSet({"Nominal cell capacity [A.h]": 5})
         model = model_class(options=options, build=True, parameter_set=parameter_set)
 
     @pytest.fixture(
@@ -219,7 +217,7 @@ class TestModels:
         model = pybop.BaseModel(parameter_set=parameter_set)
         assert model.parameter_set == parameter_set
 
-        pybop_parameter_set = pybop.ParameterSet(params_dict=param_dict)
+        pybop_parameter_set = pybop.ParameterSet(param_dict)
         model = pybop.BaseModel(parameter_set=pybop_parameter_set)
         assert model.parameter_set == parameter_set
 

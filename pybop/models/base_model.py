@@ -81,7 +81,7 @@ class BaseModel:
         ----------
         name : str, optional
             The name given to the model instance.
-        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues, dict], optional
             A dict-like object containing the parameter values.
         check_params : Callable, optional
             A compatibility check for the model parameters. Function, with
@@ -107,14 +107,9 @@ class BaseModel:
         """
         self.name = name
         self.eis = eis
-        if parameter_set is None:
-            self._parameter_set = None
-        elif isinstance(parameter_set, dict):
-            self._parameter_set = pybamm.ParameterValues(parameter_set).copy()
-        elif isinstance(parameter_set, pybamm.ParameterValues):
-            self._parameter_set = parameter_set.copy()
-        else:  # a pybop parameter set
-            self._parameter_set = pybamm.ParameterValues(parameter_set.params).copy()
+        if not isinstance(parameter_set, ParameterSet):
+            parameter_set = ParameterSet(parameter_set)
+        self._parameter_set = parameter_set()
         self.param_checker = check_params
 
         self.pybamm_model = None

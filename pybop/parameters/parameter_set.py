@@ -1,7 +1,7 @@
 import json
 import types
 from numbers import Number
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 from pybamm import (
@@ -25,19 +25,67 @@ class ParameterSet:
 
     Parameters
     ----------
+    parameter_set : Union[str, dict, ParameterValues], optional
+        A dictionary of parameters to initialise the ParameterSet with. If not provided, an empty dictionary is used.
     json_path : str, optional
-        Path to a JSON file containing parameter data. If provided, parameters will be imported from this file during initialization.
-    params_dict : dict, optional
-        A dictionary of parameters to initialize the ParameterSet with. If not provided, an empty dictionary is used.
+        Path to a JSON file containing parameter data. If provided, parameters will be imported from this file during
+        initialisation.
     """
 
-    def __init__(self, json_path=None, params_dict=None):
+    def __init__(
+        self,
+        parameter_set: Union[str, dict, ParameterValues] = None,
+        json_path: Optional[str] = None,
+        formation_concentrations: bool = False,
+    ):
+        if parameter_set is not None and json_path is not None:
+            raise ValueError(
+                "ParameterSet needs either a parameter_set or json_path as an input, not both."
+            )
         self.json_path = json_path
-        self.params = params_dict or {}
+        self.params = None
         self.chemistry = None
+        self.formation_concentrations = formation_concentrations
 
-    def __call__(self):
-        return self.params
+        if isinstance(parameter_set, str):
+            # Use class method
+            self.params = ParameterSet.pybamm(parameter_set)
+        elif isinstance(parameter_set, dict):
+            # Keep as dictionary to allow "default" as value
+            self.params = parameter_set
+        elif isinstance(parameter_set, ParameterValues):
+            self.params = parameter_set
+
+        if self.params is not None:
+            self.chemistry = self.params.get("chemistry", None)
+
+    def __call__(self, formation_concentrations: Optional[bool] = False):
+        """
+        Obtain a copy of the parameter set as a PyBaMM ParameterValues object.
+
+        Parameters
+        ----------
+        set_formation_concentrations : bool, optional
+            If True, re-calculates the initial concentrations of lithium in the active material (default: False).
+
+        Returns
+        -------
+        pybamm.ParameterValues
+            A PyBaMM parameter set corresponding to the parameter set stored in self.params.
+        """
+        self.formation_concentrations = formation_concentrations
+
+        if self.params is None:
+            return None
+        elif isinstance(self.params, dict):
+            parameter_set = ParameterValues(self.params).copy()
+        else:
+            parameter_set = self.params.copy()
+
+        if self.formation_concentrations:
+            set_formation_concentrations(parameter_set)
+
+        return parameter_set
 
     def __setitem__(self, key, value):
         self.params[key] = value
@@ -78,13 +126,35 @@ class ParameterSet:
         """
         return list(self.params.keys())
 
-    def update(self, params_dict=None):
+    def update(self, params_dict: dict = None, check_already_exists: bool = True):
         """
         Update the parameter dictionary.
-        """
-        self.params.update(params_dict)
 
-    def import_parameters(self, json_path=None):
+        Parameters
+        ----------
+        params_dict : dict
+            Dictionary of parameter values to update parameter dictionary with.
+        check_already_exists : bool, optional
+            Whether to check that a parameter in `params_dict` already exists when trying
+            to update it. This is to avoid cases where an intended change in the parameters
+            is ignored due a typo in the parameter name (default: True).
+        """
+        if isinstance(self.params, ParameterValues):
+            self.params.update(params_dict, check_already_exists=check_already_exists)
+        elif check_already_exists is True:
+            for key, value in params_dict.items():
+                try:
+                    self.params.update({key: value})
+                except KeyError as err:
+                    raise KeyError(
+                        f"Cannot update parameter '{key}' as it does not have a default value. "
+                        f"({err.args[0]}). If you are sure you want to update this parameter, "
+                        "use param.update({name: value}, check_already_exists=False)"
+                    ) from err
+        else:
+            self.params.update(params_dict)
+
+    def import_parameters(self, json_path: Optional[str] = None):
         """
         Imports parameters from a JSON file specified by the `json_path` attribute.
 
@@ -107,6 +177,8 @@ class ParameterSet:
         FileNotFoundError
             If the specified JSON file cannot be found.
         """
+        if json_path is not None:
+            self.json_path = json_path
 
         # Read JSON file
         if not self.params and self.json_path:
@@ -116,8 +188,8 @@ class ParameterSet:
             raise ValueError(
                 "Parameter set already constructed, or path to json file not provided."
             )
-        if self.params["chemistry"] is not None:
-            self.chemistry = self.params["chemistry"]
+        self.chemistry = self.params.get("chemistry", None)
+
         return self.params
 
     def import_from_bpx(self, json_path=None):
@@ -144,6 +216,8 @@ class ParameterSet:
         FileNotFoundError
             If the specified JSON file cannot be found.
         """
+        if json_path is not None:
+            self.json_path = json_path
 
         # Read JSON file
         if not self.params and self.json_path:
@@ -152,6 +226,8 @@ class ParameterSet:
             raise ValueError(
                 "Parameter set already constructed, or path to bpx file not provided."
             )
+        self.chemistry = self.params.get("chemistry", None)
+
         return self.params
 
     def export_parameters(self, output_json_path, fit_params=None):
