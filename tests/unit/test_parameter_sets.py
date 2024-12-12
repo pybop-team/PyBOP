@@ -146,9 +146,7 @@ class TestParameterSets:
             bpx_parameters.import_from_bpx()
 
         bpx_parameters = pybop.ParameterSet()
-        bpx_parameters.import_parameters(
-            json_path="examples/parameters/example_BPX.json"
-        )
+        bpx_parameters.import_from_bpx(json_path="examples/parameters/example_BPX.json")
 
     @pytest.mark.unit
     def test_set_formation_concentrations(self):
