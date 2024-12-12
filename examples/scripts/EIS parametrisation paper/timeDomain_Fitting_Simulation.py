@@ -1,11 +1,11 @@
+import time as timer
+
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy
-import pybop
-import pybamm
-import pickle
-import time as timer
-import matplotlib.pyplot as plt
 from scipy.io import savemat
+
+import pybop
 from pybop.models.lithium_ion.basic_SPMe import convert_physical_to_grouped_parameters
 
 Nruns = 10
