@@ -83,7 +83,7 @@ The currently implemented subclasses for the model, problem, and cost classes ar
 |                                     |                 | Gravimetric energy density  |
 |                                     |                 | Unscented Kalman filter     |
 
-Similarly, the current algorithms available for optimisation are presented in \autoref{tab:optimisers}. It should be noted that SciPy minimize includes several gradient and non-gradient methods. From here on, the point-based parameterisation and design-optimisation tasks will simply be referred to as optimisation tasks. This simplification can be justified by comparing \autoref{eqn:parameterisation} and \autoref{eqn:design}; deterministic parameterisation is just an optimisation task to minimise a distance-based cost function.
+Similarly, the current algorithms available for optimisation are presented in \autoref{tab:optimisers}. It should be noted that SciPy minimize includes several gradient and non-gradient methods. From here on, the point-based parameterisation and design-optimisation tasks will simply be referred to as optimisation tasks. This simplification can be justified by comparing \autoref{eqn:parameterisation} and \autoref{eqn:design}; deterministic parameterisation is just an optimisation task to minimise a distance-based cost between model output and measured values.
 
 : Currently supported optimisers classified by candidate solution type, including gradient information. \label{tab:optimisers}
 
@@ -101,7 +101,7 @@ In addition to deterministic optimisers \autoref{tab:subclasses}, `PyBOP` also p
 
 | Gradient-based    | Adaptive                   | Slicing        | Evolutionary           | Other                        |
 |:------------------|:---------------------------|:---------------|:-----------------------|:-----------------------------|
-| Monomial gamma    | Delayed rejection adaptive | Rank—shrinking | Differential evolution | Metropolis random walk       |
+| Monomial gamma    | Delayed rejection adaptive | Rank shrinking | Differential evolution | Metropolis random walk       |
 | No-U-turn         | Haario Bardenet            | Doubling       |                        | Emcee hammer                 |
 | Hamiltonian       | Haario                     | Stepout        |                        | Metropolis adjusted Langevin |
 | Relativistic      | Rao Blackwell              |                |                        |                              |
@@ -111,13 +111,13 @@ In addition to deterministic optimisers \autoref{tab:subclasses}, `PyBOP` also p
 
 ## Battery models
 
-In general, battery models (after spatial discretisation) can be written in the form of a differential-algebraic system of equations:
+In general, battery models (after spatial discretisation) can be written in the form of a differential-algebraic system of equations,
 \begin{equation}
 \frac{\mathrm{d} \mathbf{x}}{\mathrm{d} t} = f(t,\mathbf{x},\mathbf{\theta}),
 \label{dynamics}
 \end{equation}
 \begin{equation}
-0 = g(t, \mathbf{x}, \mathbf{\theta})
+0 = g(t, \mathbf{x}, \mathbf{\theta}),
 \label{algebraic}
 \end{equation}
 \begin{equation}
@@ -132,22 +132,22 @@ with initial conditions
 
 Here, $t$ is time, $\mathbf{x}(t)$ are the (spatially discretised) states, $\mathbf{y}(t)$ are the outputs (e.g. the terminal voltage) and $\mathbf{\theta}$ are the unknown parameters.
 
-Common battery models include various types of equivalent circuit models (e.g. the Thévenin model), the Doyle–Fuller–Newman (DFN) model [@Doyle:1993; @Fuller:1994] based on porous electrode theory and its reduced-order variants including the single particle model (SPM) [@Planella:2022], and the multi-species, multi-reaction (MSMR) model [@Verbrugge:2017]. Simplified models that retain acceptable predictive capabilities at a lower computational cost are widely used, for example in battery management systems, while physics-based models are required to understand the impact of physical parameters on battery performance. This separation of complexity traditionally results in multiple parameterisations for a single battery type, depending on the model structure.
+Common battery models include various types of equivalent circuit models (e.g. the Thévenin model), the Doyle–Fuller–Newman (DFN) model [@Doyle:1993; @Fuller:1994] based on porous electrode theory, and its reduced-order variants including the single particle model (SPM) [@Planella:2022] and the multi-species multi-reaction (MSMR) model [@Verbrugge:2017]. Simplified models that retain acceptable predictive accuracy at lower computational cost are widely used, for example in battery management systems, while physics-based models are required to understand the impact of physical parameters on performance. This separation of complexity traditionally results in multiple parameterisations for a single battery type, depending on the model structure.
 
 # Examples
 
 ## Parameterisation
 
-The parameterisation of battery models is challenging due to the large number of parameters that need to be identified compared to the measurable outputs [@Miguel:2021; @Wang:2022; @Andersson:2022]. A complete parameterisation often requires a stepwise identification of smaller sets of parameters from a variety of excitations and different data sets [@Chu:2019; @Chen:2020; @Lu:2021; @Kirk:2022].
+The parameterisation of battery models is challenging due to the large number of parameters that need to be identified compared to the number of measurable outputs [@Miguel:2021; @Wang:2022; @Andersson:2022]. A complete parameterisation often requires stepwise identification of smaller sets of parameters from a variety of excitations and different data sets [@Chu:2019; @Chen:2020; @Lu:2021; @Kirk:2022].
 
-A generic data fitting optimisation problem may be formulated as:
+A generic data-fitting optimisation problem may be formulated as:
 \begin{equation}
 \min_{\mathbf{\theta}} ~ \mathcal{L}_{(\hat{\mathbf{y}_i})}(\mathbf{\theta}) ~~~
 \textrm{subject to equations (\ref{dynamics})\textrm{-}(\ref{initial_conditions})}
 \label{eqn:parameterisation}
 \end{equation}
 
-where $\mathcal{L} : \mathbf{\theta} \mapsto [0,\infty)$ is a cost function that quantifies the agreement between the model output $\mathbf{y}(t)$ and a sequence of observations $(\hat{\mathbf{y}_i})$ measured at times $t_i$. Within the `PyBOP` framework, the `FittingProblem` class packages the model output along with the measured observations, both of which are then passed to the cost classes for the computation of the specific cost function. For gradient-based optimisers, the Jacobian of the cost function with respect to the unknown parameters, $(\frac{\partial \mathcal{L}}{\partial \theta})$ is computed for step size and directional information.
+where $\mathcal{L} : \mathbf{\theta} \mapsto [0,\infty)$ is a cost function that quantifies the agreement between the model output $\mathbf{y}(t)$ and a sequence of observations $(\hat{\mathbf{y}_i})$ measured at times $t_i$. Within the `PyBOP` framework, the `FittingProblem` class packages the model output along with the measured observations, both of which are then passed to the cost classes for the computation of the specific cost function. For gradient-based optimisers, the Jacobian of the cost function with respect to the unknown parameters, $\frac{\partial \mathcal{L}}{\partial \theta}$, is computed for step size and directional information.
 
 Next, we demonstrate the fitting of synthetic data where the system parameters are known. In this example problem, we use `PyBaMM`'s implementation of the single particle model (SPM) with an added contact resistance submodel. We assume that the battery model is already parameterised except for two dynamic parameters, namely the lithium diffusivity of the negative electrode active material particle (denoted "negative particle diffusivity") and the contact resistance. We generate synthetic data from a one-hour discharge from 100% state of charge, to 0% (denoted as 1C rate), followed by 30 minutes of relaxation. This data is then corrupted with zero mean Gaussian noise of amplitude 2mV, shown by the dots in \autoref{fig:inference-time-landscape} (left). The initial states are assumed known, although such an assumption is not generally necessary. The `PyBOP` repository contains multiple [example notebooks](https://github.com/pybop-team/PyBOP/tree/develop/examples/notebooks) that follow a similar inference process for readers that would like further information. The underlying cost landscape to be explored by the optimiser is shown in \autoref{fig:inference-time-landscape} (right) with the initial position denoted alongside the known system parameters for this synthetic inference task. In general, the true parameters are not known a priori.
 
