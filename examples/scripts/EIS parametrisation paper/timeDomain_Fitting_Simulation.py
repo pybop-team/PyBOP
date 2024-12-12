@@ -32,18 +32,19 @@ model = pybop.lithium_ion.GroupedSPMe(
 )
 
 ## Choose parameter bounds for optimisation
+R0_bounds = [0, 0.05]
 tau_d_bounds = [5e2, 1e4]
+t_plus_bounds = [0.2, 0.5]
 tau_e_bounds = [2e2, 1e3]
-zeta_bounds = [0.5, 1.5]
-Qe_bounds = [5e2, 1e3]
 tau_ct_bounds = [1e3, 5e4]
 C_bounds = [0, 1]
-c0p_bounds = [0.8, 0.9]
-c0n_bounds = [0, 0.1]
-c100p_bounds = [0.2, 0.3]
-c100n_bounds = [0.85, 0.95]
-t_plus_bounds = [0.2, 0.5]
-R0_bounds = [0, 0.05]
+zeta_bounds = [0.5, 1.5]
+Qe_bounds = [5e2, 1e3]
+# c0p_bounds = [0.8, 0.9]
+# c0n_bounds = [0, 0.1]
+# c100p_bounds = [0.2, 0.3]
+# c100n_bounds = [0.85, 0.95]
+
 
 parameters = pybop.Parameters(
     pybop.Parameter(
@@ -163,7 +164,8 @@ dataset = pybop.Dataset(
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
 optim = pybop.SciPyDifferentialEvolution(
-    cost, max_iterations=100, max_unchanged_iterations=100
+    cost,
+    maxiter=50,
 )
 
 # Run optimisation
