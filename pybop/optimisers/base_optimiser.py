@@ -325,6 +325,7 @@ class OptimisationResult:
         cost: Union[BaseCost, None] = None,
         final_cost: Optional[float] = None,
         n_iterations: Optional[int] = None,
+        n_evaluations: Optional[int] = None,
         optim: Optional[BaseOptimiser] = None,
         time: Optional[float] = None,
         scipy_result=None,
@@ -335,6 +336,7 @@ class OptimisationResult:
             final_cost if final_cost is not None else self._calculate_final_cost()
         )
         self.n_iterations = n_iterations
+        self.n_evaluations = n_evaluations
         self.scipy_result = scipy_result
         self.optim = optim
         self.time = time
@@ -418,6 +420,7 @@ class OptimisationResult:
             f"  Final cost: {self.final_cost}\n"
             f"  Optimisation time: {self.time} seconds\n"
             f"  Number of iterations: {self.n_iterations}\n"
+            f"  Number of evaluations: {self.n_evaluations}\n"
             f"  SciPy result available: {'Yes' if self.scipy_result else 'No'}"
         )
 
@@ -513,6 +516,10 @@ class MultiOptimisationResult:
     @property
     def n_iterations(self):
         return self.best_run().n_iterations
+
+    @property
+    def n_evaluations(self):
+        return self.best_run().n_evaluations
 
     @property
     def scipy_result(self):

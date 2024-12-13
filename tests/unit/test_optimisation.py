@@ -511,8 +511,8 @@ class TestOptimisation:
 
         # Test max evalutions
         optim = pybop.GradientDescent(cost=cost, max_evaluations=1, verbose=True)
-        optim.run()
-        assert optim.result.n_iterations == 1
+        results = optim.run()
+        assert results.n_evaluations == 1
 
         # Test max unchanged iterations
         optim = pybop.GradientDescent(
@@ -528,6 +528,7 @@ class TestOptimisation:
             f"  Final cost: {results.final_cost}\n"
             f"  Optimisation time: {results.time} seconds\n"
             f"  Number of iterations: {results.n_iterations}\n"
+            f"  Number of evaluations: {results.n_evaluations}\n"
             f"  SciPy result available: No"
         )
 
@@ -571,6 +572,7 @@ class TestOptimisation:
             f"  Final cost: {results.final_cost}\n"
             f"  Optimisation time: {results.time} seconds\n"
             f"  Number of iterations: {results.n_iterations}\n"
+            f"  Number of evaluations: {results.n_evaluations}\n"
             f"  SciPy result available: No"
         )
 

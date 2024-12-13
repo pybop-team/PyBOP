@@ -365,6 +365,7 @@ class BasePintsOptimiser(BaseOptimiser):
             cost=self.cost,
             final_cost=f if self.minimising else -f,
             n_iterations=self._iterations,
+            n_evaluations=self._evaluations,
             optim=self,
             time=total_time,
         )
