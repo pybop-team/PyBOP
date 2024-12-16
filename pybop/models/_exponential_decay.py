@@ -28,12 +28,20 @@ class ExponentialDecayModel(BaseModel):
         name: str = "Experimental Decay Model",
         parameter_set: pybamm.ParameterValues = None,
         n_states: int = 1,
+        solver=None,
     ):
         if n_states < 1:
             raise ValueError("The number of states (n_states) must be at least 1.")
 
         super().__init__(name=name, parameter_set=parameter_set)
+
         self.n_states = n_states
+        if solver is None:
+            self._solver = pybamm.CasadiSolver
+            self._solver.mode = "fast with events"
+            self._solver.max_step_decrease_count = 1
+        else:
+            self._solver = solver
 
         # Initialise the PyBaMM model, variables, parameters
         self.pybamm_model = pybamm.BaseModel()

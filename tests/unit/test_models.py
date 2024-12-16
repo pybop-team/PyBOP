@@ -43,18 +43,13 @@ class TestModels:
     )
     @pytest.mark.unit
     def test_model_classes(self, model_class, expected_name, options):
-        model = model_class(options=options)
+        parameter_set = pybop.ParameterSet(
+            params_dict={"Nominal cell capacity [A.h]": 5.12}
+        )
+        model = model_class(options=options, parameter_set=parameter_set)
         assert model.pybamm_model is not None
         assert model.name == expected_name
-
-        # Test initialisation with kwargs
-        if model_class is pybop.lithium_ion.MSMR:
-            # Reset the options to cope with a bug in PyBaMM v23.9 msmr.py:23 which is fixed in v24.1
-            options = {"number of MSMR reactions": ("6", "4")}
-        parameter_set = pybop.ParameterSet(
-            params_dict={"Nominal cell capacity [A.h]": 5}
-        )
-        model = model_class(options=options, build=True, parameter_set=parameter_set)
+        assert model.parameter_set["Nominal cell capacity [A.h]"] == 5.12
 
     @pytest.fixture(
         params=[
