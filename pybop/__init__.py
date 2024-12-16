@@ -80,6 +80,7 @@ from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointL
 from .models.base_model import BaseModel
 from .models import lithium_ion
 from .models import empirical
+from .models._exponential_decay import ExponentialDecayModel
 from .models.base_model import TimeSeriesState
 from .models.base_model import Inputs
 
