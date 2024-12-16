@@ -261,7 +261,12 @@ class TestOptimisation:
                 ):
                     optimiser(cost=cost, bounds=bounds_case)
 
-        if optimiser in [pybop.AdamW, pybop.CuckooSearch, pybop.GradientDescent, pybop.RandomSearch]:
+        if optimiser in [
+            pybop.AdamW,
+            pybop.CuckooSearch,
+            pybop.GradientDescent,
+            pybop.RandomSearch,
+        ]:
             optim = optimiser(cost)
             with pytest.raises(
                 RuntimeError, match=re.escape("ask() must be called before tell().")
