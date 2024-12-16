@@ -134,7 +134,6 @@ from .optimisers.scipy_optimisers import (
 )
 from .optimisers.pints_optimisers import (
     GradientDescent,
-    Adam,
     CMAES,
     IRPropMin,
     NelderMead,
