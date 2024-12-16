@@ -89,6 +89,7 @@ class TestOptimisation:
             (pybop.PSO, "Particle Swarm Optimisation (PSO)", False),
             (pybop.IRPropMin, "iRprop-", True),
             (pybop.NelderMead, "Nelder-Mead", False),
+            (pybop.RandomSearch, "Random Search", False),
         ],
     )
     @pytest.mark.unit
@@ -139,6 +140,7 @@ class TestOptimisation:
             pybop.IRPropMin,
             pybop.NelderMead,
             pybop.CuckooSearch,
+            pybop.RandomSearch,
         ],
     )
     @pytest.mark.unit
@@ -259,7 +261,7 @@ class TestOptimisation:
                 ):
                     optimiser(cost=cost, bounds=bounds_case)
 
-        if optimiser in [pybop.AdamW, pybop.CuckooSearch, pybop.GradientDescent]:
+        if optimiser in [pybop.AdamW, pybop.CuckooSearch, pybop.GradientDescent, pybop.RandomSearch]:
             optim = optimiser(cost)
             with pytest.raises(
                 RuntimeError, match=re.escape("ask() must be called before tell().")
@@ -317,6 +319,12 @@ class TestOptimisation:
     @pytest.mark.unit
     def test_cuckoo_no_bounds(self, cost):
         optim = pybop.CuckooSearch(cost=cost, bounds=None, max_iterations=1)
+        optim.run()
+        assert optim.optimiser._boundaries is None
+
+    @pytest.mark.unit
+    def test_randomsearch_no_bounds(self, cost):
+        optim = pybop.RandomSearch(cost=cost, bounds=None, max_iterations=1)
         optim.run()
         assert optim.optimiser._boundaries is None
 
