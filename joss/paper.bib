@@ -335,6 +335,7 @@
 author = {Dhoot, Rishit and Timms, Robert and Please, Colin},
 title = {PyBaMM EIS: Efficient Linear Algebra Methods to Determine Li-ion Battery Behaviour},
 url = {https://www.github.com/pybamm-team/pybamm-eis},
+year = {2024},
 version = {0.1.4}
 }
 
@@ -349,4 +350,59 @@ version = {0.1.4}
   volume    = {168},
   doi       = {10.1149/1945-7111/ac11a5},
   publisher = {IOP Publishing},
+}
+
+@misc{Loshchilov:2017,
+	title = {Decoupled {Weight} {Decay} {Regularization}},
+	copyright = {arXiv.org perpetual, non-exclusive license},
+	url = {https://arxiv.org/abs/1711.05101},
+	doi = {10.48550/ARXIV.1711.05101},
+	abstract = {L\$\_2\$ regularization and weight decay regularization are equivalent for standard stochastic gradient descent (when rescaled by the learning rate), but as we demonstrate this is {\textbackslash}emph\{not\} the case for adaptive gradient algorithms, such as Adam. While common implementations of these algorithms employ L\$\_2\$ regularization (often calling it "weight decay" in what may be misleading due to the inequivalence we expose), we propose a simple modification to recover the original formulation of weight decay regularization by {\textbackslash}emph\{decoupling\} the weight decay from the optimization steps taken w.r.t. the loss function. We provide empirical evidence that our proposed modification (i) decouples the optimal choice of weight decay factor from the setting of the learning rate for both standard SGD and Adam and (ii) substantially improves Adam's generalization performance, allowing it to compete with SGD with momentum on image classification datasets (on which it was previously typically outperformed by the latter). Our proposed decoupled weight decay has already been adopted by many researchers, and the community has implemented it in TensorFlow and PyTorch; the complete source code for our experiments is available at https://github.com/loshchil/AdamW-and-SGDW},
+	urldate = {2024-12-13},
+	publisher = {arXiv},
+	author = {Loshchilov, Ilya and Hutter, Frank},
+	year = {2017},
+	note = {Version Number: 3},
+	keywords = {FOS: Computer and information sciences, FOS: Mathematics, Machine Learning (cs.LG), Neural and Evolutionary Computing (cs.NE), Optimization and Control (math.OC)},
+}
+
+
+@inproceedings{Yang:2009,
+	address = {Coimbatore, India},
+	title = {Cuckoo {Search} via Levy flights},
+	isbn = {978-1-4244-5053-4},
+	url = {http://ieeexplore.ieee.org/document/5393690/},
+	doi = {10.1109/NABIC.2009.5393690},
+	urldate = {2024-12-13},
+	booktitle = {2009 {World} {Congress} on {Nature} \& {Biologically} {Inspired} {Computing} ({NaBIC})},
+	publisher = {IEEE},
+	author = {Yang, Xin-She and {Suash Deb}},
+	year = {2009},
+	pages = {210--214},
+}
+
+@article{Cauchy:1847,
+  title={M{\'e}thode g{\'e}n{\'e}rale pour la r{\'e}solution des systemes d’{\'e}quations simultan{\'e}es},
+  author={Cauchy, Augustin and others},
+  journal={Comp. Rend. Sci. Paris},
+  volume={25},
+  number={1847},
+  pages={536--538},
+  year={1847}
+}
+
+@article{Aitio:2020,
+title = {Bayesian Parameter Estimation Applied to the Li-ion Battery Single Particle Model with Electrolyte Dynamicsa⁎This work was carried out with funding received from the Faraday Institution (faraday.ac.uk; EP/S003053/1, ref. FIRG003). Scott Marquis was supported by the EPSRC Centre For Doctoral Training in Industrially Focused Mathematical Modelling (EP/L015803/1) in collaboration with Siemens Corporate Technology.},
+journal = {IFAC-PapersOnLine},
+volume = {53},
+number = {2},
+pages = {12497-12504},
+year = {2020},
+note = {21st IFAC World Congress},
+issn = {2405-8963},
+doi = {https://doi.org/10.1016/j.ifacol.2020.12.1770},
+url = {https://www.sciencedirect.com/science/article/pii/S2405896320323788},
+author = {Antti Aitio and Scott G. Marquis and Pedro Ascencio and David Howey},
+keywords = {identifiability, Bayesian methods, parameter estimation, battery, lithium-ion},
+abstract = {This paper presents a Bayesian parameter estimation approach and identifiability analysis for a lithium-ion battery model, to determine the uniqueness, evaluate the sensitivity and quantify the uncertainty of a subset of the model parameters. The analysis was based on the single particle model with electrolyte dynamics, rigorously derived from the Doyle-Fuller-Newman model using asymptotic analysis including electrode-average terms. The Bayesian approach allows complex target distributions to be estimated, which enables a global analysis of the parameter space. The analysis focuses on the identification problem (i) locally, under a set of discrete quasi-steady states of charge, and in comparison (ii) globally with a continuous excursion of state of charge. The performance of the methodology was evaluated using synthetic data from multiple numerical simulations under diverse types of current excitation. We show that various diffusivities as well as the transference number may be estimated with small variances in the global case, but with much larger uncertainty in the local estimation case. This also has significant implications for estimation where parameters might vary as a function of state of charge or other latent variables.}
 }
