@@ -239,7 +239,7 @@ cost = pybop.SumSquaredError(problem)
 optim = pybop.PSO(
     cost,
     parallel=True,
-    multistart=2,
+    multistart=3,
     max_iterations=10,
     max_unchanged_iterations=10,
 )
@@ -250,7 +250,7 @@ results = optim.run()
 print("True grouped parameters", parameters.true_value())
 
 
-grouped_parameters.update(parameters.as_dict(results.x))
+grouped_parameters.update(parameters.as_dict(results.best_x))
 
 # Plot convergence
 pybop.plot.convergence(optim)

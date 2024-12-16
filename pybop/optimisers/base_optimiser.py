@@ -187,13 +187,12 @@ class BaseOptimiser:
                 self.parameters.update(
                     initial_values=self._transformation.to_model(self.x0)
                 )  # TODO: Improve
-                # self.parameters.update(initial_values=self.x0)
                 self._set_up_optimiser()
 
             self.result.add_run(self._run())
 
         # Store the optimised parameters
-        self.parameters.update(values=self.result.x)
+        self.parameters.update(values=self.result.best_x)
 
         if self.verbose:
             print(self.result)
@@ -478,10 +477,6 @@ class MultiOptimisationResult:
         valid_times = [res.time for res in self.results if res.time is not None]
         return np.sum(valid_times)
 
-    def best_x(self) -> Optional[float]:
-        """Returns the best parameters, x across the optimisation"""
-        return self.best_run().x
-
     def __str__(self) -> str:
         """
         A string representation of the MultiOptimisationResult object.
@@ -502,25 +497,29 @@ class MultiOptimisationResult:
         return self.best_run().get_scipy_result()
 
     @property
+    def best_x(self):
+        return self.best_run().x
+
+    @property
     def x(self):
-        return self.best_x()
+        return [res.x for res in self.results]
 
     @property
     def x0(self):
-        return self.best_run().x0
+        return [res.x0 for res in self.results]
 
     @property
     def final_cost(self):
-        return self.best_run().final_cost
+        return [res.final_cost for res in self.results]
 
     @property
     def n_iterations(self):
-        return self.best_run().n_iterations
+        return [res.n_iterations for res in self.results]
 
     @property
     def scipy_result(self):
-        return self.best_run().scipy_result
+        return [res.scipy_result for res in self.results]
 
     @property
     def time(self):
-        return self.total_runtime()
+        return [res.time for res in self.results]
