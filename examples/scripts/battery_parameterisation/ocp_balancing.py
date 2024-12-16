@@ -4,11 +4,14 @@ import pybop
 
 # Parameter set and model definition
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+# solver = pybamm.IDAKLUSolver()
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set)  # , solver=solver)
 
 # Set objects for initial conditions
 init_soc = {"Initial SoC": 1}
 parameter_set.set_initial_stoichiometries(initial_value=init_soc["Initial SoC"])
+parameter_set["Lower voltage cut-off [V]"] = -1e9
+parameter_set["Upper voltage cut-off [V]"] = 1e9
 cs_n_max = parameter_set["Maximum concentration in negative electrode [mol.m-3]"]
 cs_p_max = parameter_set["Maximum concentration in positive electrode [mol.m-3]"]
 v_min = parameter_set["Open-circuit voltage at 0% SOC [V]"]

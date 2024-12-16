@@ -1,6 +1,5 @@
 import time as timer
 
-import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from scipy.io import savemat
@@ -38,13 +37,13 @@ tau_e_bounds = [2e2, 1e3]
 zeta_bounds = [0.5, 1.5]
 Qe_bounds = [5e2, 1e3]
 tau_ct_bounds = [1e3, 5e4]
-C_bounds = [0, 1]
+C_bounds = [1e-5, 1]
 c0p_bounds = [0.8, 0.9]
-c0n_bounds = [0, 0.1]
+c0n_bounds = [1e-5, 0.1]
 c100p_bounds = [0.2, 0.3]
 c100n_bounds = [0.85, 0.95]
 t_plus_bounds = [0.2, 0.5]
-R0_bounds = [0, 0.05]
+R0_bounds = [1e-5, 0.05]
 
 parameters = pybop.Parameters(
     pybop.Parameter(
@@ -222,22 +221,24 @@ for ii in range(len(SOCs)):
 problem = pybop.MultiFittingProblem(*problems)
 
 cost = pybop.SumSquaredError(problem)
-optim = pybop.XNES(
+optim = pybop.PSO(
     cost,
     parallel=True,
-    max_iterations=500,
-    max_unchanged_iterations=500,
+    max_iterations=1000,
+    max_unchanged_iterations=1000,
 )
 
 computationTime = np.zeros(Nruns)
+final_cost = np.zeros(Nruns)
 thetahat = np.zeros((len(parameters), Nruns))
 # Run optimisation
 for ii in range(Nruns):
     start_time = timer.time()
-    estimate = optim.run()
-    thetahat[:, ii] = estimate.x
+    results = optim.run()
+    thetahat[:, ii] = results.x
     end_time = timer.time()
     computationTime[ii] = end_time - start_time
+    final_cost[ii] = results.final_cost
     print(ii)
 
 thetahatmean = np.mean(thetahat, axis=1)
@@ -251,10 +252,10 @@ optimised_grouped_parameters.update(parameters.as_dict(thetahatmean))
 # print("Optimised grouped parameters:", optimised_grouped_parameters)
 
 # Plot convergence
-pybop.plot.convergence(optim)
+# pybop.plot.convergence(optim)
 
 # Plot the parameter traces
-pybop.plot.parameters(optim)
+# pybop.plot.parameters(optim)
 
 ## Save estimated impedance data
 modelhat = pybop.lithium_ion.GroupedSPMe(
@@ -274,23 +275,24 @@ for ii in range(len(SOCs)):
     simulation = modelhat.simulateEIS(inputs=None, f_eval=frequencies)
     impedanceshat[:, ii] = simulation["Impedance"]
 
-colors = plt.get_cmap("tab10")
-fig, ax = plt.subplots()
-for ii in range(len(SOCs)):
-    ax.plot(np.real(impedances[:, ii]), -np.imag(impedances[:, ii]), color=colors(ii))
-    ax.plot(
-        np.real(impedanceshat[:, ii]), -np.imag(impedanceshat[:, ii]), color=colors(ii)
-    )
-ax.set(xlabel=r"$Z_r(\omega)$ [$\Omega$]", ylabel=r"$-Z_j(\omega)$ [$\Omega$]")
-ax.grid()
-ax.set_aspect("equal", "box")
-plt.show()
+# colors = plt.get_cmap("tab10")
+# fig, ax = plt.subplots()
+# for ii in range(len(SOCs)):
+#    ax.plot(np.real(impedances[:, ii]), -np.imag(impedances[:, ii]), color=colors(ii))
+#    ax.plot(
+#        np.real(impedanceshat[:, ii]), -np.imag(impedanceshat[:, ii]), color=colors(ii)
+#    )
+# ax.set(xlabel=r"$Z_r(\omega)$ [$\Omega$]", ylabel=r"$-Z_j(\omega)$ [$\Omega$]")
+# ax.grid()
+# ax.set_aspect("equal", "box")
+# plt.show()
 
 mdic = {
     "Z": impedances,
     "Zhat": impedanceshat,
     "f": frequencies,
     "SOC": SOCs,
+    "final_cost": final_cost,
     "thetahat": thetahat,
     "computationTime": computationTime,
 }
