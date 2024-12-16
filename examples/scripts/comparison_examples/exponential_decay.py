@@ -6,7 +6,7 @@ import pybop
 # Define model and use high-performant solver for sensitivities
 solver = pybamm.IDAKLUSolver()
 parameter_set = pybamm.ParameterValues({"k": 1, "y0": 0.5})
-model = pybop.ExponentialDecay(parameter_set=parameter_set)
+model = pybop.ExponentialDecayModel(parameter_set=parameter_set, n_states=2)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -36,10 +36,11 @@ dataset = pybop.Dataset(
         "Time [s]": t_eval,
         "Current function [A]": 0 * t_eval,
         "y_0": values["y_0"].data + noise(sigma),
+        "y_1": values["y_1"].data + noise(sigma),
     }
 )
 
-signal = ["y_0"]
+signal = ["y_0", "y_1"]
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 cost = pybop.Minkowski(problem, p=2)

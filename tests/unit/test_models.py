@@ -6,6 +6,7 @@ import pybamm
 import pytest
 
 import pybop
+from examples.standalone.model import ExponentialDecay as StandaloneDecay
 
 
 class TestModels:
@@ -271,11 +272,14 @@ class TestModels:
                 atol=1e-5,
             )
 
+    @pytest.mark.parametrize(
+        "model_cls", [StandaloneDecay, pybop.ExponentialDecayModel]
+    )
     @pytest.mark.unit
-    def test_reinit(self):
+    def test_reinit(self, model_cls):
         k = 0.1
         y0 = 1
-        model = pybop.ExponentialDecay(pybamm.ParameterValues({"k": k, "y0": y0}))
+        model = model_cls(pybamm.ParameterValues({"k": k, "y0": y0}))
 
         with pytest.raises(
             ValueError, match="Model must be built before calling get_state"
@@ -290,17 +294,20 @@ class TestModels:
         state = model.reinit(inputs=[1])
         np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
 
-        model = pybop.ExponentialDecay(pybamm.ParameterValues({"k": k, "y0": y0}))
+        model = model_cls(pybamm.ParameterValues({"k": k, "y0": y0}))
         with pytest.raises(
             ValueError, match="Model must be built before calling reinit"
         ):
             model.reinit(inputs={})
 
+    @pytest.mark.parametrize(
+        "model_cls", [StandaloneDecay, pybop.ExponentialDecayModel]
+    )
     @pytest.mark.unit
-    def test_simulate(self):
+    def test_simulate(self, model_cls):
         k = 0.1
         y0 = 1
-        model = pybop.ExponentialDecay(pybamm.ParameterValues({"k": k, "y0": y0}))
+        model = model_cls(pybamm.ParameterValues({"k": k, "y0": y0}))
         model.build()
         model.signal = ["y_0"]
         inputs = {}
@@ -310,7 +317,7 @@ class TestModels:
         np.testing.assert_array_almost_equal(solved["y_0"].data, expected, decimal=5)
 
         with pytest.raises(ValueError):
-            pybop.ExponentialDecay(n_states=-1)
+            model_cls(n_states=-1)
 
     @pytest.mark.unit
     def test_simulateEIS(self):

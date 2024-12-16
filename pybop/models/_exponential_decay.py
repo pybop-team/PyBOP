@@ -3,7 +3,7 @@ import pybamm
 from pybop.models.base_model import BaseModel
 
 
-class ExponentialDecay(BaseModel):
+class ExponentialDecayModel(BaseModel):
     """
     Exponential decay model defined by the equation:
 
@@ -16,14 +16,19 @@ class ExponentialDecay(BaseModel):
             for the model, with "k" (decay rate) and "y0" (initial condition).
 
     Parameters:
-        name (str): Name of the model (default: "Constant Model").
+        name (str): Name of the model (default: "Experimental Decay Model").
         parameter_set (pybamm.ParameterValues): Parameter values for the model.
         n_states (int): Number of states in the system. Must be >= 1.
+
+    Returns:
+        solution (pybamm.Solution): Solution object for the model. Variables will be named
+        "y_{i}" for each state. For example, the first state will be "y_0", the second will be
+        "y_1", etc.
     """
 
     def __init__(
         self,
-        name: str = "Constant Model",
+        name: str = "Experimental Decay Model",
         parameter_set: pybamm.ParameterValues = None,
         n_states: int = 1,
     ):
@@ -44,7 +49,9 @@ class ExponentialDecay(BaseModel):
         self.pybamm_model.initial_conditions = {y: y0 for y in ys}
 
         # Define model outputs and set default values
-        self.pybamm_model.variables = {"y_0": ys[0], "Time [s]": pybamm.t}
+        self.pybamm_model.variables = {f"y_{en}": i for en, i in enumerate(ys)} | {
+            "Time [s]": pybamm.t
+        }
         self.default_parameter_values = parameter_set or pybamm.ParameterValues(
             {"k": 0.1, "y0": 1}
         )
