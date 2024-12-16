@@ -16,13 +16,11 @@ model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 parameters = pybop.Parameters(
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.6, 0.05),
         bounds=[0.4, 0.75],
         initial_value=0.41,
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.48, 0.05),
         bounds=[0.4, 0.75],
         initial_value=0.41,
     ),
