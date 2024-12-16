@@ -16,9 +16,10 @@ class TestExamples:
         path_to_example_scripts = os.path.join(
             pybop.script_path, "..", "examples", "scripts"
         )
-        for example in os.listdir(path_to_example_scripts):
-            if example.endswith(".py"):
-                examples_list.append(os.path.join(path_to_example_scripts, example))
+        for dirpath, _, filenames in os.walk(path_to_example_scripts):
+            for file in filenames:
+                if file.endswith(".py"):
+                    examples_list.append(os.path.join(dirpath, file))
         return examples_list
 
     @pytest.mark.parametrize("example", list_of_examples())

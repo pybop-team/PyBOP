@@ -9,6 +9,8 @@ class ExponentialDecayModel(BaseModel):
 
         dy/dt = -k * y,  y(0) = y0
 
+    Note: The output variables are named "y_{i}" for each state.
+        For example, the first state is "y_0", the second is "y_1", etc.
     Attributes:
         n_states (int): Number of states in the system (default is 1).
         pybamm_model (pybamm.BaseModel): PyBaMM model representation.
@@ -19,11 +21,6 @@ class ExponentialDecayModel(BaseModel):
         name (str): Name of the model (default: "Experimental Decay Model").
         parameter_set (pybamm.ParameterValues): Parameter values for the model.
         n_states (int): Number of states in the system. Must be >= 1.
-
-    Returns:
-        solution (pybamm.Solution): Solution object for the model. Variables will be named
-        "y_{i}" for each state. For example, the first state will be "y_0", the second will be
-        "y_1", etc.
     """
 
     def __init__(

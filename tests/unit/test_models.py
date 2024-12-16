@@ -7,6 +7,7 @@ import pytest
 
 import pybop
 from examples.standalone.model import ExponentialDecay as StandaloneDecay
+from pybop.models.lithium_ion.basic_SPMe import convert_physical_to_grouped_parameters
 
 
 class TestModels:
@@ -27,6 +28,16 @@ class TestModels:
                 {"number of MSMR reactions": ("6", "4")},
             ),
             (pybop.lithium_ion.WeppnerHuggins, "Weppner & Huggins model", None),
+            (
+                pybop.lithium_ion.GroupedSPMe,
+                "Grouped Single Particle Model with Electrolyte",
+                None,
+            ),
+            (
+                pybop.lithium_ion.GroupedSPMe,
+                "Grouped Single Particle Model with Electrolyte",
+                {"surface form": "differential"},
+            ),
             (pybop.empirical.Thevenin, "Equivalent Circuit Thevenin Model", None),
         ],
     )
@@ -53,6 +64,8 @@ class TestModels:
             pybop.lithium_ion.MPM(),
             pybop.lithium_ion.MSMR(options={"number of MSMR reactions": ("6", "4")}),
             pybop.lithium_ion.WeppnerHuggins(),
+            pybop.lithium_ion.GroupedSPMe(),
+            pybop.lithium_ion.GroupedSPMe(options={"surface form": "differential"}),
             pybop.empirical.Thevenin(),
         ]
     )
@@ -83,7 +96,9 @@ class TestModels:
             model.predict(None, None)
 
         # Test new_copy() without pybamm_model
-        if not isinstance(model, pybop.lithium_ion.MSMR):
+        if not isinstance(
+            model, (pybop.lithium_ion.MSMR, pybop.lithium_ion.GroupedSPMe)
+        ):
             new_model = model.new_copy()
             assert new_model.pybamm_model is not None
             assert new_model.parameter_set is not None
@@ -92,7 +107,12 @@ class TestModels:
     def test_predict_with_inputs(self, model):
         # Define inputs
         t_eval = np.linspace(0, 10, 100)
-        if isinstance(model, (pybop.lithium_ion.EChemBaseModel)):
+        if isinstance(model, (pybop.lithium_ion.GroupedSPMe)):
+            inputs = {
+                "Negative electrode relative porosity": 0.52,
+                "Positive electrode relative porosity": 0.63,
+            }
+        elif isinstance(model, (pybop.lithium_ion.EChemBaseModel)):
             if model.pybamm_model.options["working electrode"] == "positive":
                 inputs = {
                     "Positive electrode active material volume fraction": 0.63,
@@ -574,3 +594,33 @@ class TestModels:
             dataset_2["Current function [A]"].data,
             atol=1e-8,
         )
+
+    @pytest.mark.unit
+    def test_grouped_SPMe(self):
+        with pytest.warns(UserWarning) as record:
+            model = pybop.lithium_ion.GroupedSPMe(
+                unused_kwarg=0, options={"unused option": 0}
+            )
+            assert "The input model_kwargs" in str(record[0].message)
+            assert "are not currently used by the GroupedSPMe." in str(
+                record[0].message
+            )
+
+        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set["Electrolyte diffusivity [m2.s-1]"] = 1.769e-10
+        parameter_set["Electrolyte conductivity [S.m-1]"] = 0.9487
+
+        grouped_parameter_set = convert_physical_to_grouped_parameters(parameter_set)
+        model = pybop.lithium_ion.GroupedSPMe(parameter_set=grouped_parameter_set)
+
+        with pytest.raises(
+            ValueError, match="GroupedSPMe can currently only accept an initial SoC."
+        ):
+            model.set_initial_state({"Initial open-circuit voltage [V]": 3.7})
+
+        model.set_initial_state({"Initial SoC": 1.0})
+        res = model.predict(t_eval=np.linspace(0, 10, 100))
+        assert len(res["Voltage [V]"].data) == 100
+
+        variable_list = model.pybamm_model.default_quick_plot_variables
+        assert isinstance(variable_list, list)
