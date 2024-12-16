@@ -184,7 +184,10 @@ class BaseOptimiser:
             if i >= 1:
                 self.unset_options = self.unset_options_store.copy()
                 self.x0 = self.parameters.rvs(1, apply_transform=True)
-                self.parameters.update(initial_values=self.x0)
+                self.parameters.update(
+                    initial_values=self._transformation.to_model(self.x0)
+                )  # TODO: Improve
+                # self.parameters.update(initial_values=self.x0)
                 self._set_up_optimiser()
 
             self.result.add_run(self._run())

@@ -1,13 +1,10 @@
-import time as timer
-
+import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from scipy.io import savemat
 
 import pybop
 from pybop.models.lithium_ion.basic_SPMe import convert_physical_to_grouped_parameters
-
-Nruns = 10
 
 ## Define true parameters
 R0 = 0.01
@@ -49,6 +46,7 @@ parameters = pybop.Parameters(
     pybop.Parameter(
         "Series resistance [Ohm]",
         bounds=R0_bounds,
+        prior=pybop.Uniform(*R0_bounds),
         initial_value=np.mean(R0_bounds),
         true_value=grouped_parameters["Series resistance [Ohm]"],
         transformation=pybop.LogTransformation(),
@@ -57,6 +55,7 @@ parameters = pybop.Parameters(
         "Positive particle diffusion time scale [s]",
         bounds=tau_d_bounds,
         initial_value=np.mean(tau_d_bounds),
+        prior=pybop.Uniform(*tau_d_bounds),
         true_value=grouped_parameters["Positive particle diffusion time scale [s]"],
         transformation=pybop.LogTransformation(),
     ),
@@ -64,20 +63,23 @@ parameters = pybop.Parameters(
         "Negative particle diffusion time scale [s]",
         bounds=tau_d_bounds,
         initial_value=np.mean(tau_d_bounds),
+        prior=pybop.Uniform(*tau_d_bounds),
         true_value=grouped_parameters["Negative particle diffusion time scale [s]"],
         transformation=pybop.LogTransformation(),
     ),
     pybop.Parameter(
         "Cation transference number",
-        bounds=np.sort(t_plus_bounds),
+        bounds=t_plus_bounds,
         initial_value=np.mean(t_plus_bounds),
+        prior=pybop.Uniform(*t_plus_bounds),
         true_value=grouped_parameters["Cation transference number"],
         transformation=pybop.LogTransformation(),
     ),
     pybop.Parameter(
         "Positive electrode electrolyte diffusion time scale [s]",
-        bounds=np.sort(tau_e_bounds),
+        bounds=tau_e_bounds,
         initial_value=np.mean(tau_e_bounds),
+        prior=pybop.Uniform(*tau_e_bounds),
         true_value=grouped_parameters[
             "Positive electrode electrolyte diffusion time scale [s]"
         ],
@@ -85,8 +87,9 @@ parameters = pybop.Parameters(
     ),
     pybop.Parameter(
         "Negative electrode electrolyte diffusion time scale [s]",
-        bounds=np.sort(tau_e_bounds),
+        bounds=tau_e_bounds,
         initial_value=np.mean(tau_e_bounds),
+        prior=pybop.Uniform(*tau_e_bounds),
         true_value=grouped_parameters[
             "Negative electrode electrolyte diffusion time scale [s]"
         ],
@@ -94,15 +97,17 @@ parameters = pybop.Parameters(
     ),
     pybop.Parameter(
         "Separator electrolyte diffusion time scale [s]",
-        bounds=np.sort(tau_e_bounds),
+        bounds=tau_e_bounds,
         initial_value=np.mean(tau_e_bounds),
+        prior=pybop.Uniform(*tau_e_bounds),
         true_value=grouped_parameters["Separator electrolyte diffusion time scale [s]"],
         transformation=pybop.LogTransformation(),
     ),
     pybop.Parameter(
         "Positive electrode charge transfer time scale [s]",
-        bounds=np.sort(tau_ct_bounds),
+        bounds=tau_ct_bounds,
         initial_value=np.mean(tau_ct_bounds),
+        prior=pybop.Uniform(*tau_ct_bounds),
         true_value=grouped_parameters[
             "Positive electrode charge transfer time scale [s]"
         ],
@@ -110,8 +115,9 @@ parameters = pybop.Parameters(
     ),
     pybop.Parameter(
         "Negative electrode charge transfer time scale [s]",
-        bounds=np.sort(tau_ct_bounds),
+        bounds=tau_ct_bounds,
         initial_value=np.mean(tau_ct_bounds),
+        prior=pybop.Uniform(*tau_ct_bounds),
         true_value=grouped_parameters[
             "Negative electrode charge transfer time scale [s]"
         ],
@@ -119,64 +125,73 @@ parameters = pybop.Parameters(
     ),
     pybop.Parameter(
         "Positive electrode capacitance [F]",
-        bounds=np.sort(C_bounds),
+        bounds=C_bounds,
         initial_value=np.mean(C_bounds),
+        prior=pybop.Uniform(*C_bounds),
         true_value=grouped_parameters["Positive electrode capacitance [F]"],
         transformation=pybop.LogTransformation(),
     ),
     pybop.Parameter(
         "Negative electrode capacitance [F]",
-        bounds=np.sort(C_bounds),
+        bounds=C_bounds,
         initial_value=np.mean(C_bounds),
+        prior=pybop.Uniform(*C_bounds),
         true_value=grouped_parameters["Negative electrode capacitance [F]"],
         transformation=pybop.LogTransformation(),
     ),
     pybop.Parameter(
         "Positive electrode relative porosity",
-        bounds=np.sort(zeta_bounds),
+        bounds=zeta_bounds,
         initial_value=np.mean(zeta_bounds),
+        prior=pybop.Uniform(*zeta_bounds),
         true_value=grouped_parameters["Positive electrode relative porosity"],
         transformation=pybop.LogTransformation(),
     ),
     pybop.Parameter(
         "Negative electrode relative porosity",
-        bounds=np.sort(zeta_bounds),
+        bounds=zeta_bounds,
         initial_value=np.mean(zeta_bounds),
+        prior=pybop.Uniform(*zeta_bounds),
         true_value=grouped_parameters["Negative electrode relative porosity"],
         transformation=pybop.LogTransformation(),
     ),
     pybop.Parameter(
         "Reference electrolyte capacity [A.s]",
-        bounds=np.sort(Qe_bounds),
+        bounds=Qe_bounds,
         initial_value=np.mean(Qe_bounds),
+        prior=pybop.Uniform(*Qe_bounds),
         true_value=grouped_parameters["Reference electrolyte capacity [A.s]"],
         transformation=pybop.LogTransformation(),
     ),
     pybop.Parameter(
         "Minimum positive stoichiometry",
-        bounds=np.sort(c100p_bounds),
+        bounds=c100p_bounds,
         initial_value=np.mean(c100p_bounds),
+        prior=pybop.Uniform(*c100p_bounds),
         true_value=grouped_parameters["Minimum positive stoichiometry"],
         transformation=pybop.LogTransformation(),
     ),
     pybop.Parameter(
         "Maximum positive stoichiometry",
-        bounds=np.sort(c0p_bounds),
+        bounds=c0p_bounds,
         initial_value=np.mean(c0p_bounds),
+        prior=pybop.Uniform(*c0p_bounds),
         true_value=grouped_parameters["Maximum positive stoichiometry"],
         transformation=pybop.LogTransformation(),
     ),
     pybop.Parameter(
         "Minimum negative stoichiometry",
-        bounds=np.sort(c0n_bounds),
+        bounds=c0n_bounds,
         initial_value=np.mean(c0n_bounds),
+        prior=pybop.Uniform(*c0n_bounds),
         true_value=grouped_parameters["Minimum negative stoichiometry"],
         transformation=pybop.LogTransformation(),
     ),
     pybop.Parameter(
         "Maximum negative stoichiometry",
-        bounds=np.sort(c100n_bounds),
+        bounds=c100n_bounds,
         initial_value=np.mean(c100n_bounds),
+        prior=pybop.Uniform(*c100n_bounds),
         true_value=grouped_parameters["Maximum negative stoichiometry"],
         transformation=pybop.LogTransformation(),
     ),
@@ -224,42 +239,28 @@ cost = pybop.SumSquaredError(problem)
 optim = pybop.PSO(
     cost,
     parallel=True,
-    max_iterations=1000,
-    max_unchanged_iterations=1000,
+    multistart=2,
+    max_iterations=10,
+    max_unchanged_iterations=10,
 )
 
-computationTime = np.zeros(Nruns)
-final_cost = np.zeros(Nruns)
-thetahat = np.zeros((len(parameters), Nruns))
-# Run optimisation
-for ii in range(Nruns):
-    start_time = timer.time()
-    results = optim.run()
-    thetahat[:, ii] = results.x
-    end_time = timer.time()
-    computationTime[ii] = end_time - start_time
-    final_cost[ii] = results.final_cost
-    print(ii)
-
-thetahatmean = np.mean(thetahat, axis=1)
+results = optim.run()
 
 # Print optimised parameters
 print("True grouped parameters", parameters.true_value())
 
-optimised_grouped_parameters = grouped_parameters
-optimised_grouped_parameters.update(parameters.as_dict(thetahatmean))
 
-# print("Optimised grouped parameters:", optimised_grouped_parameters)
+grouped_parameters.update(parameters.as_dict(results.x))
 
 # Plot convergence
-# pybop.plot.convergence(optim)
+pybop.plot.convergence(optim)
 
 # Plot the parameter traces
-# pybop.plot.parameters(optim)
+pybop.plot.parameters(optim)
 
 ## Save estimated impedance data
 modelhat = pybop.lithium_ion.GroupedSPMe(
-    parameter_set=optimised_grouped_parameters,
+    parameter_set=grouped_parameters,
     eis=True,
     var_pts=var_pts,
     options=model_options,
@@ -275,25 +276,25 @@ for ii in range(len(SOCs)):
     simulation = modelhat.simulateEIS(inputs=None, f_eval=frequencies)
     impedanceshat[:, ii] = simulation["Impedance"]
 
-# colors = plt.get_cmap("tab10")
-# fig, ax = plt.subplots()
-# for ii in range(len(SOCs)):
-#    ax.plot(np.real(impedances[:, ii]), -np.imag(impedances[:, ii]), color=colors(ii))
-#    ax.plot(
-#        np.real(impedanceshat[:, ii]), -np.imag(impedanceshat[:, ii]), color=colors(ii)
-#    )
-# ax.set(xlabel=r"$Z_r(\omega)$ [$\Omega$]", ylabel=r"$-Z_j(\omega)$ [$\Omega$]")
-# ax.grid()
-# ax.set_aspect("equal", "box")
-# plt.show()
+colors = plt.get_cmap("tab10")
+fig, ax = plt.subplots()
+for ii in range(len(SOCs)):
+    ax.plot(np.real(impedances[:, ii]), -np.imag(impedances[:, ii]), color=colors(ii))
+    ax.plot(
+        np.real(impedanceshat[:, ii]), -np.imag(impedanceshat[:, ii]), color=colors(ii)
+    )
+ax.set(xlabel=r"$Z_r(\omega)$ [$\Omega$]", ylabel=r"$-Z_j(\omega)$ [$\Omega$]")
+ax.grid()
+ax.set_aspect("equal", "box")
+plt.show()
 
 mdic = {
     "Z": impedances,
     "Zhat": impedanceshat,
     "f": frequencies,
     "SOC": SOCs,
-    "final_cost": final_cost,
-    "thetahat": thetahat,
-    "computationTime": computationTime,
+    "final_cost": results.final_cost,
+    "thetahat": results.x,
+    "computationTime": results.time,
 }
 savemat("Data/Zhat_SOC_SPMe_Simulation.mat", mdic)
