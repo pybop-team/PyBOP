@@ -45,6 +45,14 @@ class WeightedCost(BaseCost):
         else:
             self.weights = np.ones(len(self.costs))
 
+        # Apply the minimising property from each cost
+        for i, cost in enumerate(self.costs):
+            self.weights[i] = self.weights[i] * (1 if cost.minimising else -1)
+        if all(not cost.minimising for cost in self.costs):
+            # If all costs are maximising, convert the weighted cost to maximising
+            self.weights = -self.weights
+            self.minimising = False
+
         # Check if all costs depend on the same problem
         self._has_identical_problems = all(
             cost.has_separable_problem and cost.problem is self.costs[0].problem

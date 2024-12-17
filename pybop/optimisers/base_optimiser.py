@@ -4,15 +4,7 @@ from typing import Optional, Union
 import numpy as np
 from scipy.optimize import OptimizeResult
 
-from pybop import (
-    BaseCost,
-    BaseLikelihood,
-    DesignCost,
-    Inputs,
-    Parameter,
-    Parameters,
-    WeightedCost,
-)
+from pybop import BaseCost, Inputs, Parameter, Parameters
 
 
 class BaseOptimiser:
@@ -43,9 +35,6 @@ class BaseOptimiser:
         Not all methods will use this information.
     verbose : bool, optional
         If True, the optimisation progress is printed (default: False).
-    minimising : bool, optional
-        If True, the target is to minimise the cost, else target is to maximise by minimising
-        the negative cost (default: True).
     physical_viability : bool, optional
         If True, the feasibility of the optimised parameters is checked (default: False).
     allow_infeasible_solutions : bool, optional
@@ -66,9 +55,9 @@ class BaseOptimiser:
         self.bounds = None
         self.sigma0 = 0.02
         self.verbose = True
-        self.minimising = True
         self._transformation = None
         self._needs_sensitivities = False
+        self._minimising = True
         self.physical_viability = False
         self.allow_infeasible_solutions = False
         self.default_max_iterations = 1000
@@ -79,12 +68,7 @@ class BaseOptimiser:
             self.parameters = self.cost.parameters
             self._transformation = self.cost.transformation
             self.set_allow_infeasible_solutions()
-            if isinstance(cost, WeightedCost):
-                self.minimising = not isinstance(
-                    cost.costs[0], (BaseLikelihood, DesignCost)
-                )
-            else:
-                self.minimising = not isinstance(cost, (BaseLikelihood, DesignCost))
+            self._minimising = self.cost.minimising
 
         else:
             try:
@@ -100,7 +84,6 @@ class BaseOptimiser:
                     self.parameters.add(
                         Parameter(name=f"Parameter {i}", initial_value=value)
                     )
-                self.minimising = True
 
             except Exception as e:
                 raise Exception(
@@ -149,7 +132,6 @@ class BaseOptimiser:
 
         # Set other options
         self.verbose = self.unset_options.pop("verbose", self.verbose)
-        self.minimising = self.unset_options.pop("minimising", self.minimising)
         if "allow_infeasible_solutions" in self.unset_options.keys():
             self.set_allow_infeasible_solutions(
                 self.unset_options.pop("allow_infeasible_solutions")
@@ -200,7 +182,7 @@ class BaseOptimiser:
             x,
             calculate_grad=calculate_grad,
             apply_transform=True,
-            minimising=self.minimising,
+            for_optimiser=True,
         )
 
     def run(self):
@@ -343,6 +325,10 @@ class BaseOptimiser:
     @property
     def needs_sensitivities(self):
         return self._needs_sensitivities
+
+    @property
+    def minimising(self):
+        return self._minimising
 
 
 class OptimisationResult:
@@ -504,7 +490,7 @@ class MultiOptimisationResult:
     def best_run(self) -> Optional[OptimisationResult]:
         """Returns the result with the best final cost."""
         valid_results = [res for res in self.results if res.final_cost is not None]
-        if self.results[0].optim.minimising is True:
+        if self.results[0].minimising is True:
             return min(valid_results, key=lambda res: res.final_cost)
 
         return max(valid_results, key=lambda res: res.final_cost)

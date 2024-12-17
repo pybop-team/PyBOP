@@ -32,6 +32,9 @@ class BaseCost:
     _de : float
         The gradient of the cost function to use if an error occurs during
         evaluation. Defaults to 1.0.
+    minimsing : bool, optional, default=True
+        If False, switches the sign of the cost and gradient to perform maximisation
+        instead of minimisation.
     """
 
     def __init__(self, problem: Optional[BaseProblem] = None):
@@ -43,6 +46,7 @@ class BaseCost:
         self.y = None
         self.dy = None
         self._de = 1.0
+        self.minimising = True
         if isinstance(self.problem, BaseProblem):
             self._target = self.problem.target
             self._parameters.join(self.problem.parameters)
@@ -58,7 +62,7 @@ class BaseCost:
         inputs: Union[Inputs, list],
         calculate_grad: bool = False,
         apply_transform: bool = False,
-        minimising: bool = True,
+        for_optimiser: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
         This method calls the forward model via problem.evaluate(inputs),
@@ -74,9 +78,9 @@ class BaseCost:
             cost is computed.
         apply_transform : bool, optional, default=False
             If True, applies a transformation to the inputs before evaluating the model.
-        minimsing : bool, optional, default=True
-            If False, switches the sign of the cost and gradient to perform maximisation
-            instead of minimisation.
+        for_optimiser : bool, optional, default=False
+            If True, returns the cost value if self.minimising=True and the negative of
+            the cost value if self.minimising=False (i.e. the cost is being maximised).
 
         Returns
         -------
@@ -99,6 +103,9 @@ class BaseCost:
             model_inputs = self.transformation.to_model(inputs)
         else:
             model_inputs = inputs
+
+        # Check whether we are maximising or minimising
+        minimising = self.minimising or not for_optimiser
 
         # Validate inputs, update parameters
         model_inputs = self.parameters.verify(model_inputs)
