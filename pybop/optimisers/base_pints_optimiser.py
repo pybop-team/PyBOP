@@ -216,9 +216,6 @@ class BasePintsOptimiser(BaseOptimiser):
         # Keep track of current best and best-guess scores.
         fb = fg = np.inf
 
-        # Internally we always minimise! Keep a 2nd value to show the user.
-        fg_user = (fb, fg)
-
         # Keep track of the last significant change
         f_sig = np.inf
 
@@ -238,7 +235,6 @@ class BasePintsOptimiser(BaseOptimiser):
                 # Update the scores
                 fb = self.optimiser.f_best()
                 fg = self.optimiser.f_guessed()
-                fg_user = (fb, fg)
 
                 # Check for significant changes against the absolute and relative tolerance
                 f_new = fg if self._use_f_guessed else fb
@@ -321,7 +317,7 @@ class BasePintsOptimiser(BaseOptimiser):
             # Show last result and exit
             print("\n" + "-" * 40)
             print("Unexpected termination.")
-            print("Current score: " + str(fg_user))
+            print("Current score: " + str((fb, fg)))
             print("Current position:")
 
             # Show current parameters (with any transformation applied)
