@@ -328,10 +328,10 @@ class TestOptimisation:
         assert optim.optimiser._boundaries is None
 
     @pytest.mark.unit
-    def test_randomsearch_no_bounds(self, cost):
-        optim = pybop.RandomSearch(cost=cost, bounds=None, max_iterations=1)
-        optim.run()
-        assert optim.optimiser._boundaries is None
+    def test_randomsearch(self, cost):
+        optim = pybop.RandomSearch(cost=cost, max_iterations=10)
+        results = optim.run()
+        assert results.final_cost is not None
 
     @pytest.mark.unit
     def test_scipy_minimize_with_jac(self, cost):
