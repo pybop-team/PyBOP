@@ -38,12 +38,14 @@ class RandomSearchImpl(PopulationBasedOptimiser):
         self._boundaries = boundaries
 
         # Initialise population
-        self._candidates = np.random.uniform(
-            low=self._boundaries.lower(),
-            high=self._boundaries.upper(),
-            size=(self._population_size, self._dim),
-        ) if self._boundaries else np.random.normal(
-            self._x0, self._sigma0, size=(self._n, self._dim)
+        self._candidates = (
+            np.random.uniform(
+                low=self._boundaries.lower(),
+                high=self._boundaries.upper(),
+                size=(self._population_size, self._dim),
+            )
+            if self._boundaries
+            else np.random.normal(self._x0, self._sigma0, size=(self._n, self._dim))
         )
 
         # Initialise best solution
@@ -69,7 +71,7 @@ class RandomSearchImpl(PopulationBasedOptimiser):
             )
         else:
             self._candidates = np.random.normal(
-            self._x0, self._sigma0, size=(self._n, self._dim)
+                self._x0, self._sigma0, size=(self._n, self._dim)
             )
         return self.clip_candidates(self._candidates)
 
