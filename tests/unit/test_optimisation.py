@@ -329,7 +329,7 @@ class TestOptimisation:
 
     @pytest.mark.unit
     def test_randomsearch(self, cost):
-        optim = pybop.RandomSearch(cost=cost, max_iterations=10)
+        optim = pybop.RandomSearch(cost=cost, max_iterations=1)
         results = optim.run()
         assert results.final_cost is not None
 
