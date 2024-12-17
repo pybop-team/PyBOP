@@ -34,9 +34,6 @@ class RandomSearchImpl(PopulationBasedOptimiser):
         self._n = self._population_size
         self._iterations = 0
 
-        # Set boundaries
-        self._boundaries = boundaries
-
         # Initialise population
         self._candidates = (
             np.random.uniform(
