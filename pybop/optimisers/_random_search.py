@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from pints import PopulationBasedOptimiser
 
@@ -51,13 +53,23 @@ class RandomSearchImpl(PopulationBasedOptimiser):
         self._ready_for_tell = True
         self._running = True
 
+
         # Generate random solutions within the boundaries
-        self._candidates = np.random.uniform(
-            low=self._boundaries.lower(),
-            high=self._boundaries.upper(),
-            size=(self._population_size, self._dim),
-        )
-        return self._candidates
+        if self._boundaries:
+            self._candidates = np.random.uniform(
+                low=self._boundaries.lower(),
+                high=self._boundaries.upper(),
+                size=(self._population_size, self._dim),
+            )
+            return self._candidates
+        else:
+            warnings.warn("No boundaries provided. Generating candidates using a normal distribution centered on the initial point.",
+                          UserWarning,
+                          stacklevel=2,
+            )
+            self._candidates = np.random.normal(
+                self._x0, self._sigma0, size=(self._n, self._dim)
+            )
 
     def tell(self, replies):
         """
