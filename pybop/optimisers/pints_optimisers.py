@@ -730,9 +730,9 @@ class RandomSearch(BasePintsOptimiser):
     def __init__(
         self,
         cost,
-        max_iterations: int = 10,
+        max_iterations: int = None,
         min_iterations: int = 2,
-        max_unchanged_iterations: int = 2,
+        max_unchanged_iterations: int = 15,
         parallel: bool = False,
         **optimiser_kwargs,
     ):
