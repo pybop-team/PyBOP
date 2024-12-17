@@ -3,7 +3,6 @@ import pybamm
 import pytest
 
 import pybop
-from examples.standalone.model import ExponentialDecay
 from pybop.observers.unscented_kalman import SquareRootUKF
 
 
@@ -33,7 +32,7 @@ class TestUKF:
 
     @pytest.fixture(params=[1, 2, 3])
     def model(self, parameters, request):
-        model = ExponentialDecay(
+        model = pybop.ExponentialDecayModel(
             parameter_set=pybamm.ParameterValues({"k": "[input]", "y0": "[input]"}),
             n_states=request.param,
         )
@@ -42,7 +41,7 @@ class TestUKF:
 
     @pytest.fixture
     def dataset(self, model: pybop.BaseModel, parameters):
-        observer = pybop.Observer(parameters, model, signal=["2y"])
+        observer = pybop.Observer(parameters, model, signal=["y_0"])
         measurements = []
         t_eval = np.linspace(0, 20, 10)
         for t in t_eval:
@@ -67,7 +66,7 @@ class TestUKF:
             process[1, 1] = 0
         measure = np.diag([1e-4])
         observer = pybop.UnscentedKalmanFilterObserver(
-            parameters, model, sigma0, process, measure, signal=["2y"]
+            parameters, model, sigma0, process, measure, signal=["y_0"]
         )
         return observer
 
@@ -121,7 +120,7 @@ class TestUKF:
             )
             np.testing.assert_array_almost_equal(
                 observer.get_current_measure(),
-                np.array([2 * y[0]]),
+                np.array([y[0]]),
                 decimal=4,
             )
 
@@ -144,7 +143,7 @@ class TestUKF:
 
     @pytest.mark.unit
     def test_wrong_input_shapes(self, model, parameters):
-        signal = "2y"
+        signal = "y_0"
         n = model.n_states
 
         sigma0 = np.diag([1e-4] * (n + 1))
