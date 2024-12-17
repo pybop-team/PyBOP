@@ -31,7 +31,7 @@ class RandomSearchImpl(PopulationBasedOptimiser):
         super().__init__(x0, sigma0, boundaries=boundaries)
 
         # Optimisation parameters
-        self._population_size = self._population_size
+        self._n = self._population_size
         self._iterations = 0
 
         # Set boundaries
@@ -41,7 +41,7 @@ class RandomSearchImpl(PopulationBasedOptimiser):
         self._candidates = np.random.uniform(
             low=self._boundaries.lower(),
             high=self._boundaries.upper(),
-            size=(self._population_size, self._dim),
+            size=(self._n, self._dim),
         ) if self._boundaries else np.random.normal(
             self._x0, self._sigma0, size=(self._n, self._dim)
         )
@@ -65,7 +65,7 @@ class RandomSearchImpl(PopulationBasedOptimiser):
             self._candidates = np.random.uniform(
                 low=self._boundaries.lower(),
                 high=self._boundaries.upper(),
-                size=(self._population_size, self._dim),
+                size=(self._n, self._dim),
             )
         else:
             self._candidates = np.random.normal(
@@ -80,12 +80,12 @@ class RandomSearchImpl(PopulationBasedOptimiser):
         accordingly.
         """
         if not self._ready_for_tell:
-            raise RuntimeError("Optimiser not ready for tell()")
+            raise RuntimeError("ask() must be called before tell().")
 
         self._iterations += 1
 
         # Evaluate solutions and update the best
-        for i in range(self._population_size):
+        for i in range(self._n):
             f_new = replies[i]
             if f_new < self._f_best:
                 self._f_best = f_new
