@@ -18,6 +18,7 @@ class BaseLikelihood(BaseCost):
     def __init__(self, problem: BaseProblem):
         super().__init__(problem)
         self.n_data = problem.n_data
+        self.minimising = False
 
 
 class BaseMetaLikelihood(BaseLikelihood):
@@ -69,7 +70,6 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
 
     def __init__(self, problem: BaseProblem, sigma0: Union[list[float], float]):
         super().__init__(problem)
-        self.minimising = False
         sigma0 = self.check_sigma0(sigma0)
         self.sigma2 = sigma0**2.0
         self._offset = -0.5 * self.n_data * np.log(2 * np.pi * self.sigma2)
