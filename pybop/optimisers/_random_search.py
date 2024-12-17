@@ -53,7 +53,6 @@ class RandomSearchImpl(PopulationBasedOptimiser):
         self._ready_for_tell = True
         self._running = True
 
-
         # Generate random solutions within the boundaries
         if self._boundaries:
             self._candidates = np.random.uniform(
@@ -63,9 +62,10 @@ class RandomSearchImpl(PopulationBasedOptimiser):
             )
             return self._candidates
         else:
-            warnings.warn("No boundaries provided. Generating candidates using a normal distribution centered on the initial point.",
-                          UserWarning,
-                          stacklevel=2,
+            warnings.warn(
+                "No boundaries provided. Generating candidates using a normal distribution centered on the initial point.",
+                UserWarning,
+                stacklevel=2,
             )
             self._candidates = np.random.normal(
                 self._x0, self._sigma0, size=(self._n, self._dim)
