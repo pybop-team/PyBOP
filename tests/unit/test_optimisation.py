@@ -76,7 +76,6 @@ class TestOptimisation:
             (pybop.SciPyMinimize, "SciPyMinimize", False),
             (pybop.SciPyDifferentialEvolution, "SciPyDifferentialEvolution", False),
             (pybop.GradientDescent, "Gradient descent", True),
-            (pybop.Adam, "Adam", True),
             (pybop.AdamW, "AdamW", True),
             (
                 pybop.CMAES,
@@ -131,7 +130,6 @@ class TestOptimisation:
             pybop.SciPyMinimize,
             pybop.SciPyDifferentialEvolution,
             pybop.GradientDescent,
-            pybop.Adam,
             pybop.AdamW,
             pybop.SNES,
             pybop.XNES,
@@ -184,7 +182,7 @@ class TestOptimisation:
         multistart_optim = optimiser(cost, multistart=2, max_iterations=6)
         check_multistart(multistart_optim, 6, 2)
 
-        if optimiser in [pybop.GradientDescent, pybop.Adam, pybop.NelderMead]:
+        if optimiser in [pybop.GradientDescent, pybop.AdamW, pybop.NelderMead]:
             optim = optimiser(cost=cost, bounds=cost_bounds)
             assert optim.bounds is None
         elif optimiser in [pybop.PSO]:
