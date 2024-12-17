@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 import pybamm
 
@@ -120,6 +122,22 @@ class ECircuitModel(BaseModel):
         if self.param_checker:
             return self.param_checker(inputs, allow_infeasible_solutions)
         return True
+
+    def _set_initial_state(self, initial_state: dict, inputs: Optional[Inputs] = None):
+        """
+        Set the initial state of charge or concentrations for the battery model.
+
+        Parameters
+        ----------
+        initial_state : dict
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+        inputs : Inputs
+            The input parameters to be used when building the model.
+        """
+        initial_state = self.convert_to_pybamm_initial_state(initial_state)
+
+        initial_state = self.get_initial_state(initial_state, inputs=inputs)
+        self._unprocessed_parameter_set.update({"Initial SoC": initial_state})
 
     def get_initial_state(
         self,
