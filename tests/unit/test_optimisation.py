@@ -5,6 +5,7 @@ import warnings
 
 import numpy as np
 import pytest
+from pints import PopulationBasedOptimiser
 
 import pybop
 
@@ -75,7 +76,6 @@ class TestOptimisation:
             (pybop.SciPyMinimize, "SciPyMinimize", False),
             (pybop.SciPyDifferentialEvolution, "SciPyDifferentialEvolution", False),
             (pybop.GradientDescent, "Gradient descent", True),
-            (pybop.Adam, "Adam", True),
             (pybop.AdamW, "AdamW", True),
             (
                 pybop.CMAES,
@@ -130,7 +130,6 @@ class TestOptimisation:
             pybop.SciPyMinimize,
             pybop.SciPyDifferentialEvolution,
             pybop.GradientDescent,
-            pybop.Adam,
             pybop.AdamW,
             pybop.SNES,
             pybop.XNES,
@@ -162,9 +161,15 @@ class TestOptimisation:
                 with pytest.raises(
                     ValueError, match="Either all bounds or no bounds must be set"
                 ):
-                    optim = optimiser(cost=cost, bounds=expected_bounds)
+                    optimiser(cost=cost, bounds=expected_bounds)
             else:
                 assert optim.bounds == expected_bounds
+
+        def check_multistart(optim, n_iters, multistarts):
+            results = optim.run()
+            if isinstance(optim, pybop.BasePintsOptimiser):
+                assert len(optim.log["x_best"]) == n_iters * multistarts
+                assert results.average_iterations() == n_iters
 
         optim = optimiser(cost=cost, max_iterations=3, tol=1e-6)
         cost_bounds = cost.parameters.get_bounds()
@@ -173,7 +178,11 @@ class TestOptimisation:
         assert_log_update(optim)
         check_incorrect_update(optim)
 
-        if optimiser in [pybop.GradientDescent, pybop.Adam, pybop.NelderMead]:
+        # Test multistart
+        multistart_optim = optimiser(cost, multistart=2, max_iterations=6)
+        check_multistart(multistart_optim, 6, 2)
+
+        if optimiser in [pybop.GradientDescent, pybop.AdamW, pybop.NelderMead]:
             optim = optimiser(cost=cost, bounds=cost_bounds)
             assert optim.bounds is None
         elif optimiser in [pybop.PSO]:
@@ -206,6 +215,16 @@ class TestOptimisation:
                 warnings.simplefilter("always")
                 optimiser(cost=cost, unrecognised=10)
             assert not optim.optimiser.running()
+
+            # Check default bounds setter
+            optim.set_max_iterations("default")
+
+            # Check population setter
+            if isinstance(optim.optimiser, PopulationBasedOptimiser):
+                optim = pybop.Optimisation(
+                    cost=cost, optimiser=optimiser, population_size=100
+                )
+                assert optim.optimiser.population_size() == 100
         else:
             bounds_list = [
                 (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])

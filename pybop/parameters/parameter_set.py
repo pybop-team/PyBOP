@@ -78,6 +78,12 @@ class ParameterSet:
         """
         return list(self.params.keys())
 
+    def update(self, params_dict=None):
+        """
+        Update the parameter dictionary.
+        """
+        self.params.update(params_dict)
+
     def import_parameters(self, json_path=None):
         """
         Imports parameters from a JSON file specified by the `json_path` attribute.

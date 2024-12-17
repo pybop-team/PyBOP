@@ -2,16 +2,16 @@ from time import time
 
 import numpy as np
 from pints import PSO as PintsPSO
-from pints import Adam as PintsAdam
 from pints import NelderMead as PintsNelderMead
 from pints import Optimiser as PintsOptimiser
 from pints import ParallelEvaluator as PintsParallelEvaluator
+from pints import PopulationBasedOptimiser
 from pints import PopulationBasedOptimiser as PintsPopulationBasedOptimiser
 from pints import RectangularBoundaries as PintsRectangularBoundaries
 from pints import SequentialEvaluator as PintsSequentialEvaluator
 from pints import strfloat as PintsStrFloat
 
-from pybop import BaseOptimiser, GradientDescentImpl, OptimisationResult
+from pybop import AdamWImpl, BaseOptimiser, GradientDescentImpl, OptimisationResult
 
 
 class BasePintsOptimiser(BaseOptimiser):
@@ -60,6 +60,7 @@ class BasePintsOptimiser(BaseOptimiser):
         max_iterations: int = None,
         min_iterations: int = 2,
         max_unchanged_iterations: int = 15,
+        multistart: int = 1,
         parallel: bool = False,
         **optimiser_kwargs,
     ):
@@ -85,7 +86,8 @@ class BasePintsOptimiser(BaseOptimiser):
             "threshold": self.set_threshold,
         }
 
-        self.optimiser = pints_optimiser
+        self._pints_optimiser = pints_optimiser
+        optimiser_kwargs["multistart"] = multistart
         super().__init__(cost, **optimiser_kwargs)
 
     def _set_up_optimiser(self):
@@ -96,8 +98,8 @@ class BasePintsOptimiser(BaseOptimiser):
         self._sanitise_inputs()
 
         # Create an instance of the PINTS optimiser class
-        if issubclass(self.optimiser, PintsOptimiser):
-            self.optimiser = self.optimiser(
+        if issubclass(self._pints_optimiser, PintsOptimiser):
+            self.optimiser = self._pints_optimiser(
                 self.x0, sigma0=self.sigma0, boundaries=self._boundaries
             )
         else:
@@ -117,6 +119,11 @@ class BasePintsOptimiser(BaseOptimiser):
             if tol_key in self.unset_options:
                 max_unchanged_kwargs[tol_key] = self.unset_options.pop(tol_key)
 
+        # Set population size (if applicable)
+        if "population_size" in self.unset_options:
+            population_size = self.unset_options.pop("population_size")
+            self.set_population_size(population_size)
+
     def _sanitise_inputs(self):
         """
         Check and remove any duplicate optimiser options.
@@ -135,19 +142,19 @@ class BasePintsOptimiser(BaseOptimiser):
 
         # Convert bounds to PINTS boundaries
         if self.bounds is not None:
-            ignored_optimisers = (GradientDescentImpl, PintsAdam, PintsNelderMead)
-            if issubclass(self.optimiser, ignored_optimisers):
-                print(f"NOTE: Boundaries ignored by {self.optimiser}")
+            ignored_optimisers = (GradientDescentImpl, AdamWImpl, PintsNelderMead)
+            if issubclass(self._pints_optimiser, ignored_optimisers):
+                print(f"NOTE: Boundaries ignored by {self._pints_optimiser}")
                 self.bounds = None
             else:
-                if issubclass(self.optimiser, PintsPSO):
+                if issubclass(self._pints_optimiser, PintsPSO):
                     if not all(
                         np.isfinite(value)
                         for sublist in self.bounds.values()
                         for value in sublist
                     ):
                         raise ValueError(
-                            f"Either all bounds or no bounds must be set for {self.optimiser.__name__}."
+                            f"Either all bounds or no bounds must be set for {self._pints_optimiser.__name__}."
                         )
                 self._boundaries = PintsRectangularBoundaries(
                     self.bounds["lower"], self.bounds["upper"]
@@ -514,3 +521,10 @@ class BasePintsOptimiser(BaseOptimiser):
             self._threshold = None
         else:
             self._threshold = float(threshold)
+
+    def set_population_size(self, population_size=None):
+        """
+        Set the population size for population-based optimisers, if specified.
+        """
+        if isinstance(self.optimiser, PopulationBasedOptimiser):
+            self.optimiser.set_population_size(population_size)

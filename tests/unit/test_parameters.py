@@ -203,6 +203,37 @@ class TestParameters:
 
     @pytest.mark.unit
     def test_parameters_transformation(self):
+        # Construct params
+        params = pybop.Parameters(
+            pybop.Parameter(
+                "LogParam",
+                bounds=[0, 1],
+                transformation=pybop.LogTransformation(),
+            ),
+            pybop.Parameter(
+                "ScaledParam",
+                bounds=[0, 1],
+                transformation=pybop.ScaledTransformation(1, 0.5),
+            ),
+            pybop.Parameter(
+                "IdentityParam",
+                bounds=[0, 1],
+                transformation=pybop.IdentityTransformation(),
+            ),
+            pybop.Parameter(
+                "UnitHyperParam",
+                bounds=[0, 1],
+                transformation=pybop.UnitHyperCube(1, 2),
+            ),
+        )
+
+        # Test transformed bounds
+        bounds = params.get_bounds(apply_transform=True)
+        np.testing.assert_allclose(
+            bounds["lower"], [np.log(np.finfo(float).eps), 0.5, 0, -1]
+        )
+        np.testing.assert_allclose(bounds["upper"], [np.log(1), 1.5, 1, 0])
+
         # Test unbounded transformation causes ValueError due to NaN
         params = pybop.Parameters(
             pybop.Parameter(
