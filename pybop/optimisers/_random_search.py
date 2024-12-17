@@ -30,16 +30,25 @@ class RandomSearchImpl(PopulationBasedOptimiser):
 
         super().__init__(x0, sigma0, boundaries=boundaries)
 
-        self.step_size = self._sigma0
-
-        # Initialise best solutions
-        self._x_best = np.copy(x0)
-        self._f_best = np.inf
-
-        # Iteration counter
+        # Optimisation parameters
+        self._population_size = self._population_size
         self._iterations = 0
 
-        # Flags
+        # Set boundaries
+        self._boundaries = boundaries
+
+        # Initialise population
+        self._candidates = np.random.uniform(
+            low=self._boundaries.lower(),
+            high=self._boundaries.upper(),
+            size=(self._population_size, self._dim),
+        ) if self._boundaries else np.random.normal(
+            self._x0, self._sigma0, size=(self._n, self._dim)
+        )
+
+        # Initialise best solution
+        self._x_best = np.copy(x0)
+        self._f_best = np.inf
         self._running = False
         self._ready_for_tell = False
 
@@ -52,12 +61,17 @@ class RandomSearchImpl(PopulationBasedOptimiser):
         self._running = True
 
         # Generate random solutions within the boundaries
-        self._candidates = np.random.uniform(
-            low=self._boundaries.lower(),
-            high=self._boundaries.upper(),
-            size=(self._population_size, self._dim),
-        )
-        return self._candidates
+        if self._boundaries:
+            self._candidates = np.random.uniform(
+                low=self._boundaries.lower(),
+                high=self._boundaries.upper(),
+                size=(self._population_size, self._dim),
+            )
+        else:
+            self._candidates = np.random.normal(
+            self._x0, self._sigma0, size=(self._n, self._dim)
+            )
+        return self.clip_candidates(self._candidates)
 
     def tell(self, replies):
         """
@@ -69,12 +83,12 @@ class RandomSearchImpl(PopulationBasedOptimiser):
             raise RuntimeError("Optimiser not ready for tell()")
 
         self._iterations += 1
-        self._ready_for_tell = False
 
-        # Update the best solution
-        for i, fitness in enumerate(replies):
-            if fitness < self._f_best:
-                self._f_best = fitness
+        # Evaluate solutions and update the best
+        for i in range(self._population_size):
+            f_new = replies[i]
+            if f_new < self._f_best:
+                self._f_best = f_new
                 self._x_best = self._candidates[i]
 
     def running(self):
@@ -100,6 +114,14 @@ class RandomSearchImpl(PopulationBasedOptimiser):
         Returns the name of the optimiser.
         """
         return "Random Search"
+
+    def clip_candidates(self, x):
+        """
+        Clip the input array to the boundaries if available.
+        """
+        if self._boundaries:
+            x = np.clip(x, self._boundaries.lower(), self._boundaries.upper())
+        return x
 
     def _suggested_population_size(self):
         """
