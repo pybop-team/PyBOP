@@ -287,15 +287,18 @@ class BaseOptimiser:
 
         if cost is not None:
             cost = convert_to_list(cost)
-            true_cost = [cost * (1 if self.minimising else -1) for cost in cost]
-            self.log["cost"].extend(true_cost)
+            cost = [
+                internal_cost * (1 if self.minimising else -1) for internal_cost in cost
+            ]
+            self.log["cost"].extend(cost)
 
         if cost_best is not None:
             cost_best = convert_to_list(cost_best)
-            true_cost_best = [
-                cost * (1 if self.minimising else -1) for cost in cost_best
+            cost_best = [
+                internal_cost * (1 if self.minimising else -1)
+                for internal_cost in cost_best
             ]
-            self.log["cost_best"].extend(true_cost_best)
+            self.log["cost_best"].extend(cost_best)
 
         if x0 is not None:
             self.log["x0"].extend(x0)
