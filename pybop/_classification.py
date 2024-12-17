@@ -6,7 +6,7 @@ def classify_using_Hessian(optim, x=None, epsilon=1e-2):
     A simple check for parameter correlations based on numerical approximation
     of the Hessian matrix at the optimal point using central finite differences.
 
-    Paramters
+    Parameters
     ---------
     x : array-like, optional
         The parameters values assumed to be the optimal point (default: optim.result.x).
