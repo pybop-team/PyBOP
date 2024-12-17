@@ -42,8 +42,6 @@ def classify_using_Hessian(optim, x=None, epsilon=1e-2):
             costs[i, j, 0] = optim.cost(x + np.multiply([i - 1, j - 1], dx))
             costs[i, j, 1] = optim.cost(x + np.multiply([i - 1, j - 1], 2 * dx))
 
-    print(costs - final_cost)
-
     # Classify the result
     if (optim.minimising and np.any(costs < final_cost)) or (
         not optim.minimising and np.any(costs > final_cost)
