@@ -70,4 +70,4 @@ pybop.plot.convergence(optim)
 pybop.plot.parameters(optim)
 
 # Plot the cost landscape with optimisation path
-pybop.plot.contour(optim, steps=15)
+pybop.plot.contour(optim, steps=10)

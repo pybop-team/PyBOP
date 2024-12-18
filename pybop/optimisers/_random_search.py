@@ -25,10 +25,10 @@ class RandomSearchImpl(PopulationBasedOptimiser):
     """
 
     def __init__(self, x0, sigma0=0.05, boundaries=None):
-        # Problem dimensionality
-        self._dim = len(x0)  # Initialize _dim first
-
         super().__init__(x0, sigma0, boundaries=boundaries)
+
+        # Problem dimensionality
+        self._dim = len(x0)
 
         # Optimisation parameters
         self._n = self._population_size
