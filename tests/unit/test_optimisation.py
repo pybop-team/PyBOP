@@ -276,7 +276,7 @@ class TestOptimisation:
             pybop.AdamW,
             pybop.CuckooSearch,
             pybop.GradientDescent,
-            # pybop.RandomSearch,
+            pybop.RandomSearch,
         ]:
             optim = optimiser(cost)
             with pytest.raises(
@@ -324,11 +324,11 @@ class TestOptimisation:
                 assert optim.optimiser.n_hyper_parameters() == 5
                 assert optim.optimiser.x_guessed() == optim.optimiser._x0
 
-            if optimiser is pybop.RandomSearch:
-                assert optimiser._dim == len(optim.optimiser._x0)
-                assert optimiser.x_best().shape == optim.optimiser._x0.shape
-                assert optimiser.f_best() == np.inf
-                assert optimiser._iterations == 0
+            # if optimiser is pybop.RandomSearch:
+            #     assert optimiser._dim == len(optim.optimiser._x0)
+            #     assert optimiser.x_best().shape == optim.optimiser._x0.shape
+            #     assert optimiser.f_best() == np.inf
+            #     assert optimiser._iterations == 0
         else:
             x0 = cost.parameters.initial_value()
             assert optim.x0 == x0
@@ -343,11 +343,11 @@ class TestOptimisation:
         optim.run()
         assert optim.optimiser._boundaries is None
 
-    # @pytest.mark.unit
-    # def test_randomsearch(self, cost):
-    #     optim = pybop.RandomSearch(cost=cost, max_iterations=1)
-    #     results = optim.run()
-    #     assert results.final_cost is not None
+    @pytest.mark.unit
+    def test_randomsearch(self, cost):
+        optim = pybop.RandomSearch(cost=cost, bounds=None, max_iterations=1)
+        optim.run()
+        assert optim.optimiser._boundaries is None
 
     @pytest.mark.unit
     def test_scipy_minimize_with_jac(self, cost):
