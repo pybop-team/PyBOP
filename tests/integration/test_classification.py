@@ -75,38 +75,39 @@ class TestClassification:
     @pytest.mark.integration
     def test_classify_using_Hessian(self, problem):
         cost = pybop.RootMeanSquaredError(problem)
-        optim = pybop.XNES(cost=cost)
-
-        x = np.asarray(cost.parameters.true_value())
+        x = cost.parameters.true_value()
         bounds = cost.parameters.get_bounds()
-        optim_x = np.clip(x, bounds["lower"], bounds["upper"])
+        x0 = np.clip(x, bounds["lower"], bounds["upper"])
+        optim = pybop.Optimisation(cost=cost)
+        results = pybop.OptimisationResult(x=x0, optim=optim, cost=cost)
 
         if np.all(x == np.asarray([0.05, 0.05])):
-            message = classify_using_Hessian(optim, optim_x)
+            message = classify_using_Hessian(results)
             assert message == "The optimiser has located a minimum."
         elif np.all(x == np.asarray([0.1, 0.05])):
-            message = classify_using_Hessian(optim, optim_x)
+            message = classify_using_Hessian(results)
             assert message == (
                 "The optimiser has not converged to a stationary point."
                 " The result is near the upper bound of R0 [Ohm]."
             )
         elif np.all(x == np.asarray([0.05, 0.01])):
-            message = classify_using_Hessian(optim, optim_x)
+            message = classify_using_Hessian(results)
             assert message == (
                 "The optimiser has not converged to a stationary point."
                 " The result is near the lower bound of R1 [Ohm]."
             )
         else:
-            raise Exception("Please add a check for these values.")
+            raise Exception(f"Please add a check for these values: {x}")
 
         if np.all(x == np.asarray([0.05, 0.05])):
             cost = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002)
-            optim = pybop.XNES(cost=cost)
+            optim = pybop.Optimisation(cost=cost)
+            results = pybop.OptimisationResult(x=x, optim=optim, cost=cost)
 
-            message = classify_using_Hessian(optim, x)
+            message = classify_using_Hessian(results)
             assert message == "The optimiser has located a maximum."
 
-        # message = classify_using_Hessian(optim, x)
+        # message = classify_using_Hessian(results)
         # assert message == "The optimiser has located a saddle point."
 
     @pytest.mark.integration
@@ -163,10 +164,11 @@ class TestClassification:
         ):
             problem = pybop.FittingProblem(model, parameters, dataset)
             cost = pybop.SumofPower(problem, p=3)
-            optim = pybop.XNES(cost=cost)
+            x = cost.parameters.true_value()
+            optim = pybop.Optimisation(cost=cost)
+            results = pybop.OptimisationResult(x=x, optim=optim, cost=cost)
 
-            x = np.asarray(cost.parameters.true_value())
-            message = classify_using_Hessian(optim, x)
+            message = classify_using_Hessian(results)
 
             if i == 0:
                 assert message == "The cost is insensitive to these parameters."
@@ -176,10 +178,11 @@ class TestClassification:
         parameters = pybop.Parameters(param_R0, param_R0_mod)
         problem = pybop.FittingProblem(model, parameters, dataset)
         cost = pybop.SumofPower(problem, p=3)
-        optim = pybop.XNES(cost=cost)
+        x = cost.parameters.true_value()
+        optim = pybop.Optimisation(cost=cost)
+        results = pybop.OptimisationResult(x=x, optim=optim, cost=cost)
 
-        x = np.asarray(cost.parameters.true_value())
-        message = classify_using_Hessian(optim, x)
+        message = classify_using_Hessian(results)
         assert message == "There may be a correlation between these parameters."
 
     @pytest.mark.integration
@@ -187,12 +190,13 @@ class TestClassification:
         parameters.remove("R0 [Ohm]")
         problem = pybop.FittingProblem(model, parameters, dataset)
         cost = pybop.SumSquaredError(problem)
-        optim = pybop.SNES(cost=cost)
-        optim.run()
+        x = cost.parameters.true_value()
+        optim = pybop.Optimisation(cost=cost)
+        results = pybop.OptimisationResult(x=x, optim=optim, cost=cost)
 
         with pytest.raises(
             ValueError,
             match="The function classify_using_Hessian currently only works"
             " in the case of 2 parameters.",
         ):
-            classify_using_Hessian(optim)
+            classify_using_Hessian(results)

@@ -1,25 +1,26 @@
 import numpy as np
 
+from pybop import OptimisationResult
 
-def classify_using_Hessian(optim, x=None, epsilon=1e-2):
+
+def classify_using_Hessian(result: OptimisationResult, epsilon=1e-2):
     """
     A simple check for parameter correlations based on numerical approximation
     of the Hessian matrix at the optimal point using central finite differences.
 
     Parameters
     ---------
-    x : array-like, optional
-        The parameters values assumed to be the optimal point (default: optim.result.x).
     epsilon : float, optional
+    result : OptimisationResult
+        The PyBOP optimisation results.
         A small positive value used to check proximity to the parameter bounds and as the
         perturbation distance used in the finite difference calculations (default: 1e-2).
     """
-
-    if x is None:
-        x = optim.result.x
-        final_cost = optim.result.final_cost
-    else:
-        final_cost = optim.cost(x)
+    x = result.x
+    final_cost = result.final_cost
+    cost = result.cost
+    parameters = result.cost.parameters
+    minimising = result.optim.minimising
 
     n = len(x)
     if n != 2:
@@ -29,7 +30,7 @@ def classify_using_Hessian(optim, x=None, epsilon=1e-2):
         )
 
     # Get a list of parameter names for use in the output message
-    names = list(optim.cost.parameters.keys())
+    names = list(parameters.keys())
 
     # Evaluate the cost for a grid of surrounding points
     dx = x * epsilon
@@ -39,17 +40,18 @@ def classify_using_Hessian(optim, x=None, epsilon=1e-2):
             if i == j == 1:
                 costs[1, 1, 0] = final_cost
                 costs[1, 1, 1] = final_cost
-            costs[i, j, 0] = optim.cost(x + np.multiply([i - 1, j - 1], dx))
-            costs[i, j, 1] = optim.cost(x + np.multiply([i - 1, j - 1], 2 * dx))
+            else:
+                costs[i, j, 0] = cost(x + np.multiply([i - 1, j - 1], dx))
+                costs[i, j, 1] = cost(x + np.multiply([i - 1, j - 1], 2 * dx))
 
     # Classify the result
-    if (optim.minimising and np.any(costs < final_cost)) or (
-        not optim.minimising and np.any(costs > final_cost)
+    if (minimising and np.any(costs < final_cost)) or (
+        not minimising and np.any(costs > final_cost)
     ):
         message = "The optimiser has not converged to a stationary point."
 
         # Check proximity to bounds
-        bounds = optim.cost.parameters.get_bounds()
+        bounds = parameters.get_bounds()
         if bounds is not None:
             for i, value in enumerate(x):
                 x_range = bounds["upper"][i] - bounds["lower"][i]
