@@ -1,5 +1,7 @@
 # A script to generate parameterisation plots for the JOSS paper.
 
+import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly
@@ -16,16 +18,15 @@ np.random.seed(8)
 
 # Choose which plots to show and save
 create_plot = {}
-create_plot["simulation"] = False
-create_plot["landscape"] = False
-create_plot["minimising"] = False
-create_plot["maximising"] = False
+create_plot["simulation"] = True
+create_plot["landscape"] = True
+create_plot["minimising"] = True
+create_plot["maximising"] = True
 create_plot["gradient"] = True
 create_plot["evolution"] = True
 create_plot["heuristic"] = True
-create_plot["posteriors"] = False
-create_plot["eis"] = False
-
+create_plot["posteriors"] = True
+create_plot["eis"] = True
 
 # Parameter set and model definition
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
@@ -94,7 +95,9 @@ if create_plot["simulation"]:
         legend_traceorder="reversed",
     )
     simulation_fig.show()
-    simulation_fig.write_image("joss/figures/simulation.png")
+    simulation_fig.write_image("joss/figures/simulation.pdf")
+    time.sleep(3)
+    simulation_fig.write_image("joss/figures/simulation.pdf")
 
 # Form dataset
 dataset = pybop.Dataset(
@@ -153,7 +156,7 @@ if create_plot["landscape"]:
         )
     )
     landscape_fig.show()
-    landscape_fig.write_image("joss/figures/landscape.png")
+    landscape_fig.write_image("joss/figures/landscape.pdf")
 
 
 # Categorise the costs
@@ -227,7 +230,7 @@ if create_plot["minimising"]:
         ),
     )
     convergence_fig.show()
-    convergence_fig.write_image("joss/figures/convergence_minimising.png")
+    convergence_fig.write_image("joss/figures/convergence_minimising.pdf")
 
 
 if create_plot["maximising"]:
@@ -303,7 +306,7 @@ if create_plot["maximising"]:
         ),
     )
     convergence_fig.show()
-    convergence_fig.write_image("joss/figures/convergence_maximising.png")
+    convergence_fig.write_image("joss/figures/convergence_maximising.pdf")
 
 
 # Categorise the optimisers
@@ -342,7 +345,7 @@ subplot_contour_fig = make_subplots(
     shared_xaxes=True,
     x_title="Negative particle diffusivity [m2.s-1]",
     y_title="Contact resistance [Ohm]",
-    horizontal_spacing=0.02,
+    horizontal_spacing=0.025,
     vertical_spacing=0.04,
     subplot_titles=[
         cls.__name__
@@ -411,9 +414,24 @@ if create_plot["gradient"]:
             show=False,
             margin=dict(l=20, r=20, t=20, b=20),
         )
-        contour.update_traces(
-            showscale=(i == num_optimisers - 1), selector=dict(type="contour")
-        )
+        if i == num_optimisers - 1:
+            contour.update_traces(
+                showscale=(i == num_optimisers - 1),
+                colorbar=dict(
+                    title=dict(
+                        text="Cost",
+                        # side="right",
+                        font=dict(size=18),
+                    ),
+                    tickfont=dict(size=16),
+                ),
+                selector=dict(type="contour"),
+            )
+        else:
+            contour.update_traces(
+                showscale=False,
+                selector=dict(type="contour"),
+            )
 
         # Add all traces from the contour figure to the subplot
         for trace in contour.data:
@@ -445,7 +463,7 @@ if create_plot["gradient"]:
     parameter_fig.add_traces(parameter_traces)
     parameter_fig = plotly.subplots.make_subplots(figure=parameter_fig, rows=2, cols=1)
     parameter_fig.show()
-    parameter_fig.write_image("joss/figures/gradient_parameters.png")
+    parameter_fig.write_image("joss/figures/gradient_parameters.pdf")
 
 if create_plot["evolution"]:
     # Create subplot structure
@@ -495,9 +513,9 @@ if create_plot["evolution"]:
             margin=dict(l=20, r=20, t=20, b=20),
         )
         contour.update_traces(
-            showscale=(i == num_optimisers - 1), selector=dict(type="contour")
+            showscale=False,
+            selector=dict(type="contour"),
         )
-
         # Add all traces from the contour figure to the subplot
         for trace in contour.data:
             subplot_contour_fig.add_trace(trace, row=2, col=i + 1)
@@ -528,7 +546,7 @@ if create_plot["evolution"]:
     parameter_fig.add_traces(parameter_traces)
     parameter_fig = plotly.subplots.make_subplots(figure=parameter_fig, rows=2, cols=1)
     parameter_fig.show()
-    parameter_fig.write_image("joss/figures/evolution_parameters.png")
+    parameter_fig.write_image("joss/figures/evolution_parameters.pdf")
 
 
 if create_plot["heuristic"]:
@@ -584,7 +602,8 @@ if create_plot["heuristic"]:
             margin=dict(l=20, r=20, t=20, b=20),
         )
         contour.update_traces(
-            showscale=(i == num_optimisers - 1), selector=dict(type="contour")
+            showscale=False,
+            selector=dict(type="contour"),
         )
 
         # Add all traces from the contour figure to the subplot
@@ -594,23 +613,24 @@ if create_plot["heuristic"]:
     # Update layout to configure the color bar and plot dimensions
     bounds = cost.parameters.get_bounds_for_plotly()
     subplot_contour_fig.update_xaxes(
-        dict(titlefont_size=14, tickfont_size=14, range=bounds[0])
+        dict(titlefont_size=12, tickfont_size=16, range=bounds[0])
     )
     subplot_contour_fig.update_yaxes(
-        dict(titlefont_size=14, tickfont_size=14, range=bounds[1])
+        dict(titlefont_size=12, tickfont_size=16, range=bounds[1])
     )
     subplot_contour_fig.update_layout(
         showlegend=False,
-        height=450 * 3,
-        width=450 * max_optims,
-        coloraxis_colorbar=dict(
-            title="Cost", thickness=20, len=1, y=0.5, yanchor="middle"
-        ),
+        height=400 * 3,
+        width=400 * max_optims,
+    )
+    subplot_contour_fig.update_annotations(font_size=18)
+    subplot_contour_fig.update_annotations(
+        x=-0.01, font_size=18, selector={"text": "Contact resistance [Ohm]"}
     )
 
     # Show figure and save image
     subplot_contour_fig.show()
-    subplot_contour_fig.write_image("joss/figures/joss/contour_subplot.png")
+    subplot_contour_fig.write_image("joss/figures/joss/contour_subplot.pdf")
 
     # Plot the parameter traces together
     parameter_fig.update_layout(
@@ -639,7 +659,7 @@ if create_plot["heuristic"]:
     parameter_fig = plotly.subplots.make_subplots(figure=parameter_fig, rows=2, cols=1)
     parameter_fig.update_layout(yaxis1=dict(range=[1e-14, 10e-14]))
     parameter_fig.show()
-    parameter_fig.write_image("joss/figures/heuristic_parameters.png")
+    parameter_fig.write_image("joss/figures/heuristic_parameters.pdf")
 
 
 if create_plot["posteriors"]:
@@ -768,7 +788,7 @@ if create_plot["posteriors"]:
 
     # Adjust layout
     plt.tight_layout()
-    plt.savefig("joss/figures/joss/posteriors.png")
+    plt.savefig("joss/figures/joss/posteriors.pdf")
     plt.show()
 
 
@@ -829,7 +849,7 @@ if create_plot["eis"]:
     results = optim.run()
 
     parameter_fig = pybop.plot.nyquist(problem, results.x, title="")
-    parameter_fig[0].write_image("joss/figures/impedance_spectrum.png")
+    parameter_fig[0].write_image("joss/figures/impedance_spectrum.pdf")
 
     landscape_fig = pybop.plot.contour(cost, steps=30, title="")
     initial_value = parameters.initial_value()
@@ -867,4 +887,4 @@ if create_plot["eis"]:
         )
     )
     landscape_fig.show()
-    landscape_fig.write_image("joss/figures/impedance_contour.png")
+    landscape_fig.write_image("joss/figures/impedance_contour.pdf")

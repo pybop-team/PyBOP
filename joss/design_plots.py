@@ -1,5 +1,7 @@
 # A script to generate design optimisation plots for the JOSS paper.
 
+import time
+
 import numpy as np
 import pybamm
 from pybamm import Parameter
@@ -38,7 +40,6 @@ parameter_set.update(
     },
     check_already_exists=False,
 )
-initial_capacity = parameter_set["Nominal cell capacity [A.h]"]
 model = pybop.lithium_ion.SPMe(
     parameter_set=parameter_set, solver=pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6)
 )
@@ -73,6 +74,23 @@ problem = pybop.DesignProblem(
     initial_state={"Initial SoC": 1.0},
     update_capacity=True,
 )
+parameter_set.update(
+    {
+        "Positive electrode thickness [m]": parameters[
+            "Positive electrode thickness [m]"
+        ].initial_value
+    }
+)
+parameter_set.update(
+    {
+        "Positive electrode active material volume fraction": parameters[
+            "Positive electrode active material volume fraction"
+        ].initial_value
+    }
+)
+initial_capacity = problem.model.approximate_capacity(parameter_set)
+problem.model.parameter_set.update({"Nominal cell capacity [A.h]": initial_capacity})
+
 cost = pybop.GravimetricEnergyDensity(problem)
 optim = pybop.NelderMead(
     cost,
@@ -94,12 +112,14 @@ if create_plot["gravimetric"]:
     # Plot the cost landscape with optimisation path
     gravimetric_fig = pybop.plot.contour(
         optim,
-        steps=65,
+        steps=60,
         title=None,
         xaxis=dict(titlefont_size=14, tickfont_size=14),
         yaxis=dict(titlefont_size=14, tickfont_size=14),
     )
-    gravimetric_fig.write_image("joss/figures/design_gravimetric.png")
+    gravimetric_fig.write_image("joss/figures/design_gravimetric.pdf")
+    time.sleep(3)
+    gravimetric_fig.write_image("joss/figures/design_gravimetric.pdf")
 
 problem.update_capacity = False
 problem.model.parameter_set.update({"Nominal cell capacity [A.h]": initial_capacity})
@@ -120,4 +140,4 @@ if create_plot["prediction"]:
     prediction_fig.data[0].name = f"Initial result: {cost(result.x0):.2f} Wh.kg-1"
     prediction_fig.data[1].name = f"Optimised result: {cost(result.x):.2f} Wh.kg-1"
     prediction_fig.show()
-    prediction_fig.write_image("joss/figures/design_prediction.png")
+    prediction_fig.write_image("joss/figures/design_prediction.pdf")

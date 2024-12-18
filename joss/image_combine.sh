@@ -1,9 +1,9 @@
-convert +append figures/design_gravimetric.png figures/design_prediction.png figures/joss/design.png
+pdfjam --nup 2x1 figures/design_prediction.pdf figures/design_gravimetric.pdf --landscape --outfile figures/joss/design.pdf --papersize '{450px,900px}'
 
-convert +append figures/gradient_parameters.png figures/evolution_parameters.png figures/heuristic_parameters.png figures/joss/optimisers_parameters.png
+pdfjam --nup 3x1 figures/gradient_parameters.pdf figures/evolution_parameters.pdf figures/heuristic_parameters.pdf --landscape --outfile figures/joss/optimisers_parameters.pdf --papersize '{768px,1296px}'
 
-convert +append figures/convergence_minimising.png figures/convergence_maximising.png figures/joss/converge.png
+pdfjam --nup 2x1 figures/convergence_minimising.pdf figures/convergence_maximising.pdf --landscape --outfile figures/joss/converge.pdf --papersize '{450px,900px}'
 
-convert +append figures/simulation.png figures/landscape.png figures/joss/sim-landscape.png
+pdfjam --nup 2x1 figures/simulation.pdf figures/landscape.pdf --landscape --outfile figures/joss/sim-landscape.pdf --papersize '{450px,900px}'
 
-convert +append figures/impedance_spectrum.png figures/impedance_contour.png figures/joss/impedance.png
+pdfjam --nup 2x1 figures/impedance_spectrum.pdf figures/impedance_contour.pdf --landscape --outfile figures/joss/impedance.pdf --papersize '{450px,900px}'
