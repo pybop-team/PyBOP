@@ -88,15 +88,18 @@ class BaseSciPyOptimiser(BaseOptimiser):
             nit = -1
 
         return OptimisationResult(
-            x=self._transformation.to_model(result.x)
-            if self._transformation
-            else result.x,
+            x=(
+                self._transformation.to_model(result.x)
+                if self._transformation
+                else result.x
+            ),
             cost=self.cost,
             final_cost=self.cost(result.x, apply_transform=True),
             n_iterations=nit,
             scipy_result=result,
             optim=self,
             time=total_time,
+            pybamm_solution=self.cost.problem.solution,
         )
 
 

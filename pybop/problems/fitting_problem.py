@@ -130,6 +130,7 @@ class FittingProblem(BaseProblem):
                     print(f"Simulation error: {e}")
                 return {signal: self.failure_output for signal in self.signal}
 
+            self._solution = sol
             return {
                 signal: sol[signal].data
                 for signal in (self.signal + self.additional_variables)
