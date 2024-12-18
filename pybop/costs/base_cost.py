@@ -105,12 +105,12 @@ class BaseCost:
             model_inputs = inputs
 
         # Check whether we are maximising or minimising via:
-        #| `minimising` | `self.minimising` | `for_optimiser` |
-        #|--------------|-------------------|-----------------|
-        #| `True`       | `True`            | `True`          |
-        #| `True`       | `True`            | `False`         |
-        #| `False`      | `False`           | `True`          |
-        #| `True`       | `False`           | `False`         |
+        # | `minimising` | `self.minimising` | `for_optimiser` |
+        # |--------------|-------------------|-----------------|
+        # | `True`       | `True`            | `True`          |
+        # | `True`       | `True`            | `False`         |
+        # | `False`      | `False`           | `True`          |
+        # | `True`       | `False`           | `False`         |
         minimising = self.minimising or not for_optimiser
 
         # Validate inputs, update parameters
