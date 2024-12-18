@@ -26,8 +26,8 @@ def classify_using_Hessian(
     dx = np.asarray(dx) if dx is not None else np.maximum(x, 1e-40) * 1e-2
     final_cost = result.final_cost
     cost = result.cost
-    parameters = result.cost.parameters
-    minimising = result.optim.minimising
+    parameters = cost.parameters
+    minimising = result.minimising
 
     n = len(x)
     if n != 2 or len(dx) != n:

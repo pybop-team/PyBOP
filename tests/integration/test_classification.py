@@ -79,7 +79,7 @@ class TestClassification:
         bounds = cost.parameters.get_bounds()
         x0 = np.clip(x, bounds["lower"], bounds["upper"])
         optim = pybop.Optimisation(cost=cost)
-        results = pybop.OptimisationResult(x=x0, optim=optim, cost=cost)
+        results = pybop.OptimisationResult(x=x0, optim=optim)
 
         if np.all(x == np.asarray([0.05, 0.05])):
             message = classify_using_Hessian(results)
@@ -102,7 +102,7 @@ class TestClassification:
         if np.all(x == np.asarray([0.05, 0.05])):
             cost = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002)
             optim = pybop.Optimisation(cost=cost)
-            results = pybop.OptimisationResult(x=x, optim=optim, cost=cost)
+            results = pybop.OptimisationResult(x=x, optim=optim)
 
             message = classify_using_Hessian(results)
             assert message == "The optimiser has located a maximum."
@@ -151,7 +151,7 @@ class TestClassification:
             cost = pybop.SumofPower(problem, p=1)
             x = cost.parameters.true_value()
             optim = pybop.Optimisation(cost=cost)
-            results = pybop.OptimisationResult(x=x, optim=optim, cost=cost)
+            results = pybop.OptimisationResult(x=x, optim=optim)
 
             message = classify_using_Hessian(results)
             assert message == (
@@ -180,7 +180,7 @@ class TestClassification:
         cost = pybop.SumSquaredError(problem)
         x = cost.parameters.true_value()
         optim = pybop.Optimisation(cost=cost)
-        results = pybop.OptimisationResult(x=x, optim=optim, cost=cost)
+        results = pybop.OptimisationResult(x=x, optim=optim)
 
         with pytest.raises(
             ValueError,
