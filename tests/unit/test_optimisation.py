@@ -341,15 +341,19 @@ class TestOptimisation:
     @pytest.mark.unit
     def test_randomsearch_bounds(self, two_param_cost):
         # Test clip_candidates with bound
-        bounds = {"upper": [0.62,0.57], "lower": [0.58,0.53]}
-        optimiser = pybop.RandomSearch(cost=two_param_cost, bounds=bounds, max_iterations=1)
+        bounds = {"upper": [0.62, 0.57], "lower": [0.58, 0.53]}
+        optimiser = pybop.RandomSearch(
+            cost=two_param_cost, bounds=bounds, max_iterations=1
+        )
         candidates = np.array([[0.57, 0.52], [0.63, 0.58]])
         clipped_candidates = optimiser.optimiser.clip_candidates(candidates)
         expected_clipped = np.array([[0.58, 0.53], [0.62, 0.57]])
         assert np.allclose(clipped_candidates, expected_clipped)
 
         # Test clip_candidates without bound
-        optimiser = pybop.RandomSearch(cost=two_param_cost, bounds=None, max_iterations=1)
+        optimiser = pybop.RandomSearch(
+            cost=two_param_cost, bounds=None, max_iterations=1
+        )
         candidates = np.array([[0.57, 0.52], [0.63, 0.58]])
         clipped_candidates = optimiser.optimiser.clip_candidates(candidates)
         assert np.allclose(clipped_candidates, candidates)
