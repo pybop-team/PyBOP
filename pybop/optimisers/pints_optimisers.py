@@ -703,6 +703,7 @@ class RandomSearch(BasePintsOptimiser):
         max_iterations: int = None,
         min_iterations: int = 2,
         max_unchanged_iterations: int = 15,
+        multistart: int = 1,
         parallel: bool = False,
         **optimiser_kwargs,
     ):
@@ -712,6 +713,7 @@ class RandomSearch(BasePintsOptimiser):
             max_iterations,
             min_iterations,
             max_unchanged_iterations,
+            multistart,
             parallel,
             **optimiser_kwargs,
         )
