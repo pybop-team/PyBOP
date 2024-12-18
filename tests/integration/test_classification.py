@@ -112,34 +112,22 @@ class TestClassification:
 
     @pytest.mark.integration
     def test_insensitive_classify_using_Hessian(self, parameter_set):
-        param_R0 = pybop.Parameter(
-            "R0 [Ohm]",
+        param_R0_a = pybop.Parameter(
+            "R0_a [Ohm]",
             bounds=[0, 0.002],
             true_value=0.001,
         )
-        param_R0_mod = pybop.Parameter(
-            "R0 modification [Ohm]",
-            bounds=[-1e-4, 1e-4],
-            true_value=0,
-        )
-        param_R1_mod = pybop.Parameter(
-            "R1 modification [Ohm]",
+        param_R0_b = pybop.Parameter(
+            "R0_b [Ohm]",
             bounds=[-1e-4, 1e-4],
             true_value=0,
         )
         parameter_set.params.update(
-            {
-                "R0 modification [Ohm]": 0,
-                "R1 modification [Ohm]": 0,
-            },
+            {"R0_a [Ohm]": 0.001, "R0_b [Ohm]": 0},
             check_already_exists=False,
         )
-        R0, R1 = parameter_set["R0 [Ohm]"], parameter_set["R1 [Ohm]"]
         parameter_set.params.update(
-            {
-                "R0 [Ohm]": R0 + Parameter("R0 modification [Ohm]"),
-                "R1 [Ohm]": R1 + Parameter("R1 modification [Ohm]"),
-            }
+            {"R0 [Ohm]": Parameter("R0_a [Ohm]") + Parameter("R0_b [Ohm]")},
         )
         model = pybop.empirical.Thevenin(parameter_set=parameter_set)
 
@@ -155,35 +143,34 @@ class TestClassification:
             }
         )
 
-        for i, parameters in enumerate(
-            [
-                pybop.Parameters(param_R0_mod, param_R1_mod),
-                pybop.Parameters(param_R1_mod, param_R0),
-                pybop.Parameters(param_R0, param_R1_mod),
-            ]
-        ):
+        for parameters in [
+            pybop.Parameters(param_R0_b, param_R0_a),
+            pybop.Parameters(param_R0_a, param_R0_b),
+        ]:
             problem = pybop.FittingProblem(model, parameters, dataset)
-            cost = pybop.SumofPower(problem, p=3)
+            cost = pybop.SumofPower(problem, p=1)
             x = cost.parameters.true_value()
             optim = pybop.Optimisation(cost=cost)
             results = pybop.OptimisationResult(x=x, optim=optim, cost=cost)
 
             message = classify_using_Hessian(results)
+            assert (
+                message == "The cost is insensitive to a change of 1e-42 in R0_b [Ohm]."
+            )
 
-            if i == 0:
-                assert message == "The cost is insensitive to these parameters."
-            elif i == 1 or i == 2:
-                assert message == "The cost is insensitive to R1 modification [Ohm]."
+        results = pybop.OptimisationResult(x=[0.0008, 0.0002], optim=optim, cost=cost)
 
-        parameters = pybop.Parameters(param_R0, param_R0_mod)
-        problem = pybop.FittingProblem(model, parameters, dataset)
-        cost = pybop.SumofPower(problem, p=3)
-        x = cost.parameters.true_value()
-        optim = pybop.Optimisation(cost=cost)
-        results = pybop.OptimisationResult(x=x, optim=optim, cost=cost)
-
-        message = classify_using_Hessian(results)
+        message = classify_using_Hessian(
+            results,
+            dx=[0.0001, 0.0001], cost_tolerance=1e-2
+        )
         assert message == "There may be a correlation between these parameters."
+
+        message = classify_using_Hessian(results, cost_tolerance=1e-2)
+        assert message == "The cost variation is smaller than the cost tolerance: 0.01."
+
+        message = classify_using_Hessian(results, dx=[1, 1])
+        assert message == "Classification cannot proceed due to infinite cost value(s)."
 
     @pytest.mark.integration
     def test_classify_using_Hessian_invalid(self, model, parameters, dataset):
