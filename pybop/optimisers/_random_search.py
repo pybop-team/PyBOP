@@ -7,21 +7,21 @@ class RandomSearchImpl(PopulationBasedOptimiser):
     Random Search (RS) optimisation algorithm.
     This algorithm explores the parameter space by randomly sampling points.
 
-    The algorithm is simple:
+    The algorithm does the following:
     1. Initialise a population of solutions.
-    2. At each iteration, generate new random solutions within boundaries.
-    3. Evaluate the quality/fitness of the solutions.
-    4. Update the best solution found so far.
+    2. At each iteration, generate `n` number of random positions within boundaries.
+    3. Evaluate the quality/fitness of the positions.
+    4. Replace the best position with improved position if found.
 
     Parameters:
-    - population_size (optional): Number of solutions to evaluate per iteration.
+        population_size (optional): Number of solutions to evaluate per iteration.
 
     References:
-    - The Random Search algorithm implemented in this work is based on principles outlined
+    The Random Search algorithm implemented in this work is based on principles outlined
     in "Introduction to Stochastic Search and Optimization: Estimation, Simulation, and
     Control" by Spall, J. C. (2003).
-    The implementation leverages the pints library framework, which provides tools for
-    population-based optimization methods.
+
+    The implementation inherits from the PINTS PopulationOptimiser.
     """
 
     def __init__(self, x0, sigma0=0.05, boundaries=None):
@@ -32,18 +32,6 @@ class RandomSearchImpl(PopulationBasedOptimiser):
 
         # Optimisation parameters
         self._n = self._population_size
-        self._iterations = 0
-
-        # Initialise population
-        self._candidates = (
-            np.random.uniform(
-                low=self._boundaries.lower(),
-                high=self._boundaries.upper(),
-                size=(self._n, self._dim),
-            )
-            if self._boundaries
-            else np.random.normal(self._x0, self._sigma0, size=(self._n, self._dim))
-        )
 
         # Initialise best solution
         self._x_best = np.copy(x0)
@@ -53,35 +41,32 @@ class RandomSearchImpl(PopulationBasedOptimiser):
 
     def ask(self):
         """
-        Returns a list of next points in the parameter-space
-        to evaluate from the optimiser.
+        Returns a list of positions to evaluate in the optimiser-space.
         """
         self._ready_for_tell = True
         self._running = True
 
-        # Generate random solutions within the boundaries
+        # Generate random solutions
         if self._boundaries:
             self._candidates = np.random.uniform(
                 low=self._boundaries.lower(),
                 high=self._boundaries.upper(),
                 size=(self._n, self._dim),
             )
-        else:
-            self._candidates = np.random.normal(
-                self._x0, self._sigma0, size=(self._n, self._dim)
-            )
+            return self._candidates
+
+        self._candidates = np.random.normal(
+            self._x0, self._sigma0, size=(self._n, self._dim)
+        )
         return self.clip_candidates(self._candidates)
 
     def tell(self, replies):
         """
-        Receives a list of function values from the cost function from points
-        previously specified by `self.ask()`, and updates the optimiser state
-        accordingly.
+        Receives a list of cost function values from points previously specified
+        by `self.ask()`, and updates the optimiser state accordingly.
         """
         if not self._ready_for_tell:
             raise RuntimeError("ask() must be called before tell().")
-
-        self._iterations += 1
 
         # Evaluate solutions and update the best
         for i in range(self._n):

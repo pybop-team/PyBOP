@@ -662,6 +662,9 @@ class RandomSearch(BasePintsOptimiser):
     Random Search is a simple optimisation algorithm that samples parameter sets randomly
     within the given boundaries and identifies the best solution based on fitness.
 
+    This optimiser has been implemented for benchmarking and comparisons, convergence will be
+    better with one of other optimisers in the majority of cases.
+
     Parameters
     ----------
     cost : callable
@@ -672,6 +675,9 @@ class RandomSearch(BasePintsOptimiser):
         Minimum number of iterations before termination.
     max_unchanged_iterations : int, optional (default=15)
         Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
     parallel : bool, optional (default=False)
         Whether to run the optimisation in parallel.
     **optimiser_kwargs : optional
