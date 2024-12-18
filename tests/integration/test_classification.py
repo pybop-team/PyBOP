@@ -154,20 +154,21 @@ class TestClassification:
             results = pybop.OptimisationResult(x=x, optim=optim, cost=cost)
 
             message = classify_using_Hessian(results)
-            assert (
-                message == "The cost is insensitive to a change of 1e-42 in R0_b [Ohm]."
+            assert message == (
+                "The cost variation is too small to classify with certainty."
+                " The cost is insensitive to a change of 1e-42 in R0_b [Ohm]."
             )
 
-        results = pybop.OptimisationResult(x=[0.0008, 0.0002], optim=optim, cost=cost)
-
-        message = classify_using_Hessian(
-            results,
-            dx=[0.0001, 0.0001], cost_tolerance=1e-2
+        message = classify_using_Hessian(results, dx=[0.0001, 0.0001])
+        assert message == (
+            "The optimiser has located a minimum."
+            " There may be a correlation between these parameters."
         )
-        assert message == "There may be a correlation between these parameters."
 
         message = classify_using_Hessian(results, cost_tolerance=1e-2)
-        assert message == "The cost variation is smaller than the cost tolerance: 0.01."
+        assert message == (
+            "The cost variation is smaller than the cost tolerance: 0.01."
+        )
 
         message = classify_using_Hessian(results, dx=[1, 1])
         assert message == "Classification cannot proceed due to infinite cost value(s)."

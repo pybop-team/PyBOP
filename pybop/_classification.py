@@ -112,20 +112,25 @@ def classify_using_Hessian(
             message = "The optimiser has located a maximum."
         elif np.all(np.abs(eigenvalues) > cost_tolerance):
             message = "The optimiser has located a saddle point."
+        elif np.all(np.abs(eigenvalues) < cost_tolerance):
+            message = f"The cost variation is smaller than the cost tolerance: {cost_tolerance}."
         else:
-            # At least one eigenvalue is too small to classify with certainty
-            if np.all(np.abs(eigenvalues) < cost_tolerance):
-                message = f"The cost variation is smaller than the cost tolerance: {cost_tolerance}."
-            elif np.allclose(eigenvectors[0], np.array([1, 0])):
-                message = (
-                    f"The cost is insensitive to a change of {dx[0]:.2g} in {names[0]}."
-                )
+            # One eigenvalue is too small to classify with certainty
+            message = "The cost variation is too small to classify with certainty."
+
+        # Check for parameter correlations
+        if np.any(np.abs(eigenvalues) > cost_tolerance):
+            if np.allclose(eigenvectors[0], np.array([1, 0])):
+                message += f" The cost is insensitive to a change of {dx[0]:.2g} in {names[0]}."
             elif np.allclose(eigenvectors[0], np.array([0, 1])):
-                message = (
-                    f"The cost is insensitive to a change of {dx[1]:.2g} in {names[1]}."
-                )
+                message += f" The cost is insensitive to a change of {dx[1]:.2g} in {names[1]}."
             else:
-                message = "There may be a correlation between these parameters."
+                diagonal_costs = [
+                    cost(x - np.multiply(eigenvectors[:, 0], dx)),
+                    cost(x + np.multiply(eigenvectors[:, 0], dx)),
+                ]
+                if np.allclose(final_cost, diagonal_costs, atol=cost_tolerance, rtol=0):
+                    message += " There may be a correlation between these parameters."
 
     print(message)
     return message
