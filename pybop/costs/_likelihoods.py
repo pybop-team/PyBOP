@@ -18,6 +18,7 @@ class BaseLikelihood(BaseCost):
     def __init__(self, problem: BaseProblem):
         super().__init__(problem)
         self.n_data = problem.n_data
+        self.minimising = False
 
 
 class BaseMetaLikelihood(BaseLikelihood):

@@ -6,7 +6,7 @@ import pybamm
 import pytest
 
 import pybop
-from examples.standalone.model import ExponentialDecay
+from examples.standalone.model import ExponentialDecay as StandaloneDecay
 from pybop.models.lithium_ion.basic_SPMe import convert_physical_to_grouped_parameters
 
 
@@ -43,16 +43,11 @@ class TestModels:
     )
     @pytest.mark.unit
     def test_model_classes(self, model_class, expected_name, options):
-        model = model_class(options=options)
+        parameter_set = pybop.ParameterSet({"Nominal cell capacity [A.h]": 5.12})
+        model = model_class(options=options, parameter_set=parameter_set)
         assert model.pybamm_model is not None
         assert model.name == expected_name
-
-        # Test initialisation with kwargs
-        if model_class is pybop.lithium_ion.MSMR:
-            # Reset the options to cope with a bug in PyBaMM v23.9 msmr.py:23 which is fixed in v24.1
-            options = {"number of MSMR reactions": ("6", "4")}
-        parameter_set = pybop.ParameterSet({"Nominal cell capacity [A.h]": 5})
-        model = model_class(options=options, build=True, parameter_set=parameter_set)
+        assert model.parameter_set["Nominal cell capacity [A.h]"] == 5.12
 
     @pytest.fixture(
         params=[
@@ -290,11 +285,14 @@ class TestModels:
                 atol=1e-5,
             )
 
+    @pytest.mark.parametrize(
+        "model_cls", [StandaloneDecay, pybop.ExponentialDecayModel]
+    )
     @pytest.mark.unit
-    def test_reinit(self):
+    def test_reinit(self, model_cls):
         k = 0.1
         y0 = 1
-        model = ExponentialDecay(pybamm.ParameterValues({"k": k, "y0": y0}))
+        model = model_cls(pybamm.ParameterValues({"k": k, "y0": y0}))
 
         with pytest.raises(
             ValueError, match="Model must be built before calling get_state"
@@ -309,17 +307,20 @@ class TestModels:
         state = model.reinit(inputs=[1])
         np.testing.assert_array_almost_equal(state.as_ndarray(), np.array([[y0]]))
 
-        model = ExponentialDecay(pybamm.ParameterValues({"k": k, "y0": y0}))
+        model = model_cls(pybamm.ParameterValues({"k": k, "y0": y0}))
         with pytest.raises(
             ValueError, match="Model must be built before calling reinit"
         ):
             model.reinit(inputs={})
 
+    @pytest.mark.parametrize(
+        "model_cls", [StandaloneDecay, pybop.ExponentialDecayModel]
+    )
     @pytest.mark.unit
-    def test_simulate(self):
+    def test_simulate(self, model_cls):
         k = 0.1
         y0 = 1
-        model = ExponentialDecay(pybamm.ParameterValues({"k": k, "y0": y0}))
+        model = model_cls(pybamm.ParameterValues({"k": k, "y0": y0}))
         model.build()
         model.signal = ["y_0"]
         inputs = {}
@@ -329,7 +330,7 @@ class TestModels:
         np.testing.assert_array_almost_equal(solved["y_0"].data, expected, decimal=5)
 
         with pytest.raises(ValueError):
-            ExponentialDecay(n_states=-1)
+            model_cls(n_states=-1)
 
     @pytest.mark.unit
     def test_simulateEIS(self):
