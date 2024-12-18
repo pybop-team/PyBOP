@@ -339,10 +339,35 @@ class TestOptimisation:
         assert optim.optimiser._boundaries is None
 
     @pytest.mark.unit
-    def test_randomsearch(self, cost):
-        optim = pybop.RandomSearch(cost=cost, bounds=None, max_iterations=1)
-        optim.run()
-        assert optim.optimiser._boundaries is None
+    def test_randomsearch_bounds(self, two_param_cost):
+        # Initialize RandomSearch with boundaries
+        bounds = {"upper": [0.62,0.57], "lower": [0.58,0.53]}
+
+        optimiser = pybop.RandomSearch(cost=two_param_cost, bounds=bounds, max_iterations=1)
+
+        # Define candidates outside boundaries
+        candidates = np.array([[0.57, 0.52], [0.63, 0.58]])
+
+        # Use clip_candidates to clip to boundaries
+        clipped_candidates = optimiser.optimiser.clip_candidates(candidates)
+
+        # Expected clipped candidates
+        expected_clipped = np.array([[0.58, 0.53], [0.62, 0.57]])
+
+        # Assert that the clipped candidates match the expected values
+        assert np.allclose(clipped_candidates, expected_clipped)
+
+        # Initialize optimiser without boundaries
+        optimiser = pybop.RandomSearch(cost=two_param_cost, bounds=None, max_iterations=1)
+
+        # Define candidates outside typical boundaries
+        candidates = np.array([[0.57, 0.52], [0.63, 0.58]])
+
+        # Use clip_candidates, which should return the input unmodified
+        clipped_candidates = optimiser.optimiser.clip_candidates(candidates)
+
+        # Assert that the clipped candidates are unchanged
+        assert np.allclose(clipped_candidates, candidates)
 
     @pytest.mark.unit
     def test_scipy_minimize_with_jac(self, cost):
