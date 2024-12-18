@@ -67,12 +67,10 @@ class StandaloneOptimiser(BaseOptimiser):
         )
 
         return OptimisationResult(
+            optim=self,
             x=result.x,
-            cost=self.cost,
-            final_cost=self.cost(result.x),
             n_iterations=result.nit,
             scipy_result=result,
-            optim=self,
         )
 
     def name(self):

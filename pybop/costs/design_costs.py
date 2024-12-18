@@ -19,7 +19,7 @@ class DesignCost(BaseCost):
 
     def __init__(self, problem):
         """
-        Initialises the gravimetric energy density calculator with a problem.
+        Initialises the design cost calculator with a problem.
 
         Parameters
         ----------
@@ -27,15 +27,14 @@ class DesignCost(BaseCost):
             The problem instance containing the model and data.
         """
         super().__init__(problem)
-        self.problem = problem
+        self.minimising = False
 
 
 class GravimetricEnergyDensity(DesignCost):
     """
     Calculates the gravimetric energy density (specific energy) of a battery cell,
     when applied to a normalised discharge from upper to lower voltage limits. The
-    goal of maximising the energy density is achieved by setting minimising = False
-    in the optimiser settings.
+    goal of maximising the energy density is achieved with self.minimising=False.
 
     The gravimetric energy density [Wh.kg-1] is calculated as
 
@@ -92,8 +91,7 @@ class VolumetricEnergyDensity(DesignCost):
     """
     Calculates the (volumetric) energy density of a battery cell, when applied to a
     normalised discharge from upper to lower voltage limits. The goal of maximising
-    the energy density is achieved by setting minimising = False in the optimiser
-    settings.
+    the energy density is achieved with self.minimising = False.
 
     The volumetric energy density [Wh.m-3] is calculated as
 
@@ -150,8 +148,7 @@ class GravimetricPowerDensity(DesignCost):
     """
     Calculates the gravimetric power density (specific power) of a battery cell,
     when applied to a discharge from upper to lower voltage limits. The goal of
-    maximising the power density is achieved by setting minimising = False in the
-    optimiser settings.
+    maximising the power density is achieved with self.minimising=False.
 
     The time-averaged gravimetric power density [W.kg-1] is calculated as
 
@@ -214,7 +211,7 @@ class VolumetricPowerDensity(DesignCost):
     """
     Calculates the (volumetric) power density of a battery cell, when applied to a
     discharge from upper to lower voltage limits. The goal of maximising the power
-    density is achieved by setting minimising = False in the optimiser settings.
+    density is achieved with self.minimising=False.
 
     The time-averaged volumetric power density [W.m-3] is calculated as
 
