@@ -2,7 +2,7 @@ from typing import Optional, Union
 
 import numpy as np
 
-from pybop import BaseCost, BaseLikelihood, DesignCost
+from pybop import BaseCost
 
 
 class WeightedCost(BaseCost):
@@ -32,9 +32,6 @@ class WeightedCost(BaseCost):
         self.costs = [cost for cost in costs]
         if len(set(type(cost.problem) for cost in self.costs)) > 1:
             raise TypeError("All problems must be of the same class type.")
-        self.minimising = not any(
-            isinstance(cost, (BaseLikelihood, DesignCost)) for cost in self.costs
-        )
 
         # Check if weights are provided
         if weights is not None:
@@ -61,6 +58,14 @@ class WeightedCost(BaseCost):
 
         for cost in self.costs:
             self.join_parameters(cost.parameters)
+
+        # Apply the minimising property from each cost
+        for i, cost in enumerate(self.costs):
+            self.weights[i] = self.weights[i] * (1 if cost.minimising else -1)
+        if all(not cost.minimising for cost in self.costs):
+            # If all costs are maximising, convert the weighted cost to maximising
+            self.weights = -self.weights
+            self.minimising = False
 
         # Weighted costs do not use this functionality
         self._has_separable_problem = False
