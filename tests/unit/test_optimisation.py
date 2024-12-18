@@ -265,6 +265,7 @@ class TestOptimisation:
             pybop.AdamW,
             pybop.CuckooSearch,
             pybop.GradientDescent,
+            pybop.RandomSearch,
         ]:
             optim = optimiser(cost)
             with pytest.raises(
@@ -312,6 +313,11 @@ class TestOptimisation:
                 assert optim.optimiser.n_hyper_parameters() == 5
                 assert optim.optimiser.x_guessed() == optim.optimiser._x0
 
+            if optimiser is pybop.RandomSearch:
+                assert optimiser._dim == len(optim.optimiser._x0)
+                assert optimiser.x_best().shape == optim.optimiser._x0.shape
+                assert optimiser.f_best() == np.inf
+                assert optimiser._iterations == 0
         else:
             x0 = cost.parameters.initial_value()
             assert optim.x0 == x0
