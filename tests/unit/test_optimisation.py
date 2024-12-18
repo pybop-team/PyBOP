@@ -365,6 +365,23 @@ class TestOptimisation:
         assert np.allclose(clipped_candidates, candidates)
 
     @pytest.mark.unit
+    def test_randomsearch_ask_without_bounds(two_param_cost):
+        # Initialize optimiser without boundaries
+        optimiser = pybop.RandomSearch(cost=two_param_cost, bounds=None, max_iterations=1)
+        optimiser.optimiser._x0 = np.array([0.6, 0.55])
+        optimiser.optimiser._sigma0 = 0.05
+        optimiser.optimiser._n = 2
+        optimiser.optimiser._dim = 2
+
+        # Call ask to generate candidates
+        candidates = optimiser.optimiser.ask()
+
+        # Assert the shape of generated candidates
+        assert candidates.shape == (2, 2)
+        assert np.all(candidates >= optimiser.optimiser._x0 - 3 * optimiser.optimiser._sigma0)
+        assert np.all(candidates <= optimiser.optimiser._x0 + 3 * optimiser.optimiser._sigma0)
+
+    @pytest.mark.unit
     def test_scipy_minimize_with_jac(self, cost):
         # Check a method that uses gradient information
         optim = pybop.SciPyMinimize(
