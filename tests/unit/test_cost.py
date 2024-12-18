@@ -112,11 +112,13 @@ class TestCosts:
             )
 
     @pytest.mark.unit
-    def test_base(self, problem):
-        base_cost = pybop.BaseCost(problem)
-        assert base_cost.problem == problem
-        with pytest.raises(NotImplementedError):
-            base_cost([0.5])
+    def test_base(self, model, parameters, dataset):
+        problem = pybop.FittingProblem(model, parameters, dataset)
+        for cost_class in [pybop.BaseCost, pybop.FittingCost, pybop.DesignCost]:
+            base_cost = cost_class(problem)
+            assert base_cost.problem == problem
+            with pytest.raises(NotImplementedError):
+                base_cost([0.5])
 
     @pytest.mark.unit
     def test_costs(self, cost):
@@ -229,7 +231,6 @@ class TestCosts:
     @pytest.mark.parametrize(
         "cost_class, expected_name",
         [
-            (pybop.DesignCost, "Design Cost"),
             (pybop.GravimetricEnergyDensity, "Gravimetric Energy Density"),
             (pybop.VolumetricEnergyDensity, "Volumetric Energy Density"),
             (pybop.GravimetricPowerDensity, "Gravimetric Power Density"),
@@ -242,33 +243,25 @@ class TestCosts:
         cost = cost_class(design_problem)
         assert cost.name == expected_name
 
-        if cost_class in [pybop.DesignCost]:
-            with pytest.raises(NotImplementedError):
-                cost([0.5])
-        else:
-            # Test type of returned value
-            assert np.isscalar(cost([0.5]))
-            assert cost([0.4]) >= 0  # Should be a viable design
-            assert (
-                cost([0.8]) == -np.inf
-            )  # Should exceed active material + porosity < 1
-            assert cost([1.4]) == -np.inf  # Definitely not viable
-            assert cost([-0.1]) == -np.inf  # Should not be a viable design
+        # Test type of returned value
+        assert np.isscalar(cost([0.5]))
+        assert cost([0.4]) >= 0  # Should be a viable design
+        assert cost([0.8]) == -np.inf  # Should exceed active material + porosity < 1
+        assert cost([1.4]) == -np.inf  # Definitely not viable
+        assert cost([-0.1]) == -np.inf  # Should not be a viable design
 
-            # Test infeasible locations
-            cost.problem.model.allow_infeasible_solutions = False
-            assert cost([1.1]) == -np.inf
+        # Test infeasible locations
+        cost.problem.model.allow_infeasible_solutions = False
+        assert cost([1.1]) == -np.inf
 
-            # Test exception for non-numeric inputs
-            with pytest.raises(
-                TypeError, match="Inputs must be a dictionary or numeric."
-            ):
-                cost(["StringInputShouldNotWork"])
+        # Test exception for non-numeric inputs
+        with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
+            cost(["StringInputShouldNotWork"])
 
-            # Compute after updating nominal capacity
-            design_problem.update_capacity = True
-            cost = cost_class(design_problem)
-            cost([0.4])
+        # Compute after updating nominal capacity
+        design_problem.update_capacity = True
+        cost = cost_class(design_problem)
+        cost([0.4])
 
     @pytest.fixture
     def noisy_problem(self, ground_truth, parameters, experiment):

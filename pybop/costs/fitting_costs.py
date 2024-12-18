@@ -66,7 +66,7 @@ class FittingCost(BaseCost):
         dy : np.ndarray, optional
             The corresponding gradient with respect to the parameters for each signal.
         """
-        return NotImplementedError
+        raise NotImplementedError
 
 
 class RootMeanSquaredError(FittingCost):
