@@ -365,7 +365,7 @@ class TestOptimisation:
         assert np.allclose(clipped_candidates, candidates)
 
     @pytest.mark.unit
-    def test_randomsearch_ask_without_bounds(two_param_cost):
+    def test_randomsearch_ask_without_bounds(self, two_param_cost):
         # Initialize optimiser without boundaries
         optimiser = pybop.RandomSearch(
             cost=two_param_cost, bounds=None, max_iterations=1
