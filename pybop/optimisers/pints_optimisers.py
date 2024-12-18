@@ -1,10 +1,7 @@
-from warnings import warn
-
 from pints import CMAES as PintsCMAES
 from pints import PSO as PintsPSO
 from pints import SNES as PintsSNES
 from pints import XNES as PintsXNES
-from pints import Adam as PintsAdam
 from pints import IRPropMin as PintsIRPropMin
 from pints import NelderMead as PintsNelderMead
 
@@ -36,6 +33,9 @@ class GradientDescent(BasePintsOptimiser):
         Minimum number of iterations before termination.
     max_unchanged_iterations : int, optional (default=15)
         Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
     parallel : bool, optional (default=False)
         Whether to run the optimisation in parallel.
     **optimiser_kwargs : optional
@@ -69,6 +69,7 @@ class GradientDescent(BasePintsOptimiser):
         max_iterations: int = None,
         min_iterations: int = 2,
         max_unchanged_iterations: int = 15,
+        multistart: int = 1,
         parallel: bool = False,
         **optimiser_kwargs,
     ):
@@ -78,78 +79,7 @@ class GradientDescent(BasePintsOptimiser):
             max_iterations,
             min_iterations,
             max_unchanged_iterations,
-            parallel,
-            **optimiser_kwargs,
-        )
-
-
-class Adam(BasePintsOptimiser):
-    """
-    Implements the Adam optimisation algorithm.
-
-    This class extends the Adam optimiser from the PINTS library, which combines
-    ideas from RMSProp and Stochastic Gradient Descent with momentum.
-
-    Note that this optimiser does not support boundary constraints.
-
-    Parameters
-    ----------
-    cost : callable
-        The cost function to be minimized.
-    max_iterations : int, optional
-        Maximum number of iterations for the optimisation.
-    min_iterations : int, optional (default=2)
-        Minimum number of iterations before termination.
-    max_unchanged_iterations : int, optional (default=15)
-        Maximum number of iterations without improvement before termination.
-    parallel : bool, optional (default=False)
-        Whether to run the optimisation in parallel.
-    **optimiser_kwargs : optional
-        Valid PINTS option keys and their values, for example:
-        x0 : array_like
-            Initial position from which optimisation will start.
-        sigma0 : float
-            Initial step size or standard deviation depending on the optimiser.
-        bounds : dict
-            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
-            upper bounds on the parameters.
-        use_f_guessed : bool
-            Whether to return the guessed function values.
-        absolute_tolerance : float
-            Absolute tolerance for convergence checking.
-        relative_tolerance : float
-            Relative tolerance for convergence checking.
-        max_evaluations : int
-            Maximum number of function evaluations.
-        threshold : float
-            Threshold value for early termination.
-
-    See Also
-    --------
-    pints.Adam : The PINTS implementation this class is based on.
-    """
-
-    warn(
-        "Adam is deprecated and will be removed in a future release. Please use AdamW instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    def __init__(
-        self,
-        cost,
-        max_iterations: int = None,
-        min_iterations: int = 2,
-        max_unchanged_iterations: int = 15,
-        parallel: bool = False,
-        **optimiser_kwargs,
-    ):
-        super().__init__(
-            cost,
-            PintsAdam,
-            max_iterations,
-            min_iterations,
-            max_unchanged_iterations,
+            multistart,
             parallel,
             **optimiser_kwargs,
         )
@@ -176,6 +106,9 @@ class AdamW(BasePintsOptimiser):
         Minimum number of iterations before termination.
     max_unchanged_iterations : int, optional (default=15)
         Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
     parallel : bool, optional (default=False)
         Whether to run the optimisation in parallel.
     **optimiser_kwargs : optional
@@ -209,6 +142,7 @@ class AdamW(BasePintsOptimiser):
         max_iterations: int = None,
         min_iterations: int = 2,
         max_unchanged_iterations: int = 15,
+        multistart: int = 1,
         parallel: bool = False,
         **optimiser_kwargs,
     ):
@@ -218,6 +152,7 @@ class AdamW(BasePintsOptimiser):
             max_iterations,
             min_iterations,
             max_unchanged_iterations,
+            multistart,
             parallel,
             **optimiser_kwargs,
         )
@@ -241,6 +176,9 @@ class IRPropMin(BasePintsOptimiser):
         Minimum number of iterations before termination.
     max_unchanged_iterations : int, optional (default=15)
         Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
     parallel : bool, optional (default=False)
         Whether to run the optimisation in parallel.
     **optimiser_kwargs : optional
@@ -274,6 +212,7 @@ class IRPropMin(BasePintsOptimiser):
         max_iterations: int = None,
         min_iterations: int = 2,
         max_unchanged_iterations: int = 15,
+        multistart: int = 1,
         parallel: bool = False,
         **optimiser_kwargs,
     ):
@@ -283,6 +222,7 @@ class IRPropMin(BasePintsOptimiser):
             max_iterations,
             min_iterations,
             max_unchanged_iterations,
+            multistart,
             parallel,
             **optimiser_kwargs,
         )
@@ -306,6 +246,9 @@ class PSO(BasePintsOptimiser):
         Minimum number of iterations before termination.
     max_unchanged_iterations : int, optional (default=15)
         Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
     parallel : bool, optional (default=False)
         Whether to run the optimisation in parallel.
     **optimiser_kwargs : optional
@@ -339,6 +282,7 @@ class PSO(BasePintsOptimiser):
         max_iterations: int = None,
         min_iterations: int = 2,
         max_unchanged_iterations: int = 15,
+        multistart: int = 1,
         parallel: bool = False,
         **optimiser_kwargs,
     ):
@@ -348,6 +292,7 @@ class PSO(BasePintsOptimiser):
             max_iterations,
             min_iterations,
             max_unchanged_iterations,
+            multistart,
             parallel,
             **optimiser_kwargs,
         )
@@ -371,6 +316,9 @@ class SNES(BasePintsOptimiser):
         Minimum number of iterations before termination.
     max_unchanged_iterations : int, optional (default=15)
         Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
     parallel : bool, optional (default=False)
         Whether to run the optimisation in parallel.
     **optimiser_kwargs : optional
@@ -404,6 +352,7 @@ class SNES(BasePintsOptimiser):
         max_iterations: int = None,
         min_iterations: int = 2,
         max_unchanged_iterations: int = 15,
+        multistart: int = 1,
         parallel: bool = False,
         **optimiser_kwargs,
     ):
@@ -413,6 +362,7 @@ class SNES(BasePintsOptimiser):
             max_iterations,
             min_iterations,
             max_unchanged_iterations,
+            multistart,
             parallel,
             **optimiser_kwargs,
         )
@@ -436,6 +386,9 @@ class XNES(BasePintsOptimiser):
         Minimum number of iterations before termination.
     max_unchanged_iterations : int, optional (default=15)
         Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
     parallel : bool, optional (default=False)
         Whether to run the optimisation in parallel.
     **optimiser_kwargs : optional
@@ -469,6 +422,7 @@ class XNES(BasePintsOptimiser):
         max_iterations: int = None,
         min_iterations: int = 2,
         max_unchanged_iterations: int = 15,
+        multistart: int = 1,
         parallel: bool = False,
         **optimiser_kwargs,
     ):
@@ -478,6 +432,7 @@ class XNES(BasePintsOptimiser):
             max_iterations,
             min_iterations,
             max_unchanged_iterations,
+            multistart,
             parallel,
             **optimiser_kwargs,
         )
@@ -503,6 +458,9 @@ class NelderMead(BasePintsOptimiser):
         Minimum number of iterations before termination.
     max_unchanged_iterations : int, optional (default=15)
         Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
     parallel : bool, optional (default=False)
         Whether to run the optimisation in parallel.
     **optimiser_kwargs : optional
@@ -536,6 +494,7 @@ class NelderMead(BasePintsOptimiser):
         max_iterations: int = None,
         min_iterations: int = 2,
         max_unchanged_iterations: int = 15,
+        multistart: int = 1,
         parallel: bool = False,
         **optimiser_kwargs,
     ):
@@ -545,6 +504,7 @@ class NelderMead(BasePintsOptimiser):
             max_iterations,
             min_iterations,
             max_unchanged_iterations,
+            multistart,
             parallel,
             **optimiser_kwargs,
         )
@@ -568,6 +528,9 @@ class CMAES(BasePintsOptimiser):
         Minimum number of iterations before termination.
     max_unchanged_iterations : int, optional (default=15)
         Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
     parallel : bool, optional (default=False)
         Whether to run the optimisation in parallel.
     **optimiser_kwargs : optional
@@ -601,6 +564,7 @@ class CMAES(BasePintsOptimiser):
         max_iterations: int = None,
         min_iterations: int = 2,
         max_unchanged_iterations: int = 15,
+        multistart: int = 1,
         parallel: bool = False,
         **optimiser_kwargs,
     ):
@@ -616,6 +580,7 @@ class CMAES(BasePintsOptimiser):
             max_iterations,
             min_iterations,
             max_unchanged_iterations,
+            multistart,
             parallel,
             **optimiser_kwargs,
         )
@@ -638,6 +603,9 @@ class CuckooSearch(BasePintsOptimiser):
         Minimum number of iterations before termination.
     max_unchanged_iterations : int, optional (default=15)
         Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
     parallel : bool, optional (default=False)
         Whether to run the optimisation in parallel.
     **optimiser_kwargs : optional
@@ -671,6 +639,7 @@ class CuckooSearch(BasePintsOptimiser):
         max_iterations: int = None,
         min_iterations: int = 2,
         max_unchanged_iterations: int = 15,
+        multistart: int = 1,
         parallel: bool = False,
         **optimiser_kwargs,
     ):
@@ -680,6 +649,7 @@ class CuckooSearch(BasePintsOptimiser):
             max_iterations,
             min_iterations,
             max_unchanged_iterations,
+            multistart,
             parallel,
             **optimiser_kwargs,
         )
