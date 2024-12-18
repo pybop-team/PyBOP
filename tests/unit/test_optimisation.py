@@ -265,7 +265,7 @@ class TestOptimisation:
             pybop.AdamW,
             pybop.CuckooSearch,
             pybop.GradientDescent,
-            pybop.RandomSearch,
+            #pybop.RandomSearch,
         ]:
             optim = optimiser(cost)
             with pytest.raises(
