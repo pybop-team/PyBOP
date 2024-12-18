@@ -32,7 +32,7 @@ class BaseCost:
     _de : float
         The gradient of the cost function to use if an error occurs during
         evaluation. Defaults to 1.0.
-    minimsing : bool, optional, default=True
+    minimising : bool, optional, default=True
         If False, switches the sign of the cost and gradient to perform maximisation
         instead of minimisation.
     """
@@ -104,7 +104,13 @@ class BaseCost:
         else:
             model_inputs = inputs
 
-        # Check whether we are maximising or minimising
+        # Check whether we are maximising or minimising via:
+        #| `minimising` | `self.minimising` | `for_optimiser` |
+        #|--------------|-------------------|-----------------|
+        #| `True`       | `True`            | `True`          |
+        #| `True`       | `True`            | `False`         |
+        #| `False`      | `False`           | `True`          |
+        #| `True`       | `False`           | `False`         |
         minimising = self.minimising or not for_optimiser
 
         # Validate inputs, update parameters
