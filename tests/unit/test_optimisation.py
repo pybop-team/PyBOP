@@ -76,7 +76,6 @@ class TestOptimisation:
             (pybop.SciPyMinimize, "SciPyMinimize", False),
             (pybop.SciPyDifferentialEvolution, "SciPyDifferentialEvolution", False),
             (pybop.GradientDescent, "Gradient descent", True),
-            (pybop.Adam, "Adam", True),
             (pybop.AdamW, "AdamW", True),
             (
                 pybop.CMAES,
@@ -131,7 +130,6 @@ class TestOptimisation:
             pybop.SciPyMinimize,
             pybop.SciPyDifferentialEvolution,
             pybop.GradientDescent,
-            pybop.Adam,
             pybop.AdamW,
             pybop.SNES,
             pybop.XNES,
@@ -144,9 +142,15 @@ class TestOptimisation:
     @pytest.mark.unit
     def test_optimiser_kwargs(self, cost, optimiser):
         def assert_log_update(optim):
-            optim.log_update(x=[0.7], cost=[0.01])
-            assert optim.log["x"][-1] == 0.7
-            assert optim.log["cost"][-1] == 0.01
+            x_search = 0.7
+            optim.log_update(x=[x_search], cost=[0.01])
+            assert optim.log["x_search"][-1] == x_search
+            assert optim.log["cost"][-1] == 0.01 * (1 if optim.minimising else -1)
+            assert (
+                optim.log["x"][-1] == optim._transformation.to_model(x_search)
+                if optim._transformation
+                else x_search
+            )
 
         def check_max_iterations(optim):
             results = optim.run()
@@ -163,9 +167,15 @@ class TestOptimisation:
                 with pytest.raises(
                     ValueError, match="Either all bounds or no bounds must be set"
                 ):
-                    optim = optimiser(cost=cost, bounds=expected_bounds)
+                    optimiser(cost=cost, bounds=expected_bounds)
             else:
                 assert optim.bounds == expected_bounds
+
+        def check_multistart(optim, n_iters, multistarts):
+            results = optim.run()
+            if isinstance(optim, pybop.BasePintsOptimiser):
+                assert len(optim.log["x_best"]) == n_iters * multistarts
+                assert results.average_iterations() == n_iters
 
         optim = optimiser(cost=cost, max_iterations=3, tol=1e-6)
         cost_bounds = cost.parameters.get_bounds()
@@ -174,7 +184,11 @@ class TestOptimisation:
         assert_log_update(optim)
         check_incorrect_update(optim)
 
-        if optimiser in [pybop.GradientDescent, pybop.Adam, pybop.NelderMead]:
+        # Test multistart
+        multistart_optim = optimiser(cost, multistart=2, max_iterations=6)
+        check_multistart(multistart_optim, 6, 2)
+
+        if optimiser in [pybop.GradientDescent, pybop.AdamW, pybop.NelderMead]:
             optim = optimiser(cost=cost, bounds=cost_bounds)
             assert optim.bounds is None
         elif optimiser in [pybop.PSO]:
@@ -207,6 +221,9 @@ class TestOptimisation:
                 warnings.simplefilter("always")
                 optimiser(cost=cost, unrecognised=10)
             assert not optim.optimiser.running()
+
+            # Check default bounds setter
+            optim.set_max_iterations("default")
 
             # Check population setter
             if isinstance(optim.optimiser, PopulationBasedOptimiser):
@@ -612,7 +629,8 @@ class TestOptimisation:
     @pytest.mark.unit
     def test_optimisation_results(self, cost):
         # Construct OptimisationResult
-        results = pybop.OptimisationResult(x=[1e-3], cost=cost, n_iterations=1)
+        optim = pybop.Optimisation(cost=cost)
+        results = pybop.OptimisationResult(optim=optim, x=[1e-3], n_iterations=1)
 
         # Asserts
         assert results.x[0] == 1e-3
@@ -623,4 +641,4 @@ class TestOptimisation:
         with pytest.raises(
             ValueError, match="Optimised parameters do not produce a finite cost value"
         ):
-            pybop.OptimisationResult(x=[1e-5], cost=cost, n_iterations=1)
+            pybop.OptimisationResult(optim=optim, x=[1e-5], n_iterations=1)

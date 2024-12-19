@@ -352,7 +352,7 @@ class TestCosts:
 
         # Test LogPosterior explicitly
         cost4 = pybop.LogPosterior(pybop.GaussianLogLikelihood(problem))
-        weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, -1 / weight])
+        weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, 1 / weight])
         assert weighted_cost_4.has_identical_problems is True
         assert weighted_cost_4.has_separable_problem is False
         sigma = 0.01

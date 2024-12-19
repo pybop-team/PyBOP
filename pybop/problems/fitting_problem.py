@@ -60,7 +60,7 @@ class FittingProblem(BaseProblem):
         self._n_parameters = len(self.parameters)
 
         # Check that the dataset contains necessary variables
-        dataset.check(domain=self.domain, signal=[*self.signal, "Current function [A]"])
+        dataset.check(domain=self.domain, signal=self.signal)
 
         # Unpack domain and target data
         self._domain_data = self._dataset[self.domain]

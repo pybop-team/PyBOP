@@ -1,8 +1,8 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
-from examples.standalone.model import ExponentialDecay
 
 
 class TestObservers:
@@ -20,11 +20,15 @@ class TestObservers:
 
     @pytest.fixture
     def parameter_set(self):
-        return {"k": self.ground_truth[0], "y0": self.ground_truth[1]}
+        return pybamm.ParameterValues(
+            {"k": self.ground_truth[0], "y0": self.ground_truth[1]}
+        )
 
     @pytest.fixture
     def model(self, parameter_set):
-        return ExponentialDecay(parameter_set=parameter_set, n_states=1)
+        return pybop.ExponentialDecayModel(
+            parameter_set=parameter_set, solver=pybamm.IDAKLUSolver, n_states=1
+        )
 
     @pytest.fixture
     def parameters(self, parameter_set):
@@ -51,7 +55,7 @@ class TestObservers:
         # Make a prediction with measurement noise
         sigma = 1e-2
         t_eval = np.linspace(0, 20, 10)
-        values = model.predict(t_eval=t_eval)["2y"].data
+        values = model.predict(t_eval=t_eval)["y_0"].data
         corrupt_values = values + self.noise(sigma, len(t_eval))
 
         # Form dataset
@@ -59,12 +63,12 @@ class TestObservers:
             {
                 "Time [s]": t_eval,
                 "Current function [A]": 0 * t_eval,  # placeholder
-                "2y": corrupt_values,
+                "y_0": corrupt_values,
             }
         )
 
         # Define the UKF observer
-        signal = ["2y"]
+        signal = ["y_0"]
         n_states = model.n_states
         n_signals = len(signal)
         covariance = np.diag([sigma**2] * n_states)

@@ -81,8 +81,6 @@ class BaseProblem:
 
         # Add domain and remove duplicates
         self.additional_variables = additional_variables or []
-        self.additional_variables.extend([self.domain, "Current [A]"])
-        self.additional_variables = list(set(self.additional_variables))
 
         # If model.solver is IDAKLU, set output vars for improved performance
         self.output_vars = tuple(self.signal + self.additional_variables)

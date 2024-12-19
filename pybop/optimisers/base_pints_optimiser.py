@@ -2,7 +2,6 @@ from time import time
 
 import numpy as np
 from pints import PSO as PintsPSO
-from pints import Adam as PintsAdam
 from pints import NelderMead as PintsNelderMead
 from pints import Optimiser as PintsOptimiser
 from pints import ParallelEvaluator as PintsParallelEvaluator
@@ -13,6 +12,7 @@ from pints import SequentialEvaluator as PintsSequentialEvaluator
 from pints import strfloat as PintsStrFloat
 
 from pybop import (
+    AdamWImpl,
     BaseJaxCost,
     BaseOptimiser,
     GradientDescentImpl,
@@ -67,6 +67,7 @@ class BasePintsOptimiser(BaseOptimiser):
         max_iterations: int = None,
         min_iterations: int = 2,
         max_unchanged_iterations: int = 15,
+        multistart: int = 1,
         parallel: bool = False,
         **optimiser_kwargs,
     ):
@@ -92,7 +93,8 @@ class BasePintsOptimiser(BaseOptimiser):
             "threshold": self.set_threshold,
         }
 
-        self.optimiser = pints_optimiser
+        self._pints_optimiser = pints_optimiser
+        optimiser_kwargs["multistart"] = multistart
         super().__init__(cost, **optimiser_kwargs)
 
     def _set_up_optimiser(self):
@@ -103,8 +105,8 @@ class BasePintsOptimiser(BaseOptimiser):
         self._sanitise_inputs()
 
         # Create an instance of the PINTS optimiser class
-        if issubclass(self.optimiser, PintsOptimiser):
-            self.optimiser = self.optimiser(
+        if issubclass(self._pints_optimiser, PintsOptimiser):
+            self.optimiser = self._pints_optimiser(
                 self.x0, sigma0=self.sigma0, boundaries=self._boundaries
             )
         else:
@@ -147,19 +149,19 @@ class BasePintsOptimiser(BaseOptimiser):
 
         # Convert bounds to PINTS boundaries
         if self.bounds is not None:
-            ignored_optimisers = (GradientDescentImpl, PintsAdam, PintsNelderMead)
-            if issubclass(self.optimiser, ignored_optimisers):
-                print(f"NOTE: Boundaries ignored by {self.optimiser}")
+            ignored_optimisers = (GradientDescentImpl, AdamWImpl, PintsNelderMead)
+            if issubclass(self._pints_optimiser, ignored_optimisers):
+                print(f"NOTE: Boundaries ignored by {self._pints_optimiser}")
                 self.bounds = None
             else:
-                if issubclass(self.optimiser, PintsPSO):
+                if issubclass(self._pints_optimiser, PintsPSO):
                     if not all(
                         np.isfinite(value)
                         for sublist in self.bounds.values()
                         for value in sublist
                     ):
                         raise ValueError(
-                            f"Either all bounds or no bounds must be set for {self.optimiser.__name__}."
+                            f"Either all bounds or no bounds must be set for {self._pints_optimiser.__name__}."
                         )
                 self._boundaries = PintsRectangularBoundaries(
                     self.bounds["lower"], self.bounds["upper"]
@@ -203,13 +205,7 @@ class BasePintsOptimiser(BaseOptimiser):
 
         # Choose method to evaluate
         def fun(x):
-            if self._needs_sensitivities:
-                L, dl = self.cost(x, calculate_grad=True, apply_transform=True)
-            else:
-                L = self.cost(x, apply_transform=True)
-                dl = None
-            sign = -1 if not self.minimising else 1
-            return (sign * L, sign * dl) if dl is not None else sign * L
+            return self.cost_call(x, calculate_grad=self._needs_sensitivities)
 
         # Create evaluator object
         if isinstance(self.cost, BaseJaxCost):
@@ -230,9 +226,6 @@ class BasePintsOptimiser(BaseOptimiser):
         # Keep track of current best and best-guess scores.
         fb = fg = np.inf
 
-        # Internally we always minimise! Keep a 2nd value to show the user.
-        fg_user = (fb, fg) if self.minimising else (-fb, -fg)
-
         # Keep track of the last significant change
         f_sig = np.inf
 
@@ -252,7 +245,6 @@ class BasePintsOptimiser(BaseOptimiser):
                 # Update the scores
                 fb = self.optimiser.f_best()
                 fg = self.optimiser.f_guessed()
-                fg_user = (fb, fg) if self.minimising else (-fb, -fg)
 
                 # Check for significant changes against the absolute and relative tolerance
                 f_new = fg if self._use_f_guessed else fb
@@ -271,8 +263,8 @@ class BasePintsOptimiser(BaseOptimiser):
                 self.log_update(
                     x=xs,
                     x_best=self.optimiser.x_best(),
-                    cost=_fs if self.minimising else [-x for x in _fs],
-                    cost_best=[fb] if self.minimising else [-fb],
+                    cost=_fs,
+                    cost_best=fb,  # TODO: check shape, [fb]?
                 )
 
                 # Check stopping criteria:
@@ -335,14 +327,11 @@ class BasePintsOptimiser(BaseOptimiser):
             # Show last result and exit
             print("\n" + "-" * 40)
             print("Unexpected termination.")
-            print("Current score: " + str(fg_user))
+            print("Current score: " + str((fb, fg)))
             print("Current position:")
 
-            # Show current parameters
-            x_user = self.optimiser.x_guessed()
-            if self._transformation:
-                x_user = self._transformation.to_model(x_user)
-            for p in x_user:
+            # Show current parameters (with any transformation applied)
+            for p in self.optimiser.x_guessed():
                 print(PintsStrFloat(p))
             print("-" * 40)
             raise
@@ -363,16 +352,11 @@ class BasePintsOptimiser(BaseOptimiser):
             x = self.optimiser.x_best()
             f = self.optimiser.f_best()
 
-        # Inverse transform search parameters
-        if self._transformation:
-            x = self._transformation.to_model(x)
-
         return OptimisationResult(
-            x=x,
-            cost=self.cost,
-            final_cost=f if self.minimising else -f,
-            n_iterations=self._iterations,
             optim=self,
+            x=x,
+            final_cost=f,
+            n_iterations=self._iterations,
             time=total_time,
         )
 

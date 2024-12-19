@@ -88,14 +88,10 @@ class BaseSciPyOptimiser(BaseOptimiser):
             nit = -1
 
         return OptimisationResult(
-            x=self._transformation.to_model(result.x)
-            if self._transformation
-            else result.x,
-            cost=self.cost,
-            final_cost=self.cost(result.x, apply_transform=True),
+            optim=self,
+            x=result.x,
             n_iterations=nit,
             scipy_result=result,
-            optim=self,
             time=total_time,
         )
 
@@ -200,18 +196,19 @@ class SciPyMinimize(BaseSciPyOptimiser):
         Scale the cost function, preserving the sign convention, and eliminate nan values
         """
         if not self._options["jac"]:
-            cost = self.cost(x, apply_transform=True)
-            self.log_update(x=[x], cost=cost if self.minimising else -cost)
+            cost = self.cost_call(x)
+            self.log_update(x=[x], cost=cost)
             scaled_cost = cost / self._cost0
             if np.isinf(scaled_cost):
                 self.inf_count += 1
-                scaled_cost = 1 + 0.9**self.inf_count  # for fake finite gradient
-            return scaled_cost if self.minimising else -scaled_cost
+                scaled_cost = np.sign(cost) * (
+                    1 + 0.9**self.inf_count
+                )  # for fake finite gradient
+            return scaled_cost
 
-        L, dl = self.cost(x, calculate_grad=True, apply_transform=True)
-        self.log_update(x=[x], cost=L if self.minimising else -L)
-        scaled_L = L / self._cost0
-        return (scaled_L, dl) if self.minimising else (-scaled_L, -dl)
+        L, dl = self.cost_call(x, calculate_grad=True)
+        self.log_update(x=[x], cost=L)
+        return (L / self._cost0, dl / self._cost0)
 
     def _run_optimiser(self):
         """
@@ -229,21 +226,17 @@ class SciPyMinimize(BaseSciPyOptimiser):
             """
             Log intermediate optimisation solutions. Depending on the
             optimisation algorithm, intermediate_result may be either
-            a OptimizeResult or an array of parameter values, with a
+            an OptimizeResult or an array of parameter values, with a
             try/except ensuring both cases are handled correctly.
             """
             if isinstance(intermediate_result, OptimizeResult):
                 x_best = intermediate_result.x
-                cost_best = intermediate_result.fun
+                cost_best = intermediate_result.fun * self._cost0
             else:
                 x_best = intermediate_result
-                cost_best = self.cost(x_best, apply_transform=True)
+                cost_best = self.cost_call(x_best)
 
-            cost_log = (-1 if not self.minimising else 1) * cost_best * self._cost0
-            self.log_update(
-                x_best=x_best,
-                cost_best=cost_log,
-            )
+            self.log_update(x_best=x_best, cost_best=cost_best)
 
         callback = (
             base_callback
@@ -252,7 +245,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         )
 
         # Compute the absolute initial cost and resample if required
-        self._cost0 = np.abs(self.cost(self.x0, apply_transform=True))
+        self._cost0 = np.abs(self.cost_call(self.x0))
         if np.isinf(self._cost0):
             for _i in range(1, self.num_resamples):
                 try:
@@ -264,7 +257,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
                         stacklevel=2,
                     )
                     break
-                self._cost0 = np.abs(self.cost(self.x0, apply_transform=True))
+                self._cost0 = np.abs(self.cost_call(self.x0))
                 if not np.isinf(self._cost0):
                     break
             if np.isinf(self._cost0):
@@ -428,16 +421,13 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
         # Add callback storing history of parameter values
         def callback(intermediate_result: OptimizeResult):
-            cost = (
-                intermediate_result.fun if self.minimising else -intermediate_result.fun
+            self.log_update(
+                x_best=intermediate_result.x,
+                cost_best=intermediate_result.fun,
             )
-            self.log_update(x_best=intermediate_result.x, cost_best=cost)
 
         def cost_wrapper(x):
-            if self.minimising:
-                cost = self.cost(x, apply_transform=True)
-            else:
-                cost = -self.cost(x, apply_transform=True)
+            cost = self.cost_call(x)
             self.log_update(x=[x], cost=cost)
             return cost
 
