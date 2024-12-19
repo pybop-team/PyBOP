@@ -54,9 +54,9 @@ def quick(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
         )
 
         model_trace = plot_dict.create_trace(
-            x=domain_data
-            if isinstance(problem, FittingProblem)
-            else model_output[domain],
+            x=model_output[domain]
+            if domain in model_output.keys()
+            else domain_data[: len(model_output[signal])],
             y=model_output[signal],
             name="Optimised" if isinstance(problem, DesignProblem) else "Model",
             mode="markers",

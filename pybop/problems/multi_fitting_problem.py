@@ -105,7 +105,7 @@ class MultiFittingProblem(BaseProblem):
             domain_data = (
                 problem_output[problem.domain]
                 if problem.domain in problem_output.keys()
-                else problem.domain_data
+                else problem.domain_data[: len(problem_output[problem.signal[0]])]
             )
 
             # Collect signals
@@ -146,7 +146,7 @@ class MultiFittingProblem(BaseProblem):
             domain_data = (
                 problem_output[problem.domain]
                 if problem.domain in problem_output.keys()
-                else problem.domain_data
+                else problem.domain_data[: len(problem_output[problem.signal[0]])]
             )
 
             # Collect signals and derivatives
