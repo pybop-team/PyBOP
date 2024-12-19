@@ -344,6 +344,7 @@ class TestOptimisation:
             cost=cost, method="L-BFGS-B", jac=True, max_iterations=1
         )
         results = optim.run()
+        assert results.scipy_result == optim.result.scipy_result
 
         with pytest.raises(
             ValueError,

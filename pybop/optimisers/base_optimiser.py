@@ -388,13 +388,13 @@ class OptimisationResult:
 
     def add_result(self, result=None):
         """Add a preprocessed OptimisationResult."""
-        for i, x in enumerate(result._x):
+        for i, x in enumerate(result._x):  # noqa: SLF001
             self._append(
                 x=x,
-                final_cost=result._final_cost[i],
-                n_iterations=result._n_iterations[i],
-                time=result._time[i],
-                scipy_result=result._scipy_result[i],
+                final_cost=result._final_cost[i],  # noqa: SLF001
+                n_iterations=result._n_iterations[i],  # noqa: SLF001
+                time=result._time[i],  # noqa: SLF001
+                scipy_result=result._scipy_result[i],  # noqa: SLF001
             )
 
     def _append(
