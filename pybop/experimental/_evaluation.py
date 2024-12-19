@@ -29,6 +29,6 @@ class SequentialJaxEvaluator(PintsEvaluator):
 
         # If gradient provided, convert jnp to np and return
         if isinstance(scores[0], tuple):
-            return [(np.asarray(score[0]), score[1]) for score in scores]
+            return [(score[0].item(), score[1]) for score in scores]
 
         return np.asarray(scores)

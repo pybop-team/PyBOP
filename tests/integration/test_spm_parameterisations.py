@@ -29,7 +29,8 @@ class Test_SPM_Parameterisation:
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        return pybop.lithium_ion.SPM(parameter_set=parameter_set)
+        solver = pybamm.IDAKLUSolver()
+        return pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
 
     @pytest.fixture
     def parameters(self):
@@ -95,13 +96,6 @@ class Test_SPM_Parameterisation:
                 + self.noise(self.sigma0, len(solution["Time [s]"].data)),
             }
         )
-
-        # IDAKLU Solver for Gradient-based optimisers
-        if (
-            optimiser in [pybop.AdamW, pybop.IRPropMin]
-            or cost is pybop.JaxSumSquaredError
-        ):
-            model.solver = pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6)
 
         # Define the problem
         problem = pybop.FittingProblem(model, parameters, dataset)

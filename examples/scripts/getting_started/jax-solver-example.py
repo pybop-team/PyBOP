@@ -25,18 +25,29 @@ parameters = pybop.Parameters(
     ),
 )
 
-# Define test protocol and generate data
-t_eval = np.linspace(0, 600, 600)
-values = model.predict(
-    initial_state={"Initial open-circuit voltage [V]": 4.2}, t_eval=t_eval
+# Generate data
+sigma = 0.002
+experiment = pybop.Experiment(
+    [
+        (
+            "Charge at 0.5C for 3 minutes (3 second period)",
+            "Discharge at 0.5C for 3 minutes (3 second period)",
+        ),
+    ]
 )
+values = model.predict(initial_state={"Initial SoC": 0.5}, experiment=experiment)
+
+
+def noise(sigma):
+    return np.random.normal(0, sigma, len(values["Voltage [V]"].data))
+
 
 # Form dataset
 dataset = pybop.Dataset(
     {
         "Time [s]": values["Time [s]"].data,
         "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": values["Voltage [V]"].data,
+        "Voltage [V]": values["Voltage [V]"].data + noise(sigma),
     }
 )
 

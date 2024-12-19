@@ -141,3 +141,8 @@ class TestJaxCosts:
             ValueError, match="Solver is not pybamm.IDAKLUSolver, cannot jaxify it."
         ):
             model.jaxify_solver(t_eval=np.linspace(0, 1, 100))
+
+    @pytest.mark.unit
+    def test_observed_fisher(self, cost):
+        fisher = cost.observed_fisher([0.5])
+        assert isinstance(fisher, jnp.ndarray)
