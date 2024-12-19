@@ -37,9 +37,11 @@ class MultiFittingProblem(BaseProblem):
             combined_parameters.join(problem.parameters)
 
         # Combine the target datasets
+        domain = self.problems[0].domain
         combined_domain_data = []
         combined_signal = []
         for problem in self.problems:
+            domain = problem.domain if problem.domain == domain else "Mixed domain"
             for signal in problem.signal:
                 combined_domain_data.extend(problem.domain_data)
                 combined_signal.extend(problem.target[signal])
@@ -50,6 +52,7 @@ class MultiFittingProblem(BaseProblem):
             signal=["Combined signal"],
         )
 
+        self.domain = domain
         combined_dataset = Dataset(
             {
                 self.domain: np.asarray(combined_domain_data),
@@ -93,17 +96,27 @@ class MultiFittingProblem(BaseProblem):
         inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(inputs.values()))
 
+        combined_domain = []
         combined_signal = []
 
         for problem in self.problems:
             problem_inputs = problem.parameters.as_dict()
-            signal_values = problem.evaluate(problem_inputs)
+            problem_output = problem.evaluate(problem_inputs)
+            domain_data = (
+                problem_output[problem.domain]
+                if problem.domain in problem_output.keys()
+                else problem.domain_data
+            )
 
             # Collect signals
             for signal in problem.signal:
-                combined_signal.extend(signal_values[signal])
+                combined_domain.extend(domain_data)
+                combined_signal.extend(problem_output[signal])
 
-        return {"Combined signal": np.asarray(combined_signal)}
+        return {
+            self.domain: np.asarray(combined_domain),
+            "Combined signal": np.asarray(combined_signal),
+        }
 
     def evaluateS1(self, inputs: Inputs):
         """
@@ -123,19 +136,29 @@ class MultiFittingProblem(BaseProblem):
         inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(inputs.values()))
 
+        combined_domain = []
         combined_signal = []
         all_derivatives = []
 
         for problem in self.problems:
             problem_inputs = problem.parameters.as_dict()
-            signal_values, dyi = problem.evaluateS1(problem_inputs)
+            problem_output, dyi = problem.evaluateS1(problem_inputs)
+            domain_data = (
+                problem_output[problem.domain]
+                if problem.domain in problem_output.keys()
+                else problem.domain_data
+            )
 
             # Collect signals and derivatives
             for signal in problem.signal:
-                combined_signal.extend(signal_values[signal])
+                combined_domain.extend(domain_data)
+                combined_signal.extend(problem_output[signal])
             all_derivatives.append(dyi)
 
-        y = {"Combined signal": np.asarray(combined_signal)}
+        y = {
+            self.domain: np.asarray(combined_domain),
+            "Combined signal": np.asarray(combined_signal),
+        }
         dy = np.concatenate(all_derivatives) if all_derivatives else None
 
         return (y, dy)
