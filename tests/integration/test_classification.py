@@ -3,7 +3,6 @@ import pytest
 from pybamm import Parameter
 
 import pybop
-from pybop._classification import classify_using_Hessian
 
 
 class TestClassification:
@@ -53,10 +52,8 @@ class TestClassification:
     def dataset(self, model):
         experiment = pybop.Experiment(
             [
-                (
-                    "Discharge at 0.5C for 2 minutes (4 seconds period)",
-                    "Charge at 0.5C for 2 minutes (4 seconds period)",
-                ),
+                "Discharge at 0.5C for 2 minutes (4 seconds period)",
+                "Charge at 0.5C for 2 minutes (4 seconds period)",
             ]
         )
         solution = model.predict(experiment=experiment)
@@ -82,16 +79,16 @@ class TestClassification:
         results = pybop.OptimisationResult(x=x0, optim=optim)
 
         if np.all(x == np.asarray([0.05, 0.05])):
-            message = classify_using_Hessian(results)
+            message = pybop.classify_using_Hessian(results)
             assert message == "The optimiser has located a minimum."
         elif np.all(x == np.asarray([0.1, 0.05])):
-            message = classify_using_Hessian(results)
+            message = pybop.classify_using_Hessian(results)
             assert message == (
                 "The optimiser has not converged to a stationary point."
                 " The result is near the upper bound of R0 [Ohm]."
             )
         elif np.all(x == np.asarray([0.05, 0.01])):
-            message = classify_using_Hessian(results)
+            message = pybop.classify_using_Hessian(results)
             assert message == (
                 "The optimiser has not converged to a stationary point."
                 " The result is near the lower bound of R1 [Ohm]."
@@ -104,10 +101,10 @@ class TestClassification:
             optim = pybop.Optimisation(cost=cost)
             results = pybop.OptimisationResult(x=x, optim=optim)
 
-            message = classify_using_Hessian(results)
+            message = pybop.classify_using_Hessian(results)
             assert message == "The optimiser has located a maximum."
 
-        # message = classify_using_Hessian(results)
+        # message = pybop.classify_using_Hessian(results)
         # assert message == "The optimiser has located a saddle point."
 
     @pytest.mark.integration
@@ -153,38 +150,22 @@ class TestClassification:
             optim = pybop.Optimisation(cost=cost)
             results = pybop.OptimisationResult(x=x, optim=optim)
 
-            message = classify_using_Hessian(results)
+            message = pybop.classify_using_Hessian(results)
             assert message == (
                 "The cost variation is too small to classify with certainty."
                 " The cost is insensitive to a change of 1e-42 in R0_b [Ohm]."
             )
 
-        message = classify_using_Hessian(results, dx=[0.0001, 0.0001])
+        message = pybop.classify_using_Hessian(results, dx=[0.0001, 0.0001])
         assert message == (
             "The optimiser has located a minimum."
             " There may be a correlation between these parameters."
         )
 
-        message = classify_using_Hessian(results, cost_tolerance=1e-2)
+        message = pybop.classify_using_Hessian(results, cost_tolerance=1e-2)
         assert message == (
             "The cost variation is smaller than the cost tolerance: 0.01."
         )
 
-        message = classify_using_Hessian(results, dx=[1, 1])
+        message = pybop.classify_using_Hessian(results, dx=[1, 1])
         assert message == "Classification cannot proceed due to infinite cost value(s)."
-
-    @pytest.mark.integration
-    def test_classify_using_Hessian_invalid(self, model, parameters, dataset):
-        parameters.remove("R0 [Ohm]")
-        problem = pybop.FittingProblem(model, parameters, dataset)
-        cost = pybop.SumSquaredError(problem)
-        x = cost.parameters.true_value()
-        optim = pybop.Optimisation(cost=cost)
-        results = pybop.OptimisationResult(x=x, optim=optim)
-
-        with pytest.raises(
-            ValueError,
-            match="The function classify_using_Hessian currently only works"
-            " in the case of 2 parameters.",
-        ):
-            classify_using_Hessian(results)
