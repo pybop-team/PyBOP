@@ -4,7 +4,7 @@ import pytest
 import pybop
 
 
-class TestClassification:
+class TestClassifier:
     """
     A class to test the classification of different optimisation results.
     """
