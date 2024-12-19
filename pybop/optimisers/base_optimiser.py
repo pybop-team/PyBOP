@@ -2,7 +2,6 @@ import warnings
 from typing import Optional, Union
 
 import numpy as np
-from scipy.optimize import OptimizeResult
 
 from pybop import BaseCost, Inputs, Parameter, Parameters
 
@@ -191,10 +190,10 @@ class BaseOptimiser:
 
         Returns
         -------
-        results: MultiOptimisationResult
+        results: OptimisationResult
             The pybop optimisation result class.
         """
-        self.result = MultiOptimisationResult()
+        self.result = OptimisationResult(optim=self)
 
         for i in range(self.multistart):
             if i >= 1:
@@ -203,7 +202,7 @@ class BaseOptimiser:
                 self.parameters.update(initial_values=self.x0)
                 self._set_up_optimiser()
 
-            self.result.add_run(self._run())
+            self.result.add_result(self._run())
 
         # Store the optimised parameters
         self.parameters.update(values=self.result.x)
@@ -361,50 +360,77 @@ class OptimisationResult:
         self.minimising = self.optim.minimising
         self._transformation = self.optim._transformation  # noqa: SLF001
 
-        self.x = self._transformation.to_model(x) if self._transformation else x
-        self.final_cost = (
-            final_cost * (1 if self.minimising else -1)
-            if final_cost is not None
-            else self._calculate_final_cost()
-        )
-        self.n_iterations = n_iterations
-        self.scipy_result = scipy_result
-        self.time = time
+        self.n_runs = 0
+        self._best_run = None
+        self._x = []
+        self._final_cost = []
+        self._n_iterations = []
+        self._scipy_result = []
+        self._time = []
+        self._x0 = []
+
+        if x is not None:
+            # Transform the parameter values and update the sign of any final cost
+            # coming directly from an optimiser
+            x = self._transformation.to_model(x) if self._transformation else x
+            final_cost = (
+                final_cost * (1 if self.minimising else -1)
+                if final_cost is not None
+                else self.cost(x)
+            )
+            self._append(
+                x=x,
+                final_cost=final_cost,
+                n_iterations=n_iterations,
+                time=time,
+                scipy_result=scipy_result,
+            )
+
+    def add_result(self, result=None):
+        """Add a preprocessed OptimisationResult."""
+        for i, x in enumerate(result._x):
+            self._append(
+                x=x,
+                final_cost=result._final_cost[i],
+                n_iterations=result._n_iterations[i],
+                time=result._time[i],
+                scipy_result=result._scipy_result[i],
+            )
+
+    def _append(
+        self,
+        x: Union[Inputs, np.ndarray] = None,
+        final_cost: Optional[float] = None,
+        n_iterations: Optional[int] = None,
+        time: Optional[float] = None,
+        scipy_result=None,
+    ):
+        self.n_runs += 1
+        self._x.append(x)
+        self._final_cost.append(final_cost)
+        self._n_iterations.append(n_iterations)
+        self._scipy_result.append(scipy_result)
+        self._time.append(time)
         if isinstance(self.optim, BaseOptimiser):
-            self.x0 = self.optim.parameters.initial_value()
-        else:
-            self.x0 = None
+            self._x0.append(self.optim.parameters.initial_value())
 
         # Check that the parameters produce finite cost, and are physically viable
         self._validate_parameters()
-        self.check_physical_viability(self.x)
+        self.check_physical_viability(x)
 
-    def _calculate_final_cost(self) -> float:
-        """
-        Calculate the final cost using the cost function and optimised parameters.
-
-        Returns:
-            float: The calculated final cost.
-        """
-        return self.cost(self.x)
-
-    def get_scipy_result(self) -> Optional[OptimizeResult]:
-        """
-        Get the SciPy optimisation result object.
-
-        Returns:
-            OptimizeResult or None: The SciPy optimisation result object if available, None otherwise.
-        """
-        return self.scipy_result
+        # Update best run
+        self._best_run = self._final_cost.index(
+            min(self._final_cost) if self.minimising else max(self._final_cost)
+        )
 
     def _validate_parameters(self) -> None:
         """
         Validate the optimised parameters and ensure they produce a finite cost value.
 
         Raises:
-            ValueError: If the optimized parameters do not produce a finite cost value.
+            ValueError: If the optimised parameters do not produce a finite cost value.
         """
-        if not np.isfinite(self.final_cost):
+        if not np.isfinite(self._final_cost[-1]):
             raise ValueError("Optimised parameters do not produce a finite cost value")
 
     def check_physical_viability(self, x):
@@ -445,6 +471,7 @@ class OptimisationResult:
         """
         return (
             f"OptimisationResult:\n"
+            f"  Best result from {self.n_runs} run(s).\n"
             f"  Initial parameters: {self.x0}\n"
             f"  Optimised parameters: {self.x}\n"
             f"  Final cost: {self.final_cost}\n"
@@ -453,103 +480,38 @@ class OptimisationResult:
             f"  SciPy result available: {'Yes' if self.scipy_result else 'No'}"
         )
 
-
-class MultiOptimisationResult:
-    """
-    Multi run optimisation result class. Stores the results
-    of multiple optimisation runs.
-
-    Attributes
-    ----------
-    results : list
-        The list of OptimisationResults for each optimisation run
-
-    Properties
-    ----------
-    x : ndarray
-        The solution of the best optimisation run.
-    final_cost : float
-        The cost associated with the best solution x.
-    n_iterations : int
-        Number of iterations performed by the optimiser
-        for the best optimisation run.
-    scipy_result : scipy.optimize.OptimizeResult, optional
-        The result obtained from a SciPy optimiser for the
-        best optimisation run.
-    time : float
-        The total time across all optimisation runs.
-    """
-
-    def __init__(self):
-        self.results: list[OptimisationResult] = []
-
-    def add_run(self, result: OptimisationResult):
-        """Adds a new optimisation result."""
-        self.results.append(result)
-
-    def best_run(self) -> Optional[OptimisationResult]:
-        """Returns the result with the best final cost."""
-        valid_results = [res for res in self.results if res.final_cost is not None]
-        if self.results[0].minimising is True:
-            return min(valid_results, key=lambda res: res.final_cost)
-
-        return max(valid_results, key=lambda res: res.final_cost)
-
     def average_iterations(self) -> Optional[float]:
         """Calculates the average number of iterations across all runs."""
-        valid_iterations = [
-            res.n_iterations for res in self.results if res.n_iterations is not None
-        ]
-        return np.mean(valid_iterations)
+        return np.mean(self._n_iterations)
 
     def total_runtime(self) -> Optional[float]:
         """Calculates the total runtime across all runs."""
-        valid_times = [res.time for res in self.results if res.time is not None]
-        return np.sum(valid_times)
-
-    def best_x(self) -> Optional[float]:
-        """Returns the best parameters, x across the optimisation"""
-        return self.best_run().x
-
-    def __str__(self) -> str:
-        """
-        A string representation of the MultiOptimisationResult object.
-
-        Returns:
-            str: A formatted string containing optimisation result information.
-        """
-        result_strs = []
-        for res in self.results:
-            result_strs.append(str(res))
-
-        return "\n".join(result_strs)
-
-    def check_physical_viability(self, x):
-        return self.best_run().check_physical_viability(x)
-
-    def get_scipy_result(self):
-        return self.best_run().get_scipy_result()
+        return np.sum(self._time)
 
     @property
     def x(self):
-        return self.best_x()
+        return self._x[self._best_run] if self._best_run is not None else None
 
     @property
     def x0(self):
-        return self.best_run().x0
+        return self._x0[self._best_run] if self._best_run is not None else None
 
     @property
     def final_cost(self):
-        return self.best_run().final_cost
+        return self._final_cost[self._best_run] if self._best_run is not None else None
 
     @property
     def n_iterations(self):
-        return self.best_run().n_iterations
+        return (
+            self._n_iterations[self._best_run] if self._best_run is not None else None
+        )
 
     @property
     def scipy_result(self):
-        return self.best_run().scipy_result
+        return (
+            self._scipy_result[self._best_run] if self._best_run is not None else None
+        )
 
     @property
     def time(self):
-        return self.total_runtime()
+        return self._time[self._best_run] if self._best_run is not None else None
