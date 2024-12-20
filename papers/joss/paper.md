@@ -96,7 +96,7 @@ Similarly, the current algorithms available for optimisation are presented in \a
 
 In addition to deterministic optimisers (\autoref{tab:optimisers}), `PyBOP` also provides Monte Carlo sampling routines to estimate distributions of parameters within a Bayesian framework. These methods construct a posterior parameter distribution that can be used to assess uncertainty and practical identifiability. The individual sampler classes are currently composed within `PyBOP` from the `PINTS` library, with a base sampler class implemented for interoperability and direct integration with `PyBOP`'s model, problem, and likelihood classes. The currently supported samplers are listed in \autoref{tab:samplers}.
 
-: Sampling methods supported by `PyBOP`, classified according to the type of method. \label{tab:samplers}
+: Sampling methods supported by `PyBOP`, classified according to the candidate proposal method. \label{tab:samplers}
 
 | Gradient-based    | Adaptive                   | Slicing        | Evolutionary           | Other                        |
 |:------------------|:---------------------------|:---------------|:-----------------------|:-----------------------------|
