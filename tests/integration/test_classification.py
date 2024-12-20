@@ -70,7 +70,7 @@ class TestClassification:
         return pybop.FittingProblem(model, parameters, dataset)
 
     @pytest.mark.integration
-    def test_classify_using_Hessian(self, problem):
+    def test_classify_using_hessian(self, problem):
         cost = pybop.RootMeanSquaredError(problem)
         x = cost.parameters.true_value()
         bounds = cost.parameters.get_bounds()
@@ -79,16 +79,16 @@ class TestClassification:
         results = pybop.OptimisationResult(x=x0, optim=optim)
 
         if np.all(x == np.asarray([0.05, 0.05])):
-            message = pybop.classify_using_Hessian(results)
+            message = pybop.classify_using_hessian(results)
             assert message == "The optimiser has located a minimum."
         elif np.all(x == np.asarray([0.1, 0.05])):
-            message = pybop.classify_using_Hessian(results)
+            message = pybop.classify_using_hessian(results)
             assert message == (
                 "The optimiser has not converged to a stationary point."
                 " The result is near the upper bound of R0 [Ohm]."
             )
         elif np.all(x == np.asarray([0.05, 0.01])):
-            message = pybop.classify_using_Hessian(results)
+            message = pybop.classify_using_hessian(results)
             assert message == (
                 "The optimiser has not converged to a stationary point."
                 " The result is near the lower bound of R1 [Ohm]."
@@ -101,14 +101,14 @@ class TestClassification:
             optim = pybop.Optimisation(cost=cost)
             results = pybop.OptimisationResult(x=x, optim=optim)
 
-            message = pybop.classify_using_Hessian(results)
+            message = pybop.classify_using_hessian(results)
             assert message == "The optimiser has located a maximum."
 
-        # message = pybop.classify_using_Hessian(results)
+        # message = pybop.classify_using_hessian(results)
         # assert message == "The optimiser has located a saddle point."
 
     @pytest.mark.integration
-    def test_insensitive_classify_using_Hessian(self, parameter_set):
+    def test_insensitive_classify_using_hessian(self, parameter_set):
         param_R0_a = pybop.Parameter(
             "R0_a [Ohm]",
             bounds=[0, 0.002],
@@ -150,22 +150,22 @@ class TestClassification:
             optim = pybop.Optimisation(cost=cost)
             results = pybop.OptimisationResult(x=x, optim=optim)
 
-            message = pybop.classify_using_Hessian(results)
+            message = pybop.classify_using_hessian(results)
             assert message == (
                 "The cost variation is too small to classify with certainty."
                 " The cost is insensitive to a change of 1e-42 in R0_b [Ohm]."
             )
 
-        message = pybop.classify_using_Hessian(results, dx=[0.0001, 0.0001])
+        message = pybop.classify_using_hessian(results, dx=[0.0001, 0.0001])
         assert message == (
             "The optimiser has located a minimum."
             " There may be a correlation between these parameters."
         )
 
-        message = pybop.classify_using_Hessian(results, cost_tolerance=1e-2)
+        message = pybop.classify_using_hessian(results, cost_tolerance=1e-2)
         assert message == (
             "The cost variation is smaller than the cost tolerance: 0.01."
         )
 
-        message = pybop.classify_using_Hessian(results, dx=[1, 1])
+        message = pybop.classify_using_hessian(results, dx=[1, 1])
         assert message == "Classification cannot proceed due to infinite cost value(s)."

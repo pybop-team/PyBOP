@@ -36,7 +36,7 @@ class TestClassifier:
         return pybop.FittingProblem(model, parameters, dataset)
 
     @pytest.mark.unit
-    def test_classify_using_Hessian_invalid(self, problem):
+    def test_classify_using_hessian_invalid(self, problem):
         cost = pybop.SumSquaredError(problem)
         optim = pybop.Optimisation(cost=cost)
         x = np.asarray([0.001])
@@ -44,7 +44,7 @@ class TestClassifier:
 
         with pytest.raises(
             ValueError,
-            match="The function classify_using_Hessian currently only works"
+            match="The function classify_using_hessian currently only works"
             " in the case of 2 parameters, and dx must have the same length as x.",
         ):
-            pybop.classify_using_Hessian(results)
+            pybop.classify_using_hessian(results)

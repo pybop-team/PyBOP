@@ -173,7 +173,7 @@ from .observers.observer import Observer
 #
 # Classification classes
 #
-from ._classification import classify_using_Hessian
+from ._classification import classify_using_hessian
 
 #
 # Plotting classes

@@ -5,7 +5,7 @@ import numpy as np
 from pybop import OptimisationResult
 
 
-def classify_using_Hessian(
+def classify_using_hessian(
     result: OptimisationResult, dx=None, cost_tolerance: Optional[float] = 1e-5
 ):
     """
@@ -32,7 +32,7 @@ def classify_using_Hessian(
     n = len(x)
     if n != 2 or len(dx) != n:
         raise ValueError(
-            "The function classify_using_Hessian currently only works in the case "
+            "The function classify_using_hessian currently only works in the case "
             "of 2 parameters, and dx must have the same length as x."
         )
 
@@ -51,10 +51,7 @@ def classify_using_Hessian(
                 costs[i, j, 1] = cost(x + np.multiply([i - 1, j - 1], 2 * dx))
 
     # Classify the result
-    if not np.all([np.isfinite(cost) for cost in costs]):
-        message = "Classification cannot proceed due to infinite cost value(s)."
-
-    elif (minimising and np.any(costs < final_cost)) or (
+    if (minimising and np.any(costs < final_cost)) or (
         not minimising and np.any(costs > final_cost)
     ):
         message = "The optimiser has not converged to a stationary point."
@@ -68,6 +65,9 @@ def classify_using_Hessian(
 
                 if value < bounds["lower"][i] + dx[i]:
                     message += f" The result is near the lower bound of {names[i]}."
+
+    elif not np.all([np.isfinite(cost) for cost in costs]):
+        message = "Classification cannot proceed due to infinite cost value(s)."
 
     else:
         # Estimate the Hessian using second-order accurate central finite differences
