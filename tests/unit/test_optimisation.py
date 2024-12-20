@@ -176,6 +176,7 @@ class TestOptimisation:
             if isinstance(optim, pybop.BasePintsOptimiser):
                 assert len(optim.log["x_best"]) == n_iters * multistarts
                 assert results.average_iterations() == n_iters
+                assert results.total_runtime() >= results.time
 
         optim = optimiser(cost=cost, max_iterations=3, tol=1e-6)
         cost_bounds = cost.parameters.get_bounds()
@@ -344,7 +345,7 @@ class TestOptimisation:
             cost=cost, method="L-BFGS-B", jac=True, max_iterations=1
         )
         results = optim.run()
-        assert results.get_scipy_result() == optim.result.scipy_result
+        assert results.scipy_result == optim.result.scipy_result
 
         with pytest.raises(
             ValueError,
@@ -527,6 +528,7 @@ class TestOptimisation:
 
         assert (
             str(results) == f"OptimisationResult:\n"
+            f"  Best result from {results.n_runs} run(s).\n"
             f"  Initial parameters: {results.x0}\n"
             f"  Optimised parameters: {results.x}\n"
             f"  Final cost: {results.final_cost}\n"
@@ -570,6 +572,7 @@ class TestOptimisation:
             captured_output.getvalue().strip()
             == f"Halt: Objective function crossed threshold: inf.\n"
             f"OptimisationResult:\n"
+            f"  Best result from {results.n_runs} run(s).\n"
             f"  Initial parameters: {results.x0}\n"
             f"  Optimised parameters: {results.x}\n"
             f"  Final cost: {results.final_cost}\n"
