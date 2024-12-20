@@ -5,7 +5,7 @@ from typing import Union
 import numpy as np
 from scipy.optimize import Bounds, OptimizeResult, differential_evolution, minimize
 
-from pybop import BaseOptimiser, OptimisationResult
+from pybop import BaseOptimiser, OptimisationResult, SciPyEvaluator
 
 
 class BaseSciPyOptimiser(BaseOptimiser):
@@ -77,6 +77,14 @@ class BaseSciPyOptimiser(BaseOptimiser):
         result : pybop.Result
             The result of the optimisation including the optimised parameter values and cost.
         """
+
+        # Choose method to evaluate
+        def fun(x):
+            return self.cost_call(x, calculate_grad=self._needs_sensitivities)
+
+        # Create evaluator object
+        self.evaluator = SciPyEvaluator(fun)
+
         # Run with timing
         start_time = time()
         result = self._run_optimiser()
@@ -196,7 +204,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         Scale the cost function, preserving the sign convention, and eliminate nan values
         """
         if not self._options["jac"]:
-            cost = self.cost_call(x)
+            cost = self.evaluator.evaluate(x)
             self.log_update(x=[x], cost=cost)
             scaled_cost = cost / self._cost0
             if np.isinf(scaled_cost):
@@ -427,7 +435,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             )
 
         def cost_wrapper(x):
-            cost = self.cost_call(x)
+            cost = self.evaluator.evaluate(x)
             self.log_update(x=[x], cost=cost)
             return cost
 

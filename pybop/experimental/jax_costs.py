@@ -25,6 +25,7 @@ class BaseJaxCost(BaseCost):
         inputs: Inputs,
         calculate_grad: bool = False,
         apply_transform: bool = False,
+        for_optimiser: bool = False,
     ) -> Union[np.array, tuple[float, np.ndarray]]:
         """
         Computes the cost function for the given predictions.

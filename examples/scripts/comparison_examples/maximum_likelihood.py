@@ -11,9 +11,8 @@ parameter_set.update(
         "Positive electrode active material volume fraction": 0.62,
     }
 )
-options = {"max_num_steps": int(1e6), "max_error_test_failures": 60}
-solver = pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6, options=options)
-model = pybop.lithium_ion.DFN(parameter_set=parameter_set, solver=solver)
+solver = pybamm.IDAKLUSolver()
+model = pybop.lithium_ion.SPMe(parameter_set=parameter_set, solver=solver)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -60,7 +59,7 @@ dataset = pybop.Dataset(
 signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
-likelihood = pybop.JaxGaussianLogLikelihoodKnownSigma(problem, sigma0=sigma)
+likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=sigma)
 optim = pybop.XNES(
     likelihood,
     max_unchanged_iterations=20,
@@ -79,9 +78,6 @@ pybop.plot.convergence(optim)
 
 # Plot the parameter traces
 pybop.plot.parameters(optim)
-
-# Plot the cost landscape
-pybop.plot.contour(likelihood, steps=15)
 
 # Plot the cost landscape with optimisation path
 bounds = np.asarray([[0.55, 0.77], [0.48, 0.68]])

@@ -125,6 +125,11 @@ class Test_SPM_Parameterisation:
             if isinstance(cost, pybop.GaussianLogLikelihood)
             else sigma0,
         }
+        if (
+            isinstance(cost, pybop.JaxSumSquaredError)
+            and optimiser is pybop.SciPyDifferentialEvolution
+        ):
+            common_args["bounds"] = [[0.375, 0.775], [0.375, 0.775]]
 
         if isinstance(cost, pybop.LogPosterior):
             for i in cost.parameters.keys():
@@ -218,6 +223,12 @@ class Test_SPM_Parameterisation:
             if isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood)
             else 0.02,
         }
+
+        if (
+            isinstance(spm_two_signal_cost, pybop.JaxSumSquaredError)
+            and multi_optimiser is pybop.SciPyDifferentialEvolution
+        ):
+            common_args["bounds"] = [[0.375, 0.775], [0.375, 0.775]]
 
         # Test each optimiser
         optim = multi_optimiser(**common_args)
