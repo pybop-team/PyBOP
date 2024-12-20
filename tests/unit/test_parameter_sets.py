@@ -10,11 +10,43 @@ class TestParameterSets:
     A class to test parameter sets.
     """
 
+    @pytest.fixture
+    def params_dict(self):
+        return {
+            "chemistry": "ecm",
+            "Initial SoC": 0.5,
+            "Initial temperature [K]": 25 + 273.15,
+            "Cell capacity [A.h]": 5,
+            "Nominal cell capacity [A.h]": 5,
+            "Ambient temperature [K]": 25 + 273.15,
+            "Current function [A]": 5,
+            "Upper voltage cut-off [V]": 4.2,
+            "Lower voltage cut-off [V]": 3.0,
+            "Cell thermal mass [J/K]": 1000,
+            "Cell-jig heat transfer coefficient [W/K]": 10,
+            "Jig thermal mass [J/K]": 500,
+            "Jig-air heat transfer coefficient [W/K]": 10,
+            "Open-circuit voltage [V]": "default",
+            "R0 [Ohm]": 0.001,
+            "Element-1 initial overpotential [V]": 0,
+            "Element-2 initial overpotential [V]": 0,
+            "R1 [Ohm]": 0.0002,
+            "R2 [Ohm]": 0.0003,
+            "C1 [F]": 10000,
+            "C2 [F]": 5000,
+            "Entropic change [V/K]": 0.0004,
+        }
+
     @pytest.mark.unit
     def test_parameter_set(self):
         # Tests parameter set creation and validation
         with pytest.raises(ValueError):
             pybop.ParameterSet.pybamm("sChen2010s")
+
+        parameter_test = pybop.ParameterSet("Chen2020")
+        np.testing.assert_allclose(
+            parameter_test["Negative electrode active material volume fraction"], 0.75
+        )
 
         parameter_test = pybop.ParameterSet.pybamm("Chen2020")
         np.testing.assert_allclose(
@@ -28,12 +60,12 @@ class TestParameterSets:
         )
 
     @pytest.mark.unit
-    def test_ecm_parameter_sets(self):
+    def test_ecm_parameter_sets(self, params_dict):
         # Test importing a json file
         json_params = pybop.ParameterSet()
         with pytest.raises(
             ValueError,
-            match="Parameter set already constructed, or path to json file not provided.",
+            match="No path was provided.",
         ):
             json_params.import_parameters()
 
@@ -44,39 +76,27 @@ class TestParameterSets:
 
         with pytest.raises(
             ValueError,
-            match="Parameter set already constructed, or path to json file not provided.",
+            match="Parameter set already constructed.",
         ):
             json_params.import_parameters()
 
-        params = pybop.ParameterSet(
-            params_dict={
-                "chemistry": "ecm",
-                "Initial SoC": 0.5,
-                "Initial temperature [K]": 25 + 273.15,
-                "Cell capacity [A.h]": 5,
-                "Nominal cell capacity [A.h]": 5,
-                "Ambient temperature [K]": 25 + 273.15,
-                "Current function [A]": 5,
-                "Upper voltage cut-off [V]": 4.2,
-                "Lower voltage cut-off [V]": 3.0,
-                "Cell thermal mass [J/K]": 1000,
-                "Cell-jig heat transfer coefficient [W/K]": 10,
-                "Jig thermal mass [J/K]": 500,
-                "Jig-air heat transfer coefficient [W/K]": 10,
-                "Open-circuit voltage [V]": "default",
-                "R0 [Ohm]": 0.001,
-                "Element-1 initial overpotential [V]": 0,
-                "Element-2 initial overpotential [V]": 0,
-                "R1 [Ohm]": 0.0002,
-                "R2 [Ohm]": 0.0003,
-                "C1 [F]": 10000,
-                "C2 [F]": 5000,
-                "Entropic change [V/K]": 0.0004,
-            }
+        json_params = pybop.ParameterSet()
+        json_params.import_parameters(
+            json_path="examples/parameters/initial_ecm_parameters.json"
         )
 
+        params = pybop.ParameterSet(params_dict)
+
         assert json_params.params == params.params
-        assert params() == params.params
+        assert params_dict == params.params
+
+        with pytest.raises(
+            ValueError,
+            match="ParameterSet needs either a parameter_set or json_path as an input, not both.",
+        ):
+            pybop.ParameterSet(
+                params_dict, json_path="examples/parameters/initial_ecm_parameters.json"
+            )
 
         # Test exporting a json file
         parameters = pybop.Parameters(
@@ -110,7 +130,7 @@ class TestParameterSets:
         bpx_parameters = pybop.ParameterSet()
         with pytest.raises(
             ValueError,
-            match="Parameter set already constructed, or path to bpx file not provided.",
+            match="No path was provided.",
         ):
             bpx_parameters.import_from_bpx()
 
@@ -121,15 +141,28 @@ class TestParameterSets:
 
         with pytest.raises(
             ValueError,
-            match="Parameter set already constructed, or path to bpx file not provided.",
+            match="Parameter set already constructed.",
         ):
             bpx_parameters.import_from_bpx()
+
+        bpx_parameters = pybop.ParameterSet()
+        bpx_parameters.import_from_bpx(json_path="examples/parameters/example_BPX.json")
 
     @pytest.mark.unit
     def test_set_formation_concentrations(self):
         parameter_set = pybop.ParameterSet.pybamm(
             "Chen2020", formation_concentrations=True
         )
+
+        assert (
+            parameter_set["Initial concentration in negative electrode [mol.m-3]"] == 0
+        )
+        assert (
+            parameter_set["Initial concentration in positive electrode [mol.m-3]"] > 0
+        )
+
+        parameter_set = pybop.ParameterSet(parameter_set)
+        parameter_set = parameter_set(formation_concentrations=True)
 
         assert (
             parameter_set["Initial concentration in negative electrode [mol.m-3]"] == 0
@@ -153,3 +186,23 @@ class TestParameterSets:
             value = pybop.ParameterSet.evaluate_symbol(param, parameter_set)
             assert isinstance(value, float)
             np.testing.assert_allclose(value, 1.0 + porosity)
+
+    @pytest.mark.unit
+    def test_check_already_exists(self, params_dict):
+        parameter_set = pybop.ParameterSet(params_dict)
+
+        parameter_set.update({"Nominal cell capacity [A.h]": 3})
+        np.testing.assert_allclose(parameter_set["Nominal cell capacity [A.h]"], 3)
+
+        with pytest.raises(
+            KeyError,
+            match="If you are sure you want to update this parameter,",
+        ):
+            parameter_set.update({"Unused parameter name": 3})
+
+        parameter_set.update({"Unused parameter name": 3}, check_already_exists=False)
+        np.testing.assert_allclose(parameter_set["Unused parameter name"], 3)
+
+        parameter_set = pybop.ParameterSet("Chen2020")
+        parameter_set.update({"Nominal cell capacity [A.h]": 3})
+        np.testing.assert_allclose(parameter_set["Nominal cell capacity [A.h]"], 3)
