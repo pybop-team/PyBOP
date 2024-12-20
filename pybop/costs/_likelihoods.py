@@ -12,7 +12,9 @@ from pybop.problems.base_problem import BaseProblem
 
 class BaseLikelihood(BaseCost):
     """
-    Base class for likelihoods
+    Base class for likelihoods.
+
+    Inherits all parameters and attributes from ``BaseCost``.
     """
 
     def __init__(self, problem: BaseProblem):
@@ -78,26 +80,22 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
     def compute(
         self,
         y: dict,
-        dy: np.ndarray = None,
-        calculate_grad: bool = False,
+        dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
         Compute the Gaussian log-likelihood for the given parameters with known sigma.
 
         This method only computes the likelihood, without calling the problem.evaluateS1.
         """
-        # Verify we have dy if calculate_grad is True
-        self.verify_args(dy, calculate_grad)
-
         # Early return if the prediction is not verified
         if not self.verify_prediction(y):
-            return (-np.inf, -self.grad_fail) if calculate_grad else -np.inf
+            return (-np.inf, -self.grad_fail) if dy is not None else -np.inf
 
         # Calculate residuals and error
         r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
         e = np.sum(self._offset + self._multip * np.sum(np.real(r * np.conj(r))))
 
-        if calculate_grad:
+        if dy is not None:
             dl = np.sum((np.sum((r * dy.T), axis=2) / self.sigma2), axis=1)
             return e, dl
 
@@ -201,8 +199,7 @@ class GaussianLogLikelihood(BaseLikelihood):
     def compute(
         self,
         y: dict,
-        dy: np.ndarray = None,
-        calculate_grad: bool = False,
+        dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
         Compute the Gaussian log-likelihood for the given parameters.
@@ -214,12 +211,10 @@ class GaussianLogLikelihood(BaseLikelihood):
         float
             The log-likelihood value, or -inf if the standard deviations are non-positive.
         """
-        # Verify we have dy if calculate_grad is True
-        self.verify_args(dy, calculate_grad)
         sigma = self.sigma.current_value()
 
         if not self.verify_prediction(y):
-            return (-np.inf, -self.grad_fail) if calculate_grad else -np.inf
+            return (-np.inf, -self.grad_fail) if dy is not None else -np.inf
 
         # Calculate residuals and error
         r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
@@ -229,7 +224,7 @@ class GaussianLogLikelihood(BaseLikelihood):
             - np.sum(np.real(r * np.conj(r)), axis=1) / (2.0 * sigma**2.0)
         )
 
-        if calculate_grad:
+        if dy is not None:
             dl = np.sum((np.sum((r * dy.T), axis=2) / (sigma**2.0)), axis=1)
             dsigma = (
                 -self.n_data / sigma + np.sum(r**2.0, axis=1) / (sigma**3.0)
@@ -259,10 +254,9 @@ class ScaledLogLikelihood(BaseMetaLikelihood):
     def compute(
         self,
         y: dict,
-        dy: np.ndarray = None,
-        calculate_grad: bool = False,
+        dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        likelihood = self._log_likelihood.compute(y, dy, calculate_grad)
+        likelihood = self._log_likelihood.compute(y, dy)
         normalised_val = 1 / self.n_data
 
         if isinstance(likelihood, tuple):
@@ -308,8 +302,7 @@ class LogPosterior(BaseMetaLikelihood):
     def compute(
         self,
         y: dict,
-        dy: np.ndarray = None,
-        calculate_grad: bool = False,
+        dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
         Calculate the posterior cost for a given forward model prediction.
@@ -320,18 +313,13 @@ class LogPosterior(BaseMetaLikelihood):
             The data for which to evaluate the cost.
         dy : np.ndarray, optional
             The correspond sensitivities in the data.
-        calculate_grad : bool, optional
-            Whether to calculate the gradient of the cost function.
 
         Returns
         -------
         Union[float, Tuple[float, np.ndarray]]
             The posterior cost, and optionally the gradient.
         """
-        # Verify we have dy if calculate_grad is True
-        self.verify_args(dy, calculate_grad)
-
-        if calculate_grad:
+        if dy is not None:
             if isinstance(self._prior, BasePrior):
                 log_prior, dp = self._prior.logpdfS1(self.parameters.current_value())
             else:
@@ -358,12 +346,10 @@ class LogPosterior(BaseMetaLikelihood):
             log_prior = self._prior.logpdf(self.parameters.current_value())
 
         if not np.isfinite(log_prior).any():
-            return (-np.inf, -self.grad_fail) if calculate_grad else -np.inf
+            return (-np.inf, -self.grad_fail) if dy is not None else -np.inf
 
-        if calculate_grad:
-            log_likelihood, dl = self._log_likelihood.compute(
-                y, dy, calculate_grad=True
-            )
+        if dy is not None:
+            log_likelihood, dl = self._log_likelihood.compute(y, dy)
 
             posterior = log_likelihood + log_prior
             total_gradient = dl + dp
