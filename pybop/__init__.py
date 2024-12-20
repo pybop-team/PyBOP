@@ -171,6 +171,11 @@ from .observers.unscented_kalman import UnscentedKalmanFilterObserver
 from .observers.observer import Observer
 
 #
+# Classification classes
+#
+from ._classification import classify_using_hessian
+
+#
 # Plotting classes
 #
 from . import plot as plot
