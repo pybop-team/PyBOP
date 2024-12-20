@@ -745,33 +745,28 @@ class BaseModel:
 
     def jaxify_solver(self, t_eval, calculate_sensitivities=False):
         """
-        Jaxify the IDAKLU Solver and store a copy for reconstructing
-        the jax'ed solver in the future. This is helpful for reconstructing
-        the solver with `calculate_sensitivities=True` as this solver requires
-        casting sensitivity information on construction.
+        Jaxify the IDAKLU Solver and store a copy for future reconstruction.
+        Handles sensitivity calculations during solver construction.
         """
         self._calculate_sensitivities = calculate_sensitivities
+
+        if not isinstance(self._solver, (pybamm.IDAKLUSolver, pybamm.IDAKLUJax)):
+            raise ValueError("Solver must be pybamm.IDAKLUSolver to jaxify.")
+
+        # Store original solver if not already stored, and create local copy
         if isinstance(self._solver, pybamm.IDAKLUSolver):
             self._IDAKLU_stored = self._solver.copy()
-            self._solver = self._solver.jaxify(
-                model=self._built_model,
-                t_eval=t_eval
-                if calculate_sensitivities is True
-                else [t_eval[0], t_eval[-1]],  # Current bug in PyBaMM v24.11
-                t_interp=t_eval,
-                calculate_sensitivities=calculate_sensitivities,
-            )
-        elif isinstance(self._solver, pybamm.IDAKLUJax):
-            self._solver = self._IDAKLU_stored.jaxify(
-                model=self._built_model,
-                t_eval=t_eval
-                if calculate_sensitivities is True
-                else [t_eval[0], t_eval[-1]],  # Current bug in PyBaMM v24.11
-                t_interp=t_eval,
-                calculate_sensitivities=calculate_sensitivities,
-            )
-        else:
-            raise ValueError("Solver is not pybamm.IDAKLUSolver, cannot jaxify it.")
+        base_solver = self._IDAKLU_stored
+
+        # Handle PyBaMM v24.11 bug: use full t_eval only when calculating sensitivities
+        t_eval_adjusted = t_eval if calculate_sensitivities else [t_eval[0], t_eval[-1]]
+
+        self._solver = base_solver.jaxify(
+            model=self._built_model,
+            t_eval=t_eval_adjusted,
+            t_interp=t_eval,
+            calculate_sensitivities=calculate_sensitivities,
+        )
 
     def check_params(
         self,

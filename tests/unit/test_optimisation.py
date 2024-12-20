@@ -338,6 +338,11 @@ class TestOptimisation:
         assert optim.optimiser._boundaries is None
 
     @pytest.mark.unit
+    def test_adamw_impl_bounds(self):
+        with pytest.warns(UserWarning, match="Boundaries ignored by AdamW"):
+            pybop.AdamWImpl(x0=[0.1], boundaries=[0.0, 0.2])
+
+    @pytest.mark.unit
     def test_scipy_minimize_with_jac(self, cost):
         # Check a method that uses gradient information
         optim = pybop.SciPyMinimize(

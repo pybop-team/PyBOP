@@ -100,6 +100,7 @@ class TestPlots:
         # Test plot of Problem objects
         pybop.plot.quick(fitting_problem, title="Optimised Comparison")
         pybop.plot.quick(design_problem)
+        pybop.plot.quick(jax_fitting_problem)
 
         # Test conversion of values into inputs
         pybop.plot.quick(fitting_problem, problem_inputs=[0.6, 0.6])

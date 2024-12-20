@@ -138,7 +138,7 @@ class TestJaxCosts:
         # Test jaxify with incorrect solver
         model.solver = pybamm.CasadiSolver()
         with pytest.raises(
-            ValueError, match="Solver is not pybamm.IDAKLUSolver, cannot jaxify it."
+            ValueError, match="Solver must be pybamm.IDAKLUSolver to jaxify."
         ):
             model.jaxify_solver(t_eval=np.linspace(0, 1, 100))
 

@@ -264,7 +264,7 @@ class BasePintsOptimiser(BaseOptimiser):
                     x=xs,
                     x_best=self.optimiser.x_best(),
                     cost=_fs,
-                    cost_best=fb,  # TODO: check shape, [fb]?
+                    cost_best=fb,
                 )
 
                 # Check stopping criteria:

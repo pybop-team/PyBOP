@@ -8,7 +8,7 @@ parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 parameter_set.update(
     {
         "Negative electrode active material volume fraction": 0.63,
-        "Positive electrode active material volume fraction": 0.62,
+        "Positive electrode active material volume fraction": 0.51,
     }
 )
 solver = pybamm.IDAKLUSolver()

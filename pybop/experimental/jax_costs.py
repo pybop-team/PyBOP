@@ -44,15 +44,17 @@ class BaseJaxCost(BaseCost):
         float
             The Sum of Squared Error.
         """
-        inputs = self.parameters.verify(inputs)
+        self.has_transform = self.transformation is not None and apply_transform
+        model_inputs = self.parameters.verify(self._apply_transformations(inputs))
+
         if calculate_grad != self.model.calculate_sensitivities:
             self._update_solver_sensitivities(calculate_grad)
 
         if calculate_grad:
-            y, dy = jax.value_and_grad(self.evaluate)(inputs)
+            y, dy = jax.value_and_grad(self.evaluate)(model_inputs)
             return y, np.asarray(list(dy.values()))
         else:
-            return self.evaluate(inputs)
+            return self.evaluate(model_inputs)
 
     def _update_solver_sensitivities(self, calculate_grad: bool) -> None:
         """
