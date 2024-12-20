@@ -168,4 +168,7 @@ class TestClassification:
         )
 
         message = pybop.classify_using_hessian(results, dx=[1, 1])
-        assert message == "Classification cannot proceed due to infinite cost value(s)."
+        assert message == (
+            "Classification cannot proceed due to infinite cost value(s)."
+            " The result is near the upper bound of R0_a [Ohm]."
+        )
