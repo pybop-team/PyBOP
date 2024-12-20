@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#362](https://github.com/pybop-team/PyBOP/issues/362) - Adds the `classify_using_Hessian` functionality to classify the optimised result.
 - [#584](https://github.com/pybop-team/PyBOP/pull/584) - Adds the `GroupedSPMe` model for parameter identification.
 - [#571](https://github.com/pybop-team/PyBOP/pull/571) - Adds Multistart functionality to optimisers via initialisation arg `multistart`.
 - [#582](https://github.com/pybop-team/PyBOP/pull/582) - Fixes `population_size` arg for Pints' based optimisers, reshapes `parameters.rvs` to be parameter instances.
