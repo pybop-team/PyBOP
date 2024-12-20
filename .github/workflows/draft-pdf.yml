@@ -3,10 +3,10 @@ name: JossPaperCompilation
 on:
   push:
     paths:
-      - joss/**
+      - ../../papers/**
   pull_request:
     paths:
-    - 'joss/**'
+    - '../../papers/**'
   workflow_dispatch:
 jobs:
   paper:

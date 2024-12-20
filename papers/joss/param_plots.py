@@ -19,14 +19,14 @@ np.random.seed(8)
 # Choose which plots to show and save
 create_plot = {}
 create_plot["simulation"] = True
-create_plot["landscape"] = True
-create_plot["minimising"] = True
-create_plot["maximising"] = True
+create_plot["landscape"] = False
+create_plot["minimising"] = False
+create_plot["maximising"] = False
 create_plot["gradient"] = True
 create_plot["evolution"] = True
 create_plot["heuristic"] = True
-create_plot["posteriors"] = True
-create_plot["eis"] = True
+create_plot["posteriors"] = False
+create_plot["eis"] = False
 
 # Parameter set and model definition
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
@@ -80,19 +80,43 @@ if create_plot["simulation"]:
         x=solution["Time [s]"].data,
         y=[corrupt_values, solution["Battery open-circuit voltage [V]"].data, values],
         trace_names=[
-            "Voltage w/ Gaussian noise [V]",
-            "Open-circuit voltage [V]",
-            "Voltage [V]",
+            "Voltage w/ noise",
+            "Open-circuit voltage",
+            "Voltage",
         ],
     )
     simulation_plot_dict.traces[0].mode = "markers"
     simulation_fig = simulation_plot_dict(show=False)
     simulation_fig.update_layout(
+        width=595,
+        height=595,
         xaxis_title="Time / s",
         yaxis_title="Voltage / V",
-        width=576,
-        height=576,
-        legend_traceorder="reversed",
+        yaxis=dict(
+            showline=True,
+            linewidth=2,
+            linecolor="black",
+            mirror=True,
+            titlefont_size=15,
+            tickfont_size=15,
+        ),
+        xaxis=dict(
+            showline=True,
+            linewidth=2,
+            linecolor="black",
+            mirror=True,
+            titlefont_size=15,
+            tickfont_size=15,
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            font=dict(size=15),
+        ),
+        margin=dict(r=50, t=50),
     )
     simulation_fig.show()
     simulation_fig.write_image("joss/figures/simulation.pdf")
@@ -118,9 +142,21 @@ if create_plot["landscape"]:
         cost,
         steps=25,
         show=False,
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        yaxis=dict(titlefont_size=15, tickfont_size=15),
+        xaxis=dict(titlefont_size=15, tickfont_size=15),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            font=dict(size=15),
+        ),
+        coloraxis_colorbar=dict(tickfont=dict(size=18)),
+        margin=dict(t=50),
         title=None,
     )
+    landscape_fig.update_traces(colorbar=dict(tickfont=dict(size=15)))
     initial_value = parameters.initial_value()
     true_value = parameters.true_value()
     landscape_fig.add_trace(
@@ -221,10 +257,10 @@ if create_plot["minimising"]:
                 gridcolor=px.colors.qualitative.Pastel2[7],
                 zerolinecolor=px.colors.qualitative.Pastel2[7],
                 zerolinewidth=1,
-                titlefont_size=14,
-                tickfont_size=14,
+                titlefont_size=15,
+                tickfont_size=15,
             ),
-            xaxis=dict(titlefont_size=14, tickfont_size=14),
+            xaxis=dict(titlefont_size=15, tickfont_size=15),
             width=600,
             height=600,
         ),
@@ -297,10 +333,10 @@ if create_plot["maximising"]:
                 gridcolor=px.colors.qualitative.Pastel2[7],
                 zerolinecolor=px.colors.qualitative.Pastel2[7],
                 zerolinewidth=1,
-                titlefont_size=14,
-                tickfont_size=14,
+                titlefont_size=15,
+                tickfont_size=15,
             ),
-            xaxis=dict(titlefont_size=14, tickfont_size=14),
+            xaxis=dict(titlefont_size=15, tickfont_size=15),
             width=600,
             height=600,
         ),
@@ -439,25 +475,33 @@ if create_plot["gradient"]:
 
     # Plot the parameter traces together
     parameter_fig.update_layout(
-        width=576,
-        height=1024,
+        width=480,
+        height=910,
         plot_bgcolor="white",
         yaxis=dict(
             gridcolor=px.colors.qualitative.Pastel2[7],
             zerolinecolor=px.colors.qualitative.Pastel2[7],
             zerolinewidth=1,
-            titlefont_size=14,
-            tickfont_size=14,
+            titlefont_size=16,
+            tickfont_size=16,
         ),
-        xaxis=dict(titlefont_size=14, tickfont_size=14),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            font=dict(size=15),
+        ),
+        xaxis=dict(titlefont_size=16, tickfont_size=16),
         yaxis2=dict(
             gridcolor=px.colors.qualitative.Pastel2[7],
             zerolinecolor=px.colors.qualitative.Pastel2[7],
             zerolinewidth=1,
-            titlefont_size=14,
-            tickfont_size=14,
+            titlefont_size=16,
+            tickfont_size=16,
         ),
-        xaxis2=dict(titlefont_size=14, tickfont_size=14),
+        xaxis2=dict(titlefont_size=16, tickfont_size=16),
     )
     parameter_fig.data = []
     parameter_fig.add_traces(parameter_traces)
@@ -522,25 +566,33 @@ if create_plot["evolution"]:
 
     # Plot the parameter traces together
     parameter_fig.update_layout(
-        width=576,
-        height=1024,
+        width=480,
+        height=910,
         plot_bgcolor="white",
         yaxis=dict(
             gridcolor=px.colors.qualitative.Pastel2[7],
             zerolinecolor=px.colors.qualitative.Pastel2[7],
             zerolinewidth=1,
-            titlefont_size=14,
-            tickfont_size=14,
+            titlefont_size=16,
+            tickfont_size=16,
         ),
-        xaxis=dict(titlefont_size=14, tickfont_size=14),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            font=dict(size=14),
+        ),
+        xaxis=dict(titlefont_size=16, tickfont_size=16),
         yaxis2=dict(
             gridcolor=px.colors.qualitative.Pastel2[7],
             zerolinecolor=px.colors.qualitative.Pastel2[7],
             zerolinewidth=1,
-            titlefont_size=14,
-            tickfont_size=14,
+            titlefont_size=16,
+            tickfont_size=16,
         ),
-        xaxis2=dict(titlefont_size=14, tickfont_size=14),
+        xaxis2=dict(titlefont_size=16, tickfont_size=16),
     )
     parameter_fig.data = []
     parameter_fig.add_traces(parameter_traces)
@@ -634,25 +686,33 @@ if create_plot["heuristic"]:
 
     # Plot the parameter traces together
     parameter_fig.update_layout(
-        width=576,
-        height=1024,
+        width=480,
+        height=910,
         plot_bgcolor="white",
         yaxis=dict(
             gridcolor=px.colors.qualitative.Pastel2[7],
             zerolinecolor=px.colors.qualitative.Pastel2[7],
             zerolinewidth=1,
-            titlefont_size=14,
-            tickfont_size=14,
+            titlefont_size=16,
+            tickfont_size=16,
         ),
-        xaxis=dict(titlefont_size=14, tickfont_size=14),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            font=dict(size=15),
+        ),
+        xaxis=dict(titlefont_size=16, tickfont_size=16),
         yaxis2=dict(
             gridcolor=px.colors.qualitative.Pastel2[7],
             zerolinecolor=px.colors.qualitative.Pastel2[7],
             zerolinewidth=1,
-            titlefont_size=14,
-            tickfont_size=14,
+            titlefont_size=16,
+            tickfont_size=16,
         ),
-        xaxis2=dict(titlefont_size=14, tickfont_size=14),
+        xaxis2=dict(titlefont_size=16, tickfont_size=16),
     )
     parameter_fig.data = []
     parameter_fig.add_traces(parameter_traces)
@@ -720,7 +780,7 @@ if create_plot["posteriors"]:
         color="tab:red",
         label="$R_n$",
     )
-    ax1.set_title("Negative Particle Radius", fontsize=22)
+    ax1.set_title("Negative Particle Radius", fontsize=16)
     ax1.set_xlabel(r"m", fontsize=18)
     ax1.set_ylabel("Density", fontsize=18)
     ax1.set_xlim(
@@ -728,7 +788,7 @@ if create_plot["posteriors"]:
         parameter_set["Negative particle diffusivity [m2.s-1]"] * 1.07,
     )
     # ax1.set_ylim(0, 1e4)
-    ax1.tick_params(axis="both", which="major", labelsize=18)
+    ax1.tick_params(axis="both", which="major", labelsize=16)
     ax1.axvspan(
         summary.get_summary_statistics()[("ci_lower")][0],
         summary.get_summary_statistics()[("ci_upper")][0],
@@ -747,14 +807,14 @@ if create_plot["posteriors"]:
         color="tab:blue",
         label="$R_c$",
     )
-    ax2.set_title("Contact Resistance", fontsize=22)
+    ax2.set_title("Contact Resistance", fontsize=16)
     ax2.set_xlabel(r"$\Omega$", fontsize=18)
     ax2.set_xlim(
         parameter_set["Contact resistance [Ohm]"] * 0.95,
         parameter_set["Contact resistance [Ohm]"] * 1.05,
     )
     # ax2.set_ylim(0, 1e3)
-    ax2.tick_params(axis="both", which="major", labelsize=18)
+    ax2.tick_params(axis="both", which="major", labelsize=16)
     ax2.axvspan(
         summary.get_summary_statistics()[("ci_lower")][1],
         summary.get_summary_statistics()[("ci_upper")][1],
@@ -773,11 +833,11 @@ if create_plot["posteriors"]:
         color="tab:purple",
         label=r"$\sigma$",
     )
-    ax3.set_title(r"Observation Noise, $\sigma$", fontsize=22)
+    ax3.set_title(r"Observation Noise, $\sigma$", fontsize=16)
     ax3.set_xlabel("V", fontsize=18)
     ax3.set_xlim(4e-3, 5.5e-3)
     # ax3.set_ylim(0, 10 * 1.1)
-    ax3.tick_params(axis="both", which="major", labelsize=18)
+    ax3.tick_params(axis="both", which="major", labelsize=16)
     ax3.axvspan(
         summary.get_summary_statistics()[("ci_lower")][2],
         summary.get_summary_statistics()[("ci_upper")][2],
@@ -848,10 +908,30 @@ if create_plot["eis"]:
     optim = pybop.CMAES(cost, max_iterations=75, min_iterations=75, sigma0=0.25)
     results = optim.run()
 
-    parameter_fig = pybop.plot.nyquist(problem, results.x, title="")
+    parameter_fig = pybop.plot.nyquist(
+        problem, results.x, title="", width=595, height=595, margin=dict(r=50, t=50)
+    )
+    parameter_fig[0].data[1].update(line=dict(color="#00CC97"))
     parameter_fig[0].write_image("joss/figures/impedance_spectrum.pdf")
 
-    landscape_fig = pybop.plot.contour(cost, steps=30, title="")
+    landscape_fig = pybop.plot.contour(
+        cost,
+        steps=25,
+        show=False,
+        yaxis=dict(titlefont_size=15, tickfont_size=15),
+        xaxis=dict(titlefont_size=15, tickfont_size=15),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            font=dict(size=15),
+        ),
+        coloraxis_colorbar=dict(tickfont=dict(size=18)),
+        margin=dict(t=50),
+        title=None,
+    )
     initial_value = parameters.initial_value()
     true_value = parameters.true_value()
     landscape_fig.add_trace(

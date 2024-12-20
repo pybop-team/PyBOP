@@ -5,6 +5,7 @@
 %
 \documentclass[
 ]{article}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
 \usepackage{amsmath,amssymb}
 \usepackage{lmodern}
 \usepackage{iftex}
@@ -197,7 +198,7 @@ Oxford, UK%
    %
 }
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\date{04 December 2024}
+\date{19 December 2024}
 
 \begin{document}
 \maketitle
@@ -578,8 +579,8 @@ synthetic inference task. In general, the true parameters are not known.
 
 \begin{figure}
 \centering
-\includegraphics[width=1\textwidth,height=\textheight]{figures/joss/sim-landscape.png}
-\caption{The fitted synthetic dataset (left) and cost landscape (right)
+\includegraphics[width=1\textwidth,height=\textheight]{figures/joss/sim-landscape.pdf}
+\caption{The synthetic fitting dataset (left) and cost landscape (right)
 for an example time-series battery model parameterisation using a
 root-mean-squared error cost function.
 \label{fig:inference-time-landscape}}
@@ -597,7 +598,7 @@ using an impedance workflow.
 
 \begin{figure}
 \centering
-\includegraphics[width=1\textwidth,height=\textheight]{figures/joss/impedance.png}
+\includegraphics[width=1\textwidth,height=\textheight]{figures/joss/impedance.pdf}
 \caption{The data and model fit (left) and cost landscape (right) for a
 frequency-domain impedance parameterisation with a root-mean-squared
 error cost function, at 5\% SOC. \label{fig:impedance-landscape}}
@@ -622,7 +623,7 @@ Minimize using the gradient-based L-BFGS-B method.
 
 \begin{figure}
 \centering
-\includegraphics[width=1\textwidth,height=\textheight]{figures/joss/converge.png}
+\includegraphics[width=1\textwidth,height=\textheight]{figures/joss/converge.pdf}
 \caption{Optimiser convergence using various cost (left) and likelihood
 (right) functions and the L-BFGS-B algorithm.
 \label{fig:convergence-min-max}}
@@ -641,16 +642,16 @@ performance of the optimiser depends on the cost environment, initial
 guess or prior, and corresponding hyperparameters for each specific
 problem.
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
-\includegraphics[width=1\textwidth,height=\textheight]{figures/joss/optimisers_parameters.png}
+\includegraphics[width=1\textwidth,height=\textheight]{figures/joss/optimisers_parameters.pdf}
 \caption{Convergence in parameter values for several optimisation
 algorithms provided by \texttt{PyBOP}. \label{fig:optimiser-inference1}}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[htb]
 \centering
-\includegraphics[width=1\textwidth,height=\textheight]{figures/joss/contour_subplot.png}
+\includegraphics[width=1\textwidth,height=\textheight]{figures/joss/contour_subplot.pdf}
 \caption{Cost landscape contour plot with corresponding optimisation
 traces, for several optimisers. \label{fig:optimiser-inference2}}
 \end{figure}
@@ -695,7 +696,7 @@ Bardenet (\citeproc{ref-Haario:2001}{Haario et al., 2001}).
 
 \begin{figure}
 \centering
-\includegraphics[width=1\textwidth,height=\textheight]{figures/joss/posteriors.png}
+\includegraphics[width=1\textwidth,height=\textheight]{figures/joss/posteriors.pdf}
 \caption{Posterior distributions of model parameters alongside
 identified noise on the observations. Shaded area denotes the 95th
 percentile credible interval for each parameter. \label{fig:posteriors}}
@@ -742,7 +743,7 @@ design and use the particle swarm optimisation algorithm.
 
 \begin{figure}
 \centering
-\includegraphics[width=1\textwidth,height=\textheight]{figures/joss/design.png}
+\includegraphics[width=1\textwidth,height=\textheight]{figures/joss/design.pdf}
 \caption{Gravimetric energy density cost landscape alongside the initial
 and optimised voltage profiles, for a fixed 1C discharge set from the
 initial design. \label{fig:design_gravimetric}}

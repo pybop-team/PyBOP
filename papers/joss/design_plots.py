@@ -98,7 +98,7 @@ optim = pybop.NelderMead(
     parallel=True,
     allow_infeasible_solutions=False,
     max_iterations=250,
-    max_unchanged_iterations=35,
+    max_unchanged_iterations=45,
     sigma0=0.1,
 )
 
@@ -112,10 +112,21 @@ if create_plot["gravimetric"]:
     # Plot the cost landscape with optimisation path
     gravimetric_fig = pybop.plot.contour(
         optim,
-        steps=60,
+        steps=45,
+        show=False,
+        yaxis=dict(titlefont_size=15, tickfont_size=15),
+        xaxis=dict(titlefont_size=15, tickfont_size=15),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            font=dict(size=15),
+        ),
+        coloraxis_colorbar=dict(tickfont=dict(size=18)),
+        margin=dict(t=50),
         title=None,
-        xaxis=dict(titlefont_size=14, tickfont_size=14),
-        yaxis=dict(titlefont_size=14, tickfont_size=14),
     )
     gravimetric_fig.write_image("joss/figures/design_gravimetric.pdf")
     time.sleep(3)
@@ -129,15 +140,39 @@ if create_plot["prediction"]:
         problem,
         problem_inputs=result.x,
         title=None,
-        width=576,
-        height=576,
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-        xaxis=dict(titlefont_size=14, tickfont_size=14),
-        yaxis=dict(titlefont_size=14, tickfont_size=14),
+        width=585,
+        height=585,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+            font=dict(size=14),
+        ),
+        yaxis=dict(
+            showline=True,
+            linewidth=2,
+            linecolor="black",
+            mirror=True,
+            titlefont_size=15,
+            tickfont_size=15,
+        ),
+        xaxis=dict(
+            showline=True,
+            linewidth=2,
+            linecolor="black",
+            mirror=True,
+            titlefont_size=15,
+            tickfont_size=15,
+        ),
+        margin=dict(r=50, t=50),
         show=False,
     )
+
     prediction_fig = figs[0]
-    prediction_fig.data[0].name = f"Initial result: {cost(result.x0):.2f} Wh.kg-1"
-    prediction_fig.data[1].name = f"Optimised result: {cost(result.x):.2f} Wh.kg-1"
+    prediction_fig.data[1].update(line=dict(color="#00CC97"))
+    prediction_fig.data[0].name = f"Initial: {cost(result.x0):.2f} Wh.kg-1"
+    prediction_fig.data[1].name = f"Optimised: {cost(result.x):.2f} Wh.kg-1"
     prediction_fig.show()
     prediction_fig.write_image("joss/figures/design_prediction.pdf")

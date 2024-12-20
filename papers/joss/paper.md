@@ -38,7 +38,7 @@ affiliations:
    index: 4
  - name:  Mathematics Institute, University of Warwick, Coventry, UK
    index: 5
-date: 04 December 2024
+date: 19 December 2024
 bibliography: paper.bib
 repository: https://github.com/pybop-team/PyBOP
 ---
@@ -150,7 +150,7 @@ where $\mathcal{L} : \mathbf{\theta} \mapsto [0,\infty)$ is a cost function that
 
 Next, we demonstrate the fitting of synthetic data where the model parameters are known. Throughout this section, as an example, we use `PyBaMM`'s implementation of the single particle model with an added contact resistance submodel. We assume that the model is already fully parameterised apart from two parameters, namely, the lithium diffusivity of the negative electrode active material particles (denoted "negative particle diffusivity") and the contact resistance with corresponding true values of [3.3e-14 $\text{m}^2/\text{s}$, 10 mOhm]. To start, we generate synthetic time-domain data corresponding to a one-hour discharge from 100% to 0% state of charge, denoted as 1C rate, followed by 30 minutes of relaxation. This dataset is then corrupted with zero-mean Gaussian noise of amplitude 2 mV, with the resulting signal shown by the blue dots in \autoref{fig:inference-time-landscape} (left). The initial states are assumed known, although this assumption is not generally necessary. The `PyBOP` repository contains several other [example notebooks](https://github.com/pybop-team/PyBOP/tree/develop/examples/notebooks) that follow a similar inference process. The underlying cost landscape to be explored by the optimiser is shown in \autoref{fig:inference-time-landscape} (right), with the initial position denoted alongside the known true system parameters for this synthetic inference task. In general, the true parameters are not known.
 
-![The fitted synthetic dataset (left) and cost landscape (right) for an example time-series battery model parameterisation using a root-mean-squared error cost function. \label{fig:inference-time-landscape}](figures/joss/sim-landscape.pdf){ width=100% }
+![The synthetic fitting dataset (left) and cost landscape (right) for an example time-series battery model parameterisation using a root-mean-squared error cost function. \label{fig:inference-time-landscape}](figures/joss/sim-landscape.pdf){ width=100% }
 
 We can also use `PyBOP` to generate and fit electrochemical impedance data using methods within `pybamm-eis` that enable fast impedance computation of battery models [@pybamm-eis]. Using the same model and parameters as in the time-domain case, \autoref{fig:impedance-landscape} shows the numerical impedance prediction available in `PyBOP` alongside the cost landscape for the corresponding inference task. At the time of publication, gradient-based optimisation and sampling methods are not available when using an impedance workflow.
 
@@ -194,9 +194,9 @@ where $\mathcal{L} : \mathbf{\theta} \mapsto [0,\infty)$ is a cost function that
 
 As an example, we consider the challenge of maximising the gravimetric energy density, subject to constraints on two of the geometric electrode parameters [@Couto:2023]. In this case we use the `PyBaMM` implementation of the single particle model with electrolyte (SPMe) to investigate the impact of the positive electrode thickness and the active material volume fraction on the energy density. Since the total volume fraction must sum to unity, the positive electrode porosity for each optimisation iteration is defined in relation to the active material volume fraction. It is also possible to update the 1C rate corresponding to the theoretical capacity for each iteration of the design.
 
-![Gravimetric energy density cost landscape alongside the initial and optimised voltage profiles, for a fixed-rate (nominally 1C) discharge. \label{fig:design_gravimetric}](figures/joss/design.pdf){ width=100% }
+![Initial and optimised voltage profiles alongside the gravimetric energy density cost landscape.  \label{fig:design_gravimetric}](figures/joss/design.pdf){ width=100% }
 
-\autoref{fig:design_gravimetric} (left) shows the predicted improvement in the discharge profile between the initial and optimised parameter values and (left) the Nelder-Mead search over the parameter space.
+\autoref{fig:design_gravimetric} (left) shows the predicted improvement in the discharge profile between the initial and optimised parameter values for a fixed-rate 1C discharge selected from the initial design and (right) the Nelder-Mead search over the parameter space.
 
 # Acknowledgements
 
