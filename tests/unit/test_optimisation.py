@@ -385,6 +385,11 @@ class TestOptimisation:
         assert np.all(candidates <= optim.optimiser._x0 + 6 * optim.optimiser._sigma0)
 
     @pytest.mark.unit
+    def test_adamw_impl_bounds(self):
+        with pytest.warns(UserWarning, match="Boundaries ignored by AdamW"):
+            pybop.AdamWImpl(x0=[0.1], boundaries=[0.0, 0.2])
+
+    @pytest.mark.unit
     def test_scipy_minimize_with_jac(self, cost):
         # Check a method that uses gradient information
         optim = pybop.SciPyMinimize(
@@ -576,6 +581,7 @@ class TestOptimisation:
             str(results) == f"OptimisationResult:\n"
             f"  Initial parameters: {results.x0}\n"
             f"  Optimised parameters: {results.x}\n"
+            f"  Diagonal Fisher Information entries: {None}\n"
             f"  Final cost: {results.final_cost}\n"
             f"  Optimisation time: {results.time} seconds\n"
             f"  Number of iterations: {results.n_iterations}\n"
@@ -620,6 +626,7 @@ class TestOptimisation:
             f"OptimisationResult:\n"
             f"  Initial parameters: {results.x0}\n"
             f"  Optimised parameters: {results.x}\n"
+            f"  Diagonal Fisher Information entries: {None}\n"
             f"  Final cost: {results.final_cost}\n"
             f"  Optimisation time: {results.time} seconds\n"
             f"  Number of iterations: {results.n_iterations}\n"
