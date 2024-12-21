@@ -367,25 +367,22 @@ class TestOptimisation:
     @pytest.mark.unit
     def test_randomsearch_ask_without_bounds(self, two_param_cost):
         # Initialize optimiser without boundaries
-        optimiser = pybop.RandomSearch(
-            cost=two_param_cost, bounds=None, max_iterations=1
+        optim = pybop.RandomSearch(
+            cost=two_param_cost,
+            sigma0=0.05,
+            x0=[0.6, 0.55],
+            bounds=None,
+            max_iterations=1,
         )
-        optimiser.optimiser._x0 = np.array([0.6, 0.55])
-        optimiser.optimiser._sigma0 = 0.05
-        optimiser.optimiser._n = 2
-        optimiser.optimiser._dim = 2
 
-        # Call ask to generate candidates
-        candidates = optimiser.optimiser.ask()
+        # Set population size, generate candidates
+        optim.set_population_size(2)
+        candidates = optim.optimiser.ask()
 
-        # Assert the shape of generated candidates
+        # Assert the shape of the candidates
         assert candidates.shape == (2, 2)
-        assert np.all(
-            candidates >= optimiser.optimiser._x0 - 6 * optimiser.optimiser._sigma0
-        )
-        assert np.all(
-            candidates <= optimiser.optimiser._x0 + 6 * optimiser.optimiser._sigma0
-        )
+        assert np.all(candidates >= optim.optimiser._x0 - 6 * optim.optimiser._sigma0)
+        assert np.all(candidates <= optim.optimiser._x0 + 6 * optim.optimiser._sigma0)
 
     @pytest.mark.unit
     def test_scipy_minimize_with_jac(self, cost):

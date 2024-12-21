@@ -30,9 +30,6 @@ class RandomSearchImpl(PopulationBasedOptimiser):
         # Problem dimensionality
         self._dim = len(x0)
 
-        # Optimisation parameters
-        self._n = self._population_size
-
         # Initialise best solution
         self._x_best = np.copy(x0)
         self._f_best = np.inf
@@ -51,12 +48,12 @@ class RandomSearchImpl(PopulationBasedOptimiser):
             self._candidates = np.random.uniform(
                 low=self._boundaries.lower(),
                 high=self._boundaries.upper(),
-                size=(self._n, self._dim),
+                size=(self._population_size, self._dim),
             )
             return self._candidates
 
         self._candidates = np.random.normal(
-            self._x0, self._sigma0, size=(self._n, self._dim)
+            self._x0, self._sigma0, size=(self._population_size, self._dim)
         )
         return self.clip_candidates(self._candidates)
 
@@ -69,7 +66,7 @@ class RandomSearchImpl(PopulationBasedOptimiser):
             raise RuntimeError("ask() must be called before tell().")
 
         # Evaluate solutions and update the best
-        for i in range(self._n):
+        for i in range(self._population_size):
             f_new = replies[i]
             if f_new < self._f_best:
                 self._f_best = f_new
