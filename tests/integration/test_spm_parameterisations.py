@@ -61,6 +61,7 @@ class Test_SPM_Parameterisation:
             pybop.Minkowski,
             pybop.LogPosterior,
             pybop.JaxSumSquaredError,
+            pybop.JaxLogNormalLikelihood,
         ]
     )
     def cost(self, request):
@@ -101,7 +102,10 @@ class Test_SPM_Parameterisation:
         problem = pybop.FittingProblem(model, parameters, dataset)
 
         # Construct the cost
-        if cost is pybop.GaussianLogLikelihoodKnownSigma:
+        if cost in [
+            pybop.GaussianLogLikelihoodKnownSigma,
+            pybop.JaxLogNormalLikelihood,
+        ]:
             cost = cost(problem, sigma0=self.sigma0)
         elif cost is pybop.GaussianLogLikelihood:
             cost = cost(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
@@ -126,7 +130,7 @@ class Test_SPM_Parameterisation:
             else sigma0,
         }
         if (
-            isinstance(cost, pybop.JaxSumSquaredError)
+            isinstance(cost, pybop.BaseJaxCost)
             and optimiser is pybop.SciPyDifferentialEvolution
         ):
             common_args["bounds"] = [[0.375, 0.775], [0.375, 0.775]]
@@ -190,7 +194,10 @@ class Test_SPM_Parameterisation:
         signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
         problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 
-        if cost is pybop.GaussianLogLikelihoodKnownSigma:
+        if cost in [
+            pybop.GaussianLogLikelihoodKnownSigma,
+            pybop.JaxLogNormalLikelihood,
+        ]:
             return cost(problem, sigma0=self.sigma0)
         elif cost is pybop.GaussianLogLikelihood:
             return cost(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
@@ -225,7 +232,7 @@ class Test_SPM_Parameterisation:
         }
 
         if (
-            isinstance(spm_two_signal_cost, pybop.JaxSumSquaredError)
+            isinstance(spm_two_signal_cost, pybop.BaseJaxCost)
             and multi_optimiser is pybop.SciPyDifferentialEvolution
         ):
             common_args["bounds"] = [[0.375, 0.775], [0.375, 0.775]]

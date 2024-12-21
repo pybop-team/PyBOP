@@ -1,3 +1,7 @@
+# This is an example benchmarking script
+# to introduce the comparison method better
+# PyBaMM solvers for parameter inference / optimisation.
+
 import time
 
 import numpy as np

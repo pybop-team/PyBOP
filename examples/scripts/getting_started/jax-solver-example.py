@@ -6,10 +6,10 @@ import pybop
 # Parameter set and model definition
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 
-# The IDAKLU, and it's jaxified version perform very well on the DFN with and without
-# gradient calculations
-solver = pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6)
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
+# The Jaxified IDAKLU performs very well on high iteration
+# identification tasks, due to the just-in-time compilation
+solver = pybamm.IDAKLUSolver()
+model = pybop.lithium_ion.SPMe(parameter_set=parameter_set, solver=solver)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -57,13 +57,13 @@ problem = pybop.FittingProblem(model, parameters, dataset)
 
 # By selecting a Jax based cost function, the IDAKLU solver will be
 # jaxified (wrapped in a Jax compiled expression) and used for optimisation
-cost = pybop.JaxSumSquaredError(problem)
+cost = pybop.JaxLogNormalLikelihood(problem, sigma0=sigma)
 
-# Non-gradient optimiser, change to `pybop.AdamW` for gradient-based example
+# Test gradient-based optimiser
 optim = pybop.IRPropMin(
     cost,
     sigma0=0.02,
-    max_unchanged_iterations=55,
+    max_unchanged_iterations=35,
     max_iterations=100,
 )
 
@@ -75,5 +75,5 @@ pybop.plot.convergence(optim)
 # Plot parameter trace
 pybop.plot.parameters(optim)
 
-# Plot voronoi optimiser surface
+# Plot voronoi surface
 pybop.plot.surface(optim)

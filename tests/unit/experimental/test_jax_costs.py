@@ -71,6 +71,11 @@ class TestJaxCosts:
     )
     def cost(self, problem, request):
         cls = request.param
+        if cls in [
+            pybop.JaxLogNormalLikelihood,
+            pybop.JaxGaussianLogLikelihoodKnownSigma,
+        ]:
+            return cls(problem, sigma0=1e-3)
         return cls(problem)
 
     @pytest.mark.unit
