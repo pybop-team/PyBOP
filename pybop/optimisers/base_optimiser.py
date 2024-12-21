@@ -4,12 +4,7 @@ from typing import Optional, Union
 import numpy as np
 from scipy.optimize import OptimizeResult
 
-from pybop import (
-    BaseCost,
-    Inputs,
-    Parameter,
-    Parameters,
-)
+from pybop import BaseCost, Inputs, Parameter, Parameters
 
 
 class BaseOptimiser:
