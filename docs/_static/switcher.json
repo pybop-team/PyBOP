@@ -6,13 +6,13 @@
     {
       "name": "v24.12 (stable)",
       "version": "v24.12",
-      "url": "https://pybop-docs.readthedocs.io/en/v24.24/",
+      "url": "https://pybop-docs.readthedocs.io/en/v24.12/",
       "preferred": true
     },
     {
       "name": "v24.9",
       "version": "v24.9",
-      "url": "https://pybop-docs.readthedocs.io/en/v24.9.1/",
+      "url": "https://pybop-docs.readthedocs.io/en/v24.9.1/"
     },
     {
       "name": "v24.6",
