@@ -58,7 +58,7 @@ scifem = [
   "scikit-fem>=8.1.0" # scikit-fem is a dependency for the multi-dimensional pybamm models
 ]
 bpx = [
-    "bpx>=0.4",
+    "bpx<0.5",
 ]
 all = ["pybop[plot,scifem,bpx]"]
 
