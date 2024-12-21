@@ -93,7 +93,9 @@ class JaxSumSquaredError(BaseJaxCost):
         super().__init__(problem)
 
     def evaluate(self, inputs):
-        # Calculate residuals and error
+        """
+        Evaluates the sum of squared error for the given predictions.
+        """
         y = self.problem.evaluate(inputs)
         r = jnp.asarray([y[s] - self._target[s] for s in self.signal])
         return jnp.sum(r**2)

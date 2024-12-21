@@ -48,10 +48,10 @@ class SciPyEvaluator(PintsEvaluator):
     def _evaluate(self, positions):
         scores = [self._function(x, *self._args) for x in [positions]]
 
-        # If gradient provided, convert jnp to np and return
         if not isinstance(scores[0], tuple):
             return np.asarray(scores)[0]
 
+        # If gradient provided, convert jnp to np and return
         if isinstance(scores[0][0], jnp.ndarray):
             return [(score[0].item(), score[1]) for score in scores][0]
         return [(score[0], score[1]) for score in scores][0]
