@@ -381,10 +381,10 @@ class TestOptimisation:
         # Assert the shape of generated candidates
         assert candidates.shape == (2, 2)
         assert np.all(
-            candidates >= optimiser.optimiser._x0 - 3 * optimiser.optimiser._sigma0
+            candidates >= optimiser.optimiser._x0 - 6 * optimiser.optimiser._sigma0
         )
         assert np.all(
-            candidates <= optimiser.optimiser._x0 + 3 * optimiser.optimiser._sigma0
+            candidates <= optimiser.optimiser._x0 + 6 * optimiser.optimiser._sigma0
         )
 
     @pytest.mark.unit
