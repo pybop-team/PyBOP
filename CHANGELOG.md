@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#597](https://github.com/pybop-team/PyBOP/pull/597) - Adds number of function evaluations `n_evaluations` to `OptimisationResult`.
 - [#362](https://github.com/pybop-team/PyBOP/issues/362) - Adds the `classify_using_Hessian` functionality to classify the optimised result.
 - [#584](https://github.com/pybop-team/PyBOP/pull/584) - Adds the `GroupedSPMe` model for parameter identification.
 - [#571](https://github.com/pybop-team/PyBOP/pull/571) - Adds Multistart functionality to optimisers via initialisation arg `multistart`.
