@@ -118,7 +118,6 @@ class Test_SPM_Parameterisation:
         else:
             cost = cost(problem)
 
-        sigma0 = 0.05 if optimiser == pybop.CuckooSearch else 0.02
         # Construct optimisation object
         common_args = {
             "cost": cost,
@@ -127,7 +126,7 @@ class Test_SPM_Parameterisation:
             "max_unchanged_iterations": 55,
             "sigma0": [0.05, 0.05, 1e-3]
             if isinstance(cost, pybop.GaussianLogLikelihood)
-            else sigma0,
+            else 0.05,
         }
         if (
             isinstance(cost, pybop.BaseJaxCost)
