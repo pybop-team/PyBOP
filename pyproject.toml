@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pybop"
-version = "24.9.1"
+version = "24.12"
 authors = [
   {name = "The PyBOP Team"},
 ]
