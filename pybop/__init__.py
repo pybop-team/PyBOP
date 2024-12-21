@@ -134,6 +134,7 @@ from ._evaluation import SequentialJaxEvaluator, SciPyEvaluator
 #
 
 from .optimisers._cuckoo import CuckooSearchImpl
+from .optimisers._random_search import RandomSearchImpl
 from .optimisers._adamw import AdamWImpl
 from .optimisers._gradient_descent import GradientDescentImpl
 from .optimisers.base_optimiser import BaseOptimiser, OptimisationResult, MultiOptimisationResult
@@ -152,6 +153,7 @@ from .optimisers.pints_optimisers import (
     SNES,
     XNES,
     CuckooSearch,
+    RandomSearch,
     AdamW,
 )
 from .optimisers.optimisation import Optimisation

@@ -219,7 +219,7 @@ class Test_SPM_Parameterisation:
             "max_iterations": 250,
             "absolute_tolerance": 1e-6,
             "max_unchanged_iterations": 55,
-            "sigma0": [0.035, 0.035, 6e-3, 6e-3]
+            "sigma0": [0.05, 0.05, 6e-3, 6e-3]
             if isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood)
             else 0.02,
         }
@@ -236,9 +236,6 @@ class Test_SPM_Parameterisation:
         # Add sigma0 to ground truth for GaussianLogLikelihood
         if isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood):
             self.ground_truth = np.concatenate((self.ground_truth, combined_sigma0))
-
-        if issubclass(multi_optimiser, pybop.BasePintsOptimiser):
-            optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-6)
 
         initial_cost = optim.cost(optim.parameters.initial_value())
         results = optim.run()

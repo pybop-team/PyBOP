@@ -3,6 +3,7 @@
 ## Features
 
 - [#481](https://github.com/pybop-team/PyBOP/pull/481) - Adds experimental support for PyBaMM's jaxified IDAKLU solver. Includes Jax-specific cost functions `pybop.JaxSumSquareError` and `pybop.JaxLogNormalLikelihood`. Adds `Jax` optional dependency to PyBaMM dependency.
+- [#597](https://github.com/pybop-team/PyBOP/pull/597) - Adds number of function evaluations `n_evaluations` to `OptimisationResult`.
 - [#362](https://github.com/pybop-team/PyBOP/issues/362) - Adds the `classify_using_Hessian` functionality to classify the optimised result.
 - [#584](https://github.com/pybop-team/PyBOP/pull/584) - Adds the `GroupedSPMe` model for parameter identification.
 - [#571](https://github.com/pybop-team/PyBOP/pull/571) - Adds Multistart functionality to optimisers via initialisation arg `multistart`.
@@ -22,6 +23,7 @@
 
 ## Optimisations
 
+- [#580](https://github.com/pybop-team/PyBOP/pull/580) - Random Search optimiser is implimented.
 - [#588](https://github.com/pybop-team/PyBOP/pull/588) - Makes `minimising` a property of `BaseOptimiser` set by the cost class.
 - [#512](https://github.com/pybop-team/PyBOP/pull/513) - Refactors `LogPosterior` with attributes pointing to composed likelihood object.
 - [#551](https://github.com/pybop-team/PyBOP/pull/551) - Refactors Optimiser arguments, `population_size` and `max_iterations` as default args, improves optimiser docstrings
