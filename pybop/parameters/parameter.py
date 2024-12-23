@@ -4,7 +4,7 @@ from typing import Optional
 
 import numpy as np
 
-from pybop import ComposedTransformation, IdentityTransformation
+from pybop import ComposedTransformation, IdentityTransformation, LogTransformation
 from pybop._utils import is_numeric
 
 Inputs = dict[str, float]
@@ -57,8 +57,8 @@ class Parameter:
         self.transformation = transformation
         self.applied_prior_bounds = False
         self.bounds = None
-        self.lower_bounds = None
-        self.upper_bounds = None
+        self.lower_bound = None
+        self.upper_bound = None
         self.set_bounds(bounds)
         self.margin = 1e-4
 
@@ -150,9 +150,12 @@ class Parameter:
 
         self.margin = margin
 
-    def set_bounds(self, bounds=None, boundary_multiplier=6):
+    def set_bounds(self, bounds=None, boundary_multiplier=15):
         """
-        Set the upper and lower bounds.
+        Set the upper and lower bounds and applies default values
+        from the prior if no bounds are provided. The default values
+        are calculated using the boundary_multiplier and the parameters
+        prior sigma value.
 
         Parameters
         ----------
@@ -161,7 +164,7 @@ class Parameter:
             Defaults to None.
         boundary_multiplier : float, optional
             Used to define the bounds when no bounds are passed but the parameter has
-            a prior distribution (default: 6).
+            a prior distribution (default: 15).
 
         Raises
         ------
@@ -335,31 +338,31 @@ class Parameters:
         apply_transform : bool
             If True, the transformation is applied to the output (default: False).
         """
-        all_unbounded = True  # assumption
         bounds = {"lower": [], "upper": []}
-
         for param in self.param.values():
-            if param.bounds is not None:
-                if apply_transform and param.transformation is not None:
-                    lower = float(param.transformation.to_search(param.bounds[0]))
-                    upper = float(param.transformation.to_search(param.bounds[1]))
-                    if np.isnan(lower) or np.isnan(upper):
-                        raise ValueError(
-                            "Transformed bounds resulted in NaN values.\n"
-                            "If you've not applied bounds, this is due to the defaults applied from the prior distribution,\n"
-                            "consider bounding the parameters to avoid this error."
-                        )
-                    bounds["lower"].append(lower)
-                    bounds["upper"].append(upper)
-                else:
-                    bounds["lower"].append(param.bounds[0])
-                    bounds["upper"].append(param.bounds[1])
-                all_unbounded = False
-            else:
-                bounds["lower"].append(-np.inf)
-                bounds["upper"].append(np.inf)
-        if all_unbounded:
-            bounds = None
+            lower, upper = param.bounds or (-np.inf, np.inf)
+
+            if (
+                apply_transform
+                and param.bounds is not None
+                and param.transformation is not None
+            ):
+                if isinstance(param.transformation, LogTransformation):
+                    param.bounds = [
+                        b + np.finfo(float).eps if b == 0 else b for b in param.bounds
+                    ]
+                lower = float(param.transformation.to_search(param.bounds[0]))
+                upper = float(param.transformation.to_search(param.bounds[1]))
+
+                if np.isnan(lower) or np.isnan(upper):
+                    raise ValueError(
+                        "Transformed bounds resulted in NaN values.\n"
+                        "If you've not applied bounds, this is due to the defaults applied from the prior distribution,\n"
+                        "consider bounding the parameters to avoid this error."
+                    )
+
+            bounds["lower"].append(lower)
+            bounds["upper"].append(upper)
 
         return bounds
 
@@ -402,6 +405,9 @@ class Parameters:
         for param in self.param.values():
             samples = param.rvs(n_samples, apply_transform=apply_transform)
             all_samples.append(samples)
+
+        if n_samples > 1:
+            return np.asarray(all_samples).T
 
         return np.concatenate(all_samples)
 
@@ -525,7 +531,7 @@ class Parameters:
         ]
         return ComposedTransformation(valid_transformations)
 
-    def get_bounds_for_plotly(self):
+    def get_bounds_for_plotly(self, apply_transform: bool = False) -> np.ndarray:
         """
         Retrieve parameter bounds in the format expected by Plotly.
 
@@ -534,22 +540,22 @@ class Parameters:
         bounds : numpy.ndarray
             An array of shape (n_parameters, 2) containing the bounds for each parameter.
         """
-        bounds = np.zeros((len(self), 2))
-
-        for i, param in enumerate(self.param.values()):
+        for param in self.param.values():
             if param.applied_prior_bounds:
                 warnings.warn(
                     "Bounds were created from prior distributions. "
-                    "Please provide bounds for better plotting results.",
+                    "Please provide bounds for better plot results.",
                     UserWarning,
                     stacklevel=2,
                 )
-            if param.bounds is not None:
-                bounds[i] = param.bounds
-            else:
-                raise ValueError("All parameters require bounds for plotting.")
 
-        return bounds
+        bounds = self.get_bounds(apply_transform=apply_transform)
+
+        # Validate that all parameters have bounds
+        if bounds is None or not np.isfinite(list(bounds.values())).all():
+            raise ValueError("All parameters require bounds for plot.")
+
+        return np.asarray(list(bounds.values())).T
 
     def as_dict(self, values=None) -> dict:
         """

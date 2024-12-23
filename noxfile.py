@@ -97,12 +97,20 @@ def notebooks_overwrite(session):
 
 @nox.session(name="tests")
 def run_tests(session):
-    """Run all the tests."""
+    """Run all or a user-defined set of tests."""
     session.install("-e", ".[all,dev]", silent=False)
     if PYBOP_SCHEDULED:
         session.run("pip", "install", f"pybamm=={PYBAMM_VERSION}", silent=False)
+    specific_tests = session.posargs if session.posargs else []
     session.run(
-        "pytest", "--unit", "--integration", "--nbmake", "--examples", "-n", "auto"
+        "pytest",
+        "--unit",
+        "--integration",
+        "--nbmake",
+        "--examples",
+        "-n",
+        "auto",
+        *specific_tests,
     )
 
 

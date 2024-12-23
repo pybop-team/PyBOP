@@ -1,4 +1,5 @@
 import logging
+import time
 from functools import partial
 from typing import Optional
 
@@ -43,7 +44,7 @@ class BasePintsSampler(BaseSampler):
             cov0: Initial standard deviation for the chains.
             kwargs: Additional keyword arguments.
         """
-        super().__init__(log_pdf, x0, cov0)
+        super().__init__(log_pdf, x0, chains, cov0)
 
         # Set kwargs
         self._max_iterations = kwargs.get("max_iterations", 500)
@@ -55,13 +56,11 @@ class BasePintsSampler(BaseSampler):
         self._evaluation_files = kwargs.get("evaluation_files", None)
         self._parallel = kwargs.get("parallel", False)
         self._verbose = kwargs.get("verbose", False)
+        self.sampler = sampler
+        self.iter_time = float(0)
         self._iteration = 0
+        self._loop_iters = 0
         self._warm_up = warm_up
-        self.n_parameters = (
-            self._log_pdf[0].n_parameters
-            if isinstance(self._log_pdf, list)
-            else self._log_pdf.n_parameters
-        )
 
         # Check log_pdf
         if isinstance(self._log_pdf, BaseCost):
@@ -81,27 +80,16 @@ class BasePintsSampler(BaseSampler):
 
             self._multi_log_pdf = True
 
-        # Number of chains
-        self._n_chains = chains
-        if self._n_chains < 1:
-            raise ValueError("Number of chains must be greater than 0")
-
-        # Check initial conditions
-        if self._x0.size != self.n_parameters:
-            raise ValueError("x0 must have the same number of parameters as log_pdf")
-        if len(self._x0) != self._n_chains or len(self._x0) == 1:
-            self._x0 = np.tile(self._x0, (self._n_chains, 1))
-
         # Single chain vs multiple chain samplers
-        self._single_chain = issubclass(sampler, SingleChainMCMC)
+        self._single_chain = issubclass(self.sampler, SingleChainMCMC)
 
         # Construct the samplers object
         if self._single_chain:
             self._n_samplers = self._n_chains
-            self._samplers = [sampler(x0, sigma0=self._cov0) for x0 in self._x0]
+            self._samplers = [self.sampler(x0, sigma0=self._cov0) for x0 in self._x0]
         else:
             self._n_samplers = 1
-            self._samplers = [sampler(self._n_chains, self._x0, self._cov0)]
+            self._samplers = [self.sampler(self._n_chains, self._x0, self._cov0)]
 
         # Check for sensitivities from sampler and set evaluation
         self._needs_sensitivities = self._samplers[0].needs_sensitivities()
@@ -184,8 +172,17 @@ class BasePintsSampler(BaseSampler):
 
             self._iteration += 1
             if self._log_to_screen and self._verbose:
-                logging.info(f"Iteration: {self._iteration}")  # TODO: Add more info
-
+                if self._iteration <= 10 or self._iteration % 50 == 0:
+                    timing_iterations = self._iteration - self._loop_iters
+                    elapsed_time = time.time() - self.iter_time
+                    iterations_per_second = (
+                        timing_iterations / elapsed_time if elapsed_time > 0 else 0
+                    )
+                    logging.info(
+                        f"| Iteration: {self._iteration} | Iter/s: {iterations_per_second: .2f} |"
+                    )
+                    self.iter_time = time.time()
+                    self._loop_iters = self._iteration
             if self._max_iterations and self._iteration >= self._max_iterations:
                 running = False
 
@@ -270,13 +267,14 @@ class BasePintsSampler(BaseSampler):
             raise ValueError("At least one stopping criterion must be set.")
 
     def _create_evaluator(self):
-        f = self._log_pdf
-        # Check for sensitivities from sampler and set evaluator
+        common_args = {"apply_transform": True}
+
         if self._needs_sensitivities:
-            if not self._multi_log_pdf:
-                f = partial(f, calculate_grad=True)
-            else:
-                f = [partial(pdf, calculate_grad=True) for pdf in f]
+            common_args["calculate_grad"] = True
+        if not self._multi_log_pdf:
+            f = partial(self._log_pdf, **common_args)
+        else:
+            f = [partial(pdf, **common_args) for pdf in self._log_pdf]
 
         if self._parallel:
             if not self._multi_log_pdf:

@@ -12,11 +12,6 @@ class TestCosts:
     Class for tests cost functions
     """
 
-    # Define an invalid likelihood class for MAP tests
-    class InvalidLikelihood:
-        def __init__(self, problem, sigma0):
-            pass
-
     @pytest.fixture
     def model(self, ground_truth):
         solver = pybamm.IDAKLUSolver()
@@ -204,7 +199,28 @@ class TestCosts:
 
     @pytest.fixture
     def design_problem(self, parameters, experiment, signal):
-        model = pybop.lithium_ion.SPM()
+        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set.update(
+            {
+                "Electrolyte density [kg.m-3]": pybamm.Parameter(
+                    "Separator density [kg.m-3]"
+                ),
+                "Negative electrode active material density [kg.m-3]": pybamm.Parameter(
+                    "Negative electrode density [kg.m-3]"
+                ),
+                "Negative electrode carbon-binder density [kg.m-3]": pybamm.Parameter(
+                    "Negative electrode density [kg.m-3]"
+                ),
+                "Positive electrode active material density [kg.m-3]": pybamm.Parameter(
+                    "Positive electrode density [kg.m-3]"
+                ),
+                "Positive electrode carbon-binder density [kg.m-3]": pybamm.Parameter(
+                    "Positive electrode density [kg.m-3]"
+                ),
+            },
+            check_already_exists=False,
+        )
+        model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
         return pybop.DesignProblem(
             model,
             parameters,
@@ -214,17 +230,20 @@ class TestCosts:
         )
 
     @pytest.mark.parametrize(
-        "cost_class",
+        "cost_class, expected_name",
         [
-            pybop.DesignCost,
-            pybop.GravimetricEnergyDensity,
-            pybop.VolumetricEnergyDensity,
+            (pybop.DesignCost, "Design Cost"),
+            (pybop.GravimetricEnergyDensity, "Gravimetric Energy Density"),
+            (pybop.VolumetricEnergyDensity, "Volumetric Energy Density"),
+            (pybop.GravimetricPowerDensity, "Gravimetric Power Density"),
+            (pybop.VolumetricPowerDensity, "Volumetric Power Density"),
         ],
     )
     @pytest.mark.unit
-    def test_design_costs(self, cost_class, design_problem):
+    def test_design_costs(self, cost_class, expected_name, design_problem):
         # Construct Cost
         cost = cost_class(design_problem)
+        assert cost.name == expected_name
 
         if cost_class in [pybop.DesignCost]:
             with pytest.raises(NotImplementedError):
@@ -333,7 +352,7 @@ class TestCosts:
 
         # Test LogPosterior explicitly
         cost4 = pybop.LogPosterior(pybop.GaussianLogLikelihood(problem))
-        weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, -1 / weight])
+        weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, 1 / weight])
         assert weighted_cost_4.has_identical_problems is True
         assert weighted_cost_4.has_separable_problem is False
         sigma = 0.01

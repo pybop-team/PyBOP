@@ -1,6 +1,7 @@
 import warnings
 
 import numpy as np
+import pybamm
 import pytest
 from packaging import version
 
@@ -9,14 +10,16 @@ import pybop
 
 class TestPlots:
     """
-    A class to test the plotting classes.
+    A class to test the plot classes.
     """
 
     @pytest.mark.unit
     def test_standard_plot(self):
         # Test standard plot
-        trace_names = pybop.StandardPlot.remove_brackets(["Trace [1]", "Trace [2]"])
-        plot_dict = pybop.StandardPlot(
+        trace_names = pybop.plot.StandardPlot.remove_brackets(
+            ["Trace [1]", "Trace [2]"]
+        )
+        plot_dict = pybop.plot.StandardPlot(
             x=np.ones((2, 10)),
             y=np.ones((2, 10)),
             trace_names=trace_names,
@@ -60,17 +63,24 @@ class TestPlots:
 
     @pytest.mark.unit
     def test_dataset_plots(self, dataset):
-        # Test plotting of Dataset objects
-        pybop.plot_trajectories(
+        # Test plot of Dataset objects
+        pybop.plot.trajectories(
             dataset["Time [s]"],
             dataset["Voltage [V]"],
             trace_names=["Time [s]", "Voltage [V]"],
         )
-        pybop.plot_dataset(dataset)
+        pybop.plot.dataset(dataset)
 
     @pytest.fixture
     def fitting_problem(self, model, parameters, dataset):
         return pybop.FittingProblem(model, parameters, dataset)
+
+    @pytest.fixture
+    def jax_fitting_problem(self, model, parameters, dataset):
+        model.solver = pybamm.IDAKLUSolver()
+        problem = pybop.FittingProblem(model, parameters, dataset)
+        problem.model.jaxify_solver(t_eval=problem.domain_data)
+        return problem
 
     @pytest.fixture
     def experiment(self):
@@ -86,13 +96,14 @@ class TestPlots:
         return pybop.DesignProblem(model, parameters, experiment)
 
     @pytest.mark.unit
-    def test_problem_plots(self, fitting_problem, design_problem):
-        # Test plotting of Problem objects
-        pybop.quick_plot(fitting_problem, title="Optimised Comparison")
-        pybop.quick_plot(design_problem)
+    def test_problem_plots(self, fitting_problem, design_problem, jax_fitting_problem):
+        # Test plot of Problem objects
+        pybop.plot.quick(fitting_problem, title="Optimised Comparison")
+        pybop.plot.quick(design_problem)
+        pybop.plot.quick(jax_fitting_problem)
 
         # Test conversion of values into inputs
-        pybop.quick_plot(fitting_problem, problem_inputs=[0.6, 0.6])
+        pybop.plot.quick(fitting_problem, problem_inputs=[0.6, 0.6])
 
     @pytest.fixture
     def cost(self, fitting_problem):
@@ -101,15 +112,17 @@ class TestPlots:
 
     @pytest.mark.unit
     def test_cost_plots(self, cost):
-        # Test plotting of Cost objects
-        pybop.plot2d(cost, gradient=True, steps=5)
+        # Test plot of Cost objects
+        pybop.plot.contour(cost, gradient=True, steps=5)
 
         # Test without bounds
-        for param in cost.problem.parameters:
+        for param in cost.parameters:
             param.bounds = None
-        with pytest.raises(ValueError):
-            pybop.plot2d(cost, steps=5)
-        pybop.plot2d(cost, bounds=np.array([[0.5, 0.8], [0.4, 0.7]]), steps=5)
+        with pytest.raises(ValueError, match="All parameters require bounds for plot."):
+            pybop.plot.contour(cost, steps=5)
+
+        # Test with bounds
+        pybop.plot.contour(cost, bounds=np.array([[0.5, 0.8], [0.4, 0.7]]), steps=5)
 
     @pytest.fixture
     def optim(self, cost):
@@ -120,46 +133,85 @@ class TestPlots:
 
     @pytest.mark.unit
     def test_optim_plots(self, optim):
+        bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
+
         # Plot convergence
-        pybop.plot_convergence(optim)
+        pybop.plot.convergence(optim)
         optim._minimising = False
-        pybop.plot_convergence(optim)
+        pybop.plot.convergence(optim)
 
         # Plot the parameter traces
-        pybop.plot_parameters(optim)
+        pybop.plot.parameters(optim)
 
         # Plot the cost landscape with optimisation path
-        pybop.plot2d(optim, steps=5)
+        pybop.plot.contour(optim, steps=3)
+
+        # Plot the cost landscape w/ optim & bounds
+        pybop.plot.contour(optim, steps=3, bounds=bounds)
 
         # Plot the cost landscape using optimisation path
-        pybop.plot2d(optim, steps=5, use_optim_log=True)
+        pybop.plot.contour(optim, steps=3, use_optim_log=True)
 
         # Plot gradient cost landscape
-        pybop.plot2d(optim, gradient=True, steps=5)
+        pybop.plot.contour(optim, gradient=True, steps=5)
+
+        # Plot voronoi
+        pybop.plot.surface(optim, normalise=False)
+
+        # Plot voronoi w/ bounds
+        pybop.plot.surface(optim, bounds=bounds)
+
+        with pytest.raises(
+            ValueError, match="Lower bounds must be strictly less than upper bounds."
+        ):
+            pybop.plot.surface(optim, bounds=[[0.5, 0.8], [0.7, 0.4]])
+
+    @pytest.fixture
+    def posterior_summary(self, fitting_problem):
+        posterior = pybop.LogPosterior(
+            pybop.GaussianLogLikelihoodKnownSigma(fitting_problem, sigma0=2e-3)
+        )
+        sampler = pybop.SliceStepoutMCMC(posterior, chains=1, iterations=1)
+        results = sampler.run()
+        return pybop.PosteriorSummary(results)
+
+    @pytest.mark.unit
+    def test_posterior_plots(self, posterior_summary):
+        # Plot trace
+        posterior_summary.plot_trace()
+
+        # Plot posterior
+        posterior_summary.plot_posterior()
+
+        # Plot chains
+        posterior_summary.plot_chains()
+
+        # Plot summary table
+        posterior_summary.summary_table()
 
     @pytest.mark.unit
     def test_with_ipykernel(self, dataset, cost, optim):
         import ipykernel
 
         assert version.parse(ipykernel.__version__) >= version.parse("0.6")
-        pybop.plot_dataset(dataset, signal=["Voltage [V]"])
-        pybop.plot2d(cost, gradient=True, steps=5)
-        pybop.plot_convergence(optim)
-        pybop.plot_parameters(optim)
-        pybop.plot2d(optim, steps=5)
+        pybop.plot.dataset(dataset, signal=["Voltage [V]"])
+        pybop.plot.contour(cost, gradient=True, steps=5)
+        pybop.plot.convergence(optim)
+        pybop.plot.parameters(optim)
+        pybop.plot.contour(optim, steps=5)
 
     @pytest.mark.unit
     def test_gaussianlogliklihood_plots(self, fitting_problem):
-        # Test plotting of GaussianLogLikelihood
+        # Test plot of GaussianLogLikelihood
         likelihood = pybop.GaussianLogLikelihood(fitting_problem)
         optim = pybop.CMAES(likelihood, max_iterations=5)
         optim.run()
 
         # Plot parameters
-        pybop.plot_parameters(optim)
+        pybop.plot.parameters(optim)
 
     @pytest.mark.unit
-    def test_plot2d_incorrect_number_of_parameters(self, model, dataset):
+    def test_contour_incorrect_number_of_parameters(self, model, dataset):
         # Test with less than two paramters
         parameters = pybop.Parameters(
             pybop.Parameter(
@@ -173,7 +225,7 @@ class TestPlots:
         with pytest.raises(
             ValueError, match="This cost function takes fewer than 2 parameters."
         ):
-            pybop.plot2d(cost)
+            pybop.plot.contour(cost)
 
         # Test with more than two paramters
         parameters = pybop.Parameters(
@@ -195,10 +247,10 @@ class TestPlots:
         )
         fitting_problem = pybop.FittingProblem(model, parameters, dataset)
         cost = pybop.SumSquaredError(fitting_problem)
-        pybop.plot2d(cost)
+        pybop.plot.contour(cost)
 
     @pytest.mark.unit
-    def test_plot2d_prior_bounds(self, model, dataset):
+    def test_contour_prior_bounds(self, model, dataset):
         # Test with prior bounds
         parameters = pybop.Parameters(
             pybop.Parameter(
@@ -217,7 +269,7 @@ class TestPlots:
             match="Bounds were created from prior distributions.",
         ):
             warnings.simplefilter("always")
-            pybop.plot2d(cost)
+            pybop.plot.contour(cost)
 
     @pytest.mark.unit
     def test_nyquist(self):
@@ -249,7 +301,9 @@ class TestPlots:
         problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 
         # Plot the nyquist
-        pybop.nyquist(problem, problem_inputs=[60e-6], title="Optimised Comparison")
+        pybop.plot.nyquist(
+            problem, problem_inputs=[60e-6], title="Optimised Comparison"
+        )
 
         # Without inputs
-        pybop.nyquist(problem, title="Optimised Comparison")
+        pybop.plot.nyquist(problem, title="Optimised Comparison")

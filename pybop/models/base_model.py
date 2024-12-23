@@ -72,7 +72,7 @@ class BaseModel:
         name: str = "Base Model",
         parameter_set: Optional[ParameterSet] = None,
         check_params: Callable = None,
-        eis=False,
+        eis: bool = False,
     ):
         """
         Initialise the BaseModel with an optional name and a parameter set.
@@ -107,6 +107,8 @@ class BaseModel:
         """
         self.name = name
         self.eis = eis
+        self._calculate_sensitivities = False
+
         if parameter_set is None:
             self._parameter_set = None
         elif isinstance(parameter_set, dict):
@@ -241,31 +243,7 @@ class BaseModel:
         """
         self.clear()
 
-        initial_state = self.convert_to_pybamm_initial_state(initial_state)
-
-        if isinstance(self.pybamm_model, pybamm.equivalent_circuit.Thevenin):
-            initial_state = self.get_initial_state(initial_state, inputs=inputs)
-            self._unprocessed_parameter_set.update({"Initial SoC": initial_state})
-
-        else:
-            if not self.pybamm_model._built:  # noqa: SLF001
-                self.pybamm_model.build_model()
-
-            # Temporary construction of attributes for PyBaMM
-            self.model = self._model = self.pybamm_model
-            self._unprocessed_parameter_values = self._unprocessed_parameter_set
-
-            # Set initial state via PyBaMM's Simulation class
-            pybamm.Simulation.set_initial_soc(self, initial_state, inputs=inputs)
-
-            # Update the default parameter set for consistency
-            self._unprocessed_parameter_set = self._parameter_values
-
-            # Clear the pybamm objects
-            del self.model  # can be removed after PyBaMM's next release, fixed with pybamm-team/PyBaMM#4319
-            del self._model
-            del self._unprocessed_parameter_values
-            del self._parameter_values
+        self._set_initial_state(initial_state=initial_state, inputs=inputs)
 
         # Use a copy of the updated default parameter set
         self._parameter_set = self._unprocessed_parameter_set.copy()
@@ -332,11 +310,11 @@ class BaseModel:
             model.param, None, model.options, control="algebraic"
         ).get_fundamental_variables()
 
-        # Perform the replacement
-        symbol_replacement_map = {
-            model.variables[name]: variable
-            for name, variable in external_circuit_variables.items()
-        }
+        # Define the variables to replace
+        symbol_replacement_map = {}
+        for name, variable in external_circuit_variables.items():
+            if name in model.variables.keys():
+                symbol_replacement_map[model.variables[name]] = variable
 
         # Don't replace initial conditions, as these should not contain
         # Variable objects
@@ -508,7 +486,7 @@ class BaseModel:
             t_eval=[t_eval[0], t_eval[-1]]
             if isinstance(self._solver, IDAKLUSolver)
             else t_eval,
-            t_interp=t_eval,
+            t_interp=t_eval if self._solver.supports_interp else None,
         )
 
     def simulateEIS(
@@ -669,7 +647,7 @@ class BaseModel:
             if isinstance(self._solver, IDAKLUSolver)
             else t_eval,
             calculate_sensitivities=True,
-            t_interp=t_eval,
+            t_interp=t_eval if self._solver.supports_interp else None,
         )
 
     def predict(
@@ -764,6 +742,31 @@ class BaseModel:
                 "The predict method requires either an experiment or t_eval "
                 "to be specified."
             )
+
+    def jaxify_solver(self, t_eval, calculate_sensitivities=False):
+        """
+        Jaxify the IDAKLU Solver and store a copy for future reconstruction.
+        Handles sensitivity calculations during solver construction.
+        """
+        self._calculate_sensitivities = calculate_sensitivities
+
+        if not isinstance(self._solver, (pybamm.IDAKLUSolver, pybamm.IDAKLUJax)):
+            raise ValueError("Solver must be pybamm.IDAKLUSolver to jaxify.")
+
+        # Store original solver if not already stored, and create local copy
+        if isinstance(self._solver, pybamm.IDAKLUSolver):
+            self._IDAKLU_stored = self._solver.copy()
+        base_solver = self._IDAKLU_stored
+
+        # Handle PyBaMM v24.11 bug: use full t_eval only when calculating sensitivities
+        t_eval_adjusted = t_eval if calculate_sensitivities else [t_eval[0], t_eval[-1]]
+
+        self._solver = base_solver.jaxify(
+            model=self._built_model,
+            t_eval=t_eval_adjusted,
+            t_interp=t_eval,
+            calculate_sensitivities=calculate_sensitivities,
+        )
 
     def check_params(
         self,
@@ -983,6 +986,15 @@ class BaseModel:
     def solver(self):
         return self._solver
 
+    @property
+    def calculate_sensitivities(self):
+        return self._calculate_sensitivities
+
     @solver.setter
     def solver(self, solver):
-        self._solver = solver.copy() if solver is not None else None
+        if isinstance(solver, pybamm.solvers.idaklu_jax.IDAKLUJax):
+            self._solver = solver
+        elif isinstance(solver, pybamm.BaseSolver):
+            self._solver = solver.copy()
+        else:
+            self._solver = None

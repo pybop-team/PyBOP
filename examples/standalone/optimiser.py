@@ -1,7 +1,6 @@
-import numpy as np
 from scipy.optimize import minimize
 
-from pybop import BaseOptimiser, Result
+from pybop import BaseOptimiser, OptimisationResult
 
 
 class StandaloneOptimiser(BaseOptimiser):
@@ -9,15 +8,9 @@ class StandaloneOptimiser(BaseOptimiser):
     Defines an example standalone optimiser without a Cost.
     """
 
-    def __init__(self, cost=None, **optimiser_kwargs):
-        # Define cost function
-        def cost(x):
-            x1, x2 = x
-            return (x1 - 2) ** 2 + (x2 - 4) ** 4
-
+    def __init__(self, cost, **optimiser_kwargs):
         # Set initial values and other options
         optimiser_options = dict(
-            x0=np.array([0, 0]),
             bounds=None,
             method="Nelder-Mead",
             jac=False,
@@ -54,7 +47,7 @@ class StandaloneOptimiser(BaseOptimiser):
         Returns
         -------
         x : numpy.ndarray
-            The best parameter set found by the optimization.
+            The best parameter set found by the optimisation.
         final_cost : float
             The final cost associated with the best parameters.
         """
@@ -73,9 +66,9 @@ class StandaloneOptimiser(BaseOptimiser):
             **self._options,
         )
 
-        return Result(
+        return OptimisationResult(
+            optim=self,
             x=result.x,
-            final_cost=self.cost(result.x),
             n_iterations=result.nit,
             scipy_result=result,
         )

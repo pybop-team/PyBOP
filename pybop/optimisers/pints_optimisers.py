@@ -1,20 +1,22 @@
-from warnings import warn
-
 from pints import CMAES as PintsCMAES
 from pints import PSO as PintsPSO
 from pints import SNES as PintsSNES
 from pints import XNES as PintsXNES
-from pints import Adam as PintsAdam
-from pints import GradientDescent as PintsGradientDescent
 from pints import IRPropMin as PintsIRPropMin
 from pints import NelderMead as PintsNelderMead
 
-from pybop import AdamWImpl, BasePintsOptimiser, CuckooSearchImpl
+from pybop import (
+    AdamWImpl,
+    BasePintsOptimiser,
+    CuckooSearchImpl,
+    GradientDescentImpl,
+    RandomSearchImpl,
+)
 
 
 class GradientDescent(BasePintsOptimiser):
     """
-    Implements a simple gradient descent optimization algorithm.
+    Implements a simple gradient descent optimisation algorithm.
 
     This class extends the gradient descent optimiser from the PINTS library, designed
     to minimize a scalar function of one or more variables.
@@ -23,53 +25,64 @@ class GradientDescent(BasePintsOptimiser):
 
     Parameters
     ----------
+    cost : callable
+        The cost function to be minimized.
+    max_iterations : int, optional
+        Maximum number of iterations for the optimisation.
+    min_iterations : int, optional (default=2)
+        Minimum number of iterations before termination.
+    max_unchanged_iterations : int, optional (default=15)
+        Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
+    parallel : bool, optional (default=False)
+        Whether to run the optimisation in parallel.
     **optimiser_kwargs : optional
         Valid PINTS option keys and their values, for example:
         x0 : array_like
             Initial position from which optimisation will start.
         sigma0 : float
-            The learning rate / Initial step size.
+            Initial step size or standard deviation depending on the optimiser.
+        bounds : dict
+            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
+            upper bounds on the parameters.
+        use_f_guessed : bool
+            Whether to return the guessed function values.
+        absolute_tolerance : float
+            Absolute tolerance for convergence checking.
+        relative_tolerance : float
+            Relative tolerance for convergence checking.
+        max_evaluations : int
+            Maximum number of function evaluations.
+        threshold : float
+            Threshold value for early termination.
 
     See Also
     --------
     pints.GradientDescent : The PINTS implementation this class is based on.
     """
 
-    def __init__(self, cost, **optimiser_kwargs):
-        super().__init__(cost, PintsGradientDescent, **optimiser_kwargs)
-
-
-class Adam(BasePintsOptimiser):
-    """
-    Implements the Adam optimization algorithm.
-
-    This class extends the Adam optimiser from the PINTS library, which combines
-    ideas from RMSProp and Stochastic Gradient Descent with momentum.
-
-    Note that this optimiser does not support boundary constraints.
-
-    Parameters
-    ----------
-    **optimiser_kwargs : optional
-        Valid PINTS option keys and their values, for example:
-        x0 : array_like
-            Initial position from which optimisation will start.
-        sigma0 : float
-            Initial step size.
-
-    See Also
-    --------
-    pints.Adam : The PINTS implementation this class is based on.
-    """
-
-    warn(
-        "Adam is deprecated and will be removed in a future release. Please use AdamW instead.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
-    def __init__(self, cost, **optimiser_kwargs):
-        super().__init__(cost, PintsAdam, **optimiser_kwargs)
+    def __init__(
+        self,
+        cost,
+        max_iterations: int = None,
+        min_iterations: int = 2,
+        max_unchanged_iterations: int = 15,
+        multistart: int = 1,
+        parallel: bool = False,
+        **optimiser_kwargs,
+    ):
+        super().__init__(
+            cost,
+            GradientDescentImpl,
+            max_iterations,
+            min_iterations,
+            max_unchanged_iterations,
+            multistart,
+            parallel,
+            **optimiser_kwargs,
+        )
 
 
 class AdamW(BasePintsOptimiser):
@@ -82,27 +95,72 @@ class AdamW(BasePintsOptimiser):
     using larger learning rates.
 
     Note that this optimiser does not support boundary constraints.
+
     Parameters
     ----------
+    cost : callable
+        The cost function to be minimized.
+    max_iterations : int, optional
+        Maximum number of iterations for the optimisation.
+    min_iterations : int, optional (default=2)
+        Minimum number of iterations before termination.
+    max_unchanged_iterations : int, optional (default=15)
+        Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
+    parallel : bool, optional (default=False)
+        Whether to run the optimisation in parallel.
     **optimiser_kwargs : optional
-        Valid PyBOP option keys and their values, for example:
+        Valid PINTS option keys and their values, for example:
         x0 : array_like
             Initial position from which optimisation will start.
         sigma0 : float
-            Initial step size.
+            Initial step size or standard deviation depending on the optimiser.
+        bounds : dict
+            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
+            upper bounds on the parameters.
+        use_f_guessed : bool
+            Whether to return the guessed function values.
+        absolute_tolerance : float
+            Absolute tolerance for convergence checking.
+        relative_tolerance : float
+            Relative tolerance for convergence checking.
+        max_evaluations : int
+            Maximum number of function evaluations.
+        threshold : float
+            Threshold value for early termination.
 
     See Also
     --------
     pybop.AdamWImpl : The PyBOP implementation this class is based on.
     """
 
-    def __init__(self, cost, **optimiser_kwargs):
-        super().__init__(cost, AdamWImpl, **optimiser_kwargs)
+    def __init__(
+        self,
+        cost,
+        max_iterations: int = None,
+        min_iterations: int = 2,
+        max_unchanged_iterations: int = 15,
+        multistart: int = 1,
+        parallel: bool = False,
+        **optimiser_kwargs,
+    ):
+        super().__init__(
+            cost,
+            AdamWImpl,
+            max_iterations,
+            min_iterations,
+            max_unchanged_iterations,
+            multistart,
+            parallel,
+            **optimiser_kwargs,
+        )
 
 
 class IRPropMin(BasePintsOptimiser):
     """
-    Implements the iRpropMin optimization algorithm.
+    Implements the iRpropMin optimisation algorithm.
 
     This class inherits from the PINTS IRPropMin class, which is an optimiser that
     uses resilient backpropagation with weight-backtracking. It is designed to handle
@@ -110,57 +168,139 @@ class IRPropMin(BasePintsOptimiser):
 
     Parameters
     ----------
+    cost : callable
+        The cost function to be minimized.
+    max_iterations : int, optional
+        Maximum number of iterations for the optimisation.
+    min_iterations : int, optional (default=2)
+        Minimum number of iterations before termination.
+    max_unchanged_iterations : int, optional (default=15)
+        Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
+    parallel : bool, optional (default=False)
+        Whether to run the optimisation in parallel.
     **optimiser_kwargs : optional
         Valid PINTS option keys and their values, for example:
         x0 : array_like
             Initial position from which optimisation will start.
         sigma0 : float
-            Initial step size.
+            Initial step size or standard deviation depending on the optimiser.
         bounds : dict
             A dictionary with 'lower' and 'upper' keys containing arrays for lower and
             upper bounds on the parameters.
+        use_f_guessed : bool
+            Whether to return the guessed function values.
+        absolute_tolerance : float
+            Absolute tolerance for convergence checking.
+        relative_tolerance : float
+            Relative tolerance for convergence checking.
+        max_evaluations : int
+            Maximum number of function evaluations.
+        threshold : float
+            Threshold value for early termination.
 
     See Also
     --------
     pints.IRPropMin : The PINTS implementation this class is based on.
     """
 
-    def __init__(self, cost, **optimiser_kwargs):
-        super().__init__(cost, PintsIRPropMin, **optimiser_kwargs)
+    def __init__(
+        self,
+        cost,
+        max_iterations: int = None,
+        min_iterations: int = 2,
+        max_unchanged_iterations: int = 15,
+        multistart: int = 1,
+        parallel: bool = False,
+        **optimiser_kwargs,
+    ):
+        super().__init__(
+            cost,
+            PintsIRPropMin,
+            max_iterations,
+            min_iterations,
+            max_unchanged_iterations,
+            multistart,
+            parallel,
+            **optimiser_kwargs,
+        )
 
 
 class PSO(BasePintsOptimiser):
     """
-    Implements a particle swarm optimization (PSO) algorithm.
+    Implements a particle swarm optimisation (PSO) algorithm.
 
     This class extends the PSO optimiser from the PINTS library. PSO is a
-    metaheuristic optimization method inspired by the social behavior of birds
-    flocking or fish schooling, suitable for global optimization problems.
+    metaheuristic optimisation method inspired by the social behavior of birds
+    flocking or fish schooling, suitable for global optimisation problems.
 
     Parameters
     ----------
+    cost : callable
+        The cost function to be minimized.
+    max_iterations : int, optional
+        Maximum number of iterations for the optimisation.
+    min_iterations : int, optional (default=2)
+        Minimum number of iterations before termination.
+    max_unchanged_iterations : int, optional (default=15)
+        Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
+    parallel : bool, optional (default=False)
+        Whether to run the optimisation in parallel.
     **optimiser_kwargs : optional
         Valid PINTS option keys and their values, for example:
         x0 : array_like
-            Initial positions of particles, which the optimisation will use.
+            Initial position from which optimisation will start.
         sigma0 : float
-            Spread of the initial particle positions.
+            Initial step size or standard deviation depending on the optimiser.
         bounds : dict
             A dictionary with 'lower' and 'upper' keys containing arrays for lower and
             upper bounds on the parameters.
+        use_f_guessed : bool
+            Whether to return the guessed function values.
+        absolute_tolerance : float
+            Absolute tolerance for convergence checking.
+        relative_tolerance : float
+            Relative tolerance for convergence checking.
+        max_evaluations : int
+            Maximum number of function evaluations.
+        threshold : float
+            Threshold value for early termination.
 
     See Also
     --------
     pints.PSO : The PINTS implementation this class is based on.
     """
 
-    def __init__(self, cost, **optimiser_kwargs):
-        super().__init__(cost, PintsPSO, **optimiser_kwargs)
+    def __init__(
+        self,
+        cost,
+        max_iterations: int = None,
+        min_iterations: int = 2,
+        max_unchanged_iterations: int = 15,
+        multistart: int = 1,
+        parallel: bool = False,
+        **optimiser_kwargs,
+    ):
+        super().__init__(
+            cost,
+            PintsPSO,
+            max_iterations,
+            min_iterations,
+            max_unchanged_iterations,
+            multistart,
+            parallel,
+            **optimiser_kwargs,
+        )
 
 
 class SNES(BasePintsOptimiser):
     """
-    Implements the stochastic natural evolution strategy (SNES) optimization algorithm.
+    Implements the stochastic natural evolution strategy (SNES) optimisation algorithm.
 
     Inheriting from the PINTS SNES class, this optimiser is an evolutionary algorithm
     that evolves a probability distribution on the parameter space, guiding the search
@@ -168,23 +308,64 @@ class SNES(BasePintsOptimiser):
 
     Parameters
     ----------
+    cost : callable
+        The cost function to be minimized.
+    max_iterations : int, optional
+        Maximum number of iterations for the optimisation.
+    min_iterations : int, optional (default=2)
+        Minimum number of iterations before termination.
+    max_unchanged_iterations : int, optional (default=15)
+        Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
+    parallel : bool, optional (default=False)
+        Whether to run the optimisation in parallel.
     **optimiser_kwargs : optional
         Valid PINTS option keys and their values, for example:
         x0 : array_like
             Initial position from which optimisation will start.
         sigma0 : float
-            Initial standard deviation of the sampling distribution.
+            Initial step size or standard deviation depending on the optimiser.
         bounds : dict
             A dictionary with 'lower' and 'upper' keys containing arrays for lower and
             upper bounds on the parameters.
+        use_f_guessed : bool
+            Whether to return the guessed function values.
+        absolute_tolerance : float
+            Absolute tolerance for convergence checking.
+        relative_tolerance : float
+            Relative tolerance for convergence checking.
+        max_evaluations : int
+            Maximum number of function evaluations.
+        threshold : float
+            Threshold value for early termination.
 
     See Also
     --------
     pints.SNES : The PINTS implementation this class is based on.
     """
 
-    def __init__(self, cost, **optimiser_kwargs):
-        super().__init__(cost, PintsSNES, **optimiser_kwargs)
+    def __init__(
+        self,
+        cost,
+        max_iterations: int = None,
+        min_iterations: int = 2,
+        max_unchanged_iterations: int = 15,
+        multistart: int = 1,
+        parallel: bool = False,
+        **optimiser_kwargs,
+    ):
+        super().__init__(
+            cost,
+            PintsSNES,
+            max_iterations,
+            min_iterations,
+            max_unchanged_iterations,
+            multistart,
+            parallel,
+            **optimiser_kwargs,
+        )
 
 
 class XNES(BasePintsOptimiser):
@@ -197,23 +378,64 @@ class XNES(BasePintsOptimiser):
 
     Parameters
     ----------
+    cost : callable
+        The cost function to be minimized.
+    max_iterations : int, optional
+        Maximum number of iterations for the optimisation.
+    min_iterations : int, optional (default=2)
+        Minimum number of iterations before termination.
+    max_unchanged_iterations : int, optional (default=15)
+        Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
+    parallel : bool, optional (default=False)
+        Whether to run the optimisation in parallel.
     **optimiser_kwargs : optional
         Valid PINTS option keys and their values, for example:
         x0 : array_like
-            The initial parameter vector to optimise.
+            Initial position from which optimisation will start.
         sigma0 : float
-            Initial standard deviation of the sampling distribution.
+            Initial step size or standard deviation depending on the optimiser.
         bounds : dict
             A dictionary with 'lower' and 'upper' keys containing arrays for lower and
-            upperbounds on the parameters. If ``None``, no bounds are enforced.
+            upper bounds on the parameters.
+        use_f_guessed : bool
+            Whether to return the guessed function values.
+        absolute_tolerance : float
+            Absolute tolerance for convergence checking.
+        relative_tolerance : float
+            Relative tolerance for convergence checking.
+        max_evaluations : int
+            Maximum number of function evaluations.
+        threshold : float
+            Threshold value for early termination.
 
     See Also
     --------
     pints.XNES : PINTS implementation of XNES algorithm.
     """
 
-    def __init__(self, cost, **optimiser_kwargs):
-        super().__init__(cost, PintsXNES, **optimiser_kwargs)
+    def __init__(
+        self,
+        cost,
+        max_iterations: int = None,
+        min_iterations: int = 2,
+        max_unchanged_iterations: int = 15,
+        multistart: int = 1,
+        parallel: bool = False,
+        **optimiser_kwargs,
+    ):
+        super().__init__(
+            cost,
+            PintsXNES,
+            max_iterations,
+            min_iterations,
+            max_unchanged_iterations,
+            multistart,
+            parallel,
+            **optimiser_kwargs,
+        )
 
 
 class NelderMead(BasePintsOptimiser):
@@ -228,56 +450,140 @@ class NelderMead(BasePintsOptimiser):
 
     Parameters
     ----------
+    cost : callable
+        The cost function to be minimized.
+    max_iterations : int, optional
+        Maximum number of iterations for the optimisation.
+    min_iterations : int, optional (default=2)
+        Minimum number of iterations before termination.
+    max_unchanged_iterations : int, optional (default=15)
+        Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
+    parallel : bool, optional (default=False)
+        Whether to run the optimisation in parallel.
     **optimiser_kwargs : optional
         Valid PINTS option keys and their values, for example:
         x0 : array_like
-            The initial parameter vector to optimise.
+            Initial position from which optimisation will start.
         sigma0 : float
-            Initial standard deviation of the sampling distribution.
-            Does not appear to be used.
+            Initial step size or standard deviation depending on the optimiser.
+        bounds : dict
+            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
+            upper bounds on the parameters.
+        use_f_guessed : bool
+            Whether to return the guessed function values.
+        absolute_tolerance : float
+            Absolute tolerance for convergence checking.
+        relative_tolerance : float
+            Relative tolerance for convergence checking.
+        max_evaluations : int
+            Maximum number of function evaluations.
+        threshold : float
+            Threshold value for early termination.
 
     See Also
     --------
     pints.NelderMead : PINTS implementation of Nelder-Mead algorithm.
     """
 
-    def __init__(self, cost, **optimiser_kwargs):
-        super().__init__(cost, PintsNelderMead, **optimiser_kwargs)
+    def __init__(
+        self,
+        cost,
+        max_iterations: int = None,
+        min_iterations: int = 2,
+        max_unchanged_iterations: int = 15,
+        multistart: int = 1,
+        parallel: bool = False,
+        **optimiser_kwargs,
+    ):
+        super().__init__(
+            cost,
+            PintsNelderMead,
+            max_iterations,
+            min_iterations,
+            max_unchanged_iterations,
+            multistart,
+            parallel,
+            **optimiser_kwargs,
+        )
 
 
 class CMAES(BasePintsOptimiser):
     """
     Adapter for the Covariance Matrix Adaptation Evolution Strategy (CMA-ES) optimiser in PINTS.
 
-    CMA-ES is an evolutionary algorithm for difficult non-linear non-convex optimization problems.
+    CMA-ES is an evolutionary algorithm for difficult non-linear non-convex optimisation problems.
     It adapts the covariance matrix of a multivariate normal distribution to capture the shape of
     the cost landscape.
 
     Parameters
     ----------
+    cost : callable
+        The cost function to be minimized.
+    max_iterations : int, optional
+        Maximum number of iterations for the optimisation.
+    min_iterations : int, optional (default=2)
+        Minimum number of iterations before termination.
+    max_unchanged_iterations : int, optional (default=15)
+        Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
+    parallel : bool, optional (default=False)
+        Whether to run the optimisation in parallel.
     **optimiser_kwargs : optional
         Valid PINTS option keys and their values, for example:
         x0 : array_like
-            The initial parameter vector to optimise.
+            Initial position from which optimisation will start.
         sigma0 : float
-            Initial standard deviation of the sampling distribution.
+            Initial step size or standard deviation depending on the optimiser.
         bounds : dict
             A dictionary with 'lower' and 'upper' keys containing arrays for lower and
-            upper bounds on the parameters. If ``None``, no bounds are enforced.
+            upper bounds on the parameters.
+        use_f_guessed : bool
+            Whether to return the guessed function values.
+        absolute_tolerance : float
+            Absolute tolerance for convergence checking.
+        relative_tolerance : float
+            Relative tolerance for convergence checking.
+        max_evaluations : int
+            Maximum number of function evaluations.
+        threshold : float
+            Threshold value for early termination.
 
     See Also
     --------
     pints.CMAES : PINTS implementation of CMA-ES algorithm.
     """
 
-    def __init__(self, cost, **optimiser_kwargs):
+    def __init__(
+        self,
+        cost,
+        max_iterations: int = None,
+        min_iterations: int = 2,
+        max_unchanged_iterations: int = 15,
+        multistart: int = 1,
+        parallel: bool = False,
+        **optimiser_kwargs,
+    ):
         x0 = optimiser_kwargs.get("x0", cost.parameters.initial_value())
         if len(x0) == 1 or len(cost.parameters) == 1:
             raise ValueError(
                 "CMAES requires optimisation of >= 2 parameters at once. "
                 "Please choose another optimiser."
             )
-        super().__init__(cost, PintsCMAES, **optimiser_kwargs)
+        super().__init__(
+            cost,
+            PintsCMAES,
+            max_iterations,
+            min_iterations,
+            max_unchanged_iterations,
+            multistart,
+            parallel,
+            **optimiser_kwargs,
+        )
 
 
 class CuckooSearch(BasePintsOptimiser):
@@ -289,20 +595,131 @@ class CuckooSearch(BasePintsOptimiser):
 
     Parameters
     ----------
+    cost : callable
+        The cost function to be minimized.
+    max_iterations : int, optional
+        Maximum number of iterations for the optimisation.
+    min_iterations : int, optional (default=2)
+        Minimum number of iterations before termination.
+    max_unchanged_iterations : int, optional (default=15)
+        Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
+    parallel : bool, optional (default=False)
+        Whether to run the optimisation in parallel.
     **optimiser_kwargs : optional
-        Valid PyBOP option keys and their values, for example:
+        Valid PINTS option keys and their values, for example:
         x0 : array_like
-            Initial parameter values.
+            Initial position from which optimisation will start.
         sigma0 : float
-            Initial step size.
+            Initial step size or standard deviation depending on the optimiser.
         bounds : dict
             A dictionary with 'lower' and 'upper' keys containing arrays for lower and
             upper bounds on the parameters.
+        use_f_guessed : bool
+            Whether to return the guessed function values.
+        absolute_tolerance : float
+            Absolute tolerance for convergence checking.
+        relative_tolerance : float
+            Relative tolerance for convergence checking.
+        max_evaluations : int
+            Maximum number of function evaluations.
+        threshold : float
+            Threshold value for early termination.
 
     See Also
     --------
-    pybop.CuckooSearch : PyBOP implementation of Cuckoo Search algorithm.
+    pybop.CuckooSearchImpl : PyBOP implementation of Cuckoo Search algorithm.
     """
 
-    def __init__(self, cost, **optimiser_kwargs):
-        super().__init__(cost, CuckooSearchImpl, **optimiser_kwargs)
+    def __init__(
+        self,
+        cost,
+        max_iterations: int = None,
+        min_iterations: int = 2,
+        max_unchanged_iterations: int = 15,
+        multistart: int = 1,
+        parallel: bool = False,
+        **optimiser_kwargs,
+    ):
+        super().__init__(
+            cost,
+            CuckooSearchImpl,
+            max_iterations,
+            min_iterations,
+            max_unchanged_iterations,
+            multistart,
+            parallel,
+            **optimiser_kwargs,
+        )
+
+
+class RandomSearch(BasePintsOptimiser):
+    """
+    Adapter for the Random Search optimiser in PyBOP.
+
+    Random Search is a simple optimisation algorithm that samples parameter sets randomly
+    within the given boundaries and identifies the best solution based on fitness.
+
+    This optimiser has been implemented for benchmarking and comparisons, convergence will be
+    better with one of other optimisers in the majority of cases.
+
+    Parameters
+    ----------
+    cost : callable
+        The cost function to be minimized.
+    max_iterations : int, optional
+        Maximum number of iterations for the optimisation.
+    min_iterations : int, optional (default=2)
+        Minimum number of iterations before termination.
+    max_unchanged_iterations : int, optional (default=15)
+        Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
+    parallel : bool, optional (default=False)
+        Whether to run the optimisation in parallel.
+    **optimiser_kwargs : optional
+        Valid PINTS option keys and their values, for example:
+        x0 : array_like
+            Initial position from which optimisation will start.
+        population_size : int
+            Number of solutions to evaluate per iteration.
+        bounds : dict
+            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
+            upper bounds on the parameters.
+        absolute_tolerance : float
+            Absolute tolerance for convergence checking.
+        relative_tolerance : float
+            Relative tolerance for convergence checking.
+        max_evaluations : int
+            Maximum number of function evaluations.
+        threshold : float
+            Threshold value for early termination.
+
+    See Also
+    --------
+    pybop.RandomSearchImpl : PyBOP implementation of Random Search algorithm.
+    """
+
+    def __init__(
+        self,
+        cost,
+        max_iterations: int = None,
+        min_iterations: int = 2,
+        max_unchanged_iterations: int = 15,
+        multistart: int = 1,
+        parallel: bool = False,
+        **optimiser_kwargs,
+    ):
+        super().__init__(
+            cost,
+            RandomSearchImpl,
+            max_iterations,
+            min_iterations,
+            max_unchanged_iterations,
+            multistart,
+            parallel,
+            **optimiser_kwargs,
+        )

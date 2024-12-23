@@ -1,5 +1,6 @@
 import copy
 import logging
+import re
 from unittest.mock import call, patch
 
 import numpy as np
@@ -152,6 +153,33 @@ class TestPintsSamplers:
         assert samples.shape == (chains, 1, 2)
 
     @pytest.mark.unit
+    def test_effective_sample_size(self, log_posterior):
+        chains = np.asarray([[[0, 0]]])
+        summary = pybop.PosteriorSummary(chains)
+
+        with pytest.raises(ValueError, match="At least two samples must be given."):
+            summary.effective_sample_size()
+
+        n_chains = 3
+        sampler = pybop.HaarioBardenetACMC(
+            log_pdf=log_posterior,
+            chains=n_chains,
+            max_iterations=3,
+        )
+        chains = sampler.run()
+        summary = pybop.PosteriorSummary(chains)
+
+        # Non mixed chains
+        ess = summary.effective_sample_size()
+        assert len(ess) == log_posterior.n_parameters * n_chains
+        assert all(e > 0 for e in ess)  # ESS should be positive
+
+        # Mixed chains
+        ess = summary.effective_sample_size(mixed_chains=True)
+        assert len(ess) == log_posterior.n_parameters
+        assert all(e > 0 for e in ess)
+
+    @pytest.mark.unit
     def test_single_parameter_sampling(self, model, dataset, MCMC, chains):
         parameters = pybop.Parameters(
             pybop.Parameter(
@@ -177,10 +205,13 @@ class TestPintsSamplers:
             log_pdf=log_posterior,
             chains=chains,
             sampler=MCMC,
-            max_iterations=1,
+            max_iterations=3,
             verbose=True,
         )
-        sampler.run()
+        result = sampler.run()
+        summary = pybop.PosteriorSummary(result)
+        autocorr = summary.autocorrelation(result[0, :, 0])
+        assert autocorr.shape == (result[0, :, 0].shape[0] - 2,)
 
     @pytest.mark.unit
     def test_multi_log_pdf(self, log_posterior, x0, chains):
@@ -214,12 +245,14 @@ class TestPintsSamplers:
             )
 
         # Test incorrect number of parameters
-        new_multi_log_posterior = copy.copy(log_posterior)
-        new_multi_log_posterior._parameters = [
-            new_multi_log_posterior._parameters[
+        likelihood_copy = copy.copy(log_posterior.likelihood)
+        likelihood_copy.parameters = pybop.Parameters(
+            likelihood_copy.parameters[
                 "Positive electrode active material volume fraction"
             ]
-        ]
+        )
+        new_multi_log_posterior = pybop.LogPosterior(likelihood_copy)
+
         with pytest.raises(
             ValueError, match="All log pdf's must have the same number of parameters"
         ):
@@ -374,9 +407,15 @@ class TestPintsSamplers:
 
     @pytest.mark.unit
     def test_base_sampler(self, log_posterior, x0):
-        sampler = pybop.BaseSampler(log_posterior, x0, cov0=0.1)
+        sampler = pybop.BaseSampler(log_posterior, x0, chains=1, cov0=0.1)
         with pytest.raises(NotImplementedError):
             sampler.run()
+
+        with pytest.raises(
+            ValueError,
+            match=re.escape("log_pdf must be a LogPosterior or List[LogPosterior]"),
+        ):
+            pybop.BaseSampler(pybop.WeightedCost(log_posterior), x0, chains=1, cov0=0.1)
 
     @pytest.mark.unit
     def test_MCMC_sampler(self, log_posterior, x0, chains):

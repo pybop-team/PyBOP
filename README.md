@@ -64,21 +64,21 @@ These include a wide variety of optimisation problems that require careful consi
 
 Explore our [example notebooks](https://github.com/pybop-team/PyBOP/blob/develop/examples) for hands-on demonstrations:
 
-- [Gravimetric design optimisation (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/spm_electrode_design.ipynb)
-- [GITT fitting of an ECM for an LG M50](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/LG_M50_ECM/1-single-pulse-circuit-model.ipynb)
-- [Non-linear constrained ECM parameter identification](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/ecm_trust-constr.ipynb)
-- [Optimiser comparison for parameter identification](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/multi_optimiser_identification.ipynb)
-- [Parameter identification for spatial pouch cell model](https://github.com/pybop-team/PyBOP/blob/develop/examples/notebooks/pouch_cell_identification.ipynb)
+- [Gravimetric design optimisation (SPMe)](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/design_optimisation/energy_based_electrode_design.ipynb)
+- [Non-linear constrained ECM parameter identification](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/battery_parameterisation/ecm_trust-constr.ipynb)
+- [Optimiser comparison for parameter identification](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/comparison_examples/multi_optimiser_identification.ipynb)
+- [Parameter identification for spatial pouch cell model](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/battery_parameterisation/pouch_cell_identification.ipynb)
+- [Estimating ECM parameters from HPPC pulse](https://nbviewer.org/github/pybop-team/PyBOP/blob/develop/examples/notebooks/battery_parameterisation/equivalent_circuit_identification_hppc.ipynb)
 
 ### Python Scripts
 
 Find additional script-based examples in the [examples directory](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/):
 
-- [UKF parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_UKF.py)
-- [BPX format parameter import/export](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/BPX_spm.py)
-- [Electrochemical Impendence Spectroscopy (EIS) parameter identification](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/eis_fitting.py)
-- [Maximum a Posteriori parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/BPX_spm.py)
-- [Gradient-based parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/spm_AdamW.py)
+- [UKF parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/comparison_examples/spm_UKF.py)
+- [BPX format parameter import/export](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/getting_started/BPX_spm.py)
+- [Electrochemical Impendence Spectroscopy (EIS) parameter identification](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/battery_parameterisation/eis_fitting.py)
+- [Maximum a Posteriori parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/getting_started/BPX_spm.py)
+- [Gradient-based parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/comparison_examples/spm_AdamW.py)
 
 
 ### Supported Methods
@@ -92,10 +92,10 @@ The table below lists the currently supported [models](https://github.com/pybop-
 | Single Particle Model with Electrolyte (SPMe) | Particle Swarm Optimization (PSO)                        | Root Mean Squared Error (RMSE) <tr></tr> |
 | Doyle-Fuller-Newman (DFN)                     | Exponential Natural Evolution Strategy (xNES)            | Minkowski <tr></tr>                      |
 | Many Particle Model (MPM)                     | Separable Natural Evolution Strategy (sNES)              | Sum of Power <tr></tr>                   |
-| Multi-Species Multi-Reactants (MSMR)          | Adaptive Moment Estimation with Weight Decay (AdamW)     | Gaussian Log Likelihood <tr></tr>        |
+| Multi-Species Multi-Reaction (MSMR)           | Adaptive Moment Estimation with Weight Decay (AdamW)     | Gaussian Log Likelihood <tr></tr>        |
 | Weppner-Huggins                               | Improved Resilient Backpropagation (iRProp-)             | Log Posterior <tr></tr>                  |
 | Equivalent Circuit Models (ECM)               | SciPy Minimize & Differential Evolution                  | Unscented Kalman Filter (UKF) <tr></tr>  |
-|                                               | Cuckoo Search                                            | Gravimetric Energy Density <tr></tr>     |
+| Grouped-parameter SPMe (GroupedSPMe)          | Cuckoo Search                                            | Gravimetric Energy Density <tr></tr>     |
 |                                               | Gradient Descent                                         | Volumetric Energy Density<tr></tr>       |
 |                                               | Nelder-Mead                                              | <tr></tr>                                |
 
@@ -140,7 +140,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://www.linkedin.com/in/muhammedsogut/"><img src="https://avatars.githubusercontent.com/u/34511375?v=4?s=100" width="100px;" alt="Muhammed Nedim Sogut"/><br /><sub><b>Muhammed Nedim Sogut</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=muhammedsogut" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/MarkBlyth"><img src="https://avatars.githubusercontent.com/u/20501619?v=4?s=100" width="100px;" alt="MarkBlyth"/><br /><sub><b>MarkBlyth</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=MarkBlyth" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/f-g-r-i-m-m"><img src="https://avatars.githubusercontent.com/u/137511310?v=4?s=100" width="100px;" alt="f-g-r-i-m-m"/><br /><sub><b>f-g-r-i-m-m</b></sub></a><br /><a href="#example-f-g-r-i-m-m" title="Examples">💡</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Dibyendu-IITKGP"><img src="https://avatars.githubusercontent.com/u/32595915?v=4?s=100" width="100px;" alt="Dibyendu-IITKGP"/><br /><sub><b>Dibyendu-IITKGP</b></sub></a><br /><a href="#example-Dibyendu-IITKGP" title="Examples">💡</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Dibyendu-IITKGP"><img src="https://avatars.githubusercontent.com/u/32595915?v=4?s=100" width="100px;" alt="Dibyendu-IITKGP"/><br /><sub><b>Dibyendu-IITKGP</b></sub></a><br /><a href="#example-Dibyendu-IITKGP" title="Examples">💡</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=Dibyendu-IITKGP" title="Tests">⚠️</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=Dibyendu-IITKGP" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>

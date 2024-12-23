@@ -2,6 +2,8 @@
 # Extends the Pints' Adam Class with a Weight Decay addition
 #
 
+import warnings
+
 import numpy as np
 from pints import Optimiser as PintsOptimiser
 
@@ -55,7 +57,11 @@ class AdamWImpl(PintsOptimiser):
 
     def __init__(self, x0, sigma0=0.015, boundaries=None):
         if boundaries is not None:
-            print("NOTE: Boundaries ignored by AdamW")
+            warnings.warn(
+                "Boundaries ignored by AdamW",
+                UserWarning,
+                stacklevel=2,
+            )
 
         self.boundaries = None
         super().__init__(x0, sigma0, self.boundaries)
@@ -156,7 +162,7 @@ class AdamWImpl(PintsOptimiser):
 
         # Check ask-tell pattern
         if not self._ready_for_tell:
-            raise RuntimeError("ask() not called before tell()")
+            raise RuntimeError("ask() must be called before tell().")
         self._ready_for_tell = False
 
         # Unpack reply

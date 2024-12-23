@@ -7,7 +7,7 @@ import plotly
 import pytest
 
 import pybop
-from pybop import PlotlyManager
+from pybop.plot import PlotlyManager
 
 # Find the Python executable
 python_executable = which("python")
@@ -135,37 +135,37 @@ def dataset(plotly_installed):
 @pytest.mark.unit
 def test_standard_plot(dataset, plotly_installed):
     # Check the StandardPlot class
-    pybop.StandardPlot(dataset["Time [s]"], dataset["Terminal voltage [V]"])
+    pybop.plot.StandardPlot(dataset["Time [s]"], dataset["Terminal voltage [V]"])
 
     # Check the StandardSubplot class
-    pybop.StandardSubplot(
+    pybop.plot.StandardSubplot(
         dataset["Time [s]"],
         [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
         num_rows=1,
     )
-    pybop.StandardSubplot(
+    pybop.plot.StandardSubplot(
         dataset["Time [s]"],
         [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
         num_cols=1,
     )
 
-    # Check plotting numpy arrays, lists, and lists of numpy arrays
-    pybop.plot_trajectories(dataset["Time [s]"], dataset["Terminal voltage [V]"])
-    pybop.plot_trajectories(
+    # Check plot numpy arrays, lists, and lists of numpy arrays
+    pybop.plot.trajectories(dataset["Time [s]"], dataset["Terminal voltage [V]"])
+    pybop.plot.trajectories(
         dataset["Time [s]"].tolist(), dataset["Terminal voltage [V]"].tolist()
     )
-    pybop.plot_trajectories(
+    pybop.plot.trajectories(
         [dataset["Time [s]"]],
         [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
     )
-    pybop.plot_trajectories(
+    pybop.plot.trajectories(
         [dataset["Time [s]"], dataset["Time [s]"]],
         [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
     )
 
     # Test incorrect dimensions
     with pytest.raises(ValueError):
-        pybop.plot_trajectories(
+        pybop.plot.trajectories(
             [dataset["Time [s]"], dataset["Current [A]"]],
             dataset["Terminal voltage [V]"],
         )
@@ -173,6 +173,6 @@ def test_standard_plot(dataset, plotly_installed):
 
 @pytest.mark.unit
 def test_plot_dataset(dataset, plotly_installed):
-    # Test plotting of a dataset
-    pybop.plot_dataset(dataset, signal=["Terminal voltage [V]"])
-    pybop.plot_dataset(dataset, signal=["Terminal voltage [V]", "Current [A]"])
+    # Test plot of a dataset
+    pybop.plot.dataset(dataset, signal=["Terminal voltage [V]"])
+    pybop.plot.dataset(dataset, signal=["Terminal voltage [V]", "Current [A]"])
