@@ -31,6 +31,8 @@ class EChemBaseModel(BaseModel):
         The spatial methods used for discretization. If None, default spatial methods from PyBaMM are used.
     solver : pybamm.Solver, optional
         The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
+    eis : bool, optional
+        A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values. For example,
         build : bool, optional

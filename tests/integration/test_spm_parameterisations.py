@@ -29,7 +29,8 @@ class Test_SPM_Parameterisation:
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        return pybop.lithium_ion.SPM(parameter_set=parameter_set)
+        solver = pybamm.IDAKLUSolver()
+        return pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
 
     @pytest.fixture
     def parameters(self):
@@ -59,6 +60,8 @@ class Test_SPM_Parameterisation:
             pybop.SumofPower,
             pybop.Minkowski,
             pybop.LogPosterior,
+            pybop.JaxSumSquaredError,
+            pybop.JaxLogNormalLikelihood,
         ]
     )
     def cost(self, request):
@@ -95,15 +98,14 @@ class Test_SPM_Parameterisation:
             }
         )
 
-        # IDAKLU Solver for Gradient-based optimisers
-        if optimiser in [pybop.AdamW, pybop.IRPropMin]:
-            model.solver = pybamm.IDAKLUSolver()
-
         # Define the problem
         problem = pybop.FittingProblem(model, parameters, dataset)
 
         # Construct the cost
-        if cost is pybop.GaussianLogLikelihoodKnownSigma:
+        if cost in [
+            pybop.GaussianLogLikelihoodKnownSigma,
+            pybop.JaxLogNormalLikelihood,
+        ]:
             cost = cost(problem, sigma0=self.sigma0)
         elif cost is pybop.GaussianLogLikelihood:
             cost = cost(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
@@ -116,7 +118,6 @@ class Test_SPM_Parameterisation:
         else:
             cost = cost(problem)
 
-        sigma0 = 0.05 if optimiser == pybop.CuckooSearch else 0.02
         # Construct optimisation object
         common_args = {
             "cost": cost,
@@ -125,8 +126,13 @@ class Test_SPM_Parameterisation:
             "max_unchanged_iterations": 55,
             "sigma0": [0.05, 0.05, 1e-3]
             if isinstance(cost, pybop.GaussianLogLikelihood)
-            else sigma0,
+            else 0.05,
         }
+        if (
+            isinstance(cost, pybop.BaseJaxCost)
+            and optimiser is pybop.SciPyDifferentialEvolution
+        ):
+            common_args["bounds"] = [[0.375, 0.775], [0.375, 0.775]]
 
         if isinstance(cost, pybop.LogPosterior):
             for i in cost.parameters.keys():
@@ -187,7 +193,10 @@ class Test_SPM_Parameterisation:
         signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
         problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 
-        if cost is pybop.GaussianLogLikelihoodKnownSigma:
+        if cost in [
+            pybop.GaussianLogLikelihoodKnownSigma,
+            pybop.JaxLogNormalLikelihood,
+        ]:
             return cost(problem, sigma0=self.sigma0)
         elif cost is pybop.GaussianLogLikelihood:
             return cost(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
@@ -216,10 +225,16 @@ class Test_SPM_Parameterisation:
             "max_iterations": 250,
             "absolute_tolerance": 1e-6,
             "max_unchanged_iterations": 55,
-            "sigma0": [0.035, 0.035, 6e-3, 6e-3]
+            "sigma0": [0.05, 0.05, 6e-3, 6e-3]
             if isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood)
             else 0.02,
         }
+
+        if (
+            isinstance(spm_two_signal_cost, pybop.BaseJaxCost)
+            and multi_optimiser is pybop.SciPyDifferentialEvolution
+        ):
+            common_args["bounds"] = [[0.375, 0.775], [0.375, 0.775]]
 
         # Test each optimiser
         optim = multi_optimiser(**common_args)
@@ -227,9 +242,6 @@ class Test_SPM_Parameterisation:
         # Add sigma0 to ground truth for GaussianLogLikelihood
         if isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood):
             self.ground_truth = np.concatenate((self.ground_truth, combined_sigma0))
-
-        if issubclass(multi_optimiser, pybop.BasePintsOptimiser):
-            optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-6)
 
         initial_cost = optim.cost(optim.parameters.initial_value())
         results = optim.run()
