@@ -1,40 +1,18 @@
 import copy
-from dataclasses import dataclass
 from typing import Callable, Optional, Union
 
-import casadi
 import numpy as np
 import pybamm
 from pybamm import IDAKLUSolver as IDAKLUSolver
-from scipy.sparse import csc_matrix
-from scipy.sparse.linalg import spsolve
 
-from pybop import Dataset, Experiment, Parameters, ParameterSet, SymbolReplacer
+from pybop import Dataset, Experiment, Parameters, ParameterSet
+from pybop.models.eis_methods import (
+    calculate_impedance,
+    initialise_eis_simulation,
+    set_up_for_eis,
+)
+from pybop.models.time_series_state import TimeSeriesState
 from pybop.parameters.parameter import Inputs
-
-
-@dataclass
-class TimeSeriesState:
-    """
-    The current state of a time series model that is a pybamm model.
-    """
-
-    sol: pybamm.Solution
-    inputs: Inputs
-    t: float = 0.0
-
-    def as_ndarray(self) -> np.ndarray:
-        ncol = self.sol.y.shape[1]
-        if ncol > 1:
-            y = self.sol.y[:, -1]
-        else:
-            y = self.sol.y
-        if isinstance(y, casadi.DM):
-            y = y.full()
-        return y
-
-    def __len__(self):
-        return self.sol.y.shape[0]
 
 
 class BaseModel:
@@ -168,7 +146,7 @@ class BaseModel:
             self.pybamm_model.build_model()
 
         if self.eis:
-            self.set_up_for_eis(self.pybamm_model)
+            set_up_for_eis(self.pybamm_model)
             self._parameter_set["Current function [A]"] = 0
 
             V_scale = getattr(self.pybamm_model.variables["Voltage [V]"], "scale", 1)
@@ -284,55 +262,6 @@ class BaseModel:
         self._parameter_set.process_geometry(self._geometry)
         self.pybamm_model = self._model_with_set_params
 
-    def set_up_for_eis(self, model):
-        """
-        Set up the model for electrochemical impedance spectroscopy (EIS) simulations.
-
-        This method sets up the model for EIS simulations by adding the necessary
-        algebraic equations and variables to the model.
-        Originally developed by pybamm-eis: https://github.com/pybamm-team/pybamm-eis
-
-        Parameters
-        ----------
-        model : pybamm.Model
-            The PyBaMM model to be used for EIS simulations.
-        """
-        V_cell = pybamm.Variable("Voltage variable [V]")
-        model.variables["Voltage variable [V]"] = V_cell
-        V = model.variables["Voltage [V]"]
-
-        # Add algebraic equation for the voltage
-        model.algebraic[V_cell] = V_cell - V
-        model.initial_conditions[V_cell] = model.param.ocv_init
-
-        # Create the FunctionControl submodel and extract variables
-        external_circuit_variables = pybamm.external_circuit.FunctionControl(
-            model.param, None, model.options, control="algebraic"
-        ).get_fundamental_variables()
-
-        # Define the variables to replace
-        symbol_replacement_map = {}
-        for name, variable in external_circuit_variables.items():
-            if name in model.variables.keys():
-                symbol_replacement_map[model.variables[name]] = variable
-
-        # Don't replace initial conditions, as these should not contain
-        # Variable objects
-        replacer = SymbolReplacer(
-            symbol_replacement_map, process_initial_conditions=False
-        )
-        replacer.process_model(model, inplace=True)
-
-        # Add an algebraic equation for the current density variable
-        # External circuit submodels are always equations on the current
-        I_cell = model.variables["Current variable [A]"]
-        I = model.variables["Current [A]"]
-        I_applied = pybamm.FunctionParameter(
-            "Current function [A]", {"Time [s]": pybamm.t}
-        )
-        model.algebraic[I_cell] = I - I_applied
-        model.initial_conditions[I_cell] = 0
-
     def clear(self):
         """
         Clear any built PyBaMM model.
@@ -361,18 +290,16 @@ class BaseModel:
         self.parameters = parameters or self.parameters
 
         # Compile all parameters and inputs
-        parameter_dictionary = self.parameters.as_dict()
-        parameter_dictionary.update(inputs or {})
+        parameter_dict = self.parameters.as_dict()
+        parameter_dict.update(inputs or {})
 
         rebuild_parameters = {
-            param: parameter_dictionary[param]
-            for param in parameter_dictionary
-            if param in self.geometric_parameters
+            k: v for k, v in parameter_dict.items() if k in self.geometric_parameters
         }
         standard_parameters = {
-            param: parameter_dictionary[param]
-            for param in parameter_dictionary
-            if param not in self.geometric_parameters
+            k: v
+            for k, v in parameter_dict.items()
+            if k not in self.geometric_parameters
         }
 
         # Mark any standard parameters in the active parameter set and pass as inputs
@@ -380,18 +307,15 @@ class BaseModel:
             self._parameter_set[key] = "[input]"
 
         # Clear any built model, update the parameter set and geometry if rebuild required
-        if rebuild_parameters:
-            requires_rebuild = False
-            # A rebuild is required if any of the rebuild parameter values have changed
-            for key, value in rebuild_parameters.items():
-                if value != self._unprocessed_parameter_set[key]:
-                    requires_rebuild = True
-            if requires_rebuild:
-                self.clear()
-                self._geometry = self.pybamm_model.default_geometry
-                # Update both the active and unprocessed parameter sets for consistency
-                self._parameter_set.update(rebuild_parameters)
-                self._unprocessed_parameter_set.update(rebuild_parameters)
+        if rebuild_parameters and any(
+            rebuild_parameters[k] != self._unprocessed_parameter_set.get(k)
+            for k in rebuild_parameters
+        ):
+            self.clear()
+            self._geometry = self.pybamm_model.default_geometry
+            # Update both the active and unprocessed parameter sets for consistency
+            self._parameter_set.update(rebuild_parameters)
+            self._unprocessed_parameter_set.update(rebuild_parameters)
 
         return standard_parameters
 
@@ -442,8 +366,12 @@ class BaseModel:
         return TimeSeriesState(sol=new_sol, inputs=state.inputs, t=time)
 
     def simulate(
-        self, inputs: Inputs, t_eval: np.array, initial_state: Optional[dict] = None
-    ) -> Union[pybamm.Solution, list[np.float64]]:
+        self,
+        inputs: Inputs,
+        eval: np.array,  # noqa: A002
+        initial_state: Optional[dict] = None,
+        eis: bool = False,
+    ) -> Union[pybamm.Solution, list[np.float64], dict[str, np.ndarray]]:
         """
         Execute the forward model simulation and return the result.
 
@@ -451,8 +379,8 @@ class BaseModel:
         ----------
         inputs : Inputs
             The input parameters for the simulation.
-        t_eval : array-like
-            An array of time points at which to evaluate the solution.
+        eval : array-like
+            An array of time or frequency points at which to evaluate the solution.
         initial_state : dict, optional
             A valid initial state, e.g. the initial state of charge or open-circuit voltage.
             Defaults to None, indicating that the existing initial state of charge (for an ECM)
@@ -480,121 +408,32 @@ class BaseModel:
         ):
             raise ValueError("These parameter values are infeasible.")
 
+        if eis:
+            if self.eis is False:
+                raise ValueError(
+                    "Model must be constructed for EIS before calling simulate"
+                )
+
+            self.M, self.J, self.b = initialise_eis_simulation(self, inputs)
+            zs = [calculate_impedance(self.M, self.J, self.b, f) for f in eval]
+
+            return {"Impedance": np.asarray(zs) * self.z_scale}
+
         return self.solver.solve(
             self._built_model,
             inputs=inputs,
-            t_eval=[t_eval[0], t_eval[-1]]
+            t_eval=[eval[0], eval[-1]]
             if isinstance(self._solver, IDAKLUSolver)
-            else t_eval,
-            t_interp=t_eval if self._solver.supports_interp else None,
+            else eval,
+            t_interp=eval if self._solver.supports_interp else None,
         )
-
-    def simulateEIS(
-        self, inputs: Inputs, f_eval: list, initial_state: Optional[dict] = None
-    ) -> dict[str, np.ndarray]:
-        """
-        Compute the forward model simulation with electrochemical impedance spectroscopy
-        and return the result.
-
-        Parameters
-        ----------
-        inputs : dict or array-like
-            The input parameters for the simulation. If array-like, it will be
-            converted to a dictionary using the model's fit keys.
-        f_eval : array-like
-            An array of frequency points at which to evaluate the solution.
-
-        Returns
-        -------
-        array-like
-            The simulation result corresponding to the specified signal.
-
-        Raises
-        ------
-        ValueError
-            If the model has not been built before simulation.
-        """
-        inputs = self.parameters.verify(inputs)
-
-        # Build or rebuild if required
-        self.build(inputs=inputs, initial_state=initial_state)
-
-        if not self.check_params(
-            inputs=inputs,
-            allow_infeasible_solutions=self.allow_infeasible_solutions,
-        ):
-            raise ValueError("These parameter values are infeasible.")
-
-        self.initialise_eis_simulation(inputs)
-        zs = [self.calculate_impedance(frequency) for frequency in f_eval]
-
-        return {"Impedance": np.asarray(zs) * self.z_scale}
-
-    def initialise_eis_simulation(self, inputs: Optional[Inputs] = None):
-        """
-        Initialise the Electrochemical Impedance Spectroscopy (EIS) simulation.
-
-        This method sets up the mass matrix and solver, converts inputs to the appropriate format,
-        extracts necessary attributes from the model, and prepares matrices for the simulation.
-
-        Parameters
-        ----------
-        inputs : dict (optional)
-            The input parameters for the simulation.
-        """
-        # Setup mass matrix, solver
-        self.M = self._built_model.mass_matrix.entries
-        self._solver.set_up(self._built_model, inputs=inputs)
-
-        # Convert inputs to casadi format if needed
-        casadi_inputs = (
-            casadi.vertcat(*inputs.values())
-            if inputs is not None and self._built_model.convert_to_format == "casadi"
-            else inputs or []
-        )
-
-        # Extract necessary attributes from the model
-        self.y0 = self._built_model.concatenated_initial_conditions.evaluate(
-            0, inputs=inputs
-        )
-        self.J = self._built_model.jac_rhs_algebraic_eval(
-            0, self.y0, casadi_inputs
-        ).sparse()
-
-        # Convert to Compressed Sparse Column format
-        self.M = csc_matrix(self.M)
-        self.J = csc_matrix(self.J)
-
-        # Add forcing to the RHS on the current density
-        self.b = np.zeros(self.y0.shape)
-        self.b[-1] = -1
-
-    def calculate_impedance(self, frequency):
-        """
-        Calculate the impedance for a given frequency.
-
-        This method computes the system matrix, solves the linear system, and calculates
-        the impedance based on the solution.
-
-        Parameters
-        ----------
-            frequency (np.ndarray | list like): The frequency at which to calculate the impedance.
-
-        Returns
-        -------
-            The calculated impedance (complex np.ndarray).
-        """
-        # Compute the system matrix
-        A = 1.0j * 2 * np.pi * frequency * self.M - self.J
-
-        # Solve the system
-        x = spsolve(A, self.b)
-
-        # Calculate the impedance
-        return -x[-2] / x[-1]
 
     def simulateS1(
-        self, inputs: Inputs, t_eval: np.array, initial_state: Optional[dict] = None
+        self,
+        inputs: Inputs,
+        eval: np.array,  # noqa: A002
+        initial_state: Optional[dict] = None,
+        eis: bool = False,
     ):
         """
         Perform the forward model simulation with sensitivities.
@@ -603,7 +442,7 @@ class BaseModel:
         ----------
         inputs : Inputs
             The input parameters for the simulation.
-        t_eval : array-like
+        eval : array-like
             An array of time points at which to evaluate the solution and its
             sensitivities.
         initial_state : dict, optional
@@ -622,6 +461,11 @@ class BaseModel:
         ValueError
             If the model has not been built before simulation.
         """
+        if eis is True:
+            raise ValueError(
+                "EIS predictions don't currently support gradient information"
+            )
+
         inputs = self.parameters.verify(inputs)
 
         if initial_state is not None or any(
@@ -643,11 +487,11 @@ class BaseModel:
         return self._solver.solve(
             self._built_model,
             inputs=inputs,
-            t_eval=[t_eval[0], t_eval[-1]]
+            t_eval=[eval[0], eval[-1]]
             if isinstance(self._solver, IDAKLUSolver)
-            else t_eval,
+            else eval,
             calculate_sensitivities=True,
-            t_interp=t_eval if self._solver.supports_interp else None,
+            t_interp=eval if self._solver.supports_interp else None,
         )
 
     def predict(
@@ -831,18 +675,18 @@ class BaseModel:
 
     def copy(self):
         """
-        Return a copy of the model.
+        Returns a shallow copy of the model.
 
         Returns
         -------
         BaseModel
-            A copy of the model.
+            A shallow copy of the model.
         """
         return copy.copy(self)
 
     def new_copy(self):
         """
-        Return a new copy of the model, explicitly copying all the mutable attributes
+        Return a copy of the model, explicitly copying all the mutable attributes
         to avoid issues with shared objects.
 
         Returns
@@ -909,8 +753,6 @@ class BaseModel:
         """
         Calculate the cell volume in m3.
 
-        This method must be implemented by subclasses.
-
         Parameters
         ----------
         parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
@@ -927,8 +769,6 @@ class BaseModel:
         """
         Calculate a new estimate for the nominal capacity based on the theoretical energy
         density and an average voltage.
-
-        This method must be implemented by subclasses.
 
         Parameters
         ----------

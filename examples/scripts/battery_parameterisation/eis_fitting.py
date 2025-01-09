@@ -16,13 +16,14 @@ model = pybop.lithium_ion.SPM(
 )
 
 # Create synthetic data for parameter inference
-sim = model.simulateEIS(
+sim = model.simulate(
     inputs={
         "Negative electrode active material volume fraction": 0.531,
         "Positive electrode active material volume fraction": 0.732,
     },
-    f_eval=f_eval,
+    eval=f_eval,
     initial_state=initial_state,
+    eis=True,
 )
 
 # Fitting parameters

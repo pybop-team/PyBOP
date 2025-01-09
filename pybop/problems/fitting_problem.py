@@ -116,9 +116,6 @@ class FittingProblem(BaseProblem):
         y : np.ndarray
             The simulated model output y(t) for self.eis == False, and y(ω) for self.eis == True for the given inputs.
         """
-        inputs = self.parameters.verify(inputs)
-        if self.eis:
-            return self._evaluate(self._model.simulateEIS, inputs)
 
         return self._evaluate(self._model.simulate, inputs)
 
@@ -150,6 +147,7 @@ class FittingProblem(BaseProblem):
                     inputs,
                     self._domain_data,
                     initial_state=self.initial_state,
+                    eis=self.eis,
                 )
         except (SolverError, ZeroDivisionError, RuntimeError, ValueError) as e:
             if isinstance(e, ValueError) and str(e) not in self.exception:
