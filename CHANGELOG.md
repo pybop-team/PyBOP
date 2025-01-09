@@ -27,6 +27,7 @@
 
 ## Bug Fixes
 
+- [#602](https://github.com/pybop-team/PyBOP/pull/602) - Aligns the standard quick plot of `MultiFittingProblem` outputs.
 - [#595](https://github.com/pybop-team/PyBOP/pull/595) - Fixes non-finite LogTransformed bounds for indices of zero.
 - [#561](https://github.com/pybop-team/PyBOP/pull/561) - Bug fixes the sign of the SciPy cost logs for maximised costs.
 - [#505](https://github.com/pybop-team/PyBOP/pull/505) - Bug fixes for `LogPosterior` with transformed `GaussianLogLikelihood` likelihood.
