@@ -1,6 +1,6 @@
 import numpy as np
 
-from pybop import DesignProblem, FittingProblem
+from pybop import DesignProblem, FittingProblem, MultiFittingProblem
 from pybop.parameters.parameter import Inputs
 from pybop.plot.standard_plots import StandardPlot
 
@@ -59,7 +59,7 @@ def quick(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
             else domain_data[: len(model_output[signal])],
             y=model_output[signal],
             name="Optimised" if isinstance(problem, DesignProblem) else "Model",
-            mode="markers",
+            mode="markers" if isinstance(problem, MultiFittingProblem) else "lines",
             showlegend=True,
         )
         plot_dict.traces.append(model_trace)
