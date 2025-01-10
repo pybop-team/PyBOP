@@ -1,9 +1,10 @@
 import warnings
 from typing import Optional, Union
 
+import jax.numpy as jnp
 import numpy as np
 
-from pybop import BaseCost, Inputs, Parameter, Parameters
+from pybop import BaseCost, BaseJaxCost, Inputs, Parameter, Parameters
 
 
 class BaseOptimiser:
@@ -243,7 +244,7 @@ class BaseOptimiser:
 
         def convert_to_list(array_like):
             """Helper function to convert input to a list, if necessary."""
-            if isinstance(array_like, (list, tuple, np.ndarray)):
+            if isinstance(array_like, (list, tuple, np.ndarray, jnp.ndarray)):
                 return list(array_like)
             elif isinstance(array_like, (int, float)):
                 return [array_like]
@@ -352,6 +353,7 @@ class OptimisationResult:
         x: Union[Inputs, np.ndarray] = None,
         final_cost: Optional[float] = None,
         n_iterations: Optional[int] = None,
+        n_evaluations: Optional[int] = None,
         time: Optional[float] = None,
         scipy_result=None,
     ):
@@ -359,11 +361,11 @@ class OptimisationResult:
         self.cost = self.optim.cost
         self.minimising = self.optim.minimising
         self._transformation = self.optim._transformation  # noqa: SLF001
-
         self.n_runs = 0
         self._best_run = None
         self._x = []
         self._final_cost = []
+        self._fisher = []
         self._n_iterations = []
         self._scipy_result = []
         self._time = []
@@ -378,9 +380,14 @@ class OptimisationResult:
                 if final_cost is not None
                 else self.cost(x)
             )
+
+            # Calculate Fisher Information if JAX Likelihood
+            fisher = self.cost.observed_fisher(x) if isinstance(self.cost, BaseJaxCost) else None
+
             self._append(
                 x=x,
                 final_cost=final_cost,
+                fisher=fisher,
                 n_iterations=n_iterations,
                 time=time,
                 scipy_result=scipy_result,
@@ -392,6 +399,7 @@ class OptimisationResult:
             self._append(
                 x=x,
                 final_cost=result._final_cost[i],  # noqa: SLF001
+                fisher=result._fisher[i],  # noqa: SLF001
                 n_iterations=result._n_iterations[i],  # noqa: SLF001
                 time=result._time[i],  # noqa: SLF001
                 scipy_result=result._scipy_result[i],  # noqa: SLF001
@@ -401,6 +409,7 @@ class OptimisationResult:
         self,
         x: Union[Inputs, np.ndarray] = None,
         final_cost: Optional[float] = None,
+        fisher: Optional = None,
         n_iterations: Optional[int] = None,
         time: Optional[float] = None,
         scipy_result=None,
@@ -408,6 +417,7 @@ class OptimisationResult:
         self.n_runs += 1
         self._x.append(x)
         self._final_cost.append(final_cost)
+        self._fisher.append(fisher)
         self._n_iterations.append(n_iterations)
         self._scipy_result.append(scipy_result)
         self._time.append(time)
@@ -474,9 +484,11 @@ class OptimisationResult:
             f"  Best result from {self.n_runs} run(s).\n"
             f"  Initial parameters: {self.x0}\n"
             f"  Optimised parameters: {self.x}\n"
+            f"  Diagonal Fisher Information entries: {self.fisher}\n"
             f"  Final cost: {self.final_cost}\n"
             f"  Optimisation time: {self.time} seconds\n"
             f"  Number of iterations: {self.n_iterations}\n"
+            f"  Number of evaluations: {self.n_evaluations}\n"
             f"  SciPy result available: {'Yes' if self.scipy_result else 'No'}"
         )
 
@@ -505,6 +517,10 @@ class OptimisationResult:
         return (
             self._n_iterations[self._best_run] if self._best_run is not None else None
         )
+
+    @property
+    def n_evaluations(self):
+        return self.best_run().n_evaluations
 
     @property
     def scipy_result(self):

@@ -88,6 +88,7 @@ class TestOptimisation:
             (pybop.PSO, "Particle Swarm Optimisation (PSO)", False),
             (pybop.IRPropMin, "iRprop-", True),
             (pybop.NelderMead, "Nelder-Mead", False),
+            (pybop.RandomSearch, "Random Search", False),
         ],
     )
     @pytest.mark.unit
@@ -137,6 +138,7 @@ class TestOptimisation:
             pybop.IRPropMin,
             pybop.NelderMead,
             pybop.CuckooSearch,
+            pybop.RandomSearch,
         ],
     )
     @pytest.mark.unit
@@ -277,7 +279,12 @@ class TestOptimisation:
                 ):
                     optimiser(cost=cost, bounds=bounds_case)
 
-        if optimiser in [pybop.AdamW, pybop.CuckooSearch, pybop.GradientDescent]:
+        if optimiser in [
+            pybop.AdamW,
+            pybop.CuckooSearch,
+            pybop.GradientDescent,
+            pybop.RandomSearch,
+        ]:
             optim = optimiser(cost)
             with pytest.raises(
                 RuntimeError, match=re.escape("ask() must be called before tell().")
@@ -337,6 +344,51 @@ class TestOptimisation:
         optim = pybop.CuckooSearch(cost=cost, bounds=None, max_iterations=1)
         optim.run()
         assert optim.optimiser._boundaries is None
+
+    @pytest.mark.unit
+    def test_randomsearch_bounds(self, two_param_cost):
+        # Test clip_candidates with bound
+        bounds = {"upper": [0.62, 0.57], "lower": [0.58, 0.53]}
+        optimiser = pybop.RandomSearch(
+            cost=two_param_cost, bounds=bounds, max_iterations=1
+        )
+        candidates = np.array([[0.57, 0.52], [0.63, 0.58]])
+        clipped_candidates = optimiser.optimiser.clip_candidates(candidates)
+        expected_clipped = np.array([[0.58, 0.53], [0.62, 0.57]])
+        assert np.allclose(clipped_candidates, expected_clipped)
+
+        # Test clip_candidates without bound
+        optimiser = pybop.RandomSearch(
+            cost=two_param_cost, bounds=None, max_iterations=1
+        )
+        candidates = np.array([[0.57, 0.52], [0.63, 0.58]])
+        clipped_candidates = optimiser.optimiser.clip_candidates(candidates)
+        assert np.allclose(clipped_candidates, candidates)
+
+    @pytest.mark.unit
+    def test_randomsearch_ask_without_bounds(self, two_param_cost):
+        # Initialize optimiser without boundaries
+        optim = pybop.RandomSearch(
+            cost=two_param_cost,
+            sigma0=0.05,
+            x0=[0.6, 0.55],
+            bounds=None,
+            max_iterations=1,
+        )
+
+        # Set population size, generate candidates
+        optim.set_population_size(2)
+        candidates = optim.optimiser.ask()
+
+        # Assert the shape of the candidates
+        assert candidates.shape == (2, 2)
+        assert np.all(candidates >= optim.optimiser._x0 - 6 * optim.optimiser._sigma0)
+        assert np.all(candidates <= optim.optimiser._x0 + 6 * optim.optimiser._sigma0)
+
+    @pytest.mark.unit
+    def test_adamw_impl_bounds(self):
+        with pytest.warns(UserWarning, match="Boundaries ignored by AdamW"):
+            pybop.AdamWImpl(x0=[0.1], boundaries=[0.0, 0.2])
 
     @pytest.mark.unit
     def test_scipy_minimize_with_jac(self, cost):
@@ -516,8 +568,8 @@ class TestOptimisation:
 
         # Test max evalutions
         optim = pybop.GradientDescent(cost=cost, max_evaluations=1, verbose=True)
-        optim.run()
-        assert optim.result.n_iterations == 1
+        results = optim.run()
+        assert results.n_evaluations == 1
 
         # Test max unchanged iterations
         optim = pybop.GradientDescent(
@@ -531,9 +583,11 @@ class TestOptimisation:
             f"  Best result from {results.n_runs} run(s).\n"
             f"  Initial parameters: {results.x0}\n"
             f"  Optimised parameters: {results.x}\n"
+            f"  Diagonal Fisher Information entries: {None}\n"
             f"  Final cost: {results.final_cost}\n"
             f"  Optimisation time: {results.time} seconds\n"
             f"  Number of iterations: {results.n_iterations}\n"
+            f"  Number of evaluations: {results.n_evaluations}\n"
             f"  SciPy result available: No"
         )
 
@@ -575,9 +629,11 @@ class TestOptimisation:
             f"  Best result from {results.n_runs} run(s).\n"
             f"  Initial parameters: {results.x0}\n"
             f"  Optimised parameters: {results.x}\n"
+            f"  Diagonal Fisher Information entries: {None}\n"
             f"  Final cost: {results.final_cost}\n"
             f"  Optimisation time: {results.time} seconds\n"
             f"  Number of iterations: {results.n_iterations}\n"
+            f"  Number of evaluations: {results.n_evaluations}\n"
             f"  SciPy result available: No"
         )
 

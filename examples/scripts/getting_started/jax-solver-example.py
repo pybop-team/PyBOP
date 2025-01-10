@@ -3,14 +3,11 @@ import pybamm
 
 import pybop
 
-# Define model and set initial parameter values
+# Parameter set and model definition
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-parameter_set.update(
-    {
-        "Negative electrode active material volume fraction": 0.63,
-        "Positive electrode active material volume fraction": 0.51,
-    }
-)
+
+# The Jaxified IDAKLU performs very well on high iteration
+# identification tasks, due to the just-in-time compilation
 solver = pybamm.IDAKLUSolver()
 model = pybop.lithium_ion.SPMe(parameter_set=parameter_set, solver=solver)
 
@@ -18,12 +15,14 @@ model = pybop.lithium_ion.SPMe(parameter_set=parameter_set, solver=solver)
 parameters = pybop.Parameters(
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.6, 0.05),
+        initial_value=0.55,
+        prior=pybop.Gaussian(0.6, 0.03),
         bounds=[0.5, 0.8],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.48, 0.05),
+        initial_value=0.55,
+        prior=pybop.Gaussian(0.6, 0.03),
     ),
 )
 
@@ -32,8 +31,8 @@ sigma = 0.002
 experiment = pybop.Experiment(
     [
         (
-            "Discharge at 0.5C for 3 minutes (3 second period)",
             "Charge at 0.5C for 3 minutes (3 second period)",
+            "Discharge at 0.5C for 3 minutes (3 second period)",
         ),
     ]
 )
@@ -50,35 +49,31 @@ dataset = pybop.Dataset(
         "Time [s]": values["Time [s]"].data,
         "Current function [A]": values["Current [A]"].data,
         "Voltage [V]": values["Voltage [V]"].data + noise(sigma),
-        "Bulk open-circuit voltage [V]": values["Bulk open-circuit voltage [V]"].data
-        + noise(sigma),
     }
 )
 
+# Construct the Problem
+problem = pybop.FittingProblem(model, parameters, dataset)
 
-signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
-# Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
-likelihood = pybop.GaussianLogLikelihood(problem, sigma0=sigma * 4)
+# By selecting a Jax based cost function, the IDAKLU solver will be
+# jaxified (wrapped in a Jax compiled expression) and used for optimisation
+cost = pybop.JaxLogNormalLikelihood(problem, sigma0=sigma)
+
+# Test gradient-based optimiser
 optim = pybop.IRPropMin(
-    likelihood,
-    max_unchanged_iterations=20,
-    min_iterations=20,
+    cost,
+    sigma0=0.02,
+    max_unchanged_iterations=35,
     max_iterations=100,
 )
 
-# Run the optimisation
 results = optim.run()
-
-# Plot the timeseries output
-pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot.convergence(optim)
 
-# Plot the parameter traces
+# Plot parameter trace
 pybop.plot.parameters(optim)
 
-# Plot the cost landscape with optimisation path
-bounds = np.asarray([[0.55, 0.77], [0.48, 0.68]])
-pybop.plot.contour(optim, bounds=bounds, steps=15)
+# Plot voronoi surface
+pybop.plot.surface(optim)
