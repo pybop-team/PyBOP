@@ -34,7 +34,7 @@ class BaseCost:
     class DeferredPrediction:
         """
         Class used to indicate a prediction has yet to be, but is expected during
-        a cost call. 
+        a cost call.
         """
 
         pass
