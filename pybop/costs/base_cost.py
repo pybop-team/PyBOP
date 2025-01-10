@@ -1,7 +1,6 @@
 from typing import Optional, Union
 
 import numpy as np
-from numpy import ndarray
 
 from pybop import BaseProblem
 from pybop._utils import add_spaces
@@ -11,11 +10,6 @@ from pybop.parameters.parameter import Inputs, Parameters
 class BaseCost:
     """
     Base class for defining cost functions.
-
-    This class is intended to be subclassed to create specific cost functions
-    for evaluating model predictions against a set of data. The cost function
-    quantifies the goodness-of-fit between the model predictions and the
-    observed data, with a lower cost value indicating a better fit.
 
     Parameters
     ----------
@@ -36,6 +30,14 @@ class BaseCost:
         If False, switches the sign of the cost and gradient to perform maximisation
         instead of minimisation.
     """
+
+    class DeferredPrediction:
+        """
+        Class used to indicate a prediction has yet to be, but is expected during
+        a cost call.
+        """
+
+        pass
 
     def __init__(self, problem: Optional[BaseProblem] = None):
         self._parameters = Parameters()
@@ -109,11 +111,13 @@ class BaseCost:
         # | `True`       | `False`           | `False`         |
         minimising = self.minimising or not for_optimiser
 
-        y, dy = None, None
+        y = self.DeferredPrediction
+        dy = self.DeferredPrediction if calculate_grad else None
+
         if self._has_separable_problem:
             if calculate_grad:
                 y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
-                cost, grad = self.compute(y, dy=dy, calculate_grad=calculate_grad)
+                cost, grad = self.compute(y, dy=dy)
 
                 if self.has_transform and np.isfinite(cost):
                     jac = self.transformation.jacobian(inputs)
@@ -125,18 +129,16 @@ class BaseCost:
 
             y = self.problem.evaluate(self.problem.parameters.as_dict())
 
-        return self.compute(y, dy=dy, calculate_grad=calculate_grad) * (
-            1 if minimising else -1
-        )
+        return self.compute(y, dy=dy) * (1 if minimising else -1)
 
     def _apply_transformations(self, inputs):
         """Apply transformation if needed"""
         return self.transformation.to_model(inputs) if self.has_transform else inputs
 
-    def compute(self, y: dict, dy: ndarray, calculate_grad: bool = False):
+    def compute(self, y: dict, dy: Optional[np.ndarray]):
         """
-        Compute the cost and  if `calculate_grad` is True, its gradient with
-        respect to the predictions.
+        Compute the cost and, if dy is not None, its gradient with respect to the
+        parameters.
 
         This method only computes the cost, without calling the `problem.evaluate()`.
         This method must be implemented by subclasses.
@@ -147,13 +149,6 @@ class BaseCost:
             The dictionary of predictions with keys designating the signals for fitting.
         dy : np.ndarray, optional
             The corresponding gradient with respect to the parameters for each signal.
-        calculate_grad : bool, optional
-            A bool condition designating whether to calculate the gradient.
-
-        Returns
-        -------
-        float
-            The calculated cost function value.
 
         Raises
         ------
@@ -179,7 +174,7 @@ class BaseCost:
         self._de = de
         self.grad_fail = self._de * np.ones(self.n_parameters)
 
-    def verify_prediction(self, y):
+    def verify_prediction(self, y: dict):
         """
         Verify that the prediction matches the target data.
 
@@ -199,12 +194,6 @@ class BaseCost:
             return False
 
         return True
-
-    def verify_args(self, dy: ndarray, calculate_grad: bool):
-        if calculate_grad and dy is None:
-            raise ValueError(
-                "Forward model sensitivities need to be provided alongside `calculate_grad=True` for `cost.compute`."
-            )
 
     def join_parameters(self, parameters):
         """
