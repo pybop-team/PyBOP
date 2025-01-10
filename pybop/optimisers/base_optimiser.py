@@ -413,7 +413,7 @@ class OptimisationResult:
         self,
         x: Union[Inputs, np.ndarray] = None,
         final_cost: Optional[float] = None,
-        fisher: Optional = None,
+        fisher=None,
         n_iterations: Optional[int] = None,
         time: Optional[float] = None,
         scipy_result=None,
@@ -515,6 +515,10 @@ class OptimisationResult:
     @property
     def final_cost(self):
         return self._final_cost[self._best_run] if self._best_run is not None else None
+
+    @property
+    def fisher(self):
+        return self._fisher[self._best_run] if self._best_run is not None else None
 
     @property
     def n_iterations(self):
