@@ -382,7 +382,11 @@ class OptimisationResult:
             )
 
             # Calculate Fisher Information if JAX Likelihood
-            fisher = self.cost.observed_fisher(x) if isinstance(self.cost, BaseJaxCost) else None
+            fisher = (
+                self.cost.observed_fisher(x)
+                if isinstance(self.cost, BaseJaxCost)
+                else None
+            )
 
             self._append(
                 x=x,
