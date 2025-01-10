@@ -367,6 +367,7 @@ class OptimisationResult:
         self._final_cost = []
         self._fisher = []
         self._n_iterations = []
+        self._n_evaluations = []
         self._scipy_result = []
         self._time = []
         self._x0 = []
@@ -393,6 +394,7 @@ class OptimisationResult:
                 final_cost=final_cost,
                 fisher=fisher,
                 n_iterations=n_iterations,
+                n_evaluations=n_evaluations,
                 time=time,
                 scipy_result=scipy_result,
             )
@@ -405,6 +407,7 @@ class OptimisationResult:
                 final_cost=result._final_cost[i],  # noqa: SLF001
                 fisher=result._fisher[i],  # noqa: SLF001
                 n_iterations=result._n_iterations[i],  # noqa: SLF001
+                n_evaluations=result._n_evaluations[i],  # noqa: SLF001
                 time=result._time[i],  # noqa: SLF001
                 scipy_result=result._scipy_result[i],  # noqa: SLF001
             )
@@ -415,6 +418,7 @@ class OptimisationResult:
         final_cost: Optional[float] = None,
         fisher=None,
         n_iterations: Optional[int] = None,
+        n_evaluations: Optional[int] = None,
         time: Optional[float] = None,
         scipy_result=None,
     ):
@@ -423,6 +427,7 @@ class OptimisationResult:
         self._final_cost.append(final_cost)
         self._fisher.append(fisher)
         self._n_iterations.append(n_iterations)
+        self._n_evaluations.append(n_evaluations)
         self._scipy_result.append(scipy_result)
         self._time.append(time)
         if isinstance(self.optim, BaseOptimiser):
@@ -528,7 +533,9 @@ class OptimisationResult:
 
     @property
     def n_evaluations(self):
-        return self.best_run().n_evaluations
+        return (
+            self._n_evaluations[self._best_run] if self._best_run is not None else None
+        )
 
     @property
     def scipy_result(self):
