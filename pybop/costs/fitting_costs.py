@@ -77,7 +77,6 @@ class RootMeanSquaredError(FittingCost):
     data, providing a measure of the differences between predicted values and
     observed values.
 
-    Inherits all parameters and attributes from ``FittingCost``.
 
     """
 
@@ -123,7 +122,6 @@ class SumSquaredError(FittingCost):
     and target data, which serves as a measure of the total error between the
     predicted and observed values.
 
-    Inherits all parameters and attributes from ``FittingCost``.
 
     """
 

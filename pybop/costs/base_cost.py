@@ -33,8 +33,8 @@ class BaseCost:
 
     class DeferredPrediction:
         """
-        Class used to indicate a prediction has yet to be, but should be, calculated during
-        a cost call. Implements nothing so that any use will result in an error.
+        Class used to indicate a prediction has yet to be, but is expected during
+        a cost call. 
         """
 
         pass
@@ -119,8 +119,8 @@ class BaseCost:
         model_inputs = self.parameters.verify(model_inputs)
         self.parameters.update(values=list(model_inputs.values()))
 
-        y = BaseCost.DeferredPrediction()
-        dy = BaseCost.DeferredPrediction() if calculate_grad else None
+        y = self.DeferredPrediction
+        dy = self.DeferredPrediction if calculate_grad else None
 
         if self._has_separable_problem:
             if calculate_grad:

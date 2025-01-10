@@ -14,7 +14,6 @@ class BaseLikelihood(BaseCost):
     """
     Base class for likelihoods.
 
-    Inherits all parameters and attributes from ``BaseCost``.
     """
 
     def __init__(self, problem: BaseProblem):
