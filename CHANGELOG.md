@@ -6,6 +6,8 @@
 
 ## Bug Fixes
 
+- [#602](https://github.com/pybop-team/PyBOP/pull/602) - Aligns the standard quick plot of `MultiFittingProblem` outputs.
+
 ## Breaking Changes
 
 # [v24.12](https://github.com/pybop-team/PyBOP/tree/v24.12) - 2024-12-21
