@@ -1,5 +1,3 @@
-import time
-
 import matplotlib
 import plotly
 import pytest
@@ -28,34 +26,6 @@ def pytest_addoption(parser):
         "--notebooks", action="store_true", default=False, help="run notebook tests"
     )
     parser.addoption("--docs", action="store_true", default=False, help="run doc tests")
-
-
-def pytest_sessionstart(session):
-    start_time = time.time()
-    session.config.cache.set("session_start_time", start_time)
-
-
-def pytest_terminal_summary(terminalreporter, exitstatus, config):
-    """Add additional section to terminal summary reporting."""
-    start_time = config.cache.get("session_start_time", None)
-    if start_time is None:
-        print("Warning: Session start time not found in cache.")
-        return
-
-    # Collect the durations of all tests from different outcomes
-    total_time = 0
-    num_tests = 0
-
-    # Loop through all test outcomes (including skipped)
-    for _outcome, reports in terminalreporter.stats.items():
-        for report in reports:
-            if hasattr(report, "duration") and report.duration is not None:
-                total_time += report.duration
-                num_tests += 1
-
-    print(f"\nTotal number of tests completed: {num_tests}")
-    print(f"Total summed time taken: {total_time:.2f} seconds")
-    print(f"Total wall clock time: {(time.time() - start_time):.2f} seconds")
 
 
 def pytest_configure(config):
