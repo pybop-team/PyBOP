@@ -4,6 +4,8 @@
 
 ## Optimisations
 
+- [#600](https://github.com/pybop-team/PyBOP/pull/600) - Removes repetitious functionality within the cost classes.
+
 ## Bug Fixes
 
 - [#602](https://github.com/pybop-team/PyBOP/pull/602) - Aligns the standard quick plot of `MultiFittingProblem` outputs.
