@@ -141,6 +141,15 @@
         "test",
         "code"
       ]
+    },
+    {
+      "login": "noelhallemans",
+      "name": "Noël Hallemans",
+      "avatar_url": "https://avatars.githubusercontent.com/u/90609505?v=4",
+      "profile": "https://eng.ox.ac.uk/people/noel-hallemans/",
+      "contributions": [
+        "example"
+      ]
     }
   ],
   "contributorsPerLine": 7,
