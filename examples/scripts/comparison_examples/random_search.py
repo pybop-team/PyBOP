@@ -4,30 +4,46 @@ import pybop
 
 # Define model
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+parameter_set.update(
+    {
+        "Negative electrode active material volume fraction": 0.7,
+        "Positive electrode active material volume fraction": 0.67,
+    }
+)
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = pybop.Parameters(
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.6, 0.05),
-        bounds=[0.5, 0.8],
+        bounds=[0.4, 0.75],
+        initial_value=0.41,
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.48, 0.05),
-        bounds=[0.4, 0.7],
+        bounds=[0.4, 0.75],
+        initial_value=0.41,
     ),
 )
+experiment = pybop.Experiment(
+    [
+        (
+            "Discharge at 0.5C for 3 minutes (4 second period)",
+            "Charge at 0.5C for 3 minutes (4 second period)",
+        ),
+    ]
+)
+values = model.predict(initial_state={"Initial SoC": 0.7}, experiment=experiment)
 
-sigma = 0.001
-t_eval = np.arange(0, 900, 3)
-values = model.predict(t_eval=t_eval)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
+sigma = 0.002
+corrupt_values = values["Voltage [V]"].data + np.random.normal(
+    0, sigma, len(values["Voltage [V]"].data)
+)
 
+# Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": t_eval,
+        "Time [s]": values["Time [s]"].data,
         "Current function [A]": values["Current [A]"].data,
         "Voltage [V]": corrupt_values,
     }
@@ -35,8 +51,12 @@ dataset = pybop.Dataset(
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.SumofPower(problem, p=2)
-optim = pybop.SNES(cost, max_iterations=100)
+cost = pybop.GaussianLogLikelihood(problem, sigma0=sigma * 4)
+optim = pybop.Optimisation(
+    cost,
+    optimiser=pybop.RandomSearch,
+    max_iterations=100,
+)
 
 results = optim.run()
 
@@ -50,4 +70,4 @@ pybop.plot.convergence(optim)
 pybop.plot.parameters(optim)
 
 # Plot the cost landscape with optimisation path
-pybop.plot.surface(optim)
+pybop.plot.contour(optim, steps=10)

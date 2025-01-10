@@ -12,11 +12,6 @@ class TestCosts:
     Class for tests cost functions
     """
 
-    # Define an invalid likelihood class for MAP tests
-    class InvalidLikelihood:
-        def __init__(self, problem, sigma0):
-            pass
-
     @pytest.fixture
     def model(self, ground_truth):
         solver = pybamm.IDAKLUSolver()

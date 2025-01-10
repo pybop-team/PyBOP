@@ -54,7 +54,6 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
         self._dim = len(x0)
 
         # Population size and abandon rate
-        self._n = self._population_size
         self._pa = pa
         self.step_size = self._sigma0
         self.beta = 1.5
@@ -68,14 +67,14 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
             self._nests = np.random.uniform(
                 low=self._boundaries.lower(),
                 high=self._boundaries.upper(),
-                size=(self._n, self._dim),
+                size=(self._population_size, self._dim),
             )
         else:
             self._nests = np.random.normal(
-                self._x0, self._sigma0, size=(self._n, self._dim)
+                self._x0, self._sigma0, size=(self._population_size, self._dim)
             )
 
-        self._fitness = np.full(self._n, np.inf)
+        self._fitness = np.full(self._population_size, np.inf)
 
         # Initialise best solutions
         self._x_best = np.copy(x0)
@@ -112,7 +111,7 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
         self._iterations += 1
 
         # Compare cuckoos with current nests
-        for i in range(self._n):
+        for i in range(self._population_size):
             f_new = replies[i]
             if f_new < self._fitness[i]:
                 self._nests[i] = self.cuckoos[i]
@@ -122,7 +121,7 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
                     self._x_best = self.cuckoos[i]
 
         # Abandon some worse nests
-        n_abandon = int(self._pa * self._n)
+        n_abandon = int(self._pa * self._population_size)
         worst_nests = np.argsort(self._fitness)[-n_abandon:]
         for idx in worst_nests:
             self.abandon_nests(idx)

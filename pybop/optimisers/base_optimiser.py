@@ -1,10 +1,11 @@
 import warnings
 from typing import Optional, Union
 
+import jax.numpy as jnp
 import numpy as np
 from scipy.optimize import OptimizeResult
 
-from pybop import BaseCost, Inputs, Parameter, Parameters
+from pybop import BaseCost, BaseJaxCost, Inputs, Parameter, Parameters
 
 
 class BaseOptimiser:
@@ -244,7 +245,7 @@ class BaseOptimiser:
 
         def convert_to_list(array_like):
             """Helper function to convert input to a list, if necessary."""
-            if isinstance(array_like, (list, tuple, np.ndarray)):
+            if isinstance(array_like, (list, tuple, np.ndarray, jnp.ndarray)):
                 return list(array_like)
             elif isinstance(array_like, (int, float)):
                 return [array_like]
@@ -353,6 +354,7 @@ class OptimisationResult:
         x: Union[Inputs, np.ndarray] = None,
         final_cost: Optional[float] = None,
         n_iterations: Optional[int] = None,
+        n_evaluations: Optional[int] = None,
         time: Optional[float] = None,
         scipy_result=None,
     ):
@@ -360,6 +362,7 @@ class OptimisationResult:
         self.cost = self.optim.cost
         self.minimising = self.optim.minimising
         self._transformation = self.optim._transformation  # noqa: SLF001
+        self.fisher = None
 
         self.x = self._transformation.to_model(x) if self._transformation else x
         self.final_cost = (
@@ -368,6 +371,7 @@ class OptimisationResult:
             else self._calculate_final_cost()
         )
         self.n_iterations = n_iterations
+        self.n_evaluations = n_evaluations
         self.scipy_result = scipy_result
         self.time = time
         if isinstance(self.optim, BaseOptimiser):
@@ -378,6 +382,10 @@ class OptimisationResult:
         # Check that the parameters produce finite cost, and are physically viable
         self._validate_parameters()
         self.check_physical_viability(self.x)
+
+        # Calculate Fisher Information if JAX Likelihood
+        if isinstance(optim.cost, BaseJaxCost):
+            self.fisher = optim.cost.observed_fisher(self.x)
 
     def _calculate_final_cost(self) -> float:
         """
@@ -447,9 +455,11 @@ class OptimisationResult:
             f"OptimisationResult:\n"
             f"  Initial parameters: {self.x0}\n"
             f"  Optimised parameters: {self.x}\n"
+            f"  Diagonal Fisher Information entries: {self.fisher}\n"
             f"  Final cost: {self.final_cost}\n"
             f"  Optimisation time: {self.time} seconds\n"
             f"  Number of iterations: {self.n_iterations}\n"
+            f"  Number of evaluations: {self.n_evaluations}\n"
             f"  SciPy result available: {'Yes' if self.scipy_result else 'No'}"
         )
 
@@ -545,6 +555,10 @@ class MultiOptimisationResult:
     @property
     def n_iterations(self):
         return self.best_run().n_iterations
+
+    @property
+    def n_evaluations(self):
+        return self.best_run().n_evaluations
 
     @property
     def scipy_result(self):

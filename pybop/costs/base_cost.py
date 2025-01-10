@@ -98,13 +98,9 @@ class BaseCost:
         """
         # Note, we use the transformation and parameter properties here to enable
         # differing attributes within the `LogPosterior` class
-
-        # Apply transformation if needed
         self.has_transform = self.transformation is not None and apply_transform
-        if self.has_transform:
-            model_inputs = self.transformation.to_model(inputs)
-        else:
-            model_inputs = inputs
+        model_inputs = self.parameters.verify(self._apply_transformations(inputs))
+        self.parameters.update(values=list(model_inputs.values()))
 
         # Check whether we are maximising or minimising via:
         # | `minimising` | `self.minimising` | `for_optimiser` |
@@ -114,10 +110,6 @@ class BaseCost:
         # | `False`      | `False`           | `True`          |
         # | `True`       | `False`           | `False`         |
         minimising = self.minimising or not for_optimiser
-
-        # Validate inputs, update parameters
-        model_inputs = self.parameters.verify(model_inputs)
-        self.parameters.update(values=list(model_inputs.values()))
 
         y = self.DeferredPrediction
         dy = self.DeferredPrediction if calculate_grad else None
@@ -138,6 +130,10 @@ class BaseCost:
             y = self.problem.evaluate(self.problem.parameters.as_dict())
 
         return self.compute(y, dy=dy) * (1 if minimising else -1)
+
+    def _apply_transformations(self, inputs):
+        """Apply transformation if needed"""
+        return self.transformation.to_model(inputs) if self.has_transform else inputs
 
     def compute(self, y: dict, dy: Optional[np.ndarray]):
         """
