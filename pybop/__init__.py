@@ -120,10 +120,21 @@ from .costs._likelihoods import (
 from .costs._weighted_cost import WeightedCost
 
 #
+# Experimental
+#
+from .experimental.jax_costs import BaseJaxCost, JaxSumSquaredError, JaxLogNormalLikelihood, JaxGaussianLogLikelihoodKnownSigma
+
+#
+# Evaluation
+#
+from ._evaluation import SequentialJaxEvaluator, SciPyEvaluator
+
+#
 # Optimiser classes
 #
 
 from .optimisers._cuckoo import CuckooSearchImpl
+from .optimisers._random_search import RandomSearchImpl
 from .optimisers._adamw import AdamWImpl
 from .optimisers._gradient_descent import GradientDescentImpl
 from .optimisers.base_optimiser import BaseOptimiser, OptimisationResult, MultiOptimisationResult
@@ -142,6 +153,7 @@ from .optimisers.pints_optimisers import (
     SNES,
     XNES,
     CuckooSearch,
+    RandomSearch,
     AdamW,
 )
 from .optimisers.optimisation import Optimisation
