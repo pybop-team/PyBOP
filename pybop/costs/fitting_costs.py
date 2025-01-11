@@ -76,8 +76,6 @@ class RootMeanSquaredError(FittingCost):
     Computes the root mean square error between model predictions and the target
     data, providing a measure of the differences between predicted values and
     observed values.
-
-
     """
 
     def _error_measure(
@@ -114,15 +112,13 @@ class RootMeanSquaredError(FittingCost):
         return e.item() if self.n_outputs == 1 else np.sum(e)
 
 
-class SumSquaredError(FittingCost):
+class MeanAbsoluteError(FittingCost):
     """
-    Sum of squared errors cost function.
+    Mean absolute error (MAE) cost function.
 
-    Computes the sum of the squares of the differences between model predictions
-    and target data, which serves as a measure of the total error between the
-    predicted and observed values.
-
-
+    Computes the mean absolute error (MAE) between model predictions
+    and target data. The MAE is a measure of the average magnitude
+    of errors in a set of predictions, without considering their direction.
     """
 
     def _error_measure(
@@ -146,7 +142,47 @@ class SumSquaredError(FittingCost):
             If dy is not None, returns a tuple containing the cost (float) and the
             gradient (np.ndarray), otherwise returns only the computed cost (float).
         """
-        e = np.sum(np.sum(np.abs(r) ** 2, axis=0), axis=0)
+        e = np.mean(np.abs(r))
+
+        if dy is not None:
+            sign = np.sign(r)
+            de = np.mean(sign * dy.T, axis=(1, 2))
+            return e, de
+
+        return e
+
+
+class SumSquaredError(FittingCost):
+    """
+    Sum of squared errors cost function.
+
+    Computes the sum of the squares of the differences between model predictions
+    and target data, which serves as a measure of the total error between the
+    predicted and observed values.
+    """
+
+    def _error_measure(
+        self,
+        r: np.ndarray,
+        dy: Optional[np.ndarray] = None,
+    ) -> Union[float, tuple[float, np.ndarray]]:
+        """
+        Computes the cost function for the given predictions.
+
+        Parameters
+        ----------
+        r : np.ndarray
+            The residual difference between the model prediction and the target.
+        dy : np.ndarray, optional
+            The corresponding gradient with respect to the parameters for each signal.
+
+        Returns
+        -------
+        tuple or float
+            If dy is not None, returns a tuple containing the cost (float) and the
+            gradient (np.ndarray), otherwise returns only the computed cost (float).
+        """
+        e = np.sum(np.abs(r) ** 2)
 
         if dy is not None:
             de = 2 * np.sum((r * dy.T), axis=(1, 2))
@@ -309,7 +345,6 @@ class ObserverCost(BaseCost):
     of the data points given the model parameters.
 
     Inherits all parameters and attributes from ``BaseCost``.
-
     """
 
     def __init__(self, observer: Observer):

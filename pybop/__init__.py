@@ -99,6 +99,7 @@ from .costs.base_cost import BaseCost
 from .costs.fitting_costs import (
     FittingCost,
     RootMeanSquaredError,
+    MeanAbsoluteError,
     SumSquaredError,
     Minkowski,
     SumofPower,

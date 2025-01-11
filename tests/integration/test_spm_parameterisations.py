@@ -56,6 +56,7 @@ class Test_SPM_Parameterisation:
             pybop.GaussianLogLikelihoodKnownSigma,
             pybop.GaussianLogLikelihood,
             pybop.RootMeanSquaredError,
+            pybop.MeanAbsoluteError,
             pybop.SumSquaredError,
             pybop.SumofPower,
             pybop.Minkowski,

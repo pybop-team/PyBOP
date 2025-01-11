@@ -4,6 +4,7 @@
 
 ## Optimisations
 
+- [#618](https://github.com/pybop-team/PyBOP/pull/618) - Adds Mean Absolute Error (MAE) cost function.
 - [#600](https://github.com/pybop-team/PyBOP/pull/600) - Removes repetitious functionality within the cost classes.
 
 ## Bug Fixes
