@@ -11,6 +11,7 @@ from pybop import (
     CuckooSearchImpl,
     GradientDescentImpl,
     RandomSearchImpl,
+    SimulatedAnnealingImpl,
 )
 
 
@@ -716,6 +717,73 @@ class RandomSearch(BasePintsOptimiser):
         super().__init__(
             cost,
             RandomSearchImpl,
+            max_iterations,
+            min_iterations,
+            max_unchanged_iterations,
+            multistart,
+            parallel,
+            **optimiser_kwargs,
+        )
+
+
+class SimulatedAnnealing(BasePintsOptimiser):
+    """
+    Adapter for Simulated Annealing optimiser in PyBOP.
+
+
+    Parameters
+    ----------
+    cost : callable
+        The cost function to be minimized.
+    max_iterations : int, optional
+        Maximum number of iterations for the optimisation.
+    min_iterations : int, optional (default=2)
+        Minimum number of iterations before termination.
+    max_unchanged_iterations : int, optional (default=15)
+        Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
+    parallel : bool, optional (default=False)
+        Whether to run the optimisation in parallel.
+    **optimiser_kwargs : optional
+        Valid PINTS option keys and their values, for example:
+        x0 : array_like
+            Initial position from which optimisation will start.
+        sigma0 : float
+            Initial step size or standard deviation depending on the optimiser.
+        bounds : dict
+            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
+            upper bounds on the parameters.
+        use_f_guessed : bool
+            Whether to return the guessed function values.
+        absolute_tolerance : float
+            Absolute tolerance for convergence checking.
+        relative_tolerance : float
+            Relative tolerance for convergence checking.
+        max_evaluations : int
+            Maximum number of function evaluations.
+        threshold : float
+            Threshold value for early termination.
+
+    See Also
+    --------
+    pybop.SimulatedAnnealingImpl : PyBOP implementation of Simulated Annealing.
+    """
+
+    def __init__(
+        self,
+        cost,
+        max_iterations: int = None,
+        min_iterations: int = 2,
+        max_unchanged_iterations: int = 15,
+        multistart: int = 1,
+        parallel: bool = False,
+        **optimiser_kwargs,
+    ):
+        super().__init__(
+            cost,
+            SimulatedAnnealingImpl,
             max_iterations,
             min_iterations,
             max_unchanged_iterations,

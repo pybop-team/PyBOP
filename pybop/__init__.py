@@ -138,6 +138,7 @@ from .optimisers._cuckoo import CuckooSearchImpl
 from .optimisers._random_search import RandomSearchImpl
 from .optimisers._adamw import AdamWImpl
 from .optimisers._gradient_descent import GradientDescentImpl
+from .optimisers._simulated_annealing import SimulatedAnnealingImpl
 from .optimisers.base_optimiser import BaseOptimiser, OptimisationResult, MultiOptimisationResult
 from .optimisers.base_pints_optimiser import BasePintsOptimiser
 from .optimisers.scipy_optimisers import (
@@ -156,6 +157,7 @@ from .optimisers.pints_optimisers import (
     CuckooSearch,
     RandomSearch,
     AdamW,
+    SimulatedAnnealing,
 )
 from .optimisers.optimisation import Optimisation
 
