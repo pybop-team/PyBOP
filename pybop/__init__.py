@@ -100,6 +100,7 @@ from .costs.fitting_costs import (
     FittingCost,
     RootMeanSquaredError,
     MeanAbsoluteError,
+    MeanSquaredError,
     SumSquaredError,
     Minkowski,
     SumofPower,

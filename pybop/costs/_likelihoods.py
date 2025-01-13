@@ -247,9 +247,6 @@ class ScaledLogLikelihood(BaseMetaLikelihood):
     cases.
     """
 
-    def __init__(self, log_likelihood: BaseLikelihood):
-        super().__init__(log_likelihood)
-
     def compute(
         self,
         y: dict,
