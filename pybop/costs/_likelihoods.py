@@ -170,7 +170,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         elif isinstance(value, (int, float)):
             self.sigma.add(
                 Parameter(
-                    f"Sigma for output {index+1}",
+                    f"Sigma for output {index + 1}",
                     initial_value=value,
                     prior=Uniform(1e-8 * value, 3 * value),
                     bounds=[1e-8, 3 * value],
