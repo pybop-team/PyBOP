@@ -73,6 +73,7 @@ class Test_SPM_Parameterisation:
     @pytest.fixture(
         params=[
             pybop.SciPyDifferentialEvolution,
+            pybop.SimulatedAnnealing,
             pybop.CuckooSearch,
             pybop.NelderMead,
             pybop.IRPropMin,
@@ -121,9 +122,11 @@ class Test_SPM_Parameterisation:
         # Construct optimisation object
         common_args = {
             "cost": cost,
-            "max_iterations": 250,
+            "max_iterations": 450,
             "absolute_tolerance": 1e-6,
-            "max_unchanged_iterations": 55,
+            "max_unchanged_iterations": 450
+            if optimiser is pybop.SimulatedAnnealing
+            else 55,
             "sigma0": [0.05, 0.05, 1e-3]
             if isinstance(cost, pybop.GaussianLogLikelihood)
             else 0.05,
@@ -142,6 +145,12 @@ class Test_SPM_Parameterisation:
 
         # Set sigma0 and create optimiser
         optim = optimiser(**common_args)
+
+        if isinstance(optim, pybop.SimulatedAnnealing):
+            optim.optimiser.sigma0 = [0.125, 0.125]
+            if isinstance(cost, pybop.GaussianLogLikelihood):
+                optim.optimiser.sigma0.extend([1e-3])
+
         return optim
 
     @pytest.mark.integration
