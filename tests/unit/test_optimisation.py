@@ -330,6 +330,15 @@ class TestOptimisation:
                 assert optim.optimiser.n_hyper_parameters() == 5
                 assert optim.optimiser.x_guessed() == optim.optimiser._x0
 
+            if optimiser is pybop.CuckooSearch:
+                optim.optimiser.pa = 0.6
+                assert optim.optimiser.pa == 0.6
+
+                with pytest.raises(
+                    Exception, match="must be a numeric value between 0 and 1."
+                ):
+                    optim.optimiser.pa = "test"
+
         else:
             x0 = cost.parameters.initial_value()
             assert optim.x0 == x0

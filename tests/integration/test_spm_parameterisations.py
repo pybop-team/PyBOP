@@ -125,16 +125,16 @@ class Test_SPM_Parameterisation:
             "cost": cost,
             "max_iterations": 250,
             "absolute_tolerance": 1e-6,
-            "max_unchanged_iterations": 55,
-            "sigma0": [0.05, 0.05, 1e-3]
+            "max_unchanged_iterations": 60,
+            "sigma0": [0.06, 0.06, 1e-3]
             if isinstance(cost, pybop.GaussianLogLikelihood)
-            else 0.05,
+            else 0.06,
         }
-        if (
-            isinstance(cost, pybop.BaseJaxCost)
-            and optimiser is pybop.SciPyDifferentialEvolution
-        ):
+
+        if optimiser is pybop.SciPyDifferentialEvolution:
             common_args["bounds"] = [[0.375, 0.775], [0.375, 0.775]]
+            if isinstance(cost, pybop.GaussianLogLikelihood):
+                common_args["bounds"].extend([[0.0, 0.1]])
 
         if isinstance(cost, pybop.LogPosterior):
             for i in cost.parameters.keys():
@@ -144,6 +144,8 @@ class Test_SPM_Parameterisation:
 
         # Set sigma0 and create optimiser
         optim = optimiser(**common_args)
+        if isinstance(optim, pybop.CuckooSearch):
+            optim.optimiser.pa = 0.55  # Increase abandon rate for limited iterations
         return optim
 
     @pytest.mark.integration
@@ -226,10 +228,10 @@ class Test_SPM_Parameterisation:
             "cost": spm_two_signal_cost,
             "max_iterations": 250,
             "absolute_tolerance": 1e-6,
-            "max_unchanged_iterations": 55,
-            "sigma0": [0.05, 0.05, 6e-3, 6e-3]
+            "max_unchanged_iterations": 60,
+            "sigma0": [0.06, 0.06, 6e-3, 6e-3]
             if isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood)
-            else 0.02,
+            else 0.06,
         }
 
         if multi_optimiser is pybop.SciPyDifferentialEvolution:

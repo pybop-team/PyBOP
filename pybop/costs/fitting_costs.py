@@ -16,6 +16,10 @@ class FittingCost(BaseCost):
     observed data, with a lower cost value indicating a better fit.
     """
 
+    def __init__(self, problem):
+        super().__init__(problem)
+        self.numpy_axis = (0, 2) if self.n_outputs > 1 else (1, 2)
+
     def compute(
         self,
         y: dict,
@@ -70,27 +74,7 @@ class FittingCost(BaseCost):
         raise NotImplementedError
 
 
-class ErrorMeasureMixin:
-    """
-    Mixin class providing reshaping to the error measure method.
-    """
-
-    def _format_output(
-        self, e: np.ndarray, dy: Optional[np.ndarray] = None
-    ) -> Union[float, tuple[float, np.ndarray]]:
-        """
-        Format output based on number of outputs and gradient presence.
-        """
-        if dy is not None:
-            return (
-                (e.item(), dy.flatten())
-                if self.n_outputs == 1
-                else (e.sum(), dy.sum(1))
-            )
-        return e.item() if self.n_outputs == 1 else np.sum(e)
-
-
-class MeanSquaredError(FittingCost, ErrorMeasureMixin):
+class MeanSquaredError(FittingCost):
     """
     Mean square error (MSE) cost function.
 
@@ -104,16 +88,16 @@ class MeanSquaredError(FittingCost, ErrorMeasureMixin):
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        e = np.mean(np.abs(r) ** 2, axis=1)
+        e = np.mean(np.abs(r) ** 2)
 
         if dy is not None:
-            de = 2 * np.mean((r * dy.T), axis=2)
-            return self._format_output(e, de)
+            de = 2 * np.mean((r * dy.T), axis=self.numpy_axis)
+            return e, de
 
-        return self._format_output(e)
+        return e
 
 
-class RootMeanSquaredError(FittingCost, ErrorMeasureMixin):
+class RootMeanSquaredError(FittingCost):
     """
     Root mean square error (RMSE) cost function.
 
@@ -127,13 +111,13 @@ class RootMeanSquaredError(FittingCost, ErrorMeasureMixin):
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        e = np.sqrt(np.mean(np.abs(r) ** 2, axis=1))
+        e = np.sqrt(np.mean(np.abs(r) ** 2))
 
         if dy is not None:
-            de = np.mean((r * dy.T), axis=2) / (e + np.finfo(float).eps)
-            return self._format_output(e, de)
+            de = np.mean((r * dy.T), axis=self.numpy_axis) / (e + np.finfo(float).eps)
+            return e, de
 
-        return self._format_output(e)
+        return e
 
 
 class MeanAbsoluteError(FittingCost):
@@ -154,7 +138,7 @@ class MeanAbsoluteError(FittingCost):
 
         if dy is not None:
             sign = np.sign(r)
-            de = np.mean(sign * dy.T, axis=(1, 2))
+            de = np.mean(sign * dy.T, axis=self.numpy_axis)
             return e, de
 
         return e
@@ -177,7 +161,7 @@ class SumSquaredError(FittingCost):
         e = np.sum(np.abs(r) ** 2)
 
         if dy is not None:
-            de = 2 * np.sum((r * dy.T), axis=(1, 2))
+            de = 2 * np.sum((r * dy.T), axis=self.numpy_axis)
             return e, de
 
         return e
@@ -233,10 +217,8 @@ class Minkowski(FittingCost):
 
         if dy is not None:
             de = np.sum(
-                np.sum(np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T, axis=2)
-                / (e ** (self.p - 1) + np.finfo(float).eps),
-                axis=1,
-            )
+                np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T, axis=self.numpy_axis
+            ) / (e ** (self.p - 1) + np.finfo(float).eps)
             return e, de
 
         return e
@@ -290,7 +272,7 @@ class SumofPower(FittingCost):
 
         if dy is not None:
             de = self.p * np.sum(
-                np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T, axis=(1, 2)
+                np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T, axis=self.numpy_axis
             )
             return e, de
 
