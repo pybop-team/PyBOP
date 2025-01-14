@@ -27,7 +27,7 @@ class Dataset:
         if not isinstance(data_dictionary, dict):
             raise TypeError("The input to pybop.Dataset must be a dictionary.")
         self.data = data_dictionary
-        self.names = self.data.keys()
+        self.domain = ""
 
     def __repr__(self):
         """
@@ -38,7 +38,7 @@ class Dataset:
         str
             A string that includes the type and contents of the dataset.
         """
-        return f"Dataset: {type(self.data)} \n Contains: {self.names}"
+        return f"Dataset: {type(self.data)} \n Contains: {self.data.keys()}"
 
     def __setitem__(self, key, value):
         """
@@ -103,7 +103,7 @@ class Dataset:
         signals = [signal] if isinstance(signal, str) else (signal or ["Voltage [V]"])
 
         # Check that the dataset contains domain and chosen signals
-        missing_attributes = set([self.domain, *signals]) - set(self.names)
+        missing_attributes = set([self.domain, *signals]) - set(self.data.keys())
         if missing_attributes:
             raise ValueError(
                 f"Expected {', '.join(missing_attributes)} in list of dataset"
@@ -143,3 +143,13 @@ class Dataset:
                 raise ValueError(
                     f"{self.domain} data and {s} data must be the same length."
                 )
+
+    def get_subset(self, index: Union[list, np.ndarray]):
+        """
+        Reduce the dataset to a subset defined by the list of indices.
+        """
+        data = {}
+        for key in self.data.keys():
+            data[key] = self[key][index]
+
+        return Dataset(data)
