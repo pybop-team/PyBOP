@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 from pybamm import solvers
@@ -15,11 +15,13 @@ class Dataset:
     ----------
     data_dictionary : dict or instance of pybamm.solvers.solution.Solution
         The experimental data to store within the dataset.
+    domain : str, optional
+        The domain of the dataset. Defaults to "Time [s]".
     """
 
-    def __init__(self, data_dictionary):
+    def __init__(self, data_dictionary, domain: Optional[str] = None):
         """
-        Initialize a Dataset instance with data and a set of names.
+        Initialise a Dataset instance with data and a set of names.
         """
 
         if isinstance(data_dictionary, solvers.solution.Solution):
@@ -27,7 +29,7 @@ class Dataset:
         if not isinstance(data_dictionary, dict):
             raise TypeError("The input to pybop.Dataset must be a dictionary.")
         self.data = data_dictionary
-        self.domain = ""
+        self.domain = domain or "Time [s]"
 
     def __repr__(self):
         """
@@ -85,7 +87,7 @@ class Dataset:
         Parameters
         ----------
         domain : str, optional
-            The domain of the dataset. Defaults to "Time [s]".
+            If not None, updates the domain of the dataset.
         signal : str or List[str], optional
             The signal(s) to check. Defaults to ["Voltage [V]"].
 
@@ -99,7 +101,7 @@ class Dataset:
         ValueError
             If the time series and the data series are not consistent.
         """
-        self.domain = domain or "Time [s]"
+        self.domain = domain or self.domain
         signals = [signal] if isinstance(signal, str) else (signal or ["Voltage [V]"])
 
         # Check that the dataset contains domain and chosen signals
@@ -152,4 +154,4 @@ class Dataset:
         for key in self.data.keys():
             data[key] = self[key][index]
 
-        return Dataset(data)
+        return Dataset(data, domain=self.domain)
