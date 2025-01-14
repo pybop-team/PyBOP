@@ -238,7 +238,7 @@ class TestOptimisation:
                 (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
             ]
             optim = optimiser(cost=cost, bounds=bounds_list, tol=1e-2)
-            assert optim.bounds == bounds_list
+            assert optim.bounds == bounds
 
         if optimiser in [
             pybop.SciPyMinimize,

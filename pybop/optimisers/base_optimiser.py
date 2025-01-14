@@ -1,4 +1,5 @@
 import warnings
+from copy import deepcopy
 from typing import Optional, Union
 
 import jax.numpy as jnp
@@ -66,7 +67,7 @@ class BaseOptimiser:
 
         if isinstance(cost, BaseCost):
             self.cost = cost
-            self.parameters = self.cost.parameters
+            self.parameters = deepcopy(self.cost.parameters)
             self._transformation = self.cost.transformation
             self.set_allow_infeasible_solutions()
             self._minimising = self.cost.minimising
@@ -122,9 +123,13 @@ class BaseOptimiser:
         self.x0 = self.parameters.reset_initial_value(apply_transform=True)
 
         # Set default bounds (for all or no parameters)
-        self.bounds = self.unset_options.pop(
+        bounds = self.unset_options.pop(
             "bounds", self.parameters.get_bounds(apply_transform=True)
         )
+        if isinstance(bounds, (np.ndarray, list)):
+            self.parameters.update(bounds=bounds)
+            bounds = self.parameters.get_bounds(apply_transform=True)
+        self.bounds = bounds
 
         # Set default initial standard deviation (for all or no parameters)
         self.sigma0 = self.unset_options.pop(

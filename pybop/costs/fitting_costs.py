@@ -91,7 +91,7 @@ class MeanSquaredError(FittingCost):
         e = np.mean(np.abs(r) ** 2)
 
         if dy is not None:
-            de = 2 * np.mean((r * dy.T), axis=self.numpy_axis)
+            de = 2 * np.sum((r * dy.T), axis=self.numpy_axis)
             return e, de
 
         return e
@@ -137,8 +137,8 @@ class MeanAbsoluteError(FittingCost):
         e = np.mean(np.abs(r))
 
         if dy is not None:
-            sign = np.sign(r)
-            de = np.mean(sign * dy.T, axis=self.numpy_axis)
+            sign_r = np.sign(r)
+            de = np.sum(sign_r * dy.T, axis=self.numpy_axis)
             return e, de
 
         return e
