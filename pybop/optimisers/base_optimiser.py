@@ -65,7 +65,7 @@ class BaseOptimiser:
         self.result = None
 
         if isinstance(cost, BaseCost):
-            self.cost = cost
+            self.cost = cost.copy()
             self.parameters = self.cost.parameters
             self._transformation = self.cost.transformation
             self.set_allow_infeasible_solutions()

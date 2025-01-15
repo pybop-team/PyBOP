@@ -1,3 +1,4 @@
+import copy
 from typing import Optional, Union
 
 import numpy as np
@@ -42,7 +43,7 @@ class BaseCost:
     def __init__(self, problem: Optional[BaseProblem] = None):
         self._parameters = Parameters()
         self._transformation = None
-        self.problem = problem
+        self.problem = copy.copy(problem)
         self.verbose = False
         self._has_separable_problem = False
         self.y = None
@@ -116,7 +117,7 @@ class BaseCost:
 
         if self._has_separable_problem:
             if calculate_grad:
-                y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
+                y, dy = self.problem.evaluateS1(self.parameters.as_dict())
                 cost, grad = self.compute(y, dy=dy)
 
                 if self.has_transform and np.isfinite(cost):
@@ -127,7 +128,7 @@ class BaseCost:
                     1 if minimising else -1
                 )
 
-            y = self.problem.evaluate(self.problem.parameters.as_dict())
+            y = self.problem.evaluate(self.parameters.as_dict())
 
         return self.compute(y, dy=dy) * (1 if minimising else -1)
 
@@ -203,6 +204,38 @@ class BaseCost:
         self._parameters.join(parameters)
         if original_n_params != self.n_parameters:
             self.set_fail_gradient()
+
+    def copy(self) -> "BaseCost":
+        """
+        Create a deep copy of the current instance of the BaseCost class.
+
+        Returns
+        -------
+        BaseCost
+            A new instance of BaseCost with the same attributes as the original.
+        """
+        # Create a new instance of BaseCost
+        new_instance = self.__class__(problem=self.problem)
+
+        # Copy all relevant attributes
+        new_instance._parameters = copy.deepcopy(self._parameters)
+        new_instance._transformation = copy.deepcopy(self._transformation)
+        new_instance.verbose = self.verbose
+        new_instance._has_separable_problem = self._has_separable_problem
+        new_instance._de = self._de
+        new_instance.minimising = copy.deepcopy(self.minimising)
+        new_instance.problem._model = self.problem.model.new_copy()
+
+        if hasattr(self, "_target"):
+            new_instance._target = copy.deepcopy(self._target)
+        if hasattr(self, "n_outputs"):
+            new_instance.n_outputs = self.n_outputs
+        if hasattr(self, "signal"):
+            new_instance.signal = copy.deepcopy(self.signal)
+        if hasattr(self, "grad_fail"):
+            new_instance.grad_fail = copy.deepcopy(self.grad_fail)
+
+        return new_instance
 
     @property
     def name(self):
