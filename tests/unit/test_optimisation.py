@@ -559,7 +559,7 @@ class TestOptimisation:
         # Create the optimisation class with incorrect bounds type
         with pytest.raises(
             TypeError,
-            match="Bounds provided must be either type dict, list or SciPy.optimize.bounds object.",
+            match="Bounds provided must be either type dict or SciPy.optimize.bounds object.",
         ):
             pybop.SciPyMinimize(
                 cost=cost,
