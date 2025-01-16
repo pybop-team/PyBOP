@@ -165,7 +165,13 @@ class MultivariateGaussian(BaseMultivariatePrior):
         self.name = "MultivariateGaussian"
         self.prior = stats.multivariate_normal
         self.properties = {"mean": mean, "cov": covariance}
-        self.mean = mean
-        self.sigma = sqrtm(covariance)
         self.sigma2 = covariance
         self._n_parameters = len(mean)
+
+    @property
+    def mean(self):
+        return self.properties["mean"]
+
+    @property
+    def sigma(self):
+        return sqrtm(self.properties["cov"])

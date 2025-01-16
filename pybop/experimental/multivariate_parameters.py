@@ -1,6 +1,7 @@
 import numpy as np
+from multivariate_priors import BaseMultivariatePrior
 
-from pybop import MultivariatePrior, Parameters
+from pybop import Parameters
 
 
 class MultivariateParameters(Parameters):
@@ -15,7 +16,7 @@ class MultivariateParameters(Parameters):
     Parameters
     ----------
     parameter_list : pybop.Parameter or Dict
-    prior : pybop.MultivariatePrior
+    prior : pybop.BaseMultivariatePrior
         The joint multivariate prior.
     """
 
@@ -85,12 +86,12 @@ class MultivariateParameters(Parameters):
         return samples
 
     def get_sigma0(self, apply_transform: bool = False) -> list:
-        if apply_transform:
-            raise NotImplementedError("Correlations may not sensibly transform.")
+        # if apply_transform:
+        #     raise NotImplementedError("Correlations may not sensibly transform.")
         try:
             return self.prior.sigma
         except NotImplementedError:
             return
 
-    def priors(self) -> MultivariatePrior:
+    def priors(self) -> BaseMultivariatePrior:
         return self.prior
