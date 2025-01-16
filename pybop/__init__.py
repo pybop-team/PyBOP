@@ -97,6 +97,7 @@ from .problems.design_problem import DesignProblem
 #
 from .costs.base_cost import BaseCost
 from .costs.fitting_costs import (
+    FittingCost,
     RootMeanSquaredError,
     SumSquaredError,
     Minkowski,

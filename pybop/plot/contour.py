@@ -244,7 +244,7 @@ def contour(
         for i, grad_costs in enumerate(grad_parameter_costs):
             # Update title for gradient plots
             updated_layout_options = layout_options.copy()
-            updated_layout_options["title"] = f"Gradient for Parameter: {i+1}"
+            updated_layout_options["title"] = f"Gradient for Parameter: {i + 1}"
 
             # Create contour plot with updated layout options
             grad_layout = go.Layout(updated_layout_options)

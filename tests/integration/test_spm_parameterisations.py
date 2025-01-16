@@ -230,11 +230,10 @@ class Test_SPM_Parameterisation:
             else 0.02,
         }
 
-        if (
-            isinstance(spm_two_signal_cost, pybop.BaseJaxCost)
-            and multi_optimiser is pybop.SciPyDifferentialEvolution
-        ):
+        if multi_optimiser is pybop.SciPyDifferentialEvolution:
             common_args["bounds"] = [[0.375, 0.775], [0.375, 0.775]]
+            if isinstance(spm_two_signal_cost, pybop.GaussianLogLikelihood):
+                common_args["bounds"].extend([[0.0, 0.1], [0.0, 0.1]])
 
         # Test each optimiser
         optim = multi_optimiser(**common_args)
