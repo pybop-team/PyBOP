@@ -30,6 +30,11 @@ class EP_BOLFI(BaseOptimiser):
         )[self.output_variable]
 
     def _set_up_optimiser(self):
+        # Read in predictor settings.
+        self.inputs = self.unset_options.pop("inputs", None)
+        self.t_eval = self.unset_options.pop("t_eval", None)
+        self.experiment = self.unset_options.pop("experiment", None)
+        self.initial_state = self.unset_options.pop("initial_state", None)
         # Read in EP-BOLFI-specific settings.
         self.boundaries_in_deviations = self.unset_options.pop(
             "boundaries_in_deviations", 0
@@ -74,7 +79,10 @@ class EP_BOLFI(BaseOptimiser):
         self.independent_mcmc_chains = self.unset_options.pop(
             "independent_mcmc_chains", 4
         )
-        self.seed = self.unset_options.pop("seed", -1)
+        self.scramble_ep_feature_order = self.unset_options.pop(
+            "scramble_ep_feature_order", False
+        )
+        self.seed = self.unset_options.pop("seed", 0)
         transposed_boundaries = {}
         for i, name in enumerate(self.parameters.param.keys()):
             transposed_boundaries[name] = [
@@ -86,9 +94,9 @@ class EP_BOLFI(BaseOptimiser):
         self.optimiser = ep_bolfi.EP_BOLFI(
             [self.model_wrapper],
             [self.cost.problem.dataset],
-            self.cost.costs,
+            [lambda x, stored_cost=cost: [stored_cost(x)] for cost in self.cost.costs],
             fixed_parameters={},  # probably baked into self.problem.model
-            free_parameters={k: v.initial_value for k, v in self.parameters.items()},
+            free_parameters=self.parameters.as_dict(),
             initial_covariance=self.parameters.prior.properties["cov"],
             free_parameters_boundaries=transposed_boundaries,
             boundaries_in_deviations=self.boundaries_in_deviations,
@@ -99,7 +107,7 @@ class EP_BOLFI(BaseOptimiser):
             transform_parameters={},  # might be handled within PyBOP
             weights=None,  # only applicable within vector-valued features
             display_current_feature=None,  # ToDo: costs with names
-            fixed_parameter_order=list(self.parameters.param.keys()),
+            fixed_parameter_order=list(enumerate(self.parameters.param.keys())),
         )
 
     def _run(self):
