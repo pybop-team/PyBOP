@@ -62,25 +62,25 @@ class BaseProblem:
         self.parameters = parameters
         self.parameters.reset_initial_value()
 
-        self._model = model
+        self._model = model.copy() if model is not None else None
         self.eis = False
         self.domain = "Time [s]"
         self.check_model = check_model
         self.signal = signal or ["Voltage [V]"]
         self.set_initial_state(initial_state)
         self._dataset = None
-        self._domain_data = None
         self._target = None
         self.verbose = False
         self.failure_output = np.asarray([np.inf])
+        self.exception = [
+            "These parameter values are infeasible."
+        ]  # TODO: Update to a utility function and add to it on exception creation
         if isinstance(self._model, BaseModel):
             self.eis = self.model.eis
             self.domain = "Frequency [Hz]" if self.eis else "Time [s]"
 
         # Add domain and remove duplicates
         self.additional_variables = additional_variables or []
-        self.additional_variables.extend([self.domain, "Current [A]"])
-        self.additional_variables = list(set(self.additional_variables))
 
         # If model.solver is IDAKLU, set output vars for improved performance
         self.output_vars = tuple(self.signal + self.additional_variables)

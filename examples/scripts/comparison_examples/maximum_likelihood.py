@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 
 import pybop
 
@@ -10,7 +11,8 @@ parameter_set.update(
         "Positive electrode active material volume fraction": 0.51,
     }
 )
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+solver = pybamm.IDAKLUSolver()
+model = pybop.lithium_ion.SPMe(parameter_set=parameter_set, solver=solver)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -76,9 +78,6 @@ pybop.plot.convergence(optim)
 
 # Plot the parameter traces
 pybop.plot.parameters(optim)
-
-# Plot the cost landscape
-pybop.plot.contour(likelihood, steps=15)
 
 # Plot the cost landscape with optimisation path
 bounds = np.asarray([[0.55, 0.77], [0.48, 0.68]])

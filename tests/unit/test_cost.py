@@ -12,11 +12,6 @@ class TestCosts:
     Class for tests cost functions
     """
 
-    # Define an invalid likelihood class for MAP tests
-    class InvalidLikelihood:
-        def __init__(self, problem, sigma0):
-            pass
-
     @pytest.fixture
     def model(self, ground_truth):
         solver = pybamm.IDAKLUSolver()
@@ -112,11 +107,13 @@ class TestCosts:
             )
 
     @pytest.mark.unit
-    def test_base(self, problem):
-        base_cost = pybop.BaseCost(problem)
-        assert base_cost.problem == problem
-        with pytest.raises(NotImplementedError):
-            base_cost([0.5])
+    def test_base(self, model, parameters, dataset):
+        problem = pybop.FittingProblem(model, parameters, dataset)
+        for cost_class in [pybop.BaseCost, pybop.FittingCost, pybop.DesignCost]:
+            base_cost = cost_class(problem)
+            assert base_cost.problem == problem
+            with pytest.raises(NotImplementedError):
+                base_cost([0.5])
 
     @pytest.mark.unit
     def test_costs(self, cost):
@@ -171,14 +168,6 @@ class TestCosts:
         # Test exception for non-numeric inputs
         with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
             cost(["StringInputShouldNotWork"])
-
-        # Test ValueError for none dy w/ calculate_grad == True
-        if not isinstance(cost, pybop.ObserverCost):
-            with pytest.raises(
-                ValueError,
-                match="Forward model sensitivities need to be provided alongside `calculate_grad=True` for `cost.compute`.",
-            ):
-                cost.compute([1.1], dy=None, calculate_grad=True)
 
     @pytest.mark.unit
     def test_minkowski(self, problem):
@@ -235,47 +224,39 @@ class TestCosts:
         )
 
     @pytest.mark.parametrize(
-        "cost_class",
+        "cost_class, expected_name",
         [
-            pybop.DesignCost,
-            pybop.GravimetricEnergyDensity,
-            pybop.VolumetricEnergyDensity,
-            pybop.GravimetricPowerDensity,
-            pybop.VolumetricPowerDensity,
+            (pybop.GravimetricEnergyDensity, "Gravimetric Energy Density"),
+            (pybop.VolumetricEnergyDensity, "Volumetric Energy Density"),
+            (pybop.GravimetricPowerDensity, "Gravimetric Power Density"),
+            (pybop.VolumetricPowerDensity, "Volumetric Power Density"),
         ],
     )
     @pytest.mark.unit
-    def test_design_costs(self, cost_class, design_problem):
+    def test_design_costs(self, cost_class, expected_name, design_problem):
         # Construct Cost
         cost = cost_class(design_problem)
+        assert cost.name == expected_name
 
-        if cost_class in [pybop.DesignCost]:
-            with pytest.raises(NotImplementedError):
-                cost([0.5])
-        else:
-            # Test type of returned value
-            assert np.isscalar(cost([0.5]))
-            assert cost([0.4]) >= 0  # Should be a viable design
-            assert (
-                cost([0.8]) == -np.inf
-            )  # Should exceed active material + porosity < 1
-            assert cost([1.4]) == -np.inf  # Definitely not viable
-            assert cost([-0.1]) == -np.inf  # Should not be a viable design
+        # Test type of returned value
+        assert np.isscalar(cost([0.5]))
+        assert cost([0.4]) >= 0  # Should be a viable design
+        assert cost([0.8]) == -np.inf  # Should exceed active material + porosity < 1
+        assert cost([1.4]) == -np.inf  # Definitely not viable
+        assert cost([-0.1]) == -np.inf  # Should not be a viable design
 
-            # Test infeasible locations
-            cost.problem.model.allow_infeasible_solutions = False
-            assert cost([1.1]) == -np.inf
+        # Test infeasible locations
+        cost.problem.model.allow_infeasible_solutions = False
+        assert cost([1.1]) == -np.inf
 
-            # Test exception for non-numeric inputs
-            with pytest.raises(
-                TypeError, match="Inputs must be a dictionary or numeric."
-            ):
-                cost(["StringInputShouldNotWork"])
+        # Test exception for non-numeric inputs
+        with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
+            cost(["StringInputShouldNotWork"])
 
-            # Compute after updating nominal capacity
-            design_problem.update_capacity = True
-            cost = cost_class(design_problem)
-            cost([0.4])
+        # Compute after updating nominal capacity
+        design_problem.update_capacity = True
+        cost = cost_class(design_problem)
+        cost([0.4])
 
     @pytest.fixture
     def noisy_problem(self, ground_truth, parameters, experiment):
@@ -356,7 +337,7 @@ class TestCosts:
 
         # Test LogPosterior explicitly
         cost4 = pybop.LogPosterior(pybop.GaussianLogLikelihood(problem))
-        weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, -1 / weight])
+        weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, 1 / weight])
         assert weighted_cost_4.has_identical_problems is True
         assert weighted_cost_4.has_separable_problem is False
         sigma = 0.01

@@ -194,9 +194,41 @@ def interpolate_point(p, q, axis, boundary_val):
     return np.array([boundary_val, s]) if axis == 0 else np.array([s, boundary_val])
 
 
+def assign_nearest_value(x, y, f, xi, yi):
+    """
+    Computes an array of values given by the score of the nearest point.
+
+    Parameters
+    ----------
+    x : array-like
+        The x coordinates of points with known scores.
+    y : array-like
+        The y coordinates of points with known scores.
+    f : array-like
+        The score function at the given x and y coordinates.
+    xi : array-like
+        The x coordinates of grid points.
+    yi : array-like
+        The y coordinates of grid points.
+
+    Returns
+    -------
+        A numpy array containing the scores corresponding to the grid points.
+    """
+    # Create a KD-tree for efficient nearest neighbor search
+    tree = cKDTree(np.column_stack((x, y)))
+
+    # Find the nearest point for each grid point
+    _, indices = tree.query(np.column_stack((xi.ravel(), yi.ravel())))
+    zi = f[indices].reshape(xi.shape)
+
+    return zi
+
+
 def surface(
     optim: Union[BaseOptimiser, Optimisation],
     bounds=None,
+    normalise=True,
     resolution=250,
     show=True,
     **layout_kwargs,
@@ -211,6 +243,9 @@ def surface(
     bounds : numpy.ndarray, optional
         A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
         `cost.parameters.get_bounds_for_plotly`.
+    normalise : bool, optional
+        If True, the voronoi regions are computed using the Euclidean distance between
+        points normalised with respect to the bounds (default: True).
     resolution : int, optional
         Resolution of the plot. Default is 500.
     show : bool, optional
@@ -235,24 +270,51 @@ def surface(
         bounds if bounds is not None else [param.bounds for param in optim.parameters]
     )[:2]
 
-    # Compute regions
-    x, y, f, regions = _voronoi_regions(x_optim, y_optim, f, xlim, ylim)
-
     # Create a grid for plot
     xi = np.linspace(xlim[0], xlim[1], resolution)
     yi = np.linspace(ylim[0], ylim[1], resolution)
     xi, yi = np.meshgrid(xi, yi)
 
-    # Create a KD-tree for efficient nearest neighbor search
-    tree = cKDTree(np.column_stack((x, y)))
+    if normalise:
+        if xlim[1] <= xlim[0] or ylim[1] <= ylim[0]:
+            raise ValueError("Lower bounds must be strictly less than upper bounds.")
 
-    # Find the nearest point for each grid point
-    _, indices = tree.query(np.column_stack((xi.ravel(), yi.ravel())))
-    zi = f[indices].reshape(xi.shape)
+        # Normalise the region
+        x_range = xlim[1] - xlim[0]
+        y_range = ylim[1] - ylim[0]
+        norm_x_optim = (np.asarray(x_optim) - xlim[0]) / x_range
+        norm_y_optim = (np.asarray(y_optim) - ylim[0]) / y_range
+
+        # Compute regions
+        norm_x, norm_y, f, norm_regions = _voronoi_regions(
+            norm_x_optim, norm_y_optim, f, (0, 1), (0, 1)
+        )
+
+        # Create a normalised grid
+        norm_xi = np.linspace(0, 1, resolution)
+        norm_xi, norm_yi = np.meshgrid(norm_xi, norm_xi)
+
+        # Assign a value to each point in the grid
+        zi = assign_nearest_value(norm_x, norm_y, f, norm_xi, norm_yi)
+
+        # Rescale for plotting
+        regions = []
+        for norm_region in norm_regions:
+            region = np.empty_like(norm_region)
+            region[:, 0] = norm_region[:, 0] * x_range + xlim[0]
+            region[:, 1] = norm_region[:, 1] * y_range + ylim[0]
+            regions.append(region)
+
+    else:
+        # Compute regions
+        x, y, f, regions = _voronoi_regions(x_optim, y_optim, f, xlim, ylim)
+
+        # Assign a value to each point in the grid
+        zi = assign_nearest_value(x, y, f, xi, yi)
 
     # Calculate the size of each Voronoi region
     region_sizes = np.array([len(region) for region in regions])
-    normalized_sizes = (region_sizes - region_sizes.min()) / (
+    relative_sizes = (region_sizes - region_sizes.min()) / (
         region_sizes.max() - region_sizes.min()
     )
 
@@ -272,7 +334,7 @@ def surface(
     )
 
     # Add Voronoi edges
-    for region, size in zip(regions, normalized_sizes):
+    for region, size in zip(regions, relative_sizes):
         x_region = region[:, 0].tolist() + [region[0, 0]]
         y_region = region[:, 1].tolist() + [region[0, 1]]
 
@@ -293,9 +355,9 @@ def surface(
             y=y_optim,
             mode="markers",
             marker=dict(
+                color=[i / len(x_optim) for i in range(len(x_optim))],
+                colorscale="Greys",
                 size=8,
-                symbol="x-thin",
-                line=dict(color="white", width=1),
                 showscale=False,
             ),
             text=[f"f={val:.2f}" for val in f],
@@ -308,31 +370,52 @@ def surface(
     if optim.x0 is not None:
         fig.add_trace(
             go.Scatter(
-                x=[optim.x0[0]],
-                y=[optim.x0[1]],
+                x=[optim.log["x0"][0]],
+                y=[optim.log["x0"][1]],
                 mode="markers",
-                marker_symbol="circle",
+                marker_symbol="x",
                 marker=dict(
-                    color="mediumspringgreen",
-                    line_color="mediumspringgreen",
+                    color="white",
+                    line_color="black",
                     line_width=1,
                     size=14,
                     showscale=False,
                 ),
-                showlegend=False,
+                name="Initial values",
             )
         )
+
+        # Plot optimised value
+        if optim.log["x_best"] is not None:
+            fig.add_trace(
+                go.Scatter(
+                    x=[optim.log["x_best"][-1][0]],
+                    y=[optim.log["x_best"][-1][1]],
+                    mode="markers",
+                    marker_symbol="cross",
+                    marker=dict(
+                        color="black",
+                        line_color="white",
+                        line_width=1,
+                        size=14,
+                        showscale=False,
+                    ),
+                    name="Final values",
+                )
+            )
+
     names = optim.cost.parameters.keys()
     fig.update_layout(
         title="Voronoi Cost Landscape",
         title_x=0.5,
-        title_y=0.9,
+        title_y=0.905,
         xaxis_title=names[0],
         yaxis_title=names[1],
         width=600,
         height=600,
         xaxis=dict(range=xlim, showexponent="last", exponentformat="e"),
         yaxis=dict(range=ylim, showexponent="last", exponentformat="e"),
+        legend=dict(orientation="h", yanchor="bottom", y=1, xanchor="right", x=1),
     )
     fig.update_layout(**layout_kwargs)
     if show:

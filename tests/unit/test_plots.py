@@ -1,6 +1,7 @@
 import warnings
 
 import numpy as np
+import pybamm
 import pytest
 from packaging import version
 
@@ -75,6 +76,13 @@ class TestPlots:
         return pybop.FittingProblem(model, parameters, dataset)
 
     @pytest.fixture
+    def jax_fitting_problem(self, model, parameters, dataset):
+        model.solver = pybamm.IDAKLUSolver()
+        problem = pybop.FittingProblem(model, parameters, dataset)
+        problem.model.jaxify_solver(t_eval=problem.domain_data)
+        return problem
+
+    @pytest.fixture
     def experiment(self):
         return pybop.Experiment(
             [
@@ -88,10 +96,11 @@ class TestPlots:
         return pybop.DesignProblem(model, parameters, experiment)
 
     @pytest.mark.unit
-    def test_problem_plots(self, fitting_problem, design_problem):
+    def test_problem_plots(self, fitting_problem, design_problem, jax_fitting_problem):
         # Test plot of Problem objects
         pybop.plot.quick(fitting_problem, title="Optimised Comparison")
         pybop.plot.quick(design_problem)
+        pybop.plot.quick(jax_fitting_problem)
 
         # Test conversion of values into inputs
         pybop.plot.quick(fitting_problem, problem_inputs=[0.6, 0.6])
@@ -147,10 +156,15 @@ class TestPlots:
         pybop.plot.contour(optim, gradient=True, steps=5)
 
         # Plot voronoi
-        pybop.plot.surface(optim)
+        pybop.plot.surface(optim, normalise=False)
 
         # Plot voronoi w/ bounds
         pybop.plot.surface(optim, bounds=bounds)
+
+        with pytest.raises(
+            ValueError, match="Lower bounds must be strictly less than upper bounds."
+        ):
+            pybop.plot.surface(optim, bounds=[[0.5, 0.8], [0.7, 0.4]])
 
     @pytest.fixture
     def posterior_summary(self, fitting_problem):

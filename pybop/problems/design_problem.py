@@ -56,6 +56,10 @@ class DesignProblem(BaseProblem):
             "Non-physical point encountered",
         ]
 
+        # Add "Current" to the variable list
+        self.additional_variables.extend([self.domain, "Current [A]"])
+        self.additional_variables = list(set(self.additional_variables))
+
         # Set whether to update the nominal capacity along with the design parameters
         if update_capacity is True:
             nominal_capacity_warning = (
