@@ -49,7 +49,7 @@ class ParameterSet:
 
         if isinstance(parameter_set, str):
             # Use class method
-            self.params = ParameterSet.pybamm(parameter_set)
+            self.params = self.pybamm(parameter_set)
         elif isinstance(parameter_set, dict):
             # Keep as dictionary to allow "default" as value
             self.params = parameter_set
@@ -133,7 +133,7 @@ class ParameterSet:
         Parameters
         ----------
         params_dict : dict
-            Dictionary of parameter values to update parameter dictionary with.
+            A dictionary of parameters and values used to update the parameter values
         check_already_exists : bool, optional
             Whether to check that a parameter in `params_dict` already exists when trying
             to update it. This is to avoid cases where an intended change in the parameters
