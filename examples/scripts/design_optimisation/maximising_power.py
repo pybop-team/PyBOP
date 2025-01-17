@@ -75,7 +75,7 @@ print(f"Optimised gravimetric power density: {cost1(results.x):.2f} W.kg-1")
 print(f"Initial volumetric power density: {cost2(optim.x0):.2f} W.m-3")
 print(f"Optimised volumetric power density: {cost2(results.x):.2f} W.m-3")
 print(
-    f"Optimised discharge rate: {results.x[-1]:.2f} A = {results.x[-1]/nominal_capacity:.2f} C"
+    f"Optimised discharge rate: {results.x[-1]:.2f} A = {results.x[-1] / nominal_capacity:.2f} C"
 )
 
 # Plot the timeseries output
