@@ -352,6 +352,9 @@ class BasePintsOptimiser(BaseOptimiser):
             x = self.optimiser.x_best()
             f = self.optimiser.f_best()
 
+        # run the forward model once more to update the solution
+        self.cost.problem.evaluate(x)
+
         return OptimisationResult(
             optim=self,
             x=x,

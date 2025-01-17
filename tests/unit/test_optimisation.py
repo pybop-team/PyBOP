@@ -587,7 +587,7 @@ class TestOptimisation:
             f"  Number of iterations: {results.n_iterations}\n"
             f"  Number of evaluations: {results.n_evaluations}\n"
             f"  SciPy result available: No\n"
-            f"  PyBaMM Solution available: No"
+            f"  PyBaMM Solution available: Yes"
         )
 
         # Test guessed values

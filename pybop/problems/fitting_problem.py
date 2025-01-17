@@ -2,7 +2,7 @@ import warnings
 from typing import Optional
 
 import numpy as np
-from pybamm import IDAKLUJax, SolverError
+from pybamm import IDAKLUJax, SolverError, Solution
 
 from pybop import BaseModel, BaseProblem, Dataset
 from pybop.parameters.parameter import Inputs, Parameters
@@ -118,12 +118,9 @@ class FittingProblem(BaseProblem):
         """
         inputs = self.parameters.verify(inputs)
         if self.eis:
-            y, _ = self._evaluate(self._model.simulateEIS, inputs)
-            return y
+            return self._evaluate(self._model.simulateEIS, inputs)
 
-        y, sol = self._evaluate(self._model.simulate, inputs)
-        self._solution = sol
-        return y
+        return self._evaluate(self._model.simulate, inputs)
 
     def _evaluate(
         self, func, inputs, calculate_grad=False
@@ -161,9 +158,12 @@ class FittingProblem(BaseProblem):
             return (error_out, self.failure_output) if calculate_grad else error_out
 
         if self.eis:
-            return sol, None
+            return sol
+
+        self._solution = sol if isinstance(sol, Solution) else None
+
         if isinstance(self.model.solver, IDAKLUJax):
-            return {signal: sol[:, i] for i, signal in enumerate(self.signal)}, sol
+            return {signal: sol[:, i] for i, signal in enumerate(self.signal)}
         if calculate_grad:
             signals = self.signal + self.additional_variables
             return (
@@ -171,7 +171,7 @@ class FittingProblem(BaseProblem):
                 {s: sol[s].sensitivities for s in signals},
             )
 
-        return {s: sol[s].data for s in (self.signal + self.additional_variables)}, sol
+        return {s: sol[s].data for s in (self.signal + self.additional_variables)}
 
     def evaluateS1(self, inputs: Inputs):
         """
