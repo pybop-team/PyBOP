@@ -1,3 +1,4 @@
+import warnings
 from time import time
 
 import numpy as np
@@ -353,7 +354,12 @@ class BasePintsOptimiser(BaseOptimiser):
             f = self.optimiser.f_best()
 
         # run the forward model once more to update the solution
-        self.cost.problem.evaluate(x)
+        try:
+            self.cost.problem.evaluate(x)
+            pybamm_solution = self.cost.problem.solution
+        except Exception:
+            warnings.warn("Failed to evaluate the model with best fit parameters.")
+            pybamm_solution = None
 
         return OptimisationResult(
             optim=self,
@@ -362,7 +368,7 @@ class BasePintsOptimiser(BaseOptimiser):
             n_iterations=self._iterations,
             n_evaluations=self._evaluations,
             time=total_time,
-            pybamm_solution=self.cost.problem.solution,
+            pybamm_solution=pybamm_solution,
         )
 
     def f_guessed_tracking(self):
