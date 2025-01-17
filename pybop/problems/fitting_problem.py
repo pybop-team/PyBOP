@@ -2,7 +2,7 @@ import warnings
 from typing import Optional
 
 import numpy as np
-from pybamm import IDAKLUJax, SolverError, Solution
+from pybamm import IDAKLUJax, Solution, SolverError
 
 from pybop import BaseModel, BaseProblem, Dataset
 from pybop.parameters.parameter import Inputs, Parameters
