@@ -51,7 +51,7 @@ results = optim.run()
 
 # We can plot the timeseries output, for the best run
 # using the results.x attribute
-pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.quick(problem, problem_inputs=results.x_best, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot.convergence(optim)
