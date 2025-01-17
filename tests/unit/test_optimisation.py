@@ -178,7 +178,7 @@ class TestOptimisation:
             if isinstance(optim, pybop.BasePintsOptimiser):
                 assert len(optim.log["x_best"]) == n_iters * multistarts
                 assert results.average_iterations() == n_iters
-                assert results.total_runtime() >= results.time
+                assert results.total_runtime() >= results.time[0]
 
         optim = optimiser(cost=cost, max_iterations=3, tol=1e-6)
         cost_bounds = cost.parameters.get_bounds()

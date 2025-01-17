@@ -206,7 +206,7 @@ class BaseOptimiser:
             self.result.add_result(self._run())
 
         # Store the optimised parameters
-        self.parameters.update(values=self.result.x)
+        self.parameters.update(values=self.result.x_best)
 
         if self.verbose:
             print(self.result)
@@ -509,40 +509,42 @@ class OptimisationResult:
         """Calculates the total runtime across all runs."""
         return np.sum(self._time)
 
+    def _get_single_or_all(self, attr):
+        value = getattr(self, attr)
+        return value[0] if len(value) == 1 else value
+
     @property
-    def x(self):
+    def x_best(self):
         return self._x[self._best_run] if self._best_run is not None else None
 
     @property
+    def x(self):
+        return self._get_single_or_all("_x")
+
+    @property
     def x0(self):
-        return self._x0[self._best_run] if self._best_run is not None else None
+        return self._get_single_or_all("_x0")
 
     @property
     def final_cost(self):
-        return self._final_cost[self._best_run] if self._best_run is not None else None
+        return self._get_single_or_all("_final_cost")
 
     @property
     def fisher(self):
-        return self._fisher[self._best_run] if self._best_run is not None else None
+        return self._get_single_or_all("_fisher")
 
     @property
     def n_iterations(self):
-        return (
-            self._n_iterations[self._best_run] if self._best_run is not None else None
-        )
+        return self._get_single_or_all("_n_iterations")
 
     @property
     def n_evaluations(self):
-        return (
-            self._n_evaluations[self._best_run] if self._best_run is not None else None
-        )
+        return self._get_single_or_all("_n_evaluations")
 
     @property
     def scipy_result(self):
-        return (
-            self._scipy_result[self._best_run] if self._best_run is not None else None
-        )
+        return self._get_single_or_all("_scipy_result")
 
     @property
     def time(self):
-        return self._time[self._best_run] if self._best_run is not None else None
+        return self._get_single_or_all("_time")
