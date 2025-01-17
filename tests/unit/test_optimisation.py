@@ -636,6 +636,11 @@ class TestOptimisation:
             f"  PyBaMM Solution available: Yes"
         )
 
+        assert (
+            "Positive electrode active material volume fraction"
+            in results.results[0].pybamm_solution.all_inputs[0]
+        )
+
         optim.set_max_unchanged_iterations()
 
         # Test callback and halting output
