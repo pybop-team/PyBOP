@@ -2,7 +2,6 @@
 
 ## Features
 
-## Documentation Update
 - [#565] (https://github.com/pybop-team/PyBOP/pull/627) - DigiBatt added as funding partner
 
 ## Optimisations
