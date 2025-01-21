@@ -491,14 +491,14 @@ class OptimisationResult:
         return (
             f"OptimisationResult:\n"
             f"  Best result from {self.n_runs} run(s).\n"
-            f"  Initial parameters: {self.x0}\n"
-            f"  Optimised parameters: {self.x}\n"
-            f"  Diagonal Fisher Information entries: {self.fisher}\n"
-            f"  Final cost: {self.final_cost}\n"
-            f"  Optimisation time: {self.time} seconds\n"
-            f"  Number of iterations: {self.n_iterations}\n"
-            f"  Number of evaluations: {self.n_evaluations}\n"
-            f"  SciPy result available: {'Yes' if self.scipy_result else 'No'}"
+            f"  Initial parameters: {self.x0_best}\n"
+            f"  Optimised parameters: {self.x_best}\n"
+            f"  Diagonal Fisher Information entries: {self.fisher_best}\n"
+            f"  Final cost: {self.final_cost_best}\n"
+            f"  Optimisation time: {self.time_best} seconds\n"
+            f"  Number of iterations: {self.n_iterations_best}\n"
+            f"  Number of evaluations: {self.n_evaluations_best}\n"
+            f"  SciPy result available: {'Yes' if self.scipy_result_best else 'No'}"
         )
 
     def average_iterations(self) -> Optional[float]:
@@ -526,25 +526,59 @@ class OptimisationResult:
         return self._get_single_or_all("_x0")
 
     @property
+    def x0_best(self):
+        return self._x0[self._best_run] if self._best_run is not None else None
+
+    @property
     def final_cost(self):
         return self._get_single_or_all("_final_cost")
+
+    @property
+    def final_cost_best(self):
+        return self._final_cost[self._best_run] if self._best_run is not None else None
 
     @property
     def fisher(self):
         return self._get_single_or_all("_fisher")
 
     @property
+    def fisher_best(self):
+        return self._fisher[self._best_run] if self._best_run is not None else None
+
+    @property
     def n_iterations(self):
         return self._get_single_or_all("_n_iterations")
+
+    @property
+    def n_iterations_best(self):
+        return (
+            self._n_iterations[self._best_run] if self._best_run is not None else None
+        )
 
     @property
     def n_evaluations(self):
         return self._get_single_or_all("_n_evaluations")
 
     @property
+    def n_evaluations_best(self):
+        return (
+            self._n_evaluations[self._best_run] if self._best_run is not None else None
+        )
+
+    @property
     def scipy_result(self):
         return self._get_single_or_all("_scipy_result")
 
     @property
+    def scipy_result_best(self):
+        return (
+            self._scipy_result[self._best_run] if self._best_run is not None else None
+        )
+
+    @property
     def time(self):
         return self._get_single_or_all("_time")
+
+    @property
+    def time_best(self):
+        return self._time[self._best_run] if self._best_run is not None else None
