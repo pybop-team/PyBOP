@@ -693,6 +693,7 @@ class TestOptimisation:
         assert results.x[0] == 1e-3
         assert results.final_cost == cost([1e-3])
         assert results.n_iterations == 1
+        assert results.fisher is None
 
         # Test non-finite results
         with pytest.raises(
