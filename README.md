@@ -86,18 +86,20 @@ The table below lists the currently supported [models](https://github.com/pybop-
 
 <p align="center">
 
-| Battery Models                                | Optimization Algorithms                                  | Cost Functions                           |
-|-----------------------------------------------|----------------------------------------------------------|------------------------------------------|
-| Single Particle Model (SPM)                   | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) | Sum of Squared Errors (SSE) <tr></tr>    |
-| Single Particle Model with Electrolyte (SPMe) | Particle Swarm Optimization (PSO)                        | Root Mean Squared Error (RMSE) <tr></tr> |
-| Doyle-Fuller-Newman (DFN)                     | Exponential Natural Evolution Strategy (xNES)            | Minkowski <tr></tr>                      |
-| Many Particle Model (MPM)                     | Separable Natural Evolution Strategy (sNES)              | Sum of Power <tr></tr>                   |
-| Multi-Species Multi-Reaction (MSMR)           | Adaptive Moment Estimation with Weight Decay (AdamW)     | Gaussian Log Likelihood <tr></tr>        |
-| Weppner-Huggins                               | Improved Resilient Backpropagation (iRProp-)             | Log Posterior <tr></tr>                  |
-| Equivalent Circuit Models (ECM)               | SciPy Minimize & Differential Evolution                  | Unscented Kalman Filter (UKF) <tr></tr>  |
-| Grouped-parameter SPMe (GroupedSPMe)          | Cuckoo Search                                            | Gravimetric Energy Density <tr></tr>     |
-|                                               | Gradient Descent                                         | Volumetric Energy Density<tr></tr>       |
-|                                               | Nelder-Mead                                              | <tr></tr>                                |
+| Battery Models                                | Cost Functions                 | Optimization Algorithms                                           |
+|-----------------------------------------------|--------------------------------|-------------------------------------------------------------------|
+| Single Particle Model (SPM)                   | Sum of Squared Errors (SSE)    | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) <tr></tr> |
+| Single Particle Model with Electrolyte (SPMe) | Root Mean Squared Error (RMSE) | Particle Swarm Optimization (PSO) <tr></tr>                       |
+| Doyle-Fuller-Newman (DFN)                     | Minkowski                      | Exponential Natural Evolution Strategy (xNES) <tr></tr>           |
+| Many Particle Model (MPM)                     | Sum of Power                   | Separable Natural Evolution Strategy (sNES)  <tr></tr>            |
+| Multi-Species Multi-Reaction (MSMR)           | Gaussian Log Likelihood        | Weight Decayed Adaptive Moment Estimation (AdamW) <tr></tr>       |
+| Weppner-Huggins                               | Log Posterior                  | Improved Resilient Backpropagation (iRProp-) <tr></tr>            |
+| Equivalent Circuit Models (ECM)               | Unscented Kalman Filter (UKF)  | SciPy Minimize & Differential Evolution  <tr></tr>                |
+| Grouped-parameter SPMe (GroupedSPMe)          | Gravimetric Energy Density     | Cuckoo Search  <tr></tr>                                          |
+|                                               | Volumetric Energy Density      | Simulated Annealing  <tr></tr>                                    |
+|                                               |                                | Random Search <tr></tr>                                           |
+|                                               |                                | Gradient Descent <tr></tr>                                        |
+|                                               |                                | Nelder-Mead <tr></tr>                                             |
 
 </p>
 
