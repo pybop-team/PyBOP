@@ -68,7 +68,7 @@ class SimulatedAnnealingImpl(PintsOptimiser):
         to evaluate from the optimiser.
         """
         # Update temperature
-        self._temp = self._initial_temp * (self._temp_decay**self._iterations)
+        self._temp *= self._temp_decay
 
         # Generate new point with random perturbation
         step = np.random.normal(0, self._sigma0, size=len(self._current))
@@ -105,7 +105,7 @@ class SimulatedAnnealingImpl(PintsOptimiser):
         if fx < self._current_f:
             accept = True
         else:
-            p = np.exp(-(fx - self._current_f) / self._temp)
+            p = np.exp(-(fx - self._current_f) / (np.finfo(float).eps + self._temp))
             accept = np.random.random() < p
 
         if accept:
@@ -168,7 +168,9 @@ class SimulatedAnnealingImpl(PintsOptimiser):
         """
         Sets the cooling rate for the temperature schedule.
         """
-        if not isinstance(alpha, (int, float)) or not 0 < alpha < 1:
+        if not isinstance(alpha, (int, float)):
+            raise TypeError("Cooling rate must be a number")
+        if not 0 < alpha < 1:
             raise ValueError("Cooling rate must be between 0 and 1")
         self._temp_decay = float(alpha)
 

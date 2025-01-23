@@ -124,7 +124,7 @@ class Test_SPM_Parameterisation:
             "cost": cost,
             "max_iterations": 450,
             "absolute_tolerance": 1e-6,
-            "max_unchanged_iterations": 450
+            "max_unchanged_iterations": 400
             if optimiser is pybop.SimulatedAnnealing
             else 55,
             "sigma0": [0.05, 0.05, 1e-3]
@@ -147,9 +147,10 @@ class Test_SPM_Parameterisation:
         optim = optimiser(**common_args)
 
         if isinstance(optim, pybop.SimulatedAnnealing):
-            optim.optimiser.sigma0 = [0.125, 0.125]
+            optim.optimiser.sigma0 = [0.1, 0.1]
+            optim.optimiser.cooling_rate = 0.8  # Cool quickly
             if isinstance(cost, pybop.GaussianLogLikelihood):
-                optim.optimiser.sigma0.extend([1e-3])
+                optim.optimiser.sigma0.extend([3e-3])
 
         return optim
 
