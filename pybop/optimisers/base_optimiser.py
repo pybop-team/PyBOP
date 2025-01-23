@@ -381,6 +381,11 @@ class OptimisationResult:
                 if final_cost is not None
                 else self.cost(x)
             )
+            x0 = (
+                self.optim.parameters.initial_value()
+                if isinstance(self.optim, BaseOptimiser)
+                else None
+            )
 
             # Calculate Fisher Information if JAX Likelihood
             fisher = (
@@ -389,67 +394,68 @@ class OptimisationResult:
                 else None
             )
 
-            self._append(
-                x=x,
-                final_cost=final_cost,
-                fisher=fisher,
-                n_iterations=n_iterations,
-                n_evaluations=n_evaluations,
-                time=time,
-                scipy_result=scipy_result,
+            self._extend(
+                x=[x],
+                final_cost=[final_cost],
+                fisher=[fisher],
+                n_iterations=[n_iterations],
+                n_evaluations=[n_evaluations],
+                time=[time],
+                scipy_result=[scipy_result],
+                x0=[x0],
             )
 
-    def add_result(self, result=None):
+    def add_result(self, result):
         """Add a preprocessed OptimisationResult."""
-        for i, x in enumerate(result._x):  # noqa: SLF001
-            self._append(
-                x=x,
-                final_cost=result._final_cost[i],  # noqa: SLF001
-                fisher=result._fisher[i],  # noqa: SLF001
-                n_iterations=result._n_iterations[i],  # noqa: SLF001
-                n_evaluations=result._n_evaluations[i],  # noqa: SLF001
-                time=result._time[i],  # noqa: SLF001
-                scipy_result=result._scipy_result[i],  # noqa: SLF001
-            )
+        self._extend(
+            x=result._x,  # noqa: SLF001
+            final_cost=result._final_cost,  # noqa: SLF001
+            fisher=result._fisher,  # noqa: SLF001
+            n_iterations=result._n_iterations,  # noqa: SLF001
+            n_evaluations=result._n_evaluations,  # noqa: SLF001
+            time=result._time,  # noqa: SLF001
+            scipy_result=result._scipy_result,  # noqa: SLF001
+            x0=result._x0,  # noqa: SLF001
+        )
 
-    def _append(
+    def _extend(
         self,
-        x: Union[Inputs, np.ndarray] = None,
-        final_cost: Optional[float] = None,
-        fisher=None,
-        n_iterations: Optional[int] = None,
-        n_evaluations: Optional[int] = None,
-        time: Optional[float] = None,
-        scipy_result=None,
+        x: Union[list[Inputs], list[np.ndarray]],
+        final_cost: list[float],
+        fisher: list,
+        n_iterations: list[int],
+        n_evaluations: list[int],
+        time: list[float],
+        scipy_result: list,
+        x0: list,
     ):
-        self.n_runs += 1
-        self._x.append(x)
-        self._final_cost.append(final_cost)
-        self._fisher.append(fisher)
-        self._n_iterations.append(n_iterations)
-        self._n_evaluations.append(n_evaluations)
-        self._scipy_result.append(scipy_result)
-        self._time.append(time)
-        if isinstance(self.optim, BaseOptimiser):
-            self._x0.append(self.optim.parameters.initial_value())
+        self.n_runs += len(final_cost)
+        self._x.extend(x)
+        self._final_cost.extend(final_cost)
+        self._fisher.extend(fisher)
+        self._n_iterations.extend(n_iterations)
+        self._n_evaluations.extend(n_evaluations)
+        self._scipy_result.extend(scipy_result)
+        self._time.extend(time)
+        self._x0.extend(x0)
 
-        # Check that the parameters produce finite cost, and are physically viable
-        self._validate_parameters()
-        self.check_physical_viability(x)
-
-        # Update best run
+        # Check that there is a finite cost and update best run
+        self.check_for_finite_cost()
         self._best_run = self._final_cost.index(
             min(self._final_cost) if self.minimising else max(self._final_cost)
         )
 
-    def _validate_parameters(self) -> None:
+        # Check that the best parameters are physically viable
+        self.check_physical_viability(self.x_best)
+
+    def check_for_finite_cost(self) -> None:
         """
         Validate the optimised parameters and ensure they produce a finite cost value.
 
         Raises:
             ValueError: If the optimised parameters do not produce a finite cost value.
         """
-        if not np.isfinite(self._final_cost[-1]):
+        if not any(np.isfinite(self._final_cost)):
             raise ValueError("Optimised parameters do not produce a finite cost value")
 
     def check_physical_viability(self, x):
