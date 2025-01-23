@@ -2,6 +2,8 @@
 
 ## Features
 
+- [#565] (https://github.com/pybop-team/PyBOP/pull/627) - DigiBatt added as funding partner.
+
 ## Optimisations
 
 - [#600](https://github.com/pybop-team/PyBOP/pull/600) - Removes repetitious functionality within the cost classes.
