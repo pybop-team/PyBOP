@@ -76,7 +76,7 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=sigma)
-optim = pybop.SciPyMinimize(cost, max_iterations=250)
+optim = pybop.SciPyMinimize(cost, max_iterations=125)
 
 # Run optimisation for Maximum Likelihood Estimate (MLE)
 results = optim.run()
