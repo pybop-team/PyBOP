@@ -48,7 +48,7 @@ optim = pybop.SimulatedAnnealing(
 )
 
 # Update hypers for lower iteration values
-optim.optimiser.initial_temperature = 0.9
+optim.optimiser.temperature = 0.9
 optim.optimiser.cooling_rate = 0.75
 
 # Run optimisation

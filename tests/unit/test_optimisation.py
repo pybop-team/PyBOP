@@ -331,6 +331,30 @@ class TestOptimisation:
                 assert optim.optimiser.n_hyper_parameters() == 5
                 assert optim.optimiser.x_guessed() == optim.optimiser._x0
 
+            if optimiser is pybop.SimulatedAnnealing:
+                assert optim.optimiser.temperature == 1.0
+                assert optim.optimiser.cooling_rate == 0.95
+
+                optim.optimiser.cooling_rate = 0.9
+                assert optim.optimiser.cooling_rate == 0.9
+
+                optim.optimiser.temperature = 0.74
+                assert optim.optimiser.temperature == 0.74
+
+                with pytest.raises(TypeError, match="Cooling rate must be a number"):
+                    optim.optimiser.cooling_rate = "0.94"
+
+                with pytest.raises(
+                    ValueError, match="Cooling rate must be between 0 and 1"
+                ):
+                    optim.optimiser.cooling_rate = 1.1
+
+                with pytest.raises(ValueError, match="Temperature must be positive"):
+                    optim.optimiser.initial_temperature = -1.1
+
+                with pytest.raises(TypeError, match="Temperature must be a number"):
+                    optim.optimiser.temperature = "0.94"
+
         else:
             x0 = cost.parameters.initial_value()
             assert optim.x0 == x0

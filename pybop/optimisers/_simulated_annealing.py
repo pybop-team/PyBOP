@@ -58,9 +58,8 @@ class SimulatedAnnealingImpl(PintsOptimiser):
         self._proposed.setflags(write=False)
 
         # Temperature parameters
-        self._temp = 1.0
-        self._temp_decay = 0.95
-        self._initial_temp = 1.0
+        self._temperature = 1.0
+        self._temperature_decay = 0.95
 
     def ask(self):
         """
@@ -68,7 +67,7 @@ class SimulatedAnnealingImpl(PintsOptimiser):
         to evaluate from the optimiser.
         """
         # Update temperature
-        self._temp *= self._temp_decay
+        self._temperature *= self._temperature_decay
 
         # Generate new point with random perturbation
         step = np.random.normal(0, self._sigma0, size=len(self._current))
@@ -105,7 +104,9 @@ class SimulatedAnnealingImpl(PintsOptimiser):
         if fx < self._current_f:
             accept = True
         else:
-            p = np.exp(-(fx - self._current_f) / (np.finfo(float).eps + self._temp))
+            p = np.exp(
+                -(fx - self._current_f) / (np.finfo(float).eps + self._temperature)
+            )
             accept = np.random.random() < p
 
         if accept:
@@ -157,11 +158,23 @@ class SimulatedAnnealingImpl(PintsOptimiser):
 
     @property
     def temperature(self):
-        return self._temp
+        return self._temperature
+
+    @temperature.setter
+    def temperature(self, temp):
+        """
+        Sets the temperature attribute, to be used
+        for initialisation before optimisation occurs.
+        """
+        if not isinstance(temp, (int, float)):
+            raise TypeError("Temperature must be a number")
+        if temp < 0.0:
+            raise ValueError("Temperature must be positive")
+        self._temperature = float(temp)
 
     @property
     def cooling_rate(self):
-        return self._temp_decay
+        return self._temperature_decay
 
     @cooling_rate.setter
     def cooling_rate(self, alpha):
@@ -172,17 +185,4 @@ class SimulatedAnnealingImpl(PintsOptimiser):
             raise TypeError("Cooling rate must be a number")
         if not 0 < alpha < 1:
             raise ValueError("Cooling rate must be between 0 and 1")
-        self._temp_decay = float(alpha)
-
-    @property
-    def initial_temperature(self):
-        return self._initial_temp
-
-    @initial_temperature.setter
-    def initial_temperature(self, temp):
-        """
-        Sets the initial temperature.
-        """
-        if not isinstance(temp, (int, float)) or temp <= 0:
-            raise ValueError("Initial temperature must be positive")
-        self._initial_temp = float(temp)
+        self._temperature_decay = float(alpha)
