@@ -6,7 +6,7 @@ import pybop
 # Define model and use high-performant solver for sensitivities
 solver = pybamm.IDAKLUSolver()
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-model = pybop.lithium_ion.SPMe(parameter_set=parameter_set, solver=solver)
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -42,14 +42,14 @@ problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.RootMeanSquaredError(problem)
 optim = pybop.SimulatedAnnealing(
     cost,
-    verbose=True,
-    max_iterations=80,
-    max_unchanged_iterations=80,
+    max_iterations=120,
+    max_unchanged_iterations=60,
 )
 
-# Update hypers for lower iteration values
+# Update initial temperature and cooling rate
+# for the reduced number of iterations
 optim.optimiser.temperature = 0.9
-optim.optimiser.cooling_rate = 0.75
+optim.optimiser.cooling_rate = 0.8
 
 # Run optimisation
 results = optim.run()
