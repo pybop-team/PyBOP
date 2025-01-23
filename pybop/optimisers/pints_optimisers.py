@@ -20,14 +20,14 @@ class GradientDescent(BasePintsOptimiser):
     Implements a simple gradient descent optimisation algorithm.
 
     This class extends the gradient descent optimiser from the PINTS library, designed
-    to minimize a scalar function of one or more variables.
+    to minimise a scalar function of one or more variables.
 
     Note that this optimiser does not support boundary constraints.
 
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -100,7 +100,7 @@ class AdamW(BasePintsOptimiser):
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -170,7 +170,7 @@ class IRPropMin(BasePintsOptimiser):
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -240,7 +240,7 @@ class PSO(BasePintsOptimiser):
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -310,7 +310,7 @@ class SNES(BasePintsOptimiser):
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -380,7 +380,7 @@ class XNES(BasePintsOptimiser):
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -452,7 +452,7 @@ class NelderMead(BasePintsOptimiser):
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -522,7 +522,7 @@ class CMAES(BasePintsOptimiser):
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -597,7 +597,7 @@ class CuckooSearch(BasePintsOptimiser):
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -669,7 +669,7 @@ class RandomSearch(BasePintsOptimiser):
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -730,11 +730,19 @@ class SimulatedAnnealing(BasePintsOptimiser):
     """
     Adapter for Simulated Annealing optimiser in PyBOP.
 
+    Simulated Annealing is a probabilistic optimisation algorithm inspired by the annealing
+    process in metallurgy. It works by iteratively proposing new solutions and accepting
+    them based on both their fitness and a temperature parameter that decreases over time.
+    This allows the algorithm to initially explore broadly and gradually focus on local
+    optimisation as the temperature decreases.
+
+    The algorithm is particularly effective at avoiding local minima and returning a
+    global solution.
 
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -751,12 +759,14 @@ class SimulatedAnnealing(BasePintsOptimiser):
         x0 : array_like
             Initial position from which optimisation will start.
         sigma0 : float
-            Initial step size or standard deviation depending on the optimiser.
+            Initial step size or standard deviation for parameter perturbation.
         bounds : dict
             A dictionary with 'lower' and 'upper' keys containing arrays for lower and
             upper bounds on the parameters.
-        use_f_guessed : bool
-            Whether to return the guessed function values.
+        cooling_schedule : callable, optional
+            Function that determines how temperature decreases over time.
+        initial_temperature : float, optional
+            Starting temperature for the annealing process.
         absolute_tolerance : float
             Absolute tolerance for convergence checking.
         relative_tolerance : float
@@ -768,7 +778,7 @@ class SimulatedAnnealing(BasePintsOptimiser):
 
     See Also
     --------
-    pybop.SimulatedAnnealingImpl : PyBOP implementation of Simulated Annealing.
+    pybop.SimulatedAnnealingImpl : PyBOP implementation of Simulated Annealing algorithm.
     """
 
     def __init__(
