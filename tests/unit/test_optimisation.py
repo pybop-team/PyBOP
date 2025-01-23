@@ -139,6 +139,7 @@ class TestOptimisation:
             pybop.NelderMead,
             pybop.CuckooSearch,
             pybop.RandomSearch,
+            pybop.SimulatedAnnealing,
         ],
     )
     @pytest.mark.unit
@@ -350,7 +351,7 @@ class TestOptimisation:
                     optim.optimiser.cooling_rate = 1.1
 
                 with pytest.raises(ValueError, match="Temperature must be positive"):
-                    optim.optimiser.initial_temperature = -1.1
+                    optim.optimiser.temperature = -1.1
 
                 with pytest.raises(TypeError, match="Temperature must be a number"):
                     optim.optimiser.temperature = "0.94"
