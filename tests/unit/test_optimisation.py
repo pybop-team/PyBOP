@@ -89,6 +89,7 @@ class TestOptimisation:
             (pybop.IRPropMin, "iRprop-", True),
             (pybop.NelderMead, "Nelder-Mead", False),
             (pybop.RandomSearch, "Random Search", False),
+            (pybop.SimulatedAnnealing, "Simulated Annealing", False),
         ],
     )
     @pytest.mark.unit
@@ -333,6 +334,7 @@ class TestOptimisation:
                 assert optim.optimiser.x_guessed() == optim.optimiser._x0
 
             if optimiser is pybop.SimulatedAnnealing:
+                assert optim.optimiser.n_hyper_parameters() == 2
                 assert optim.optimiser.temperature == 1.0
                 assert optim.optimiser.cooling_rate == 0.95
 
