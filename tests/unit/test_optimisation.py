@@ -283,6 +283,7 @@ class TestOptimisation:
             pybop.CuckooSearch,
             pybop.GradientDescent,
             pybop.RandomSearch,
+            pybop.SimulatedAnnealing,
         ]:
             optim = optimiser(cost)
             with pytest.raises(
