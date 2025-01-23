@@ -377,10 +377,6 @@ class EChemBaseModel(BaseModel):
                 "Positive electrode thickness [m]",
                 "Separator porosity",
                 "Separator thickness [m]",
-                "Open-circuit voltage at 100% SOC [V]",
-                "Open-circuit voltage at 0% SOC [V]"
-                "Maximum concentration in positive electrode [mol.m-3]",
-                "Maximum concentration in negative electrode [mol.m-3]",
             ]
         )
 
