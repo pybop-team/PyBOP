@@ -239,7 +239,7 @@ class TestOptimisation:
                 (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
             ]
             optim = optimiser(cost=cost, bounds=bounds_list, tol=1e-2)
-            assert optim.bounds == bounds_list
+            assert optim.bounds == bounds
 
         if optimiser in [
             pybop.SciPyMinimize,
@@ -330,6 +330,15 @@ class TestOptimisation:
 
                 assert optim.optimiser.n_hyper_parameters() == 5
                 assert optim.optimiser.x_guessed() == optim.optimiser._x0
+
+            if optimiser is pybop.CuckooSearch:
+                optim.optimiser.pa = 0.6
+                assert optim.optimiser.pa == 0.6
+
+                with pytest.raises(
+                    Exception, match="must be a numeric value between 0 and 1."
+                ):
+                    optim.optimiser.pa = "test"
 
         else:
             x0 = cost.parameters.initial_value()
@@ -551,7 +560,7 @@ class TestOptimisation:
         # Create the optimisation class with incorrect bounds type
         with pytest.raises(
             TypeError,
-            match="Bounds provided must be either type dict, list or SciPy.optimize.bounds object.",
+            match="Bounds provided must be either type dict or SciPy.optimize.bounds object.",
         ):
             pybop.SciPyMinimize(
                 cost=cost,
