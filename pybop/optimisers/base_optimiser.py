@@ -4,7 +4,6 @@ from typing import Optional, Union
 
 import jax.numpy as jnp
 import numpy as np
-from scipy.optimize import OptimizeResult
 
 from pybop import BaseCost, BaseJaxCost, Inputs, Parameter, Parameters
 
@@ -197,10 +196,10 @@ class BaseOptimiser:
 
         Returns
         -------
-        results: MultiOptimisationResult
+        results: OptimisationResult
             The pybop optimisation result class.
         """
-        self.result = MultiOptimisationResult()
+        self.result = OptimisationResult(optim=self)
 
         for i in range(self.multistart):
             if i >= 1:
@@ -209,10 +208,10 @@ class BaseOptimiser:
                 self.parameters.update(initial_values=self.x0)
                 self._set_up_optimiser()
 
-            self.result.add_run(self._run())
+            self.result.add_result(self._run())
 
         # Store the optimised parameters
-        self.parameters.update(values=self.result.x)
+        self.parameters.update(values=self.result.x_best)
 
         if self.verbose:
             print(self.result)
@@ -367,57 +366,101 @@ class OptimisationResult:
         self.cost = self.optim.cost
         self.minimising = self.optim.minimising
         self._transformation = self.optim._transformation  # noqa: SLF001
-        self.fisher = None
+        self.n_runs = 0
+        self._best_run = None
+        self._x = []
+        self._final_cost = []
+        self._fisher = []
+        self._n_iterations = []
+        self._n_evaluations = []
+        self._scipy_result = []
+        self._time = []
+        self._x0 = []
 
-        self.x = self._transformation.to_model(x) if self._transformation else x
-        self.final_cost = (
-            final_cost * (1 if self.minimising else -1)
-            if final_cost is not None
-            else self._calculate_final_cost()
+        if x is not None:
+            # Transform the parameter values and update the sign of any final cost
+            # coming directly from an optimiser
+            x = self._transformation.to_model(x) if self._transformation else x
+            final_cost = (
+                final_cost * (1 if self.minimising else -1)
+                if final_cost is not None
+                else self.cost(x)
+            )
+            x0 = (
+                self.optim.parameters.initial_value()
+                if isinstance(self.optim, BaseOptimiser)
+                else None
+            )
+
+            # Calculate Fisher Information if JAX Likelihood
+            fisher = (
+                self.cost.observed_fisher(x)
+                if isinstance(self.cost, BaseJaxCost)
+                else None
+            )
+
+            self._extend(
+                x=[x],
+                final_cost=[final_cost],
+                fisher=[fisher],
+                n_iterations=[n_iterations],
+                n_evaluations=[n_evaluations],
+                time=[time],
+                scipy_result=[scipy_result],
+                x0=[x0],
+            )
+
+    def add_result(self, result):
+        """Add a preprocessed OptimisationResult."""
+        self._extend(
+            x=result._x,  # noqa: SLF001
+            final_cost=result._final_cost,  # noqa: SLF001
+            fisher=result._fisher,  # noqa: SLF001
+            n_iterations=result._n_iterations,  # noqa: SLF001
+            n_evaluations=result._n_evaluations,  # noqa: SLF001
+            time=result._time,  # noqa: SLF001
+            scipy_result=result._scipy_result,  # noqa: SLF001
+            x0=result._x0,  # noqa: SLF001
         )
-        self.n_iterations = n_iterations
-        self.n_evaluations = n_evaluations
-        self.scipy_result = scipy_result
-        self.time = time
-        if isinstance(self.optim, BaseOptimiser):
-            self.x0 = self.optim.parameters.initial_value()
-        else:
-            self.x0 = None
 
-        # Check that the parameters produce finite cost, and are physically viable
-        self._validate_parameters()
-        self.check_physical_viability(self.x)
+    def _extend(
+        self,
+        x: Union[list[Inputs], list[np.ndarray]],
+        final_cost: list[float],
+        fisher: list,
+        n_iterations: list[int],
+        n_evaluations: list[int],
+        time: list[float],
+        scipy_result: list,
+        x0: list,
+    ):
+        self.n_runs += len(final_cost)
+        self._x.extend(x)
+        self._final_cost.extend(final_cost)
+        self._fisher.extend(fisher)
+        self._n_iterations.extend(n_iterations)
+        self._n_evaluations.extend(n_evaluations)
+        self._scipy_result.extend(scipy_result)
+        self._time.extend(time)
+        self._x0.extend(x0)
 
-        # Calculate Fisher Information if JAX Likelihood
-        if isinstance(optim.cost, BaseJaxCost):
-            self.fisher = optim.cost.observed_fisher(self.x)
+        # Check that there is a finite cost and update best run
+        self.check_for_finite_cost()
+        self._best_run = self._final_cost.index(
+            min(self._final_cost) if self.minimising else max(self._final_cost)
+        )
 
-    def _calculate_final_cost(self) -> float:
-        """
-        Calculate the final cost using the cost function and optimised parameters.
+        # Check that the best parameters are physically viable
+        self.check_physical_viability(self.x_best)
 
-        Returns:
-            float: The calculated final cost.
-        """
-        return self.cost(self.x)
-
-    def get_scipy_result(self) -> Optional[OptimizeResult]:
-        """
-        Get the SciPy optimisation result object.
-
-        Returns:
-            OptimizeResult or None: The SciPy optimisation result object if available, None otherwise.
-        """
-        return self.scipy_result
-
-    def _validate_parameters(self) -> None:
+    def check_for_finite_cost(self) -> None:
         """
         Validate the optimised parameters and ensure they produce a finite cost value.
 
         Raises:
-            ValueError: If the optimized parameters do not produce a finite cost value.
+            ValueError: If the optimised parameters do not produce a finite cost value.
         """
-        if not np.isfinite(self.final_cost):
+        if not any(np.isfinite(self._final_cost)):
             raise ValueError("Optimised parameters do not produce a finite cost value")
 
     def check_physical_viability(self, x):
@@ -458,117 +501,95 @@ class OptimisationResult:
         """
         return (
             f"OptimisationResult:\n"
-            f"  Initial parameters: {self.x0}\n"
-            f"  Optimised parameters: {self.x}\n"
-            f"  Diagonal Fisher Information entries: {self.fisher}\n"
-            f"  Final cost: {self.final_cost}\n"
-            f"  Optimisation time: {self.time} seconds\n"
-            f"  Number of iterations: {self.n_iterations}\n"
-            f"  Number of evaluations: {self.n_evaluations}\n"
-            f"  SciPy result available: {'Yes' if self.scipy_result else 'No'}"
+            f"  Best result from {self.n_runs} run(s).\n"
+            f"  Initial parameters: {self.x0_best}\n"
+            f"  Optimised parameters: {self.x_best}\n"
+            f"  Diagonal Fisher Information entries: {self.fisher_best}\n"
+            f"  Final cost: {self.final_cost_best}\n"
+            f"  Optimisation time: {self.time_best} seconds\n"
+            f"  Number of iterations: {self.n_iterations_best}\n"
+            f"  Number of evaluations: {self.n_evaluations_best}\n"
+            f"  SciPy result available: {'Yes' if self.scipy_result_best else 'No'}"
         )
-
-
-class MultiOptimisationResult:
-    """
-    Multi run optimisation result class. Stores the results
-    of multiple optimisation runs.
-
-    Attributes
-    ----------
-    results : list
-        The list of OptimisationResults for each optimisation run
-
-    Properties
-    ----------
-    x : ndarray
-        The solution of the best optimisation run.
-    final_cost : float
-        The cost associated with the best solution x.
-    n_iterations : int
-        Number of iterations performed by the optimiser
-        for the best optimisation run.
-    scipy_result : scipy.optimize.OptimizeResult, optional
-        The result obtained from a SciPy optimiser for the
-        best optimisation run.
-    time : float
-        The total time across all optimisation runs.
-    """
-
-    def __init__(self):
-        self.results: list[OptimisationResult] = []
-
-    def add_run(self, result: OptimisationResult):
-        """Adds a new optimisation result."""
-        self.results.append(result)
-
-    def best_run(self) -> Optional[OptimisationResult]:
-        """Returns the result with the best final cost."""
-        valid_results = [res for res in self.results if res.final_cost is not None]
-        if self.results[0].minimising is True:
-            return min(valid_results, key=lambda res: res.final_cost)
-
-        return max(valid_results, key=lambda res: res.final_cost)
 
     def average_iterations(self) -> Optional[float]:
         """Calculates the average number of iterations across all runs."""
-        valid_iterations = [
-            res.n_iterations for res in self.results if res.n_iterations is not None
-        ]
-        return np.mean(valid_iterations)
+        return np.mean(self._n_iterations)
 
     def total_runtime(self) -> Optional[float]:
         """Calculates the total runtime across all runs."""
-        valid_times = [res.time for res in self.results if res.time is not None]
-        return np.sum(valid_times)
+        return np.sum(self._time)
 
-    def best_x(self) -> Optional[float]:
-        """Returns the best parameters, x across the optimisation"""
-        return self.best_run().x
+    def _get_single_or_all(self, attr):
+        value = getattr(self, attr)
+        return value[0] if len(value) == 1 else value
 
-    def __str__(self) -> str:
-        """
-        A string representation of the MultiOptimisationResult object.
-
-        Returns:
-            str: A formatted string containing optimisation result information.
-        """
-        result_strs = []
-        for res in self.results:
-            result_strs.append(str(res))
-
-        return "\n".join(result_strs)
-
-    def check_physical_viability(self, x):
-        return self.best_run().check_physical_viability(x)
-
-    def get_scipy_result(self):
-        return self.best_run().get_scipy_result()
+    @property
+    def x_best(self):
+        return self._x[self._best_run] if self._best_run is not None else None
 
     @property
     def x(self):
-        return self.best_x()
+        return self._get_single_or_all("_x")
 
     @property
     def x0(self):
-        return self.best_run().x0
+        return self._get_single_or_all("_x0")
+
+    @property
+    def x0_best(self):
+        return self._x0[self._best_run] if self._best_run is not None else None
 
     @property
     def final_cost(self):
-        return self.best_run().final_cost
+        return self._get_single_or_all("_final_cost")
+
+    @property
+    def final_cost_best(self):
+        return self._final_cost[self._best_run] if self._best_run is not None else None
+
+    @property
+    def fisher(self):
+        return self._get_single_or_all("_fisher")
+
+    @property
+    def fisher_best(self):
+        return self._fisher[self._best_run] if self._best_run is not None else None
 
     @property
     def n_iterations(self):
-        return self.best_run().n_iterations
+        return self._get_single_or_all("_n_iterations")
+
+    @property
+    def n_iterations_best(self):
+        return (
+            self._n_iterations[self._best_run] if self._best_run is not None else None
+        )
 
     @property
     def n_evaluations(self):
-        return self.best_run().n_evaluations
+        return self._get_single_or_all("_n_evaluations")
+
+    @property
+    def n_evaluations_best(self):
+        return (
+            self._n_evaluations[self._best_run] if self._best_run is not None else None
+        )
 
     @property
     def scipy_result(self):
-        return self.best_run().scipy_result
+        return self._get_single_or_all("_scipy_result")
+
+    @property
+    def scipy_result_best(self):
+        return (
+            self._scipy_result[self._best_run] if self._best_run is not None else None
+        )
 
     @property
     def time(self):
-        return self.total_runtime()
+        return self._get_single_or_all("_time")
+
+    @property
+    def time_best(self):
+        return self._time[self._best_run] if self._best_run is not None else None

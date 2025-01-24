@@ -2,9 +2,12 @@
 
 ## Features
 
+- [#565] (https://github.com/pybop-team/PyBOP/pull/627) - DigiBatt added as funding partner.
+
 ## Optimisations
 
 - [#618](https://github.com/pybop-team/PyBOP/pull/618) - Adds Mean Absolute Error (MAE) and Mean Squared Error (MSE) costs.
+- [#601](https://github.com/pybop-team/PyBOP/pull/601) - Deprecates `MultiOptimisationResult` by merging with `OptimisationResult`.
 - [#600](https://github.com/pybop-team/PyBOP/pull/600) - Removes repetitious functionality within the cost classes.
 
 ## Bug Fixes
