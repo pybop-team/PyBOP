@@ -789,7 +789,7 @@ class BaseModel:
 
         """
         inputs = self.parameters.verify(inputs) or {}
-        parameter_set = ParameterSet.to_pybamm(parameter_set) or self._parameter_set
+        parameter_set = parameter_set or self._parameter_set
 
         return self._check_params(
             inputs=inputs,
