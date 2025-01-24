@@ -52,29 +52,13 @@ class ParameterSet:
         if json_path is not None:
             self.import_parameters(json_path)
         else:
-            self.parameter_values = self.convert_to_parameter_values(parameter_set)
+            self.parameter_values = self.to_pybamm(parameter_set)
 
         if self.parameter_values is not None:
             self.chemistry = self.parameter_values.get("chemistry", None)
 
             if self.formation_concentrations:
                 set_formation_concentrations(self.parameter_values)
-
-    def convert_to_parameter_values(self, parameter_set):
-        """
-        Converts a parameter set to a PyBaMM ParameterValues object.
-        """
-        if parameter_set is None:
-            return None
-        elif isinstance(parameter_set, str):
-            # Use class method
-            return self.pybamm(parameter_set)
-        elif isinstance(parameter_set, dict):
-            return ParameterValues(parameter_set)
-        elif isinstance(parameter_set, ParameterValues):
-            return parameter_set
-        else:
-            return parameter_set.parameter_values
 
     def __call__(self):
         """
@@ -281,6 +265,23 @@ class ParameterSet:
             raise ValueError(msg)
 
         return ParameterValues(name).copy()
+
+    @classmethod
+    def to_pybamm(cls, parameter_set):
+        """
+        Converts a parameter set to a new PyBaMM ParameterValues object.
+        """
+        if parameter_set is None:
+            return None
+        elif isinstance(parameter_set, str):
+            # Use class method
+            return cls.pybamm(parameter_set)
+        elif isinstance(parameter_set, dict):
+            return ParameterValues(parameter_set)
+        elif isinstance(parameter_set, ParameterValues):
+            return parameter_set.copy()
+        else:
+            return parameter_set.parameter_values.copy()
 
 
 def set_formation_concentrations(parameter_set):

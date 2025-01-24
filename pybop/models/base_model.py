@@ -109,11 +109,7 @@ class BaseModel:
         self.eis = eis
         self._calculate_sensitivities = False
 
-        self._parameter_set = None
-        if parameter_set is not None:
-            if not isinstance(parameter_set, ParameterSet):
-                parameter_set = ParameterSet(parameter_set)
-            self._parameter_set = parameter_set().copy()
+        self._parameter_set = ParameterSet.to_pybamm(parameter_set)
         self.param_checker = check_params
 
         self.pybamm_model = None
@@ -702,7 +698,10 @@ class BaseModel:
             self._unprocessed_model.build_model()
 
         no_parameter_set = parameter_set is None
-        parameter_set = parameter_set or self._unprocessed_parameter_set.copy()
+        parameter_set = (
+            ParameterSet.to_pybamm(parameter_set)
+            or self._unprocessed_parameter_set.copy()
+        )
         if inputs is not None:
             inputs = self.parameters.verify(inputs)
             parameter_set.update(inputs)
@@ -790,7 +789,7 @@ class BaseModel:
 
         """
         inputs = self.parameters.verify(inputs) or {}
-        parameter_set = parameter_set or self._parameter_set
+        parameter_set = ParameterSet.to_pybamm(parameter_set) or self._parameter_set
 
         return self._check_params(
             inputs=inputs,
