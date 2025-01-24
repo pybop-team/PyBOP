@@ -377,7 +377,6 @@ class TestModels:
             json_path="examples/parameters/initial_ecm_parameters.json"
         )
         parameter_set.import_parameters()
-        assert parameter_set["Open-circuit voltage [V]"] == "default"
         model = pybop.empirical.Thevenin(
             parameter_set=parameter_set, options={"number of rc elements": 2}
         )
