@@ -39,12 +39,14 @@ class TestEISParameterisation:
         return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Uniform(0.4, 0.75),
+                prior=pybop.Uniform(0.3, 0.9),
+                initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
                 bounds=[0.375, 0.775],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Uniform(0.4, 0.75),
+                prior=pybop.Uniform(0.3, 0.9),
+                initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
                 bounds=[0.375, 0.775],
             ),
         )
@@ -132,12 +134,6 @@ class TestEISParameterisation:
             if isinstance(cost, pybop.GaussianLogLikelihood)
             else 0.02,
         }
-
-        if isinstance(cost, pybop.LogPosterior):
-            for i in cost.parameters.keys():
-                cost.parameters[i].prior = pybop.Uniform(
-                    0.2, 2.0
-                )  # Increase range to avoid prior == np.inf
 
         # Create optimiser
         optim = optimiser(**common_args)
