@@ -86,20 +86,20 @@ The table below lists the currently supported [models](https://github.com/pybop-
 
 <p align="center">
 
-| Battery Models                                | Cost Functions                 | Optimization Algorithms                                           |
-|-----------------------------------------------|--------------------------------|-------------------------------------------------------------------|
-| Single Particle Model (SPM)                   | Sum of Squared Errors (SSE)    | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) <tr></tr> |
-| Single Particle Model with Electrolyte (SPMe) | Root Mean Squared Error (RMSE) | Particle Swarm Optimization (PSO) <tr></tr>                       |
-| Doyle-Fuller-Newman (DFN)                     | Minkowski                      | Exponential Natural Evolution Strategy (xNES) <tr></tr>           |
-| Many Particle Model (MPM)                     | Sum of Power                   | Separable Natural Evolution Strategy (sNES)  <tr></tr>            |
-| Multi-Species Multi-Reaction (MSMR)           | Gaussian Log Likelihood        | Weight Decayed Adaptive Moment Estimation (AdamW) <tr></tr>       |
-| Weppner-Huggins                               | Log Posterior                  | Improved Resilient Backpropagation (iRProp-) <tr></tr>            |
-| Equivalent Circuit Models (ECM)               | Unscented Kalman Filter (UKF)  | SciPy Minimize & Differential Evolution  <tr></tr>                |
-| Grouped-parameter SPMe (GroupedSPMe)          | Gravimetric Energy Density     | Cuckoo Search  <tr></tr>                                          |
-|                                               | Volumetric Energy Density      | Simulated Annealing  <tr></tr>                                    |
-|                                               |                                | Random Search <tr></tr>                                           |
-|                                               |                                | Gradient Descent <tr></tr>                                        |
-|                                               |                                | Nelder-Mead <tr></tr>                                             |
+| Battery Models                                | Cost Functions                     | Optimization Algorithms                                            |
+|-----------------------------------------------|------------------------------------|--------------------------------------------------------------------|
+| Single Particle Model (SPM)                   | Sum of Squared Error (SSE)         | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) <tr></tr> |
+| Single Particle Model with Electrolyte (SPMe) | Root Mean Squared Error (RMSE)     | Particle Swarm Optimization (PSO) <tr></tr>                        |
+| Doyle-Fuller-Newman (DFN)                     | Mean Squared Error (MSE)           | Exponential Natural Evolution Strategy (xNES) <tr></tr>            |
+| Many Particle Model (MPM)                     | Mean Absolute Error (MAE)          | Separable Natural Evolution Strategy (sNES)  <tr></tr>             |
+| Multi-Species Multi-Reaction (MSMR)           | Minkowski                          | Weight Decayed Adaptive Moment Estimation (AdamW) <tr></tr>        |
+| Weppner-Huggins                               | Sum of Power                       | Improved Resilient Backpropagation (iRProp-) <tr></tr>             |
+| Equivalent Circuit Models (ECM)               | Gaussian Log Likelihood            | SciPy Minimize & Differential Evolution  <tr></tr>                 |
+| Grouped-parameter SPMe (GroupedSPMe)          | Log Posterior                      | Cuckoo Search  <tr></tr>                                           |
+|                                               | Gravimetric Energy / Power Density | Simulated Annealing  <tr></tr>                                     |
+|                                               | Volumetric Energy / Power Density  | Random Search <tr></tr>                                            |
+|                                               |                                    | Gradient Descent <tr></tr>                                         |
+|                                               |                                    | Nelder Mead <tr></tr>                                              |
 
 </p>
 
