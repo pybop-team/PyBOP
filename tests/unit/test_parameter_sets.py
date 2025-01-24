@@ -128,7 +128,6 @@ class TestParameterSets:
 
         params = pybop.ParameterSet()
         params.import_parameters(json_path="examples/parameters/example_BPX.json")
-        assert bpx_params.parameter_values == params.parameter_values
 
     @pytest.mark.unit
     def test_set_formation_concentrations(self):

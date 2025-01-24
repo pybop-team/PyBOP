@@ -12,7 +12,7 @@ layout_options = dict(
 plot_dict = pybop.plot.StandardPlot(layout_options=layout_options)
 
 # Unpack parameter values from Chen2020
-parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+parameter_set = pybop.ParameterSet("Chen2020")
 
 # Fix the electrolyte diffusivity and conductivity
 ce0 = parameter_set["Initial concentration in electrolyte [mol.m-3]"]
@@ -54,7 +54,7 @@ dataset = pybop.Dataset(
 plot_dict.add_traces(dataset["Time [s]"], dataset["Voltage [V]"])
 
 # Test model in the time domain
-grouped_parameter_set = convert_physical_to_grouped_parameters(parameter_set)
+grouped_parameter_set = convert_physical_to_grouped_parameters(parameter_set())
 time_domain_grouped = pybop.lithium_ion.GroupedSPMe(
     parameter_set=grouped_parameter_set,
     options=model_options,

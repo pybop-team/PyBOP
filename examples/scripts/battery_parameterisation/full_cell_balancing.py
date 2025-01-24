@@ -3,12 +3,12 @@ import numpy as np
 import pybop
 
 # Parameter set definition
-parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+parameter_set = pybop.ParameterSet("Chen2020")
 parameter_set["Lower voltage cut-off [V]"] = 2.3
 parameter_set["Upper voltage cut-off [V]"] = 4.4
 
 # Set initial state and unpack true values
-parameter_set.set_initial_stoichiometries(initial_value=1.0)
+parameter_set.parameter_values.set_initial_stoichiometries(initial_value=1.0)
 cs_n_max = parameter_set["Maximum concentration in negative electrode [mol.m-3]"]
 cs_p_max = parameter_set["Maximum concentration in positive electrode [mol.m-3]"]
 cs_n_init = parameter_set["Initial concentration in negative electrode [mol.m-3]"]
