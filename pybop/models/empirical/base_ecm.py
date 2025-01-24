@@ -61,8 +61,13 @@ class ECircuitModel(BaseModel):
             parameter_set is not None
             and "Open-circuit voltage [V]" not in parameter_set.keys()
         ):
-            parameter_set["Open-circuit voltage [V]"] = (
-                pybamm_model.default_parameter_values["Open-circuit voltage [V]"]
+            parameter_set.update(
+                {
+                    "Open-circuit voltage [V]": pybamm_model.default_parameter_values[
+                        "Open-circuit voltage [V]"
+                    ]
+                },
+                check_already_exists=False,
             )
 
         super().__init__(

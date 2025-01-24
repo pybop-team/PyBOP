@@ -30,68 +30,71 @@ class ParameterSet:
     json_path : str, optional
         Path to a JSON file containing parameter data. If provided, parameters will be imported from this file during
         initialisation.
+    formation_concentrations : bool, optional
+            If True, re-calculates the initial concentrations of lithium in the active material (default: False).
     """
 
     def __init__(
         self,
         parameter_set: Union[str, dict, ParameterValues] = None,
         json_path: Optional[str] = None,
-        formation_concentrations: bool = False,
+        formation_concentrations: Optional[bool] = False,
     ):
         if parameter_set is not None and json_path is not None:
             raise ValueError(
                 "ParameterSet needs either a parameter_set or json_path as an input, not both."
             )
-        self.json_path = json_path
-        self.params = None
+        self._json_path = None
+        self.parameter_values = None
         self.chemistry = None
         self.formation_concentrations = formation_concentrations
 
-        if isinstance(parameter_set, str):
-            # Use class method
-            self.params = self.pybamm(parameter_set)
-        elif isinstance(parameter_set, dict):
-            # Keep as dictionary to allow "default" as value
-            self.params = parameter_set
-        elif isinstance(parameter_set, ParameterValues):
-            self.params = parameter_set
+        if json_path is not None:
+            self.import_parameters(json_path)
+        else:
+            self.parameter_values = self.convert_to_parameter_values(parameter_set)
 
-        if self.params is not None:
-            self.chemistry = self.params.get("chemistry", None)
+        if self.parameter_values is not None:
+            self.chemistry = self.parameter_values.get("chemistry", None)
 
-    def __call__(self, formation_concentrations: Optional[bool] = False):
+            if self.formation_concentrations:
+                set_formation_concentrations(self.parameter_values)
+
+    def convert_to_parameter_values(self, parameter_set):
         """
-        Obtain a copy of the parameter set as a PyBaMM ParameterValues object.
+        Converts a parameter set to a PyBaMM ParameterValues object.
+        """
+        if parameter_set is None:
+            return None
+        elif isinstance(parameter_set, str):
+            # Use class method
+            return self.pybamm(parameter_set)
+        elif isinstance(parameter_set, dict):
+            return ParameterValues(parameter_set)
+        elif isinstance(parameter_set, ParameterValues):
+            return parameter_set
+        else:
+            return parameter_set.parameter_values
 
-        Parameters
-        ----------
-        set_formation_concentrations : bool, optional
-            If True, re-calculates the initial concentrations of lithium in the active material (default: False).
+    def __call__(self):
+        """
+        Return the parameter set as a pybamm.ParameterValues object.
 
         Returns
         -------
         pybamm.ParameterValues
-            A PyBaMM parameter set corresponding to the parameter set stored in self.params.
+            The parameter set for a PyBaMM model.
         """
-        self.formation_concentrations = formation_concentrations
-
-        if self.params is None:
-            return None
-        elif isinstance(self.params, dict):
-            parameter_set = ParameterValues(self.params).copy()
-        else:
-            parameter_set = self.params.copy()
-
         if self.formation_concentrations:
-            set_formation_concentrations(parameter_set)
+            set_formation_concentrations(self.parameter_values)
 
-        return parameter_set
+        return self.parameter_values
 
     def __setitem__(self, key, value):
-        self.params[key] = value
+        self.parameter_values[key] = value
 
     def __getitem__(self, key):
-        return self.params[key]
+        return self.parameter_values[key]
 
     @staticmethod
     def evaluate_symbol(symbol: Union[Symbol, Number], params: dict):
@@ -124,7 +127,7 @@ class ParameterSet:
         """
         A list of parameter names
         """
-        return list(self.params.keys())
+        return list(self.parameter_values.keys())
 
     def update(self, params_dict: dict = None, check_already_exists: bool = True):
         """
@@ -139,18 +142,9 @@ class ParameterSet:
             to update it. This is to avoid cases where an intended change in the parameters
             is ignored due a typo in the parameter name (default: True).
         """
-        if isinstance(self.params, ParameterValues):
-            self.params.update(params_dict, check_already_exists=check_already_exists)
-        else:
-            if check_already_exists is True:
-                for key in params_dict.keys():
-                    if key not in self.params.keys():
-                        raise KeyError(
-                            f"Cannot update parameter '{key}' as it does not have a default "
-                            "value. If you are sure you want to update this parameter, use "
-                            "param.update({name: value}, check_already_exists=False)"
-                        )
-            self.params.update(params_dict)
+        self.parameter_values.update(
+            params_dict, check_already_exists=check_already_exists
+        )
 
     def import_parameters(self, json_path: Optional[str] = None):
         """
@@ -175,62 +169,30 @@ class ParameterSet:
         FileNotFoundError
             If the specified JSON file cannot be found.
         """
-        if self.params:
+        if self.parameter_values:
             raise ValueError("Parameter set already constructed.")
 
-        if json_path is not None:
-            self.json_path = json_path
-
         # Read JSON file
-        if self.json_path:
-            with open(self.json_path) as file:
-                self.params = json.load(file)
+        if json_path:
+            self._json_path = json_path
+            try:
+                self.parameter_values = ParameterValues.create_from_bpx(self._json_path)
+            except Exception:
+                print(
+                    "The JSON file was not recognised as a BPX parameter set. Importing as a JSON file."
+                )
+                with open(self._json_path) as file:
+                    params = json.load(file)
+                    self.parameter_values = ParameterValues(params)
         else:
             raise ValueError("No path was provided.")
 
-        self.chemistry = self.params.get("chemistry", None)
+        self.chemistry = self.parameter_values.get("chemistry", None)
 
-        return self.params
+        if self.formation_concentrations:
+            set_formation_concentrations(self.parameter_values)
 
-    def import_from_bpx(self, json_path=None):
-        """
-        Imports parameters from a JSON file in the BPX format specified by the `json_path`
-        attribute.
-        Credit: PyBaMM
-
-        If a `json_path` is provided at initialization or as an argument, that JSON file
-        is loaded and the parameters are stored in the `params` attribute.
-
-        Parameters
-        ----------
-        json_path : str, optional
-            Path to the JSON file from which to import parameters. If provided, it overrides the instance's `json_path`.
-
-        Returns
-        -------
-        dict
-            The dictionary containing the imported parameters.
-
-        Raises
-        ------
-        FileNotFoundError
-            If the specified JSON file cannot be found.
-        """
-        if self.params:
-            raise ValueError("Parameter set already constructed.")
-
-        if json_path is not None:
-            self.json_path = json_path
-
-        # Read JSON file
-        if self.json_path:
-            self.params = ParameterValues.create_from_bpx(self.json_path)
-        else:
-            raise ValueError("No path was provided.")
-
-        self.chemistry = self.params.get("chemistry", None)
-
-        return self.params
+        return self.parameter_values
 
     def export_parameters(self, output_json_path, fit_params=None):
         """
@@ -252,11 +214,14 @@ class ParameterSet:
         ValueError
             If there are no parameters to export.
         """
-        if not self.params:
+        if not self.parameter_values:
             raise ValueError("No parameters to export. Please import parameters first.")
 
         # Prepare a copy of the params to avoid modifying the original dict
-        exportable_params = {**{"chemistry": self.chemistry}, **self.params.copy()}
+        exportable_params = {
+            **{"chemistry": self.chemistry},
+            **self.parameter_values.copy(),
+        }
 
         # Update parameter set
         if fit_params is not None:
@@ -295,7 +260,7 @@ class ParameterSet:
             return False
 
     @classmethod
-    def pybamm(cls, name, formation_concentrations=False):
+    def pybamm(cls, name):
         """
         Retrieves a PyBaMM parameter set by name.
 
@@ -303,8 +268,6 @@ class ParameterSet:
         ----------
         name : str
             The name of the PyBaMM parameter set to retrieve.
-        set_formation_concentrations : bool, optional
-            If True, re-calculates the initial concentrations of lithium in the active material (default: False).
 
         Returns
         -------
@@ -317,12 +280,7 @@ class ParameterSet:
         if name not in list(parameter_sets):
             raise ValueError(msg)
 
-        parameter_set = ParameterValues(name).copy()
-
-        if formation_concentrations:
-            set_formation_concentrations(parameter_set)
-
-        return parameter_set
+        return ParameterValues(name).copy()
 
 
 def set_formation_concentrations(parameter_set):

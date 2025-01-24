@@ -109,9 +109,11 @@ class BaseModel:
         self.eis = eis
         self._calculate_sensitivities = False
 
-        if not isinstance(parameter_set, ParameterSet):
-            parameter_set = ParameterSet(parameter_set)
-        self._parameter_set = parameter_set()
+        self._parameter_set = None
+        if parameter_set is not None:
+            if not isinstance(parameter_set, ParameterSet):
+                parameter_set = ParameterSet(parameter_set)
+            self._parameter_set = parameter_set().copy()
         self.param_checker = check_params
 
         self.pybamm_model = None

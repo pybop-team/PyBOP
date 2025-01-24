@@ -71,8 +71,6 @@ class TestParameterSets:
         json_params = pybop.ParameterSet(
             json_path="examples/parameters/initial_ecm_parameters.json"
         )
-        json_params.import_parameters()
-
         with pytest.raises(
             ValueError,
             match="Parameter set already constructed.",
@@ -85,9 +83,7 @@ class TestParameterSets:
         )
 
         params = pybop.ParameterSet(params_dict)
-
-        assert json_params.params == params.params
-        assert params_dict == params.params
+        assert json_params.parameter_values == params.parameter_values
 
         with pytest.raises(
             ValueError,
@@ -126,42 +122,17 @@ class TestParameterSets:
     @pytest.mark.unit
     def test_bpx_parameter_sets(self):
         # Test importing a BPX json file
-        bpx_parameters = pybop.ParameterSet()
-        with pytest.raises(
-            ValueError,
-            match="No path was provided.",
-        ):
-            bpx_parameters.import_from_bpx()
-
-        bpx_parameters = pybop.ParameterSet(
+        bpx_params = pybop.ParameterSet(
             json_path="examples/parameters/example_BPX.json"
         )
-        bpx_parameters.import_from_bpx()
 
-        with pytest.raises(
-            ValueError,
-            match="Parameter set already constructed.",
-        ):
-            bpx_parameters.import_from_bpx()
-
-        bpx_parameters = pybop.ParameterSet()
-        bpx_parameters.import_from_bpx(json_path="examples/parameters/example_BPX.json")
+        params = pybop.ParameterSet()
+        params.import_parameters(json_path="examples/parameters/example_BPX.json")
+        assert bpx_params.parameter_values == params.parameter_values
 
     @pytest.mark.unit
     def test_set_formation_concentrations(self):
-        parameter_set = pybop.ParameterSet.pybamm(
-            "Chen2020", formation_concentrations=True
-        )
-
-        assert (
-            parameter_set["Initial concentration in negative electrode [mol.m-3]"] == 0
-        )
-        assert (
-            parameter_set["Initial concentration in positive electrode [mol.m-3]"] > 0
-        )
-
-        parameter_set = pybop.ParameterSet(parameter_set)
-        parameter_set = parameter_set(formation_concentrations=True)
+        parameter_set = pybop.ParameterSet("Chen2020", formation_concentrations=True)
 
         assert (
             parameter_set["Initial concentration in negative electrode [mol.m-3]"] == 0

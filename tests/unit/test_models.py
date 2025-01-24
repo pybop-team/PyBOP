@@ -376,7 +376,6 @@ class TestModels:
         parameter_set = pybop.ParameterSet(
             json_path="examples/parameters/initial_ecm_parameters.json"
         )
-        parameter_set.import_parameters()
         model = pybop.empirical.Thevenin(
             parameter_set=parameter_set, options={"number of rc elements": 2}
         )
