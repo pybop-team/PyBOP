@@ -40,14 +40,14 @@ class TestParameterSets:
     def test_parameter_set(self):
         # Tests parameter set creation and validation
         with pytest.raises(ValueError):
-            pybop.ParameterSet.pybamm("sChen2010s")
+            pybop.ParameterSet("sChen2010s")
 
         parameter_test = pybop.ParameterSet("Chen2020")
         np.testing.assert_allclose(
             parameter_test["Negative electrode active material volume fraction"], 0.75
         )
 
-        parameter_test = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_test = pybop.ParameterSet("Chen2020")
         np.testing.assert_allclose(
             parameter_test["Negative electrode active material volume fraction"], 0.75
         )
@@ -123,11 +123,14 @@ class TestParameterSets:
     def test_bpx_parameter_sets(self):
         # Test importing a BPX json file
         bpx_params = pybop.ParameterSet(
-            json_path="examples/parameters/example_BPX.json"
+            json_path="examples/parameters/example_BPX.json",
+            formation_concentrations=True,
         )
 
-        params = pybop.ParameterSet()
-        params.import_parameters(json_path="examples/parameters/example_BPX.json")
+        params = pybop.ParameterSet(formation_concentrations=True)
+        params.import_parameters(
+            json_path="examples/parameters/example_BPX.json",
+        )
 
         assert bpx_params.keys() == params.keys()
 
@@ -144,7 +147,7 @@ class TestParameterSets:
 
     @pytest.mark.unit
     def test_evaluate_symbol(self):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set = pybop.ParameterSet("Chen2020")
         porosity = parameter_set["Positive electrode porosity"]
         assert isinstance(porosity, float)
 
