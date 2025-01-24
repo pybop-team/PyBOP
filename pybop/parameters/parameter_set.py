@@ -60,20 +60,6 @@ class ParameterSet:
             if self.formation_concentrations:
                 set_formation_concentrations(self.parameter_values)
 
-    def __call__(self):
-        """
-        Return the parameter set as a pybamm.ParameterValues object.
-
-        Returns
-        -------
-        pybamm.ParameterValues
-            The parameter set for a PyBaMM model.
-        """
-        if self.formation_concentrations:
-            set_formation_concentrations(self.parameter_values)
-
-        return self.parameter_values
-
     def __setitem__(self, key, value):
         self.parameter_values[key] = value
 

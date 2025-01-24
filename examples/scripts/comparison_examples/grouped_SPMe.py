@@ -54,7 +54,7 @@ dataset = pybop.Dataset(
 plot_dict.add_traces(dataset["Time [s]"], dataset["Voltage [V]"])
 
 # Test model in the time domain
-grouped_parameter_set = convert_physical_to_grouped_parameters(parameter_set())
+grouped_parameter_set = convert_physical_to_grouped_parameters(parameter_set)
 time_domain_grouped = pybop.lithium_ion.GroupedSPMe(
     parameter_set=grouped_parameter_set,
     options=model_options,
