@@ -4,7 +4,7 @@ import pybamm
 import pybop
 
 # Parameter set and model definition
-parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+parameter_set = pybop.ParameterSet("Chen2020")
 
 # The Jaxified IDAKLU performs very well on high iteration
 # identification tasks, due to the just-in-time compilation

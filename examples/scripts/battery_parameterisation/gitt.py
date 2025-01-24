@@ -3,7 +3,7 @@ import numpy as np
 import pybop
 
 # Define model
-parameter_set = pybop.ParameterSet.pybamm("Xu2019")
+parameter_set = pybop.ParameterSet("Xu2019")
 model = pybop.lithium_ion.SPM(
     parameter_set=parameter_set, options={"working electrode": "positive"}
 )
