@@ -77,6 +77,7 @@ class Test_SPM_Parameterisation:
             pybop.CuckooSearch,
             pybop.NelderMead,
             pybop.IRPropMin,
+            pybop.IRPropPlus,
             pybop.AdamW,
             pybop.CMAES,
             pybop.SNES,

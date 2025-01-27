@@ -87,6 +87,7 @@ class TestOptimisation:
             (pybop.XNES, "Exponential Natural Evolution Strategy (xNES)", False),
             (pybop.PSO, "Particle Swarm Optimisation (PSO)", False),
             (pybop.IRPropMin, "iRprop-", True),
+            (pybop.IRPropPlus, "iRprop+", True),
             (pybop.NelderMead, "Nelder-Mead", False),
             (pybop.RandomSearch, "Random Search", False),
             (pybop.SimulatedAnnealing, "Simulated Annealing", False),
@@ -137,6 +138,7 @@ class TestOptimisation:
             pybop.XNES,
             pybop.PSO,
             pybop.IRPropMin,
+            pybop.IRPropPlus,
             pybop.NelderMead,
             pybop.CuckooSearch,
             pybop.RandomSearch,
@@ -283,6 +285,7 @@ class TestOptimisation:
 
         if optimiser in [
             pybop.AdamW,
+            pybop.IRPropPlus,
             pybop.CuckooSearch,
             pybop.GradientDescent,
             pybop.RandomSearch,

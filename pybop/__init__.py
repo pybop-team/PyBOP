@@ -141,6 +141,7 @@ from .optimisers._random_search import RandomSearchImpl
 from .optimisers._adamw import AdamWImpl
 from .optimisers._gradient_descent import GradientDescentImpl
 from .optimisers._simulated_annealing import SimulatedAnnealingImpl
+from .optimisers._irpropplus import IRPropPlusImpl
 from .optimisers.base_optimiser import BaseOptimiser, OptimisationResult
 from .optimisers.base_pints_optimiser import BasePintsOptimiser
 from .optimisers.scipy_optimisers import (
@@ -152,6 +153,7 @@ from .optimisers.pints_optimisers import (
     GradientDescent,
     CMAES,
     IRPropMin,
+    IRPropPlus,
     NelderMead,
     PSO,
     SNES,
