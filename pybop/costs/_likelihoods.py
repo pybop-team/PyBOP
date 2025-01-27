@@ -21,7 +21,7 @@ class BaseLikelihood(BaseCost):
         self.n_data = problem.n_data
         self.minimising = False
 
-    def observed_fisher(self, y: dict, dy: Optional[np.ndarray] = None) -> np.ndarray:
+    def observed_fisher(self, y: dict, dy: np.ndarray) -> np.ndarray:
         """
         Compute the observed Fisher Information Matrix (FIM) for the given data.
 
@@ -32,7 +32,7 @@ class BaseLikelihood(BaseCost):
         ----------
         y : dict
             The model outputs for which to compute the FIM.
-        dy : np.ndarray, optional
+        dy : np.ndarray
             The sensitivities (gradients) of the model outputs with respect to parameters.
 
         Returns
@@ -40,8 +40,6 @@ class BaseLikelihood(BaseCost):
         np.ndarray
             The observed Fisher Information Matrix.
         """
-        if dy is None:
-            _, dy = self.compute(y, dy=True)  # Compute gradients if not provided
 
         # Calculate squared gradients element-wise
         fisher_info = np.sum(np.square(dy), axis=0) / self.n_data
