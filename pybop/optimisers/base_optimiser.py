@@ -145,6 +145,14 @@ class BaseOptimiser:
         # Set multistart
         self.multistart = self.unset_options.pop("multistart", 1)
 
+        # Parameter sensitivities
+        self.compute_sensitivities = self.unset_options.pop(
+            "compute_sensitivities", False
+        )
+        self.n_samples_sensitivity = self.unset_options.pop(
+            "n_sensitivity_samples", 256
+        )
+
     def _set_up_optimiser(self):
         """
         Parse optimiser options and prepare the optimiser.
@@ -213,6 +221,9 @@ class BaseOptimiser:
         # Store the optimised parameters
         self.parameters.update(values=self.result.x_best)
 
+        # Compute sensitivities
+        self.result.sensitivities = self._parameter_sensitivities()
+
         if self.verbose:
             print(self.result)
 
@@ -230,6 +241,16 @@ class BaseOptimiser:
             If the method has not been implemented by the subclass.
         """
         raise NotImplementedError
+
+    def _parameter_sensitivities(self):
+        if not self.compute_sensitivities:
+            return None
+
+        print("Computing sensitivities...")
+        sensitivities = self.cost.sensitivity_analysis(self.n_samples_sensitivity)
+        print("Done.")
+
+        return sensitivities
 
     def log_update(self, x=None, x_best=None, cost=None, cost_best=None, x0=None):
         """
@@ -357,6 +378,7 @@ class OptimisationResult:
         optim: BaseOptimiser,
         x: Union[Inputs, np.ndarray] = None,
         final_cost: Optional[float] = None,
+        sensitivities: Optional[dict] = None,
         n_iterations: Optional[int] = None,
         n_evaluations: Optional[int] = None,
         time: Optional[float] = None,
@@ -370,6 +392,7 @@ class OptimisationResult:
         self._best_run = None
         self._x = []
         self._final_cost = []
+        self._sensitivities = None
         self._fisher = []
         self._n_iterations = []
         self._n_evaluations = []
@@ -499,11 +522,21 @@ class OptimisationResult:
         Returns:
             str: A formatted string containing optimisation result information.
         """
+        # Format the sensitivities
+        self.sense_format = ""
+        if self._sensitivities:
+            self.sense_format = ""
+            for value, conf in zip(
+                self._sensitivities["ST"], self._sensitivities["ST_conf"]
+            ):
+                self.sense_format += f" {value:.3f} ± {conf:.3f},"
+
         return (
             f"OptimisationResult:\n"
             f"  Best result from {self.n_runs} run(s).\n"
             f"  Initial parameters: {self.x0_best}\n"
             f"  Optimised parameters: {self.x_best}\n"
+            f"  Total-order sensitivities:{self.sense_format}\n"
             f"  Diagonal Fisher Information entries: {self.fisher_best}\n"
             f"  Final cost: {self.final_cost_best}\n"
             f"  Optimisation time: {self.time_best} seconds\n"
@@ -525,12 +558,12 @@ class OptimisationResult:
         return value[0] if len(value) == 1 else value
 
     @property
-    def x_best(self):
-        return self._x[self._best_run] if self._best_run is not None else None
-
-    @property
     def x(self):
         return self._get_single_or_all("_x")
+
+    @property
+    def x_best(self):
+        return self._x[self._best_run] if self._best_run is not None else None
 
     @property
     def x0(self):
@@ -551,6 +584,14 @@ class OptimisationResult:
     @property
     def fisher(self):
         return self._get_single_or_all("_fisher")
+
+    @property
+    def sensitivities(self):
+        return self._get_single_or_all("_sensitivities")
+
+    @sensitivities.setter
+    def sensitivities(self, obj: dict):
+        self._sensitivities = obj
 
     @property
     def fisher_best(self):
