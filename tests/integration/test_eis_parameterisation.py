@@ -9,6 +9,8 @@ class TestEISParameterisation:
     A class to test the eis parameterisation methods.
     """
 
+    pytestmark = pytest.mark.integration
+
     @pytest.fixture(autouse=True)
     def setup(self):
         self.sigma0 = 5e-4
@@ -143,7 +145,6 @@ class TestEISParameterisation:
         optim = optimiser(**common_args)
         return optim
 
-    @pytest.mark.integration
     def test_eis_optimisers(self, optim):
         x0 = optim.parameters.initial_value()
 

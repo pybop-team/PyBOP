@@ -10,6 +10,8 @@ class TestWeightedCost:
     A class to test the weighted cost function.
     """
 
+    pytestmark = pytest.mark.integration
+
     @pytest.fixture(autouse=True)
     def setup(self):
         self.sigma0 = 0.002
@@ -116,7 +118,6 @@ class TestWeightedCost:
 
         return pybop.WeightedCost(*costs, weights=[0.1, 1, 0.5, 0.6])
 
-    @pytest.mark.integration
     def test_fitting_costs(self, weighted_fitting_cost):
         x0 = weighted_fitting_cost.parameters.initial_value()
         optim = pybop.CuckooSearch(
@@ -174,7 +175,6 @@ class TestWeightedCost:
 
         return pybop.WeightedCost(*costs, weights=[1.0, 0.1])
 
-    @pytest.mark.integration
     def test_design_costs(self, weighted_design_cost):
         cost = weighted_design_cost
         optim = pybop.CuckooSearch(

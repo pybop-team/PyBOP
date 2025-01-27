@@ -10,6 +10,8 @@ class TestTheveninParameterisation:
     A class to test a subset of optimisers on a simple model.
     """
 
+    pytestmark = pytest.mark.integration
+
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ground_truth = np.clip(
@@ -78,7 +80,6 @@ class TestTheveninParameterisation:
             (pybop.PSO, ""),
         ],
     )
-    @pytest.mark.integration
     def test_optimisers_on_simple_model(
         self, model, parameters, dataset, cost_class, optimiser, method
     ):

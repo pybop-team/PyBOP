@@ -21,6 +21,8 @@ class TestSamplingThevenin:
     A class to test a subset of samplers on the simple Thevenin Model.
     """
 
+    pytestmark = pytest.mark.integration
+
     @pytest.fixture(autouse=True)
     def setup(self):
         self.sigma0 = 1e-3
@@ -122,7 +124,6 @@ class TestSamplingThevenin:
             DramACMC,
         ],
     )
-    @pytest.mark.integration
     def test_sampling_thevenin(self, sampler, posterior, map_estimate):
         x0 = np.clip(map_estimate + np.random.normal(0, 1e-3, size=2), 1e-4, 1e-1)
         common_args = {

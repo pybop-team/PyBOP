@@ -18,6 +18,8 @@ class Test_Sampling_SPM:
     A class to test the MCMC samplers on a physics-based model.
     """
 
+    pytestmark = pytest.mark.integration
+
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ground_truth = np.clip(
@@ -103,7 +105,6 @@ class Test_Sampling_SPM:
             PopulationMCMC,
         ],
     )
-    @pytest.mark.integration
     def test_sampling_spm(self, quick_sampler, log_posterior, map_estimate):
         x0 = np.clip(
             map_estimate + np.random.normal(0, [5e-3, 5e-3, 1e-4], size=3),

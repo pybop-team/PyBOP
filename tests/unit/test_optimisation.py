@@ -15,6 +15,8 @@ class TestOptimisation:
     A class to test the optimisation class.
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.fixture
     def dataset(self):
         return pybop.Dataset(
@@ -91,7 +93,6 @@ class TestOptimisation:
             (pybop.RandomSearch, "Random Search", False),
         ],
     )
-    @pytest.mark.unit
     def test_optimiser_classes(
         self, two_param_cost, optimiser, expected_name, sensitivities
     ):
@@ -116,7 +117,6 @@ class TestOptimisation:
             if issubclass(optimiser, pybop.BasePintsOptimiser):
                 assert optim._boundaries is None
 
-    @pytest.mark.unit
     def test_no_optimisation_parameters(self, model, dataset):
         problem = pybop.FittingProblem(
             model=model, parameters=pybop.Parameters(), dataset=dataset
@@ -141,7 +141,6 @@ class TestOptimisation:
             pybop.RandomSearch,
         ],
     )
-    @pytest.mark.unit
     def test_optimiser_kwargs(self, cost, optimiser):
         def assert_log_update(optim):
             x_search = 0.7
@@ -348,13 +347,11 @@ class TestOptimisation:
             assert optim.x0 == x0_new
             assert optim.x0 != x0
 
-    @pytest.mark.unit
     def test_cuckoo_no_bounds(self, cost):
         optim = pybop.CuckooSearch(cost=cost, bounds=None, max_iterations=1)
         optim.run()
         assert optim.optimiser._boundaries is None
 
-    @pytest.mark.unit
     def test_randomsearch_bounds(self, two_param_cost):
         # Test clip_candidates with bound
         bounds = {"upper": [0.62, 0.57], "lower": [0.58, 0.53]}
@@ -374,7 +371,6 @@ class TestOptimisation:
         clipped_candidates = optimiser.optimiser.clip_candidates(candidates)
         assert np.allclose(clipped_candidates, candidates)
 
-    @pytest.mark.unit
     def test_randomsearch_ask_without_bounds(self, two_param_cost):
         # Initialize optimiser without boundaries
         optim = pybop.RandomSearch(
@@ -394,12 +390,10 @@ class TestOptimisation:
         assert np.all(candidates >= optim.optimiser._x0 - 6 * optim.optimiser._sigma0)
         assert np.all(candidates <= optim.optimiser._x0 + 6 * optim.optimiser._sigma0)
 
-    @pytest.mark.unit
     def test_adamw_impl_bounds(self):
         with pytest.warns(UserWarning, match="Boundaries ignored by AdamW"):
             pybop.AdamWImpl(x0=[0.1], boundaries=[0.0, 0.2])
 
-    @pytest.mark.unit
     def test_scipy_minimize_with_jac(self, cost):
         # Check a method that uses gradient information
         optim = pybop.SciPyMinimize(
@@ -414,7 +408,6 @@ class TestOptimisation:
         ):
             optim = pybop.SciPyMinimize(cost=cost, jac="Invalid string")
 
-    @pytest.mark.unit
     def test_scipy_minimize_invalid_x0(self, cost):
         # Check a starting point that returns an infinite cost
         invalid_x0 = np.array([1.1])
@@ -427,7 +420,6 @@ class TestOptimisation:
         optim.run()
         assert abs(optim._cost0) != np.inf
 
-    @pytest.mark.unit
     def test_single_parameter(self, cost):
         # Test catch for optimisers that can only run with multiple parameters
         with pytest.raises(
@@ -436,7 +428,6 @@ class TestOptimisation:
         ):
             pybop.CMAES(cost=cost)
 
-    @pytest.mark.unit
     def test_invalid_cost(self):
         # Test without valid cost
         with pytest.raises(
@@ -460,7 +451,6 @@ class TestOptimisation:
 
         pybop.Optimisation(cost=valid_cost, x0=np.asarray([0.1]))
 
-    @pytest.mark.unit
     def test_default_optimiser(self, cost):
         optim = pybop.Optimisation(cost=cost)
         assert optim.name() == "Exponential Natural Evolution Strategy (xNES)"
@@ -468,7 +458,6 @@ class TestOptimisation:
         # Test getting incorrect attribute
         assert not hasattr(optim, "not_a_valid_attribute")
 
-    @pytest.mark.unit
     def test_incorrect_optimiser_class(self, cost):
         class RandomClass:
             pass
@@ -485,7 +474,6 @@ class TestOptimisation:
         with pytest.raises(ValueError):
             pybop.Optimisation(cost=cost, optimiser=RandomClass)
 
-    @pytest.mark.unit
     @pytest.mark.parametrize(
         "mean, sigma, expect_exception",
         [
@@ -529,7 +517,6 @@ class TestOptimisation:
             cost = opt.cost_wrapper(np.array([0.9]))
             assert cost in [1.729, 1.81, 1.9]
 
-    @pytest.mark.unit
     def test_scipy_noprior(self, model, dataset):
         # Test that Scipy minimize handles no-priors correctly
         # Set up the parameter with no prior
@@ -555,7 +542,6 @@ class TestOptimisation:
         ):
             opt.run()
 
-    @pytest.mark.unit
     def test_scipy_bounds(self, cost):
         # Create the optimisation class with incorrect bounds type
         with pytest.raises(
@@ -568,7 +554,6 @@ class TestOptimisation:
                 max_iterations=1,
             )
 
-    @pytest.mark.unit
     def test_halting(self, cost):
         # Add a parameter transformation
         cost.parameters[
@@ -675,7 +660,6 @@ class TestOptimisation:
             optim._threshold = None
             optim.run()
 
-    @pytest.mark.unit
     def test_infeasible_solutions(self, cost):
         # Test infeasible solutions
         for optimiser in [pybop.SciPyMinimize, pybop.GradientDescent]:
@@ -685,14 +669,12 @@ class TestOptimisation:
             optim.run()
             assert optim.result.n_iterations == 1
 
-    @pytest.mark.unit
     def test_unphysical_result(self, cost):
         # Trigger parameters not physically viable warning
         optim = pybop.Optimisation(cost=cost, max_iterations=3)
         results = optim.run()
         results.check_physical_viability(np.array([2]))
 
-    @pytest.mark.unit
     def test_optimisation_results(self, cost):
         # Construct OptimisationResult
         optim = pybop.Optimisation(cost=cost)
