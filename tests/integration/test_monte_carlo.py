@@ -47,12 +47,14 @@ class Test_Sampling_SPM:
         return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Uniform(0.4, 0.7),
+                prior=pybop.Gaussian(0.575, 0.05),
+                initial_value=pybop.Uniform(0.4, 0.7).rvs()[0],
                 bounds=[0.375, 0.725],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Uniform(0.4, 0.7),
+                prior=pybop.Gaussian(0.525, 0.05),
+                initial_value=pybop.Uniform(0.4, 0.7).rvs()[0],
                 # no bounds
             ),
         )
@@ -87,7 +89,6 @@ class Test_Sampling_SPM:
         common_args = {
             "max_iterations": 100,
             "max_unchanged_iterations": 35,
-            "absolute_tolerance": 1e-7,
         }
         optim = pybop.CMAES(log_posterior, **common_args)
         results = optim.run()

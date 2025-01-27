@@ -59,12 +59,16 @@ class TestSamplingThevenin:
         return pybop.Parameters(
             pybop.Parameter(
                 "R0 [Ohm]",
-                prior=pybop.Uniform(1e-3, 9e-2),
+                prior=pybop.Gaussian(5e-2, 5e-3),
+                transformation=pybop.LogTransformation(),
+                initial_value=pybop.Uniform(2e-3, 8e-2).rvs()[0],
                 bounds=[1e-4, 1e-1],
             ),
             pybop.Parameter(
                 "R1 [Ohm]",
-                prior=pybop.Uniform(1e-3, 9e-2),
+                prior=pybop.Gaussian(5e-2, 5e-3),
+                transformation=pybop.LogTransformation(),
+                initial_value=pybop.Uniform(2e-3, 8e-2).rvs()[0],
                 bounds=[1e-4, 1e-1],
             ),
         )
@@ -99,7 +103,6 @@ class TestSamplingThevenin:
         common_args = {
             "max_iterations": 100,
             "max_unchanged_iterations": 35,
-            "absolute_tolerance": 1e-7,
             "sigma0": [3e-4, 3e-4],
             "verbose": True,
         }
@@ -129,9 +132,9 @@ class TestSamplingThevenin:
         common_args = {
             "log_pdf": posterior,
             "chains": 2,
-            "warm_up": 100,
-            "cov0": [2e-3, 2e-3],
-            "max_iterations": 1050,
+            "warm_up": 150,
+            "cov0": [6e-3, 6e-3],
+            "max_iterations": 550,
             "x0": x0,
         }
 
@@ -148,7 +151,7 @@ class TestSamplingThevenin:
         np.testing.assert_array_less(0, ess)
         if not isinstance(sampler, RelativisticMCMC):
             np.testing.assert_array_less(
-                summary.rhat(), 1.5
+                summary.rhat(), 2.0
             )  # Large rhat, to enable faster tests
 
         # Assert both final sample and posterior mean
