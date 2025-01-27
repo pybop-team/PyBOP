@@ -625,7 +625,8 @@ class TestOptimisation:
             f"  Optimisation time: {results.time} seconds\n"
             f"  Number of iterations: {results.n_iterations}\n"
             f"  Number of evaluations: {results.n_evaluations}\n"
-            f"  SciPy result available: No"
+            f"  SciPy result available: No\n"
+            f"  PyBaMM Solution available: Yes"
         )
 
         # Test guessed values
@@ -671,7 +672,13 @@ class TestOptimisation:
             f"  Optimisation time: {results.time} seconds\n"
             f"  Number of iterations: {results.n_iterations}\n"
             f"  Number of evaluations: {results.n_evaluations}\n"
-            f"  SciPy result available: No"
+            f"  SciPy result available: No\n"
+            f"  PyBaMM Solution available: Yes"
+        )
+
+        assert (
+            "Positive electrode active material volume fraction"
+            in results.pybamm_solution[0].all_inputs[0]
         )
 
         optim.set_max_unchanged_iterations()

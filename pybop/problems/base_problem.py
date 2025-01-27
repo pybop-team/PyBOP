@@ -97,6 +97,9 @@ class BaseProblem:
                 output_variables=self.output_vars,
             )
 
+        # to store pybamm solution objects
+        self._solution = None
+
     def set_initial_state(self, initial_state: Optional[dict] = None):
         """
         Set the initial state to be applied to evaluations of the problem.
@@ -196,3 +199,7 @@ class BaseProblem:
     @property
     def dataset(self):
         return self._dataset
+
+    @property
+    def solution(self):
+        return self._solution

@@ -98,6 +98,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
             n_iterations=nit,
             scipy_result=result,
             time=total_time,
+            pybamm_solution=self.cost.problem.solution,
         )
 
 
