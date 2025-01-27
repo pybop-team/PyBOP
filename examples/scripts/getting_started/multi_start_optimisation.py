@@ -5,7 +5,7 @@ import pybop
 
 # Define model and use the high-performant IDAKLU solver for sensitivities
 solver = pybamm.IDAKLUSolver(atol=1e-5, rtol=1e-5)
-parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+parameter_set = pybop.ParameterSet("Chen2020")
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
 
 # Fitting parameters
@@ -43,19 +43,15 @@ cost = pybop.RootMeanSquaredError(problem)
 # Each of these runs has a random starting position sampled
 # from the parameter priors
 optim = pybop.GradientDescent(
-    cost, sigma0=[0.6, 0.02], verbose=False, max_iterations=50, multistart=10
+    cost, sigma0=[0.6, 0.02], max_iterations=50, multistart=10
 )
 
 # Run optimisation
 results = optim.run()
 
-# Let's find the best solution
-# This is selected based on the best cost value obtained
-print(results.best_run())
-
 # We can plot the timeseries output, for the best run
 # using the results.x attribute
-pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.quick(problem, problem_inputs=results.x_best, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot.convergence(optim)

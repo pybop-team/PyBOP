@@ -3,8 +3,7 @@ import numpy as np
 import pybop
 
 # Define model
-bpx_parameters = pybop.ParameterSet(json_path="examples/parameters/example_BPX.json")
-parameter_set = bpx_parameters.import_from_bpx()
+parameter_set = pybop.ParameterSet(json_path="examples/parameters/example_BPX.json")
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters

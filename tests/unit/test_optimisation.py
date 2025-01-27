@@ -89,6 +89,7 @@ class TestOptimisation:
             (pybop.IRPropMin, "iRprop-", True),
             (pybop.NelderMead, "Nelder-Mead", False),
             (pybop.RandomSearch, "Random Search", False),
+            (pybop.SimulatedAnnealing, "Simulated Annealing", False),
         ],
     )
     @pytest.mark.unit
@@ -139,6 +140,7 @@ class TestOptimisation:
             pybop.NelderMead,
             pybop.CuckooSearch,
             pybop.RandomSearch,
+            pybop.SimulatedAnnealing,
         ],
     )
     @pytest.mark.unit
@@ -178,6 +180,7 @@ class TestOptimisation:
             if isinstance(optim, pybop.BasePintsOptimiser):
                 assert len(optim.log["x_best"]) == n_iters * multistarts
                 assert results.average_iterations() == n_iters
+                assert results.total_runtime() >= results.time[0]
 
         optim = optimiser(cost=cost, max_iterations=3, tol=1e-6)
         cost_bounds = cost.parameters.get_bounds()
@@ -238,7 +241,7 @@ class TestOptimisation:
                 (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
             ]
             optim = optimiser(cost=cost, bounds=bounds_list, tol=1e-2)
-            assert optim.bounds == bounds_list
+            assert optim.bounds == bounds
 
         if optimiser in [
             pybop.SciPyMinimize,
@@ -283,6 +286,7 @@ class TestOptimisation:
             pybop.CuckooSearch,
             pybop.GradientDescent,
             pybop.RandomSearch,
+            pybop.SimulatedAnnealing,
         ]:
             optim = optimiser(cost)
             with pytest.raises(
@@ -329,6 +333,40 @@ class TestOptimisation:
 
                 assert optim.optimiser.n_hyper_parameters() == 5
                 assert optim.optimiser.x_guessed() == optim.optimiser._x0
+
+            if optimiser is pybop.SimulatedAnnealing:
+                assert optim.optimiser.n_hyper_parameters() == 2
+                assert optim.optimiser.temperature == 1.0
+                assert optim.optimiser.cooling_rate == 0.95
+
+                optim.optimiser.cooling_rate = 0.9
+                assert optim.optimiser.cooling_rate == 0.9
+
+                optim.optimiser.temperature = 0.74
+                assert optim.optimiser.temperature == 0.74
+
+                with pytest.raises(TypeError, match="Cooling rate must be a number"):
+                    optim.optimiser.cooling_rate = "0.94"
+
+                with pytest.raises(
+                    ValueError, match="Cooling rate must be between 0 and 1"
+                ):
+                    optim.optimiser.cooling_rate = 1.1
+
+                with pytest.raises(ValueError, match="Temperature must be positive"):
+                    optim.optimiser.temperature = -1.1
+
+                with pytest.raises(TypeError, match="Temperature must be a number"):
+                    optim.optimiser.temperature = "0.94"
+
+            if optimiser is pybop.CuckooSearch:
+                optim.optimiser.pa = 0.6
+                assert optim.optimiser.pa == 0.6
+
+                with pytest.raises(
+                    Exception, match="must be a numeric value between 0 and 1."
+                ):
+                    optim.optimiser.pa = "test"
 
         else:
             x0 = cost.parameters.initial_value()
@@ -396,7 +434,7 @@ class TestOptimisation:
             cost=cost, method="L-BFGS-B", jac=True, max_iterations=1
         )
         results = optim.run()
-        assert results.get_scipy_result() == optim.result.scipy_result
+        assert results.scipy_result == optim.result.scipy_result
 
         with pytest.raises(
             ValueError,
@@ -550,7 +588,7 @@ class TestOptimisation:
         # Create the optimisation class with incorrect bounds type
         with pytest.raises(
             TypeError,
-            match="Bounds provided must be either type dict, list or SciPy.optimize.bounds object.",
+            match="Bounds provided must be either type dict or SciPy.optimize.bounds object.",
         ):
             pybop.SciPyMinimize(
                 cost=cost,
@@ -579,6 +617,7 @@ class TestOptimisation:
 
         assert (
             str(results) == f"OptimisationResult:\n"
+            f"  Best result from {results.n_runs} run(s).\n"
             f"  Initial parameters: {results.x0}\n"
             f"  Optimised parameters: {results.x}\n"
             f"  Diagonal Fisher Information entries: {None}\n"
@@ -625,6 +664,7 @@ class TestOptimisation:
             captured_output.getvalue().strip()
             == f"Halt: Objective function crossed threshold: inf.\n"
             f"OptimisationResult:\n"
+            f"  Best result from {results.n_runs} run(s).\n"
             f"  Initial parameters: {results.x0}\n"
             f"  Optimised parameters: {results.x}\n"
             f"  Diagonal Fisher Information entries: {None}\n"
@@ -697,6 +737,7 @@ class TestOptimisation:
         assert results.x[0] == 1e-3
         assert results.final_cost == cost([1e-3])
         assert results.n_iterations == 1
+        assert results.fisher is None
 
         # Test non-finite results
         with pytest.raises(

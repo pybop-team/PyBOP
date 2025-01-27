@@ -81,7 +81,7 @@ class BaseModel:
         ----------
         name : str, optional
             The name given to the model instance.
-        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues], optional
+        parameter_set : Union[pybop.ParameterSet, pybamm.ParameterValues, dict], optional
             A dict-like object containing the parameter values.
         check_params : Callable, optional
             A compatibility check for the model parameters. Function, with
@@ -109,14 +109,7 @@ class BaseModel:
         self.eis = eis
         self._calculate_sensitivities = False
 
-        if parameter_set is None:
-            self._parameter_set = None
-        elif isinstance(parameter_set, dict):
-            self._parameter_set = pybamm.ParameterValues(parameter_set).copy()
-        elif isinstance(parameter_set, pybamm.ParameterValues):
-            self._parameter_set = parameter_set.copy()
-        else:  # a pybop parameter set
-            self._parameter_set = pybamm.ParameterValues(parameter_set.params).copy()
+        self._parameter_set = ParameterSet.to_pybamm(parameter_set)
         self.param_checker = check_params
 
         self.pybamm_model = None
@@ -705,7 +698,10 @@ class BaseModel:
             self._unprocessed_model.build_model()
 
         no_parameter_set = parameter_set is None
-        parameter_set = parameter_set or self._unprocessed_parameter_set.copy()
+        parameter_set = (
+            ParameterSet.to_pybamm(parameter_set)
+            or self._unprocessed_parameter_set.copy()
+        )
         if inputs is not None:
             inputs = self.parameters.verify(inputs)
             parameter_set.update(inputs)

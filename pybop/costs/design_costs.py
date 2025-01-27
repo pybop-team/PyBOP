@@ -35,9 +35,6 @@ class GravimetricEnergyDensity(DesignCost):
     Inherits all parameters and attributes from ``DesignCost``.
     """
 
-    def __init__(self, problem):
-        super().__init__(problem)
-
     def compute(
         self,
         y: dict,

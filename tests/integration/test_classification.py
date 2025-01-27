@@ -39,13 +39,12 @@ class TestClassification:
         parameter_set = pybop.ParameterSet(
             json_path="examples/parameters/initial_ecm_parameters.json"
         )
-        parameter_set.import_parameters()
-        parameter_set.params.update({"C1 [F]": 1000})
+        parameter_set.update({"C1 [F]": 1000})
         return parameter_set
 
     @pytest.fixture
     def model(self, parameter_set, parameters):
-        parameter_set.params.update(parameters.as_dict(parameters.true_value()))
+        parameter_set.update(parameters.as_dict(parameters.true_value()))
         return pybop.empirical.Thevenin(parameter_set=parameter_set)
 
     @pytest.fixture
@@ -119,11 +118,11 @@ class TestClassification:
             bounds=[-1e-4, 1e-4],
             true_value=0,
         )
-        parameter_set.params.update(
+        parameter_set.update(
             {"R0_a [Ohm]": 0.001, "R0_b [Ohm]": 0},
             check_already_exists=False,
         )
-        parameter_set.params.update(
+        parameter_set.update(
             {"R0 [Ohm]": Parameter("R0_a [Ohm]") + Parameter("R0_b [Ohm]")},
         )
         model = pybop.empirical.Thevenin(parameter_set=parameter_set)
