@@ -11,7 +11,7 @@ and C1 is replaced by 1/R1 so that the bounds can be applied directly.
 """
 
 # Define the initial parameter set
-parameter_set = pybop.ParameterSet.pybamm("ECM_Example")
+parameter_set = pybop.ParameterSet("ECM_Example")
 parameter_set.update(
     {
         "Initial SoC": 0.75,
@@ -109,7 +109,7 @@ print(
         parameter_set["R0 [Ohm]"],
         parameter_set["R1 [Ohm]"],
         parameter_set["tau1 [s]"],
-        parameter_set.evaluate(pybamm.Parameter("C1 [F]")),
+        parameter_set.parameter_values.evaluate(pybamm.Parameter("C1 [F]")),
     ],
 )
 print("Estimated parameters:", results.x.tolist() + [results.x[2] / results.x[1]])
