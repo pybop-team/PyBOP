@@ -7,6 +7,8 @@
 
 ## Optimisations
 
+- [#638](https://github.com/pybop-team/PyBOP/pull/638) - Allows the problem class to accept any domain name.
+- [#593](https://github.com/pybop-team/PyBOP/pull/593) - Enables `ParameterSet` to systematically return a `pybamm.ParameterValues` object within the model class.
 - [#618](https://github.com/pybop-team/PyBOP/pull/618) - Adds Mean Absolute Error (MAE) and Mean Squared Error (MSE) costs.
 - [#601](https://github.com/pybop-team/PyBOP/pull/601) - Deprecates `MultiOptimisationResult` by merging with `OptimisationResult`.
 - [#600](https://github.com/pybop-team/PyBOP/pull/600) - Removes repetitious functionality within the cost classes.
