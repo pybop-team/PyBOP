@@ -91,6 +91,7 @@ class TestOptimisation:
             (pybop.IRPropMin, "iRprop-", True),
             (pybop.NelderMead, "Nelder-Mead", False),
             (pybop.RandomSearch, "Random Search", False),
+            (pybop.SimulatedAnnealing, "Simulated Annealing", False),
         ],
     )
     def test_optimiser_classes(
@@ -139,6 +140,7 @@ class TestOptimisation:
             pybop.NelderMead,
             pybop.CuckooSearch,
             pybop.RandomSearch,
+            pybop.SimulatedAnnealing,
         ],
     )
     def test_optimiser_kwargs(self, cost, optimiser):
@@ -283,6 +285,7 @@ class TestOptimisation:
             pybop.CuckooSearch,
             pybop.GradientDescent,
             pybop.RandomSearch,
+            pybop.SimulatedAnnealing,
         ]:
             optim = optimiser(cost)
             with pytest.raises(
@@ -329,6 +332,31 @@ class TestOptimisation:
 
                 assert optim.optimiser.n_hyper_parameters() == 5
                 assert optim.optimiser.x_guessed() == optim.optimiser._x0
+
+            if optimiser is pybop.SimulatedAnnealing:
+                assert optim.optimiser.n_hyper_parameters() == 2
+                assert optim.optimiser.temperature == 1.0
+                assert optim.optimiser.cooling_rate == 0.95
+
+                optim.optimiser.cooling_rate = 0.9
+                assert optim.optimiser.cooling_rate == 0.9
+
+                optim.optimiser.temperature = 0.74
+                assert optim.optimiser.temperature == 0.74
+
+                with pytest.raises(TypeError, match="Cooling rate must be a number"):
+                    optim.optimiser.cooling_rate = "0.94"
+
+                with pytest.raises(
+                    ValueError, match="Cooling rate must be between 0 and 1"
+                ):
+                    optim.optimiser.cooling_rate = 1.1
+
+                with pytest.raises(ValueError, match="Temperature must be positive"):
+                    optim.optimiser.temperature = -1.1
+
+                with pytest.raises(TypeError, match="Temperature must be a number"):
+                    optim.optimiser.temperature = "0.94"
 
             if optimiser is pybop.CuckooSearch:
                 optim.optimiser.pa = 0.6
@@ -582,7 +610,8 @@ class TestOptimisation:
             f"  Optimisation time: {results.time} seconds\n"
             f"  Number of iterations: {results.n_iterations}\n"
             f"  Number of evaluations: {results.n_evaluations}\n"
-            f"  SciPy result available: No"
+            f"  SciPy result available: No\n"
+            f"  PyBaMM Solution available: Yes"
         )
 
         # Test guessed values
@@ -628,7 +657,13 @@ class TestOptimisation:
             f"  Optimisation time: {results.time} seconds\n"
             f"  Number of iterations: {results.n_iterations}\n"
             f"  Number of evaluations: {results.n_evaluations}\n"
-            f"  SciPy result available: No"
+            f"  SciPy result available: No\n"
+            f"  PyBaMM Solution available: Yes"
+        )
+
+        assert (
+            "Positive electrode active material volume fraction"
+            in results.pybamm_solution[0].all_inputs[0]
         )
 
         optim.set_max_unchanged_iterations()

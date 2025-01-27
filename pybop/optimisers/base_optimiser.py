@@ -4,6 +4,7 @@ from typing import Optional, Union
 
 import jax.numpy as jnp
 import numpy as np
+from pybamm import Solution
 
 from pybop import BaseCost, BaseJaxCost, Inputs, Parameter, Parameters
 
@@ -350,6 +351,8 @@ class OptimisationResult:
         Number of iterations performed by the optimiser.
     scipy_result : scipy.optimize.OptimizeResult, optional
         The result obtained from a SciPy optimiser.
+    pybamm_solution: pybamm.Solution or list[pybamm.Solution], optional
+        The best solution object(s) obtained from the optimisation.
     """
 
     def __init__(
@@ -361,6 +364,7 @@ class OptimisationResult:
         n_evaluations: Optional[int] = None,
         time: Optional[float] = None,
         scipy_result=None,
+        pybamm_solution=None,
     ):
         self.optim = optim
         self.cost = self.optim.cost
@@ -376,6 +380,7 @@ class OptimisationResult:
         self._scipy_result = []
         self._time = []
         self._x0 = []
+        self.pybamm_solution = []
 
         if x is not None:
             # Transform the parameter values and update the sign of any final cost
@@ -408,6 +413,7 @@ class OptimisationResult:
                 time=[time],
                 scipy_result=[scipy_result],
                 x0=[x0],
+                pybamm_solution=[pybamm_solution],
             )
 
     def add_result(self, result):
@@ -421,6 +427,7 @@ class OptimisationResult:
             time=result._time,  # noqa: SLF001
             scipy_result=result._scipy_result,  # noqa: SLF001
             x0=result._x0,  # noqa: SLF001
+            pybamm_solution=result.pybamm_solution,
         )
 
     def _extend(
@@ -433,6 +440,7 @@ class OptimisationResult:
         time: list[float],
         scipy_result: list,
         x0: list,
+        pybamm_solution: list[Solution],
     ):
         self.n_runs += len(final_cost)
         self._x.extend(x)
@@ -443,6 +451,7 @@ class OptimisationResult:
         self._scipy_result.extend(scipy_result)
         self._time.extend(time)
         self._x0.extend(x0)
+        self.pybamm_solution.extend(pybamm_solution)
 
         # Check that there is a finite cost and update best run
         self.check_for_finite_cost()
@@ -509,7 +518,8 @@ class OptimisationResult:
             f"  Optimisation time: {self.time_best} seconds\n"
             f"  Number of iterations: {self.n_iterations_best}\n"
             f"  Number of evaluations: {self.n_evaluations_best}\n"
-            f"  SciPy result available: {'Yes' if self.scipy_result_best else 'No'}"
+            f"  SciPy result available: {'Yes' if self.scipy_result_best else 'No'}\n"
+            f"  PyBaMM Solution available: {'Yes' if self.pybamm_solution else 'No'}"
         )
 
     def average_iterations(self) -> Optional[float]:

@@ -245,11 +245,13 @@ class TestProblem:
         assert len(combined_problem._dataset["Combined signal"]) == len(
             problem_1._dataset[signal]
         ) + len(problem_2._dataset[signal])
+        assert combined_problem.solution is None
 
         y = combined_problem.evaluate(inputs=[1e-5, 1e-5])
         assert len(y["Combined signal"]) == len(
             combined_problem._dataset["Combined signal"]
         )
+        assert len(combined_problem.solution) == 2
 
     def test_design_problem(self, parameters, experiment, model):
         with pytest.warns(UserWarning) as record:
