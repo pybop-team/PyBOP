@@ -215,21 +215,23 @@ class TestLikelihoods:
 
     @pytest.mark.unit
     def test_observed_fisher(self, one_signal_problem):
-        likelihood = pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, sigma0=0.1)
-        
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(
+            one_signal_problem, sigma0=0.1
+        )
+
         # Get the actual voltage data from the dataset
         y = {"Voltage [V]": one_signal_problem.dataset["Voltage [V]"].data}
 
         # Now let's test with a mock dy
         n_data_points = len(y["Voltage [V]"])
         mock_dy = np.random.rand(1, n_data_points)  # 1 parameter
-        
+
         # Compute observed Fisher Information Matrix with provided dy
         fim_with_dy = likelihood.observed_fisher(y, mock_dy)
-        
+
         # Check that FIM is a 1x1 array
         assert fim_with_dy.shape == (n_data_points,)
-        
+
         # Check that FIM is computed correctly
         expected_fim = np.sum(np.square(mock_dy), axis=0) / n_data_points
         np.testing.assert_allclose(fim_with_dy, expected_fim, rtol=1e-7)
