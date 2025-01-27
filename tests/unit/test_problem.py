@@ -142,7 +142,7 @@ class TestProblem:
         assert_array_equal(target, dataset["Voltage [V]"])
 
         # Test model.simulate
-        model.simulate(inputs=[1e-5, 1e-5], t_eval=np.linspace(0, 10, 100))
+        model.simulate(inputs=[1e-5, 1e-5], eval=np.linspace(0, 10, 100))
 
         # Test model.simulate with an initial state
         problem.evaluate(inputs=[1e-5, 1e-5])

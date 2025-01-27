@@ -167,7 +167,7 @@ class TestEISParameterisation:
 
     def get_data(self, model, init_soc, f_eval):
         initial_state = {"Initial SoC": init_soc}
-        sim = model.simulateEIS(
+        sim = model.simulate(
             inputs={
                 "Negative electrode active material volume fraction": self.ground_truth[
                     0
@@ -176,8 +176,9 @@ class TestEISParameterisation:
                     1
                 ],
             },
-            f_eval=f_eval,
+            eval=f_eval,
             initial_state=initial_state,
+            eis=True,
         )
 
         return sim
