@@ -4,9 +4,9 @@ from typing import Optional, Union
 
 import jax.numpy as jnp
 import numpy as np
+from pybamm import Solution
 
 from pybop import BaseCost, BaseJaxCost, Inputs, Parameter, Parameters
-from pybamm import Solution
 
 
 class BaseOptimiser:
