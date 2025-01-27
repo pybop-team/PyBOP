@@ -19,8 +19,10 @@ class BaseProblem:
         The model to be used for the problem (default: None).
     check_model : bool, optional
         Flag to indicate if the model should be checked (default: True).
-    signal: list[str]
-      The signal to observe.
+    signal: list[str], optional
+        A list of variables to analyse (default: ["Voltage [V]"]).
+    domain : str, optional
+        The name of the domain (default: "Time [s]").
     additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default: []).
     initial_state : dict, optional
@@ -33,6 +35,7 @@ class BaseProblem:
         model: Optional[BaseModel] = None,
         check_model: bool = True,
         signal: Optional[list[str]] = None,
+        domain: Optional[str] = None,
         additional_variables: Optional[list[str]] = None,
         initial_state: Optional[dict] = None,
     ):
@@ -64,9 +67,10 @@ class BaseProblem:
 
         self._model = model.copy() if model is not None else None
         self.eis = False
-        self.domain = "Time [s]"
+        self.domain = domain or "Time [s]"
         self.check_model = check_model
         self.signal = signal or ["Voltage [V]"]
+        self.additional_variables = additional_variables or []
         self.set_initial_state(initial_state)
         self._dataset = None
         self._target = None
@@ -78,9 +82,6 @@ class BaseProblem:
         if isinstance(self._model, BaseModel):
             self.eis = self.model.eis
             self.domain = "Frequency [Hz]" if self.eis else "Time [s]"
-
-        # Add domain and remove duplicates
-        self.additional_variables = additional_variables or []
 
         # If model.solver is IDAKLU, set output vars for improved performance
         self.output_vars = tuple(self.signal + self.additional_variables)

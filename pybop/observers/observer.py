@@ -22,8 +22,10 @@ class Observer(BaseProblem):
       The model to observe.
     check_model : bool, optional
         Flag to indicate if the model should be checked (default: True).
-    signal: list[str]
-      The signal to observe.
+    signal: list[str], optional
+        A list of variables to observe (default: ["Voltage [V]"]).
+    domain : str, optional
+        The name of the domain (default: "Time [s]").
     additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default: []).
     initial_state : dict, optional
@@ -39,11 +41,18 @@ class Observer(BaseProblem):
         model: BaseModel,
         check_model: bool = True,
         signal: Optional[list[str]] = None,
+        domain: Optional[str] = None,
         additional_variables: Optional[list[str]] = None,
         initial_state: Optional[dict] = None,
     ) -> None:
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, initial_state
+            parameters,
+            model,
+            check_model,
+            signal,
+            domain,
+            additional_variables,
+            initial_state,
         )
         if model.built_model is None:
             raise ValueError("Only built models can be used in Observers")
