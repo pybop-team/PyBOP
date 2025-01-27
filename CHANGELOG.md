@@ -2,7 +2,8 @@
 
 ## Features
 
-- [#565] (https://github.com/pybop-team/PyBOP/pull/627) - DigiBatt added as funding partner.
+- [#619](https://github.com/pybop-team/PyBOP/pull/619) - Adds `pybop.SimulatingAnnealing` optimiser with corresponding tests.
+- [#565](https://github.com/pybop-team/PyBOP/pull/627) - DigiBatt added as funding partner.
 
 ## Optimisations
 
