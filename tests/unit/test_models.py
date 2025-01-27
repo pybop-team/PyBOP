@@ -43,9 +43,7 @@ class TestModels:
     )
     @pytest.mark.unit
     def test_model_classes(self, model_class, expected_name, options):
-        parameter_set = pybop.ParameterSet(
-            params_dict={"Nominal cell capacity [A.h]": 5.12}
-        )
+        parameter_set = pybop.ParameterSet({"Nominal cell capacity [A.h]": 5.12})
         model = model_class(options=options, parameter_set=parameter_set)
         assert model.pybamm_model is not None
         assert model.name == expected_name
@@ -214,7 +212,7 @@ class TestModels:
         model = pybop.BaseModel(parameter_set=parameter_set)
         assert model.parameter_set == parameter_set
 
-        pybop_parameter_set = pybop.ParameterSet(params_dict=param_dict)
+        pybop_parameter_set = pybop.ParameterSet(param_dict)
         model = pybop.BaseModel(parameter_set=pybop_parameter_set)
         assert model.parameter_set == parameter_set
 
@@ -378,8 +376,6 @@ class TestModels:
         parameter_set = pybop.ParameterSet(
             json_path="examples/parameters/initial_ecm_parameters.json"
         )
-        parameter_set.import_parameters()
-        assert parameter_set["Open-circuit voltage [V]"] == "default"
         model = pybop.empirical.Thevenin(
             parameter_set=parameter_set, options={"number of rc elements": 2}
         )

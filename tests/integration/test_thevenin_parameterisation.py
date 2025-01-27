@@ -23,8 +23,7 @@ class TestTheveninParameterisation:
         parameter_set = pybop.ParameterSet(
             json_path="examples/parameters/initial_ecm_parameters.json"
         )
-        parameter_set.import_parameters()
-        parameter_set.params.update(
+        parameter_set.update(
             {
                 "C1 [F]": 1000,
                 "R0 [Ohm]": self.ground_truth[0],

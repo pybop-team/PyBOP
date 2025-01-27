@@ -26,8 +26,10 @@ class DesignProblem(BaseProblem):
         The experimental setup to apply the model to.
     check_model : bool, optional
         Flag to indicate if the model parameters should be checked for feasibility each iteration (default: True).
-    signal : str, optional
-        The signal to fit (default: "Voltage [V]").
+    signal : list[str], optional
+        A list of variables to analyse (default: ["Voltage [V]"]).
+    domain : str, optional
+        The name of the domain (default: "Time [s]").
     additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default additions are: ["Time [s]", "Current [A]"]).
     initial_state : dict, optional
@@ -43,12 +45,19 @@ class DesignProblem(BaseProblem):
         experiment: Optional[Experiment],
         check_model: bool = True,
         signal: Optional[list[str]] = None,
+        domain: Optional[str] = None,
         additional_variables: Optional[list[str]] = None,
         initial_state: Optional[dict] = None,
         update_capacity: bool = False,
     ):
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, initial_state
+            parameters=parameters,
+            model=model,
+            check_model=check_model,
+            signal=signal,
+            domain=domain,
+            additional_variables=additional_variables,
+            initial_state=initial_state,
         )
         self.experiment = experiment
         self.warning_patterns = [
@@ -74,7 +83,7 @@ class DesignProblem(BaseProblem):
 
         # Add an example dataset for plot comparison
         sol = self.evaluate(self.parameters.as_dict("initial"))
-        self._domain_data = sol["Time [s]"]
+        self._domain_data = sol[self.domain]
         self._target = {key: sol[key] for key in self.signal}
         self._dataset = None
 
