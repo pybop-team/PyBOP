@@ -678,7 +678,7 @@ class TestOptimisation:
 
         assert (
             "Positive electrode active material volume fraction"
-            in results.results[0].pybamm_solution.all_inputs[0]
+            in results.pybamm_solution[0].all_inputs[0]
         )
 
         optim.set_max_unchanged_iterations()

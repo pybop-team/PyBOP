@@ -358,7 +358,11 @@ class BasePintsOptimiser(BaseOptimiser):
             self.cost.problem.evaluate(x)
             pybamm_solution = self.cost.problem.solution
         except Exception:
-            warnings.warn("Failed to evaluate the model with best fit parameters.")
+            warnings.warn(
+                "Failed to evaluate the model with best fit parameters.",
+                UserWarning,
+                stacklevel=2,
+            )
             pybamm_solution = None
 
         return OptimisationResult(

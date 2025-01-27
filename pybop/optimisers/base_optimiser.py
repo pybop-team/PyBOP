@@ -6,6 +6,7 @@ import jax.numpy as jnp
 import numpy as np
 
 from pybop import BaseCost, BaseJaxCost, Inputs, Parameter, Parameters
+from pybamm import Solution
 
 
 class BaseOptimiser:
@@ -379,6 +380,7 @@ class OptimisationResult:
         self._scipy_result = []
         self._time = []
         self._x0 = []
+        self.pybamm_solution = []
 
         if x is not None:
             # Transform the parameter values and update the sign of any final cost
@@ -402,8 +404,6 @@ class OptimisationResult:
                 else None
             )
 
-            self.pybamm_solution = pybamm_solution
-
             self._extend(
                 x=[x],
                 final_cost=[final_cost],
@@ -413,6 +413,7 @@ class OptimisationResult:
                 time=[time],
                 scipy_result=[scipy_result],
                 x0=[x0],
+                pybamm_solution=[pybamm_solution],
             )
 
     def add_result(self, result):
@@ -426,6 +427,7 @@ class OptimisationResult:
             time=result._time,  # noqa: SLF001
             scipy_result=result._scipy_result,  # noqa: SLF001
             x0=result._x0,  # noqa: SLF001
+            pybamm_solution=result.pybamm_solution,  # noqa: SLF001
         )
 
     def _extend(
@@ -438,6 +440,7 @@ class OptimisationResult:
         time: list[float],
         scipy_result: list,
         x0: list,
+        pybamm_solution: list[Solution],
     ):
         self.n_runs += len(final_cost)
         self._x.extend(x)
@@ -448,6 +451,7 @@ class OptimisationResult:
         self._scipy_result.extend(scipy_result)
         self._time.extend(time)
         self._x0.extend(x0)
+        self.pybamm_solution.extend(pybamm_solution)
 
         # Check that there is a finite cost and update best run
         self.check_for_finite_cost()
