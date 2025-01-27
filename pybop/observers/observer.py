@@ -46,13 +46,13 @@ class Observer(BaseProblem):
         initial_state: Optional[dict] = None,
     ) -> None:
         super().__init__(
-            parameters,
-            model,
-            check_model,
-            signal,
-            domain,
-            additional_variables,
-            initial_state,
+            parameters=parameters,
+            model=model,
+            check_model=check_model,
+            signal=signal,
+            domain=domain,
+            additional_variables=additional_variables,
+            initial_state=initial_state,
         )
         if model.built_model is None:
             raise ValueError("Only built models can be used in Observers")

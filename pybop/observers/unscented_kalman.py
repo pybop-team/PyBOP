@@ -69,13 +69,13 @@ class UnscentedKalmanFilterObserver(Observer):
             )
 
         super().__init__(
-            parameters,
-            model,
-            check_model,
-            signal,
-            domain,
-            additional_variables,
-            initial_state,
+            parameters=parameters,
+            model=model,
+            check_model=check_model,
+            signal=signal,
+            domain=domain,
+            additional_variables=additional_variables,
+            initial_state=initial_state,
         )
         if dataset is not None:
             # Check that the dataset contains necessary variables

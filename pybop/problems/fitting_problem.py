@@ -57,13 +57,13 @@ class FittingProblem(BaseProblem):
         initial_state: Optional[dict] = None,
     ):
         super().__init__(
-            parameters,
-            model,
-            check_model,
-            signal,
-            domain,
-            additional_variables,
-            initial_state,
+            parameters=parameters,
+            model=model,
+            check_model=check_model,
+            signal=signal,
+            domain=domain,
+            additional_variables=additional_variables,
+            initial_state=initial_state,
         )
         self._dataset = dataset.data
         self._n_parameters = len(self.parameters)

@@ -51,13 +51,13 @@ class DesignProblem(BaseProblem):
         update_capacity: bool = False,
     ):
         super().__init__(
-            parameters,
-            model,
-            check_model,
-            signal,
-            domain,
-            additional_variables,
-            initial_state,
+            parameters=parameters,
+            model=model,
+            check_model=check_model,
+            signal=signal,
+            domain=domain,
+            additional_variables=additional_variables,
+            initial_state=initial_state,
         )
         self.experiment = experiment
         self.warning_patterns = [
