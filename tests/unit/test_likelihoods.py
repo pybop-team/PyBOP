@@ -212,3 +212,29 @@ class TestLikelihoods:
         np.testing.assert_allclose(
             grad, scaled_likelihood([0.6], calculate_grad=True)[1]
         )
+
+    @pytest.mark.unit
+    def test_observed_fisher(self, one_signal_problem):
+        likelihood = pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, sigma0=0.1)
+        
+        # Create mock data and sensitivities
+        y = {"Voltage [V]": np.array([3.7, 3.6, 3.5])}
+        dy = np.array([[0.1, 0.2, 0.3]])
+        
+        # Compute observed Fisher Information Matrix
+        fim = likelihood.observed_fisher(y, dy)
+        
+        # Check that FIM is a 1x1 array (since we have one parameter)
+        assert fim.shape == (1, 1)
+        
+        # Check that FIM is positive (for a single parameter, it should be)
+        assert fim[0, 0] > 0
+        
+        # Check that FIM is computed correctly
+        expected_fim = np.sum(np.square(dy)) / likelihood.n_data
+        np.testing.assert_allclose(fim, expected_fim, rtol=1e-7)
+        
+        # Test without providing dy
+        fim_without_dy = likelihood.observed_fisher(y)
+        assert fim_without_dy.shape == (1, 1)
+        assert fim_without_dy[0, 0] > 0
