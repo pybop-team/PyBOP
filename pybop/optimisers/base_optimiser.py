@@ -352,7 +352,7 @@ class OptimisationResult:
     scipy_result : scipy.optimize.OptimizeResult, optional
         The result obtained from a SciPy optimiser.
     pybamm_solution: pybamm.Solution or list[pybamm.Solution], optional
-        The final solution object(s) obtained from the optimisation.
+        The best solution object(s) obtained from the optimisation.
     """
 
     def __init__(
@@ -427,7 +427,7 @@ class OptimisationResult:
             time=result._time,  # noqa: SLF001
             scipy_result=result._scipy_result,  # noqa: SLF001
             x0=result._x0,  # noqa: SLF001
-            pybamm_solution=result.pybamm_solution,  # noqa: SLF001
+            pybamm_solution=result.pybamm_solution,
         )
 
     def _extend(
