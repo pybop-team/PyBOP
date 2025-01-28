@@ -7,6 +7,7 @@ parameter_set = pybop.ParameterSet("Chen2020")
 ocv_function = parameter_set["Positive electrode OCP [V]"]
 nom_capacity = parameter_set["Nominal cell capacity [A.h]"]
 
+
 def noise(sigma):
     return np.random.normal(0, sigma, 91)
 

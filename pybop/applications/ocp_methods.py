@@ -10,6 +10,7 @@ class ocp_method:
     """
     A base class for the OCP fitting methods.
     """
+
     def interp1d(self, x, y):
         return interpolate.interp1d(
             x,
@@ -18,7 +19,8 @@ class ocp_method:
             fill_value="extrapolate",
             axis=0,
         )
-    
+
+
 class ocp_average(ocp_method):
     """
     Estimate the equlilibrium open-circuit potential (OCP) by averaging the charge
@@ -224,7 +226,8 @@ class stoichiometric_fit(ocp_method):
             ),
             pybop.Parameter(
                 "stretch",
-                initial_value=np.max(ocv_dataset["Charge capacity [A.h]"]) - np.min(ocv_dataset["Charge capacity [A.h]"]),
+                initial_value=np.max(ocv_dataset["Charge capacity [A.h]"])
+                - np.min(ocv_dataset["Charge capacity [A.h]"]),
             ),
         )
 
@@ -261,7 +264,8 @@ class stoichiometric_fit(ocp_method):
         # Scale charge capacity into stoichiometry
         self.dataset = pybop.Dataset(
             {
-                "Stoichiometry": (ocv_dataset["Charge capacity [A.h]"] - self.shift) / self.stretch,
+                "Stoichiometry": (ocv_dataset["Charge capacity [A.h]"] - self.shift)
+                / self.stretch,
                 "Voltage [V]": ocv_dataset["Voltage [V]"],
             }
         )
