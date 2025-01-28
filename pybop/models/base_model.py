@@ -998,3 +998,19 @@ class BaseModel:
             else:
                 setattr(result, k, copy.deepcopy(v, memo))
         return result
+
+    def __getstate__(self):
+        pickleable_dict = {}
+        for k, v in self.__dict__.items():
+            if isinstance(v, types.ModuleType):
+                pickleable_dict["__module__" + k] = v.__spec__
+            else:
+                pickleable_dict[k] = v
+        return pickleable_dict
+
+    def __setstate__(self, state):
+        for k, v in state.items():
+            if k[:10] == "__module__":
+                setattr(self, k[10:], importlib.util.module_from_spec(v))
+            else:
+                setattr(self, k, v)
