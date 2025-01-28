@@ -193,6 +193,12 @@ from .observers.observer import Observer
 from ._classification import classify_using_hessian
 
 #
+# Applications
+#
+from .applications.ocp_average import ocp_average
+from .applications.gitt_ocv_extract import gitt_ocv_extract
+
+#
 # Plotting classes
 #
 from . import plot as plot
