@@ -98,6 +98,7 @@ class MultiFittingProblem(BaseProblem):
 
         combined_domain = []
         combined_signal = []
+        combined_solutions = []
 
         for problem in self.problems:
             problem_inputs = problem.parameters.as_dict()
@@ -107,12 +108,14 @@ class MultiFittingProblem(BaseProblem):
                 if problem.domain in problem_output.keys()
                 else problem.domain_data[: len(problem_output[problem.signal[0]])]
             )
+            combined_solutions.append(problem.solution)
 
             # Collect signals
             for signal in problem.signal:
                 combined_domain.extend(domain_data)
                 combined_signal.extend(problem_output[signal])
 
+        self._solution = combined_solutions
         return {
             self.domain: np.asarray(combined_domain),
             "Combined signal": np.asarray(combined_signal),

@@ -10,6 +10,8 @@ class TestObservers:
     A class to run integration tests on the Observers class.
     """
 
+    pytestmark = pytest.mark.integration
+
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ground_truth = np.clip(
@@ -50,7 +52,6 @@ class TestObservers:
     def noise(self, sigma, values):
         return np.random.normal(0, sigma, values)
 
-    @pytest.mark.integration
     def test_observer_exponential_decay(self, parameters, model):
         # Make a prediction with measurement noise
         sigma = 1e-2
