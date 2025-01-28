@@ -1,4 +1,6 @@
 import copy
+import importlib
+import types
 from dataclasses import dataclass
 from typing import Callable, Optional, Union
 
@@ -985,3 +987,14 @@ class BaseModel:
     @solver.setter
     def solver(self, solver):
         self._solver = solver.copy() if solver is not None else None
+
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            if isinstance(v, types.ModuleType):
+                setattr(result, k, importlib.util.module_from_spec(v.__spec__))
+            else:
+                setattr(result, k, copy.deepcopy(v, memo))
+        return result
