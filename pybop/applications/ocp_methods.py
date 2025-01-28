@@ -6,7 +6,20 @@ from scipy import interpolate
 import pybop
 
 
-class ocp_average:
+class ocp_method:
+    """
+    A base class for the OCP fitting methods.
+    """
+    def interp1d(self, x, y):
+        return interpolate.interp1d(
+            x,
+            y,
+            bounds_error=False,
+            fill_value="extrapolate",
+            axis=0,
+        )
+    
+class ocp_average(ocp_method):
     """
     Estimate the equlilibrium open-circuit potential (OCP) by averaging the charge
     and discharge branches, using a method loosely based on method 4(a) proposed by
@@ -25,9 +38,11 @@ class ocp_average:
         the stoichiometry (default: True)
     cost: pybop.BaseCost, optional
         The cost function to quantify the difference between the differential
-        capacity curves (default: pybop.CrossCorrelation).
-    optimiser: pybop.BaseOptimiser, optimiser
+        capacity curves (default: pybop.MeanAbsoluteError).
+    optimiser: pybop.BaseOptimiser, optional
         The optimisation algorithm to use (default: pybop.SciPyMinimize).
+    verbose : bool, optional
+        If True, progress messages are printed (default: True).
     """
 
     def __init__(
@@ -169,11 +184,84 @@ class ocp_average:
             {"Stoichiometry": sto_range, "Voltage [V]": voltage}
         )
 
-    def interp1d(self, x, y):
-        return interpolate.interp1d(
-            x,
-            y,
-            bounds_error=False,
-            fill_value="extrapolate",
-            axis=0,
+
+class stoichiometric_fit(ocp_method):
+    """
+    Estimate the stoichiometry from a measurement of open-circuit voltage versus
+    charge capacity.
+
+    Parameters
+    ----------
+    ocv_dataset: pybop.Dataset, optional
+        A dataset containing the "Charge capacity [A.h]" and "Voltage [V]" obtained
+        from an OCV measurement.
+    ocv_function: pybop.Dataset, optional
+        The open-circuit voltage as a dataset with "Stoichiometry" and "Voltage [V]".
+    cost: pybop.BaseCost, optional
+        The cost function to quantify the difference between the differential
+        capacity curves (default: pybop.RootMeanSquaredError).
+    optimiser: pybop.BaseOptimiser, optional
+        The optimisation algorithm to use (default: pybop.SciPyMinimize).
+    verbose : bool, optional
+        If True, progress messages are printed (default: True).
+    """
+
+    def __init__(
+        self,
+        ocv_dataset: pybop.Dataset,
+        ocv_function: pybop.Dataset,
+        cost: Optional[pybop.BaseCost] = pybop.RootMeanSquaredError,
+        optimiser: Optional[pybop.BaseOptimiser] = pybop.SciPyMinimize,
+        verbose: bool = True,
+    ):
+        # Use the OCV dataset as the target to fit and the OCV function as the model
+
+        # Define the optimisation parameters
+        self.parameters = pybop.Parameters(
+            pybop.Parameter(
+                "shift",
+                initial_value=0,
+            ),
+            pybop.Parameter(
+                "stretch",
+                initial_value=np.max(ocv_dataset["Charge capacity [A.h]"]) - np.min(ocv_dataset["Charge capacity [A.h]"]),
+            ),
+        )
+
+        # Create the fitting problem
+        class FunctionFitting(pybop.FittingProblem):
+            def evaluate(self, inputs):
+                return {
+                    "Voltage [V]": ocv_function(
+                        (self.domain_data - inputs["shift"]) / inputs["stretch"]
+                    ),
+                }
+
+        self.model = None
+        self.problem = FunctionFitting(
+            model=self.model,
+            parameters=self.parameters,
+            dataset=ocv_dataset,
+            signal=["Voltage [V]"],
+            domain="Charge capacity [A.h]",
+        )
+
+        # Optimise the fit between the OCV function and the dataset
+        self.cost = cost(self.problem)
+        self.optim = optimiser(cost=self.cost, verbose=verbose)
+        self.results = self.optim.run()
+        self.stretch = self.results.x[1]
+        self.shift = self.results.x[0]
+
+        if verbose:
+            print(
+                f"The capacity stretch and shift values are ({self.stretch} A.h, {self.shift} A.h)."
+            )
+
+        # Scale charge capacity into stoichiometry
+        self.dataset = pybop.Dataset(
+            {
+                "Stoichiometry": (ocv_dataset["Charge capacity [A.h]"] - self.shift) / self.stretch,
+                "Voltage [V]": ocv_dataset["Voltage [V]"],
+            }
         )
