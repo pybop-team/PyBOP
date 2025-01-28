@@ -155,3 +155,15 @@ class Dataset:
             else:
                 setattr(result, k, copy.deepcopy(v, memo))
         return result
+
+    def __getstate__(self):
+        pickleable_dict = {}
+        for k, v in self.__dict__.items():
+            if k != "names":
+                pickleable_dict[k] = v
+        return pickleable_dict
+
+    def __setstate__(self, state):
+        for k, v in state.items():
+            setattr(self, k, v)
+        self.names = self.data.keys()
