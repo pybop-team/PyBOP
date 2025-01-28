@@ -1,3 +1,4 @@
+import copy
 from typing import Union
 
 import numpy as np
@@ -143,3 +144,14 @@ class Dataset:
                 raise ValueError(
                     f"{self.domain} data and {s} data must be the same length."
                 )
+
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            if k == "names":
+                setattr(result, k, self.data.keys())
+            else:
+                setattr(result, k, copy.deepcopy(v, memo))
+        return result
