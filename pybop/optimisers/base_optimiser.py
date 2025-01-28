@@ -380,7 +380,7 @@ class OptimisationResult:
         self._scipy_result = []
         self._time = []
         self._x0 = []
-        self.pybamm_solution = []
+        self._pybamm_solution = []
 
         if x is not None:
             # Transform the parameter values and update the sign of any final cost
@@ -427,7 +427,7 @@ class OptimisationResult:
             time=result._time,  # noqa: SLF001
             scipy_result=result._scipy_result,  # noqa: SLF001
             x0=result._x0,  # noqa: SLF001
-            pybamm_solution=result.pybamm_solution,
+            pybamm_solution=result._pybamm_solution,  # noqa: SLF001
         )
 
     def _extend(
@@ -451,7 +451,7 @@ class OptimisationResult:
         self._scipy_result.extend(scipy_result)
         self._time.extend(time)
         self._x0.extend(x0)
-        self.pybamm_solution.extend(pybamm_solution)
+        self._pybamm_solution.extend(pybamm_solution)
 
         # Check that there is a finite cost and update best run
         self.check_for_finite_cost()
@@ -594,6 +594,18 @@ class OptimisationResult:
     def scipy_result_best(self):
         return (
             self._scipy_result[self._best_run] if self._best_run is not None else None
+        )
+
+    @property
+    def pybamm_solution(self):
+        return self._get_single_or_all("_pybamm_solution")
+
+    @property
+    def pybamm_solution_best(self):
+        return (
+            self._pybamm_solution[self._best_run]
+            if self._best_run is not None
+            else None
         )
 
     @property
