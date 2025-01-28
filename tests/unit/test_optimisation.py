@@ -663,7 +663,7 @@ class TestOptimisation:
 
         assert (
             "Positive electrode active material volume fraction"
-            in results.pybamm_solution[0].all_inputs[0]
+            in results.pybamm_solution.all_inputs[0]
         )
 
         optim.set_max_unchanged_iterations()
@@ -726,3 +726,15 @@ class TestOptimisation:
             ValueError, match="Optimised parameters do not produce a finite cost value"
         ):
             pybop.OptimisationResult(optim=optim, x=[1e-5], n_iterations=1)
+
+        # Test list-like functionality with "best" properties
+        optim = pybop.Optimisation(cost=cost, n_iterations=1, multistart=3)
+        results = optim.run()
+
+        assert results.pybamm_solution_best in results.pybamm_solution
+        assert results.x_best in results.x
+        assert results.final_cost_best in results.final_cost
+        assert results.time_best in results.time
+        assert results.n_iterations_best in results.n_iterations
+        assert results.n_evaluations_best in results.n_evaluations
+        assert results.x0_best in results.x0
