@@ -24,10 +24,13 @@ class EP_BOLFI(BaseOptimiser):
     MultivariateGaussian prior and an ExpectationPropagationCost.
     """
 
-    def model_wrapper(self, parameter_set):
-        return self.cost.problem.model.predict(
-            self.inputs, self.t_eval, parameter_set, self.experiment, self.initial_state
-        )[self.output_variable]
+    def model_wrapper(self, inputs):
+        evaluation = self.cost.problem.model.predict(
+            inputs, self.t_eval, None, self.experiment, self.initial_state
+        )
+        return {
+            signal: evaluation[signal].entries for signal in self.cost.problem.signal
+        }
 
     def _set_up_optimiser(self):
         # Read in predictor settings.
@@ -84,19 +87,26 @@ class EP_BOLFI(BaseOptimiser):
         )
         self.seed = self.unset_options.pop("seed", 0)
         transposed_boundaries = {}
+        model_bounds = self.parameters.get_bounds(apply_transform=False)
         for i, name in enumerate(self.parameters.param.keys()):
             transposed_boundaries[name] = [
-                self.bounds["lower"][i],
-                self.bounds["upper"][i],
+                model_bounds["lower"][i],
+                model_bounds["upper"][i],
             ]
         # EP-BOLFI can handle multiple simulators at once, hence the
         # lists. ToDo: mediate this between EP-BOLFI and PyBOP.
         self.optimiser = ep_bolfi.EP_BOLFI(
             [self.model_wrapper],
             [self.cost.problem.dataset],
-            [lambda x, stored_cost=cost: [stored_cost(x)] for cost in self.cost.costs],
+            [
+                lambda y, stored_cost=cost: [stored_cost.compute(y)]
+                for cost in self.cost.costs
+            ],
             fixed_parameters={},  # probably baked into self.problem.model
-            free_parameters=self.parameters.as_dict(),
+            free_parameters={
+                name: par.get_initial_value(apply_transform=True)
+                for name, par in self.parameters.param.items()
+            },
             initial_covariance=self.parameters.prior.properties["cov"],
             free_parameters_boundaries=transposed_boundaries,
             boundaries_in_deviations=self.boundaries_in_deviations,
@@ -104,7 +114,10 @@ class EP_BOLFI(BaseOptimiser):
             r=self.r,
             Q_features=self.Q_features,
             r_features=self.r_features,
-            transform_parameters={},  # might be handled within PyBOP
+            transform_parameters={
+                name: (par.transformation.to_model, par.transformation.to_search)
+                for name, par in self.parameters.param.items()
+            },
             weights=None,  # only applicable within vector-valued features
             display_current_feature=None,  # ToDo: costs with names
             fixed_parameter_order=list(enumerate(self.parameters.param.keys())),

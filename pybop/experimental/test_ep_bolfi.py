@@ -30,11 +30,11 @@ unknowns = MultivariateParameters(
     prior=MultivariateGaussian([np.log(original_diffusivity)], [[np.log(10)]]),
 )
 
-problem = pybop.FittingProblem(model, unknowns, dataset)
+problem = pybop.FittingProblem(model, unknowns, dataset, signal=["Voltage [V]"])
 cost = pybop.WeightedCost(pybop.SumSquaredError(problem))
 # Override the forced Parameters class in BaseCost instantiation.
 cost.parameters = unknowns
-optim = EP_BOLFI(cost, ep_iterations=1)
+optim = EP_BOLFI(cost, t_eval=t_eval, ep_iterations=1)
 
 results = optim.run()
 print(results.x)
