@@ -14,7 +14,7 @@ class TestApplications:
     @pytest.fixture
     def parameter_set(self):
         return pybop.ParameterSet("Chen2020")
-    
+
     def noise(self, sigma, values):
         return np.random.normal(0, sigma, values)
 
@@ -54,7 +54,10 @@ class TestApplications:
 
         # Create the OCV dataset
         ocv_dataset = pybop.Dataset(
-            {"Charge capacity [A.h]": (sto + 0.1) * nom_capacity, "Voltage [V]": voltage}
+            {
+                "Charge capacity [A.h]": (sto + 0.1) * nom_capacity,
+                "Voltage [V]": voltage,
+            }
         )
 
         # Estimate the stoichiometry corresponding to the GITT-OCV
@@ -64,4 +67,6 @@ class TestApplications:
         )
 
         np.testing.assert_allclose(ocv_fit.stretch, nom_capacity, rtol=1e-3, atol=1e-3)
-        np.testing.assert_allclose(ocv_fit.shift, 0.1*nom_capacity, rtol=1e-3, atol=1e-3)
+        np.testing.assert_allclose(
+            ocv_fit.shift, 0.1 * nom_capacity, rtol=1e-3, atol=1e-3
+        )
