@@ -10,6 +10,8 @@ class TestObserver:
     A class to test the observer class.
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.fixture
     def parameters(self):
         return pybop.Parameters(
@@ -34,7 +36,6 @@ class TestObserver:
         model.build(parameters=parameters)
         return model
 
-    @pytest.mark.unit
     def test_observer(self, model, parameters):
         n = model.n_states
         observer = pybop.Observer(parameters, model, signal=["y_0"])
@@ -84,7 +85,6 @@ class TestObserver:
         observer._target = {"y_0": expected}
         observer.evaluate(parameters.as_dict())
 
-    @pytest.mark.unit
     def test_unbuilt_model(self, parameters):
         model = pybop.ExponentialDecayModel()
         with pytest.raises(
@@ -92,7 +92,6 @@ class TestObserver:
         ):
             pybop.Observer(parameters, model)
 
-    @pytest.mark.unit
     def test_observer_inputs(self):
         initial_state = {"Initial open-circuit voltage [V]": 4.0}
         t_eval = np.linspace(0, 1, 100)

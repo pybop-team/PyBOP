@@ -150,6 +150,15 @@
       "contributions": [
         "example"
       ]
+    },
+    {
+      "login": "pipliggins",
+      "name": "Pip Liggins",
+      "avatar_url": "https://avatars.githubusercontent.com/u/55396775?v=4",
+      "profile": "https://github.com/pipliggins",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,

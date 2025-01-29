@@ -10,6 +10,8 @@ class TestParameterSets:
     A class to test parameter sets.
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.fixture
     def params_dict(self):
         return {
@@ -36,7 +38,6 @@ class TestParameterSets:
             "Entropic change [V/K]": 0.0004,
         }
 
-    @pytest.mark.unit
     def test_parameter_set(self):
         # Tests parameter set creation and validation
         with pytest.raises(ValueError):
@@ -58,7 +59,6 @@ class TestParameterSets:
             parameter_test["Negative electrode active material volume fraction"] == 0.8
         )
 
-    @pytest.mark.unit
     def test_ecm_parameter_sets(self, params_dict):
         # Test importing a json file
         json_params = pybop.ParameterSet()
@@ -119,7 +119,6 @@ class TestParameterSets:
                 "examples/parameters/fit_ecm_parameters.json"
             )
 
-    @pytest.mark.unit
     def test_bpx_parameter_sets(self):
         # Test importing a BPX json file
         bpx_params = pybop.ParameterSet(
@@ -134,7 +133,6 @@ class TestParameterSets:
 
         assert bpx_params.keys() == params.keys()
 
-    @pytest.mark.unit
     def test_set_formation_concentrations(self):
         parameter_set = pybop.ParameterSet("Chen2020", formation_concentrations=True)
 
@@ -145,7 +143,6 @@ class TestParameterSets:
             parameter_set["Initial concentration in positive electrode [mol.m-3]"] > 0
         )
 
-    @pytest.mark.unit
     def test_evaluate_symbol(self):
         parameter_set = pybop.ParameterSet("Chen2020")
         porosity = parameter_set["Positive electrode porosity"]
@@ -161,7 +158,6 @@ class TestParameterSets:
             assert isinstance(value, float)
             np.testing.assert_allclose(value, 1.0 + porosity)
 
-    @pytest.mark.unit
     def test_check_already_exists(self, params_dict):
         parameter_set = pybop.ParameterSet(params_dict)
 

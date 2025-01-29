@@ -10,6 +10,8 @@ class TestSolvers:
     A class to test the forward model solver interface
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.fixture(
         params=[
             pybamm.IDAKLUSolver(atol=1e-4, rtol=1e-4),
@@ -27,7 +29,6 @@ class TestSolvers:
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
         return model
 
-    @pytest.mark.unit
     def test_solvers_with_model_predict(self, model, solver):
         assert model.solver == solver
         assert model.solver.atol == 1e-4
