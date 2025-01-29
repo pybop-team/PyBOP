@@ -195,7 +195,7 @@ from ._classification import classify_using_hessian
 #
 # Applications
 #
-from .applications.ocp_methods import ocp_average, stoichiometric_fit
+from .applications.ocp_methods import ocp_blend, ocp_average, stoichiometric_fit
 
 #
 # Plotting classes

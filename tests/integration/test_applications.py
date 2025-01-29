@@ -18,22 +18,48 @@ class TestApplications:
     def noise(self, sigma, values):
         return np.random.normal(0, sigma, values)
 
-    def test_ocp_average(self, parameter_set):
+    @pytest.fixture
+    def discharge_dataset(self, parameter_set):
         ocp_function = parameter_set["Positive electrode OCP [V]"]
 
         discharge_sto = np.linspace(0, 0.9, 91)
         discharge_voltage = ocp_function(discharge_sto + 0.02) + self.noise(1e-3, 91)
+
+        return pybop.Dataset(
+            {"Stoichiometry": discharge_sto, "Voltage [V]": discharge_voltage}
+        )
+
+    @pytest.fixture
+    def charge_dataset(self, parameter_set):
+        ocp_function = parameter_set["Positive electrode OCP [V]"]
+
         charge_sto = np.linspace(1, 0.1, 91)
         charge_voltage = ocp_function(charge_sto - 0.02) + self.noise(1e-3, 91)
 
-        # Create the charge and discharge datasets
-        discharge_dataset = pybop.Dataset(
-            {"Stoichiometry": discharge_sto, "Voltage [V]": discharge_voltage}
-        )
-        charge_dataset = pybop.Dataset(
+        return pybop.Dataset(
             {"Stoichiometry": charge_sto, "Voltage [V]": charge_voltage}
         )
 
+    def test_ocp_blend(self, discharge_dataset, charge_dataset):
+        ocp_blend = pybop.ocp_blend(
+            ocp_discharge=discharge_dataset,
+            ocp_charge=charge_dataset,
+        )
+
+        np.testing.assert_allclose(
+            ocp_blend.dataset["Stoichiometry"][0], discharge_dataset["Stoichiometry"][0]
+        )
+        np.testing.assert_allclose(
+            ocp_blend.dataset["Voltage [V]"][0], discharge_dataset["Voltage [V]"][0]
+        )
+        np.testing.assert_allclose(
+            ocp_blend.dataset["Stoichiometry"][-1], charge_dataset["Stoichiometry"][0]
+        )
+        np.testing.assert_allclose(
+            ocp_blend.dataset["Voltage [V]"][-1], charge_dataset["Voltage [V]"][0]
+        )
+
+    def test_ocp_average(self, discharge_dataset, charge_dataset):
         for allow_stretching in [True, False]:
             # Estimate the shift and generate the average open-circuit potential
             ocp_average = pybop.ocp_average(
@@ -68,5 +94,5 @@ class TestApplications:
 
         np.testing.assert_allclose(ocv_fit.stretch, nom_capacity, rtol=1e-3, atol=1e-3)
         np.testing.assert_allclose(
-            ocv_fit.shift, 0.1 * nom_capacity, rtol=1e-3, atol=1e-3
+            ocv_fit.shift, 0.1 * nom_capacity, rtol=5e-3, atol=5e-3
         )

@@ -31,6 +31,9 @@ ocp_average = pybop.ocp_average(
     allow_stretching=False,
 )
 
+# Create a composite open-circuit potential from charge and discharge
+ocp_blend = pybop.ocp_blend(discharge_dataset, charge_dataset)
+
 # Verify the method through plotting
 stoichiometry = np.linspace(0, 1, 101)
 fig = pybop.plot.trajectories(
@@ -39,12 +42,14 @@ fig = pybop.plot.trajectories(
         charge_dataset["Stoichiometry"],
         stoichiometry,
         ocp_average.dataset["Stoichiometry"],
+        ocp_blend.dataset["Stoichiometry"],
     ],
     y=[
         discharge_dataset["Voltage [V]"],
         charge_dataset["Voltage [V]"],
         parameter_set["Positive electrode OCP [V]"](stoichiometry),
         ocp_average.dataset["Voltage [V]"],
+        ocp_blend.dataset["Voltage [V]"],
     ],
-    trace_names=["Discharge", "Charge", "Ground truth", "Averaged"],
+    trace_names=["Discharge", "Charge", "Ground truth", "Averaged", "Blended"],
 )

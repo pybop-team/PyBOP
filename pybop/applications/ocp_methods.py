@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Callable, Optional
 
 import numpy as np
 from scipy import interpolate
@@ -18,6 +18,55 @@ class ocp_method:
             bounds_error=False,
             fill_value="extrapolate",
             axis=0,
+        )
+
+
+class ocp_blend(ocp_method):
+    """
+    Blend the charge and discharge branches of the open-circuit potential (OCP) to
+    generate a broadly applicable open-circuit potential without hysteresis.
+
+    Parameters
+    ----------
+    ocp_discharge: pybop.Dataset
+        A dataset containing the "Stoichiometry" and "Voltage [V]" obtained from a
+        discharge measurement.
+    ocp_charge: pybop.Dataset
+        A dataset containing the "Stoichiometry" and "Voltage [V]" obtained from a
+        charge measurement.
+    """
+
+    def __init__(
+        self,
+        ocp_discharge: pybop.Dataset,
+        ocp_charge: pybop.Dataset,
+    ):
+        # Use the discharge branch as the target to fit
+        voltage_discharge = self.interp1d(
+            ocp_discharge["Stoichiometry"], ocp_discharge["Voltage [V]"]
+        )
+
+        # Use the charge branch as the model output
+        voltage_charge = self.interp1d(
+            ocp_charge["Stoichiometry"], ocp_charge["Voltage [V]"]
+        )
+
+        # Generate evenly spaced data for dataset creation
+        sto_evenly_spaced = np.linspace(
+            np.min(ocp_discharge["Stoichiometry"]),
+            np.max(ocp_charge["Stoichiometry"]),
+            501,
+        )
+
+        # Define a linear transition from the discharge branch at low
+        # stoichiometry to the charge branch at high stoichiometry
+        transition = np.linspace(0, 1, len(sto_evenly_spaced))
+        voltage_blend = (1 - transition) * voltage_discharge(
+            sto_evenly_spaced
+        ) + transition * voltage_charge(sto_evenly_spaced)
+
+        self.dataset = pybop.Dataset(
+            {"Stoichiometry": sto_evenly_spaced, "Voltage [V]": voltage_blend}
         )
 
 
@@ -194,11 +243,11 @@ class stoichiometric_fit(ocp_method):
 
     Parameters
     ----------
-    ocv_dataset: pybop.Dataset, optional
+    ocv_dataset: pybop.Dataset
         A dataset containing the "Charge capacity [A.h]" and "Voltage [V]" obtained
         from an OCV measurement.
-    ocv_function: pybop.Dataset, optional
-        The open-circuit voltage as a dataset with "Stoichiometry" and "Voltage [V]".
+    ocv_function: Callable
+        The open-circuit voltage as a function of stoichiometry.
     cost: pybop.BaseCost, optional
         The cost function to quantify the difference between the differential
         capacity curves (default: pybop.RootMeanSquaredError).
@@ -211,7 +260,7 @@ class stoichiometric_fit(ocp_method):
     def __init__(
         self,
         ocv_dataset: pybop.Dataset,
-        ocv_function: pybop.Dataset,
+        ocv_function: Callable,
         cost: Optional[pybop.BaseCost] = pybop.RootMeanSquaredError,
         optimiser: Optional[pybop.BaseOptimiser] = pybop.SciPyMinimize,
         verbose: bool = True,
