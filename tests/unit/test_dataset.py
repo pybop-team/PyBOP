@@ -1,3 +1,6 @@
+import copy
+import pickle
+
 import numpy as np
 import pytest
 
@@ -29,6 +32,16 @@ class TestDataset:
         # Test data structure
         assert dataset.data == data_dictionary
         assert np.all(dataset["Time [s]"] == solution["Time [s]"].data)
+
+        # Test deepcopy
+        dataset_copy = copy.deepcopy(dataset)
+        assert np.all(dataset_copy["Time [s]"] == dataset["Time [s]"])
+        assert dataset.names == dataset_copy.names
+
+        # Test pickle
+        dataset_pickle = pickle.loads(pickle.dumps(dataset))
+        assert np.all(dataset_pickle["Time [s]"] == dataset["Time [s]"])
+        assert dataset.names == dataset_pickle.names
 
         # Test exception for non-dictionary inputs
         with pytest.raises(

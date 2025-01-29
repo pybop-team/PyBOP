@@ -1,3 +1,5 @@
+import copy
+import pickle
 import sys
 from io import StringIO
 
@@ -568,3 +570,17 @@ class TestModels:
             dataset_2["Current function [A]"].data,
             atol=1e-8,
         )
+
+    @pytest.mark.unit
+    def test_serializability(self):
+        model = pybop.lithium_ion.SPM()
+
+        # Test deepcopy
+        model_copy = copy.deepcopy(model)
+        assert model_copy.name == model.name
+        assert model_copy._electrode_soh.__spec__ == model._electrode_soh.__spec__
+
+        # Test pickle
+        model_pickle = pickle.loads(pickle.dumps(model))
+        assert model_pickle.name == model.name
+        assert model_pickle._electrode_soh.__spec__ == model._electrode_soh.__spec__

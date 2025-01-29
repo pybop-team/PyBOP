@@ -20,6 +20,7 @@
 
 ## Bug Fixes
 
+- [#645](https://github.com/pybop-team/PyBOP/pull/645) - Bug fixes for serialization of `DataSet` and `base_echem` classes to enable parallelization.
 - [#505](https://github.com/pybop-team/PyBOP/pull/505) - Bug fixes for `LogPosterior` with transformed `GaussianLogLikelihood` likelihood.
 
 ## Breaking Changes
