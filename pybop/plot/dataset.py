@@ -18,7 +18,7 @@ def dataset(dataset, signal=None, trace_names=None, show=True, **layout_kwargs):
     **layout_kwargs : optional
         Valid Plotly layout keys and their values,
         e.g. `xaxis_title="Time / s"` or
-        `xaxis={"title": "Time / s", "titlefont_size": 18}`.
+        `xaxis={"title": "Time / s", "title": {font={"size":14}}}`.
 
     Returns
     -------

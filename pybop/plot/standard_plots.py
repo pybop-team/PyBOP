@@ -9,18 +9,16 @@ DEFAULT_LAYOUT_OPTIONS = dict(
     title=None,
     title_x=0.5,
     xaxis=dict(
-        title=None,
+        title=dict(font={"size": 14}),
         showexponent="last",
         exponentformat="e",
-        titlefont_size=12,
-        tickfont_size=12,
+        tickfont=dict(size=12),
     ),
     yaxis=dict(
-        title=None,
+        title=dict(font={"size": 14}),
         showexponent="last",
         exponentformat="e",
-        titlefont_size=12,
-        tickfont_size=12,
+        tickfont=dict(size=12),
     ),
     legend=dict(x=1, y=1, xanchor="right", yanchor="top", font_size=12),
     showlegend=True,
@@ -370,7 +368,7 @@ def trajectories(x, y, trace_names=None, show=True, **layout_kwargs):
     **layout_kwargs : optional
             Valid Plotly layout keys and their values,
             e.g. `xaxis_title="Time / s"` or
-            `xaxis={"title": "Time / s", "titlefont_size": 18}`.
+            `xaxis={"title": "Time / s", "title": {font={"size":14}}}`.
 
     Returns
     -------
