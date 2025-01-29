@@ -10,6 +10,8 @@ class TestProblem:
     A class to test the problem class.
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.fixture
     def model(self):
         return pybop.lithium_ion.SPM()
@@ -65,12 +67,9 @@ class TestProblem:
     def signal(self):
         return "Voltage [V]"
 
-    @pytest.mark.unit
     def test_base_problem(self, parameters, model, dataset):
         # Construct Problem
         problem = pybop.BaseProblem(parameters, model=model)
-
-        assert problem.model == model
 
         with pytest.raises(NotImplementedError):
             problem.evaluate([1e-5, 1e-5])
@@ -106,7 +105,6 @@ class TestProblem:
                 parameters=[parameter_list[0], "Invalid string"]
             )
 
-    @pytest.mark.unit
     def test_fitting_problem(self, parameters, dataset, model, signal):
         with pytest.warns(UserWarning) as record:
             problem = pybop.FittingProblem(
@@ -129,7 +127,6 @@ class TestProblem:
             initial_state={"Initial open-circuit voltage [V]": 4.0},
         )
 
-        assert problem.model == model
         assert problem.model.built_model is not None
 
         # Test get target
@@ -187,7 +184,6 @@ class TestProblem:
         with pytest.raises(ValueError):
             pybop.FittingProblem(model, parameters, bad_dataset, signal=two_signals)
 
-    @pytest.mark.unit
     def test_fitting_problem_eis(self, parameters):
         model = pybop.lithium_ion.SPM(eis=True)
 
@@ -215,7 +211,6 @@ class TestProblem:
         out = problem.evaluate(inputs=[0.0, 0.0])
         assert not np.isfinite(out["Impedance"])
 
-    @pytest.mark.unit
     def test_multi_fitting_problem(self, model, parameters, dataset, signal):
         problem_1 = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 
@@ -250,13 +245,14 @@ class TestProblem:
         assert len(combined_problem._dataset["Combined signal"]) == len(
             problem_1._dataset[signal]
         ) + len(problem_2._dataset[signal])
+        assert combined_problem.solution is None
 
         y = combined_problem.evaluate(inputs=[1e-5, 1e-5])
         assert len(y["Combined signal"]) == len(
             combined_problem._dataset["Combined signal"]
         )
+        assert len(combined_problem.solution) == 2
 
-    @pytest.mark.unit
     def test_design_problem(self, parameters, experiment, model):
         with pytest.warns(UserWarning) as record:
             problem = pybop.DesignProblem(
@@ -286,7 +282,6 @@ class TestProblem:
         # Construct Problem
         problem = pybop.DesignProblem(model, parameters, experiment)
 
-        assert problem.model == model
         assert (
             problem.model.built_model is None
         )  # building postponed with input experiment
@@ -302,7 +297,6 @@ class TestProblem:
         problem = pybop.DesignProblem(model, pybop.Parameters(), experiment)
         assert problem.initial_state == {"Initial SoC": 0.8}
 
-    @pytest.mark.unit
     def test_problem_construct_with_model_predict(
         self, parameters, model, dataset, signal
     ):

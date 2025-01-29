@@ -4,7 +4,7 @@ from typing import Optional
 
 import numpy as np
 
-from pybop import ComposedTransformation, IdentityTransformation
+from pybop import ComposedTransformation, IdentityTransformation, LogTransformation
 from pybop._utils import is_numeric
 
 Inputs = dict[str, float]
@@ -57,8 +57,8 @@ class Parameter:
         self.transformation = transformation
         self.applied_prior_bounds = False
         self.bounds = None
-        self.lower_bounds = None
-        self.upper_bounds = None
+        self.lower_bound = None
+        self.upper_bound = None
         self.set_bounds(bounds)
         self.margin = 1e-4
 
@@ -340,19 +340,26 @@ class Parameters:
         """
         bounds = {"lower": [], "upper": []}
         for param in self.param.values():
-            if param.bounds is None:
-                lower, upper = -np.inf, np.inf
-            else:
-                lower, upper = param.bounds
-                if apply_transform and param.transformation is not None:
-                    lower = float(param.transformation.to_search(param.bounds[0]))
-                    upper = float(param.transformation.to_search(param.bounds[1]))
-                    if np.isnan(lower) or np.isnan(upper):
-                        raise ValueError(
-                            "Transformed bounds resulted in NaN values.\n"
-                            "If you've not applied bounds, this is due to the defaults applied from the prior distribution,\n"
-                            "consider bounding the parameters to avoid this error."
-                        )
+            lower, upper = param.bounds or (-np.inf, np.inf)
+
+            if (
+                apply_transform
+                and param.bounds is not None
+                and param.transformation is not None
+            ):
+                if isinstance(param.transformation, LogTransformation):
+                    param.bounds = [
+                        b + np.finfo(float).eps if b == 0 else b for b in param.bounds
+                    ]
+                lower = float(param.transformation.to_search(param.bounds[0]))
+                upper = float(param.transformation.to_search(param.bounds[1]))
+
+                if np.isnan(lower) or np.isnan(upper):
+                    raise ValueError(
+                        "Transformed bounds resulted in NaN values.\n"
+                        "If you've not applied bounds, this is due to the defaults applied from the prior distribution,\n"
+                        "consider bounding the parameters to avoid this error."
+                    )
 
             bounds["lower"].append(lower)
             bounds["upper"].append(upper)
@@ -398,6 +405,9 @@ class Parameters:
         for param in self.param.values():
             samples = param.rvs(n_samples, apply_transform=apply_transform)
             all_samples.append(samples)
+
+        if n_samples > 1:
+            return np.asarray(all_samples).T
 
         return np.concatenate(all_samples)
 

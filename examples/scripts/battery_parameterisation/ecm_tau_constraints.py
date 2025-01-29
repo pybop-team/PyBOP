@@ -22,7 +22,7 @@ when good timescale guesses are available.
 """
 
 # Define the initial parameter set
-parameter_set = pybop.ParameterSet.pybamm("ECM_Example")
+parameter_set = pybop.ParameterSet("ECM_Example")
 parameter_set.update(
     {
         "Initial SoC": 0.75,

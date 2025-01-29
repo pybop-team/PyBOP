@@ -3,7 +3,7 @@ import numpy as np
 import pybop
 
 # Define model
-parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+parameter_set = pybop.ParameterSet("Chen2020")
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
@@ -39,6 +39,7 @@ cost = pybop.SumofPower(problem, p=2)
 optim = pybop.SNES(cost, max_iterations=100)
 
 results = optim.run()
+
 # Plot the timeseries output
 pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
 

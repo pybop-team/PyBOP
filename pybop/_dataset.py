@@ -1,5 +1,5 @@
 import copy
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 from pybamm import solvers
@@ -16,11 +16,13 @@ class Dataset:
     ----------
     data_dictionary : dict or instance of pybamm.solvers.solution.Solution
         The experimental data to store within the dataset.
+    domain : str, optional
+        The domain of the dataset. Defaults to "Time [s]".
     """
 
-    def __init__(self, data_dictionary):
+    def __init__(self, data_dictionary, domain: Optional[str] = None):
         """
-        Initialize a Dataset instance with data and a set of names.
+        Initialise a Dataset instance with data and a set of names.
         """
 
         if isinstance(data_dictionary, solvers.solution.Solution):
@@ -28,7 +30,7 @@ class Dataset:
         if not isinstance(data_dictionary, dict):
             raise TypeError("The input to pybop.Dataset must be a dictionary.")
         self.data = data_dictionary
-        self.names = self.data.keys()
+        self.domain = domain or "Time [s]"
 
     def __repr__(self):
         """
@@ -39,7 +41,7 @@ class Dataset:
         str
             A string that includes the type and contents of the dataset.
         """
-        return f"Dataset: {type(self.data)} \n Contains: {self.names}"
+        return f"Dataset: {type(self.data)} \n Contains: {self.data.keys()}"
 
     def __setitem__(self, key, value):
         """
@@ -86,7 +88,7 @@ class Dataset:
         Parameters
         ----------
         domain : str, optional
-            The domain of the dataset. Defaults to "Time [s]".
+            If not None, updates the domain of the dataset.
         signal : str or List[str], optional
             The signal(s) to check. Defaults to ["Voltage [V]"].
 
@@ -100,11 +102,11 @@ class Dataset:
         ValueError
             If the time series and the data series are not consistent.
         """
-        self.domain = domain or "Time [s]"
+        self.domain = domain or self.domain
         signals = [signal] if isinstance(signal, str) else (signal or ["Voltage [V]"])
 
         # Check that the dataset contains domain and chosen signals
-        missing_attributes = set([self.domain, *signals]) - set(self.names)
+        missing_attributes = set([self.domain, *signals]) - set(self.data.keys())
         if missing_attributes:
             raise ValueError(
                 f"Expected {', '.join(missing_attributes)} in list of dataset"
@@ -144,6 +146,16 @@ class Dataset:
                 raise ValueError(
                     f"{self.domain} data and {s} data must be the same length."
                 )
+
+    def get_subset(self, index: Union[list, np.ndarray]):
+        """
+        Reduce the dataset to a subset defined by the list of indices.
+        """
+        data = {}
+        for key in self.data.keys():
+            data[key] = self[key][index]
+
+        return Dataset(data, domain=self.domain)
 
     def __deepcopy__(self, memo):
         cls = self.__class__

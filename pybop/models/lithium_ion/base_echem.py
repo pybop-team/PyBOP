@@ -2,7 +2,7 @@ import sys
 import warnings
 from typing import Optional
 
-from pybamm import LithiumIonParameters
+from pybamm import LithiumIonParameters, Simulation
 from pybamm import lithium_ion as pybamm_lithium_ion
 
 from pybop.models.base_model import BaseModel, Inputs
@@ -31,6 +31,8 @@ class EChemBaseModel(BaseModel):
         The spatial methods used for discretization. If None, default spatial methods from PyBaMM are used.
     solver : pybamm.Solver, optional
         The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
+    eis : bool, optional
+        A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values. For example,
         build : bool, optional
@@ -153,6 +155,37 @@ class EChemBaseModel(BaseModel):
                 return allow_infeasible_solutions
 
         return True
+
+    def _set_initial_state(self, initial_state: dict, inputs: Optional[Inputs] = None):
+        """
+        Set the initial state of charge or concentrations for the battery model.
+
+        Parameters
+        ----------
+        initial_state : dict
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+        inputs : Inputs
+            The input parameters to be used when building the model.
+        """
+        initial_state = self.convert_to_pybamm_initial_state(initial_state)
+
+        if not self.pybamm_model._built:  # noqa: SLF001
+            self.pybamm_model.build_model()
+
+        # Temporary construction of attributes for PyBaMM
+        self._model = self.pybamm_model
+        self._unprocessed_parameter_values = self._unprocessed_parameter_set
+
+        # Set initial state via PyBaMM's Simulation class
+        Simulation.set_initial_soc(self, initial_state, inputs=inputs)
+
+        # Update the default parameter set for consistency
+        self._unprocessed_parameter_set = self._parameter_values
+
+        # Clear the pybamm objects
+        del self._model
+        del self._unprocessed_parameter_values
+        del self._parameter_values
 
     def cell_volume(self, parameter_set: Optional[ParameterSet] = None):
         """
@@ -344,10 +377,6 @@ class EChemBaseModel(BaseModel):
                 "Positive electrode thickness [m]",
                 "Separator porosity",
                 "Separator thickness [m]",
-                "Open-circuit voltage at 100% SOC [V]",
-                "Open-circuit voltage at 0% SOC [V]"
-                "Maximum concentration in positive electrode [mol.m-3]",
-                "Maximum concentration in negative electrode [mol.m-3]",
             ]
         )
 
