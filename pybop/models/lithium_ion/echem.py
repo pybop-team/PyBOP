@@ -258,16 +258,8 @@ class WeppnerHuggins(EChemBaseModel):
         Valid PyBaMM model option keys and their values, for example:
         parameter_set : pybamm.ParameterValues or dict, optional
             The parameters for the model. If None, default parameters provided by PyBaMM are used.
-        geometry : dict, optional
-            The geometry definitions for the model. If None, default geometry from PyBaMM is used.
-        submesh_types : dict, optional
-            The types of submeshes to use. If None, default submesh types from PyBaMM are used.
-        var_pts : dict, optional
-            The discretization points for each variable in the model. If None, default points from PyBaMM are used.
-        spatial_methods : dict, optional
-            The spatial methods used for discretization. If None, default spatial methods from PyBaMM are used.
-        solver : pybamm.Solver, optional
-            The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
+        options : dict, optional
+            A dictionary of options to customise the behaviour of the PyBaMM model.
     """
 
     def __init__(
@@ -279,6 +271,10 @@ class WeppnerHuggins(EChemBaseModel):
         super().__init__(
             pybamm_model=BaseWeppnerHuggins, name=name, eis=eis, **model_kwargs
         )
+
+    def _check_params(self, inputs, parameter_set, allow_infeasible_solutions):
+        # Skip the usual electrochemical checks for this scaled model
+        return True
 
 
 class GroupedSPMe(EChemBaseModel):
@@ -356,7 +352,7 @@ class GroupedSPMe(EChemBaseModel):
         )
 
     def _check_params(self, inputs, parameter_set, allow_infeasible_solutions):
-        # Skip the usual electrochemical checks for this dimensionless model
+        # Skip the usual electrochemical checks for this scaled model
         return True
 
     def _set_initial_state(self, initial_state: dict, inputs=None):
