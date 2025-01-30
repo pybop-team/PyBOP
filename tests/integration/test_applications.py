@@ -41,7 +41,7 @@ class TestApplications:
         )
 
     def test_ocp_blend(self, discharge_dataset, charge_dataset):
-        ocp_blend = pybop.ocp_blend(
+        ocp_blend = pybop.OCPBlend(
             ocp_discharge=discharge_dataset,
             ocp_charge=charge_dataset,
         )
@@ -62,7 +62,7 @@ class TestApplications:
     def test_ocp_average(self, discharge_dataset, charge_dataset):
         for allow_stretching in [True, False]:
             # Estimate the shift and generate the average open-circuit potential
-            ocp_average = pybop.ocp_average(
+            ocp_average = pybop.OCPAverage(
                 ocp_discharge=discharge_dataset,
                 ocp_charge=charge_dataset,
                 allow_stretching=allow_stretching,
@@ -87,7 +87,7 @@ class TestApplications:
         )
 
         # Estimate the stoichiometry corresponding to the GITT-OCV
-        ocv_fit = pybop.stoichiometric_fit(
+        ocv_fit = pybop.StoichiometricFit(
             ocv_dataset=ocv_dataset,
             ocv_function=ocv_function,
         )

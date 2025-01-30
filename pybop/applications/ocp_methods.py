@@ -1,27 +1,12 @@
 from typing import Callable, Optional
 
 import numpy as np
-from scipy import interpolate
 
 import pybop
+from pybop import BaseApplication
 
 
-class ocp_method:
-    """
-    A base class for the OCP fitting methods.
-    """
-
-    def interp1d(self, x, y):
-        return interpolate.interp1d(
-            x,
-            y,
-            bounds_error=False,
-            fill_value="extrapolate",
-            axis=0,
-        )
-
-
-class ocp_blend(ocp_method):
+class OCPBlend(BaseApplication):
     """
     Blend the charge and discharge branches of the open-circuit potential (OCP) to
     generate a broadly applicable open-circuit potential without hysteresis.
@@ -70,7 +55,7 @@ class ocp_blend(ocp_method):
         )
 
 
-class ocp_average(ocp_method):
+class OCPAverage(BaseApplication):
     """
     Estimate the equlilibrium open-circuit potential (OCP) by averaging the charge
     and discharge branches, using a method loosely based on method 4(a) proposed by
@@ -231,7 +216,7 @@ class ocp_average(ocp_method):
         )
 
 
-class stoichiometric_fit(ocp_method):
+class StoichiometricFit(BaseApplication):
     """
     Estimate the stoichiometry from a measurement of open-circuit voltage versus
     charge capacity.

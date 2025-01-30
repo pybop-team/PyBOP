@@ -25,14 +25,14 @@ charge_dataset = pybop.Dataset(
 )
 
 # Estimate the shift and generate the average open-circuit potential
-ocp_average = pybop.ocp_average(
+ocp_average = pybop.OCPAverage(
     discharge_dataset,
     charge_dataset,
     allow_stretching=False,
 )
 
 # Create a composite open-circuit potential from charge and discharge
-ocp_blend = pybop.ocp_blend(discharge_dataset, charge_dataset)
+ocp_blend = pybop.OCPBlend(discharge_dataset, charge_dataset)
 
 # Verify the method through plotting
 stoichiometry = np.linspace(0, 1, 101)

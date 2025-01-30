@@ -1,9 +1,10 @@
 from typing import Optional
 
 import pybop
+from pybop import BaseApplication
 
 
-class gitt_pulse_fit:
+class GITTPulseFit(BaseApplication):
     """
     Fit the diffusion timescale of one pulse from a galvanostatic intermittent
     titration technique (GITT) measurement.
@@ -16,8 +17,7 @@ class gitt_pulse_fit:
     parameter_set : pybop.ParameterSet
         A parameter set containing values for the parameters of the SPDiffusion model.
     cost : pybop.BaseCost, optional
-        The cost function to quantify the difference between the differential
-        capacity curves (default: pybop.RootMeanSquaredError).
+        The cost function to quantify the error (default: pybop.RootMeanSquaredError).
     optimiser : pybop.BaseOptimiser, optional
         The optimisation algorithm to use (default: pybop.SciPyMinimize).
     verbose : bool, optional
@@ -32,17 +32,6 @@ class gitt_pulse_fit:
         optimiser: Optional[pybop.BaseOptimiser] = pybop.SciPyMinimize,
         verbose: bool = True,
     ):
-        # Check the keys in the parameter set
-        missing_keys = []
-        self.parameter_set = pybop.ParameterSet.to_pybamm(parameter_set)
-        for key in pybop.lithium_ion.SPDiffusion().default_parameter_values:
-            if key not in self.parameter_set.keys():
-                missing_keys.append(key)
-        if any(missing_keys):
-            raise ValueError(
-                f"The following keys are missing from the parameter set: {missing_keys}."
-            )
-
         # Fitting parameters
         self.parameters = pybop.Parameters(
             pybop.Parameter(
@@ -56,7 +45,8 @@ class gitt_pulse_fit:
         )
 
         # Define the cost to optimise
-        self.model = pybop.lithium_ion.SPDiffusion(parameter_set=parameter_set)
+        self.parameter_set = parameter_set
+        self.model = pybop.lithium_ion.SPDiffusion(parameter_set=self.parameter_set)
         self.problem = pybop.FittingProblem(self.model, self.parameters, gitt_pulse)
         self.cost = cost(self.problem)
 

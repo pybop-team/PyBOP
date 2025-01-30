@@ -195,8 +195,9 @@ from ._classification import classify_using_hessian
 #
 # Applications
 #
-from .applications.ocp_methods import ocp_blend, ocp_average, stoichiometric_fit
-from .applications.gitt_methods import gitt_pulse_fit
+from .applications.base_method import BaseApplication
+from .applications.ocp_methods import OCPBlend, OCPAverage, StoichiometricFit
+from .applications.gitt_methods import GITTPulseFit, GITTFit
 
 #
 # Plotting classes

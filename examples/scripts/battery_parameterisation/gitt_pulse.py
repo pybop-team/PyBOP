@@ -42,7 +42,7 @@ parameter_set = convert_physical_to_electrode_parameters(
 )
 
 # Fit the GITT pulse using the single particle diffusion model
-gitt_fit = pybop.gitt_pulse_fit(dataset, parameter_set)
+gitt_fit = pybop.GITTPulseFit(dataset, parameter_set)
 
 # Plot the timeseries output
 pybop.plot.quick(
