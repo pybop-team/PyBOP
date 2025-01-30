@@ -94,8 +94,8 @@ class BaseCost:
         # Convert dict to list for sequential computations
         if isinstance(inputs, dict):
             inputs = list(inputs.values())
-
         input_list = np.atleast_2d(inputs)
+
         minimising = self.minimising or not for_optimiser
         sign = 1 if minimising else -1
 
@@ -118,9 +118,7 @@ class BaseCost:
         apply_transform: bool,
         sign: int,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        """
-        Evaluate cost and optional gradient for a single input.
-        """
+        """Evaluate cost (and optional gradient) for a single input."""
         # Setup input transformation
         self.has_transform = self.transformation is not None and apply_transform
         model_inputs = self.parameters.verify(self._apply_transformations(input_value))
@@ -192,6 +190,20 @@ class BaseCost:
         raise NotImplementedError
 
     def sensitivity_analysis(self, n_samples: int = 256):
+        """
+        Computes the parameter sensitivities on the cost function.
+
+        Parameters
+        ----------
+        n_samples : int, optional
+            Number of samples for SOBOL sensitivity analysis,
+            performs best as order of 2, i.e. 128, 256, etc.
+
+        Returns
+        -------
+        Sensitivities : dict
+        """
+
         salib_dict = {
             "names": self.parameters.keys(),
             "bounds": self.parameters.get_bounds_for_plotly(),
