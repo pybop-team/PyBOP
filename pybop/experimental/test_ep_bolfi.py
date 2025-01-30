@@ -2,6 +2,7 @@ import numpy as np
 from _ep_bolfi import EP_BOLFI
 from multivariate_parameters import MultivariateParameters
 from multivariate_priors import MultivariateGaussian
+from pybamm import print_citations
 
 import pybop
 
@@ -23,8 +24,8 @@ dataset = pybop.Dataset(
 unknowns = MultivariateParameters(
     pybop.Parameter(
         "Positive particle diffusivity [m2.s-1]",
-        initial_value=original_diffusivity,
-        bounds=[original_diffusivity / 10, original_diffusivity * 10],
+        initial_value=10 * original_diffusivity,
+        bounds=[original_diffusivity / 100, original_diffusivity * 100],
         transformation=pybop.LogTransformation(),
     ),
     prior=MultivariateGaussian([np.log(original_diffusivity)], [[np.log(10)]]),
@@ -34,12 +35,21 @@ problem = pybop.FittingProblem(model, unknowns, dataset, signal=["Voltage [V]"])
 cost = pybop.WeightedCost(pybop.SumSquaredError(problem))
 # Override the forced Parameters class in BaseCost instantiation.
 cost.parameters = unknowns
-optim = EP_BOLFI(cost, t_eval=t_eval, ep_iterations=1)
+optim = EP_BOLFI(
+    cost,
+    t_eval=t_eval,
+    ep_iterations=1,
+    ep_dampener=0,
+    bolfi_initial_evidence=15,
+    bolfi_total_evidence=30,
+    bolfi_posterior_samples=20,
+    verbose=True,
+)
 
 results = optim.run()
-print(results.x)
 
 pybop.plot.quick(problem, problem_inputs=results.x)
-pybop.plot.convergence(optim)
-pybop.plot.parameters(optim)
-pybop.plot.surface(optim)
+pybop.plot.convergence(optim, yaxis_type="log")
+pybop.plot.parameters(optim, yaxis_type="log")
+
+print_citations()

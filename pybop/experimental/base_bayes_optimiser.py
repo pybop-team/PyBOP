@@ -2,12 +2,7 @@ from typing import Optional, Union
 
 import numpy as np
 
-from pybop import (
-    BaseCost,
-    BaseOptimiser,
-    BasePrior,
-    Inputs,
-)
+from pybop import BaseCost, BaseOptimiser, BasePrior, Inputs, OptimisationResult
 
 
 class BaseBayesOptimiser(BaseOptimiser):
@@ -19,7 +14,7 @@ class BaseBayesOptimiser(BaseOptimiser):
         super().__init__(cost, **optimiser_kwargs)
 
 
-class BayesianOptimisationResult:
+class BayesianOptimisationResult(OptimisationResult):
     """
     Stores the result of a Bayesian optimisation.
 
