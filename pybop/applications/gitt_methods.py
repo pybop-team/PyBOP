@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Optional
 
 import pybop
 
@@ -39,7 +39,9 @@ class gitt_pulse_fit:
             if key not in self.parameter_set.keys():
                 missing_keys.append(key)
         if any(missing_keys):
-            raise ValueError(f"The following keys are missing from the parameter set: {missing_keys}.")
+            raise ValueError(
+                f"The following keys are missing from the parameter set: {missing_keys}."
+            )
 
         # Fitting parameters
         self.parameters = pybop.Parameters(
