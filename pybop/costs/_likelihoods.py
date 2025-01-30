@@ -42,7 +42,9 @@ class BaseLikelihood(BaseCost):
         """
 
         # Calculate squared gradients element-wise
-        fisher_info = np.sum(np.square(dy), axis=0) / self.n_data
+        _, grad = self.__call__(inputs, calc_grad = True)
+        shaped_grad = grad.reshape(-1,1)
+        fisher = (shaped_grad @ shaped_grad.T) / self.n_data
 
         return fisher_info
 
