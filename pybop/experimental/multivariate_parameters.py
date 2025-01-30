@@ -64,12 +64,14 @@ class MultivariateParameters(Parameters):
                 A matrix (i.e., a 2D array) of samples drawn from the
                 joint prior distribution inside parameter boundaries.
         """
-        samples = np.atleast_1d(self.prior.rvs(n_samples, random_state=random_state))
+        samples = self.prior.rvs(n_samples, random_state=random_state)
+        if samples.ndim < 2:
+            samples = np.atleast_2d(samples).T
 
         # Constrain samples to be within bounds.
         bounds = self.get_bounds(apply_transform=True)
         margins = self.get_margins()
-        for i in range(len(samples)):
+        for i in range(len(samples[0])):
             offset = margins[i] * (bounds["upper"][i] - bounds["lower"][i])
             samples[i] = np.clip(
                 samples[i], bounds["lower"][i] + offset, bounds["upper"][i] + offset
@@ -77,11 +79,11 @@ class MultivariateParameters(Parameters):
 
         transformations = self.get_transformations()
         if apply_transform:
-            for i in len(samples):
+            for i in range(len(samples[0])):
                 if transformations[i]:
-                    samples[i] = np.asarray(
-                        [transformations[i].to_search(x) for x in samples[i]]
-                    )
+                    samples.T[i] = np.asarray(
+                        [transformations[i].to_model(x) for x in samples.T[i]]
+                    ).T
 
         return samples
 

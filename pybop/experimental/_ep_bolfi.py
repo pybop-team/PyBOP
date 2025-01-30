@@ -218,14 +218,29 @@ class EP_BOLFI(BaseOptimiser):
             cost_best=cost_best,  # , x0=x0
         )
         self._transformation = stored_transformation
-        mean = np.array(
+        model_mean = np.array(
             [result[0] for result in ep_bolfi_result["inferred parameters"].values()]
         )
+        search_mean = [
+            par.transformation.to_search(entry)
+            for entry, par in zip(model_mean, self.parameters.param.values())
+        ]
+        lower_bounds = np.array(
+            [bounds[0][0] for bounds in ep_bolfi_result["error bounds"].values()]
+        )
+        upper_bounds = np.array(
+            [bounds[1][0] for bounds in ep_bolfi_result["error bounds"].values()]
+        )
+        # The re-use of `parameters` makes transformations easily usable.
+        posterior = copy.deepcopy(self.parameters)
+        posterior.prior = MultivariateGaussian(
+            search_mean, np.array(ep_bolfi_result["covariance"])
+        )
         return BayesianOptimisationResult(
-            x=mean,
-            posterior=MultivariateGaussian(
-                mean, np.array(ep_bolfi_result["covariance"])
-            ),
+            x=model_mean,
+            posterior=posterior,
+            lower_bounds=lower_bounds,
+            upper_bounds=upper_bounds,
             cost=self.cost,
             n_iterations={
                 "model evaluations": len(

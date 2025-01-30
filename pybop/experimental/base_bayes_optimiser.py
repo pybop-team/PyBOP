@@ -1,8 +1,9 @@
 from typing import Optional, Union
 
 import numpy as np
+from multivariate_parameters import MultivariateParameters
 
-from pybop import BaseCost, BaseOptimiser, BasePrior, Inputs, OptimisationResult
+from pybop import BaseCost, BaseOptimiser, Inputs, OptimisationResult
 
 
 class BaseBayesOptimiser(BaseOptimiser):
@@ -22,6 +23,10 @@ class BayesianOptimisationResult(OptimisationResult):
     ----------
     x : ndarray
         The MAP (Maximum A Posteriori) of the optimisation.
+    lower_bounds: ndarray
+        The lower confidence parameter boundaries.
+    upper_bounds: ndarray
+        The upper confidence parameter boundaries.
     posterior : pybop.BasePrior
         The probability distribution of the optimisation. (PyBOP
         currently handles all probability distributions as "Priors".)
@@ -41,7 +46,9 @@ class BayesianOptimisationResult(OptimisationResult):
     def __init__(
         self,
         x: Union[Inputs, np.ndarray] = None,
-        posterior: BasePrior = None,
+        lower_bounds: Union[Inputs, np.ndarray] = None,
+        upper_bounds: Union[Inputs, np.ndarray] = None,
+        posterior: MultivariateParameters = None,
         cost: Union[BaseCost, None] = None,
         final_cost: Optional[float] = None,
         n_iterations: Union[int, dict, None] = None,
@@ -49,4 +56,6 @@ class BayesianOptimisationResult(OptimisationResult):
         time: Union[float, dict, None] = None,
     ):
         super().__init__(x, cost, final_cost, n_iterations, optim, time)
+        self.lower_bounds = lower_bounds
+        self.upper_bounds = upper_bounds
         self.posterior = posterior
