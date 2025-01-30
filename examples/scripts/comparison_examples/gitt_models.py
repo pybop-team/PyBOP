@@ -47,7 +47,7 @@ for model_type in [pybop.lithium_ion.WeppnerHuggins, pybop.lithium_ion.SPDiffusi
     if model_type == pybop.lithium_ion.WeppnerHuggins:
         # Define parameter set
         parameter_set = convert_physical_to_gitt_parameters(
-            model._unprocessed_parameter_set, "positive"
+            model.parameter_set, "positive"
         )
 
         # We can fit only the duration of the pulse
@@ -81,7 +81,7 @@ for model_type in [pybop.lithium_ion.WeppnerHuggins, pybop.lithium_ion.SPDiffusi
     else:
         # Define parameter set
         parameter_set = convert_physical_to_electrode_parameters(
-            model._unprocessed_parameter_set, "positive"
+            model.parameter_set, "positive"
         )
 
         # Fitting parameters

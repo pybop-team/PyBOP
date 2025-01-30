@@ -38,7 +38,7 @@ dataset = pybop.Dataset(
 
 # Define parameter set
 parameter_set = convert_physical_to_electrode_parameters(
-    model._unprocessed_parameter_set, "positive"
+    model.parameter_set, "positive"
 )
 
 # Fitting parameters
