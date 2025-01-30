@@ -1,6 +1,7 @@
 from pybamm import lithium_ion as pybamm_lithium_ion
 
 from pybop.models.lithium_ion.base_echem import EChemBaseModel
+from pybop.models.lithium_ion.basic_SP_diffusion import BaseSPDiffusion
 from pybop.models.lithium_ion.basic_SPMe import BaseGroupedSPMe
 from pybop.models.lithium_ion.weppner_huggins import BaseWeppnerHuggins
 
@@ -246,7 +247,7 @@ class MSMR(EChemBaseModel):
 
 class WeppnerHuggins(EChemBaseModel):
     """
-    Represents the Weppner & Huggins model to fit diffusion coefficients to GITT data.
+    Represents the Weppner & Huggins model for GITT pulses.
 
     Parameters
     ----------
@@ -270,6 +271,39 @@ class WeppnerHuggins(EChemBaseModel):
     ):
         super().__init__(
             pybamm_model=BaseWeppnerHuggins, name=name, eis=eis, **model_kwargs
+        )
+
+    def _check_params(self, inputs, parameter_set, allow_infeasible_solutions):
+        # Skip the usual electrochemical checks for this scaled model
+        return True
+
+
+class SPDiffusion(EChemBaseModel):
+    """
+    Represents the Single Particle Diffusion Model for GITT pulses.
+
+    Parameters
+    ----------
+    name: str, optional
+        A name for the model instance, defaulting to "Single Particle Diffusion Model".
+    eis : bool, optional
+        A flag to build the forward model for EIS predictions. Defaults to False.
+    **model_kwargs : optional
+        Valid PyBaMM model option keys and their values, for example:
+        parameter_set : pybamm.ParameterValues or dict, optional
+            The parameters for the model. If None, default parameters provided by PyBaMM are used.
+        options : dict, optional
+            A dictionary of options to customise the behaviour of the PyBaMM model.
+    """
+
+    def __init__(
+        self,
+        name="Single Particle Diffusion Model",
+        eis: bool = False,
+        **model_kwargs,
+    ):
+        super().__init__(
+            pybamm_model=BaseSPDiffusion, name=name, eis=eis, **model_kwargs
         )
 
     def _check_params(self, inputs, parameter_set, allow_infeasible_solutions):

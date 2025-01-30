@@ -105,11 +105,11 @@ class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
     @property
     def default_parameter_values(self):
         parameter_dictionary = {
-            "Current function [A]": 3,
-            "Reference voltage [V]": 4,
+            "Current function [A]": 0.0024,
+            "Reference voltage [V]": 0.0024,
             "Derivative of the OCP wrt stoichiometry [V]": -1,
-            "Theoretical electrode capacity [A.s]": 3000,
-            "Particle diffusion time scale [s]": 2000,
+            "Theoretical electrode capacity [A.s]": 15,
+            "Particle diffusion time scale [s]": 3000,
         }
         return ParameterValues(values=parameter_dictionary)
 
@@ -130,7 +130,7 @@ class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
         return DummySolver()
 
 
-def convert_physical_to_electrode_parameters(parameter_set, electrode):
+def convert_physical_to_gitt_parameters(parameter_set, electrode):
     """
     A function to create an electrode parameter set from a standard
     PyBaMM parameter set.
