@@ -88,8 +88,7 @@ class ocp_average(ocp_method):
         If True, the OCPs are allowed to stretch as well as shift with respect to
         the stoichiometry (default: True)
     cost : pybop.BaseCost, optional
-        The cost function to quantify the difference between the differential
-        capacity curves (default: pybop.MeanAbsoluteError).
+        The cost function to quantify the error (default: pybop.MeanAbsoluteError).
     optimiser : pybop.BaseOptimiser, optional
         The optimisation algorithm to use (default: pybop.SciPyMinimize).
     verbose : bool, optional
@@ -130,13 +129,9 @@ class ocp_average(ocp_method):
         )
 
         # Generate evenly spaced data for fitting
-        sto_min_discharge = np.min(ocp_discharge["Stoichiometry"])
-        sto_max_discharge = np.max(ocp_discharge["Stoichiometry"])
-        sto_min_charge = np.min(ocp_charge["Stoichiometry"])
-        sto_max_charge = np.max(ocp_charge["Stoichiometry"])
         sto_evenly_spaced = np.linspace(
-            np.maximum(sto_min_discharge, sto_min_charge),
-            np.minimum(sto_max_discharge, sto_max_charge),
+            np.min(ocp_discharge["Stoichiometry"]),
+            np.max(ocp_discharge["Stoichiometry"]),
             101,
         )
         interpolated_dataset = pybop.Dataset(
@@ -218,12 +213,12 @@ class ocp_average(ocp_method):
 
         # Define the average OCP using the optimised parameters
         sto_min = np.maximum(
-            stretch_and_shift(sto_min_discharge),
-            inverse_stretch_and_shift(sto_min_charge),
+            stretch_and_shift(np.min(ocp_discharge["Stoichiometry"])),
+            inverse_stretch_and_shift(np.min(ocp_charge["Stoichiometry"])),
         )
         sto_max = np.minimum(
-            stretch_and_shift(sto_max_discharge),
-            inverse_stretch_and_shift(sto_max_charge),
+            stretch_and_shift(np.max(ocp_discharge["Stoichiometry"])),
+            inverse_stretch_and_shift(np.max(ocp_charge["Stoichiometry"])),
         )
         sto_range = np.linspace(sto_min, sto_max, 501)
         voltage = (
@@ -249,8 +244,7 @@ class stoichiometric_fit(ocp_method):
     ocv_function : Callable
         The open-circuit voltage as a function of stoichiometry.
     cost : pybop.BaseCost, optional
-        The cost function to quantify the difference between the differential
-        capacity curves (default: pybop.RootMeanSquaredError).
+        The cost function to quantify the error (default: pybop.RootMeanSquaredError).
     optimiser : pybop.BaseOptimiser, optional
         The optimisation algorithm to use (default: pybop.SciPyMinimize).
     verbose : bool, optional
