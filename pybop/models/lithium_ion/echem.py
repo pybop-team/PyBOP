@@ -15,7 +15,7 @@ class SPM(EChemBaseModel):
     Parameters
     ----------
     name : str, optional
-        The name for the model instance, defaulting to "Single Particle Model".
+        A name for the model instance, defaulting to "Single Particle Model".
     eis : bool, optional
         A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
@@ -64,7 +64,7 @@ class SPMe(EChemBaseModel):
     Parameters
     ----------
     name: str, optional
-        A name for the model instance, defaults to "Single Particle Model with Electrolyte".
+        A name for the model instance, defaulting to "Single Particle Model with Electrolyte".
     eis : bool, optional
         A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
@@ -113,7 +113,7 @@ class DFN(EChemBaseModel):
     Parameters
     ----------
     name : str, optional
-        The name for the model instance, defaulting to "Doyle-Fuller-Newman".
+        A name for the model instance, defaulting to "Doyle-Fuller-Newman Model".
     eis : bool, optional
         A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
@@ -138,7 +138,7 @@ class DFN(EChemBaseModel):
 
     def __init__(
         self,
-        name="Doyle-Fuller-Newman",
+        name="Doyle-Fuller-Newman Model",
         eis: bool = False,
         **model_kwargs,
     ):
@@ -152,7 +152,7 @@ class DFN(EChemBaseModel):
 
 class MPM(EChemBaseModel):
     """
-    Wraps the Multi-Particle-Model (MPM) model for simulating lithium-ion batteries, as implemented in PyBaMM.
+    Wraps the Many Particle Model (MPM) for simulating lithium-ion batteries, as implemented in PyBaMM.
 
     The MPM represents lithium-ion battery dynamics using a distribution of spherical particles
     for each electrode. This model inherits the SPM class.
@@ -160,7 +160,7 @@ class MPM(EChemBaseModel):
     Parameters
     ----------
     name : str, optional
-        The name for the model instance, defaulting to "Many Particle Model".
+        A name for the model instance, defaulting to "Many Particle Model".
     eis : bool, optional
         A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
@@ -199,7 +199,7 @@ class MPM(EChemBaseModel):
 
 class MSMR(EChemBaseModel):
     """
-    Wraps the Multi-Species-Multi-Reactions (MSMR) model for simulating lithium-ion batteries, as implemented in PyBaMM.
+    Wraps the Multi-Species Multi-Reaction (MSMR) model for simulating lithium-ion batteries, as implemented in PyBaMM.
 
     The MSMR represents lithium-ion battery dynamics using a distribution of spherical particles for each electrode.
     This model inherits the DFN class.
@@ -207,7 +207,7 @@ class MSMR(EChemBaseModel):
     Parameters
     ----------
     name : str, optional
-        The name for the model instance, defaulting to "Multi Species Multi Reactions Model".
+        A name for the model instance, defaulting to "Multi-Species Multi-Reaction Model".
     eis : bool, optional
         A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
@@ -232,7 +232,7 @@ class MSMR(EChemBaseModel):
 
     def __init__(
         self,
-        name="Multi Species Multi Reactions Model",
+        name="Multi-Species Multi-Reaction Model",
         eis: bool = False,
         **model_kwargs,
     ):
@@ -251,7 +251,7 @@ class WeppnerHuggins(EChemBaseModel):
     Parameters
     ----------
     name: str, optional
-        A name for the model instance, defaults to "Weppner & Huggins model".
+        A name for the model instance, defaulting to "Weppner & Huggins Model".
     eis : bool, optional
         A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
@@ -264,7 +264,7 @@ class WeppnerHuggins(EChemBaseModel):
 
     def __init__(
         self,
-        name="Weppner & Huggins model",
+        name="Weppner & Huggins Model",
         eis: bool = False,
         **model_kwargs,
     ):
@@ -279,12 +279,12 @@ class WeppnerHuggins(EChemBaseModel):
 
 class GroupedSPMe(EChemBaseModel):
     """
-    Represents the grouped-parameter version of the SPMe.
+    Represents the grouped-parameter version of the Single Particle Model with Electrolyte (SPMe).
 
     Parameters
     ----------
     name: str, optional
-        A name for the model instance, defaults to "Grouped SPMe".
+        A name for the model instance, defaulting to "Grouped Single Particle Model with Electrolyte".
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values, for example:
         parameter_set : pybamm.ParameterValues or dict, optional

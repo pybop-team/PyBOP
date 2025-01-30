@@ -22,14 +22,14 @@ class TestModels:
         [
             (pybop.lithium_ion.SPM, "Single Particle Model", None),
             (pybop.lithium_ion.SPMe, "Single Particle Model with Electrolyte", None),
-            (pybop.lithium_ion.DFN, "Doyle-Fuller-Newman", None),
+            (pybop.lithium_ion.DFN, "Doyle-Fuller-Newman Model", None),
             (pybop.lithium_ion.MPM, "Many Particle Model", None),
             (
                 pybop.lithium_ion.MSMR,
-                "Multi Species Multi Reactions Model",
+                "Multi-Species Multi-Reaction Model",
                 {"number of MSMR reactions": ("6", "4")},
             ),
-            (pybop.lithium_ion.WeppnerHuggins, "Weppner & Huggins model", None),
+            (pybop.lithium_ion.WeppnerHuggins, "Weppner & Huggins Model", None),
             (
                 pybop.lithium_ion.GroupedSPMe,
                 "Grouped Single Particle Model with Electrolyte",
@@ -102,6 +102,10 @@ class TestModels:
             inputs = {
                 "Negative electrode relative porosity": 0.52,
                 "Positive electrode relative porosity": 0.63,
+            }
+        elif isinstance(model, (pybop.lithium_ion.WeppnerHuggins)):
+            inputs = {
+                "Theoretical electrode capacity [A.s]": 5000,
             }
         elif isinstance(model, (pybop.lithium_ion.EChemBaseModel)):
             if model.pybamm_model.options["working electrode"] == "positive":
