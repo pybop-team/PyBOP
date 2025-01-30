@@ -39,7 +39,7 @@ class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
                 else:
                     unused_keys.append("options[" + key + "]")
         if any(unused_keys):
-            unused_kwargs_warning = "The input model_kwargs are not currently used by the Weppner & Huggins model."
+            unused_kwargs_warning = f"The input model_kwargs {unused_keys} are not currently used by the Weppner & Huggins model."
             warnings.warn(unused_kwargs_warning, UserWarning, stacklevel=2)
 
         super().__init__(options=options, name=name, build=True)

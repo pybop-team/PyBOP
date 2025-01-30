@@ -28,10 +28,10 @@ class ocp_blend(ocp_method):
 
     Parameters
     ----------
-    ocp_discharge: pybop.Dataset
+    ocp_discharge : pybop.Dataset
         A dataset containing the "Stoichiometry" and "Voltage [V]" obtained from a
         discharge measurement.
-    ocp_charge: pybop.Dataset
+    ocp_charge : pybop.Dataset
         A dataset containing the "Stoichiometry" and "Voltage [V]" obtained from a
         charge measurement.
     """
@@ -78,19 +78,19 @@ class ocp_average(ocp_method):
 
     Parameters
     ----------
-    ocp_discharge: pybop.Dataset
+    ocp_discharge : pybop.Dataset
         A dataset containing the "Stoichiometry" and "Voltage [V]" obtained from a
         discharge measurement.
-    ocp_charge: pybop.Dataset
+    ocp_charge : pybop.Dataset
         A dataset containing the "Stoichiometry" and "Voltage [V]" obtained from a
         charge measurement.
-    allow_stretching: bool, optional
+    allow_stretching : bool, optional
         If True, the OCPs are allowed to stretch as well as shift with respect to
         the stoichiometry (default: True)
-    cost: pybop.BaseCost, optional
+    cost : pybop.BaseCost, optional
         The cost function to quantify the difference between the differential
         capacity curves (default: pybop.MeanAbsoluteError).
-    optimiser: pybop.BaseOptimiser, optional
+    optimiser : pybop.BaseOptimiser, optional
         The optimisation algorithm to use (default: pybop.SciPyMinimize).
     verbose : bool, optional
         If True, progress messages are printed (default: True).
@@ -243,15 +243,15 @@ class stoichiometric_fit(ocp_method):
 
     Parameters
     ----------
-    ocv_dataset: pybop.Dataset
+    ocv_dataset : pybop.Dataset
         A dataset containing the "Charge capacity [A.h]" and "Voltage [V]" obtained
         from an OCV measurement.
-    ocv_function: Callable
+    ocv_function : Callable
         The open-circuit voltage as a function of stoichiometry.
-    cost: pybop.BaseCost, optional
+    cost : pybop.BaseCost, optional
         The cost function to quantify the difference between the differential
         capacity curves (default: pybop.RootMeanSquaredError).
-    optimiser: pybop.BaseOptimiser, optional
+    optimiser : pybop.BaseOptimiser, optional
         The optimisation algorithm to use (default: pybop.SciPyMinimize).
     verbose : bool, optional
         If True, progress messages are printed (default: True).

@@ -9,6 +9,7 @@ from pybamm import (
     ParameterValues,
     PrimaryBroadcast,
     Scalar,
+    SpatialVariable,
     Variable,
 )
 from pybamm import lithium_ion as pybamm_lithium_ion
@@ -32,6 +33,26 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
     ----------
     name : str, optional
         The name of the model.
+    eis : bool, optional
+        A flag to build the forward model for EIS predictions. Defaults to False.
+    **model_kwargs : optional
+        Valid PyBaMM model option keys and their values, for example:
+        parameter_set : pybamm.ParameterValues or dict, optional
+            The parameters for the model. If None, default parameters provided by PyBaMM are used.
+        geometry : dict, optional
+            The geometry definitions for the model. If None, default geometry from PyBaMM is used.
+        submesh_types : dict, optional
+            The types of submeshes to use. If None, default submesh types from PyBaMM are used.
+        var_pts : dict, optional
+            The discretization points for each variable in the model. If None, default points from PyBaMM are used.
+        spatial_methods : dict, optional
+            The spatial methods used for discretization. If None, default spatial methods from PyBaMM are used.
+        solver : pybamm.Solver, optional
+            The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
+        build : bool, optional
+            If True, the model is built upon creation (default: False).
+        options : dict, optional
+            A dictionary of options to customise the behaviour of the PyBaMM model.
     """
 
     def __init__(
@@ -98,8 +119,8 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         )
 
         # Spatial variables
-        x_n = pybamm.SpatialVariable("x_n", ["negative electrode"])
-        x_p = pybamm.SpatialVariable("x_p", ["positive electrode"])
+        x_n = SpatialVariable("x_n", ["negative electrode"])
+        x_p = SpatialVariable("x_p", ["positive electrode"])
 
         # Surf takes the surface value of a variable, i.e. its boundary value on the
         # right side. This is also accessible via `boundary_value(x, "right")`, with
@@ -386,6 +407,40 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "Open-circuit voltage [V]": U_p - U_n,
         }
 
+    def U(self, sto, domain):
+        """
+        Dimensional open-circuit potential [V], calculated as U(x) = U_ref(x).
+        Credit: PyBaMM
+        """
+        # bound stoichiometry between tol and 1-tol. Adding 1/sto + 1/(sto-1) later
+        # will ensure that ocp goes to +- infinity if sto goes into that region
+        # anyway
+        Domain = domain.capitalize()
+        tol = pybamm.settings.tolerances["U__c_s"]
+        sto = pybamm.maximum(pybamm.minimum(sto, 1 - tol), tol)
+        inputs = {f"{Domain} particle surface stoichiometry": sto}
+        u_ref = FunctionParameter(f"{Domain} electrode OCP [V]", inputs)
+
+        # add a term to ensure that the OCP goes to infinity at 0 and -infinity at 1
+        # this will not affect the OCP for most values of sto
+        out = u_ref + 1e-6 * (1 / sto + 1 / (sto - 1))
+
+        if domain == "negative":
+            out.print_name = r"U_\mathrm{n}(c^\mathrm{surf}_\mathrm{s,n})"
+        elif domain == "positive":
+            out.print_name = r"U_\mathrm{p}(c^\mathrm{surf}_\mathrm{s,p})"
+        return out
+
+    def build_model(self):
+        """
+        Build model variables and equations
+        Credit: PyBaMM
+        """
+        self._build_model()
+
+        self._built = True
+        pybamm.logger.info(f"Finish building {self.name}")
+
     @property
     def default_parameter_values(self):
         parameter_dictionary = {
@@ -423,40 +478,6 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "Series resistance [Ohm]": 0.01,
         }
         return ParameterValues(values=parameter_dictionary)
-
-    def build_model(self):
-        """
-        Build model variables and equations
-        Credit: PyBaMM
-        """
-        self._build_model()
-
-        self._built = True
-        pybamm.logger.info(f"Finish building {self.name}")
-
-    def U(self, sto, domain):
-        """
-        Dimensional open-circuit potential [V], calculated as U(x) = U_ref(x).
-        Credit: PyBaMM
-        """
-        # bound stoichiometry between tol and 1-tol. Adding 1/sto + 1/(sto-1) later
-        # will ensure that ocp goes to +- infinity if sto goes into that region
-        # anyway
-        Domain = domain.capitalize()
-        tol = pybamm.settings.tolerances["U__c_s"]
-        sto = pybamm.maximum(pybamm.minimum(sto, 1 - tol), tol)
-        inputs = {f"{Domain} particle surface stoichiometry": sto}
-        u_ref = FunctionParameter(f"{Domain} electrode OCP [V]", inputs)
-
-        # add a term to ensure that the OCP goes to infinity at 0 and -infinity at 1
-        # this will not affect the OCP for most values of sto
-        out = u_ref + 1e-6 * (1 / sto + 1 / (sto - 1))
-
-        if domain == "negative":
-            out.print_name = r"U_\mathrm{n}(c^\mathrm{surf}_\mathrm{s,n})"
-        elif domain == "positive":
-            out.print_name = r"U_\mathrm{p}(c^\mathrm{surf}_\mathrm{s,p})"
-        return out
 
     @property
     def default_quick_plot_variables(self):
