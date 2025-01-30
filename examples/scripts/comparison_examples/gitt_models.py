@@ -1,7 +1,9 @@
 import numpy as np
 
 import pybop
-from pybop.models.lithium_ion.basic_SP_diffusion import convert_physical_to_electrode_parameters
+from pybop.models.lithium_ion.basic_SP_diffusion import (
+    convert_physical_to_electrode_parameters,
+)
 from pybop.models.lithium_ion.weppner_huggins import convert_physical_to_gitt_parameters
 
 # Define model
@@ -36,7 +38,6 @@ dataset = pybop.Dataset(
 )
 
 for model_type in [pybop.lithium_ion.WeppnerHuggins, pybop.lithium_ion.SPDiffusion]:
-
     # GITT target parameter
     diffusion_parameter = pybop.Parameter(
         "Particle diffusion time scale [s]",
@@ -55,7 +56,10 @@ for model_type in [pybop.lithium_ion.WeppnerHuggins, pybop.lithium_ion.SPDiffusi
         # We linearise the open-circuit voltage function
         ocp_derivative = (
             (dataset["Voltage [V]"][-1] - dataset["Voltage [V]"][0])
-            / (dataset["Discharge capacity [A.h]"][-1] - dataset["Discharge capacity [A.h]"][0])
+            / (
+                dataset["Discharge capacity [A.h]"][-1]
+                - dataset["Discharge capacity [A.h]"][0]
+            )
             * (parameter_set["Theoretical electrode capacity [A.s]"] / 3600)
         )
         parameter_set.update(
@@ -88,14 +92,15 @@ for model_type in [pybop.lithium_ion.WeppnerHuggins, pybop.lithium_ion.SPDiffusi
                 initial_value=parameter_set["Series resistance [Ohm]"],
             ),
         )
-        
 
     # Define the cost to optimise
     gitt_model = model_type(parameter_set=parameter_set)
     problem = pybop.FittingProblem(
         gitt_model,
         parameters,
-        dataset.get_subset(pulse_index) if model_type == pybop.lithium_ion.WeppnerHuggins else dataset,
+        dataset.get_subset(pulse_index)
+        if model_type == pybop.lithium_ion.WeppnerHuggins
+        else dataset,
     )
     cost = pybop.RootMeanSquaredError(problem)
 
@@ -108,5 +113,7 @@ for model_type in [pybop.lithium_ion.WeppnerHuggins, pybop.lithium_ion.SPDiffusi
     # Plot the timeseries output
     pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
 
-print("Note the different optimised values for the particle diffusion time scale,"
-      " which is a consequence of the differing model assumptions.")
+print(
+    "Note the different optimised values for the particle diffusion time scale,"
+    " which is a consequence of the differing model assumptions."
+)
