@@ -21,7 +21,7 @@ ocv_dataset = pybop.Dataset(
 )
 
 # Estimate the stoichiometry corresponding to the GITT-OCV
-ocv_fit = pybop.stoichiometric_fit(
+ocv_fit = pybop.StoichiometricFit(
     ocv_dataset,
     ocv_function,
 )
