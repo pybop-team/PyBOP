@@ -41,32 +41,16 @@ parameter_set = convert_physical_to_electrode_parameters(
     model.parameter_set, "positive"
 )
 
-# Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Particle diffusion time scale [s]",
-        prior=pybop.Gaussian(2000, 1000),
-    ),
-    pybop.Parameter(
-        "Series resistance [Ohm]",
-        initial_value=parameter_set["Series resistance [Ohm]"],
-    ),
-)
-
-# Define the cost to optimise
-model = pybop.lithium_ion.SPDiffusion(parameter_set=parameter_set)
-problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.RootMeanSquaredError(problem)
-
-# Build and run the optimisation problem
-optim = pybop.SciPyMinimize(cost=cost)
-results = optim.run()
+# Fit the GITT pulse using the single particle diffusion model
+gitt_fit = pybop.gitt_pulse_fit(dataset, parameter_set)
 
 # Plot the timeseries output
-pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.quick(
+    gitt_fit.problem, problem_inputs=gitt_fit.results.x, title="Optimised Comparison"
+)
 
 # Plot convergence
-pybop.plot.convergence(optim)
+pybop.plot.convergence(gitt_fit.optim)
 
 # Plot the parameter traces
-pybop.plot.parameters(optim)
+pybop.plot.parameters(gitt_fit.optim)
