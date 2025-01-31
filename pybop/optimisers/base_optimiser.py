@@ -54,7 +54,14 @@ class BaseOptimiser:
         self.parameters = Parameters()
         self.x0 = optimiser_kwargs.get("x0", [])
         self.log = dict(
-            iterations=[], x=[], x_best=[], x_search=[], x0=[], cost=[], cost_best=[]
+            iterations=[],
+            evaluations=[],
+            x=[],
+            x_best=[],
+            x_search=[],
+            x0=[],
+            cost=[],
+            cost_best=[],
         )
         self.bounds = None
         self.sigma0 = 0.02
@@ -234,7 +241,14 @@ class BaseOptimiser:
         raise NotImplementedError
 
     def log_update(
-        self, iterations=None, x=None, x_best=None, cost=None, cost_best=None, x0=None
+        self,
+        iterations=None,
+        evaluations=None,
+        x=None,
+        x_best=None,
+        cost=None,
+        cost_best=None,
+        x0=None,
     ):
         """
         Update the log with new values.
@@ -275,6 +289,8 @@ class BaseOptimiser:
         # Prepare and log each parameter (if provided)
         if iterations is not None:
             self.log["iterations"].extend(_prepare_values(iterations))
+        if evaluations is not None:
+            self.log["evaluations"].extend(_prepare_values(evaluations))
         if x is not None:
             x_prepared = _prepare_values(x, transform=True)
             self.log["x_search"].extend(x)
@@ -296,13 +312,16 @@ class BaseOptimiser:
                 if self.log["iterations"]
                 else self._iter_count
             )
+            latest_eval = (
+                self.log["evaluations"][-1] if self.log["evaluations"] else "N/A"
+            )
             latest_x_best = self.log["x_best"][-1] if self.log["x_best"] else "N/A"
             latest_cost_best = (
                 self.log["cost_best"][-1] if self.log["cost_best"] else "N/A"
             )
             if latest_iter <= 10 or latest_iter % 20 == 0:
                 print(
-                    f"Iter: {latest_iter} | Best Values: {latest_x_best} | Best Cost: {latest_cost_best} |"
+                    f"Iter: {latest_iter} | Evals: {latest_eval} | Best Values: {latest_x_best} | Best Cost: {latest_cost_best} |"
                 )
         self._iter_count += 1
 
