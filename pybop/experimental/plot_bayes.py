@@ -1,4 +1,3 @@
-import copy
 from multiprocessing import Pool
 
 import numpy as np
@@ -7,10 +6,6 @@ from ep_bolfi.utility.preprocessing import combine_parameters_to_try
 
 from pybop import DesignProblem
 from pybop.plot.standard_plots import StandardPlot
-
-
-def parallel_evaluate(inputs, problem):
-    return problem.evaluate(inputs)
 
 
 def bayes(problem, results: BayesianOptimisationResult, show=True, **layout_kwargs):
@@ -44,7 +39,7 @@ def bayes(problem, results: BayesianOptimisationResult, show=True, **layout_kwar
 
     # Extract the time data and evaluate the model's output and target values
     xaxis_data = problem.domain_data
-    model_output = copy.deepcopy(problem).evaluate(results.x)
+    model_output = problem.evaluate(results.x)
     target_output = problem.get_target()
 
     # Explore the range of model realizations
@@ -62,9 +57,8 @@ def bayes(problem, results: BayesianOptimisationResult, show=True, **layout_kwar
                 [permutations[i][k] for k in range(len(permutations[i]))]
             )
 
-        parallel_input = [(p, copy.deepcopy(problem)) for p in permutations]
         with Pool() as p:
-            extremes = p.starmap(parallel_evaluate, parallel_input)
+            extremes = p.map(problem.evaluate, permutations)
             extremes = {
                 i: [extremes[j][i] for j in range(len(extremes))]
                 for i in problem.signal
@@ -77,9 +71,9 @@ def bayes(problem, results: BayesianOptimisationResult, show=True, **layout_kwar
         )
         if resamples.ndim == 1:
             resamples = np.atleast_2d(resamples).T
-        parallel_input = [(r, copy.deepcopy(problem)) for r in resamples]
+
         with Pool() as p:
-            predictions = p.starmap(parallel_evaluate, parallel_input)
+            predictions = p.map(problem.evaluate, resamples)
             predictions = {
                 i: [predictions[j][i] for j in range(len(predictions))]
                 for i in problem.signal
