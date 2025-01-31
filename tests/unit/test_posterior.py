@@ -10,6 +10,8 @@ class TestLogPosterior:
     Class for log posterior unit tests
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.fixture
     def model(self):
         return pybop.lithium_ion.SPM()
@@ -64,7 +66,6 @@ class TestLogPosterior:
     def prior(self):
         return pybop.Gaussian(0.5, 0.01)
 
-    @pytest.mark.unit
     def test_log_posterior_construction(self, likelihood, prior):
         # Test log posterior construction
         posterior = pybop.LogPosterior(likelihood, prior)
@@ -76,7 +77,6 @@ class TestLogPosterior:
         assert posterior.has_separable_problem == likelihood.has_separable_problem
         assert posterior.transformation == likelihood.transformation
 
-    @pytest.mark.unit
     def test_log_posterior_construction_no_prior(self, likelihood):
         # Test log posterior construction without prior
         posterior = pybop.LogPosterior(likelihood, None)
@@ -91,7 +91,6 @@ class TestLogPosterior:
     def posterior(self, likelihood, prior):
         return pybop.LogPosterior(likelihood, prior)
 
-    @pytest.mark.unit
     def test_log_posterior(self, posterior):
         # Test log posterior
         x = np.array([0.50])
@@ -113,13 +112,11 @@ class TestLogPosterior:
     def posterior_uniform_prior(self, likelihood):
         return pybop.LogPosterior(likelihood, pybop.Uniform(0.45, 0.55))
 
-    @pytest.mark.unit
     def test_log_posterior_inf(self, posterior_uniform_prior):
         # Test prior np.inf
         assert not np.isfinite(posterior_uniform_prior([1]))
         assert not np.isfinite(posterior_uniform_prior([1], calculate_grad=True)[0])
 
-    @pytest.mark.unit
     def test_non_logpdfS1_prior(self, likelihood):
         # Scipy distribution
         prior = st.norm(0.8, 0.01)

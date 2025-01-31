@@ -9,6 +9,8 @@ class Test_SPM_Parameterisation:
     A class to test the model parameterisation methods.
     """
 
+    pytestmark = pytest.mark.integration
+
     @pytest.fixture(autouse=True)
     def setup(self):
         self.sigma0 = 0.002
@@ -158,7 +160,6 @@ class Test_SPM_Parameterisation:
             optim.optimiser.b2 = 0.9
         return optim
 
-    @pytest.mark.integration
     def test_optimisers(self, optim):
         x0 = optim.parameters.initial_value()
 
@@ -226,7 +227,6 @@ class Test_SPM_Parameterisation:
             pybop.CMAES,
         ],
     )
-    @pytest.mark.integration
     def test_multiple_signals(self, multi_optimiser, two_signal_cost):
         x0 = two_signal_cost.parameters.initial_value()
         combined_sigma0 = np.asarray([self.sigma0, self.sigma0])
@@ -271,7 +271,6 @@ class Test_SPM_Parameterisation:
             np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
     @pytest.mark.parametrize("init_soc", [0.4, 0.6])
-    @pytest.mark.integration
     def test_model_misparameterisation(self, parameters, model, init_soc):
         # Define two different models with different parameter sets
         # The optimisation should fail as the models are not the same

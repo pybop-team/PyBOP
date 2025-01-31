@@ -10,6 +10,8 @@ class TestHalfCellModel:
     A class to test optimisation of a PyBaMM half-cell model.
     """
 
+    pytestmark = pytest.mark.integration
+
     @pytest.fixture(autouse=True)
     def setup(self):
         self.sigma0 = 0.002
@@ -89,7 +91,6 @@ class TestHalfCellModel:
         problem = pybop.FittingProblem(model, parameters, dataset)
         return pybop.SumSquaredError(problem)
 
-    @pytest.mark.integration
     def test_fitting_costs(self, fitting_cost):
         x0 = fitting_cost.parameters.initial_value()
         optim = pybop.CuckooSearch(
@@ -133,7 +134,6 @@ class TestHalfCellModel:
         )
         return pybop.GravimetricEnergyDensity(problem)
 
-    @pytest.mark.integration
     def test_design_costs(self, design_cost):
         optim = pybop.CuckooSearch(
             design_cost,

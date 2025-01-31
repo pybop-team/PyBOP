@@ -23,6 +23,8 @@ class TestTransformation:
     A class for integration tests of the transformation methods.
     """
 
+    pytestmark = pytest.mark.integration
+
     @pytest.fixture(autouse=True)
     def setup(self):
         self.sigma0 = 2e-3
@@ -110,7 +112,6 @@ class TestTransformation:
         [pybop.IRPropMin, pybop.CMAES, pybop.SciPyDifferentialEvolution],
         ids=["IRPropMin", "CMAES", "SciPyDifferentialEvolution"],
     )
-    @pytest.mark.integration
     @pytest.mark.parametrize(
         "transformation_r0, transformation_r1",
         list(

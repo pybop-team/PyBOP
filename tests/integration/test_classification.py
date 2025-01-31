@@ -10,6 +10,8 @@ class TestClassification:
     A class to test the classification of different optimisation results.
     """
 
+    pytestmark = pytest.mark.integration
+
     @pytest.fixture(
         params=[
             np.asarray([0.05, 0.05]),
@@ -68,7 +70,6 @@ class TestClassification:
     def problem(self, model, parameters, dataset):
         return pybop.FittingProblem(model, parameters, dataset)
 
-    @pytest.mark.integration
     def test_classify_using_hessian(self, problem):
         cost = pybop.RootMeanSquaredError(problem)
         x = cost.parameters.true_value()
@@ -106,7 +107,6 @@ class TestClassification:
         # message = pybop.classify_using_hessian(results)
         # assert message == "The optimiser has located a saddle point."
 
-    @pytest.mark.integration
     def test_insensitive_classify_using_hessian(self, parameter_set):
         param_R0_a = pybop.Parameter(
             "R0_a [Ohm]",

@@ -9,7 +9,8 @@ class TestDataset:
     Class to test dataset construction.
     """
 
-    @pytest.mark.unit
+    pytestmark = pytest.mark.unit
+
     def test_dataset(self):
         # Construct and simulate model
         model = pybop.lithium_ion.SPM()
