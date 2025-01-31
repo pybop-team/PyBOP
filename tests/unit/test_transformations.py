@@ -11,6 +11,8 @@ class TestTransformation:
     A class to test the transformations.
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.fixture
     def parameters(self):
         return pybop.Parameters(
@@ -31,7 +33,6 @@ class TestTransformation:
             ),
         )
 
-    @pytest.mark.unit
     def test_identity_transformation(self, parameters):
         q = np.asarray([5.0])
         transformation = parameters["Identity"].transformation
@@ -52,7 +53,6 @@ class TestTransformation:
         cov_transformed = transformation.convert_covariance_matrix(cov, q)
         assert np.array_equal(cov_transformed, cov)
 
-    @pytest.mark.unit
     def test_scaled_transformation(self, parameters):
         q = np.asarray([2.5])
         transformation = parameters["Scaled"].transformation
@@ -83,7 +83,6 @@ class TestTransformation:
         with pytest.raises(ValueError, match="Unknown method:"):
             transformation._transform(q, "bad-string")
 
-    @pytest.mark.unit
     def test_hypercube_transformation(self, parameters):
         q = np.asarray([0.5])
         coeff = 1 / (100 - 10)
@@ -113,7 +112,6 @@ class TestTransformation:
         ):
             pybop.UnitHyperCube(100, 1)
 
-    @pytest.mark.unit
     def test_log_transformation(self, parameters):
         q = np.asarray([10])
         transformation = parameters["Log"].transformation
@@ -146,7 +144,6 @@ class TestTransformation:
         with pytest.raises(ValueError, match="Unknown method:"):
             transformation._transform(q, "bad-string")
 
-    @pytest.mark.unit
     def test_composed_transformation(self, parameters):
         # Test elementwise transformations
         transformation = pybop.ComposedTransformation(
@@ -196,7 +193,6 @@ class TestTransformation:
                 [parameters["Identity"].transformation, "string"]
             )
 
-    @pytest.mark.unit
     def test_verify_input(self, parameters):
         q = np.asarray([5.0])
         q_dict = {"Identity": q[0]}
@@ -219,6 +215,8 @@ class TestBaseTransformation:
     A class to test the abstract base transformation class.
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.fixture
     def ConcreteTransformation(self):
         class ConcreteTransformation(pybop.Transformation):
@@ -230,19 +228,16 @@ class TestBaseTransformation:
 
         return ConcreteTransformation()
 
-    @pytest.mark.unit
     def test_abstract_base_transformation(self):
         with pytest.raises(TypeError):
             pybop.Transformation()
 
-    @pytest.mark.unit
     def test_abstract_methods(self):
         abstract_methods = ["jacobian", "_transform"]
         for method in abstract_methods:
             assert hasattr(pybop.Transformation, method)
             assert getattr(pybop.Transformation, method).__isabstractmethod__
 
-    @pytest.mark.unit
     def test_concrete_methods(self):
         concrete_methods = [
             "convert_covariance_matrix",
@@ -255,7 +250,6 @@ class TestBaseTransformation:
             assert hasattr(pybop.Transformation, method)
             assert not inspect.isabstract(getattr(pybop.Transformation, method))
 
-    @pytest.mark.unit
     def test_not_implemented_methods(self, ConcreteTransformation):
         not_implemented_methods = [
             "jacobian_S1",

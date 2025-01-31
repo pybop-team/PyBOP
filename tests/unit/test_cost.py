@@ -12,6 +12,8 @@ class TestCosts:
     Class for tests cost functions
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.fixture
     def model(self, ground_truth):
         solver = pybamm.IDAKLUSolver()
@@ -77,10 +79,10 @@ class TestCosts:
         cls = request.param
         if cls in [pybop.SumSquaredError, pybop.RootMeanSquaredError]:
             return cls(problem)
-        elif cls is pybop.LogPosterior:
-            return cls(pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002))
         elif cls in [pybop.Minkowski, pybop.SumofPower]:
             return cls(problem, p=2)
+        elif cls is pybop.LogPosterior:
+            return cls(pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002))
         elif cls is pybop.ObserverCost:
             inputs = problem.parameters.initial_value()
             state = problem.model.reinit(inputs)
@@ -106,7 +108,6 @@ class TestCosts:
                 ),
             )
 
-    @pytest.mark.unit
     def test_base(self, model, parameters, dataset):
         problem = pybop.FittingProblem(model, parameters, dataset)
         for cost_class in [pybop.BaseCost, pybop.FittingCost, pybop.DesignCost]:
@@ -115,7 +116,6 @@ class TestCosts:
             with pytest.raises(NotImplementedError):
                 base_cost([0.5])
 
-    @pytest.mark.unit
     def test_costs(self, cost):
         if isinstance(cost, pybop.BaseLikelihood):
             higher_cost = cost([0.52])
@@ -169,7 +169,6 @@ class TestCosts:
         with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
             cost(["StringInputShouldNotWork"])
 
-    @pytest.mark.unit
     def test_minkowski(self, problem):
         # Incorrect order
         with pytest.raises(ValueError, match="The order of the Minkowski distance"):
@@ -180,7 +179,6 @@ class TestCosts:
         ):
             pybop.Minkowski(problem, p=np.inf)
 
-    @pytest.mark.unit
     def test_sumofpower(self, problem):
         # Incorrect order
         with pytest.raises(
@@ -232,7 +230,6 @@ class TestCosts:
             (pybop.VolumetricPowerDensity, "Volumetric Power Density"),
         ],
     )
-    @pytest.mark.unit
     def test_design_costs(self, cost_class, expected_name, design_problem):
         # Construct Cost
         cost = cost_class(design_problem)
@@ -275,7 +272,6 @@ class TestCosts:
         )
         return pybop.FittingProblem(model, parameters, noisy_dataset)
 
-    @pytest.mark.unit
     def test_weighted_fitting_cost(self, noisy_problem):
         problem = noisy_problem
         cost1 = pybop.SumSquaredError(problem)
@@ -349,7 +345,6 @@ class TestCosts:
             atol=1e-5,
         )
 
-    @pytest.mark.unit
     def test_weighted_design_cost(self, design_problem):
         cost1 = pybop.GravimetricEnergyDensity(design_problem)
         cost2 = pybop.VolumetricEnergyDensity(design_problem)
@@ -381,7 +376,6 @@ class TestCosts:
             atol=1e-5,
         )
 
-    @pytest.mark.unit
     def test_weighted_design_cost_with_update_capacity(self, design_problem):
         design_problem.update_capacity = True
         cost1 = pybop.GravimetricEnergyDensity(design_problem)
@@ -398,7 +392,6 @@ class TestCosts:
             atol=1e-5,
         )
 
-    @pytest.mark.unit
     def test_mixed_problem_classes(self, problem, design_problem):
         cost1 = pybop.SumSquaredError(problem)
         cost2 = pybop.GravimetricEnergyDensity(design_problem)

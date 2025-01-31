@@ -9,6 +9,8 @@ class TestCostsTransformations:
     Class for unit testing cost functions with transformations applied.
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.fixture(autouse=True)
     def setup(self):
         self.x1 = [0.5, 1]
@@ -108,7 +110,6 @@ class TestCostsTransformations:
         else:
             return cls(problem)
 
-    @pytest.mark.unit
     def test_cost_transformations(self, cost):
         if isinstance(cost, pybop.GaussianLogLikelihood):
             self.x1.append(0.002)
@@ -119,7 +120,6 @@ class TestCostsTransformations:
         transformed_cost = cost(self.x2, apply_transform=True)
         np.testing.assert_allclose(non_transformed_cost, transformed_cost)
 
-    @pytest.mark.unit
     def test_cost_gradient_transformed(self, cost):
         # Gradient transformations are not implmented on ObserverCost
         if isinstance(cost, pybop.ObserverCost):

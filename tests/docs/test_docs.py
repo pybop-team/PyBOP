@@ -9,7 +9,8 @@ import pytest
 class TestDocs:
     """A class to test the PyBOP documentation."""
 
-    @pytest.mark.docs
+    pytestmark = pytest.mark.docs
+
     def test_docs(self):
         """
         Check if the documentation can be built and run any doctests (currently not used).
