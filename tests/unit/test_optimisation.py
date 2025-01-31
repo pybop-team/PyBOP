@@ -425,6 +425,12 @@ class TestOptimisation:
         with pytest.warns(UserWarning, match="Boundaries ignored by AdamW"):
             pybop.AdamWImpl(x0=[0.1], boundaries=[0.0, 0.2])
 
+    def test_irprop_plus_impl_incorrect_steps(self):
+        with pytest.raises(ValueError, match="Minimum step size"):
+            optim = pybop.IRPropPlusImpl(x0=[0.1])
+            optim.step_max = 1e-8
+            optim.ask()
+
     def test_scipy_minimize_with_jac(self, cost):
         # Check a method that uses gradient information
         optim = pybop.SciPyMinimize(

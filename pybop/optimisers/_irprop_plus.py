@@ -1,6 +1,10 @@
+#
+# Initially based of Pints' IRProp- class.
+#
+
 import numpy as np
-from pints import Boundaries, RectangularBoundaries
 from pints import Optimiser as PintsOptimiser
+from pints import RectangularBoundaries
 
 
 class IRPropPlusImpl(PintsOptimiser):
@@ -20,7 +24,7 @@ class IRPropPlusImpl(PintsOptimiser):
         Initial starting point for the optimisation.
     sigma0 : float or array-like, optional
         Initial step size(s). If a scalar is provided, it is applied to all dimensions.
-        Default is 0.1.
+        Default is 0.05.
     boundaries : pints.Boundaries, optional
         Boundary constraints for the optimisation. If None, no boundaries are applied.
 
@@ -38,18 +42,8 @@ class IRPropPlusImpl(PintsOptimiser):
         Maximum allowable step size. Default is None (unlimited).
     """
 
-    def __init__(self, x0, sigma0=0.1, boundaries=None):
+    def __init__(self, x0, sigma0=0.05, boundaries=None):
         super().__init__(x0, sigma0, boundaries)
-
-        # Validate inputs
-        if len(self._sigma0) != len(x0):
-            raise ValueError(
-                "Length of `sigma0` must match the dimensionality of `x0`."
-            )
-        if boundaries is not None and not isinstance(boundaries, Boundaries):
-            raise ValueError(
-                "`boundaries` must be a `pints.Boundaries` object or None."
-            )
 
         # Set hypers
         self.eta_min = 0.5
@@ -130,18 +124,16 @@ class IRPropPlusImpl(PintsOptimiser):
             return
 
         # Compute gradient product (element-wise)
-        gradient_product = gradient_new * self._gradient_previous
+        grad_product = gradient_new * self._gradient_previous
 
         # Update step sizes, and bound them
-        self._step_sizes[gradient_product > 0] *= self.eta_max
-        self._step_sizes[gradient_product < 0] *= self.eta_min
+        self._step_sizes[grad_product > 0] *= self.eta_max
+        self._step_sizes[grad_product < 0] *= self.eta_min
         self._step_sizes = np.clip(self._step_sizes, self.step_min, self.step_max)
 
         # Handle weight backtracking: revert last update where gradient sign changed
-        gradient_new[gradient_product < 0] = 0
-        self._x_current[gradient_product < 0] -= self._update_previous[
-            gradient_product < 0
-        ]
+        gradient_new[grad_product < 0] = 0
+        self._x_current[grad_product < 0] -= self._update_previous[grad_product < 0]
 
         # Update the current position
         self._x_current = np.copy(self._proposed)
@@ -163,11 +155,6 @@ class IRPropPlusImpl(PintsOptimiser):
             while np.any(proposed < self._lower) or np.any(proposed >= self._upper):
                 mask = np.logical_or(proposed < self._lower, proposed >= self._upper)
                 self._step_sizes[mask] *= self.eta_min
-                proposed = self._x_current - self._step_sizes * np.sign(gradient_new)
-        elif self._boundaries is not None:
-            # General boundaries
-            while not self._boundaries.check(proposed):
-                self._step_sizes *= self.eta_min
                 proposed = self._x_current - self._step_sizes * np.sign(gradient_new)
 
         # Update the proposed point
