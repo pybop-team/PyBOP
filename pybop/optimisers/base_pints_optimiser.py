@@ -262,6 +262,7 @@ class BasePintsOptimiser(BaseOptimiser):
                 iteration += 1
                 _fs = [x[0] for x in fs] if self._needs_sensitivities else fs
                 self.log_update(
+                    iterations=iteration,
                     x=xs,
                     x_best=self.optimiser.x_best(),
                     cost=_fs,

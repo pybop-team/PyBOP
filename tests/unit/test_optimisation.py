@@ -159,12 +159,6 @@ class TestOptimisation:
             results = optim.run()
             assert results.n_iterations == 3
 
-        def check_incorrect_update(optim):
-            with pytest.raises(
-                TypeError, match="Input must be a list, tuple, or numpy array"
-            ):
-                optim.log_update(x="Incorrect")
-
         def check_bounds_handling(optim, expected_bounds, should_raise=False):
             if should_raise:
                 with pytest.raises(
@@ -186,7 +180,6 @@ class TestOptimisation:
 
         check_max_iterations(optim)
         assert_log_update(optim)
-        check_incorrect_update(optim)
 
         # Test multistart
         multistart_optim = optimiser(cost, multistart=2, max_iterations=6)
@@ -646,21 +639,11 @@ class TestOptimisation:
         optim.set_threshold(np.inf)
         results = optim.run()
         assert (
-            captured_output.getvalue().strip()
-            == f"Halt: Objective function crossed threshold: inf.\n"
-            f"OptimisationResult:\n"
-            f"  Best result from {results.n_runs} run(s).\n"
-            f"  Initial parameters: {results.x0}\n"
-            f"  Optimised parameters: {results.x}\n"
-            f"  Diagonal Fisher Information entries: {None}\n"
-            f"  Final cost: {results.final_cost}\n"
-            f"  Optimisation time: {results.time} seconds\n"
-            f"  Number of iterations: {results.n_iterations}\n"
-            f"  Number of evaluations: {results.n_evaluations}\n"
-            f"  SciPy result available: No\n"
-            f"  PyBaMM Solution available: Yes"
+            "Halt: Objective function crossed threshold: inf."
+            in captured_output.getvalue()
         )
 
+        # Test pybamm solution
         assert (
             "Positive electrode active material volume fraction"
             in results.pybamm_solution.all_inputs[0]

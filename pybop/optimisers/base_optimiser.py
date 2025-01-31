@@ -53,10 +53,12 @@ class BaseOptimiser:
         # First set attributes to default values
         self.parameters = Parameters()
         self.x0 = optimiser_kwargs.get("x0", [])
-        self.log = dict(x=[], x_best=[], x_search=[], x0=[], cost=[], cost_best=[])
+        self.log = dict(
+            iterations=[], x=[], x_best=[], x_search=[], x0=[], cost=[], cost_best=[]
+        )
         self.bounds = None
         self.sigma0 = 0.02
-        self.verbose = True
+        self.verbose = False
         self._transformation = None
         self._needs_sensitivities = False
         self._minimising = True
@@ -64,6 +66,7 @@ class BaseOptimiser:
         self.allow_infeasible_solutions = False
         self.default_max_iterations = 1000
         self.result = None
+        self._iter_count = 0
 
         if isinstance(cost, BaseCost):
             self.cost = cost
@@ -213,9 +216,7 @@ class BaseOptimiser:
 
         # Store the optimised parameters
         self.parameters.update(values=self.result.x_best)
-
-        if self.verbose:
-            print(self.result)
+        print(self.result)
 
         return self.result
 
@@ -232,64 +233,78 @@ class BaseOptimiser:
         """
         raise NotImplementedError
 
-    def log_update(self, x=None, x_best=None, cost=None, cost_best=None, x0=None):
+    def log_update(
+        self, iterations=None, x=None, x_best=None, cost=None, cost_best=None, x0=None
+    ):
         """
         Update the log with new values.
 
         Parameters
         ----------
+        iterations : list or array-like, optional
+            Iteration indices to log (default: None).
         x : list or array-like, optional
             Parameter values (default: None).
         x_best : list or array-like, optional
             Parameter values corresponding to the best cost yet (default: None).
         cost : list, optional
             Cost values corresponding to x (default: None).
-        cost_best
+        cost_best : list, optional
             Cost values corresponding to x_best (default: None).
+        x0 : list or array-like, optional
+            Initial parameter values (default: None).
         """
 
-        def convert_to_list(array_like):
-            """Helper function to convert input to a list, if necessary."""
-            if isinstance(array_like, (list, tuple, np.ndarray, jnp.ndarray)):
-                return list(array_like)
-            elif isinstance(array_like, (int, float)):
-                return [array_like]
+        def _prepare_values(values, transform=False, negate=False):
+            """
+            Helper function to convert values to a list, apply transformations,
+            and negate if required.
+            """
+            if values is None:
+                return None
+            if isinstance(values, (list, tuple, np.ndarray, jnp.ndarray)):
+                values = list(values)
             else:
-                raise TypeError("Input must be a list, tuple, or numpy array")
-
-        def apply_transformation(values):
-            """Apply transformation if it exists."""
-            if self._transformation:
-                return [self._transformation.to_model(value) for value in values]
+                values = [values]
+            if transform and self._transformation:
+                values = [self._transformation.to_model(v) for v in values]
+            if negate:
+                values = [v * (1 if self.minimising else -1) for v in values]
             return values
 
+        # Prepare and log each parameter (if provided)
+        if iterations is not None:
+            self.log["iterations"].extend(_prepare_values(iterations))
         if x is not None:
-            x = convert_to_list(x)
+            x_prepared = _prepare_values(x, transform=True)
             self.log["x_search"].extend(x)
-            x = apply_transformation(x)
-            self.log["x"].extend(x)
-
+            self.log["x"].extend(x_prepared)
         if x_best is not None:
-            x_best = apply_transformation([x_best])
-            self.log["x_best"].extend(x_best)
-
+            x_best_prepared = _prepare_values([x_best], transform=True)
+            self.log["x_best"].extend(x_best_prepared)
         if cost is not None:
-            cost = convert_to_list(cost)
-            cost = [
-                internal_cost * (1 if self.minimising else -1) for internal_cost in cost
-            ]
-            self.log["cost"].extend(cost)
-
+            self.log["cost"].extend(_prepare_values(cost, negate=True))
         if cost_best is not None:
-            cost_best = convert_to_list(cost_best)
-            cost_best = [
-                internal_cost * (1 if self.minimising else -1)
-                for internal_cost in cost_best
-            ]
-            self.log["cost_best"].extend(cost_best)
-
+            self.log["cost_best"].extend(_prepare_values(cost_best, negate=True))
         if x0 is not None:
-            self.log["x0"].extend(x0)
+            self.log["x0"].extend(_prepare_values(x0))
+
+        # Verbose printing if user-requested
+        if self.verbose:
+            latest_iter = (
+                self.log["iterations"][-1]
+                if self.log["iterations"]
+                else self._iter_count
+            )
+            latest_x_best = self.log["x_best"][-1] if self.log["x_best"] else "N/A"
+            latest_cost_best = (
+                self.log["cost_best"][-1] if self.log["cost_best"] else "N/A"
+            )
+            if latest_iter <= 10 or latest_iter % 20 == 0:
+                print(
+                    f"Iter: {latest_iter} | Best Values: {latest_x_best} | Best Cost: {latest_cost_best} |"
+                )
+        self._iter_count += 1
 
     def name(self):
         """
