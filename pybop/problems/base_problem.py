@@ -1,3 +1,4 @@
+import copy
 from typing import Optional
 
 import numpy as np
@@ -25,6 +26,12 @@ class BaseProblem:
         Additional variables to observe and store in the solution (default: []).
     initial_state : dict, optional
         A valid initial state (default: None).
+    parallelizable : bool, optional
+        Set to True to use the following workaround to enable parallel
+        model evaluation: deepcopy the model before every evaluation.
+        Note that this means no sensitivities are ever stored. If you
+        wish to compute them, set `parallelizable` to False again and
+        evaluate once more.
     """
 
     def __init__(
@@ -35,6 +42,7 @@ class BaseProblem:
         signal: Optional[list[str]] = None,
         additional_variables: Optional[list[str]] = None,
         initial_state: Optional[dict] = None,
+        parallelizable: Optional[bool] = False,
     ):
         signal = signal or ["Voltage [V]"]
         if isinstance(signal, str):
@@ -68,6 +76,7 @@ class BaseProblem:
         self.check_model = check_model
         self.signal = signal or ["Voltage [V]"]
         self.set_initial_state(initial_state)
+        self.parallelizable = parallelizable
         self._dataset = None
         self._domain_data = None
         self._target = None
@@ -178,7 +187,10 @@ class BaseProblem:
 
     @property
     def model(self):
-        return self._model
+        if self.parallelizable:
+            return copy.deepcopy(self._model)
+        else:
+            return self._model
 
     @property
     def target(self):
