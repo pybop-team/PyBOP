@@ -214,21 +214,17 @@ class TestLikelihoods:
         )
 
     @pytest.fixture(
-        params=[
-            pybop.GaussianLogLikelihoodKnownSigma,
-            pybop.GaussianLogLikelihood
-        ]
+        params=[pybop.GaussianLogLikelihoodKnownSigma, pybop.GaussianLogLikelihood]
     )
-    def cost(self,one_signal_problem, request):
+    def cost(self, one_signal_problem, request):
         cls = request.param
         if cls in [
             pybop.GaussianLogLikelihoodKnownSigma,
         ]:
             return cls(one_signal_problem, sigma0=1e-3)
         return cls(one_signal_problem)
-    
-    @pytest.mark.unit
-    def test_fisher_matrix(self,cost):
-        fisher = cost.fisher_matrix([0.5,0.03])
-        assert isinstance(fisher, np.ndarray)
 
+    @pytest.mark.unit
+    def test_fisher_matrix(self, cost):
+        fisher = cost.fisher_matrix([0.5, 0.03])
+        assert isinstance(fisher, np.ndarray)

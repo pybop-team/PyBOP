@@ -21,7 +21,7 @@ class BaseLikelihood(BaseCost):
         self.n_data = problem.n_data
         self.minimising = False
 
-    def fisher_matrix(self,inputs: Inputs) -> np.ndarray:
+    def fisher_matrix(self, inputs: Inputs) -> np.ndarray:
         """
         Compute the observed Fisher Information Matrix (FIM) for the given data.
 
