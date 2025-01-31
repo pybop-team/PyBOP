@@ -40,7 +40,7 @@ class TestOptimisation:
         return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.6, 0.2),
+                prior=pybop.Gaussian(0.6, 0.02),
                 bounds=[0.58, 0.62],
             ),
             pybop.Parameter(
