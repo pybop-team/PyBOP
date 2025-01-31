@@ -5,7 +5,7 @@ import scipy.stats as stats
 
 import pybop
 from pybop.costs.base_cost import BaseCost
-from pybop.parameters.parameter import Parameter, Parameters
+from pybop.parameters.parameter import Parameter, Parameters, Inputs
 from pybop.parameters.priors import BasePrior, JointLogPrior, Uniform
 from pybop.problems.base_problem import BaseProblem
 
@@ -21,12 +21,13 @@ class BaseLikelihood(BaseCost):
         self.n_data = problem.n_data
         self.minimising = False
 
-    def observed_fisher(self, y: dict, dy: np.ndarray) -> np.ndarray:
+    def observed_fisher(self, y: dict, dy: np.ndarray, inputs: Inputs) -> np.ndarray:
         """
         Compute the observed Fisher Information Matrix (FIM) for the given data.
 
         The FIM is computed as the average of the squared gradients with respect to
-        the model parameters.
+        the model parameters. This method should only be used with exponential-based
+        likelihood functions
 
         Parameters
         ----------
@@ -42,9 +43,9 @@ class BaseLikelihood(BaseCost):
         """
 
         # Calculate squared gradients element-wise
-        _, grad = self.__call__(inputs, calc_grad=True)
+        _, grad = self.__call__(inputs, calculate_grad=True)
         shaped_grad = grad.reshape(-1, 1)
-        fisher = (shaped_grad @ shaped_grad.T) / self.n_data
+        fisher_info = (shaped_grad @ shaped_grad.T) / self.n_data
 
         return fisher_info
 
