@@ -29,6 +29,12 @@ class FittingProblem(BaseProblem):
         Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
     initial_state : dict, optional
         A valid initial state, e.g. the initial open-circuit voltage (default: None).
+    parallelizable : bool, optional
+        Set to True to use the following workaround to enable parallel
+        model evaluation: deepcopy the model before every evaluation.
+        Note that this means no sensitivities are ever stored. If you
+        wish to compute them, set `parallelizable` to False again and
+        evaluate once more.
 
     Additional Attributes
     ---------------------
@@ -51,9 +57,16 @@ class FittingProblem(BaseProblem):
         signal: Optional[list[str]] = None,
         additional_variables: Optional[list[str]] = None,
         initial_state: Optional[dict] = None,
+        parallelizable: Optional[bool] = False,
     ):
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, initial_state
+            parameters,
+            model,
+            check_model,
+            signal,
+            additional_variables,
+            initial_state,
+            parallelizable,
         )
         self._dataset = dataset.data
         self._n_parameters = len(self.parameters)
@@ -120,7 +133,7 @@ class FittingProblem(BaseProblem):
             return self._evaluateEIS(inputs)
         else:
             try:
-                sol = self._model.simulate(
+                sol = self.model.simulate(
                     inputs=inputs,
                     t_eval=self._domain_data,
                     initial_state=self.initial_state,
@@ -150,7 +163,7 @@ class FittingProblem(BaseProblem):
             The simulated model output y(ω) for the given inputs.
         """
         try:
-            sol = self._model.simulateEIS(
+            sol = self.model.simulateEIS(
                 inputs=inputs,
                 f_eval=self._domain_data,
                 initial_state=self.initial_state,
@@ -181,7 +194,7 @@ class FittingProblem(BaseProblem):
         self.parameters.update(values=list(inputs.values()))
 
         try:
-            sol = self._model.simulateS1(
+            sol = self.model.simulateS1(
                 inputs=inputs,
                 t_eval=self._domain_data,
                 initial_state=self.initial_state,

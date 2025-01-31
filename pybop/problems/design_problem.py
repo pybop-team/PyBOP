@@ -32,6 +32,12 @@ class DesignProblem(BaseProblem):
         Additional variables to observe and store in the solution (default additions are: ["Time [s]", "Current [A]"]).
     initial_state : dict, optional
         A valid initial state (default: {"Initial SoC": 1.0}).
+    parallelizable : bool, optional
+        Set to True to use the following workaround to enable parallel
+        model evaluation: deepcopy the model before every evaluation.
+        Note that this means no sensitivities are ever stored. If you
+        wish to compute them, set `parallelizable` to False again and
+        evaluate once more.
     update_capacity : bool, optional
         If True, the nominal capacity is updated with an approximate value for each design.
     """
@@ -45,10 +51,17 @@ class DesignProblem(BaseProblem):
         signal: Optional[list[str]] = None,
         additional_variables: Optional[list[str]] = None,
         initial_state: Optional[dict] = None,
+        parallelizable: Optional[bool] = False,
         update_capacity: bool = False,
     ):
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, initial_state
+            parameters,
+            model,
+            check_model,
+            signal,
+            additional_variables,
+            initial_state,
+            parallelizable,
         )
         self.experiment = experiment
         self.warning_patterns = [
@@ -133,7 +146,7 @@ class DesignProblem(BaseProblem):
                         "error", category=UserWarning, message=pattern
                     )
 
-                sol = self._model.predict(
+                sol = self.model.predict(
                     parameter_set=parameter_set,
                     experiment=self.experiment,
                     initial_state=self.initial_state,
