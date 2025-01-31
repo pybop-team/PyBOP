@@ -35,6 +35,8 @@ class TestPintsSamplers:
     Class for testing the Pints-based MCMC Samplers
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.fixture
     def dataset(self):
         return pybop.Dataset(
@@ -116,7 +118,6 @@ class TestPintsSamplers:
     def MCMC(self, request):
         return request.param
 
-    @pytest.mark.unit
     def test_initialisation_and_run(
         self, log_posterior, x0, chains, MCMC, multi_samplers
     ):
@@ -152,20 +153,32 @@ class TestPintsSamplers:
         assert samples is not None
         assert samples.shape == (chains, 1, 2)
 
-    @pytest.mark.unit
-    def test_effectie_sample_size(self, log_posterior):
-        sampler = pybop.SliceStepoutMCMC(
-            log_pdf=log_posterior,
-            chains=1,
-            max_iterations=1,
-        )
-        results = sampler.run()
-        summary = pybop.PosteriorSummary(results)
+    def test_effective_sample_size(self, log_posterior):
+        chains = np.asarray([[[0, 0]]])
+        summary = pybop.PosteriorSummary(chains)
 
         with pytest.raises(ValueError, match="At least two samples must be given."):
             summary.effective_sample_size()
 
-    @pytest.mark.unit
+        n_chains = 3
+        sampler = pybop.HaarioBardenetACMC(
+            log_pdf=log_posterior,
+            chains=n_chains,
+            max_iterations=3,
+        )
+        chains = sampler.run()
+        summary = pybop.PosteriorSummary(chains)
+
+        # Non mixed chains
+        ess = summary.effective_sample_size()
+        assert len(ess) == log_posterior.n_parameters * n_chains
+        assert all(e > 0 for e in ess)  # ESS should be positive
+
+        # Mixed chains
+        ess = summary.effective_sample_size(mixed_chains=True)
+        assert len(ess) == log_posterior.n_parameters
+        assert all(e > 0 for e in ess)
+
     def test_single_parameter_sampling(self, model, dataset, MCMC, chains):
         parameters = pybop.Parameters(
             pybop.Parameter(
@@ -199,7 +212,6 @@ class TestPintsSamplers:
         autocorr = summary.autocorrelation(result[0, :, 0])
         assert autocorr.shape == (result[0, :, 0].shape[0] - 2,)
 
-    @pytest.mark.unit
     def test_multi_log_pdf(self, log_posterior, x0, chains):
         multi_log_posterior = [log_posterior, log_posterior, log_posterior]
         sampler = pybop.MCMCSampler(
@@ -250,7 +262,6 @@ class TestPintsSamplers:
                 max_iterations=1,
             )
 
-    @pytest.mark.unit
     def test_invalid_initialisation(self, log_posterior, x0):
         with pytest.raises(ValueError, match="Number of chains must be greater than 0"):
             AdaptiveCovarianceMCMC(
@@ -285,7 +296,6 @@ class TestPintsSamplers:
             DifferentialEvolutionMCMC,
         ],
     )
-    @pytest.mark.unit
     def test_no_chains_in_memory(self, log_posterior, x0, chains, sampler):
         sampler = sampler(
             log_pdf=log_posterior,
@@ -303,7 +313,6 @@ class TestPintsSamplers:
 
     @patch("logging.basicConfig")
     @patch("logging.info")
-    @pytest.mark.unit
     def test_initialise_logging(
         self, mock_info, mock_basicConfig, log_posterior, x0, chains
     ):
@@ -340,7 +349,6 @@ class TestPintsSamplers:
         sampler._initialise_logging()
         assert mock_info.call_count == len(expected_calls)  # No additional calls
 
-    @pytest.mark.unit
     def test_check_stopping_criteria(self, log_posterior, x0, chains):
         sampler = AdaptiveCovarianceMCMC(
             log_pdf=log_posterior,
@@ -364,7 +372,6 @@ class TestPintsSamplers:
         ):
             sampler.set_max_iterations(-1)
 
-    @pytest.mark.unit
     def test_set_parallel(self, log_posterior, x0, chains):
         sampler = AdaptiveCovarianceMCMC(
             log_pdf=log_posterior,
@@ -391,7 +398,6 @@ class TestPintsSamplers:
         evaluator = sampler._create_evaluator()
         assert isinstance(evaluator, ParallelEvaluator)
 
-    @pytest.mark.unit
     def test_base_sampler(self, log_posterior, x0):
         sampler = pybop.BaseSampler(log_posterior, x0, chains=1, cov0=0.1)
         with pytest.raises(NotImplementedError):
@@ -403,7 +409,6 @@ class TestPintsSamplers:
         ):
             pybop.BaseSampler(pybop.WeightedCost(log_posterior), x0, chains=1, cov0=0.1)
 
-    @pytest.mark.unit
     def test_MCMC_sampler(self, log_posterior, x0, chains):
         with pytest.raises(TypeError):
             pybop.MCMCSampler(

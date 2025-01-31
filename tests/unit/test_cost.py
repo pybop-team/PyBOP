@@ -12,10 +12,7 @@ class TestCosts:
     Class for tests cost functions
     """
 
-    # Define an invalid likelihood class for MAP tests
-    class InvalidLikelihood:
-        def __init__(self, problem, sigma0):
-            pass
+    pytestmark = pytest.mark.unit
 
     @pytest.fixture
     def model(self, ground_truth):
@@ -82,10 +79,10 @@ class TestCosts:
         cls = request.param
         if cls in [pybop.SumSquaredError, pybop.RootMeanSquaredError]:
             return cls(problem)
-        elif cls is pybop.LogPosterior:
-            return cls(pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002))
         elif cls in [pybop.Minkowski, pybop.SumofPower]:
             return cls(problem, p=2)
+        elif cls is pybop.LogPosterior:
+            return cls(pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002))
         elif cls is pybop.ObserverCost:
             inputs = problem.parameters.initial_value()
             state = problem.model.reinit(inputs)
@@ -111,14 +108,14 @@ class TestCosts:
                 ),
             )
 
-    @pytest.mark.unit
-    def test_base(self, problem):
-        base_cost = pybop.BaseCost(problem)
-        assert base_cost.problem == problem
-        with pytest.raises(NotImplementedError):
-            base_cost([0.5])
+    def test_base(self, model, parameters, dataset):
+        problem = pybop.FittingProblem(model, parameters, dataset)
+        for cost_class in [pybop.BaseCost, pybop.FittingCost, pybop.DesignCost]:
+            base_cost = cost_class(problem)
+            assert base_cost.problem == problem
+            with pytest.raises(NotImplementedError):
+                base_cost([0.5])
 
-    @pytest.mark.unit
     def test_costs(self, cost):
         if isinstance(cost, pybop.BaseLikelihood):
             higher_cost = cost([0.52])
@@ -172,15 +169,6 @@ class TestCosts:
         with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
             cost(["StringInputShouldNotWork"])
 
-        # Test ValueError for none dy w/ calculate_grad == True
-        if not isinstance(cost, pybop.ObserverCost):
-            with pytest.raises(
-                ValueError,
-                match="Forward model sensitivities need to be provided alongside `calculate_grad=True` for `cost.compute`.",
-            ):
-                cost.compute([1.1], dy=None, calculate_grad=True)
-
-    @pytest.mark.unit
     def test_minkowski(self, problem):
         # Incorrect order
         with pytest.raises(ValueError, match="The order of the Minkowski distance"):
@@ -191,7 +179,6 @@ class TestCosts:
         ):
             pybop.Minkowski(problem, p=np.inf)
 
-    @pytest.mark.unit
     def test_sumofpower(self, problem):
         # Incorrect order
         with pytest.raises(
@@ -235,47 +222,38 @@ class TestCosts:
         )
 
     @pytest.mark.parametrize(
-        "cost_class",
+        "cost_class, expected_name",
         [
-            pybop.DesignCost,
-            pybop.GravimetricEnergyDensity,
-            pybop.VolumetricEnergyDensity,
-            pybop.GravimetricPowerDensity,
-            pybop.VolumetricPowerDensity,
+            (pybop.GravimetricEnergyDensity, "Gravimetric Energy Density"),
+            (pybop.VolumetricEnergyDensity, "Volumetric Energy Density"),
+            (pybop.GravimetricPowerDensity, "Gravimetric Power Density"),
+            (pybop.VolumetricPowerDensity, "Volumetric Power Density"),
         ],
     )
-    @pytest.mark.unit
-    def test_design_costs(self, cost_class, design_problem):
+    def test_design_costs(self, cost_class, expected_name, design_problem):
         # Construct Cost
         cost = cost_class(design_problem)
+        assert cost.name == expected_name
 
-        if cost_class in [pybop.DesignCost]:
-            with pytest.raises(NotImplementedError):
-                cost([0.5])
-        else:
-            # Test type of returned value
-            assert np.isscalar(cost([0.5]))
-            assert cost([0.4]) >= 0  # Should be a viable design
-            assert (
-                cost([0.8]) == -np.inf
-            )  # Should exceed active material + porosity < 1
-            assert cost([1.4]) == -np.inf  # Definitely not viable
-            assert cost([-0.1]) == -np.inf  # Should not be a viable design
+        # Test type of returned value
+        assert np.isscalar(cost([0.5]))
+        assert cost([0.4]) >= 0  # Should be a viable design
+        assert cost([0.8]) == -np.inf  # Should exceed active material + porosity < 1
+        assert cost([1.4]) == -np.inf  # Definitely not viable
+        assert cost([-0.1]) == -np.inf  # Should not be a viable design
 
-            # Test infeasible locations
-            cost.problem.model.allow_infeasible_solutions = False
-            assert cost([1.1]) == -np.inf
+        # Test infeasible locations
+        cost.problem.model.allow_infeasible_solutions = False
+        assert cost([1.1]) == -np.inf
 
-            # Test exception for non-numeric inputs
-            with pytest.raises(
-                TypeError, match="Inputs must be a dictionary or numeric."
-            ):
-                cost(["StringInputShouldNotWork"])
+        # Test exception for non-numeric inputs
+        with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
+            cost(["StringInputShouldNotWork"])
 
-            # Compute after updating nominal capacity
-            design_problem.update_capacity = True
-            cost = cost_class(design_problem)
-            cost([0.4])
+        # Compute after updating nominal capacity
+        design_problem.update_capacity = True
+        cost = cost_class(design_problem)
+        cost([0.4])
 
     @pytest.fixture
     def noisy_problem(self, ground_truth, parameters, experiment):
@@ -294,7 +272,6 @@ class TestCosts:
         )
         return pybop.FittingProblem(model, parameters, noisy_dataset)
 
-    @pytest.mark.unit
     def test_weighted_fitting_cost(self, noisy_problem):
         problem = noisy_problem
         cost1 = pybop.SumSquaredError(problem)
@@ -356,7 +333,7 @@ class TestCosts:
 
         # Test LogPosterior explicitly
         cost4 = pybop.LogPosterior(pybop.GaussianLogLikelihood(problem))
-        weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, -1 / weight])
+        weighted_cost_4 = pybop.WeightedCost(cost1, cost4, weights=[1, 1 / weight])
         assert weighted_cost_4.has_identical_problems is True
         assert weighted_cost_4.has_separable_problem is False
         sigma = 0.01
@@ -368,7 +345,6 @@ class TestCosts:
             atol=1e-5,
         )
 
-    @pytest.mark.unit
     def test_weighted_design_cost(self, design_problem):
         cost1 = pybop.GravimetricEnergyDensity(design_problem)
         cost2 = pybop.VolumetricEnergyDensity(design_problem)
@@ -400,7 +376,6 @@ class TestCosts:
             atol=1e-5,
         )
 
-    @pytest.mark.unit
     def test_weighted_design_cost_with_update_capacity(self, design_problem):
         design_problem.update_capacity = True
         cost1 = pybop.GravimetricEnergyDensity(design_problem)
@@ -417,7 +392,6 @@ class TestCosts:
             atol=1e-5,
         )
 
-    @pytest.mark.unit
     def test_mixed_problem_classes(self, problem, design_problem):
         cost1 = pybop.SumSquaredError(problem)
         cost2 = pybop.GravimetricEnergyDensity(design_problem)

@@ -137,7 +137,27 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/32595915?v=4",
       "profile": "https://github.com/Dibyendu-IITKGP",
       "contributions": [
+        "example",
+        "test",
+        "code"
+      ]
+    },
+    {
+      "login": "noelhallemans",
+      "name": "Noël Hallemans",
+      "avatar_url": "https://avatars.githubusercontent.com/u/90609505?v=4",
+      "profile": "https://eng.ox.ac.uk/people/noel-hallemans/",
+      "contributions": [
         "example"
+      ]
+    },
+    {
+      "login": "pipliggins",
+      "name": "Pip Liggins",
+      "avatar_url": "https://avatars.githubusercontent.com/u/55396775?v=4",
+      "profile": "https://github.com/pipliggins",
+      "contributions": [
+        "code"
       ]
     }
   ],

@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 
@@ -10,32 +10,18 @@ class DesignCost(BaseCost):
     Overwrites and extends `BaseCost` class for design-related cost functions.
 
     Inherits all parameters and attributes from ``BaseCost``.
-
-    Additional Attributes
-    ---------------------
-    problem : object
-        The associated problem containing model and evaluation methods.
     """
 
     def __init__(self, problem):
-        """
-        Initialises the gravimetric energy density calculator with a problem.
-
-        Parameters
-        ----------
-        problem : object
-            The problem instance containing the model and data.
-        """
         super().__init__(problem)
-        self.problem = problem
+        self.minimising = False
 
 
 class GravimetricEnergyDensity(DesignCost):
     """
     Calculates the gravimetric energy density (specific energy) of a battery cell,
     when applied to a normalised discharge from upper to lower voltage limits. The
-    goal of maximising the energy density is achieved by setting minimising = False
-    in the optimiser settings.
+    goal of maximising the energy density is achieved with self.minimising=False.
 
     The gravimetric energy density [Wh.kg-1] is calculated as
 
@@ -49,14 +35,10 @@ class GravimetricEnergyDensity(DesignCost):
     Inherits all parameters and attributes from ``DesignCost``.
     """
 
-    def __init__(self, problem):
-        super().__init__(problem)
-
     def compute(
         self,
         y: dict,
-        dy: np.ndarray = None,
-        calculate_grad: bool = False,
+        dy: Optional[np.ndarray] = None,
     ) -> float:
         """
         Computes the cost function for the given predictions.
@@ -68,8 +50,6 @@ class GravimetricEnergyDensity(DesignCost):
         dy : np.ndarray, optional
             The corresponding gradient with respect to the parameters for each signal.
             Note: not used in design optimisation classes.
-        calculate_grad : bool, optional
-            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
@@ -92,8 +72,7 @@ class VolumetricEnergyDensity(DesignCost):
     """
     Calculates the (volumetric) energy density of a battery cell, when applied to a
     normalised discharge from upper to lower voltage limits. The goal of maximising
-    the energy density is achieved by setting minimising = False in the optimiser
-    settings.
+    the energy density is achieved with self.minimising = False.
 
     The volumetric energy density [Wh.m-3] is calculated as
 
@@ -113,8 +92,7 @@ class VolumetricEnergyDensity(DesignCost):
     def compute(
         self,
         y: dict,
-        dy: np.ndarray = None,
-        calculate_grad: bool = False,
+        dy: Optional[np.ndarray] = None,
     ) -> float:
         """
         Computes the cost function for the given predictions.
@@ -126,8 +104,6 @@ class VolumetricEnergyDensity(DesignCost):
         dy : np.ndarray, optional
             The corresponding gradient with respect to the parameters for each signal.
             Note: not used in design optimisation classes.
-        calculate_grad : bool, optional
-            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
@@ -150,8 +126,7 @@ class GravimetricPowerDensity(DesignCost):
     """
     Calculates the gravimetric power density (specific power) of a battery cell,
     when applied to a discharge from upper to lower voltage limits. The goal of
-    maximising the power density is achieved by setting minimising = False in the
-    optimiser settings.
+    maximising the power density is achieved with self.minimising=False.
 
     The time-averaged gravimetric power density [W.kg-1] is calculated as
 
@@ -177,8 +152,7 @@ class GravimetricPowerDensity(DesignCost):
     def compute(
         self,
         y: dict,
-        dy: np.ndarray = None,
-        calculate_grad: bool = False,
+        dy: Optional[np.ndarray] = None,
     ) -> float:
         """
         Computes the cost function for the given predictions.
@@ -190,8 +164,6 @@ class GravimetricPowerDensity(DesignCost):
         dy : np.ndarray, optional
             The corresponding gradient with respect to the parameters for each signal.
             Note: not used in design optimisation classes.
-        calculate_grad : bool, optional
-            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
@@ -214,7 +186,7 @@ class VolumetricPowerDensity(DesignCost):
     """
     Calculates the (volumetric) power density of a battery cell, when applied to a
     discharge from upper to lower voltage limits. The goal of maximising the power
-    density is achieved by setting minimising = False in the optimiser settings.
+    density is achieved with self.minimising=False.
 
     The time-averaged volumetric power density [W.m-3] is calculated as
 
@@ -240,8 +212,7 @@ class VolumetricPowerDensity(DesignCost):
     def compute(
         self,
         y: dict,
-        dy: np.ndarray = None,
-        calculate_grad: bool = False,
+        dy: Optional[np.ndarray] = None,
     ) -> float:
         """
         Computes the cost function for the given predictions.
@@ -253,8 +224,6 @@ class VolumetricPowerDensity(DesignCost):
         dy : np.ndarray, optional
             The corresponding gradient with respect to the parameters for each signal.
             Note: not used in design optimisation classes.
-        calculate_grad : bool, optional
-            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------

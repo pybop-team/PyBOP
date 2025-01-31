@@ -11,6 +11,8 @@ class TestOptimisation:
     A class to run integration tests on the Optimisation class.
     """
 
+    pytestmark = pytest.mark.integration
+
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ground_truth = np.clip(
@@ -87,7 +89,6 @@ class TestOptimisation:
             False,
         ],
     )
-    @pytest.mark.integration
     def test_optimisation_f_guessed(self, f_guessed, spm_costs):
         x0 = spm_costs.parameters.initial_value()
         # Test each optimiser

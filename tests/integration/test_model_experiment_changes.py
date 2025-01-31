@@ -9,6 +9,8 @@ class TestModelAndExperimentChanges:
     A class to test that different inputs return different outputs.
     """
 
+    pytestmark = pytest.mark.integration
+
     @pytest.fixture(
         params=[
             pybop.Parameters(
@@ -34,7 +36,6 @@ class TestModelAndExperimentChanges:
     def parameters(self, request):
         return request.param
 
-    @pytest.mark.integration
     def test_changing_experiment(self, parameters):
         # Change the experiment and check that the results are different.
 
@@ -65,7 +66,6 @@ class TestModelAndExperimentChanges:
         np.testing.assert_allclose(cost_1, 0, atol=1e-5)
         np.testing.assert_allclose(cost_2, 0, atol=1e-5)
 
-    @pytest.mark.integration
     def test_changing_model(self, parameters):
         # Change the model and check that the results are different.
 
@@ -108,7 +108,6 @@ class TestModelAndExperimentChanges:
         results = optim.run()
         return results.final_cost
 
-    @pytest.mark.integration
     def test_multi_fitting_problem(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
         parameters = pybop.Parameter(

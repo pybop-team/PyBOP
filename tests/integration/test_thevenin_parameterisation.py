@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -8,6 +9,8 @@ class TestTheveninParameterisation:
     """
     A class to test a subset of optimisers on a simple model.
     """
+
+    pytestmark = pytest.mark.integration
 
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -22,15 +25,16 @@ class TestTheveninParameterisation:
         parameter_set = pybop.ParameterSet(
             json_path="examples/parameters/initial_ecm_parameters.json"
         )
-        parameter_set.import_parameters()
-        parameter_set.params.update(
+        parameter_set.update(
             {
                 "C1 [F]": 1000,
                 "R0 [Ohm]": self.ground_truth[0],
                 "R1 [Ohm]": self.ground_truth[1],
             }
         )
-        return pybop.empirical.Thevenin(parameter_set=parameter_set)
+        return pybop.empirical.Thevenin(
+            parameter_set=parameter_set, solver=pybamm.IDAKLUSolver()
+        )
 
     @pytest.fixture
     def parameters(self):
@@ -39,11 +43,13 @@ class TestTheveninParameterisation:
                 "R0 [Ohm]",
                 prior=pybop.Gaussian(0.05, 0.01),
                 bounds=[0, 0.1],
+                transformation=pybop.LogTransformation(),
             ),
             pybop.Parameter(
                 "R1 [Ohm]",
                 prior=pybop.Gaussian(0.05, 0.01),
                 bounds=[0, 0.1],
+                transformation=pybop.LogTransformation(),
             ),
         )
 
@@ -60,19 +66,20 @@ class TestTheveninParameterisation:
         )
 
     @pytest.mark.parametrize(
-        "cost_class", [pybop.RootMeanSquaredError, pybop.SumSquaredError]
+        "cost_class",
+        [pybop.RootMeanSquaredError, pybop.SumSquaredError, pybop.JaxSumSquaredError],
     )
     @pytest.mark.parametrize(
         "optimiser, method",
         [
             (pybop.SciPyMinimize, "trust-constr"),
             (pybop.SciPyMinimize, "SLSQP"),
+            (pybop.SciPyMinimize, "L-BFGS-B"),
             (pybop.SciPyMinimize, "COBYLA"),
             (pybop.GradientDescent, ""),
             (pybop.PSO, ""),
         ],
     )
-    @pytest.mark.integration
     def test_optimisers_on_simple_model(
         self, model, parameters, dataset, cost_class, optimiser, method
     ):
@@ -81,12 +88,17 @@ class TestTheveninParameterisation:
         cost = cost_class(problem)
 
         x0 = cost.parameters.initial_value()
+        common_args = {
+            "cost": cost,
+            "max_iterations": 150,
+        }
         if optimiser in [pybop.GradientDescent]:
-            optim = optimiser(
-                cost=cost, sigma0=2.5e-4, max_iterations=250, method=method
-            )
+            optim = optimiser(sigma0=2.5e-2, **common_args)
+        elif method == "L-BFGS-B":
+            optim = optimiser(sigma0=2.5e-2, method=method, jac=True, **common_args)
         else:
-            optim = optimiser(cost=cost, sigma0=0.03, max_iterations=250, method=method)
+            optim = optimiser(sigma0=0.02, method=method, **common_args)
+
         if isinstance(optimiser, pybop.BasePintsOptimiser):
             optim.set_max_unchanged_iterations(iterations=35, absolute_tolerance=1e-5)
 
@@ -110,9 +122,9 @@ class TestTheveninParameterisation:
         experiment = pybop.Experiment(
             [
                 (
-                    "Discharge at 0.5C for 2 minutes (4 seconds period)",
+                    "Discharge at 0.5C for 6 minutes (12 seconds period)",
                     "Rest for 20 seconds (4 seconds period)",
-                    "Charge at 0.5C for 2 minutes (4 seconds period)",
+                    "Charge at 0.5C for 6 minutes (12 seconds period)",
                 ),
             ]
         )

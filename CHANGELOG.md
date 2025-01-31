@@ -2,6 +2,35 @@
 
 ## Features
 
+- [#619](https://github.com/pybop-team/PyBOP/pull/619) - Adds `pybop.SimulatingAnnealing` optimiser with corresponding tests.
+- [#565](https://github.com/pybop-team/PyBOP/pull/627) - DigiBatt added as funding partner.
+
+## Optimisations
+
+- [#638](https://github.com/pybop-team/PyBOP/pull/638) - Allows the problem class to accept any domain name.
+- [#593](https://github.com/pybop-team/PyBOP/pull/593) - Enables `ParameterSet` to systematically return a `pybamm.ParameterValues` object within the model class.
+- [#618](https://github.com/pybop-team/PyBOP/pull/618) - Adds Mean Absolute Error (MAE) and Mean Squared Error (MSE) costs.
+- [#601](https://github.com/pybop-team/PyBOP/pull/601) - Deprecates `MultiOptimisationResult` by merging with `OptimisationResult`.
+- [#600](https://github.com/pybop-team/PyBOP/pull/600) - Removes repetitious functionality within the cost classes.
+
+## Bug Fixes
+
+- [#602](https://github.com/pybop-team/PyBOP/pull/602) - Aligns the standard quick plot of `MultiFittingProblem` outputs.
+
+## Breaking Changes
+
+# [v24.12](https://github.com/pybop-team/PyBOP/tree/v24.12) - 2024-12-21
+
+## Features
+
+- [#481](https://github.com/pybop-team/PyBOP/pull/481) - Adds experimental support for PyBaMM's jaxified IDAKLU solver. Includes Jax-specific cost functions `pybop.JaxSumSquareError` and `pybop.JaxLogNormalLikelihood`. Adds `Jax` optional dependency to PyBaMM dependency.
+- [#597](https://github.com/pybop-team/PyBOP/pull/597) - Adds number of function evaluations `n_evaluations` to `OptimisationResult`.
+- [#362](https://github.com/pybop-team/PyBOP/issues/362) - Adds the `classify_using_Hessian` functionality to classify the optimised result.
+- [#584](https://github.com/pybop-team/PyBOP/pull/584) - Adds the `GroupedSPMe` model for parameter identification.
+- [#571](https://github.com/pybop-team/PyBOP/pull/571) - Adds Multistart functionality to optimisers via initialisation arg `multistart`.
+- [#582](https://github.com/pybop-team/PyBOP/pull/582) - Fixes `population_size` arg for Pints' based optimisers, reshapes `parameters.rvs` to be parameter instances.
+- [#570](https://github.com/pybop-team/PyBOP/pull/570) - Updates the contour and surface plots, adds mixed chain effective sample size computation, x0 to optim.log
+- [#566](https://github.com/pybop-team/PyBOP/pull/566) - Adds `UnitHyperCube` transformation class, fixes incorrect application of gradient transformation.
 - [#569](https://github.com/pybop-team/PyBOP/pull/569) - Adds parameter specific learning rate functionality to GradientDescent optimiser.
 - [#282](https://github.com/pybop-team/PyBOP/issues/282) - Restructures the examples directory.
 - [#396](https://github.com/pybop-team/PyBOP/issues/396) - Adds `ecm_with_tau.py` example script.
@@ -15,20 +44,26 @@
 
 ## Optimisations
 
+- [#580](https://github.com/pybop-team/PyBOP/pull/580) - Random Search optimiser is implimented.
+- [#588](https://github.com/pybop-team/PyBOP/pull/588) - Makes `minimising` a property of `BaseOptimiser` set by the cost class.
 - [#512](https://github.com/pybop-team/PyBOP/pull/513) - Refactors `LogPosterior` with attributes pointing to composed likelihood object.
 - [#551](https://github.com/pybop-team/PyBOP/pull/551) - Refactors Optimiser arguments, `population_size` and `max_iterations` as default args, improves optimiser docstrings
 
 ## Bug Fixes
 
 - [#645](https://github.com/pybop-team/PyBOP/pull/645) - Bug fixes for serialization of `DataSet` and `base_echem` classes to enable parallelization.
+- [#595](https://github.com/pybop-team/PyBOP/pull/595) - Fixes non-finite LogTransformed bounds for indices of zero.
+- [#561](https://github.com/pybop-team/PyBOP/pull/561) - Bug fixes the sign of the SciPy cost logs for maximised costs.
 - [#505](https://github.com/pybop-team/PyBOP/pull/505) - Bug fixes for `LogPosterior` with transformed `GaussianLogLikelihood` likelihood.
 
 ## Breaking Changes
 
+- [#481](https://github.com/pybop-team/PyBOP/pull/481) - `problem.model` is now a copied instance of `model`
+- [#598](https://github.com/pybop-team/PyBOP/pull/598) - Depreciated `Adam` optimiser has been removed, see `AdamW` for replacement.
 - [#531](https://github.com/pybop-team/PyBOP/pull/531) - Plot methods moved to `pybop.plot` with mostly minimal renaming. For example, `pybop.plot_parameters` is now `pybop.plot.parameters`. Other breaking changes include: `pybop.plot2d` to `pybop.plot.contour`.
 - [#526](https://github.com/pybop-team/PyBOP/pull/526) - Refactor `OptimisationResults` classes, with `optim.run()` now return the full object. Adds finite cost value check for optimised parameters.
 
-# [v24.9.1](https://github.com/pybop-team/PyBOP/tree/v24.9.0) - 2024-09-16
+# [v24.9.1](https://github.com/pybop-team/PyBOP/tree/v24.9.1) - 2024-09-16
 
 ## Features
 

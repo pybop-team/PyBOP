@@ -2,6 +2,7 @@ import warnings
 from typing import Optional
 
 import numpy as np
+from pybamm import IDAKLUJax, Solution, SolverError
 
 from pybop import BaseModel, BaseProblem, Dataset
 from pybop.parameters.parameter import Inputs, Parameters
@@ -23,8 +24,10 @@ class FittingProblem(BaseProblem):
         Dataset object containing the data to fit the model to.
     check_model : bool, optional
         Flag to indicate if the model should be checked (default: True).
-    signal : str, optional
-        The variable used for fitting (default: "Voltage [V]").
+    signal : list[str], optional
+        A list of variables to fit (default: ["Voltage [V]"]).
+    domain : str, optional
+        The name of the domain (default: "Time [s]").
     additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
     initial_state : dict, optional
@@ -55,24 +58,26 @@ class FittingProblem(BaseProblem):
         dataset: Dataset,
         check_model: bool = True,
         signal: Optional[list[str]] = None,
+        domain: Optional[str] = None,
         additional_variables: Optional[list[str]] = None,
         initial_state: Optional[dict] = None,
         parallelizable: Optional[bool] = False,
     ):
         super().__init__(
-            parameters,
-            model,
-            check_model,
-            signal,
-            additional_variables,
-            initial_state,
-            parallelizable,
+            parameters=parameters,
+            model=model,
+            check_model=check_model,
+            signal=signal,
+            domain=domain,
+            additional_variables=additional_variables,
+            initial_state=initial_state,
+            parallelizable=parallelizable,
         )
         self._dataset = dataset.data
         self._n_parameters = len(self.parameters)
 
         # Check that the dataset contains necessary variables
-        dataset.check(domain=self.domain, signal=[*self.signal, "Current function [A]"])
+        dataset.check(domain=self.domain, signal=self.signal)
 
         # Unpack domain and target data
         self._domain_data = self._dataset[self.domain]
@@ -130,50 +135,60 @@ class FittingProblem(BaseProblem):
         """
         inputs = self.parameters.verify(inputs)
         if self.eis:
-            return self._evaluateEIS(inputs)
-        else:
-            try:
-                sol = self.model.simulate(
-                    inputs=inputs,
-                    t_eval=self._domain_data,
-                    initial_state=self.initial_state,
-                )
-            except Exception as e:
-                if self.verbose:
-                    print(f"Simulation error: {e}")
-                return {signal: self.failure_output for signal in self.signal}
+            return self._evaluate(self.model.simulateEIS, inputs)
 
-            return {
-                signal: sol[signal].data
-                for signal in (self.signal + self.additional_variables)
-            }
+        return self._evaluate(self.model.simulate, inputs)
 
-    def _evaluateEIS(self, inputs: Inputs) -> dict[str, np.ndarray[np.float64]]:
+    def _evaluate(
+        self, func, inputs, calculate_grad=False
+    ) -> dict[str, np.ndarray[np.float64]]:
         """
-        Evaluate the model with the given parameters and return the signal.
+        Perform simulation using the specified method and handle exceptions.
 
         Parameters
         ----------
+        func : callable
+            The method to be used for simulation.
         inputs : Inputs
             Parameters for evaluation of the model.
 
         Returns
         -------
-        y : np.ndarray
-            The simulated model output y(ω) for the given inputs.
+        dict[str, np.ndarray[np.float64]]
+            The simulated model output.
         """
         try:
-            sol = self.model.simulateEIS(
-                inputs=inputs,
-                f_eval=self._domain_data,
-                initial_state=self.initial_state,
-            )
-        except Exception as e:
-            if self.verbose:
-                print(f"Simulation error: {e}")
-            return {signal: self.failure_output for signal in self.signal}
+            if isinstance(self.model.solver, IDAKLUJax):
+                sol = self.model.solver.get_vars(self.signal)(
+                    self.domain_data, inputs
+                )  # TODO: Add initial_state capabilities
+            else:
+                sol = func(
+                    inputs,
+                    self._domain_data,
+                    initial_state=self.initial_state,
+                )
+        except (SolverError, ZeroDivisionError, RuntimeError, ValueError) as e:
+            if isinstance(e, ValueError) and str(e) not in self.exception:
+                raise  # Raise the error if it doesn't match the expected list
+            error_out = {s: self.failure_output for s in self.signal}
+            return (error_out, self.failure_output) if calculate_grad else error_out
 
-        return sol
+        if self.eis:
+            return sol
+
+        self._solution = sol if isinstance(sol, Solution) else None
+
+        if isinstance(self.model.solver, IDAKLUJax):
+            return {signal: sol[:, i] for i, signal in enumerate(self.signal)}
+        if calculate_grad:
+            signals = self.signal + self.additional_variables
+            return (
+                {s: sol[s].data for s in signals},
+                {s: sol[s].sensitivities for s in signals},
+            )
+
+        return {s: sol[s].data for s in (self.signal + self.additional_variables)}
 
     def evaluateS1(self, inputs: Inputs):
         """
@@ -192,37 +207,21 @@ class FittingProblem(BaseProblem):
         """
         inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(inputs.values()))
+        y, sens = self._evaluate(self._model.simulateS1, inputs, calculate_grad=True)
 
-        try:
-            sol = self.model.simulateS1(
-                inputs=inputs,
-                t_eval=self._domain_data,
-                initial_state=self.initial_state,
-            )
-        except Exception as e:
-            print(f"Error: {e}")
-            return {
-                signal: self.failure_output for signal in self.signal
-            }, self.failure_output
+        if not any([np.isfinite(y[s]).any() for s in self.signal]):
+            return y, sens
 
-        y = {signal: sol[signal].data for signal in self.signal}
-
-        # Extract the sensitivities and stack them along a new axis for each signal
-        dy = np.empty(
-            (
-                sol[self.signal[0]].data.shape[0],
-                self.n_outputs,
-                self._n_parameters,
-            )
+        # Extract the sensitivities for all signals at once
+        param_keys = self.parameters.keys()
+        dy = np.stack(
+            [
+                np.column_stack(
+                    [sens[signal][key].toarray()[:, 0] for key in param_keys]
+                )
+                for signal in self.signal
+            ],
+            axis=1,
         )
 
-        for i, signal in enumerate(self.signal):
-            dy[:, i, :] = np.stack(
-                [
-                    sol[signal].sensitivities[key].toarray()[:, 0]
-                    for key in self.parameters.keys()
-                ],
-                axis=-1,
-            )
-
-        return y, np.asarray(dy)
+        return y, dy
