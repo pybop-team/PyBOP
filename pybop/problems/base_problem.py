@@ -47,6 +47,7 @@ class BaseProblem:
         initial_state: Optional[dict] = None,
         parallelizable: Optional[bool] = False,
     ):
+        self.parallelizable = parallelizable
         signal = signal or ["Voltage [V]"]
         if isinstance(signal, str):
             signal = [signal]
@@ -80,7 +81,6 @@ class BaseProblem:
         self.signal = signal or ["Voltage [V]"]
         self.additional_variables = additional_variables or []
         self.set_initial_state(initial_state)
-        self.parallelizable = parallelizable
         self._dataset = None
         self._target = None
         self.verbose = False
