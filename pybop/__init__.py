@@ -64,6 +64,7 @@ from .transformation.transformations import (
     ScaledTransformation,
     LogTransformation,
     ComposedTransformation,
+    UnitHyperCube,
 )
 
 #
@@ -79,6 +80,7 @@ from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointL
 from .models.base_model import BaseModel
 from .models import lithium_ion
 from .models import empirical
+from .models._exponential_decay import ExponentialDecayModel
 from .models.base_model import TimeSeriesState
 from .models.base_model import Inputs
 
@@ -95,7 +97,10 @@ from .problems.design_problem import DesignProblem
 #
 from .costs.base_cost import BaseCost
 from .costs.fitting_costs import (
+    FittingCost,
     RootMeanSquaredError,
+    MeanAbsoluteError,
+    MeanSquaredError,
     SumSquaredError,
     Minkowski,
     SumofPower,
@@ -118,12 +123,24 @@ from .costs._likelihoods import (
 from .costs._weighted_cost import WeightedCost
 
 #
+# Experimental
+#
+from .experimental.jax_costs import BaseJaxCost, JaxSumSquaredError, JaxLogNormalLikelihood, JaxGaussianLogLikelihoodKnownSigma
+
+#
+# Evaluation
+#
+from ._evaluation import SequentialJaxEvaluator, SciPyEvaluator
+
+#
 # Optimiser classes
 #
 
 from .optimisers._cuckoo import CuckooSearchImpl
+from .optimisers._random_search import RandomSearchImpl
 from .optimisers._adamw import AdamWImpl
 from .optimisers._gradient_descent import GradientDescentImpl
+from .optimisers._simulated_annealing import SimulatedAnnealingImpl
 from .optimisers.base_optimiser import BaseOptimiser, OptimisationResult
 from .optimisers.base_pints_optimiser import BasePintsOptimiser
 from .optimisers.scipy_optimisers import (
@@ -133,7 +150,6 @@ from .optimisers.scipy_optimisers import (
 )
 from .optimisers.pints_optimisers import (
     GradientDescent,
-    Adam,
     CMAES,
     IRPropMin,
     NelderMead,
@@ -141,7 +157,9 @@ from .optimisers.pints_optimisers import (
     SNES,
     XNES,
     CuckooSearch,
+    RandomSearch,
     AdamW,
+    SimulatedAnnealing,
 )
 from .optimisers.optimisation import Optimisation
 
@@ -168,6 +186,11 @@ from .samplers.mcmc_sampler import MCMCSampler
 #
 from .observers.unscented_kalman import UnscentedKalmanFilterObserver
 from .observers.observer import Observer
+
+#
+# Classification classes
+#
+from ._classification import classify_using_hessian
 
 #
 # Plotting classes

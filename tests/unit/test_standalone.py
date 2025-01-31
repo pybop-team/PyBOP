@@ -12,6 +12,8 @@ class TestStandalone:
     Class for testing standalone components.
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.fixture
     def dataset(self):
         return pybop.Dataset(
@@ -48,7 +50,6 @@ class TestStandalone:
     def cost(self, problem):
         return pybop.SumSquaredError(problem)
 
-    @pytest.mark.unit
     def test_standalone_optimiser(self, cost):
         # Define cost function
         optim = StandaloneOptimiser(cost, maxiter=10, x0=[0.6])
@@ -67,7 +68,6 @@ class TestStandalone:
         assert optim.cost(optim.x0) > results.final_cost
         assert 0.3 <= results.x <= 0.8
 
-    @pytest.mark.unit
     def test_optimisation_on_standalone_cost(self, problem):
         # Build an Optimisation problem with a StandaloneCost
         cost = StandaloneCost(problem)
@@ -79,7 +79,6 @@ class TestStandalone:
         assert initial_cost > results.final_cost
         np.testing.assert_allclose(results.final_cost, 1460, atol=1)
 
-    @pytest.mark.unit
     def test_standalone_problem(self):
         # Define parameters to estimate
         parameters = pybop.Parameters(

@@ -86,18 +86,20 @@ The table below lists the currently supported [models](https://github.com/pybop-
 
 <p align="center">
 
-| Battery Models                                | Optimization Algorithms                                  | Cost Functions                           |
-|-----------------------------------------------|----------------------------------------------------------|------------------------------------------|
-| Single Particle Model (SPM)                   | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) | Sum of Squared Errors (SSE) <tr></tr>    |
-| Single Particle Model with Electrolyte (SPMe) | Particle Swarm Optimization (PSO)                        | Root Mean Squared Error (RMSE) <tr></tr> |
-| Doyle-Fuller-Newman (DFN)                     | Exponential Natural Evolution Strategy (xNES)            | Minkowski <tr></tr>                      |
-| Many Particle Model (MPM)                     | Separable Natural Evolution Strategy (sNES)              | Sum of Power <tr></tr>                   |
-| Multi-Species Multi-Reactants (MSMR)          | Adaptive Moment Estimation with Weight Decay (AdamW)     | Gaussian Log Likelihood <tr></tr>        |
-| Weppner-Huggins                               | Improved Resilient Backpropagation (iRProp-)             | Log Posterior <tr></tr>                  |
-| Equivalent Circuit Models (ECM)               | SciPy Minimize & Differential Evolution                  | Unscented Kalman Filter (UKF) <tr></tr>  |
-|                                               | Cuckoo Search                                            | Gravimetric Energy Density <tr></tr>     |
-|                                               | Gradient Descent                                         | Volumetric Energy Density<tr></tr>       |
-|                                               | Nelder-Mead                                              | <tr></tr>                                |
+| Battery Models                                | Cost Functions                     | Optimization Algorithms                                            |
+|-----------------------------------------------|------------------------------------|--------------------------------------------------------------------|
+| Single Particle Model (SPM)                   | Sum of Squared Error (SSE)         | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) <tr></tr> |
+| Single Particle Model with Electrolyte (SPMe) | Root Mean Squared Error (RMSE)     | Particle Swarm Optimization (PSO) <tr></tr>                        |
+| Doyle-Fuller-Newman (DFN)                     | Mean Squared Error (MSE)           | Exponential Natural Evolution Strategy (xNES) <tr></tr>            |
+| Many Particle Model (MPM)                     | Mean Absolute Error (MAE)          | Separable Natural Evolution Strategy (sNES)  <tr></tr>             |
+| Multi-Species Multi-Reaction (MSMR)           | Minkowski                          | Weight Decayed Adaptive Moment Estimation (AdamW) <tr></tr>        |
+| Weppner-Huggins                               | Sum of Power                       | Improved Resilient Backpropagation (iRProp-) <tr></tr>             |
+| Equivalent Circuit Models (ECM)               | Gaussian Log Likelihood            | SciPy Minimize & Differential Evolution  <tr></tr>                 |
+| Grouped-parameter SPMe (GroupedSPMe)          | Log Posterior                      | Cuckoo Search  <tr></tr>                                           |
+|                                               | Gravimetric Energy / Power Density | Simulated Annealing  <tr></tr>                                     |
+|                                               | Volumetric Energy / Power Density  | Random Search <tr></tr>                                            |
+|                                               |                                    | Gradient Descent <tr></tr>                                         |
+|                                               |                                    | Nelder Mead <tr></tr>                                              |
 
 </p>
 
@@ -140,7 +142,11 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://www.linkedin.com/in/muhammedsogut/"><img src="https://avatars.githubusercontent.com/u/34511375?v=4?s=100" width="100px;" alt="Muhammed Nedim Sogut"/><br /><sub><b>Muhammed Nedim Sogut</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=muhammedsogut" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/MarkBlyth"><img src="https://avatars.githubusercontent.com/u/20501619?v=4?s=100" width="100px;" alt="MarkBlyth"/><br /><sub><b>MarkBlyth</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=MarkBlyth" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/f-g-r-i-m-m"><img src="https://avatars.githubusercontent.com/u/137511310?v=4?s=100" width="100px;" alt="f-g-r-i-m-m"/><br /><sub><b>f-g-r-i-m-m</b></sub></a><br /><a href="#example-f-g-r-i-m-m" title="Examples">💡</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Dibyendu-IITKGP"><img src="https://avatars.githubusercontent.com/u/32595915?v=4?s=100" width="100px;" alt="Dibyendu-IITKGP"/><br /><sub><b>Dibyendu-IITKGP</b></sub></a><br /><a href="#example-Dibyendu-IITKGP" title="Examples">💡</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Dibyendu-IITKGP"><img src="https://avatars.githubusercontent.com/u/32595915?v=4?s=100" width="100px;" alt="Dibyendu-IITKGP"/><br /><sub><b>Dibyendu-IITKGP</b></sub></a><br /><a href="#example-Dibyendu-IITKGP" title="Examples">💡</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=Dibyendu-IITKGP" title="Tests">⚠️</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=Dibyendu-IITKGP" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://eng.ox.ac.uk/people/noel-hallemans/"><img src="https://avatars.githubusercontent.com/u/90609505?v=4?s=100" width="100px;" alt="Noël Hallemans"/><br /><sub><b>Noël Hallemans</b></sub></a><br /><a href="#example-noelhallemans" title="Examples">💡</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/pipliggins"><img src="https://avatars.githubusercontent.com/u/55396775?v=4?s=100" width="100px;" alt="Pip Liggins"/><br /><sub><b>Pip Liggins</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=pipliggins" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>

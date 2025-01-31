@@ -1,13 +1,29 @@
+import itertools
+
 import numpy as np
 import pytest
 
 import pybop
 
 
+def transformation_id(val):
+    """Create a readable name for each transformation."""
+    if isinstance(val, pybop.IdentityTransformation):
+        return "Identity"
+    elif isinstance(val, pybop.UnitHyperCube):
+        return "UnitHyperCube"
+    elif isinstance(val, pybop.LogTransformation):
+        return "Log"
+    else:
+        return str(val)
+
+
 class TestTransformation:
     """
     A class for integration tests of the transformation methods.
     """
+
+    pytestmark = pytest.mark.integration
 
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -23,8 +39,7 @@ class TestTransformation:
         parameter_set = pybop.ParameterSet(
             json_path="examples/parameters/initial_ecm_parameters.json"
         )
-        parameter_set.import_parameters()
-        parameter_set.params.update(
+        parameter_set.update(
             {
                 "C1 [F]": 1000,
                 "R0 [Ohm]": self.ground_truth[0],
@@ -34,25 +49,23 @@ class TestTransformation:
         return pybop.empirical.Thevenin(parameter_set=parameter_set)
 
     @pytest.fixture
-    def parameters(self):
+    def parameters(self, transformation_r0, transformation_r1):
         return pybop.Parameters(
             pybop.Parameter(
                 "R0 [Ohm]",
-                prior=pybop.Uniform(0.001, 0.1),
-                bounds=[0, 0.1],
-                transformation=pybop.ScaledTransformation(
-                    coefficient=1 / 0.35, intercept=-0.375
-                ),
+                prior=pybop.Gaussian(0.05, 0.02),
+                bounds=[1e-4, 0.1],
+                transformation=transformation_r0,
             ),
             pybop.Parameter(
                 "R1 [Ohm]",
-                prior=pybop.Uniform(0.001, 0.1),
-                bounds=[0, 0.1],
-                transformation=pybop.LogTransformation(),
+                prior=pybop.Gaussian(0.05, 0.02),
+                bounds=[1e-4, 0.1],
+                transformation=transformation_r1,
             ),
         )
 
-    @pytest.fixture(params=[0.5])
+    @pytest.fixture(params=[0.6])
     def init_soc(self, request):
         return request.param
 
@@ -61,14 +74,10 @@ class TestTransformation:
 
     @pytest.fixture(
         params=[
-            pybop.GaussianLogLikelihoodKnownSigma,
             pybop.GaussianLogLikelihood,
             pybop.RootMeanSquaredError,
             pybop.SumSquaredError,
-            pybop.SumofPower,
-            pybop.Minkowski,
             pybop.LogPosterior,
-            pybop.LogPosterior,  # Second for GaussianLogLikelihood
         ]
     )
     def cost_cls(self, request):
@@ -91,41 +100,42 @@ class TestTransformation:
         problem = pybop.FittingProblem(model, parameters, dataset)
 
         # Construct the cost
-        first_map = True
-        if cost_cls is pybop.GaussianLogLikelihoodKnownSigma:
-            return cost_cls(problem, sigma0=self.sigma0)
-        elif cost_cls is pybop.GaussianLogLikelihood:
+        if cost_cls is pybop.GaussianLogLikelihood:
             return cost_cls(problem)
-        elif cost_cls is pybop.LogPosterior and first_map:
-            first_map = False
-            return cost_cls(log_likelihood=pybop.GaussianLogLikelihood(problem))
         elif cost_cls is pybop.LogPosterior:
-            return cost_cls(
-                log_likelihood=pybop.GaussianLogLikelihoodKnownSigma(
-                    problem, sigma0=self.sigma0
-                )
-            )
+            return cost_cls(log_likelihood=pybop.GaussianLogLikelihood(problem))
         else:
             return cost_cls(problem)
 
     @pytest.mark.parametrize(
         "optimiser",
-        [
-            pybop.IRPropMin,
-            pybop.NelderMead,
-        ],
+        [pybop.IRPropMin, pybop.CMAES, pybop.SciPyDifferentialEvolution],
+        ids=["IRPropMin", "CMAES", "SciPyDifferentialEvolution"],
     )
-    @pytest.mark.integration
+    @pytest.mark.parametrize(
+        "transformation_r0, transformation_r1",
+        list(
+            itertools.product(
+                [
+                    pybop.IdentityTransformation(),
+                    pybop.UnitHyperCube(0.001, 0.1),
+                    pybop.LogTransformation(),
+                ],
+                repeat=2,
+            )
+        ),
+        ids=lambda val: f"{transformation_id(val)}",
+    )
     def test_thevenin_transformation(self, optimiser, cost):
         x0 = cost.parameters.initial_value()
         optim = optimiser(
             cost=cost,
-            sigma0=[0.03, 0.03, 1e-3]
+            sigma0=[0.02, 0.02, 2e-3]
             if isinstance(cost, (pybop.GaussianLogLikelihood, pybop.LogPosterior))
-            else [0.03, 0.03],
-            max_unchanged_iterations=35,
-            absolute_tolerance=1e-6,
+            else [0.02, 0.02],
             max_iterations=250,
+            max_unchanged_iterations=45,
+            popsize=3 if optimiser is pybop.SciPyDifferentialEvolution else 6,
         )
 
         initial_cost = optim.cost(x0)
@@ -157,8 +167,8 @@ class TestTransformation:
         experiment = pybop.Experiment(
             [
                 (
-                    "Discharge at 0.5C for 2 minutes (4 second period)",
-                    "Rest for 1 minute (4 second period)",
+                    "Rest for 10 seconds (2 second period)",
+                    "Discharge at 0.5C for 6 minutes (12 second period)",
                 ),
             ]
         )

@@ -2,7 +2,7 @@ from typing import Optional, Union
 
 import numpy as np
 
-from pybop import BaseCost, BaseLikelihood, DesignCost
+from pybop import BaseCost
 
 
 class WeightedCost(BaseCost):
@@ -32,9 +32,6 @@ class WeightedCost(BaseCost):
         self.costs = [cost for cost in costs]
         if len(set(type(cost.problem) for cost in self.costs)) > 1:
             raise TypeError("All problems must be of the same class type.")
-        self.minimising = not any(
-            isinstance(cost, (BaseLikelihood, DesignCost)) for cost in self.costs
-        )
 
         # Check if weights are provided
         if weights is not None:
@@ -62,14 +59,21 @@ class WeightedCost(BaseCost):
         for cost in self.costs:
             self.join_parameters(cost.parameters)
 
+        # Apply the minimising property from each cost
+        for i, cost in enumerate(self.costs):
+            self.weights[i] = self.weights[i] * (1 if cost.minimising else -1)
+        if all(not cost.minimising for cost in self.costs):
+            # If all costs are maximising, convert the weighted cost to maximising
+            self.weights = -self.weights
+            self.minimising = False
+
         # Weighted costs do not use this functionality
         self._has_separable_problem = False
 
     def compute(
         self,
         y: dict,
-        dy: np.ndarray = None,
-        calculate_grad: bool = False,
+        dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
         Computes the cost function for the given predictions.
@@ -80,8 +84,6 @@ class WeightedCost(BaseCost):
             The dictionary of predictions with keys designating the signals for fitting.
         dy : np.ndarray, optional
             The corresponding gradient with respect to the parameters for each signal.
-        calculate_grad : bool, optional
-            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------
@@ -90,7 +92,7 @@ class WeightedCost(BaseCost):
         """
         if self._has_identical_problems:
             inputs = self.problem.parameters.as_dict()
-            if calculate_grad:
+            if dy is not None:
                 y, dy = self.problem.evaluateS1(inputs)
             else:
                 y = self.problem.evaluate(inputs)
@@ -103,18 +105,18 @@ class WeightedCost(BaseCost):
                 y, dy = (y, dy)
             elif cost.has_separable_problem:
                 inputs = cost.parameters.as_dict()
-                if calculate_grad:
+                if dy is not None:
                     y, dy = cost.problem.evaluateS1(inputs)
                 else:
                     y = cost.problem.evaluate(inputs)
 
-            if calculate_grad:
-                e[i], de[:, i] = cost.compute(y, dy=dy, calculate_grad=True)
+            if dy is not None:
+                e[i], de[:, i] = cost.compute(y, dy=dy)
             else:
                 e[i] = cost.compute(y)
 
         e = np.dot(e, self.weights)
-        if calculate_grad:
+        if dy is not None:
             de = np.dot(de, self.weights)
             return e, de
 

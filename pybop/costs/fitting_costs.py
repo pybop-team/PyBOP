@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 
@@ -6,123 +6,168 @@ from pybop.costs.base_cost import BaseCost
 from pybop.observers.observer import Observer
 
 
-class RootMeanSquaredError(BaseCost):
+class FittingCost(BaseCost):
     """
-    Root mean square error cost function.
+    Overwrites and extends `BaseCost` class for fitting-type cost functions.
 
-    Computes the root mean square error between model predictions and the target
+    This class is intended to be subclassed to create specific cost functions
+    for evaluating model predictions against a set of data. The cost function
+    quantifies the goodness-of-fit between the model predictions and the
+    observed data, with a lower cost value indicating a better fit.
+    """
+
+    def __init__(self, problem):
+        super().__init__(problem)
+        self.numpy_axis = (0, 2) if self.n_outputs > 1 else (1, 2)
+
+    def compute(
+        self,
+        y: dict,
+        dy: Optional[np.ndarray] = None,
+    ) -> Union[float, tuple[float, np.ndarray]]:
+        """
+        Computes the cost function for the given predictions.
+
+        Parameters
+        ----------
+        y : dict
+            The dictionary of predictions with keys designating the signals for fitting.
+        dy : np.ndarray, optional
+            The corresponding gradient with respect to the parameters for each signal.
+
+        Returns
+        -------
+        tuple or float
+            If dy is not None, returns a tuple containing the cost (float) and the
+            gradient (np.ndarray), otherwise returns only the computed cost (float).
+        """
+        # Early return if the prediction is not verified
+        if not self.verify_prediction(y):
+            return (np.inf, self.grad_fail) if dy is not None else np.inf
+
+        # Compute the residual
+        r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
+
+        return self._error_measure(r=r, dy=dy)
+
+    def _error_measure(
+        self,
+        r: np.ndarray,
+        dy: Optional[np.ndarray] = None,
+    ) -> Union[float, tuple[float, np.ndarray]]:
+        """
+        Computes the cost function for the given predictions.
+
+        Parameters
+        ----------
+        r : np.ndarray
+            The residual difference between the model prediction and the target.
+        dy : np.ndarray, optional
+            The corresponding gradient with respect to the parameters for each signal.
+
+        Returns
+        -------
+        tuple or float
+            If dy is not None, returns a tuple containing the cost (float) and the
+            gradient (np.ndarray), otherwise returns only the computed cost (float).
+        """
+        raise NotImplementedError
+
+
+class MeanSquaredError(FittingCost):
+    """
+    Mean square error (MSE) cost function.
+
+    Computes the mean square error between model predictions and the target
     data, providing a measure of the differences between predicted values and
     observed values.
-
-    Inherits all parameters and attributes from ``BaseCost``.
-
     """
 
-    def __init__(self, problem):
-        super().__init__(problem)
-
-    def compute(
+    def _error_measure(
         self,
-        y: dict,
-        dy: np.ndarray = None,
-        calculate_grad: bool = False,
+        r: np.ndarray,
+        dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        """
-        Computes the cost function for the given predictions.
+        e = np.mean(np.abs(r) ** 2)
 
-        Parameters
-        ----------
-        y : dict
-            The dictionary of predictions with keys designating the signals for fitting.
-        dy : np.ndarray, optional
-            The corresponding gradient with respect to the parameters for each signal.
-        calculate_grad : bool, optional
-            A bool condition designating whether to calculate the gradient.
-
-        Returns
-        -------
-        float
-            The root mean square error.
-        """
-        # Verify we have dy if calculate_grad is True
-        self.verify_args(dy, calculate_grad)
-
-        # Early return if the prediction is not verified
-        if not self.verify_prediction(y):
-            return (np.inf, self.grad_fail) if calculate_grad else np.inf
-
-        # Calculate residuals and error
-        r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
-        e = np.sqrt(np.mean(np.abs(r) ** 2, axis=1))
-
-        if calculate_grad:
-            de = np.mean((r * dy.T), axis=2) / (e + np.finfo(float).eps)
-            return (
-                (e.item(), de.flatten())
-                if self.n_outputs == 1
-                else (e.sum(), de.sum(1))
-            )
-
-        return e.item() if self.n_outputs == 1 else np.sum(e)
-
-
-class SumSquaredError(BaseCost):
-    """
-    Sum of squared errors cost function.
-
-    Computes the sum of the squares of the differences between model predictions
-    and target data, which serves as a measure of the total error between the
-    predicted and observed values.
-
-    Inherits all parameters and attributes from ``BaseCost``.
-
-    """
-
-    def __init__(self, problem):
-        super().__init__(problem)
-
-    def compute(
-        self,
-        y: dict,
-        dy: np.ndarray = None,
-        calculate_grad: bool = False,
-    ) -> Union[float, tuple[float, np.ndarray]]:
-        """
-        Computes the cost function for the given predictions.
-
-        Parameters
-        ----------
-        y : dict
-            The dictionary of predictions with keys designating the signals for fitting.
-        dy : np.ndarray, optional
-            The corresponding gradient with respect to the parameters for each signal.
-        calculate_grad : bool, optional
-            A bool condition designating whether to calculate the gradient.
-
-        Returns
-        -------
-        float
-            The Sum of Squared Error.
-        """
-        # Verify we have dy if calculate_grad is True
-        self.verify_args(dy, calculate_grad)
-
-        # Early return if the prediction is not verified
-        if not self.verify_prediction(y):
-            return (np.inf, self.grad_fail) if calculate_grad else np.inf
-
-        # Calculate residuals and error
-        r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
-        e = np.sum(np.sum(np.abs(r) ** 2, axis=0), axis=0)
-
-        if calculate_grad:
-            de = 2 * np.sum((r * dy.T), axis=(1, 2))
+        if dy is not None:
+            de = 2 * np.mean((r * dy.T), axis=self.numpy_axis)
             return e, de
 
         return e
 
 
-class Minkowski(BaseCost):
+class RootMeanSquaredError(FittingCost):
+    """
+    Root mean square error (RMSE) cost function.
+
+    Computes the root mean square error between model predictions and the target
+    data, providing a measure of the differences between predicted values and
+    observed values.
+    """
+
+    def _error_measure(
+        self,
+        r: np.ndarray,
+        dy: Optional[np.ndarray] = None,
+    ) -> Union[float, tuple[float, np.ndarray]]:
+        e = np.sqrt(np.mean(np.abs(r) ** 2))
+
+        if dy is not None:
+            de = np.mean((r * dy.T), axis=self.numpy_axis) / (e + np.finfo(float).eps)
+            return e, de
+
+        return e
+
+
+class MeanAbsoluteError(FittingCost):
+    """
+    Mean absolute error (MAE) cost function.
+
+    Computes the mean absolute error (MAE) between model predictions
+    and target data. The MAE is a measure of the average magnitude
+    of errors in a set of predictions, without considering their direction.
+    """
+
+    def _error_measure(
+        self,
+        r: np.ndarray,
+        dy: Optional[np.ndarray] = None,
+    ) -> Union[float, tuple[float, np.ndarray]]:
+        e = np.mean(np.abs(r))
+
+        if dy is not None:
+            sign_r = np.sign(r)
+            de = np.mean(sign_r * dy.T, axis=self.numpy_axis)
+            return e, de
+
+        return e
+
+
+class SumSquaredError(FittingCost):
+    """
+    Sum of squared error (SSE) cost function.
+
+    Computes the sum of the squares of the differences between model predictions
+    and target data, which serves as a measure of the total error between the
+    predicted and observed values.
+    """
+
+    def _error_measure(
+        self,
+        r: np.ndarray,
+        dy: Optional[np.ndarray] = None,
+    ) -> Union[float, tuple[float, np.ndarray]]:
+        e = np.sum(np.abs(r) ** 2)
+
+        if dy is not None:
+            de = 2 * np.sum((r * dy.T), axis=self.numpy_axis)
+            return e, de
+
+        return e
+
+
+class Minkowski(FittingCost):
     """
     The Minkowski distance is a generalisation of several distance metrics,
     including the Euclidean and Manhattan distances. It is defined as:
@@ -163,52 +208,23 @@ class Minkowski(BaseCost):
             )
         self.p = float(p)
 
-    def compute(
+    def _error_measure(
         self,
-        y: dict,
-        dy: np.ndarray = None,
-        calculate_grad: bool = False,
+        r: np.ndarray,
+        dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        """
-        Computes the cost function for the given predictions.
-
-        Parameters
-        ----------
-        y : dict
-            The dictionary of predictions with keys designating the signals for fitting.
-        dy : np.ndarray, optional
-            The corresponding gradient with respect to the parameters for each signal.
-        calculate_grad : bool, optional
-            A bool condition designating whether to calculate the gradient.
-
-        Returns
-        -------
-        float
-            The Minkowski cost.
-        """
-        # Verify we have dy if calculate_grad is True
-        self.verify_args(dy, calculate_grad)
-
-        # Early return if the prediction is not verified
-        if not self.verify_prediction(y):
-            return (np.inf, self.grad_fail) if calculate_grad else np.inf
-
-        # Calculate residuals and error
-        r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
         e = np.sum(np.abs(r) ** self.p) ** (1 / self.p)
 
-        if calculate_grad:
+        if dy is not None:
             de = np.sum(
-                np.sum(np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T, axis=2)
-                / (e ** (self.p - 1) + np.finfo(float).eps),
-                axis=1,
-            )
+                np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T, axis=self.numpy_axis
+            ) / (e ** (self.p - 1) + np.finfo(float).eps)
             return e, de
 
         return e
 
 
-class SumofPower(BaseCost):
+class SumofPower(FittingCost):
     """
     The Sum of Power [1] is a generalised cost function based on the p-th power
     of absolute differences between two vectors. It is defined as:
@@ -247,43 +263,16 @@ class SumofPower(BaseCost):
             raise ValueError("p = np.inf is not yet supported.")
         self.p = float(p)
 
-    def compute(
+    def _error_measure(
         self,
-        y: dict,
-        dy: np.ndarray = None,
-        calculate_grad: bool = False,
+        r: np.ndarray,
+        dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        """
-        Computes the cost function for the given predictions.
-
-        Parameters
-        ----------
-        y : dict
-            The dictionary of predictions with keys designating the signals for fitting.
-        dy : np.ndarray, optional
-            The corresponding gradient with respect to the parameters for each signal.
-        calculate_grad : bool, optional
-            A bool condition designating whether to calculate the gradient.
-
-        Returns
-        -------
-        float
-            The Sum of Power cost.
-        """
-        # Verify we have dy if calculate_grad is True
-        self.verify_args(dy, calculate_grad)
-
-        # Early return if the prediction is not verified
-        if not self.verify_prediction(y):
-            return (np.inf, self.grad_fail) if calculate_grad else np.inf
-
-        # Calculate residuals and error
-        r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
         e = np.sum(np.abs(r) ** self.p)
 
-        if calculate_grad:
+        if dy is not None:
             de = self.p * np.sum(
-                np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T, axis=(1, 2)
+                np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T, axis=self.numpy_axis
             )
             return e, de
 
@@ -298,7 +287,6 @@ class ObserverCost(BaseCost):
     of the data points given the model parameters.
 
     Inherits all parameters and attributes from ``BaseCost``.
-
     """
 
     def __init__(self, observer: Observer):
@@ -309,8 +297,7 @@ class ObserverCost(BaseCost):
     def compute(
         self,
         y: dict,
-        dy: np.ndarray = None,
-        calculate_grad: bool = False,
+        dy: Optional[np.ndarray] = None,
     ) -> float:
         """
         Computes the cost function for the given predictions.
@@ -321,8 +308,6 @@ class ObserverCost(BaseCost):
             The dictionary of predictions with keys designating the signals for fitting.
         dy : np.ndarray, optional
             The corresponding gradient with respect to the parameters for each signal.
-        calculate_grad : bool, optional
-            A bool condition designating whether to calculate the gradient.
 
         Returns
         -------

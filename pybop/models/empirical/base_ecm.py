@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 import pybamm
 
@@ -54,17 +56,19 @@ class ECircuitModel(BaseModel):
             model_options[key] = value
         pybamm_model = pybamm_model(**model_options)
 
-        # Correct OCP if set to default
+        # Add OCV if not provided
         if (
             parameter_set is not None
-            and "Open-circuit voltage [V]" in parameter_set.keys()
+            and "Open-circuit voltage [V]" not in parameter_set.keys()
         ):
-            default_ocp = pybamm_model.default_parameter_values[
-                "Open-circuit voltage [V]"
-            ]
-            if parameter_set["Open-circuit voltage [V]"] == "default":
-                print("Setting open-circuit voltage to default function")
-                parameter_set["Open-circuit voltage [V]"] = default_ocp
+            parameter_set.update(
+                {
+                    "Open-circuit voltage [V]": pybamm_model.default_parameter_values[
+                        "Open-circuit voltage [V]"
+                    ]
+                },
+                check_already_exists=False,
+            )
 
         super().__init__(
             name=name, parameter_set=parameter_set, check_params=check_params, eis=eis
@@ -120,6 +124,22 @@ class ECircuitModel(BaseModel):
         if self.param_checker:
             return self.param_checker(inputs, allow_infeasible_solutions)
         return True
+
+    def _set_initial_state(self, initial_state: dict, inputs: Optional[Inputs] = None):
+        """
+        Set the initial state of charge or concentrations for the battery model.
+
+        Parameters
+        ----------
+        initial_state : dict
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+        inputs : Inputs
+            The input parameters to be used when building the model.
+        """
+        initial_state = self.convert_to_pybamm_initial_state(initial_state)
+
+        initial_state = self.get_initial_state(initial_state, inputs=inputs)
+        self._unprocessed_parameter_set.update({"Initial SoC": initial_state})
 
     def get_initial_state(
         self,

@@ -3,7 +3,7 @@ import numpy as np
 import pybop
 
 # Define model
-parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+parameter_set = pybop.ParameterSet("Chen2020")
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
@@ -52,3 +52,6 @@ pybop.plot.parameters(optim)
 
 # Plot the cost landscape with optimisation path
 pybop.plot.surface(optim)
+
+# Plot contour
+pybop.plot.contour(optim)

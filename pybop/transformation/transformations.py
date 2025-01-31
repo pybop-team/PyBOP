@@ -126,6 +126,55 @@ class ScaledTransformation(Transformation):
             raise ValueError(f"Unknown method: {method}")
 
 
+class UnitHyperCube(ScaledTransformation):
+    """
+    A class that implements a linear transformation between the model parameter space
+    and a normalized search space (unit hypercube), using an inverse scale factor.
+
+    This transformation maps the input parameters from a given range [lower, upper]
+    to a unit range [0, 1].
+
+    Initially based on pints.UnitCubeTransformation method.
+
+    Parameters
+    ----------
+    lower : float or array-like of shape (n,)
+        The lower bound(s) of the model parameter space.
+    upper : float or array-like of shape (n,)
+        The upper bound(s) of the model parameter space.
+
+    Attributes
+    ----------
+    lower : np.ndarray
+        The lower bound of the input space for each parameter.
+    upper : np.ndarray
+        The upper bound of the input space for each parameter.
+    coeff : np.ndarray
+        The scaling coefficient (1 / (upper - lower)) for each parameter.
+    inter : np.ndarray
+        The intercept (-lower) to shift the input parameters.
+    """
+
+    def __init__(
+        self,
+        lower: Union[float, list, np.ndarray],
+        upper: Union[float, list, np.ndarray],
+    ):
+        self.lower = lower
+        self.upper = upper
+
+        # Validate that upper > lower for all elements
+        if np.any(self.upper <= self.lower):
+            raise ValueError(
+                "All elements of upper bounds must be greater than lower bounds."
+            )
+
+        # Compute the scaling coefficient (1 / (upper - lower)) and intercept (-lower)
+        self.coeff = 1 / (self.upper - self.lower)
+        self.inter = -self.lower
+        super().__init__(coefficient=self.coeff, intercept=self.inter)
+
+
 class LogTransformation(Transformation):
     """
     This class implements a logarithmic transformation between the model parameter space

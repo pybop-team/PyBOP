@@ -18,6 +18,8 @@ class Test_Sampling_SPM:
     A class to test the MCMC samplers on a physics-based model.
     """
 
+    pytestmark = pytest.mark.integration
+
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ground_truth = np.clip(
@@ -45,12 +47,14 @@ class Test_Sampling_SPM:
         return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Uniform(0.4, 0.7),
+                prior=pybop.Gaussian(0.575, 0.05),
+                initial_value=pybop.Uniform(0.4, 0.7).rvs()[0],
                 bounds=[0.375, 0.725],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Uniform(0.4, 0.7),
+                prior=pybop.Gaussian(0.525, 0.05),
+                initial_value=pybop.Uniform(0.4, 0.7).rvs()[0],
                 # no bounds
             ),
         )
@@ -85,7 +89,6 @@ class Test_Sampling_SPM:
         common_args = {
             "max_iterations": 100,
             "max_unchanged_iterations": 35,
-            "absolute_tolerance": 1e-7,
         }
         optim = pybop.CMAES(log_posterior, **common_args)
         results = optim.run()
@@ -103,7 +106,6 @@ class Test_Sampling_SPM:
             PopulationMCMC,
         ],
     )
-    @pytest.mark.integration
     def test_sampling_spm(self, quick_sampler, log_posterior, map_estimate):
         x0 = np.clip(
             map_estimate + np.random.normal(0, [5e-3, 5e-3, 1e-4], size=3),

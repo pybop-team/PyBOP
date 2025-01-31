@@ -1,8 +1,8 @@
 import numpy as np
-import pints
+from pints import Optimiser as PintsOptimiser
 
 
-class GradientDescentImpl(pints.Optimiser):
+class GradientDescentImpl(PintsOptimiser):
     """
     Gradient descent method with a fixed, per-dimension learning rate.
 

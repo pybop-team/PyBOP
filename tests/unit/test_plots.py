@@ -1,6 +1,7 @@
 import warnings
 
 import numpy as np
+import pybamm
 import pytest
 from packaging import version
 
@@ -12,7 +13,8 @@ class TestPlots:
     A class to test the plot classes.
     """
 
-    @pytest.mark.unit
+    pytestmark = pytest.mark.unit
+
     def test_standard_plot(self):
         # Test standard plot
         trace_names = pybop.plot.StandardPlot.remove_brackets(
@@ -60,7 +62,6 @@ class TestPlots:
             }
         )
 
-    @pytest.mark.unit
     def test_dataset_plots(self, dataset):
         # Test plot of Dataset objects
         pybop.plot.trajectories(
@@ -75,6 +76,13 @@ class TestPlots:
         return pybop.FittingProblem(model, parameters, dataset)
 
     @pytest.fixture
+    def jax_fitting_problem(self, model, parameters, dataset):
+        model.solver = pybamm.IDAKLUSolver()
+        problem = pybop.FittingProblem(model, parameters, dataset)
+        problem.model.jaxify_solver(t_eval=problem.domain_data)
+        return problem
+
+    @pytest.fixture
     def experiment(self):
         return pybop.Experiment(
             [
@@ -87,11 +95,11 @@ class TestPlots:
         model = pybop.lithium_ion.SPM()
         return pybop.DesignProblem(model, parameters, experiment)
 
-    @pytest.mark.unit
-    def test_problem_plots(self, fitting_problem, design_problem):
+    def test_problem_plots(self, fitting_problem, design_problem, jax_fitting_problem):
         # Test plot of Problem objects
         pybop.plot.quick(fitting_problem, title="Optimised Comparison")
         pybop.plot.quick(design_problem)
+        pybop.plot.quick(jax_fitting_problem)
 
         # Test conversion of values into inputs
         pybop.plot.quick(fitting_problem, problem_inputs=[0.6, 0.6])
@@ -101,7 +109,6 @@ class TestPlots:
         # Define an example cost
         return pybop.SumSquaredError(fitting_problem)
 
-    @pytest.mark.unit
     def test_cost_plots(self, cost):
         # Test plot of Cost objects
         pybop.plot.contour(cost, gradient=True, steps=5)
@@ -122,7 +129,6 @@ class TestPlots:
         optim.run()
         return optim
 
-    @pytest.mark.unit
     def test_optim_plots(self, optim):
         bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
 
@@ -147,10 +153,15 @@ class TestPlots:
         pybop.plot.contour(optim, gradient=True, steps=5)
 
         # Plot voronoi
-        pybop.plot.surface(optim)
+        pybop.plot.surface(optim, normalise=False)
 
         # Plot voronoi w/ bounds
         pybop.plot.surface(optim, bounds=bounds)
+
+        with pytest.raises(
+            ValueError, match="Lower bounds must be strictly less than upper bounds."
+        ):
+            pybop.plot.surface(optim, bounds=[[0.5, 0.8], [0.7, 0.4]])
 
     @pytest.fixture
     def posterior_summary(self, fitting_problem):
@@ -161,7 +172,6 @@ class TestPlots:
         results = sampler.run()
         return pybop.PosteriorSummary(results)
 
-    @pytest.mark.unit
     def test_posterior_plots(self, posterior_summary):
         # Plot trace
         posterior_summary.plot_trace()
@@ -175,7 +185,6 @@ class TestPlots:
         # Plot summary table
         posterior_summary.summary_table()
 
-    @pytest.mark.unit
     def test_with_ipykernel(self, dataset, cost, optim):
         import ipykernel
 
@@ -186,7 +195,6 @@ class TestPlots:
         pybop.plot.parameters(optim)
         pybop.plot.contour(optim, steps=5)
 
-    @pytest.mark.unit
     def test_gaussianlogliklihood_plots(self, fitting_problem):
         # Test plot of GaussianLogLikelihood
         likelihood = pybop.GaussianLogLikelihood(fitting_problem)
@@ -196,7 +204,6 @@ class TestPlots:
         # Plot parameters
         pybop.plot.parameters(optim)
 
-    @pytest.mark.unit
     def test_contour_incorrect_number_of_parameters(self, model, dataset):
         # Test with less than two paramters
         parameters = pybop.Parameters(
@@ -235,7 +242,6 @@ class TestPlots:
         cost = pybop.SumSquaredError(fitting_problem)
         pybop.plot.contour(cost)
 
-    @pytest.mark.unit
     def test_contour_prior_bounds(self, model, dataset):
         # Test with prior bounds
         parameters = pybop.Parameters(
@@ -257,7 +263,6 @@ class TestPlots:
             warnings.simplefilter("always")
             pybop.plot.contour(cost)
 
-    @pytest.mark.unit
     def test_nyquist(self):
         # Define model
         model = pybop.lithium_ion.SPM(

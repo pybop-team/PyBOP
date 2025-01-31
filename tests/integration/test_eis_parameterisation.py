@@ -9,6 +9,8 @@ class TestEISParameterisation:
     A class to test the eis parameterisation methods.
     """
 
+    pytestmark = pytest.mark.integration
+
     @pytest.fixture(autouse=True)
     def setup(self):
         self.sigma0 = 5e-4
@@ -39,12 +41,14 @@ class TestEISParameterisation:
         return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Uniform(0.4, 0.75),
+                prior=pybop.Uniform(0.3, 0.9),
+                initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
                 bounds=[0.375, 0.775],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Uniform(0.4, 0.75),
+                prior=pybop.Uniform(0.3, 0.9),
+                initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
                 bounds=[0.375, 0.775],
             ),
         )
@@ -57,6 +61,8 @@ class TestEISParameterisation:
         params=[
             pybop.GaussianLogLikelihood,
             pybop.SumSquaredError,
+            pybop.MeanAbsoluteError,
+            pybop.MeanSquaredError,
             pybop.Minkowski,
             pybop.LogPosterior,
         ]
@@ -131,17 +137,10 @@ class TestEISParameterisation:
             else 0.02,
         }
 
-        if isinstance(cost, pybop.LogPosterior):
-            for i in cost.parameters.keys():
-                cost.parameters[i].prior = pybop.Uniform(
-                    0.2, 2.0
-                )  # Increase range to avoid prior == np.inf
-
         # Create optimiser
         optim = optimiser(**common_args)
         return optim
 
-    @pytest.mark.integration
     def test_eis_optimisers(self, optim):
         x0 = optim.parameters.initial_value()
 
