@@ -257,6 +257,8 @@ class BaseOptimiser:
         ----------
         iterations : list or array-like, optional
             Iteration indices to log (default: None).
+        evaluations: list or array-like, optional
+            Evaluation indices to log (default: None).
         x : list or array-like, optional
             Parameter values (default: None).
         x_best : list or array-like, optional
@@ -274,8 +276,6 @@ class BaseOptimiser:
             Helper function to convert values to a list, apply transformations,
             and negate if required.
             """
-            if values is None:
-                return None
             if isinstance(values, (list, tuple, np.ndarray, jnp.ndarray)):
                 values = list(values)
             else:
