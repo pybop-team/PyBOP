@@ -35,6 +35,8 @@ class BaseLikelihood(BaseCost):
             The model outputs for which to compute the FIM.
         dy : np.ndarray
             The sensitivities (gradients) of the model outputs with respect to parameters.
+        inputs : dict[str, float]
+            Input data for model evaluation.
 
         Returns
         -------
