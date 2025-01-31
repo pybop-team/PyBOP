@@ -47,7 +47,7 @@ class GITTPulseFit(BaseApplication):
         )
 
         # Define the cost to optimise
-        self.parameter_set = parameter_set
+        self.parameter_set = parameter_set.copy()
         self.model = pybop.lithium_ion.SPDiffusion(
             parameter_set=self.parameter_set, build=True
         )

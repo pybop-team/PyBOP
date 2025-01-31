@@ -2,6 +2,9 @@ import numpy as np
 import pytest
 
 import pybop
+from pybop.models.lithium_ion.basic_SP_diffusion import (
+    convert_physical_to_electrode_parameters,
+)
 
 
 class TestApplications:
@@ -96,3 +99,46 @@ class TestApplications:
         np.testing.assert_allclose(
             ocv_fit.shift, 0.1 * nom_capacity, rtol=5e-3, atol=5e-3
         )
+
+    @pytest.fixture
+    def half_cell_model(self):
+        parameter_set = pybop.ParameterSet("Xu2019")
+        return pybop.lithium_ion.SPMe(
+            parameter_set=parameter_set, options={"working electrode": "positive"}
+        )
+
+    @pytest.fixture
+    def pulse_data(self, half_cell_model):
+        sigma = 1e-3
+        initial_state = {"Initial SoC": 0.9}
+        experiment = pybop.Experiment(
+            [
+                "Rest for 1 second",
+                "Discharge at 1C for 10 minutes (10 second period)",
+                "Rest for 20 minutes",
+            ]
+        )
+        values = half_cell_model.predict(
+            initial_state=initial_state, experiment=experiment
+        )
+        corrupt_values = values["Voltage [V]"].data + np.random.normal(
+            0, sigma, len(values["Voltage [V]"].data)
+        )
+        return pybop.Dataset(
+            {
+                "Time [s]": values["Time [s]"].data,
+                "Current function [A]": values["Current [A]"].data,
+                "Discharge capacity [A.h]": values["Discharge capacity [A.h]"].data,
+                "Voltage [V]": corrupt_values,
+            }
+        )
+
+    def test_gitt_pulse_fit(self, half_cell_model, pulse_data):
+        parameter_set = convert_physical_to_electrode_parameters(
+            half_cell_model.parameter_set, "positive"
+        )
+        diffusion_time = parameter_set["Particle diffusion time scale [s]"]
+
+        gitt_fit = pybop.GITTPulseFit(pulse_data, parameter_set)
+
+        np.testing.assert_allclose(gitt_fit.results.x[0], diffusion_time, rtol=5e-2)
