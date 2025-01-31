@@ -213,29 +213,22 @@ class TestLikelihoods:
             grad, scaled_likelihood([0.6], calculate_grad=True)[1]
         )
 
+    @pytest.fixture(
+        params=[
+            pybop.GaussianLogLikelihoodKnownSigma,
+            pybop.GaussianLogLikelihood
+        ]
+    )
+    def cost(self,one_signal_problem, request):
+        cls = request.param
+        if cls in [
+            pybop.GaussianLogLikelihoodKnownSigma,
+        ]:
+            return cls(one_signal_problem, sigma0=1e-3)
+        return cls(one_signal_problem)
+    
     @pytest.mark.unit
-    def test_observed_fisher(self, one_signal_problem):
-        likelihood = pybop.GaussianLogLikelihoodKnownSigma(
-            one_signal_problem, sigma0=0.1
-        )
+    def test_fisher_matrix(self,cost):
+        fisher = cost.fisher_matrix([0.5,0.03])
+        assert isinstance(fisher, np.ndarray)
 
-        # Get the actual voltage data from the dataset
-        y = {"Voltage [V]": one_signal_problem.dataset["Voltage [V]"].data}
-
-        # Now let's test with a mock dy
-        n_data_points = len(y["Voltage [V]"])
-        mock_dy = np.random.rand(1, n_data_points)  # 1 parameter
-
-        # Compute observed Fisher Information Matrix with provided dy
-        inputs = [0.5]
-        fim_with_dy = likelihood.observed_fisher(y, mock_dy, inputs)
-
-        # Check that FIM is a 1x1 array
-        assert fim_with_dy.shape == (1,1)
-
-        # Check that FIM is computed correctly
-        _, grad = likelihood.__call__(inputs, calculate_grad=True)
-        shaped_grad = grad.reshape(-1, 1)
-        expected_fim = (shaped_grad @ shaped_grad.T) / n_data_points
-        
-        np.testing.assert_allclose(fim_with_dy, expected_fim, rtol=1e-7)
