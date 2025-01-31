@@ -111,7 +111,7 @@ for model_type in [pybop.lithium_ion.WeppnerHuggins, pybop.lithium_ion.SPDiffusi
     results = optim.run()
 
     # Plot the timeseries output
-    pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
+    pybop.plot.quick(problem, problem_inputs=results.x, title=model_type().name)
 
 print(
     "Note the different optimised values for the particle diffusion time scale,"

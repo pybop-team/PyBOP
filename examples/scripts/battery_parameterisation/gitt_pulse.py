@@ -26,7 +26,7 @@ corrupt_values = values["Voltage [V]"].data + np.random.normal(
     0, sigma, len(values["Voltage [V]"].data)
 )
 
-# Form dataset and locate the pulse
+# Form dataset
 dataset = pybop.Dataset(
     {
         "Time [s]": values["Time [s]"].data,

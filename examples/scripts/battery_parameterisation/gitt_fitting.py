@@ -89,4 +89,6 @@ pybop.plot.trajectories(
     values["Time [s]"].data,
     [dataset["Voltage [V]"], values["Voltage [V]"].data],
     trace_names=["Ground truth", "Identified"],
+    xaxis_title="Time / s",
+    yaxis_title="Voltage / V",
 )
