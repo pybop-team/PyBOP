@@ -21,20 +21,16 @@ class BaseLikelihood(BaseCost):
         self.n_data = problem.n_data
         self.minimising = False
 
-    def observed_fisher(self, y: dict, dy: np.ndarray, inputs: Inputs) -> np.ndarray:
+    def fisher_matrix(self, inputs: Inputs) -> np.ndarray:
         """
         Compute the observed Fisher Information Matrix (FIM) for the given data.
 
-        The FIM is computed as the average of the squared gradients with respect to
-        the model parameters. This method should only be used with exponential-based
-        likelihood functions
+        The Fisher information is computed as the outer product of the gradients with respect to
+        the model parameters, scaled by the inverse of the dataset size. This method should only
+        be used with exponential-based likelihood functions.
 
         Parameters
         ----------
-        y : dict
-            The model outputs for which to compute the FIM.
-        dy : np.ndarray
-            The sensitivities (gradients) of the model outputs with respect to parameters.
         inputs : dict[str, float]
             Input data for model evaluation.
 
