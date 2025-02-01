@@ -43,12 +43,12 @@ class TestParameterSets:
         with pytest.raises(ValueError):
             pybop.ParameterSet("sChen2010s")
 
-        parameter_test = pybop.ParameterSet("Chen2020")
+        parameter_test = pybop.ParameterSet().pybamm("Chen2020")
         np.testing.assert_allclose(
             parameter_test["Negative electrode active material volume fraction"], 0.75
         )
 
-        parameter_test = pybop.ParameterSet("Chen2020")
+        parameter_test = pybop.ParameterSet().pybamm("Chen2020")
         np.testing.assert_allclose(
             parameter_test["Negative electrode active material volume fraction"], 0.75
         )
@@ -144,7 +144,7 @@ class TestParameterSets:
         )
 
     def test_evaluate_symbol(self):
-        parameter_set = pybop.ParameterSet("Chen2020")
+        parameter_set = pybop.ParameterSet().pybamm("Chen2020")
         porosity = parameter_set["Positive electrode porosity"]
         assert isinstance(porosity, float)
 
@@ -173,6 +173,6 @@ class TestParameterSets:
         parameter_set.update({"Unused parameter name": 3}, check_already_exists=False)
         np.testing.assert_allclose(parameter_set["Unused parameter name"], 3)
 
-        parameter_set = pybop.ParameterSet("Chen2020")
+        parameter_set = pybop.ParameterSet().pybamm("Chen2020")
         parameter_set.update({"Nominal cell capacity [A.h]": 3})
         np.testing.assert_allclose(parameter_set["Nominal cell capacity [A.h]"], 3)

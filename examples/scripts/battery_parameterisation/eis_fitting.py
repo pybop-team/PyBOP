@@ -3,7 +3,7 @@ import numpy as np
 import pybop
 
 # Define model
-parameter_set = pybop.ParameterSet("Chen2020")
+parameter_set = pybop.ParameterSet().pybamm("Chen2020")
 parameter_set["Contact resistance [Ohm]"] = 0.0
 initial_state = {"Initial SoC": 0.5}
 n_frequency = 20

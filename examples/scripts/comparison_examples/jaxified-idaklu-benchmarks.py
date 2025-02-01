@@ -16,7 +16,7 @@ solvers = [
 ]
 
 # Parameter set and model definition
-parameter_set = pybop.ParameterSet("Chen2020")
+parameter_set = pybop.ParameterSet().pybamm("Chen2020")
 model = pybop.lithium_ion.DFN(parameter_set=parameter_set, solver=solvers[0])
 
 # Fitting parameters

@@ -3,7 +3,7 @@ import numpy as np
 import pybop
 
 # Parameter set definition
-parameter_set = pybop.ParameterSet("Chen2020")
+parameter_set = pybop.ParameterSet().pybamm("Chen2020")
 parameter_set["Lower voltage cut-off [V]"] = 2.3
 parameter_set["Upper voltage cut-off [V]"] = 4.4
 

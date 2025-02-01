@@ -3,7 +3,7 @@ import numpy as np
 import pybop
 
 # Define model
-parameter_set = pybop.ParameterSet("Chen2020")
+parameter_set = pybop.ParameterSet().pybamm("Chen2020")
 parameter_set.update(
     {
         "Negative electrode active material volume fraction": 0.7,
