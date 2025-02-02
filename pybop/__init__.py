@@ -196,7 +196,7 @@ from ._classification import classify_using_hessian
 # Applications
 #
 from .applications.base_method import BaseApplication
-from .applications.ocp_methods import OCPBlend, OCPAverage, StoichiometricFit
+from .applications.ocp_methods import OCPBlend, OCPAverage, OCPCapacityToStoichiometry
 from .applications.gitt_methods import GITTPulseFit, GITTFit
 
 #

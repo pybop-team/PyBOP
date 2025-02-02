@@ -216,7 +216,7 @@ class OCPAverage(BaseApplication):
         )
 
 
-class StoichiometricFit(BaseApplication):
+class OCPCapacityToStoichiometry(BaseApplication):
     """
     Estimate the stoichiometry from a measurement of open-circuit voltage versus
     charge capacity.
@@ -289,11 +289,15 @@ class StoichiometricFit(BaseApplication):
                 f"The capacity stretch and shift values are ({self.stretch} A.h, {self.shift} A.h)."
             )
 
-        # Scale charge capacity into stoichiometry
+        # Scale charge capacity into stoichiometry (ascending)
+        stoichiometry = (
+            ocv_dataset["Charge capacity [A.h]"] - self.shift
+        ) / self.stretch
         self.dataset = pybop.Dataset(
-            {
-                "Stoichiometry": (ocv_dataset["Charge capacity [A.h]"] - self.shift)
-                / self.stretch,
-                "Voltage [V]": ocv_dataset["Voltage [V]"],
+            {"Stoichiometry": stoichiometry, "Voltage [V]": ocv_dataset["Voltage [V]"]}
+            if stoichiometry[-1] > stoichiometry[0]
+            else {
+                "Stoichiometry": np.flipud(stoichiometry),
+                "Voltage [V]": np.flipud(ocv_dataset["Voltage [V]"]),
             }
         )
