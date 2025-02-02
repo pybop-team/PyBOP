@@ -316,8 +316,8 @@ class BaseOptimiser:
         self.allow_infeasible_solutions = allow
 
         if (
-            hasattr(self.cost, "problem")
-            and hasattr(self.cost.problem, "model")
+            isinstance(self.cost, BaseCost)
+            and self.cost.problem is not None
             and self.cost.problem.model is not None
         ):
             self.cost.problem.model.allow_infeasible_solutions = (
@@ -364,7 +364,6 @@ class OptimisationResult:
         n_evaluations: Optional[int] = None,
         time: Optional[float] = None,
         scipy_result=None,
-        pybamm_solution=None,
     ):
         self.optim = optim
         self.cost = self.optim.cost
@@ -396,6 +395,20 @@ class OptimisationResult:
                 if isinstance(self.optim, BaseOptimiser)
                 else None
             )
+
+            # Extract any pybamm solutions corresponding to the final cost
+            pybamm_solution = None
+            if isinstance(self.cost, BaseCost) and self.cost.problem is not None:
+                # Evaluate the problem once more to update the solution
+                try:
+                    self.cost(x)
+                    pybamm_solution = self.cost.pybamm_solution
+                except Exception:
+                    warnings.warn(
+                        "Failed to evaluate the model with best fit parameters.",
+                        UserWarning,
+                        stacklevel=2,
+                    )
 
             # Calculate Fisher Information if JAX Likelihood
             fisher = (
@@ -481,7 +494,11 @@ class OptimisationResult:
         x : array-like
             Optimised parameter values.
         """
-        if self.cost.problem.model is None:
+        if (
+            not isinstance(self.cost, BaseCost)
+            or self.cost.problem is None
+            or self.cost.problem.model is None
+        ):
             warnings.warn(
                 "No model within problem class, can't check physical viability.",
                 UserWarning,
