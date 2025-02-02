@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -13,7 +14,8 @@ class TestLikelihoods:
 
     @pytest.fixture
     def model(self, ground_truth):
-        model = pybop.lithium_ion.SPM()
+        solver = pybamm.IDAKLUSolver()
+        model = pybop.lithium_ion.SPM(solver=solver)
         model.parameter_set.update(
             {
                 "Negative electrode active material volume fraction": ground_truth,
@@ -205,17 +207,14 @@ class TestLikelihoods:
             grad, scaled_likelihood([0.6], calculate_grad=True)[1]
         )
 
-    @pytest.fixture(
-        params=[pybop.GaussianLogLikelihoodKnownSigma, pybop.GaussianLogLikelihood]
-    )
-    def cost(self, one_signal_problem, request):
-        cls = request.param
-        if cls in [
+    @pytest.mark.parametrize(
+        "likelihood_cls",
+        [
             pybop.GaussianLogLikelihoodKnownSigma,
-        ]:
-            return cls(one_signal_problem, sigma0=1e-3)
-        return cls(one_signal_problem)
-
-    def test_fisher_matrix(self, cost):
-        fisher = cost.fisher_matrix([0.5, 0.03])
+            pybop.JaxGaussianLogLikelihoodKnownSigma,
+        ],
+    )
+    def test_fisher_matrix(self, likelihood_cls, one_signal_problem):
+        likelihood = likelihood_cls(one_signal_problem, sigma0=1e-3)
+        fisher = likelihood.observed_fisher([0.5, 0.03])
         assert isinstance(fisher, np.ndarray)

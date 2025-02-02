@@ -28,7 +28,7 @@ parameters = pybop.Parameters(
 )
 
 # Generate data
-sigma = 0.002
+sigma = 0.001
 experiment = pybop.Experiment(
     [
         (
@@ -37,7 +37,7 @@ experiment = pybop.Experiment(
         ),
     ]
 )
-values = model.predict(initial_state={"Initial SoC": 0.5}, experiment=experiment)
+values = model.predict(initial_state={"Initial SoC": 0.15}, experiment=experiment)
 
 
 def noise(sigma):
@@ -60,9 +60,9 @@ signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 likelihood = pybop.GaussianLogLikelihood(problem, sigma0=sigma * 4)
-optim = pybop.IRPropMin(
+optim = pybop.CMAES(
     likelihood,
-    max_unchanged_iterations=20,
+    max_unchanged_iterations=60,
     min_iterations=20,
     max_iterations=100,
 )

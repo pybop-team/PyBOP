@@ -6,7 +6,7 @@ import jax.numpy as jnp
 import numpy as np
 from pybamm import Solution
 
-from pybop import BaseCost, BaseJaxCost, Inputs, Parameter, Parameters
+from pybop import BaseCost, BaseLikelihood, Inputs, Parameter, Parameters
 
 
 class BaseOptimiser:
@@ -397,10 +397,10 @@ class OptimisationResult:
                 else None
             )
 
-            # Calculate Fisher Information if JAX Likelihood
+            # Calculate Fisher Information if Likelihood
             fisher = (
-                self.cost.observed_fisher(x)
-                if isinstance(self.cost, BaseJaxCost)
+                np.diagonal(self.cost.observed_fisher(x))
+                if isinstance(self.cost, BaseLikelihood)
                 else None
             )
 
