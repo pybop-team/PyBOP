@@ -396,19 +396,17 @@ class OptimisationResult:
                 else None
             )
 
-            # Extract any pybamm solutions corresponding to the final cost
-            pybamm_solution = None
-            if isinstance(self.cost, BaseCost) and self.cost.problem is not None:
-                # Evaluate the problem once more to update the solution
-                try:
-                    self.cost(x)
-                    pybamm_solution = self.cost.pybamm_solution
-                except Exception:
-                    warnings.warn(
-                        "Failed to evaluate the model with best fit parameters.",
-                        UserWarning,
-                        stacklevel=2,
-                    )
+            # Evaluate the problem once more to update the solution
+            try:
+                self.cost(x)
+                pybamm_solution = self.cost.pybamm_solution
+            except Exception:
+                warnings.warn(
+                    "Failed to evaluate the model with best fit parameters.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                pybamm_solution = None
 
             # Calculate Fisher Information if JAX Likelihood
             fisher = (
