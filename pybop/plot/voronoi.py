@@ -253,7 +253,7 @@ def surface(
     **layout_kwargs : optional
         Valid Plotly layout keys and their values,
         e.g. `xaxis_title="Time [s]"` or
-        `xaxis={"title": "Time [s]", "titlefont_size": 18}`.
+        `xaxis={"title": "Time [s]", font={"size":14}}`
     """
 
     # Append the optimisation trace to the data

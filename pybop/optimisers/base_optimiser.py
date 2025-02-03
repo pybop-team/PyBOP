@@ -316,8 +316,8 @@ class BaseOptimiser:
         self.allow_infeasible_solutions = allow
 
         if (
-            hasattr(self.cost, "problem")
-            and hasattr(self.cost.problem, "model")
+            isinstance(self.cost, BaseCost)
+            and self.cost.problem is not None
             and self.cost.problem.model is not None
         ):
             self.cost.problem.model.allow_infeasible_solutions = (
@@ -364,7 +364,6 @@ class OptimisationResult:
         n_evaluations: Optional[int] = None,
         time: Optional[float] = None,
         scipy_result=None,
-        pybamm_solution=None,
     ):
         self.optim = optim
         self.cost = self.optim.cost
@@ -380,7 +379,7 @@ class OptimisationResult:
         self._scipy_result = []
         self._time = []
         self._x0 = []
-        self.pybamm_solution = []
+        self._pybamm_solution = []
 
         if x is not None:
             # Transform the parameter values and update the sign of any final cost
@@ -396,6 +395,18 @@ class OptimisationResult:
                 if isinstance(self.optim, BaseOptimiser)
                 else None
             )
+
+            # Evaluate the problem once more to update the solution
+            try:
+                self.cost(x)
+                pybamm_solution = self.cost.pybamm_solution
+            except Exception:
+                warnings.warn(
+                    "Failed to evaluate the model with best fit parameters.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                pybamm_solution = None
 
             # Calculate Fisher Information if JAX Likelihood
             fisher = (
@@ -427,7 +438,7 @@ class OptimisationResult:
             time=result._time,  # noqa: SLF001
             scipy_result=result._scipy_result,  # noqa: SLF001
             x0=result._x0,  # noqa: SLF001
-            pybamm_solution=result.pybamm_solution,
+            pybamm_solution=result._pybamm_solution,  # noqa: SLF001
         )
 
     def _extend(
@@ -451,7 +462,7 @@ class OptimisationResult:
         self._scipy_result.extend(scipy_result)
         self._time.extend(time)
         self._x0.extend(x0)
-        self.pybamm_solution.extend(pybamm_solution)
+        self._pybamm_solution.extend(pybamm_solution)
 
         # Check that there is a finite cost and update best run
         self.check_for_finite_cost()
@@ -481,7 +492,11 @@ class OptimisationResult:
         x : array-like
             Optimised parameter values.
         """
-        if self.cost.problem.model is None:
+        if (
+            not isinstance(self.cost, BaseCost)
+            or self.cost.problem is None
+            or self.cost.problem.model is None
+        ):
             warnings.warn(
                 "No model within problem class, can't check physical viability.",
                 UserWarning,
@@ -594,6 +609,18 @@ class OptimisationResult:
     def scipy_result_best(self):
         return (
             self._scipy_result[self._best_run] if self._best_run is not None else None
+        )
+
+    @property
+    def pybamm_solution(self):
+        return self._get_single_or_all("_pybamm_solution")
+
+    @property
+    def pybamm_solution_best(self):
+        return (
+            self._pybamm_solution[self._best_run]
+            if self._best_run is not None
+            else None
         )
 
     @property
