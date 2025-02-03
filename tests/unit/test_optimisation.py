@@ -32,7 +32,7 @@ class TestOptimisation:
         return pybop.Parameter(
             "Positive electrode active material volume fraction",
             prior=pybop.Gaussian(0.5, 0.02),
-            bounds=[0.47, 0.53],
+            bounds=[0.48, 0.52],
         )
 
     @pytest.fixture
@@ -46,7 +46,7 @@ class TestOptimisation:
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.05),
-                bounds=[0.43, 0.57],
+                bounds=[0.48, 0.52],
             ),
         )
 
@@ -386,20 +386,16 @@ class TestOptimisation:
     def test_randomsearch_bounds(self, two_param_cost):
         # Test clip_candidates with bound
         bounds = {"upper": [0.62, 0.54], "lower": [0.58, 0.46]}
-        optimiser = pybop.RandomSearch(
-            cost=two_param_cost, bounds=bounds, max_iterations=1
-        )
+        optim = pybop.RandomSearch(cost=two_param_cost, bounds=bounds, max_iterations=1)
         candidates = np.array([[0.57, 0.55], [0.63, 0.44]])
-        clipped_candidates = optimiser.optimiser.clip_candidates(candidates)
+        clipped_candidates = optim.optimiser.clip_candidates(candidates)
         expected_clipped = np.array([[0.58, 0.54], [0.62, 0.46]])
         assert np.allclose(clipped_candidates, expected_clipped)
 
         # Test clip_candidates without bound
-        optimiser = pybop.RandomSearch(
-            cost=two_param_cost, bounds=None, max_iterations=1
-        )
+        optim = pybop.RandomSearch(cost=two_param_cost, bounds=None, max_iterations=1)
         candidates = np.array([[0.57, 0.52], [0.63, 0.58]])
-        clipped_candidates = optimiser.optimiser.clip_candidates(candidates)
+        clipped_candidates = optim.optimiser.clip_candidates(candidates)
         assert np.allclose(clipped_candidates, candidates)
 
     def test_randomsearch_ask_without_bounds(self, two_param_cost):
