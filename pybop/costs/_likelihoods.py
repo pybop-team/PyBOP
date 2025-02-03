@@ -21,7 +21,9 @@ class BaseLikelihood(BaseCost):
         self.n_data = problem.n_data
         self.minimising = False
 
-    def observed_fisher(self, inputs: Union[Inputs, list, np.ndarray]) -> np.ndarray:
+    def observed_fisher(
+        self, inputs: Union[Inputs, list, np.ndarray]
+    ) -> Union[np.ndarray, None]:
         """
         Compute the observed Fisher Information Matrix (FIM) for the given data.
 
@@ -39,6 +41,10 @@ class BaseLikelihood(BaseCost):
         np.ndarray
             The observed Fisher Information Matrix.
         """
+
+        # Check gradients are available, return None if not.
+        if not self.problem.sensitivities_available:
+            return
 
         # Calculate the fisher information via gradient outer-product
         _, grad = self.__call__(inputs, calculate_grad=True)

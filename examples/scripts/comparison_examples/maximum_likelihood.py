@@ -62,7 +62,7 @@ problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 likelihood = pybop.GaussianLogLikelihood(problem, sigma0=sigma * 4)
 optim = pybop.CMAES(
     likelihood,
-    max_unchanged_iterations=60,
+    max_unchanged_iterations=20,
     min_iterations=20,
     max_iterations=100,
 )
