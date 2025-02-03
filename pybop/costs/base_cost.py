@@ -1,6 +1,8 @@
 from typing import Optional, Union
 
 import numpy as np
+from SALib.analyze import sobol
+from SALib.sample.sobol import sample
 
 from pybop import BaseProblem
 from pybop._utils import add_spaces
@@ -61,75 +63,107 @@ class BaseCost:
 
     def __call__(
         self,
-        inputs: Union[Inputs, list],
+        inputs: Union[Inputs, list, np.ndarray],
         calculate_grad: bool = False,
         apply_transform: bool = False,
         for_optimiser: bool = False,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+    ) -> Union[float, list, tuple[float, np.ndarray], list[tuple[float, np.ndarray]]]:
         """
-        This method calls the forward model via problem.evaluate(inputs),
-        and computes the cost for the given output by calling self.compute().
+        Compute cost and optional gradient for given input parameters.
 
         Parameters
         ----------
-        inputs : Inputs or list-like
-            The input parameters for which the cost and optionally the gradient
-            will be computed.
-        calculate_grad : bool, optional, default=False
+        inputs : Union[Inputs, list, np.ndarray]
+            Input parameters for cost computation. Supports list-like evaluation of
+            multiple input values, shaped [N,M] where N is the number of input positions
+            to evaluate and M is the number of inputs for the underlying model (i.e. parameters).
+        calculate_grad : bool, default=False
             If True, both the cost and gradient will be computed. Otherwise, only the
             cost is computed.
-        apply_transform : bool, optional, default=False
+        apply_transform : bool, default=False
             If True, applies a transformation to the inputs before evaluating the model.
-        for_optimiser : bool, optional, default=False
-            If True, returns the cost value if self.minimising=True and the negative of
-            the cost value if self.minimising=False (i.e. the cost is being maximised).
+        for_optimiser : bool, default=False
+            If True, adjusts output sign based on minimisation/maximisation setting.
 
         Returns
         -------
-        float or tuple
-            - If `calculate_grad` is False, returns the computed cost (float).
-            - If `calculate_grad` is True, returns a tuple containing the cost (float)
-              and the gradient (np.ndarray).
-
-        Raises
-        ------
-        ValueError
-            If an error occurs during the calculation of the cost.
+        Union[float, list, tuple[float, np.ndarray], list[tuple[float, np.ndarray]]]
+            - Single input, no gradient: float
+            - Multiple inputs, no gradient: list[float]
+            - Single input with gradient: tuple[float, np.ndarray]
+            - Multiple inputs with gradient: list[tuple[float, np.ndarray]]
         """
-        # Note, we use the transformation and parameter properties here to enable
-        # differing attributes within the `LogPosterior` class
+        # Convert dict to list for sequential computations
+        if isinstance(inputs, dict):
+            inputs = list(inputs.values())
+        input_list = np.atleast_2d(inputs)
+
+        minimising = self.minimising or not for_optimiser
+        sign = 1 if minimising else -1
+
+        results = []
+        for input_val in input_list:
+            result = self._evaluate_single_input(
+                input_val,
+                calculate_grad=calculate_grad,
+                apply_transform=apply_transform,
+                sign=sign,
+            )
+            results.append(result)
+
+        return results[0] if len(input_list) == 1 else results
+
+    def _evaluate_single_input(
+        self,
+        input_value: Union[Inputs, np.ndarray],
+        calculate_grad: bool,
+        apply_transform: bool,
+        sign: int,
+    ) -> Union[float, tuple[float, np.ndarray]]:
+        """Evaluate cost (and optional gradient) for a single input."""
+        # Setup input transformation
         self.has_transform = self.transformation is not None and apply_transform
-        model_inputs = self.parameters.verify(self._apply_transformations(inputs))
+        model_inputs = self.parameters.verify(self._apply_transformations(input_value))
         self.parameters.update(values=list(model_inputs.values()))
 
-        # Check whether we are maximising or minimising via:
-        # | `minimising` | `self.minimising` | `for_optimiser` |
-        # |--------------|-------------------|-----------------|
-        # | `True`       | `True`            | `True`          |
-        # | `True`       | `True`            | `False`         |
-        # | `False`      | `False`           | `True`          |
-        # | `True`       | `False`           | `False`         |
-        minimising = self.minimising or not for_optimiser
+        if self._has_separable_problem:
+            return self._evaluate_separable_problem(
+                input_value, calculate_grad=calculate_grad, sign=sign
+            )
 
+        return self._evaluate_non_separable_problem(
+            calculate_grad=calculate_grad, sign=sign
+        )
+
+    def _evaluate_separable_problem(
+        self, input_value: Union[Inputs, np.ndarray], calculate_grad: bool, sign: int
+    ) -> Union[float, tuple[float, np.ndarray]]:
+        """Evaluation for separable problems."""
+        if calculate_grad:
+            y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
+            cost, grad = self.compute(y, dy=dy)
+
+            if self.has_transform and np.isfinite(cost):
+                jac = self.transformation.jacobian(input_value)
+                grad = np.matmul(grad, jac)
+
+            return cost * sign, grad * sign
+
+        y = self.problem.evaluate(self.problem.parameters.as_dict())
+        return self.compute(y, dy=None) * sign
+
+    def _evaluate_non_separable_problem(
+        self, calculate_grad: bool, sign: int
+    ) -> Union[float, tuple[float, np.ndarray]]:
+        """Evaluation for non-separable problems."""
         y = self.DeferredPrediction
         dy = self.DeferredPrediction if calculate_grad else None
 
-        if self._has_separable_problem:
-            if calculate_grad:
-                y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
-                cost, grad = self.compute(y, dy=dy)
+        if calculate_grad:
+            cost, grad = self.compute(y, dy=dy)
+            return cost * sign, grad * sign
 
-                if self.has_transform and np.isfinite(cost):
-                    jac = self.transformation.jacobian(inputs)
-                    grad = np.matmul(grad, jac)
-
-                return cost * (1 if minimising else -1), grad * (
-                    1 if minimising else -1
-                )
-
-            y = self.problem.evaluate(self.problem.parameters.as_dict())
-
-        return self.compute(y, dy=dy) * (1 if minimising else -1)
+        return self.compute(y, dy=dy) * sign
 
     def _apply_transformations(self, inputs):
         """Apply transformation if needed"""
@@ -156,6 +190,37 @@ class BaseCost:
             If the method has not been implemented by the subclass.
         """
         raise NotImplementedError
+
+    def sensitivity_analysis(self, n_samples: int = 256):
+        """
+        Computes the parameter sensitivities on the cost function using
+        SOBOL analyse from the SALib module [1].
+
+        Parameters
+        ----------
+        n_samples : int, optional
+            Number of samples for SOBOL sensitivity analysis,
+            performs best as order of 2, i.e. 128, 256, etc.
+
+        References
+        ----------
+        .. [1] Iwanaga, T., Usher, W., & Herman, J. (2022). Toward SALib 2.0:
+               Advancing the accessibility and interpretability of global sensitivity
+               analyses. Socio-Environmental Systems Modelling, 4, 18155. doi:10.18174/sesmo.18155
+
+        Returns
+        -------
+        Sensitivities : dict
+        """
+
+        salib_dict = {
+            "names": self.parameters.keys(),
+            "bounds": self.parameters.get_bounds_for_plotly(),
+            "num_vars": len(self.parameters.keys()),
+        }
+
+        param_values = sample(salib_dict, n_samples)
+        return sobol.analyze(salib_dict, np.asarray(self.__call__(param_values)))
 
     def set_fail_gradient(self, de: float = 1.0):
         """

@@ -614,6 +614,7 @@ class TestOptimisation:
             f"  Best result from {results.n_runs} run(s).\n"
             f"  Initial parameters: {results.x0}\n"
             f"  Optimised parameters: {results.x}\n"
+            f"  Total-order sensitivities:{results.sense_format}\n"
             f"  Diagonal Fisher Information entries: {None}\n"
             f"  Final cost: {results.final_cost}\n"
             f"  Optimisation time: {results.time} seconds\n"
@@ -661,6 +662,7 @@ class TestOptimisation:
             f"  Best result from {results.n_runs} run(s).\n"
             f"  Initial parameters: {results.x0}\n"
             f"  Optimised parameters: {results.x}\n"
+            f"  Total-order sensitivities:{results.sense_format}\n"
             f"  Diagonal Fisher Information entries: {None}\n"
             f"  Final cost: {results.final_cost}\n"
             f"  Optimisation time: {results.time} seconds\n"
@@ -737,7 +739,14 @@ class TestOptimisation:
             pybop.OptimisationResult(optim=optim, x=[1e-5], n_iterations=1)
 
         # Test list-like functionality with "best" properties
-        optim = pybop.Optimisation(cost=cost, n_iterations=1, multistart=3)
+        optim = pybop.Optimisation(
+            cost=cost,
+            x0=[0.6, 0.5],
+            n_iterations=1,
+            multistart=3,
+            compute_sensitivities=True,
+            n_samples_sensitivity=8,
+        )
         results = optim.run()
 
         assert results.pybamm_solution_best in results.pybamm_solution
@@ -747,3 +756,4 @@ class TestOptimisation:
         assert results.n_iterations_best in results.n_iterations
         assert results.n_evaluations_best in results.n_evaluations
         assert results.x0_best in results.x0
+        assert isinstance(results.sensitivities, dict)

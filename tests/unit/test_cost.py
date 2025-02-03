@@ -29,10 +29,12 @@ class TestCosts:
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameter(
-            "Negative electrode active material volume fraction",
-            prior=pybop.Gaussian(0.5, 0.01),
-            bounds=[0.375, 0.625],
+        return pybop.Parameters(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.5, 0.01),
+                bounds=[0.375, 0.625],
+            )
         )
 
     @pytest.fixture
@@ -116,7 +118,8 @@ class TestCosts:
             with pytest.raises(NotImplementedError):
                 base_cost([0.5])
 
-    def test_costs(self, cost):
+    def test_costs(self, cost, parameters):
+        # Test cost direction
         if isinstance(cost, pybop.BaseLikelihood):
             higher_cost = cost([0.52])
             lower_cost = cost([0.55])
@@ -129,6 +132,7 @@ class TestCosts:
 
         # Test type of returned value
         assert np.isscalar(cost([0.5]))
+        assert np.isscalar(cost(parameters.as_dict()))
 
         # Test UserWarnings
         if isinstance(cost, (pybop.SumSquaredError, pybop.RootMeanSquaredError)):
@@ -400,3 +404,20 @@ class TestCosts:
             match="All problems must be of the same class type.",
         ):
             pybop.WeightedCost(cost1, cost2)
+
+    def test_parameter_sensitivities(self, problem):
+        cost = pybop.MeanAbsoluteError(problem)
+        result = cost.sensitivity_analysis(4)
+
+        # Assertions
+        assert isinstance(result, dict)
+        assert "S1" in result
+        assert "ST" in result
+        assert isinstance(result["S1"], np.ndarray)
+        assert isinstance(result["S2"], np.ndarray)
+        assert isinstance(result["ST"], np.ndarray)
+        assert isinstance(result["S1_conf"], np.ndarray)
+        assert isinstance(result["ST_conf"], np.ndarray)
+        assert isinstance(result["S2_conf"], np.ndarray)
+        assert result["S1"].shape == (1,)
+        assert result["ST"].shape == (1,)
