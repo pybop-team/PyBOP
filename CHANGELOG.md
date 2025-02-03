@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#649](https://github.com/pybop-team/PyBOP/pull/649) - Adds verbose outputs to Pints-based optimisers
 - [#619](https://github.com/pybop-team/PyBOP/pull/619) - Adds `pybop.SimulatingAnnealing` optimiser with corresponding tests.
 - [#565](https://github.com/pybop-team/PyBOP/pull/627) - DigiBatt added as funding partner.
 
