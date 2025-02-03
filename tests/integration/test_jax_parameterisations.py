@@ -29,7 +29,7 @@ class Test_Jax_Parameterisation:
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        solver = pybamm.IDAKLUSolver()
+        solver = pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6)
         return pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
 
     @pytest.fixture
