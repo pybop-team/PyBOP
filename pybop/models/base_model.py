@@ -118,6 +118,8 @@ class BaseModel:
         self.param_check_counter = 0
         self.allow_infeasible_solutions = True
 
+        self._pybamm_solution = None
+
     def build(
         self,
         parameters: Union[Parameters, dict] = None,
@@ -150,6 +152,8 @@ class BaseModel:
         check_model : bool, optional
             If True, the model will be checked for correctness after construction.
         """
+        self._pybamm_solution = None
+
         if parameters is not None or inputs is not None:
             # Classify parameters and clear the model if rebuild required
             inputs = self.classify_parameters(parameters, inputs=inputs)
@@ -475,7 +479,7 @@ class BaseModel:
         ):
             raise ValueError("These parameter values are infeasible.")
 
-        return self.solver.solve(
+        self._pybamm_solution = self.solver.solve(
             self._built_model,
             inputs=inputs,
             t_eval=[t_eval[0], t_eval[-1]]
@@ -483,6 +487,8 @@ class BaseModel:
             else t_eval,
             t_interp=t_eval if self._solver.supports_interp else None,
         )
+
+        return self._pybamm_solution
 
     def simulateEIS(
         self, inputs: Inputs, f_eval: list, initial_state: Optional[dict] = None
@@ -635,7 +641,7 @@ class BaseModel:
         ):
             raise ValueError("These parameter values are infeasible.")
 
-        return self._solver.solve(
+        self._pybamm_solution = self._solver.solve(
             self._built_model,
             inputs=inputs,
             t_eval=[t_eval[0], t_eval[-1]]
@@ -644,6 +650,8 @@ class BaseModel:
             calculate_sensitivities=True,
             t_interp=t_eval if self._solver.supports_interp else None,
         )
+
+        return self._pybamm_solution
 
     def predict(
         self,
@@ -698,6 +706,7 @@ class BaseModel:
             )
         elif not self._unprocessed_model._built:  # noqa: SLF001
             self._unprocessed_model.build_model()
+        self._pybamm_solution = None
 
         no_parameter_set = parameter_set is None
         parameter_set = (
@@ -725,13 +734,13 @@ class BaseModel:
             raise ValueError("These parameter values are infeasible.")
 
         if experiment is not None:
-            return pybamm.Simulation(
+            self._pybamm_solution = pybamm.Simulation(
                 model=self._unprocessed_model,
                 experiment=experiment,
                 parameter_values=parameter_set,
             ).solve(initial_soc=initial_state)
         elif t_eval is not None:
-            return pybamm.Simulation(
+            self._pybamm_solution = pybamm.Simulation(
                 model=self._unprocessed_model,
                 parameter_values=parameter_set,
             ).solve(t_eval=t_eval, initial_soc=initial_state)
@@ -740,6 +749,8 @@ class BaseModel:
                 "The predict method requires either an experiment or t_eval "
                 "to be specified."
             )
+
+        return self._pybamm_solution
 
     def jaxify_solver(self, t_eval, calculate_sensitivities=False):
         """
@@ -979,6 +990,10 @@ class BaseModel:
     @property
     def spatial_methods(self):
         return self._spatial_methods
+
+    @property
+    def pybamm_solution(self):
+        return self._pybamm_solution
 
     @property
     def solver(self):
