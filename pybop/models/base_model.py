@@ -738,11 +738,21 @@ class BaseModel:
                 model=self._unprocessed_model,
                 experiment=experiment,
                 parameter_values=parameter_set,
+                geometry=self.geometry,
+                submesh_types=self.submesh_types,
+                var_pts=self.var_pts,
+                spatial_methods=self.spatial_methods,
+                solver=self.solver,
             ).solve(initial_soc=initial_state)
         elif t_eval is not None:
             self._pybamm_solution = pybamm.Simulation(
                 model=self._unprocessed_model,
                 parameter_values=parameter_set,
+                geometry=self.geometry,
+                submesh_types=self.submesh_types,
+                var_pts=self.var_pts,
+                spatial_methods=self.spatial_methods,
+                solver=self.solver,
             ).solve(t_eval=t_eval, initial_soc=initial_state)
         else:
             raise ValueError(
