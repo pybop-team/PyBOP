@@ -13,10 +13,14 @@ parameters = pybop.Parameters(
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         prior=pybop.Gaussian(0.68, 0.05),
+        initial_value=0.45,
+        bounds=[0.4, 0.9],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
         prior=pybop.Gaussian(0.58, 0.05),
+        initial_value=0.45,
+        bounds=[0.4, 0.9],
     ),
 )
 
@@ -52,15 +56,22 @@ dataset = pybop.Dataset(
 signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
-cost = pybop.Minkowski(problem, p=2)
+cost = pybop.SumofPower(problem, p=2.5)
+
 optim = pybop.AdamW(
     cost,
     verbose=True,
     allow_infeasible_solutions=True,
     sigma0=0.02,
     max_iterations=100,
-    max_unchanged_iterations=20,
+    max_unchanged_iterations=45,
+    compute_sensitivities=True,
+    n_sensitivity_samples=128,
 )
+# Reduce the momentum influence
+# for the reduced number of optimiser iterations
+optim.optimiser.b1 = 0.9
+optim.optimiser.b2 = 0.9
 
 # Run optimisation
 results = optim.run()
