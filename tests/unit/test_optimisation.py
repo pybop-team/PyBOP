@@ -31,8 +31,8 @@ class TestOptimisation:
     def one_parameter(self):
         return pybop.Parameter(
             "Positive electrode active material volume fraction",
-            prior=pybop.Gaussian(0.6, 0.02),
-            bounds=[0.58, 0.62],
+            prior=pybop.Gaussian(0.5, 0.02),
+            bounds=[0.47, 0.53],
         )
 
     @pytest.fixture
@@ -45,8 +45,8 @@ class TestOptimisation:
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.55, 0.05),
-                bounds=[0.53, 0.57],
+                prior=pybop.Gaussian(0.5, 0.05),
+                bounds=[0.43, 0.57],
             ),
         )
 
@@ -191,7 +191,7 @@ class TestOptimisation:
         check_incorrect_update(optim)
 
         # Test multistart
-        multistart_optim = optimiser(cost, multistart=2, max_iterations=6)
+        multistart_optim = optimiser(cost, max_iterations=6, multistart=2)
         check_multistart(multistart_optim, 6, 2)
 
         if optimiser in [pybop.GradientDescent, pybop.AdamW, pybop.NelderMead]:
@@ -203,7 +203,7 @@ class TestOptimisation:
                 optim, {"upper": [np.inf], "lower": [0.57]}, should_raise=True
             )
         else:
-            bounds = {"upper": [0.63], "lower": [0.57]}
+            bounds = {"upper": [0.53], "lower": [0.47]}
             check_bounds_handling(optim, cost_bounds)
             optim = optimiser(cost=cost, bounds=bounds)
             assert optim.bounds == bounds
@@ -373,7 +373,7 @@ class TestOptimisation:
         else:
             x0 = cost.parameters.initial_value()
             assert optim.x0 == x0
-            x0_new = np.array([0.6])
+            x0_new = np.array([0.5])
             optim = optimiser(cost=cost, x0=x0_new)
             assert optim.x0 == x0_new
             assert optim.x0 != x0
@@ -385,13 +385,13 @@ class TestOptimisation:
 
     def test_randomsearch_bounds(self, two_param_cost):
         # Test clip_candidates with bound
-        bounds = {"upper": [0.62, 0.57], "lower": [0.58, 0.53]}
+        bounds = {"upper": [0.62, 0.54], "lower": [0.58, 0.46]}
         optimiser = pybop.RandomSearch(
             cost=two_param_cost, bounds=bounds, max_iterations=1
         )
-        candidates = np.array([[0.57, 0.52], [0.63, 0.58]])
+        candidates = np.array([[0.57, 0.55], [0.63, 0.44]])
         clipped_candidates = optimiser.optimiser.clip_candidates(candidates)
-        expected_clipped = np.array([[0.58, 0.53], [0.62, 0.57]])
+        expected_clipped = np.array([[0.58, 0.54], [0.62, 0.46]])
         assert np.allclose(clipped_candidates, expected_clipped)
 
         # Test clip_candidates without bound
@@ -741,7 +741,7 @@ class TestOptimisation:
         # Test list-like functionality with "best" properties
         optim = pybop.Optimisation(
             cost=cost,
-            x0=[0.6, 0.5],
+            x0=[0.5],
             n_iterations=1,
             multistart=3,
             compute_sensitivities=True,
