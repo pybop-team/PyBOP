@@ -74,7 +74,9 @@ class BaseCost:
         Parameters
         ----------
         inputs : Union[Inputs, list, np.ndarray]
-            Input parameters for cost computation. Supports single or multiple inputs.
+            Input parameters for cost computation. Supports list-like evaluation of
+            multiple input values, shaped [N,M] where N is the number of input positions
+            to evaluate and M is the number of inputs for the underlying model (i.e. parameters).
         calculate_grad : bool, default=False
             If True, both the cost and gradient will be computed. Otherwise, only the
             cost is computed.
@@ -191,13 +193,20 @@ class BaseCost:
 
     def sensitivity_analysis(self, n_samples: int = 256):
         """
-        Computes the parameter sensitivities on the cost function.
+        Computes the parameter sensitivities on the cost function using
+        SOBOL analyse from the SALib module [1].
 
         Parameters
         ----------
         n_samples : int, optional
             Number of samples for SOBOL sensitivity analysis,
             performs best as order of 2, i.e. 128, 256, etc.
+
+        References
+        ----------
+        .. [1] Iwanaga, T., Usher, W., & Herman, J. (2022). Toward SALib 2.0:
+               Advancing the accessibility and interpretability of global sensitivity
+               analyses. Socio-Environmental Systems Modelling, 4, 18155. doi:10.18174/sesmo.18155
 
         Returns
         -------

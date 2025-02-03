@@ -247,11 +247,7 @@ class BaseOptimiser:
         if not self.compute_sensitivities:
             return None
 
-        print("Computing sensitivities...")
-        sensitivities = self.cost.sensitivity_analysis(self.n_samples_sensitivity)
-        print("Done.")
-
-        return sensitivities
+        return self.cost.sensitivity_analysis(self.n_samples_sensitivity)
 
     def log_update(self, x=None, x_best=None, cost=None, cost_best=None, x0=None):
         """
