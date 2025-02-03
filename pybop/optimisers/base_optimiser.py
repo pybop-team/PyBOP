@@ -6,7 +6,7 @@ import jax.numpy as jnp
 import numpy as np
 from pybamm import Solution
 
-from pybop import BaseCost, BaseJaxCost, Inputs, Parameter, Parameters
+from pybop import BaseCost, BaseLikelihood, Inputs, Parameter, Parameters
 
 
 class BaseOptimiser:
@@ -337,8 +337,8 @@ class BaseOptimiser:
         self.allow_infeasible_solutions = allow
 
         if (
-            hasattr(self.cost, "problem")
-            and hasattr(self.cost.problem, "model")
+            isinstance(self.cost, BaseCost)
+            and self.cost.problem is not None
             and self.cost.problem.model is not None
         ):
             self.cost.problem.model.allow_infeasible_solutions = (
@@ -352,6 +352,10 @@ class BaseOptimiser:
     @property
     def needs_sensitivities(self):
         return self._needs_sensitivities
+
+    @property
+    def transformation(self):
+        return self._transformation
 
     @property
     def minimising(self):
@@ -386,12 +390,11 @@ class OptimisationResult:
         n_evaluations: Optional[int] = None,
         time: Optional[float] = None,
         scipy_result=None,
-        pybamm_solution=None,
     ):
         self.optim = optim
         self.cost = self.optim.cost
         self.minimising = self.optim.minimising
-        self._transformation = self.optim._transformation  # noqa: SLF001
+        self._transformation = self.optim.transformation
         self.n_runs = 0
         self._best_run = None
         self._x = []
@@ -420,17 +423,29 @@ class OptimisationResult:
                 else None
             )
 
-            # Calculate Fisher Information if JAX Likelihood
-            fisher = (
-                self.cost.observed_fisher(x)
-                if isinstance(self.cost, BaseJaxCost)
-                else None
-            )
+            # Evaluate the problem once more to update the solution
+            try:
+                self.cost(x)
+                pybamm_solution = self.cost.pybamm_solution
+            except Exception:
+                warnings.warn(
+                    "Failed to evaluate the model with best fit parameters.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                pybamm_solution = None
+
+            # Calculate Fisher Information if Likelihood
+            if isinstance(self.cost, BaseLikelihood):
+                fisher = self.cost.observed_fisher(x)
+                diag_fish = np.diag(fisher) if fisher is not None else None
+            else:
+                diag_fish = None
 
             self._extend(
                 x=[x],
                 final_cost=[final_cost],
-                fisher=[fisher],
+                fisher=[diag_fish],
                 n_iterations=[n_iterations],
                 n_evaluations=[n_evaluations],
                 time=[time],
@@ -504,7 +519,11 @@ class OptimisationResult:
         x : array-like
             Optimised parameter values.
         """
-        if self.cost.problem.model is None:
+        if (
+            not isinstance(self.cost, BaseCost)
+            or self.cost.problem is None
+            or self.cost.problem.model is None
+        ):
             warnings.warn(
                 "No model within problem class, can't check physical viability.",
                 UserWarning,

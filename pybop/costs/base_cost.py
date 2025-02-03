@@ -291,3 +291,7 @@ class BaseCost:
     @transformation.setter
     def transformation(self, transformation):
         self._transformation = transformation
+
+    @property
+    def pybamm_solution(self):
+        return self.problem.pybamm_solution if self.problem is not None else None

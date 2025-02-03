@@ -102,21 +102,6 @@ class BaseJaxCost(BaseCost):
             raise ValueError("sigma0 must be a positive number")
         return float(sigma0)
 
-    def observed_fisher(self, inputs: Inputs):
-        """
-        Compute the observed Fisher Information Matrix (FIM) for the given inputs.
-
-        The FIM is computed using the square of the gradient, divided by the number
-        of data points. This is an approximation since the Hessian is not available.
-
-        Returns
-        -------
-        jnp.ndarray
-            The observed Fisher Information Matrix.
-        """
-        _, grad = self.__call__(inputs, calculate_grad=True)
-        return jnp.square(grad) / self.n_data
-
 
 class JaxSumSquaredError(BaseJaxCost):
     """
