@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#630] (https://github.com/pybop-team/PyBOP/pull/632) - Fisher Information Matrix added to `BaseLikelihood` class.
 - [#619](https://github.com/pybop-team/PyBOP/pull/619) - Adds `pybop.SimulatingAnnealing` optimiser with corresponding tests.
 - [#565](https://github.com/pybop-team/PyBOP/pull/627) - DigiBatt added as funding partner.
 
