@@ -117,13 +117,13 @@ class IRPropPlusImpl(PintsOptimiser):
         self._ready_for_tell = False
         f_new, gradient_new = reply[0]
 
-        # First iteration setup
+        # Setup for first iteration
         if self._gradient_previous is None:
             self._gradient_previous = gradient_new
             self._f_current = f_new
             return
 
-        # Compute gradient product (element-wise)
+        # Compute element-wise gradient product
         grad_product = gradient_new * self._gradient_previous
 
         # Update step sizes, and bound them
@@ -131,7 +131,8 @@ class IRPropPlusImpl(PintsOptimiser):
         self._step_sizes[grad_product < 0] *= self.eta_min
         self._step_sizes = np.clip(self._step_sizes, self.step_min, self.step_max)
 
-        # Handle weight backtracking: revert last update where gradient sign changed
+        # Handle weight backtracking,
+        # Reverting last update where gradient sign changed
         gradient_new[grad_product < 0] = 0
         self._x_current[grad_product < 0] -= self._update_previous[grad_product < 0]
 
@@ -140,16 +141,14 @@ class IRPropPlusImpl(PintsOptimiser):
         self._f_current = f_new
         self._gradient_previous = gradient_new
 
-        # Compute the new update
+        # Compute the new update and store for back-tracking
         update = -self._step_sizes * np.sign(gradient_new)
-
-        # Store the update for backtracking
         self._update_previous = update
 
-        # Take a step in the direction of the gradient
+        # Step in the direction of the negative gradient
         proposed = self._x_current + update
 
-        # Handle boundaries if applicable
+        # Boundaries
         if self._lower is not None:
             # Rectangular boundaries
             while np.any(proposed < self._lower) or np.any(proposed >= self._upper):
@@ -157,11 +156,11 @@ class IRPropPlusImpl(PintsOptimiser):
                 self._step_sizes[mask] *= self.eta_min
                 proposed = self._x_current - self._step_sizes * np.sign(gradient_new)
 
-        # Update the proposed point
+        # Update proposed attribute
         self._proposed = proposed
         self._proposed.setflags(write=False)
 
-        # Update the best solution if applicable
+        # Update best solution
         if f_new < self._f_best:
             self._f_best = f_new
             self._x_best = self._x_current

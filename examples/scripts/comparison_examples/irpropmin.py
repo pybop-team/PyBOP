@@ -4,12 +4,6 @@ import pybop
 
 # Define model and use high-performant solver for sensitivities
 parameter_set = pybop.ParameterSet("Chen2020")
-# parameter_set.update(
-#     {
-#         "Negative electrode porosity": 1.0 - Parameter("Negative electrode active material volume fraction"),
-#         "Positive electrode porosity": 1.0 - Parameter("Positive electrode active material volume fraction"),
-#     }
-# )
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Construct the fitting parameters
