@@ -108,6 +108,7 @@ class BaseModel:
         self.name = name
         self.eis = eis
         self._calculate_sensitivities = False
+        self._sensitivities_available = not eis  # Not available for EIS, use as default
 
         self._parameter_set = ParameterSet.to_pybamm(parameter_set)
         self.param_checker = check_params
@@ -378,6 +379,7 @@ class BaseModel:
 
         # Clear any built model, update the parameter set and geometry if rebuild required
         if rebuild_parameters:
+            self._sensitivities_available = False
             requires_rebuild = False
             # A rebuild is required if any of the rebuild parameter values have changed
             for key, value in rebuild_parameters.items():
@@ -1000,6 +1002,11 @@ class BaseModel:
     @property
     def calculate_sensitivities(self):
         return self._calculate_sensitivities
+
+    @property
+    def sensitivities_available(self):
+        """True if sensitivities are available."""
+        return self._sensitivities_available
 
     @solver.setter
     def solver(self, solver):

@@ -182,6 +182,10 @@ class BaseProblem:
         return self._model
 
     @property
+    def sensitivities_available(self):
+        return self._model.sensitivities_available
+
+    @property
     def target(self):
         return self._target
 

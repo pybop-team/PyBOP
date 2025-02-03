@@ -6,7 +6,7 @@ import jax.numpy as jnp
 import numpy as np
 from pybamm import Solution
 
-from pybop import BaseCost, BaseJaxCost, Inputs, Parameter, Parameters
+from pybop import BaseCost, BaseLikelihood, Inputs, Parameter, Parameters
 
 
 class BaseOptimiser:
@@ -333,6 +333,10 @@ class BaseOptimiser:
         return self._needs_sensitivities
 
     @property
+    def transformation(self):
+        return self._transformation
+
+    @property
     def minimising(self):
         return self._minimising
 
@@ -368,7 +372,7 @@ class OptimisationResult:
         self.optim = optim
         self.cost = self.optim.cost
         self.minimising = self.optim.minimising
-        self._transformation = self.optim._transformation  # noqa: SLF001
+        self._transformation = self.optim.transformation
         self.n_runs = 0
         self._best_run = None
         self._x = []
@@ -408,17 +412,17 @@ class OptimisationResult:
                 )
                 pybamm_solution = None
 
-            # Calculate Fisher Information if JAX Likelihood
-            fisher = (
-                self.cost.observed_fisher(x)
-                if isinstance(self.cost, BaseJaxCost)
-                else None
-            )
+            # Calculate Fisher Information if Likelihood
+            if isinstance(self.cost, BaseLikelihood):
+                fisher = self.cost.observed_fisher(x)
+                diag_fish = np.diag(fisher) if fisher is not None else None
+            else:
+                diag_fish = None
 
             self._extend(
                 x=[x],
                 final_cost=[final_cost],
-                fisher=[fisher],
+                fisher=[diag_fish],
                 n_iterations=[n_iterations],
                 n_evaluations=[n_evaluations],
                 time=[time],
