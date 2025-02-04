@@ -13,12 +13,13 @@ class MeanFittingCost(FittingCost):
 
     def __init__(self, problem):
         super().__init__(problem)
-        self.domain_data = (
-            self.problem.domain_data
-            / (self.problem.domain_data[-1] - self.problem.domain_data[0])
-            if self.problem is not None
-            else None
-        )
+        self.domain_data = None
+        if self.problem is not None:
+            x = self.problem.domain_data
+            if np.all(x[:-1] <= x[1:]):
+                self.domain_data = (x - x[0]) / (x[-1] - x[0])
+            else:
+                self.domain_data = np.linspace(0, 1, len(x))
 
 
 class MeanSquaredError(MeanFittingCost):
