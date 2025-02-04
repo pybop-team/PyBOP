@@ -340,6 +340,7 @@ class BaseModel:
         self._built_initial_soc = None
         self._mesh = None
         self._disc = None
+        self._geometry = self._unprocessed_model.default_geometry
 
     def classify_parameters(
         self, parameters: Optional[Parameters] = None, inputs: Optional[Inputs] = None
@@ -377,7 +378,7 @@ class BaseModel:
         for key in standard_parameters.keys():
             self._parameter_set[key] = "[input]"
 
-        # Clear any built model, update the parameter set and geometry if rebuild required
+        # Clear any built model and update the parameter set if rebuild required
         if rebuild_parameters:
             self._sensitivities_available = False
             requires_rebuild = False
@@ -387,7 +388,6 @@ class BaseModel:
                     requires_rebuild = True
             if requires_rebuild:
                 self.clear()
-                self._geometry = self.pybamm_model.default_geometry
                 # Update both the active and unprocessed parameter sets for consistency
                 self._parameter_set.update(rebuild_parameters)
                 self._unprocessed_parameter_set.update(rebuild_parameters)
@@ -733,27 +733,24 @@ class BaseModel:
         ):
             raise ValueError("These parameter values are infeasible.")
 
+        simulation_args = {
+            "model": self._unprocessed_model,
+            "geometry": self._unprocessed_model.default_geometry,
+            "parameter_values": parameter_set,
+            "submesh_types": self.submesh_types,
+            "var_pts": self.var_pts,
+            "spatial_methods": self.spatial_methods,
+            "solver": self.solver,
+        }
+
         if experiment is not None:
             self._pybamm_solution = pybamm.Simulation(
-                model=self._unprocessed_model,
-                experiment=experiment,
-                parameter_values=parameter_set,
-                geometry=self.geometry,
-                submesh_types=self.submesh_types,
-                var_pts=self.var_pts,
-                spatial_methods=self.spatial_methods,
-                solver=self.solver,
+                **simulation_args, experiment=experiment
             ).solve(initial_soc=initial_state)
         elif t_eval is not None:
-            self._pybamm_solution = pybamm.Simulation(
-                model=self._unprocessed_model,
-                parameter_values=parameter_set,
-                geometry=self.geometry,
-                submesh_types=self.submesh_types,
-                var_pts=self.var_pts,
-                spatial_methods=self.spatial_methods,
-                solver=self.solver,
-            ).solve(t_eval=t_eval, initial_soc=initial_state)
+            self._pybamm_solution = pybamm.Simulation(**simulation_args).solve(
+                t_eval=t_eval, initial_soc=initial_state
+            )
         else:
             raise ValueError(
                 "The predict method requires either an experiment or t_eval "
@@ -871,16 +868,20 @@ class BaseModel:
         """
         model_class = type(self)
         if self.pybamm_model is None:
-            model_args = {"parameter_set": self._parameter_set.copy()}
+            model_args = {
+                "name": self.name,
+                "parameter_set": self._parameter_set.copy(),
+            }
         else:
             model_args = {
-                "options": self._unprocessed_model.options,
+                "name": self.name,
+                "options": copy.copy(self._unprocessed_model.options),
+                "geometry": self._unprocessed_model.default_geometry,
                 "parameter_set": self._unprocessed_parameter_set.copy(),
-                "geometry": self.pybamm_model.default_geometry.copy(),
-                "submesh_types": self.pybamm_model.default_submesh_types.copy(),
-                "var_pts": self.pybamm_model.default_var_pts.copy(),
-                "spatial_methods": self.pybamm_model.default_spatial_methods.copy(),
-                "solver": self.pybamm_model.default_solver.copy(),
+                "submesh_types": self.submesh_types.copy(),
+                "var_pts": self.var_pts.copy(),
+                "spatial_methods": self.spatial_methods.copy(),
+                "solver": self.solver.copy(),
                 "eis": copy.copy(self.eis),
             }
 
