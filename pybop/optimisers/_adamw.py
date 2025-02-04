@@ -1,5 +1,5 @@
 #
-# Extends the Pints' Adam Class with a Weight Decay addition
+# Initially based off Pints' Adam class, adds weight decay
 #
 
 import warnings
