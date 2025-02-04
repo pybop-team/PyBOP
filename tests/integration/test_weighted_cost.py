@@ -23,7 +23,7 @@ class TestWeightedCost:
 
     @pytest.fixture
     def model(self):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set = pybop.ParameterSet("Chen2020")
         parameter_set.update(
             {
                 "Electrolyte density [kg.m-3]": Parameter("Separator density [kg.m-3]"),

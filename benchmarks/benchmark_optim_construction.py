@@ -25,7 +25,7 @@ class BenchmarkOptimisationConstruction:
         set_random_seed()
 
         # Create model instance
-        model_instance = model(parameter_set=pybop.ParameterSet.pybamm(parameter_set))
+        model_instance = model(parameter_set=pybop.ParameterSet(parameter_set))
 
         # Define fitting parameters
         parameters = pybop.Parameters(

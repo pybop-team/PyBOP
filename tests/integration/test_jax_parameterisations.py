@@ -1,6 +1,6 @@
 import numpy as np
-import pybamm
 import pytest
+from pybamm import IDAKLUSolver
 
 import pybop
 
@@ -21,7 +21,7 @@ class Test_Jax_Parameterisation:
 
     @pytest.fixture
     def model(self):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set = pybop.ParameterSet("Chen2020")
         x = self.ground_truth
         parameter_set.update(
             {
@@ -29,8 +29,7 @@ class Test_Jax_Parameterisation:
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        solver = pybamm.IDAKLUSolver()
-        return pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
+        return pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
     @pytest.fixture
     def parameters(self):
@@ -96,6 +95,7 @@ class Test_Jax_Parameterisation:
         )
 
         # Define the problem
+        model.solver = IDAKLUSolver()
         problem = pybop.FittingProblem(model, parameters, dataset)
 
         # Construct the cost

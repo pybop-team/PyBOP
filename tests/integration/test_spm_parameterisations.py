@@ -22,7 +22,7 @@ class Test_SPM_Parameterisation:
 
     @pytest.fixture
     def model(self):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set = pybop.ParameterSet("Chen2020")
         x = self.ground_truth
         parameter_set.update(
             {
@@ -274,7 +274,7 @@ class Test_SPM_Parameterisation:
     def test_model_misparameterisation(self, parameters, model, init_soc):
         # Define two different models with different parameter sets
         # The optimisation should fail as the models are not the same
-        second_parameter_set = pybop.ParameterSet.pybamm("Ecker2015")
+        second_parameter_set = pybop.ParameterSet("Ecker2015")
         second_model = pybop.lithium_ion.SPMe(parameter_set=second_parameter_set)
 
         # Form dataset
