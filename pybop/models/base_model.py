@@ -737,10 +737,10 @@ class BaseModel:
             "model": self._unprocessed_model,
             "geometry": self._unprocessed_model.default_geometry,
             "parameter_values": parameter_set,
-            "submesh_types": self.submesh_types,
-            "var_pts": self.var_pts,
-            "spatial_methods": self.spatial_methods,
-            "solver": self.solver,
+            "submesh_types": self._submesh_types,
+            "var_pts": self._var_pts,
+            "spatial_methods": self._spatial_methods,
+            "solver": self._solver,
         }
 
         if experiment is not None:
@@ -749,7 +749,11 @@ class BaseModel:
             ).solve(initial_soc=initial_state)
         elif t_eval is not None:
             self._pybamm_solution = pybamm.Simulation(**simulation_args).solve(
-                t_eval=t_eval, initial_soc=initial_state
+                initial_soc=initial_state,
+                t_eval=[t_eval[0], t_eval[-1]]
+                if isinstance(self._solver, IDAKLUSolver)
+                else t_eval,
+                t_interp=t_eval if self._solver.supports_interp else None,
             )
         else:
             raise ValueError(

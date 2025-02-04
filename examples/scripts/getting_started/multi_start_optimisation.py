@@ -4,9 +4,8 @@ import pybamm
 import pybop
 
 # Define model and use the high-performant IDAKLU solver for sensitivities
-solver = pybamm.IDAKLUSolver(atol=1e-5, rtol=1e-5)
 parameter_set = pybop.ParameterSet("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -38,6 +37,7 @@ dataset = pybop.Dataset(
 )
 
 # Generate problem, cost function classes
+model.solver = pybamm.IDAKLUSolver(atol=1e-5, rtol=1e-5)
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.RootMeanSquaredError(problem)
 

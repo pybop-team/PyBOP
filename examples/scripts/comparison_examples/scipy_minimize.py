@@ -5,8 +5,7 @@ import pybop
 
 # Define model
 parameter_set = pybop.ParameterSet("Chen2020")
-solver = pybamm.IDAKLUSolver()
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -38,6 +37,7 @@ dataset = pybop.Dataset(
 )
 
 # Generate problem, cost function, and optimisation class
+model.solver = pybamm.IDAKLUSolver()
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
 optim = pybop.SciPyMinimize(
