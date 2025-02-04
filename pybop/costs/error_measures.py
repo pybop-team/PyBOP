@@ -5,7 +5,23 @@ import numpy as np
 from pybop import FittingCost
 
 
-class MeanSquaredError(FittingCost):
+class MeanFittingCost(FittingCost):
+    """
+    A subclass for fitting costs which involve taking the mean with respect to
+    the domain data.
+    """
+
+    def __init__(self, problem):
+        super().__init__(problem)
+        self.domain_data = (
+            self.problem.domain_data
+            / (self.problem.domain_data[-1] - self.problem.domain_data[0])
+            if self.problem is not None
+            else None
+        )
+
+
+class MeanSquaredError(MeanFittingCost):
     """
     Mean square error (MSE) cost function.
 
@@ -19,16 +35,16 @@ class MeanSquaredError(FittingCost):
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        e = np.mean(np.abs(r) ** 2)
+        e = np.trapz(np.abs(r) ** 2, self.domain_data).item()
 
         if dy is not None:
-            de = 2 * np.mean((r * dy.T), axis=self.numpy_axis)
+            de = 2 * np.trapz((r * dy.T), self.domain_data, axis=2).flatten()
             return e, de
 
         return e
 
 
-class RootMeanSquaredError(FittingCost):
+class RootMeanSquaredError(MeanFittingCost):
     """
     Root mean square error (RMSE) cost function.
 
@@ -42,16 +58,18 @@ class RootMeanSquaredError(FittingCost):
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        e = np.sqrt(np.mean(np.abs(r) ** 2))
+        e = np.sqrt(np.trapz(np.abs(r) ** 2, self.domain_data).item())
 
         if dy is not None:
-            de = np.mean((r * dy.T), axis=self.numpy_axis) / (e + np.finfo(float).eps)
+            de = np.trapz((r * dy.T), self.domain_data, axis=2).flatten() / (
+                e + np.finfo(float).eps
+            )
             return e, de
 
         return e
 
 
-class MeanAbsoluteError(FittingCost):
+class MeanAbsoluteError(MeanFittingCost):
     """
     Mean absolute error (MAE) cost function.
 
@@ -65,11 +83,11 @@ class MeanAbsoluteError(FittingCost):
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        e = np.mean(np.abs(r))
+        e = np.trapz(np.abs(r), self.domain_data).item()
 
         if dy is not None:
             sign_r = np.sign(r)
-            de = np.mean(sign_r * dy.T, axis=self.numpy_axis)
+            de = np.trapz(sign_r * dy.T, self.domain_data, axis=2).flatten()
             return e, de
 
         return e
@@ -92,7 +110,7 @@ class SumSquaredError(FittingCost):
         e = np.sum(np.abs(r) ** 2)
 
         if dy is not None:
-            de = 2 * np.sum((r * dy.T), axis=self.numpy_axis)
+            de = 2 * np.sum((r * dy.T), axis=2).flatten()
             return e, de
 
         return e
@@ -148,8 +166,8 @@ class Minkowski(FittingCost):
 
         if dy is not None:
             de = np.sum(
-                np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T, axis=self.numpy_axis
-            ) / (e ** (self.p - 1) + np.finfo(float).eps)
+                np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T, axis=2
+            ).flatten() / (e ** (self.p - 1) + np.finfo(float).eps)
             return e, de
 
         return e
@@ -202,8 +220,11 @@ class SumofPower(FittingCost):
         e = np.sum(np.abs(r) ** self.p)
 
         if dy is not None:
-            de = self.p * np.sum(
-                np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T, axis=self.numpy_axis
+            de = (
+                self.p
+                * np.sum(
+                    np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T, axis=2
+                ).flatten()
             )
             return e, de
 
