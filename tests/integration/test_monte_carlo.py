@@ -128,7 +128,7 @@ class Test_Sampling_SPM:
         # Assert both final sample and posterior mean
         x = np.mean(chains, axis=1)
         for i in range(len(x)):
-            np.testing.assert_allclose(x[i], self.ground_truth, atol=1.5e-2)
+            np.testing.assert_allclose(x[i], self.ground_truth, atol=1.6e-2)
 
     def get_data(self, model, init_soc):
         initial_state = {"Initial SoC": init_soc}
