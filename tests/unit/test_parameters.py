@@ -9,6 +9,8 @@ class TestParameter:
     A class to test the parameter classes.
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.fixture
     def parameter(self):
         return pybop.Parameter(
@@ -18,7 +20,6 @@ class TestParameter:
             initial_value=0.6,
         )
 
-    @pytest.mark.unit
     def test_parameter_construction(self, parameter):
         assert parameter.name == "Negative electrode active material volume fraction"
         assert parameter.prior.mean == 0.6
@@ -28,19 +29,16 @@ class TestParameter:
         assert parameter.upper_bound == 0.7
         assert parameter.initial_value == 0.6
 
-    @pytest.mark.unit
     def test_parameter_repr(self, parameter):
         assert (
             repr(parameter)
             == "Parameter: Negative electrode active material volume fraction \n Prior: Gaussian, loc: 0.6, scale: 0.02 \n Bounds: [0.375, 0.7] \n Value: 0.6"
         )
 
-    @pytest.mark.unit
     def test_parameter_rvs(self, parameter):
         samples = parameter.rvs(n_samples=500)
         assert (samples >= 0.375).all() and (samples <= 0.7).all()
 
-    @pytest.mark.unit
     def test_parameter_update(self, parameter):
         # Test value update
         parameter.update(value=0.534)
@@ -50,13 +48,11 @@ class TestParameter:
         parameter.update(initial_value=0.654)
         assert parameter.value == 0.654
 
-    @pytest.mark.unit
     def test_parameter_margin(self, parameter):
         assert parameter.margin == 1e-4
         parameter.set_margin(margin=1e-3)
         assert parameter.margin == 1e-3
 
-    @pytest.mark.unit
     def test_no_bounds(self):
         parameter = pybop.Parameter(
             "Negative electrode active material volume fraction",
@@ -68,7 +64,6 @@ class TestParameter:
         bounds = parameters.get_bounds()
         assert not np.isfinite(list(bounds.values())).all()
 
-    @pytest.mark.unit
     def test_invalid_inputs(self, parameter):
         # Test error with invalid value
         with pytest.raises(ValueError, match="Margin must be between 0 and 1"):
@@ -84,7 +79,6 @@ class TestParameter:
         ):
             pybop.Parameter("Name", bounds=[0.7, 0.3])
 
-    @pytest.mark.unit
     def test_sample_initial_values(self):
         parameter = pybop.Parameter(
             "Negative electrode active material volume fraction",
@@ -100,6 +94,8 @@ class TestParameters:
     A class to test the parameter classes.
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.fixture
     def parameter(self):
         return pybop.Parameter(
@@ -109,7 +105,6 @@ class TestParameters:
             initial_value=0.6,
         )
 
-    @pytest.mark.unit
     def test_parameters_construction(self, parameter):
         params = pybop.Parameters(parameter)
         assert parameter.name in params.param.keys()
@@ -189,7 +184,6 @@ class TestParameters:
         ):
             params.remove(parameter_name=parameter)
 
-    @pytest.mark.unit
     def test_parameters_naming(self, parameter):
         params = pybop.Parameters(parameter)
         param = params["Negative electrode active material volume fraction"]
@@ -201,7 +195,6 @@ class TestParameters:
         ):
             params["Positive electrode active material volume fraction"]
 
-    @pytest.mark.unit
     def test_parameters_transformation(self):
         # Construct params
         params = pybop.Parameters(
@@ -249,7 +242,6 @@ class TestParameters:
         ):
             params.get_bounds(apply_transform=True)
 
-    @pytest.mark.unit
     def test_parameters_update(self, parameter):
         params = pybop.Parameters(parameter)
         params.update(values=[0.5])
@@ -259,7 +251,6 @@ class TestParameters:
         params.update(bounds=dict(lower=[0.37], upper=[0.7]))
         assert parameter.bounds == [0.37, 0.7]
 
-    @pytest.mark.unit
     def test_parameters_rvs(self, parameter):
         parameter.transformation = pybop.ScaledTransformation(
             coefficient=0.2, intercept=-1
@@ -270,7 +261,6 @@ class TestParameters:
         assert (samples >= -0.125).all() and (samples <= -0.06).all()
         parameter.transformation = None
 
-    @pytest.mark.unit
     def test_get_sigma(self, parameter):
         params = pybop.Parameters(parameter)
         assert params.get_sigma0() == [0.02]
@@ -278,7 +268,6 @@ class TestParameters:
         parameter.prior = None
         assert params.get_sigma0() is None
 
-    @pytest.mark.unit
     def test_initial_values_without_attributes(self):
         # Test without initial values
         parameter = pybop.Parameters(
@@ -294,7 +283,6 @@ class TestParameters:
 
         np.testing.assert_equal(sample, np.array([None]))
 
-    @pytest.mark.unit
     def test_parameters_repr(self, parameter):
         params = pybop.Parameters(parameter)
         assert (

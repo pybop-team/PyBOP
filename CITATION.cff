@@ -1,15 +1,35 @@
 cff-version: 1.2.0
-title: 'Python Battery Optimisation and Parameterisation (PyBOP)'
+title: 'PyBOP: A Python package for battery model optimisation and parameterisation'
 message: >-
-  If you use this software, please cite it using the
-  metadata from this file.
-type: software
+  If you use this software, please cite the article below.
 authors:
   - given-names: Brady
     family-names: Planden
+    orcid: "https://orcid.org/0000-0002-1082-9125"
   - given-names: Nicola
     family-names: Courtier
+    orcid: "https://orcid.org/0000-0002-5714-1096"
+  - given-names: Martin
+    family-names: Robinson
+    orcid: "https://orcid.org/0000-0002-1572-6782"
+  - given-names: Agriya
+    family-names: Khetarpal
+    orcid: "https://orcid.org/0000-0002-1112-1786"
+  - given-names: Ferran
+    family-names: Brosa Planella
+    orcid: "https://orcid.org/0000-0001-6363-2812"
   - given-names: David
     family-names: Howey
-version: "24.12" # Update this when you release a new version
+    orcid: "https://orcid.org/0000-0002-0620-3955"
+
+keywords:
+  - "python"
+  - "battery models"
+  - "parameter inference"
+  - "optimization"
+
+journal: "arXiv"
+date-released: 2024-12-20
+doi: 10.48550/arXiv.2412.15859
+version: "25.1" # Update this alongside new releases
 repository-code: 'https://www.github.com/pybop-team/pybop'

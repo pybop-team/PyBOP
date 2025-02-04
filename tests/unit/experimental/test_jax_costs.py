@@ -13,6 +13,8 @@ class TestJaxCosts:
     Class for testing Jax-based cost functions
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.fixture
     def model(self, ground_truth):
         solver = pybamm.IDAKLUSolver()
@@ -78,7 +80,6 @@ class TestJaxCosts:
             return cls(problem, sigma0=1e-3)
         return cls(problem)
 
-    @pytest.mark.unit
     def test_costs(self, cost):
         if isinstance(cost, pybop.BaseLikelihood):
             higher_cost = cost([0.52])
@@ -112,7 +113,6 @@ class TestJaxCosts:
         assert e.dtype == jnp.float64
         assert de.dtype == np.float64
 
-    @pytest.mark.unit
     def test_non_mutated_problem(self, problem):
         # Run Jax Cost
         cost = pybop.JaxSumSquaredError(problem)
@@ -124,7 +124,6 @@ class TestJaxCosts:
         e_casadi = cost([0.5])
         np.testing.assert_almost_equal(e_jax, e_casadi)
 
-    @pytest.mark.unit
     def test_solver_property(self, cost):
         model = cost.problem.model
 
@@ -147,7 +146,7 @@ class TestJaxCosts:
         ):
             model.jaxify_solver(t_eval=np.linspace(0, 1, 100))
 
-    @pytest.mark.unit
     def test_observed_fisher(self, cost):
-        fisher = cost.observed_fisher([0.5])
-        assert isinstance(fisher, jnp.ndarray)
+        if isinstance(cost, pybop.BaseLikelihood):
+            fisher = cost.observed_fisher([0.5])
+            assert isinstance(fisher, np.ndarray)

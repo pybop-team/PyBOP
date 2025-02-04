@@ -3,7 +3,7 @@ from pybamm import Parameter
 import pybop
 
 # Define parameter set and additional parameters needed for the cost function
-parameter_set = pybop.ParameterSet.pybamm("Chen2020", formation_concentrations=True)
+parameter_set = pybop.ParameterSet("Chen2020", formation_concentrations=True)
 parameter_set.update(
     {
         "Electrolyte density [kg.m-3]": Parameter("Separator density [kg.m-3]"),
@@ -75,7 +75,7 @@ print(f"Optimised gravimetric power density: {cost1(results.x):.2f} W.kg-1")
 print(f"Initial volumetric power density: {cost2(optim.x0):.2f} W.m-3")
 print(f"Optimised volumetric power density: {cost2(results.x):.2f} W.m-3")
 print(
-    f"Optimised discharge rate: {results.x[-1]:.2f} A = {results.x[-1]/nominal_capacity:.2f} C"
+    f"Optimised discharge rate: {results.x[-1]:.2f} A = {results.x[-1] / nominal_capacity:.2f} C"
 )
 
 # Plot the timeseries output

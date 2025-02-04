@@ -325,7 +325,8 @@ class GroupedSPMe(EChemBaseModel):
                     "Negative electrode thickness [m]": default_parameter_set[
                         "Negative electrode thickness [m]"
                     ],
-                }
+                },
+                check_already_exists=False,
             )
             # Update dimensions to equal their dimensionless values
             if "Positive electrode relative thickness" in parameter_set.keys():
@@ -345,7 +346,8 @@ class GroupedSPMe(EChemBaseModel):
                     ),
                     "Positive particle radius [m]": 1,
                     "Negative particle radius [m]": 1,
-                }
+                },
+                check_already_exists=False,
             )
             model_kwargs["parameter_set"] = parameter_set
 

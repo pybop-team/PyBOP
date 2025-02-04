@@ -1,3 +1,4 @@
+import numpy as np
 from scipy.optimize import minimize
 
 from pybop import BaseOptimiser, OptimisationResult
@@ -8,9 +9,15 @@ class StandaloneOptimiser(BaseOptimiser):
     Defines an example standalone optimiser without a Cost.
     """
 
-    def __init__(self, cost, **optimiser_kwargs):
+    def __init__(self, cost=None, **optimiser_kwargs):
+        # Define cost function
+        def cost(x):
+            x1, x2 = x
+            return (x1 - 2) ** 2 + (x2 - 4) ** 4
+
         # Set initial values and other options
         optimiser_options = dict(
+            x0=np.array([0, 0]),
             bounds=None,
             method="Nelder-Mead",
             jac=False,
@@ -75,11 +82,11 @@ class StandaloneOptimiser(BaseOptimiser):
 
     def name(self):
         """
-        Provides the name of the optimization strategy.
+        Provides the name of the optimisation strategy.
 
         Returns
         -------
         str
-            The name 'SciPyMinimize'.
+            The name 'StandaloneOptimiser'.
         """
         return "StandaloneOptimiser"

@@ -97,7 +97,10 @@ from .problems.design_problem import DesignProblem
 #
 from .costs.base_cost import BaseCost
 from .costs.fitting_costs import (
+    FittingCost,
     RootMeanSquaredError,
+    MeanAbsoluteError,
+    MeanSquaredError,
     SumSquaredError,
     Minkowski,
     SumofPower,
@@ -137,7 +140,9 @@ from .optimisers._cuckoo import CuckooSearchImpl
 from .optimisers._random_search import RandomSearchImpl
 from .optimisers._adamw import AdamWImpl
 from .optimisers._gradient_descent import GradientDescentImpl
-from .optimisers.base_optimiser import BaseOptimiser, OptimisationResult, MultiOptimisationResult
+from .optimisers._simulated_annealing import SimulatedAnnealingImpl
+from .optimisers._irprop_plus import IRPropPlusImpl
+from .optimisers.base_optimiser import BaseOptimiser, OptimisationResult
 from .optimisers.base_pints_optimiser import BasePintsOptimiser
 from .optimisers.scipy_optimisers import (
     BaseSciPyOptimiser,
@@ -148,6 +153,7 @@ from .optimisers.pints_optimisers import (
     GradientDescent,
     CMAES,
     IRPropMin,
+    IRPropPlus,
     NelderMead,
     PSO,
     SNES,
@@ -155,6 +161,7 @@ from .optimisers.pints_optimisers import (
     CuckooSearch,
     RandomSearch,
     AdamW,
+    SimulatedAnnealing,
 )
 from .optimisers.optimisation import Optimisation
 

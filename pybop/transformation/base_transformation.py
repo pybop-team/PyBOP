@@ -17,16 +17,12 @@ class Transformation(ABC):
     Based on pints.transformation method.
 
     References
-    ----------
+    -----------
     .. [1] Erik Jorgensen and Asger Roer Pedersen. "How to Obtain Those Nasty Standard Errors From Transformed Data."
            http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.47.9023
     .. [2] Kaare Brandt Petersen and Michael Syskind Pedersen. "The Matrix Cookbook." 2012.
-    """
 
-    # ---- To be implemented with Monte Carlo PR ------ #
-    # def convert_log_prior(self, log_prior):
-    #     """Returns a transformed log-prior class."""
-    #     return TransformedLogPrior(log_prior, self)
+    """
 
     def convert_covariance_matrix(self, cov: np.ndarray, q: np.ndarray) -> np.ndarray:
         """

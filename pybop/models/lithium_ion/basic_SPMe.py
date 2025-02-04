@@ -21,6 +21,8 @@ from pybamm.models.full_battery_models.lithium_ion.electrode_soh import (
     get_min_max_stoichiometries,
 )
 
+from pybop import ParameterSet
+
 
 class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
     """
@@ -491,6 +493,8 @@ def convert_physical_to_grouped_parameters(parameter_set):
     dict
         A dictionary of the grouped parameters.
     """
+    parameter_set = ParameterSet.to_pybamm(parameter_set)
+
     # Unpack physical parameters
     F = parameter_set["Faraday constant [C.mol-1]"]
     alpha_p = parameter_set["Positive electrode active material volume fraction"]

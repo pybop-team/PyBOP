@@ -3,7 +3,7 @@ import numpy as np
 import pybop
 
 # Define model
-parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+parameter_set = pybop.ParameterSet("Chen2020")
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
@@ -44,7 +44,9 @@ signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.CMAES(cost, sigma0=0.25, max_unchanged_iterations=10, max_iterations=40)
+optim = pybop.CMAES(
+    cost, sigma0=0.25, max_unchanged_iterations=10, max_iterations=40, multistart=2
+)
 
 # Run the optimisation
 results = optim.run()
@@ -54,7 +56,7 @@ print("True parameters:", parameters.true_value())
 pybop.plot.dataset(dataset)
 
 # Plot the timeseries output
-pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.quick(problem, problem_inputs=results.x_best, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot.convergence(optim)

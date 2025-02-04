@@ -10,7 +10,9 @@ from pybop import (
     BasePintsOptimiser,
     CuckooSearchImpl,
     GradientDescentImpl,
+    IRPropPlusImpl,
     RandomSearchImpl,
+    SimulatedAnnealingImpl,
 )
 
 
@@ -19,14 +21,14 @@ class GradientDescent(BasePintsOptimiser):
     Implements a simple gradient descent optimisation algorithm.
 
     This class extends the gradient descent optimiser from the PINTS library, designed
-    to minimize a scalar function of one or more variables.
+    to minimise a scalar function of one or more variables.
 
     Note that this optimiser does not support boundary constraints.
 
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -99,7 +101,7 @@ class AdamW(BasePintsOptimiser):
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -163,13 +165,13 @@ class IRPropMin(BasePintsOptimiser):
     Implements the iRpropMin optimisation algorithm.
 
     This class inherits from the PINTS IRPropMin class, which is an optimiser that
-    uses resilient backpropagation with weight-backtracking. It is designed to handle
+    uses resilient backpropagation without weight-backtracking. It is designed to handle
     problems with large plateaus, noisy gradients, and local minima.
 
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -228,6 +230,75 @@ class IRPropMin(BasePintsOptimiser):
         )
 
 
+class IRPropPlus(BasePintsOptimiser):
+    """
+    Implements the iRpropPlus optimisation algorithm.
+
+    This class implements the improved resilient backpropagation with weight-backtracking.
+    It is designed to handle problems with large plateaus, noisy gradients, and local minima.
+
+    Parameters
+    ----------
+    cost : callable
+        The cost function to be minimized.
+    max_iterations : int, optional
+        Maximum number of iterations for the optimisation.
+    min_iterations : int, optional (default=2)
+        Minimum number of iterations before termination.
+    max_unchanged_iterations : int, optional (default=15)
+        Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
+    parallel : bool, optional (default=False)
+        Whether to run the optimisation in parallel.
+    **optimiser_kwargs : optional
+        Valid PINTS option keys and their values, for example:
+        x0 : array_like
+            Initial position from which optimisation will start.
+        sigma0 : float
+            Initial step size or standard deviation depending on the optimiser.
+        bounds : dict
+            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
+            upper bounds on the parameters.
+        use_f_guessed : bool
+            Whether to return the guessed function values.
+        absolute_tolerance : float
+            Absolute tolerance for convergence checking.
+        relative_tolerance : float
+            Relative tolerance for convergence checking.
+        max_evaluations : int
+            Maximum number of function evaluations.
+        threshold : float
+            Threshold value for early termination.
+
+    See Also
+    --------
+    pints.IRPropMin : The PINTS implementation this class is based on.
+    """
+
+    def __init__(
+        self,
+        cost,
+        max_iterations: int = None,
+        min_iterations: int = 2,
+        max_unchanged_iterations: int = 15,
+        multistart: int = 1,
+        parallel: bool = False,
+        **optimiser_kwargs,
+    ):
+        super().__init__(
+            cost,
+            IRPropPlusImpl,
+            max_iterations,
+            min_iterations,
+            max_unchanged_iterations,
+            multistart,
+            parallel,
+            **optimiser_kwargs,
+        )
+
+
 class PSO(BasePintsOptimiser):
     """
     Implements a particle swarm optimisation (PSO) algorithm.
@@ -239,7 +310,7 @@ class PSO(BasePintsOptimiser):
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -309,7 +380,7 @@ class SNES(BasePintsOptimiser):
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -379,7 +450,7 @@ class XNES(BasePintsOptimiser):
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -451,7 +522,7 @@ class NelderMead(BasePintsOptimiser):
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -521,7 +592,7 @@ class CMAES(BasePintsOptimiser):
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -596,7 +667,7 @@ class CuckooSearch(BasePintsOptimiser):
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -668,7 +739,7 @@ class RandomSearch(BasePintsOptimiser):
     Parameters
     ----------
     cost : callable
-        The cost function to be minimized.
+        The cost function to be minimised.
     max_iterations : int, optional
         Maximum number of iterations for the optimisation.
     min_iterations : int, optional (default=2)
@@ -716,6 +787,83 @@ class RandomSearch(BasePintsOptimiser):
         super().__init__(
             cost,
             RandomSearchImpl,
+            max_iterations,
+            min_iterations,
+            max_unchanged_iterations,
+            multistart,
+            parallel,
+            **optimiser_kwargs,
+        )
+
+
+class SimulatedAnnealing(BasePintsOptimiser):
+    """
+    Adapter for Simulated Annealing optimiser in PyBOP.
+
+    Simulated Annealing is a probabilistic optimisation algorithm inspired by the annealing
+    process in metallurgy. It works by iteratively proposing new solutions and accepting
+    them based on both their fitness and a temperature parameter that decreases over time.
+    This allows the algorithm to initially explore broadly and gradually focus on local
+    optimisation as the temperature decreases.
+
+    The algorithm is particularly effective at avoiding local minima and returning a
+    global solution.
+
+    Parameters
+    ----------
+    cost : callable
+        The cost function to be minimised.
+    max_iterations : int, optional
+        Maximum number of iterations for the optimisation.
+    min_iterations : int, optional (default=2)
+        Minimum number of iterations before termination.
+    max_unchanged_iterations : int, optional (default=15)
+        Maximum number of iterations without improvement before termination.
+    multistart : int, optional (default=1)
+        Number of optimiser restarts from randomly sample position. These positions
+        are sampled from the priors.
+    parallel : bool, optional (default=False)
+        Whether to run the optimisation in parallel.
+    **optimiser_kwargs : optional
+        Valid PINTS option keys and their values, for example:
+        x0 : array_like
+            Initial position from which optimisation will start.
+        sigma0 : float
+            Initial step size or standard deviation for parameter perturbation.
+        bounds : dict
+            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
+            upper bounds on the parameters.
+        cooling_schedule : callable, optional
+            Function that determines how temperature decreases over time.
+        initial_temperature : float, optional
+            Starting temperature for the annealing process.
+        absolute_tolerance : float
+            Absolute tolerance for convergence checking.
+        relative_tolerance : float
+            Relative tolerance for convergence checking.
+        max_evaluations : int
+            Maximum number of function evaluations.
+        threshold : float
+            Threshold value for early termination.
+
+    See Also
+    --------
+    pybop.SimulatedAnnealingImpl : PyBOP implementation of Simulated Annealing algorithm.
+    """
+
+    def __init__(
+        self,
+        cost,
+        max_iterations: int = None,
+        min_iterations: int = 2,
+        max_unchanged_iterations: int = 15,
+        multistart: int = 1,
+        parallel: bool = False,
+        **optimiser_kwargs,
+    ):
+        super().__init__(
+            cost,
+            SimulatedAnnealingImpl,
             max_iterations,
             min_iterations,
             max_unchanged_iterations,

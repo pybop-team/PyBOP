@@ -1,12 +1,10 @@
 import numpy as np
-import pybamm
 
 import pybop
 
-# Define model and use high-performant solver for sensitivities
-solver = pybamm.IDAKLUSolver()
-parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
+# Parameter set and model definition
+parameter_set = pybop.ParameterSet("Chen2020")
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -49,15 +47,15 @@ dataset = pybop.Dataset(
     }
 )
 
-signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 # Generate problem, cost function, and optimisation class
+signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
-cost = pybop.Minkowski(problem, p=2)
-optim = pybop.AdamW(
+cost = pybop.RootMeanSquaredError(problem)
+optim = pybop.NelderMead(
     cost,
     verbose=True,
     allow_infeasible_solutions=True,
-    sigma0=0.02,
+    sigma0=0.05,
     max_iterations=100,
     max_unchanged_iterations=20,
 )

@@ -47,7 +47,7 @@ def contour(
     **layout_kwargs : optional
         Valid Plotly layout keys and their values,
         e.g. `xaxis_title="Time [s]"` or
-        `xaxis={"title": "Time [s]", "titlefont_size": 18}`.
+        `xaxis={"title": "Time [s]", font={"size":14}}`
 
     Returns
     -------
@@ -244,7 +244,7 @@ def contour(
         for i, grad_costs in enumerate(grad_parameter_costs):
             # Update title for gradient plots
             updated_layout_options = layout_options.copy()
-            updated_layout_options["title"] = f"Gradient for Parameter: {i+1}"
+            updated_layout_options["title"] = f"Gradient for Parameter: {i + 1}"
 
             # Create contour plot with updated layout options
             grad_layout = go.Layout(updated_layout_options)

@@ -12,6 +12,8 @@ class TestCosts:
     Class for tests cost functions
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.fixture
     def model(self, ground_truth):
         solver = pybamm.IDAKLUSolver()
@@ -27,10 +29,12 @@ class TestCosts:
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameter(
-            "Negative electrode active material volume fraction",
-            prior=pybop.Gaussian(0.5, 0.01),
-            bounds=[0.375, 0.625],
+        return pybop.Parameters(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.5, 0.01),
+                bounds=[0.375, 0.625],
+            )
         )
 
     @pytest.fixture
@@ -77,10 +81,10 @@ class TestCosts:
         cls = request.param
         if cls in [pybop.SumSquaredError, pybop.RootMeanSquaredError]:
             return cls(problem)
-        elif cls is pybop.LogPosterior:
-            return cls(pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002))
         elif cls in [pybop.Minkowski, pybop.SumofPower]:
             return cls(problem, p=2)
+        elif cls is pybop.LogPosterior:
+            return cls(pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002))
         elif cls is pybop.ObserverCost:
             inputs = problem.parameters.initial_value()
             state = problem.model.reinit(inputs)
@@ -106,15 +110,16 @@ class TestCosts:
                 ),
             )
 
-    @pytest.mark.unit
-    def test_base(self, problem):
-        base_cost = pybop.BaseCost(problem)
-        assert base_cost.problem == problem
-        with pytest.raises(NotImplementedError):
-            base_cost([0.5])
+    def test_base(self, model, parameters, dataset):
+        problem = pybop.FittingProblem(model, parameters, dataset)
+        for cost_class in [pybop.BaseCost, pybop.FittingCost, pybop.DesignCost]:
+            base_cost = cost_class(problem)
+            assert base_cost.problem == problem
+            with pytest.raises(NotImplementedError):
+                base_cost([0.5])
 
-    @pytest.mark.unit
-    def test_costs(self, cost):
+    def test_costs(self, cost, parameters):
+        # Test cost direction
         if isinstance(cost, pybop.BaseLikelihood):
             higher_cost = cost([0.52])
             lower_cost = cost([0.55])
@@ -127,6 +132,7 @@ class TestCosts:
 
         # Test type of returned value
         assert np.isscalar(cost([0.5]))
+        assert np.isscalar(cost(parameters.as_dict()))
 
         # Test UserWarnings
         if isinstance(cost, (pybop.SumSquaredError, pybop.RootMeanSquaredError)):
@@ -167,15 +173,6 @@ class TestCosts:
         with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
             cost(["StringInputShouldNotWork"])
 
-        # Test ValueError for none dy w/ calculate_grad == True
-        if not isinstance(cost, pybop.ObserverCost):
-            with pytest.raises(
-                ValueError,
-                match="Forward model sensitivities need to be provided alongside `calculate_grad=True` for `cost.compute`.",
-            ):
-                cost.compute([1.1], dy=None, calculate_grad=True)
-
-    @pytest.mark.unit
     def test_minkowski(self, problem):
         # Incorrect order
         with pytest.raises(ValueError, match="The order of the Minkowski distance"):
@@ -186,7 +183,6 @@ class TestCosts:
         ):
             pybop.Minkowski(problem, p=np.inf)
 
-    @pytest.mark.unit
     def test_sumofpower(self, problem):
         # Incorrect order
         with pytest.raises(
@@ -232,46 +228,36 @@ class TestCosts:
     @pytest.mark.parametrize(
         "cost_class, expected_name",
         [
-            (pybop.DesignCost, "Design Cost"),
             (pybop.GravimetricEnergyDensity, "Gravimetric Energy Density"),
             (pybop.VolumetricEnergyDensity, "Volumetric Energy Density"),
             (pybop.GravimetricPowerDensity, "Gravimetric Power Density"),
             (pybop.VolumetricPowerDensity, "Volumetric Power Density"),
         ],
     )
-    @pytest.mark.unit
     def test_design_costs(self, cost_class, expected_name, design_problem):
         # Construct Cost
         cost = cost_class(design_problem)
         assert cost.name == expected_name
 
-        if cost_class in [pybop.DesignCost]:
-            with pytest.raises(NotImplementedError):
-                cost([0.5])
-        else:
-            # Test type of returned value
-            assert np.isscalar(cost([0.5]))
-            assert cost([0.4]) >= 0  # Should be a viable design
-            assert (
-                cost([0.8]) == -np.inf
-            )  # Should exceed active material + porosity < 1
-            assert cost([1.4]) == -np.inf  # Definitely not viable
-            assert cost([-0.1]) == -np.inf  # Should not be a viable design
+        # Test type of returned value
+        assert np.isscalar(cost([0.5]))
+        assert cost([0.4]) >= 0  # Should be a viable design
+        assert cost([0.8]) == -np.inf  # Should exceed active material + porosity < 1
+        assert cost([1.4]) == -np.inf  # Definitely not viable
+        assert cost([-0.1]) == -np.inf  # Should not be a viable design
 
-            # Test infeasible locations
-            cost.problem.model.allow_infeasible_solutions = False
-            assert cost([1.1]) == -np.inf
+        # Test infeasible locations
+        cost.problem.model.allow_infeasible_solutions = False
+        assert cost([1.1]) == -np.inf
 
-            # Test exception for non-numeric inputs
-            with pytest.raises(
-                TypeError, match="Inputs must be a dictionary or numeric."
-            ):
-                cost(["StringInputShouldNotWork"])
+        # Test exception for non-numeric inputs
+        with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
+            cost(["StringInputShouldNotWork"])
 
-            # Compute after updating nominal capacity
-            design_problem.update_capacity = True
-            cost = cost_class(design_problem)
-            cost([0.4])
+        # Compute after updating nominal capacity
+        design_problem.update_capacity = True
+        cost = cost_class(design_problem)
+        cost([0.4])
 
     @pytest.fixture
     def noisy_problem(self, ground_truth, parameters, experiment):
@@ -290,7 +276,6 @@ class TestCosts:
         )
         return pybop.FittingProblem(model, parameters, noisy_dataset)
 
-    @pytest.mark.unit
     def test_weighted_fitting_cost(self, noisy_problem):
         problem = noisy_problem
         cost1 = pybop.SumSquaredError(problem)
@@ -364,7 +349,6 @@ class TestCosts:
             atol=1e-5,
         )
 
-    @pytest.mark.unit
     def test_weighted_design_cost(self, design_problem):
         cost1 = pybop.GravimetricEnergyDensity(design_problem)
         cost2 = pybop.VolumetricEnergyDensity(design_problem)
@@ -396,7 +380,6 @@ class TestCosts:
             atol=1e-5,
         )
 
-    @pytest.mark.unit
     def test_weighted_design_cost_with_update_capacity(self, design_problem):
         design_problem.update_capacity = True
         cost1 = pybop.GravimetricEnergyDensity(design_problem)
@@ -413,7 +396,6 @@ class TestCosts:
             atol=1e-5,
         )
 
-    @pytest.mark.unit
     def test_mixed_problem_classes(self, problem, design_problem):
         cost1 = pybop.SumSquaredError(problem)
         cost2 = pybop.GravimetricEnergyDensity(design_problem)
@@ -422,3 +404,20 @@ class TestCosts:
             match="All problems must be of the same class type.",
         ):
             pybop.WeightedCost(cost1, cost2)
+
+    def test_parameter_sensitivities(self, problem):
+        cost = pybop.MeanAbsoluteError(problem)
+        result = cost.sensitivity_analysis(4)
+
+        # Assertions
+        assert isinstance(result, dict)
+        assert "S1" in result
+        assert "ST" in result
+        assert isinstance(result["S1"], np.ndarray)
+        assert isinstance(result["S2"], np.ndarray)
+        assert isinstance(result["ST"], np.ndarray)
+        assert isinstance(result["S1_conf"], np.ndarray)
+        assert isinstance(result["ST_conf"], np.ndarray)
+        assert isinstance(result["S2_conf"], np.ndarray)
+        assert result["S1"].shape == (1,)
+        assert result["ST"].shape == (1,)

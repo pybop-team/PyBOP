@@ -9,7 +9,8 @@ class TestDataset:
     Class to test dataset construction.
     """
 
-    @pytest.mark.unit
+    pytestmark = pytest.mark.unit
+
     def test_dataset(self):
         # Construct and simulate model
         model = pybop.lithium_ion.SPM()
@@ -42,7 +43,6 @@ class TestDataset:
 
         # Test conversion of pybamm solution into dictionary
         assert dataset.data == pybop.Dataset(solution).data
-        assert dataset.names == pybop.Dataset(solution).names
 
         # Test set and get item
         test_current = solution["Current [A]"].data + np.ones_like(
@@ -55,6 +55,10 @@ class TestDataset:
 
         # Test conversion of single signal to list
         assert dataset.check()
+
+        # Test get subset
+        dataset = dataset.get_subset(list(range(5)))
+        assert len(dataset[dataset.domain]) == 5
 
         # Form frequency dataset
         data_dictionary = {

@@ -23,6 +23,8 @@ class TestTransformation:
     A class for integration tests of the transformation methods.
     """
 
+    pytestmark = pytest.mark.integration
+
     @pytest.fixture(autouse=True)
     def setup(self):
         self.sigma0 = 2e-3
@@ -37,8 +39,7 @@ class TestTransformation:
         parameter_set = pybop.ParameterSet(
             json_path="examples/parameters/initial_ecm_parameters.json"
         )
-        parameter_set.import_parameters()
-        parameter_set.params.update(
+        parameter_set.update(
             {
                 "C1 [F]": 1000,
                 "R0 [Ohm]": self.ground_truth[0],
@@ -52,13 +53,13 @@ class TestTransformation:
         return pybop.Parameters(
             pybop.Parameter(
                 "R0 [Ohm]",
-                prior=pybop.Uniform(0.001, 0.1),
+                prior=pybop.Gaussian(0.05, 0.02),
                 bounds=[1e-4, 0.1],
                 transformation=transformation_r0,
             ),
             pybop.Parameter(
                 "R1 [Ohm]",
-                prior=pybop.Uniform(0.001, 0.1),
+                prior=pybop.Gaussian(0.05, 0.02),
                 bounds=[1e-4, 0.1],
                 transformation=transformation_r1,
             ),
@@ -111,7 +112,6 @@ class TestTransformation:
         [pybop.IRPropMin, pybop.CMAES, pybop.SciPyDifferentialEvolution],
         ids=["IRPropMin", "CMAES", "SciPyDifferentialEvolution"],
     )
-    @pytest.mark.integration
     @pytest.mark.parametrize(
         "transformation_r0, transformation_r1",
         list(
@@ -130,12 +130,11 @@ class TestTransformation:
         x0 = cost.parameters.initial_value()
         optim = optimiser(
             cost=cost,
-            sigma0=[0.02, 0.02, 3e-3]
+            sigma0=[0.02, 0.02, 2e-3]
             if isinstance(cost, (pybop.GaussianLogLikelihood, pybop.LogPosterior))
             else [0.02, 0.02],
-            max_unchanged_iterations=25,
-            absolute_tolerance=1e-6,
             max_iterations=250,
+            max_unchanged_iterations=45,
             popsize=3 if optimiser is pybop.SciPyDifferentialEvolution else 6,
         )
 
@@ -168,7 +167,7 @@ class TestTransformation:
         experiment = pybop.Experiment(
             [
                 (
-                    "Rest for 10 seconds (5 second period)",
+                    "Rest for 10 seconds (2 second period)",
                     "Discharge at 0.5C for 6 minutes (12 second period)",
                 ),
             ]

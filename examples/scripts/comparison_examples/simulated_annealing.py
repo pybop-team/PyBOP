@@ -3,30 +3,31 @@ import pybamm
 
 import pybop
 
-# Define model
+# Define model and use high-performant solver for sensitivities
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-solver = pybamm.IDAKLUSolver()
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = pybop.Parameters(
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.6, 0.05),
-        bounds=[0.5, 0.8],
+        prior=pybop.Gaussian(0.6, 0.1),
+        bounds=[0.4, 0.85],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.48, 0.05),
-        bounds=[0.4, 0.7],
+        prior=pybop.Gaussian(0.6, 0.1),
+        bounds=[0.4, 0.85],
     ),
 )
 
+# Generate data
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
 values = model.predict(t_eval=t_eval)
 corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
 
+# Form dataset
 dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
@@ -36,10 +37,21 @@ dataset = pybop.Dataset(
 )
 
 # Generate problem, cost function, and optimisation class
+model.solver = pybamm.IDAKLUSolver()
 problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.JaxSumSquaredError(problem)
-optim = pybop.SciPyMinimize(cost, max_iterations=100, method="L-BFGS-B", jac=True)
+cost = pybop.RootMeanSquaredError(problem)
+optim = pybop.SimulatedAnnealing(
+    cost,
+    max_iterations=120,
+    max_unchanged_iterations=60,
+)
 
+# Update initial temperature and cooling rate
+# for the reduced number of iterations
+optim.optimiser.temperature = 0.9
+optim.optimiser.cooling_rate = 0.8
+
+# Run optimisation
 results = optim.run()
 
 # Plot the timeseries output
@@ -52,4 +64,5 @@ pybop.plot.convergence(optim)
 pybop.plot.parameters(optim)
 
 # Plot the cost landscape with optimisation path
-pybop.plot.surface(optim)
+bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
+pybop.plot.surface(optim, bounds=bounds)

@@ -24,8 +24,10 @@ class FittingProblem(BaseProblem):
         Dataset object containing the data to fit the model to.
     check_model : bool, optional
         Flag to indicate if the model should be checked (default: True).
-    signal : str, optional
-        The variable used for fitting (default: "Voltage [V]").
+    signal : list[str], optional
+        A list of variables to fit (default: ["Voltage [V]"]).
+    domain : str, optional
+        The name of the domain (default: "Time [s]").
     additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
     initial_state : dict, optional
@@ -50,11 +52,18 @@ class FittingProblem(BaseProblem):
         dataset: Dataset,
         check_model: bool = True,
         signal: Optional[list[str]] = None,
+        domain: Optional[str] = None,
         additional_variables: Optional[list[str]] = None,
         initial_state: Optional[dict] = None,
     ):
         super().__init__(
-            parameters, model, check_model, signal, additional_variables, initial_state
+            parameters=parameters,
+            model=model,
+            check_model=check_model,
+            signal=signal,
+            domain=domain,
+            additional_variables=additional_variables,
+            initial_state=initial_state,
         )
         self._dataset = dataset.data
         self._n_parameters = len(self.parameters)
@@ -159,6 +168,7 @@ class FittingProblem(BaseProblem):
 
         if self.eis:
             return sol
+
         if isinstance(self.model.solver, IDAKLUJax):
             return {signal: sol[:, i] for i, signal in enumerate(self.signal)}
         if calculate_grad:

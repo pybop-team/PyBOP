@@ -9,6 +9,8 @@ class TestClassifier:
     A class to test the classification of different optimisation results.
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.fixture
     def problem(self):
         model = pybop.empirical.Thevenin()
@@ -35,7 +37,6 @@ class TestClassifier:
         )
         return pybop.FittingProblem(model, parameters, dataset)
 
-    @pytest.mark.unit
     def test_classify_using_hessian_invalid(self, problem):
         cost = pybop.SumSquaredError(problem)
         optim = pybop.Optimisation(cost=cost)

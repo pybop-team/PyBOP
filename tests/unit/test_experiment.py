@@ -9,7 +9,8 @@ class TestExperiment:
     Class to test the experiment class.
     """
 
-    @pytest.mark.unit
+    pytestmark = pytest.mark.unit
+
     def test_experiment(self):
         # Define example protocol
         protocol = [("Discharge at 1 C for 20 seconds")]

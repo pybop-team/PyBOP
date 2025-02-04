@@ -35,7 +35,7 @@ class BenchmarkParameterisation:
         set_random_seed()
 
         # Create model instance
-        params = pybop.ParameterSet.pybamm(parameter_set)
+        params = pybop.ParameterSet(parameter_set)
         params.update(
             {
                 "Negative electrode active material volume fraction": 0.63,

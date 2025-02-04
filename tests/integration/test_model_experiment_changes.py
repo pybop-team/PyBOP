@@ -9,6 +9,8 @@ class TestModelAndExperimentChanges:
     A class to test that different inputs return different outputs.
     """
 
+    pytestmark = pytest.mark.integration
+
     @pytest.fixture(
         params=[
             pybop.Parameters(
@@ -34,11 +36,10 @@ class TestModelAndExperimentChanges:
     def parameters(self, request):
         return request.param
 
-    @pytest.mark.integration
     def test_changing_experiment(self, parameters):
         # Change the experiment and check that the results are different.
 
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set = pybop.ParameterSet("Chen2020")
         parameter_set.update(parameters.as_dict("true"))
         initial_state = {"Initial SoC": 0.5}
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
@@ -65,11 +66,10 @@ class TestModelAndExperimentChanges:
         np.testing.assert_allclose(cost_1, 0, atol=1e-5)
         np.testing.assert_allclose(cost_2, 0, atol=1e-5)
 
-    @pytest.mark.integration
     def test_changing_model(self, parameters):
         # Change the model and check that the results are different.
 
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set = pybop.ParameterSet("Chen2020")
         parameter_set.update(parameters.as_dict("true"))
         initial_state = {"Initial SoC": 0.5}
         experiment = pybop.Experiment(["Charge at 1C until 4.1 V (2 seconds period)"])
@@ -108,9 +108,8 @@ class TestModelAndExperimentChanges:
         results = optim.run()
         return results.final_cost
 
-    @pytest.mark.integration
     def test_multi_fitting_problem(self):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set = pybop.ParameterSet("Chen2020")
         parameters = pybop.Parameter(
             "Negative electrode active material volume fraction",
             prior=pybop.Gaussian(0.68, 0.05),
