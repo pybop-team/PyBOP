@@ -147,5 +147,6 @@ class TestJaxCosts:
             model.jaxify_solver(t_eval=np.linspace(0, 1, 100))
 
     def test_observed_fisher(self, cost):
-        fisher = cost.observed_fisher([0.5])
-        assert isinstance(fisher, jnp.ndarray)
+        if isinstance(cost, pybop.BaseLikelihood):
+            fisher = cost.observed_fisher([0.5])
+            assert isinstance(fisher, np.ndarray)

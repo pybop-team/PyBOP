@@ -25,11 +25,13 @@ parameters = pybop.Parameters(
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
 values = model.predict(t_eval=t_eval)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
+corrupt_values = values["Voltage [V]"].data + np.random.normal(
+    0, sigma, len(values["Voltage [V]"].data)
+)
 
 dataset = pybop.Dataset(
     {
-        "Time [s]": t_eval,
+        "Time [s]": values["Time [s]"].data,
         "Current function [A]": values["Current [A]"].data,
         "Voltage [V]": corrupt_values,
     }
@@ -37,8 +39,15 @@ dataset = pybop.Dataset(
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.JaxSumSquaredError(problem)
-optim = pybop.SciPyMinimize(cost, max_iterations=100, method="L-BFGS-B", jac=True)
+cost = pybop.SumSquaredError(problem)
+optim = pybop.SciPyMinimize(
+    cost,
+    max_iterations=100,
+    multistart=1,
+    method="L-BFGS-B",
+    jac=True,
+    n_sensitivity_samples=256,
+)
 
 results = optim.run()
 

@@ -65,11 +65,11 @@ results = optim.run()
 # Plot the timeseries output (requires model that returns Voltage)
 pybop.plot.quick(observer, problem_inputs=results.x, title="Optimised Comparison")
 
-# # Plot convergence
-# pybop.plot.convergence(optim)
+# Plot convergence
+pybop.plot.convergence(optim)
 
-# # Plot the parameter traces
-# pybop.plot.parameters(optim)
+# Plot the parameter traces
+pybop.plot.parameters(optim)
 
-# # Plot the cost landscape with optimisation path
-# pybop.plot.surface(optim)
+# Plot the cost landscape with optimisation path
+pybop.plot.surface(optim)

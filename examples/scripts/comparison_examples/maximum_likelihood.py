@@ -37,7 +37,7 @@ experiment = pybop.Experiment(
         ),
     ]
 )
-values = model.predict(initial_state={"Initial SoC": 0.5}, experiment=experiment)
+values = model.predict(initial_state={"Initial SoC": 0.15}, experiment=experiment)
 
 
 def noise(sigma):
