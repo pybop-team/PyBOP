@@ -1,3 +1,4 @@
+import copy
 import json
 import types
 from numbers import Number
@@ -228,6 +229,14 @@ class ParameterSet:
             return True
         except (TypeError, OverflowError):
             return False
+
+    def copy(self):
+        new_copy = ParameterSet(
+            parameter_set=self.parameter_values.copy(),
+            json_path=copy.copy(self._json_path),
+            formation_concentrations=copy.copy(self.formation_concentrations),
+        )
+        return new_copy
 
     @classmethod
     def pybamm(cls, name):
