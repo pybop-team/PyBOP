@@ -35,10 +35,13 @@ class MeanSquaredError(MeanFittingCost):
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        e = np.trapz(np.abs(r) ** 2, self.domain_data).item()
+        e = np.mean(np.trapz(np.abs(r) ** 2, self.domain_data))
 
         if dy is not None:
-            de = 2 * np.trapz((r * dy.T), self.domain_data, axis=2).flatten()
+            de = 2 * np.mean(
+                np.trapz((r * dy.T), self.domain_data, axis=2),
+                axis=self.output_axis,
+            )
             return e, de
 
         return e
@@ -58,12 +61,13 @@ class RootMeanSquaredError(MeanFittingCost):
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        e = np.sqrt(np.trapz(np.abs(r) ** 2, self.domain_data).item())
+        e = np.sqrt(np.mean(np.trapz(np.abs(r) ** 2, self.domain_data)))
 
         if dy is not None:
-            de = np.trapz((r * dy.T), self.domain_data, axis=2).flatten() / (
-                e + np.finfo(float).eps
-            )
+            de = np.mean(
+                np.trapz((r * dy.T), self.domain_data, axis=2),
+                axis=self.output_axis,
+            ) / (e + np.finfo(float).eps)
             return e, de
 
         return e
@@ -83,11 +87,14 @@ class MeanAbsoluteError(MeanFittingCost):
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        e = np.trapz(np.abs(r), self.domain_data).item()
+        e = np.mean(np.trapz(np.abs(r), self.domain_data))
 
         if dy is not None:
             sign_r = np.sign(r)
-            de = np.trapz(sign_r * dy.T, self.domain_data, axis=2).flatten()
+            de = np.mean(
+                np.trapz(sign_r * dy.T, self.domain_data, axis=2),
+                axis=self.output_axis,
+            )
             return e, de
 
         return e
@@ -110,7 +117,7 @@ class SumSquaredError(FittingCost):
         e = np.sum(np.abs(r) ** 2)
 
         if dy is not None:
-            de = 2 * np.sum((r * dy.T), axis=2).flatten()
+            de = 2 * np.sum((r * dy.T), axis=(self.output_axis, 2))
             return e, de
 
         return e
@@ -166,8 +173,9 @@ class Minkowski(FittingCost):
 
         if dy is not None:
             de = np.sum(
-                np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T, axis=2
-            ).flatten() / (e ** (self.p - 1) + np.finfo(float).eps)
+                np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T,
+                axis=(self.output_axis, 2),
+            ) / (e ** (self.p - 1) + np.finfo(float).eps)
             return e, de
 
         return e
@@ -220,11 +228,9 @@ class SumofPower(FittingCost):
         e = np.sum(np.abs(r) ** self.p)
 
         if dy is not None:
-            de = (
-                self.p
-                * np.sum(
-                    np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T, axis=2
-                ).flatten()
+            de = self.p * np.sum(
+                np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T,
+                axis=(self.output_axis, 2),
             )
             return e, de
 
