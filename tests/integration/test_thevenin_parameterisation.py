@@ -1,5 +1,5 @@
 import numpy as np
-import pybamm
+from pybamm import IDAKLUSolver
 import pytest
 
 import pybop
@@ -32,9 +32,7 @@ class TestTheveninParameterisation:
                 "R1 [Ohm]": self.ground_truth[1],
             }
         )
-        return pybop.empirical.Thevenin(
-            parameter_set=parameter_set, solver=pybamm.IDAKLUSolver()
-        )
+        return pybop.empirical.Thevenin(parameter_set=parameter_set)
 
     @pytest.fixture
     def parameters(self):
@@ -84,6 +82,7 @@ class TestTheveninParameterisation:
         self, model, parameters, dataset, cost_class, optimiser, method
     ):
         # Define the cost to optimise
+        model.solver = IDAKLUSolver()
         problem = pybop.FittingProblem(model, parameters, dataset)
         cost = cost_class(problem)
 

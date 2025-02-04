@@ -1,5 +1,5 @@
 import numpy as np
-import pybamm
+from pybamm import IDAKLUSolver
 import pytest
 
 import pybop
@@ -22,14 +22,14 @@ class TestObservers:
 
     @pytest.fixture
     def parameter_set(self):
-        return pybamm.ParameterValues(
+        return pybop.ParameterSet(
             {"k": self.ground_truth[0], "y0": self.ground_truth[1]}
         )
 
     @pytest.fixture
     def model(self, parameter_set):
         return pybop.ExponentialDecayModel(
-            parameter_set=parameter_set, solver=pybamm.IDAKLUSolver, n_states=1
+            parameter_set=parameter_set, solver=IDAKLUSolver, n_states=1
         )
 
     @pytest.fixture

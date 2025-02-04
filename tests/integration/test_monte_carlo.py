@@ -1,5 +1,5 @@
 import numpy as np
-import pybamm
+from pybamm import IDAKLUSolver
 import pytest
 
 import pybop
@@ -39,8 +39,7 @@ class Test_Sampling_SPM:
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        solver = pybamm.IDAKLUSolver()
-        return pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
+        return pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
     @pytest.fixture
     def parameters(self):
@@ -80,6 +79,7 @@ class Test_Sampling_SPM:
         )
 
         # Define the posterior to optimise
+        model.solver = IDAKLUSolver()
         problem = pybop.FittingProblem(model, parameters, dataset)
         likelihood = pybop.GaussianLogLikelihood(problem, sigma0=0.002 * 1.2)
         return pybop.LogPosterior(likelihood)
