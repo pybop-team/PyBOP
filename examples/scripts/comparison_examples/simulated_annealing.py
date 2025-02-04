@@ -4,9 +4,8 @@ import pybamm
 import pybop
 
 # Define model and use high-performant solver for sensitivities
-solver = pybamm.IDAKLUSolver()
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -26,20 +25,19 @@ parameters = pybop.Parameters(
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
 values = model.predict(t_eval=t_eval)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(
-    0, sigma, len(values["Voltage [V]"].data)
-)
+corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
 
 # Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": values["Time [s]"].data,
+        "Time [s]": t_eval,
         "Current function [A]": values["Current [A]"].data,
         "Voltage [V]": corrupt_values,
     }
 )
 
 # Generate problem, cost function, and optimisation class
+model.solver = pybamm.IDAKLUSolver()
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.RootMeanSquaredError(problem)
 optim = pybop.SimulatedAnnealing(
