@@ -98,13 +98,15 @@ from .problems.design_problem import DesignProblem
 from .costs.base_cost import BaseCost
 from .costs.fitting_costs import (
     FittingCost,
+    ObserverCost,
+)
+from .costs.error_measures import (
     RootMeanSquaredError,
     MeanAbsoluteError,
     MeanSquaredError,
     SumSquaredError,
     Minkowski,
     SumofPower,
-    ObserverCost,
 )
 from .costs.design_costs import (
     DesignCost,
