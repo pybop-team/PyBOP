@@ -11,7 +11,9 @@ class IRPropPlusImpl(PintsOptimiser):
     """
     The iRprop+ algorithm adjusts step sizes based on the sign of the gradient
     in each dimension, increasing step sizes when the sign remains consistent
-    and decreasing them when the sign changes.
+    and decreasing when the sign changes. This implementation includes
+    weight (parameter) backtracking that reverts the previous step in the
+    event of a gradient sign changing.
 
     References:
     - [1] Igel and Hüsken (2003): Empirical Evaluation of Improved Rprop Algorithms.
