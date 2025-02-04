@@ -13,6 +13,7 @@
 
 ## Features
 
+- [#636](https://github.com/pybop-team/PyBOP/pull/636) - Adds `pybop.IRPropPlus` optimiser with corresponding tests.
 - [#635](https://github.com/pybop-team/PyBOP/pull/635) - Adds support for multi-proposal evaluation of list-like objects to `BaseCost` classes.
 - [#635](https://github.com/pybop-team/PyBOP/pull/635) - Adds global parameter sensitivity analysis with method `BaseCost.sensitivity_analysis`. This is computation is added to `OptimisationResult` if optimiser arg `compute_sensitivities` is `True`. An additional arg is added to select the number of samples for analysis: `n_sensitivity_samples`.
 - [#630] (https://github.com/pybop-team/PyBOP/pull/632) - Fisher Information Matrix added to `BaseLikelihood` class.
