@@ -23,7 +23,7 @@ class TestOptimisation:
 
     @pytest.fixture
     def model(self):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set = pybop.ParameterSet("Chen2020")
         x = self.ground_truth
         parameter_set.update(
             {

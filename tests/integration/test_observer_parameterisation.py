@@ -22,7 +22,7 @@ class TestObservers:
 
     @pytest.fixture
     def parameter_set(self):
-        return pybop.ParameterSet(
+        return pybop.ParameterSet.to_pybamm(
             {"k": self.ground_truth[0], "y0": self.ground_truth[1]}
         )
 
