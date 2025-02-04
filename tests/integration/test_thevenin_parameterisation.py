@@ -1,6 +1,6 @@
 import numpy as np
-from pybamm import IDAKLUSolver
 import pytest
+from pybamm import IDAKLUSolver
 
 import pybop
 
