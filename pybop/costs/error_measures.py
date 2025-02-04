@@ -17,9 +17,7 @@ class MeanFittingCost(FittingCost):
         if self.problem is not None:
             x = self.problem.domain_data
             if np.all(x[:-1] <= x[1:]):
-                self.domain_data = (x - x[0]) / (x[-1] - x[0])
-            else:
-                self.domain_data = np.linspace(0, 1, len(x))
+                self.domain_data = x / (x[-1] - x[0]) * (len(x) - 1)
 
 
 class MeanSquaredError(MeanFittingCost):
@@ -36,11 +34,12 @@ class MeanSquaredError(MeanFittingCost):
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        e = np.mean(np.trapz(np.abs(r) ** 2, self.domain_data))
+        L = r.shape[-1] - 1
+        e = np.mean(np.trapz(np.abs(r) ** 2, self.domain_data) / L)
 
         if dy is not None:
             de = 2 * np.mean(
-                np.trapz((r * dy.T), self.domain_data, axis=2),
+                np.trapz((r * dy.T), self.domain_data, axis=2) / L,
                 axis=self.output_axis,
             )
             return e, de
@@ -62,11 +61,12 @@ class RootMeanSquaredError(MeanFittingCost):
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        e = np.sqrt(np.mean(np.trapz(np.abs(r) ** 2, self.domain_data)))
+        L = r.shape[-1] - 1
+        e = np.sqrt(np.mean(np.trapz(np.abs(r) ** 2, self.domain_data) / L))
 
         if dy is not None:
             de = np.mean(
-                np.trapz((r * dy.T), self.domain_data, axis=2),
+                np.trapz((r * dy.T), self.domain_data, axis=2) / L,
                 axis=self.output_axis,
             ) / (e + np.finfo(float).eps)
             return e, de
@@ -88,12 +88,13 @@ class MeanAbsoluteError(MeanFittingCost):
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        e = np.mean(np.trapz(np.abs(r), self.domain_data))
+        L = r.shape[-1] - 1
+        e = np.mean(np.trapz(np.abs(r), self.domain_data) / L)
 
         if dy is not None:
             sign_r = np.sign(r)
             de = np.mean(
-                np.trapz(sign_r * dy.T, self.domain_data, axis=2),
+                np.trapz(sign_r * dy.T, self.domain_data, axis=2) / L,
                 axis=self.output_axis,
             )
             return e, de
