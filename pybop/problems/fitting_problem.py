@@ -172,13 +172,12 @@ class FittingProblem(BaseProblem):
         if isinstance(self.model.solver, IDAKLUJax):
             return {signal: sol[:, i] for i, signal in enumerate(self.signal)}
         if calculate_grad:
-            signals = self.signal + self.additional_variables
             return (
-                {s: sol[s].data for s in signals},
-                {s: sol[s].sensitivities for s in signals},
+                {s: sol[s].data for s in self.output_variables},
+                {s: sol[s].sensitivities for s in self.output_variables},
             )
 
-        return {s: sol[s].data for s in (self.signal + self.additional_variables)}
+        return {s: sol[s].data for s in self.output_variables}
 
     def evaluateS1(self, inputs: Inputs):
         """
