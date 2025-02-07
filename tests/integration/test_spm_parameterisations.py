@@ -143,9 +143,10 @@ class Test_SPM_Parameterisation:
             pybop.SciPyDifferentialEvolution,
             pybop.CuckooSearch,
         ]:
-            common_args["bounds"] = [[0.375, 0.775], [0.375, 0.775]]
+            common_args["bounds"] = {"lower": [0.375, 0.375], "upper": [0.775, 0.775]}
             if isinstance(cost, pybop.GaussianLogLikelihood):
-                common_args["bounds"].extend([[0.0, 0.05]])
+                common_args["bounds"]["lower"].append(0.0)
+                common_args["bounds"]["upper"].append(0.05)
 
         # Set sigma0 and create optimiser
         optim = optimiser(**common_args)
@@ -181,11 +182,9 @@ class Test_SPM_Parameterisation:
         else:
             assert initial_cost < results.final_cost
 
+        np.testing.assert_allclose(results.x[:2], self.ground_truth, atol=1.5e-2)
         if isinstance(optim.cost, pybop.GaussianLogLikelihood):
-            np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
             np.testing.assert_allclose(results.x[-1], self.sigma0, atol=5e-4)
-        else:
-            np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
     @pytest.fixture
     def two_signal_cost(self, parameters, model, cost_cls):
@@ -241,9 +240,10 @@ class Test_SPM_Parameterisation:
         }
 
         if multi_optimiser is pybop.SciPyDifferentialEvolution:
-            common_args["bounds"] = [[0.375, 0.775], [0.375, 0.775]]
+            common_args["bounds"] = {"lower": [0.375, 0.375], "upper": [0.775, 0.775]}
             if isinstance(two_signal_cost, pybop.GaussianLogLikelihood):
-                common_args["bounds"].extend([[0.0, 0.05], [0.0, 0.05]])
+                common_args["bounds"]["lower"].append(0.0)
+                common_args["bounds"]["upper"].append(0.05)
 
         # Test each optimiser
         optim = multi_optimiser(**common_args)
@@ -264,11 +264,9 @@ class Test_SPM_Parameterisation:
         else:
             assert initial_cost < results.final_cost
 
+        np.testing.assert_allclose(results.x[:2], self.ground_truth, atol=1.5e-2)
         if isinstance(two_signal_cost, pybop.GaussianLogLikelihood):
-            np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
             np.testing.assert_allclose(results.x[-2:], combined_sigma0, atol=5e-4)
-        else:
-            np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
     @pytest.mark.parametrize("init_soc", [0.4, 0.6])
     def test_model_misparameterisation(self, parameters, model, init_soc):
