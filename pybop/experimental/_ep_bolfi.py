@@ -237,21 +237,42 @@ class EP_BOLFI(BaseOptimiser):
             search_mean, np.array(ep_bolfi_result["covariance"])
         )
         return BayesianOptimisationResult(
+            optim=self,
             x=model_mean,
-            posterior=posterior,
-            lower_bounds=lower_bounds,
-            upper_bounds=upper_bounds,
-            cost=self.cost,
             n_iterations={
-                "model evaluations": len(
-                    list(ep_bolfi_log["tried parameters"].values())[0]
-                ),
                 "EP iterations": self.ep_iterations,
                 "total feature iterations": self.ep_iterations * len(self.cost.costs),
             },
-            optim=self.optimiser,
+            n_evaluations={
+                "model evaluations": len(
+                    list(ep_bolfi_log["tried parameters"].values())[0]
+                ),
+                # "surrogate evaluations" are not directly accessible
+            },
             time=end - start,
+            posterior=posterior,
+            lower_bounds=lower_bounds,
+            upper_bounds=upper_bounds,
         )
+
+    def run(self):
+        """
+        Run the optimisation and return the optimised parameters and final cost.
+
+        Returns
+        -------
+        results: BayesOptimisationResult
+            The pybop optimisation result class.
+        """
+        self.result = self._run()
+
+        # Store the optimised parameters
+        self.parameters.update(values=self.result.x_best)
+
+        if self.verbose:
+            print(self.result)
+
+        return self.result
 
     def name(self):
         return (
