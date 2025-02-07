@@ -52,8 +52,8 @@ class BaseOptimiser:
     ):
         # First set attributes to default values
         self.parameters = Parameters()
-        self.x0 = optimiser_kwargs.get("x0", [])
-        self.log = dict(x=[], x_best=[], x_search=[], x0=[], cost=[], cost_best=[])
+        self.x0 = optimiser_kwargs.get("x0", None)
+        self.log = dict(x=[], x_best=[], x_search=[], cost=[], cost_best=[])
         self.bounds = None
         self.sigma0 = 0.02
         self.verbose = True
@@ -119,7 +119,6 @@ class BaseOptimiser:
         """
         # Set initial values, if x0 is None, initial values are unmodified.
         self.parameters.update(initial_values=self.unset_options.pop("x0", None))
-        self.log_update(x0=self.parameters.reset_initial_value())
         self.x0 = self.parameters.reset_initial_value(apply_transform=True)
 
         # Set default bounds (for all or no parameters)
@@ -249,7 +248,7 @@ class BaseOptimiser:
 
         return self.cost.sensitivity_analysis(self.n_samples_sensitivity)
 
-    def log_update(self, x=None, x_best=None, cost=None, cost_best=None, x0=None):
+    def log_update(self, x=None, x_best=None, cost=None, cost_best=None):
         """
         Update the log with new values.
 
@@ -304,9 +303,6 @@ class BaseOptimiser:
                 for internal_cost in cost_best
             ]
             self.log["cost_best"].extend(cost_best)
-
-        if x0 is not None:
-            self.log["x0"].extend(x0)
 
     def name(self):
         """

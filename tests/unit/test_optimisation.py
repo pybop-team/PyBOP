@@ -476,7 +476,7 @@ class TestOptimisation:
             Exception,
             match="not a scalar numeric value.",
         ):
-            pybop.Optimisation(cost=invalid_cost)
+            pybop.Optimisation(cost=invalid_cost, x0=[1])
 
         # Test valid cost
         def valid_cost(x):
