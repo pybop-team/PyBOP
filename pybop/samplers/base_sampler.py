@@ -25,7 +25,7 @@ class BaseSampler:
         chains : int
             Number of chains to be used.
         x0
-            List-like initial values of the (search) parameters for Monte Carlo sampling.
+            List-like initial values of the (model) parameters for Monte Carlo sampling.
         cov0
             The covariance matrix to be sampled.
         """
@@ -56,9 +56,8 @@ class BaseSampler:
             raise ValueError("x0 must have the same number of parameters as log_pdf")
 
         # Set initial values, if x0 is None, initial values are unmodified
-        x0_search = x0 if x0 is not None else None
-        if x0_search is not None:
-            x0_model = self._inverse_transform(x0_search, self._log_pdf)
+        x0_model = x0 if x0 is not None else None
+        if x0_model is not None:
             self.parameters.update(initial_values=x0_model)
         self._x0 = self.parameters.reset_initial_value(apply_transform=True).reshape(
             1, -1
