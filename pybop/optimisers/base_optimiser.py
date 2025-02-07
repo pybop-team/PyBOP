@@ -21,26 +21,26 @@ class BaseOptimiser:
     Parameters
     ----------
     cost : pybop.BaseCost or pints.ErrorMeasure
-        An objective function to be optimised, which can be either a pybop.Cost or PINTS error measure
+        An objective function to be optimised, which can be either a pybop.Cost or pints.ErrorMeasure.
     **optimiser_kwargs : optional
-            Valid option keys and their values.
+        Valid option keys and their values, for example:
+        x0 : numpy.ndarray
+            Initial values of the (search) parameters for the optimisation.
+        bounds : dict
+            Dictionary containing bounds for the (search) parameters with keys 'lower' and 'upper'.
+        sigma0 : float or sequence
+            Initial step size or standard deviation in the (search) parameters. Either a scalar value
+            (same for all coordinates) or an array with one entry per dimension.
+            Not all methods will use this information.
+        verbose : bool, optional
+            If True, the optimisation progress is printed (default: False).
+        physical_viability : bool, optional
+            If True, the feasibility of the optimised parameters is checked (default: False).
+        allow_infeasible_solutions : bool, optional
+            If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
     Attributes
     ----------
-    x0 : numpy.ndarray
-        Initial parameter values for the optimisation.
-    bounds : dict
-        Dictionary containing the parameter bounds with keys 'lower' and 'upper'.
-    sigma0 : float or sequence
-        Initial step size or standard deviation around ``x0``. Either a scalar value (one
-        standard deviation for all coordinates) or an array with one entry per dimension.
-        Not all methods will use this information.
-    verbose : bool, optional
-        If True, the optimisation progress is printed (default: False).
-    physical_viability : bool, optional
-        If True, the feasibility of the optimised parameters is checked (default: False).
-    allow_infeasible_solutions : bool, optional
-        If True, infeasible parameter values will be allowed in the optimisation (default: True).
     log : dict
         A log of the parameter values tried during the optimisation and associated costs.
     """
@@ -74,7 +74,12 @@ class BaseOptimiser:
 
         else:
             try:
-                cost_test = cost(self.x0)
+                x0 = optimiser_kwargs.get("x0", [])
+                for i, value in enumerate(x0):
+                    self.parameters.add(
+                        Parameter(name=f"Parameter {i}", initial_value=value)
+                    )
+                cost_test = cost(x0)
                 warnings.warn(
                     "The cost is not an instance of pybop.BaseCost, but let's continue "
                     "assuming that it is a callable function to be minimised.",
@@ -82,10 +87,6 @@ class BaseOptimiser:
                     stacklevel=2,
                 )
                 self.cost = cost
-                for i, value in enumerate(self.x0):
-                    self.parameters.add(
-                        Parameter(name=f"Parameter {i}", initial_value=value)
-                    )
 
             except Exception as e:
                 raise Exception(
@@ -117,18 +118,17 @@ class BaseOptimiser:
         """
         Update the base optimiser options and remove them from the options dictionary.
         """
-        # Set initial values, if x0 is None, initial values are unmodified.
-        self.parameters.update(initial_values=self.unset_options.pop("x0", None))
+        # Set initial values, if x0 is None, initial values are unmodified
+        x0_search = self.unset_options.pop("x0", None)
+        if x0_search is not None:
+            x0_model = self.apply_transformation(x0_search)
+            self.parameters.update(initial_values=x0_model)
         self.x0 = self.parameters.reset_initial_value(apply_transform=True)
 
-        # Set default bounds (for all or no parameters)
-        bounds = self.unset_options.pop(
+        # Set the search bounds (for all or no parameters)
+        self.bounds = self.unset_options.pop(
             "bounds", self.parameters.get_bounds(apply_transform=True)
         )
-        if isinstance(bounds, (np.ndarray, list)):
-            self.parameters.update(bounds=bounds)
-            bounds = self.parameters.get_bounds(apply_transform=True)
-        self.bounds = bounds
 
         # Set default initial standard deviation (for all or no parameters)
         self.sigma0 = self.unset_options.pop(
@@ -212,8 +212,8 @@ class BaseOptimiser:
         for i in range(self.multistart):
             if i >= 1:
                 self.unset_options = self.unset_options_store.copy()
-                self.x0 = self.parameters.rvs(1, apply_transform=True)
-                self.parameters.update(initial_values=self.x0)
+                self.parameters.update(initial_values=self.parameters.rvs(1))
+                self.x0 = self.parameters.reset_initial_value(apply_transform=True)
                 self._set_up_optimiser()
 
             self.result.add_result(self._run())
@@ -273,20 +273,14 @@ class BaseOptimiser:
             else:
                 raise TypeError("Input must be a list, tuple, or numpy array")
 
-        def apply_transformation(values):
-            """Apply transformation if it exists."""
-            if self._transformation:
-                return [self._transformation.to_model(value) for value in values]
-            return values
-
         if x is not None:
             x = convert_to_list(x)
             self.log["x_search"].extend(x)
-            x = apply_transformation(x)
+            x = self.apply_transformation(x)
             self.log["x"].extend(x)
 
         if x_best is not None:
-            x_best = apply_transformation([x_best])
+            x_best = self.apply_transformation([x_best])
             self.log["x_best"].extend(x_best)
 
         if cost is not None:
@@ -340,6 +334,12 @@ class BaseOptimiser:
             # Turn off this feature as there is no model
             self.physical_viability = False
             self.allow_infeasible_solutions = False
+
+    def apply_transformation(self, values):
+        """Apply transformation if it exists."""
+        if self._transformation:
+            return [self._transformation.to_model(value) for value in values]
+        return values
 
     @property
     def needs_sensitivities(self):

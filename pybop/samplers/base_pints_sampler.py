@@ -286,6 +286,3 @@ class BasePintsSampler(BaseSampler):
                 if not self._multi_log_pdf
                 else MultiSequentialEvaluator(f)
             )
-
-    def _inverse_transform(self, y, log_pdf):
-        return log_pdf.transformation.to_model(y) if log_pdf.transformation else y

@@ -19,11 +19,15 @@ class BaseSampler:
         Initialise the base sampler.
 
         Parameters
-        ----------------
-        log_pdf (pybop.LogPosterior or List[pybop.LogPosterior]): The posterior or PDF to be sampled.
-        chains (int): Number of chains to be used.
-        x0: List-like initial condition for Monte Carlo sampling.
-        cov0: The covariance matrix to be sampled.
+        ----------
+        log_pdf : pybop.LogPosterior or List[pybop.LogPosterior]
+            The posterior or PDF to be sampled.
+        chains : int
+            Number of chains to be used.
+        x0
+            List-like initial values of the (search) parameters for Monte Carlo sampling.
+        cov0
+            The covariance matrix to be sampled.
         """
         self._log_pdf = log_pdf
         self._cov0 = cov0
@@ -51,8 +55,11 @@ class BaseSampler:
         if x0 is not None and len(x0) != self.n_parameters:
             raise ValueError("x0 must have the same number of parameters as log_pdf")
 
-        # Set initial values, if x0 is None, initial values are unmodified.
-        self.parameters.update(initial_values=x0 if x0 is not None else None)
+        # Set initial values, if x0 is None, initial values are unmodified
+        x0_search = x0 if x0 is not None else None
+        if x0_search is not None:
+            x0_model = self._inverse_transform(x0_search, self._log_pdf)
+            self.parameters.update(initial_values=x0_model)
         self._x0 = self.parameters.reset_initial_value(apply_transform=True).reshape(
             1, -1
         )
@@ -186,3 +193,9 @@ class BaseSampler:
             logging.info(
                 f"Halting: Maximum number of iterations ({self._iteration}) reached."
             )
+
+    def _inverse_transform(self, y, log_pdf):
+        if isinstance(log_pdf, list):
+            # Take the transformation from the first in the list
+            log_pdf = log_pdf[0]
+        return log_pdf.transformation.to_model(y) if log_pdf.transformation else y
