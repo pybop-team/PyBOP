@@ -142,7 +142,8 @@ from .optimisers._adamw import AdamWImpl
 from .optimisers._gradient_descent import GradientDescentImpl
 from .optimisers._simulated_annealing import SimulatedAnnealingImpl
 from .optimisers._irprop_plus import IRPropPlusImpl
-from .optimisers.base_optimiser import BaseOptimiser, OptimisationResult
+from .optimisers._result import OptimisationResult
+from .optimisers.base_optimiser import BaseOptimiser
 from .optimisers.base_pints_optimiser import BasePintsOptimiser
 from .optimisers.scipy_optimisers import (
     BaseSciPyOptimiser,
