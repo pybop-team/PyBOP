@@ -4,10 +4,10 @@ from typing import Union
 import numpy as np
 from pints import ParallelEvaluator
 
-from pybop import LogPosterior
+from pybop import CostInterface, LogPosterior
 
 
-class BaseSampler:
+class BaseSampler(CostInterface):
     """
     Base class for Monte Carlo samplers.
     """

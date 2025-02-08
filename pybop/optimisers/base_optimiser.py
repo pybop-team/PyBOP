@@ -1,14 +1,19 @@
 import warnings
 from copy import deepcopy
-from typing import Union
 
 import jax.numpy as jnp
 import numpy as np
 
-from pybop import BaseCost, Inputs, OptimisationResult, Parameter, Parameters
+from pybop import (
+    BaseCost,
+    CostInterface,
+    OptimisationResult,
+    Parameter,
+    Parameters,
+)
 
 
-class BaseOptimiser:
+class BaseOptimiser(CostInterface):
     """
     A base class for defining optimisation methods.
 
@@ -164,40 +169,6 @@ class BaseOptimiser:
             If the method has not been implemented by the subclass.
         """
         raise NotImplementedError
-
-    def call_cost(
-        self,
-        x: Union[Inputs, list],
-        cost: Union[BaseCost, callable],
-        calculate_grad: bool = False,
-        apply_transform: bool = True,
-    ) -> Union[float, tuple[float, np.ndarray]]:
-        """
-        Call the cost function to minimise, applying any given transformation to the
-        input parameters.
-
-        Parameters
-        ----------
-        x : Inputs or list-like
-            The input parameters for which the cost and optionally the gradient
-            will be computed.
-        calculate_grad : bool, optional, default=False
-            If True, both the cost and gradient will be computed. Otherwise, only the
-            cost is computed.
-
-        Returns
-        -------
-        float or tuple
-            - If `calculate_grad` is False, returns the computed cost (float).
-            - If `calculate_grad` is True, returns a tuple containing the cost (float)
-              and the gradient (np.ndarray).
-        """
-        return cost(
-            x,
-            calculate_grad=calculate_grad,
-            apply_transform=apply_transform,
-            for_optimiser=True,
-        )
 
     def run(self):
         """

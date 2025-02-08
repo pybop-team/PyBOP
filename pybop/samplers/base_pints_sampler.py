@@ -36,13 +36,20 @@ class BasePintsSampler(BaseSampler):
         """
         Initialise the base PINTS sampler.
 
-        Args:
-            log_pdf (pybop.LogPosterior or List[pybop.LogPosterior]): The distribution(s) to be sampled.
-            chains (int): Number of chains to be used.
-            sampler: The sampler class to be used.
-            x0 (list): Initial states for the chains.
-            cov0: Initial standard deviation for the chains.
-            kwargs: Additional keyword arguments.
+        Parameters
+        ----------
+        log_pdf : pybop.LogPosterior or List[pybop.LogPosterior]
+            The distribution(s) to be sampled.
+        chains : int
+            Number of chains to be used.
+        sampler
+            The sampler class to be used.
+        x0 : list
+            Initial states for the chains.
+        cov0
+            Initial standard deviation for the chains.
+        kwargs
+            Additional keyword arguments.
         """
         super().__init__(log_pdf, x0, chains, cov0)
 
@@ -267,14 +274,17 @@ class BasePintsSampler(BaseSampler):
             raise ValueError("At least one stopping criterion must be set.")
 
     def _create_evaluator(self):
-        common_args = {"apply_transform": True}
+        common_args = {"apply_transform": True, "for_optimiser": False}
 
         if self._needs_sensitivities:
             common_args["calculate_grad"] = True
         if not self._multi_log_pdf:
-            f = partial(self._log_pdf, **common_args)
+            f = partial(self.call_cost, cost=self._log_pdf, **common_args)
         else:
-            f = [partial(pdf, **common_args) for pdf in self._log_pdf]
+            f = [
+                partial(self.call_cost, cost=log_pdf, **common_args)
+                for log_pdf in self._log_pdf
+            ]
 
         if self._parallel:
             if not self._multi_log_pdf:

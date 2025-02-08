@@ -195,7 +195,7 @@ class TestPlots:
         pybop.plot.parameters(optim)
         pybop.plot.contour(optim, steps=5)
 
-    def test_gaussianlogliklihood_plots(self, fitting_problem):
+    def test_gaussianloglikelihood_plots(self, fitting_problem):
         # Test plot of GaussianLogLikelihood
         likelihood = pybop.GaussianLogLikelihood(fitting_problem)
         optim = pybop.CMAES(likelihood, max_iterations=5)
