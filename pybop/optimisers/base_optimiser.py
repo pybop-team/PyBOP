@@ -19,8 +19,8 @@ class BaseOptimiser:
 
     Parameters
     ----------
-    cost : pybop.BaseCost or pints.ErrorMeasure
-        An objective function to be optimised, which can be either a pybop.Cost or pints.ErrorMeasure.
+    cost : pybop.BaseCost or callable
+        An objective function to be optimised, which can be either a pybop.Cost or callable function.
     **optimiser_kwargs : optional
         Valid option keys and their values, for example:
         x0 : numpy.ndarray
@@ -165,10 +165,12 @@ class BaseOptimiser:
         """
         raise NotImplementedError
 
-    def cost_call(
+    def call_cost(
         self,
         x: Union[Inputs, list],
+        cost: Union[BaseCost, callable],
         calculate_grad: bool = False,
+        apply_transform: bool = True,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
         Call the cost function to minimise, applying any given transformation to the
@@ -190,10 +192,10 @@ class BaseOptimiser:
             - If `calculate_grad` is True, returns a tuple containing the cost (float)
               and the gradient (np.ndarray).
         """
-        return self.cost(
+        return cost(
             x,
             calculate_grad=calculate_grad,
-            apply_transform=True,
+            apply_transform=apply_transform,
             for_optimiser=True,
         )
 

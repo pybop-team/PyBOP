@@ -38,7 +38,7 @@ class BaseJaxCost(BaseCost):
         if isinstance(self.model.solver, IDAKLUSolver):
             self.model.jaxify_solver(t_eval=self.problem.domain_data)
 
-    def __call__(
+    def single_call(
         self,
         inputs: Inputs,
         calculate_grad: bool = False,
