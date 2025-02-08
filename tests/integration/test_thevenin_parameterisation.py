@@ -40,13 +40,13 @@ class TestTheveninParameterisation:
             pybop.Parameter(
                 "R0 [Ohm]",
                 prior=pybop.Gaussian(0.05, 0.01),
-                bounds=[0, 0.1],
+                bounds=[1e-6, 0.1],
                 transformation=pybop.LogTransformation(),
             ),
             pybop.Parameter(
                 "R1 [Ohm]",
                 prior=pybop.Gaussian(0.05, 0.01),
-                bounds=[0, 0.1],
+                bounds=[1e-6, 0.1],
                 transformation=pybop.LogTransformation(),
             ),
         )
