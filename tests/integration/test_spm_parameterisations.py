@@ -242,8 +242,8 @@ class Test_SPM_Parameterisation:
         if multi_optimiser is pybop.SciPyDifferentialEvolution:
             common_args["bounds"] = {"lower": [0.375, 0.375], "upper": [0.775, 0.775]}
             if isinstance(two_signal_cost, pybop.GaussianLogLikelihood):
-                common_args["bounds"]["lower"].append(0.0)
-                common_args["bounds"]["upper"].append(0.05)
+                common_args["bounds"]["lower"].extend([0.0, 0.0])
+                common_args["bounds"]["upper"].extend([0.05, 0.05])
 
         # Test each optimiser
         optim = multi_optimiser(**common_args)
