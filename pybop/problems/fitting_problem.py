@@ -55,6 +55,7 @@ class FittingProblem(BaseProblem):
         domain: Optional[str] = None,
         additional_variables: Optional[list[str]] = None,
         initial_state: Optional[dict] = None,
+        build_on_evaluation: Optional[bool] = False,
     ):
         super().__init__(
             parameters=parameters,
@@ -67,6 +68,7 @@ class FittingProblem(BaseProblem):
         )
         self._dataset = dataset.data
         self._n_parameters = len(self.parameters)
+        self.build_on_evaluation = build_on_evaluation
 
         # Check that the dataset contains necessary variables
         dataset.check(domain=self.domain, signal=self.signal)
@@ -158,7 +160,9 @@ class FittingProblem(BaseProblem):
                 sol = func(
                     inputs,
                     self._domain_data,
-                    initial_state=self.initial_state,
+                    initial_state=self.initial_state
+                    if self.build_on_evaluation
+                    else None,
                 )
         except (SolverError, ZeroDivisionError, RuntimeError, ValueError) as e:
             if isinstance(e, ValueError) and str(e) not in self.exception:

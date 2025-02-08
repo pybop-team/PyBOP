@@ -504,7 +504,9 @@ class OptimisationResult:
             ValueError: If the optimised parameters do not produce a finite cost value.
         """
         if not any(np.isfinite(self._final_cost)):
-            raise ValueError("Optimised parameters do not produce a finite cost value")
+            raise ValueError(
+                f"Optimised parameters {self.cost.parameters.as_dict()} do not produce a finite cost value"
+            )
 
     def check_physical_viability(self, x):
         """
