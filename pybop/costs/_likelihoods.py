@@ -322,6 +322,8 @@ class LogPosterior(BaseMetaLikelihood):
         else:
             self._prior = log_prior
 
+        self._prior.parameters = self.parameters
+
     def compute(
         self,
         y: dict,

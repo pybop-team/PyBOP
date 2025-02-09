@@ -72,29 +72,27 @@ def contour(
         cost = call_object
         cost_call = partial(cost)
 
+    parameters = cost.parameters
+    names = list(parameters.keys())
     additional_values = []
-    names = ["", ""]
-    if isinstance(cost, BaseCost):
-        parameters = call_object.parameters
-        names = list(parameters.keys())
 
-        if len(parameters) < 2:
-            raise ValueError("This cost function takes fewer than 2 parameters.")
+    if len(parameters) < 2:
+        raise ValueError("This cost function takes fewer than 2 parameters.")
 
-        if len(parameters) > 2:
-            warnings.warn(
-                "This cost function requires more than 2 parameters. "
-                "Plotting in 2d with fixed values for the additional parameters.",
-                UserWarning,
-                stacklevel=2,
-            )
-            for (
-                i,
-                param,
-            ) in enumerate(parameters):
-                if i > 1:
-                    additional_values.append(param.value)
-                    print(f"Fixed {param.name}:", param.value)
+    if len(parameters) > 2:
+        warnings.warn(
+            "This cost function requires more than 2 parameters. "
+            "Plotting in 2d with fixed values for the additional parameters.",
+            UserWarning,
+            stacklevel=2,
+        )
+        for (
+            i,
+            param,
+        ) in enumerate(parameters):
+            if i > 1:
+                additional_values.append(param.value)
+                print(f"Fixed {param.name}:", param.value)
 
     # Set up parameter bounds
     if bounds is None:
@@ -156,26 +154,22 @@ def contour(
         xf, yf = np.meshgrid(x, y)
         costs = griddata((flat_x, flat_y), flat_costs, (xf, yf), method="linear")
 
-    # Apply the transformation
-    if apply_transform:
-        x = np.asarray(
-            [parameters[names[0]].transformation.to_search(xi) for xi in x]
-        ).flatten()
-        y = np.asarray(
-            [parameters[names[1]].transformation.to_search(yi) for yi in y]
-        ).flatten()
-        bounds[0] = np.asarray(
-            [
-                parameters[names[0]].transformation.to_search(bound)
-                for bound in bounds[0]
-            ]
-        ).flatten()
-        bounds[1] = np.asarray(
-            [
-                parameters[names[1]].transformation.to_search(bound)
-                for bound in bounds[1]
-            ]
-        ).flatten()
+    # Apply any transformation if requested
+    def transform_array_of_values(list_of_values, parameter):
+        """Apply transformation if requested."""
+        if apply_transform:
+            return np.asarray(
+                [
+                    parameter.transformation.to_search(value)
+                    for value in list_of_values
+                ]
+            ).flatten()
+        return list_of_values
+
+    x = transform_array_of_values(x, parameters[names[0]])
+    y = transform_array_of_values(y, parameters[names[1]])
+    bounds[0] = transform_array_of_values(bounds[0], parameters[names[0]])
+    bounds[1] = transform_array_of_values(bounds[1], parameters[names[1]])
 
     # Import plotly only when needed
     go = PlotlyManager().go
@@ -210,20 +204,10 @@ def contour(
         optim_trace = np.asarray([item[:2] for item in optim.log["x"]])
         optim_trace = optim_trace.reshape(-1, 2)
 
-        if apply_transform:
-            optim_trace[:, 0] = [
-                parameters[names[0]].transformation.to_search(p)
-                for p in optim_trace[:, 0]
-            ]
-            optim_trace[:, 1] = [
-                parameters[names[1]].transformation.to_search(p)
-                for p in optim_trace[:, 1]
-            ]
-
         fig.add_trace(
             go.Scatter(
-                x=optim_trace[:, 0],
-                y=optim_trace[:, 1],
+                x=transform_array_of_values(optim_trace[:, 0], parameters[names[0]]),
+                y=transform_array_of_values(optim_trace[:, 1], parameters[names[1]]),
                 mode="markers",
                 marker=dict(
                     color=[i / len(optim_trace) for i in range(len(optim_trace))],
@@ -237,17 +221,10 @@ def contour(
 
         # Plot the initial guess
         if optim.x0 is not None:
-            x0 = optim.x0[0]
-            y0 = optim.x0[1]
-
-            if apply_transform:
-                x0 = parameters[names[0]].transformation.to_search(x0)
-                y0 = parameters[names[1]].transformation.to_search(y0)
-
             fig.add_trace(
                 go.Scatter(
-                    x=[x0],
-                    y=[y0],
+                    x=transform_array_of_values([optim.x0[0]], parameters[names[0]]),
+                    y=transform_array_of_values([optim.x0[1]], parameters[names[1]]),
                     mode="markers",
                     marker_symbol="x",
                     marker=dict(
@@ -263,17 +240,14 @@ def contour(
 
         # Plot optimised value
         if optim.log["x_best"] is not None:
-            x_best = optim.log["x_best"][-1][0]
-            y_best = optim.log["x_best"][-1][1]
-
-            if apply_transform:
-                x_best = parameters[names[0]].transformation.to_search(x_best)
-                y_best = parameters[names[1]].transformation.to_search(y_best)
-
             fig.add_trace(
                 go.Scatter(
-                    x=[x_best],
-                    y=[y_best],
+                    x=transform_array_of_values(
+                        [optim.log["x_best"][-1][0]], parameters[names[0]]
+                    ),
+                    y=transform_array_of_values(
+                        [optim.log["x_best"][-1][1]], parameters[names[1]]
+                    ),
                     mode="markers",
                     marker_symbol="cross",
                     marker=dict(

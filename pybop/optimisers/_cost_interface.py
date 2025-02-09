@@ -15,9 +15,6 @@ class CostInterface:
         self.minimising = True
         self._transformation = None
 
-    def run(self):
-        raise NotImplementedError
-
     def transform_values(self, values):
         """Apply transformation if it exists."""
         if self._transformation:
