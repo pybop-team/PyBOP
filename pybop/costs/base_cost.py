@@ -28,9 +28,9 @@ class BaseCost:
     _de : float
         The gradient of the cost function to use if an error occurs during
         evaluation. Defaults to 1.0.
-    minimising : bool, optional, default=True
-        If False, switches the sign of the cost and gradient to perform maximisation
-        instead of minimisation.
+    minimising : bool, optional
+        If False, tells the optimiser to switch the sign of the cost and gradient
+        to maximise by default rather than minimise (default: True).
     """
 
     class DeferredPrediction:
@@ -63,7 +63,6 @@ class BaseCost:
         self,
         inputs: Union[Inputs, list, np.ndarray],
         calculate_grad: bool = False,
-        for_optimiser: bool = False,
     ) -> Union[float, list, tuple[float, np.ndarray], list[tuple[float, np.ndarray]]]:
         """
         Compute cost and optional gradient for given input parameters.
@@ -77,8 +76,6 @@ class BaseCost:
         calculate_grad : bool, default=False
             If True, both the cost and gradient will be computed. Otherwise, only the
             cost is computed.
-        for_optimiser : bool, default=False
-            If True, adjusts output sign based on minimisation/maximisation setting.
 
         Returns
         -------
@@ -95,11 +92,7 @@ class BaseCost:
 
         results = []
         for inputs in inputs_list:
-            result = self.single_call(
-                inputs,
-                calculate_grad=calculate_grad,
-                for_optimiser=for_optimiser,
-            )
+            result = self.single_call(inputs, calculate_grad=calculate_grad)
             results.append(result)
 
         return results[0] if len(inputs_list) == 1 else results
@@ -108,7 +101,6 @@ class BaseCost:
         self,
         inputs: Union[Inputs, np.ndarray],
         calculate_grad: bool,
-        for_optimiser: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """Evaluate the cost and (optionally) the gradient for a single set of inputs."""
         model_inputs = self.parameters.verify(inputs)
@@ -117,21 +109,14 @@ class BaseCost:
         y = self.DeferredPrediction
         dy = self.DeferredPrediction if calculate_grad else None
 
-        sign = 1 if self.minimising or not for_optimiser else -1
-
         if self._has_separable_problem:
             if calculate_grad:
                 y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
-                cost, grad = self.compute(y, dy=dy)
-                return cost * sign, grad * sign
+                return self.compute(y, dy=dy)
 
             y = self.problem.evaluate(self.problem.parameters.as_dict())
 
-        if calculate_grad:
-            cost, grad = self.compute(y, dy=dy)
-            return cost * sign, grad * sign
-
-        return self.compute(y, dy=dy) * sign
+        return self.compute(y, dy=dy)
 
     def compute(self, y: dict, dy: Optional[np.ndarray]):
         """

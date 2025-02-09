@@ -12,6 +12,7 @@ class CostInterface:
     """
 
     def __init__(self):
+        self.minimising = True
         self._transformation = None
 
     def run(self):
@@ -28,7 +29,6 @@ class CostInterface:
         x: Union[Inputs, list],
         cost: Union[BaseCost, callable],
         calculate_grad: bool = False,
-        for_optimiser: bool = True,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
         Provides the interface between the cost and the optimiser.
@@ -53,25 +53,22 @@ class CostInterface:
             - If `calculate_grad` is True, returns a tuple containing the cost (float)
               and the gradient (np.ndarray).
         """
-        # Apply any transformation
         model_x = self.apply_transformation([x])[0]
 
+        sign = 1 if self.minimising else -1
+
         if calculate_grad:
-            cost, grad = cost.single_call(
-                model_x,
-                calculate_grad=calculate_grad,
-                for_optimiser=for_optimiser,
-            )
+            cost, grad = cost.single_call(model_x, calculate_grad=calculate_grad)
 
             # Compute gradient with respect to the search parameters
             if self._transformation is not None:  #  and np.isfinite(cost):
                 jac = self.transformation.jacobian(x)
                 grad = np.matmul(grad, jac)
 
-            return cost, grad
+            return cost * sign, grad * sign
 
-        return cost(model_x, for_optimiser=for_optimiser)
-    
+        return cost(model_x) * sign
+
     @property
     def transformation(self):
         return self._transformation

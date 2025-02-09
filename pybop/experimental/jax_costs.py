@@ -14,8 +14,7 @@ class BaseJaxCost(BaseCost):
 
     This class implements a cost function using JAX for automatic differentiation
     and efficient gradient computation. It is designed to work with problems
-    defined in the `BaseProblem` framework and supports gradient computation and
-    minimisation for optimisation tasks.
+    defined in the `BaseProblem` framework and supports gradient computation.
 
     Attributes
     ----------
@@ -40,7 +39,6 @@ class BaseJaxCost(BaseCost):
         self,
         inputs: Inputs,
         calculate_grad: bool = False,
-        for_optimiser: bool = False,
     ) -> Union[np.array, tuple[float, np.ndarray]]:
         """
         Compute the JAX cost function and (optionally) its gradient for given inputs.
@@ -51,8 +49,6 @@ class BaseJaxCost(BaseCost):
             Input data for model evaluation.
         calculate_grad : bool, optional
             Whether to calculate and return the gradient.
-        for_optimiser : bool, optional
-            Whether the function is being called for an optimiser.
 
         Returns
         -------
@@ -61,17 +57,15 @@ class BaseJaxCost(BaseCost):
         """
         model_inputs = self.parameters.verify(inputs)
 
-        sign = 1 if self.minimising or not for_optimiser else -1
-
         # Update solver sensitivities if needed
         if calculate_grad != self.model.calculate_sensitivities:
             self._update_solver_sensitivities(calculate_grad)
 
         if calculate_grad:
             y, dy = jax.value_and_grad(self.evaluate)(model_inputs)
-            return y * sign, np.asarray(list(dy.values())) * sign
+            return y, np.asarray(list(dy.values()))
 
-        return self.evaluate(model_inputs) * sign
+        return self.evaluate(model_inputs)
 
     def _update_solver_sensitivities(self, calculate_grad: bool) -> None:
         """

@@ -63,7 +63,6 @@ class BaseOptimiser(CostInterface):
         self.sigma0 = 0.02
         self.verbose = True
         self._needs_sensitivities = False
-        self._minimising = True
         self.physical_viability = False
         self.allow_infeasible_solutions = False
         self.default_max_iterations = 1000
@@ -74,7 +73,7 @@ class BaseOptimiser(CostInterface):
             self.parameters = deepcopy(self.cost.parameters)
             self._transformation = self.parameters.construct_transformation()
             self.set_allow_infeasible_solutions()
-            self._minimising = self.cost.minimising
+            self.minimising = self.cost.minimising
 
         else:
             try:
@@ -310,7 +309,3 @@ class BaseOptimiser(CostInterface):
     @property
     def needs_sensitivities(self):
         return self._needs_sensitivities
-
-    @property
-    def minimising(self):
-        return self._minimising

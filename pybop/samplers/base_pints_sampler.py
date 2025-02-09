@@ -272,7 +272,6 @@ class BasePintsSampler(BaseSampler):
     def _create_evaluator(self):
         common_args = {
             "calculate_grad": self._needs_sensitivities,
-            "for_optimiser": False,
         }
 
         if not self._multi_log_pdf:
