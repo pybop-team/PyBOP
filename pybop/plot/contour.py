@@ -61,8 +61,6 @@ def contour(
     """
     plot_optim = False
     cost = cost_call = call_object
-    parameters = call_object.parameters
-    names = list(parameters.keys())
 
     # Assign input as a cost or optimisation object
     if isinstance(call_object, (BaseOptimiser, Optimisation)):
@@ -74,24 +72,29 @@ def contour(
         cost = call_object
         cost_call = partial(cost)
 
-    if len(parameters) < 2:
-        raise ValueError("This cost function takes fewer than 2 parameters.")
-
     additional_values = []
-    if len(parameters) > 2:
-        warnings.warn(
-            "This cost function requires more than 2 parameters. "
-            "Plotting in 2d with fixed values for the additional parameters.",
-            UserWarning,
-            stacklevel=2,
-        )
-        for (
-            i,
-            param,
-        ) in enumerate(parameters):
-            if i > 1:
-                additional_values.append(param.value)
-                print(f"Fixed {param.name}:", param.value)
+    names = ["",""]
+    if isinstance(cost, BaseCost):
+        parameters = call_object.parameters
+        names = list(parameters.keys())
+
+        if len(parameters) < 2:
+            raise ValueError("This cost function takes fewer than 2 parameters.")
+
+        if len(parameters) > 2:
+            warnings.warn(
+                "This cost function requires more than 2 parameters. "
+                "Plotting in 2d with fixed values for the additional parameters.",
+                UserWarning,
+                stacklevel=2,
+            )
+            for (
+                i,
+                param,
+            ) in enumerate(parameters):
+                if i > 1:
+                    additional_values.append(param.value)
+                    print(f"Fixed {param.name}:", param.value)
 
     # Set up parameter bounds
     if bounds is None:
