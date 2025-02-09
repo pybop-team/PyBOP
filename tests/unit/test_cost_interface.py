@@ -4,7 +4,7 @@ import pytest
 import pybop
 
 
-class TestCostsTransformations:
+class TestCostInterface:
     """
     Class for unit testing cost functions with transformations applied.
     """

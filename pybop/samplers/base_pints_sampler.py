@@ -206,7 +206,7 @@ class BasePintsSampler(BaseSampler):
             reply = self._samplers[i].tell(next(self.fxs_iterator))
             if reply:
                 y, fy, accepted = reply
-                y_store = self.apply_transformation([y])[0]
+                y_store = self.transform_values(y)
                 if self._chains_in_memory:
                     self._samples[i][self._n_samples[i]] = y_store
                 else:
@@ -237,7 +237,7 @@ class BasePintsSampler(BaseSampler):
         self._intermediate_step = reply is None
         if reply:
             ys, fys, accepted = reply
-            ys_store = np.asarray(self.apply_transformation(ys))
+            ys_store = np.asarray(self.transform_list_of_values(ys))
             if self._chains_in_memory:
                 self._samples[:, self._iteration] = ys_store
             else:

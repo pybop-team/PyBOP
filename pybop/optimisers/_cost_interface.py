@@ -18,11 +18,17 @@ class CostInterface:
     def run(self):
         raise NotImplementedError
 
-    def apply_transformation(self, values):
+    def transform_values(self, values):
         """Apply transformation if it exists."""
         if self._transformation:
-            return [self._transformation.to_model(value) for value in values]
+            return self._transformation.to_model(values)
         return values
+
+    def transform_list_of_values(self, list_of_values):
+        """Apply transformation if it exists."""
+        if self._transformation:
+            return [self._transformation.to_model(values) for values in list_of_values]
+        return list_of_values
 
     def call_cost(
         self,
@@ -53,7 +59,7 @@ class CostInterface:
             - If `calculate_grad` is True, returns a tuple containing the cost (float)
               and the gradient (np.ndarray).
         """
-        model_x = self.apply_transformation([x])[0]
+        model_x = self.transform_values(x)
 
         sign = 1 if self.minimising else -1
 

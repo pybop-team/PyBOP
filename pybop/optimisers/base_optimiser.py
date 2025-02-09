@@ -124,7 +124,7 @@ class BaseOptimiser(CostInterface):
         # Set initial values, if x0 is None, initial values are unmodified
         x0_search = self.unset_options.pop("x0", None)
         if x0_search is not None:
-            x0_model = self.apply_transformation([x0_search])[0]
+            x0_model = self.transform_values(x0_search)
             self.parameters.update(initial_values=x0_model)
         self.x0 = self.parameters.reset_initial_value(apply_transform=True)
 
@@ -247,12 +247,12 @@ class BaseOptimiser(CostInterface):
         if x is not None:
             x = convert_to_list(x)
             self.log["x_search"].extend(x)
-            x = self.apply_transformation(x)
+            x = self.transform_list_of_values(x)
             self.log["x"].extend(x)
 
         if x_best is not None:
-            x_best = self.apply_transformation([x_best])
-            self.log["x_best"].extend(x_best)
+            x_best = self.transform_values(x_best)
+            self.log["x_best"].append(x_best)
 
         if cost is not None:
             cost = convert_to_list(cost)
