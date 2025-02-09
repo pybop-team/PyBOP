@@ -342,6 +342,7 @@ class LogPosterior(BaseMetaLikelihood):
         Union[float, Tuple[float, np.ndarray]]
             The posterior cost, and optionally the gradient.
         """
+        # Compute log prior (and gradient)
         if dy is not None:
             if isinstance(self._prior, BasePrior):
                 log_prior, dp = self._prior.logpdfS1(self.parameters.current_value())
@@ -350,19 +351,19 @@ class LogPosterior(BaseMetaLikelihood):
                 log_prior = self._prior.logpdf(self.parameters.current_value())
 
                 # Compute a finite difference approximation of the gradient of the log prior
-                delta = self.parameters.initial_value() * self.gradient_step
+                delta = self.parameters.current_value() * self.gradient_step
                 dp = []
 
                 for parameter, step_size in zip(self.parameters, delta):
                     param_value = parameter.value
-                    upper_value = param_value * (1 + step_size)
-                    lower_value = param_value * (1 - step_size)
+                    upper_value = param_value + step_size
+                    lower_value = param_value - step_size
 
-                    log_prior_upper = parameter.prior.logpdf(upper_value)
-                    log_prior_lower = parameter.prior.logpdf(lower_value)
+                    log_prior_upper = self._prior.logpdf(upper_value)
+                    log_prior_lower = self._prior.logpdf(lower_value)
 
                     gradient = (log_prior_upper - log_prior_lower) / (
-                        2 * step_size * param_value + np.finfo(float).eps
+                        2 * step_size + np.finfo(float).eps
                     )
                     dp.append(gradient)
         else:
@@ -371,6 +372,7 @@ class LogPosterior(BaseMetaLikelihood):
         if not np.isfinite(log_prior).any():
             return (-np.inf, -self.grad_fail) if dy is not None else -np.inf
 
+        # Compute log likelihood and add log prior (and gradients)
         if dy is not None:
             log_likelihood, dl = self._log_likelihood.compute(y, dy)
 

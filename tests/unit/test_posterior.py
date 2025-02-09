@@ -118,10 +118,12 @@ class TestLogPosterior:
 
     def test_non_logpdfS1_prior(self, likelihood):
         # Scipy distribution
-        prior = st.norm(0.8, 0.01)
+        prior = st.norm(loc=0.8, scale=0.01)
         posterior = pybop.LogPosterior(likelihood, log_prior=prior)
+        l, dl = likelihood([0.6], calculate_grad=True)
         p, dp = posterior([0.6], calculate_grad=True)
 
-        # Assert to PyBOP.Gaussian
-        p2, dp2 = pybop.Gaussian(0.8, 0.01).logpdfS1(0.6)
-        np.testing.assert_allclose(dp, dp2, atol=2e-3)
+        # Assert to pybop.Gaussian
+        p2, dp2 = pybop.Gaussian(mean=0.8, sigma=0.01).logpdfS1(0.6)
+        np.testing.assert_allclose(p - l, p2, atol=2e-3)
+        np.testing.assert_allclose(dp - dl, dp2, atol=2e-3)

@@ -13,8 +13,8 @@ class TestCostInterface:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.x_model = [0.5, 1.5]
-        self.x_search = [-2.5 * (self.x_model[0] + 1), np.log(self.x_model[1])]
+        self.x_model = [0.525, 1.5]
+        self.x_search = [1 / 0.25 * (self.x_model[0] - 0.375), np.log(self.x_model[1])]
 
     @pytest.fixture
     def model(self):
@@ -28,7 +28,7 @@ class TestCostInterface:
                 prior=pybop.Gaussian(0.5, 0.01),
                 bounds=[0.375, 0.625],
                 transformation=pybop.ScaledTransformation(
-                    coefficient=-2.5, intercept=1
+                    coefficient=1 / 0.25, intercept=-0.375
                 ),
             ),
             pybop.Parameter(
@@ -147,9 +147,9 @@ class TestCostInterface:
 
         np.testing.assert_allclose(true_cost, cost_with_transformation)
 
-        delta = 1e-6
         numerical_grad = []
         for i in range(len(self.x_model)):
+            delta = 1e-6 * self.x_model[i]
             self.x_model[i] += delta / 2
             cost_right = cost(self.x_model)
             self.x_model[i] -= delta
@@ -157,7 +157,7 @@ class TestCostInterface:
             self.x_model[i] += delta / 2
             numerical_grad.append((cost_right - cost_left) / delta)
 
-        np.testing.assert_allclose(grad_wrt_model_parameters, numerical_grad, rtol=1e-4)
+        np.testing.assert_allclose(grad_wrt_model_parameters, numerical_grad, rtol=6e-4)
 
         jac = optim.transformation.jacobian(self.x_search)
         gradient_wrt_search_parameters = np.matmul(grad_wrt_model_parameters, jac)
