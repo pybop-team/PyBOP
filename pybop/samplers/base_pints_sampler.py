@@ -36,13 +36,20 @@ class BasePintsSampler(BaseSampler):
         """
         Initialise the base PINTS sampler.
 
-        Args:
-            log_pdf (pybop.LogPosterior or List[pybop.LogPosterior]): The distribution(s) to be sampled.
-            chains (int): Number of chains to be used.
-            sampler: The sampler class to be used.
-            x0 (list): Initial states for the chains.
-            cov0: Initial standard deviation for the chains.
-            kwargs: Additional keyword arguments.
+        Parameters
+        ----------
+        log_pdf : pybop.LogPosterior or List[pybop.LogPosterior]
+            The distribution(s) to be sampled.
+        chains : int
+            Number of chains to be used.
+        sampler
+            The sampler class to be used.
+        x0 : list
+            Initial states for the chains.
+        cov0
+            Initial standard deviation for the chains.
+        kwargs
+            Additional keyword arguments.
         """
         super().__init__(log_pdf, x0, chains, cov0)
 
@@ -199,9 +206,7 @@ class BasePintsSampler(BaseSampler):
             reply = self._samplers[i].tell(next(self.fxs_iterator))
             if reply:
                 y, fy, accepted = reply
-                y_store = self._inverse_transform(
-                    y, self._log_pdf[i] if self._multi_log_pdf else self._log_pdf
-                )
+                y_store = self.transform_values(y)
                 if self._chains_in_memory:
                     self._samples[i][self._n_samples[i]] = y_store
                 else:
@@ -232,9 +237,7 @@ class BasePintsSampler(BaseSampler):
         self._intermediate_step = reply is None
         if reply:
             ys, fys, accepted = reply
-            ys_store = np.asarray(
-                [self._inverse_transform(y, self._log_pdf) for y in ys]
-            )
+            ys_store = np.asarray(self.transform_list_of_values(ys))
             if self._chains_in_memory:
                 self._samples[:, self._iteration] = ys_store
             else:
@@ -267,14 +270,17 @@ class BasePintsSampler(BaseSampler):
             raise ValueError("At least one stopping criterion must be set.")
 
     def _create_evaluator(self):
-        common_args = {"apply_transform": True}
+        common_args = {
+            "calculate_grad": self._needs_sensitivities,
+        }
 
-        if self._needs_sensitivities:
-            common_args["calculate_grad"] = True
         if not self._multi_log_pdf:
-            f = partial(self._log_pdf, **common_args)
+            f = partial(self.call_cost, cost=self._log_pdf, **common_args)
         else:
-            f = [partial(pdf, **common_args) for pdf in self._log_pdf]
+            f = [
+                partial(self.call_cost, cost=log_pdf, **common_args)
+                for log_pdf in self._log_pdf
+            ]
 
         if self._parallel:
             if not self._multi_log_pdf:
@@ -286,6 +292,3 @@ class BasePintsSampler(BaseSampler):
                 if not self._multi_log_pdf
                 else MultiSequentialEvaluator(f)
             )
-
-    def _inverse_transform(self, y, log_pdf):
-        return log_pdf.transformation.to_model(y) if log_pdf.transformation else y

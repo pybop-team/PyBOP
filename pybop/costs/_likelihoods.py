@@ -67,10 +67,6 @@ class BaseMetaLikelihood(BaseLikelihood):
         super().__init__(log_likelihood.problem)
 
     @property
-    def transformation(self):
-        return self._log_likelihood.transformation
-
-    @property
     def has_separable_problem(self):
         return self._log_likelihood.has_separable_problem
 
@@ -174,11 +170,10 @@ class GaussianLogLikelihood(BaseLikelihood):
         self._dsigma_scale = dsigma_scale
         self._logpi = -0.5 * self.n_data * np.log(2 * np.pi)
 
-        # Add sigma parameter, join with self.parameters, reapply transformations
+        # Add sigma parameter, join with self.parameters
         self.sigma = Parameters()
         self._add_sigma_parameters(sigma0)
         self.join_parameters(self.sigma)
-        self.transformation = self._parameters.construct_transformation()
 
     def _add_sigma_parameters(self, sigma0):
         sigma0 = [sigma0] if not isinstance(sigma0, list) else sigma0
@@ -327,6 +322,8 @@ class LogPosterior(BaseMetaLikelihood):
         else:
             self._prior = log_prior
 
+        self._prior.parameters = self.parameters
+
     def compute(
         self,
         y: dict,
@@ -347,6 +344,7 @@ class LogPosterior(BaseMetaLikelihood):
         Union[float, Tuple[float, np.ndarray]]
             The posterior cost, and optionally the gradient.
         """
+        # Compute log prior (and gradient)
         if dy is not None:
             if isinstance(self._prior, BasePrior):
                 log_prior, dp = self._prior.logpdfS1(self.parameters.current_value())
@@ -355,19 +353,19 @@ class LogPosterior(BaseMetaLikelihood):
                 log_prior = self._prior.logpdf(self.parameters.current_value())
 
                 # Compute a finite difference approximation of the gradient of the log prior
-                delta = self.parameters.initial_value() * self.gradient_step
+                delta = self.parameters.current_value() * self.gradient_step
                 dp = []
 
                 for parameter, step_size in zip(self.parameters, delta):
                     param_value = parameter.value
-                    upper_value = param_value * (1 + step_size)
-                    lower_value = param_value * (1 - step_size)
+                    upper_value = param_value + step_size
+                    lower_value = param_value - step_size
 
-                    log_prior_upper = parameter.prior.logpdf(upper_value)
-                    log_prior_lower = parameter.prior.logpdf(lower_value)
+                    log_prior_upper = self._prior.logpdf(upper_value)
+                    log_prior_lower = self._prior.logpdf(lower_value)
 
                     gradient = (log_prior_upper - log_prior_lower) / (
-                        2 * step_size * param_value + np.finfo(float).eps
+                        2 * step_size + np.finfo(float).eps
                     )
                     dp.append(gradient)
         else:
@@ -376,6 +374,7 @@ class LogPosterior(BaseMetaLikelihood):
         if not np.isfinite(log_prior).any():
             return (-np.inf, -self.grad_fail) if dy is not None else -np.inf
 
+        # Compute log likelihood and add log prior (and gradients)
         if dy is not None:
             log_likelihood, dl = self._log_likelihood.compute(y, dy)
 

@@ -124,9 +124,10 @@ class Test_Jax_Parameterisation:
             pybop.SciPyDifferentialEvolution,
             pybop.CuckooSearch,
         ]:
-            common_args["bounds"] = [[0.375, 0.775], [0.375, 0.775]]
+            common_args["bounds"] = {"lower": [0.375, 0.375], "upper": [0.775, 0.775]}
             if isinstance(cost, pybop.GaussianLogLikelihood):
-                common_args["bounds"].extend([[0.0, 0.05]])
+                common_args["bounds"]["lower"].append(0.0)
+                common_args["bounds"]["upper"].append(0.05)
 
         # Set sigma0 and create optimiser
         optim = optimiser(**common_args)

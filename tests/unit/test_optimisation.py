@@ -238,10 +238,7 @@ class TestOptimisation:
                 )
                 assert optim.optimiser.population_size() == 100
         else:
-            bounds_list = [
-                (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
-            ]
-            optim = optimiser(cost=cost, bounds=bounds_list, tol=1e-2)
+            optim = optimiser(cost=cost, bounds=bounds, tol=1e-2)
             assert optim.bounds == bounds
 
         if optimiser in [
@@ -271,16 +268,15 @@ class TestOptimisation:
 
             invalid_bounds_cases = [
                 None,
-                [(0, np.inf)],
                 {"upper": [np.inf], "lower": [0.57]},
             ]
 
-            for bounds_case in invalid_bounds_cases:
+            for bounds in invalid_bounds_cases:
                 with pytest.raises(
                     ValueError,
                     match="Bounds must be specified for differential_evolution.",
                 ):
-                    optimiser(cost=cost, bounds=bounds_case)
+                    optimiser(cost=cost, bounds=bounds)
 
         if optimiser in [
             pybop.AdamW,

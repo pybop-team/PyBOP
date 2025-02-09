@@ -163,9 +163,6 @@ class TestSamplingThevenin:
     def get_data(self, model, init_soc):
         initial_state = {"Initial SoC": init_soc}
         experiment = pybop.Experiment(
-            [
-                ("Discharge at 0.5C for 6 minutes (20 second period)",),
-            ]
+            ["Discharge at 0.5C for 6 minutes (20 second period)"]
         )
-        sim = model.predict(initial_state=initial_state, experiment=experiment)
-        return sim
+        return model.predict(initial_state=initial_state, experiment=experiment)

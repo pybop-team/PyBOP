@@ -39,11 +39,17 @@ class TestPlots:
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.68, 0.05),
                 bounds=[0.5, 0.8],
+                transformation=pybop.ScaledTransformation(
+                    coefficient=1 / 0.3, intercept=-0.5
+                ),
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
                 prior=pybop.Gaussian(0.58, 0.05),
                 bounds=[0.4, 0.7],
+                transformation=pybop.ScaledTransformation(
+                    coefficient=1 / 0.3, intercept=-0.4
+                ),
             ),
         )
 
@@ -112,6 +118,8 @@ class TestPlots:
     def test_cost_plots(self, cost):
         # Test plot of Cost objects
         pybop.plot.contour(cost, gradient=True, steps=5)
+
+        pybop.plot.contour(cost, gradient=True, steps=5, apply_transform=True)
 
         # Test without bounds
         for param in cost.parameters:
@@ -195,7 +203,7 @@ class TestPlots:
         pybop.plot.parameters(optim)
         pybop.plot.contour(optim, steps=5)
 
-    def test_gaussianlogliklihood_plots(self, fitting_problem):
+    def test_gaussianloglikelihood_plots(self, fitting_problem):
         # Test plot of GaussianLogLikelihood
         likelihood = pybop.GaussianLogLikelihood(fitting_problem)
         optim = pybop.CMAES(likelihood, max_iterations=5)
