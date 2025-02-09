@@ -73,7 +73,7 @@ def contour(
         cost_call = partial(cost)
 
     additional_values = []
-    names = ["",""]
+    names = ["", ""]
     if isinstance(cost, BaseCost):
         parameters = call_object.parameters
         names = list(parameters.keys())
