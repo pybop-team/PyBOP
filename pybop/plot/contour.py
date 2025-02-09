@@ -13,7 +13,6 @@ def contour(
     call_object: Union[BaseCost, BaseOptimiser],
     gradient: bool = False,
     bounds: Union[np.ndarray, None] = None,
-    apply_transform: bool = False,
     steps: int = 10,
     show: bool = True,
     use_optim_log: bool = False,
@@ -36,8 +35,6 @@ def contour(
     bounds : numpy.ndarray, optional
         A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
         `cost.parameters.get_bounds_for_plotly`.
-    apply_transform : bool, optional
-        Converts contour landscape into transformed landscape that was used by the optimiser.
     steps : int, optional
         The number of grid points to divide the parameter space into along each dimension (default: 10).
     show : bool, optional
@@ -67,10 +64,10 @@ def contour(
         plot_optim = True
         optim = call_object
         cost = optim.cost
-        cost_call = partial(optim.cost, apply_transform=apply_transform)
+        cost_call = partial(optim.cost)
     elif isinstance(call_object, BaseCost):
         cost = call_object
-        cost_call = partial(cost, apply_transform=apply_transform)
+        cost_call = partial(cost)
 
     if isinstance(cost, BaseCost) and len(cost.parameters) < 2:
         raise ValueError("This cost function takes fewer than 2 parameters.")
@@ -93,7 +90,7 @@ def contour(
 
     # Set up parameter bounds
     if bounds is None:
-        bounds = cost.parameters.get_bounds_for_plotly(apply_transform=apply_transform)
+        bounds = cost.parameters.get_bounds_for_plotly()
 
     # Generate grid
     x = np.linspace(bounds[0, 0], bounds[0, 1], steps)

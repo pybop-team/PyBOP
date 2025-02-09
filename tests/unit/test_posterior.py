@@ -75,7 +75,6 @@ class TestLogPosterior:
         assert posterior._prior == prior
         assert posterior.parameters[keys[0]] == likelihood.parameters[keys[0]]
         assert posterior.has_separable_problem == likelihood.has_separable_problem
-        assert posterior.transformation == likelihood.transformation
 
     def test_log_posterior_construction_no_prior(self, likelihood):
         # Test log posterior construction without prior

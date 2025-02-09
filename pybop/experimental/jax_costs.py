@@ -14,8 +14,8 @@ class BaseJaxCost(BaseCost):
 
     This class implements a cost function using JAX for automatic differentiation
     and efficient gradient computation. It is designed to work with problems
-    defined in the `BaseProblem` framework and supports transformations, gradient
-    computation, and minimisation for optimisation tasks.
+    defined in the `BaseProblem` framework and supports gradient computation and
+    minimisation for optimisation tasks.
 
     Attributes
     ----------
@@ -25,8 +25,6 @@ class BaseJaxCost(BaseCost):
         The model associated with the problem.
     n_data : int
         The number of data points in the problem.
-    has_transform : bool
-        Indicates whether input transformations are applied.
     """
 
     def __init__(self, problem: BaseProblem):
@@ -42,7 +40,6 @@ class BaseJaxCost(BaseCost):
         self,
         inputs: Inputs,
         calculate_grad: bool = False,
-        apply_transform: bool = False,
         for_optimiser: bool = False,
     ) -> Union[np.array, tuple[float, np.ndarray]]:
         """
@@ -54,8 +51,6 @@ class BaseJaxCost(BaseCost):
             Input data for model evaluation.
         calculate_grad : bool, optional
             Whether to calculate and return the gradient.
-        apply_transform : bool, optional
-            Whether to apply transformation to the inputs.
         for_optimiser : bool, optional
             Whether the function is being called for an optimiser.
 
@@ -64,10 +59,9 @@ class BaseJaxCost(BaseCost):
         Union[np.ndarray, tuple[float, np.ndarray]]
             The computed cost or a tuple of cost and gradient.
         """
-        # Set-up transformation, inputs, minimising factor
-        self.has_transform = bool(self.transformation and apply_transform)
-        model_inputs = self.parameters.verify(self._apply_transformations(inputs))
-        minimising_factor = 1 if (self.minimising or not for_optimiser) else -1
+        model_inputs = self.parameters.verify(inputs)
+
+        sign = 1 if self.minimising or not for_optimiser else -1
 
         # Update solver sensitivities if needed
         if calculate_grad != self.model.calculate_sensitivities:
@@ -75,11 +69,9 @@ class BaseJaxCost(BaseCost):
 
         if calculate_grad:
             y, dy = jax.value_and_grad(self.evaluate)(model_inputs)
-            return minimising_factor * y, minimising_factor * np.asarray(
-                list(dy.values())
-            )
+            return y * sign, np.asarray(list(dy.values())) * sign
 
-        return minimising_factor * self.evaluate(model_inputs)
+        return self.evaluate(model_inputs) * sign
 
     def _update_solver_sensitivities(self, calculate_grad: bool) -> None:
         """

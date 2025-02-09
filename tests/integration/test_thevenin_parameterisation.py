@@ -70,8 +70,8 @@ class TestTheveninParameterisation:
     @pytest.mark.parametrize(
         "optimiser, method",
         [
-            (pybop.SciPyMinimize, "trust-constr"),
             (pybop.SciPyMinimize, "SLSQP"),
+            (pybop.SciPyMinimize, "trust-constr"),
             (pybop.SciPyMinimize, "L-BFGS-B"),
             (pybop.SciPyMinimize, "COBYLA"),
             (pybop.GradientDescent, ""),

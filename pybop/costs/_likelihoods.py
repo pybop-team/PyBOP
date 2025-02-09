@@ -67,10 +67,6 @@ class BaseMetaLikelihood(BaseLikelihood):
         super().__init__(log_likelihood.problem)
 
     @property
-    def transformation(self):
-        return self._log_likelihood.transformation
-
-    @property
     def has_separable_problem(self):
         return self._log_likelihood.has_separable_problem
 
@@ -174,11 +170,10 @@ class GaussianLogLikelihood(BaseLikelihood):
         self._dsigma_scale = dsigma_scale
         self._logpi = -0.5 * self.n_data * np.log(2 * np.pi)
 
-        # Add sigma parameter, join with self.parameters, reapply transformations
+        # Add sigma parameter, join with self.parameters
         self.sigma = Parameters()
         self._add_sigma_parameters(sigma0)
         self.join_parameters(self.sigma)
-        self.transformation = self._parameters.construct_transformation()
 
     def _add_sigma_parameters(self, sigma0):
         sigma0 = [sigma0] if not isinstance(sigma0, list) else sigma0

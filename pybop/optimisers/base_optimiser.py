@@ -54,6 +54,7 @@ class BaseOptimiser(CostInterface):
         cost,
         **optimiser_kwargs,
     ):
+        super().__init__()
         # First set attributes to default values
         self.parameters = Parameters()
         self.x0 = optimiser_kwargs.get("x0", None)
@@ -61,7 +62,6 @@ class BaseOptimiser(CostInterface):
         self.bounds = None
         self.sigma0 = 0.02
         self.verbose = True
-        self._transformation = None
         self._needs_sensitivities = False
         self._minimising = True
         self.physical_viability = False
@@ -72,7 +72,7 @@ class BaseOptimiser(CostInterface):
         if isinstance(cost, BaseCost):
             self.cost = cost
             self.parameters = deepcopy(self.cost.parameters)
-            self._transformation = self.cost.transformation
+            self._transformation = self.parameters.construct_transformation()
             self.set_allow_infeasible_solutions()
             self._minimising = self.cost.minimising
 
@@ -125,7 +125,7 @@ class BaseOptimiser(CostInterface):
         # Set initial values, if x0 is None, initial values are unmodified
         x0_search = self.unset_options.pop("x0", None)
         if x0_search is not None:
-            x0_model = self.apply_transformation(x0_search)
+            x0_model = self.apply_transformation([x0_search])[0]
             self.parameters.update(initial_values=x0_model)
         self.x0 = self.parameters.reset_initial_value(apply_transform=True)
 
@@ -307,19 +307,9 @@ class BaseOptimiser(CostInterface):
             self.physical_viability = False
             self.allow_infeasible_solutions = False
 
-    def apply_transformation(self, values):
-        """Apply transformation if it exists."""
-        if self._transformation:
-            return [self._transformation.to_model(value) for value in values]
-        return values
-
     @property
     def needs_sensitivities(self):
         return self._needs_sensitivities
-
-    @property
-    def transformation(self):
-        return self._transformation
 
     @property
     def minimising(self):

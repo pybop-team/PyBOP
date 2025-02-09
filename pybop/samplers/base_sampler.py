@@ -29,6 +29,7 @@ class BaseSampler(CostInterface):
         cov0
             The covariance matrix to be sampled.
         """
+        super().__init__()
         self._log_pdf = log_pdf
         self._cov0 = cov0
 
@@ -50,6 +51,8 @@ class BaseSampler(CostInterface):
             raise ValueError(
                 "log_pdf must be a LogPosterior or List[LogPosterior]"
             )  # TODO: Update for more general sampling
+
+        self._transformation = self.parameters.construct_transformation()
 
         # Check initial conditions
         if x0 is not None and len(x0) != self.n_parameters:
@@ -192,9 +195,3 @@ class BaseSampler(CostInterface):
             logging.info(
                 f"Halting: Maximum number of iterations ({self._iteration}) reached."
             )
-
-    def _inverse_transform(self, y, log_pdf):
-        if isinstance(log_pdf, list):
-            # Take the transformation from the first in the list
-            log_pdf = log_pdf[0]
-        return log_pdf.transformation.to_model(y) if log_pdf.transformation else y
