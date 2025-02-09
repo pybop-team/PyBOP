@@ -159,10 +159,7 @@ def contour(
         """Apply transformation if requested."""
         if apply_transform:
             return np.asarray(
-                [
-                    parameter.transformation.to_search(value)
-                    for value in list_of_values
-                ]
+                [parameter.transformation.to_search(value) for value in list_of_values]
             ).flatten()
         return list_of_values
 
