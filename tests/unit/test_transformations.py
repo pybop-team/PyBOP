@@ -64,10 +64,10 @@ class TestTransformation:
         q_transformed = transformation.to_search(p)
         assert np.allclose(q_transformed, q)
         assert np.allclose(
-            transformation.log_jacobian_det(q), np.sum(np.log(np.abs(2.0)))
+            transformation.log_jacobian_det(q), np.sum(np.log(np.abs(1 / 2.0)))
         )
         log_jac_det_S1 = transformation.log_jacobian_det_S1(q)
-        assert log_jac_det_S1[0] == np.sum(np.log(np.abs(2.0)))
+        assert log_jac_det_S1[0] == np.sum(np.log(np.abs(1 / 2.0)))
         assert log_jac_det_S1[1] == np.zeros(1)
 
         jac, jac_S1 = transformation.jacobian_S1(q)
@@ -95,10 +95,10 @@ class TestTransformation:
         q_transformed = transformation.to_search(p)
         assert np.allclose(q_transformed, q)
         assert np.allclose(
-            transformation.log_jacobian_det(q), np.sum(np.log(np.abs(coeff)))
+            transformation.log_jacobian_det(q), np.sum(np.log(np.abs(1 / coeff)))
         )
         log_jac_det_S1 = transformation.log_jacobian_det_S1(q)
-        assert log_jac_det_S1[0] == np.sum(np.log(np.abs(coeff)))
+        assert log_jac_det_S1[0] == np.sum(np.log(np.abs(1 / coeff)))
         assert log_jac_det_S1[1] == np.zeros(1)
 
         jac, jac_S1 = transformation.jacobian_S1(q)
@@ -171,7 +171,7 @@ class TestTransformation:
         np.testing.assert_allclose(jac_S1[1][0, :, :], np.zeros((3, 3)))
         np.testing.assert_allclose(jac_S1[1][1, :, :], np.zeros((3, 3)))
 
-        correct_output = np.sum(np.log(np.abs(2.0))) + np.sum(10)
+        correct_output = np.sum(np.log(np.abs(1 / 2.0))) + np.sum(10)
         log_jac_det = transformation.log_jacobian_det(q)
         assert log_jac_det == correct_output
 
