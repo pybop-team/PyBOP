@@ -8,6 +8,7 @@
 
 ## Breaking Changes
 
+- [#663](https://github.com/pybop-team/PyBOP/pull/663) - Changes default `initial_state` logic for `FittingProblem`. Building the model for every evaluation now requires `build_on_evaluation` to be `True` (default: `False`).
 
 # [v25.1](https://github.com/pybop-team/PyBOP/tree/v25.1) - 2025-02-03
 

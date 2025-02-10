@@ -14,8 +14,8 @@ models = [
 ]
 
 # Generate data
-sigma = 2e-4
-soc = 0.05
+sigma = 5e-4
+soc = [0.15, 0.5]
 experiment = pybop.Experiment(
     [
         "Rest for 2 seconds (1 second period)",
@@ -26,25 +26,26 @@ experiment = pybop.Experiment(
     ]
 )
 for model, name in models:
-    values = model.predict(
-        initial_state={"Initial SoC": soc},
-        experiment=experiment,
-        parameter_set=parameter_set,
-    )
+    for s in soc:
+        values = model.predict(
+            initial_state={"Initial SoC": s},
+            experiment=experiment,
+            parameter_set=parameter_set,
+        )
 
-    def noise(sigma, dict_obj):
-        return np.random.normal(0, sigma, len(dict_obj["Voltage [V]"].data))
+        def noise(sigma, dict_obj):
+            return np.random.normal(0, sigma, len(dict_obj["Voltage [V]"].data))
 
-    pd.DataFrame(
-        {
-            "Time [s]": np.round(values["Time [s]"].data, decimals=5),
-            "Current function [A]": values["Current [A]"].data,
-            "Voltage [V]": values["Voltage [V]"].data + noise(sigma, values),
-            "Bulk open-circuit voltage [V]": values[
-                "Bulk open-circuit voltage [V]"
-            ].data
-            + noise(sigma, values),
-        }
-    ).drop_duplicates(subset=["Time [s]"]).to_csv(
-        f"{name}_pulse_{int(soc * 100)}.csv", index=False
-    )
+        pd.DataFrame(
+            {
+                "Time [s]": np.round(values["Time [s]"].data, decimals=5),
+                "Current function [A]": values["Current [A]"].data,
+                "Voltage [V]": values["Voltage [V]"].data + noise(sigma, values),
+                "Bulk open-circuit voltage [V]": values[
+                    "Bulk open-circuit voltage [V]"
+                ].data
+                + noise(sigma, values),
+            }
+        ).drop_duplicates(subset=["Time [s]"]).to_csv(
+            f"{name}_pulse_{int(s * 100)}.csv", index=False
+        )

@@ -55,7 +55,7 @@ problem = pybop.FittingProblem(
     initial_state={"Initial open-circuit voltage [V]": csv_data[0, 2]},
     build_on_evaluation=False,
 )
-cost = pybop.SumSquaredError(problem)
+cost = pybop.RootMeanSquaredError(problem)
 
 optim = pybop.IRPropPlus(
     cost,
@@ -63,7 +63,7 @@ optim = pybop.IRPropPlus(
     max_iterations=100,
     max_unchanged_iterations=20,
     compute_sensitivities=True,
-    n_sensitivity_samples=128,  # Decrease samples for CI (increase for higher accuracy)
+    n_sensitivity_samples=64,  # Decrease samples for CI (increase for higher accuracy)
 )
 
 # Run optimisation

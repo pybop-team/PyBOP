@@ -5,7 +5,7 @@ import pybamm
 import pybop
 
 # Define model and use high-performant solver for sensitivities
-solver = pybamm.CasadiSolver()
+solver = pybamm.CasadiSolver(atol=1e-7, rtol=1e-7)
 parameter_set = pybop.ParameterSet("Chen2020")
 models = [
     (pybop.lithium_ion.DFN(parameter_set=parameter_set, solver=solver), "dfn"),
@@ -14,7 +14,7 @@ models = [
 ]
 
 # Generate data
-sigma = 0.001
+sigma = 5e-4
 soc = 0.75
 experiment = pybop.Experiment(
     [

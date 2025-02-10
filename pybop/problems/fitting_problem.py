@@ -32,6 +32,9 @@ class FittingProblem(BaseProblem):
         Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
     initial_state : dict, optional
         A valid initial state, e.g. the initial open-circuit voltage (default: None).
+    build_on_evaluation : bool, optional
+        If true, the underlying model is rebuild on every problem evaluation (default: False).
+        NOTE: Sensitivities are not support when rebuilding the model on every evaluation.
 
     Additional Attributes
     ---------------------
@@ -91,7 +94,9 @@ class FittingProblem(BaseProblem):
 
     def set_initial_state(self, initial_state: Optional[dict] = None):
         """
-        Set the initial state to be applied to evaluations of the problem.
+        Set the initial state to be applied to either the first model build,
+        or for every problem evaluation. This depends on the boolean argument
+        `build_on_evaluation`.
 
         Parameters
         ----------
