@@ -41,6 +41,7 @@ time_domain_SPMe = pybop.lithium_ion.SPMe(
     parameter_set=parameter_set,
     options=model_options,
 )
+time_domain_SPMe.solver = time_domain_SPMe.pybamm_model.default_solver
 simulation = time_domain_SPMe.predict(
     initial_state=initial_state, experiment=experiment
 )

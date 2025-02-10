@@ -110,6 +110,7 @@ class BaseModel:
         self.name = name
         self.eis = eis
         self._calculate_sensitivities = False
+        self._sensitivities_available = not eis  # Not available for EIS, use as default
 
         self._parameter_set = ParameterSet.to_pybamm(parameter_set)
         self.param_checker = check_params
@@ -118,6 +119,8 @@ class BaseModel:
         self.parameters = Parameters()
         self.param_check_counter = 0
         self.allow_infeasible_solutions = True
+
+        self._pybamm_solution = None
 
     def build(
         self,
@@ -151,6 +154,8 @@ class BaseModel:
         check_model : bool, optional
             If True, the model will be checked for correctness after construction.
         """
+        self._pybamm_solution = None
+
         if parameters is not None or inputs is not None:
             # Classify parameters and clear the model if rebuild required
             inputs = self.classify_parameters(parameters, inputs=inputs)
@@ -337,6 +342,7 @@ class BaseModel:
         self._built_initial_soc = None
         self._mesh = None
         self._disc = None
+        self._geometry = self._unprocessed_model.default_geometry
 
     def classify_parameters(
         self, parameters: Optional[Parameters] = None, inputs: Optional[Inputs] = None
@@ -374,8 +380,9 @@ class BaseModel:
         for key in standard_parameters.keys():
             self._parameter_set[key] = "[input]"
 
-        # Clear any built model, update the parameter set and geometry if rebuild required
+        # Clear any built model and update the parameter set if rebuild required
         if rebuild_parameters:
+            self._sensitivities_available = False
             requires_rebuild = False
             # A rebuild is required if any of the rebuild parameter values have changed
             for key, value in rebuild_parameters.items():
@@ -383,7 +390,6 @@ class BaseModel:
                     requires_rebuild = True
             if requires_rebuild:
                 self.clear()
-                self._geometry = self.pybamm_model.default_geometry
                 # Update both the active and unprocessed parameter sets for consistency
                 self._parameter_set.update(rebuild_parameters)
                 self._unprocessed_parameter_set.update(rebuild_parameters)
@@ -475,7 +481,7 @@ class BaseModel:
         ):
             raise ValueError("These parameter values are infeasible.")
 
-        return self.solver.solve(
+        self._pybamm_solution = self.solver.solve(
             self._built_model,
             inputs=inputs,
             t_eval=[t_eval[0], t_eval[-1]]
@@ -483,6 +489,8 @@ class BaseModel:
             else t_eval,
             t_interp=t_eval if self._solver.supports_interp else None,
         )
+
+        return self._pybamm_solution
 
     def simulateEIS(
         self, inputs: Inputs, f_eval: list, initial_state: Optional[dict] = None
@@ -635,7 +643,7 @@ class BaseModel:
         ):
             raise ValueError("These parameter values are infeasible.")
 
-        return self._solver.solve(
+        self._pybamm_solution = self._solver.solve(
             self._built_model,
             inputs=inputs,
             t_eval=[t_eval[0], t_eval[-1]]
@@ -644,6 +652,8 @@ class BaseModel:
             calculate_sensitivities=True,
             t_interp=t_eval if self._solver.supports_interp else None,
         )
+
+        return self._pybamm_solution
 
     def predict(
         self,
@@ -698,6 +708,7 @@ class BaseModel:
             )
         elif not self._unprocessed_model._built:  # noqa: SLF001
             self._unprocessed_model.build_model()
+        self._pybamm_solution = None
 
         no_parameter_set = parameter_set is None
         parameter_set = (
@@ -724,22 +735,35 @@ class BaseModel:
         ):
             raise ValueError("These parameter values are infeasible.")
 
+        simulation_args = {
+            "model": self._unprocessed_model,
+            "geometry": self._unprocessed_model.default_geometry,
+            "parameter_values": parameter_set,
+            "submesh_types": self._submesh_types,
+            "var_pts": self._var_pts,
+            "spatial_methods": self._spatial_methods,
+            "solver": self._solver,
+        }
+
         if experiment is not None:
-            return pybamm.Simulation(
-                model=self._unprocessed_model,
-                experiment=experiment,
-                parameter_values=parameter_set,
+            self._pybamm_solution = pybamm.Simulation(
+                **simulation_args, experiment=experiment
             ).solve(initial_soc=initial_state)
         elif t_eval is not None:
-            return pybamm.Simulation(
-                model=self._unprocessed_model,
-                parameter_values=parameter_set,
-            ).solve(t_eval=t_eval, initial_soc=initial_state)
+            self._pybamm_solution = pybamm.Simulation(**simulation_args).solve(
+                initial_soc=initial_state,
+                t_eval=[t_eval[0], t_eval[-1]]
+                if isinstance(self._solver, IDAKLUSolver)
+                else t_eval,
+                t_interp=t_eval if self._solver.supports_interp else None,
+            )
         else:
             raise ValueError(
                 "The predict method requires either an experiment or t_eval "
                 "to be specified."
             )
+
+        return self._pybamm_solution
 
     def jaxify_solver(self, t_eval, calculate_sensitivities=False):
         """
@@ -850,16 +874,20 @@ class BaseModel:
         """
         model_class = type(self)
         if self.pybamm_model is None:
-            model_args = {"parameter_set": self._parameter_set.copy()}
+            model_args = {
+                "name": self.name,
+                "parameter_set": self._parameter_set.copy(),
+            }
         else:
             model_args = {
-                "options": self._unprocessed_model.options,
+                "name": self.name,
+                "options": copy.copy(self._unprocessed_model.options),
+                "geometry": self._unprocessed_model.default_geometry,
                 "parameter_set": self._unprocessed_parameter_set.copy(),
-                "geometry": self.pybamm_model.default_geometry.copy(),
-                "submesh_types": self.pybamm_model.default_submesh_types.copy(),
-                "var_pts": self.pybamm_model.default_var_pts.copy(),
-                "spatial_methods": self.pybamm_model.default_spatial_methods.copy(),
-                "solver": self.pybamm_model.default_solver.copy(),
+                "submesh_types": self.submesh_types.copy(),
+                "var_pts": self.var_pts.copy(),
+                "spatial_methods": self.spatial_methods.copy(),
+                "solver": self.solver.copy(),
                 "eis": copy.copy(self.eis),
             }
 
@@ -981,12 +1009,21 @@ class BaseModel:
         return self._spatial_methods
 
     @property
+    def pybamm_solution(self):
+        return self._pybamm_solution
+
+    @property
     def solver(self):
         return self._solver
 
     @property
     def calculate_sensitivities(self):
         return self._calculate_sensitivities
+
+    @property
+    def sensitivities_available(self):
+        """True if sensitivities are available."""
+        return self._sensitivities_available
 
     @solver.setter
     def solver(self, solver):

@@ -31,8 +31,8 @@ class TestOptimisation:
     def one_parameter(self):
         return pybop.Parameter(
             "Positive electrode active material volume fraction",
-            prior=pybop.Gaussian(0.6, 0.02),
-            bounds=[0.58, 0.62],
+            prior=pybop.Gaussian(0.5, 0.02),
+            bounds=[0.48, 0.52],
         )
 
     @pytest.fixture
@@ -40,13 +40,13 @@ class TestOptimisation:
         return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.6, 0.2),
+                prior=pybop.Gaussian(0.6, 0.02),
                 bounds=[0.58, 0.62],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.55, 0.05),
-                bounds=[0.53, 0.57],
+                prior=pybop.Gaussian(0.5, 0.05),
+                bounds=[0.48, 0.52],
             ),
         )
 
@@ -89,6 +89,7 @@ class TestOptimisation:
             (pybop.XNES, "Exponential Natural Evolution Strategy (xNES)", False),
             (pybop.PSO, "Particle Swarm Optimisation (PSO)", False),
             (pybop.IRPropMin, "iRprop-", True),
+            (pybop.IRPropPlus, "iRprop+", True),
             (pybop.NelderMead, "Nelder-Mead", False),
             (pybop.RandomSearch, "Random Search", False),
             (pybop.SimulatedAnnealing, "Simulated Annealing", False),
@@ -137,6 +138,7 @@ class TestOptimisation:
             pybop.XNES,
             pybop.PSO,
             pybop.IRPropMin,
+            pybop.IRPropPlus,
             pybop.NelderMead,
             pybop.CuckooSearch,
             pybop.RandomSearch,
@@ -189,7 +191,7 @@ class TestOptimisation:
         check_incorrect_update(optim)
 
         # Test multistart
-        multistart_optim = optimiser(cost, multistart=2, max_iterations=6)
+        multistart_optim = optimiser(cost, max_iterations=6, multistart=2)
         check_multistart(multistart_optim, 6, 2)
 
         if optimiser in [pybop.GradientDescent, pybop.AdamW, pybop.NelderMead]:
@@ -201,7 +203,7 @@ class TestOptimisation:
                 optim, {"upper": [np.inf], "lower": [0.57]}, should_raise=True
             )
         else:
-            bounds = {"upper": [0.63], "lower": [0.57]}
+            bounds = {"upper": [0.53], "lower": [0.47]}
             check_bounds_handling(optim, cost_bounds)
             optim = optimiser(cost=cost, bounds=bounds)
             assert optim.bounds == bounds
@@ -282,6 +284,7 @@ class TestOptimisation:
 
         if optimiser in [
             pybop.AdamW,
+            pybop.IRPropPlus,
             pybop.CuckooSearch,
             pybop.GradientDescent,
             pybop.RandomSearch,
@@ -370,7 +373,7 @@ class TestOptimisation:
         else:
             x0 = cost.parameters.initial_value()
             assert optim.x0 == x0
-            x0_new = np.array([0.6])
+            x0_new = np.array([0.5])
             optim = optimiser(cost=cost, x0=x0_new)
             assert optim.x0 == x0_new
             assert optim.x0 != x0
@@ -382,21 +385,17 @@ class TestOptimisation:
 
     def test_randomsearch_bounds(self, two_param_cost):
         # Test clip_candidates with bound
-        bounds = {"upper": [0.62, 0.57], "lower": [0.58, 0.53]}
-        optimiser = pybop.RandomSearch(
-            cost=two_param_cost, bounds=bounds, max_iterations=1
-        )
-        candidates = np.array([[0.57, 0.52], [0.63, 0.58]])
-        clipped_candidates = optimiser.optimiser.clip_candidates(candidates)
-        expected_clipped = np.array([[0.58, 0.53], [0.62, 0.57]])
+        bounds = {"upper": [0.62, 0.54], "lower": [0.58, 0.46]}
+        optim = pybop.RandomSearch(cost=two_param_cost, bounds=bounds, max_iterations=1)
+        candidates = np.array([[0.57, 0.55], [0.63, 0.44]])
+        clipped_candidates = optim.optimiser.clip_candidates(candidates)
+        expected_clipped = np.array([[0.58, 0.54], [0.62, 0.46]])
         assert np.allclose(clipped_candidates, expected_clipped)
 
         # Test clip_candidates without bound
-        optimiser = pybop.RandomSearch(
-            cost=two_param_cost, bounds=None, max_iterations=1
-        )
+        optim = pybop.RandomSearch(cost=two_param_cost, bounds=None, max_iterations=1)
         candidates = np.array([[0.57, 0.52], [0.63, 0.58]])
-        clipped_candidates = optimiser.optimiser.clip_candidates(candidates)
+        clipped_candidates = optim.optimiser.clip_candidates(candidates)
         assert np.allclose(clipped_candidates, candidates)
 
     def test_randomsearch_ask_without_bounds(self, two_param_cost):
@@ -421,6 +420,12 @@ class TestOptimisation:
     def test_adamw_impl_bounds(self):
         with pytest.warns(UserWarning, match="Boundaries ignored by AdamW"):
             pybop.AdamWImpl(x0=[0.1], boundaries=[0.0, 0.2])
+
+    def test_irprop_plus_impl_incorrect_steps(self):
+        with pytest.raises(ValueError, match="Minimum step size"):
+            optim = pybop.IRPropPlusImpl(x0=[0.1])
+            optim.step_max = 1e-8
+            optim.ask()
 
     def test_scipy_minimize_with_jac(self, cost):
         # Check a method that uses gradient information
@@ -605,6 +610,7 @@ class TestOptimisation:
             f"  Best result from {results.n_runs} run(s).\n"
             f"  Initial parameters: {results.x0}\n"
             f"  Optimised parameters: {results.x}\n"
+            f"  Total-order sensitivities:{results.sense_format}\n"
             f"  Diagonal Fisher Information entries: {None}\n"
             f"  Final cost: {results.final_cost}\n"
             f"  Optimisation time: {results.time} seconds\n"
@@ -652,6 +658,7 @@ class TestOptimisation:
             f"  Best result from {results.n_runs} run(s).\n"
             f"  Initial parameters: {results.x0}\n"
             f"  Optimised parameters: {results.x}\n"
+            f"  Total-order sensitivities:{results.sense_format}\n"
             f"  Diagonal Fisher Information entries: {None}\n"
             f"  Final cost: {results.final_cost}\n"
             f"  Optimisation time: {results.time} seconds\n"
@@ -728,7 +735,14 @@ class TestOptimisation:
             pybop.OptimisationResult(optim=optim, x=[1e-5], n_iterations=1)
 
         # Test list-like functionality with "best" properties
-        optim = pybop.Optimisation(cost=cost, n_iterations=1, multistart=3)
+        optim = pybop.Optimisation(
+            cost=cost,
+            x0=[0.5],
+            n_iterations=1,
+            multistart=3,
+            compute_sensitivities=True,
+            n_samples_sensitivity=8,
+        )
         results = optim.run()
 
         assert results.pybamm_solution_best in results.pybamm_solution
@@ -738,3 +752,4 @@ class TestOptimisation:
         assert results.n_iterations_best in results.n_iterations
         assert results.n_evaluations_best in results.n_evaluations
         assert results.x0_best in results.x0
+        assert isinstance(results.sensitivities, dict)

@@ -23,7 +23,7 @@ class BenchmarkModel:
         set_random_seed()
 
         # Create model instance
-        self.model = model(parameter_set=pybop.ParameterSet.pybamm(parameter_set))
+        self.model = model(parameter_set=pybop.ParameterSet(parameter_set))
 
         # Define fitting parameters
         parameters = pybop.Parameters(

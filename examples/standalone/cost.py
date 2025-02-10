@@ -36,6 +36,15 @@ class StandaloneCost(pybop.BaseCost):
         """
         super().__init__(problem)
 
+        self._parameters = pybop.Parameters(
+            pybop.Parameter(
+                "x",
+                initial_value=4.2,
+                bounds=[-1, 10],
+            ),
+        )
+        self.x0 = self._parameters.initial_value()
+
     def compute(
         self, y: dict = None, dy: np.ndarray = None, calculate_grad: bool = False
     ):
@@ -50,4 +59,4 @@ class StandaloneCost(pybop.BaseCost):
         float
             The calculated cost value for the given parameter.
         """
-        return np.asarray([sum(y[signal]) for signal in self.signal]) ** 2 + 43
+        return np.asarray(self._parameters["x"].value ** 2 + 42)

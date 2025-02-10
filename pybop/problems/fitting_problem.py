@@ -2,7 +2,7 @@ import warnings
 from typing import Optional
 
 import numpy as np
-from pybamm import IDAKLUJax, Solution, SolverError
+from pybamm import IDAKLUJax, SolverError
 
 from pybop import BaseModel, BaseProblem, Dataset
 from pybop.parameters.parameter import Inputs, Parameters
@@ -176,8 +176,6 @@ class FittingProblem(BaseProblem):
 
         if self.eis:
             return sol
-
-        self._solution = sol if isinstance(sol, Solution) else None
 
         if isinstance(self.model.solver, IDAKLUJax):
             return {signal: sol[:, i] for i, signal in enumerate(self.signal)}

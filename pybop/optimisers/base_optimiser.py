@@ -6,7 +6,7 @@ import jax.numpy as jnp
 import numpy as np
 from pybamm import Solution
 
-from pybop import BaseCost, BaseJaxCost, Inputs, Parameter, Parameters
+from pybop import BaseCost, BaseLikelihood, Inputs, Parameter, Parameters
 
 
 class BaseOptimiser:
@@ -146,6 +146,14 @@ class BaseOptimiser:
         # Set multistart
         self.multistart = self.unset_options.pop("multistart", 1)
 
+        # Parameter sensitivities
+        self.compute_sensitivities = self.unset_options.pop(
+            "compute_sensitivities", False
+        )
+        self.n_samples_sensitivity = self.unset_options.pop(
+            "n_sensitivity_samples", 256
+        )
+
     def _set_up_optimiser(self):
         """
         Parse optimiser options and prepare the optimiser.
@@ -214,6 +222,9 @@ class BaseOptimiser:
         # Store the optimised parameters
         self.parameters.update(values=self.result.x_best)
 
+        # Compute sensitivities
+        self.result.sensitivities = self._parameter_sensitivities()
+
         if self.verbose:
             print(self.result)
 
@@ -231,6 +242,12 @@ class BaseOptimiser:
             If the method has not been implemented by the subclass.
         """
         raise NotImplementedError
+
+    def _parameter_sensitivities(self):
+        if not self.compute_sensitivities:
+            return None
+
+        return self.cost.sensitivity_analysis(self.n_samples_sensitivity)
 
     def log_update(self, x=None, x_best=None, cost=None, cost_best=None, x0=None):
         """
@@ -316,8 +333,8 @@ class BaseOptimiser:
         self.allow_infeasible_solutions = allow
 
         if (
-            hasattr(self.cost, "problem")
-            and hasattr(self.cost.problem, "model")
+            isinstance(self.cost, BaseCost)
+            and self.cost.problem is not None
             and self.cost.problem.model is not None
         ):
             self.cost.problem.model.allow_infeasible_solutions = (
@@ -331,6 +348,10 @@ class BaseOptimiser:
     @property
     def needs_sensitivities(self):
         return self._needs_sensitivities
+
+    @property
+    def transformation(self):
+        return self._transformation
 
     @property
     def minimising(self):
@@ -360,20 +381,21 @@ class OptimisationResult:
         optim: BaseOptimiser,
         x: Union[Inputs, np.ndarray] = None,
         final_cost: Optional[float] = None,
+        sensitivities: Optional[dict] = None,
         n_iterations: Optional[int] = None,
         n_evaluations: Optional[int] = None,
         time: Optional[float] = None,
         scipy_result=None,
-        pybamm_solution=None,
     ):
         self.optim = optim
         self.cost = self.optim.cost
         self.minimising = self.optim.minimising
-        self._transformation = self.optim._transformation  # noqa: SLF001
+        self._transformation = self.optim.transformation
         self.n_runs = 0
         self._best_run = None
         self._x = []
         self._final_cost = []
+        self._sensitivities = None
         self._fisher = []
         self._n_iterations = []
         self._n_evaluations = []
@@ -397,17 +419,29 @@ class OptimisationResult:
                 else None
             )
 
-            # Calculate Fisher Information if JAX Likelihood
-            fisher = (
-                self.cost.observed_fisher(x)
-                if isinstance(self.cost, BaseJaxCost)
-                else None
-            )
+            # Evaluate the problem once more to update the solution
+            try:
+                self.cost(x)
+                pybamm_solution = self.cost.pybamm_solution
+            except Exception:
+                warnings.warn(
+                    "Failed to evaluate the model with best fit parameters.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                pybamm_solution = None
+
+            # Calculate Fisher Information if Likelihood
+            if isinstance(self.cost, BaseLikelihood):
+                fisher = self.cost.observed_fisher(x)
+                diag_fish = np.diag(fisher) if fisher is not None else None
+            else:
+                diag_fish = None
 
             self._extend(
                 x=[x],
                 final_cost=[final_cost],
-                fisher=[fisher],
+                fisher=[diag_fish],
                 n_iterations=[n_iterations],
                 n_evaluations=[n_evaluations],
                 time=[time],
@@ -481,7 +515,11 @@ class OptimisationResult:
         x : array-like
             Optimised parameter values.
         """
-        if self.cost.problem.model is None:
+        if (
+            not isinstance(self.cost, BaseCost)
+            or self.cost.problem is None
+            or self.cost.problem.model is None
+        ):
             warnings.warn(
                 "No model within problem class, can't check physical viability.",
                 UserWarning,
@@ -508,11 +546,21 @@ class OptimisationResult:
         Returns:
             str: A formatted string containing optimisation result information.
         """
+        # Format the sensitivities
+        self.sense_format = ""
+        if self._sensitivities:
+            self.sense_format = ""
+            for value, conf in zip(
+                self._sensitivities["ST"], self._sensitivities["ST_conf"]
+            ):
+                self.sense_format += f" {value:.3f} ± {conf:.3f},"
+
         return (
             f"OptimisationResult:\n"
             f"  Best result from {self.n_runs} run(s).\n"
             f"  Initial parameters: {self.x0_best}\n"
             f"  Optimised parameters: {self.x_best}\n"
+            f"  Total-order sensitivities:{self.sense_format}\n"
             f"  Diagonal Fisher Information entries: {self.fisher_best}\n"
             f"  Final cost: {self.final_cost_best}\n"
             f"  Optimisation time: {self.time_best} seconds\n"
@@ -535,12 +583,12 @@ class OptimisationResult:
         return value[0] if len(value) == 1 else value
 
     @property
-    def x_best(self):
-        return self._x[self._best_run] if self._best_run is not None else None
-
-    @property
     def x(self):
         return self._get_single_or_all("_x")
+
+    @property
+    def x_best(self):
+        return self._x[self._best_run] if self._best_run is not None else None
 
     @property
     def x0(self):
@@ -561,6 +609,14 @@ class OptimisationResult:
     @property
     def fisher(self):
         return self._get_single_or_all("_fisher")
+
+    @property
+    def sensitivities(self):
+        return self._get_single_or_all("_sensitivities")
+
+    @sensitivities.setter
+    def sensitivities(self, obj: dict):
+        self._sensitivities = obj
 
     @property
     def fisher_best(self):
