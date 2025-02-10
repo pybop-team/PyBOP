@@ -236,9 +236,11 @@ class EP_BOLFI(BaseOptimiser):
         posterior.prior = MultivariateGaussian(
             search_mean, np.array(ep_bolfi_result["covariance"])
         )
+        final_cost = self.cost(model_mean)
         return BayesianOptimisationResult(
             optim=self,
             x=model_mean,
+            final_cost=final_cost,
             n_iterations={
                 "EP iterations": self.ep_iterations,
                 "total feature iterations": self.ep_iterations * len(self.cost.costs),

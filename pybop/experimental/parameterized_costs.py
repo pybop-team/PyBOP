@@ -56,6 +56,7 @@ class ParameterizedCost(BaseCost):
         dy: np.ndarray = None,
         calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
+        time_domain_data = self.problem.domain_data  # y["Time [s]"]
         # Gradient not available for fitting function parameters.
         if calculate_grad:
             raise ValueError("Square-root fit cost does not support gradients.")
@@ -64,17 +65,17 @@ class ParameterizedCost(BaseCost):
             return np.inf
         # Calculate square-root fit function.
         if self.time_start:
-            start_index = find_occurrences(y["Time [s]"], self.time_start)[0]
+            start_index = find_occurrences(time_domain_data, self.time_start)[0]
         else:
             start_index = 0
         if self.time_end:
-            end_index = find_occurrences(y["Time [s]"], self.time_end)[0]
+            end_index = find_occurrences(time_domain_data, self.time_end)[0]
         else:
             end_index = None
         error = np.asarray(
             [
                 self._fit(
-                    y["Time [s]"][start_index:end_index],
+                    time_domain_data[start_index:end_index],
                     y[signal][start_index:end_index],
                 )
                 - self._fit(
