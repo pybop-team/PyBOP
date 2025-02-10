@@ -1,7 +1,15 @@
+import os
+
 import numpy as np
 import pybamm
 
 import pybop
+
+# Get the current directory location and convert to absolute path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+dataset_path = os.path.join(
+    current_dir, "../../data/synthetic/spm_charge_discharge_75.csv"
+)
 
 # Define model and use high-performant solver for sensitivities
 solver = pybamm.IDAKLUSolver()
@@ -23,9 +31,9 @@ parameters = pybop.Parameters(
         bounds=[0.4, 0.9],
     ),
 )
-csv_data = np.loadtxt(
-    "../../data/synthetic/charge_discharge_75.csv", delimiter=",", skiprows=1
-)
+
+# Import the synthetic dataset
+csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
 
 # Form dataset
 dataset = pybop.Dataset(

@@ -1,6 +1,14 @@
+import os
+
 import numpy as np
 
 import pybop
+
+# Get the current directory location and convert to absolute path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+dataset_path = os.path.join(
+    current_dir, "../../data/synthetic/spm_charge_discharge_75.csv"
+)
 
 # Define model
 parameter_set = pybop.ParameterSet("Chen2020")
@@ -27,33 +35,27 @@ parameters = pybop.Parameters(
         initial_value=0.41,
     ),
 )
-experiment = pybop.Experiment(
-    [
-        (
-            "Discharge at 0.5C for 3 minutes (4 second period)",
-            "Charge at 0.5C for 3 minutes (4 second period)",
-        ),
-    ]
-)
-values = model.predict(initial_state={"Initial SoC": 0.7}, experiment=experiment)
 
-sigma = 0.002
-corrupt_values = values["Voltage [V]"].data + np.random.normal(
-    0, sigma, len(values["Voltage [V]"].data)
-)
+# Import the synthetic dataset
+csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
 
 # Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": values["Time [s]"].data,
-        "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": corrupt_values,
+        "Time [s]": csv_data[:, 0],
+        "Current function [A]": csv_data[:, 1],
+        "Voltage [V]": csv_data[:, 2],
     }
 )
 
 # Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.GaussianLogLikelihood(problem, sigma0=sigma * 4)
+problem = pybop.FittingProblem(
+    model,
+    parameters,
+    dataset,
+    initial_state={"Initial open-circuit voltage [V]": csv_data[0, 2]},
+)
+cost = pybop.GaussianLogLikelihood(problem, sigma0=8e-3)
 optim = pybop.Optimisation(
     cost,
     optimiser=pybop.CuckooSearch,

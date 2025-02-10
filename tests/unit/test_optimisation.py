@@ -730,7 +730,8 @@ class TestOptimisation:
 
         # Test non-finite results
         with pytest.raises(
-            ValueError, match="Optimised parameters do not produce a finite cost value"
+            ValueError,
+            match="Optimised parameters {'Positive electrode active material volume fraction': 1e-05} do not produce a finite cost value",
         ):
             pybop.OptimisationResult(optim=optim, x=[1e-5], n_iterations=1)
 
