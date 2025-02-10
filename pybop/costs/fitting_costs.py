@@ -18,7 +18,7 @@ class FittingCost(BaseCost):
 
     def __init__(self, problem):
         super().__init__(problem)
-        self.numpy_axis = (1, 2)
+        self.numpy_axis = (0, 2) if self.n_outputs > 1 else (1, 2)
 
     def compute(
         self,
