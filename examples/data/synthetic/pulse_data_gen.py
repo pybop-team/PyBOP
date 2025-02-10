@@ -5,7 +5,7 @@ import pybamm
 import pybop
 
 # Define model and use high-performant solver for sensitivities
-solver = pybamm.CasadiSolver()
+solver = pybamm.CasadiSolver(atol=1e-7, rtol=1e-7)
 parameter_set = pybop.ParameterSet("Chen2020")
 models = [
     (pybop.lithium_ion.DFN(parameter_set=parameter_set, solver=solver), "dfn"),
@@ -15,16 +15,19 @@ models = [
 
 # Generate data
 sigma = 2e-4
+soc = 0.05
 experiment = pybop.Experiment(
     [
         "Rest for 2 seconds (1 second period)",
-        "Discharge at 0.05C for 1 minute (2 second period)",
-        "Rest for 5 minutes (2 second period)",
+        "Discharge at 0.1C for 1 minute (2 second period)",
+        "Rest for 10 minutes (8 second period)",
+        "Charge at 0.1C for 1 minute (2 second period)",
+        "Rest for 10 minutes (8 second period)",
     ]
 )
 for model, name in models:
     values = model.predict(
-        initial_state={"Initial SoC": 0.5},
+        initial_state={"Initial SoC": soc},
         experiment=experiment,
         parameter_set=parameter_set,
     )
@@ -42,4 +45,6 @@ for model, name in models:
             ].data
             + noise(sigma, values),
         }
-    ).drop_duplicates(subset=["Time [s]"]).to_csv(f"{name}_pulse_50.csv", index=False)
+    ).drop_duplicates(subset=["Time [s]"]).to_csv(
+        f"{name}_pulse_{int(soc * 100)}.csv", index=False
+    )

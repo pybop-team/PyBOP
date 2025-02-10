@@ -14,17 +14,18 @@ models = [
 ]
 
 # Generate data
-sigma = 0.002
+sigma = 0.001
+soc = 0.75
 experiment = pybop.Experiment(
     [
         "Rest for 2 seconds (1 second period)",
-        "Discharge at 0.5C for 30 minutes (20 second period)",
-        "Charge at 0.5C for 30 minutes (20 second period)",
+        "Discharge at 0.5C for 40 minutes (20 second period)",
+        "Charge at 0.5C for 20 minutes (20 second period)",
     ]
 )
 for model, name in models:
     values = model.predict(
-        initial_state={"Initial SoC": 0.75},
+        initial_state={"Initial SoC": soc},
         experiment=experiment,
         parameter_set=parameter_set,
     )
@@ -43,5 +44,5 @@ for model, name in models:
             + noise(sigma, values),
         }
     ).drop_duplicates(subset=["Time [s]"]).to_csv(
-        f"{name}_charge_discharge_75.csv", index=False
+        f"{name}_charge_discharge_{int(soc * 100)}.csv", index=False
     )

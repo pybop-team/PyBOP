@@ -6,19 +6,19 @@ import pybamm
 import pybop
 
 # This example introduces pulse fitting
-# within PyBOP. Data is loaded from a local `csv` file
-# and particle diffusivity for a DFN model is performed.
+# within PyBOP. 5% SOC pulse data is loaded from a local `csv` file
+# and particle diffusivity identification for a SPMe model is performed.
 # Additionally, uncertainty metrics are computed.
 
 # Get the current directory location and convert to absolute path
 current_dir = os.path.dirname(os.path.abspath(__file__))
-dataset_path = os.path.join(
-    current_dir, "../../data/synthetic/spm_charge_discharge_75.csv"
-)
+dataset_path = os.path.join(current_dir, "../../data/synthetic/spme_pulse_15.csv")
 
 # Define model and use high-performant solver for sensitivities
 parameter_set = pybop.ParameterSet("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=pybamm.IDAKLUSolver())
+model = pybop.lithium_ion.SPMe(
+    parameter_set=parameter_set, solver=pybamm.IDAKLUSolver(atol=1e-7, rtol=1e-7)
+)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -50,7 +50,7 @@ dataset = pybop.Dataset(
 )
 
 # Generate problem, cost function, and optimisation class
-# In this example, we initialise the DFN at the first voltage
+# In this example, we initialise the SPMe at the first voltage
 # point in `csv_data`, an optimise without rebuilding the
 # model on every evaluation.
 problem = pybop.FittingProblem(
@@ -58,17 +58,21 @@ problem = pybop.FittingProblem(
     parameters,
     dataset,
     initial_state={"Initial open-circuit voltage [V]": csv_data[0, 2]},
-    build_on_evaluation=False,
 )
 
 likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=2e-4)
-
-optim = pybop.XNES(
+optim = pybop.IRPropPlus(
     likelihood,
     verbose=True,
+    sigma0=0.02,
     max_iterations=100,
-    max_unchanged_iterations=45,
+    max_unchanged_iterations=40,
+    compute_sensitivities=True,
+    n_sensitivity_samples=64,  # Decrease samples for CI (increase for higher accuracy)
 )
+
+# Slow the step-size shrinking (default is 0.5)
+optim.optimiser.eta_min = 0.7
 
 # Run optimisation
 results = optim.run()
@@ -83,4 +87,4 @@ pybop.plot.convergence(optim)
 pybop.plot.parameters(optim)
 
 # Plot the cost landscape with optimisation path
-pybop.plot.surface(optim)
+pybop.plot.contour(optim)

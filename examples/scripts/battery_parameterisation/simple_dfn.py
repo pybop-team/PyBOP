@@ -8,7 +8,7 @@ import pybop
 # Get the current directory location and convert to absolute path
 current_dir = os.path.dirname(os.path.abspath(__file__))
 dataset_path = os.path.join(
-    current_dir, "../../data/synthetic/spm_charge_discharge_75.csv"
+    current_dir, "../../data/synthetic/dfn_charge_discharge_75.csv"
 )
 
 # Define model and use high-performant solver for sensitivities
@@ -21,13 +21,13 @@ parameters = pybop.Parameters(
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         prior=pybop.Gaussian(0.68, 0.05),
-        initial_value=0.55,
+        initial_value=0.65,
         bounds=[0.4, 0.9],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
         prior=pybop.Gaussian(0.58, 0.05),
-        initial_value=0.55,
+        initial_value=0.65,
         bounds=[0.4, 0.9],
     ),
 )
@@ -55,13 +55,15 @@ problem = pybop.FittingProblem(
     initial_state={"Initial open-circuit voltage [V]": csv_data[0, 2]},
     build_on_evaluation=False,
 )
-cost = pybop.SumofPower(problem, p=2.5)
+cost = pybop.SumSquaredError(problem)
 
-optim = pybop.IRPropMin(
+optim = pybop.IRPropPlus(
     cost,
     verbose=True,
     max_iterations=100,
-    max_unchanged_iterations=45,
+    max_unchanged_iterations=20,
+    compute_sensitivities=True,
+    n_sensitivity_samples=128,  # Decrease samples for CI (increase for higher accuracy)
 )
 
 # Run optimisation
