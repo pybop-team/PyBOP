@@ -106,7 +106,7 @@ from .costs.error_measures import (
     MeanSquaredError,
     SumSquaredError,
     Minkowski,
-    SumofPower,
+    SumOfPower,
 )
 from .costs.design_costs import (
     DesignCost,

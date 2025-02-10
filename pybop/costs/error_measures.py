@@ -183,7 +183,7 @@ class Minkowski(FittingCost):
         return e
 
 
-class SumofPower(FittingCost):
+class SumOfPower(FittingCost):
     """
     The Sum of Power [1] is a generalised cost function based on the p-th power
     of absolute differences between two vectors. It is defined as:
