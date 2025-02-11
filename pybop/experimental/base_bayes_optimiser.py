@@ -51,7 +51,14 @@ class BayesianOptimisationResult(OptimisationResult):
         upper_bounds: Union[Inputs, np.ndarray] = None,
         posterior: MultivariateParameters = None,
     ):
-        super().__init__(optim, x, final_cost, n_iterations, n_evaluations, time)
+        super().__init__(
+            optim=optim,
+            x=x,
+            final_cost=final_cost,
+            n_iterations=n_iterations,
+            n_evaluations=n_evaluations,
+            time=time,
+        )
         self.lower_bounds = lower_bounds
         self.upper_bounds = upper_bounds
         self.posterior = posterior

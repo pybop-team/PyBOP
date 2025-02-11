@@ -72,18 +72,20 @@ class ParameterizedCost(BaseCost):
             end_index = find_occurrences(time_domain_data, self.time_end)[0]
         else:
             end_index = None
-        error = np.asarray(
-            [
-                self._fit(
-                    time_domain_data[start_index:end_index],
-                    y[signal][start_index:end_index],
-                )
-                - self._fit(
-                    self.time_data[start_index:end_index],
-                    self.target[signal][start_index:end_index],
-                )
-                for signal in self.signal
-            ]
+        error = np.abs(
+            np.asarray(
+                [
+                    self._fit(
+                        time_domain_data[start_index:end_index],
+                        y[signal][start_index:end_index],
+                    )
+                    - self._fit(
+                        self.time_data[start_index:end_index],
+                        self.target[signal][start_index:end_index],
+                    )
+                    for signal in self.signal
+                ]
+            )
         )
         return error.item() if self.n_outputs == 1 else np.sum(error)
 
