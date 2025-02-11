@@ -2,7 +2,6 @@ from multiprocessing import Pool
 
 import numpy as np
 from base_bayes_optimiser import BayesianOptimisationResult
-from ep_bolfi.utility.preprocessing import combine_parameters_to_try
 
 from pybop import DesignProblem
 from pybop.plot.standard_plots import StandardPlot
@@ -36,6 +35,7 @@ def bayes(problem, results: BayesianOptimisationResult, show=True, **layout_kwar
     plotly.graph_objs.Figure
         The Plotly figure object for the predictive posterior plot.
     """
+    from ep_bolfi.utility.preprocessing import combine_parameters_to_try
 
     # Extract the time data and evaluate the model's output and target values
     xaxis_data = problem.domain_data

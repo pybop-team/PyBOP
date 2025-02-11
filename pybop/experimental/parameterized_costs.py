@@ -1,7 +1,6 @@
 from typing import Union
 
 import numpy as np
-from ep_bolfi.utility.preprocessing import find_occurrences
 from scipy.optimize import minimize
 
 from pybop import BaseCost
@@ -56,6 +55,8 @@ class ParameterizedCost(BaseCost):
         dy: np.ndarray = None,
         calculate_grad: bool = False,
     ) -> Union[float, tuple[float, np.ndarray]]:
+        from ep_bolfi.utility.preprocessing import find_occurrences
+
         time_domain_data = self.problem.domain_data  # y["Time [s]"]
         # Gradient not available for fitting function parameters.
         if calculate_grad:

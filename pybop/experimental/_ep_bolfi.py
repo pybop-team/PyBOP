@@ -2,7 +2,6 @@ import copy
 import json
 import time
 
-import ep_bolfi
 import numpy as np
 from pybamm import citations
 
@@ -66,6 +65,8 @@ class EP_BOLFI(BaseOptimiser):
         }
 
     def _set_up_optimiser(self):
+        import ep_bolfi
+
         # Read in predictor settings.
         self.inputs = self.unset_options.pop("inputs", None)
         self.t_eval = self.unset_options.pop("t_eval", None)
