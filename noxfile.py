@@ -135,7 +135,7 @@ def lint(session):
     session.run("pre-commit", "run", "--all-files")
 
 
-@nox.session(name="quick", reuse_venv=True)
+@nox.session(name="quick")
 def run_quick(session):
     """
     Run integration tests, unit tests, and doctests sequentially
