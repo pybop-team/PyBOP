@@ -167,7 +167,7 @@ class Test_SPM_Parameterisation:
         # Add sigma0 to ground truth for GaussianLogLikelihood
         if isinstance(optim.cost, pybop.GaussianLogLikelihood):
             self.ground_truth = np.concatenate(
-                (self.ground_truth[:2], np.asarray([self.sigma0]))
+                (self.ground_truth, np.asarray([self.sigma0]))
             )
 
         initial_cost = optim.cost(x0)
@@ -250,7 +250,7 @@ class Test_SPM_Parameterisation:
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
         if isinstance(two_signal_cost, pybop.GaussianLogLikelihood):
-            self.ground_truth = np.concatenate((self.ground_truth[:2], combined_sigma0))
+            self.ground_truth = np.concatenate((self.ground_truth, combined_sigma0))
 
         initial_cost = optim.cost(optim.parameters.initial_value())
         results = optim.run()
