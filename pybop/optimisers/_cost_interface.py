@@ -66,7 +66,7 @@ class CostInterface:
             cost, grad = cost.single_call(model_x, calculate_grad=calculate_grad)
 
             # Compute gradient with respect to the search parameters
-            if self._transformation is not None:  #  and np.isfinite(cost):
+            if self._transformation is not None:
                 jac = self.transformation.jacobian(x)
                 grad = np.matmul(grad, jac)
 
