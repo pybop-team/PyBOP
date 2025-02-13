@@ -1,10 +1,13 @@
 import warnings
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import numpy as np
 from pybamm import Solution
 
 from pybop import BaseCost, BaseLikelihood, Inputs
+
+if TYPE_CHECKING:
+    from pybop import BaseOptimiser
 
 
 class OptimisationResult:
@@ -13,6 +16,8 @@ class OptimisationResult:
 
     Attributes
     ----------
+    optim : pybop.BaseOptimiser
+        The optimisation object used to generate the results.
     x : ndarray
         The solution of the optimisation.
     final_cost : float
@@ -27,7 +32,7 @@ class OptimisationResult:
 
     def __init__(
         self,
-        optim,
+        optim: "BaseOptimiser",
         x: Union[Inputs, np.ndarray] = None,
         final_cost: Optional[float] = None,
         sensitivities: Optional[dict] = None,
@@ -38,7 +43,7 @@ class OptimisationResult:
     ):
         self.optim = optim
         self.cost = self.optim.cost
-        self.minimising = self.optim.minimising
+        self.minimising = not self.optim.invert_cost
         self._transformation = self.optim.transformation
         self.n_runs = 0
         self._best_run = None

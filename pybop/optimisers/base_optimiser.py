@@ -15,7 +15,8 @@ from pybop import (
 
 class BaseOptimiser(CostInterface):
     """
-    A base class for defining optimisation methods.
+    A base class for defining optimisation methods. Optimisers perform minimisation of the cost
+    function; maximisation may be performed instead using the option invert_cost=True.
 
     This class serves as a base class for creating optimisers. It provides a basic structure for
     an optimisation algorithm, including the initial setup and a method stub for performing the
@@ -29,9 +30,9 @@ class BaseOptimiser(CostInterface):
     **optimiser_kwargs : optional
         Valid option keys and their values, for example:
         x0 : numpy.ndarray
-            Initial values of the (search) parameters for the optimisation.
+            Initial values of the parameters for the optimisation.
         bounds : dict
-            Dictionary containing bounds for the (search) parameters with keys 'lower' and 'upper'.
+            Dictionary containing bounds for the parameters with keys 'lower' and 'upper'.
         sigma0 : float or sequence
             Initial step size or standard deviation in the (search) parameters. Either a scalar value
             (same for all coordinates) or an array with one entry per dimension.
@@ -54,7 +55,6 @@ class BaseOptimiser(CostInterface):
         cost,
         **optimiser_kwargs,
     ):
-        super().__init__()
         # First set attributes to default values
         self.parameters = Parameters()
         self.x0 = optimiser_kwargs.get("x0", None)
@@ -67,13 +67,15 @@ class BaseOptimiser(CostInterface):
         self.allow_infeasible_solutions = False
         self.default_max_iterations = 1000
         self.result = None
+        transformation = None
+        invert_cost = False
 
         if isinstance(cost, BaseCost):
             self.cost = cost
             self.parameters = deepcopy(self.cost.parameters)
-            self._transformation = self.parameters.construct_transformation()
+            transformation = self.parameters.construct_transformation()
             self.set_allow_infeasible_solutions()
-            self.minimising = self.cost.minimising
+            invert_cost = not self.cost.minimising
 
         else:
             try:
@@ -104,6 +106,8 @@ class BaseOptimiser(CostInterface):
         if len(self.parameters) == 0:
             raise ValueError("There are no parameters to optimise.")
 
+        super().__init__(transformation=transformation, invert_cost=invert_cost)
+
         self.unset_options = optimiser_kwargs
         self.unset_options_store = optimiser_kwargs.copy()
         self.set_base_options()
@@ -121,17 +125,18 @@ class BaseOptimiser(CostInterface):
         """
         Update the base optimiser options and remove them from the options dictionary.
         """
-        # Set initial values, if x0 is None, initial values are unmodified
-        x0_search = self.unset_options.pop("x0", None)
-        if x0_search is not None:
-            x0_model = self.transform_values(x0_search)
-            self.parameters.update(initial_values=x0_model)
+        # Set initial search-space parameter values
+        x0 = self.unset_options.pop("x0", None)
+        if x0 is not None:
+            self.parameters.update(initial_values=x0)
         self.x0 = self.parameters.reset_initial_value(apply_transform=True)
 
-        # Set the search bounds (for all or no parameters)
-        self.bounds = self.unset_options.pop(
-            "bounds", self.parameters.get_bounds(apply_transform=True)
-        )
+        # Set the search-space parameter bounds (for all or no parameters)
+        bounds = self.unset_options.pop("bounds", self.parameters.get_bounds())
+        if bounds is not None:
+            self.parameters.update(bounds=bounds)
+            bounds = self.parameters.get_bounds(apply_transform=True)
+        self.bounds = bounds  # can be None or current parameter bounds
 
         # Set default initial standard deviation (for all or no parameters)
         self.sigma0 = self.unset_options.pop(
@@ -257,14 +262,15 @@ class BaseOptimiser(CostInterface):
         if cost is not None:
             cost = convert_to_list(cost)
             cost = [
-                internal_cost * (1 if self.minimising else -1) for internal_cost in cost
+                internal_cost * (-1 if self.invert_cost else 1)
+                for internal_cost in cost
             ]
             self.log["cost"].extend(cost)
 
         if cost_best is not None:
             cost_best = convert_to_list(cost_best)
             cost_best = [
-                internal_cost * (1 if self.minimising else -1)
+                internal_cost * (-1 if self.invert_cost else 1)
                 for internal_cost in cost_best
             ]
             self.log["cost_best"].extend(cost_best)

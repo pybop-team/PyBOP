@@ -158,7 +158,7 @@ class TestEISParameterisation:
         # Assert on identified values, without sigma for GaussianLogLikelihood
         # as the sigma values are small (5e-4), this is a difficult identification process
         # and requires a high number of iterations, and parameter dependent step sizes.
-        if optim.minimising:
+        if results.minimising:
             assert initial_cost > results.final_cost
         else:
             assert initial_cost < results.final_cost

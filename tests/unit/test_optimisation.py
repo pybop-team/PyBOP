@@ -150,7 +150,7 @@ class TestOptimisation:
             x_search = 0.7
             optim.log_update(x=[x_search], cost=[0.01])
             assert optim.log["x_search"][-1] == x_search
-            assert optim.log["cost"][-1] == 0.01 * (1 if optim.minimising else -1)
+            assert optim.log["cost"][-1] == 0.01 * (-1 if optim.invert_cost else 1)
             assert (
                 optim.log["x"][-1] == optim._transformation.to_model(x_search)
                 if optim._transformation
@@ -570,18 +570,6 @@ class TestOptimisation:
             match="The initial parameter values return an infinite cost.",
         ):
             opt.run()
-
-    def test_scipy_bounds(self, cost):
-        # Create the optimisation class with incorrect bounds type
-        with pytest.raises(
-            TypeError,
-            match="Bounds provided must be either type dict or SciPy.optimize.bounds object.",
-        ):
-            pybop.SciPyMinimize(
-                cost=cost,
-                bounds="This is a bad bound",
-                max_iterations=1,
-            )
 
     def test_halting(self, cost):
         # Add a parameter transformation

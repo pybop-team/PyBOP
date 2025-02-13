@@ -152,7 +152,7 @@ class Test_Jax_Parameterisation:
         if np.allclose(x0, self.ground_truth, atol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
-        if optim.minimising:
+        if results.minimising:
             assert initial_cost > results.final_cost
         else:
             assert initial_cost < results.final_cost
