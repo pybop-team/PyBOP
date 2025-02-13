@@ -30,9 +30,9 @@ class BaseOptimiser(CostInterface):
     **optimiser_kwargs : optional
         Valid option keys and their values, for example:
         x0 : numpy.ndarray
-            Initial values of the (search) parameters for the optimisation.
+            Initial values of the parameters for the optimisation.
         bounds : dict
-            Dictionary containing bounds for the (search) parameters with keys 'lower' and 'upper'.
+            Dictionary containing bounds for the parameters with keys 'lower' and 'upper'.
         sigma0 : float or sequence
             Initial step size or standard deviation in the (search) parameters. Either a scalar value
             (same for all coordinates) or an array with one entry per dimension.
@@ -125,17 +125,18 @@ class BaseOptimiser(CostInterface):
         """
         Update the base optimiser options and remove them from the options dictionary.
         """
-        # Set initial values, if x0 is None, initial values are unmodified
-        x0_search = self.unset_options.pop("x0", None)
-        if x0_search is not None:
-            x0_model = self.transform_values(x0_search)
-            self.parameters.update(initial_values=x0_model)
+        # Set initial search-space parameter values
+        x0 = self.unset_options.pop("x0", None)
+        if x0 is not None:
+            self.parameters.update(initial_values=x0)
         self.x0 = self.parameters.reset_initial_value(apply_transform=True)
 
-        # Set the search bounds (for all or no parameters)
-        self.bounds = self.unset_options.pop(
-            "bounds", self.parameters.get_bounds(apply_transform=True)
-        )
+        # Set the search-space parameter bounds (for all or no parameters)
+        bounds = self.unset_options.pop("bounds", self.parameters.get_bounds())
+        if bounds is not None:
+            self.parameters.update(bounds=bounds)
+            bounds = self.parameters.get_bounds(apply_transform=True)
+        self.bounds = bounds  # can be None or current parameter bounds
 
         # Set default initial standard deviation (for all or no parameters)
         self.sigma0 = self.unset_options.pop(

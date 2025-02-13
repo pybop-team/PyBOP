@@ -26,7 +26,7 @@ class BaseSampler(CostInterface):
         chains : int
             Number of chains to be used.
         x0
-            List-like initial values of the (model) parameters for Monte Carlo sampling.
+            List-like initial values of the parameters for Monte Carlo sampling.
         cov0
             The covariance matrix to be sampled.
         """
@@ -60,9 +60,8 @@ class BaseSampler(CostInterface):
             raise ValueError("x0 must have the same number of parameters as log_pdf")
 
         # Set initial values, if x0 is None, initial values are unmodified
-        x0_model = x0 if x0 is not None else None
-        if x0_model is not None:
-            self.parameters.update(initial_values=x0_model)
+        if x0 is not None:
+            self.parameters.update(initial_values=x0)
         self._x0 = self.parameters.reset_initial_value(apply_transform=True).reshape(
             1, -1
         )

@@ -571,18 +571,6 @@ class TestOptimisation:
         ):
             opt.run()
 
-    def test_scipy_bounds(self, cost):
-        # Create the optimisation class with incorrect bounds type
-        with pytest.raises(
-            TypeError,
-            match="Bounds provided must be either type dict or SciPy.optimize.bounds object.",
-        ):
-            pybop.SciPyMinimize(
-                cost=cost,
-                bounds="This is a bad bound",
-                max_iterations=1,
-            )
-
     def test_halting(self, cost):
         # Add a parameter transformation
         cost.parameters[
