@@ -43,7 +43,7 @@ class OptimisationResult:
     ):
         self.optim = optim
         self.cost = self.optim.cost
-        self.minimising = self.optim.minimising
+        self.minimising = not self.optim.invert_cost
         self._transformation = self.optim.transformation
         self.n_runs = 0
         self._best_run = None

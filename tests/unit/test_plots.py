@@ -142,7 +142,7 @@ class TestPlots:
 
         # Plot convergence
         pybop.plot.convergence(optim)
-        optim._minimising = False
+        optim.invert_cost = True
         pybop.plot.convergence(optim)
 
         # Plot the parameter traces

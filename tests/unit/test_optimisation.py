@@ -150,7 +150,7 @@ class TestOptimisation:
             x_search = 0.7
             optim.log_update(x=[x_search], cost=[0.01])
             assert optim.log["x_search"][-1] == x_search
-            assert optim.log["cost"][-1] == 0.01 * (1 if optim.minimising else -1)
+            assert optim.log["cost"][-1] == 0.01 * (-1 if optim.invert_cost else 1)
             assert (
                 optim.log["x"][-1] == optim._transformation.to_model(x_search)
                 if optim._transformation

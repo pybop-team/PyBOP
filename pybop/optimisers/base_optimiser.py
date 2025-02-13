@@ -15,7 +15,8 @@ from pybop import (
 
 class BaseOptimiser(CostInterface):
     """
-    A base class for defining optimisation methods.
+    A base class for defining optimisation methods. Optimisers perform minimisation of the cost
+    function; maximisation may be performed instead using the option invert_cost=True.
 
     This class serves as a base class for creating optimisers. It provides a basic structure for
     an optimisation algorithm, including the initial setup and a method stub for performing the
@@ -54,7 +55,6 @@ class BaseOptimiser(CostInterface):
         cost,
         **optimiser_kwargs,
     ):
-        super().__init__()
         # First set attributes to default values
         self.parameters = Parameters()
         self.x0 = optimiser_kwargs.get("x0", None)
@@ -67,13 +67,15 @@ class BaseOptimiser(CostInterface):
         self.allow_infeasible_solutions = False
         self.default_max_iterations = 1000
         self.result = None
+        transformation = None
+        invert_cost = False
 
         if isinstance(cost, BaseCost):
             self.cost = cost
             self.parameters = deepcopy(self.cost.parameters)
-            self._transformation = self.parameters.construct_transformation()
+            transformation = self.parameters.construct_transformation()
             self.set_allow_infeasible_solutions()
-            self.minimising = self.cost.minimising
+            invert_cost = not self.cost.minimising
 
         else:
             try:
@@ -103,6 +105,8 @@ class BaseOptimiser(CostInterface):
 
         if len(self.parameters) == 0:
             raise ValueError("There are no parameters to optimise.")
+
+        super().__init__(transformation=transformation, invert_cost=invert_cost)
 
         self.unset_options = optimiser_kwargs
         self.unset_options_store = optimiser_kwargs.copy()
@@ -257,14 +261,15 @@ class BaseOptimiser(CostInterface):
         if cost is not None:
             cost = convert_to_list(cost)
             cost = [
-                internal_cost * (1 if self.minimising else -1) for internal_cost in cost
+                internal_cost * (-1 if self.invert_cost else 1)
+                for internal_cost in cost
             ]
             self.log["cost"].extend(cost)
 
         if cost_best is not None:
             cost_best = convert_to_list(cost_best)
             cost_best = [
-                internal_cost * (1 if self.minimising else -1)
+                internal_cost * (-1 if self.invert_cost else 1)
                 for internal_cost in cost_best
             ]
             self.log["cost_best"].extend(cost_best)

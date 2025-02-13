@@ -9,7 +9,8 @@ from pybop import CostInterface, LogPosterior
 
 class BaseSampler(CostInterface):
     """
-    Base class for Monte Carlo samplers.
+    Base class for Monte Carlo samplers. Samplers perform maximisation of the cost
+    function by default.
     """
 
     def __init__(
@@ -29,7 +30,6 @@ class BaseSampler(CostInterface):
         cov0
             The covariance matrix to be sampled.
         """
-        super().__init__()
         self._log_pdf = log_pdf
         self._cov0 = cov0
 
@@ -52,7 +52,8 @@ class BaseSampler(CostInterface):
                 "log_pdf must be a LogPosterior or List[LogPosterior]"
             )  # TODO: Update for more general sampling
 
-        self._transformation = self.parameters.construct_transformation()
+        transformation = self.parameters.construct_transformation()
+        super().__init__(transformation=transformation)
 
         # Check initial conditions
         if x0 is not None and len(x0) != self.n_parameters:

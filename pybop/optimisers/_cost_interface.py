@@ -1,8 +1,8 @@
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 
-from pybop import BaseCost, Inputs
+from pybop import BaseCost, Inputs, Transformation
 
 
 class CostInterface:
@@ -11,9 +11,11 @@ class CostInterface:
     the optimiser/sampler and the cost evaluation.
     """
 
-    def __init__(self):
-        self.minimising = True
-        self._transformation = None
+    def __init__(
+        self, transformation: Optional[Transformation] = None, invert_cost: bool = False
+    ):
+        self.invert_cost = invert_cost
+        self.transformation = transformation
 
     def transform_values(self, values):
         """Apply transformation if it exists."""
@@ -58,7 +60,7 @@ class CostInterface:
         """
         model_x = self.transform_values(x)
 
-        sign = 1 if self.minimising else -1
+        sign = -1 if self.invert_cost else 1
 
         if calculate_grad:
             cost, grad = cost.single_call(model_x, calculate_grad=calculate_grad)
@@ -75,3 +77,7 @@ class CostInterface:
     @property
     def transformation(self):
         return self._transformation
+
+    @transformation.setter
+    def transformation(self, transformation: Transformation):
+        self._transformation = transformation
