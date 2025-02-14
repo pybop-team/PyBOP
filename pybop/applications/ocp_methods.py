@@ -27,12 +27,12 @@ class OCPBlend(BaseApplication):
         ocp_charge: pybop.Dataset,
     ):
         # Use the discharge branch as the target to fit
-        voltage_discharge = self.interp1d(
+        voltage_discharge = pybop.Interpolant(
             ocp_discharge["Stoichiometry"], ocp_discharge["Voltage [V]"]
         )
 
         # Use the charge branch as the model output
-        voltage_charge = self.interp1d(
+        voltage_charge = pybop.Interpolant(
             ocp_charge["Stoichiometry"], ocp_charge["Voltage [V]"]
         )
 
@@ -90,10 +90,10 @@ class OCPAverage(BaseApplication):
         verbose: bool = True,
     ):
         # Use the discharge branch as the target to fit
-        voltage_discharge = self.interp1d(
+        voltage_discharge = pybop.Interpolant(
             ocp_discharge["Stoichiometry"], ocp_discharge["Voltage [V]"]
         )
-        differential_capacity_discharge = self.interp1d(
+        differential_capacity_discharge = pybop.Interpolant(
             ocp_discharge["Stoichiometry"],
             np.nan_to_num(
                 np.gradient(
@@ -103,10 +103,10 @@ class OCPAverage(BaseApplication):
         )
 
         # Use the charge branch as the model output
-        voltage_charge = self.interp1d(
+        voltage_charge = pybop.Interpolant(
             ocp_charge["Stoichiometry"], ocp_charge["Voltage [V]"]
         )
-        differential_capacity_charge = self.interp1d(
+        differential_capacity_charge = pybop.Interpolant(
             ocp_charge["Stoichiometry"],
             np.nan_to_num(
                 np.gradient(ocp_charge["Stoichiometry"], ocp_charge["Voltage [V]"])

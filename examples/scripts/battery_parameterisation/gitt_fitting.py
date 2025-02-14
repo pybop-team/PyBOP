@@ -1,5 +1,4 @@
 import numpy as np
-from pybamm import Interpolant
 
 import pybop
 from pybop.models.lithium_ion.basic_SP_diffusion import (
@@ -45,18 +44,19 @@ nonzero_index = np.concatenate(
         [len(dataset["Current function [A]"]) + 1],
     )
 )
-nonzero_gaps = np.extract(
+pulse_starts = np.extract(
     nonzero_index[1:] - nonzero_index[:-1] != 1,  # check if there is a gap
     nonzero_index[1:],  # return the index at the start of the pulse
 )
 pulse_index = []
-for start, finish in zip(nonzero_gaps[:-1], nonzero_gaps[1:]):
-    pulse_index.append([i for i in nonzero_index if i >= start and i < finish])
+for start, finish in zip(pulse_starts[:-1], pulse_starts[1:]):
+    pulse_index.append([i for i in nonzero_index if i >= start - 1 and i < finish])
 
 # Define parameter set
 parameter_set = convert_physical_to_electrode_parameters(
     model.parameter_set, "positive"
 )
+init_sto = parameter_set["Initial stoichiometry"]
 
 # Fit the whole GITT measurement
 gitt_fit = pybop.GITTFit(dataset, pulse_index, parameter_set)
@@ -67,24 +67,54 @@ pybop.plot.dataset(
 )
 pybop.plot.dataset(gitt_fit.parameter_data, signal=["Series resistance [Ohm]"])
 
-# Replace the diffusivity in the original model
+parameter_set.update(
+    {
+        "Initial stoichiometry": init_sto,
+        "Particle diffusion time scale [s]": np.mean(
+            gitt_fit.parameter_data["Particle diffusion time scale [s]"]
+        ),
+        "Series resistance [Ohm]": np.mean(
+            gitt_fit.parameter_data["Series resistance [Ohm]"]
+        ),
+    }
+)
+
+# Compare the identified model prediction to the data
+model = pybop.lithium_ion.SPDiffusion(
+    parameter_set=parameter_set,
+    options={"working electrode": "positive"},
+    build=True,
+)
+model.set_current_function(dataset)
+values = model.predict(t_eval=dataset["Time [s]"])
+
+pybop.plot.trajectories(
+    [dataset["Time [s]"], values["Time [s]"].data],
+    [dataset["Voltage [V]"], values["Voltage [V]"].data],
+    trace_names=["Ground truth", "Identified"],
+    xaxis_title="Time / s",
+    yaxis_title="Voltage / V",
+)
+
+# Return to the original model
 parameter_set = pybop.ParameterSet("Xu2019")
 
 
-def diffusivity(sto, T):
-    return parameter_set["Positive particle radius [m]"] ** 2 / Interpolant(
-        gitt_fit.parameter_data["Stoichiometry"],
-        gitt_fit.parameter_data["Particle diffusion time scale [s]"],
-        sto,
-        name="Diffusivity",
-    )
+diffusivity = pybop.Interpolant(
+    gitt_fit.parameter_data["Stoichiometry"],
+    (
+        parameter_set["Positive particle radius [m]"] ** 2
+        / gitt_fit.parameter_data["Particle diffusion time scale [s]"]
+    ),
+)
 
 
 # Compare the original and identified model predictions
 parameter_set.update({"Positive particle diffusivity [m2.s-1]": diffusivity})
-values = model.predict(
-    initial_state=initial_state, experiment=experiment, parameter_set=parameter_set
+model = pybop.lithium_ion.SPMe(
+    parameter_set=parameter_set, options={"working electrode": "positive"}
 )
+values = model.predict(initial_state=initial_state, experiment=experiment)
 pybop.plot.trajectories(
     values["Time [s]"].data,
     [dataset["Voltage [V]"], values["Voltage [V]"].data],

@@ -39,10 +39,12 @@ class GITTPulseFit(BaseApplication):
             pybop.Parameter(
                 "Particle diffusion time scale [s]",
                 initial_value=parameter_set["Particle diffusion time scale [s]"],
+                bounds=[0, np.inf],
             ),
             pybop.Parameter(
                 "Series resistance [Ohm]",
                 initial_value=parameter_set["Series resistance [Ohm]"],
+                bounds=[0, np.inf],
             ),
         )
 
@@ -70,7 +72,7 @@ class GITTFit(BaseApplication):
     gitt_dataset : pybop.Dataset
         A dataset containing the "Time [s]", "Current [A]" and "Voltage [V]" for one
         pulse obtained from a GITT measurement.
-    gitt_pulse_index : list[np.ndarray]
+    pulse_index : list[np.ndarray]
         A nested list of integers representing the indices of each pulse in the dataset.
     parameter_set : pybop.ParameterSet
         A parameter set containing values for the parameters of the SPDiffusion model.
@@ -85,7 +87,7 @@ class GITTFit(BaseApplication):
     def __init__(
         self,
         gitt_dataset: pybop.Dataset,
-        gitt_pulse_index: list[np.ndarray],
+        pulse_index: list[np.ndarray],
         parameter_set: pybop.ParameterSet,
         cost: Optional[pybop.BaseCost] = pybop.RootMeanSquaredError,
         optimiser: Optional[pybop.BaseOptimiser] = pybop.SciPyMinimize,
@@ -97,44 +99,58 @@ class GITTFit(BaseApplication):
         diffusion_time = []
         series_resistance = []
 
-        for pulse_index in gitt_pulse_index:
+        inverse_ocp = pybop.InverseOCV(parameter_set["Electrode OCP [V]"])
+
+        for index in pulse_index:
+            # Estimate the initial stoichiometry from the initial voltage
+            parameter_set["Initial stoichiometry"] = inverse_ocp(
+                gitt_dataset["Voltage [V]"][index[0]]
+            )
+
             # Estimate the parameters for this pulse
-            self.pulses.append(
-                pybop.GITTPulseFit(
-                    gitt_pulse=gitt_dataset.get_subset(pulse_index),
-                    parameter_set=parameter_set,
-                    cost=cost,
-                    optimiser=optimiser,
-                    verbose=verbose,
-                )
-            )
-
-            # Log and update the parameter estimates for the next iteration
-            parameter_set.update(
-                {
-                    "Particle diffusion time scale [s]": self.pulses[-1].results.x[0],
-                    "Series resistance [Ohm]": self.pulses[-1].results.x[1],
-                }
-            )
-            diffusion_time.append(parameter_set["Particle diffusion time scale [s]"])
-            series_resistance.append(parameter_set["Series resistance [Ohm]"])
-            stoichiometry.append(parameter_set["Initial stoichiometry"])
-            parameter_set.update(
-                {
-                    "Initial stoichiometry": stoichiometry[-1]
-                    + (
-                        gitt_dataset["Discharge capacity [A.h]"][pulse_index[-1] + 1]
-                        - gitt_dataset["Discharge capacity [A.h]"][pulse_index[0] - 1]
+            try:
+                self.pulses.append(
+                    pybop.GITTPulseFit(
+                        gitt_pulse=gitt_dataset.get_subset(index),
+                        parameter_set=parameter_set,
+                        cost=cost,
+                        optimiser=optimiser,
+                        verbose=verbose,
                     )
-                    / (parameter_set["Theoretical electrode capacity [A.s]"] / 3600)
-                }
-            )
+                )
 
+                # Log and update the parameter estimates for the next iteration
+                parameter_set.update(
+                    {
+                        "Particle diffusion time scale [s]": self.pulses[-1].results.x[
+                            0
+                        ],
+                        "Series resistance [Ohm]": self.pulses[-1].results.x[1],
+                    }
+                )
+                diffusion_time.append(
+                    parameter_set["Particle diffusion time scale [s]"]
+                )
+                series_resistance.append(parameter_set["Series resistance [Ohm]"])
+                stoichiometry.append(parameter_set["Initial stoichiometry"])
+
+            except (Exception, SystemExit, KeyboardInterrupt):
+                self.pulses.append(None)
+
+        # Save parameters versus stoichiometry (ascending)
         self.parameter_data = pybop.Dataset(
             {
                 "Stoichiometry": np.asarray(stoichiometry),
                 "Particle diffusion time scale [s]": np.asarray(diffusion_time),
                 "Series resistance [Ohm]": np.asarray(series_resistance),
+            }
+            if stoichiometry[-1] > stoichiometry[0]
+            else {
+                "Stoichiometry": np.flipud(np.asarray(stoichiometry)),
+                "Particle diffusion time scale [s]": np.flipud(
+                    np.asarray(diffusion_time)
+                ),
+                "Series resistance [Ohm]": np.flipud(np.asarray(series_resistance)),
             },
             domain="Stoichiometry",
         )
