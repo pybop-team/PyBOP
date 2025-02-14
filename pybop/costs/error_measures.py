@@ -39,8 +39,8 @@ class MeanSquaredError(MeanFittingCost):
 
         if dy is not None:
             de = 2 * np.mean(
-                np.trapz((r * dy.T), self.domain_data, axis=2) / L,
-                axis=self.output_axis,
+                np.trapz((r * dy), self.domain_data, axis=2) / L,
+                axis=1,
             )
             return e, de
 
@@ -66,8 +66,8 @@ class RootMeanSquaredError(MeanFittingCost):
 
         if dy is not None:
             de = np.mean(
-                np.trapz((r * dy.T), self.domain_data, axis=2) / L,
-                axis=self.output_axis,
+                np.trapz((r * dy), self.domain_data, axis=2) / L,
+                axis=1,
             ) / (e + np.finfo(float).eps)
             return e, de
 
@@ -94,8 +94,8 @@ class MeanAbsoluteError(MeanFittingCost):
         if dy is not None:
             sign_r = np.sign(r)
             de = np.mean(
-                np.trapz(sign_r * dy.T, self.domain_data, axis=2) / L,
-                axis=self.output_axis,
+                np.trapz(sign_r * dy, self.domain_data, axis=2) / L,
+                axis=1,
             )
             return e, de
 
@@ -119,7 +119,7 @@ class SumSquaredError(FittingCost):
         e = np.sum(np.abs(r) ** 2)
 
         if dy is not None:
-            de = 2 * np.sum((r * dy.T), axis=(self.output_axis, 2))
+            de = 2 * np.sum((r * dy), axis=(1, 2))
             return e, de
 
         return e
@@ -175,8 +175,8 @@ class Minkowski(FittingCost):
 
         if dy is not None:
             de = np.sum(
-                np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T,
-                axis=(self.output_axis, 2),
+                np.sign(r) * np.abs(r) ** (self.p - 1) * dy,
+                axis=(1, 2),
             ) / (e ** (self.p - 1) + np.finfo(float).eps)
             return e, de
 
@@ -231,8 +231,8 @@ class SumOfPower(FittingCost):
 
         if dy is not None:
             de = self.p * np.sum(
-                np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T,
-                axis=(self.output_axis, 2),
+                np.sign(r) * np.abs(r) ** (self.p - 1) * dy,
+                axis=(1, 2),
             )
             return e, de
 
