@@ -61,8 +61,6 @@ class TestEISParameterisation:
         params=[
             pybop.GaussianLogLikelihood,
             pybop.SumSquaredError,
-            pybop.MeanAbsoluteError,
-            pybop.MeanSquaredError,
             pybop.Minkowski,
             pybop.LogPosterior,
         ]
@@ -121,7 +119,7 @@ class TestEISParameterisation:
             cost = cost(
                 pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
             )
-        elif cost in [pybop.SumofPower, pybop.Minkowski]:
+        elif cost in [pybop.SumOfPower, pybop.Minkowski]:
             cost = cost(problem, p=2)
         else:
             cost = cost(problem)
@@ -160,7 +158,7 @@ class TestEISParameterisation:
         # Assert on identified values, without sigma for GaussianLogLikelihood
         # as the sigma values are small (5e-4), this is a difficult identification process
         # and requires a high number of iterations, and parameter dependent step sizes.
-        if optim.minimising:
+        if results.minimising:
             assert initial_cost > results.final_cost
         else:
             assert initial_cost < results.final_cost

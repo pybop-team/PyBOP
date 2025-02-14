@@ -209,7 +209,11 @@ class Parameter:
                     stacklevel=2,
                 )
 
-        if apply_transform and self.transformation is not None:
+        if (
+            self.initial_value is not None
+            and apply_transform
+            and self.transformation is not None
+        ):
             return float(self.transformation.to_search(self.initial_value))
 
         return self.initial_value
@@ -347,19 +351,21 @@ class Parameters:
                 and param.bounds is not None
                 and param.transformation is not None
             ):
-                if isinstance(param.transformation, LogTransformation):
-                    param.bounds = [
-                        b + np.finfo(float).eps if b == 0 else b for b in param.bounds
-                    ]
-                lower = float(param.transformation.to_search(param.bounds[0]))
-                upper = float(param.transformation.to_search(param.bounds[1]))
+                if isinstance(param.transformation, LogTransformation) and lower == 0:
+                    bound_one = -np.inf
+                else:
+                    bound_one = float(param.transformation.to_search(lower))
+                bound_two = float(param.transformation.to_search(upper))
 
-                if np.isnan(lower) or np.isnan(upper):
+                if np.isnan(bound_one) or np.isnan(bound_two):
                     raise ValueError(
                         "Transformed bounds resulted in NaN values.\n"
                         "If you've not applied bounds, this is due to the defaults applied from the prior distribution,\n"
                         "consider bounding the parameters to avoid this error."
                     )
+
+                lower = np.minimum(bound_one, bound_two)
+                upper = np.maximum(bound_one, bound_two)
 
             bounds["lower"].append(lower)
             bounds["upper"].append(upper)

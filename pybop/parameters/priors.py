@@ -236,9 +236,6 @@ class Gaussian(BasePrior):
         self.loc = mean
         self.scale = sigma
         self.prior = stats.norm
-        self._offset = -0.5 * np.log(2 * np.pi * self.scale**2)
-        self.sigma2 = self.scale**2
-        self._multip = -1 / (2.0 * self.sigma2)
         self._n_parameters = 1
 
     def _logpdfS1(self, x):
@@ -255,7 +252,7 @@ class Gaussian(BasePrior):
         float
             The value(s) of the first derivative at x.
         """
-        return self.__call__(x), -(x - self.loc) * self._multip
+        return self.__call__(x), (self.loc - x) / self.scale**2
 
 
 class Uniform(BasePrior):
