@@ -14,39 +14,81 @@ class FittingCost(BaseCost):
     for evaluating model predictions against a set of data. The cost function
     quantifies the goodness-of-fit between the model predictions and the
     observed data, with a lower cost value indicating a better fit.
+
+    Additional Parameters
+    ---------------------
+    weighting : Union[str, np.ndarray], optional, optional
+        The type of weighting to use when taking the sum or mean of the error
+        measure.
     """
 
-    def __init__(self, problem):
+    def __init__(self, problem, weighting: Union[str, np.ndarray] = None):
         super().__init__(problem)
-        self.output_axis = 0 if self.n_outputs > 1 else 1
+        self.domain_data = None
+        self.weighting = None
+
+        if self.problem is not None:
+            self.domain_data = self.problem.domain_data
+            self.n_domain_data = len(self.domain_data)
+            if (
+                weighting is None
+                and np.all(self.domain_data[1:] > self.domain_data[:-1])
+                and self.problem.domain != "Frequency [Hz]"
+            ):
+                weighting = "domain"
+
+        if weighting is None:
+            self.weighting = 1.0
+        elif weighting == "domain":
+            # Normalise the residuals by the domain spacing (for a uniform domain,
+            # this is the same as a uniform weighting)
+            domain_spacing = self.domain_data[1:] - self.domain_data[:-1]
+            self.weighting = (
+                np.concatenate(
+                    (
+                        [domain_spacing[0]],
+                        (domain_spacing[1:] + domain_spacing[:-1]) / 2,
+                        [domain_spacing[-1]],
+                    )
+                )
+                * (self.n_domain_data - 1)
+                / (self.domain_data[-1] - self.domain_data[0])
+            )
+        else:
+            self.weighting = np.asarray(weighting)
 
     def compute(
         self,
         y: dict,
-        dy: Optional[np.ndarray] = None,
+        dy: Optional[dict] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
         Computes the cost function for the given predictions.
 
         Parameters
         ----------
-        y : dict
+        y : dict[str, np.ndarray[np.float64]]
             The dictionary of predictions with keys designating the signals for fitting.
-        dy : np.ndarray, optional
-            The corresponding gradient with respect to the parameters for each signal.
+        dy : dict[str, dict[str, np.ndarray]], optional
+            The corresponding sensitivities to each parameter for each signal.
 
         Returns
         -------
-        tuple or float
+        np.float64 or tuple[np.float64, np.ndarray[np.float64]]
             If dy is not None, returns a tuple containing the cost (float) and the
-            gradient (np.ndarray), otherwise returns only the computed cost (float).
+            sensitivities with dimensions (len(parameters), len(signal), len(domain_data)),
+            otherwise returns only the cost.
         """
         # Early return if the prediction is not verified
         if not self.verify_prediction(y):
             return (np.inf, self.grad_fail) if dy is not None else np.inf
 
-        # Compute the residual
+        # Compute the residual for all signals
         r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
+
+        # Extract the sensitivities for all signals and parameters
+        if dy is not None:
+            dy = self.compute_model_parameter_sensitivities(dy)
 
         return self._error_measure(r=r, dy=dy)
 
@@ -61,15 +103,18 @@ class FittingCost(BaseCost):
         Parameters
         ----------
         r : np.ndarray
-            The residual difference between the model prediction and the target.
+            The residual difference between the model prediction and the target. The
+            dimensions of r are (len(signal), len(domain_data)).
         dy : np.ndarray, optional
             The corresponding gradient with respect to the parameters for each signal.
+            The dimensions of dy are (len(parameters), len(signal), len(domain_data)).
 
         Returns
         -------
-        tuple or float
+        np.float64 or tuple[np.float64, np.ndarray[np.float64]]
             If dy is not None, returns a tuple containing the cost (float) and the
-            gradient (np.ndarray), otherwise returns only the computed cost (float).
+            gradient with dimensions (len(parameters), len(signal), len(domain_data)),
+            otherwise returns only the cost.
         """
         raise NotImplementedError
 

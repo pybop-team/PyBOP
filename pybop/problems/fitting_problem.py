@@ -122,8 +122,9 @@ class FittingProblem(BaseProblem):
 
         Returns
         -------
-        y : np.ndarray
-            The simulated model output y(t) for self.eis == False, and y(ω) for self.eis == True for the given inputs.
+        dict[str, np.ndarray[np.float64]]
+            The simulated model output y(t) for self.eis == False, and y(ω) for self.eis == True
+            for the given inputs.
         """
         inputs = self.parameters.verify(inputs)
         if self.eis:
@@ -146,8 +147,9 @@ class FittingProblem(BaseProblem):
 
         Returns
         -------
-        dict[str, np.ndarray[np.float64]]
-            The simulated model output.
+        dict[str, np.ndarray[np.float64]] or tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]]
+            The simulation result y(t) and, optionally, the sensitivities dy/dx(t) for each
+            parameter x and signal y.
         """
         try:
             if isinstance(self.model.solver, IDAKLUJax):
@@ -171,10 +173,22 @@ class FittingProblem(BaseProblem):
 
         if isinstance(self.model.solver, IDAKLUJax):
             return {signal: sol[:, i] for i, signal in enumerate(self.signal)}
+
         if calculate_grad:
+            param_keys = [
+                p
+                for p in self.parameters.keys()
+                if p in sol[self.signal[0]].sensitivities.keys()
+            ]
             return (
                 {s: sol[s].data for s in self.output_variables},
-                {s: sol[s].sensitivities for s in self.output_variables},
+                {
+                    p: {
+                        s: sol[s].sensitivities[p].toarray().reshape(-1)
+                        for s in self.output_variables
+                    }
+                    for p in param_keys
+                },
             )
 
         return {s: sol[s].data for s in self.output_variables}
@@ -190,27 +204,10 @@ class FittingProblem(BaseProblem):
 
         Returns
         -------
-        tuple[dict, np.ndarray]
-            A tuple containing the simulation result y(t) as a dictionary and the sensitivities
-            dy/dx(t) evaluated with given inputs.
+        tuple[dict[str, np.ndarray[np.float64]], dict[str, dict[str, np.ndarray]]]
+            A tuple containing the simulation result y(t) and the sensitivities dy/dx(t)
+            for each parameter x and signal y evaluated with the given inputs.
         """
         inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(inputs.values()))
-        y, sens = self._evaluate(self._model.simulateS1, inputs, calculate_grad=True)
-
-        if not any([np.isfinite(y[s]).any() for s in self.signal]):
-            return y, sens
-
-        # Extract the sensitivities for all signals at once
-        param_keys = self.parameters.keys()
-        dy = np.stack(
-            [
-                np.column_stack(
-                    [sens[signal][key].toarray()[:, 0] for key in param_keys]
-                )
-                for signal in self.signal
-            ],
-            axis=1,
-        )
-
-        return y, dy
+        return self._evaluate(self._model.simulateS1, inputs, calculate_grad=True)
