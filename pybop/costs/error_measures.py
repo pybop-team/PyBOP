@@ -5,22 +5,7 @@ import numpy as np
 from pybop import FittingCost
 
 
-class MeanFittingCost(FittingCost):
-    """
-    A subclass for fitting costs which involve taking the mean with respect to
-    the domain data.
-    """
-
-    def __init__(self, problem):
-        super().__init__(problem)
-        self.domain_data = None
-        if self.problem is not None:
-            x = self.problem.domain_data
-            if np.all(x[:-1] <= x[1:]):
-                self.domain_data = x / (x[-1] - x[0]) * (len(x) - 1)
-
-
-class MeanSquaredError(MeanFittingCost):
+class MeanSquaredError(FittingCost):
     """
     Mean square error (MSE) cost function.
 
@@ -34,20 +19,16 @@ class MeanSquaredError(MeanFittingCost):
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        L = r.shape[-1] - 1
-        e = np.mean(np.trapz(np.abs(r) ** 2, self.domain_data) / L)
+        e = np.mean((np.abs(r) ** 2) * self.weighting)
 
         if dy is not None:
-            de = 2 * np.mean(
-                np.trapz((r * dy), self.domain_data, axis=2) / L,
-                axis=1,
-            )
+            de = 2 * np.mean((r * self.weighting) * dy, axis=(1, 2))
             return e, de
 
         return e
 
 
-class RootMeanSquaredError(MeanFittingCost):
+class RootMeanSquaredError(FittingCost):
     """
     Root mean square error (RMSE) cost function.
 
@@ -61,20 +42,18 @@ class RootMeanSquaredError(MeanFittingCost):
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        L = r.shape[-1] - 1
-        e = np.sqrt(np.mean(np.trapz(np.abs(r) ** 2, self.domain_data) / L))
+        e = np.sqrt(np.mean((np.abs(r) ** 2) * self.weighting))
 
         if dy is not None:
-            de = np.mean(
-                np.trapz((r * dy), self.domain_data, axis=2) / L,
-                axis=1,
-            ) / (e + np.finfo(float).eps)
+            de = np.mean((r * self.weighting) * dy, axis=(1, 2)) / (
+                e + np.finfo(float).eps
+            )
             return e, de
 
         return e
 
 
-class MeanAbsoluteError(MeanFittingCost):
+class MeanAbsoluteError(FittingCost):
     """
     Mean absolute error (MAE) cost function.
 
@@ -88,15 +67,10 @@ class MeanAbsoluteError(MeanFittingCost):
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        L = r.shape[-1] - 1
-        e = np.mean(np.trapz(np.abs(r), self.domain_data) / L)
+        e = np.mean(np.abs(r) * self.weighting)
 
         if dy is not None:
-            sign_r = np.sign(r)
-            de = np.mean(
-                np.trapz(sign_r * dy, self.domain_data, axis=2) / L,
-                axis=1,
-            )
+            de = np.mean((np.sign(r) * self.weighting) * dy, axis=(1, 2))
             return e, de
 
         return e
@@ -116,10 +90,10 @@ class SumSquaredError(FittingCost):
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        e = np.sum(np.abs(r) ** 2)
+        e = np.sum(np.abs(r) ** 2 * self.weighting)
 
         if dy is not None:
-            de = 2 * np.sum((r * dy), axis=(1, 2))
+            de = 2 * np.sum((r * self.weighting) * dy, axis=(1, 2))
             return e, de
 
         return e
@@ -171,11 +145,11 @@ class Minkowski(FittingCost):
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        e = np.sum(np.abs(r) ** self.p) ** (1 / self.p)
+        e = np.sum((np.abs(r) ** self.p) * self.weighting) ** (1 / self.p)
 
         if dy is not None:
             de = np.sum(
-                np.sign(r) * np.abs(r) ** (self.p - 1) * dy,
+                (np.sign(r) * np.abs(r) ** (self.p - 1) * self.weighting) * dy,
                 axis=(1, 2),
             ) / (e ** (self.p - 1) + np.finfo(float).eps)
             return e, de
@@ -227,11 +201,11 @@ class SumOfPower(FittingCost):
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        e = np.sum(np.abs(r) ** self.p)
+        e = np.sum((np.abs(r) ** self.p) * self.weighting)
 
         if dy is not None:
             de = self.p * np.sum(
-                np.sign(r) * np.abs(r) ** (self.p - 1) * dy,
+                (np.sign(r) * np.abs(r) ** (self.p - 1) * self.weighting) * dy,
                 axis=(1, 2),
             )
             return e, de
