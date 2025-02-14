@@ -157,7 +157,7 @@ class TestTransformation:
         else:
             assert (
                 (initial_cost > results.final_cost)
-                if optim.minimising
+                if results.minimising
                 else (initial_cost < results.final_cost)
             )
             np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)

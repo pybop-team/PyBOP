@@ -132,7 +132,7 @@ class TestWeightedCost:
 
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
-            if optim.minimising:
+            if results.minimising:
                 assert initial_cost > results.final_cost
             else:
                 assert initial_cost < results.final_cost
