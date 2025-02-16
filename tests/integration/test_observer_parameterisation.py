@@ -49,15 +49,15 @@ class TestObservers:
             ),
         )
 
-    def noise(self, sigma, values):
-        return np.random.normal(0, sigma, values)
+    def noisy(self, data, sigma):
+        return data + np.random.normal(0, sigma, len(data))
 
     def test_observer_exponential_decay(self, parameters, model):
         # Make a prediction with measurement noise
         sigma = 1e-2
         t_eval = np.linspace(0, 20, 10)
         values = model.predict(t_eval=t_eval)["y_0"].data
-        corrupt_values = values + self.noise(sigma, len(t_eval))
+        corrupt_values = self.noisy(values, sigma)
 
         # Form dataset
         dataset = pybop.Dataset(
