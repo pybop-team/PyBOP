@@ -109,7 +109,7 @@ class ScaledTransformation(Transformation):
 
     def log_jacobian_det(self, q: np.ndarray) -> float:
         """See :meth:`Transformation.log_jacobian_det()`."""
-        return np.log(np.abs(self.coefficient)).sum()
+        return np.log(np.abs(self.inverse_coeff)).sum()
 
     def log_jacobian_det_S1(self, q: np.ndarray) -> tuple[float, np.ndarray]:
         """See :meth:`Transformation.log_jacobian_det_S1()`."""

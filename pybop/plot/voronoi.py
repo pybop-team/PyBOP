@@ -370,8 +370,8 @@ def surface(
     if optim.x0 is not None:
         fig.add_trace(
             go.Scatter(
-                x=[optim.log["x0"][0]],
-                y=[optim.log["x0"][1]],
+                x=[optim.x0[0]],
+                y=[optim.x0[1]],
                 mode="markers",
                 marker_symbol="x",
                 marker=dict(

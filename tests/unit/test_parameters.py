@@ -222,9 +222,7 @@ class TestParameters:
 
         # Test transformed bounds
         bounds = params.get_bounds(apply_transform=True)
-        np.testing.assert_allclose(
-            bounds["lower"], [np.log(np.finfo(float).eps), 0.5, 0, -1]
-        )
+        np.testing.assert_allclose(bounds["lower"], [-np.inf, 0.5, 0, -1])
         np.testing.assert_allclose(bounds["upper"], [np.log(1), 1.5, 1, 0])
 
         # Test unbounded transformation causes ValueError due to NaN
