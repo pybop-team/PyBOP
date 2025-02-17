@@ -144,6 +144,30 @@ class TestModels:
             ):
                 model.predict(t_eval=t_eval, inputs=inputs)
 
+    def test_removal_and_apply_events(self, model):
+        if isinstance(model, (pybop.lithium_ion.SPM, pybop.lithium_ion.SPMe)):
+            model = (
+                model.new_copy()
+            )  # Copy the model, so building does not affect later tests
+            model.build()
+            assert not model._built_model.events
+            t_eval = np.linspace(0, 1e3, 5)
+            inputs = {
+                "Negative electrode active material volume fraction": 0.9,
+                "Positive electrode active material volume fraction": 0.9,
+            }
+            assert (
+                len(model.simulate(t_eval=t_eval, inputs=inputs)["Voltage [V]"].data)
+                == 5
+            )
+
+            # Reapply events
+            model.apply_events()
+            assert (
+                len(model.simulate(t_eval=t_eval, inputs=inputs)["Voltage [V]"].data)
+                <= 5
+            )
+
     def test_build(self, model):
         if isinstance(model, pybop.lithium_ion.SPMe):
             model.build(initial_state={"Initial SoC": 1.0})

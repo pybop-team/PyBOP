@@ -165,3 +165,9 @@ class TestClassification:
         assert message == (
             "The cost variation is smaller than the cost tolerance: 0.01."
         )
+
+        message = pybop.classify_using_hessian(results, dx=[1, 1])
+        assert message == (
+            "Classification cannot proceed due to infinite cost value(s)."
+            " The result is near the upper bound of R0_a [Ohm]."
+        )
