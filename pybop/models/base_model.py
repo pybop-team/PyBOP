@@ -297,10 +297,14 @@ class BaseModel:
                 return
 
     def apply_events(self):
-        """Applies events if `infeasible_solutions` is True."""
+        """
+        Applies events if `infeasible_solutions` is True.
+        Resets solver to ensure events are applied.
+        """
         if self._events is None:
             self.store_events()
         self._built_model.events = self._events
+        self._solver._model_set_up = {}  # noqa: SLF001
 
     def set_up_for_eis(self, model):
         """
