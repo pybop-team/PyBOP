@@ -2,6 +2,8 @@
 
 ## Features
 
+- [#674](https://github.com/pybop-team/PyBOP/issues/674) - Adds the reason for stopping to the `OptimisationResult`.
+
 ## Optimisations
 
 ## Bug Fixes
