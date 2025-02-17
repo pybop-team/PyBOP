@@ -150,6 +150,7 @@ class TestModels:
             for mdl in [model, model.new_copy()]:
                 mdl.build()
                 assert not mdl._built_model.events
+                assert mdl.events is not None
                 t_eval = np.linspace(0, 1e3, 3)
                 inputs = {
                     "Negative electrode active material volume fraction": 0.5,
