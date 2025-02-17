@@ -57,10 +57,10 @@ problem = pybop.FittingProblem(
     dataset,
     initial_state={"Initial open-circuit voltage [V]": dataset["Voltage [V]"][0]},
 )
-# cost = pybop.GaussianLogLikelihood(problem, sigma0=sigma * 4)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.XNES(
+optim = pybop.Optimisation(
     cost,
+    optimiser=pybop.CuckooSearch,
     max_iterations=100,
 )
 
@@ -76,4 +76,4 @@ pybop.plot.convergence(optim)
 pybop.plot.parameters(optim)
 
 # Plot the cost landscape with optimisation path
-pybop.plot.surface(optim)
+pybop.plot.contour(optim, steps=15)
