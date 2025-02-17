@@ -103,7 +103,7 @@ from .costs.fitting_costs import (
     MeanSquaredError,
     SumSquaredError,
     Minkowski,
-    SumofPower,
+    SumOfPower,
     ObserverCost,
 )
 from .costs.design_costs import (
