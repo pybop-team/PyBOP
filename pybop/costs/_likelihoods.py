@@ -56,10 +56,9 @@ class BaseLikelihood(BaseCost):
 
 class BaseMetaLikelihood(BaseLikelihood):
     """
-    Base class for likelihood classes which have a meta-likelihood
-    such as `LogPosterior` or `ScaledLoglikelihood`. This class
-    points the required attributes towards the composed likelihood
-    class.
+    Base class for likelihood classes which have a meta-likelihood such as `LogPosterior` or
+    `ScaledLoglikelihood`. This class points the required attributes towards the composed
+    likelihood class.
     """
 
     def __init__(self, log_likelihood: BaseLikelihood):
@@ -85,16 +84,15 @@ class BaseMetaLikelihood(BaseLikelihood):
 
 class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
     """
-    This class represents a Gaussian Log Likelihood with a known sigma,
-    which assumes that the data follows a Gaussian distribution and computes
-    the log-likelihood of observed data under this assumption.
+    This class represents a Gaussian log-likelihood with a known sigma, which computes the
+    log-likelihood under the assumption that measurement noise on the target data follows a
+    Gaussian distribution.
 
     Parameters
     ----------
     sigma0 : scalar or array
-        Initial standard deviation around ``x0``. Either a scalar value (one
-        standard deviation for all coordinates) or an array with one entry
-        per dimension.
+        Initial standard deviation around ``x0``. Either a scalar value (one standard deviation
+        for all coordinates) or an array with one entry per dimension.
     """
 
     def __init__(self, problem: BaseProblem, sigma0: Union[list[float], float]):
@@ -120,13 +118,14 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
 
         # Calculate residuals and error
         r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
-        e = np.sum(self._offset + self._multip * np.sum(np.real(r * np.conj(r))))
+        l = np.sum(self._offset + self._multip * np.sum(np.real(r * np.conj(r))))
 
         if dy is not None:
-            dl = np.sum((np.sum((r * dy.T), axis=2) / self.sigma2), axis=1)
-            return e, dl
+            dy = self.stack_sensitivities(dy)
+            dl = np.sum((np.sum((r * dy), axis=2) / self.sigma2), axis=1)
+            return l, dl
 
-        return e
+        return l
 
     def check_sigma0(self, sigma0: Union[np.ndarray, float]):
         """
@@ -145,12 +144,11 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
 
 class GaussianLogLikelihood(BaseLikelihood):
     """
-    This class represents a Gaussian Log Likelihood, which assumes that the
-    data follows a Gaussian distribution and computes the log-likelihood of
-    observed data under this assumption.
+    This class represents a Gaussian log-likelihood, which computes the log-likelihood under
+    the assumption that measurement noise on the target data follows a Gaussian distribution.
 
-    This class estimates the standard deviation of the Gaussian distribution
-    alongside the parameters of the model.
+    This class estimates the standard deviation of the Gaussian distribution alongside the
+    parameters of the model.
 
     Attributes
     ----------
@@ -232,10 +230,19 @@ class GaussianLogLikelihood(BaseLikelihood):
 
         This method only computes the likelihood, without calling problem.evaluate().
 
+        Parameters
+        ----------
+        y : dict[str, np.ndarray[np.float64]]
+            The dictionary of predictions with keys designating the signals for fitting.
+        dy : dict[str, dict[str, np.ndarray]], optional
+            The corresponding gradient with respect to each parameter for each signal.
+
         Returns
         -------
-        float
-            The log-likelihood value, or -inf if the standard deviations are non-positive.
+        np.float64 or tuple[np.float64, np.ndarray[np.float64]]
+            If dy is not None, returns a tuple containing the log-likelihood (float) and the
+            gradient with dimensions (len(parameters), len(signal), len(domain_data)),
+            otherwise returns only the log-likelihood.
         """
         sigma = self.sigma.current_value()
 
@@ -244,21 +251,22 @@ class GaussianLogLikelihood(BaseLikelihood):
 
         # Calculate residuals and error
         r = np.asarray([self._target[signal] - y[signal] for signal in self.signal])
-        e = np.sum(
-            self._logpi
-            - self.n_data * np.log(sigma)
-            - np.sum(np.real(r * np.conj(r)), axis=1) / (2.0 * sigma**2.0)
+        sum_r2 = np.sum(np.real(r * np.conj(r)), axis=1)
+        l = np.sum(
+            self._logpi - self.n_data * np.log(sigma) - sum_r2 / (2.0 * sigma**2.0)
         )
 
         if dy is not None:
-            dl = np.sum((np.sum((r * dy.T), axis=2) / (sigma**2.0)), axis=1)
-            dsigma = (
-                -self.n_data / sigma + np.sum(r**2.0, axis=1) / (sigma**3.0)
-            ) / self._dsigma_scale
-            dl = np.concatenate((dl.flatten(), dsigma))
-            return e, dl
+            dy = self.stack_sensitivities(dy)
+            dl = np.concatenate(
+                (
+                    np.sum((np.sum((r * dy), axis=2) / (sigma**2.0)), axis=1),
+                    (-self.n_data / sigma + sum_r2 / (sigma**3.0)) / self._dsigma_scale,
+                )
+            )
+            return l, dl
 
-        return e
+        return l
 
 
 class ScaledLogLikelihood(BaseMetaLikelihood):
@@ -280,20 +288,20 @@ class ScaledLogLikelihood(BaseMetaLikelihood):
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
         likelihood = self._log_likelihood.compute(y, dy)
-        normalised_val = 1 / self.n_data
+        scaling_factor = 1 / self.n_data
 
         if isinstance(likelihood, tuple):
-            return tuple(val * normalised_val for val in likelihood)
+            return tuple(val * scaling_factor for val in likelihood)
 
-        return likelihood * normalised_val
+        return likelihood * scaling_factor
 
 
 class LogPosterior(BaseMetaLikelihood):
     """
     The Log Posterior for a given problem.
 
-    Computes the log posterior which is proportional to the sum of the log
-    likelihood and the log prior.
+    Computes the log-posterior which is proportional to the sum of the log-likelihood and the
+    log-prior.
 
     Parameters
     ----------
@@ -334,15 +342,17 @@ class LogPosterior(BaseMetaLikelihood):
 
         Parameters
         ----------
-        y : dict
-            The data for which to evaluate the cost.
-        dy : np.ndarray, optional
-            The correspond sensitivities in the data.
+        y : dict[str, np.ndarray[np.float64]]
+            The dictionary of predictions with keys designating the signals for fitting.
+        dy : dict[str, dict[str, np.ndarray]], optional
+            The corresponding sensitivities to each parameter for each signal.
 
         Returns
         -------
-        Union[float, Tuple[float, np.ndarray]]
-            The posterior cost, and optionally the gradient.
+        np.float64 or tuple[np.float64, np.ndarray[np.float64]]
+            If dy is not None, returns a tuple containing the log-posterior (float) and the
+            gradient with dimensions (len(parameters), len(signal), len(domain_data)),
+            otherwise returns only the log-posterior.
         """
         # Compute log prior (and gradient)
         if dy is not None:
