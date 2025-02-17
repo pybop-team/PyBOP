@@ -27,6 +27,8 @@ class BaseProblem:
         Additional variables to observe and store in the solution (default: []).
     initial_state : dict, optional
         A valid initial state (default: None).
+    infeasible_solutions: bool, optional
+        If True, infeasible parameter values will be returned as normal evaluations (default: True).
     """
 
     def __init__(
@@ -38,6 +40,7 @@ class BaseProblem:
         domain: Optional[str] = None,
         additional_variables: Optional[list[str]] = None,
         initial_state: Optional[dict] = None,
+        infeasible_solutions: bool = True,
     ):
         signal = signal or ["Voltage [V]"]
         if isinstance(signal, str):
@@ -76,6 +79,7 @@ class BaseProblem:
         self._target = None
         self.verbose = False
         self.failure_output = np.asarray([np.inf])
+        self.set_allow_infeasible_solutions(infeasible_solutions)
         self.exception = [
             "These parameter values are infeasible."
         ]  # TODO: Update to a utility function and add to it on exception creation
@@ -108,13 +112,16 @@ class BaseProblem:
         """
         self.initial_state = initial_state
 
-    @property
-    def n_parameters(self):
-        return len(self.parameters)
-
-    @property
-    def n_outputs(self):
-        return len(self.signal)
+    def set_allow_infeasible_solutions(self, allow: bool = True):
+        """
+        Set whether to allow infeasible solutions or not.
+        """
+        if self.model is not None:
+            self.infeasible_solutions = allow
+            self.model.allow_infeasible_solutions = self.infeasible_solutions
+        else:
+            # Turn off this feature as there is no model
+            self.infeasible_solutions = False
 
     def evaluate(self, inputs: Inputs, eis=False):
         """
@@ -176,6 +183,14 @@ class BaseProblem:
 
         self._domain_data = dataset[self.domain]
         self._target = {signal: dataset[signal] for signal in self.signal}
+
+    @property
+    def n_parameters(self):
+        return len(self.parameters)
+
+    @property
+    def n_outputs(self):
+        return len(self.signal)
 
     @property
     def model(self):

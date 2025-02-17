@@ -522,13 +522,14 @@ class TestOptimisation:
         )
 
         # Define the problem and cost
-        problem = pybop.FittingProblem(model, parameter, dataset)
+        problem = pybop.FittingProblem(
+            model, parameter, dataset, infeasible_solutions=False
+        )
         cost = pybop.SumSquaredError(problem)
 
         # Create the optimisation class with infeasible solutions disabled
         opt = pybop.SciPyMinimize(
             cost=cost,
-            allow_infeasible_solutions=False,
             max_iterations=1,
         )
 
@@ -556,13 +557,14 @@ class TestOptimisation:
         )
 
         # Define the problem and cost
-        problem = pybop.FittingProblem(model, parameter, dataset)
+        problem = pybop.FittingProblem(
+            model, parameter, dataset, infeasible_solutions=False
+        )
         cost = pybop.SumSquaredError(problem)
 
         # Create the optimisation class with infeasible solutions disabled
         opt = pybop.SciPyMinimize(
             cost=cost,
-            allow_infeasible_solutions=False,
             max_iterations=1,
         )
         with pytest.raises(

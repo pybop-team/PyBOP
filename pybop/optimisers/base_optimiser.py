@@ -41,8 +41,6 @@ class BaseOptimiser(CostInterface):
             If True, the optimisation progress is printed (default: False).
         physical_viability : bool, optional
             If True, the feasibility of the optimised parameters is checked (default: False).
-        allow_infeasible_solutions : bool, optional
-            If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
     Attributes
     ----------
@@ -64,7 +62,6 @@ class BaseOptimiser(CostInterface):
         self.verbose = True
         self._needs_sensitivities = False
         self.physical_viability = False
-        self.allow_infeasible_solutions = False
         self.default_max_iterations = 1000
         self.result = None
         transformation = None
@@ -74,7 +71,6 @@ class BaseOptimiser(CostInterface):
             self.cost = cost
             self.parameters = deepcopy(self.cost.parameters)
             transformation = self.parameters.construct_transformation()
-            self.set_allow_infeasible_solutions()
             invert_cost = not self.cost.minimising
 
         else:
@@ -145,10 +141,6 @@ class BaseOptimiser(CostInterface):
 
         # Set other options
         self.verbose = self.unset_options.pop("verbose", self.verbose)
-        if "allow_infeasible_solutions" in self.unset_options.keys():
-            self.set_allow_infeasible_solutions(
-                self.unset_options.pop("allow_infeasible_solutions")
-            )
 
         # Set multistart
         self.multistart = self.unset_options.pop("multistart", 1)
@@ -285,32 +277,6 @@ class BaseOptimiser(CostInterface):
             The name of the optimiser
         """
         raise NotImplementedError  # pragma: no cover
-
-    def set_allow_infeasible_solutions(self, allow: bool = True):
-        """
-        Set whether to allow infeasible solutions or not.
-
-        Parameters
-        ----------
-        iterations : bool, optional
-            Whether to allow infeasible solutions.
-        """
-        # Set whether to allow infeasible locations
-        self.physical_viability = allow
-        self.allow_infeasible_solutions = allow
-
-        if (
-            isinstance(self.cost, BaseCost)
-            and self.cost.problem is not None
-            and self.cost.problem.model is not None
-        ):
-            self.cost.problem.model.allow_infeasible_solutions = (
-                self.allow_infeasible_solutions
-            )
-        else:
-            # Turn off this feature as there is no model
-            self.physical_viability = False
-            self.allow_infeasible_solutions = False
 
     @property
     def needs_sensitivities(self):

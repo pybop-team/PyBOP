@@ -144,7 +144,8 @@ class OptimisationResult:
         )
 
         # Check that the best parameters are physically viable
-        self.check_physical_viability(self.x_best)
+        if self.optim.physical_viability:
+            self.check_physical_viability(self.x_best)
 
     def check_for_finite_cost(self) -> None:
         """
