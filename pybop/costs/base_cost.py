@@ -28,9 +28,9 @@ class BaseCost:
     _de : float
         The gradient of the cost function to use if an error occurs during
         evaluation. Defaults to 1.0.
-    minimising : bool, optional, default=True
-        If False, switches the sign of the cost and gradient to perform maximisation
-        instead of minimisation.
+    minimising : bool, optional
+        If False, tells the optimiser to switch the sign of the cost and gradient
+        to maximise by default rather than minimise (default: True).
     """
 
     class DeferredPrediction:
@@ -43,7 +43,6 @@ class BaseCost:
 
     def __init__(self, problem: Optional[BaseProblem] = None):
         self._parameters = Parameters()
-        self._transformation = None
         self.problem = problem
         self.verbose = False
         self._has_separable_problem = False
@@ -56,7 +55,6 @@ class BaseCost:
             self._parameters.join(self.problem.parameters)
             self.n_outputs = self.problem.n_outputs
             self.signal = self.problem.signal
-            self._transformation = self._parameters.construct_transformation()
             self._has_separable_problem = True
             self.grad_fail = None
             self.set_fail_gradient()
@@ -65,8 +63,6 @@ class BaseCost:
         self,
         inputs: Union[Inputs, list, np.ndarray],
         calculate_grad: bool = False,
-        apply_transform: bool = False,
-        for_optimiser: bool = False,
     ) -> Union[float, list, tuple[float, np.ndarray], list[tuple[float, np.ndarray]]]:
         """
         Compute cost and optional gradient for given input parameters.
@@ -80,10 +76,6 @@ class BaseCost:
         calculate_grad : bool, default=False
             If True, both the cost and gradient will be computed. Otherwise, only the
             cost is computed.
-        apply_transform : bool, default=False
-            If True, applies a transformation to the inputs before evaluating the model.
-        for_optimiser : bool, default=False
-            If True, adjusts output sign based on minimisation/maximisation setting.
 
         Returns
         -------
@@ -96,78 +88,35 @@ class BaseCost:
         # Convert dict to list for sequential computations
         if isinstance(inputs, dict):
             inputs = list(inputs.values())
-        input_list = np.atleast_2d(inputs)
-
-        minimising = self.minimising or not for_optimiser
-        sign = 1 if minimising else -1
+        inputs_list = np.atleast_2d(inputs)
 
         results = []
-        for input_val in input_list:
-            result = self._evaluate_single_input(
-                input_val,
-                calculate_grad=calculate_grad,
-                apply_transform=apply_transform,
-                sign=sign,
-            )
+        for inputs in inputs_list:
+            result = self.single_call(inputs, calculate_grad=calculate_grad)
             results.append(result)
 
-        return results[0] if len(input_list) == 1 else results
+        return results[0] if len(inputs_list) == 1 else results
 
-    def _evaluate_single_input(
+    def single_call(
         self,
-        input_value: Union[Inputs, np.ndarray],
+        inputs: Union[Inputs, np.ndarray],
         calculate_grad: bool,
-        apply_transform: bool,
-        sign: int,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        """Evaluate cost (and optional gradient) for a single input."""
-        # Setup input transformation
-        self.has_transform = self.transformation is not None and apply_transform
-        model_inputs = self.parameters.verify(self._apply_transformations(input_value))
+        """Evaluate the cost and (optionally) the gradient for a single set of inputs."""
+        model_inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(model_inputs.values()))
 
-        if self._has_separable_problem:
-            return self._evaluate_separable_problem(
-                input_value, calculate_grad=calculate_grad, sign=sign
-            )
-
-        return self._evaluate_non_separable_problem(
-            calculate_grad=calculate_grad, sign=sign
-        )
-
-    def _evaluate_separable_problem(
-        self, input_value: Union[Inputs, np.ndarray], calculate_grad: bool, sign: int
-    ) -> Union[float, tuple[float, np.ndarray]]:
-        """Evaluation for separable problems."""
-        if calculate_grad:
-            y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
-            cost, grad = self.compute(y, dy=dy)
-
-            if self.has_transform and np.isfinite(cost):
-                jac = self.transformation.jacobian(input_value)
-                grad = np.matmul(grad, jac)
-
-            return cost * sign, grad * sign
-
-        y = self.problem.evaluate(self.problem.parameters.as_dict())
-        return self.compute(y, dy=None) * sign
-
-    def _evaluate_non_separable_problem(
-        self, calculate_grad: bool, sign: int
-    ) -> Union[float, tuple[float, np.ndarray]]:
-        """Evaluation for non-separable problems."""
         y = self.DeferredPrediction
         dy = self.DeferredPrediction if calculate_grad else None
 
-        if calculate_grad:
-            cost, grad = self.compute(y, dy=dy)
-            return cost * sign, grad * sign
+        if self._has_separable_problem:
+            if calculate_grad:
+                y, dy = self.problem.evaluateS1(self.problem.parameters.as_dict())
+                return self.compute(y, dy=dy)
 
-        return self.compute(y, dy=dy) * sign
+            y = self.problem.evaluate(self.problem.parameters.as_dict())
 
-    def _apply_transformations(self, inputs):
-        """Apply transformation if needed"""
-        return self.transformation.to_model(inputs) if self.has_transform else inputs
+        return self.compute(y, dy=dy)
 
     def compute(self, y: dict, dy: Optional[np.ndarray]):
         """
@@ -292,14 +241,6 @@ class BaseCost:
     @parameters.setter
     def parameters(self, parameters):
         self._parameters = parameters
-
-    @property
-    def transformation(self):
-        return self._transformation
-
-    @transformation.setter
-    def transformation(self, transformation):
-        self._transformation = transformation
 
     @property
     def pybamm_solution(self):

@@ -70,15 +70,15 @@ class TestEISParameterisation:
     def cost(self, request):
         return request.param
 
-    def noise(self, sigma, values):
+    def noisy(self, data, sigma):
         # Generate real part noise
-        real_noise = np.random.normal(0, sigma, values)
+        real_noise = np.random.normal(0, sigma, len(data))
 
         # Generate imaginary part noise
-        imag_noise = np.random.normal(0, sigma, values)
+        imag_noise = np.random.normal(0, sigma, len(data))
 
         # Combine them into a complex noise
-        return real_noise + 1j * imag_noise
+        return data + real_noise + 1j * imag_noise
 
     @pytest.fixture(
         params=[
@@ -103,8 +103,7 @@ class TestEISParameterisation:
             {
                 "Frequency [Hz]": f_eval,
                 "Current function [A]": np.ones(n_frequency) * 0.0,
-                "Impedance": solution["Impedance"]
-                + self.noise(self.sigma0, len(solution["Impedance"])),
+                "Impedance": self.noisy(solution["Impedance"], self.sigma0),
             }
         )
 
@@ -160,7 +159,7 @@ class TestEISParameterisation:
         # Assert on identified values, without sigma for GaussianLogLikelihood
         # as the sigma values are small (5e-4), this is a difficult identification process
         # and requires a high number of iterations, and parameter dependent step sizes.
-        if optim.minimising:
+        if results.minimising:
             assert initial_cost > results.final_cost
         else:
             assert initial_cost < results.final_cost

@@ -46,8 +46,8 @@ values = synth_model.predict(
 )
 
 
-def noise(sigma):
-    return np.random.normal(0, sigma, len(values["Voltage [V]"].data))
+def noisy(data, sigma):
+    return data + np.random.normal(0, sigma, len(data))
 
 
 # Form dataset
@@ -55,9 +55,10 @@ dataset = pybop.Dataset(
     {
         "Time [s]": values["Time [s]"].data,
         "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": values["Voltage [V]"].data + noise(sigma),
-        "Bulk open-circuit voltage [V]": values["Bulk open-circuit voltage [V]"].data
-        + noise(sigma),
+        "Voltage [V]": noisy(values["Voltage [V]"].data, sigma),
+        "Bulk open-circuit voltage [V]": noisy(
+            values["Bulk open-circuit voltage [V]"].data, sigma
+        ),
     }
 )
 
