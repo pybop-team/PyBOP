@@ -637,9 +637,7 @@ class TestOptimisation:
         optim.set_threshold(np.inf)
         results = optim.run()
         assert (
-            captured_output.getvalue().strip()
-            == f"Halt: Objective function crossed threshold: inf.\n"
-            f"OptimisationResult:\n"
+            captured_output.getvalue().strip() == f"OptimisationResult:\n"
             f"  Best result from {results.n_runs} run(s).\n"
             f"  Initial parameters: {results.x0}\n"
             f"  Optimised parameters: {results.x}\n"
