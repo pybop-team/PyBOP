@@ -150,7 +150,7 @@ class TestOptimisation:
             x_search = 0.7
             optim.log_update(x=[x_search], cost=[0.01])
             assert optim.log["x_search"][-1] == x_search
-            assert optim.log["cost"][-1] == 0.01 * (1 if optim.minimising else -1)
+            assert optim.log["cost"][-1] == 0.01 * (-1 if optim.invert_cost else 1)
             assert (
                 optim.log["x"][-1] == optim._transformation.to_model(x_search)
                 if optim._transformation
@@ -238,10 +238,7 @@ class TestOptimisation:
                 )
                 assert optim.optimiser.population_size() == 100
         else:
-            bounds_list = [
-                (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
-            ]
-            optim = optimiser(cost=cost, bounds=bounds_list, tol=1e-2)
+            optim = optimiser(cost=cost, bounds=bounds, tol=1e-2)
             assert optim.bounds == bounds
 
         if optimiser in [
@@ -271,16 +268,15 @@ class TestOptimisation:
 
             invalid_bounds_cases = [
                 None,
-                [(0, np.inf)],
                 {"upper": [np.inf], "lower": [0.57]},
             ]
 
-            for bounds_case in invalid_bounds_cases:
+            for bounds in invalid_bounds_cases:
                 with pytest.raises(
                     ValueError,
                     match="Bounds must be specified for differential_evolution.",
                 ):
-                    optimiser(cost=cost, bounds=bounds_case)
+                    optimiser(cost=cost, bounds=bounds)
 
         if optimiser in [
             pybop.AdamW,
@@ -574,18 +570,6 @@ class TestOptimisation:
             match="The initial parameter values return an infinite cost.",
         ):
             opt.run()
-
-    def test_scipy_bounds(self, cost):
-        # Create the optimisation class with incorrect bounds type
-        with pytest.raises(
-            TypeError,
-            match="Bounds provided must be either type dict or SciPy.optimize.bounds object.",
-        ):
-            pybop.SciPyMinimize(
-                cost=cost,
-                bounds="This is a bad bound",
-                max_iterations=1,
-            )
 
     def test_halting(self, cost):
         # Add a parameter transformation

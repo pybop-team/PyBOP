@@ -205,7 +205,9 @@ class BasePintsOptimiser(BaseOptimiser):
 
         # Choose method to evaluate
         def fun(x):
-            return self.cost_call(x, calculate_grad=self._needs_sensitivities)
+            return self.call_cost(
+                x, cost=self.cost, calculate_grad=self._needs_sensitivities
+            )
 
         # Create evaluator object
         if isinstance(self.cost, BaseJaxCost):
