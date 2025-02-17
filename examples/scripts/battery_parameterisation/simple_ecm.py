@@ -48,18 +48,18 @@ parameters = pybop.Parameters(
     pybop.Parameter(
         "R0 [Ohm]",
         prior=pybop.Gaussian(0.0002, 0.0001),
-        bounds=[1e-4, 1e-2],
+        bounds=[1e-4, 1e-3],
     ),
     pybop.Parameter(
         "R1 [Ohm]",
         prior=pybop.Gaussian(0.0001, 0.0001),
-        bounds=[1e-5, 1e-2],
+        bounds=[1e-5, 1e-3],
     ),
 )
 
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
-values = model.predict(t_eval=t_eval)
+values = model.predict(t_eval=t_eval, initial_state={"Initial SoC": 0.5})
 corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
 
 # Form dataset
@@ -72,7 +72,11 @@ dataset = pybop.Dataset(
 )
 
 # Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset)
+problem = pybop.FittingProblem(
+    model,
+    parameters,
+    dataset,  # initial_state={"Initial open-circuit voltage [V]": dataset["Voltage [V]"][0]}
+)
 cost = pybop.SumSquaredError(problem)
 optim = pybop.CMAES(cost, max_iterations=100)
 

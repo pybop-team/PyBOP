@@ -4,8 +4,6 @@ import pybop
 
 # Parameter set definition
 parameter_set = pybop.ParameterSet("Chen2020")
-parameter_set["Lower voltage cut-off [V]"] = 2.3
-parameter_set["Upper voltage cut-off [V]"] = 4.4
 
 # Set initial state and unpack true values
 parameter_set.parameter_values.set_initial_stoichiometries(initial_value=1.0)

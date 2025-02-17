@@ -29,13 +29,12 @@ parameters = pybop.Parameters(
 )
 experiment = pybop.Experiment(
     [
-        (
-            "Discharge at 0.5C for 3 minutes (4 second period)",
-            "Charge at 0.5C for 3 minutes (4 second period)",
-        ),
+        "Rest for 5 seconds (1 second period)",
+        "Discharge at 0.5C for 3 minutes (4 second period)",
+        "Charge at 0.5C for 3 minutes (4 second period)",
     ]
 )
-values = model.predict(initial_state={"Initial SoC": 0.7}, experiment=experiment)
+values = model.predict(experiment=experiment, initial_state={"Initial SoC": 0.65})
 
 sigma = 0.002
 corrupt_values = values["Voltage [V]"].data + np.random.normal(
@@ -52,11 +51,16 @@ dataset = pybop.Dataset(
 )
 
 # Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.GaussianLogLikelihood(problem, sigma0=sigma * 4)
-optim = pybop.Optimisation(
+problem = pybop.FittingProblem(
+    model,
+    parameters,
+    dataset,
+    initial_state={"Initial open-circuit voltage [V]": dataset["Voltage [V]"][0]},
+)
+# cost = pybop.GaussianLogLikelihood(problem, sigma0=sigma * 4)
+cost = pybop.SumSquaredError(problem)
+optim = pybop.XNES(
     cost,
-    optimiser=pybop.CuckooSearch,
     max_iterations=100,
 )
 
@@ -72,4 +76,4 @@ pybop.plot.convergence(optim)
 pybop.plot.parameters(optim)
 
 # Plot the cost landscape with optimisation path
-pybop.plot.contour(optim, steps=15)
+pybop.plot.surface(optim)

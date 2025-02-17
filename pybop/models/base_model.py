@@ -117,6 +117,7 @@ class BaseModel:
         self.parameters = Parameters()
         self.param_check_counter = 0
         self.allow_infeasible_solutions = True
+        self._events = None
 
         self._pybamm_solution = None
 
@@ -197,6 +198,9 @@ class BaseModel:
             self._solver._model_set_up = {}  # noqa: SLF001
 
         self.n_states = self._built_model.len_rhs_and_alg  # len_rhs + len_alg
+        self.store_events()
+        if self.allow_infeasible_solutions:
+            self._built_model.events = []
 
     def convert_to_pybamm_initial_state(self, initial_state: dict):
         """
@@ -281,6 +285,22 @@ class BaseModel:
         )
         self._parameter_set.process_geometry(self._geometry)
         self.pybamm_model = self._model_with_set_params
+
+    def store_events(self):
+        """Stores events"""
+        if self._events is None:
+            if (
+                self._built_model is not None
+            ):  # This will need to be updated (does pybamm_model guarantee events?)
+                self._events = self._built_model.events.copy()
+            else:
+                return
+
+    def apply_events(self):
+        """Applies events if `infeasible_solutions` is True."""
+        if self._events is None:
+            self.store_events()
+        self._built_model.events = self._events
 
     def set_up_for_eis(self, model):
         """
@@ -700,12 +720,16 @@ class BaseModel:
             if PyBaMM models are not supported by the current simulation method.
 
         """
+        unprocessed_copy = self._unprocessed_model.new_copy()
         if self.pybamm_model is None:
             raise ValueError(
                 "The predict method currently only supports PyBaMM models."
             )
-        elif not self._unprocessed_model._built:  # noqa: SLF001
-            self._unprocessed_model.build_model()
+        elif not unprocessed_copy._built:  # noqa: SLF001
+            unprocessed_copy.build_model()
+            self.store_events()
+            if self.allow_infeasible_solutions:
+                unprocessed_copy.events = []
         self._pybamm_solution = None
 
         no_parameter_set = parameter_set is None
@@ -734,8 +758,8 @@ class BaseModel:
             raise ValueError("These parameter values are infeasible.")
 
         simulation_args = {
-            "model": self._unprocessed_model,
-            "geometry": self._unprocessed_model.default_geometry,
+            "model": unprocessed_copy,
+            "geometry": unprocessed_copy.default_geometry,
             "parameter_values": parameter_set,
             "submesh_types": self._submesh_types,
             "var_pts": self._var_pts,
@@ -985,6 +1009,10 @@ class BaseModel:
     @property
     def geometry(self):
         return self._geometry
+
+    @property
+    def events(self):
+        return self._events
 
     @property
     def submesh_types(self):

@@ -719,6 +719,7 @@ class TestOptimisation:
 
     def test_optimisation_results(self, cost):
         # Construct OptimisationResult
+        cost.problem.model.apply_events()
         optim = pybop.Optimisation(cost=cost)
         results = pybop.OptimisationResult(optim=optim, x=[1e-3], n_iterations=1)
 

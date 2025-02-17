@@ -68,10 +68,6 @@ def classify_using_hessian(
         message = "The optimiser has not converged to a stationary point."
         message += check_proximity_to_bounds(parameters, x, dx, names)
 
-    elif not np.all([np.isfinite(cost) for cost in costs]):
-        message = "Classification cannot proceed due to infinite cost value(s)."
-        message += check_proximity_to_bounds(parameters, x, dx, names)
-
     else:
         # Estimate the Hessian using second-order accurate central finite differences
         # cfd_hessian = np.zeros((2, 2))
