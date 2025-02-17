@@ -287,11 +287,9 @@ class BaseModel:
         self.pybamm_model = self._model_with_set_params
 
     def store_events(self):
-        """Stores events"""
+        """Stores pybamm events"""
         if self._events is None:
-            if (
-                self._built_model is not None
-            ):  # This will need to be updated (does pybamm_model guarantee events?)
+            if self._built_model is not None:
                 self._events = self._built_model.events.copy()
             else:
                 return
@@ -301,8 +299,6 @@ class BaseModel:
         Applies events if `infeasible_solutions` is True.
         Resets solver to ensure events are applied.
         """
-        if self._events is None:
-            self.store_events()
         self._built_model.events = self._events
         self._solver._model_set_up = {}  # noqa: SLF001
 

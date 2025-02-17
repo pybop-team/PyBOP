@@ -145,7 +145,12 @@ class TestModels:
                 model.predict(t_eval=t_eval, inputs=inputs)
 
     def test_removal_and_apply_events(self, model):
-        if isinstance(model, pybop.lithium_ion.SPM):
+        skipped_models = (
+            pybop.lithium_ion.WeppnerHuggins,
+            pybop.empirical.Thevenin,
+            pybop.lithium_ion.GroupedSPMe,
+        )
+        if not isinstance(model, skipped_models):
             # Test with already built/solved model and new model instances
             for mdl in [model, model.new_copy()]:
                 mdl.build()
