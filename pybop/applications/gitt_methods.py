@@ -54,7 +54,7 @@ class GITTPulseFit(BaseApplication):
             parameter_set=self.parameter_set, build=True
         )
         self.problem = pybop.FittingProblem(self.model, self.parameters, gitt_pulse)
-        self.cost = cost(self.problem)
+        self.cost = cost(self.problem, weighting="domain")
 
         # Build and run the optimisation problem
         self.optim = optimiser(cost=self.cost, verbose=verbose)

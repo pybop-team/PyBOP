@@ -99,18 +99,14 @@ pybop.plot.trajectories(
 # Return to the original model
 parameter_set = pybop.ParameterSet("Xu2019")
 
-
-diffusivity = pybop.Interpolant(
-    gitt_fit.parameter_data["Stoichiometry"],
-    (
-        parameter_set["Positive particle radius [m]"] ** 2
-        / gitt_fit.parameter_data["Particle diffusion time scale [s]"]
-    ),
+# Update the diffusivity value
+diffusivity = np.mean(
+    parameter_set["Positive particle radius [m]"] ** 2
+    / gitt_fit.parameter_data["Particle diffusion time scale [s]"]
 )
-
+parameter_set.update({"Positive particle diffusivity [m2.s-1]": diffusivity})
 
 # Compare the original and identified model predictions
-parameter_set.update({"Positive particle diffusivity [m2.s-1]": diffusivity})
 model = pybop.lithium_ion.SPMe(
     parameter_set=parameter_set, options={"working electrode": "positive"}
 )
