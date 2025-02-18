@@ -107,6 +107,12 @@ class GITTFit(BaseApplication):
                 gitt_dataset["Voltage [V]"][index[0]]
             )
 
+            # Check that initial current is zero
+            if gitt_dataset["Current function [A]"][index[0]] != 0:
+                raise ValueError(
+                    "The initial current in the pulse dataset must be zero."
+                )
+
             # Estimate the parameters for this pulse
             try:
                 self.pulses.append(
@@ -144,7 +150,7 @@ class GITTFit(BaseApplication):
                 "Particle diffusion time scale [s]": np.asarray(diffusion_time),
                 "Series resistance [Ohm]": np.asarray(series_resistance),
             }
-            if stoichiometry[-1] > stoichiometry[0]
+            if len(stoichiometry) > 1 and stoichiometry[-1] > stoichiometry[0]
             else {
                 "Stoichiometry": np.flipud(np.asarray(stoichiometry)),
                 "Particle diffusion time scale [s]": np.flipud(

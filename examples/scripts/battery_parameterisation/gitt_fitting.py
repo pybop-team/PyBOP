@@ -50,7 +50,11 @@ pulse_starts = np.extract(
 )
 pulse_index = []
 for start, finish in zip(pulse_starts[:-1], pulse_starts[1:]):
-    pulse_index.append([i for i in nonzero_index if i >= start - 1 and i < finish])
+    pulse_index.append(
+        np.concatenate(
+            ([start - 1], [i for i in nonzero_index if i >= start and i < finish])
+        )
+    )
 
 # Define parameter set
 parameter_set = convert_physical_to_electrode_parameters(
@@ -58,7 +62,7 @@ parameter_set = convert_physical_to_electrode_parameters(
 )
 init_sto = parameter_set["Initial stoichiometry"]
 
-# Fit the whole GITT measurement
+# Fit each pulse of the GITT measurement
 gitt_fit = pybop.GITTFit(dataset, pulse_index, parameter_set)
 
 # Plot the parameters
@@ -79,22 +83,14 @@ parameter_set.update(
     }
 )
 
-# Compare the identified model prediction to the data
+# Run the identified model
 model = pybop.lithium_ion.SPDiffusion(
     parameter_set=parameter_set,
     options={"working electrode": "positive"},
     build=True,
 )
 model.set_current_function(dataset)
-values = model.predict(t_eval=dataset["Time [s]"])
-
-pybop.plot.trajectories(
-    [dataset["Time [s]"], values["Time [s]"].data],
-    [dataset["Voltage [V]"], values["Voltage [V]"].data],
-    trace_names=["Ground truth", "Identified"],
-    xaxis_title="Time / s",
-    yaxis_title="Voltage / V",
-)
+fitted_values = model.predict(t_eval=dataset["Time [s]"])
 
 # Return to the original model
 parameter_set = pybop.ParameterSet("Xu2019")
@@ -106,15 +102,19 @@ diffusivity = np.mean(
 )
 parameter_set.update({"Positive particle diffusivity [m2.s-1]": diffusivity})
 
-# Compare the original and identified model predictions
+# Compare the original, fitted and identified model predictions
 model = pybop.lithium_ion.SPMe(
     parameter_set=parameter_set, options={"working electrode": "positive"}
 )
 values = model.predict(initial_state=initial_state, experiment=experiment)
 pybop.plot.trajectories(
     values["Time [s]"].data,
-    [dataset["Voltage [V]"], values["Voltage [V]"].data],
-    trace_names=["Ground truth", "Identified"],
+    [
+        dataset["Voltage [V]"],
+        fitted_values["Voltage [V]"].data,
+        values["Voltage [V]"].data,
+    ],
+    trace_names=["Ground truth", "Fitted GITT Model", "Identified Model"],
     xaxis_title="Time / s",
     yaxis_title="Voltage / V",
 )
