@@ -72,11 +72,6 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
 
         # Unpack model options
         electrode = self.options["working electrode"]
-        if electrode not in ["positive", "negative"]:
-            raise ValueError(
-                f"Unrecognised electrode type: {electrode}, "
-                'expecting either "positive" or "negative".'
-            )
 
         pybamm.citations.register("Xu2019")  # for the OCP
 
@@ -198,10 +193,7 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
         # this will not affect the OCP for most values of sto
         out = u_ref + 1e-6 * (1 / sto + 1 / (sto - 1))
 
-        if domain == "negative":
-            out.print_name = r"U_\mathrm{n}(c^\mathrm{surf}_\mathrm{s,n})"
-        elif domain == "positive":
-            out.print_name = r"U_\mathrm{p}(c^\mathrm{surf}_\mathrm{s,p})"
+        out.print_name = r"U(c^\mathrm{surf}_\mathrm{s})"
         return out
 
     def build_model(self):
