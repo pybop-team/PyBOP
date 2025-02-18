@@ -624,21 +624,16 @@ class TestModels:
         with pytest.raises(ValueError, match="Unrecognised electrode type"):
             convert_physical_to_electrode_parameters(parameter_set, electrode="both")
 
-        electrode_parameter_set = convert_physical_to_electrode_parameters(
-            parameter_set, electrode="negative"
-        )
-        model = pybop.lithium_ion.SPDiffusion(parameter_set=electrode_parameter_set)
+        for electrode in ["positive", "negative"]:
+            electrode_parameter_set = convert_physical_to_electrode_parameters(
+                parameter_set, electrode=electrode
+            )
+            model = pybop.lithium_ion.SPDiffusion(
+                parameter_set=electrode_parameter_set, electrode=electrode
+            )
 
-        electrode_parameter_set = convert_physical_to_electrode_parameters(
-            parameter_set, electrode="positive"
-        )
-        model = pybop.lithium_ion.SPDiffusion(
-            parameter_set=electrode_parameter_set,
-            options={"working electrode": "positive"},
-        )
-
-        res = model.predict(t_eval=np.linspace(0, 10, 100))
-        assert len(res["Voltage [V]"].data) == 100
+            res = model.predict(t_eval=np.linspace(0, 10, 100))
+            assert len(res["Voltage [V]"].data) == 100
 
         variable_list = model.pybamm_model.default_quick_plot_variables
         assert isinstance(variable_list, list)

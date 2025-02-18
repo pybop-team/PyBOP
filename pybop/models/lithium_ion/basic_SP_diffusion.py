@@ -57,21 +57,14 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
                 unused_keys.append(key)
         if model_kwargs.get("build", True) is False:
             unused_keys.append("build")
-        options = {"working electrode": "positive"}
         if model_kwargs.get("options", None) is not None:
-            for key, value in model_kwargs["options"].items():
-                if key in ["working electrode"]:
-                    options[key] = value
-                else:
-                    unused_keys.append("options[" + key + "]")
+            for key in model_kwargs["options"].keys():
+                unused_keys.append("options[" + key + "]")
         if any(unused_keys):
             unused_kwargs_warning = f"The input model_kwargs {unused_keys} are not currently used by the SP Diffusion Model."
             warnings.warn(unused_kwargs_warning, UserWarning, stacklevel=2)
 
-        super().__init__(options=options, name=name, build=True)
-
-        # Unpack model options
-        electrode = self.options["working electrode"]
+        super().__init__(options={}, name=name, build=True)
 
         pybamm.citations.register("Xu2019")  # for the OCP
 
@@ -134,11 +127,7 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
         self.rhs[sto] = pybamm.div(pybamm.grad(sto) / tau_d)
 
         # Boundary conditions must be provided for equations with spatial derivatives
-        if electrode == "positive":
-            j = -I / (3 * Q_th)
-        else:
-            j = I / (3 * Q_th)
-
+        j = -I / (3 * Q_th)
         self.boundary_conditions[sto] = {
             "left": (Scalar(0), "Neumann"),
             "right": (-tau_d * j, "Neumann"),
@@ -149,14 +138,11 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
         ######################
         # Cell voltage
         ######################
-        if electrode == "positive":
-            U = self.U(sto_surf, electrode)
-        else:
-            U = -self.U(sto_surf, electrode)
+        U = self.U(sto_surf)
         V = U - R0 * I
 
         # Save the initial OCV
-        self.param.ocv_init = self.U(sto_init, electrode)
+        self.param.ocv_init = self.U(sto_init)
 
         ######################
         # (Some) variables
@@ -176,7 +162,7 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
         # Set the built property on creation to prevent unnecessary model rebuilds
         self._built = True
 
-    def U(self, sto, domain):
+    def U(self, sto):
         """
         Dimensional open-circuit potential [V], calculated as U(x) = U_ref(x).
         Credit: PyBaMM
