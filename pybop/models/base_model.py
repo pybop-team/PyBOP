@@ -358,6 +358,7 @@ class BaseModel:
         self._model_with_set_params = None
         self._built_model = None
         self._built_initial_soc = None
+        self._events = None
         self._mesh = None
         self._disc = None
         self._geometry = self._unprocessed_model.default_geometry
