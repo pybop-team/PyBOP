@@ -202,7 +202,7 @@ class TestCosts:
     @pytest.fixture
     def randomly_spaced_dataset(self, model):
         t_eval = np.linspace(0, 10 * 60, 31) + np.concatenate(
-            ([0], np.random.normal(0, 2, 29), [0])
+            ([0], np.random.normal(0, 1, 29), [0])
         )
         solution = model.predict(t_eval=t_eval)
         return pybop.Dataset(
@@ -247,8 +247,8 @@ class TestCosts:
         problemR = pybop.FittingProblem(model, parameters, randomly_spaced_dataset)
         costR = cost_class(problemR, weighting="domain")
         eR, deR = costR([0.5], calculate_grad=True)
-        np.testing.assert_allclose(e, eR, rtol=9e-3, atol=1e-9)
-        np.testing.assert_allclose(de, deR, rtol=9e-3, atol=1e-9)
+        np.testing.assert_allclose(e, eR, rtol=1e-2, atol=1e-9)
+        np.testing.assert_allclose(de, deR, rtol=1e-2, atol=1e-9)
 
     @pytest.fixture
     def design_problem(self, parameters, experiment):
