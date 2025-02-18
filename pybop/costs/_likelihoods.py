@@ -241,8 +241,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         -------
         np.float64 or tuple[np.float64, np.ndarray[np.float64]]
             If dy is not None, returns a tuple containing the log-likelihood (float) and the
-            gradient with dimensions (len(parameters), len(signal), len(domain_data)),
-            otherwise returns only the log-likelihood.
+            gradient with dimension (len(parameters)), otherwise returns only the log-likelihood.
         """
         sigma = self.sigma.current_value()
 
@@ -350,9 +349,8 @@ class LogPosterior(BaseMetaLikelihood):
         Returns
         -------
         np.float64 or tuple[np.float64, np.ndarray[np.float64]]
-            If dy is not None, returns a tuple containing the log-posterior (float) and the
-            gradient with dimensions (len(parameters), len(signal), len(domain_data)),
-            otherwise returns only the log-posterior.
+            If dy is not None, returns a tuple containing the log-likelihood (float) and the
+            gradient with dimension (len(parameters)), otherwise returns only the log-likelihood.
         """
         # Compute log prior (and gradient)
         if dy is not None:
