@@ -62,6 +62,28 @@ class TestApplications:
             ocp_blend.dataset["Voltage [V]"][-1], charge_dataset["Voltage [V]"][0]
         )
 
+        # Test with opposite voltage gradient
+        discharge_dataset["Voltage [V]"] = np.flipud(discharge_dataset["Voltage [V]"])
+        charge_dataset["Voltage [V]"] = np.flipud(charge_dataset["Voltage [V]"])
+        ocp_blend = pybop.OCPBlend(
+            ocp_discharge=discharge_dataset,
+            ocp_charge=charge_dataset,
+        )
+
+        np.testing.assert_allclose(
+            ocp_blend.dataset["Stoichiometry"][0], charge_dataset["Stoichiometry"][-1]
+        )
+        np.testing.assert_allclose(
+            ocp_blend.dataset["Voltage [V]"][0], charge_dataset["Voltage [V]"][-1]
+        )
+        np.testing.assert_allclose(
+            ocp_blend.dataset["Stoichiometry"][-1],
+            discharge_dataset["Stoichiometry"][-1],
+        )
+        np.testing.assert_allclose(
+            ocp_blend.dataset["Voltage [V]"][-1], discharge_dataset["Voltage [V]"][-1]
+        )
+
     def test_ocp_average(self, discharge_dataset, charge_dataset):
         for allow_stretching in [True, False]:
             # Estimate the shift and generate the average open-circuit potential
@@ -95,7 +117,7 @@ class TestApplications:
             ocv_function=ocv_function,
         )
 
-        np.testing.assert_allclose(ocv_fit.stretch, nom_capacity, rtol=1e-3, atol=1e-3)
+        np.testing.assert_allclose(ocv_fit.stretch, nom_capacity, rtol=2e-3, atol=2e-3)
         np.testing.assert_allclose(
             ocv_fit.shift, 0.1 * nom_capacity, rtol=5e-3, atol=5e-3
         )

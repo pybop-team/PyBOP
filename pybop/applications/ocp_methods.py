@@ -36,19 +36,30 @@ class OCPBlend(BaseApplication):
             ocp_charge["Stoichiometry"], ocp_charge["Voltage [V]"]
         )
 
-        # Generate evenly spaced data for dataset creation
-        sto_evenly_spaced = np.linspace(
-            np.min(ocp_discharge["Stoichiometry"]),
-            np.max(ocp_charge["Stoichiometry"]),
-            501,
-        )
+        if np.sign(
+            ocp_charge["Stoichiometry"][-1] - ocp_charge["Stoichiometry"][0]
+        ) == np.sign(ocp_charge["Voltage [V]"][-1] - ocp_charge["Voltage [V]"][0]):
+            # Increasing stoichiometry corresponds to increasing voltage (full cell)
+            sto_min = np.min(ocp_charge["Stoichiometry"])
+            sto_max = np.max(ocp_discharge["Stoichiometry"])
+            low_sto_fit = voltage_charge
+            high_sto_fit = voltage_discharge
+        else:
+            # Decreasing stoichiometry corresponds to increasing voltage (electrode)
+            sto_min = np.min(ocp_discharge["Stoichiometry"])
+            sto_max = np.max(ocp_charge["Stoichiometry"])
+            low_sto_fit = voltage_discharge
+            high_sto_fit = voltage_charge
 
-        # Define a linear transition from the discharge branch at low
-        # stoichiometry to the charge branch at high stoichiometry
+        # Generate evenly spaced data for dataset creation
+        sto_evenly_spaced = np.linspace(sto_min, sto_max, 501)
+
+        # Define a linear transition from the charge branch at low voltage
+        # to the charge branch at high voltage
         transition = np.linspace(0, 1, len(sto_evenly_spaced))
-        voltage_blend = (1 - transition) * voltage_discharge(
+        voltage_blend = (1 - transition) * low_sto_fit(
             sto_evenly_spaced
-        ) + transition * voltage_charge(sto_evenly_spaced)
+        ) + transition * high_sto_fit(sto_evenly_spaced)
 
         self.dataset = pybop.Dataset(
             {"Stoichiometry": sto_evenly_spaced, "Voltage [V]": voltage_blend}
@@ -179,7 +190,7 @@ class OCPAverage(BaseApplication):
         )
 
         # Optimise the fit between the charge and discharge branches
-        self.cost = cost(self.problem)
+        self.cost = cost(self.problem, weighting="equal")
         self.optim = optimiser(cost=self.cost, verbose=verbose)
         self.results = self.optim.run()
         self.stretch = np.sqrt(self.results.x[1]) if allow_stretching else 1.0
@@ -278,7 +289,7 @@ class OCPCapacityToStoichiometry(BaseApplication):
         )
 
         # Optimise the fit between the OCV function and the dataset
-        self.cost = cost(self.problem)
+        self.cost = cost(self.problem, weighting="domain")
         self.optim = optimiser(cost=self.cost, verbose=verbose)
         self.results = self.optim.run()
         self.stretch = self.results.x[1]
