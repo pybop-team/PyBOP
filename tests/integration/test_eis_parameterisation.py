@@ -61,6 +61,8 @@ class TestEISParameterisation:
         params=[
             pybop.GaussianLogLikelihood,
             pybop.SumSquaredError,
+            pybop.MeanAbsoluteError,
+            pybop.MeanSquaredError,
             pybop.Minkowski,
             pybop.LogPosterior,
         ]

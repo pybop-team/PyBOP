@@ -62,13 +62,6 @@ class FittingCost(BaseCost):
             The dictionary of predictions with keys designating the signals for fitting.
         dy : dict[str, dict[str, np.ndarray]], optional
             The corresponding sensitivities to each parameter for each signal.
-
-        Returns
-        -------
-        np.float64 or tuple[np.float64, np.ndarray[np.float64]]
-            If dy is not None, returns a tuple containing the cost (float) and the
-            sensitivities with dimensions (len(parameters), len(signal), len(domain_data)),
-            otherwise returns only the cost.
         """
         # Early return if the prediction is not verified
         if not self.verify_prediction(y):
