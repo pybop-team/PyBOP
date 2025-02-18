@@ -17,32 +17,23 @@ class FittingCost(BaseCost):
 
     Additional Parameters
     ---------------------
-    weighting : Union[str, np.ndarray], optional, optional
+    weighting : Union[str, np.ndarray], optional
         The type of weighting to use when taking the sum or mean of the error
         measure.
     """
 
     def __init__(self, problem, weighting: Union[str, np.ndarray] = None):
         super().__init__(problem)
-        self.domain_data = None
         self.weighting = None
 
-        if self.problem is not None:
-            self.domain_data = self.problem.domain_data
-            self.n_domain_data = len(self.domain_data)
-            if (
-                weighting is None
-                and np.all(self.domain_data[1:] > self.domain_data[:-1])
-                and self.problem.domain != "Frequency [Hz]"
-            ):
-                weighting = "domain"
-
-        if weighting is None:
+        if weighting == "equal" or weighting is None:
             self.weighting = 1.0
         elif weighting == "domain":
             # Normalise the residuals by the domain spacing (for a uniform domain,
             # this is the same as a uniform weighting)
-            domain_spacing = self.domain_data[1:] - self.domain_data[:-1]
+            domain_data = self.problem.domain_data
+            n_domain_data = len(domain_data)
+            domain_spacing = domain_data[1:] - domain_data[:-1]
             self.weighting = (
                 np.concatenate(
                     (
@@ -51,8 +42,8 @@ class FittingCost(BaseCost):
                         [domain_spacing[-1]],
                     )
                 )
-                * (self.n_domain_data - 1)
-                / (self.domain_data[-1] - self.domain_data[0])
+                * (n_domain_data - 1)
+                / (domain_data[-1] - domain_data[0])
             )
         else:
             self.weighting = np.asarray(weighting)
@@ -71,13 +62,6 @@ class FittingCost(BaseCost):
             The dictionary of predictions with keys designating the signals for fitting.
         dy : dict[str, dict[str, np.ndarray]], optional
             The corresponding sensitivities to each parameter for each signal.
-
-        Returns
-        -------
-        np.float64 or tuple[np.float64, np.ndarray[np.float64]]
-            If dy is not None, returns a tuple containing the cost (float) and the
-            sensitivities with dimensions (len(parameters), len(signal), len(domain_data)),
-            otherwise returns only the cost.
         """
         # Early return if the prediction is not verified
         if not self.verify_prediction(y):
@@ -88,7 +72,7 @@ class FittingCost(BaseCost):
 
         # Extract the sensitivities for all signals and parameters
         if dy is not None:
-            dy = self.compute_model_parameter_sensitivities(dy)
+            dy = self.stack_sensitivities(dy)
 
         return self._error_measure(r=r, dy=dy)
 

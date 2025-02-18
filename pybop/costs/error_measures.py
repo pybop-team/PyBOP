@@ -128,8 +128,10 @@ class Minkowski(FittingCost):
         The order of the Minkowski distance.
     """
 
-    def __init__(self, problem, p: float = 2.0):
-        super().__init__(problem)
+    def __init__(
+        self, problem, p: float = 2.0, weighting: Union[str, np.ndarray] = None
+    ):
+        super().__init__(problem, weighting=weighting)
         if p < 0:
             raise ValueError(
                 "The order of the Minkowski distance must be greater than 0."
@@ -188,8 +190,10 @@ class SumOfPower(FittingCost):
         The power order for Sum of Power.
     """
 
-    def __init__(self, problem, p: float = 2.0):
-        super().__init__(problem)
+    def __init__(
+        self, problem, p: float = 2.0, weighting: Union[str, np.ndarray] = None
+    ):
+        super().__init__(problem, weighting=weighting)
         if p < 0:
             raise ValueError("The order of 'p' must be greater than 0.")
         elif not np.isfinite(p):

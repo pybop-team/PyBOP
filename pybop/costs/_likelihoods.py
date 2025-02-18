@@ -121,7 +121,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         l = np.sum(self._offset + self._multip * np.sum(np.real(r * np.conj(r))))
 
         if dy is not None:
-            dy = self.compute_model_parameter_sensitivities(dy)
+            dy = self.stack_sensitivities(dy)
             dl = np.sum((np.sum((r * dy), axis=2) / self.sigma2), axis=1)
             return l, dl
 
@@ -257,7 +257,7 @@ class GaussianLogLikelihood(BaseLikelihood):
         )
 
         if dy is not None:
-            dy = self.compute_model_parameter_sensitivities(dy)
+            dy = self.stack_sensitivities(dy)
             dl = np.concatenate(
                 (
                     np.sum((np.sum((r * dy), axis=2) / (sigma**2.0)), axis=1),

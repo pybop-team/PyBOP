@@ -129,7 +129,7 @@ class BaseCost:
         Parameters
         ----------
         y : dict
-            The dictionary of predictions with keys designating the signals for fitting.
+            A dictionary of predictions with keys designating the signals for fitting.
         dy : np.ndarray, optional
             The corresponding gradient with respect to the parameters for each signal.
 
@@ -195,7 +195,7 @@ class BaseCost:
         Parameters
         ----------
         y : dict
-            The dictionary of predictions with keys designating the signals for fitting.
+            A dictionary of predictions with keys designating the signals for fitting.
 
         Returns
         -------
@@ -218,9 +218,9 @@ class BaseCost:
         if original_n_params != self.n_parameters:
             self.set_fail_gradient()
 
-    def compute_model_parameter_sensitivities(self, dy) -> np.ndarray:
+    def stack_sensitivities(self, dy) -> np.ndarray:
         """
-        Unpack the sensitivities for each signal and parameter into one array.
+        Stack the sensitivities for each signal and parameter into a single array.
 
         Parameters
         ----------
