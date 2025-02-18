@@ -14,8 +14,8 @@ class GITTPulseFit(BaseApplication):
     Parameters
     ----------
     gitt_pulse : pybop.Dataset
-        A dataset containing the "Time [s]", "Current [A]" and "Voltage [V]" for one
-        pulse obtained from a GITT measurement.
+        A dataset containing the "Time [s]", "Current function [A]" and "Voltage [V]"
+        for one pulse obtained from a GITT measurement.
     parameter_set : pybop.ParameterSet
         A parameter set containing values for the parameters of the SPDiffusion model.
     cost : pybop.BaseCost, optional
@@ -70,8 +70,8 @@ class GITTFit(BaseApplication):
     Parameters
     ----------
     gitt_dataset : pybop.Dataset
-        A dataset containing the "Time [s]", "Current [A]" and "Voltage [V]" for one
-        pulse obtained from a GITT measurement.
+        A dataset containing the "Time [s]", "Current function [A]" and "Voltage [V]"
+        for a GITT measurement.
     pulse_index : list[np.ndarray]
         A nested list of integers representing the indices of each pulse in the dataset.
     parameter_set : pybop.ParameterSet

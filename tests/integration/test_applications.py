@@ -164,3 +164,30 @@ class TestApplications:
         gitt_fit = pybop.GITTPulseFit(pulse_data, parameter_set)
 
         np.testing.assert_allclose(gitt_fit.results.x[0], diffusion_time, rtol=5e-2)
+
+    def test_gitt_fit(self, half_cell_model, pulse_data):
+        parameter_set = convert_physical_to_electrode_parameters(
+            half_cell_model.parameter_set, "positive"
+        )
+        diffusion_time = parameter_set["Particle diffusion time scale [s]"]
+
+        with pytest.raises(
+            ValueError, match="The initial current in the pulse dataset must be zero."
+        ):
+            pybop.GITTFit(
+                gitt_dataset=pulse_data,
+                pulse_index=[np.arange(2, len(pulse_data["Current function [A]"]))],
+                parameter_set=parameter_set,
+            )
+
+        gitt_fit = pybop.GITTFit(
+            gitt_dataset=pulse_data,
+            pulse_index=[np.arange(len(pulse_data["Current function [A]"]))],
+            parameter_set=parameter_set,
+        )
+
+        np.testing.assert_allclose(
+            gitt_fit.parameter_data["Particle diffusion time scale [s]"][0],
+            diffusion_time,
+            rtol=5e-2,
+        )
