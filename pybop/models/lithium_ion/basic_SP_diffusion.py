@@ -98,8 +98,6 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
         # `ParameterValues` class when the model is processed.
 
         Q_th = Parameter("Theoretical electrode capacity [A.s]")
-        tau_d = Parameter("Particle diffusion time scale [s]")
-        R0 = Parameter("Series resistance [Ohm]")
 
         sto_init = Parameter("Initial stoichiometry")
 
@@ -124,13 +122,13 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
         ######################
         # The div and grad operators will be converted to the appropriate matrix
         # multiplication at the discretisation stage
-        self.rhs[sto] = pybamm.div(pybamm.grad(sto) / tau_d)
+        self.rhs[sto] = pybamm.div(pybamm.grad(sto) / self.tau_d(sto))
 
         # Boundary conditions must be provided for equations with spatial derivatives
         j = -I / (3 * Q_th)
         self.boundary_conditions[sto] = {
             "left": (Scalar(0), "Neumann"),
-            "right": (-tau_d * j, "Neumann"),
+            "right": (-self.tau_d(sto_surf) * j, "Neumann"),
         }
 
         self.initial_conditions[sto] = sto_init
@@ -139,7 +137,7 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
         # Cell voltage
         ######################
         U = self.U(sto_surf)
-        V = U - R0 * I
+        V = U - self.R0(sto_surf) * I
 
         # Save the initial OCV
         self.param.ocv_init = self.U(sto_init)
@@ -181,6 +179,20 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
 
         out.print_name = r"U(c^\mathrm{surf}_\mathrm{s})"
         return out
+
+    def tau_d(self, sto):
+        """
+        Diffusion time scale [s] for lithium in the particles.
+        """
+        inputs = {"Particle surface stoichiometry": sto}
+        return FunctionParameter("Particle diffusion time scale [s]", inputs)
+
+    def R0(self, sto):
+        """
+        Series resistance [Ohm].
+        """
+        inputs = {"Particle surface stoichiometry": sto}
+        return FunctionParameter("Series resistance [Ohm]", inputs)
 
     def build_model(self):
         """
