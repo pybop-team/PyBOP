@@ -32,6 +32,12 @@ class FittingProblem(BaseProblem):
         Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
     initial_state : dict, optional
         A valid initial state, e.g. the initial open-circuit voltage (default: None).
+    parallelizable : bool, optional
+        Set to True to use the following workaround to enable parallel
+        model evaluation: deepcopy the model before every evaluation.
+        Note that this means no sensitivities are ever stored. If you
+        wish to compute them, set `parallelizable` to False again and
+        evaluate once more.
 
     Additional Attributes
     ---------------------
@@ -55,6 +61,7 @@ class FittingProblem(BaseProblem):
         domain: Optional[str] = None,
         additional_variables: Optional[list[str]] = None,
         initial_state: Optional[dict] = None,
+        parallelizable: Optional[bool] = False,
     ):
         super().__init__(
             parameters=parameters,
@@ -64,6 +71,7 @@ class FittingProblem(BaseProblem):
             domain=domain,
             additional_variables=additional_variables,
             initial_state=initial_state,
+            parallelizable=parallelizable,
         )
         self._dataset = dataset.data
         self._n_parameters = len(self.parameters)
@@ -127,9 +135,9 @@ class FittingProblem(BaseProblem):
         """
         inputs = self.parameters.verify(inputs)
         if self.eis:
-            return self._evaluate(self._model.simulateEIS, inputs)
+            return self._evaluate(self.model.simulateEIS, inputs)
 
-        return self._evaluate(self._model.simulate, inputs)
+        return self._evaluate(self.model.simulate, inputs)
 
     def _evaluate(
         self, func, inputs, calculate_grad=False
@@ -151,7 +159,7 @@ class FittingProblem(BaseProblem):
         """
         try:
             if isinstance(self.model.solver, IDAKLUJax):
-                sol = self._model.solver.get_vars(self.signal)(
+                sol = self.model.solver.get_vars(self.signal)(
                     self.domain_data, inputs
                 )  # TODO: Add initial_state capabilities
             else:
