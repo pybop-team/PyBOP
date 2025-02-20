@@ -98,7 +98,9 @@ class GITTFit(BaseApplication):
         stoichiometry = []
         diffusion_time = []
         series_resistance = []
+        final_costs = []
 
+        init_sto = parameter_set["Initial stoichiometry"]
         inverse_ocp = pybop.InverseOCV(parameter_set["Electrode OCP [V]"])
 
         for index in pulse_index:
@@ -139,6 +141,7 @@ class GITTFit(BaseApplication):
                 )
                 series_resistance.append(parameter_set["Series resistance [Ohm]"])
                 stoichiometry.append(parameter_set["Initial stoichiometry"])
+                final_costs.append(self.pulses[-1].results.final_cost)
 
             except (Exception, SystemExit, KeyboardInterrupt):
                 self.pulses.append(None)
@@ -149,6 +152,7 @@ class GITTFit(BaseApplication):
                 "Stoichiometry": np.asarray(stoichiometry),
                 "Particle diffusion time scale [s]": np.asarray(diffusion_time),
                 "Series resistance [Ohm]": np.asarray(series_resistance),
+                str(cost(problem=None).name) + " [V]": np.asarray(final_costs),
             }
             if len(stoichiometry) > 1 and stoichiometry[-1] > stoichiometry[0]
             else {
@@ -157,6 +161,22 @@ class GITTFit(BaseApplication):
                     np.asarray(diffusion_time)
                 ),
                 "Series resistance [Ohm]": np.flipud(np.asarray(series_resistance)),
+                str(cost(problem=None).name) + " [V]": np.flipud(
+                    np.asarray(final_costs)
+                ),
             },
             domain="Stoichiometry",
+        )
+
+        # Update parameter set
+        parameter_set.update(
+            {
+                "Initial stoichiometry": init_sto,
+                "Particle diffusion time scale [s]": np.mean(
+                    self.parameter_data["Particle diffusion time scale [s]"],
+                ),
+                "Series resistance [Ohm]": np.mean(
+                    self.parameter_data["Series resistance [Ohm]"],
+                ),
+            }
         )

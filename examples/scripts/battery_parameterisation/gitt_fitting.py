@@ -60,7 +60,6 @@ for start, finish in zip(pulse_starts[:-1], pulse_starts[1:]):
 parameter_set = convert_physical_to_electrode_parameters(
     model.parameter_set, "positive"
 )
-init_sto = parameter_set["Initial stoichiometry"]
 
 # Fit each pulse of the GITT measurement
 gitt_fit = pybop.GITTFit(dataset, pulse_index, parameter_set)
@@ -70,18 +69,6 @@ pybop.plot.dataset(
     gitt_fit.parameter_data, signal=["Particle diffusion time scale [s]"]
 )
 pybop.plot.dataset(gitt_fit.parameter_data, signal=["Series resistance [Ohm]"])
-
-parameter_set.update(
-    {
-        "Initial stoichiometry": init_sto,
-        "Particle diffusion time scale [s]": np.mean(
-            gitt_fit.parameter_data["Particle diffusion time scale [s]"]
-        ),
-        "Series resistance [Ohm]": np.mean(
-            gitt_fit.parameter_data["Series resistance [Ohm]"]
-        ),
-    }
-)
 
 # Run the identified model
 model = pybop.lithium_ion.SPDiffusion(
