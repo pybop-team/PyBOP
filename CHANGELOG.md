@@ -19,6 +19,7 @@
 
 ## Features
 
+- [#666](https://github.com/pybop-team/PyBOP/pull/666) - Adds EP-BOLFI optimiser support.
 - [#636](https://github.com/pybop-team/PyBOP/pull/636) - Adds `pybop.IRPropPlus` optimiser with corresponding tests.
 - [#635](https://github.com/pybop-team/PyBOP/pull/635) - Adds support for multi-proposal evaluation of list-like objects to `BaseCost` classes.
 - [#635](https://github.com/pybop-team/PyBOP/pull/635) - Adds global parameter sensitivity analysis with method `BaseCost.sensitivity_analysis`. This is computation is added to `OptimisationResult` if optimiser arg `compute_sensitivities` is `True`. An additional arg is added to select the number of samples for analysis: `n_sensitivity_samples`.
@@ -74,6 +75,7 @@
 
 ## Bug Fixes
 
+- [#645](https://github.com/pybop-team/PyBOP/pull/645) - Bug fixes for serialization of `DataSet` and `base_echem` classes to enable parallelization.
 - [#595](https://github.com/pybop-team/PyBOP/pull/595) - Fixes non-finite LogTransformed bounds for indices of zero.
 - [#561](https://github.com/pybop-team/PyBOP/pull/561) - Bug fixes the sign of the SciPy cost logs for maximised costs.
 - [#505](https://github.com/pybop-team/PyBOP/pull/505) - Bug fixes for `LogPosterior` with transformed `GaussianLogLikelihood` likelihood.
