@@ -30,6 +30,8 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
     ----------
     name : str, optional
         The name of the model.
+    electrode : str, optional
+        Either "positive" or "negative" depending on the type of electrode.
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values, for example:
         parameter_set : pybamm.ParameterValues or dict, optional
@@ -50,7 +52,12 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
             A dictionary of options to customise the behaviour of the PyBaMM model.
     """
 
-    def __init__(self, name="Single Particle Diffusion Model", **model_kwargs):
+    def __init__(
+        self,
+        name="Single Particle Diffusion Model",
+        electrode="negative",
+        **model_kwargs,
+    ):
         unused_keys = []
         for key in model_kwargs.keys():
             if key not in ["build", "parameter_set", "options"]:
@@ -125,7 +132,10 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
         self.rhs[sto] = pybamm.div(pybamm.grad(sto) / self.tau_d(sto))
 
         # Boundary conditions must be provided for equations with spatial derivatives
-        j = -I / (3 * Q_th)
+        if electrode == "positive":
+            j = -I / (3 * Q_th)
+        else:
+            j = I / (3 * Q_th)
         self.boundary_conditions[sto] = {
             "left": (Scalar(0), "Neumann"),
             "right": (-self.tau_d(sto_surf) * j, "Neumann"),
