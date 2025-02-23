@@ -131,13 +131,13 @@ class TestApplications:
 
     @pytest.fixture
     def pulse_data(self, half_cell_model):
-        sigma = 1e-3
+        sigma = 5e-4
         initial_state = {"Initial SoC": 0.9}
         experiment = pybop.Experiment(
             [
                 "Rest for 1 second",
-                "Discharge at 1C for 10 minutes (10 second period)",
-                "Rest for 20 minutes",
+                "Discharge at 2C for 5 minutes (10 second period)",
+                "Rest for 15 minutes (10 second period)",
             ]
         )
         values = half_cell_model.predict(
@@ -157,17 +157,17 @@ class TestApplications:
 
     def test_gitt_pulse_fit(self, half_cell_model, pulse_data):
         parameter_set = convert_physical_to_electrode_parameters(
-            half_cell_model.parameter_set, "positive"
+            half_cell_model.parameter_set, electrode="positive"
         )
         diffusion_time = parameter_set["Particle diffusion time scale [s]"]
 
-        gitt_fit = pybop.GITTPulseFit(pulse_data, parameter_set)
+        gitt_fit = pybop.GITTPulseFit(pulse_data, parameter_set, electrode="positive")
 
         np.testing.assert_allclose(gitt_fit.results.x[0], diffusion_time, rtol=5e-2)
 
     def test_gitt_fit(self, half_cell_model, pulse_data):
         parameter_set = convert_physical_to_electrode_parameters(
-            half_cell_model.parameter_set, "positive"
+            half_cell_model.parameter_set, electrode="positive"
         )
         diffusion_time = parameter_set["Particle diffusion time scale [s]"]
 
@@ -184,10 +184,12 @@ class TestApplications:
             gitt_dataset=pulse_data,
             pulse_index=[np.arange(len(pulse_data["Current function [A]"]))],
             parameter_set=parameter_set,
+            electrode="positive",
         )
 
         np.testing.assert_allclose(
-            gitt_fit.parameter_data["Particle diffusion time scale [s]"][0],
-            diffusion_time,
+            gitt_fit.parameter_data["Particle diffusion time scale [s]"],
+            np.asarray([diffusion_time]),
             rtol=5e-2,
         )
+        assert gitt_fit.parameter_data["Root Mean Squared Error [V]"][0] < 2e-3

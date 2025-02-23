@@ -62,7 +62,12 @@ parameter_set = convert_physical_to_electrode_parameters(
 )
 
 # Fit each pulse of the GITT measurement
-gitt_fit = pybop.GITTFit(dataset, pulse_index, parameter_set)
+gitt_fit = pybop.GITTFit(
+    gitt_dataset=dataset,
+    pulse_index=pulse_index,
+    parameter_set=parameter_set,
+    electrode="positive",
+)
 
 # Plot the parameters
 pybop.plot.dataset(
@@ -73,7 +78,7 @@ pybop.plot.dataset(gitt_fit.parameter_data, signal=["Series resistance [Ohm]"])
 # Run the identified model
 model = pybop.lithium_ion.SPDiffusion(
     parameter_set=parameter_set,
-    options={"working electrode": "positive"},
+    electrode="positive",
     build=True,
 )
 model.set_current_function(dataset)
