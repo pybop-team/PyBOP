@@ -119,8 +119,8 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         )
 
         # Spatial variables
-        x_n = SpatialVariable("x_n", ["negative electrode"])
-        x_p = SpatialVariable("x_p", ["positive electrode"])
+        x_n = SpatialVariable("x_n", domain=["negative electrode"])
+        x_p = SpatialVariable("x_p", domain=["positive electrode"])
 
         # Surf takes the surface value of a variable, i.e. its boundary value on the
         # right side. This is also accessible via `boundary_value(x, "right")`, with
@@ -176,8 +176,8 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         tau_ct_p = Parameter("Positive electrode charge transfer time scale [s]")
         tau_ct_n = Parameter("Negative electrode charge transfer time scale [s]")
 
-        l_p = Parameter("Positive electrode thickness [m]")  # normalised
-        l_n = Parameter("Negative electrode thickness [m]")  # normalised
+        l_p = Parameter("Positive electrode relative thickness")
+        l_n = Parameter("Negative electrode relative thickness")
 
         t_plus = Parameter("Cation transference number")
 
@@ -470,11 +470,8 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             "Positive electrode capacitance [F]": 1,
             "Negative electrode capacitance [F]": 1,
             "Cation transference number": 0.25,
-            "Positive electrode thickness [m]": 0.47,  # normalised
-            "Negative electrode thickness [m]": 0.47,  # normalised
-            "Separator thickness [m]": 0.06,  # normalised
-            "Positive particle radius [m]": 1,  # normalised
-            "Negative particle radius [m]": 1,  # normalised
+            "Positive electrode relative thickness": 0.47,
+            "Negative electrode relative thickness": 0.47,
             "Series resistance [Ohm]": 0.01,
         }
         return ParameterValues(values=parameter_dictionary)
@@ -497,6 +494,73 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
             },
             {"Open-circuit voltage [V]", "Voltage [V]"},
         ]
+
+    @property
+    def default_var_pts(self):
+        x_n = pybamm.SpatialVariable(
+            "x_n",
+            domain=["negative electrode"],
+            coord_sys="cartesian",
+        )
+        x_s = pybamm.SpatialVariable(
+            "x_s",
+            domain=["separator"],
+            coord_sys="cartesian",
+        )
+        x_p = pybamm.SpatialVariable(
+            "x_p",
+            domain=["positive electrode"],
+            coord_sys="cartesian",
+        )
+
+        # Add particle domains
+        r_n = pybamm.SpatialVariable(
+            "r_n",
+            domain=["negative particle"],
+            auxiliary_domains={"secondary": "negative electrode"},
+            coord_sys="spherical polar",
+        )
+        r_p = pybamm.SpatialVariable(
+            "r_p",
+            domain=["positive particle"],
+            auxiliary_domains={"secondary": "positive electrode"},
+            coord_sys="spherical polar",
+        )
+
+        return {x_n: 20, x_s: 20, x_p: 20, r_n: 20, r_p: 20}
+
+    @property
+    def default_geometry(self):
+        l_p = Parameter("Positive electrode relative thickness")
+        l_n = Parameter("Negative electrode relative thickness")
+
+        return {
+            "negative electrode": {"x_n": {"min": 0, "max": l_n}},
+            "separator": {"x_s": {"min": l_n, "max": 1 - l_p}},
+            "positive electrode": {"x_p": {"min": 1 - l_p, "max": 1}},
+            "negative particle": {"r_n": {"min": 0, "max": 1}},
+            "positive particle": {"r_p": {"min": 0, "max": 1}},
+        }
+
+    @property
+    def default_submesh_types(self):
+        return {
+            "negative electrode": pybamm.Uniform1DSubMesh,
+            "separator": pybamm.Uniform1DSubMesh,
+            "positive electrode": pybamm.Uniform1DSubMesh,
+            "negative particle": pybamm.Uniform1DSubMesh,
+            "positive particle": pybamm.Uniform1DSubMesh,
+        }
+
+    @property
+    def default_spatial_methods(self):
+        return {
+            "negative electrode": pybamm.FiniteVolume(),
+            "separator": pybamm.FiniteVolume(),
+            "positive electrode": pybamm.FiniteVolume(),
+            "negative particle": pybamm.FiniteVolume(),
+            "positive particle": pybamm.FiniteVolume(),
+        }
 
 
 def convert_physical_to_grouped_parameters(parameter_set):
