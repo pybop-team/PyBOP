@@ -6,6 +6,8 @@
 
 ## Optimisations
 
+- [#681](https://github.com/pybop-team/PyBOP/pull/681) - Update the spatial variable defaults of the `GroupedSPMe` model.
+
 ## Bug Fixes
 
 - [#678](https://github.com/pybop-team/PyBOP/pull/678) - Fixed bug where model wasn't plotted for observer classes with `pybop.plot.quick()`.
