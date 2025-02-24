@@ -22,8 +22,8 @@ class Interpolant:
     def __init__(
         self, x, y, name=None, bounds_error=False, fill_value="extrapolate", axis=0
     ):
-        self.x = x
-        self.y = y
+        self.x = np.asarray(x)
+        self.y = np.asarray(y)
         self.name = name
         self.interp1d = interpolate.interp1d(
             x,
