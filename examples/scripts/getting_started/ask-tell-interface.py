@@ -83,6 +83,6 @@ for i in range(100):
         )
 
 # Plot the timeseries output
-pybop.plot.quick(
+pybop.plot.problem(
     problem, problem_inputs=optim.optimiser.x_best(), title="Optimised Comparison"
 )
