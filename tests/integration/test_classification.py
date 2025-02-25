@@ -144,7 +144,7 @@ class TestClassification:
             pybop.Parameters(param_R0_a, param_R0_b),
         ]:
             problem = pybop.FittingProblem(model, parameters, dataset)
-            cost = pybop.SumofPower(problem, p=1)
+            cost = pybop.SumOfPower(problem, p=1)
             x = cost.parameters.true_value()
             optim = pybop.Optimisation(cost=cost)
             results = pybop.OptimisationResult(x=x, optim=optim)
