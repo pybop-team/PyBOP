@@ -160,10 +160,7 @@ class DesignProblem(BaseProblem):
                 print(f"Ignoring this sample due to: {e}")
             return {
                 signal: np.asarray(np.ones(2) * -np.inf)
-                for signal in [*self.signal, *self.additional_variables]
+                for signal in self.output_variables
             }
 
-        return {
-            signal: sol[signal].data
-            for signal in self.signal + self.additional_variables
-        }
+        return {signal: sol[signal].data for signal in self.output_variables}

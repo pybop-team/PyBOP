@@ -100,6 +100,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
             n_iterations=nit,
             scipy_result=result,
             time=total_time,
+            message=result.message,
         )
 
 

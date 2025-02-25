@@ -120,7 +120,7 @@ class TestEISParameterisation:
             cost = cost(
                 pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
             )
-        elif cost in [pybop.SumofPower, pybop.Minkowski]:
+        elif cost in [pybop.SumOfPower, pybop.Minkowski]:
             cost = cost(problem, p=2)
         else:
             cost = cost(problem)

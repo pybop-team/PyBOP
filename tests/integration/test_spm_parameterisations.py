@@ -61,7 +61,7 @@ class Test_SPM_Parameterisation:
             pybop.MeanAbsoluteError,
             pybop.MeanSquaredError,
             pybop.SumSquaredError,
-            pybop.SumofPower,
+            pybop.SumOfPower,
             pybop.Minkowski,
             pybop.LogPosterior,
         ]
@@ -113,7 +113,7 @@ class Test_SPM_Parameterisation:
             cost = cost_cls(
                 pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
             )
-        elif cost_cls in [pybop.SumofPower, pybop.Minkowski]:
+        elif cost_cls in [pybop.SumOfPower, pybop.Minkowski]:
             cost = cost_cls(problem, p=2.5)
         else:
             cost = cost_cls(problem)

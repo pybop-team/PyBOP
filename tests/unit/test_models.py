@@ -594,16 +594,20 @@ class TestModels:
             atol=1e-8,
         )
 
-    def test_grouped_SPMe(self):
+    @pytest.mark.parametrize(
+        "model_class",
+        [
+            pybop.lithium_ion.WeppnerHuggins,
+            pybop.lithium_ion.GroupedSPMe,
+        ],
+    )
+    def test_custom_models(self, model_class):
         with pytest.warns(UserWarning) as record:
-            model = pybop.lithium_ion.GroupedSPMe(
-                unused_kwarg=0, options={"unused option": 0}
-            )
+            model_class(unused_kwarg=0, options={"unused option": 0})
             assert "The input model_kwargs" in str(record[0].message)
-            assert "are not currently used by the GroupedSPMe." in str(
-                record[0].message
-            )
+            assert "are not currently used by " in str(record[0].message)
 
+    def test_grouped_SPMe(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
         parameter_set["Electrolyte diffusivity [m2.s-1]"] = 1.769e-10
         parameter_set["Electrolyte conductivity [S.m-1]"] = 0.9487

@@ -35,7 +35,7 @@ dataset = pybop.Dataset(
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.SumofPower(problem, p=2)
+cost = pybop.SumOfPower(problem, p=2)
 optim = pybop.SNES(cost, max_iterations=100)
 
 results = optim.run()

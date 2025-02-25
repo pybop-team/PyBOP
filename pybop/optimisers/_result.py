@@ -24,6 +24,8 @@ class OptimisationResult:
         The cost associated with the solution x.
     n_iterations : int
         Number of iterations performed by the optimiser.
+    message : str
+        The reason for stopping given by the optimiser.
     scipy_result : scipy.optimize.OptimizeResult, optional
         The result obtained from a SciPy optimiser.
     pybamm_solution: pybamm.Solution or list[pybamm.Solution], optional
@@ -39,6 +41,7 @@ class OptimisationResult:
         n_iterations: Optional[int] = None,
         n_evaluations: Optional[int] = None,
         time: Optional[float] = None,
+        message: Optional[str] = None,
         scipy_result=None,
     ):
         self.optim = optim
@@ -53,6 +56,7 @@ class OptimisationResult:
         self._fisher = []
         self._n_iterations = []
         self._n_evaluations = []
+        self._message = []
         self._scipy_result = []
         self._time = []
         self._x0 = []
@@ -95,6 +99,7 @@ class OptimisationResult:
                 n_iterations=[n_iterations],
                 n_evaluations=[n_evaluations],
                 time=[time],
+                message=[message],
                 scipy_result=[scipy_result],
                 x0=[x0],
                 pybamm_solution=[pybamm_solution],
@@ -109,6 +114,7 @@ class OptimisationResult:
             n_iterations=result._n_iterations,  # noqa: SLF001
             n_evaluations=result._n_evaluations,  # noqa: SLF001
             time=result._time,  # noqa: SLF001
+            message=result._message,  # noqa: SLF001
             scipy_result=result._scipy_result,  # noqa: SLF001
             x0=result._x0,  # noqa: SLF001
             pybamm_solution=result._pybamm_solution,  # noqa: SLF001
@@ -122,6 +128,7 @@ class OptimisationResult:
         n_iterations: list[int],
         n_evaluations: list[int],
         time: list[float],
+        message: list[str],
         scipy_result: list,
         x0: list,
         pybamm_solution: list[Solution],
@@ -132,6 +139,7 @@ class OptimisationResult:
         self._fisher.extend(fisher)
         self._n_iterations.extend(n_iterations)
         self._n_evaluations.extend(n_evaluations)
+        self._message.extend(message)
         self._scipy_result.extend(scipy_result)
         self._time.extend(time)
         self._x0.extend(x0)
@@ -217,6 +225,7 @@ class OptimisationResult:
             f"  Optimisation time: {self.time_best} seconds\n"
             f"  Number of iterations: {self.n_iterations_best}\n"
             f"  Number of evaluations: {self.n_evaluations_best}\n"
+            f"  Reason for stopping: {self.message_best}\n"
             f"  SciPy result available: {'Yes' if self.scipy_result_best else 'No'}\n"
             f"  PyBaMM Solution available: {'Yes' if self.pybamm_solution else 'No'}"
         )
@@ -292,6 +301,14 @@ class OptimisationResult:
         return (
             self._n_evaluations[self._best_run] if self._best_run is not None else None
         )
+
+    @property
+    def message(self):
+        return self._get_single_or_all("_message")
+
+    @property
+    def message_best(self):
+        return self._message[self._best_run] if self._best_run is not None else None
 
     @property
     def scipy_result(self):

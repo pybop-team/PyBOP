@@ -72,7 +72,7 @@ class TestCosts:
             pybop.RootMeanSquaredError,
             pybop.SumSquaredError,
             pybop.Minkowski,
-            pybop.SumofPower,
+            pybop.SumOfPower,
             pybop.ObserverCost,
             pybop.LogPosterior,
         ]
@@ -81,7 +81,7 @@ class TestCosts:
         cls = request.param
         if cls in [pybop.SumSquaredError, pybop.RootMeanSquaredError]:
             return cls(problem)
-        elif cls in [pybop.Minkowski, pybop.SumofPower]:
+        elif cls in [pybop.Minkowski, pybop.SumOfPower]:
             return cls(problem, p=2)
         elif cls is pybop.LogPosterior:
             return cls(pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002))
@@ -189,10 +189,10 @@ class TestCosts:
         with pytest.raises(
             ValueError, match="The order of 'p' must be greater than 0."
         ):
-            pybop.SumofPower(problem, p=-1)
+            pybop.SumOfPower(problem, p=-1)
 
         with pytest.raises(ValueError, match="p = np.inf is not yet supported."):
-            pybop.SumofPower(problem, p=np.inf)
+            pybop.SumOfPower(problem, p=np.inf)
 
     @pytest.fixture
     def design_problem(self, parameters, experiment, signal):
