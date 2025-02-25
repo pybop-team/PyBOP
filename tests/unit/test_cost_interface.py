@@ -68,7 +68,7 @@ class TestCostInterface:
             pybop.RootMeanSquaredError,
             pybop.SumSquaredError,
             pybop.Minkowski,
-            pybop.SumofPower,
+            pybop.SumOfPower,
             pybop.ObserverCost,
             pybop.LogPosterior,
             pybop.GaussianLogLikelihood,

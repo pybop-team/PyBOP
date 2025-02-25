@@ -54,7 +54,7 @@ problem = pybop.FittingProblem(
     signal=signal,
     initial_state={"Initial open-circuit voltage [V]": csv_data[0, 2]},
 )
-cost = pybop.SumofPower(problem, p=2.5)
+cost = pybop.SumOfPower(problem, p=2.5)
 
 optim = pybop.AdamW(
     cost,

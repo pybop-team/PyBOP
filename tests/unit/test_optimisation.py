@@ -600,6 +600,7 @@ class TestOptimisation:
             f"  Optimisation time: {results.time} seconds\n"
             f"  Number of iterations: {results.n_iterations}\n"
             f"  Number of evaluations: {results.n_evaluations}\n"
+            f"  Reason for stopping: {results.message}\n"
             f"  SciPy result available: No\n"
             f"  PyBaMM Solution available: Yes"
         )
@@ -636,9 +637,7 @@ class TestOptimisation:
         optim.set_threshold(np.inf)
         results = optim.run()
         assert (
-            captured_output.getvalue().strip()
-            == f"Halt: Objective function crossed threshold: inf.\n"
-            f"OptimisationResult:\n"
+            captured_output.getvalue().strip() == f"OptimisationResult:\n"
             f"  Best result from {results.n_runs} run(s).\n"
             f"  Initial parameters: {results.x0}\n"
             f"  Optimised parameters: {results.x}\n"
@@ -648,6 +647,7 @@ class TestOptimisation:
             f"  Optimisation time: {results.time} seconds\n"
             f"  Number of iterations: {results.n_iterations}\n"
             f"  Number of evaluations: {results.n_evaluations}\n"
+            f"  Reason for stopping: {results.message}\n"
             f"  SciPy result available: No\n"
             f"  PyBaMM Solution available: Yes"
         )
