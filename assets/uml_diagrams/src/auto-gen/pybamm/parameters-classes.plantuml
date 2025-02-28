@@ -1,0 +1,520 @@
+@startuml classes
+set namespaceSeparator none
+class "BaseParameters" as pybamm.parameters.base_parameters.BaseParameters {
+  domain
+  domain_Domain
+  options
+  phase_name : str
+  phase_prefactor : str
+  set_phase_name()
+}
+class "Domain" as pybamm.parameters.bpx.Domain {
+  name : str
+  pre_name : str
+  short_pre_name : str
+}
+class "DomainGeometricParameters" as pybamm.parameters.geometric_parameters.DomainGeometricParameters {
+  A_tab
+  L : Parameter
+  L_cc : Parameter
+  L_tab : Parameter
+  b_e : Parameter
+  b_s : Parameter
+  centre_y_tab : Parameter
+  centre_z_tab : Parameter
+  domain
+  main_param
+  phase_params : dict
+  prim
+  sec
+  tau_e : Parameter
+  tau_s : Parameter
+}
+class "DomainLeadAcidParameters" as pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters {
+  A_tab
+  DeltaV
+  DeltaVliq
+  DeltaVsurf
+  L
+  L_cc
+  L_tab
+  Q_max : Parameter
+  b_e
+  b_s
+  centre_y_tab
+  centre_z_tab
+  d : Parameter
+  domain
+  eps_max : Parameter
+  epsilon_inactive : Scalar
+  epsilon_init : Parameter
+  geo
+  h_cc
+  h_tab
+  lambda_
+  lambda_cc
+  main_param
+  phase_params : dict
+  prim
+  rho_c_p
+  rho_c_p_cc
+  sigma_cc
+  therm
+  xi : Parameter
+  C_dl(T)
+  sigma(T)
+}
+class "DomainLithiumIonParameters" as pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters {
+  A_tab
+  L
+  L_cc
+  L_tab
+  Q_Li_init
+  Q_init
+  b_e
+  b_s
+  beta_utilisation : Parameter
+  centre_y_tab
+  centre_z_tab
+  domain
+  epsilon_inactive
+  epsilon_init : FunctionParameter
+  geo
+  h_cc
+  h_tab
+  lambda_
+  lambda_cc
+  main_param
+  n_Li_init
+  phase_params : dict
+  prim
+  rho_c_p
+  rho_c_p_cc
+  sec
+  sigma_cc : Parameter
+  tau_e
+  tau_s
+  therm
+  u_init : Parameter
+  C_dl(T)
+  LAM_rate_current(i, T)
+  sigma(T)
+}
+class "DomainThermalParameters" as pybamm.parameters.thermal_parameters.DomainThermalParameters {
+  domain
+  h_tab : Parameter
+  main_param
+  c_p(T)
+  c_p_cc(T)
+  h_cc(y, z)
+  lambda_(T)
+  lambda_cc(T)
+  rho(T)
+  rho_c_p(T)
+  rho_c_p_cc(T)
+  rho_cc(T)
+}
+class "EcmParameters" as pybamm.parameters.ecm_parameters.EcmParameters {
+  A_cc : Scalar
+  Q : Parameter
+  cell_capacity : Parameter
+  cth_cell : Parameter
+  cth_jig : Parameter
+  current_density_with_time : FunctionParameter
+  current_with_time : FunctionParameter
+  initial_T_cell
+  initial_T_jig
+  initial_soc : Parameter
+  k_cell_jig : Parameter
+  k_jig_air : Parameter
+  n_cells : Scalar
+  n_electrodes_parallel : Scalar
+  tau_D : Parameter
+  voltage_high_cut : Parameter
+  voltage_low_cut : Parameter
+  T_amb(t)
+  dUdT(ocv, T_cell)
+  initial_rc_overpotential(element_number)
+  ocv(soc)
+  rcr_element(name, T_cell, current, soc)
+}
+class "ElectricalParameters" as pybamm.parameters.electrical_parameters.ElectricalParameters {
+  Q : Parameter
+  R_contact : Parameter
+  current_density_with_time
+  current_with_time : FunctionParameter
+  geo
+  n_cells : Parameter
+  n_electrodes_parallel : Parameter
+  ocp_soc_0 : Parameter
+  ocp_soc_100 : Parameter
+  voltage_high_cut : Parameter
+  voltage_low_cut : Parameter
+}
+class "GeometricParameters" as pybamm.parameters.geometric_parameters.GeometricParameters {
+  A_cc
+  A_cooling : Parameter
+  L
+  L_Li : Parameter
+  L_x
+  L_y : Parameter
+  L_z : Parameter
+  V_cell : Parameter
+  domain_params : dict
+  n
+  options : NoneType
+  p
+  r_inner : Parameter
+  r_outer : Parameter
+  s
+}
+class "LeadAcidParameters" as pybamm.parameters.lead_acid_parameters.LeadAcidParameters {
+  A_cc
+  A_cooling
+  D_hy : Parameter
+  D_ox : Parameter
+  F : Parameter
+  H : Parameter
+  I_typ
+  L
+  L_x
+  L_y : Parameter
+  L_z : Parameter
+  M_e
+  M_hy : Parameter
+  M_minus : Parameter
+  M_ox : Parameter
+  M_plus : Parameter
+  M_w : Parameter
+  Q : Parameter
+  Q_e_max
+  R : Parameter
+  R_contact : Parameter
+  R_sei : Scalar
+  T_amb
+  T_init : Parameter
+  T_ref : Parameter
+  U_Hy : Parameter
+  U_Ox : Parameter
+  V_Pb : Parameter
+  V_PbO2 : Parameter
+  V_PbSO4 : Parameter
+  V_cell
+  V_e
+  V_hy : Parameter
+  V_minus : Parameter
+  V_ox : Parameter
+  V_plus : Parameter
+  V_w : Parameter
+  W : Parameter
+  a_j_scale
+  c_e_init : Parameter
+  c_e_init_av : Parameter
+  c_ox_init : Parameter
+  c_ox_typ : Parameter
+  capacity
+  current_density_with_time
+  current_with_time : FunctionParameter
+  delta
+  domain_params : dict
+  elec
+  epsilon_init : ConcatenationVariable, FullBroadcast, PrimaryBroadcast
+  geo
+  h_edge
+  h_total : Parameter
+  k_b : Parameter
+  n
+  n_cells : Parameter
+  n_electrodes_parallel : Parameter
+  ne_Hy : Parameter
+  ne_Ox : Parameter
+  nu
+  nu_minus : Parameter
+  nu_plus : Parameter
+  ocv_init
+  p
+  q_e : Parameter
+  q_init : Parameter
+  rho_c_p_eff
+  s
+  s_hy_Hy : Parameter
+  s_ox_Ox : Parameter
+  s_plus_Hy : Parameter
+  s_plus_Ox : Parameter
+  s_w_Ox : Parameter
+  therm
+  thermal_voltage
+  voltage_high_cut : Parameter
+  voltage_low_cut : Parameter
+  D_e(c_e, T)
+  c_T(c_e, c_ox, c_hy)
+  chi(c_e, T, c_ox, c_hy)
+  chiRT_over_Fc(c_e, T)
+  kappa_e(c_e, T)
+  m(c_e)
+  t_plus(c_e, T)
+}
+class "LithiumIonParameters" as pybamm.parameters.lithium_ion_parameters.LithiumIonParameters {
+  A_cc
+  A_cooling
+  F : Parameter
+  I_typ
+  L
+  L_x
+  L_y : Parameter
+  L_z : Parameter
+  Q : Parameter
+  Q_Li_init
+  Q_Li_particles_init
+  R : Parameter
+  R_contact : Parameter
+  T_amb
+  T_amb_av
+  T_init : Parameter
+  T_ref : Parameter
+  V_bar_Li : Parameter
+  V_cell
+  a_j_scale
+  alpha_T_cell : Parameter
+  c_e_init : Parameter
+  c_e_init_av
+  current_density_with_time
+  current_with_time : FunctionParameter
+  domain_params : dict
+  elec
+  epsilon_init : ConcatenationVariable, FullBroadcast, PrimaryBroadcast
+  geo
+  h_edge
+  h_total : Parameter
+  k_b : Parameter
+  lambda_eff
+  n
+  n_Li_e_init
+  n_Li_init
+  n_Li_particles_init
+  n_cells : Parameter
+  n_electrodes_parallel : Parameter
+  ocp_soc_0 : Parameter
+  ocp_soc_100 : Parameter
+  ocv_init
+  options : NoneType
+  p
+  q_e : Parameter
+  r_inner : Parameter
+  r_outer : Parameter
+  rho_c_p_eff
+  s
+  therm
+  thermal_voltage
+  voltage_high_cut : Parameter
+  voltage_low_cut : Parameter
+  D_e(c_e, T)
+  chi(c_e, T)
+  chiRT_over_Fc(c_e, T)
+  j0_Li_metal(c_e, c_Li, T)
+  kappa_e(c_e, T)
+  t_plus(c_e, T)
+  thermodynamic_factor(c_e, T)
+}
+class "NullParameters" as pybamm.parameters.base_parameters.NullParameters {
+}
+class "ParameterSets" as pybamm.parameters.parameter_sets.ParameterSets {
+  get_docstring(key)
+  get_entries(group_name)
+}
+class "ParameterValues" as pybamm.parameters.parameter_values.ParameterValues {
+  check_parameter_values(values)
+  copy()
+  create_from_bpx(filename, target_soc: float)
+  create_from_bpx_obj(bpx_obj, target_soc: float)
+  evaluate(symbol, inputs)
+  get(key, default)
+  items()
+  keys()
+  pop()
+  print_evaluated_parameters(evaluated_parameters, output_file)
+  print_parameters(parameters, output_file)
+  process_boundary_conditions(model)
+  process_geometry(geometry)
+  process_model(unprocessed_model, inplace)
+  process_symbol(symbol)
+  search(key, print_values)
+  set_initial_ocps(initial_value, param, known_value, inplace, options)
+  set_initial_stoichiometries(initial_value, param, known_value, inplace, options, inputs, tol)
+  set_initial_stoichiometry_half_cell(initial_value, param, known_value, inplace, options, inputs)
+  update(values, check_conflict, check_already_exists, path)
+  values()
+}
+class "ParticleGeometricParameters" as pybamm.parameters.geometric_parameters.ParticleGeometricParameters {
+  R
+  R_max : Parameter
+  R_min : Parameter
+  R_typ
+  a : Parameter
+  domain
+  main_param
+  phase
+  phase_prefactor : str
+  f_a_dist(R)
+}
+class "ParticleLithiumIonParameters" as pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters {
+  D_ec : Parameter
+  D_li : Parameter
+  D_sol : Parameter
+  E_sei : Parameter
+  L_sei_0 : Parameter
+  L_sei_crack_0 : Parameter
+  L_tunneling : Parameter
+  Q_Li_init : Scalar
+  Q_init
+  R
+  R_max
+  R_min
+  R_sei : Parameter
+  R_typ
+  U_init : Parameter, Scalar
+  U_sei : Parameter
+  V_bar_sei : Parameter
+  a_typ
+  alpha_SEI : Parameter
+  alpha_bv : Parameter
+  alpha_plating : Parameter
+  alpha_stripping
+  b_cr : Parameter
+  beta_LAM : Parameter
+  beta_LAM_sei : Parameter
+  beta_tunnelling : Parameter
+  c_0 : Parameter
+  c_Li_typ : Parameter
+  c_ec_0 : Parameter
+  c_init : FunctionParameter
+  c_init_av
+  c_li_0 : Parameter
+  c_max : Parameter
+  c_plated_Li_0 : Parameter
+  c_sol : Parameter
+  domain
+  domain_param
+  elec_loading
+  epsilon_s : FunctionParameter
+  epsilon_s_av : FullBroadcast, PrimaryBroadcast
+  f_a_dist
+  geo
+  h_init : Parameter
+  hysteresis_decay : Parameter
+  hysteresis_switch : Parameter
+  j0_sei : Parameter
+  k_sei : Parameter
+  kappa_Li_ion : Parameter
+  kappa_inner : Parameter
+  l_cr_0 : Parameter
+  m_LAM : Parameter
+  m_cr : Parameter
+  main_param
+  mhc_lambda : Parameter
+  n_Li_init : Scalar
+  ne : Scalar
+  nu : Parameter
+  options
+  phase
+  rho_cr : Parameter
+  sto_init_av
+  stress_critical : Parameter
+  w_cr : Parameter
+  z_sei : Parameter
+  D(c_s, T, lithiation)
+  E(sto, T)
+  Omega(sto, T)
+  U(sto, T, lithiation)
+  U0_j(T, index)
+  X_j(T, index)
+  alpha_bv_j(T, index)
+  dUdT(sto)
+  dead_lithium_decay_rate(L_sei)
+  dxdU(U, T)
+  dxdU_j(U, T, index)
+  j0(c_e, c_s_surf, T, lithiation)
+  j0_j(c_e, U, T, index)
+  j0_plating(c_e, c_Li, T)
+  j0_stripping(c_e, c_Li, T)
+  k_cr(T)
+  t_change(sto)
+  w_j(T, index)
+  x(U, T)
+  x_j(U, T, index)
+}
+class "PhaseLeadAcidParameters" as pybamm.parameters.lead_acid_parameters.PhaseLeadAcidParameters {
+  U_init : FunctionParameter
+  a : FunctionParameter
+  alpha_bv : Parameter
+  domain
+  domain_param
+  epsilon_s
+  geo
+  main_param
+  ne : Scalar
+  ne_S : Scalar
+  phase
+  phase_name
+  s_plus_S : Scalar
+  U(c_e, T)
+  j0(c_e, T)
+  j0_Ox(c_e, T)
+}
+class "ThermalParameters" as pybamm.parameters.thermal_parameters.ThermalParameters {
+  T_init : Parameter
+  T_ref : Parameter
+  domain_params : dict
+  geo
+  h_total : Parameter
+  n
+  p
+  s
+  T_amb(y, z, t)
+  T_amb_av(t)
+  h_edge(y, z)
+  lambda_eff(T)
+  rho_c_p_eff(T)
+}
+pybamm.parameters.electrical_parameters.ElectricalParameters --|> pybamm.parameters.base_parameters.BaseParameters
+pybamm.parameters.geometric_parameters.DomainGeometricParameters --|> pybamm.parameters.base_parameters.BaseParameters
+pybamm.parameters.geometric_parameters.GeometricParameters --|> pybamm.parameters.base_parameters.BaseParameters
+pybamm.parameters.geometric_parameters.ParticleGeometricParameters --|> pybamm.parameters.base_parameters.BaseParameters
+pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters --|> pybamm.parameters.base_parameters.BaseParameters
+pybamm.parameters.lead_acid_parameters.LeadAcidParameters --|> pybamm.parameters.base_parameters.BaseParameters
+pybamm.parameters.lead_acid_parameters.PhaseLeadAcidParameters --|> pybamm.parameters.base_parameters.BaseParameters
+pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters --|> pybamm.parameters.base_parameters.BaseParameters
+pybamm.parameters.lithium_ion_parameters.LithiumIonParameters --|> pybamm.parameters.base_parameters.BaseParameters
+pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters --|> pybamm.parameters.base_parameters.BaseParameters
+pybamm.parameters.thermal_parameters.DomainThermalParameters --|> pybamm.parameters.base_parameters.BaseParameters
+pybamm.parameters.thermal_parameters.ThermalParameters --|> pybamm.parameters.base_parameters.BaseParameters
+pybamm.parameters.base_parameters.NullParameters --* pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters : prim
+pybamm.parameters.base_parameters.NullParameters --* pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters : prim
+pybamm.parameters.base_parameters.NullParameters --* pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters : sec
+pybamm.parameters.base_parameters.NullParameters --* pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters : sec
+pybamm.parameters.electrical_parameters.ElectricalParameters --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : elec
+pybamm.parameters.electrical_parameters.ElectricalParameters --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : elec
+pybamm.parameters.geometric_parameters.DomainGeometricParameters --* pybamm.parameters.geometric_parameters.GeometricParameters : n
+pybamm.parameters.geometric_parameters.DomainGeometricParameters --* pybamm.parameters.geometric_parameters.GeometricParameters : s
+pybamm.parameters.geometric_parameters.DomainGeometricParameters --* pybamm.parameters.geometric_parameters.GeometricParameters : p
+pybamm.parameters.geometric_parameters.GeometricParameters --* pybamm.parameters.electrical_parameters.ElectricalParameters : geo
+pybamm.parameters.geometric_parameters.GeometricParameters --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : geo
+pybamm.parameters.geometric_parameters.GeometricParameters --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : geo
+pybamm.parameters.geometric_parameters.GeometricParameters --* pybamm.parameters.thermal_parameters.ThermalParameters : geo
+pybamm.parameters.geometric_parameters.ParticleGeometricParameters --* pybamm.parameters.geometric_parameters.DomainGeometricParameters : prim
+pybamm.parameters.geometric_parameters.ParticleGeometricParameters --* pybamm.parameters.geometric_parameters.DomainGeometricParameters : sec
+pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : n
+pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : s
+pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : p
+pybamm.parameters.lead_acid_parameters.PhaseLeadAcidParameters --* pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters : prim
+pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : n
+pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : s
+pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : p
+pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters --* pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters : prim
+pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters --* pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters : sec
+pybamm.parameters.thermal_parameters.DomainThermalParameters --* pybamm.parameters.thermal_parameters.ThermalParameters : n
+pybamm.parameters.thermal_parameters.DomainThermalParameters --* pybamm.parameters.thermal_parameters.ThermalParameters : s
+pybamm.parameters.thermal_parameters.DomainThermalParameters --* pybamm.parameters.thermal_parameters.ThermalParameters : p
+pybamm.parameters.thermal_parameters.ThermalParameters --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : therm
+pybamm.parameters.thermal_parameters.ThermalParameters --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : therm
+@enduml

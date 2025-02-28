@@ -1,0 +1,11 @@
+@startuml packages
+set namespaceSeparator none
+package "pybop.parameters" as pybop.parameters {
+}
+package "pybop.parameters.parameter" as pybop.parameters.parameter {
+}
+package "pybop.parameters.parameter_set" as pybop.parameters.parameter_set {
+}
+package "pybop.parameters.priors" as pybop.parameters.priors {
+}
+@enduml

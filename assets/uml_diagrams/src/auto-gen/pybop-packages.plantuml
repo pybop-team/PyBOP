@@ -1,0 +1,264 @@
+@startuml packages
+set namespaceSeparator none
+package "pybop" as pybop {
+}
+package "pybop._classification" as pybop._classification {
+}
+package "pybop._dataset" as pybop._dataset {
+}
+package "pybop._evaluation" as pybop._evaluation {
+}
+package "pybop._experiment" as pybop._experiment {
+}
+package "pybop._utils" as pybop._utils {
+}
+package "pybop._version" as pybop._version {
+}
+package "pybop.costs" as pybop.costs {
+}
+package "pybop.costs._likelihoods" as pybop.costs._likelihoods {
+}
+package "pybop.costs._weighted_cost" as pybop.costs._weighted_cost {
+}
+package "pybop.costs.base_cost" as pybop.costs.base_cost {
+}
+package "pybop.costs.design_costs" as pybop.costs.design_costs {
+}
+package "pybop.costs.error_measures" as pybop.costs.error_measures {
+}
+package "pybop.costs.fitting_costs" as pybop.costs.fitting_costs {
+}
+package "pybop.models" as pybop.models {
+}
+package "pybop.models._exponential_decay" as pybop.models._exponential_decay {
+}
+package "pybop.models.base_model" as pybop.models.base_model {
+}
+package "pybop.models.empirical" as pybop.models.empirical {
+}
+package "pybop.models.empirical.base_ecm" as pybop.models.empirical.base_ecm {
+}
+package "pybop.models.empirical.ecm" as pybop.models.empirical.ecm {
+}
+package "pybop.models.lithium_ion" as pybop.models.lithium_ion {
+}
+package "pybop.models.lithium_ion.base_echem" as pybop.models.lithium_ion.base_echem {
+}
+package "pybop.models.lithium_ion.basic_SPMe" as pybop.models.lithium_ion.basic_SPMe {
+}
+package "pybop.models.lithium_ion.echem" as pybop.models.lithium_ion.echem {
+}
+package "pybop.models.lithium_ion.weppner_huggins" as pybop.models.lithium_ion.weppner_huggins {
+}
+package "pybop.observers" as pybop.observers {
+}
+package "pybop.observers.observer" as pybop.observers.observer {
+}
+package "pybop.observers.unscented_kalman" as pybop.observers.unscented_kalman {
+}
+package "pybop.optimisers" as pybop.optimisers {
+}
+package "pybop.optimisers._adamw" as pybop.optimisers._adamw {
+}
+package "pybop.optimisers._cost_interface" as pybop.optimisers._cost_interface {
+}
+package "pybop.optimisers._cuckoo" as pybop.optimisers._cuckoo {
+}
+package "pybop.optimisers._gradient_descent" as pybop.optimisers._gradient_descent {
+}
+package "pybop.optimisers._irprop_plus" as pybop.optimisers._irprop_plus {
+}
+package "pybop.optimisers._random_search" as pybop.optimisers._random_search {
+}
+package "pybop.optimisers._result" as pybop.optimisers._result {
+}
+package "pybop.optimisers._simulated_annealing" as pybop.optimisers._simulated_annealing {
+}
+package "pybop.optimisers.base_optimiser" as pybop.optimisers.base_optimiser {
+}
+package "pybop.optimisers.base_pints_optimiser" as pybop.optimisers.base_pints_optimiser {
+}
+package "pybop.optimisers.optimisation" as pybop.optimisers.optimisation {
+}
+package "pybop.optimisers.pints_optimisers" as pybop.optimisers.pints_optimisers {
+}
+package "pybop.optimisers.scipy_optimisers" as pybop.optimisers.scipy_optimisers {
+}
+package "pybop.parameters" as pybop.parameters {
+}
+package "pybop.parameters.parameter" as pybop.parameters.parameter {
+}
+package "pybop.parameters.parameter_set" as pybop.parameters.parameter_set {
+}
+package "pybop.parameters.priors" as pybop.parameters.priors {
+}
+package "pybop.plot" as pybop.plot {
+}
+package "pybop.plot.contour" as pybop.plot.contour {
+}
+package "pybop.plot.convergence" as pybop.plot.convergence {
+}
+package "pybop.plot.dataset" as pybop.plot.dataset {
+}
+package "pybop.plot.nyquist" as pybop.plot.nyquist {
+}
+package "pybop.plot.parameters" as pybop.plot.parameters {
+}
+package "pybop.plot.plotly_manager" as pybop.plot.plotly_manager {
+}
+package "pybop.plot.problem" as pybop.plot.problem {
+}
+package "pybop.plot.standard_plots" as pybop.plot.standard_plots {
+}
+package "pybop.plot.voronoi" as pybop.plot.voronoi {
+}
+package "pybop.problems" as pybop.problems {
+}
+package "pybop.problems.base_problem" as pybop.problems.base_problem {
+}
+package "pybop.problems.design_problem" as pybop.problems.design_problem {
+}
+package "pybop.problems.fitting_problem" as pybop.problems.fitting_problem {
+}
+package "pybop.problems.multi_fitting_problem" as pybop.problems.multi_fitting_problem {
+}
+package "pybop.samplers" as pybop.samplers {
+}
+package "pybop.samplers.base_pints_sampler" as pybop.samplers.base_pints_sampler {
+}
+package "pybop.samplers.base_sampler" as pybop.samplers.base_sampler {
+}
+package "pybop.samplers.mcmc_sampler" as pybop.samplers.mcmc_sampler {
+}
+package "pybop.samplers.mcmc_summary" as pybop.samplers.mcmc_summary {
+}
+package "pybop.samplers.pints_samplers" as pybop.samplers.pints_samplers {
+}
+pybop --> pybop._classification
+pybop --> pybop._dataset
+pybop --> pybop._evaluation
+pybop --> pybop._experiment
+pybop --> pybop._utils
+pybop --> pybop._version
+pybop --> pybop.costs._likelihoods
+pybop --> pybop.costs._weighted_cost
+pybop --> pybop.costs.base_cost
+pybop --> pybop.costs.design_costs
+pybop --> pybop.costs.error_measures
+pybop --> pybop.costs.fitting_costs
+pybop --> pybop.models
+pybop --> pybop.models._exponential_decay
+pybop --> pybop.models.base_model
+pybop --> pybop.observers.observer
+pybop --> pybop.observers.unscented_kalman
+pybop --> pybop.optimisers._adamw
+pybop --> pybop.optimisers._cost_interface
+pybop --> pybop.optimisers._cuckoo
+pybop --> pybop.optimisers._gradient_descent
+pybop --> pybop.optimisers._irprop_plus
+pybop --> pybop.optimisers._random_search
+pybop --> pybop.optimisers._result
+pybop --> pybop.optimisers._simulated_annealing
+pybop --> pybop.optimisers.base_optimiser
+pybop --> pybop.optimisers.base_pints_optimiser
+pybop --> pybop.optimisers.optimisation
+pybop --> pybop.optimisers.pints_optimisers
+pybop --> pybop.optimisers.scipy_optimisers
+pybop --> pybop.parameters.parameter
+pybop --> pybop.parameters.parameter_set
+pybop --> pybop.parameters.priors
+pybop --> pybop.problems.base_problem
+pybop --> pybop.problems.design_problem
+pybop --> pybop.problems.fitting_problem
+pybop --> pybop.problems.multi_fitting_problem
+pybop --> pybop.samplers.base_pints_sampler
+pybop --> pybop.samplers.base_sampler
+pybop --> pybop.samplers.mcmc_sampler
+pybop --> pybop.samplers.mcmc_summary
+pybop --> pybop.samplers.pints_samplers
+pybop._classification --> pybop
+pybop.costs._likelihoods --> pybop
+pybop.costs._likelihoods --> pybop.costs.base_cost
+pybop.costs._likelihoods --> pybop.parameters.parameter
+pybop.costs._likelihoods --> pybop.parameters.priors
+pybop.costs._likelihoods --> pybop.problems.base_problem
+pybop.costs._weighted_cost --> pybop
+pybop.costs.base_cost --> pybop
+pybop.costs.base_cost --> pybop._utils
+pybop.costs.base_cost --> pybop.parameters.parameter
+pybop.costs.design_costs --> pybop.costs.base_cost
+pybop.costs.error_measures --> pybop
+pybop.costs.fitting_costs --> pybop.costs.base_cost
+pybop.costs.fitting_costs --> pybop.observers.observer
+pybop.models._exponential_decay --> pybop.models.base_model
+pybop.models.base_model --> pybop
+pybop.models.base_model --> pybop.parameters.parameter
+pybop.models.empirical --> pybop.models.empirical.base_ecm
+pybop.models.empirical --> pybop.models.empirical.ecm
+pybop.models.empirical.base_ecm --> pybop.models.base_model
+pybop.models.empirical.base_ecm --> pybop.parameters.parameter_set
+pybop.models.empirical.ecm --> pybop.models.empirical.base_ecm
+pybop.models.lithium_ion --> pybop.models.lithium_ion.base_echem
+pybop.models.lithium_ion --> pybop.models.lithium_ion.echem
+pybop.models.lithium_ion.base_echem --> pybop.models.base_model
+pybop.models.lithium_ion.base_echem --> pybop.parameters.parameter_set
+pybop.models.lithium_ion.basic_SPMe --> pybop
+pybop.models.lithium_ion.echem --> pybop.models.lithium_ion.base_echem
+pybop.models.lithium_ion.echem --> pybop.models.lithium_ion.basic_SPMe
+pybop.models.lithium_ion.echem --> pybop.models.lithium_ion.weppner_huggins
+pybop.observers.observer --> pybop
+pybop.observers.observer --> pybop.models.base_model
+pybop.observers.observer --> pybop.parameters.parameter
+pybop.observers.unscented_kalman --> pybop._dataset
+pybop.observers.unscented_kalman --> pybop.models.base_model
+pybop.observers.unscented_kalman --> pybop.observers.observer
+pybop.observers.unscented_kalman --> pybop.parameters.parameter
+pybop.optimisers._cost_interface --> pybop
+pybop.optimisers._result --> pybop
+pybop.optimisers.base_optimiser --> pybop
+pybop.optimisers.base_pints_optimiser --> pybop
+pybop.optimisers.optimisation --> pybop
+pybop.optimisers.pints_optimisers --> pybop
+pybop.optimisers.scipy_optimisers --> pybop
+pybop.parameters.parameter --> pybop
+pybop.parameters.parameter --> pybop._utils
+pybop.plot --> pybop.plot.contour
+pybop.plot --> pybop.plot.convergence
+pybop.plot --> pybop.plot.dataset
+pybop.plot --> pybop.plot.nyquist
+pybop.plot --> pybop.plot.parameters
+pybop.plot --> pybop.plot.plotly_manager
+pybop.plot --> pybop.plot.problem
+pybop.plot --> pybop.plot.standard_plots
+pybop.plot --> pybop.plot.voronoi
+pybop.plot.contour --> pybop
+pybop.plot.contour --> pybop.plot.plotly_manager
+pybop.plot.convergence --> pybop.plot.standard_plots
+pybop.plot.dataset --> pybop.plot.standard_plots
+pybop.plot.nyquist --> pybop.parameters.parameter
+pybop.plot.nyquist --> pybop.plot.standard_plots
+pybop.plot.parameters --> pybop
+pybop.plot.parameters --> pybop.plot.standard_plots
+pybop.plot.problem --> pybop
+pybop.plot.problem --> pybop.parameters.parameter
+pybop.plot.problem --> pybop.plot.standard_plots
+pybop.plot.standard_plots --> pybop.plot.plotly_manager
+pybop.plot.voronoi --> pybop
+pybop.plot.voronoi --> pybop.plot.plotly_manager
+pybop.problems.base_problem --> pybop
+pybop.problems.base_problem --> pybop.parameters.parameter
+pybop.problems.design_problem --> pybop
+pybop.problems.design_problem --> pybop.models.empirical.base_ecm
+pybop.problems.design_problem --> pybop.models.lithium_ion.base_echem
+pybop.problems.design_problem --> pybop.parameters.parameter
+pybop.problems.design_problem --> pybop.parameters.parameter_set
+pybop.problems.fitting_problem --> pybop
+pybop.problems.fitting_problem --> pybop.parameters.parameter
+pybop.problems.multi_fitting_problem --> pybop
+pybop.problems.multi_fitting_problem --> pybop.parameters.parameter
+pybop.samplers.base_pints_sampler --> pybop
+pybop.samplers.base_sampler --> pybop
+pybop.samplers.mcmc_sampler --> pybop
+pybop.samplers.mcmc_summary --> pybop.plot
+pybop.samplers.pints_samplers --> pybop
+@enduml

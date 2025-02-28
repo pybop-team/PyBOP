@@ -1,0 +1,1212 @@
+@startuml packages
+set namespaceSeparator none
+package "pybamm" as pybamm {
+}
+package "pybamm.batch_study" as pybamm.batch_study {
+}
+package "pybamm.callbacks" as pybamm.callbacks {
+}
+package "pybamm.citations" as pybamm.citations {
+}
+package "pybamm.config" as pybamm.config {
+}
+package "pybamm.discretisations" as pybamm.discretisations {
+}
+package "pybamm.discretisations.discretisation" as pybamm.discretisations.discretisation {
+}
+package "pybamm.doc_utils" as pybamm.doc_utils {
+}
+package "pybamm.experiment" as pybamm.experiment {
+}
+package "pybamm.experiment.experiment" as pybamm.experiment.experiment {
+}
+package "pybamm.experiment.step" as pybamm.experiment.step {
+}
+package "pybamm.experiment.step.base_step" as pybamm.experiment.step.base_step {
+}
+package "pybamm.experiment.step.step_termination" as pybamm.experiment.step.step_termination {
+}
+package "pybamm.experiment.step.steps" as pybamm.experiment.step.steps {
+}
+package "pybamm.expression_tree" as pybamm.expression_tree {
+}
+package "pybamm.expression_tree.array" as pybamm.expression_tree.array {
+}
+package "pybamm.expression_tree.averages" as pybamm.expression_tree.averages {
+}
+package "pybamm.expression_tree.binary_operators" as pybamm.expression_tree.binary_operators {
+}
+package "pybamm.expression_tree.broadcasts" as pybamm.expression_tree.broadcasts {
+}
+package "pybamm.expression_tree.concatenations" as pybamm.expression_tree.concatenations {
+}
+package "pybamm.expression_tree.coupled_variable" as pybamm.expression_tree.coupled_variable {
+}
+package "pybamm.expression_tree.discrete_time_sum" as pybamm.expression_tree.discrete_time_sum {
+}
+package "pybamm.expression_tree.exceptions" as pybamm.expression_tree.exceptions {
+}
+package "pybamm.expression_tree.functions" as pybamm.expression_tree.functions {
+}
+package "pybamm.expression_tree.independent_variable" as pybamm.expression_tree.independent_variable {
+}
+package "pybamm.expression_tree.input_parameter" as pybamm.expression_tree.input_parameter {
+}
+package "pybamm.expression_tree.interpolant" as pybamm.expression_tree.interpolant {
+}
+package "pybamm.expression_tree.matrix" as pybamm.expression_tree.matrix {
+}
+package "pybamm.expression_tree.operations" as pybamm.expression_tree.operations {
+}
+package "pybamm.expression_tree.operations.convert_to_casadi" as pybamm.expression_tree.operations.convert_to_casadi {
+}
+package "pybamm.expression_tree.operations.evaluate_python" as pybamm.expression_tree.operations.evaluate_python {
+}
+package "pybamm.expression_tree.operations.jacobian" as pybamm.expression_tree.operations.jacobian {
+}
+package "pybamm.expression_tree.operations.latexify" as pybamm.expression_tree.operations.latexify {
+}
+package "pybamm.expression_tree.operations.serialise" as pybamm.expression_tree.operations.serialise {
+}
+package "pybamm.expression_tree.operations.unpack_symbols" as pybamm.expression_tree.operations.unpack_symbols {
+}
+package "pybamm.expression_tree.parameter" as pybamm.expression_tree.parameter {
+}
+package "pybamm.expression_tree.printing" as pybamm.expression_tree.printing {
+}
+package "pybamm.expression_tree.printing.print_name" as pybamm.expression_tree.printing.print_name {
+}
+package "pybamm.expression_tree.printing.sympy_overrides" as pybamm.expression_tree.printing.sympy_overrides {
+}
+package "pybamm.expression_tree.scalar" as pybamm.expression_tree.scalar {
+}
+package "pybamm.expression_tree.state_vector" as pybamm.expression_tree.state_vector {
+}
+package "pybamm.expression_tree.symbol" as pybamm.expression_tree.symbol {
+}
+package "pybamm.expression_tree.unary_operators" as pybamm.expression_tree.unary_operators {
+}
+package "pybamm.expression_tree.variable" as pybamm.expression_tree.variable {
+}
+package "pybamm.expression_tree.vector" as pybamm.expression_tree.vector {
+}
+package "pybamm.geometry" as pybamm.geometry {
+}
+package "pybamm.geometry.battery_geometry" as pybamm.geometry.battery_geometry {
+}
+package "pybamm.geometry.geometry" as pybamm.geometry.geometry {
+}
+package "pybamm.geometry.standard_spatial_vars" as pybamm.geometry.standard_spatial_vars {
+}
+package "pybamm.input" as pybamm.input {
+}
+package "pybamm.input.parameters" as pybamm.input.parameters {
+}
+package "pybamm.input.parameters.ecm" as pybamm.input.parameters.ecm {
+}
+package "pybamm.input.parameters.ecm.example_set" as pybamm.input.parameters.ecm.example_set {
+}
+package "pybamm.input.parameters.lead_acid" as pybamm.input.parameters.lead_acid {
+}
+package "pybamm.input.parameters.lead_acid.Sulzer2019" as pybamm.input.parameters.lead_acid.Sulzer2019 {
+}
+package "pybamm.input.parameters.lithium_ion" as pybamm.input.parameters.lithium_ion {
+}
+package "pybamm.input.parameters.lithium_ion.Ai2020" as pybamm.input.parameters.lithium_ion.Ai2020 {
+}
+package "pybamm.input.parameters.lithium_ion.Chen2020" as pybamm.input.parameters.lithium_ion.Chen2020 {
+}
+package "pybamm.input.parameters.lithium_ion.Chen2020_composite" as pybamm.input.parameters.lithium_ion.Chen2020_composite {
+}
+package "pybamm.input.parameters.lithium_ion.Ecker2015" as pybamm.input.parameters.lithium_ion.Ecker2015 {
+}
+package "pybamm.input.parameters.lithium_ion.Ecker2015_graphite_halfcell" as pybamm.input.parameters.lithium_ion.Ecker2015_graphite_halfcell {
+}
+package "pybamm.input.parameters.lithium_ion.MSMR_example_set" as pybamm.input.parameters.lithium_ion.MSMR_example_set {
+}
+package "pybamm.input.parameters.lithium_ion.Marquis2019" as pybamm.input.parameters.lithium_ion.Marquis2019 {
+}
+package "pybamm.input.parameters.lithium_ion.Mohtat2020" as pybamm.input.parameters.lithium_ion.Mohtat2020 {
+}
+package "pybamm.input.parameters.lithium_ion.NCA_Kim2011" as pybamm.input.parameters.lithium_ion.NCA_Kim2011 {
+}
+package "pybamm.input.parameters.lithium_ion.OKane2022" as pybamm.input.parameters.lithium_ion.OKane2022 {
+}
+package "pybamm.input.parameters.lithium_ion.OKane2022_graphite_SiOx_halfcell" as pybamm.input.parameters.lithium_ion.OKane2022_graphite_SiOx_halfcell {
+}
+package "pybamm.input.parameters.lithium_ion.ORegan2022" as pybamm.input.parameters.lithium_ion.ORegan2022 {
+}
+package "pybamm.input.parameters.lithium_ion.Prada2013" as pybamm.input.parameters.lithium_ion.Prada2013 {
+}
+package "pybamm.input.parameters.lithium_ion.Ramadass2004" as pybamm.input.parameters.lithium_ion.Ramadass2004 {
+}
+package "pybamm.input.parameters.lithium_ion.Xu2019" as pybamm.input.parameters.lithium_ion.Xu2019 {
+}
+package "pybamm.input.parameters.sodium_ion" as pybamm.input.parameters.sodium_ion {
+}
+package "pybamm.input.parameters.sodium_ion.Chayambuka2022" as pybamm.input.parameters.sodium_ion.Chayambuka2022 {
+}
+package "pybamm.logger" as pybamm.logger {
+}
+package "pybamm.meshes" as pybamm.meshes {
+}
+package "pybamm.meshes.meshes" as pybamm.meshes.meshes {
+}
+package "pybamm.meshes.one_dimensional_submeshes" as pybamm.meshes.one_dimensional_submeshes {
+}
+package "pybamm.meshes.scikit_fem_submeshes" as pybamm.meshes.scikit_fem_submeshes {
+}
+package "pybamm.meshes.zero_dimensional_submesh" as pybamm.meshes.zero_dimensional_submesh {
+}
+package "pybamm.models" as pybamm.models {
+}
+package "pybamm.models.base_model" as pybamm.models.base_model {
+}
+package "pybamm.models.event" as pybamm.models.event {
+}
+package "pybamm.models.full_battery_models" as pybamm.models.full_battery_models {
+}
+package "pybamm.models.full_battery_models.base_battery_model" as pybamm.models.full_battery_models.base_battery_model {
+}
+package "pybamm.models.full_battery_models.equivalent_circuit" as pybamm.models.full_battery_models.equivalent_circuit {
+}
+package "pybamm.models.full_battery_models.equivalent_circuit.ecm_model_options" as pybamm.models.full_battery_models.equivalent_circuit.ecm_model_options {
+}
+package "pybamm.models.full_battery_models.equivalent_circuit.thevenin" as pybamm.models.full_battery_models.equivalent_circuit.thevenin {
+}
+package "pybamm.models.full_battery_models.lead_acid" as pybamm.models.full_battery_models.lead_acid {
+}
+package "pybamm.models.full_battery_models.lead_acid.base_lead_acid_model" as pybamm.models.full_battery_models.lead_acid.base_lead_acid_model {
+}
+package "pybamm.models.full_battery_models.lead_acid.basic_full" as pybamm.models.full_battery_models.lead_acid.basic_full {
+}
+package "pybamm.models.full_battery_models.lead_acid.full" as pybamm.models.full_battery_models.lead_acid.full {
+}
+package "pybamm.models.full_battery_models.lead_acid.loqs" as pybamm.models.full_battery_models.lead_acid.loqs {
+}
+package "pybamm.models.full_battery_models.lithium_ion" as pybamm.models.full_battery_models.lithium_ion {
+}
+package "pybamm.models.full_battery_models.lithium_ion.Yang2017" as pybamm.models.full_battery_models.lithium_ion.Yang2017 {
+}
+package "pybamm.models.full_battery_models.lithium_ion.base_lithium_ion_model" as pybamm.models.full_battery_models.lithium_ion.base_lithium_ion_model {
+}
+package "pybamm.models.full_battery_models.lithium_ion.basic_dfn" as pybamm.models.full_battery_models.lithium_ion.basic_dfn {
+}
+package "pybamm.models.full_battery_models.lithium_ion.basic_dfn_composite" as pybamm.models.full_battery_models.lithium_ion.basic_dfn_composite {
+}
+package "pybamm.models.full_battery_models.lithium_ion.basic_dfn_half_cell" as pybamm.models.full_battery_models.lithium_ion.basic_dfn_half_cell {
+}
+package "pybamm.models.full_battery_models.lithium_ion.basic_splitOCVR" as pybamm.models.full_battery_models.lithium_ion.basic_splitOCVR {
+}
+package "pybamm.models.full_battery_models.lithium_ion.basic_spm" as pybamm.models.full_battery_models.lithium_ion.basic_spm {
+}
+package "pybamm.models.full_battery_models.lithium_ion.dfn" as pybamm.models.full_battery_models.lithium_ion.dfn {
+}
+package "pybamm.models.full_battery_models.lithium_ion.electrode_soh" as pybamm.models.full_battery_models.lithium_ion.electrode_soh {
+}
+package "pybamm.models.full_battery_models.lithium_ion.electrode_soh_half_cell" as pybamm.models.full_battery_models.lithium_ion.electrode_soh_half_cell {
+}
+package "pybamm.models.full_battery_models.lithium_ion.mpm" as pybamm.models.full_battery_models.lithium_ion.mpm {
+}
+package "pybamm.models.full_battery_models.lithium_ion.msmr" as pybamm.models.full_battery_models.lithium_ion.msmr {
+}
+package "pybamm.models.full_battery_models.lithium_ion.newman_tobias" as pybamm.models.full_battery_models.lithium_ion.newman_tobias {
+}
+package "pybamm.models.full_battery_models.lithium_ion.spm" as pybamm.models.full_battery_models.lithium_ion.spm {
+}
+package "pybamm.models.full_battery_models.lithium_ion.spme" as pybamm.models.full_battery_models.lithium_ion.spme {
+}
+package "pybamm.models.full_battery_models.sodium_ion" as pybamm.models.full_battery_models.sodium_ion {
+}
+package "pybamm.models.full_battery_models.sodium_ion.basic_dfn" as pybamm.models.full_battery_models.sodium_ion.basic_dfn {
+}
+package "pybamm.models.submodels" as pybamm.models.submodels {
+}
+package "pybamm.models.submodels.active_material" as pybamm.models.submodels.active_material {
+}
+package "pybamm.models.submodels.active_material.base_active_material" as pybamm.models.submodels.active_material.base_active_material {
+}
+package "pybamm.models.submodels.active_material.constant_active_material" as pybamm.models.submodels.active_material.constant_active_material {
+}
+package "pybamm.models.submodels.active_material.loss_active_material" as pybamm.models.submodels.active_material.loss_active_material {
+}
+package "pybamm.models.submodels.active_material.total_active_material" as pybamm.models.submodels.active_material.total_active_material {
+}
+package "pybamm.models.submodels.base_submodel" as pybamm.models.submodels.base_submodel {
+}
+package "pybamm.models.submodels.convection" as pybamm.models.submodels.convection {
+}
+package "pybamm.models.submodels.convection.base_convection" as pybamm.models.submodels.convection.base_convection {
+}
+package "pybamm.models.submodels.convection.through_cell" as pybamm.models.submodels.convection.through_cell {
+}
+package "pybamm.models.submodels.convection.through_cell.base_through_cell_convection" as pybamm.models.submodels.convection.through_cell.base_through_cell_convection {
+}
+package "pybamm.models.submodels.convection.through_cell.explicit_convection" as pybamm.models.submodels.convection.through_cell.explicit_convection {
+}
+package "pybamm.models.submodels.convection.through_cell.full_convection" as pybamm.models.submodels.convection.through_cell.full_convection {
+}
+package "pybamm.models.submodels.convection.through_cell.no_convection" as pybamm.models.submodels.convection.through_cell.no_convection {
+}
+package "pybamm.models.submodels.convection.transverse" as pybamm.models.submodels.convection.transverse {
+}
+package "pybamm.models.submodels.convection.transverse.base_transverse_convection" as pybamm.models.submodels.convection.transverse.base_transverse_convection {
+}
+package "pybamm.models.submodels.convection.transverse.full_convection" as pybamm.models.submodels.convection.transverse.full_convection {
+}
+package "pybamm.models.submodels.convection.transverse.no_convection" as pybamm.models.submodels.convection.transverse.no_convection {
+}
+package "pybamm.models.submodels.convection.transverse.uniform_convection" as pybamm.models.submodels.convection.transverse.uniform_convection {
+}
+package "pybamm.models.submodels.current_collector" as pybamm.models.submodels.current_collector {
+}
+package "pybamm.models.submodels.current_collector.base_current_collector" as pybamm.models.submodels.current_collector.base_current_collector {
+}
+package "pybamm.models.submodels.current_collector.effective_resistance_current_collector" as pybamm.models.submodels.current_collector.effective_resistance_current_collector {
+}
+package "pybamm.models.submodels.current_collector.homogeneous_current_collector" as pybamm.models.submodels.current_collector.homogeneous_current_collector {
+}
+package "pybamm.models.submodels.current_collector.potential_pair" as pybamm.models.submodels.current_collector.potential_pair {
+}
+package "pybamm.models.submodels.electrode" as pybamm.models.submodels.electrode {
+}
+package "pybamm.models.submodels.electrode.base_electrode" as pybamm.models.submodels.electrode.base_electrode {
+}
+package "pybamm.models.submodels.electrode.ohm" as pybamm.models.submodels.electrode.ohm {
+}
+package "pybamm.models.submodels.electrode.ohm.base_ohm" as pybamm.models.submodels.electrode.ohm.base_ohm {
+}
+package "pybamm.models.submodels.electrode.ohm.composite_ohm" as pybamm.models.submodels.electrode.ohm.composite_ohm {
+}
+package "pybamm.models.submodels.electrode.ohm.full_ohm" as pybamm.models.submodels.electrode.ohm.full_ohm {
+}
+package "pybamm.models.submodels.electrode.ohm.leading_ohm" as pybamm.models.submodels.electrode.ohm.leading_ohm {
+}
+package "pybamm.models.submodels.electrode.ohm.li_metal" as pybamm.models.submodels.electrode.ohm.li_metal {
+}
+package "pybamm.models.submodels.electrode.ohm.surface_form_ohm" as pybamm.models.submodels.electrode.ohm.surface_form_ohm {
+}
+package "pybamm.models.submodels.electrolyte_conductivity" as pybamm.models.submodels.electrolyte_conductivity {
+}
+package "pybamm.models.submodels.electrolyte_conductivity.base_electrolyte_conductivity" as pybamm.models.submodels.electrolyte_conductivity.base_electrolyte_conductivity {
+}
+package "pybamm.models.submodels.electrolyte_conductivity.composite_conductivity" as pybamm.models.submodels.electrolyte_conductivity.composite_conductivity {
+}
+package "pybamm.models.submodels.electrolyte_conductivity.full_conductivity" as pybamm.models.submodels.electrolyte_conductivity.full_conductivity {
+}
+package "pybamm.models.submodels.electrolyte_conductivity.integrated_conductivity" as pybamm.models.submodels.electrolyte_conductivity.integrated_conductivity {
+}
+package "pybamm.models.submodels.electrolyte_conductivity.leading_order_conductivity" as pybamm.models.submodels.electrolyte_conductivity.leading_order_conductivity {
+}
+package "pybamm.models.submodels.electrolyte_conductivity.surface_potential_form" as pybamm.models.submodels.electrolyte_conductivity.surface_potential_form {
+}
+package "pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.composite_surface_form_conductivity" as pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.composite_surface_form_conductivity {
+}
+package "pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.explicit_surface_form_conductivity" as pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.explicit_surface_form_conductivity {
+}
+package "pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.full_surface_form_conductivity" as pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.full_surface_form_conductivity {
+}
+package "pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.leading_surface_form_conductivity" as pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.leading_surface_form_conductivity {
+}
+package "pybamm.models.submodels.electrolyte_diffusion" as pybamm.models.submodels.electrolyte_diffusion {
+}
+package "pybamm.models.submodels.electrolyte_diffusion.base_electrolyte_diffusion" as pybamm.models.submodels.electrolyte_diffusion.base_electrolyte_diffusion {
+}
+package "pybamm.models.submodels.electrolyte_diffusion.constant_concentration" as pybamm.models.submodels.electrolyte_diffusion.constant_concentration {
+}
+package "pybamm.models.submodels.electrolyte_diffusion.full_diffusion" as pybamm.models.submodels.electrolyte_diffusion.full_diffusion {
+}
+package "pybamm.models.submodels.electrolyte_diffusion.leading_order_diffusion" as pybamm.models.submodels.electrolyte_diffusion.leading_order_diffusion {
+}
+package "pybamm.models.submodels.equivalent_circuit_elements" as pybamm.models.submodels.equivalent_circuit_elements {
+}
+package "pybamm.models.submodels.equivalent_circuit_elements.diffusion_element" as pybamm.models.submodels.equivalent_circuit_elements.diffusion_element {
+}
+package "pybamm.models.submodels.equivalent_circuit_elements.ocv_element" as pybamm.models.submodels.equivalent_circuit_elements.ocv_element {
+}
+package "pybamm.models.submodels.equivalent_circuit_elements.rc_element" as pybamm.models.submodels.equivalent_circuit_elements.rc_element {
+}
+package "pybamm.models.submodels.equivalent_circuit_elements.resistor_element" as pybamm.models.submodels.equivalent_circuit_elements.resistor_element {
+}
+package "pybamm.models.submodels.equivalent_circuit_elements.thermal" as pybamm.models.submodels.equivalent_circuit_elements.thermal {
+}
+package "pybamm.models.submodels.equivalent_circuit_elements.voltage_model" as pybamm.models.submodels.equivalent_circuit_elements.voltage_model {
+}
+package "pybamm.models.submodels.external_circuit" as pybamm.models.submodels.external_circuit {
+}
+package "pybamm.models.submodels.external_circuit.base_external_circuit" as pybamm.models.submodels.external_circuit.base_external_circuit {
+}
+package "pybamm.models.submodels.external_circuit.discharge_throughput" as pybamm.models.submodels.external_circuit.discharge_throughput {
+}
+package "pybamm.models.submodels.external_circuit.explicit_control_external_circuit" as pybamm.models.submodels.external_circuit.explicit_control_external_circuit {
+}
+package "pybamm.models.submodels.external_circuit.function_control_external_circuit" as pybamm.models.submodels.external_circuit.function_control_external_circuit {
+}
+package "pybamm.models.submodels.interface" as pybamm.models.submodels.interface {
+}
+package "pybamm.models.submodels.interface.base_interface" as pybamm.models.submodels.interface.base_interface {
+}
+package "pybamm.models.submodels.interface.interface_utilisation" as pybamm.models.submodels.interface.interface_utilisation {
+}
+package "pybamm.models.submodels.interface.interface_utilisation.base_utilisation" as pybamm.models.submodels.interface.interface_utilisation.base_utilisation {
+}
+package "pybamm.models.submodels.interface.interface_utilisation.constant_utilisation" as pybamm.models.submodels.interface.interface_utilisation.constant_utilisation {
+}
+package "pybamm.models.submodels.interface.interface_utilisation.current_driven_utilisation" as pybamm.models.submodels.interface.interface_utilisation.current_driven_utilisation {
+}
+package "pybamm.models.submodels.interface.interface_utilisation.full_utilisation" as pybamm.models.submodels.interface.interface_utilisation.full_utilisation {
+}
+package "pybamm.models.submodels.interface.kinetics" as pybamm.models.submodels.interface.kinetics {
+}
+package "pybamm.models.submodels.interface.kinetics.base_kinetics" as pybamm.models.submodels.interface.kinetics.base_kinetics {
+}
+package "pybamm.models.submodels.interface.kinetics.butler_volmer" as pybamm.models.submodels.interface.kinetics.butler_volmer {
+}
+package "pybamm.models.submodels.interface.kinetics.diffusion_limited" as pybamm.models.submodels.interface.kinetics.diffusion_limited {
+}
+package "pybamm.models.submodels.interface.kinetics.inverse_kinetics" as pybamm.models.submodels.interface.kinetics.inverse_kinetics {
+}
+package "pybamm.models.submodels.interface.kinetics.inverse_kinetics.inverse_butler_volmer" as pybamm.models.submodels.interface.kinetics.inverse_kinetics.inverse_butler_volmer {
+}
+package "pybamm.models.submodels.interface.kinetics.linear" as pybamm.models.submodels.interface.kinetics.linear {
+}
+package "pybamm.models.submodels.interface.kinetics.marcus" as pybamm.models.submodels.interface.kinetics.marcus {
+}
+package "pybamm.models.submodels.interface.kinetics.msmr_butler_volmer" as pybamm.models.submodels.interface.kinetics.msmr_butler_volmer {
+}
+package "pybamm.models.submodels.interface.kinetics.no_reaction" as pybamm.models.submodels.interface.kinetics.no_reaction {
+}
+package "pybamm.models.submodels.interface.kinetics.tafel" as pybamm.models.submodels.interface.kinetics.tafel {
+}
+package "pybamm.models.submodels.interface.kinetics.total_main_kinetics" as pybamm.models.submodels.interface.kinetics.total_main_kinetics {
+}
+package "pybamm.models.submodels.interface.lithium_plating" as pybamm.models.submodels.interface.lithium_plating {
+}
+package "pybamm.models.submodels.interface.lithium_plating.base_plating" as pybamm.models.submodels.interface.lithium_plating.base_plating {
+}
+package "pybamm.models.submodels.interface.lithium_plating.no_plating" as pybamm.models.submodels.interface.lithium_plating.no_plating {
+}
+package "pybamm.models.submodels.interface.lithium_plating.plating" as pybamm.models.submodels.interface.lithium_plating.plating {
+}
+package "pybamm.models.submodels.interface.lithium_plating.total_lithium_plating" as pybamm.models.submodels.interface.lithium_plating.total_lithium_plating {
+}
+package "pybamm.models.submodels.interface.open_circuit_potential" as pybamm.models.submodels.interface.open_circuit_potential {
+}
+package "pybamm.models.submodels.interface.open_circuit_potential.base_ocp" as pybamm.models.submodels.interface.open_circuit_potential.base_ocp {
+}
+package "pybamm.models.submodels.interface.open_circuit_potential.current_sigmoid_ocp" as pybamm.models.submodels.interface.open_circuit_potential.current_sigmoid_ocp {
+}
+package "pybamm.models.submodels.interface.open_circuit_potential.msmr_ocp" as pybamm.models.submodels.interface.open_circuit_potential.msmr_ocp {
+}
+package "pybamm.models.submodels.interface.open_circuit_potential.single_ocp" as pybamm.models.submodels.interface.open_circuit_potential.single_ocp {
+}
+package "pybamm.models.submodels.interface.open_circuit_potential.wycisk_ocp" as pybamm.models.submodels.interface.open_circuit_potential.wycisk_ocp {
+}
+package "pybamm.models.submodels.interface.sei" as pybamm.models.submodels.interface.sei {
+}
+package "pybamm.models.submodels.interface.sei.base_sei" as pybamm.models.submodels.interface.sei.base_sei {
+}
+package "pybamm.models.submodels.interface.sei.constant_sei" as pybamm.models.submodels.interface.sei.constant_sei {
+}
+package "pybamm.models.submodels.interface.sei.no_sei" as pybamm.models.submodels.interface.sei.no_sei {
+}
+package "pybamm.models.submodels.interface.sei.sei_growth" as pybamm.models.submodels.interface.sei.sei_growth {
+}
+package "pybamm.models.submodels.interface.sei.total_sei" as pybamm.models.submodels.interface.sei.total_sei {
+}
+package "pybamm.models.submodels.interface.total_interfacial_current" as pybamm.models.submodels.interface.total_interfacial_current {
+}
+package "pybamm.models.submodels.oxygen_diffusion" as pybamm.models.submodels.oxygen_diffusion {
+}
+package "pybamm.models.submodels.oxygen_diffusion.base_oxygen_diffusion" as pybamm.models.submodels.oxygen_diffusion.base_oxygen_diffusion {
+}
+package "pybamm.models.submodels.oxygen_diffusion.full_oxygen_diffusion" as pybamm.models.submodels.oxygen_diffusion.full_oxygen_diffusion {
+}
+package "pybamm.models.submodels.oxygen_diffusion.leading_oxygen_diffusion" as pybamm.models.submodels.oxygen_diffusion.leading_oxygen_diffusion {
+}
+package "pybamm.models.submodels.oxygen_diffusion.no_oxygen" as pybamm.models.submodels.oxygen_diffusion.no_oxygen {
+}
+package "pybamm.models.submodels.particle" as pybamm.models.submodels.particle {
+}
+package "pybamm.models.submodels.particle.base_particle" as pybamm.models.submodels.particle.base_particle {
+}
+package "pybamm.models.submodels.particle.fickian_diffusion" as pybamm.models.submodels.particle.fickian_diffusion {
+}
+package "pybamm.models.submodels.particle.msmr_diffusion" as pybamm.models.submodels.particle.msmr_diffusion {
+}
+package "pybamm.models.submodels.particle.polynomial_profile" as pybamm.models.submodels.particle.polynomial_profile {
+}
+package "pybamm.models.submodels.particle.total_particle_concentration" as pybamm.models.submodels.particle.total_particle_concentration {
+}
+package "pybamm.models.submodels.particle.x_averaged_polynomial_profile" as pybamm.models.submodels.particle.x_averaged_polynomial_profile {
+}
+package "pybamm.models.submodels.particle_mechanics" as pybamm.models.submodels.particle_mechanics {
+}
+package "pybamm.models.submodels.particle_mechanics.base_mechanics" as pybamm.models.submodels.particle_mechanics.base_mechanics {
+}
+package "pybamm.models.submodels.particle_mechanics.crack_propagation" as pybamm.models.submodels.particle_mechanics.crack_propagation {
+}
+package "pybamm.models.submodels.particle_mechanics.no_mechanics" as pybamm.models.submodels.particle_mechanics.no_mechanics {
+}
+package "pybamm.models.submodels.particle_mechanics.swelling_only" as pybamm.models.submodels.particle_mechanics.swelling_only {
+}
+package "pybamm.models.submodels.porosity" as pybamm.models.submodels.porosity {
+}
+package "pybamm.models.submodels.porosity.base_porosity" as pybamm.models.submodels.porosity.base_porosity {
+}
+package "pybamm.models.submodels.porosity.constant_porosity" as pybamm.models.submodels.porosity.constant_porosity {
+}
+package "pybamm.models.submodels.porosity.reaction_driven_porosity" as pybamm.models.submodels.porosity.reaction_driven_porosity {
+}
+package "pybamm.models.submodels.porosity.reaction_driven_porosity_ode" as pybamm.models.submodels.porosity.reaction_driven_porosity_ode {
+}
+package "pybamm.models.submodels.thermal" as pybamm.models.submodels.thermal {
+}
+package "pybamm.models.submodels.thermal.base_thermal" as pybamm.models.submodels.thermal.base_thermal {
+}
+package "pybamm.models.submodels.thermal.isothermal" as pybamm.models.submodels.thermal.isothermal {
+}
+package "pybamm.models.submodels.thermal.lumped" as pybamm.models.submodels.thermal.lumped {
+}
+package "pybamm.models.submodels.thermal.pouch_cell" as pybamm.models.submodels.thermal.pouch_cell {
+}
+package "pybamm.models.submodels.thermal.pouch_cell.pouch_cell_1D_current_collectors" as pybamm.models.submodels.thermal.pouch_cell.pouch_cell_1D_current_collectors {
+}
+package "pybamm.models.submodels.thermal.pouch_cell.pouch_cell_2D_current_collectors" as pybamm.models.submodels.thermal.pouch_cell.pouch_cell_2D_current_collectors {
+}
+package "pybamm.models.submodels.thermal.pouch_cell.x_full" as pybamm.models.submodels.thermal.pouch_cell.x_full {
+}
+package "pybamm.models.submodels.thermal.surface" as pybamm.models.submodels.thermal.surface {
+}
+package "pybamm.models.submodels.thermal.surface.ambient" as pybamm.models.submodels.thermal.surface.ambient {
+}
+package "pybamm.models.submodels.thermal.surface.lumped" as pybamm.models.submodels.thermal.surface.lumped {
+}
+package "pybamm.models.submodels.transport_efficiency" as pybamm.models.submodels.transport_efficiency {
+}
+package "pybamm.models.submodels.transport_efficiency.base_transport_efficiency" as pybamm.models.submodels.transport_efficiency.base_transport_efficiency {
+}
+package "pybamm.models.submodels.transport_efficiency.bruggeman" as pybamm.models.submodels.transport_efficiency.bruggeman {
+}
+package "pybamm.models.submodels.transport_efficiency.cation_exchange_membrane" as pybamm.models.submodels.transport_efficiency.cation_exchange_membrane {
+}
+package "pybamm.models.submodels.transport_efficiency.heterogeneous_catalyst" as pybamm.models.submodels.transport_efficiency.heterogeneous_catalyst {
+}
+package "pybamm.models.submodels.transport_efficiency.hyperbola_of_revolution" as pybamm.models.submodels.transport_efficiency.hyperbola_of_revolution {
+}
+package "pybamm.models.submodels.transport_efficiency.ordered_packing" as pybamm.models.submodels.transport_efficiency.ordered_packing {
+}
+package "pybamm.models.submodels.transport_efficiency.overlapping_spheres" as pybamm.models.submodels.transport_efficiency.overlapping_spheres {
+}
+package "pybamm.models.submodels.transport_efficiency.random_overlapping_cylinders" as pybamm.models.submodels.transport_efficiency.random_overlapping_cylinders {
+}
+package "pybamm.models.submodels.transport_efficiency.tortuosity_factor" as pybamm.models.submodels.transport_efficiency.tortuosity_factor {
+}
+package "pybamm.parameters" as pybamm.parameters {
+}
+package "pybamm.parameters.base_parameters" as pybamm.parameters.base_parameters {
+}
+package "pybamm.parameters.bpx" as pybamm.parameters.bpx {
+}
+package "pybamm.parameters.constants" as pybamm.parameters.constants {
+}
+package "pybamm.parameters.ecm_parameters" as pybamm.parameters.ecm_parameters {
+}
+package "pybamm.parameters.electrical_parameters" as pybamm.parameters.electrical_parameters {
+}
+package "pybamm.parameters.geometric_parameters" as pybamm.parameters.geometric_parameters {
+}
+package "pybamm.parameters.lead_acid_parameters" as pybamm.parameters.lead_acid_parameters {
+}
+package "pybamm.parameters.lithium_ion_parameters" as pybamm.parameters.lithium_ion_parameters {
+}
+package "pybamm.parameters.parameter_sets" as pybamm.parameters.parameter_sets {
+}
+package "pybamm.parameters.parameter_values" as pybamm.parameters.parameter_values {
+}
+package "pybamm.parameters.process_parameter_data" as pybamm.parameters.process_parameter_data {
+}
+package "pybamm.parameters.size_distribution_parameters" as pybamm.parameters.size_distribution_parameters {
+}
+package "pybamm.parameters.thermal_parameters" as pybamm.parameters.thermal_parameters {
+}
+package "pybamm.plotting" as pybamm.plotting {
+}
+package "pybamm.plotting.dynamic_plot" as pybamm.plotting.dynamic_plot {
+}
+package "pybamm.plotting.plot" as pybamm.plotting.plot {
+}
+package "pybamm.plotting.plot2D" as pybamm.plotting.plot2D {
+}
+package "pybamm.plotting.plot_summary_variables" as pybamm.plotting.plot_summary_variables {
+}
+package "pybamm.plotting.plot_thermal_components" as pybamm.plotting.plot_thermal_components {
+}
+package "pybamm.plotting.plot_voltage_components" as pybamm.plotting.plot_voltage_components {
+}
+package "pybamm.plotting.quick_plot" as pybamm.plotting.quick_plot {
+}
+package "pybamm.pybamm_data" as pybamm.pybamm_data {
+}
+package "pybamm.settings" as pybamm.settings {
+}
+package "pybamm.simulation" as pybamm.simulation {
+}
+package "pybamm.solvers" as pybamm.solvers {
+}
+package "pybamm.solvers.algebraic_solver" as pybamm.solvers.algebraic_solver {
+}
+package "pybamm.solvers.base_solver" as pybamm.solvers.base_solver {
+}
+package "pybamm.solvers.casadi_algebraic_solver" as pybamm.solvers.casadi_algebraic_solver {
+}
+package "pybamm.solvers.casadi_solver" as pybamm.solvers.casadi_solver {
+}
+package "pybamm.solvers.dummy_solver" as pybamm.solvers.dummy_solver {
+}
+package "pybamm.solvers.idaklu_jax" as pybamm.solvers.idaklu_jax {
+}
+package "pybamm.solvers.idaklu_solver" as pybamm.solvers.idaklu_solver {
+}
+package "pybamm.solvers.jax_bdf_solver" as pybamm.solvers.jax_bdf_solver {
+}
+package "pybamm.solvers.jax_solver" as pybamm.solvers.jax_solver {
+}
+package "pybamm.solvers.lrudict" as pybamm.solvers.lrudict {
+}
+package "pybamm.solvers.processed_variable" as pybamm.solvers.processed_variable {
+}
+package "pybamm.solvers.processed_variable_computed" as pybamm.solvers.processed_variable_computed {
+}
+package "pybamm.solvers.processed_variable_time_integral" as pybamm.solvers.processed_variable_time_integral {
+}
+package "pybamm.solvers.scipy_solver" as pybamm.solvers.scipy_solver {
+}
+package "pybamm.solvers.solution" as pybamm.solvers.solution {
+}
+package "pybamm.solvers.summary_variable" as pybamm.solvers.summary_variable {
+}
+package "pybamm.spatial_methods" as pybamm.spatial_methods {
+}
+package "pybamm.spatial_methods.finite_volume" as pybamm.spatial_methods.finite_volume {
+}
+package "pybamm.spatial_methods.scikit_finite_element" as pybamm.spatial_methods.scikit_finite_element {
+}
+package "pybamm.spatial_methods.spatial_method" as pybamm.spatial_methods.spatial_method {
+}
+package "pybamm.spatial_methods.spectral_volume" as pybamm.spatial_methods.spectral_volume {
+}
+package "pybamm.spatial_methods.zero_dimensional_method" as pybamm.spatial_methods.zero_dimensional_method {
+}
+package "pybamm.telemetry" as pybamm.telemetry {
+}
+package "pybamm.type_definitions" as pybamm.type_definitions {
+}
+package "pybamm.util" as pybamm.util {
+}
+package "pybamm.version" as pybamm.version {
+}
+pybamm --> pybamm.batch_study
+pybamm --> pybamm.citations
+pybamm --> pybamm.discretisations.discretisation
+pybamm --> pybamm.experiment
+pybamm --> pybamm.experiment.experiment
+pybamm --> pybamm.expression_tree.array
+pybamm --> pybamm.expression_tree.averages
+pybamm --> pybamm.expression_tree.binary_operators
+pybamm --> pybamm.expression_tree.broadcasts
+pybamm --> pybamm.expression_tree.concatenations
+pybamm --> pybamm.expression_tree.coupled_variable
+pybamm --> pybamm.expression_tree.discrete_time_sum
+pybamm --> pybamm.expression_tree.exceptions
+pybamm --> pybamm.expression_tree.functions
+pybamm --> pybamm.expression_tree.independent_variable
+pybamm --> pybamm.expression_tree.input_parameter
+pybamm --> pybamm.expression_tree.interpolant
+pybamm --> pybamm.expression_tree.matrix
+pybamm --> pybamm.expression_tree.operations.convert_to_casadi
+pybamm --> pybamm.expression_tree.operations.evaluate_python
+pybamm --> pybamm.expression_tree.operations.jacobian
+pybamm --> pybamm.expression_tree.operations.unpack_symbols
+pybamm --> pybamm.expression_tree.parameter
+pybamm --> pybamm.expression_tree.scalar
+pybamm --> pybamm.expression_tree.state_vector
+pybamm --> pybamm.expression_tree.symbol
+pybamm --> pybamm.expression_tree.unary_operators
+pybamm --> pybamm.expression_tree.variable
+pybamm --> pybamm.expression_tree.vector
+pybamm --> pybamm.geometry
+pybamm --> pybamm.geometry.battery_geometry
+pybamm --> pybamm.geometry.geometry
+pybamm --> pybamm.logger
+pybamm --> pybamm.meshes.meshes
+pybamm --> pybamm.meshes.one_dimensional_submeshes
+pybamm --> pybamm.meshes.scikit_fem_submeshes
+pybamm --> pybamm.meshes.zero_dimensional_submesh
+pybamm --> pybamm.models.base_model
+pybamm --> pybamm.models.event
+pybamm --> pybamm.models.full_battery_models
+pybamm --> pybamm.models.full_battery_models.base_battery_model
+pybamm --> pybamm.models.submodels
+pybamm --> pybamm.models.submodels.base_submodel
+pybamm --> pybamm.models.submodels.interface
+pybamm --> pybamm.parameters
+pybamm --> pybamm.parameters.ecm_parameters
+pybamm --> pybamm.parameters.electrical_parameters
+pybamm --> pybamm.parameters.geometric_parameters
+pybamm --> pybamm.parameters.lead_acid_parameters
+pybamm --> pybamm.parameters.lithium_ion_parameters
+pybamm --> pybamm.parameters.parameter_sets
+pybamm --> pybamm.parameters.parameter_values
+pybamm --> pybamm.parameters.size_distribution_parameters
+pybamm --> pybamm.parameters.thermal_parameters
+pybamm --> pybamm.plotting.dynamic_plot
+pybamm --> pybamm.plotting.plot
+pybamm --> pybamm.plotting.plot2D
+pybamm --> pybamm.plotting.plot_summary_variables
+pybamm --> pybamm.plotting.plot_thermal_components
+pybamm --> pybamm.plotting.plot_voltage_components
+pybamm --> pybamm.plotting.quick_plot
+pybamm --> pybamm.pybamm_data
+pybamm --> pybamm.settings
+pybamm --> pybamm.simulation
+pybamm --> pybamm.solvers.algebraic_solver
+pybamm --> pybamm.solvers.base_solver
+pybamm --> pybamm.solvers.casadi_algebraic_solver
+pybamm --> pybamm.solvers.casadi_solver
+pybamm --> pybamm.solvers.dummy_solver
+pybamm --> pybamm.solvers.idaklu_jax
+pybamm --> pybamm.solvers.idaklu_solver
+pybamm --> pybamm.solvers.jax_bdf_solver
+pybamm --> pybamm.solvers.jax_solver
+pybamm --> pybamm.solvers.processed_variable
+pybamm --> pybamm.solvers.processed_variable_computed
+pybamm --> pybamm.solvers.processed_variable_time_integral
+pybamm --> pybamm.solvers.scipy_solver
+pybamm --> pybamm.solvers.solution
+pybamm --> pybamm.solvers.summary_variable
+pybamm --> pybamm.spatial_methods.finite_volume
+pybamm --> pybamm.spatial_methods.scikit_finite_element
+pybamm --> pybamm.spatial_methods.spatial_method
+pybamm --> pybamm.spatial_methods.spectral_volume
+pybamm --> pybamm.spatial_methods.zero_dimensional_method
+pybamm --> pybamm.util
+pybamm --> pybamm.version
+pybamm.batch_study --> pybamm
+pybamm.callbacks --> pybamm
+pybamm.citations --> pybamm
+pybamm.citations --> pybamm.util
+pybamm.config --> pybamm
+pybamm.discretisations.discretisation --> pybamm
+pybamm.experiment.experiment --> pybamm
+pybamm.experiment.experiment --> pybamm.experiment.step.base_step
+pybamm.experiment.step --> pybamm.experiment.step.base_step
+pybamm.experiment.step --> pybamm.experiment.step.step_termination
+pybamm.experiment.step --> pybamm.experiment.step.steps
+pybamm.experiment.step.base_step --> pybamm
+pybamm.experiment.step.base_step --> pybamm.experiment.step.step_termination
+pybamm.experiment.step.step_termination --> pybamm
+pybamm.experiment.step.steps --> pybamm
+pybamm.experiment.step.steps --> pybamm.experiment.step.base_step
+pybamm.expression_tree.array --> pybamm
+pybamm.expression_tree.array --> pybamm.type_definitions
+pybamm.expression_tree.averages --> pybamm
+pybamm.expression_tree.binary_operators --> pybamm
+pybamm.expression_tree.binary_operators --> pybamm.type_definitions
+pybamm.expression_tree.broadcasts --> pybamm
+pybamm.expression_tree.broadcasts --> pybamm.type_definitions
+pybamm.expression_tree.concatenations --> pybamm
+pybamm.expression_tree.coupled_variable --> pybamm
+pybamm.expression_tree.coupled_variable --> pybamm.type_definitions
+pybamm.expression_tree.discrete_time_sum --> pybamm
+pybamm.expression_tree.functions --> pybamm
+pybamm.expression_tree.independent_variable --> pybamm
+pybamm.expression_tree.independent_variable --> pybamm.type_definitions
+pybamm.expression_tree.input_parameter --> pybamm
+pybamm.expression_tree.input_parameter --> pybamm.type_definitions
+pybamm.expression_tree.interpolant --> pybamm
+pybamm.expression_tree.matrix --> pybamm
+pybamm.expression_tree.matrix --> pybamm.type_definitions
+pybamm.expression_tree.operations.convert_to_casadi --> pybamm
+pybamm.expression_tree.operations.evaluate_python --> pybamm
+pybamm.expression_tree.operations.jacobian --> pybamm
+pybamm.expression_tree.operations.latexify --> pybamm
+pybamm.expression_tree.operations.latexify --> pybamm.expression_tree.printing.sympy_overrides
+pybamm.expression_tree.operations.serialise --> pybamm
+pybamm.expression_tree.operations.unpack_symbols --> pybamm
+pybamm.expression_tree.parameter --> pybamm
+pybamm.expression_tree.scalar --> pybamm
+pybamm.expression_tree.scalar --> pybamm.type_definitions
+pybamm.expression_tree.state_vector --> pybamm
+pybamm.expression_tree.state_vector --> pybamm.type_definitions
+pybamm.expression_tree.symbol --> pybamm
+pybamm.expression_tree.symbol --> pybamm.expression_tree.printing.print_name
+pybamm.expression_tree.symbol --> pybamm.util
+pybamm.expression_tree.unary_operators --> pybamm
+pybamm.expression_tree.unary_operators --> pybamm.type_definitions
+pybamm.expression_tree.unary_operators --> pybamm.util
+pybamm.expression_tree.variable --> pybamm
+pybamm.expression_tree.variable --> pybamm.type_definitions
+pybamm.expression_tree.vector --> pybamm
+pybamm.expression_tree.vector --> pybamm.type_definitions
+pybamm.geometry.battery_geometry --> pybamm
+pybamm.geometry.geometry --> pybamm
+pybamm.geometry.standard_spatial_vars --> pybamm
+pybamm.input.parameters.ecm.example_set --> pybamm
+pybamm.input.parameters.lead_acid.Sulzer2019 --> pybamm
+pybamm.input.parameters.lithium_ion.Ai2020 --> pybamm
+pybamm.input.parameters.lithium_ion.Chen2020 --> pybamm
+pybamm.input.parameters.lithium_ion.Chen2020_composite --> pybamm
+pybamm.input.parameters.lithium_ion.Ecker2015 --> pybamm
+pybamm.input.parameters.lithium_ion.Ecker2015_graphite_halfcell --> pybamm
+pybamm.input.parameters.lithium_ion.Marquis2019 --> pybamm
+pybamm.input.parameters.lithium_ion.Mohtat2020 --> pybamm
+pybamm.input.parameters.lithium_ion.NCA_Kim2011 --> pybamm
+pybamm.input.parameters.lithium_ion.OKane2022 --> pybamm
+pybamm.input.parameters.lithium_ion.OKane2022_graphite_SiOx_halfcell --> pybamm
+pybamm.input.parameters.lithium_ion.ORegan2022 --> pybamm
+pybamm.input.parameters.lithium_ion.Prada2013 --> pybamm
+pybamm.input.parameters.lithium_ion.Ramadass2004 --> pybamm
+pybamm.input.parameters.lithium_ion.Xu2019 --> pybamm
+pybamm.input.parameters.sodium_ion.Chayambuka2022 --> pybamm
+pybamm.meshes.meshes --> pybamm
+pybamm.meshes.one_dimensional_submeshes --> pybamm
+pybamm.meshes.one_dimensional_submeshes --> pybamm.meshes.meshes
+pybamm.meshes.scikit_fem_submeshes --> pybamm
+pybamm.meshes.scikit_fem_submeshes --> pybamm.meshes.meshes
+pybamm.meshes.scikit_fem_submeshes --> pybamm.util
+pybamm.meshes.zero_dimensional_submesh --> pybamm
+pybamm.meshes.zero_dimensional_submesh --> pybamm.meshes.meshes
+pybamm.models.base_model --> pybamm
+pybamm.models.base_model --> pybamm.expression_tree.operations.latexify
+pybamm.models.base_model --> pybamm.expression_tree.operations.serialise
+pybamm.models.full_battery_models.base_battery_model --> pybamm
+pybamm.models.full_battery_models.base_battery_model --> pybamm.expression_tree.operations.serialise
+pybamm.models.full_battery_models.equivalent_circuit --> pybamm.models.full_battery_models.equivalent_circuit.thevenin
+pybamm.models.full_battery_models.equivalent_circuit.thevenin --> pybamm
+pybamm.models.full_battery_models.equivalent_circuit.thevenin --> pybamm.models.full_battery_models.equivalent_circuit.ecm_model_options
+pybamm.models.full_battery_models.lead_acid --> pybamm.models.full_battery_models.lead_acid.base_lead_acid_model
+pybamm.models.full_battery_models.lead_acid --> pybamm.models.full_battery_models.lead_acid.basic_full
+pybamm.models.full_battery_models.lead_acid --> pybamm.models.full_battery_models.lead_acid.full
+pybamm.models.full_battery_models.lead_acid --> pybamm.models.full_battery_models.lead_acid.loqs
+pybamm.models.full_battery_models.lead_acid.base_lead_acid_model --> pybamm
+pybamm.models.full_battery_models.lead_acid.basic_full --> pybamm
+pybamm.models.full_battery_models.lead_acid.basic_full --> pybamm.models.full_battery_models.lead_acid.base_lead_acid_model
+pybamm.models.full_battery_models.lead_acid.full --> pybamm
+pybamm.models.full_battery_models.lead_acid.full --> pybamm.models.full_battery_models.lead_acid.base_lead_acid_model
+pybamm.models.full_battery_models.lead_acid.loqs --> pybamm
+pybamm.models.full_battery_models.lead_acid.loqs --> pybamm.models.full_battery_models.lead_acid.base_lead_acid_model
+pybamm.models.full_battery_models.lithium_ion --> pybamm.models.full_battery_models.lithium_ion.Yang2017
+pybamm.models.full_battery_models.lithium_ion --> pybamm.models.full_battery_models.lithium_ion.base_lithium_ion_model
+pybamm.models.full_battery_models.lithium_ion --> pybamm.models.full_battery_models.lithium_ion.basic_dfn
+pybamm.models.full_battery_models.lithium_ion --> pybamm.models.full_battery_models.lithium_ion.basic_dfn_composite
+pybamm.models.full_battery_models.lithium_ion --> pybamm.models.full_battery_models.lithium_ion.basic_dfn_half_cell
+pybamm.models.full_battery_models.lithium_ion --> pybamm.models.full_battery_models.lithium_ion.basic_splitOCVR
+pybamm.models.full_battery_models.lithium_ion --> pybamm.models.full_battery_models.lithium_ion.basic_spm
+pybamm.models.full_battery_models.lithium_ion --> pybamm.models.full_battery_models.lithium_ion.dfn
+pybamm.models.full_battery_models.lithium_ion --> pybamm.models.full_battery_models.lithium_ion.electrode_soh
+pybamm.models.full_battery_models.lithium_ion --> pybamm.models.full_battery_models.lithium_ion.electrode_soh_half_cell
+pybamm.models.full_battery_models.lithium_ion --> pybamm.models.full_battery_models.lithium_ion.mpm
+pybamm.models.full_battery_models.lithium_ion --> pybamm.models.full_battery_models.lithium_ion.msmr
+pybamm.models.full_battery_models.lithium_ion --> pybamm.models.full_battery_models.lithium_ion.newman_tobias
+pybamm.models.full_battery_models.lithium_ion --> pybamm.models.full_battery_models.lithium_ion.spm
+pybamm.models.full_battery_models.lithium_ion --> pybamm.models.full_battery_models.lithium_ion.spme
+pybamm.models.full_battery_models.lithium_ion.Yang2017 --> pybamm
+pybamm.models.full_battery_models.lithium_ion.Yang2017 --> pybamm.models.full_battery_models.lithium_ion.dfn
+pybamm.models.full_battery_models.lithium_ion.base_lithium_ion_model --> pybamm
+pybamm.models.full_battery_models.lithium_ion.basic_dfn --> pybamm
+pybamm.models.full_battery_models.lithium_ion.basic_dfn --> pybamm.models.full_battery_models.lithium_ion.base_lithium_ion_model
+pybamm.models.full_battery_models.lithium_ion.basic_dfn_composite --> pybamm
+pybamm.models.full_battery_models.lithium_ion.basic_dfn_composite --> pybamm.models.full_battery_models.lithium_ion.base_lithium_ion_model
+pybamm.models.full_battery_models.lithium_ion.basic_dfn_half_cell --> pybamm
+pybamm.models.full_battery_models.lithium_ion.basic_dfn_half_cell --> pybamm.models.full_battery_models.lithium_ion.base_lithium_ion_model
+pybamm.models.full_battery_models.lithium_ion.basic_splitOCVR --> pybamm
+pybamm.models.full_battery_models.lithium_ion.basic_spm --> pybamm
+pybamm.models.full_battery_models.lithium_ion.basic_spm --> pybamm.models.full_battery_models.lithium_ion.base_lithium_ion_model
+pybamm.models.full_battery_models.lithium_ion.dfn --> pybamm
+pybamm.models.full_battery_models.lithium_ion.dfn --> pybamm.models.full_battery_models.lithium_ion.base_lithium_ion_model
+pybamm.models.full_battery_models.lithium_ion.electrode_soh --> pybamm
+pybamm.models.full_battery_models.lithium_ion.electrode_soh_half_cell --> pybamm
+pybamm.models.full_battery_models.lithium_ion.mpm --> pybamm
+pybamm.models.full_battery_models.lithium_ion.mpm --> pybamm.models.full_battery_models.lithium_ion.spm
+pybamm.models.full_battery_models.lithium_ion.msmr --> pybamm
+pybamm.models.full_battery_models.lithium_ion.msmr --> pybamm.models.full_battery_models.lithium_ion.dfn
+pybamm.models.full_battery_models.lithium_ion.newman_tobias --> pybamm
+pybamm.models.full_battery_models.lithium_ion.newman_tobias --> pybamm.models.full_battery_models.lithium_ion.dfn
+pybamm.models.full_battery_models.lithium_ion.spm --> pybamm
+pybamm.models.full_battery_models.lithium_ion.spm --> pybamm.models.full_battery_models.lithium_ion.base_lithium_ion_model
+pybamm.models.full_battery_models.lithium_ion.spme --> pybamm
+pybamm.models.full_battery_models.lithium_ion.spme --> pybamm.models.full_battery_models.lithium_ion.spm
+pybamm.models.full_battery_models.sodium_ion --> pybamm.models.full_battery_models.sodium_ion.basic_dfn
+pybamm.models.full_battery_models.sodium_ion.basic_dfn --> pybamm
+pybamm.models.submodels.active_material --> pybamm.models.submodels.active_material.base_active_material
+pybamm.models.submodels.active_material --> pybamm.models.submodels.active_material.constant_active_material
+pybamm.models.submodels.active_material --> pybamm.models.submodels.active_material.loss_active_material
+pybamm.models.submodels.active_material --> pybamm.models.submodels.active_material.total_active_material
+pybamm.models.submodels.active_material.base_active_material --> pybamm
+pybamm.models.submodels.active_material.constant_active_material --> pybamm
+pybamm.models.submodels.active_material.constant_active_material --> pybamm.models.submodels.active_material.base_active_material
+pybamm.models.submodels.active_material.loss_active_material --> pybamm
+pybamm.models.submodels.active_material.loss_active_material --> pybamm.models.submodels.active_material.base_active_material
+pybamm.models.submodels.active_material.total_active_material --> pybamm
+pybamm.models.submodels.base_submodel --> pybamm
+pybamm.models.submodels.convection --> pybamm.models.submodels.convection.base_convection
+pybamm.models.submodels.convection.base_convection --> pybamm
+pybamm.models.submodels.convection.through_cell --> pybamm.models.submodels.convection.through_cell.base_through_cell_convection
+pybamm.models.submodels.convection.through_cell --> pybamm.models.submodels.convection.through_cell.explicit_convection
+pybamm.models.submodels.convection.through_cell --> pybamm.models.submodels.convection.through_cell.full_convection
+pybamm.models.submodels.convection.through_cell --> pybamm.models.submodels.convection.through_cell.no_convection
+pybamm.models.submodels.convection.through_cell.base_through_cell_convection --> pybamm
+pybamm.models.submodels.convection.through_cell.base_through_cell_convection --> pybamm.models.submodels.convection.base_convection
+pybamm.models.submodels.convection.through_cell.explicit_convection --> pybamm
+pybamm.models.submodels.convection.through_cell.explicit_convection --> pybamm.models.submodels.convection.through_cell.base_through_cell_convection
+pybamm.models.submodels.convection.through_cell.full_convection --> pybamm
+pybamm.models.submodels.convection.through_cell.full_convection --> pybamm.models.submodels.convection.through_cell.base_through_cell_convection
+pybamm.models.submodels.convection.through_cell.no_convection --> pybamm
+pybamm.models.submodels.convection.through_cell.no_convection --> pybamm.models.submodels.convection.through_cell.base_through_cell_convection
+pybamm.models.submodels.convection.transverse --> pybamm.models.submodels.convection.transverse.base_transverse_convection
+pybamm.models.submodels.convection.transverse --> pybamm.models.submodels.convection.transverse.full_convection
+pybamm.models.submodels.convection.transverse --> pybamm.models.submodels.convection.transverse.no_convection
+pybamm.models.submodels.convection.transverse --> pybamm.models.submodels.convection.transverse.uniform_convection
+pybamm.models.submodels.convection.transverse.base_transverse_convection --> pybamm
+pybamm.models.submodels.convection.transverse.base_transverse_convection --> pybamm.models.submodels.convection.base_convection
+pybamm.models.submodels.convection.transverse.full_convection --> pybamm
+pybamm.models.submodels.convection.transverse.full_convection --> pybamm.models.submodels.convection.transverse.base_transverse_convection
+pybamm.models.submodels.convection.transverse.no_convection --> pybamm
+pybamm.models.submodels.convection.transverse.no_convection --> pybamm.models.submodels.convection.transverse.base_transverse_convection
+pybamm.models.submodels.convection.transverse.uniform_convection --> pybamm
+pybamm.models.submodels.convection.transverse.uniform_convection --> pybamm.models.submodels.convection.transverse.base_transverse_convection
+pybamm.models.submodels.current_collector --> pybamm.models.submodels.current_collector.base_current_collector
+pybamm.models.submodels.current_collector --> pybamm.models.submodels.current_collector.effective_resistance_current_collector
+pybamm.models.submodels.current_collector --> pybamm.models.submodels.current_collector.homogeneous_current_collector
+pybamm.models.submodels.current_collector --> pybamm.models.submodels.current_collector.potential_pair
+pybamm.models.submodels.current_collector.base_current_collector --> pybamm
+pybamm.models.submodels.current_collector.effective_resistance_current_collector --> pybamm
+pybamm.models.submodels.current_collector.homogeneous_current_collector --> pybamm
+pybamm.models.submodels.current_collector.homogeneous_current_collector --> pybamm.models.submodels.current_collector.base_current_collector
+pybamm.models.submodels.current_collector.potential_pair --> pybamm
+pybamm.models.submodels.current_collector.potential_pair --> pybamm.models.submodels.current_collector.base_current_collector
+pybamm.models.submodels.electrode --> pybamm.models.submodels.electrode.base_electrode
+pybamm.models.submodels.electrode.base_electrode --> pybamm
+pybamm.models.submodels.electrode.ohm --> pybamm.models.submodels.electrode.ohm.base_ohm
+pybamm.models.submodels.electrode.ohm --> pybamm.models.submodels.electrode.ohm.composite_ohm
+pybamm.models.submodels.electrode.ohm --> pybamm.models.submodels.electrode.ohm.full_ohm
+pybamm.models.submodels.electrode.ohm --> pybamm.models.submodels.electrode.ohm.leading_ohm
+pybamm.models.submodels.electrode.ohm --> pybamm.models.submodels.electrode.ohm.li_metal
+pybamm.models.submodels.electrode.ohm --> pybamm.models.submodels.electrode.ohm.surface_form_ohm
+pybamm.models.submodels.electrode.ohm.base_ohm --> pybamm
+pybamm.models.submodels.electrode.ohm.base_ohm --> pybamm.models.submodels.electrode.base_electrode
+pybamm.models.submodels.electrode.ohm.composite_ohm --> pybamm
+pybamm.models.submodels.electrode.ohm.composite_ohm --> pybamm.models.submodels.electrode.ohm.base_ohm
+pybamm.models.submodels.electrode.ohm.full_ohm --> pybamm
+pybamm.models.submodels.electrode.ohm.full_ohm --> pybamm.doc_utils
+pybamm.models.submodels.electrode.ohm.full_ohm --> pybamm.models.submodels.electrode.ohm.base_ohm
+pybamm.models.submodels.electrode.ohm.leading_ohm --> pybamm
+pybamm.models.submodels.electrode.ohm.leading_ohm --> pybamm.models.submodels.electrode.ohm.base_ohm
+pybamm.models.submodels.electrode.ohm.li_metal --> pybamm
+pybamm.models.submodels.electrode.ohm.li_metal --> pybamm.models.submodels.electrode.ohm.base_ohm
+pybamm.models.submodels.electrode.ohm.surface_form_ohm --> pybamm
+pybamm.models.submodels.electrode.ohm.surface_form_ohm --> pybamm.models.submodels.electrode.ohm.base_ohm
+pybamm.models.submodels.electrolyte_conductivity --> pybamm.models.submodels.electrolyte_conductivity.base_electrolyte_conductivity
+pybamm.models.submodels.electrolyte_conductivity --> pybamm.models.submodels.electrolyte_conductivity.composite_conductivity
+pybamm.models.submodels.electrolyte_conductivity --> pybamm.models.submodels.electrolyte_conductivity.full_conductivity
+pybamm.models.submodels.electrolyte_conductivity --> pybamm.models.submodels.electrolyte_conductivity.integrated_conductivity
+pybamm.models.submodels.electrolyte_conductivity --> pybamm.models.submodels.electrolyte_conductivity.leading_order_conductivity
+pybamm.models.submodels.electrolyte_conductivity.base_electrolyte_conductivity --> pybamm
+pybamm.models.submodels.electrolyte_conductivity.composite_conductivity --> pybamm
+pybamm.models.submodels.electrolyte_conductivity.composite_conductivity --> pybamm.models.submodels.electrolyte_conductivity.base_electrolyte_conductivity
+pybamm.models.submodels.electrolyte_conductivity.full_conductivity --> pybamm
+pybamm.models.submodels.electrolyte_conductivity.full_conductivity --> pybamm.models.submodels.electrolyte_conductivity.base_electrolyte_conductivity
+pybamm.models.submodels.electrolyte_conductivity.integrated_conductivity --> pybamm
+pybamm.models.submodels.electrolyte_conductivity.integrated_conductivity --> pybamm.models.submodels.electrolyte_conductivity.base_electrolyte_conductivity
+pybamm.models.submodels.electrolyte_conductivity.leading_order_conductivity --> pybamm
+pybamm.models.submodels.electrolyte_conductivity.leading_order_conductivity --> pybamm.models.submodels.electrolyte_conductivity.base_electrolyte_conductivity
+pybamm.models.submodels.electrolyte_conductivity.surface_potential_form --> pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.composite_surface_form_conductivity
+pybamm.models.submodels.electrolyte_conductivity.surface_potential_form --> pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.explicit_surface_form_conductivity
+pybamm.models.submodels.electrolyte_conductivity.surface_potential_form --> pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.full_surface_form_conductivity
+pybamm.models.submodels.electrolyte_conductivity.surface_potential_form --> pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.leading_surface_form_conductivity
+pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.composite_surface_form_conductivity --> pybamm
+pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.composite_surface_form_conductivity --> pybamm.models.submodels.electrolyte_conductivity.composite_conductivity
+pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.explicit_surface_form_conductivity --> pybamm
+pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.explicit_surface_form_conductivity --> pybamm.models.submodels.electrolyte_conductivity.base_electrolyte_conductivity
+pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.full_surface_form_conductivity --> pybamm
+pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.full_surface_form_conductivity --> pybamm.models.submodels.electrolyte_conductivity.base_electrolyte_conductivity
+pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.leading_surface_form_conductivity --> pybamm
+pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.leading_surface_form_conductivity --> pybamm.models.submodels.electrolyte_conductivity.leading_order_conductivity
+pybamm.models.submodels.electrolyte_diffusion --> pybamm.models.submodels.electrolyte_diffusion.base_electrolyte_diffusion
+pybamm.models.submodels.electrolyte_diffusion --> pybamm.models.submodels.electrolyte_diffusion.constant_concentration
+pybamm.models.submodels.electrolyte_diffusion --> pybamm.models.submodels.electrolyte_diffusion.full_diffusion
+pybamm.models.submodels.electrolyte_diffusion --> pybamm.models.submodels.electrolyte_diffusion.leading_order_diffusion
+pybamm.models.submodels.electrolyte_diffusion.base_electrolyte_diffusion --> pybamm
+pybamm.models.submodels.electrolyte_diffusion.constant_concentration --> pybamm
+pybamm.models.submodels.electrolyte_diffusion.constant_concentration --> pybamm.models.submodels.electrolyte_diffusion.base_electrolyte_diffusion
+pybamm.models.submodels.electrolyte_diffusion.full_diffusion --> pybamm
+pybamm.models.submodels.electrolyte_diffusion.full_diffusion --> pybamm.models.submodels.electrolyte_diffusion.base_electrolyte_diffusion
+pybamm.models.submodels.electrolyte_diffusion.leading_order_diffusion --> pybamm
+pybamm.models.submodels.electrolyte_diffusion.leading_order_diffusion --> pybamm.models.submodels.electrolyte_diffusion.base_electrolyte_diffusion
+pybamm.models.submodels.equivalent_circuit_elements --> pybamm.models.submodels.equivalent_circuit_elements.diffusion_element
+pybamm.models.submodels.equivalent_circuit_elements --> pybamm.models.submodels.equivalent_circuit_elements.ocv_element
+pybamm.models.submodels.equivalent_circuit_elements --> pybamm.models.submodels.equivalent_circuit_elements.rc_element
+pybamm.models.submodels.equivalent_circuit_elements --> pybamm.models.submodels.equivalent_circuit_elements.resistor_element
+pybamm.models.submodels.equivalent_circuit_elements --> pybamm.models.submodels.equivalent_circuit_elements.voltage_model
+pybamm.models.submodels.equivalent_circuit_elements --> pybamm.models.submodels.thermal
+pybamm.models.submodels.equivalent_circuit_elements.diffusion_element --> pybamm
+pybamm.models.submodels.equivalent_circuit_elements.ocv_element --> pybamm
+pybamm.models.submodels.equivalent_circuit_elements.rc_element --> pybamm
+pybamm.models.submodels.equivalent_circuit_elements.resistor_element --> pybamm
+pybamm.models.submodels.equivalent_circuit_elements.thermal --> pybamm
+pybamm.models.submodels.equivalent_circuit_elements.voltage_model --> pybamm
+pybamm.models.submodels.external_circuit --> pybamm.models.submodels.external_circuit.base_external_circuit
+pybamm.models.submodels.external_circuit --> pybamm.models.submodels.external_circuit.discharge_throughput
+pybamm.models.submodels.external_circuit --> pybamm.models.submodels.external_circuit.explicit_control_external_circuit
+pybamm.models.submodels.external_circuit --> pybamm.models.submodels.external_circuit.function_control_external_circuit
+pybamm.models.submodels.external_circuit.base_external_circuit --> pybamm
+pybamm.models.submodels.external_circuit.discharge_throughput --> pybamm
+pybamm.models.submodels.external_circuit.discharge_throughput --> pybamm.models.submodels.external_circuit.base_external_circuit
+pybamm.models.submodels.external_circuit.explicit_control_external_circuit --> pybamm
+pybamm.models.submodels.external_circuit.explicit_control_external_circuit --> pybamm.models.submodels.external_circuit.base_external_circuit
+pybamm.models.submodels.external_circuit.function_control_external_circuit --> pybamm
+pybamm.models.submodels.external_circuit.function_control_external_circuit --> pybamm.models.submodels.external_circuit.base_external_circuit
+pybamm.models.submodels.interface --> pybamm.models.submodels.interface.base_interface
+pybamm.models.submodels.interface --> pybamm.models.submodels.interface.total_interfacial_current
+pybamm.models.submodels.interface.base_interface --> pybamm
+pybamm.models.submodels.interface.interface_utilisation --> pybamm.models.submodels.interface.interface_utilisation.base_utilisation
+pybamm.models.submodels.interface.interface_utilisation --> pybamm.models.submodels.interface.interface_utilisation.constant_utilisation
+pybamm.models.submodels.interface.interface_utilisation --> pybamm.models.submodels.interface.interface_utilisation.current_driven_utilisation
+pybamm.models.submodels.interface.interface_utilisation --> pybamm.models.submodels.interface.interface_utilisation.full_utilisation
+pybamm.models.submodels.interface.interface_utilisation.base_utilisation --> pybamm
+pybamm.models.submodels.interface.interface_utilisation.constant_utilisation --> pybamm
+pybamm.models.submodels.interface.interface_utilisation.constant_utilisation --> pybamm.models.submodels.interface.interface_utilisation.base_utilisation
+pybamm.models.submodels.interface.interface_utilisation.current_driven_utilisation --> pybamm
+pybamm.models.submodels.interface.interface_utilisation.current_driven_utilisation --> pybamm.models.submodels.interface.interface_utilisation.base_utilisation
+pybamm.models.submodels.interface.interface_utilisation.full_utilisation --> pybamm
+pybamm.models.submodels.interface.interface_utilisation.full_utilisation --> pybamm.models.submodels.interface.interface_utilisation.base_utilisation
+pybamm.models.submodels.interface.kinetics --> pybamm.models.submodels.interface.kinetics.base_kinetics
+pybamm.models.submodels.interface.kinetics --> pybamm.models.submodels.interface.kinetics.butler_volmer
+pybamm.models.submodels.interface.kinetics --> pybamm.models.submodels.interface.kinetics.diffusion_limited
+pybamm.models.submodels.interface.kinetics --> pybamm.models.submodels.interface.kinetics.inverse_kinetics.inverse_butler_volmer
+pybamm.models.submodels.interface.kinetics --> pybamm.models.submodels.interface.kinetics.linear
+pybamm.models.submodels.interface.kinetics --> pybamm.models.submodels.interface.kinetics.marcus
+pybamm.models.submodels.interface.kinetics --> pybamm.models.submodels.interface.kinetics.msmr_butler_volmer
+pybamm.models.submodels.interface.kinetics --> pybamm.models.submodels.interface.kinetics.no_reaction
+pybamm.models.submodels.interface.kinetics --> pybamm.models.submodels.interface.kinetics.tafel
+pybamm.models.submodels.interface.kinetics --> pybamm.models.submodels.interface.kinetics.total_main_kinetics
+pybamm.models.submodels.interface.kinetics.base_kinetics --> pybamm
+pybamm.models.submodels.interface.kinetics.base_kinetics --> pybamm.models.submodels.interface.base_interface
+pybamm.models.submodels.interface.kinetics.butler_volmer --> pybamm
+pybamm.models.submodels.interface.kinetics.butler_volmer --> pybamm.models.submodels.interface.kinetics.base_kinetics
+pybamm.models.submodels.interface.kinetics.diffusion_limited --> pybamm
+pybamm.models.submodels.interface.kinetics.diffusion_limited --> pybamm.models.submodels.interface.base_interface
+pybamm.models.submodels.interface.kinetics.inverse_kinetics.inverse_butler_volmer --> pybamm
+pybamm.models.submodels.interface.kinetics.inverse_kinetics.inverse_butler_volmer --> pybamm.models.submodels.interface.base_interface
+pybamm.models.submodels.interface.kinetics.linear --> pybamm.models.submodels.interface.kinetics.base_kinetics
+pybamm.models.submodels.interface.kinetics.marcus --> pybamm
+pybamm.models.submodels.interface.kinetics.marcus --> pybamm.models.submodels.interface.kinetics.base_kinetics
+pybamm.models.submodels.interface.kinetics.msmr_butler_volmer --> pybamm
+pybamm.models.submodels.interface.kinetics.msmr_butler_volmer --> pybamm.models.submodels.interface.kinetics.base_kinetics
+pybamm.models.submodels.interface.kinetics.no_reaction --> pybamm
+pybamm.models.submodels.interface.kinetics.no_reaction --> pybamm.models.submodels.interface.base_interface
+pybamm.models.submodels.interface.kinetics.tafel --> pybamm
+pybamm.models.submodels.interface.kinetics.tafel --> pybamm.models.submodels.interface.kinetics.base_kinetics
+pybamm.models.submodels.interface.kinetics.total_main_kinetics --> pybamm
+pybamm.models.submodels.interface.lithium_plating --> pybamm.models.submodels.interface.lithium_plating.base_plating
+pybamm.models.submodels.interface.lithium_plating --> pybamm.models.submodels.interface.lithium_plating.no_plating
+pybamm.models.submodels.interface.lithium_plating --> pybamm.models.submodels.interface.lithium_plating.plating
+pybamm.models.submodels.interface.lithium_plating --> pybamm.models.submodels.interface.lithium_plating.total_lithium_plating
+pybamm.models.submodels.interface.lithium_plating.base_plating --> pybamm
+pybamm.models.submodels.interface.lithium_plating.base_plating --> pybamm.models.submodels.interface.base_interface
+pybamm.models.submodels.interface.lithium_plating.no_plating --> pybamm
+pybamm.models.submodels.interface.lithium_plating.no_plating --> pybamm.models.submodels.interface.lithium_plating.base_plating
+pybamm.models.submodels.interface.lithium_plating.plating --> pybamm
+pybamm.models.submodels.interface.lithium_plating.plating --> pybamm.models.submodels.interface.lithium_plating.base_plating
+pybamm.models.submodels.interface.lithium_plating.total_lithium_plating --> pybamm
+pybamm.models.submodels.interface.open_circuit_potential --> pybamm.models.submodels.interface.open_circuit_potential.base_ocp
+pybamm.models.submodels.interface.open_circuit_potential --> pybamm.models.submodels.interface.open_circuit_potential.current_sigmoid_ocp
+pybamm.models.submodels.interface.open_circuit_potential --> pybamm.models.submodels.interface.open_circuit_potential.msmr_ocp
+pybamm.models.submodels.interface.open_circuit_potential --> pybamm.models.submodels.interface.open_circuit_potential.single_ocp
+pybamm.models.submodels.interface.open_circuit_potential --> pybamm.models.submodels.interface.open_circuit_potential.wycisk_ocp
+pybamm.models.submodels.interface.open_circuit_potential.base_ocp --> pybamm
+pybamm.models.submodels.interface.open_circuit_potential.base_ocp --> pybamm.models.submodels.interface.base_interface
+pybamm.models.submodels.interface.open_circuit_potential.current_sigmoid_ocp --> pybamm
+pybamm.models.submodels.interface.open_circuit_potential.msmr_ocp --> pybamm
+pybamm.models.submodels.interface.open_circuit_potential.single_ocp --> pybamm
+pybamm.models.submodels.interface.open_circuit_potential.wycisk_ocp --> pybamm
+pybamm.models.submodels.interface.sei --> pybamm.models.submodels.interface.sei.base_sei
+pybamm.models.submodels.interface.sei --> pybamm.models.submodels.interface.sei.constant_sei
+pybamm.models.submodels.interface.sei --> pybamm.models.submodels.interface.sei.no_sei
+pybamm.models.submodels.interface.sei --> pybamm.models.submodels.interface.sei.sei_growth
+pybamm.models.submodels.interface.sei --> pybamm.models.submodels.interface.sei.total_sei
+pybamm.models.submodels.interface.sei.base_sei --> pybamm
+pybamm.models.submodels.interface.sei.base_sei --> pybamm.models.submodels.interface.base_interface
+pybamm.models.submodels.interface.sei.constant_sei --> pybamm
+pybamm.models.submodels.interface.sei.constant_sei --> pybamm.models.submodels.interface.sei.base_sei
+pybamm.models.submodels.interface.sei.no_sei --> pybamm
+pybamm.models.submodels.interface.sei.no_sei --> pybamm.models.submodels.interface.sei.base_sei
+pybamm.models.submodels.interface.sei.sei_growth --> pybamm
+pybamm.models.submodels.interface.sei.sei_growth --> pybamm.models.submodels.interface.sei.base_sei
+pybamm.models.submodels.interface.sei.total_sei --> pybamm
+pybamm.models.submodels.interface.total_interfacial_current --> pybamm
+pybamm.models.submodels.oxygen_diffusion --> pybamm.models.submodels.oxygen_diffusion.base_oxygen_diffusion
+pybamm.models.submodels.oxygen_diffusion --> pybamm.models.submodels.oxygen_diffusion.full_oxygen_diffusion
+pybamm.models.submodels.oxygen_diffusion --> pybamm.models.submodels.oxygen_diffusion.leading_oxygen_diffusion
+pybamm.models.submodels.oxygen_diffusion --> pybamm.models.submodels.oxygen_diffusion.no_oxygen
+pybamm.models.submodels.oxygen_diffusion.base_oxygen_diffusion --> pybamm
+pybamm.models.submodels.oxygen_diffusion.full_oxygen_diffusion --> pybamm
+pybamm.models.submodels.oxygen_diffusion.full_oxygen_diffusion --> pybamm.models.submodels.oxygen_diffusion.base_oxygen_diffusion
+pybamm.models.submodels.oxygen_diffusion.leading_oxygen_diffusion --> pybamm
+pybamm.models.submodels.oxygen_diffusion.leading_oxygen_diffusion --> pybamm.models.submodels.oxygen_diffusion.base_oxygen_diffusion
+pybamm.models.submodels.oxygen_diffusion.no_oxygen --> pybamm
+pybamm.models.submodels.oxygen_diffusion.no_oxygen --> pybamm.models.submodels.oxygen_diffusion.base_oxygen_diffusion
+pybamm.models.submodels.particle --> pybamm.models.submodels.particle.base_particle
+pybamm.models.submodels.particle --> pybamm.models.submodels.particle.fickian_diffusion
+pybamm.models.submodels.particle --> pybamm.models.submodels.particle.msmr_diffusion
+pybamm.models.submodels.particle --> pybamm.models.submodels.particle.polynomial_profile
+pybamm.models.submodels.particle --> pybamm.models.submodels.particle.total_particle_concentration
+pybamm.models.submodels.particle --> pybamm.models.submodels.particle.x_averaged_polynomial_profile
+pybamm.models.submodels.particle.base_particle --> pybamm
+pybamm.models.submodels.particle.fickian_diffusion --> pybamm
+pybamm.models.submodels.particle.fickian_diffusion --> pybamm.models.submodels.particle.base_particle
+pybamm.models.submodels.particle.msmr_diffusion --> pybamm
+pybamm.models.submodels.particle.msmr_diffusion --> pybamm.models.submodels.particle.base_particle
+pybamm.models.submodels.particle.polynomial_profile --> pybamm
+pybamm.models.submodels.particle.polynomial_profile --> pybamm.models.submodels.particle.base_particle
+pybamm.models.submodels.particle.total_particle_concentration --> pybamm
+pybamm.models.submodels.particle.total_particle_concentration --> pybamm.models.submodels.particle.base_particle
+pybamm.models.submodels.particle.x_averaged_polynomial_profile --> pybamm
+pybamm.models.submodels.particle.x_averaged_polynomial_profile --> pybamm.models.submodels.particle.polynomial_profile
+pybamm.models.submodels.particle_mechanics --> pybamm.models.submodels.particle_mechanics.base_mechanics
+pybamm.models.submodels.particle_mechanics --> pybamm.models.submodels.particle_mechanics.crack_propagation
+pybamm.models.submodels.particle_mechanics --> pybamm.models.submodels.particle_mechanics.no_mechanics
+pybamm.models.submodels.particle_mechanics --> pybamm.models.submodels.particle_mechanics.swelling_only
+pybamm.models.submodels.particle_mechanics.base_mechanics --> pybamm
+pybamm.models.submodels.particle_mechanics.crack_propagation --> pybamm
+pybamm.models.submodels.particle_mechanics.crack_propagation --> pybamm.models.submodels.particle_mechanics.base_mechanics
+pybamm.models.submodels.particle_mechanics.no_mechanics --> pybamm
+pybamm.models.submodels.particle_mechanics.no_mechanics --> pybamm.models.submodels.particle_mechanics.base_mechanics
+pybamm.models.submodels.particle_mechanics.swelling_only --> pybamm
+pybamm.models.submodels.particle_mechanics.swelling_only --> pybamm.models.submodels.particle_mechanics.base_mechanics
+pybamm.models.submodels.porosity --> pybamm.models.submodels.porosity.base_porosity
+pybamm.models.submodels.porosity --> pybamm.models.submodels.porosity.constant_porosity
+pybamm.models.submodels.porosity --> pybamm.models.submodels.porosity.reaction_driven_porosity
+pybamm.models.submodels.porosity --> pybamm.models.submodels.porosity.reaction_driven_porosity_ode
+pybamm.models.submodels.porosity.base_porosity --> pybamm
+pybamm.models.submodels.porosity.constant_porosity --> pybamm
+pybamm.models.submodels.porosity.constant_porosity --> pybamm.models.submodels.porosity.base_porosity
+pybamm.models.submodels.porosity.reaction_driven_porosity --> pybamm
+pybamm.models.submodels.porosity.reaction_driven_porosity --> pybamm.models.submodels.porosity.base_porosity
+pybamm.models.submodels.porosity.reaction_driven_porosity_ode --> pybamm
+pybamm.models.submodels.porosity.reaction_driven_porosity_ode --> pybamm.models.submodels.porosity.base_porosity
+pybamm.models.submodels.thermal --> pybamm.models.submodels.thermal.base_thermal
+pybamm.models.submodels.thermal --> pybamm.models.submodels.thermal.isothermal
+pybamm.models.submodels.thermal --> pybamm.models.submodels.thermal.lumped
+pybamm.models.submodels.thermal.base_thermal --> pybamm
+pybamm.models.submodels.thermal.isothermal --> pybamm
+pybamm.models.submodels.thermal.isothermal --> pybamm.models.submodels.thermal.base_thermal
+pybamm.models.submodels.thermal.lumped --> pybamm
+pybamm.models.submodels.thermal.lumped --> pybamm.models.submodels.thermal.base_thermal
+pybamm.models.submodels.thermal.pouch_cell --> pybamm.models.submodels.thermal.pouch_cell.pouch_cell_1D_current_collectors
+pybamm.models.submodels.thermal.pouch_cell --> pybamm.models.submodels.thermal.pouch_cell.pouch_cell_2D_current_collectors
+pybamm.models.submodels.thermal.pouch_cell --> pybamm.models.submodels.thermal.pouch_cell.x_full
+pybamm.models.submodels.thermal.pouch_cell.pouch_cell_1D_current_collectors --> pybamm
+pybamm.models.submodels.thermal.pouch_cell.pouch_cell_1D_current_collectors --> pybamm.models.submodels.thermal.base_thermal
+pybamm.models.submodels.thermal.pouch_cell.pouch_cell_2D_current_collectors --> pybamm
+pybamm.models.submodels.thermal.pouch_cell.pouch_cell_2D_current_collectors --> pybamm.models.submodels.thermal.base_thermal
+pybamm.models.submodels.thermal.pouch_cell.x_full --> pybamm
+pybamm.models.submodels.thermal.pouch_cell.x_full --> pybamm.models.submodels.thermal.base_thermal
+pybamm.models.submodels.thermal.surface --> pybamm.models.submodels.thermal.lumped
+pybamm.models.submodels.thermal.surface --> pybamm.models.submodels.thermal.surface.ambient
+pybamm.models.submodels.thermal.surface.ambient --> pybamm
+pybamm.models.submodels.thermal.surface.lumped --> pybamm
+pybamm.models.submodels.transport_efficiency --> pybamm.models.submodels.transport_efficiency.base_transport_efficiency
+pybamm.models.submodels.transport_efficiency --> pybamm.models.submodels.transport_efficiency.bruggeman
+pybamm.models.submodels.transport_efficiency --> pybamm.models.submodels.transport_efficiency.cation_exchange_membrane
+pybamm.models.submodels.transport_efficiency --> pybamm.models.submodels.transport_efficiency.heterogeneous_catalyst
+pybamm.models.submodels.transport_efficiency --> pybamm.models.submodels.transport_efficiency.hyperbola_of_revolution
+pybamm.models.submodels.transport_efficiency --> pybamm.models.submodels.transport_efficiency.ordered_packing
+pybamm.models.submodels.transport_efficiency --> pybamm.models.submodels.transport_efficiency.overlapping_spheres
+pybamm.models.submodels.transport_efficiency --> pybamm.models.submodels.transport_efficiency.random_overlapping_cylinders
+pybamm.models.submodels.transport_efficiency --> pybamm.models.submodels.transport_efficiency.tortuosity_factor
+pybamm.models.submodels.transport_efficiency.base_transport_efficiency --> pybamm
+pybamm.models.submodels.transport_efficiency.bruggeman --> pybamm
+pybamm.models.submodels.transport_efficiency.bruggeman --> pybamm.models.submodels.transport_efficiency.base_transport_efficiency
+pybamm.models.submodels.transport_efficiency.cation_exchange_membrane --> pybamm
+pybamm.models.submodels.transport_efficiency.cation_exchange_membrane --> pybamm.models.submodels.transport_efficiency.base_transport_efficiency
+pybamm.models.submodels.transport_efficiency.heterogeneous_catalyst --> pybamm
+pybamm.models.submodels.transport_efficiency.heterogeneous_catalyst --> pybamm.models.submodels.transport_efficiency.base_transport_efficiency
+pybamm.models.submodels.transport_efficiency.hyperbola_of_revolution --> pybamm
+pybamm.models.submodels.transport_efficiency.hyperbola_of_revolution --> pybamm.models.submodels.transport_efficiency.base_transport_efficiency
+pybamm.models.submodels.transport_efficiency.ordered_packing --> pybamm
+pybamm.models.submodels.transport_efficiency.ordered_packing --> pybamm.models.submodels.transport_efficiency.base_transport_efficiency
+pybamm.models.submodels.transport_efficiency.overlapping_spheres --> pybamm
+pybamm.models.submodels.transport_efficiency.overlapping_spheres --> pybamm.models.submodels.transport_efficiency.base_transport_efficiency
+pybamm.models.submodels.transport_efficiency.random_overlapping_cylinders --> pybamm
+pybamm.models.submodels.transport_efficiency.random_overlapping_cylinders --> pybamm.models.submodels.transport_efficiency.base_transport_efficiency
+pybamm.models.submodels.transport_efficiency.tortuosity_factor --> pybamm
+pybamm.models.submodels.transport_efficiency.tortuosity_factor --> pybamm.models.submodels.transport_efficiency.base_transport_efficiency
+pybamm.parameters --> pybamm.parameters.process_parameter_data
+pybamm.parameters.base_parameters --> pybamm
+pybamm.parameters.bpx --> pybamm
+pybamm.parameters.bpx --> pybamm.parameters.bpx
+pybamm.parameters.constants --> pybamm
+pybamm.parameters.ecm_parameters --> pybamm
+pybamm.parameters.electrical_parameters --> pybamm
+pybamm.parameters.electrical_parameters --> pybamm.parameters.base_parameters
+pybamm.parameters.geometric_parameters --> pybamm
+pybamm.parameters.geometric_parameters --> pybamm.parameters.base_parameters
+pybamm.parameters.lead_acid_parameters --> pybamm
+pybamm.parameters.lead_acid_parameters --> pybamm.parameters.base_parameters
+pybamm.parameters.lithium_ion_parameters --> pybamm
+pybamm.parameters.lithium_ion_parameters --> pybamm.parameters.base_parameters
+pybamm.parameters.parameter_values --> pybamm
+pybamm.parameters.parameter_values --> pybamm.parameters.bpx
+pybamm.parameters.size_distribution_parameters --> pybamm
+pybamm.parameters.thermal_parameters --> pybamm
+pybamm.parameters.thermal_parameters --> pybamm.parameters.base_parameters
+pybamm.plotting.dynamic_plot --> pybamm
+pybamm.plotting.plot --> pybamm
+pybamm.plotting.plot --> pybamm.plotting.quick_plot
+pybamm.plotting.plot --> pybamm.util
+pybamm.plotting.plot2D --> pybamm
+pybamm.plotting.plot2D --> pybamm.plotting.quick_plot
+pybamm.plotting.plot2D --> pybamm.util
+pybamm.plotting.plot_summary_variables --> pybamm
+pybamm.plotting.plot_summary_variables --> pybamm.util
+pybamm.plotting.plot_thermal_components --> pybamm.simulation
+pybamm.plotting.plot_thermal_components --> pybamm.solvers.solution
+pybamm.plotting.plot_thermal_components --> pybamm.util
+pybamm.plotting.plot_voltage_components --> pybamm.simulation
+pybamm.plotting.plot_voltage_components --> pybamm.solvers.solution
+pybamm.plotting.plot_voltage_components --> pybamm.util
+pybamm.plotting.quick_plot --> pybamm
+pybamm.plotting.quick_plot --> pybamm.util
+pybamm.simulation --> pybamm
+pybamm.simulation --> pybamm.expression_tree.operations.serialise
+pybamm.simulation --> pybamm.util
+pybamm.solvers.algebraic_solver --> pybamm
+pybamm.solvers.base_solver --> pybamm
+pybamm.solvers.base_solver --> pybamm.expression_tree.binary_operators
+pybamm.solvers.casadi_algebraic_solver --> pybamm
+pybamm.solvers.casadi_solver --> pybamm
+pybamm.solvers.casadi_solver --> pybamm.solvers.lrudict
+pybamm.solvers.dummy_solver --> pybamm
+pybamm.solvers.idaklu_jax --> pybamm
+pybamm.solvers.idaklu_solver --> pybamm
+pybamm.solvers.jax_bdf_solver --> pybamm
+pybamm.solvers.jax_solver --> pybamm
+pybamm.solvers.processed_variable --> pybamm
+pybamm.solvers.processed_variable_computed --> pybamm
+pybamm.solvers.processed_variable_time_integral --> pybamm
+pybamm.solvers.scipy_solver --> pybamm
+pybamm.solvers.solution --> pybamm
+pybamm.solvers.summary_variable --> pybamm
+pybamm.spatial_methods.finite_volume --> pybamm
+pybamm.spatial_methods.scikit_finite_element --> pybamm
+pybamm.spatial_methods.scikit_finite_element --> pybamm.util
+pybamm.spatial_methods.spatial_method --> pybamm
+pybamm.spatial_methods.spectral_volume --> pybamm
+pybamm.spatial_methods.zero_dimensional_method --> pybamm
+pybamm.telemetry --> pybamm
+pybamm.type_definitions --> pybamm
+pybamm.util --> pybamm
+pybamm.expression_tree.symbol ..> pybamm.type_definitions
+@enduml

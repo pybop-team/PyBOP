@@ -1,0 +1,17 @@
+@startuml parameters-all
+
+
+title PyBOP PyBamm Parameters Interface
+
+' group the pybop and pybamm classes separately
+
+package "PyBOP" {
+!include auto-gen/parameters-classes.plantuml
+}
+package "PyBaMM" {
+!include auto-gen/pybamm/parameters-classes.plantuml
+}
+
+pybop.parameters.parameter_set.ParameterSet ..> pybamm.parameters.parameter_values.ParameterValues
+
+@enduml

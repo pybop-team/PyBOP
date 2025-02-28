@@ -1,0 +1,39 @@
+@startuml packages
+set namespaceSeparator none
+package "pybamm.parameters" as pybamm.parameters {
+}
+package "pybamm.parameters.base_parameters" as pybamm.parameters.base_parameters {
+}
+package "pybamm.parameters.bpx" as pybamm.parameters.bpx {
+}
+package "pybamm.parameters.constants" as pybamm.parameters.constants {
+}
+package "pybamm.parameters.ecm_parameters" as pybamm.parameters.ecm_parameters {
+}
+package "pybamm.parameters.electrical_parameters" as pybamm.parameters.electrical_parameters {
+}
+package "pybamm.parameters.geometric_parameters" as pybamm.parameters.geometric_parameters {
+}
+package "pybamm.parameters.lead_acid_parameters" as pybamm.parameters.lead_acid_parameters {
+}
+package "pybamm.parameters.lithium_ion_parameters" as pybamm.parameters.lithium_ion_parameters {
+}
+package "pybamm.parameters.parameter_sets" as pybamm.parameters.parameter_sets {
+}
+package "pybamm.parameters.parameter_values" as pybamm.parameters.parameter_values {
+}
+package "pybamm.parameters.process_parameter_data" as pybamm.parameters.process_parameter_data {
+}
+package "pybamm.parameters.size_distribution_parameters" as pybamm.parameters.size_distribution_parameters {
+}
+package "pybamm.parameters.thermal_parameters" as pybamm.parameters.thermal_parameters {
+}
+pybamm.parameters --> pybamm.parameters.process_parameter_data
+pybamm.parameters.bpx --> pybamm.parameters.bpx
+pybamm.parameters.electrical_parameters --> pybamm.parameters.base_parameters
+pybamm.parameters.geometric_parameters --> pybamm.parameters.base_parameters
+pybamm.parameters.lead_acid_parameters --> pybamm.parameters.base_parameters
+pybamm.parameters.lithium_ion_parameters --> pybamm.parameters.base_parameters
+pybamm.parameters.parameter_values --> pybamm.parameters.bpx
+pybamm.parameters.thermal_parameters --> pybamm.parameters.base_parameters
+@enduml

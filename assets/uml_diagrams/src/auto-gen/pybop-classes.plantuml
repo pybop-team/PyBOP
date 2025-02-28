@@ -1,0 +1,817 @@
+@startuml classes
+set namespaceSeparator none
+class "AdamW" as pybop.optimisers.pints_optimisers.AdamW {
+}
+class "AdamWImpl" as pybop.optimisers._adamw.AdamWImpl {
+  b1
+  b2
+  boundaries : NoneType
+  lam
+  ask()
+  f_best()
+  f_guessed()
+  n_hyper_parameters()
+  name()
+  needs_sensitivities()
+  running()
+  tell(reply)
+  x_best()
+  x_guessed()
+}
+class "AdaptiveCovarianceMCMC" as pybop.samplers.pints_samplers.AdaptiveCovarianceMCMC {
+}
+class "BaseCost" as pybop.costs.base_cost.BaseCost {
+  dy : NoneType
+  grad_fail : NoneType
+  has_separable_problem
+  minimising : bool
+  n_outputs
+  n_parameters
+  name
+  parameters
+  problem : Optional[BaseProblem]
+  pybamm_solution
+  signal
+  target
+  verbose : bool
+  y : NoneType
+  {abstract}compute(y: dict, dy: Optional[np.ndarray])
+  join_parameters(parameters)
+  sensitivity_analysis(n_samples: int)
+  set_fail_gradient(de: float)
+  single_call(inputs: Union[Inputs, np.ndarray], calculate_grad: bool) -> Union[float, tuple[float, np.ndarray]]
+  stack_sensitivities(dy) -> np.ndarray
+  verify_prediction(y: dict)
+}
+class "BaseGroupedSPMe" as pybop.models.lithium_ion.basic_SPMe.BaseGroupedSPMe {
+  default_geometry
+  default_parameter_values
+  default_quick_plot_variables
+  default_spatial_methods
+  default_submesh_types
+  default_var_pts
+  events
+  variables : dict
+  U(sto, domain)
+  build_model()
+}
+class "BaseLikelihood" as pybop.costs._likelihoods.BaseLikelihood {
+  minimising : bool
+  n_data
+  observed_fisher(inputs: Union[Inputs, list, np.ndarray]) -> Union[np.ndarray, None]
+}
+class "BaseMetaLikelihood" as pybop.costs._likelihoods.BaseMetaLikelihood {
+  has_separable_problem
+  likelihood
+  n_parameters
+  parameters
+}
+class "BaseModel" as pybop.models.base_model.BaseModel {
+  J : csc_matrix
+  M : csc_matrix
+  allow_infeasible_solutions : bool
+  b : ndarray
+  built_initial_soc
+  built_model
+  calculate_sensitivities
+  disc
+  eis : bool
+  geometry
+  mesh
+  model_with_set_params
+  n_states
+  name : str
+  param_check_counter : int
+  param_checker : Optional[Callable]
+  parameter_set
+  parameters
+  pybamm_model : NoneType
+  pybamm_solution
+  sensitivities_available
+  solver
+  spatial_methods
+  submesh_types
+  var_pts
+  y0
+  z_scale : float64
+  {abstract}approximate_capacity(parameter_set: ParameterSet)
+  build(parameters: Union[Parameters, dict], inputs: Optional[Inputs], initial_state: Optional[dict], dataset: Optional[Dataset], check_model: bool) -> None
+  calculate_impedance(frequency)
+  {abstract}cell_mass(parameter_set: ParameterSet)
+  {abstract}cell_volume(parameter_set: ParameterSet)
+  check_params(inputs: Optional[Inputs], parameter_set: Optional[ParameterSet], allow_infeasible_solutions: bool)
+  classify_parameters(parameters: Optional[Parameters], inputs: Optional[Inputs])
+  clear()
+  convert_to_pybamm_initial_state(initial_state: dict)
+  copy()
+  get_parameter_info(print_info: bool)
+  get_state(inputs: Inputs, t: float, x: np.ndarray) -> TimeSeriesState
+  initialise_eis_simulation(inputs: Optional[Inputs])
+  jaxify_solver(t_eval, calculate_sensitivities)
+  new_copy()
+  predict(inputs: Optional[Inputs], t_eval: Optional[np.array], parameter_set: Optional[ParameterSet], experiment: Optional[Experiment], initial_state: Optional[dict]) -> dict[str, np.ndarray[np.float64]]
+  reinit(inputs: Inputs, t: float, x: Optional[np.ndarray]) -> TimeSeriesState
+  set_current_function(dataset: Union[Dataset, dict])
+  set_initial_state(initial_state: dict, inputs: Optional[Inputs])
+  set_parameters()
+  set_up_for_eis(model)
+  simulate(inputs: Inputs, t_eval: np.array, initial_state: Optional[dict]) -> Union[pybamm.Solution, list[np.float64]]
+  simulateEIS(inputs: Inputs, f_eval: list, initial_state: Optional[dict]) -> dict[str, np.ndarray]
+  simulateS1(inputs: Inputs, t_eval: np.array, initial_state: Optional[dict])
+  step(state: TimeSeriesState, time: np.ndarray) -> TimeSeriesState
+}
+class "BaseOptimiser" as pybop.optimisers.base_optimiser.BaseOptimiser {
+  allow_infeasible_solutions : bool
+  bounds : NoneType, dict
+  compute_sensitivities
+  cost
+  default_max_iterations : int
+  log : dict
+  multistart
+  n_samples_sensitivity
+  needs_sensitivities
+  parameters
+  physical_viability : bool
+  result : NoneType
+  sigma0 : float
+  unset_options : dict
+  unset_options_store : dict
+  verbose : bool
+  x0
+  log_update(x, x_best, cost, cost_best)
+  {abstract}name()
+  run()
+  set_allow_infeasible_solutions(allow: bool)
+  set_base_options()
+}
+class "BasePintsOptimiser" as pybop.optimisers.base_pints_optimiser.BasePintsOptimiser {
+  bounds : NoneType
+  optimiser
+  option_methods : dict
+  f_guessed_tracking()
+  name()
+  set_f_guessed_tracking(use_f_guessed)
+  set_max_evaluations(evaluations)
+  set_max_iterations(iterations)
+  set_max_unchanged_iterations(iterations, absolute_tolerance, relative_tolerance)
+  set_min_iterations(iterations)
+  set_parallel(parallel)
+  set_population_size(population_size)
+  set_threshold(threshold)
+}
+class "BasePintsSampler" as pybop.samplers.base_pints_sampler.BasePintsSampler {
+  fxs
+  fxs_iterator
+  iter_time : float
+  sampler
+  run() -> Optional[np.ndarray]
+}
+class "BasePrior" as pybop.parameters.priors.BasePrior {
+  mean
+  sigma
+  cdf(x)
+  icdf(q)
+  logpdf(x)
+  logpdfS1(x)
+  pdf(x)
+  rvs(size, random_state)
+  verify(x)
+}
+class "BaseProblem" as pybop.problems.base_problem.BaseProblem {
+  additional_variables : list
+  check_model : bool
+  dataset
+  domain : str
+  domain_data
+  eis : bool
+  exception : list
+  failure_output
+  initial_state : Optional[dict]
+  model
+  n_outputs
+  n_parameters
+  output_variables
+  parameters
+  pybamm_solution
+  sensitivities_available
+  signal : list
+  target
+  verbose : bool
+  {abstract}evaluate(inputs: Inputs, eis)
+  {abstract}evaluateS1(inputs: Inputs)
+  get_target()
+  set_initial_state(initial_state: Optional[dict])
+  set_target(dataset: Dataset)
+}
+class "BaseSampler" as pybop.samplers.base_sampler.BaseSampler {
+  n_parameters
+  parameters
+  {abstract}run() -> np.ndarray
+  set_initial_phase_iterations(iterations)
+  set_max_iterations(iterations)
+  set_parallel(parallel)
+}
+class "BaseSciPyOptimiser" as pybop.optimisers.scipy_optimisers.BaseSciPyOptimiser {
+  evaluator
+  key_mapping : dict
+  num_resamples : int
+}
+class "BaseWeppnerHuggins" as pybop.models.lithium_ion.weppner_huggins.BaseWeppnerHuggins {
+  default_geometry
+  default_parameter_values
+  default_solver
+  default_spatial_methods
+  default_submesh_types
+  default_var_pts
+  variables : dict
+}
+class "CMAES" as pybop.optimisers.pints_optimisers.CMAES {
+}
+class "CostInterface" as pybop.optimisers._cost_interface.CostInterface {
+  invert_cost : bool
+  transformation
+  call_cost(x: Union[Inputs, list], cost: Union[BaseCost, callable], calculate_grad: bool) -> Union[float, tuple[float, np.ndarray]]
+  transform_list_of_values(list_of_values)
+  transform_values(values)
+}
+class "CuckooSearch" as pybop.optimisers.pints_optimisers.CuckooSearch {
+}
+class "CuckooSearchImpl" as pybop.optimisers._cuckoo.CuckooSearchImpl {
+  beta : float
+  cuckoos
+  pa
+  step_size : ndarray
+  abandon_nests(idx)
+  ask()
+  clip_nests(x)
+  f_best()
+  levy_flight(alpha, size)
+  name()
+  running()
+  tell(replies)
+  x_best()
+}
+class "DFN" as pybop.models.lithium_ion.echem.DFN {
+}
+class "DREAM" as pybop.samplers.pints_samplers.DREAM {
+}
+class "Dataset" as pybop._dataset.Dataset {
+  data
+  domain : str
+  check(domain: str, signal: Union[str, list[str]]) -> bool
+  get_subset(index: Union[list, np.ndarray])
+}
+class "DeferredPrediction" as pybop.costs.base_cost.BaseCost.DeferredPrediction {
+}
+class "DesignCost" as pybop.costs.design_costs.DesignCost {
+  minimising : bool
+}
+class "DesignProblem" as pybop.problems.design_problem.DesignProblem {
+  additional_variables : list
+  experiment : Optional[Experiment]
+  initial_state : dict
+  update_capacity : bool
+  warning_patterns : list
+  evaluate(inputs: Inputs)
+  set_initial_state(initial_state: dict)
+}
+class "DifferentialEvolutionMCMC" as pybop.samplers.pints_samplers.DifferentialEvolutionMCMC {
+}
+class "DramACMC" as pybop.samplers.pints_samplers.DramACMC {
+}
+class "EChemBaseModel" as pybop.models.lithium_ion.base_echem.EChemBaseModel {
+  default_parameter_values
+  geometric_parameters : dict
+  param_check_counter
+  pybamm_model
+  approximate_capacity(parameter_set: Optional[ParameterSet])
+  cell_mass(parameter_set: Optional[ParameterSet])
+  cell_volume(parameter_set: Optional[ParameterSet])
+  set_geometric_parameters()
+}
+class "ECircuitModel" as pybop.models.empirical.base_ecm.ECircuitModel {
+  default_parameter_values
+  geometric_parameters : dict
+  pybamm_model
+  get_initial_state(initial_value, parameter_values, param, options, tol, inputs)
+}
+class "EmceeHammerMCMC" as pybop.samplers.pints_samplers.EmceeHammerMCMC {
+}
+class "Exponential" as pybop.parameters.priors.Exponential {
+  loc : int
+  name : str
+  prior : expon_gen
+  scale
+}
+class "ExponentialDecayModel" as pybop.models._exponential_decay.ExponentialDecayModel {
+  default_parameter_values : ParameterValues
+  geometric_parameters : dict
+  n_states : int
+  pybamm_model : BaseModel
+}
+class "FittingCost" as pybop.costs.fitting_costs.FittingCost {
+  compute(y: dict, dy: Optional[dict]) -> Union[float, tuple[float, np.ndarray]]
+}
+class "FittingProblem" as pybop.problems.fitting_problem.FittingProblem {
+  initial_state : Optional[dict]
+  n_data
+  evaluate(inputs: Inputs) -> dict[str, np.ndarray[np.float64]]
+  evaluateS1(inputs: Inputs)
+  set_initial_state(initial_state: Optional[dict])
+}
+class "Gaussian" as pybop.parameters.priors.Gaussian {
+  loc
+  name : str
+  prior : norm_gen
+  scale
+}
+class "GaussianLogLikelihood" as pybop.costs._likelihoods.GaussianLogLikelihood {
+  dsigma_scale
+  sigma
+  compute(y: dict, dy: Optional[np.ndarray]) -> Union[float, tuple[float, np.ndarray]]
+}
+class "GaussianLogLikelihoodKnownSigma" as pybop.costs._likelihoods.GaussianLogLikelihoodKnownSigma {
+  sigma2
+  check_sigma0(sigma0: Union[np.ndarray, float])
+  compute(y: dict, dy: Optional[np.ndarray]) -> Union[float, tuple[float, np.ndarray]]
+}
+class "GradientDescent" as pybop.optimisers.pints_optimisers.GradientDescent {
+}
+class "GradientDescentImpl" as pybop.optimisers._gradient_descent.GradientDescentImpl {
+  ask()
+  f_best()
+  learning_rate()
+  n_hyper_parameters()
+  name()
+  needs_sensitivities()
+  running()
+  set_hyper_parameters(x)
+  set_learning_rate(eta)
+  tell(reply)
+  x_best()
+}
+class "GravimetricEnergyDensity" as pybop.costs.design_costs.GravimetricEnergyDensity {
+  compute(y: dict, dy: Optional[np.ndarray]) -> float
+}
+class "GravimetricPowerDensity" as pybop.costs.design_costs.GravimetricPowerDensity {
+  target_time : Union[int, float]
+  compute(y: dict, dy: Optional[np.ndarray]) -> float
+}
+class "GroupedSPMe" as pybop.models.lithium_ion.echem.GroupedSPMe {
+}
+class "HaarioACMC" as pybop.samplers.pints_samplers.HaarioACMC {
+}
+class "HaarioBardenetACMC" as pybop.samplers.pints_samplers.HaarioBardenetACMC {
+}
+class "HamiltonianMCMC" as pybop.samplers.pints_samplers.HamiltonianMCMC {
+}
+class "IRPropMin" as pybop.optimisers.pints_optimisers.IRPropMin {
+}
+class "IRPropPlus" as pybop.optimisers.pints_optimisers.IRPropPlus {
+}
+class "IRPropPlusImpl" as pybop.optimisers._irprop_plus.IRPropPlusImpl {
+  eta_max : float
+  eta_min : float
+  step_max : NoneType
+  step_min
+  ask()
+  f_best()
+  name()
+  needs_sensitivities()
+  running()
+  tell(reply)
+  x_best()
+}
+class "JointLogPrior" as pybop.parameters.priors.JointLogPrior {
+  parameters
+  logpdf(x: Union[float, np.ndarray]) -> float
+}
+class "LogPosterior" as pybop.costs._likelihoods.LogPosterior {
+  gradient_step : float
+  prior
+  compute(y: dict, dy: Optional[np.ndarray]) -> Union[float, tuple[float, np.ndarray]]
+}
+class "MALAMCMC" as pybop.samplers.pints_samplers.MALAMCMC {
+}
+class "MCMCSampler" as pybop.samplers.mcmc_sampler.MCMCSampler {
+  sampler
+  run()
+}
+class "MPM" as pybop.models.lithium_ion.echem.MPM {
+}
+class "MSMR" as pybop.models.lithium_ion.echem.MSMR {
+}
+class "MeanAbsoluteError" as pybop.costs.error_measures.MeanAbsoluteError {
+}
+class "MeanSquaredError" as pybop.costs.error_measures.MeanSquaredError {
+}
+class "MetropolisRandomWalkMCMC" as pybop.samplers.pints_samplers.MetropolisRandomWalkMCMC {
+}
+class "Minkowski" as pybop.costs.error_measures.Minkowski {
+  p : float
+}
+class "MonomialGammaHamiltonianMCMC" as pybop.samplers.pints_samplers.MonomialGammaHamiltonianMCMC {
+}
+class "MultiFittingProblem" as pybop.problems.multi_fitting_problem.MultiFittingProblem {
+  domain : str
+  n_domain_data
+  problems : list
+  pybamm_solution
+  evaluate(inputs: Inputs)
+  evaluateS1(inputs: Inputs)
+  set_initial_state(initial_state: Optional[dict])
+}
+class "NUTS" as pybop.samplers.pints_samplers.NUTS {
+}
+class "NelderMead" as pybop.optimisers.pints_optimisers.NelderMead {
+}
+class "Observer" as pybop.observers.observer.Observer {
+  Covariance : ndarray
+  evaluate(inputs: Inputs)
+  get_current_covariance() -> Covariance
+  get_current_measure() -> np.ndarray
+  get_current_state() -> TimeSeriesState
+  get_current_time() -> float
+  get_measure(x: TimeSeriesState) -> np.ndarray
+  log_likelihood(values: dict, times: np.ndarray, inputs: Inputs) -> float
+  observe(time: float, value: Optional[np.ndarray]) -> float
+  reset(inputs: Inputs) -> None
+}
+class "ObserverCost" as pybop.costs.fitting_costs.ObserverCost {
+  compute(y: dict, dy: Optional[np.ndarray]) -> float
+}
+class "Optimisation" as pybop.optimisers.optimisation.Optimisation {
+  optim
+  run()
+}
+class "OptimisationResult" as pybop.optimisers._result.OptimisationResult {
+  cost
+  final_cost
+  final_cost_best
+  fisher
+  fisher_best
+  message
+  message_best
+  minimising
+  n_evaluations
+  n_evaluations_best
+  n_iterations
+  n_iterations_best
+  n_runs : int
+  optim : str
+  pybamm_solution
+  pybamm_solution_best
+  scipy_result
+  scipy_result_best
+  sense_format : str
+  sensitivities
+  time
+  time_best
+  x
+  x0
+  x0_best
+  x_best
+  add_result(result)
+  average_iterations() -> Optional[float]
+  check_for_finite_cost() -> None
+  check_physical_viability(x)
+  total_runtime() -> Optional[float]
+}
+class "PSO" as pybop.optimisers.pints_optimisers.PSO {
+}
+class "Parameter" as pybop.parameters.parameter.Parameter {
+  applied_prior_bounds : bool
+  bounds : NoneType, list
+  initial_value : NoneType
+  lower_bound : NoneType
+  margin : float
+  name
+  prior : NoneType
+  transformation : NoneType
+  true_value : NoneType
+  upper_bound : NoneType
+  value : NoneType
+  get_initial_value(apply_transform: bool) -> float
+  rvs(n_samples: int, random_state, apply_transform: bool)
+  set_bounds(bounds, boundary_multiplier)
+  set_margin(margin)
+  update(initial_value, value)
+}
+class "ParameterSet" as pybop.parameters.parameter_set.ParameterSet {
+  chemistry : NoneType
+  formation_concentrations : Optional[bool]
+  parameter_values : NoneType, ParameterValues
+  copy()
+  evaluate_symbol(symbol: Union[Symbol, Number], params: dict)
+  export_parameters(output_json_path, fit_params)
+  import_parameters(json_path: Optional[str])
+  is_json_serializable(value)
+  keys() -> list
+  pybamm(name)
+  to_pybamm(parameter_set)
+  update(params_dict: dict, check_already_exists: bool)
+}
+class "Parameters" as pybop.parameters.parameter.Parameters {
+  index : int
+  param : OrderedDict
+  add(parameter)
+  as_dict(values) -> dict
+  construct_transformation()
+  current_value() -> np.ndarray
+  get_bounds(apply_transform: bool) -> dict
+  get_bounds_for_plotly(apply_transform: bool) -> np.ndarray
+  get_sigma0(apply_transform: bool) -> list
+  get_transformations()
+  initial_value(apply_transform: bool) -> np.ndarray
+  join(parameters)
+  keys() -> list
+  priors() -> list
+  remove(parameter_name)
+  reset_initial_value(apply_transform: bool) -> np.ndarray
+  rvs(n_samples: int, apply_transform: bool) -> np.ndarray
+  true_value() -> np.ndarray
+  update(initial_values, values, bounds)
+  verify(inputs: Optional[Inputs])
+}
+class "PlotlyManager" as pybop.plot.plotly_manager.PlotlyManager {
+  go : NoneType
+  make_subplots : NoneType
+  pio : NoneType
+  check_browser_availability()
+  check_renderer_settings()
+  ensure_plotly_installed()
+  install_plotly()
+  post_install_setup()
+  prompt_for_plotly_installation()
+}
+class "PopulationMCMC" as pybop.samplers.pints_samplers.PopulationMCMC {
+}
+class "PosteriorSummary" as pybop.samplers.mcmc_summary.PosteriorSummary {
+  all_samples : ndarray
+  chains : ndarray
+  go : NoneType
+  num_parameters
+  sig_digits : int
+  autocorrelation(x: np.ndarray) -> np.ndarray
+  effective_sample_size(mixed_chains)
+  get_summary_statistics()
+  plot_chains()
+  plot_posterior()
+  plot_trace()
+  rhat()
+  signif(x, p: int)
+  summary_table()
+}
+class "RandomSearch" as pybop.optimisers.pints_optimisers.RandomSearch {
+}
+class "RandomSearchImpl" as pybop.optimisers._random_search.RandomSearchImpl {
+  ask()
+  clip_candidates(x)
+  f_best()
+  name()
+  running()
+  tell(replies)
+  x_best()
+}
+class "RaoBlackwellACMC" as pybop.samplers.pints_samplers.RaoBlackwellACMC {
+}
+class "RelativisticMCMC" as pybop.samplers.pints_samplers.RelativisticMCMC {
+}
+class "RootMeanSquaredError" as pybop.costs.error_measures.RootMeanSquaredError {
+}
+class "SNES" as pybop.optimisers.pints_optimisers.SNES {
+}
+class "SPM" as pybop.models.lithium_ion.echem.SPM {
+}
+class "SPMe" as pybop.models.lithium_ion.echem.SPMe {
+}
+class "ScaledLogLikelihood" as pybop.costs._likelihoods.ScaledLogLikelihood {
+  compute(y: dict, dy: Optional[np.ndarray]) -> Union[float, tuple[float, np.ndarray]]
+}
+class "SciPyDifferentialEvolution" as pybop.optimisers.scipy_optimisers.SciPyDifferentialEvolution {
+  x0 : NoneType
+  name()
+}
+class "SciPyEvaluator" as pybop._evaluation.SciPyEvaluator {
+}
+class "SciPyMinimize" as pybop.optimisers.scipy_optimisers.SciPyMinimize {
+  inf_count : int
+  x0 : ndarray
+  cost_wrapper(x)
+  name()
+}
+class "SequentialJaxEvaluator" as pybop._evaluation.SequentialJaxEvaluator {
+}
+class "SigmaPoint" as pybop.observers.unscented_kalman.SigmaPoint {
+  w_c : float
+  w_m : float
+  x : ndarray
+}
+class "SimulatedAnnealing" as pybop.optimisers.pints_optimisers.SimulatedAnnealing {
+}
+class "SimulatedAnnealingImpl" as pybop.optimisers._simulated_annealing.SimulatedAnnealingImpl {
+  cooling_rate
+  temperature
+  ask()
+  f_best()
+  n_hyper_parameters()
+  name()
+  needs_sensitivities()
+  running()
+  tell(reply)
+  x_best()
+}
+class "SliceDoublingMCMC" as pybop.samplers.pints_samplers.SliceDoublingMCMC {
+}
+class "SliceRankShrinkingMCMC" as pybop.samplers.pints_samplers.SliceRankShrinkingMCMC {
+}
+class "SliceStepoutMCMC" as pybop.samplers.pints_samplers.SliceStepoutMCMC {
+}
+class "SquareRootUKF" as pybop.observers.unscented_kalman.SquareRootUKF {
+  Rp
+  S : ndarray
+  alpha : float
+  beta : int
+  bool_mask : tuple
+  f
+  h
+  sqrtRm : tuple
+  sqrtRp : ndarray
+  states
+  x : ndarray
+  cholupdate(R: np.ndarray, x: np.ndarray, w: float) -> np.ndarray
+  filtered_cholupdate(R: np.ndarray, x: np.ndarray, w: float, states: np.ndarray) -> np.ndarray
+  gen_sigma_points(x: np.ndarray, S: np.ndarray, alpha: float, beta: float, states: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]
+  hypot(x: float, sign: float) -> float
+  reset(x: np.ndarray, S: np.ndarray) -> None
+  step(y: np.ndarray) -> float
+  unscented_transform(sigma_points: np.ndarray, w_m: np.ndarray, w_c: np.ndarray, sqrtR: np.ndarray, states: Optional[np.ndarray]) -> tuple[np.ndarray, np.ndarray]
+}
+class "StandardPlot" as pybop.plot.standard_plots.StandardPlot {
+  go : NoneType
+  layout : Layout, NoneType
+  layout_options : dict
+  sigma : ndarray
+  trace_name_width : int
+  trace_options : dict
+  traces : list
+  add_traces(x, y, trace_names)
+  create_trace(x, y)
+  parse_data(x, y)
+  remove_brackets(s)
+  wrap_text(text, width)
+}
+class "StandardSubplot" as pybop.plot.standard_plots.StandardSubplot {
+  axis_titles : NoneType
+  make_subplots : NoneType
+  num_cols : NoneType, int
+  num_rows : NoneType, int
+  num_traces
+  subplot_options
+}
+class "SumOfPower" as pybop.costs.error_measures.SumOfPower {
+  p : float
+}
+class "SumSquaredError" as pybop.costs.error_measures.SumSquaredError {
+}
+class "SymbolReplacer" as pybop._utils.SymbolReplacer {
+  process_boundary_conditions(model)
+  process_model(unprocessed_model, inplace)
+  process_symbol(symbol)
+}
+class "Thevenin" as pybop.models.empirical.ecm.Thevenin {
+}
+class "TimeSeriesState" as pybop.models.base_model.TimeSeriesState {
+  inputs : dict
+  sol : Solution
+  t : float
+  as_ndarray() -> np.ndarray
+}
+class "Uniform" as pybop.parameters.priors.Uniform {
+  loc
+  lower
+  mean
+  name : str
+  prior : uniform_gen
+  scale
+  sigma
+  upper
+}
+class "UnscentedKalmanFilterObserver" as pybop.observers.unscented_kalman.UnscentedKalmanFilterObserver {
+  Covariance : ndarray
+  n_data
+  get_current_covariance() -> Covariance
+  observe(time: float, value: np.ndarray) -> float
+  reset(inputs: Inputs) -> None
+}
+class "VolumetricEnergyDensity" as pybop.costs.design_costs.VolumetricEnergyDensity {
+  compute(y: dict, dy: Optional[np.ndarray]) -> float
+}
+class "VolumetricPowerDensity" as pybop.costs.design_costs.VolumetricPowerDensity {
+  target_time : Union[int, float]
+  compute(y: dict, dy: Optional[np.ndarray]) -> float
+}
+class "WeightedCost" as pybop.costs._weighted_cost.WeightedCost {
+  costs
+  has_identical_problems
+  minimising : bool
+  weights : ndarray
+  compute(y: dict, dy: Optional[np.ndarray]) -> Union[float, tuple[float, np.ndarray]]
+}
+class "WeppnerHuggins" as pybop.models.lithium_ion.echem.WeppnerHuggins {
+}
+class "XNES" as pybop.optimisers.pints_optimisers.XNES {
+}
+pybop.costs._likelihoods.BaseLikelihood --|> pybop.costs.base_cost.BaseCost
+pybop.costs._likelihoods.BaseMetaLikelihood --|> pybop.costs._likelihoods.BaseLikelihood
+pybop.costs._likelihoods.GaussianLogLikelihood --|> pybop.costs._likelihoods.BaseLikelihood
+pybop.costs._likelihoods.GaussianLogLikelihoodKnownSigma --|> pybop.costs._likelihoods.BaseLikelihood
+pybop.costs._likelihoods.LogPosterior --|> pybop.costs._likelihoods.BaseMetaLikelihood
+pybop.costs._likelihoods.ScaledLogLikelihood --|> pybop.costs._likelihoods.BaseMetaLikelihood
+pybop.costs._weighted_cost.WeightedCost --|> pybop.costs.base_cost.BaseCost
+pybop.costs.design_costs.DesignCost --|> pybop.costs.base_cost.BaseCost
+pybop.costs.design_costs.GravimetricEnergyDensity --|> pybop.costs.design_costs.DesignCost
+pybop.costs.design_costs.GravimetricPowerDensity --|> pybop.costs.design_costs.DesignCost
+pybop.costs.design_costs.VolumetricEnergyDensity --|> pybop.costs.design_costs.DesignCost
+pybop.costs.design_costs.VolumetricPowerDensity --|> pybop.costs.design_costs.DesignCost
+pybop.costs.error_measures.MeanAbsoluteError --|> pybop.costs.fitting_costs.FittingCost
+pybop.costs.error_measures.MeanSquaredError --|> pybop.costs.fitting_costs.FittingCost
+pybop.costs.error_measures.Minkowski --|> pybop.costs.fitting_costs.FittingCost
+pybop.costs.error_measures.RootMeanSquaredError --|> pybop.costs.fitting_costs.FittingCost
+pybop.costs.error_measures.SumOfPower --|> pybop.costs.fitting_costs.FittingCost
+pybop.costs.error_measures.SumSquaredError --|> pybop.costs.fitting_costs.FittingCost
+pybop.costs.fitting_costs.FittingCost --|> pybop.costs.base_cost.BaseCost
+pybop.costs.fitting_costs.ObserverCost --|> pybop.costs.base_cost.BaseCost
+pybop.models._exponential_decay.ExponentialDecayModel --|> pybop.models.base_model.BaseModel
+pybop.models.empirical.base_ecm.ECircuitModel --|> pybop.models.base_model.BaseModel
+pybop.models.empirical.ecm.Thevenin --|> pybop.models.empirical.base_ecm.ECircuitModel
+pybop.models.lithium_ion.base_echem.EChemBaseModel --|> pybop.models.base_model.BaseModel
+pybop.models.lithium_ion.echem.DFN --|> pybop.models.lithium_ion.base_echem.EChemBaseModel
+pybop.models.lithium_ion.echem.GroupedSPMe --|> pybop.models.lithium_ion.base_echem.EChemBaseModel
+pybop.models.lithium_ion.echem.MPM --|> pybop.models.lithium_ion.base_echem.EChemBaseModel
+pybop.models.lithium_ion.echem.MSMR --|> pybop.models.lithium_ion.base_echem.EChemBaseModel
+pybop.models.lithium_ion.echem.SPM --|> pybop.models.lithium_ion.base_echem.EChemBaseModel
+pybop.models.lithium_ion.echem.SPMe --|> pybop.models.lithium_ion.base_echem.EChemBaseModel
+pybop.models.lithium_ion.echem.WeppnerHuggins --|> pybop.models.lithium_ion.base_echem.EChemBaseModel
+pybop.observers.observer.Observer --|> pybop.problems.base_problem.BaseProblem
+pybop.observers.unscented_kalman.UnscentedKalmanFilterObserver --|> pybop.observers.observer.Observer
+pybop.optimisers.base_optimiser.BaseOptimiser --|> pybop.optimisers._cost_interface.CostInterface
+pybop.optimisers.base_pints_optimiser.BasePintsOptimiser --|> pybop.optimisers.base_optimiser.BaseOptimiser
+pybop.optimisers.pints_optimisers.AdamW --|> pybop.optimisers.base_pints_optimiser.BasePintsOptimiser
+pybop.optimisers.pints_optimisers.CMAES --|> pybop.optimisers.base_pints_optimiser.BasePintsOptimiser
+pybop.optimisers.pints_optimisers.CuckooSearch --|> pybop.optimisers.base_pints_optimiser.BasePintsOptimiser
+pybop.optimisers.pints_optimisers.GradientDescent --|> pybop.optimisers.base_pints_optimiser.BasePintsOptimiser
+pybop.optimisers.pints_optimisers.IRPropMin --|> pybop.optimisers.base_pints_optimiser.BasePintsOptimiser
+pybop.optimisers.pints_optimisers.IRPropPlus --|> pybop.optimisers.base_pints_optimiser.BasePintsOptimiser
+pybop.optimisers.pints_optimisers.NelderMead --|> pybop.optimisers.base_pints_optimiser.BasePintsOptimiser
+pybop.optimisers.pints_optimisers.PSO --|> pybop.optimisers.base_pints_optimiser.BasePintsOptimiser
+pybop.optimisers.pints_optimisers.RandomSearch --|> pybop.optimisers.base_pints_optimiser.BasePintsOptimiser
+pybop.optimisers.pints_optimisers.SNES --|> pybop.optimisers.base_pints_optimiser.BasePintsOptimiser
+pybop.optimisers.pints_optimisers.SimulatedAnnealing --|> pybop.optimisers.base_pints_optimiser.BasePintsOptimiser
+pybop.optimisers.pints_optimisers.XNES --|> pybop.optimisers.base_pints_optimiser.BasePintsOptimiser
+pybop.optimisers.scipy_optimisers.BaseSciPyOptimiser --|> pybop.optimisers.base_optimiser.BaseOptimiser
+pybop.optimisers.scipy_optimisers.SciPyDifferentialEvolution --|> pybop.optimisers.scipy_optimisers.BaseSciPyOptimiser
+pybop.optimisers.scipy_optimisers.SciPyMinimize --|> pybop.optimisers.scipy_optimisers.BaseSciPyOptimiser
+pybop.parameters.priors.Exponential --|> pybop.parameters.priors.BasePrior
+pybop.parameters.priors.Gaussian --|> pybop.parameters.priors.BasePrior
+pybop.parameters.priors.JointLogPrior --|> pybop.parameters.priors.BasePrior
+pybop.parameters.priors.Uniform --|> pybop.parameters.priors.BasePrior
+pybop.plot.standard_plots.StandardSubplot --|> pybop.plot.standard_plots.StandardPlot
+pybop.problems.design_problem.DesignProblem --|> pybop.problems.base_problem.BaseProblem
+pybop.problems.fitting_problem.FittingProblem --|> pybop.problems.base_problem.BaseProblem
+pybop.problems.multi_fitting_problem.MultiFittingProblem --|> pybop.problems.base_problem.BaseProblem
+pybop.samplers.base_pints_sampler.BasePintsSampler --|> pybop.samplers.base_sampler.BaseSampler
+pybop.samplers.base_sampler.BaseSampler --|> pybop.optimisers._cost_interface.CostInterface
+pybop.samplers.pints_samplers.AdaptiveCovarianceMCMC --|> pybop.samplers.base_pints_sampler.BasePintsSampler
+pybop.samplers.pints_samplers.DREAM --|> pybop.samplers.base_pints_sampler.BasePintsSampler
+pybop.samplers.pints_samplers.DifferentialEvolutionMCMC --|> pybop.samplers.base_pints_sampler.BasePintsSampler
+pybop.samplers.pints_samplers.DramACMC --|> pybop.samplers.base_pints_sampler.BasePintsSampler
+pybop.samplers.pints_samplers.EmceeHammerMCMC --|> pybop.samplers.base_pints_sampler.BasePintsSampler
+pybop.samplers.pints_samplers.HaarioACMC --|> pybop.samplers.base_pints_sampler.BasePintsSampler
+pybop.samplers.pints_samplers.HaarioBardenetACMC --|> pybop.samplers.base_pints_sampler.BasePintsSampler
+pybop.samplers.pints_samplers.HamiltonianMCMC --|> pybop.samplers.base_pints_sampler.BasePintsSampler
+pybop.samplers.pints_samplers.MALAMCMC --|> pybop.samplers.base_pints_sampler.BasePintsSampler
+pybop.samplers.pints_samplers.MetropolisRandomWalkMCMC --|> pybop.samplers.base_pints_sampler.BasePintsSampler
+pybop.samplers.pints_samplers.MonomialGammaHamiltonianMCMC --|> pybop.samplers.base_pints_sampler.BasePintsSampler
+pybop.samplers.pints_samplers.NUTS --|> pybop.samplers.base_pints_sampler.BasePintsSampler
+pybop.samplers.pints_samplers.PopulationMCMC --|> pybop.samplers.base_pints_sampler.BasePintsSampler
+pybop.samplers.pints_samplers.RaoBlackwellACMC --|> pybop.samplers.base_pints_sampler.BasePintsSampler
+pybop.samplers.pints_samplers.RelativisticMCMC --|> pybop.samplers.base_pints_sampler.BasePintsSampler
+pybop.samplers.pints_samplers.SliceDoublingMCMC --|> pybop.samplers.base_pints_sampler.BasePintsSampler
+pybop.samplers.pints_samplers.SliceRankShrinkingMCMC --|> pybop.samplers.base_pints_sampler.BasePintsSampler
+pybop.samplers.pints_samplers.SliceStepoutMCMC --|> pybop.samplers.base_pints_sampler.BasePintsSampler
+pybop._evaluation.SciPyEvaluator --* pybop.optimisers.scipy_optimisers.BaseSciPyOptimiser : evaluator
+pybop.observers.unscented_kalman.SquareRootUKF --* pybop.observers.unscented_kalman.UnscentedKalmanFilterObserver : _ukf
+pybop.optimisers._result.OptimisationResult --* pybop.optimisers.base_optimiser.BaseOptimiser : result
+pybop.optimisers.pints_optimisers.XNES --* pybop.optimisers.optimisation.Optimisation : optim
+pybop.parameters.parameter.Parameters --* pybop.costs._likelihoods.GaussianLogLikelihood : sigma
+pybop.parameters.parameter.Parameters --* pybop.costs.base_cost.BaseCost : _parameters
+pybop.parameters.parameter.Parameters --* pybop.models.base_model.BaseModel : parameters
+pybop.parameters.parameter.Parameters --* pybop.optimisers.base_optimiser.BaseOptimiser : parameters
+pybop.parameters.priors.JointLogPrior --* pybop.costs._likelihoods.LogPosterior : _prior
+pybop.samplers.pints_samplers.AdaptiveCovarianceMCMC --* pybop.samplers.mcmc_sampler.MCMCSampler : sampler
+pybop.costs._likelihoods.BaseLikelihood --o pybop.costs._likelihoods.BaseMetaLikelihood : _log_likelihood
+pybop.costs._likelihoods.LogPosterior --o pybop.samplers.base_sampler.BaseSampler : _log_pdf
+pybop.observers.observer.Observer --o pybop.costs.fitting_costs.ObserverCost : _observer
+pybop.parameters.parameter.Parameters --o pybop.problems.base_problem.BaseProblem : parameters
+@enduml

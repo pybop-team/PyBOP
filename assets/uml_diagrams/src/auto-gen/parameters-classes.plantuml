@@ -1,0 +1,106 @@
+@startuml parameters-pybop-classes
+set namespaceSeparator none
+class "BasePrior" as pybop.parameters.priors.BasePrior {
+  mean
+  sigma
+  cdf(x)
+  icdf(q)
+  logpdf(x)
+  logpdfS1(x)
+  pdf(x)
+  rvs(size, random_state)
+  verify(x)
+}
+class "Exponential" as pybop.parameters.priors.Exponential {
+  loc : int
+  name : str
+  prior : expon_gen
+  scale
+}
+class "Gaussian" as pybop.parameters.priors.Gaussian {
+  loc
+  name : str
+  prior : norm_gen
+  scale
+}
+class "Uniform" as pybop.parameters.priors.Uniform {
+  loc
+  lower
+  mean
+  name : str
+  prior : uniform_gen
+  scale
+  sigma
+  upper
+}
+class "JointLogPrior" as pybop.parameters.priors.JointLogPrior {
+  logpdf(x: Union[float, np.ndarray]) -> float
+}
+class "Parameter" as pybop.parameters.parameter.Parameter {
+  applied_prior_bounds : bool
+  bounds : NoneType, list
+  initial_value : NoneType
+  lower_bound : NoneType
+  margin : float
+  name
+  prior : NoneType
+  transformation : NoneType
+  true_value : NoneType
+  upper_bound : NoneType
+  value : NoneType
+  get_initial_value(apply_transform: bool) -> float
+  rvs(n_samples: int, random_state, apply_transform: bool)
+  set_bounds(bounds, boundary_multiplier)
+  set_margin(margin)
+  update(initial_value, value)
+}
+class "ParameterSet" as pybop.parameters.parameter_set.ParameterSet {
+  chemistry : NoneType
+  formation_concentrations : Optional[bool]
+  parameter_values : NoneType, ParameterValues
+  copy()
+  evaluate_symbol(symbol: Union[Symbol, Number], params: dict)
+  export_parameters(output_json_path, fit_params)
+  import_parameters(json_path: Optional[str])
+  is_json_serializable(value)
+  keys() -> list
+  pybamm(name)
+  to_pybamm(parameter_set)
+  update(params_dict: dict, check_already_exists: bool)
+}
+class "Parameters" as pybop.parameters.parameter.Parameters {
+  index : int
+  param : OrderedDict
+  add(parameter)
+  as_dict(values) -> dict
+  construct_transformation()
+  current_value() -> np.ndarray
+  get_bounds(apply_transform: bool) -> dict
+  get_bounds_for_plotly(apply_transform: bool) -> np.ndarray
+  get_sigma0(apply_transform: bool) -> list
+  get_transformations()
+  initial_value(apply_transform: bool) -> np.ndarray
+  join(parameters)
+  keys() -> list
+  priors() -> list
+  remove(parameter_name)
+  reset_initial_value(apply_transform: bool) -> np.ndarray
+  rvs(n_samples: int, apply_transform: bool) -> np.ndarray
+  true_value() -> np.ndarray
+  update(initial_values, values, bounds)
+  verify(inputs: Optional[Inputs])
+}
+
+' Defining inheritance relationships of baseprior
+pybop.parameters.priors.Exponential --|> pybop.parameters.priors.BasePrior
+pybop.parameters.priors.Gaussian --|> pybop.parameters.priors.BasePrior
+pybop.parameters.priors.JointLogPrior --|> pybop.parameters.priors.BasePrior
+pybop.parameters.priors.Uniform --|> pybop.parameters.priors.BasePrior
+
+' Defining inheritance relationships of parameter
+pybop.parameters.parameter.Parameter --* pybop.parameters.priors.BasePrior
+
+' Defining the many relationship between parameter and parameter_set/parameters
+pybop.parameters.parameter.Parameter "many" *--  pybop.parameters.parameter_set.ParameterSet
+pybop.parameters.parameter.Parameter "many" *--  pybop.parameters.parameter.Parameters
+@enduml
