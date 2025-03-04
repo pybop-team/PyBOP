@@ -433,7 +433,6 @@ class BaseModel:
         inputs: Inputs,
         eval: np.array,  # noqa: A002
         initial_state: Optional[dict] = None,
-        eis: bool = False,
     ):
         """
         Perform the forward model simulation with sensitivities.
@@ -461,11 +460,6 @@ class BaseModel:
         ValueError
             If the model has not been built before simulation.
         """
-        if eis is True:
-            raise ValueError(
-                "EIS predictions don't currently support gradient information"
-            )
-
         inputs = self.parameters.verify(inputs)
 
         if initial_state is not None or any(
