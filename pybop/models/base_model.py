@@ -5,17 +5,12 @@ import numpy as np
 import pybamm
 from pybamm import IDAKLUSolver as IDAKLUSolver
 
-from pybop import Dataset, Experiment, Parameters, ParameterSet
-from pybop.models.eis_methods import (
-    calculate_impedance,
-    initialise_eis_simulation,
-    set_up_for_eis,
-)
+from pybop import Dataset, EISMixin, Experiment, Parameters, ParameterSet
 from pybop.models.time_series_state import TimeSeriesState
 from pybop.parameters.parameter import Inputs
 
 
-class BaseModel:
+class BaseModel(EISMixin):
     """
     A base class for constructing and simulating models using PyBaMM.
 
@@ -144,7 +139,7 @@ class BaseModel:
             self.pybamm_model.build_model()
 
         if self.eis:
-            set_up_for_eis(self.pybamm_model)
+            self.set_up_for_eis()
             self._parameter_set["Current function [A]"] = 0
 
             V_scale = getattr(self.pybamm_model.variables["Voltage [V]"], "scale", 1)
@@ -414,8 +409,8 @@ class BaseModel:
                     "Model must be constructed for EIS before calling simulate"
                 )
 
-            self.M, self.J, self.b = initialise_eis_simulation(self, inputs)
-            zs = [calculate_impedance(self.M, self.J, self.b, f) for f in eval]
+            self.initialise_eis_simulation(inputs)
+            zs = [self.calculate_impedance(f) for f in eval]
 
             return {"Impedance": np.asarray(zs) * self.z_scale}
 

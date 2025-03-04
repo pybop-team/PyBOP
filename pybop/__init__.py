@@ -77,6 +77,7 @@ from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointL
 #
 # Model classes
 #
+from .models.eis_methods import EISMixin
 from .models.base_model import BaseModel
 from .models import lithium_ion
 from .models import empirical

@@ -10,110 +10,119 @@ from pybop import SymbolReplacer
 from pybop.parameters.parameter import Inputs
 
 
-def set_up_for_eis(model):
+class EISMixin:
     """
-    Set up the model for electrochemical impedance spectroscopy (EIS) simulations.
-
-    This method sets up the model for EIS simulations by adding the necessary
-    algebraic equations and variables to the model.
-    Originally developed by pybamm-eis: https://github.com/pybamm-team/pybamm-eis
-
-    Parameters
-    ----------
-    model : pybamm.Model
-        The PyBaMM model to be used for EIS simulations.
+    A mixin class that adds Electrochemical Impedance Spectroscopy (EIS) functionality
+    to pybop.BaseModel
     """
-    V_cell = pybamm.Variable("Voltage variable [V]")
-    model.variables["Voltage variable [V]"] = V_cell
-    V = model.variables["Voltage [V]"]
 
-    # Add algebraic equation for the voltage
-    model.algebraic[V_cell] = V_cell - V
-    model.initial_conditions[V_cell] = model.param.ocv_init
+    def set_up_for_eis(self):
+        """
+        Set up the model for electrochemical impedance spectroscopy (EIS) simulations.
 
-    # Create the FunctionControl submodel and extract variables
-    external_circuit_variables = pybamm.external_circuit.FunctionControl(
-        model.param, None, model.options, control="algebraic"
-    ).get_fundamental_variables()
+        This method sets up the model for EIS simulations by adding the necessary
+        algebraic equations and variables to the model.
+        Originally developed by pybamm-eis: https://github.com/pybamm-team/pybamm-eis
 
-    # Define the variables to replace
-    symbol_replacement_map = {}
-    for name, variable in external_circuit_variables.items():
-        if name in model.variables.keys():
-            symbol_replacement_map[model.variables[name]] = variable
+        Parameters
+        ----------
+        model : pybamm.Model
+            The PyBaMM model to be used for EIS simulations.
+        """
+        V_cell = pybamm.Variable("Voltage variable [V]")
+        self.pybamm_model.variables["Voltage variable [V]"] = V_cell
+        V = self.pybamm_model.variables["Voltage [V]"]
 
-    # Don't replace initial conditions, as these should not contain
-    # Variable objects
-    replacer = SymbolReplacer(symbol_replacement_map, process_initial_conditions=False)
-    replacer.process_model(model, inplace=True)
+        # Add algebraic equation for the voltage
+        self.pybamm_model.algebraic[V_cell] = V_cell - V
+        self.pybamm_model.initial_conditions[V_cell] = self.pybamm_model.param.ocv_init
 
-    # Add an algebraic equation for the current density variable
-    # External circuit submodels are always equations on the current
-    I_cell = model.variables["Current variable [A]"]
-    I = model.variables["Current [A]"]
-    I_applied = pybamm.FunctionParameter("Current function [A]", {"Time [s]": pybamm.t})
-    model.algebraic[I_cell] = I - I_applied
-    model.initial_conditions[I_cell] = 0
+        # Create the FunctionControl submodel and extract variables
+        external_circuit_variables = pybamm.external_circuit.FunctionControl(
+            self.pybamm_model.param,
+            None,
+            self.pybamm_model.options,
+            control="algebraic",
+        ).get_fundamental_variables()
 
+        # Define the variables to replace
+        symbol_replacement_map = {}
+        for name, variable in external_circuit_variables.items():
+            if name in self.pybamm_model.variables.keys():
+                symbol_replacement_map[self.pybamm_model.variables[name]] = variable
 
-def initialise_eis_simulation(model, inputs: Optional[Inputs] = None):
-    """
-    Initialise the Electrochemical Impedance Spectroscopy (EIS) simulation.
+        # Don't replace initial conditions, as these should not contain
+        # Variable objects
+        replacer = SymbolReplacer(
+            symbol_replacement_map, process_initial_conditions=False
+        )
+        replacer.process_model(self.pybamm_model, inplace=True)
 
-    This method sets up the mass matrix and solver, converts inputs to the appropriate format,
-    extracts necessary attributes from the model, and prepares matrices for the simulation.
+        # Add an algebraic equation for the current density variable
+        # External circuit submodels are always equations on the current
+        I_cell = self.pybamm_model.variables["Current variable [A]"]
+        I = self.pybamm_model.variables["Current [A]"]
+        I_applied = pybamm.FunctionParameter(
+            "Current function [A]", {"Time [s]": pybamm.t}
+        )
+        self.pybamm_model.algebraic[I_cell] = I - I_applied
+        self.pybamm_model.initial_conditions[I_cell] = 0
 
-    Parameters
-    ----------
-    inputs : dict (optional)
-        The input parameters for the simulation.
-    """
-    # Setup mass matrix, solver
-    M = model.built_model.mass_matrix.entries
-    model.solver.set_up(model.built_model, inputs=inputs)
+    def initialise_eis_simulation(self, inputs: Optional[Inputs] = None):
+        """
+        Initialise the Electrochemical Impedance Spectroscopy (EIS) simulation.
 
-    # Convert inputs to casadi format if needed
-    casadi_inputs = (
-        casadi.vertcat(*inputs.values())
-        if inputs is not None and model.built_model.convert_to_format == "casadi"
-        else inputs or []
-    )
+        This method sets up the mass matrix and solver, converts inputs to the appropriate format,
+        extracts necessary attributes from the model, and prepares matrices for the simulation.
 
-    # Extract necessary attributes from the model
-    y0 = model.built_model.concatenated_initial_conditions.evaluate(0, inputs=inputs)
-    J = model.built_model.jac_rhs_algebraic_eval(0, y0, casadi_inputs).sparse()
+        Parameters
+        ----------
+        inputs : dict (optional)
+            The input parameters for the simulation.
+        """
+        # Setup mass matrix, solver
+        M = self.built_model.mass_matrix.entries
+        self.solver.set_up(self.built_model, inputs=inputs)
 
-    # Convert to Compressed Sparse Column format
-    M = csc_matrix(M)
-    J = csc_matrix(J)
+        # Convert inputs to casadi format if needed
+        casadi_inputs = (
+            casadi.vertcat(*inputs.values())
+            if inputs is not None and self.built_model.convert_to_format == "casadi"
+            else inputs or []
+        )
 
-    # Add forcing to the RHS on the current density
-    b = np.zeros(y0.shape)
-    b[-1] = -1
+        # Extract necessary attributes from the model
+        y0 = self.built_model.concatenated_initial_conditions.evaluate(0, inputs=inputs)
+        J = self.built_model.jac_rhs_algebraic_eval(0, y0, casadi_inputs).sparse()
 
-    return M, J, b
+        # Convert to Compressed Sparse Column format
+        self.M = csc_matrix(M)
+        self.J = csc_matrix(J)
 
+        # Add forcing to the RHS on the current density
+        self.b = np.zeros(y0.shape)
+        self.b[-1] = -1
 
-def calculate_impedance(M, J, b, frequency):
-    """
-    Calculate the impedance for a given frequency.
+    def calculate_impedance(self, frequency):
+        """
+        Calculate the impedance for a given frequency.
 
-    This method computes the system matrix, solves the linear system, and calculates
-    the impedance based on the solution.
+        This method computes the system matrix, solves the linear system, and calculates
+        the impedance based on the solution.
 
-    Parameters
-    ----------
-        frequency (np.ndarray | list like): The frequency at which to calculate the impedance.
+        Parameters
+        ----------
+            frequency (np.ndarray | list like): The frequency at which to calculate the impedance.
 
-    Returns
-    -------
-        The calculated impedance (complex np.ndarray).
-    """
-    # Compute the system matrix
-    A = 1.0j * 2 * np.pi * frequency * M - J
+        Returns
+        -------
+            The calculated impedance (complex np.ndarray).
+        """
+        # Compute the system matrix
+        A = 1.0j * 2 * np.pi * frequency * self.M - self.J
 
-    # Solve the system
-    x = spsolve(A, b)
+        # Solve the system
+        x = spsolve(A, self.b)
 
-    # Calculate the impedance
-    return -x[-2] / x[-1]
+        # Calculate the impedance
+        return -x[-2] / x[-1]
