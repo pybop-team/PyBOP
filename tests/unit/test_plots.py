@@ -13,7 +13,8 @@ class TestPlots:
     A class to test the plot classes.
     """
 
-    @pytest.mark.unit
+    pytestmark = pytest.mark.unit
+
     def test_standard_plot(self):
         # Test standard plot
         trace_names = pybop.plot.StandardPlot.remove_brackets(
@@ -38,11 +39,17 @@ class TestPlots:
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.68, 0.05),
                 bounds=[0.5, 0.8],
+                transformation=pybop.ScaledTransformation(
+                    coefficient=1 / 0.3, intercept=-0.5
+                ),
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
                 prior=pybop.Gaussian(0.58, 0.05),
                 bounds=[0.4, 0.7],
+                transformation=pybop.ScaledTransformation(
+                    coefficient=1 / 0.3, intercept=-0.4
+                ),
             ),
         )
 
@@ -61,7 +68,6 @@ class TestPlots:
             }
         )
 
-    @pytest.mark.unit
     def test_dataset_plots(self, dataset):
         # Test plot of Dataset objects
         pybop.plot.trajectories(
@@ -95,7 +101,6 @@ class TestPlots:
         model = pybop.lithium_ion.SPM()
         return pybop.DesignProblem(model, parameters, experiment)
 
-    @pytest.mark.unit
     def test_problem_plots(self, fitting_problem, design_problem, jax_fitting_problem):
         # Test plot of Problem objects
         pybop.plot.quick(fitting_problem, title="Optimised Comparison")
@@ -110,10 +115,11 @@ class TestPlots:
         # Define an example cost
         return pybop.SumSquaredError(fitting_problem)
 
-    @pytest.mark.unit
     def test_cost_plots(self, cost):
         # Test plot of Cost objects
         pybop.plot.contour(cost, gradient=True, steps=5)
+
+        pybop.plot.contour(cost, gradient=True, steps=5, apply_transform=True)
 
         # Test without bounds
         for param in cost.parameters:
@@ -131,13 +137,12 @@ class TestPlots:
         optim.run()
         return optim
 
-    @pytest.mark.unit
     def test_optim_plots(self, optim):
         bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
 
         # Plot convergence
         pybop.plot.convergence(optim)
-        optim._minimising = False
+        optim.invert_cost = True
         pybop.plot.convergence(optim)
 
         # Plot the parameter traces
@@ -175,7 +180,6 @@ class TestPlots:
         results = sampler.run()
         return pybop.PosteriorSummary(results)
 
-    @pytest.mark.unit
     def test_posterior_plots(self, posterior_summary):
         # Plot trace
         posterior_summary.plot_trace()
@@ -189,7 +193,6 @@ class TestPlots:
         # Plot summary table
         posterior_summary.summary_table()
 
-    @pytest.mark.unit
     def test_with_ipykernel(self, dataset, cost, optim):
         import ipykernel
 
@@ -200,8 +203,7 @@ class TestPlots:
         pybop.plot.parameters(optim)
         pybop.plot.contour(optim, steps=5)
 
-    @pytest.mark.unit
-    def test_gaussianlogliklihood_plots(self, fitting_problem):
+    def test_gaussianloglikelihood_plots(self, fitting_problem):
         # Test plot of GaussianLogLikelihood
         likelihood = pybop.GaussianLogLikelihood(fitting_problem)
         optim = pybop.CMAES(likelihood, max_iterations=5)
@@ -210,7 +212,6 @@ class TestPlots:
         # Plot parameters
         pybop.plot.parameters(optim)
 
-    @pytest.mark.unit
     def test_contour_incorrect_number_of_parameters(self, model, dataset):
         # Test with less than two paramters
         parameters = pybop.Parameters(
@@ -249,7 +250,6 @@ class TestPlots:
         cost = pybop.SumSquaredError(fitting_problem)
         pybop.plot.contour(cost)
 
-    @pytest.mark.unit
     def test_contour_prior_bounds(self, model, dataset):
         # Test with prior bounds
         parameters = pybop.Parameters(
@@ -271,7 +271,6 @@ class TestPlots:
             warnings.simplefilter("always")
             pybop.plot.contour(cost)
 
-    @pytest.mark.unit
     def test_nyquist(self):
         # Define model
         model = pybop.lithium_ion.SPM(

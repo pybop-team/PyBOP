@@ -11,6 +11,11 @@ class TestTransformation:
     A class to test the transformations.
     """
 
+    pytestmark = pytest.mark.unit
+
+    def log_jacobian_determinant(self, jac):
+        return np.log(np.abs(np.linalg.det(jac)))
+
     @pytest.fixture
     def parameters(self):
         return pybop.Parameters(
@@ -31,14 +36,14 @@ class TestTransformation:
             ),
         )
 
-    @pytest.mark.unit
     def test_identity_transformation(self, parameters):
         q = np.asarray([5.0])
         transformation = parameters["Identity"].transformation
         assert np.array_equal(transformation.to_model(q), q)
         assert np.array_equal(transformation.to_search(q), q)
-        assert transformation.log_jacobian_det(q) == 0.0
-        assert transformation.log_jacobian_det_S1(q) == (0.0, np.zeros(1))
+        log_jac_det = self.log_jacobian_determinant(transformation.jacobian(q))
+        assert transformation.log_jacobian_det(q) == log_jac_det
+        assert transformation.log_jacobian_det_S1(q) == (log_jac_det, np.zeros(1))
         assert transformation.n_parameters == 1
         assert transformation.is_elementwise()
 
@@ -52,7 +57,6 @@ class TestTransformation:
         cov_transformed = transformation.convert_covariance_matrix(cov, q)
         assert np.array_equal(cov_transformed, cov)
 
-    @pytest.mark.unit
     def test_scaled_transformation(self, parameters):
         q = np.asarray([2.5])
         transformation = parameters["Scaled"].transformation
@@ -63,11 +67,10 @@ class TestTransformation:
 
         q_transformed = transformation.to_search(p)
         assert np.allclose(q_transformed, q)
-        assert np.allclose(
-            transformation.log_jacobian_det(q), np.sum(np.log(np.abs(2.0)))
-        )
+        log_jac_det = self.log_jacobian_determinant(transformation.jacobian(q))
+        assert np.allclose(transformation.log_jacobian_det(q), log_jac_det)
         log_jac_det_S1 = transformation.log_jacobian_det_S1(q)
-        assert log_jac_det_S1[0] == np.sum(np.log(np.abs(2.0)))
+        assert log_jac_det_S1[0] == log_jac_det
         assert log_jac_det_S1[1] == np.zeros(1)
 
         jac, jac_S1 = transformation.jacobian_S1(q)
@@ -83,7 +86,6 @@ class TestTransformation:
         with pytest.raises(ValueError, match="Unknown method:"):
             transformation._transform(q, "bad-string")
 
-    @pytest.mark.unit
     def test_hypercube_transformation(self, parameters):
         q = np.asarray([0.5])
         coeff = 1 / (100 - 10)
@@ -95,11 +97,10 @@ class TestTransformation:
 
         q_transformed = transformation.to_search(p)
         assert np.allclose(q_transformed, q)
-        assert np.allclose(
-            transformation.log_jacobian_det(q), np.sum(np.log(np.abs(coeff)))
-        )
+        log_jac_det = self.log_jacobian_determinant(transformation.jacobian(q))
+        assert np.allclose(transformation.log_jacobian_det(q), log_jac_det)
         log_jac_det_S1 = transformation.log_jacobian_det_S1(q)
-        assert log_jac_det_S1[0] == np.sum(np.log(np.abs(coeff)))
+        assert log_jac_det_S1[0] == log_jac_det
         assert log_jac_det_S1[1] == np.zeros(1)
 
         jac, jac_S1 = transformation.jacobian_S1(q)
@@ -113,7 +114,6 @@ class TestTransformation:
         ):
             pybop.UnitHyperCube(100, 1)
 
-    @pytest.mark.unit
     def test_log_transformation(self, parameters):
         q = np.asarray([10])
         transformation = parameters["Log"].transformation
@@ -123,11 +123,12 @@ class TestTransformation:
 
         q_transformed = transformation.to_search(p)
         assert np.allclose(q_transformed, q)
-        assert np.allclose(transformation.log_jacobian_det(q), np.sum(q))
+        log_jac_det = self.log_jacobian_determinant(transformation.jacobian(q))
+        assert np.allclose(transformation.log_jacobian_det(q), log_jac_det)
 
         log_jac_det_S1 = transformation.log_jacobian_det_S1(q)
         n = transformation._n_parameters
-        assert log_jac_det_S1[0] == np.sum(q)
+        assert log_jac_det_S1[0] == log_jac_det
         assert log_jac_det_S1[1] == np.ones(n)
 
         jac, jac_S1 = transformation.jacobian_S1(q)
@@ -146,7 +147,6 @@ class TestTransformation:
         with pytest.raises(ValueError, match="Unknown method:"):
             transformation._transform(q, "bad-string")
 
-    @pytest.mark.unit
     def test_composed_transformation(self, parameters):
         # Test elementwise transformations
         transformation = pybop.ComposedTransformation(
@@ -174,12 +174,11 @@ class TestTransformation:
         np.testing.assert_allclose(jac_S1[1][0, :, :], np.zeros((3, 3)))
         np.testing.assert_allclose(jac_S1[1][1, :, :], np.zeros((3, 3)))
 
-        correct_output = np.sum(np.log(np.abs(2.0))) + np.sum(10)
-        log_jac_det = transformation.log_jacobian_det(q)
-        assert log_jac_det == correct_output
+        log_jac_det = self.log_jacobian_determinant(transformation.jacobian(q))
+        assert transformation.log_jacobian_det(q) == log_jac_det
 
         log_jac_det_S1 = transformation.log_jacobian_det_S1(q)
-        assert log_jac_det_S1[0] == correct_output
+        assert log_jac_det_S1[0] == log_jac_det
         np.testing.assert_allclose(log_jac_det_S1[1], np.asarray([0.0, 0.0, 1.0]))
 
         # Test composed with no transformations
@@ -196,7 +195,6 @@ class TestTransformation:
                 [parameters["Identity"].transformation, "string"]
             )
 
-    @pytest.mark.unit
     def test_verify_input(self, parameters):
         q = np.asarray([5.0])
         q_dict = {"Identity": q[0]}
@@ -219,6 +217,8 @@ class TestBaseTransformation:
     A class to test the abstract base transformation class.
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.fixture
     def ConcreteTransformation(self):
         class ConcreteTransformation(pybop.Transformation):
@@ -230,19 +230,16 @@ class TestBaseTransformation:
 
         return ConcreteTransformation()
 
-    @pytest.mark.unit
     def test_abstract_base_transformation(self):
         with pytest.raises(TypeError):
             pybop.Transformation()
 
-    @pytest.mark.unit
     def test_abstract_methods(self):
         abstract_methods = ["jacobian", "_transform"]
         for method in abstract_methods:
             assert hasattr(pybop.Transformation, method)
             assert getattr(pybop.Transformation, method).__isabstractmethod__
 
-    @pytest.mark.unit
     def test_concrete_methods(self):
         concrete_methods = [
             "convert_covariance_matrix",
@@ -255,7 +252,6 @@ class TestBaseTransformation:
             assert hasattr(pybop.Transformation, method)
             assert not inspect.isabstract(getattr(pybop.Transformation, method))
 
-    @pytest.mark.unit
     def test_not_implemented_methods(self, ConcreteTransformation):
         not_implemented_methods = [
             "jacobian_S1",

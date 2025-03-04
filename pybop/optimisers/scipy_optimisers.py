@@ -58,14 +58,11 @@ class BaseSciPyOptimiser(BaseOptimiser):
             self._scipy_bounds = Bounds(
                 self.bounds["lower"], self.bounds["upper"], True
             )
-        elif isinstance(self.bounds, list):
-            lb, ub = zip(*self.bounds)
-            self._scipy_bounds = Bounds(lb, ub, True)
         elif isinstance(self.bounds, Bounds) or self.bounds is None:
             self._scipy_bounds = self.bounds
         else:
             raise TypeError(
-                "Bounds provided must be either type dict, list or SciPy.optimize.bounds object."
+                "Bounds provided must be either type dict or SciPy.optimize.bounds object."
             )
 
     def _run(self):
@@ -80,7 +77,9 @@ class BaseSciPyOptimiser(BaseOptimiser):
 
         # Choose method to evaluate
         def fun(x):
-            return self.cost_call(x, calculate_grad=self._needs_sensitivities)
+            return self.call_cost(
+                x, cost=self.cost, calculate_grad=self._needs_sensitivities
+            )
 
         # Create evaluator object
         self.evaluator = SciPyEvaluator(fun)
@@ -101,6 +100,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
             n_iterations=nit,
             scipy_result=result,
             time=total_time,
+            message=result.message,
         )
 
 

@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -9,9 +10,12 @@ class TestLikelihoods:
     Class for likelihood unit tests
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.fixture
     def model(self, ground_truth):
-        model = pybop.lithium_ion.SPM()
+        solver = pybamm.IDAKLUSolver()
+        model = pybop.lithium_ion.SPM(solver=solver)
         model.parameter_set.update(
             {
                 "Negative electrode active material volume fraction": ground_truth,
@@ -25,10 +29,12 @@ class TestLikelihoods:
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameter(
-            "Negative electrode active material volume fraction",
-            prior=pybop.Gaussian(0.5, 0.01),
-            bounds=[0.375, 0.625],
+        return pybop.Parameters(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.5, 0.01),
+                bounds=[0.375, 0.625],
+            )
         )
 
     @pytest.fixture
@@ -64,7 +70,6 @@ class TestLikelihoods:
         "problem_name, n_outputs",
         [("one_signal_problem", 1), ("two_signal_problem", 2)],
     )
-    @pytest.mark.unit
     def test_base_likelihood_init(self, problem_name, n_outputs, request):
         problem = request.getfixturevalue(problem_name)
         likelihood = pybop.BaseLikelihood(problem)
@@ -74,7 +79,6 @@ class TestLikelihoods:
         assert likelihood.n_parameters == 1
         assert np.array_equal(likelihood.target, problem.target)
 
-    @pytest.mark.unit
     def test_base_likelihood_call_raises_not_implemented_error(
         self, one_signal_problem
     ):
@@ -82,7 +86,6 @@ class TestLikelihoods:
         with pytest.raises(NotImplementedError):
             likelihood(np.array([0.5]))
 
-    @pytest.mark.unit
     def test_likelihood_check_sigma0(self, one_signal_problem):
         with pytest.raises(
             ValueError,
@@ -100,7 +103,6 @@ class TestLikelihoods:
         ):
             pybop.GaussianLogLikelihoodKnownSigma(one_signal_problem, sigma0=[0.2, 0.3])
 
-    @pytest.mark.unit
     def test_base_likelihood_n_parameters_property(self, one_signal_problem):
         likelihood = pybop.BaseLikelihood(one_signal_problem)
         assert likelihood.n_parameters == 1
@@ -108,7 +110,6 @@ class TestLikelihoods:
     @pytest.mark.parametrize(
         "problem_name", ["one_signal_problem", "two_signal_problem"]
     )
-    @pytest.mark.unit
     def test_gaussian_log_likelihood_known_sigma(self, problem_name, request):
         problem = request.getfixturevalue(problem_name)
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(
@@ -121,7 +122,6 @@ class TestLikelihoods:
         # Since 0.5 < ground_truth, the likelihood should be increasing
         assert grad_likelihood >= 0
 
-    @pytest.mark.unit
     def test_gaussian_log_likelihood(self, one_signal_problem):
         likelihood = pybop.GaussianLogLikelihood(one_signal_problem)
         result = likelihood(np.array([0.8, 0.2]))
@@ -148,14 +148,6 @@ class TestLikelihoods:
                 one_signal_problem, sigma0="Invalid string"
             )
 
-        # Test transformation fail dimensions
-        cost_fail, grad_fail = likelihood(
-            [0.01, 0.01], calculate_grad=True, apply_transform=True
-        )
-        assert not np.isfinite(cost_fail)
-        assert grad_fail.shape == (2,)
-
-    @pytest.mark.unit
     def test_gaussian_log_likelihood_dsigma_scale(self, one_signal_problem):
         likelihood = pybop.GaussianLogLikelihood(one_signal_problem, dsigma_scale=0.05)
         assert likelihood.dsigma_scale == 0.05
@@ -166,7 +158,6 @@ class TestLikelihoods:
         with pytest.raises(ValueError):
             likelihood.dsigma_scale = -1e3
 
-    @pytest.mark.unit
     def test_gaussian_log_likelihood_returns_negative_inf(self, one_signal_problem):
         likelihood = pybop.GaussianLogLikelihood(one_signal_problem)
         assert likelihood(np.array([0.01, 0.1])) == -np.inf  # parameter value too small
@@ -174,7 +165,6 @@ class TestLikelihoods:
             likelihood(np.array([0.01, 0.1]), calculate_grad=True)[0] == -np.inf
         )  # parameter value too small
 
-    @pytest.mark.unit
     def test_gaussian_log_likelihood_known_sigma_returns_negative_inf(
         self, one_signal_problem
     ):
@@ -186,7 +176,6 @@ class TestLikelihoods:
             likelihood(np.array([0.01]), calculate_grad=True)[0] == -np.inf
         )  # parameter value too small
 
-    @pytest.mark.unit
     def test_scaled_log_likelihood(self, one_signal_problem):
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(
             one_signal_problem, sigma0=0.02
@@ -212,3 +201,31 @@ class TestLikelihoods:
         np.testing.assert_allclose(
             grad, scaled_likelihood([0.6], calculate_grad=True)[1]
         )
+
+    @pytest.mark.parametrize(
+        "likelihood_cls",
+        [
+            pybop.GaussianLogLikelihoodKnownSigma,
+            pybop.JaxGaussianLogLikelihoodKnownSigma,
+        ],
+    )
+    def test_fisher_matrix(
+        self, likelihood_cls, one_signal_problem, model, dataset, parameters
+    ):
+        likelihood = likelihood_cls(one_signal_problem, sigma0=1e-3)
+        fisher = likelihood.observed_fisher([0.5])
+        assert isinstance(fisher, np.ndarray)
+
+        # Test fisher does not compute for non-gradient available parameters
+
+        parameters.add(
+            pybop.Parameter(
+                "Negative particle radius [m]",
+                prior=pybop.Gaussian(6e-06, 0.1e-6),
+                bounds=[1e-6, 9e-6],
+            ),
+        )
+        problem = pybop.FittingProblem(model, parameters, dataset)
+        likelihood_non_grad = likelihood_cls(problem, sigma0=1e-3)
+        fisher = likelihood_non_grad.observed_fisher([0.5, 5e-06])
+        assert fisher is None

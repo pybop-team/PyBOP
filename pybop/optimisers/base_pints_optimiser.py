@@ -205,7 +205,9 @@ class BasePintsOptimiser(BaseOptimiser):
 
         # Choose method to evaluate
         def fun(x):
-            return self.cost_call(x, calculate_grad=self._needs_sensitivities)
+            return self.call_cost(
+                x, cost=self.cost, calculate_grad=self._needs_sensitivities
+            )
 
         # Create evaluator object
         if isinstance(self.cost, BaseJaxCost):
@@ -337,8 +339,6 @@ class BasePintsOptimiser(BaseOptimiser):
             raise
 
         total_time = time() - start_time
-        if self.verbose:
-            print("Halt: " + halt_message)
 
         # Save post-run statistics
         self._evaluations = evaluations
@@ -359,6 +359,7 @@ class BasePintsOptimiser(BaseOptimiser):
             n_iterations=self._iterations,
             n_evaluations=self._evaluations,
             time=total_time,
+            message=halt_message,
         )
 
     def f_guessed_tracking(self):

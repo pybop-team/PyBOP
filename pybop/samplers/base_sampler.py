@@ -4,12 +4,13 @@ from typing import Union
 import numpy as np
 from pints import ParallelEvaluator
 
-from pybop import LogPosterior
+from pybop import CostInterface, LogPosterior
 
 
-class BaseSampler:
+class BaseSampler(CostInterface):
     """
-    Base class for Monte Carlo samplers.
+    Base class for Monte Carlo samplers. Samplers perform maximisation of the cost
+    function by default.
     """
 
     def __init__(
@@ -19,11 +20,15 @@ class BaseSampler:
         Initialise the base sampler.
 
         Parameters
-        ----------------
-        log_pdf (pybop.LogPosterior or List[pybop.LogPosterior]): The posterior or PDF to be sampled.
-        chains (int): Number of chains to be used.
-        x0: List-like initial condition for Monte Carlo sampling.
-        cov0: The covariance matrix to be sampled.
+        ----------
+        log_pdf : pybop.LogPosterior or List[pybop.LogPosterior]
+            The posterior or PDF to be sampled.
+        chains : int
+            Number of chains to be used.
+        x0
+            List-like initial values of the parameters for Monte Carlo sampling.
+        cov0
+            The covariance matrix to be sampled.
         """
         self._log_pdf = log_pdf
         self._cov0 = cov0
@@ -47,12 +52,16 @@ class BaseSampler:
                 "log_pdf must be a LogPosterior or List[LogPosterior]"
             )  # TODO: Update for more general sampling
 
+        transformation = self.parameters.construct_transformation()
+        super().__init__(transformation=transformation)
+
         # Check initial conditions
         if x0 is not None and len(x0) != self.n_parameters:
             raise ValueError("x0 must have the same number of parameters as log_pdf")
 
-        # Set initial values, if x0 is None, initial values are unmodified.
-        self.parameters.update(initial_values=x0 if x0 is not None else None)
+        # Set initial values, if x0 is None, initial values are unmodified
+        if x0 is not None:
+            self.parameters.update(initial_values=x0)
         self._x0 = self.parameters.reset_initial_value(apply_transform=True).reshape(
             1, -1
         )

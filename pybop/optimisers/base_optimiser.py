@@ -1,16 +1,22 @@
 import warnings
-from typing import Optional, Union
+from copy import deepcopy
 
 import jax.numpy as jnp
 import numpy as np
-from scipy.optimize import OptimizeResult
 
-from pybop import BaseCost, BaseJaxCost, Inputs, Parameter, Parameters
+from pybop import (
+    BaseCost,
+    CostInterface,
+    OptimisationResult,
+    Parameter,
+    Parameters,
+)
 
 
-class BaseOptimiser:
+class BaseOptimiser(CostInterface):
     """
-    A base class for defining optimisation methods.
+    A base class for defining optimisation methods. Optimisers perform minimisation of the cost
+    function; maximisation may be performed instead using the option invert_cost=True.
 
     This class serves as a base class for creating optimisers. It provides a basic structure for
     an optimisation algorithm, including the initial setup and a method stub for performing the
@@ -19,27 +25,27 @@ class BaseOptimiser:
 
     Parameters
     ----------
-    cost : pybop.BaseCost or pints.ErrorMeasure
-        An objective function to be optimised, which can be either a pybop.Cost or PINTS error measure
+    cost : pybop.BaseCost or callable
+        An objective function to be optimised, which can be either a pybop.Cost or callable function.
     **optimiser_kwargs : optional
-            Valid option keys and their values.
+        Valid option keys and their values, for example:
+        x0 : numpy.ndarray
+            Initial values of the parameters for the optimisation.
+        bounds : dict
+            Dictionary containing bounds for the parameters with keys 'lower' and 'upper'.
+        sigma0 : float or sequence
+            Initial step size or standard deviation in the (search) parameters. Either a scalar value
+            (same for all coordinates) or an array with one entry per dimension.
+            Not all methods will use this information.
+        verbose : bool, optional
+            If True, the optimisation progress is printed (default: False).
+        physical_viability : bool, optional
+            If True, the feasibility of the optimised parameters is checked (default: False).
+        allow_infeasible_solutions : bool, optional
+            If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
     Attributes
     ----------
-    x0 : numpy.ndarray
-        Initial parameter values for the optimisation.
-    bounds : dict
-        Dictionary containing the parameter bounds with keys 'lower' and 'upper'.
-    sigma0 : float or sequence
-        Initial step size or standard deviation around ``x0``. Either a scalar value (one
-        standard deviation for all coordinates) or an array with one entry per dimension.
-        Not all methods will use this information.
-    verbose : bool, optional
-        If True, the optimisation progress is printed (default: False).
-    physical_viability : bool, optional
-        If True, the feasibility of the optimised parameters is checked (default: False).
-    allow_infeasible_solutions : bool, optional
-        If True, infeasible parameter values will be allowed in the optimisation (default: True).
     log : dict
         A log of the parameter values tried during the optimisation and associated costs.
     """
@@ -51,29 +57,34 @@ class BaseOptimiser:
     ):
         # First set attributes to default values
         self.parameters = Parameters()
-        self.x0 = optimiser_kwargs.get("x0", [])
-        self.log = dict(x=[], x_best=[], x_search=[], x0=[], cost=[], cost_best=[])
+        self.x0 = optimiser_kwargs.get("x0", None)
+        self.log = dict(x=[], x_best=[], x_search=[], cost=[], cost_best=[])
         self.bounds = None
         self.sigma0 = 0.02
         self.verbose = True
-        self._transformation = None
         self._needs_sensitivities = False
-        self._minimising = True
         self.physical_viability = False
         self.allow_infeasible_solutions = False
         self.default_max_iterations = 1000
         self.result = None
+        transformation = None
+        invert_cost = False
 
         if isinstance(cost, BaseCost):
             self.cost = cost
-            self.parameters = self.cost.parameters
-            self._transformation = self.cost.transformation
+            self.parameters = deepcopy(self.cost.parameters)
+            transformation = self.parameters.construct_transformation()
             self.set_allow_infeasible_solutions()
-            self._minimising = self.cost.minimising
+            invert_cost = not self.cost.minimising
 
         else:
             try:
-                cost_test = cost(self.x0)
+                x0 = optimiser_kwargs.get("x0", [])
+                for i, value in enumerate(x0):
+                    self.parameters.add(
+                        Parameter(name=f"Parameter {i}", initial_value=value)
+                    )
+                cost_test = cost(x0)
                 warnings.warn(
                     "The cost is not an instance of pybop.BaseCost, but let's continue "
                     "assuming that it is a callable function to be minimised.",
@@ -81,10 +92,6 @@ class BaseOptimiser:
                     stacklevel=2,
                 )
                 self.cost = cost
-                for i, value in enumerate(self.x0):
-                    self.parameters.add(
-                        Parameter(name=f"Parameter {i}", initial_value=value)
-                    )
 
             except Exception as e:
                 raise Exception(
@@ -98,6 +105,8 @@ class BaseOptimiser:
 
         if len(self.parameters) == 0:
             raise ValueError("There are no parameters to optimise.")
+
+        super().__init__(transformation=transformation, invert_cost=invert_cost)
 
         self.unset_options = optimiser_kwargs
         self.unset_options_store = optimiser_kwargs.copy()
@@ -116,15 +125,18 @@ class BaseOptimiser:
         """
         Update the base optimiser options and remove them from the options dictionary.
         """
-        # Set initial values, if x0 is None, initial values are unmodified.
-        self.parameters.update(initial_values=self.unset_options.pop("x0", None))
-        self.log_update(x0=self.parameters.reset_initial_value())
+        # Set initial search-space parameter values
+        x0 = self.unset_options.pop("x0", None)
+        if x0 is not None:
+            self.parameters.update(initial_values=x0)
         self.x0 = self.parameters.reset_initial_value(apply_transform=True)
 
-        # Set default bounds (for all or no parameters)
-        self.bounds = self.unset_options.pop(
-            "bounds", self.parameters.get_bounds(apply_transform=True)
-        )
+        # Set the search-space parameter bounds (for all or no parameters)
+        bounds = self.unset_options.pop("bounds", self.parameters.get_bounds())
+        if bounds is not None:
+            self.parameters.update(bounds=bounds)
+            bounds = self.parameters.get_bounds(apply_transform=True)
+        self.bounds = bounds  # can be None or current parameter bounds
 
         # Set default initial standard deviation (for all or no parameters)
         self.sigma0 = self.unset_options.pop(
@@ -141,6 +153,14 @@ class BaseOptimiser:
         # Set multistart
         self.multistart = self.unset_options.pop("multistart", 1)
 
+        # Parameter sensitivities
+        self.compute_sensitivities = self.unset_options.pop(
+            "compute_sensitivities", False
+        )
+        self.n_samples_sensitivity = self.unset_options.pop(
+            "n_sensitivity_samples", 256
+        )
+
     def _set_up_optimiser(self):
         """
         Parse optimiser options and prepare the optimiser.
@@ -154,60 +174,31 @@ class BaseOptimiser:
         """
         raise NotImplementedError
 
-    def cost_call(
-        self,
-        x: Union[Inputs, list],
-        calculate_grad: bool = False,
-    ) -> Union[float, tuple[float, np.ndarray]]:
-        """
-        Call the cost function to minimise, applying any given transformation to the
-        input parameters.
-
-        Parameters
-        ----------
-        x : Inputs or list-like
-            The input parameters for which the cost and optionally the gradient
-            will be computed.
-        calculate_grad : bool, optional, default=False
-            If True, both the cost and gradient will be computed. Otherwise, only the
-            cost is computed.
-
-        Returns
-        -------
-        float or tuple
-            - If `calculate_grad` is False, returns the computed cost (float).
-            - If `calculate_grad` is True, returns a tuple containing the cost (float)
-              and the gradient (np.ndarray).
-        """
-        return self.cost(
-            x,
-            calculate_grad=calculate_grad,
-            apply_transform=True,
-            for_optimiser=True,
-        )
-
     def run(self):
         """
         Run the optimisation and return the optimised parameters and final cost.
 
         Returns
         -------
-        results: MultiOptimisationResult
+        results: OptimisationResult
             The pybop optimisation result class.
         """
-        self.result = MultiOptimisationResult()
+        self.result = OptimisationResult(optim=self)
 
         for i in range(self.multistart):
             if i >= 1:
                 self.unset_options = self.unset_options_store.copy()
-                self.x0 = self.parameters.rvs(1, apply_transform=True)
-                self.parameters.update(initial_values=self.x0)
+                self.parameters.update(initial_values=self.parameters.rvs(1))
+                self.x0 = self.parameters.reset_initial_value(apply_transform=True)
                 self._set_up_optimiser()
 
-            self.result.add_run(self._run())
+            self.result.add_result(self._run())
 
         # Store the optimised parameters
-        self.parameters.update(values=self.result.x)
+        self.parameters.update(values=self.result.x_best)
+
+        # Compute sensitivities
+        self.result.sensitivities = self._parameter_sensitivities()
 
         if self.verbose:
             print(self.result)
@@ -227,7 +218,13 @@ class BaseOptimiser:
         """
         raise NotImplementedError
 
-    def log_update(self, x=None, x_best=None, cost=None, cost_best=None, x0=None):
+    def _parameter_sensitivities(self):
+        if not self.compute_sensitivities:
+            return None
+
+        return self.cost.sensitivity_analysis(self.n_samples_sensitivity)
+
+    def log_update(self, x=None, x_best=None, cost=None, cost_best=None):
         """
         Update the log with new values.
 
@@ -252,39 +249,31 @@ class BaseOptimiser:
             else:
                 raise TypeError("Input must be a list, tuple, or numpy array")
 
-        def apply_transformation(values):
-            """Apply transformation if it exists."""
-            if self._transformation:
-                return [self._transformation.to_model(value) for value in values]
-            return values
-
         if x is not None:
             x = convert_to_list(x)
             self.log["x_search"].extend(x)
-            x = apply_transformation(x)
+            x = self.transform_list_of_values(x)
             self.log["x"].extend(x)
 
         if x_best is not None:
-            x_best = apply_transformation([x_best])
-            self.log["x_best"].extend(x_best)
+            x_best = self.transform_values(x_best)
+            self.log["x_best"].append(x_best)
 
         if cost is not None:
             cost = convert_to_list(cost)
             cost = [
-                internal_cost * (1 if self.minimising else -1) for internal_cost in cost
+                internal_cost * (-1 if self.invert_cost else 1)
+                for internal_cost in cost
             ]
             self.log["cost"].extend(cost)
 
         if cost_best is not None:
             cost_best = convert_to_list(cost_best)
             cost_best = [
-                internal_cost * (1 if self.minimising else -1)
+                internal_cost * (-1 if self.invert_cost else 1)
                 for internal_cost in cost_best
             ]
             self.log["cost_best"].extend(cost_best)
-
-        if x0 is not None:
-            self.log["x0"].extend(x0)
 
     def name(self):
         """
@@ -311,8 +300,8 @@ class BaseOptimiser:
         self.allow_infeasible_solutions = allow
 
         if (
-            hasattr(self.cost, "problem")
-            and hasattr(self.cost.problem, "model")
+            isinstance(self.cost, BaseCost)
+            and self.cost.problem is not None
             and self.cost.problem.model is not None
         ):
             self.cost.problem.model.allow_infeasible_solutions = (
@@ -326,244 +315,3 @@ class BaseOptimiser:
     @property
     def needs_sensitivities(self):
         return self._needs_sensitivities
-
-    @property
-    def minimising(self):
-        return self._minimising
-
-
-class OptimisationResult:
-    """
-    Stores the result of the optimisation.
-
-    Attributes
-    ----------
-    x : ndarray
-        The solution of the optimisation.
-    final_cost : float
-        The cost associated with the solution x.
-    n_iterations : int
-        Number of iterations performed by the optimiser.
-    scipy_result : scipy.optimize.OptimizeResult, optional
-        The result obtained from a SciPy optimiser.
-    """
-
-    def __init__(
-        self,
-        optim: BaseOptimiser,
-        x: Union[Inputs, np.ndarray] = None,
-        final_cost: Optional[float] = None,
-        n_iterations: Optional[int] = None,
-        n_evaluations: Optional[int] = None,
-        time: Optional[float] = None,
-        scipy_result=None,
-    ):
-        self.optim = optim
-        self.cost = self.optim.cost
-        self.minimising = self.optim.minimising
-        self._transformation = self.optim._transformation  # noqa: SLF001
-        self.fisher = None
-
-        self.x = self._transformation.to_model(x) if self._transformation else x
-        self.final_cost = (
-            final_cost * (1 if self.minimising else -1)
-            if final_cost is not None
-            else self._calculate_final_cost()
-        )
-        self.n_iterations = n_iterations
-        self.n_evaluations = n_evaluations
-        self.scipy_result = scipy_result
-        self.time = time
-        if isinstance(self.optim, BaseOptimiser):
-            self.x0 = self.optim.parameters.initial_value()
-        else:
-            self.x0 = None
-
-        # Check that the parameters produce finite cost, and are physically viable
-        self._validate_parameters()
-        self.check_physical_viability(self.x)
-
-        # Calculate Fisher Information if JAX Likelihood
-        if isinstance(optim.cost, BaseJaxCost):
-            self.fisher = optim.cost.observed_fisher(self.x)
-
-    def _calculate_final_cost(self) -> float:
-        """
-        Calculate the final cost using the cost function and optimised parameters.
-
-        Returns:
-            float: The calculated final cost.
-        """
-        return self.cost(self.x)
-
-    def get_scipy_result(self) -> Optional[OptimizeResult]:
-        """
-        Get the SciPy optimisation result object.
-
-        Returns:
-            OptimizeResult or None: The SciPy optimisation result object if available, None otherwise.
-        """
-        return self.scipy_result
-
-    def _validate_parameters(self) -> None:
-        """
-        Validate the optimised parameters and ensure they produce a finite cost value.
-
-        Raises:
-            ValueError: If the optimized parameters do not produce a finite cost value.
-        """
-        if not np.isfinite(self.final_cost):
-            raise ValueError("Optimised parameters do not produce a finite cost value")
-
-    def check_physical_viability(self, x):
-        """
-        Check if the optimised parameters are physically viable.
-
-        Parameters
-        ----------
-        x : array-like
-            Optimised parameter values.
-        """
-        if self.cost.problem.model is None:
-            warnings.warn(
-                "No model within problem class, can't check physical viability.",
-                UserWarning,
-                stacklevel=2,
-            )
-            return
-
-        if self.cost.problem.model.check_params(
-            inputs=x, allow_infeasible_solutions=False
-        ):
-            return
-        else:
-            warnings.warn(
-                "Optimised parameters are not physically viable! \nConsider retrying the optimisation"
-                " with a non-gradient-based optimiser and the option allow_infeasible_solutions=False",
-                UserWarning,
-                stacklevel=2,
-            )
-
-    def __str__(self) -> str:
-        """
-        A string representation of the OptimisationResult object.
-
-        Returns:
-            str: A formatted string containing optimisation result information.
-        """
-        return (
-            f"OptimisationResult:\n"
-            f"  Initial parameters: {self.x0}\n"
-            f"  Optimised parameters: {self.x}\n"
-            f"  Diagonal Fisher Information entries: {self.fisher}\n"
-            f"  Final cost: {self.final_cost}\n"
-            f"  Optimisation time: {self.time} seconds\n"
-            f"  Number of iterations: {self.n_iterations}\n"
-            f"  Number of evaluations: {self.n_evaluations}\n"
-            f"  SciPy result available: {'Yes' if self.scipy_result else 'No'}"
-        )
-
-
-class MultiOptimisationResult:
-    """
-    Multi run optimisation result class. Stores the results
-    of multiple optimisation runs.
-
-    Attributes
-    ----------
-    results : list
-        The list of OptimisationResults for each optimisation run
-
-    Properties
-    ----------
-    x : ndarray
-        The solution of the best optimisation run.
-    final_cost : float
-        The cost associated with the best solution x.
-    n_iterations : int
-        Number of iterations performed by the optimiser
-        for the best optimisation run.
-    scipy_result : scipy.optimize.OptimizeResult, optional
-        The result obtained from a SciPy optimiser for the
-        best optimisation run.
-    time : float
-        The total time across all optimisation runs.
-    """
-
-    def __init__(self):
-        self.results: list[OptimisationResult] = []
-
-    def add_run(self, result: OptimisationResult):
-        """Adds a new optimisation result."""
-        self.results.append(result)
-
-    def best_run(self) -> Optional[OptimisationResult]:
-        """Returns the result with the best final cost."""
-        valid_results = [res for res in self.results if res.final_cost is not None]
-        if self.results[0].minimising is True:
-            return min(valid_results, key=lambda res: res.final_cost)
-
-        return max(valid_results, key=lambda res: res.final_cost)
-
-    def average_iterations(self) -> Optional[float]:
-        """Calculates the average number of iterations across all runs."""
-        valid_iterations = [
-            res.n_iterations for res in self.results if res.n_iterations is not None
-        ]
-        return np.mean(valid_iterations)
-
-    def total_runtime(self) -> Optional[float]:
-        """Calculates the total runtime across all runs."""
-        valid_times = [res.time for res in self.results if res.time is not None]
-        return np.sum(valid_times)
-
-    def best_x(self) -> Optional[float]:
-        """Returns the best parameters, x across the optimisation"""
-        return self.best_run().x
-
-    def __str__(self) -> str:
-        """
-        A string representation of the MultiOptimisationResult object.
-
-        Returns:
-            str: A formatted string containing optimisation result information.
-        """
-        result_strs = []
-        for res in self.results:
-            result_strs.append(str(res))
-
-        return "\n".join(result_strs)
-
-    def check_physical_viability(self, x):
-        return self.best_run().check_physical_viability(x)
-
-    def get_scipy_result(self):
-        return self.best_run().get_scipy_result()
-
-    @property
-    def x(self):
-        return self.best_x()
-
-    @property
-    def x0(self):
-        return self.best_run().x0
-
-    @property
-    def final_cost(self):
-        return self.best_run().final_cost
-
-    @property
-    def n_iterations(self):
-        return self.best_run().n_iterations
-
-    @property
-    def n_evaluations(self):
-        return self.best_run().n_evaluations
-
-    @property
-    def scipy_result(self):
-        return self.best_run().scipy_result
-
-    @property
-    def time(self):
-        return self.total_runtime()

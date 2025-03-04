@@ -1,27 +1,25 @@
 <div align="center">
 
-  <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/logo/PyBOP_logo_flat.png" alt="logo.svg" width="700" />
+  <img src="https://raw.githubusercontent.com/pybop-team/PyBOP/develop/assets/logo/PyBOP_logo_flat.png" alt="logo.svg" width="600" />
 
   # Python Battery Optimisation and Parameterisation
 
 
   [![Scheduled](https://github.com/pybop-team/PyBOP/actions/workflows/scheduled_tests.yaml/badge.svg)](https://github.com/pybop-team/PyBOP/actions/workflows/scheduled_tests.yaml)
   [![Contributors](https://img.shields.io/github/contributors/pybop-team/PyBOP)](https://github.com/pybop-team/PyBOP/graphs/contributors)
-  [![Last Commit](https://img.shields.io/github/last-commit/pybop-team/PyBOP/develop?color=purple)](https://github.com/pybop-team/PyBOP/commits/develop)
   [![Python Versions from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fpybop-team%2FPyBOP%2Fdevelop%2Fpyproject.toml&label=Python)](https://pypi.org/project/pybop/)
-  [![Forks](https://img.shields.io/github/forks/pybop-team/PyBOP?style=flat)](https://github.com/pybop-team/PyBOP/network/members)
-  [![Stars](https://img.shields.io/github/stars/pybop-team/PyBOP?style=flat&color=gold)](https://github.com/pybop-team/PyBOP/stargazers)
   [![Codecov](https://codecov.io/gh/pybop-team/PyBOP/branch/develop/graph/badge.svg)](https://codecov.io/gh/pybop-team/PyBOP)
-  [![Open Issues](https://img.shields.io/github/issues/pybop-team/PyBOP)](https://github.com/pybop-team/PyBOP/issues/)
   [![License](https://img.shields.io/github/license/pybop-team/PyBOP?color=blue)](https://github.com/pybop-team/PyBOP/blob/develop/LICENSE)
   [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/pybop-team/PyBOP/blob/develop/)
   [![nbviewer](https://raw.githubusercontent.com/jupyter/design/master/logos/Badges/nbviewer_badge.svg)](https://nbviewer.org/github/pybop-team/PyBOP/tree/develop/examples/notebooks/)
   [![Static Badge](https://img.shields.io/badge/https%3A%2F%2Fpybop-team.github.io%2Fpybop-bench%2F?label=Benchmarks)](https://pybop-team.github.io/pybop-bench/)
   [![Releases](https://img.shields.io/github/v/release/pybop-team/PyBOP?color=gold)](https://github.com/pybop-team/PyBOP/releases)
 
+[<ins>Main Branch Examples</ins>](https://github.com/pybop-team/PyBOP/tree/main/examples) [<ins>Develop Branch Examples</ins>](https://github.com/pybop-team/PyBOP/tree/develop/examples)
+
 </div>
 
-PyBOP provides a complete set of tools for parameterisation and optimisation of battery models, using both Bayesian and frequentist approaches, with [example workflows](https://github.com/pybop-team/PyBOP/tree/develop/examples/notebooks) to assist the user. PyBOP can be used to parameterise various battery models, including electrochemical and equivalent circuit models available in [PyBaMM](https://pybamm.org/). PyBOP prioritises clear and informative diagnostics for the user, while also allowing for advanced probabilistic methods.
+PyBOP provides a complete set of tools for parameterisation and optimisation of battery models, using both Bayesian and frequentist approaches, with [example workflows](https://github.com/pybop-team/PyBOP/tree/main/examples/) to assist the user. PyBOP can be used to parameterise various battery models, including electrochemical and equivalent circuit models available in [PyBaMM](https://pybamm.org/). PyBOP prioritises clear and informative diagnostics for the user, while also allowing for advanced probabilistic methods.
 
 The diagram below shows the conceptual framework of PyBOP. This package is currently under development, so users can expect the API to evolve with future releases.
 
@@ -74,11 +72,11 @@ Explore our [example notebooks](https://github.com/pybop-team/PyBOP/blob/develop
 
 Find additional script-based examples in the [examples directory](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/):
 
-- [UKF parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/comparison_examples/spm_UKF.py)
-- [BPX format parameter import/export](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/getting_started/BPX_spm.py)
-- [Electrochemical Impendence Spectroscopy (EIS) parameter identification](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/battery_parameterisation/eis_fitting.py)
-- [Maximum a Posteriori parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/getting_started/BPX_spm.py)
-- [Gradient-based parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/comparison_examples/spm_AdamW.py)
+- [UKF parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/comparison_examples/unscented_kalman_filter.py)
+- [BPX format parameter import/export](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/getting_started/simple_BPX.py)
+- [Electrochemical Impendence Spectroscopy (EIS) parameter identification](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/battery_parameterisation/simple_eis.py)
+- [Maximum a Posteriori parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/comparison_examples/maximum_a_posteriori.py)
+- [Gradient-based parameter identification (SPM)](https://github.com/pybop-team/PyBOP/blob/develop/examples/scripts/comparison_examples/adamw.py)
 
 
 ### Supported Methods
@@ -86,18 +84,20 @@ The table below lists the currently supported [models](https://github.com/pybop-
 
 <p align="center">
 
-| Battery Models                                | Optimization Algorithms                                  | Cost Functions                           |
-|-----------------------------------------------|----------------------------------------------------------|------------------------------------------|
-| Single Particle Model (SPM)                   | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) | Sum of Squared Errors (SSE) <tr></tr>    |
-| Single Particle Model with Electrolyte (SPMe) | Particle Swarm Optimization (PSO)                        | Root Mean Squared Error (RMSE) <tr></tr> |
-| Doyle-Fuller-Newman (DFN)                     | Exponential Natural Evolution Strategy (xNES)            | Minkowski <tr></tr>                      |
-| Many Particle Model (MPM)                     | Separable Natural Evolution Strategy (sNES)              | Sum of Power <tr></tr>                   |
-| Multi-Species Multi-Reaction (MSMR)           | Adaptive Moment Estimation with Weight Decay (AdamW)     | Gaussian Log Likelihood <tr></tr>        |
-| Weppner-Huggins                               | Improved Resilient Backpropagation (iRProp-)             | Log Posterior <tr></tr>                  |
-| Equivalent Circuit Models (ECM)               | SciPy Minimize & Differential Evolution                  | Unscented Kalman Filter (UKF) <tr></tr>  |
-| Grouped-parameter SPMe (GroupedSPMe)          | Cuckoo Search                                            | Gravimetric Energy Density <tr></tr>     |
-|                                               | Gradient Descent                                         | Volumetric Energy Density<tr></tr>       |
-|                                               | Nelder-Mead                                              | <tr></tr>                                |
+| Battery Models                                | Cost Functions                     | Optimization Algorithms                                            |
+|-----------------------------------------------|------------------------------------|--------------------------------------------------------------------|
+| Single Particle Model (SPM)                   | Sum of Squared Error (SSE)         | Covariance Matrix Adaptation Evolution Strategy (CMA-ES) <tr></tr> |
+| Single Particle Model with Electrolyte (SPMe) | Root Mean Squared Error (RMSE)     | Particle Swarm Optimization (PSO) <tr></tr>                        |
+| Doyle-Fuller-Newman (DFN)                     | Mean Squared Error (MSE)           | Exponential Natural Evolution Strategy (xNES) <tr></tr>            |
+| Many Particle Model (MPM)                     | Mean Absolute Error (MAE)          | Separable Natural Evolution Strategy (sNES)  <tr></tr>             |
+| Multi-Species Multi-Reaction (MSMR)           | Minkowski                          | Weight Decayed Adaptive Moment Estimation (AdamW) <tr></tr>        |
+| Weppner-Huggins                               | Sum of Power                       | Improved Resilient Backpropagation (iRProp-) <tr></tr>             |
+| Equivalent Circuit Models (ECM)               | Gaussian Log Likelihood            | SciPy Minimize & Differential Evolution  <tr></tr>                 |
+| Grouped-parameter SPMe (GroupedSPMe)          | Log Posterior                      | Cuckoo Search  <tr></tr>                                           |
+|                                               | Gravimetric Energy / Power Density | Simulated Annealing  <tr></tr>                                     |
+|                                               | Volumetric Energy / Power Density  | Random Search <tr></tr>                                            |
+|                                               |                                    | Gradient Descent <tr></tr>                                         |
+|                                               |                                    | Nelder Mead <tr></tr>                                              |
 
 </p>
 
@@ -142,6 +142,9 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/f-g-r-i-m-m"><img src="https://avatars.githubusercontent.com/u/137511310?v=4?s=100" width="100px;" alt="f-g-r-i-m-m"/><br /><sub><b>f-g-r-i-m-m</b></sub></a><br /><a href="#example-f-g-r-i-m-m" title="Examples">💡</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Dibyendu-IITKGP"><img src="https://avatars.githubusercontent.com/u/32595915?v=4?s=100" width="100px;" alt="Dibyendu-IITKGP"/><br /><sub><b>Dibyendu-IITKGP</b></sub></a><br /><a href="#example-Dibyendu-IITKGP" title="Examples">💡</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=Dibyendu-IITKGP" title="Tests">⚠️</a> <a href="https://github.com/pybop-team/PyBOP/commits?author=Dibyendu-IITKGP" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://eng.ox.ac.uk/people/noel-hallemans/"><img src="https://avatars.githubusercontent.com/u/90609505?v=4?s=100" width="100px;" alt="Noël Hallemans"/><br /><sub><b>Noël Hallemans</b></sub></a><br /><a href="#example-noelhallemans" title="Examples">💡</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/pipliggins"><img src="https://avatars.githubusercontent.com/u/55396775?v=4?s=100" width="100px;" alt="Pip Liggins"/><br /><sub><b>Pip Liggins</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=pipliggins" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>

@@ -1,6 +1,6 @@
 import numpy as np
-import pybamm
 import pytest
+from pybamm import IDAKLUSolver
 
 import pybop
 
@@ -9,6 +9,8 @@ class TestObservers:
     """
     A class to run integration tests on the Observers class.
     """
+
+    pytestmark = pytest.mark.integration
 
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -20,14 +22,14 @@ class TestObservers:
 
     @pytest.fixture
     def parameter_set(self):
-        return pybamm.ParameterValues(
+        return pybop.ParameterSet.to_pybamm(
             {"k": self.ground_truth[0], "y0": self.ground_truth[1]}
         )
 
     @pytest.fixture
     def model(self, parameter_set):
         return pybop.ExponentialDecayModel(
-            parameter_set=parameter_set, solver=pybamm.IDAKLUSolver, n_states=1
+            parameter_set=parameter_set, solver=IDAKLUSolver, n_states=1
         )
 
     @pytest.fixture
@@ -47,16 +49,15 @@ class TestObservers:
             ),
         )
 
-    def noise(self, sigma, values):
-        return np.random.normal(0, sigma, values)
+    def noisy(self, data, sigma):
+        return data + np.random.normal(0, sigma, len(data))
 
-    @pytest.mark.integration
     def test_observer_exponential_decay(self, parameters, model):
         # Make a prediction with measurement noise
         sigma = 1e-2
         t_eval = np.linspace(0, 20, 10)
         values = model.predict(t_eval=t_eval)["y_0"].data
-        corrupt_values = values + self.noise(sigma, len(t_eval))
+        corrupt_values = self.noisy(values, sigma)
 
         # Form dataset
         dataset = pybop.Dataset(
@@ -97,7 +98,7 @@ class TestObservers:
 
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
-            if optim.minimising:
+            if results.minimising:
                 assert initial_cost > results.final_cost
             else:
                 assert initial_cost < results.final_cost

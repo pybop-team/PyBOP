@@ -253,7 +253,7 @@ def surface(
     **layout_kwargs : optional
         Valid Plotly layout keys and their values,
         e.g. `xaxis_title="Time [s]"` or
-        `xaxis={"title": "Time [s]", "titlefont_size": 18}`.
+        `xaxis={"title": "Time [s]", font={"size":14}}`
     """
 
     # Append the optimisation trace to the data
@@ -370,8 +370,8 @@ def surface(
     if optim.x0 is not None:
         fig.add_trace(
             go.Scatter(
-                x=[optim.log["x0"][0]],
-                y=[optim.log["x0"][1]],
+                x=[optim.x0[0]],
+                y=[optim.x0[1]],
                 mode="markers",
                 marker_symbol="x",
                 marker=dict(

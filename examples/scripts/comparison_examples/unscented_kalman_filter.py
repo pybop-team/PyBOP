@@ -3,7 +3,7 @@ import numpy as np
 import pybop
 
 # Parameter set and model definition
-parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+parameter_set = pybop.ParameterSet("Chen2020")
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
@@ -65,11 +65,11 @@ results = optim.run()
 # Plot the timeseries output (requires model that returns Voltage)
 pybop.plot.quick(observer, problem_inputs=results.x, title="Optimised Comparison")
 
-# # Plot convergence
-# pybop.plot.convergence(optim)
+# Plot convergence
+pybop.plot.convergence(optim)
 
-# # Plot the parameter traces
-# pybop.plot.parameters(optim)
+# Plot the parameter traces
+pybop.plot.parameters(optim)
 
-# # Plot the cost landscape with optimisation path
-# pybop.plot.surface(optim)
+# Plot the cost landscape with optimisation path
+pybop.plot.surface(optim)

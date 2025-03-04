@@ -12,7 +12,7 @@ layout_options = dict(
 plot_dict = pybop.plot.StandardPlot(layout_options=layout_options)
 
 # Unpack parameter values from Chen2020
-parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+parameter_set = pybop.ParameterSet("Chen2020")
 
 # Fix the electrolyte diffusivity and conductivity
 ce0 = parameter_set["Initial concentration in electrolyte [mol.m-3]"]
@@ -41,6 +41,7 @@ time_domain_SPMe = pybop.lithium_ion.SPMe(
     parameter_set=parameter_set,
     options=model_options,
 )
+time_domain_SPMe.solver = time_domain_SPMe.pybamm_model.default_solver
 simulation = time_domain_SPMe.predict(
     initial_state=initial_state, experiment=experiment
 )

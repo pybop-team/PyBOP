@@ -9,6 +9,8 @@ class TestEISParameterisation:
     A class to test the eis parameterisation methods.
     """
 
+    pytestmark = pytest.mark.integration
+
     @pytest.fixture(autouse=True)
     def setup(self):
         self.sigma0 = 5e-4
@@ -20,7 +22,7 @@ class TestEISParameterisation:
 
     @pytest.fixture
     def model(self):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set = pybop.ParameterSet("Chen2020")
         x = self.ground_truth
         parameter_set.update(
             {
@@ -39,12 +41,14 @@ class TestEISParameterisation:
         return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Uniform(0.4, 0.75),
+                prior=pybop.Uniform(0.3, 0.9),
+                initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
                 bounds=[0.375, 0.775],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Uniform(0.4, 0.75),
+                prior=pybop.Uniform(0.3, 0.9),
+                initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
                 bounds=[0.375, 0.775],
             ),
         )
@@ -57,6 +61,8 @@ class TestEISParameterisation:
         params=[
             pybop.GaussianLogLikelihood,
             pybop.SumSquaredError,
+            pybop.MeanAbsoluteError,
+            pybop.MeanSquaredError,
             pybop.Minkowski,
             pybop.LogPosterior,
         ]
@@ -64,15 +70,15 @@ class TestEISParameterisation:
     def cost(self, request):
         return request.param
 
-    def noise(self, sigma, values):
+    def noisy(self, data, sigma):
         # Generate real part noise
-        real_noise = np.random.normal(0, sigma, values)
+        real_noise = np.random.normal(0, sigma, len(data))
 
         # Generate imaginary part noise
-        imag_noise = np.random.normal(0, sigma, values)
+        imag_noise = np.random.normal(0, sigma, len(data))
 
         # Combine them into a complex noise
-        return real_noise + 1j * imag_noise
+        return data + real_noise + 1j * imag_noise
 
     @pytest.fixture(
         params=[
@@ -97,8 +103,7 @@ class TestEISParameterisation:
             {
                 "Frequency [Hz]": f_eval,
                 "Current function [A]": np.ones(n_frequency) * 0.0,
-                "Impedance": solution["Impedance"]
-                + self.noise(self.sigma0, len(solution["Impedance"])),
+                "Impedance": self.noisy(solution["Impedance"], self.sigma0),
             }
         )
 
@@ -115,7 +120,7 @@ class TestEISParameterisation:
             cost = cost(
                 pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
             )
-        elif cost in [pybop.SumofPower, pybop.Minkowski]:
+        elif cost in [pybop.SumOfPower, pybop.Minkowski]:
             cost = cost(problem, p=2)
         else:
             cost = cost(problem)
@@ -131,17 +136,10 @@ class TestEISParameterisation:
             else 0.02,
         }
 
-        if isinstance(cost, pybop.LogPosterior):
-            for i in cost.parameters.keys():
-                cost.parameters[i].prior = pybop.Uniform(
-                    0.2, 2.0
-                )  # Increase range to avoid prior == np.inf
-
         # Create optimiser
         optim = optimiser(**common_args)
         return optim
 
-    @pytest.mark.integration
     def test_eis_optimisers(self, optim):
         x0 = optim.parameters.initial_value()
 
@@ -161,7 +159,7 @@ class TestEISParameterisation:
         # Assert on identified values, without sigma for GaussianLogLikelihood
         # as the sigma values are small (5e-4), this is a difficult identification process
         # and requires a high number of iterations, and parameter dependent step sizes.
-        if optim.minimising:
+        if results.minimising:
             assert initial_cost > results.final_cost
         else:
             assert initial_cost < results.final_cost

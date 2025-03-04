@@ -11,6 +11,7 @@ class TestUKF:
     A class to test the unscented kalman filter.
     """
 
+    pytestmark = pytest.mark.unit
     measure_noise = 1e-4
 
     @pytest.fixture
@@ -70,7 +71,6 @@ class TestUKF:
         )
         return observer
 
-    @pytest.mark.unit
     def test_cholupdate(self):
         # Create a random positive definite matrix, V
         np.random.seed(1)
@@ -101,7 +101,6 @@ class TestUKF:
         j = 10.0
         np.testing.assert_allclose(SquareRootUKF.hypot(f, j, 1.0), float(0))
 
-    @pytest.mark.unit
     def test_unscented_kalman_filter(self, dataset, observer):
         t_eval = dataset["Time [s]"]
         measurements = dataset["y"]
@@ -129,19 +128,16 @@ class TestUKF:
         assert cov.shape == (1, 1)
         assert float(0) <= cov[0]
 
-    @pytest.mark.unit
     def test_observe_no_measurement(self, observer):
         with pytest.raises(ValueError):
             observer.observe(0, None)
 
-    @pytest.mark.unit
     def test_observe_decreasing_time(self, observer):
         observer.observe(0, np.array([2]))
         observer.observe(0.1, np.array([2]))
         with pytest.raises(ValueError):
             observer.observe(0, np.array([2]))
 
-    @pytest.mark.unit
     def test_wrong_input_shapes(self, model, parameters):
         signal = "y_0"
         n = model.n_states
@@ -170,7 +166,6 @@ class TestUKF:
                 parameters, model, sigma0, process, measure, signal=signal
             )
 
-    @pytest.mark.unit
     def test_without_signal(self):
         model = pybop.lithium_ion.SPM()
         parameters = pybop.Parameters(

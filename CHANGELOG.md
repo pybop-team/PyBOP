@@ -2,8 +2,38 @@
 
 ## Features
 
+- [#674](https://github.com/pybop-team/PyBOP/issues/674) - Adds the reason for stopping to the `OptimisationResult`.
+
 ## Optimisations
 
+- [#676](https://github.com/pybop-team/PyBOP/pull/676) - Update the format of the problem sensitivities to a dict.
+- [#681](https://github.com/pybop-team/PyBOP/pull/681) - Update the spatial variable defaults of the `GroupedSPMe` model.
+
+## Bug Fixes
+
+- [#678](https://github.com/pybop-team/PyBOP/pull/678) - Fixed bug where model wasn't plotted for observer classes with `pybop.plot.quick()`.
+
+## Breaking Changes
+
+- [#661](https://github.com/pybop-team/PyBOP/pull/661) - Adds `pybop.CostInterface` which aligns the optimisers and samplers with a unified `call_cost` in which transformations and sign inversions are applied. Also includes bug fixes for transformations and gradient calculations.
+
+
+# [v25.1](https://github.com/pybop-team/PyBOP/tree/v25.1) - 2025-02-03
+
+## Features
+
+- [#636](https://github.com/pybop-team/PyBOP/pull/636) - Adds `pybop.IRPropPlus` optimiser with corresponding tests.
+- [#635](https://github.com/pybop-team/PyBOP/pull/635) - Adds support for multi-proposal evaluation of list-like objects to `BaseCost` classes.
+- [#635](https://github.com/pybop-team/PyBOP/pull/635) - Adds global parameter sensitivity analysis with method `BaseCost.sensitivity_analysis`. This is computation is added to `OptimisationResult` if optimiser arg `compute_sensitivities` is `True`. An additional arg is added to select the number of samples for analysis: `n_sensitivity_samples`.
+- [#630] (https://github.com/pybop-team/PyBOP/pull/632) - Fisher Information Matrix added to `BaseLikelihood` class.
+- [#619](https://github.com/pybop-team/PyBOP/pull/619) - Adds `pybop.SimulatingAnnealing` optimiser with corresponding tests.
+- [#565](https://github.com/pybop-team/PyBOP/pull/627) - DigiBatt added as funding partner.
+
+## Optimisations
+
+- [#638](https://github.com/pybop-team/PyBOP/pull/638) - Allows the problem class to accept any domain name.
+- [#618](https://github.com/pybop-team/PyBOP/pull/618) - Adds Mean Absolute Error (MAE) and Mean Squared Error (MSE) costs.
+- [#601](https://github.com/pybop-team/PyBOP/pull/601) - Deprecates `MultiOptimisationResult` by merging with `OptimisationResult`.
 - [#600](https://github.com/pybop-team/PyBOP/pull/600) - Removes repetitious functionality within the cost classes.
 
 ## Bug Fixes
@@ -11,6 +41,9 @@
 - [#602](https://github.com/pybop-team/PyBOP/pull/602) - Aligns the standard quick plot of `MultiFittingProblem` outputs.
 
 ## Breaking Changes
+
+- [#656](https://github.com/pybop-team/PyBOP/pull/656) - Completes `ParameterSet` changes from #593 and aligns the simulation options in `model.predict` with the model properties such as the solver.
+- [#593](https://github.com/pybop-team/PyBOP/pull/593) - Enables `ParameterSet` to systematically return a `pybamm.ParameterValues` object within the model class.
 
 # [v24.12](https://github.com/pybop-team/PyBOP/tree/v24.12) - 2024-12-21
 

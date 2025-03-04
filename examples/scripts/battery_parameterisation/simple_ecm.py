@@ -6,7 +6,6 @@ import pybop
 parameter_set = pybop.ParameterSet(
     json_path="examples/parameters/initial_ecm_parameters.json"
 )
-parameter_set.import_parameters()
 
 # Alternatively, define the initial parameter set with a dictionary
 # Add definitions for R's, C's, and initial overpotentials for any additional RC elements

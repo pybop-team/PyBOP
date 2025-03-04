@@ -3,12 +3,12 @@ import numpy as np
 import pybop
 
 # Parameter set definition
-parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+parameter_set = pybop.ParameterSet("Chen2020")
 parameter_set["Lower voltage cut-off [V]"] = 2.3
 parameter_set["Upper voltage cut-off [V]"] = 4.4
 
 # Set initial state and unpack true values
-parameter_set.set_initial_stoichiometries(initial_value=1.0)
+parameter_set.parameter_values.set_initial_stoichiometries(initial_value=1.0)
 cs_n_max = parameter_set["Maximum concentration in negative electrode [mol.m-3]"]
 cs_p_max = parameter_set["Maximum concentration in positive electrode [mol.m-3]"]
 cs_n_init = parameter_set["Initial concentration in negative electrode [mol.m-3]"]
@@ -60,8 +60,8 @@ experiment = pybop.Experiment(
 values = model.predict(experiment=experiment)
 
 
-def noise(sigma):
-    return np.random.normal(0, sigma, len(values["Voltage [V]"].data))
+def noisy(data, sigma):
+    return data + np.random.normal(0, sigma, len(data))
 
 
 # Form dataset
@@ -69,14 +69,14 @@ dataset = pybop.Dataset(
     {
         "Time [s]": values["Time [s]"].data,
         "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": values["Voltage [V]"].data + noise(sigma),
+        "Voltage [V]": noisy(values["Voltage [V]"].data, sigma),
     }
 )
 
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=sigma)
-optim = pybop.SciPyMinimize(cost, max_iterations=250)
+optim = pybop.SciPyMinimize(cost, max_iterations=125)
 
 # Run optimisation for Maximum Likelihood Estimate (MLE)
 results = optim.run()

@@ -15,6 +15,8 @@ class TestModels:
     A class to test the models.
     """
 
+    pytestmark = pytest.mark.unit
+
     @pytest.mark.parametrize(
         "model_class, expected_name, options",
         [
@@ -41,11 +43,8 @@ class TestModels:
             (pybop.empirical.Thevenin, "Equivalent Circuit Thevenin Model", None),
         ],
     )
-    @pytest.mark.unit
     def test_model_classes(self, model_class, expected_name, options):
-        parameter_set = pybop.ParameterSet(
-            params_dict={"Nominal cell capacity [A.h]": 5.12}
-        )
+        parameter_set = pybop.ParameterSet({"Nominal cell capacity [A.h]": 5.12})
         model = model_class(options=options, parameter_set=parameter_set)
         assert model.pybamm_model is not None
         assert model.name == expected_name
@@ -68,7 +67,6 @@ class TestModels:
         model = request.param
         return model.copy()
 
-    @pytest.mark.unit
     def test_non_default_solver(self):
         solver = pybamm.CasadiSolver(
             mode="fast",
@@ -80,7 +78,6 @@ class TestModels:
         assert model.solver.atol == 1e-6
         assert model.solver.rtol == 1e-6
 
-    @pytest.mark.unit
     def test_predict_without_pybamm(self, model):
         model.pybamm_model = None
 
@@ -98,7 +95,6 @@ class TestModels:
             assert new_model.pybamm_model is not None
             assert new_model.parameter_set is not None
 
-    @pytest.mark.unit
     def test_predict_with_inputs(self, model):
         # Define inputs
         t_eval = np.linspace(0, 10, 100)
@@ -134,7 +130,6 @@ class TestModels:
         ):
             model.predict(inputs=inputs)
 
-    @pytest.mark.unit
     def test_predict_without_allow_infeasible_solutions(self, model):
         if isinstance(model, (pybop.lithium_ion.SPM, pybop.lithium_ion.SPMe)):
             model.allow_infeasible_solutions = False
@@ -149,7 +144,6 @@ class TestModels:
             ):
                 model.predict(t_eval=t_eval, inputs=inputs)
 
-    @pytest.mark.unit
     def test_build(self, model):
         if isinstance(model, pybop.lithium_ion.SPMe):
             model.build(initial_state={"Initial SoC": 1.0})
@@ -166,7 +160,6 @@ class TestModels:
             model.build()
             assert model.built_model is not None
 
-    @pytest.mark.unit
     def test_rebuild(self, model):
         model.build()
         initial_built_model = model._built_model
@@ -200,7 +193,6 @@ class TestModels:
                 initial_built_model, attribute
             )
 
-    @pytest.mark.unit
     def test_parameter_set_definition(self):
         # Test initilisation with different types of parameter set
         param_dict = {"Nominal cell capacity [A.h]": 5}
@@ -214,11 +206,10 @@ class TestModels:
         model = pybop.BaseModel(parameter_set=parameter_set)
         assert model.parameter_set == parameter_set
 
-        pybop_parameter_set = pybop.ParameterSet(params_dict=param_dict)
+        pybop_parameter_set = pybop.ParameterSet(param_dict)
         model = pybop.BaseModel(parameter_set=pybop_parameter_set)
         assert model.parameter_set == parameter_set
 
-    @pytest.mark.unit
     def test_rebuild_geometric_parameters(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
         parameters = pybop.Parameters(
@@ -290,7 +281,6 @@ class TestModels:
     @pytest.mark.parametrize(
         "model_cls", [StandaloneDecay, pybop.ExponentialDecayModel]
     )
-    @pytest.mark.unit
     def test_reinit(self, model_cls):
         k = 0.1
         y0 = 1
@@ -318,7 +308,6 @@ class TestModels:
     @pytest.mark.parametrize(
         "model_cls", [StandaloneDecay, pybop.ExponentialDecayModel]
     )
-    @pytest.mark.unit
     def test_simulate(self, model_cls):
         k = 0.1
         y0 = 1
@@ -334,7 +323,6 @@ class TestModels:
         with pytest.raises(ValueError):
             model_cls(n_states=-1)
 
-    @pytest.mark.unit
     def test_simulate_with_EIS(self):
         # Test EIS on SPM
         model = pybop.lithium_ion.SPM(eis=True)
@@ -356,7 +344,6 @@ class TestModels:
         with pytest.raises(ValueError, match="These parameter values are infeasible."):
             model.simulate(eval=f_eval, inputs=inputs, eis=True)
 
-    @pytest.mark.unit
     def test_basemodel(self):
         base = pybop.BaseModel()
         x = np.array([1, 2, 3])
@@ -373,13 +360,10 @@ class TestModels:
         base.classify_parameters(parameters=None)
         assert isinstance(base.parameters, pybop.Parameters)
 
-    @pytest.mark.unit
     def test_thevenin_model(self):
         parameter_set = pybop.ParameterSet(
             json_path="examples/parameters/initial_ecm_parameters.json"
         )
-        parameter_set.import_parameters()
-        assert parameter_set["Open-circuit voltage [V]"] == "default"
         model = pybop.empirical.Thevenin(
             parameter_set=parameter_set, options={"number of rc elements": 2}
         )
@@ -420,7 +404,6 @@ class TestModels:
         ):
             model.set_initial_state({"Initial SoC": "invalid string"})
 
-    @pytest.mark.unit
     def test_check_params(self):
         base = pybop.BaseModel()
         assert base.check_params()
@@ -429,7 +412,6 @@ class TestModels:
         with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
             base.check_params(inputs=["unexpected_string"])
 
-    @pytest.mark.unit
     def test_base_ecircuit_model(self):
         def check_params(inputs: dict, allow_infeasible_solutions: bool):
             return True if inputs is None else inputs["a"] < 2
@@ -445,7 +427,6 @@ class TestModels:
         )
         assert base_ecircuit_model.check_params()
 
-    @pytest.mark.unit
     def test_userdefined_check_params(self):
         def check_params(inputs: dict, allow_infeasible_solutions: bool):
             return True if inputs is None else inputs["a"] < 2
@@ -461,7 +442,6 @@ class TestModels:
             ):
                 model.check_params(inputs=["unexpected_string"])
 
-    @pytest.mark.unit
     def test_non_converged_solution(self):
         model = pybop.lithium_ion.DFN()
         parameters = pybop.Parameters(
@@ -492,7 +472,6 @@ class TestModels:
             assert np.allclose(output.get(key, [])[0], output.get(key, []))
             assert np.allclose(output_S1.get(key, [])[0], output_S1.get(key, []))
 
-    @pytest.mark.unit
     def test_set_initial_state(self):
         t_eval = np.linspace(0, 10, 100)
 
@@ -527,7 +506,6 @@ class TestModels:
         with pytest.raises(ValueError, match="Unrecognised initial state"):
             model.set_initial_state({"Initial voltage [V]": 3.7})
 
-    @pytest.mark.unit
     def test_get_parameter_info(self, model):
         if isinstance(model, pybop.empirical.Thevenin):
             # Test at least one model without a built pybamm model
@@ -548,7 +526,6 @@ class TestModels:
             assert key in printed_messaage
             assert value in printed_messaage
 
-    @pytest.mark.unit
     def test_set_current_function(self):
         dataset_1 = pybop.Dataset(
             {
@@ -590,17 +567,20 @@ class TestModels:
             atol=1e-8,
         )
 
-    @pytest.mark.unit
-    def test_grouped_SPMe(self):
+    @pytest.mark.parametrize(
+        "model_class",
+        [
+            pybop.lithium_ion.WeppnerHuggins,
+            pybop.lithium_ion.GroupedSPMe,
+        ],
+    )
+    def test_custom_models(self, model_class):
         with pytest.warns(UserWarning) as record:
-            model = pybop.lithium_ion.GroupedSPMe(
-                unused_kwarg=0, options={"unused option": 0}
-            )
+            model_class(unused_kwarg=0, options={"unused option": 0})
             assert "The input model_kwargs" in str(record[0].message)
-            assert "are not currently used by the GroupedSPMe." in str(
-                record[0].message
-            )
+            assert "are not currently used by " in str(record[0].message)
 
+    def test_grouped_SPMe(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
         parameter_set["Electrolyte diffusivity [m2.s-1]"] = 1.769e-10
         parameter_set["Electrolyte conductivity [S.m-1]"] = 0.9487

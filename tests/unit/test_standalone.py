@@ -12,74 +12,34 @@ class TestStandalone:
     Class for testing standalone components.
     """
 
-    @pytest.fixture
-    def dataset(self):
-        return pybop.Dataset(
-            {
-                "Time [s]": np.linspace(0, 360, 10),
-                "Current function [A]": 0.25 * np.ones(10),
-                "Voltage [V]": np.linspace(3.8, 3.7, 10),
-            }
-        )
+    pytestmark = pytest.mark.unit
 
-    @pytest.fixture
-    def parameter(self):
-        return pybop.Parameter(
-            "Positive electrode active material volume fraction",
-            prior=pybop.Gaussian(0.6, 0.02),
-            bounds=[0.58, 0.62],
-        )
-
-    @pytest.fixture
-    def model(self):
-        model = pybop.lithium_ion.SPM()
-        model.build(initial_state={"Initial open-circuit voltage [V]": 3.8})
-        return model
-
-    @pytest.fixture
-    def problem(self, model, parameter, dataset):
-        return pybop.FittingProblem(
-            model,
-            parameter,
-            dataset,
-        )
-
-    @pytest.fixture
-    def cost(self, problem):
-        return pybop.SumSquaredError(problem)
-
-    @pytest.mark.unit
-    def test_standalone_optimiser(self, cost):
-        # Define cost function
-        optim = StandaloneOptimiser(cost, maxiter=10, x0=[0.6])
+    def test_standalone_optimiser(self):
+        optim = StandaloneOptimiser()
         assert optim.name() == "StandaloneOptimiser"
 
         results = optim.run()
         assert optim.cost(optim.x0) > results.final_cost
-        assert 0.0 <= results.x <= 1.0
+        np.testing.assert_allclose(results.x, [2, 4], atol=1e-2)
 
         # Test with bounds
-        optim = StandaloneOptimiser(
-            cost, maxiter=10, x0=[0.6], bounds=dict(upper=[0.8], lower=[0.3])
-        )
+        optim = StandaloneOptimiser(bounds=dict(upper=[5, 6], lower=[1, 2]))
 
         results = optim.run()
         assert optim.cost(optim.x0) > results.final_cost
-        assert 0.3 <= results.x <= 0.8
+        np.testing.assert_allclose(results.x, [2, 4], atol=1e-2)
 
-    @pytest.mark.unit
-    def test_optimisation_on_standalone_cost(self, problem):
+    def test_optimisation_on_standalone_cost(self):
         # Build an Optimisation problem with a StandaloneCost
-        cost = StandaloneCost(problem)
+        cost = StandaloneCost()
         optim = pybop.SciPyDifferentialEvolution(cost=cost)
         results = optim.run()
 
         optim.x0 = optim.log["x"][0]
         initial_cost = optim.cost(optim.x0)
         assert initial_cost > results.final_cost
-        np.testing.assert_allclose(results.final_cost, 1460, atol=1)
+        np.testing.assert_allclose(results.final_cost, 42, atol=1)
 
-    @pytest.mark.unit
     def test_standalone_problem(self):
         # Define parameters to estimate
         parameters = pybop.Parameters(

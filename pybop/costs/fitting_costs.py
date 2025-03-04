@@ -14,8 +14,6 @@ class FittingCost(BaseCost):
     for evaluating model predictions against a set of data. The cost function
     quantifies the goodness-of-fit between the model predictions and the
     observed data, with a lower cost value indicating a better fit.
-
-    Inherits all parameters and attributes from ``BaseCost``.
     """
 
     def __init__(self, problem):
@@ -24,30 +22,34 @@ class FittingCost(BaseCost):
     def compute(
         self,
         y: dict,
-        dy: Optional[np.ndarray] = None,
+        dy: Optional[dict] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
         """
         Computes the cost function for the given predictions.
 
         Parameters
         ----------
-        y : dict
+        y : dict[str, np.ndarray[np.float64]]
             The dictionary of predictions with keys designating the signals for fitting.
-        dy : np.ndarray, optional
-            The corresponding gradient with respect to the parameters for each signal.
+        dy : dict[str, dict[str, np.ndarray]], optional
+            The corresponding sensitivities to each parameter for each signal.
 
         Returns
         -------
-        tuple or float
+        np.float64 or tuple[np.float64, np.ndarray[np.float64]]
             If dy is not None, returns a tuple containing the cost (float) and the
-            gradient (np.ndarray), otherwise returns only the computed cost (float).
+            gradient with dimension (len(parameters)), otherwise returns only the cost.
         """
         # Early return if the prediction is not verified
         if not self.verify_prediction(y):
             return (np.inf, self.grad_fail) if dy is not None else np.inf
 
-        # Compute the residual
+        # Compute the residual for all signals
         r = np.asarray([y[signal] - self._target[signal] for signal in self.signal])
+
+        # Extract the sensitivities for all signals and parameters
+        if dy is not None:
+            dy = self.stack_sensitivities(dy)
 
         return self._error_measure(r=r, dy=dy)
 
@@ -62,243 +64,19 @@ class FittingCost(BaseCost):
         Parameters
         ----------
         r : np.ndarray
-            The residual difference between the model prediction and the target.
+            The residual difference between the model prediction and the target. The
+            dimensions of r are (len(signal), len(domain_data)).
         dy : np.ndarray, optional
             The corresponding gradient with respect to the parameters for each signal.
+            The dimensions of dy are (len(parameters), len(signal), len(domain_data)).
+
+        Returns
+        -------
+        np.float64 or tuple[np.float64, np.ndarray[np.float64]]
+            If dy is not None, returns a tuple containing the cost (float) and the
+            gradient with dimension (len(parameters)), otherwise returns only the cost.
         """
         raise NotImplementedError
-
-
-class RootMeanSquaredError(FittingCost):
-    """
-    Root mean square error cost function.
-
-    Computes the root mean square error between model predictions and the target
-    data, providing a measure of the differences between predicted values and
-    observed values.
-
-
-    """
-
-    def _error_measure(
-        self,
-        r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
-        """
-        Computes the cost function for the given predictions.
-
-        Parameters
-        ----------
-        r : np.ndarray
-            The residual difference between the model prediction and the target.
-        dy : np.ndarray, optional
-            The corresponding gradient with respect to the parameters for each signal.
-
-        Returns
-        -------
-        tuple or float
-            If dy is not None, returns a tuple containing the cost (float) and the
-            gradient (np.ndarray), otherwise returns only the computed cost (float).
-        """
-        e = np.sqrt(np.mean(np.abs(r) ** 2, axis=1))
-
-        if dy is not None:
-            de = np.mean((r * dy.T), axis=2) / (e + np.finfo(float).eps)
-            return (
-                (e.item(), de.flatten())
-                if self.n_outputs == 1
-                else (e.sum(), de.sum(1))
-            )
-
-        return e.item() if self.n_outputs == 1 else np.sum(e)
-
-
-class SumSquaredError(FittingCost):
-    """
-    Sum of squared errors cost function.
-
-    Computes the sum of the squares of the differences between model predictions
-    and target data, which serves as a measure of the total error between the
-    predicted and observed values.
-
-
-    """
-
-    def _error_measure(
-        self,
-        r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
-        """
-        Computes the cost function for the given predictions.
-
-        Parameters
-        ----------
-        r : np.ndarray
-            The residual difference between the model prediction and the target.
-        dy : np.ndarray, optional
-            The corresponding gradient with respect to the parameters for each signal.
-
-        Returns
-        -------
-        tuple or float
-            If dy is not None, returns a tuple containing the cost (float) and the
-            gradient (np.ndarray), otherwise returns only the computed cost (float).
-        """
-        e = np.sum(np.sum(np.abs(r) ** 2, axis=0), axis=0)
-
-        if dy is not None:
-            de = 2 * np.sum((r * dy.T), axis=(1, 2))
-            return e, de
-
-        return e
-
-
-class Minkowski(FittingCost):
-    """
-    The Minkowski distance is a generalisation of several distance metrics,
-    including the Euclidean and Manhattan distances. It is defined as:
-
-    .. math::
-        L_p(x, y) = ( \\sum_i |x_i - y_i|^p )^(1/p)
-
-    where p > 0 is the order of the Minkowski distance. For p ≥ 1, the
-    Minkowski distance is a metric. For 0 < p < 1, it is not a metric, as it
-    does not satisfy the triangle inequality, although a metric can be
-    obtained by removing the (1/p) exponent.
-
-    Special cases:
-
-    * p = 1: Manhattan distance
-    * p = 2: Euclidean distance
-    * p → ∞: Chebyshev distance (not implemented as yet)
-
-    This class implements the Minkowski distance as a cost function for
-    optimisation problems, allowing for flexible distance-based optimisation
-    across various problem domains.
-
-    Additional Attributes
-    ---------------------
-    p : float, optional
-        The order of the Minkowski distance.
-    """
-
-    def __init__(self, problem, p: float = 2.0):
-        super().__init__(problem)
-        if p < 0:
-            raise ValueError(
-                "The order of the Minkowski distance must be greater than 0."
-            )
-        elif not np.isfinite(p):
-            raise ValueError(
-                "For p = infinity, an implementation of the Chebyshev distance is required."
-            )
-        self.p = float(p)
-
-    def _error_measure(
-        self,
-        r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
-        """
-        Computes the cost function for the given predictions.
-
-        Parameters
-        ----------
-        r : np.ndarray
-            The residual difference between the model prediction and the target.
-        dy : np.ndarray, optional
-            The corresponding gradient with respect to the parameters for each signal.
-
-        Returns
-        -------
-        tuple or float
-            If dy is not None, returns a tuple containing the cost (float) and the
-            gradient (np.ndarray), otherwise returns only the computed cost (float).
-        """
-        e = np.sum(np.abs(r) ** self.p) ** (1 / self.p)
-
-        if dy is not None:
-            de = np.sum(
-                np.sum(np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T, axis=2)
-                / (e ** (self.p - 1) + np.finfo(float).eps),
-                axis=1,
-            )
-            return e, de
-
-        return e
-
-
-class SumofPower(FittingCost):
-    """
-    The Sum of Power [1] is a generalised cost function based on the p-th power
-    of absolute differences between two vectors. It is defined as:
-
-    .. math::
-        C_p(x, y) = \\sum_i |x_i - y_i|^p
-
-    where p ≥ 0 is the power order.
-
-    This class implements the Sum of Power as a cost function for
-    optimisation problems, allowing for flexible power-based optimisation
-    across various problem domains.
-
-    Special cases:
-
-    * p = 1: Sum of Absolute Differences
-    * p = 2: Sum of Squared Differences
-    * p → ∞: Maximum Absolute Difference
-
-    Note that this is not normalised, unlike distance metrics. To get a
-    distance metric, you would need to take the p-th root of the result.
-
-    [1]: https://mathworld.wolfram.com/PowerSum.html
-
-    Additional Attributes
-    ---------------------
-    p : float, optional
-        The power order for Sum of Power.
-    """
-
-    def __init__(self, problem, p: float = 2.0):
-        super().__init__(problem)
-        if p < 0:
-            raise ValueError("The order of 'p' must be greater than 0.")
-        elif not np.isfinite(p):
-            raise ValueError("p = np.inf is not yet supported.")
-        self.p = float(p)
-
-    def _error_measure(
-        self,
-        r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
-        """
-        Computes the cost function for the given predictions.
-
-        Parameters
-        ----------
-        r : np.ndarray
-            The residual difference between the model prediction and the target.
-        dy : np.ndarray, optional
-            The corresponding gradient with respect to the parameters for each signal.
-
-        Returns
-        -------
-        tuple or float
-            If dy is not None, returns a tuple containing the cost (float) and the
-            gradient (np.ndarray), otherwise returns only the computed cost (float).
-        """
-        e = np.sum(np.abs(r) ** self.p)
-
-        if dy is not None:
-            de = self.p * np.sum(
-                np.sign(r) * np.abs(r) ** (self.p - 1) * dy.T, axis=(1, 2)
-            )
-            return e, de
-
-        return e
 
 
 class ObserverCost(BaseCost):
@@ -309,7 +87,6 @@ class ObserverCost(BaseCost):
     of the data points given the model parameters.
 
     Inherits all parameters and attributes from ``BaseCost``.
-
     """
 
     def __init__(self, observer: Observer):

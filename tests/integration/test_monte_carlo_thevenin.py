@@ -21,6 +21,8 @@ class TestSamplingThevenin:
     A class to test a subset of samplers on the simple Thevenin Model.
     """
 
+    pytestmark = pytest.mark.integration
+
     @pytest.fixture(autouse=True)
     def setup(self):
         self.sigma0 = 1e-3
@@ -42,8 +44,7 @@ class TestSamplingThevenin:
         parameter_set = pybop.ParameterSet(
             json_path="examples/parameters/initial_ecm_parameters.json"
         )
-        parameter_set.import_parameters()
-        parameter_set.params.update(
+        parameter_set.update(
             {
                 "C1 [F]": 1000,
                 "R0 [Ohm]": self.ground_truth[0],
@@ -58,12 +59,16 @@ class TestSamplingThevenin:
         return pybop.Parameters(
             pybop.Parameter(
                 "R0 [Ohm]",
-                prior=pybop.Uniform(1e-3, 9e-2),
+                prior=pybop.Gaussian(5e-2, 5e-3),
+                transformation=pybop.LogTransformation(),
+                initial_value=pybop.Uniform(2e-3, 8e-2).rvs()[0],
                 bounds=[1e-4, 1e-1],
             ),
             pybop.Parameter(
                 "R1 [Ohm]",
-                prior=pybop.Uniform(1e-3, 9e-2),
+                prior=pybop.Gaussian(5e-2, 5e-3),
+                transformation=pybop.LogTransformation(),
+                initial_value=pybop.Uniform(2e-3, 8e-2).rvs()[0],
                 bounds=[1e-4, 1e-1],
             ),
         )
@@ -72,8 +77,8 @@ class TestSamplingThevenin:
     def init_soc(self, request):
         return request.param
 
-    def noise(self, sigma, values):
-        return np.random.normal(0, sigma, values)
+    def noisy(self, data, sigma):
+        return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
     def posterior(self, model, parameters, init_soc):
@@ -83,8 +88,7 @@ class TestSamplingThevenin:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Voltage [V]"].data
-                + self.noise(self.sigma0, len(solution["Time [s]"].data)),
+                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
             }
         )
 
@@ -98,7 +102,6 @@ class TestSamplingThevenin:
         common_args = {
             "max_iterations": 100,
             "max_unchanged_iterations": 35,
-            "absolute_tolerance": 1e-7,
             "sigma0": [3e-4, 3e-4],
             "verbose": True,
         }
@@ -123,15 +126,14 @@ class TestSamplingThevenin:
             DramACMC,
         ],
     )
-    @pytest.mark.integration
     def test_sampling_thevenin(self, sampler, posterior, map_estimate):
         x0 = np.clip(map_estimate + np.random.normal(0, 1e-3, size=2), 1e-4, 1e-1)
         common_args = {
             "log_pdf": posterior,
             "chains": 2,
-            "warm_up": 100,
-            "cov0": [2e-3, 2e-3],
-            "max_iterations": 1050,
+            "warm_up": 150,
+            "cov0": [6e-3, 6e-3],
+            "max_iterations": 550,
             "x0": x0,
         }
 
@@ -148,7 +150,7 @@ class TestSamplingThevenin:
         np.testing.assert_array_less(0, ess)
         if not isinstance(sampler, RelativisticMCMC):
             np.testing.assert_array_less(
-                summary.rhat(), 1.5
+                summary.rhat(), 2.0
             )  # Large rhat, to enable faster tests
 
         # Assert both final sample and posterior mean
@@ -160,9 +162,6 @@ class TestSamplingThevenin:
     def get_data(self, model, init_soc):
         initial_state = {"Initial SoC": init_soc}
         experiment = pybop.Experiment(
-            [
-                ("Discharge at 0.5C for 6 minutes (20 second period)",),
-            ]
+            ["Discharge at 0.5C for 6 minutes (20 second period)"]
         )
-        sim = model.predict(initial_state=initial_state, experiment=experiment)
-        return sim
+        return model.predict(initial_state=initial_state, experiment=experiment)

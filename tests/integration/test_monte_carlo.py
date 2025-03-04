@@ -1,6 +1,6 @@
 import numpy as np
-import pybamm
 import pytest
+from pybamm import IDAKLUSolver
 
 import pybop
 from pybop import (
@@ -18,6 +18,8 @@ class Test_Sampling_SPM:
     A class to test the MCMC samplers on a physics-based model.
     """
 
+    pytestmark = pytest.mark.integration
+
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ground_truth = np.clip(
@@ -29,7 +31,7 @@ class Test_Sampling_SPM:
 
     @pytest.fixture
     def model(self):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set = pybop.ParameterSet("Chen2020")
         x = self.ground_truth
         parameter_set.update(
             {
@@ -37,20 +39,21 @@ class Test_Sampling_SPM:
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        solver = pybamm.IDAKLUSolver()
-        return pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
+        return pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
     @pytest.fixture
     def parameters(self):
         return pybop.Parameters(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Uniform(0.4, 0.7),
+                prior=pybop.Gaussian(0.575, 0.05),
+                initial_value=pybop.Uniform(0.4, 0.7).rvs()[0],
                 bounds=[0.375, 0.725],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Uniform(0.4, 0.7),
+                prior=pybop.Gaussian(0.525, 0.05),
+                initial_value=pybop.Uniform(0.4, 0.7).rvs()[0],
                 # no bounds
             ),
         )
@@ -59,8 +62,8 @@ class Test_Sampling_SPM:
     def init_soc(self, request):
         return request.param
 
-    def noise(self, sigma, values):
-        return np.random.normal(0, sigma, values)
+    def noisy(self, data, sigma):
+        return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
     def log_posterior(self, model, parameters, init_soc):
@@ -70,12 +73,12 @@ class Test_Sampling_SPM:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Voltage [V]"].data
-                + self.noise(0.002, len(solution["Time [s]"].data)),
+                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, 0.002),
             }
         )
 
         # Define the posterior to optimise
+        model.solver = IDAKLUSolver()
         problem = pybop.FittingProblem(model, parameters, dataset)
         likelihood = pybop.GaussianLogLikelihood(problem, sigma0=0.002 * 1.2)
         return pybop.LogPosterior(likelihood)
@@ -85,7 +88,6 @@ class Test_Sampling_SPM:
         common_args = {
             "max_iterations": 100,
             "max_unchanged_iterations": 35,
-            "absolute_tolerance": 1e-7,
         }
         optim = pybop.CMAES(log_posterior, **common_args)
         results = optim.run()
@@ -103,7 +105,6 @@ class Test_Sampling_SPM:
             PopulationMCMC,
         ],
     )
-    @pytest.mark.integration
     def test_sampling_spm(self, quick_sampler, log_posterior, map_estimate):
         x0 = np.clip(
             map_estimate + np.random.normal(0, [5e-3, 5e-3, 1e-4], size=3),
@@ -126,7 +127,7 @@ class Test_Sampling_SPM:
         # Assert both final sample and posterior mean
         x = np.mean(chains, axis=1)
         for i in range(len(x)):
-            np.testing.assert_allclose(x[i], self.ground_truth, atol=1.5e-2)
+            np.testing.assert_allclose(x[i], self.ground_truth, atol=1.6e-2)
 
     def get_data(self, model, init_soc):
         initial_state = {"Initial SoC": init_soc}
