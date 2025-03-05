@@ -320,8 +320,25 @@ class TestModels:
         solved = model.simulate(inputs, t_eval)
         np.testing.assert_array_almost_equal(solved["y_0"].data, expected, decimal=5)
 
+        # Test ValueErrors
         with pytest.raises(ValueError):
             model_cls(n_states=-1)
+        with pytest.raises(
+            ValueError,
+            match="Model must be constructed for EIS before calling simulate",
+        ):
+            model.simulate(inputs, t_eval, eis=True)
+
+        with pytest.raises(
+            ValueError, match="t_eval must be provided for time domain simulation"
+        ):
+            model.simulate(inputs)
+
+        with pytest.raises(
+            ValueError,
+            match="EIS predictions don't currently support gradient information",
+        ):
+            model.simulateS1(inputs, t_eval=t_eval, eis=True)
 
     def test_simulate_with_EIS(self):
         # Test EIS on SPM
@@ -341,8 +358,14 @@ class TestModels:
         # Rebuild model
         model.build(inputs=inputs)
 
+        # Test ValueErrors
         with pytest.raises(ValueError, match="These parameter values are infeasible."):
             model.simulate(f_eval=f_eval, inputs=inputs, eis=True)
+
+        with pytest.raises(
+            ValueError, match="f_eval must be provided for EIS simulation"
+        ):
+            model.simulate(inputs, eis=True)
 
     def test_basemodel(self):
         base = pybop.BaseModel()
