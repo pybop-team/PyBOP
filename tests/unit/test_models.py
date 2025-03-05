@@ -334,12 +334,6 @@ class TestModels:
         ):
             model.simulate(inputs)
 
-        with pytest.raises(
-            ValueError,
-            match="EIS predictions don't currently support gradient information",
-        ):
-            model.simulateS1(inputs, t_eval=t_eval, eis=True)
-
     def test_simulate_with_EIS(self):
         # Test EIS on SPM
         model = pybop.lithium_ion.SPM(eis=True)

@@ -15,6 +15,7 @@
 
 ## Breaking Changes
 
+- [#616](https://github.com/pybop-team/PyBOP/pull/616) - Combines `model.simulateEIS` into `model.simulate` with `eis` argument, refactors BaseModel w/ EIS mixin.
 - [#661](https://github.com/pybop-team/PyBOP/pull/661) - Adds `pybop.CostInterface` which aligns the optimisers and samplers with a unified `call_cost` in which transformations and sign inversions are applied. Also includes bug fixes for transformations and gradient calculations.
 
 
