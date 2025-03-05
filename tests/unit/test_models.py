@@ -240,7 +240,7 @@ class TestModels:
             ValueError,
             match="Cannot use sensitivities for parameters which require a model rebuild",
         ):
-            model.simulateS1(eval=t_eval, inputs=parameters.as_dict())
+            model.simulateS1(t_eval=t_eval, inputs=parameters.as_dict())
 
         # Test that the model can be rebuilt with different geometric parameters
         parameters["Positive particle radius [m]"].update(5e-06)
@@ -329,7 +329,7 @@ class TestModels:
 
         # Construct frequencies and solve
         f_eval = np.linspace(100, 1000, 5)
-        sol = model.simulate(inputs={}, eval=f_eval, eis=True)
+        sol = model.simulate(inputs={}, f_eval=f_eval, eis=True)
         assert np.isfinite(sol["Impedance"]).all()
 
         # Test infeasible parameter values
@@ -342,7 +342,7 @@ class TestModels:
         model.build(inputs=inputs)
 
         with pytest.raises(ValueError, match="These parameter values are infeasible."):
-            model.simulate(eval=f_eval, inputs=inputs, eis=True)
+            model.simulate(f_eval=f_eval, inputs=inputs, eis=True)
 
     def test_basemodel(self):
         base = pybop.BaseModel()
@@ -559,7 +559,7 @@ class TestModels:
             atol=1e-8,
         )
 
-        values_3 = model.simulate(inputs={}, eval=dataset_2["Time [s]"])
+        values_3 = model.simulate(inputs={}, t_eval=dataset_2["Time [s]"])
 
         np.testing.assert_allclose(
             values_3["Current [A]"].data,

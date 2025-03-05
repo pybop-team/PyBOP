@@ -154,12 +154,16 @@ class FittingProblem(BaseProblem):
                     self.domain_data, inputs
                 )  # TODO: Add initial_state capabilities
             else:
-                sol = func(
-                    inputs,
-                    self._domain_data,
-                    initial_state=self.initial_state,
-                    eis=self.eis,
-                )
+                kwargs = {"inputs": inputs, "initial_state": self.initial_state}
+
+                # Set the appropriate evaluation domain
+                domain_key = "f_eval" if self.eis else "t_eval"
+                kwargs[domain_key] = self._domain_data
+
+                if self.eis:
+                    kwargs["eis"] = True
+                sol = func(**kwargs)
+
         except (SolverError, ZeroDivisionError, RuntimeError, ValueError) as e:
             if isinstance(e, ValueError) and str(e) not in self.exception:
                 raise  # Raise the error if it doesn't match the expected list

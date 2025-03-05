@@ -64,12 +64,12 @@ for solver in solvers:
 
     start_time = time.time()
     for _i in range(n):
-        out = problem.model.simulate(inputs=inputs(), eval=t_eval)
+        out = problem.model.simulate(inputs=inputs(), t_eval=t_eval)
     print(f"({solver.name}) Time model.simulate: {time.time() - start_time:.4f}")
 
     start_time = time.time()
     for _i in range(n):
-        out = problem.model.simulateS1(inputs=inputs(), eval=t_eval)
+        out = problem.model.simulateS1(inputs=inputs(), t_eval=t_eval)
     print(f"({solver.name}) Time model.SimulateS1: {time.time() - start_time:.4f}")
 
     start_time = time.time()

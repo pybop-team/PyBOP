@@ -363,7 +363,8 @@ class BaseModel(EISMixin):
     def simulate(
         self,
         inputs: Inputs,
-        eval: np.array,  # noqa: A002
+        t_eval: Optional[np.array] = None,
+        f_eval: Optional[np.array] = None,
         initial_state: Optional[dict] = None,
         eis: bool = False,
     ) -> Union[pybamm.Solution, list[np.float64], dict[str, np.ndarray]]:
@@ -374,12 +375,16 @@ class BaseModel(EISMixin):
         ----------
         inputs : Inputs
             The input parameters for the simulation.
-        eval : array-like
-            An array of time or frequency points at which to evaluate the solution.
+        t_eval : array-like, optional
+            Time points at which to evaluate the solution (for time domain simulation).
+        f_eval : array-like, optional
+            Frequency points at which to evaluate impedance (for EIS).
         initial_state : dict, optional
             A valid initial state, e.g. the initial state of charge or open-circuit voltage.
             Defaults to None, indicating that the existing initial state of charge (for an ECM)
             or initial concentrations (for an EChem model) will be used.
+        eis: bool, default=False
+            Whether to perform impedance spectroscopy simulation.
 
         Returns
         -------
@@ -392,6 +397,21 @@ class BaseModel(EISMixin):
         ValueError
             If the model has not been built before simulation.
         """
+        # If EIS requested, check if model is built for eis
+        if eis and self.eis is False:
+            raise ValueError(
+                "Model must be constructed for EIS before calling simulate"
+            )
+
+        # Validate and evaluation points
+        if eis and f_eval is None:
+            raise ValueError("f_eval must be provided for EIS simulation")
+        if not eis and t_eval is None:
+            raise ValueError("t_eval must be provided for time domain simulation")
+
+        # Prepare evaluation points
+        eval_points = f_eval if eis else t_eval
+
         inputs = self.parameters.verify(inputs)
 
         # Build or rebuild if required
@@ -403,24 +423,23 @@ class BaseModel(EISMixin):
         ):
             raise ValueError("These parameter values are infeasible.")
 
+        # Frequency domain simulation
         if eis:
-            if self.eis is False:
-                raise ValueError(
-                    "Model must be constructed for EIS before calling simulate"
-                )
-
             self.initialise_eis_simulation(inputs)
-            zs = [self.calculate_impedance(f) for f in eval]
+            zs = [self.calculate_impedance(f) for f in eval_points]
 
             return {"Impedance": np.asarray(zs) * self.z_scale}
+
+        # Time domain simulation
+        is_ida_solver = isinstance(self._solver, IDAKLUSolver)
+        t_eval = [eval_points[0], eval_points[-1]] if is_ida_solver else eval_points
+        t_interp = eval_points if self._solver.supports_interp else None
 
         self._pybamm_solution = self.solver.solve(
             self._built_model,
             inputs=inputs,
-            t_eval=[eval[0], eval[-1]]
-            if isinstance(self._solver, IDAKLUSolver)
-            else eval,
-            t_interp=eval if self._solver.supports_interp else None,
+            t_eval=t_eval,
+            t_interp=t_interp,
         )
 
         return self._pybamm_solution
@@ -428,7 +447,7 @@ class BaseModel(EISMixin):
     def simulateS1(
         self,
         inputs: Inputs,
-        eval: np.array,  # noqa: A002
+        t_eval: np.array,
         initial_state: Optional[dict] = None,
         eis: bool = False,
     ):
@@ -439,7 +458,7 @@ class BaseModel(EISMixin):
         ----------
         inputs : Inputs
             The input parameters for the simulation.
-        eval : array-like
+        t_eval : array-like
             An array of time points at which to evaluate the solution and its
             sensitivities.
         initial_state : dict, optional
@@ -484,11 +503,11 @@ class BaseModel(EISMixin):
         self._pybamm_solution = self._solver.solve(
             self._built_model,
             inputs=inputs,
-            t_eval=[eval[0], eval[-1]]
+            t_eval=[t_eval[0], t_eval[-1]]
             if isinstance(self._solver, IDAKLUSolver)
-            else eval,
+            else t_eval,
             calculate_sensitivities=True,
-            t_interp=eval if self._solver.supports_interp else None,
+            t_interp=t_eval if self._solver.supports_interp else None,
         )
 
         return self._pybamm_solution

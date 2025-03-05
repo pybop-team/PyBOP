@@ -176,7 +176,7 @@ class TestEISParameterisation:
                     1
                 ],
             },
-            eval=f_eval,
+            f_eval=f_eval,
             initial_state=initial_state,
             eis=True,
         )

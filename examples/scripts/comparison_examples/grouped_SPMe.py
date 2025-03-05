@@ -100,7 +100,7 @@ for i, model in enumerate([freq_domain_SPMe, freq_domain_grouped]):
     impedances = 1j * np.zeros((Nfreq, NSOC))
     for ii, SOC in enumerate(SOCs):
         model.set_initial_state({"Initial SoC": SOC})
-        simulation = model.simulate(inputs=None, eval=frequencies, eis=True)
+        simulation = model.simulate(inputs=None, f_eval=frequencies, eis=True)
         impedances[:, ii] = simulation["Impedance"]
 
         if i == 0:

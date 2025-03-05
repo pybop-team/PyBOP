@@ -21,7 +21,7 @@ sim = model.simulate(
         "Negative electrode active material volume fraction": 0.531,
         "Positive electrode active material volume fraction": 0.732,
     },
-    eval=f_eval,
+    f_eval=f_eval,
     initial_state=initial_state,
     eis=True,
 )
