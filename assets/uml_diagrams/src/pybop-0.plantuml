@@ -1,0 +1,11 @@
+@startuml model-interface
+
+package "PyBOP Parameters" {
+!include auto-gen/model-classes.plantuml
+}
+package "PyBaMM Parameters" {
+!include auto-gen/pybamm/model-classes.plantuml
+
+}
+
+@enduml

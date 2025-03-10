@@ -1,0 +1,141 @@
+@startuml classes
+skinparam groupInheritance 2
+set namespaceSeparator none
+class "BaseGroupedSPMe" as pybop.models.lithium_ion.basic_SPMe.BaseGroupedSPMe {
+  default_geometry
+  default_parameter_values
+  default_quick_plot_variables
+  default_spatial_methods
+  default_submesh_types
+  default_var_pts
+  events
+  variables : dict
+  U(sto, domain)
+  build_model()
+}
+class "BaseModel" as pybop.models.base_model.BaseModel {
+  J : csc_matrix
+  M : csc_matrix
+  allow_infeasible_solutions : bool
+  b : ndarray
+  built_initial_soc
+  built_model
+  calculate_sensitivities
+  disc
+  eis : bool
+  geometry
+  mesh
+  model_with_set_params
+  n_states
+  name : str
+  param_check_counter : int
+  param_checker : Optional[Callable]
+  parameter_set
+  parameters : Parameters
+  pybamm_model : NoneType
+  pybamm_solution
+  sensitivities_available
+  solver
+  spatial_methods
+  submesh_types
+  var_pts
+  y0
+  z_scale : float64
+  {abstract}approximate_capacity(parameter_set: ParameterSet)
+  build(parameters: Union[Parameters, dict], inputs: Optional[Inputs], initial_state: Optional[dict], dataset: Optional[Dataset], check_model: bool) -> None
+  calculate_impedance(frequency)
+  {abstract}cell_mass(parameter_set: ParameterSet)
+  {abstract}cell_volume(parameter_set: ParameterSet)
+  check_params(inputs: Optional[Inputs], parameter_set: Optional[ParameterSet], allow_infeasible_solutions: bool)
+  classify_parameters(parameters: Optional[Parameters], inputs: Optional[Inputs])
+  clear()
+  convert_to_pybamm_initial_state(initial_state: dict)
+  copy()
+  get_parameter_info(print_info: bool)
+  get_state(inputs: Inputs, t: float, x: np.ndarray) -> TimeSeriesState
+  initialise_eis_simulation(inputs: Optional[Inputs])
+  jaxify_solver(t_eval, calculate_sensitivities)
+  new_copy()
+  predict(inputs: Optional[Inputs], t_eval: Optional[np.array], parameter_set: Optional[ParameterSet], experiment: Optional[Experiment], initial_state: Optional[dict]) -> dict[str, np.ndarray[np.float64]]
+  reinit(inputs: Inputs, t: float, x: Optional[np.ndarray]) -> TimeSeriesState
+  set_current_function(dataset: Union[Dataset, dict])
+  set_initial_state(initial_state: dict, inputs: Optional[Inputs])
+  set_parameters()
+  set_up_for_eis(model)
+  simulate(inputs: Inputs, t_eval: np.array, initial_state: Optional[dict]) -> Union[pybamm.Solution, list[np.float64]]
+  simulateEIS(inputs: Inputs, f_eval: list, initial_state: Optional[dict]) -> dict[str, np.ndarray]
+  simulateS1(inputs: Inputs, t_eval: np.array, initial_state: Optional[dict])
+  step(state: TimeSeriesState, time: np.ndarray) -> TimeSeriesState
+}
+class "BaseWeppnerHuggins" as pybop.models.lithium_ion.weppner_huggins.BaseWeppnerHuggins {
+  default_geometry
+  default_parameter_values
+  default_solver
+  default_spatial_methods
+  default_submesh_types
+  default_var_pts
+  variables : dict
+}
+class "DFN" as pybop.models.lithium_ion.echem.DFN {
+}
+class "EChemBaseModel" as pybop.models.lithium_ion.base_echem.EChemBaseModel {
+  default_parameter_values
+  geometric_parameters : dict
+  param_check_counter
+  pybamm_model
+  approximate_capacity(parameter_set: Optional[ParameterSet])
+  cell_mass(parameter_set: Optional[ParameterSet])
+  cell_volume(parameter_set: Optional[ParameterSet])
+  set_geometric_parameters()
+}
+class "ECircuitModel" as pybop.models.empirical.base_ecm.ECircuitModel {
+  default_parameter_values
+  geometric_parameters : dict
+  pybamm_model
+  get_initial_state(initial_value, parameter_values, param, options, tol, inputs)
+}
+class "ExponentialDecayModel" as pybop.models._exponential_decay.ExponentialDecayModel {
+  default_parameter_values : ParameterValues
+  geometric_parameters : dict
+  n_states : int
+  pybamm_model : BaseModel
+}
+class "GroupedSPMe" as pybop.models.lithium_ion.echem.GroupedSPMe {
+}
+class "MPM" as pybop.models.lithium_ion.echem.MPM {
+}
+class "MSMR" as pybop.models.lithium_ion.echem.MSMR {
+}
+class "SPM" as pybop.models.lithium_ion.echem.SPM {
+}
+class "SPMe" as pybop.models.lithium_ion.echem.SPMe {
+}
+class "Thevenin" as pybop.models.empirical.ecm.Thevenin {
+}
+class "TimeSeriesState" as pybop.models.base_model.TimeSeriesState {
+  inputs : dict
+  sol : Solution
+  t : float
+  as_ndarray() -> np.ndarray
+}
+class "WeppnerHuggins" as pybop.models.lithium_ion.echem.WeppnerHuggins {
+}
+pybop.models._exponential_decay.ExponentialDecayModel --|> pybop.models.base_model.BaseModel
+pybop.models.empirical.base_ecm.ECircuitModel --|> pybop.models.base_model.BaseModel
+pybop.models.lithium_ion.base_echem.EChemBaseModel --|> pybop.models.base_model.BaseModel
+
+pybop.models.empirical.ecm.Thevenin --|> pybop.models.empirical.base_ecm.ECircuitModel
+
+pybop.models.lithium_ion.echem.DFN --|> pybop.models.lithium_ion.base_echem.EChemBaseModel
+pybop.models.lithium_ion.echem.GroupedSPMe --|> pybop.models.lithium_ion.base_echem.EChemBaseModel
+pybop.models.lithium_ion.echem.MPM --|> pybop.models.lithium_ion.base_echem.EChemBaseModel
+pybop.models.lithium_ion.echem.MSMR --|> pybop.models.lithium_ion.base_echem.EChemBaseModel
+pybop.models.lithium_ion.echem.SPM --|> pybop.models.lithium_ion.base_echem.EChemBaseModel
+pybop.models.lithium_ion.echem.SPMe --|> pybop.models.lithium_ion.base_echem.EChemBaseModel
+pybop.models.lithium_ion.echem.WeppnerHuggins --|> pybop.models.lithium_ion.base_echem.EChemBaseModel
+
+
+pybop.models.lithium_ion.echem.SPMe --* pybop.models.lithium_ion.basic_SPMe.BaseGroupedSPMe
+pybop.models.lithium_ion.echem.WeppnerHuggins --* pybop.models.lithium_ion.weppner_huggins.BaseWeppnerHuggins
+
+@enduml

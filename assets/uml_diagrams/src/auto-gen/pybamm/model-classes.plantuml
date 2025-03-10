@@ -1,0 +1,3340 @@
+@startuml classes
+set namespaceSeparator none
+' class "AbsoluteValue" as pybamm.expression_tree.unary_operators.AbsoluteValue {
+'   diff(variable)
+' }
+' class "Addition" as pybamm.expression_tree.binary_operators.Addition {
+' }
+' class "AlgebraicSolver" as pybamm.solvers.algebraic_solver.AlgebraicSolver {
+'   extra_options : dict
+'   name : str
+'   tol
+' }
+' class "AlternativeEffectiveResistance2D" as pybamm.models.submodels.current_collector.effective_resistance_current_collector.AlternativeEffectiveResistance2D {
+'   algebraic : dict
+'   boundary_conditions : dict
+'   initial_conditions : dict
+'   name : str
+'   options : dict
+'   param
+'   variables : dict
+'   post_process(solution, param_values, V_av, I_av)
+' }
+' class "Ambient" as pybamm.models.submodels.thermal.surface.ambient.Ambient {
+'   get_coupled_variables(variables)
+' }
+' class "Arcsinh" as pybamm.expression_tree.functions.Arcsinh {
+' }
+' class "Arctan" as pybamm.expression_tree.functions.Arctan {
+' }
+' class "Array" as pybamm.expression_tree.array.Array {
+'   entries
+'   entries_string
+'   ndim
+'   shape
+'   create_copy(new_children, perform_simplifications: bool)
+'   is_constant()
+'   set_id()
+'   to_equation() -> sympy.Array
+'   to_json()
+' }
+' class "AsymmetricButlerVolmer" as pybamm.models.submodels.interface.kinetics.butler_volmer.AsymmetricButlerVolmer {
+' }
+' class "BackwardIndefiniteIntegral" as pybamm.expression_tree.unary_operators.BackwardIndefiniteIntegral {
+'   name : str
+' }
+class "BaseBatteryModel" as pybamm.models.full_battery_models.base_battery_model.BaseBatteryModel {
+  default_geometry
+  default_spatial_methods
+  default_submesh_types
+  default_var_pts
+  options
+  summary_variables
+  build_model()
+  build_model_equations()
+  deserialise(properties: dict)
+  get_intercalation_kinetics(domain)
+  get_inverse_intercalation_kinetics()
+  save_model(filename, mesh, variables)
+  set_current_collector_submodel()
+  {abstract}set_degradation_variables()
+  set_external_circuit_submodel()
+  set_interface_utilisation_submodel()
+  {abstract}set_soc_variables()
+  set_standard_output_variables()
+  set_summary_variables()
+  set_surface_temperature_submodel()
+  set_thermal_submodel()
+  set_transport_efficiency_submodels()
+  set_voltage_variables()
+}
+' class "BaseEffectiveResistance" as pybamm.models.submodels.current_collector.effective_resistance_current_collector.BaseEffectiveResistance {
+'   default_geometry
+'   default_parameter_values
+'   default_spatial_methods
+'   default_submesh_types
+'   default_var_pts
+'   options
+' }
+' class "BaseElectrode" as pybamm.models.submodels.electrode.base_electrode.BaseElectrode {
+'   set_positive_potential : bool
+' }
+' class "BaseElectrolyteConductivity" as pybamm.models.submodels.electrolyte_conductivity.base_electrolyte_conductivity.BaseElectrolyteConductivity {
+'   boundary_conditions : dict
+'   set_boundary_conditions(variables)
+' }
+' class "BaseElectrolyteDiffusion" as pybamm.models.submodels.electrolyte_diffusion.base_electrolyte_diffusion.BaseElectrolyteDiffusion {
+' }
+' class "BaseIndefiniteIntegral" as pybamm.expression_tree.unary_operators.BaseIndefiniteIntegral {
+' }
+' class "BaseInterface" as pybamm.models.submodels.interface.base_interface.BaseInterface {
+'   reaction
+'   reaction_name : str
+'   size_distribution
+' }
+' class "BaseKinetics" as pybamm.models.submodels.interface.kinetics.base_kinetics.BaseKinetics {
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_algebraic(variables)
+'   set_initial_conditions(variables)
+' }
+' class "BaseLeadingOrderSurfaceForm" as pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.leading_surface_form_conductivity.BaseLeadingOrderSurfaceForm {
+'   boundary_conditions : dict
+'   initial_conditions : dict
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_boundary_conditions(variables)
+'   set_initial_conditions(variables)
+' }
+' class "BaseMechanics" as pybamm.models.submodels.particle_mechanics.base_mechanics.BaseMechanics {
+' }
+class "BaseModel" as pybamm.models.base_model.BaseModel {
+  algebraic
+  boundary_conditions
+  concatenated_algebraic
+  concatenated_initial_conditions
+  concatenated_rhs
+  convert_to_format : str
+  coupled_variables
+  default_geometry
+  default_parameter_values
+  default_quick_plot_variables
+  default_solver
+  default_spatial_methods
+  default_submesh_types
+  default_var_pts
+  events
+  geometry
+  initial_conditions
+  input_parameters
+  is_discretised : bool
+  jacobian
+  jacobian_algebraic
+  jacobian_rhs
+  length_scales
+  mass_matrix
+  mass_matrix_inv
+  name
+  options
+  param
+  parameters
+  rhs
+  submodels : dict
+  timescale
+  use_jacobian : bool
+  variables
+  variables_and_events
+  y_slices : NoneType
+  build_coupled_variables()
+  build_fundamental()
+  build_model()
+  build_model_equations()
+  check_algebraic_equations(post_discretisation)
+  check_and_combine_dict(dict1, dict2)
+  check_discretised_or_discretise_inplace_if_0D()
+  check_for_time_derivatives()
+  check_ics_bcs()
+  check_no_repeated_keys()
+  check_variables()
+  check_well_determined(post_discretisation)
+  check_well_posedness(post_discretisation)
+  deserialise(properties: dict)
+  export_casadi_objects(variable_names, input_parameter_order)
+  generate(filename, variable_names, input_parameter_order, cg_options)
+  generic_deserialise(instance, properties)
+  get_parameter_info(by_submodel)
+  info(symbol_name)
+  latexify(filename, newline, output_variables)
+  list_coupled_variables()
+  new_copy()
+  print_parameter_info(by_submodel)
+  process_parameters_and_discretise(symbol, parameter_values, disc)
+  save_model(filename, mesh, variables)
+  set_initial_conditions_from(solution, inplace, return_type)
+  update()
+  variable_names()
+}
+' class "BaseModel" as pybamm.models.submodels.porosity.base_porosity.BaseModel {
+' }
+' class "BaseModel" as pybamm.models.submodels.interface.interface_utilisation.base_utilisation.BaseModel {
+' }
+' class "BaseModel" as pybamm.models.submodels.interface.sei.base_sei.BaseModel {
+'   get_coupled_variables(variables)
+' }
+' class "BaseModel" as pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.full_surface_form_conductivity.BaseModel {
+'   boundary_conditions : dict
+'   initial_conditions : dict
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_boundary_conditions(variables)
+'   set_initial_conditions(variables)
+' }
+' class "BaseModel" as pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.composite_surface_form_conductivity.BaseModel {
+'   boundary_conditions : dict
+'   initial_conditions : dict
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_boundary_conditions(variables)
+'   set_initial_conditions(variables)
+' }
+' class "BaseModel" as pybamm.models.submodels.transport_efficiency.base_transport_efficiency.BaseModel {
+'   component
+' }
+' class "BaseModel" as pybamm.models.submodels.oxygen_diffusion.base_oxygen_diffusion.BaseModel {
+' }
+' class "BaseModel" as pybamm.models.submodels.convection.base_convection.BaseModel {
+' }
+' class "BaseModel" as pybamm.models.submodels.electrode.ohm.base_ohm.BaseModel {
+'   set_boundary_conditions(variables)
+' }
+' class "BaseModel" as pybamm.models.submodels.active_material.base_active_material.BaseModel {
+' }
+' class "BaseModel" as pybamm.models.submodels.external_circuit.base_external_circuit.BaseModel {
+' }
+' class "BaseModel" as pybamm.models.submodels.current_collector.base_current_collector.BaseModel {
+' }
+class "BaseModel" as pybamm.models.full_battery_models.lead_acid.base_lead_acid_model.BaseModel {
+  default_geometry
+  default_parameter_values
+  default_quick_plot_variables
+  default_var_pts
+  param
+  set_active_material_submodel()
+  set_lithium_plating_submodel()
+  set_open_circuit_potential_submodel()
+  set_sei_submodel()
+  set_soc_variables()
+  set_total_interface_submodel()
+}
+class "BaseModel" as pybamm.models.full_battery_models.lithium_ion.base_lithium_ion_model.BaseModel {
+  default_parameter_values
+  default_quick_plot_variables
+  param
+  summary_variables : list
+  insert_reference_electrode(position)
+  set_active_material_submodel()
+  set_convection_submodel()
+  set_crack_submodel()
+  set_default_summary_variables()
+  set_degradation_variables()
+  set_li_metal_counter_electrode_submodels()
+  set_lithium_plating_submodel()
+  set_open_circuit_potential_submodel()
+  set_porosity_submodel()
+  set_sei_on_cracks_submodel()
+  set_sei_submodel()
+  set_standard_output_variables()
+  set_submodels(build)
+  set_total_interface_submodel()
+}
+' class "BaseOpenCircuitPotential" as pybamm.models.submodels.interface.open_circuit_potential.base_ocp.BaseOpenCircuitPotential {
+' }
+class "BaseParameters" as pybamm.parameters.base_parameters.BaseParameters {
+'   domain
+'   domain_Domain
+'   options
+'   phase_name : str
+'   phase_prefactor : str
+'   set_phase_name()
+}
+' class "BaseParticle" as pybamm.models.submodels.particle.base_particle.BaseParticle {
+'   size_distribution
+' }
+' class "BasePlating" as pybamm.models.submodels.interface.lithium_plating.base_plating.BasePlating {
+'   get_coupled_variables(variables)
+' }
+' class "BasePotentialPair" as pybamm.models.submodels.current_collector.potential_pair.BasePotentialPair {
+'   algebraic : dict
+'   initial_conditions : dict
+'   get_fundamental_variables()
+'   set_algebraic(variables)
+'   set_initial_conditions(variables)
+' }
+' class "BaseSolver" as pybamm.solvers.base_solver.BaseSolver {
+'   algebraic_solver
+'   atol : float
+'   computed_dvar_dp_fcns : dict
+'   computed_dvar_dy_fcns : dict
+'   computed_var_fcns : dict
+'   extrap_tol : float
+'   method : NoneType
+'   name : str
+'   ode_solver
+'   output_variables : NoneType, list
+'   requires_explicit_sensitivities
+'   root_method
+'   root_tol : float
+'   rtol : float
+'   supports_interp
+'   supports_parallel_solve
+'   calculate_consistent_state(model, time, inputs)
+'   check_extrapolation(solution, events)
+'   copy()
+'   get_platform_context(system_type: str)
+'   get_termination_reason(solution, events)
+'   process_t_interp(t_interp)
+'   set_up(model, inputs, t_eval, ics_only)
+'   solve(model, t_eval, inputs, nproc, calculate_sensitivities, t_interp)
+'   step(old_solution, model, dt, t_eval, npts, inputs, save, calculate_sensitivities, t_interp)
+' }
+' class "BaseStep" as pybamm.experiment.step.base_step.BaseStep {
+'   description : NoneType
+'   direction : str | None
+'   duration : NoneType, float, int
+'   end_time : NoneType
+'   hash_args : str
+'   input_duration : NoneType
+'   input_value
+'   next_start_time : NoneType
+'   period : NoneType, float, ndarray
+'   repr_args : str
+'   start_time : NoneType
+'   tags : NoneType, list
+'   temperature : NoneType, float
+'   termination : list
+'   uses_default_duration
+'   value
+'   basic_repr()
+'   copy()
+'   default_duration(value)
+'   default_period()
+'   default_time_vector(tf, t0)
+'   process_model(model, parameter_values)
+'   record_tags(value, duration, termination, period, temperature, tags, start_time, description, direction)
+'   setup_timestepping(solver, tf, t_interp)
+'   to_dict()
+'   update_model_events(new_model)
+'   value_based_charge_or_discharge()
+' }
+' class "BaseStepExplicit" as pybamm.experiment.step.base_step.BaseStepExplicit {
+'   {abstract}current_value(variables)
+'   set_up(new_model, new_parameter_values)
+' }
+' class "BaseStepImplicit" as pybamm.experiment.step.base_step.BaseStepImplicit {
+'   get_parameter_values(variables)
+'   {abstract}get_submodel(model)
+'   set_up(new_model, new_parameter_values)
+' }
+' class "BaseSubModel" as pybamm.models.submodels.base_submodel.BaseSubModel {
+'   domain
+'   domain_Domain
+'   domain_param : NoneType
+'   external : bool
+'   name : str
+'   options : NoneType
+'   param
+'   phase
+'   phase_name : str
+'   phase_param
+'   {abstract}add_events_from(variables)
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   {abstract}get_parameter_info(by_submodel)
+'   {abstract}set_algebraic(variables)
+'   {abstract}set_boundary_conditions(variables)
+'   {abstract}set_initial_conditions(variables)
+'   set_phase(phase)
+'   {abstract}set_rhs(variables)
+' }
+' class "BaseTermination" as pybamm.experiment.step.step_termination.BaseTermination {
+'   operator : NoneType
+'   value
+'   {abstract}get_event(variables, step)
+' }
+' class "BaseThermal" as pybamm.models.submodels.thermal.base_thermal.BaseThermal {
+'   x_average : bool
+' }
+' class "BaseThroughCellModel" as pybamm.models.submodels.convection.through_cell.base_through_cell_convection.BaseThroughCellModel {
+' }
+' class "BaseTransverseModel" as pybamm.models.submodels.convection.transverse.base_transverse_convection.BaseTransverseModel {
+' }
+class "BasicDFN" as pybamm.models.full_battery_models.lithium_ion.basic_dfn.BasicDFN {
+  events
+  variables : dict
+}
+class "BasicDFN" as pybamm.models.full_battery_models.sodium_ion.basic_dfn.BasicDFN {
+  default_parameter_values
+  events
+  variables : dict
+}
+class "BasicDFNComposite" as pybamm.models.full_battery_models.lithium_ion.basic_dfn_composite.BasicDFNComposite {
+  default_parameter_values
+  events
+  variables : dict
+}
+class "BasicDFNHalfCell" as pybamm.models.full_battery_models.lithium_ion.basic_dfn_half_cell.BasicDFNHalfCell {
+  events
+  variables : dict
+}
+class "BasicFull" as pybamm.models.full_battery_models.lead_acid.basic_full.BasicFull {
+  variables : dict
+}
+class "BasicSPM" as pybamm.models.full_battery_models.lithium_ion.basic_spm.BasicSPM {
+  events
+  variables : dict
+}
+' class "BatchStudy" as pybamm.batch_study.BatchStudy {
+'   C_rates : NoneType
+'   INPUT_LIST : list
+'   experiments : NoneType
+'   geometries : NoneType
+'   models
+'   output_variables : NoneType
+'   parameter_values : NoneType
+'   permutations : bool
+'   quick_plot : NoneType
+'   repeats : int
+'   sims : list
+'   solvers : NoneType
+'   spatial_methods : NoneType
+'   submesh_types : NoneType
+'   var_pts : NoneType
+'   create_gif(number_of_images, duration, output_filename)
+'   plot(output_variables)
+'   solve(t_eval, solver, save_at_cycles, calc_esoh, starting_solution, initial_soc, t_interp)
+' }
+' class "BatteryModelDomainOptions" as pybamm.models.full_battery_models.base_battery_model.BatteryModelDomainOptions {
+'   index
+'   primary
+'   secondary
+' }
+class "BatteryModelOptions" as pybamm.models.full_battery_models.base_battery_model.BatteryModelOptions {
+'   electrode_types
+'   negative
+'   phases
+'   positive
+'   possible_options : dict
+'   whole_cell_domains
+'   print_detailed_options()
+'   print_options()
+}
+' class "BatteryModelPhaseOptions" as pybamm.models.full_battery_models.base_battery_model.BatteryModelPhaseOptions {
+'   domain_options
+'   index
+' }
+' class "BinaryOperator" as pybamm.expression_tree.binary_operators.BinaryOperator {
+'   left
+'   right
+'   create_copy(new_children: list[pybamm.Symbol] | None, perform_simplifications: bool)
+'   evaluate(t: float | None, y: np.ndarray | None, y_dot: np.ndarray | None, inputs: dict | str | None)
+'   is_constant()
+'   to_equation()
+'   to_json()
+' }
+' class "BoundaryConditionsDict" as pybamm.models.base_model.BoundaryConditionsDict {
+'   check_and_convert_bcs(boundary_conditions)
+'   update(bcs)
+' }
+' class "BoundaryGradient" as pybamm.expression_tree.unary_operators.BoundaryGradient {
+' }
+' class "BoundaryIntegral" as pybamm.expression_tree.unary_operators.BoundaryIntegral {
+'   region : str
+'   set_id()
+' }
+' class "BoundaryMass" as pybamm.expression_tree.unary_operators.BoundaryMass {
+' }
+' class "BoundaryOperator" as pybamm.expression_tree.unary_operators.BoundaryOperator {
+'   side
+'   set_id()
+' }
+' class "BoundaryValue" as pybamm.expression_tree.unary_operators.BoundaryValue {
+' }
+' class "Broadcast" as pybamm.expression_tree.broadcasts.Broadcast {
+'   broadcasts_to_nodes
+'   {abstract}reduce_one_dimension()
+'   {abstract}to_json()
+' }
+' class "Bruggeman" as pybamm.models.submodels.transport_efficiency.bruggeman.Bruggeman {
+'   get_coupled_variables(variables)
+' }
+' class "CCCVFunctionControl" as pybamm.models.submodels.external_circuit.function_control_external_circuit.CCCVFunctionControl {
+'   cccv(variables)
+' }
+' class "CRate" as pybamm.experiment.step.steps.CRate {
+'   calculate_charge_or_discharge : bool
+'   period
+'   temperature
+'   current_value(variables)
+'   default_duration(value)
+' }
+' class "Callback" as pybamm.callbacks.Callback {
+'   {abstract}on_cycle_end(logs)
+'   {abstract}on_cycle_start(logs)
+'   {abstract}on_experiment_end(logs)
+'   {abstract}on_experiment_error(logs)
+'   {abstract}on_experiment_infeasible_event(logs)
+'   {abstract}on_experiment_infeasible_time(logs)
+'   {abstract}on_experiment_start(logs)
+'   {abstract}on_step_end(logs)
+'   {abstract}on_step_start(logs)
+' }
+' class "CallbackList" as pybamm.callbacks.CallbackList {
+'   callbacks
+' }
+' class "CasadiAlgebraicSolver" as pybamm.solvers.casadi_algebraic_solver.CasadiAlgebraicSolver {
+'   extra_options : dict
+'   name : str
+'   tol
+' }
+' class "CasadiConverter" as pybamm.expression_tree.operations.convert_to_casadi.CasadiConverter {
+'   convert(symbol: pybamm.Symbol, t: casadi.MX, y: casadi.MX, y_dot: casadi.MX, inputs: dict | None) -> casadi.MX
+' }
+' class "CasadiSolver" as pybamm.solvers.casadi_solver.CasadiSolver {
+'   dt_max : int
+'   extra_options_call : dict
+'   extra_options_setup : dict
+'   integrator_specs
+'   integrators
+'   integrators_maxcount : int
+'   max_step_decrease_count : int
+'   mode : str
+'   name : str
+'   perturb_algebraic_initial_conditions : bool
+'   return_solution_if_failed_early : bool
+'   y_sols : dict
+'   create_integrator(model, inputs, t_eval, use_event_switch)
+' }
+' class "CationExchangeMembrane" as pybamm.models.submodels.transport_efficiency.cation_exchange_membrane.CationExchangeMembrane {
+'   get_coupled_variables(variables)
+' }
+' class "Ceiling" as pybamm.expression_tree.unary_operators.Ceiling {
+'   diff(variable)
+' }
+' class "Chebyshev1DSubMesh" as pybamm.meshes.one_dimensional_submeshes.Chebyshev1DSubMesh {
+' }
+' class "Citations" as pybamm.citations.Citations {
+'   format_citations(output_format, pybtex)
+'   print(filename, output_format, verbose)
+'   print_import_warning()
+'   read_citations()
+'   register(key)
+'   write_citations(cite_list, filename, verbose)
+' }
+' class "Composite" as pybamm.models.submodels.electrolyte_conductivity.composite_conductivity.Composite {
+'   get_coupled_variables(variables)
+' }
+' class "Composite" as pybamm.models.submodels.electrode.ohm.composite_ohm.Composite {
+'   get_coupled_variables(variables)
+'   set_boundary_conditions(variables)
+' }
+' class "CompositeAlgebraic" as pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.composite_surface_form_conductivity.CompositeAlgebraic {
+'   set_algebraic(variables)
+' }
+' class "CompositeDifferential" as pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.composite_surface_form_conductivity.CompositeDifferential {
+'   set_rhs(variables)
+' }
+' class "Concatenation" as pybamm.expression_tree.concatenations.Concatenation {
+'   concat_latex : tuple
+'   concatenation_function : NoneType
+'   print_name : str
+'   create_copy(new_children: list[pybamm.Symbol] | None, perform_simplifications: bool)
+'   evaluate(t: float | None, y: np.ndarray | None, y_dot: np.ndarray | None, inputs: dict | str | None)
+'   get_children_domains(children: Sequence[pybamm.Symbol])
+'   is_constant()
+'   to_equation()
+' }
+' class "ConcatenationVariable" as pybamm.expression_tree.concatenations.ConcatenationVariable {
+'   bounds
+'   print_name : str
+' }
+' class "Constant" as pybamm.models.submodels.porosity.constant_porosity.Constant {
+'   {abstract}add_events_from(variables)
+'   get_fundamental_variables()
+' }
+' class "Constant" as pybamm.models.submodels.interface.interface_utilisation.constant_utilisation.Constant {
+'   get_fundamental_variables()
+' }
+' class "Constant" as pybamm.models.submodels.active_material.constant_active_material.Constant {
+'   get_fundamental_variables()
+' }
+' class "ConstantConcentration" as pybamm.models.submodels.electrolyte_diffusion.constant_concentration.ConstantConcentration {
+'   boundary_conditions : dict
+'   {abstract}add_events_from(variables)
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_boundary_conditions(variables)
+' }
+' class "ConstantSEI" as pybamm.models.submodels.interface.sei.constant_sei.ConstantSEI {
+'   reaction_loc : str
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+' }
+' class "Cos" as pybamm.expression_tree.functions.Cos {
+' }
+' class "Cosh" as pybamm.expression_tree.functions.Cosh {
+' }
+' class "CoupledVariable" as pybamm.expression_tree.coupled_variable.CoupledVariable {
+'   children
+'   create_copy()
+'   set_coupled_variable(symbol, expr)
+' }
+' class "CrackPropagation" as pybamm.models.submodels.particle_mechanics.crack_propagation.CrackPropagation {
+'   initial_conditions : dict
+'   rhs : dict
+'   x_average
+'   add_events_from(variables)
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "CrateTermination" as pybamm.experiment.step.step_termination.CrateTermination {
+'   get_event(variables, step)
+' }
+' class "Current" as pybamm.experiment.step.steps.Current {
+'   calculate_charge_or_discharge : bool
+'   period
+'   temperature
+'   current_value(variables)
+' }
+' class "Current" as pybamm.experiment.step.step_termination.Current {
+' }
+' class "CurrentCollector1D" as pybamm.models.submodels.thermal.pouch_cell.pouch_cell_1D_current_collectors.CurrentCollector1D {
+'   boundary_conditions : dict
+'   initial_conditions : dict
+'   rhs : dict
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_boundary_conditions(variables)
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "CurrentCollector2D" as pybamm.models.submodels.thermal.pouch_cell.pouch_cell_2D_current_collectors.CurrentCollector2D {
+'   boundary_conditions : dict
+'   initial_conditions : dict
+'   rhs : dict
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_boundary_conditions(variables)
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "CurrentDriven" as pybamm.models.submodels.interface.interface_utilisation.current_driven_utilisation.CurrentDriven {
+'   initial_conditions : dict
+'   reaction_loc
+'   rhs : dict
+'   add_events_from(variables)
+'   get_fundamental_variables()
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "CurrentForInverseButlerVolmer" as pybamm.models.submodels.interface.kinetics.inverse_kinetics.inverse_butler_volmer.CurrentForInverseButlerVolmer {
+'   get_coupled_variables(variables)
+' }
+' class "CurrentForInverseButlerVolmerLithiumMetal" as pybamm.models.submodels.interface.kinetics.inverse_kinetics.inverse_butler_volmer.CurrentForInverseButlerVolmerLithiumMetal {
+'   get_coupled_variables(variables)
+' }
+' class "CurrentSigmoidOpenCircuitPotential" as pybamm.models.submodels.interface.open_circuit_potential.current_sigmoid_ocp.CurrentSigmoidOpenCircuitPotential {
+'   get_coupled_variables(variables)
+' }
+' class "CurrentTermination" as pybamm.experiment.step.step_termination.CurrentTermination {
+'   get_event(variables, step)
+' }
+' class "CustomPrint" as pybamm.expression_tree.printing.sympy_overrides.CustomPrint {
+' }
+' class "CustomStepExplicit" as pybamm.experiment.step.steps.CustomStepExplicit {
+'   current_value_function
+'   kwargs : dict
+'   copy()
+'   current_value(variables)
+' }
+' class "CustomStepImplicit" as pybamm.experiment.step.steps.CustomStepImplicit {
+'   control : str
+'   current_rhs_function
+'   kwargs : dict
+'   copy()
+'   get_submodel(model)
+' }
+' class "CustomTermination" as pybamm.experiment.step.step_termination.CustomTermination {
+'   event_function
+'   name
+'   get_event(variables, step)
+' }
+class "DFN" as pybamm.models.full_battery_models.lithium_ion.dfn.DFN {
+  x_average : bool
+  set_electrolyte_concentration_submodel()
+  set_electrolyte_potential_submodel()
+  set_intercalation_kinetics_submodel()
+  set_particle_submodel()
+  set_solid_submodel()
+  set_summary_variables()
+}
+' class "DataLoader" as pybamm.pybamm_data.DataLoader {
+'   files : dict
+'   path : Path
+'   registry : Pooch
+'   version : str
+'   get_data(filename: str)
+'   show_registry()
+' }
+' class "DefiniteIntegralVector" as pybamm.expression_tree.unary_operators.DefiniteIntegralVector {
+'   vector_type : str
+'   set_id()
+' }
+' class "DeltaFunction" as pybamm.expression_tree.unary_operators.DeltaFunction {
+'   side
+'   evaluate_for_shape()
+'   set_id()
+' }
+' class "DiffusionElement" as pybamm.models.submodels.equivalent_circuit_elements.diffusion_element.DiffusionElement {
+'   boundary_conditions : dict
+'   events
+'   initial_conditions : dict
+'   model_options : NoneType
+'   rhs : dict
+'   add_events_from(variables)
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "DiffusionLimited" as pybamm.models.submodels.interface.kinetics.diffusion_limited.DiffusionLimited {
+'   order
+'   get_coupled_variables(variables)
+' }
+' class "DischargeThroughput" as pybamm.models.submodels.external_circuit.discharge_throughput.DischargeThroughput {
+'   get_fundamental_variables()
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "DiscreteTimeData" as pybamm.expression_tree.discrete_time_sum.DiscreteTimeData {
+'   create_copy(new_children, perform_simplifications)
+' }
+' class "DiscreteTimeSum" as pybamm.expression_tree.discrete_time_sum.DiscreteTimeSum {
+'   data : NoneType
+'   sum_times
+'   sum_values
+' }
+' class "Discretisation" as pybamm.discretisations.discretisation.Discretisation {
+'   bcs
+'   bounds : tuple
+'   mesh
+'   spatial_methods
+'   y_slices
+'   y_slices_explicit : dict
+'   check_initial_conditions(model)
+'   check_model(model)
+'   check_tab_conditions(symbol, bcs)
+'   concatenate()
+'   create_mass_matrix(model)
+'   is_variable_independent(var, all_vars_in_eqns)
+'   process_boundary_conditions(model)
+'   process_dict(var_eqn_dict, ics)
+'   process_initial_conditions(model)
+'   process_model(model, inplace)
+'   process_rhs_and_algebraic(model)
+'   process_symbol(symbol)
+'   remove_independent_variables_from_rhs(model)
+'   set_internal_boundary_conditions(model)
+'   set_variable_slices(variables)
+' }
+' class "<color:red>DiscretisationError</color>" as pybamm.expression_tree.exceptions.DiscretisationError {
+' }
+' class "Divergence" as pybamm.expression_tree.unary_operators.Divergence {
+' }
+' class "Division" as pybamm.expression_tree.binary_operators.Division {
+' }
+' class "Domain" as pybamm.parameters.bpx.Domain {
+'   name : str
+'   pre_name : str
+'   short_pre_name : str
+' }
+' class "DomainConcatenation" as pybamm.expression_tree.concatenations.DomainConcatenation {
+'   full_mesh
+'   secondary_dimensions_npts : int
+'   create_slices(node: pybamm.Symbol) -> defaultdict
+'   to_json()
+' }
+' class "<color:red>DomainError</color>" as pybamm.expression_tree.exceptions.DomainError {
+' }
+' class "DomainGeometricParameters" as pybamm.parameters.geometric_parameters.DomainGeometricParameters {
+'   A_tab
+'   L
+'   L_cc
+'   L_tab
+'   b_e
+'   b_s
+'   centre_y_tab
+'   centre_z_tab
+'   domain
+'   main_param
+'   phase_params : dict
+'   prim
+'   sec
+'   tau_e
+'   tau_s
+' }
+' class "DomainLeadAcidParameters" as pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters {
+'   A_tab
+'   DeltaV
+'   DeltaVliq
+'   DeltaVsurf
+'   L
+'   L_cc
+'   L_tab
+'   Q_max
+'   b_e
+'   b_s
+'   centre_y_tab
+'   centre_z_tab
+'   d
+'   domain
+'   eps_max
+'   epsilon_inactive
+'   epsilon_init
+'   geo
+'   h_cc
+'   h_tab
+'   lambda_
+'   lambda_cc
+'   main_param
+'   phase_params : dict
+'   prim
+'   rho_c_p
+'   rho_c_p_cc
+'   sigma_cc
+'   therm
+'   xi
+'   C_dl(T)
+'   sigma(T)
+' }
+' class "DomainLithiumIonParameters" as pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters {
+'   A_tab
+'   L
+'   L_cc
+'   L_tab
+'   Q_Li_init
+'   Q_init
+'   b_e
+'   b_s
+'   beta_utilisation
+'   centre_y_tab
+'   centre_z_tab
+'   domain
+'   epsilon_inactive
+'   epsilon_init
+'   geo
+'   h_cc
+'   h_tab
+'   lambda_
+'   lambda_cc
+'   main_param
+'   n_Li_init
+'   phase_params : dict
+'   prim
+'   rho_c_p
+'   rho_c_p_cc
+'   sec
+'   sigma_cc
+'   tau_e
+'   tau_s
+'   therm
+'   u_init
+'   C_dl(T)
+'   LAM_rate_current(i, T)
+'   sigma(T)
+' }
+' class "DomainThermalParameters" as pybamm.parameters.thermal_parameters.DomainThermalParameters {
+'   domain
+'   h_tab
+'   main_param
+'   c_p(T)
+'   c_p_cc(T)
+'   h_cc(y, z)
+'   lambda_(T)
+'   lambda_cc(T)
+'   rho(T)
+'   rho_c_p(T)
+'   rho_c_p_cc(T)
+'   rho_cc(T)
+' }
+' class "Downwind" as pybamm.expression_tree.unary_operators.Downwind {
+' }
+' class "DummySolver" as pybamm.solvers.dummy_solver.DummySolver {
+'   name : str
+' }
+' class "EcmParameters" as pybamm.parameters.ecm_parameters.EcmParameters {
+'   A_cc
+'   Q
+'   cell_capacity
+'   cth_cell
+'   cth_jig
+'   current_density_with_time
+'   current_with_time
+'   initial_T_cell
+'   initial_T_jig
+'   initial_soc
+'   k_cell_jig
+'   k_jig_air
+'   n_cells
+'   n_electrodes_parallel
+'   tau_D
+'   voltage_high_cut
+'   voltage_low_cut
+'   T_amb(t)
+'   dUdT(ocv, T_cell)
+'   initial_rc_overpotential(element_number)
+'   ocv(soc)
+'   rcr_element(name, T_cell, current, soc)
+' }
+' class "EffectiveResistance" as pybamm.models.submodels.current_collector.effective_resistance_current_collector.EffectiveResistance {
+'   algebraic : dict
+'   boundary_conditions : dict
+'   initial_conditions : dict
+'   options : NoneType
+'   param
+'   variables : dict
+'   get_fundamental_variables()
+'   post_process(solution, param_values, V_av, I_av)
+'   set_algebraic(variables)
+'   set_boundary_conditions(variables)
+'   set_initial_conditions(variables)
+' }
+class "ElectricalParameters" as pybamm.parameters.electrical_parameters.ElectricalParameters {
+  Q
+  R_contact
+  current_density_with_time
+  current_with_time
+  geo
+  n_cells
+  n_electrodes_parallel
+  ocp_soc_0
+  ocp_soc_100
+  voltage_high_cut
+  voltage_low_cut
+}
+' class "ElectrodeSOHHalfCell" as pybamm.models.full_battery_models.lithium_ion.electrode_soh_half_cell.ElectrodeSOHHalfCell {
+'   algebraic : dict
+'   default_solver
+'   initial_conditions : dict
+'   variables : dict
+' }
+' class "ElectrodeSOHSolver" as pybamm.models.full_battery_models.lithium_ion.electrode_soh.ElectrodeSOHSolver {
+'   OCV_function : NoneType, str
+'   V_max
+'   V_min
+'   known_value : str
+'   lims_ocp : tuple
+'   options
+'   param
+'   parameter_values
+'   get_initial_ocps(initial_value, tol, inputs)
+'   get_initial_stoichiometries(initial_value, tol, inputs)
+'   get_min_max_ocps()
+'   get_min_max_stoichiometries(inputs)
+'   solve(inputs)
+'   theoretical_energy_integral(inputs, points)
+' }
+' class "EmptySolution" as pybamm.solvers.solution.EmptySolution {
+'   t : NoneType, ndarray
+'   termination : NoneType
+'   copy()
+' }
+' class "EqualHeaviside" as pybamm.expression_tree.binary_operators.EqualHeaviside {
+' }
+' class "Equality" as pybamm.expression_tree.binary_operators.Equality {
+'   diff(variable)
+' }
+' class "EquationDict" as pybamm.models.base_model.EquationDict {
+'   name
+'   check_and_convert_equations(equations)
+'   update(equations)
+' }
+' class "Erf" as pybamm.expression_tree.functions.Erf {
+' }
+' class "EvaluateAt" as pybamm.expression_tree.unary_operators.EvaluateAt {
+'   position
+'   set_id()
+' }
+' class "EvaluatorJax" as pybamm.expression_tree.operations.evaluate_python.EvaluatorJax {
+'   debug(t, y, inputs)
+'   get_jacobian()
+'   get_jacobian_action()
+'   get_sensitivities()
+'   jvp(t, y, v, inputs)
+' }
+' class "EvaluatorJaxJacobian" as pybamm.expression_tree.operations.evaluate_python.EvaluatorJaxJacobian {
+' }
+' class "EvaluatorJaxSensitivities" as pybamm.expression_tree.operations.evaluate_python.EvaluatorJaxSensitivities {
+' }
+' class "EvaluatorPython" as pybamm.expression_tree.operations.evaluate_python.EvaluatorPython {
+' }
+' class "Event" as pybamm.models.event.Event {
+'   event_type
+'   expression
+'   name
+'   evaluate(t: float | None, y: np.ndarray | None, y_dot: np.ndarray | None, inputs: dict | None)
+'   to_json()
+' }
+' class "EventType" as pybamm.models.event.EventType {
+'   name
+' }
+' class "Exp" as pybamm.expression_tree.functions.Exp {
+' }
+' class "Experiment" as pybamm.experiment.experiment.Experiment {
+'   args : tuple
+'   cycle_lengths
+'   cycles : list
+'   initial_start_time
+'   period : NoneType, float
+'   steps
+'   temperature : NoneType, float
+'   termination : dict
+'   termination_string : list[str] | None
+'   unique_steps : set
+'   copy()
+'   process_steps(unprocessed_steps, period, temp)
+'   read_termination(termination)
+'   search_tag(tag)
+' }
+' class "Explicit" as pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.explicit_surface_form_conductivity.Explicit {
+'   get_coupled_variables(variables)
+'   set_boundary_conditions(variables)
+' }
+' class "Explicit" as pybamm.models.submodels.convection.through_cell.explicit_convection.Explicit {
+'   get_coupled_variables(variables)
+' }
+' class "ExplicitCurrentControl" as pybamm.models.submodels.external_circuit.explicit_control_external_circuit.ExplicitCurrentControl {
+'   get_fundamental_variables()
+'   set_algebraic(variables)
+'   set_initial_conditions(variables)
+' }
+' class "ExplicitPowerControl" as pybamm.models.submodels.external_circuit.explicit_control_external_circuit.ExplicitPowerControl {
+'   get_coupled_variables(variables)
+' }
+' class "ExplicitResistanceControl" as pybamm.models.submodels.external_circuit.explicit_control_external_circuit.ExplicitResistanceControl {
+'   get_coupled_variables(variables)
+' }
+' class "ExplicitTimeIntegral" as pybamm.expression_tree.unary_operators.ExplicitTimeIntegral {
+'   initial_condition
+'   is_constant()
+'   to_json()
+' }
+' class "Exponential1DSubMesh" as pybamm.meshes.one_dimensional_submeshes.Exponential1DSubMesh {
+' }
+' class "FickianDiffusion" as pybamm.models.submodels.particle.fickian_diffusion.FickianDiffusion {
+'   boundary_conditions : dict
+'   initial_conditions : dict
+'   rhs : dict
+'   x_average : bool
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_boundary_conditions(variables)
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "FiniteVolume" as pybamm.spatial_methods.finite_volume.FiniteVolume {
+'   add_ghost_nodes(symbol, discretised_symbol, bcs)
+'   add_neumann_values(symbol, discretised_gradient, bcs, domain)
+'   boundary_value_or_flux(symbol, discretised_child, bcs)
+'   build(mesh)
+'   concatenation(disc_children)
+'   definite_integral_matrix(child, vector_type, integration_dimension)
+'   delta_function(symbol, discretised_symbol)
+'   divergence(symbol, discretised_symbol, boundary_conditions)
+'   divergence_matrix(domains)
+'   edge_to_node(discretised_symbol, method)
+'   evaluate_at(symbol, discretised_child, position)
+'   gradient(symbol, discretised_symbol, boundary_conditions)
+'   gradient_matrix(domain, domains)
+'   indefinite_integral(child, discretised_child, direction)
+'   indefinite_integral_matrix_edges(domains, direction)
+'   indefinite_integral_matrix_nodes(domains, direction)
+'   integral(child, discretised_child, integration_dimension)
+'   internal_neumann_condition(left_symbol_disc, right_symbol_disc, left_mesh, right_mesh)
+'   laplacian(symbol, discretised_symbol, boundary_conditions)
+'   node_to_edge(discretised_symbol, method)
+'   process_binary_operators(bin_op, left, right, disc_left, disc_right)
+'   shift(discretised_symbol, shift_key, method)
+'   spatial_variable(symbol)
+'   upwind_or_downwind(symbol, discretised_symbol, bcs, direction)
+' }
+' class "Floor" as pybamm.expression_tree.unary_operators.Floor {
+'   diff(variable)
+' }
+' class "ForwardTafel" as pybamm.models.submodels.interface.kinetics.tafel.ForwardTafel {
+' }
+' class "Full" as pybamm.models.submodels.interface.interface_utilisation.full_utilisation.Full {
+'   get_fundamental_variables()
+' }
+' class "Full" as pybamm.models.submodels.electrolyte_conductivity.full_conductivity.Full {
+'   algebraic : dict
+'   initial_conditions : dict
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_algebraic(variables)
+'   set_initial_conditions(variables)
+' }
+' class "Full" as pybamm.models.submodels.oxygen_diffusion.full_oxygen_diffusion.Full {
+'   boundary_conditions : dict
+'   initial_conditions : dict
+'   rhs : dict
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_boundary_conditions(variables)
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "Full" as pybamm.models.submodels.convection.through_cell.full_convection.Full {
+'   algebraic : dict
+'   boundary_conditions : dict
+'   initial_conditions : dict
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_algebraic(variables)
+'   set_boundary_conditions(variables)
+'   set_initial_conditions(variables)
+' }
+' class "Full" as pybamm.models.submodels.convection.transverse.full_convection.Full {
+'   algebraic : dict
+'   boundary_conditions : dict
+'   initial_conditions : dict
+'   get_fundamental_variables()
+'   set_algebraic(variables)
+'   set_boundary_conditions(variables)
+'   set_initial_conditions(variables)
+' }
+' class "Full" as pybamm.models.submodels.electrolyte_diffusion.full_diffusion.Full {
+'   boundary_conditions : dict
+'   initial_conditions : dict
+'   rhs : dict
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_boundary_conditions(variables)
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "Full" as pybamm.models.submodels.electrode.ohm.full_ohm.Full {
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_algebraic(variables)
+'   set_boundary_conditions(variables)
+'   set_initial_conditions(variables)
+' }
+' class "Full" as pybamm.models.full_battery_models.lead_acid.full.Full {
+'   set_convection_submodel()
+'   set_electrolyte_submodel()
+'   set_intercalation_kinetics_submodel()
+'   set_porosity_submodel()
+'   set_side_reaction_submodels()
+'   set_solid_submodel()
+' }
+' class "FullAlgebraic" as pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.full_surface_form_conductivity.FullAlgebraic {
+'   set_algebraic(variables)
+' }
+' class "FullBroadcast" as pybamm.expression_tree.broadcasts.FullBroadcast {
+'   broadcast_domain
+'   broadcast_type : str
+'   print_name : str
+'   check_and_set_domains(child: pybamm.Symbol, broadcast_domains: dict)
+'   reduce_one_dimension()
+' }
+' class "FullBroadcastToEdges" as pybamm.expression_tree.broadcasts.FullBroadcastToEdges {
+'   broadcast_type : str
+'   reduce_one_dimension()
+' }
+' class "FullDifferential" as pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.full_surface_form_conductivity.FullDifferential {
+'   set_rhs(variables)
+' }
+' class "Function" as pybamm.expression_tree.functions.Function {
+'   differentiated_function : NoneType
+'   function : Callable
+'   name
+'   create_copy(new_children: list[pybamm.Symbol] | None, perform_simplifications: bool)
+'   diff(variable: pybamm.Symbol)
+'   evaluate(t: float | None, y: np.ndarray | None, y_dot: np.ndarray | None, inputs: dict | str | None)
+'   is_constant()
+'   to_equation()
+'   {abstract}to_json()
+' }
+' class "FunctionControl" as pybamm.models.submodels.external_circuit.function_control_external_circuit.FunctionControl {
+'   control : str
+'   external_circuit_function
+'   get_fundamental_variables()
+'   set_algebraic(variables)
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "FunctionParameter" as pybamm.expression_tree.parameter.FunctionParameter {
+'   diff_variable : pybamm.Symbol | None
+'   input_names
+'   print_name : NoneType, str
+'   create_copy(new_children, perform_simplifications)
+'   diff(variable: pybamm.Symbol) -> pybamm.FunctionParameter
+'   print_input_names()
+'   set_id()
+'   to_equation() -> sympy.Symbol
+'   {abstract}to_json()
+' }
+class "FuzzyDict" as pybamm.util.FuzzyDict {
+'   copy()
+'   get_best_matches(key)
+'   search(keys: str | list[str], print_values: bool)
+}
+class "GeometricParameters" as pybamm.parameters.geometric_parameters.GeometricParameters {
+  A_cc
+  A_cooling
+  L
+  L_Li
+  L_x
+  L_y
+  L_z
+  V_cell
+  domain_params : dict
+  n
+  options : NoneType
+  p
+  r_inner
+  r_outer
+  s
+}
+class "Geometry" as pybamm.geometry.geometry.Geometry {
+'   parameters
+'   print_parameter_info()
+}
+' class "<color:red>GeometryError</color>" as pybamm.expression_tree.exceptions.GeometryError {
+' }
+' class "Gradient" as pybamm.expression_tree.unary_operators.Gradient {
+' }
+' class "GradientSquared" as pybamm.expression_tree.unary_operators.GradientSquared {
+' }
+' class "HashableArrayWrapper" as pybamm.solvers.jax_bdf_solver.HashableArrayWrapper {
+'   val
+' }
+' class "HeterogeneousCatalyst" as pybamm.models.submodels.transport_efficiency.heterogeneous_catalyst.HeterogeneousCatalyst {
+'   get_coupled_variables(variables)
+' }
+' class "HyperbolaOfRevolution" as pybamm.models.submodels.transport_efficiency.hyperbola_of_revolution.HyperbolaOfRevolution {
+'   get_coupled_variables(variables)
+' }
+' class "IDAKLUJax" as pybamm.solvers.idaklu_jax.IDAKLUJax {
+'   idaklu_jax_obj : NoneType
+'   jax_calculate_sensitivities : bool
+'   jax_inputs : NoneType
+'   jax_model
+'   jax_output_variables
+'   jax_t_eval
+'   jax_t_interp : NoneType, ndarray
+'   jaxify_f
+'   jaxpr : NoneType
+'   solver
+'   get_jaxpr()
+'   get_var()
+'   get_vars()
+'   jax_grad(t: np.ndarray, inputs: Union[dict, None], output_variables: Union[list[str], None])
+'   jax_value(t: np.ndarray, inputs: Union[dict, None], output_variables: Union[list[str], None])
+'   jaxify(model, t_eval)
+' }
+' class "IDAKLUSolver" as pybamm.solvers.idaklu_solver.IDAKLUSolver {
+'   dvar_dp_idaklu_fcns : list
+'   dvar_dy_idaklu_fcns : list
+'   name : str
+'   output_variables : NoneType, list
+'   requires_explicit_sensitivities
+'   supports_parallel_solve
+'   var_idaklu_fcns : list
+'   jaxify(model, t_eval)
+'   set_up(model, inputs, t_eval, ics_only)
+' }
+' class "IndefiniteIntegral" as pybamm.expression_tree.unary_operators.IndefiniteIntegral {
+'   name : str
+' }
+' class "IndependentVariable" as pybamm.expression_tree.independent_variable.IndependentVariable {
+'   create_copy(new_children, perform_simplifications)
+'   to_equation() -> sympy.Symbol
+' }
+' class "Index" as pybamm.expression_tree.unary_operators.Index {
+'   index
+'   slice : slice
+'   set_id()
+'   to_json()
+' }
+' class "Inner" as pybamm.expression_tree.binary_operators.Inner {
+' }
+' class "InputParameter" as pybamm.expression_tree.input_parameter.InputParameter {
+'   create_copy(new_children, perform_simplifications) -> pybamm.InputParameter
+'   to_json()
+' }
+' class "Integral" as pybamm.expression_tree.unary_operators.Integral {
+'   integration_variable
+'   set_id()
+' }
+' class "Integrated" as pybamm.models.submodels.electrolyte_conductivity.integrated_conductivity.Integrated {
+'   get_coupled_variables(variables)
+' }
+' class "Interpolant" as pybamm.expression_tree.interpolant.Interpolant {
+'   dimension : int
+'   entries_string
+'   extrapolate : bool
+'   interpolator : str | None
+'   x : np.ndarray | Sequence[np.ndarray]
+'   y : ndarray
+'   create_copy(new_children, perform_simplifications)
+'   set_id()
+'   to_json()
+' }
+' class "InverseButlerVolmer" as pybamm.models.submodels.interface.kinetics.inverse_kinetics.inverse_butler_volmer.InverseButlerVolmer {
+'   get_coupled_variables(variables)
+' }
+' class "Isothermal" as pybamm.models.submodels.thermal.isothermal.Isothermal {
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+' }
+' class "Jacobian" as pybamm.expression_tree.operations.jacobian.Jacobian {
+'   jac(symbol: pybamm.Symbol, variable: pybamm.Symbol) -> pybamm.Symbol
+' }
+' class "JaxCooMatrix" as pybamm.expression_tree.operations.evaluate_python.JaxCooMatrix {
+'   col
+'   data
+'   nnz
+'   row
+'   shape : tuple[int, int]
+'   dot_product(b)
+'   {abstract}multiply(b)
+'   scalar_multiply(b: float)
+'   toarray()
+' }
+' class "JaxSolver" as pybamm.solvers.jax_solver.JaxSolver {
+'   extra_options : dict
+'   name : str
+'   requires_explicit_sensitivities
+'   supports_parallel_solve
+'   create_solve(model, t_eval)
+'   get_solve(model, t_eval)
+' }
+' class "LOQS" as pybamm.models.full_battery_models.lead_acid.loqs.LOQS {
+'   reaction_submodels : dict
+'   use_jacobian : bool
+'   set_convection_submodel()
+'   set_current_collector_submodel()
+'   set_electrode_submodels()
+'   set_electrolyte_submodel()
+'   set_external_circuit_submodel()
+'   set_intercalation_kinetics_submodel()
+'   set_porosity_submodel()
+'   set_side_reaction_submodels()
+' }
+' class "LRUDict" as pybamm.solvers.lrudict.LRUDict {
+'   maxsize : NoneType
+'   get(key)
+' }
+' class "Laplacian" as pybamm.expression_tree.unary_operators.Laplacian {
+' }
+' class "Latexify" as pybamm.expression_tree.operations.latexify.Latexify {
+'   filename : str | None
+'   model
+'   newline : bool
+'   latexify(output_variables)
+' }
+class "LeadAcidParameters" as pybamm.parameters.lead_acid_parameters.LeadAcidParameters {
+  A_cc
+  A_cooling
+  D_hy
+  D_ox
+  F
+  H
+  I_typ
+  L
+  L_x
+  L_y
+  L_z
+  M_e
+  M_hy
+  M_minus
+  M_ox
+  M_plus
+  M_w
+  Q
+  Q_e_max
+  R
+  R_contact
+  R_sei
+  T_amb
+  T_init
+  T_ref
+  U_Hy
+  U_Ox
+  V_Pb
+  V_PbO2
+  V_PbSO4
+  V_cell
+  V_e
+  V_hy
+  V_minus
+  V_ox
+  V_plus
+  V_w
+  W
+  a_j_scale
+  c_e_init
+  c_e_init_av
+  c_ox_init
+  c_ox_typ
+  capacity
+  current_density_with_time
+  current_with_time
+  delta
+  domain_params : dict
+  elec
+  epsilon_init
+  geo
+  h_edge
+  h_total
+  k_b
+  n
+  n_cells
+  n_electrodes_parallel
+  ne_Hy
+  ne_Ox
+  nu
+  nu_minus
+  nu_plus
+  ocv_init
+  p
+  q_e
+  q_init
+  rho_c_p_eff
+  s
+  s_hy_Hy
+  s_ox_Ox
+  s_plus_Hy
+  s_plus_Ox
+  s_w_Ox
+  therm
+  thermal_voltage
+  voltage_high_cut
+  voltage_low_cut
+  D_e(c_e, T)
+  c_T(c_e, c_ox, c_hy)
+  chi(c_e, T, c_ox, c_hy)
+  chiRT_over_Fc(c_e, T)
+  kappa_e(c_e, T)
+  m(c_e)
+  t_plus(c_e, T)
+}
+' class "LeadingOrder" as pybamm.models.submodels.electrolyte_conductivity.leading_order_conductivity.LeadingOrder {
+'   get_coupled_variables(variables)
+' }
+' class "LeadingOrder" as pybamm.models.submodels.oxygen_diffusion.leading_oxygen_diffusion.LeadingOrder {
+'   initial_conditions : dict
+'   rhs : dict
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "LeadingOrder" as pybamm.models.submodels.electrolyte_diffusion.leading_order_diffusion.LeadingOrder {
+'   initial_conditions : dict
+'   rhs : dict
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "LeadingOrder" as pybamm.models.submodels.electrode.ohm.leading_ohm.LeadingOrder {
+'   get_coupled_variables(variables)
+'   set_boundary_conditions(variables)
+' }
+' class "LeadingOrderAlgebraic" as pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.leading_surface_form_conductivity.LeadingOrderAlgebraic {
+'   set_algebraic(variables)
+' }
+' class "LeadingOrderDifferential" as pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.leading_surface_form_conductivity.LeadingOrderDifferential {
+'   set_rhs(variables)
+' }
+' class "Linear" as pybamm.models.submodels.interface.kinetics.linear.Linear {
+' }
+class "LithiumIonParameters" as pybamm.parameters.lithium_ion_parameters.LithiumIonParameters {
+  A_cc
+  A_cooling
+  F
+  I_typ
+  L
+  L_x
+  L_y
+  L_z
+  Q
+  Q_Li_init
+  Q_Li_particles_init
+  R
+  R_contact
+  T_amb
+  T_amb_av
+  T_init
+  T_ref
+  V_bar_Li
+  V_cell
+  a_j_scale
+  alpha_T_cell
+  c_e_init
+  c_e_init_av
+  current_density_with_time
+  current_with_time
+  domain_params : dict
+  elec
+  epsilon_init
+  geo
+  h_edge
+  h_total
+  k_b
+  lambda_eff
+  n
+  n_Li_e_init
+  n_Li_init
+  n_Li_particles_init
+  n_cells
+  n_electrodes_parallel
+  ocp_soc_0
+  ocp_soc_100
+  ocv_init
+  options : NoneType
+  p
+  q_e
+  r_inner
+  r_outer
+  rho_c_p_eff
+  s
+  therm
+  thermal_voltage
+  voltage_high_cut
+  voltage_low_cut
+  D_e(c_e, T)
+  chi(c_e, T)
+  chiRT_over_Fc(c_e, T)
+  j0_Li_metal(c_e, c_Li, T)
+  kappa_e(c_e, T)
+  t_plus(c_e, T)
+  thermodynamic_factor(c_e, T)
+}
+' class "LithiumMetalBaseModel" as pybamm.models.submodels.electrode.ohm.li_metal.LithiumMetalBaseModel {
+' }
+' class "LithiumMetalExplicit" as pybamm.models.submodels.electrode.ohm.li_metal.LithiumMetalExplicit {
+'   get_coupled_variables(variables)
+' }
+' class "LithiumMetalSurfaceForm" as pybamm.models.submodels.electrode.ohm.li_metal.LithiumMetalSurfaceForm {
+'   initial_conditions : dict
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_algebraic(variables)
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "Log" as pybamm.expression_tree.functions.Log {
+' }
+' class "LoggingCallback" as pybamm.callbacks.LoggingCallback {
+'   logfile : NoneType
+'   logger : NoneType, RootLogger
+'   on_cycle_end(logs)
+'   on_cycle_start(logs)
+'   on_experiment_end(logs)
+'   on_experiment_error(logs)
+'   on_experiment_infeasible_event(logs)
+'   on_experiment_infeasible_time(logs)
+'   on_experiment_start(logs)
+'   on_step_end(logs)
+'   on_step_start(logs)
+' }
+' class "LoopList" as pybamm.plotting.quick_plot.LoopList {
+' }
+' class "LossActiveMaterial" as pybamm.models.submodels.active_material.loss_active_material.LossActiveMaterial {
+'   initial_conditions : dict
+'   rhs : dict
+'   x_average
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "Lumped" as pybamm.models.submodels.thermal.lumped.Lumped {
+'   initial_conditions : dict
+'   rhs : dict
+'   calculate_Q_cr_W(current, contact_resistance)
+'   calculate_Q_cr_vol_av(current, contact_resistance, volume)
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "Lumped" as pybamm.models.submodels.thermal.surface.lumped.Lumped {
+'   initial_conditions : dict
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+class "MPM" as pybamm.models.full_battery_models.lithium_ion.mpm.MPM {
+  default_parameter_values
+}
+class "MSMR" as pybamm.models.full_battery_models.lithium_ion.msmr.MSMR {
+  default_parameter_values
+}
+' class "MSMRButlerVolmer" as pybamm.models.submodels.interface.kinetics.msmr_butler_volmer.MSMRButlerVolmer {
+' }
+' class "MSMRDiffusion" as pybamm.models.submodels.particle.msmr_diffusion.MSMRDiffusion {
+'   boundary_conditions : dict
+'   initial_conditions : dict
+'   rhs : dict
+'   x_average : bool
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_boundary_conditions(variables)
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "MSMROpenCircuitPotential" as pybamm.models.submodels.interface.open_circuit_potential.msmr_ocp.MSMROpenCircuitPotential {
+'   get_coupled_variables(variables)
+' }
+' class "MSMRStoichiometryVariables" as pybamm.models.submodels.particle.msmr_diffusion.MSMRStoichiometryVariables {
+'   x_average : bool
+'   get_coupled_variables(variables)
+' }
+' class "Marcus" as pybamm.models.submodels.interface.kinetics.marcus.Marcus {
+' }
+' class "MarcusHushChidsey" as pybamm.models.submodels.interface.kinetics.marcus.MarcusHushChidsey {
+' }
+' class "Mass" as pybamm.expression_tree.unary_operators.Mass {
+' }
+' class "Matrix" as pybamm.expression_tree.matrix.Matrix {
+'   mesh : NoneType
+'   secondary_mesh : NoneType
+' }
+' class "MatrixMultiplication" as pybamm.expression_tree.binary_operators.MatrixMultiplication {
+'   {abstract}diff(variable)
+' }
+' class "Max" as pybamm.expression_tree.functions.Max {
+' }
+' class "Maximum" as pybamm.expression_tree.binary_operators.Maximum {
+' }
+' class "Mesh" as pybamm.meshes.meshes.Mesh {
+'   base_domains : list
+'   geometry
+'   submesh_pts : dict
+'   add_ghost_meshes()
+'   combine_submeshes()
+'   to_json()
+' }
+' class "MeshGenerator" as pybamm.meshes.meshes.MeshGenerator {
+'   submesh_params : dict
+'   submesh_type
+' }
+' class "Min" as pybamm.expression_tree.functions.Min {
+' }
+' class "Minimum" as pybamm.expression_tree.binary_operators.Minimum {
+' }
+' class "MockTelemetry" as pybamm.telemetry.MockTelemetry {
+'   disabled : bool
+'   {abstract}capture()
+' }
+' class "<color:red>ModelError</color>" as pybamm.expression_tree.exceptions.ModelError {
+' }
+' class "<color:red>ModelWarning</color>" as pybamm.expression_tree.exceptions.ModelWarning {
+' }
+' class "Modulo" as pybamm.expression_tree.binary_operators.Modulo {
+' }
+' class "Multiplication" as pybamm.expression_tree.binary_operators.Multiplication {
+' }
+' class "NaturalNumberOption" as pybamm.models.full_battery_models.equivalent_circuit.ecm_model_options.NaturalNumberOption {
+'   value
+' }
+' class "Negate" as pybamm.expression_tree.unary_operators.Negate {
+' }
+' class "NewmanTobias" as pybamm.models.full_battery_models.lithium_ion.newman_tobias.NewmanTobias {
+'   set_electrolyte_concentration_submodel()
+'   set_particle_submodel()
+' }
+' class "NoConvection" as pybamm.models.submodels.convection.through_cell.no_convection.NoConvection {
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+' }
+' class "NoConvection" as pybamm.models.submodels.convection.transverse.no_convection.NoConvection {
+'   get_fundamental_variables()
+' }
+' class "NoDiffusion" as pybamm.models.submodels.equivalent_circuit_elements.diffusion_element.NoDiffusion {
+'   model_options : NoneType
+'   get_coupled_variables(variables)
+' }
+' class "NoMechanics" as pybamm.models.submodels.particle_mechanics.no_mechanics.NoMechanics {
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+' }
+' class "NoOxygen" as pybamm.models.submodels.oxygen_diffusion.no_oxygen.NoOxygen {
+'   get_fundamental_variables()
+' }
+' class "NoPlating" as pybamm.models.submodels.interface.lithium_plating.no_plating.NoPlating {
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+' }
+' class "NoReaction" as pybamm.models.submodels.interface.kinetics.no_reaction.NoReaction {
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+' }
+' class "NoSEI" as pybamm.models.submodels.interface.sei.no_sei.NoSEI {
+'   reaction_loc : str
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+' }
+' class "NotConstant" as pybamm.expression_tree.unary_operators.NotConstant {
+'   is_constant()
+' }
+' class "NotEqualHeaviside" as pybamm.expression_tree.binary_operators.NotEqualHeaviside {
+' }
+' class "NullParameters" as pybamm.parameters.base_parameters.NullParameters {
+' }
+' class "NumpyConcatenation" as pybamm.expression_tree.concatenations.NumpyConcatenation {
+' }
+' class "NumpyEncoder" as pybamm.solvers.solution.NumpyEncoder {
+'   default(obj)
+' }
+' class "OCVElement" as pybamm.models.submodels.equivalent_circuit_elements.ocv_element.OCVElement {
+'   events
+'   initial_conditions : dict
+'   model_options : NoneType
+'   rhs : dict
+'   add_events_from(variables)
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "OneDimensionalX" as pybamm.models.submodels.thermal.pouch_cell.x_full.OneDimensionalX {
+'   boundary_conditions : dict
+'   initial_conditions : dict
+'   rhs : dict
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_boundary_conditions(variables)
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "OperatingModes" as pybamm.models.full_battery_models.equivalent_circuit.ecm_model_options.OperatingModes {
+'   default_mode
+'   named_modes : list
+' }
+' class "<color:red>OptionError</color>" as pybamm.expression_tree.exceptions.OptionError {
+' }
+' class "<color:red>OptionWarning</color>" as pybamm.expression_tree.exceptions.OptionWarning {
+' }
+' class "OrderedPacking" as pybamm.models.submodels.transport_efficiency.ordered_packing.OrderedPacking {
+'   get_coupled_variables(variables)
+' }
+' class "OverlappingSpheres" as pybamm.models.submodels.transport_efficiency.overlapping_spheres.OverlappingSpheres {
+'   get_coupled_variables(variables)
+' }
+' class "Parameter" as pybamm.expression_tree.parameter.Parameter {
+'   create_copy(new_children, perform_simplifications) -> pybamm.Parameter
+'   is_constant() -> Literal[False]
+'   to_equation() -> sympy.Symbol
+'   {abstract}to_json()
+' }
+' class "ParameterSets" as pybamm.parameters.parameter_sets.ParameterSets {
+'   get_docstring(key)
+'   get_entries(group_name)
+' }
+class "ParameterValues" as pybamm.parameters.parameter_values.ParameterValues {
+'   check_parameter_values(values)
+'   copy()
+'   create_from_bpx(filename, target_soc: float)
+'   create_from_bpx_obj(bpx_obj, target_soc: float)
+'   evaluate(symbol, inputs)
+'   get(key, default)
+'   items()
+'   keys()
+'   pop()
+'   print_evaluated_parameters(evaluated_parameters, output_file)
+'   print_parameters(parameters, output_file)
+'   process_boundary_conditions(model)
+'   process_geometry(geometry)
+'   process_model(unprocessed_model, inplace)
+'   process_symbol(symbol)
+'   search(key, print_values)
+'   set_initial_ocps(initial_value, param, known_value, inplace, options)
+'   set_initial_stoichiometries(initial_value, param, known_value, inplace, options, inputs, tol)
+'   set_initial_stoichiometry_half_cell(initial_value, param, known_value, inplace, options, inputs)
+'   update(values, check_conflict, check_already_exists, path)
+'   values()
+}
+' class "ParticleGeometricParameters" as pybamm.parameters.geometric_parameters.ParticleGeometricParameters {
+'   R
+'   R_max
+'   R_min
+'   R_typ
+'   a
+'   domain
+'   main_param
+'   phase
+'   phase_prefactor : str
+'   f_a_dist(R)
+' }
+' class "ParticleLithiumIonParameters" as pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters {
+'   D_ec
+'   D_li
+'   D_sol
+'   E_sei
+'   L_sei_0
+'   L_sei_crack_0
+'   L_tunneling
+'   Q_Li_init
+'   Q_init
+'   R
+'   R_max
+'   R_min
+'   R_sei
+'   R_typ
+'   U_init
+'   U_sei
+'   V_bar_sei
+'   a_typ
+'   alpha_SEI
+'   alpha_bv
+'   alpha_plating
+'   alpha_stripping
+'   b_cr
+'   beta_LAM
+'   beta_LAM_sei
+'   beta_tunnelling
+'   c_0
+'   c_Li_typ
+'   c_ec_0
+'   c_init
+'   c_init_av
+'   c_li_0
+'   c_max
+'   c_plated_Li_0
+'   c_sol
+'   domain
+'   domain_param
+'   elec_loading
+'   epsilon_s
+'   epsilon_s_av
+'   f_a_dist
+'   geo
+'   h_init
+'   hysteresis_decay
+'   hysteresis_switch
+'   j0_sei
+'   k_sei
+'   kappa_Li_ion
+'   kappa_inner
+'   l_cr_0
+'   m_LAM
+'   m_cr
+'   main_param
+'   mhc_lambda
+'   n_Li_init
+'   ne
+'   nu
+'   options
+'   phase
+'   rho_cr
+'   sto_init_av
+'   stress_critical
+'   w_cr
+'   z_sei
+'   D(c_s, T, lithiation)
+'   E(sto, T)
+'   Omega(sto, T)
+'   U(sto, T, lithiation)
+'   U0_j(T, index)
+'   X_j(T, index)
+'   alpha_bv_j(T, index)
+'   dUdT(sto)
+'   dead_lithium_decay_rate(L_sei)
+'   dxdU(U, T)
+'   dxdU_j(U, T, index)
+'   j0(c_e, c_s_surf, T, lithiation)
+'   j0_j(c_e, U, T, index)
+'   j0_plating(c_e, c_Li, T)
+'   j0_stripping(c_e, c_Li, T)
+'   k_cr(T)
+'   t_change(sto)
+'   w_j(T, index)
+'   x(U, T)
+'   x_j(U, T, index)
+' }
+' class "PhaseLeadAcidParameters" as pybamm.parameters.lead_acid_parameters.PhaseLeadAcidParameters {
+'   U_init
+'   a
+'   alpha_bv
+'   domain
+'   domain_param
+'   epsilon_s
+'   geo
+'   main_param
+'   ne
+'   ne_S
+'   phase
+'   phase_name
+'   s_plus_S
+'   U(c_e, T)
+'   j0(c_e, T)
+'   j0_Ox(c_e, T)
+' }
+' class "Plating" as pybamm.models.submodels.interface.lithium_plating.plating.Plating {
+'   initial_conditions : dict
+'   rhs : dict
+'   x_average
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "PolynomialProfile" as pybamm.models.submodels.particle.polynomial_profile.PolynomialProfile {
+'   algebraic : dict
+'   initial_conditions : dict
+'   name
+'   rhs : dict
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_algebraic(variables)
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "PotentialPair1plus1D" as pybamm.models.submodels.current_collector.potential_pair.PotentialPair1plus1D {
+'   boundary_conditions : dict
+'   set_boundary_conditions(variables)
+' }
+' class "PotentialPair2plus1D" as pybamm.models.submodels.current_collector.potential_pair.PotentialPair2plus1D {
+'   boundary_conditions : dict
+'   set_boundary_conditions(variables)
+' }
+' class "Power" as pybamm.expression_tree.binary_operators.Power {
+' }
+' class "Power" as pybamm.experiment.step.steps.Power {
+'   calculate_charge_or_discharge : bool
+'   get_parameter_values(variables)
+'   get_submodel(model)
+' }
+' class "PowerFunctionControl" as pybamm.models.submodels.external_circuit.function_control_external_circuit.PowerFunctionControl {
+'   constant_power(variables)
+' }
+' class "PrimaryBroadcast" as pybamm.expression_tree.broadcasts.PrimaryBroadcast {
+'   broadcast_domain : list[str] | str
+'   broadcast_type : str
+'   print_name : str
+'   check_and_set_domains(child: pybamm.Symbol, broadcast_domain: list[str])
+'   reduce_one_dimension()
+' }
+' class "PrimaryBroadcastToEdges" as pybamm.expression_tree.broadcasts.PrimaryBroadcastToEdges {
+'   broadcast_type : str
+' }
+' class "ProcessedVariable" as pybamm.solvers.processed_variable.ProcessedVariable {
+'   all_inputs
+'   all_inputs_casadi
+'   all_solution_sensitivities
+'   all_ts
+'   all_yps
+'   all_ys
+'   base_eval_shape
+'   base_eval_size
+'   base_variables
+'   base_variables_casadi
+'   data
+'   domain
+'   domains
+'   entries
+'   entries_raw_initialized
+'   hermite_interpolation
+'   mesh
+'   sensitivities
+'   spatial_variables : dict
+'   t_pts
+'   time_integral : Optional[pybamm.ProcessedVariableTimeIntegral]
+'   xr_array_raw_initialized
+'   initialise()
+'   initialise_sensitivity_explicit_forward()
+'   observe_and_interp(t, fill_value)
+'   observe_raw()
+' }
+' class "ProcessedVariable0D" as pybamm.solvers.processed_variable.ProcessedVariable0D {
+'   dimensions : int
+' }
+' class "ProcessedVariable1D" as pybamm.solvers.processed_variable.ProcessedVariable1D {
+'   dimensions : int
+'   first_dim_pts
+'   first_dimension
+'   internal_boundaries
+'   spatial_variable_names
+' }
+' class "ProcessedVariable2D" as pybamm.solvers.processed_variable.ProcessedVariable2D {
+'   dimensions : int
+'   first_dim_pts
+'   first_dim_size
+'   first_dimension
+'   second_dim_pts
+'   second_dim_size
+'   second_dimension
+'   spatial_variable_names
+' }
+' class "ProcessedVariable2DSciKitFEM" as pybamm.solvers.processed_variable.ProcessedVariable2DSciKitFEM {
+'   dimensions : int
+'   first_dim_pts
+'   first_dim_size
+'   first_dimension : str
+'   second_dim_pts
+'   second_dim_size
+'   second_dimension : str
+'   y_sol
+'   z_sol
+' }
+' class "ProcessedVariableComputed" as pybamm.solvers.processed_variable_computed.ProcessedVariableComputed {
+'   R_sol : ndarray
+'   all_inputs
+'   all_inputs_casadi
+'   all_ts
+'   all_ys
+'   base_eval_shape
+'   base_eval_size
+'   base_variables
+'   base_variables_casadi
+'   base_variables_data
+'   cumtrapz_ic : NoneType
+'   data
+'   dimensions : int
+'   domain
+'   domains
+'   entries : ndarray
+'   first_dim_pts
+'   first_dimension : str
+'   internal_boundaries
+'   mesh
+'   r_sol : ndarray
+'   second_dim_pts
+'   second_dimension : str
+'   sensitivities
+'   solution_sensitivities
+'   t_pts
+'   unroll_params : dict
+'   x_sol : ndarray
+'   y_sol
+'   z_sol : ndarray
+'   add_sensitivity(param, data)
+'   initialise_0D()
+'   initialise_1D()
+'   initialise_2D()
+'   initialise_2D_scikit_fem()
+'   unroll(realdata)
+'   unroll_0D(realdata)
+'   unroll_1D(realdata)
+'   unroll_2D(realdata, n_dim1, n_dim2, axis_swaps)
+' }
+' class "ProcessedVariableTimeIntegral" as pybamm.solvers.processed_variable_time_integral.ProcessedVariableTimeIntegral {
+'   discrete_times : Optional[np.ndarray]
+'   initial_condition : ndarray
+'   method : Literal['discrete', 'continuous']
+'   from_pybamm_var(var: Union[pybamm.DiscreteTimeSum, pybamm.ExplicitTimeIntegral]) -> 'ProcessedVariableTimeIntegral'
+' }
+' class "QuickPlot" as pybamm.plotting.quick_plot.QuickPlot {
+'   axes
+'   axis_limits : dict
+'   colorbars : dict
+'   colors
+'   fig
+'   figsize : tuple
+'   first_spatial_variable : dict
+'   gridspec
+'   is_y_z : dict
+'   labels
+'   linestyles
+'   max_t
+'   min_t
+'   n_cols : int
+'   n_rows
+'   plots : dict
+'   second_spatial_variable : dict
+'   shading : str
+'   slider
+'   spatial_factor : float, int
+'   spatial_unit : str
+'   spatial_variable_dict : dict
+'   subplot_positions : dict
+'   time_lines : dict
+'   time_scaling_factor : int
+'   time_unit : str
+'   ts_seconds : list
+'   variable_limits : dict
+'   variables : dict
+'   x_first_and_y_second : dict
+'   check_input_validity(input_solutions)
+'   create_gif(number_of_images, duration, output_filename)
+'   dynamic_plot(show_plot, step)
+'   plot(t, dynamic)
+'   preprocess_solutions(solutions)
+'   reset_axis()
+'   set_output_variables(output_variables, solutions)
+'   slider_update(t)
+' }
+' class "QuickPlotAxes" as pybamm.plotting.quick_plot.QuickPlotAxes {
+'   add(keys, axis)
+'   by_variable(key)
+' }
+' class "RAverage" as pybamm.expression_tree.averages.RAverage {
+' }
+' class "RCElement" as pybamm.models.submodels.equivalent_circuit_elements.rc_element.RCElement {
+'   element_number
+'   initial_conditions : dict
+'   model_options : NoneType
+'   rhs : dict
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "RandomOverlappingCylinders" as pybamm.models.submodels.transport_efficiency.random_overlapping_cylinders.RandomOverlappingCylinders {
+'   get_coupled_variables(variables)
+' }
+' class "ReactionDriven" as pybamm.models.submodels.porosity.reaction_driven_porosity.ReactionDriven {
+'   x_average
+'   add_events_from(variables)
+'   get_coupled_variables(variables)
+' }
+' class "ReactionDrivenODE" as pybamm.models.submodels.porosity.reaction_driven_porosity_ode.ReactionDrivenODE {
+'   initial_conditions : dict
+'   rhs : dict
+'   x_average
+'   add_events_from(variables)
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "Resistance" as pybamm.experiment.step.steps.Resistance {
+'   calculate_charge_or_discharge : bool
+'   get_parameter_values(variables)
+'   get_submodel(model)
+' }
+' class "ResistanceFunctionControl" as pybamm.models.submodels.external_circuit.function_control_external_circuit.ResistanceFunctionControl {
+'   constant_resistance(variables)
+' }
+' class "ResistorElement" as pybamm.models.submodels.equivalent_circuit_elements.resistor_element.ResistorElement {
+'   model_options : NoneType
+'   get_coupled_variables(variables)
+' }
+' class "SEIGrowth" as pybamm.models.submodels.interface.sei.sei_growth.SEIGrowth {
+'   initial_conditions : dict
+'   reaction_loc
+'   rhs : dict
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+class "SPM" as pybamm.models.full_battery_models.lithium_ion.spm.SPM {
+  x_average : bool
+  set_electrolyte_concentration_submodel()
+  set_electrolyte_potential_submodel()
+  set_intercalation_kinetics_submodel()
+  set_particle_submodel()
+  set_solid_submodel()
+  set_summary_variables()
+}
+class "SPMe" as pybamm.models.full_battery_models.lithium_ion.spme.SPMe {
+  x_average : bool
+  set_electrolyte_concentration_submodel()
+  set_electrolyte_potential_submodel()
+  set_solid_submodel()
+}
+' class "Scalar" as pybamm.expression_tree.scalar.Scalar {
+'   f_a_dist
+'   mesh : NoneType
+'   position
+'   secondary_mesh : NoneType
+'   value
+'   create_copy(new_children, perform_simplifications)
+'   is_constant() -> Literal[True]
+'   set_id()
+'   to_equation()
+'   to_json()
+' }
+' class "ScikitChebyshev2DSubMesh" as pybamm.meshes.scikit_fem_submeshes.ScikitChebyshev2DSubMesh {
+' }
+' class "ScikitExponential2DSubMesh" as pybamm.meshes.scikit_fem_submeshes.ScikitExponential2DSubMesh {
+' }
+' class "ScikitFiniteElement" as pybamm.spatial_methods.scikit_finite_element.ScikitFiniteElement {
+'   assemble_mass_form(symbol, boundary_conditions, region)
+'   bc_apply(M, boundary, zero)
+'   boundary_integral(child, discretised_child, region)
+'   boundary_integral_vector(domain, region)
+'   boundary_mass_matrix(symbol, boundary_conditions)
+'   boundary_value_or_flux(symbol, discretised_child, bcs)
+'   build(mesh)
+'   definite_integral_matrix(child, vector_type)
+'   {abstract}divergence(symbol, discretised_symbol, boundary_conditions)
+'   gradient(symbol, discretised_symbol, boundary_conditions)
+'   gradient_matrix(symbol, boundary_conditions)
+'   gradient_squared(symbol, discretised_symbol, boundary_conditions)
+'   {abstract}indefinite_integral(child, discretised_child, direction)
+'   integral(child, discretised_child, integration_dimension)
+'   laplacian(symbol, discretised_symbol, boundary_conditions)
+'   mass_matrix(symbol, boundary_conditions)
+'   spatial_variable(symbol)
+'   stiffness_matrix(symbol, boundary_conditions)
+' }
+' class "ScikitSubMesh2D" as pybamm.meshes.scikit_fem_submeshes.ScikitSubMesh2D {
+'   basis
+'   coord_sys
+'   coordinates
+'   edges
+'   element
+'   facet_basis
+'   fem_mesh
+'   negative_tab_basis
+'   negative_tab_dofs
+'   negative_tab_facets
+'   nodes : dict
+'   npts
+'   positive_tab_basis
+'   positive_tab_dofs
+'   positive_tab_facets
+'   tabs
+'   on_boundary(y, z, tab)
+'   read_lims(lims)
+'   to_json()
+' }
+' class "ScikitUniform2DSubMesh" as pybamm.meshes.scikit_fem_submeshes.ScikitUniform2DSubMesh {
+'}
+' class "ScipySolver" as pybamm.solvers.scipy_solver.ScipySolver {
+'   extra_options : dict
+'   name : str
+' }
+' class "SecondaryBroadcast" as pybamm.expression_tree.broadcasts.SecondaryBroadcast {
+'   broadcast_domain : list[str] | str
+'   broadcast_type : str
+'   check_and_set_domains(child: pybamm.Symbol, broadcast_domain: list[str])
+'   reduce_one_dimension()
+' }
+' class "SecondaryBroadcastToEdges" as pybamm.expression_tree.broadcasts.SecondaryBroadcastToEdges {
+'   broadcast_type : str
+' }
+' class "Serialise" as pybamm.expression_tree.operations.serialise.Serialise {
+'   load_model(filename: str, battery_model: pybamm.BaseModel | None) -> pybamm.BaseModel
+'   save_model(model: pybamm.BaseModel, mesh: pybamm.Mesh | None, variables: pybamm.FuzzyDict | None, filename: str | None)
+' }
+' class "Settings" as pybamm.settings.Settings {
+'   abs_smoothing
+'   debug_mode
+'   heaviside_smoothing
+'   max_words_in_line : int
+'   max_y_value : float
+'   min_max_mode
+'   min_max_smoothing
+'   simplify
+'   tolerances : dict
+'   check_k(k)
+'   set_smoothing_parameters(k)
+' }
+' class "<color:red>ShapeError</color>" as pybamm.expression_tree.exceptions.ShapeError {
+' }
+' class "Sign" as pybamm.expression_tree.unary_operators.Sign {
+'   diff(variable)
+' }
+' class "Simulation" as pybamm.simulation.Simulation {
+'   C_rate : NoneType
+'   built_model
+'   experiment
+'   experiment_unique_steps_to_model : dict
+'   geometry
+'   get_esoh_solver
+'   mesh
+'   model
+'   model_with_set_params
+'   operating_mode : str
+'   output_variables
+'   parameter_values
+'   quick_plot : NoneType
+'   solution
+'   solver
+'   spatial_methods
+'   steps_to_built_models : NoneType, dict
+'   steps_to_built_solvers : NoneType, dict
+'   submesh_types
+'   var_pts
+'   build(initial_soc, inputs)
+'   build_for_experiment(initial_soc, inputs, solve_kwargs)
+'   create_gif(number_of_images, duration, output_filename)
+'   plot(output_variables)
+'   plot_voltage_components(ax, show_legend, split_by_electrode, show_plot)
+'   run_padding_rest(kwargs, rest_time, step_solution, inputs)
+'   save(filename)
+'   save_model(filename: str | None, mesh: bool, variables: bool)
+'   set_initial_soc(initial_soc, inputs)
+'   set_parameters()
+'   set_up_and_parameterise_experiment(solve_kwargs)
+'   solve(t_eval, solver, save_at_cycles, calc_esoh, starting_solution, initial_soc, callbacks, showprogress, inputs, t_interp)
+'   step(dt, solver, t_eval, save, starting_solution, inputs)
+' }
+' class "Sin" as pybamm.expression_tree.functions.Sin {
+' }
+' class "SingleOpenCircuitPotential" as pybamm.models.submodels.interface.open_circuit_potential.single_ocp.SingleOpenCircuitPotential {
+'   get_coupled_variables(variables)
+' }
+' class "Sinh" as pybamm.expression_tree.functions.Sinh {
+' }
+' class "SizeAverage" as pybamm.expression_tree.averages.SizeAverage {
+'   f_a_dist
+' }
+' class "Solution" as pybamm.solvers.solution.Solution {
+'   all_inputs : list
+'   all_inputs_casadi
+'   all_models
+'   all_summary_variables
+'   all_ts
+'   all_yps
+'   all_ys
+'   closest_event_idx : NoneType
+'   cycle_summary_variables
+'   cycles
+'   data
+'   first_state
+'   hermite_interpolation
+'   initial_start_time
+'   integration_time : NoneType, int
+'   last_state
+'   sensitivities
+'   set_up_time : NoneType, int
+'   solve_time : NoneType, int
+'   steps
+'   sub_solutions
+'   summary_variables
+'   t
+'   t_event
+'   termination
+'   total_time
+'   variables_returned : bool
+'   y
+'   y_event
+'   check_ys_are_not_too_large()
+'   copy()
+'   extract_explicit_sensitivities()
+'   get_data_dict(variables, short_names, cycles_and_steps)
+'   has_sensitivities() -> bool
+'   plot(output_variables)
+'   plot_voltage_components(ax, show_legend, split_by_electrode, show_plot)
+'   process_casadi_var(var_pybamm, inputs, ys_shape)
+'   save(filename)
+'   save_data(filename, variables, to_format, short_names)
+'   set_sensitivities()
+'   set_t()
+'   set_y()
+'   update(variables)
+'   update_summary_variables(all_summary_variables)
+' }
+' class "<color:red>SolverError</color>" as pybamm.expression_tree.exceptions.SolverError {
+'   message
+' }
+' class "<color:red>SolverWarning</color>" as pybamm.expression_tree.exceptions.SolverWarning {
+' }
+' class "SparseStack" as pybamm.expression_tree.concatenations.SparseStack {
+' }
+' class "SpatialMethod" as pybamm.spatial_methods.spatial_method.SpatialMethod {
+'   mesh
+'   options : dict
+'   {abstract}boundary_integral(child, discretised_child, region)
+'   boundary_value_or_flux(symbol, discretised_child, bcs)
+'   broadcast(symbol, domains, broadcast_type)
+'   build(mesh)
+'   concatenation(disc_children)
+'   {abstract}delta_function(symbol, discretised_symbol)
+'   {abstract}divergence(symbol, discretised_symbol, boundary_conditions)
+'   {abstract}evaluate_at(symbol, discretised_child, position)
+'   {abstract}gradient(symbol, discretised_symbol, boundary_conditions)
+'   {abstract}gradient_squared(symbol, discretised_symbol, boundary_conditions)
+'   {abstract}indefinite_integral(child, discretised_child, direction)
+'   {abstract}integral(child, discretised_child, integration_dimension)
+'   {abstract}internal_neumann_condition(left_symbol_disc, right_symbol_disc, left_mesh, right_mesh)
+'   {abstract}laplacian(symbol, discretised_symbol, boundary_conditions)
+'   mass_matrix(symbol, boundary_conditions)
+'   process_binary_operators(bin_op, left, right, disc_left, disc_right)
+'   spatial_variable(symbol)
+' }
+' class "SpatialOperator" as pybamm.expression_tree.unary_operators.SpatialOperator {
+'   {abstract}to_json()
+' }
+' class "SpatialVariable" as pybamm.expression_tree.independent_variable.SpatialVariable {
+'   coord_sys : NoneType
+'   create_copy(new_children, perform_simplifications)
+' }
+' class "SpatialVariableEdge" as pybamm.expression_tree.independent_variable.SpatialVariableEdge {
+' }
+' class "SpecificFunction" as pybamm.expression_tree.functions.SpecificFunction {
+'   to_json()
+' }
+' class "SpectralVolume" as pybamm.spatial_methods.spectral_volume.SpectralVolume {
+'   order : int
+'   chebyshev_collocation_points(noe, a, b)
+'   chebyshev_differentiation_matrices(noe, dod)
+'   cv_boundary_reconstruction_matrix(domains)
+'   cv_boundary_reconstruction_sub_matrix()
+'   gradient(symbol, discretised_symbol, boundary_conditions)
+'   gradient_matrix(domain, domains)
+'   penalty_matrix(domains)
+'   replace_dirichlet_values(symbol, discretised_symbol, bcs)
+'   replace_neumann_values(symbol, discretised_gradient, bcs)
+' }
+' class "SpectralVolume1DSubMesh" as pybamm.meshes.one_dimensional_submeshes.SpectralVolume1DSubMesh {
+'   d_sv_edges : NoneType, ndarray
+'   d_sv_nodes : ndarray
+'   order : int
+'   sv_edges : NoneType, ndarray
+'   sv_nodes
+' }
+class "SplitOCVR" as pybamm.models.full_battery_models.lithium_ion.basic_splitOCVR.SplitOCVR {
+  default_quick_plot_variables
+  events
+  variables : dict
+}
+' class "Sqrt" as pybamm.expression_tree.functions.Sqrt {
+' }
+' class "StateVector" as pybamm.expression_tree.state_vector.StateVector {
+'   diff(variable: pybamm.Symbol)
+' }
+' class "StateVectorBase" as pybamm.expression_tree.state_vector.StateVectorBase {
+'   evaluation_array
+'   first_point
+'   last_point
+'   size
+'   y_slices
+'   create_copy(new_children, perform_simplifications)
+'   set_evaluation_array(y_slices, evaluation_array)
+'   set_id()
+'   to_json()
+' }
+' class "StateVectorDot" as pybamm.expression_tree.state_vector.StateVectorDot {
+'   diff(variable: pybamm.Symbol)
+' }
+' class "SubMesh" as pybamm.meshes.meshes.SubMesh {
+' }
+' class "SubMesh0D" as pybamm.meshes.zero_dimensional_submesh.SubMesh0D {
+'   coord_sys : NoneType
+'   edges : ndarray
+'   nodes : ndarray
+'   npts : int
+'   {abstract}add_ghost_meshes()
+'   to_json()
+' }
+' class "SubMesh1D" as pybamm.meshes.one_dimensional_submeshes.SubMesh1D {
+'   coord_sys
+'   d_edges : ndarray
+'   d_nodes : ndarray
+'   edges
+'   internal_boundaries : list
+'   length
+'   min
+'   nodes
+'   npts
+'   tabs : NoneType, dict
+'   read_lims(lims)
+'   to_json()
+' }
+' class "Subtraction" as pybamm.expression_tree.binary_operators.Subtraction {
+' }
+' class "SummaryVariables" as pybamm.solvers.summary_variable.SummaryVariables {
+'   all_variables
+'   calc_esoh
+'   cycle_number : NoneType
+'   cycles : NoneType, list[SummaryVariables]
+'   esoh_solver : pybamm.lithium_ion.ElectrodeSOHSolver | None
+'   esoh_variables
+'   first_state : NoneType
+'   last_state : NoneType
+'   user_inputs : dict
+'   update(var: str)
+'   update_esoh()
+' }
+' class "SurfaceForm" as pybamm.models.submodels.electrode.ohm.surface_form_ohm.SurfaceForm {
+'   get_coupled_variables(variables)
+' }
+' class "SwellingOnly" as pybamm.models.submodels.particle_mechanics.swelling_only.SwellingOnly {
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+' }
+' class "Symbol" as pybamm.expression_tree.symbol.Symbol {
+'   auxiliary_domains
+'   children
+'   domain
+'   domains
+'   id
+'   mesh : NoneType
+'   name
+'   ndim_for_testing
+'   orphans
+'   print_name
+'   quaternary_domain
+'   reference
+'   scale
+'   secondary_domain
+'   shape
+'   shape_for_testing
+'   size
+'   size_for_testing
+'   tertiary_domain
+'   clear_domains()
+'   copy_domains(symbol: Symbol)
+'   create_copy(new_children: list[pybamm.Symbol] | None, perform_simplifications: bool)
+'   diff(variable: Symbol)
+'   evaluate(t: float | None, y: np.ndarray | None, y_dot: np.ndarray | None, inputs: dict | str | None) -> ChildValue
+'   evaluate_for_shape()
+'   evaluate_ignoring_errors(t: float | None)
+'   evaluates_on_edges(dimension: str) -> bool
+'   evaluates_to_constant_number()
+'   evaluates_to_number()
+'   get_children_domains(children: Sequence[Symbol])
+'   has_symbol_of_classes(symbol_classes: tuple[type[Symbol], ...] | type[Symbol])
+'   is_constant()
+'   jac(variable: pybamm.Symbol, known_jacs: dict[pybamm.Symbol, pybamm.Symbol] | None, clear_domain)
+'   new_copy(new_children: list[Symbol] | None, perform_simplifications: bool)
+'   post_order(filter)
+'   pre_order()
+'   read_domain_or_domains(domain: DomainType, auxiliary_domains: AuxiliaryDomainType, domains: DomainsType)
+'   relabel_tree(symbol: Symbol, counter: int)
+'   render()
+'   set_id()
+'   test_shape()
+'   to_casadi(t: casadi.MX | None, y: casadi.MX | None, y_dot: casadi.MX | None, inputs: dict | None, casadi_symbols: Symbol | None)
+'   to_equation()
+'   to_json()
+'   visualise(filename: str)
+' }
+' class "SymbolUnpacker" as pybamm.expression_tree.operations.unpack_symbols.SymbolUnpacker {
+'   classes_to_find : Sequence[pybamm.Symbol] | pybamm.Symbol
+'   unpack_list_of_symbols(list_of_symbols: Sequence[pybamm.Symbol]) -> set[pybamm.Symbol]
+'   unpack_symbol(symbol: Sequence[pybamm.Symbol] | pybamm.Symbol) -> list[pybamm.Symbol]
+' }
+' class "SymbolicUniform1DSubMesh" as pybamm.meshes.one_dimensional_submeshes.SymbolicUniform1DSubMesh {
+'   coord_sys
+'   d_edges : ndarray
+'   d_nodes : ndarray
+'   edges : ndarray
+'   internal_boundaries : list
+'   length
+'   min
+'   nodes
+'   npts
+' }
+' class "SymmetricButlerVolmer" as pybamm.models.submodels.interface.kinetics.butler_volmer.SymmetricButlerVolmer {
+' }
+' class "Tanh" as pybamm.expression_tree.functions.Tanh {
+' }
+' class "TertiaryBroadcast" as pybamm.expression_tree.broadcasts.TertiaryBroadcast {
+'   broadcast_domain : list[str] | str
+'   broadcast_type : str
+'   check_and_set_domains(child: pybamm.Symbol, broadcast_domain: list[str] | str)
+'   {abstract}reduce_one_dimension()
+' }
+' class "TertiaryBroadcastToEdges" as pybamm.expression_tree.broadcasts.TertiaryBroadcastToEdges {
+'   broadcast_type : str
+' }
+class "ThermalParameters" as pybamm.parameters.thermal_parameters.ThermalParameters {
+  T_init
+  T_ref
+  domain_params : dict
+  geo
+  h_total
+  n
+  p
+  s
+  T_amb(y, z, t)
+  T_amb_av(t)
+  h_edge(y, z)
+  lambda_eff(T)
+  rho_c_p_eff(T)
+}
+' class "ThermalSubModel" as pybamm.models.submodels.equivalent_circuit_elements.thermal.ThermalSubModel {
+'   initial_conditions : dict
+'   model_options : NoneType
+'   rhs : dict
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+class "Thevenin" as pybamm.models.full_battery_models.equivalent_circuit.thevenin.Thevenin {
+  default_geometry
+  default_parameter_values
+  default_quick_plot_variables
+  default_spatial_methods
+  default_submesh_types
+  default_var_pts
+  element_counter : int
+  options
+  param
+  summary_variables : list
+  build_model()
+  set_diffusion_submodel()
+  set_external_circuit_submodel()
+  set_ocv_submodel()
+  set_options(extra_options)
+  set_rc_submodels()
+  set_resistor_submodel()
+  set_standard_output_variables()
+  set_submodels(build)
+  set_thermal_submodel()
+  set_voltage_submodel()
+}
+' class "Time" as pybamm.expression_tree.independent_variable.Time {
+'   create_copy(new_children, perform_simplifications)
+'   to_equation()
+' }
+' class "Timer" as pybamm.util.Timer {
+'   reset()
+'   time()
+' }
+' class "TimerTime" as pybamm.util.TimerTime {
+'   value
+' }
+' class "TortuosityFactor" as pybamm.models.submodels.transport_efficiency.tortuosity_factor.TortuosityFactor {
+'   get_coupled_variables(variables)
+' }
+' class "Total" as pybamm.models.submodels.active_material.total_active_material.Total {
+'   get_coupled_variables(variables)
+' }
+' class "TotalConcentration" as pybamm.models.submodels.particle.total_particle_concentration.TotalConcentration {
+'   get_coupled_variables(variables)
+' }
+' class "TotalInterfacialCurrent" as pybamm.models.submodels.interface.total_interfacial_current.TotalInterfacialCurrent {
+'   chemistry
+'   get_coupled_variables(variables)
+' }
+' class "TotalLithiumPlating" as pybamm.models.submodels.interface.lithium_plating.total_lithium_plating.TotalLithiumPlating {
+'   get_coupled_variables(variables)
+' }
+' class "TotalMainKinetics" as pybamm.models.submodels.interface.kinetics.total_main_kinetics.TotalMainKinetics {
+'   get_coupled_variables(variables)
+' }
+' class "TotalSEI" as pybamm.models.submodels.interface.sei.total_sei.TotalSEI {
+'   reaction : str
+'   get_coupled_variables(variables)
+' }
+' class "UnaryOperator" as pybamm.expression_tree.unary_operators.UnaryOperator {
+'   child
+'   create_copy(new_children: list[pybamm.Symbol] | None, perform_simplifications: bool)
+'   evaluate(t: float | None, y: np.ndarray | None, y_dot: np.ndarray | None, inputs: dict | str | None)
+'   is_constant()
+'   to_equation()
+' }
+' class "Uniform" as pybamm.models.submodels.convection.transverse.uniform_convection.Uniform {
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+' }
+' class "Uniform" as pybamm.models.submodels.current_collector.homogeneous_current_collector.Uniform {
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+' }
+' class "Uniform1DSubMesh" as pybamm.meshes.one_dimensional_submeshes.Uniform1DSubMesh {
+' }
+' class "Upwind" as pybamm.expression_tree.unary_operators.Upwind {
+' }
+' class "UpwindDownwind" as pybamm.expression_tree.unary_operators.UpwindDownwind {
+' }
+' class "UserSupplied1DSubMesh" as pybamm.meshes.one_dimensional_submeshes.UserSupplied1DSubMesh {
+' }
+' class "UserSupplied2DSubMesh" as pybamm.meshes.scikit_fem_submeshes.UserSupplied2DSubMesh {
+' }
+' class "Variable" as pybamm.expression_tree.variable.Variable {
+'   print_name : str
+'   diff(variable: pybamm.Symbol)
+' }
+' class "VariableBase" as pybamm.expression_tree.variable.VariableBase {
+'   bounds
+'   print_name : str | None
+'   create_copy(new_children, perform_simplifications)
+'   set_id()
+'   to_equation()
+'   {abstract}to_json()
+' }
+' class "VariableDot" as pybamm.expression_tree.variable.VariableDot {
+'   diff(variable: pybamm.Symbol) -> pybamm.Scalar
+'   get_variable() -> pybamm.Variable
+' }
+' class "Vector" as pybamm.expression_tree.vector.Vector {
+'   mesh : NoneType
+'   secondary_mesh : NoneType
+' }
+' class "Voltage" as pybamm.experiment.step.steps.Voltage {
+'   get_parameter_values(variables)
+'   get_submodel(model)
+' }
+' class "Voltage" as pybamm.experiment.step.step_termination.Voltage {
+' }
+' class "VoltageFunctionControl" as pybamm.models.submodels.external_circuit.function_control_external_circuit.VoltageFunctionControl {
+'   constant_voltage(variables)
+' }
+' class "VoltageModel" as pybamm.models.submodels.equivalent_circuit_elements.voltage_model.VoltageModel {
+'   model_options : NoneType
+'   add_events_from(variables)
+'   get_coupled_variables(variables)
+' }
+' class "VoltageTermination" as pybamm.experiment.step.step_termination.VoltageTermination {
+'   get_event(variables, step)
+' }
+' class "WyciskOpenCircuitPotential" as pybamm.models.submodels.interface.open_circuit_potential.wycisk_ocp.WyciskOpenCircuitPotential {
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "XAverage" as pybamm.expression_tree.averages.XAverage {
+' }
+' class "XAveragedPolynomialProfile" as pybamm.models.submodels.particle.x_averaged_polynomial_profile.XAveragedPolynomialProfile {
+'   initial_conditions : dict
+'   rhs : dict
+'   get_coupled_variables(variables)
+'   get_fundamental_variables()
+'   {abstract}set_algebraic(variables)
+'   set_initial_conditions(variables)
+'   set_rhs(variables)
+' }
+' class "YZAverage" as pybamm.expression_tree.averages.YZAverage {
+' }
+' class "Yang2017" as pybamm.models.full_battery_models.lithium_ion.Yang2017.Yang2017 {
+' }
+' class "ZAverage" as pybamm.expression_tree.averages.ZAverage {
+' }
+' class "ZeroDimensionalSpatialMethod" as pybamm.spatial_methods.zero_dimensional_method.ZeroDimensionalSpatialMethod {
+'   boundary_value_or_flux(symbol, discretised_child, bcs)
+'   build(mesh)
+'   indefinite_integral(child, discretised_child, direction)
+'   integral(child, discretised_child, integration_dimension)
+'   mass_matrix(symbol, boundary_conditions)
+' }
+' class "_BaseAverage" as pybamm.expression_tree.averages._BaseAverage {
+'   name : str
+' }
+' class "_BaseElectrodeSOH" as pybamm.models.full_battery_models.lithium_ion.electrode_soh._BaseElectrodeSOH {
+'   default_solver
+'   get_0_soc_variables(x_0, y_0, x_100, y_100, Un_0, Up_0, Q, Q_n, Q_p, param)
+'   get_100_soc_variables(x_100, y_100, Un_100, Up_100, Q_Li, Q_n, Q_p, param)
+' }
+' class "_ElectrodeSOH" as pybamm.models.full_battery_models.lithium_ion.electrode_soh._ElectrodeSOH {
+'   variables : dict
+' }
+' class "_ElectrodeSOHMSMR" as pybamm.models.full_battery_models.lithium_ion.electrode_soh._ElectrodeSOHMSMR {
+'   variables : dict
+' }
+' class "_Empty" as pybamm.expression_tree.operations.serialise.Serialise._Empty {
+' }
+' class "_EmptyDict" as pybamm.expression_tree.operations.serialise.Serialise._EmptyDict {
+' }
+' class "_Heaviside" as pybamm.expression_tree.binary_operators._Heaviside {
+'   diff(variable)
+' }
+' class "_MeshEncoder" as pybamm.expression_tree.operations.serialise.Serialise._MeshEncoder {
+'   default(node: pybamm.Mesh)
+' }
+' class "_SymbolEncoder" as pybamm.expression_tree.operations.serialise.Serialise._SymbolEncoder {
+'   default(node: dict)
+' }
+' class "_hashabledict" as pybamm.solvers.idaklu_jax.IDAKLUJax._hashabledict {
+' }
+' pybamm.callbacks.CallbackList --|> pybamm.callbacks.Callback
+' pybamm.callbacks.LoggingCallback --|> pybamm.callbacks.Callback
+' pybamm.experiment.step.base_step.BaseStepExplicit --|> pybamm.experiment.step.base_step.BaseStep
+' pybamm.experiment.step.base_step.BaseStepImplicit --|> pybamm.experiment.step.base_step.BaseStep
+' pybamm.experiment.step.step_termination.CrateTermination --|> pybamm.experiment.step.step_termination.BaseTermination
+' pybamm.experiment.step.step_termination.CurrentTermination --|> pybamm.experiment.step.step_termination.BaseTermination
+' pybamm.experiment.step.step_termination.CustomTermination --|> pybamm.experiment.step.step_termination.BaseTermination
+' pybamm.experiment.step.step_termination.VoltageTermination --|> pybamm.experiment.step.step_termination.BaseTermination
+' pybamm.experiment.step.steps.CRate --|> pybamm.experiment.step.base_step.BaseStepExplicit
+' pybamm.experiment.step.steps.Current --|> pybamm.experiment.step.base_step.BaseStepExplicit
+' pybamm.experiment.step.steps.CustomStepExplicit --|> pybamm.experiment.step.base_step.BaseStepExplicit
+' pybamm.experiment.step.steps.CustomStepImplicit --|> pybamm.experiment.step.base_step.BaseStepImplicit
+' pybamm.experiment.step.steps.Power --|> pybamm.experiment.step.base_step.BaseStepImplicit
+' pybamm.experiment.step.steps.Resistance --|> pybamm.experiment.step.base_step.BaseStepImplicit
+' pybamm.experiment.step.steps.Voltage --|> pybamm.experiment.step.base_step.BaseStepImplicit
+' pybamm.expression_tree.array.Array --|> pybamm.expression_tree.symbol.Symbol
+' pybamm.expression_tree.averages.RAverage --|> pybamm.expression_tree.averages._BaseAverage
+' pybamm.expression_tree.averages.SizeAverage --|> pybamm.expression_tree.averages._BaseAverage
+' pybamm.expression_tree.averages.XAverage --|> pybamm.expression_tree.averages._BaseAverage
+' pybamm.expression_tree.averages.YZAverage --|> pybamm.expression_tree.averages._BaseAverage
+' pybamm.expression_tree.averages.ZAverage --|> pybamm.expression_tree.averages._BaseAverage
+' pybamm.expression_tree.averages._BaseAverage --|> pybamm.expression_tree.unary_operators.Integral
+' pybamm.expression_tree.binary_operators.Addition --|> pybamm.expression_tree.binary_operators.BinaryOperator
+' pybamm.expression_tree.binary_operators.BinaryOperator --|> pybamm.expression_tree.symbol.Symbol
+' pybamm.expression_tree.binary_operators.Division --|> pybamm.expression_tree.binary_operators.BinaryOperator
+' pybamm.expression_tree.binary_operators.EqualHeaviside --|> pybamm.expression_tree.binary_operators._Heaviside
+' pybamm.expression_tree.binary_operators.Equality --|> pybamm.expression_tree.binary_operators.BinaryOperator
+' pybamm.expression_tree.binary_operators.Inner --|> pybamm.expression_tree.binary_operators.BinaryOperator
+' pybamm.expression_tree.binary_operators.MatrixMultiplication --|> pybamm.expression_tree.binary_operators.BinaryOperator
+' pybamm.expression_tree.binary_operators.Maximum --|> pybamm.expression_tree.binary_operators.BinaryOperator
+' pybamm.expression_tree.binary_operators.Minimum --|> pybamm.expression_tree.binary_operators.BinaryOperator
+' pybamm.expression_tree.binary_operators.Modulo --|> pybamm.expression_tree.binary_operators.BinaryOperator
+' pybamm.expression_tree.binary_operators.Multiplication --|> pybamm.expression_tree.binary_operators.BinaryOperator
+' pybamm.expression_tree.binary_operators.NotEqualHeaviside --|> pybamm.expression_tree.binary_operators._Heaviside
+' pybamm.expression_tree.binary_operators.Power --|> pybamm.expression_tree.binary_operators.BinaryOperator
+' pybamm.expression_tree.binary_operators.Subtraction --|> pybamm.expression_tree.binary_operators.BinaryOperator
+' pybamm.expression_tree.binary_operators._Heaviside --|> pybamm.expression_tree.binary_operators.BinaryOperator
+' pybamm.expression_tree.broadcasts.Broadcast --|> pybamm.expression_tree.unary_operators.SpatialOperator
+' pybamm.expression_tree.broadcasts.FullBroadcast --|> pybamm.expression_tree.broadcasts.Broadcast
+' pybamm.expression_tree.broadcasts.FullBroadcastToEdges --|> pybamm.expression_tree.broadcasts.FullBroadcast
+' pybamm.expression_tree.broadcasts.PrimaryBroadcast --|> pybamm.expression_tree.broadcasts.Broadcast
+' pybamm.expression_tree.broadcasts.PrimaryBroadcastToEdges --|> pybamm.expression_tree.broadcasts.PrimaryBroadcast
+' pybamm.expression_tree.broadcasts.SecondaryBroadcast --|> pybamm.expression_tree.broadcasts.Broadcast
+' pybamm.expression_tree.broadcasts.SecondaryBroadcastToEdges --|> pybamm.expression_tree.broadcasts.SecondaryBroadcast
+' pybamm.expression_tree.broadcasts.TertiaryBroadcast --|> pybamm.expression_tree.broadcasts.Broadcast
+' pybamm.expression_tree.broadcasts.TertiaryBroadcastToEdges --|> pybamm.expression_tree.broadcasts.TertiaryBroadcast
+' pybamm.expression_tree.concatenations.Concatenation --|> pybamm.expression_tree.symbol.Symbol
+' pybamm.expression_tree.concatenations.ConcatenationVariable --|> pybamm.expression_tree.concatenations.Concatenation
+' pybamm.expression_tree.concatenations.DomainConcatenation --|> pybamm.expression_tree.concatenations.Concatenation
+' pybamm.expression_tree.concatenations.NumpyConcatenation --|> pybamm.expression_tree.concatenations.Concatenation
+' pybamm.expression_tree.concatenations.SparseStack --|> pybamm.expression_tree.concatenations.Concatenation
+' pybamm.expression_tree.coupled_variable.CoupledVariable --|> pybamm.expression_tree.symbol.Symbol
+' pybamm.expression_tree.discrete_time_sum.DiscreteTimeData --|> pybamm.expression_tree.interpolant.Interpolant
+' pybamm.expression_tree.discrete_time_sum.DiscreteTimeSum --|> pybamm.expression_tree.unary_operators.UnaryOperator
+' pybamm.expression_tree.functions.Arcsinh --|> pybamm.expression_tree.functions.SpecificFunction
+' pybamm.expression_tree.functions.Arctan --|> pybamm.expression_tree.functions.SpecificFunction
+' pybamm.expression_tree.functions.Cos --|> pybamm.expression_tree.functions.SpecificFunction
+' pybamm.expression_tree.functions.Cosh --|> pybamm.expression_tree.functions.SpecificFunction
+' pybamm.expression_tree.functions.Erf --|> pybamm.expression_tree.functions.SpecificFunction
+' pybamm.expression_tree.functions.Exp --|> pybamm.expression_tree.functions.SpecificFunction
+' pybamm.expression_tree.functions.Function --|> pybamm.expression_tree.symbol.Symbol
+' pybamm.expression_tree.functions.Log --|> pybamm.expression_tree.functions.SpecificFunction
+' pybamm.expression_tree.functions.Max --|> pybamm.expression_tree.functions.SpecificFunction
+' pybamm.expression_tree.functions.Min --|> pybamm.expression_tree.functions.SpecificFunction
+' pybamm.expression_tree.functions.Sin --|> pybamm.expression_tree.functions.SpecificFunction
+' pybamm.expression_tree.functions.Sinh --|> pybamm.expression_tree.functions.SpecificFunction
+' pybamm.expression_tree.functions.SpecificFunction --|> pybamm.expression_tree.functions.Function
+' pybamm.expression_tree.functions.Sqrt --|> pybamm.expression_tree.functions.SpecificFunction
+' pybamm.expression_tree.functions.Tanh --|> pybamm.expression_tree.functions.SpecificFunction
+' pybamm.expression_tree.independent_variable.IndependentVariable --|> pybamm.expression_tree.symbol.Symbol
+' pybamm.expression_tree.independent_variable.SpatialVariable --|> pybamm.expression_tree.independent_variable.IndependentVariable
+' pybamm.expression_tree.independent_variable.SpatialVariableEdge --|> pybamm.expression_tree.independent_variable.SpatialVariable
+' pybamm.expression_tree.independent_variable.Time --|> pybamm.expression_tree.independent_variable.IndependentVariable
+' pybamm.expression_tree.input_parameter.InputParameter --|> pybamm.expression_tree.symbol.Symbol
+' pybamm.expression_tree.interpolant.Interpolant --|> pybamm.expression_tree.functions.Function
+' pybamm.expression_tree.matrix.Matrix --|> pybamm.expression_tree.array.Array
+' pybamm.expression_tree.parameter.FunctionParameter --|> pybamm.expression_tree.symbol.Symbol
+' pybamm.expression_tree.parameter.Parameter --|> pybamm.expression_tree.symbol.Symbol
+' pybamm.expression_tree.scalar.Scalar --|> pybamm.expression_tree.symbol.Symbol
+' pybamm.expression_tree.state_vector.StateVector --|> pybamm.expression_tree.state_vector.StateVectorBase
+' pybamm.expression_tree.state_vector.StateVectorBase --|> pybamm.expression_tree.symbol.Symbol
+' pybamm.expression_tree.state_vector.StateVectorDot --|> pybamm.expression_tree.state_vector.StateVectorBase
+' pybamm.expression_tree.unary_operators.AbsoluteValue --|> pybamm.expression_tree.unary_operators.UnaryOperator
+' pybamm.expression_tree.unary_operators.BackwardIndefiniteIntegral --|> pybamm.expression_tree.unary_operators.BaseIndefiniteIntegral
+' pybamm.expression_tree.unary_operators.BaseIndefiniteIntegral --|> pybamm.expression_tree.unary_operators.Integral
+' pybamm.expression_tree.unary_operators.BoundaryGradient --|> pybamm.expression_tree.unary_operators.BoundaryOperator
+' pybamm.expression_tree.unary_operators.BoundaryIntegral --|> pybamm.expression_tree.unary_operators.SpatialOperator
+' pybamm.expression_tree.unary_operators.BoundaryMass --|> pybamm.expression_tree.unary_operators.SpatialOperator
+' pybamm.expression_tree.unary_operators.BoundaryOperator --|> pybamm.expression_tree.unary_operators.SpatialOperator
+' pybamm.expression_tree.unary_operators.BoundaryValue --|> pybamm.expression_tree.unary_operators.BoundaryOperator
+' pybamm.expression_tree.unary_operators.Ceiling --|> pybamm.expression_tree.unary_operators.UnaryOperator
+' pybamm.expression_tree.unary_operators.DefiniteIntegralVector --|> pybamm.expression_tree.unary_operators.SpatialOperator
+' pybamm.expression_tree.unary_operators.DeltaFunction --|> pybamm.expression_tree.unary_operators.SpatialOperator
+' pybamm.expression_tree.unary_operators.Divergence --|> pybamm.expression_tree.unary_operators.SpatialOperator
+' pybamm.expression_tree.unary_operators.Downwind --|> pybamm.expression_tree.unary_operators.UpwindDownwind
+' pybamm.expression_tree.unary_operators.EvaluateAt --|> pybamm.expression_tree.unary_operators.SpatialOperator
+' pybamm.expression_tree.unary_operators.ExplicitTimeIntegral --|> pybamm.expression_tree.unary_operators.UnaryOperator
+' pybamm.expression_tree.unary_operators.Floor --|> pybamm.expression_tree.unary_operators.UnaryOperator
+' pybamm.expression_tree.unary_operators.Gradient --|> pybamm.expression_tree.unary_operators.SpatialOperator
+' pybamm.expression_tree.unary_operators.GradientSquared --|> pybamm.expression_tree.unary_operators.SpatialOperator
+' pybamm.expression_tree.unary_operators.IndefiniteIntegral --|> pybamm.expression_tree.unary_operators.BaseIndefiniteIntegral
+' pybamm.expression_tree.unary_operators.Index --|> pybamm.expression_tree.unary_operators.UnaryOperator
+' pybamm.expression_tree.unary_operators.Integral --|> pybamm.expression_tree.unary_operators.SpatialOperator
+' pybamm.expression_tree.unary_operators.Laplacian --|> pybamm.expression_tree.unary_operators.SpatialOperator
+' pybamm.expression_tree.unary_operators.Mass --|> pybamm.expression_tree.unary_operators.SpatialOperator
+' pybamm.expression_tree.unary_operators.Negate --|> pybamm.expression_tree.unary_operators.UnaryOperator
+' pybamm.expression_tree.unary_operators.NotConstant --|> pybamm.expression_tree.unary_operators.UnaryOperator
+' pybamm.expression_tree.unary_operators.Sign --|> pybamm.expression_tree.unary_operators.UnaryOperator
+' pybamm.expression_tree.unary_operators.SpatialOperator --|> pybamm.expression_tree.unary_operators.UnaryOperator
+' pybamm.expression_tree.unary_operators.UnaryOperator --|> pybamm.expression_tree.symbol.Symbol
+' pybamm.expression_tree.unary_operators.Upwind --|> pybamm.expression_tree.unary_operators.UpwindDownwind
+' pybamm.expression_tree.unary_operators.UpwindDownwind --|> pybamm.expression_tree.unary_operators.SpatialOperator
+' pybamm.expression_tree.variable.Variable --|> pybamm.expression_tree.variable.VariableBase
+' pybamm.expression_tree.variable.VariableBase --|> pybamm.expression_tree.symbol.Symbol
+' pybamm.expression_tree.variable.VariableDot --|> pybamm.expression_tree.variable.VariableBase
+' pybamm.expression_tree.vector.Vector --|> pybamm.expression_tree.array.Array
+' pybamm.meshes.one_dimensional_submeshes.Chebyshev1DSubMesh --|> pybamm.meshes.one_dimensional_submeshes.SubMesh1D
+' pybamm.meshes.one_dimensional_submeshes.Exponential1DSubMesh --|> pybamm.meshes.one_dimensional_submeshes.SubMesh1D
+' pybamm.meshes.one_dimensional_submeshes.SpectralVolume1DSubMesh --|> pybamm.meshes.one_dimensional_submeshes.SubMesh1D
+' pybamm.meshes.one_dimensional_submeshes.SubMesh1D --|> pybamm.meshes.meshes.SubMesh
+' pybamm.meshes.one_dimensional_submeshes.SymbolicUniform1DSubMesh --|> pybamm.meshes.one_dimensional_submeshes.SubMesh1D
+' pybamm.meshes.one_dimensional_submeshes.Uniform1DSubMesh --|> pybamm.meshes.one_dimensional_submeshes.SubMesh1D
+' pybamm.meshes.one_dimensional_submeshes.UserSupplied1DSubMesh --|> pybamm.meshes.one_dimensional_submeshes.SubMesh1D
+' pybamm.meshes.scikit_fem_submeshes.ScikitChebyshev2DSubMesh --|> pybamm.meshes.scikit_fem_submeshes.ScikitSubMesh2D
+' pybamm.meshes.scikit_fem_submeshes.ScikitExponential2DSubMesh --|> pybamm.meshes.scikit_fem_submeshes.ScikitSubMesh2D
+' pybamm.meshes.scikit_fem_submeshes.ScikitSubMesh2D --|> pybamm.meshes.meshes.SubMesh
+' pybamm.meshes.scikit_fem_submeshes.ScikitUniform2DSubMesh --|> pybamm.meshes.scikit_fem_submeshes.ScikitSubMesh2D
+' pybamm.meshes.scikit_fem_submeshes.UserSupplied2DSubMesh --|> pybamm.meshes.scikit_fem_submeshes.ScikitSubMesh2D
+' pybamm.meshes.zero_dimensional_submesh.SubMesh0D --|> pybamm.meshes.meshes.SubMesh
+pybamm.models.full_battery_models.base_battery_model.BaseBatteryModel --|> pybamm.models.base_model.BaseModel
+pybamm.models.full_battery_models.base_battery_model.BatteryModelOptions --|> pybamm.util.FuzzyDict
+pybamm.models.full_battery_models.equivalent_circuit.thevenin.Thevenin --|> pybamm.models.base_model.BaseModel
+pybamm.models.full_battery_models.lead_acid.base_lead_acid_model.BaseModel --|> pybamm.models.full_battery_models.base_battery_model.BaseBatteryModel
+pybamm.models.full_battery_models.lead_acid.basic_full.BasicFull --|> pybamm.models.full_battery_models.lead_acid.base_lead_acid_model.BaseModel
+' pybamm.models.full_battery_models.lead_acid.full.Full --|> pybamm.models.full_battery_models.lead_acid.base_lead_acid_model.BaseModel
+' pybamm.models.full_battery_models.lead_acid.loqs.LOQS --|> pybamm.models.full_battery_models.lead_acid.base_lead_acid_model.BaseModel
+' pybamm.models.full_battery_models.lithium_ion.Yang2017.Yang2017 --|> pybamm.models.full_battery_models.lithium_ion.dfn.DFN
+pybamm.models.full_battery_models.lithium_ion.base_lithium_ion_model.BaseModel --|> pybamm.models.full_battery_models.base_battery_model.BaseBatteryModel
+pybamm.models.full_battery_models.lithium_ion.basic_dfn.BasicDFN --|> pybamm.models.full_battery_models.lithium_ion.base_lithium_ion_model.BaseModel
+pybamm.models.full_battery_models.lithium_ion.basic_dfn_composite.BasicDFNComposite --|> pybamm.models.full_battery_models.lithium_ion.base_lithium_ion_model.BaseModel
+pybamm.models.full_battery_models.lithium_ion.basic_dfn_half_cell.BasicDFNHalfCell --|> pybamm.models.full_battery_models.lithium_ion.base_lithium_ion_model.BaseModel
+pybamm.models.full_battery_models.lithium_ion.basic_splitOCVR.SplitOCVR --|> pybamm.models.base_model.BaseModel
+pybamm.models.full_battery_models.lithium_ion.basic_spm.BasicSPM --|> pybamm.models.full_battery_models.lithium_ion.base_lithium_ion_model.BaseModel
+pybamm.models.full_battery_models.lithium_ion.dfn.DFN --|> pybamm.models.full_battery_models.lithium_ion.base_lithium_ion_model.BaseModel
+' pybamm.models.full_battery_models.lithium_ion.electrode_soh._BaseElectrodeSOH --|> pybamm.models.base_model.BaseModel
+' pybamm.models.full_battery_models.lithium_ion.electrode_soh._ElectrodeSOH --|> pybamm.models.full_battery_models.lithium_ion.electrode_soh._BaseElectrodeSOH
+' pybamm.models.full_battery_models.lithium_ion.electrode_soh._ElectrodeSOHMSMR --|> pybamm.models.full_battery_models.lithium_ion.electrode_soh._BaseElectrodeSOH
+' pybamm.models.full_battery_models.lithium_ion.electrode_soh_half_cell.ElectrodeSOHHalfCell --|> pybamm.models.base_model.BaseModel
+pybamm.models.full_battery_models.lithium_ion.mpm.MPM --|> pybamm.models.full_battery_models.lithium_ion.spm.SPM
+pybamm.models.full_battery_models.lithium_ion.msmr.MSMR --|> pybamm.models.full_battery_models.lithium_ion.dfn.DFN
+' pybamm.models.full_battery_models.lithium_ion.newman_tobias.NewmanTobias --|> pybamm.models.full_battery_models.lithium_ion.dfn.DFN
+pybamm.models.full_battery_models.lithium_ion.spm.SPM --|> pybamm.models.full_battery_models.lithium_ion.base_lithium_ion_model.BaseModel
+pybamm.models.full_battery_models.lithium_ion.spme.SPMe --|> pybamm.models.full_battery_models.lithium_ion.spm.SPM
+pybamm.models.full_battery_models.sodium_ion.basic_dfn.BasicDFN --|> pybamm.models.full_battery_models.lithium_ion.base_lithium_ion_model.BaseModel
+' pybamm.models.submodels.active_material.base_active_material.BaseModel --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.active_material.constant_active_material.Constant --|> pybamm.models.submodels.active_material.base_active_material.BaseModel
+' pybamm.models.submodels.active_material.loss_active_material.LossActiveMaterial --|> pybamm.models.submodels.active_material.base_active_material.BaseModel
+' pybamm.models.submodels.active_material.total_active_material.Total --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.base_submodel.BaseSubModel --|> pybamm.models.base_model.BaseModel
+' pybamm.models.submodels.convection.base_convection.BaseModel --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.convection.through_cell.base_through_cell_convection.BaseThroughCellModel --|> pybamm.models.submodels.convection.base_convection.BaseModel
+' pybamm.models.submodels.convection.through_cell.explicit_convection.Explicit --|> pybamm.models.submodels.convection.through_cell.base_through_cell_convection.BaseThroughCellModel
+' pybamm.models.submodels.convection.through_cell.full_convection.Full --|> pybamm.models.submodels.convection.through_cell.base_through_cell_convection.BaseThroughCellModel
+' pybamm.models.submodels.convection.through_cell.no_convection.NoConvection --|> pybamm.models.submodels.convection.through_cell.base_through_cell_convection.BaseThroughCellModel
+' pybamm.models.submodels.convection.transverse.base_transverse_convection.BaseTransverseModel --|> pybamm.models.submodels.convection.base_convection.BaseModel
+' pybamm.models.submodels.convection.transverse.full_convection.Full --|> pybamm.models.submodels.convection.transverse.base_transverse_convection.BaseTransverseModel
+' pybamm.models.submodels.convection.transverse.no_convection.NoConvection --|> pybamm.models.submodels.convection.transverse.base_transverse_convection.BaseTransverseModel
+' pybamm.models.submodels.convection.transverse.uniform_convection.Uniform --|> pybamm.models.submodels.convection.transverse.base_transverse_convection.BaseTransverseModel
+' pybamm.models.submodels.current_collector.base_current_collector.BaseModel --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.current_collector.effective_resistance_current_collector.AlternativeEffectiveResistance2D --|> pybamm.models.submodels.current_collector.effective_resistance_current_collector.BaseEffectiveResistance
+' pybamm.models.submodels.current_collector.effective_resistance_current_collector.BaseEffectiveResistance --|> pybamm.models.base_model.BaseModel
+' pybamm.models.submodels.current_collector.effective_resistance_current_collector.EffectiveResistance --|> pybamm.models.submodels.current_collector.effective_resistance_current_collector.BaseEffectiveResistance
+' pybamm.models.submodels.current_collector.homogeneous_current_collector.Uniform --|> pybamm.models.submodels.current_collector.base_current_collector.BaseModel
+' pybamm.models.submodels.current_collector.potential_pair.BasePotentialPair --|> pybamm.models.submodels.current_collector.base_current_collector.BaseModel
+' pybamm.models.submodels.current_collector.potential_pair.PotentialPair1plus1D --|> pybamm.models.submodels.current_collector.potential_pair.BasePotentialPair
+' pybamm.models.submodels.current_collector.potential_pair.PotentialPair2plus1D --|> pybamm.models.submodels.current_collector.potential_pair.BasePotentialPair
+' pybamm.models.submodels.electrode.base_electrode.BaseElectrode --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.electrode.ohm.base_ohm.BaseModel --|> pybamm.models.submodels.electrode.base_electrode.BaseElectrode
+' pybamm.models.submodels.electrode.ohm.composite_ohm.Composite --|> pybamm.models.submodels.electrode.ohm.base_ohm.BaseModel
+' pybamm.models.submodels.electrode.ohm.full_ohm.Full --|> pybamm.models.submodels.electrode.ohm.base_ohm.BaseModel
+' pybamm.models.submodels.electrode.ohm.leading_ohm.LeadingOrder --|> pybamm.models.submodels.electrode.ohm.base_ohm.BaseModel
+' pybamm.models.submodels.electrode.ohm.li_metal.LithiumMetalBaseModel --|> pybamm.models.submodels.electrode.ohm.base_ohm.BaseModel
+' pybamm.models.submodels.electrode.ohm.li_metal.LithiumMetalExplicit --|> pybamm.models.submodels.electrode.ohm.li_metal.LithiumMetalBaseModel
+' pybamm.models.submodels.electrode.ohm.li_metal.LithiumMetalSurfaceForm --|> pybamm.models.submodels.electrode.ohm.li_metal.LithiumMetalBaseModel
+' pybamm.models.submodels.electrode.ohm.surface_form_ohm.SurfaceForm --|> pybamm.models.submodels.electrode.ohm.base_ohm.BaseModel
+' pybamm.models.submodels.electrolyte_conductivity.base_electrolyte_conductivity.BaseElectrolyteConductivity --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.electrolyte_conductivity.composite_conductivity.Composite --|> pybamm.models.submodels.electrolyte_conductivity.base_electrolyte_conductivity.BaseElectrolyteConductivity
+' pybamm.models.submodels.electrolyte_conductivity.full_conductivity.Full --|> pybamm.models.submodels.electrolyte_conductivity.base_electrolyte_conductivity.BaseElectrolyteConductivity
+' pybamm.models.submodels.electrolyte_conductivity.integrated_conductivity.Integrated --|> pybamm.models.submodels.electrolyte_conductivity.base_electrolyte_conductivity.BaseElectrolyteConductivity
+' pybamm.models.submodels.electrolyte_conductivity.leading_order_conductivity.LeadingOrder --|> pybamm.models.submodels.electrolyte_conductivity.base_electrolyte_conductivity.BaseElectrolyteConductivity
+' pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.composite_surface_form_conductivity.BaseModel --|> pybamm.models.submodels.electrolyte_conductivity.composite_conductivity.Composite
+' pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.composite_surface_form_conductivity.CompositeAlgebraic --|> pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.composite_surface_form_conductivity.BaseModel
+' pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.composite_surface_form_conductivity.CompositeDifferential --|> pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.composite_surface_form_conductivity.BaseModel
+' pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.explicit_surface_form_conductivity.Explicit --|> pybamm.models.submodels.electrolyte_conductivity.base_electrolyte_conductivity.BaseElectrolyteConductivity
+' pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.full_surface_form_conductivity.BaseModel --|> pybamm.models.submodels.electrolyte_conductivity.base_electrolyte_conductivity.BaseElectrolyteConductivity
+' pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.full_surface_form_conductivity.FullAlgebraic --|> pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.full_surface_form_conductivity.BaseModel
+' pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.full_surface_form_conductivity.FullDifferential --|> pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.full_surface_form_conductivity.BaseModel
+' pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.leading_surface_form_conductivity.BaseLeadingOrderSurfaceForm --|> pybamm.models.submodels.electrolyte_conductivity.leading_order_conductivity.LeadingOrder
+' pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.leading_surface_form_conductivity.LeadingOrderAlgebraic --|> pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.leading_surface_form_conductivity.BaseLeadingOrderSurfaceForm
+' pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.leading_surface_form_conductivity.LeadingOrderDifferential --|> pybamm.models.submodels.electrolyte_conductivity.surface_potential_form.leading_surface_form_conductivity.BaseLeadingOrderSurfaceForm
+' pybamm.models.submodels.electrolyte_diffusion.base_electrolyte_diffusion.BaseElectrolyteDiffusion --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.electrolyte_diffusion.constant_concentration.ConstantConcentration --|> pybamm.models.submodels.electrolyte_diffusion.base_electrolyte_diffusion.BaseElectrolyteDiffusion
+' pybamm.models.submodels.electrolyte_diffusion.full_diffusion.Full --|> pybamm.models.submodels.electrolyte_diffusion.base_electrolyte_diffusion.BaseElectrolyteDiffusion
+' pybamm.models.submodels.electrolyte_diffusion.leading_order_diffusion.LeadingOrder --|> pybamm.models.submodels.electrolyte_diffusion.base_electrolyte_diffusion.BaseElectrolyteDiffusion
+' pybamm.models.submodels.equivalent_circuit_elements.diffusion_element.DiffusionElement --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.equivalent_circuit_elements.diffusion_element.NoDiffusion --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.equivalent_circuit_elements.ocv_element.OCVElement --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.equivalent_circuit_elements.rc_element.RCElement --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.equivalent_circuit_elements.resistor_element.ResistorElement --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.equivalent_circuit_elements.thermal.ThermalSubModel --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.equivalent_circuit_elements.voltage_model.VoltageModel --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.external_circuit.base_external_circuit.BaseModel --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.external_circuit.discharge_throughput.DischargeThroughput --|> pybamm.models.submodels.external_circuit.base_external_circuit.BaseModel
+' pybamm.models.submodels.external_circuit.explicit_control_external_circuit.ExplicitCurrentControl --|> pybamm.models.submodels.external_circuit.base_external_circuit.BaseModel
+' pybamm.models.submodels.external_circuit.explicit_control_external_circuit.ExplicitPowerControl --|> pybamm.models.submodels.external_circuit.base_external_circuit.BaseModel
+' pybamm.models.submodels.external_circuit.explicit_control_external_circuit.ExplicitResistanceControl --|> pybamm.models.submodels.external_circuit.base_external_circuit.BaseModel
+' pybamm.models.submodels.external_circuit.function_control_external_circuit.CCCVFunctionControl --|> pybamm.models.submodels.external_circuit.function_control_external_circuit.FunctionControl
+' pybamm.models.submodels.external_circuit.function_control_external_circuit.FunctionControl --|> pybamm.models.submodels.external_circuit.base_external_circuit.BaseModel
+' pybamm.models.submodels.external_circuit.function_control_external_circuit.PowerFunctionControl --|> pybamm.models.submodels.external_circuit.function_control_external_circuit.FunctionControl
+' pybamm.models.submodels.external_circuit.function_control_external_circuit.ResistanceFunctionControl --|> pybamm.models.submodels.external_circuit.function_control_external_circuit.FunctionControl
+' pybamm.models.submodels.external_circuit.function_control_external_circuit.VoltageFunctionControl --|> pybamm.models.submodels.external_circuit.function_control_external_circuit.FunctionControl
+' pybamm.models.submodels.interface.base_interface.BaseInterface --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.interface.interface_utilisation.base_utilisation.BaseModel --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.interface.interface_utilisation.constant_utilisation.Constant --|> pybamm.models.submodels.interface.interface_utilisation.base_utilisation.BaseModel
+' pybamm.models.submodels.interface.interface_utilisation.current_driven_utilisation.CurrentDriven --|> pybamm.models.submodels.interface.interface_utilisation.base_utilisation.BaseModel
+' pybamm.models.submodels.interface.interface_utilisation.full_utilisation.Full --|> pybamm.models.submodels.interface.interface_utilisation.base_utilisation.BaseModel
+' pybamm.models.submodels.interface.kinetics.base_kinetics.BaseKinetics --|> pybamm.models.submodels.interface.base_interface.BaseInterface
+' pybamm.models.submodels.interface.kinetics.butler_volmer.AsymmetricButlerVolmer --|> pybamm.models.submodels.interface.kinetics.base_kinetics.BaseKinetics
+' pybamm.models.submodels.interface.kinetics.butler_volmer.SymmetricButlerVolmer --|> pybamm.models.submodels.interface.kinetics.base_kinetics.BaseKinetics
+' pybamm.models.submodels.interface.kinetics.diffusion_limited.DiffusionLimited --|> pybamm.models.submodels.interface.base_interface.BaseInterface
+' pybamm.models.submodels.interface.kinetics.inverse_kinetics.inverse_butler_volmer.CurrentForInverseButlerVolmer --|> pybamm.models.submodels.interface.base_interface.BaseInterface
+' pybamm.models.submodels.interface.kinetics.inverse_kinetics.inverse_butler_volmer.CurrentForInverseButlerVolmerLithiumMetal --|> pybamm.models.submodels.interface.base_interface.BaseInterface
+' pybamm.models.submodels.interface.kinetics.inverse_kinetics.inverse_butler_volmer.InverseButlerVolmer --|> pybamm.models.submodels.interface.base_interface.BaseInterface
+' pybamm.models.submodels.interface.kinetics.linear.Linear --|> pybamm.models.submodels.interface.kinetics.base_kinetics.BaseKinetics
+' pybamm.models.submodels.interface.kinetics.marcus.Marcus --|> pybamm.models.submodels.interface.kinetics.base_kinetics.BaseKinetics
+' pybamm.models.submodels.interface.kinetics.marcus.MarcusHushChidsey --|> pybamm.models.submodels.interface.kinetics.base_kinetics.BaseKinetics
+' pybamm.models.submodels.interface.kinetics.msmr_butler_volmer.MSMRButlerVolmer --|> pybamm.models.submodels.interface.kinetics.base_kinetics.BaseKinetics
+' pybamm.models.submodels.interface.kinetics.no_reaction.NoReaction --|> pybamm.models.submodels.interface.base_interface.BaseInterface
+' pybamm.models.submodels.interface.kinetics.tafel.ForwardTafel --|> pybamm.models.submodels.interface.kinetics.base_kinetics.BaseKinetics
+' pybamm.models.submodels.interface.kinetics.total_main_kinetics.TotalMainKinetics --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.interface.lithium_plating.base_plating.BasePlating --|> pybamm.models.submodels.interface.base_interface.BaseInterface
+' pybamm.models.submodels.interface.lithium_plating.no_plating.NoPlating --|> pybamm.models.submodels.interface.lithium_plating.base_plating.BasePlating
+' pybamm.models.submodels.interface.lithium_plating.plating.Plating --|> pybamm.models.submodels.interface.lithium_plating.base_plating.BasePlating
+' pybamm.models.submodels.interface.lithium_plating.total_lithium_plating.TotalLithiumPlating --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.interface.open_circuit_potential.base_ocp.BaseOpenCircuitPotential --|> pybamm.models.submodels.interface.base_interface.BaseInterface
+' pybamm.models.submodels.interface.open_circuit_potential.current_sigmoid_ocp.CurrentSigmoidOpenCircuitPotential --|> pybamm.models.submodels.interface.open_circuit_potential.base_ocp.BaseOpenCircuitPotential
+' pybamm.models.submodels.interface.open_circuit_potential.msmr_ocp.MSMROpenCircuitPotential --|> pybamm.models.submodels.interface.open_circuit_potential.base_ocp.BaseOpenCircuitPotential
+' pybamm.models.submodels.interface.open_circuit_potential.single_ocp.SingleOpenCircuitPotential --|> pybamm.models.submodels.interface.open_circuit_potential.base_ocp.BaseOpenCircuitPotential
+' pybamm.models.submodels.interface.open_circuit_potential.wycisk_ocp.WyciskOpenCircuitPotential --|> pybamm.models.submodels.interface.open_circuit_potential.base_ocp.BaseOpenCircuitPotential
+' pybamm.models.submodels.interface.sei.base_sei.BaseModel --|> pybamm.models.submodels.interface.base_interface.BaseInterface
+' pybamm.models.submodels.interface.sei.constant_sei.ConstantSEI --|> pybamm.models.submodels.interface.sei.base_sei.BaseModel
+' pybamm.models.submodels.interface.sei.no_sei.NoSEI --|> pybamm.models.submodels.interface.sei.base_sei.BaseModel
+' pybamm.models.submodels.interface.sei.sei_growth.SEIGrowth --|> pybamm.models.submodels.interface.sei.base_sei.BaseModel
+' pybamm.models.submodels.interface.sei.total_sei.TotalSEI --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.interface.total_interfacial_current.TotalInterfacialCurrent --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.oxygen_diffusion.base_oxygen_diffusion.BaseModel --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.oxygen_diffusion.full_oxygen_diffusion.Full --|> pybamm.models.submodels.oxygen_diffusion.base_oxygen_diffusion.BaseModel
+' pybamm.models.submodels.oxygen_diffusion.leading_oxygen_diffusion.LeadingOrder --|> pybamm.models.submodels.oxygen_diffusion.base_oxygen_diffusion.BaseModel
+' pybamm.models.submodels.oxygen_diffusion.no_oxygen.NoOxygen --|> pybamm.models.submodels.oxygen_diffusion.base_oxygen_diffusion.BaseModel
+' pybamm.models.submodels.particle.base_particle.BaseParticle --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.particle.fickian_diffusion.FickianDiffusion --|> pybamm.models.submodels.particle.base_particle.BaseParticle
+' pybamm.models.submodels.particle.msmr_diffusion.MSMRDiffusion --|> pybamm.models.submodels.particle.base_particle.BaseParticle
+' pybamm.models.submodels.particle.msmr_diffusion.MSMRStoichiometryVariables --|> pybamm.models.submodels.particle.base_particle.BaseParticle
+' pybamm.models.submodels.particle.polynomial_profile.PolynomialProfile --|> pybamm.models.submodels.particle.base_particle.BaseParticle
+' pybamm.models.submodels.particle.total_particle_concentration.TotalConcentration --|> pybamm.models.submodels.particle.base_particle.BaseParticle
+' pybamm.models.submodels.particle.x_averaged_polynomial_profile.XAveragedPolynomialProfile --|> pybamm.models.submodels.particle.polynomial_profile.PolynomialProfile
+' pybamm.models.submodels.particle_mechanics.base_mechanics.BaseMechanics --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.particle_mechanics.crack_propagation.CrackPropagation --|> pybamm.models.submodels.particle_mechanics.base_mechanics.BaseMechanics
+' pybamm.models.submodels.particle_mechanics.no_mechanics.NoMechanics --|> pybamm.models.submodels.particle_mechanics.base_mechanics.BaseMechanics
+' pybamm.models.submodels.particle_mechanics.swelling_only.SwellingOnly --|> pybamm.models.submodels.particle_mechanics.base_mechanics.BaseMechanics
+' pybamm.models.submodels.porosity.base_porosity.BaseModel --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.porosity.constant_porosity.Constant --|> pybamm.models.submodels.porosity.base_porosity.BaseModel
+' pybamm.models.submodels.porosity.reaction_driven_porosity.ReactionDriven --|> pybamm.models.submodels.porosity.base_porosity.BaseModel
+' pybamm.models.submodels.porosity.reaction_driven_porosity_ode.ReactionDrivenODE --|> pybamm.models.submodels.porosity.base_porosity.BaseModel
+' pybamm.models.submodels.thermal.base_thermal.BaseThermal --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.thermal.isothermal.Isothermal --|> pybamm.models.submodels.thermal.base_thermal.BaseThermal
+' pybamm.models.submodels.thermal.lumped.Lumped --|> pybamm.models.submodels.thermal.base_thermal.BaseThermal
+' pybamm.models.submodels.thermal.pouch_cell.pouch_cell_1D_current_collectors.CurrentCollector1D --|> pybamm.models.submodels.thermal.base_thermal.BaseThermal
+' pybamm.models.submodels.thermal.pouch_cell.pouch_cell_2D_current_collectors.CurrentCollector2D --|> pybamm.models.submodels.thermal.base_thermal.BaseThermal
+' pybamm.models.submodels.thermal.pouch_cell.x_full.OneDimensionalX --|> pybamm.models.submodels.thermal.base_thermal.BaseThermal
+' pybamm.models.submodels.thermal.surface.ambient.Ambient --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.thermal.surface.lumped.Lumped --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.transport_efficiency.base_transport_efficiency.BaseModel --|> pybamm.models.submodels.base_submodel.BaseSubModel
+' pybamm.models.submodels.transport_efficiency.bruggeman.Bruggeman --|> pybamm.models.submodels.transport_efficiency.base_transport_efficiency.BaseModel
+' pybamm.models.submodels.transport_efficiency.cation_exchange_membrane.CationExchangeMembrane --|> pybamm.models.submodels.transport_efficiency.base_transport_efficiency.BaseModel
+' pybamm.models.submodels.transport_efficiency.heterogeneous_catalyst.HeterogeneousCatalyst --|> pybamm.models.submodels.transport_efficiency.base_transport_efficiency.BaseModel
+' pybamm.models.submodels.transport_efficiency.hyperbola_of_revolution.HyperbolaOfRevolution --|> pybamm.models.submodels.transport_efficiency.base_transport_efficiency.BaseModel
+' pybamm.models.submodels.transport_efficiency.ordered_packing.OrderedPacking --|> pybamm.models.submodels.transport_efficiency.base_transport_efficiency.BaseModel
+' pybamm.models.submodels.transport_efficiency.overlapping_spheres.OverlappingSpheres --|> pybamm.models.submodels.transport_efficiency.base_transport_efficiency.BaseModel
+' pybamm.models.submodels.transport_efficiency.random_overlapping_cylinders.RandomOverlappingCylinders --|> pybamm.models.submodels.transport_efficiency.base_transport_efficiency.BaseModel
+' pybamm.models.submodels.transport_efficiency.tortuosity_factor.TortuosityFactor --|> pybamm.models.submodels.transport_efficiency.base_transport_efficiency.BaseModel
+' pybamm.parameters.electrical_parameters.ElectricalParameters --|> pybamm.parameters.base_parameters.BaseParameters
+' pybamm.parameters.geometric_parameters.DomainGeometricParameters --|> pybamm.parameters.base_parameters.BaseParameters
+pybamm.parameters.geometric_parameters.GeometricParameters --|> pybamm.parameters.base_parameters.BaseParameters
+' pybamm.parameters.geometric_parameters.ParticleGeometricParameters --|> pybamm.parameters.base_parameters.BaseParameters
+' pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters --|> pybamm.parameters.base_parameters.BaseParameters
+pybamm.parameters.lead_acid_parameters.LeadAcidParameters --|> pybamm.parameters.base_parameters.BaseParameters
+' pybamm.parameters.lead_acid_parameters.PhaseLeadAcidParameters --|> pybamm.parameters.base_parameters.BaseParameters
+' pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters --|> pybamm.parameters.base_parameters.BaseParameters
+pybamm.parameters.lithium_ion_parameters.LithiumIonParameters --|> pybamm.parameters.base_parameters.BaseParameters
+' pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters --|> pybamm.parameters.base_parameters.BaseParameters
+' pybamm.parameters.thermal_parameters.DomainThermalParameters --|> pybamm.parameters.base_parameters.BaseParameters
+' pybamm.parameters.thermal_parameters.ThermalParameters --|> pybamm.parameters.base_parameters.BaseParameters
+' pybamm.solvers.algebraic_solver.AlgebraicSolver --|> pybamm.solvers.base_solver.BaseSolver
+' pybamm.solvers.casadi_algebraic_solver.CasadiAlgebraicSolver --|> pybamm.solvers.base_solver.BaseSolver
+' pybamm.solvers.casadi_solver.CasadiSolver --|> pybamm.solvers.base_solver.BaseSolver
+' pybamm.solvers.dummy_solver.DummySolver --|> pybamm.solvers.base_solver.BaseSolver
+' pybamm.solvers.idaklu_solver.IDAKLUSolver --|> pybamm.solvers.base_solver.BaseSolver
+' pybamm.solvers.jax_solver.JaxSolver --|> pybamm.solvers.base_solver.BaseSolver
+' pybamm.solvers.processed_variable.ProcessedVariable0D --|> pybamm.solvers.processed_variable.ProcessedVariable
+' pybamm.solvers.processed_variable.ProcessedVariable1D --|> pybamm.solvers.processed_variable.ProcessedVariable
+' pybamm.solvers.processed_variable.ProcessedVariable2D --|> pybamm.solvers.processed_variable.ProcessedVariable
+' pybamm.solvers.processed_variable.ProcessedVariable2DSciKitFEM --|> pybamm.solvers.processed_variable.ProcessedVariable2D
+' pybamm.solvers.scipy_solver.ScipySolver --|> pybamm.solvers.base_solver.BaseSolver
+' pybamm.spatial_methods.finite_volume.FiniteVolume --|> pybamm.spatial_methods.spatial_method.SpatialMethod
+' pybamm.spatial_methods.scikit_finite_element.ScikitFiniteElement --|> pybamm.spatial_methods.spatial_method.SpatialMethod
+' pybamm.spatial_methods.spectral_volume.SpectralVolume --|> pybamm.spatial_methods.finite_volume.FiniteVolume
+' pybamm.spatial_methods.zero_dimensional_method.ZeroDimensionalSpatialMethod --|> pybamm.spatial_methods.spatial_method.SpatialMethod
+' pybamm.discretisations.discretisation.Discretisation --* pybamm.simulation.Simulation : _disc
+' pybamm.discretisations.discretisation.Discretisation --* pybamm.simulation.Simulation : _disc
+' pybamm.expression_tree.broadcasts.FullBroadcast --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : epsilon_init
+' pybamm.expression_tree.broadcasts.FullBroadcast --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : epsilon_init
+' pybamm.expression_tree.broadcasts.FullBroadcast --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : epsilon_s_av
+' pybamm.expression_tree.broadcasts.FullBroadcast --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : c_init_av
+' pybamm.expression_tree.broadcasts.PrimaryBroadcast --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : epsilon_init
+' pybamm.expression_tree.broadcasts.PrimaryBroadcast --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : epsilon_init
+' pybamm.expression_tree.broadcasts.PrimaryBroadcast --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : epsilon_s_av
+' pybamm.expression_tree.broadcasts.PrimaryBroadcast --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : c_init_av
+' pybamm.expression_tree.concatenations.Concatenation --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : epsilon_init
+' pybamm.expression_tree.concatenations.Concatenation --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : epsilon_init
+' pybamm.expression_tree.concatenations.ConcatenationVariable --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : epsilon_init
+' pybamm.expression_tree.concatenations.ConcatenationVariable --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : epsilon_init
+' pybamm.expression_tree.interpolant.Interpolant --* pybamm.experiment.step.base_step.BaseStep : value
+' pybamm.expression_tree.parameter.FunctionParameter --* pybamm.parameters.ecm_parameters.EcmParameters : current_with_time
+' pybamm.expression_tree.parameter.FunctionParameter --* pybamm.parameters.ecm_parameters.EcmParameters : current_density_with_time
+' pybamm.expression_tree.parameter.FunctionParameter --* pybamm.parameters.electrical_parameters.ElectricalParameters : current_with_time
+' pybamm.expression_tree.parameter.FunctionParameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : current_with_time
+' pybamm.expression_tree.parameter.FunctionParameter --* pybamm.parameters.lead_acid_parameters.PhaseLeadAcidParameters : a
+' pybamm.expression_tree.parameter.FunctionParameter --* pybamm.parameters.lead_acid_parameters.PhaseLeadAcidParameters : U_init
+' pybamm.expression_tree.parameter.FunctionParameter --* pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters : epsilon_init
+' pybamm.expression_tree.parameter.FunctionParameter --* pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters : epsilon_init
+' pybamm.expression_tree.parameter.FunctionParameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : current_with_time
+' pybamm.expression_tree.parameter.FunctionParameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : epsilon_s
+' pybamm.expression_tree.parameter.FunctionParameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : c_init
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.ecm_parameters.EcmParameters : cell_capacity
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.ecm_parameters.EcmParameters : tau_D
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.ecm_parameters.EcmParameters : voltage_high_cut
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.ecm_parameters.EcmParameters : voltage_low_cut
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.ecm_parameters.EcmParameters : cth_cell
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.ecm_parameters.EcmParameters : k_cell_jig
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.ecm_parameters.EcmParameters : cth_jig
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.ecm_parameters.EcmParameters : k_jig_air
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.ecm_parameters.EcmParameters : Q
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.ecm_parameters.EcmParameters : initial_soc
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.electrical_parameters.ElectricalParameters : Q
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.electrical_parameters.ElectricalParameters : R_contact
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.electrical_parameters.ElectricalParameters : n_electrodes_parallel
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.electrical_parameters.ElectricalParameters : n_cells
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.electrical_parameters.ElectricalParameters : voltage_low_cut
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.electrical_parameters.ElectricalParameters : voltage_high_cut
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.electrical_parameters.ElectricalParameters : ocp_soc_0
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.electrical_parameters.ElectricalParameters : ocp_soc_100
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.DomainGeometricParameters : L
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.DomainGeometricParameters : L
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.DomainGeometricParameters : b_e
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.DomainGeometricParameters : b_e
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.DomainGeometricParameters : tau_e
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.DomainGeometricParameters : tau_e
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.DomainGeometricParameters : L_cc
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.DomainGeometricParameters : L_tab
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.DomainGeometricParameters : centre_y_tab
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.DomainGeometricParameters : centre_z_tab
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.DomainGeometricParameters : b_s
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.DomainGeometricParameters : tau_s
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.GeometricParameters : L_Li
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.GeometricParameters : L_y
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.GeometricParameters : L_z
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.GeometricParameters : r_inner
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.GeometricParameters : r_outer
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.GeometricParameters : A_cooling
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.GeometricParameters : V_cell
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.ParticleGeometricParameters : a
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.ParticleGeometricParameters : R_min
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.geometric_parameters.ParticleGeometricParameters : R_max
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters : eps_max
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters : eps_max
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters : epsilon_init
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters : xi
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters : d
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters : Q_max
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : R
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : F
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : k_b
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : q_e
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : T_ref
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : T_init
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : h_total
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : L_y
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : L_z
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : W
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : H
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : Q
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : R_contact
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : n_electrodes_parallel
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : n_cells
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : voltage_low_cut
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : voltage_high_cut
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : c_e_init
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : c_e_init_av
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : V_w
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : V_plus
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : V_minus
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : nu_plus
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : nu_minus
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : c_ox_init
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : c_ox_typ
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : V_Pb
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : V_PbO2
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : V_PbSO4
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : s_plus_Ox
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : s_w_Ox
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : s_ox_Ox
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : ne_Ox
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : U_Ox
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : s_plus_Hy
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : s_hy_Hy
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : ne_Hy
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : U_Hy
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : M_w
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : M_plus
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : M_minus
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : D_ox
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : D_hy
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : V_ox
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : V_hy
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : M_ox
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : M_hy
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : q_init
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lead_acid_parameters.PhaseLeadAcidParameters : alpha_bv
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters : sigma_cc
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters : u_init
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters : beta_utilisation
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : R
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : F
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : k_b
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : q_e
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : T_ref
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : T_init
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : h_total
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : L_y
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : L_z
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : r_inner
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : r_outer
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : Q
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : R_contact
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : n_electrodes_parallel
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : n_cells
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : voltage_low_cut
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : voltage_high_cut
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : ocp_soc_0
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : ocp_soc_100
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : V_bar_Li
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : c_e_init
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : alpha_T_cell
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : mhc_lambda
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : alpha_bv
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : V_bar_sei
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : j0_sei
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : R_sei
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : D_sol
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : c_sol
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : U_sei
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : kappa_inner
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : D_li
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : c_li_0
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : kappa_Li_ion
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : L_sei_0
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : L_sei_crack_0
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : L_tunneling
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : beta_tunnelling
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : E_sei
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : alpha_SEI
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : z_sei
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : c_ec_0
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : D_ec
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : k_sei
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : c_Li_typ
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : c_plated_Li_0
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : alpha_plating
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : U_init
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : c_max
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : hysteresis_decay
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : hysteresis_switch
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : h_init
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : nu
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : m_LAM
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : beta_LAM
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : stress_critical
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : beta_LAM_sei
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : c_0
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : l_cr_0
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : w_cr
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : rho_cr
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : b_cr
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : m_cr
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.thermal_parameters.DomainThermalParameters : h_tab
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.thermal_parameters.ThermalParameters : T_ref
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.thermal_parameters.ThermalParameters : h_total
+' pybamm.expression_tree.parameter.Parameter --* pybamm.parameters.thermal_parameters.ThermalParameters : T_init
+' pybamm.expression_tree.scalar.Scalar --* pybamm.expression_tree.scalar.Scalar : f_a_dist
+' pybamm.expression_tree.scalar.Scalar --* pybamm.parameters.ecm_parameters.EcmParameters : n_electrodes_parallel
+' pybamm.expression_tree.scalar.Scalar --* pybamm.parameters.ecm_parameters.EcmParameters : A_cc
+' pybamm.expression_tree.scalar.Scalar --* pybamm.parameters.ecm_parameters.EcmParameters : n_cells
+' pybamm.expression_tree.scalar.Scalar --* pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters : epsilon_inactive
+' pybamm.expression_tree.scalar.Scalar --* pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters : epsilon_inactive
+' pybamm.expression_tree.scalar.Scalar --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : R_sei
+' pybamm.expression_tree.scalar.Scalar --* pybamm.parameters.lead_acid_parameters.PhaseLeadAcidParameters : s_plus_S
+' pybamm.expression_tree.scalar.Scalar --* pybamm.parameters.lead_acid_parameters.PhaseLeadAcidParameters : s_plus_S
+' pybamm.expression_tree.scalar.Scalar --* pybamm.parameters.lead_acid_parameters.PhaseLeadAcidParameters : ne_S
+' pybamm.expression_tree.scalar.Scalar --* pybamm.parameters.lead_acid_parameters.PhaseLeadAcidParameters : ne
+' pybamm.expression_tree.scalar.Scalar --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : ne
+' pybamm.expression_tree.scalar.Scalar --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : n_Li_init
+' pybamm.expression_tree.scalar.Scalar --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : Q_Li_init
+' pybamm.expression_tree.scalar.Scalar --* pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters : U_init
+pybamm.geometry.geometry.Geometry --* pybamm.models.base_model.BaseModel : _geometry
+' pybamm.meshes.meshes.Mesh --* pybamm.simulation.Simulation : _mesh
+' pybamm.meshes.meshes.Mesh --* pybamm.simulation.Simulation : _mesh
+' pybamm.models.base_model.BoundaryConditionsDict --* pybamm.models.base_model.BaseModel : _boundary_conditions
+' pybamm.models.base_model.EquationDict --* pybamm.models.base_model.BaseModel : _rhs
+' pybamm.models.base_model.EquationDict --* pybamm.models.base_model.BaseModel : _algebraic
+' pybamm.models.base_model.EquationDict --* pybamm.models.base_model.BaseModel : _initial_conditions
+pybamm.models.full_battery_models.base_battery_model.BatteryModelOptions --* pybamm.parameters.base_parameters.BaseParameters : _options
+' pybamm.parameters.base_parameters.NullParameters --* pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters : prim
+' pybamm.parameters.base_parameters.NullParameters --* pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters : prim
+' pybamm.parameters.base_parameters.NullParameters --* pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters : sec
+' pybamm.parameters.base_parameters.NullParameters --* pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters : sec
+' pybamm.parameters.ecm_parameters.EcmParameters --* pybamm.models.full_battery_models.equivalent_circuit.thevenin.Thevenin : param
+' pybamm.parameters.electrical_parameters.ElectricalParameters --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : elec
+' pybamm.parameters.electrical_parameters.ElectricalParameters --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : elec
+' pybamm.parameters.geometric_parameters.DomainGeometricParameters --* pybamm.parameters.geometric_parameters.GeometricParameters : n
+' pybamm.parameters.geometric_parameters.DomainGeometricParameters --* pybamm.parameters.geometric_parameters.GeometricParameters : s
+' pybamm.parameters.geometric_parameters.DomainGeometricParameters --* pybamm.parameters.geometric_parameters.GeometricParameters : p
+pybamm.parameters.geometric_parameters.GeometricParameters --* pybamm.parameters.electrical_parameters.ElectricalParameters : geo
+pybamm.parameters.geometric_parameters.GeometricParameters --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : geo
+pybamm.parameters.geometric_parameters.GeometricParameters --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : geo
+pybamm.parameters.geometric_parameters.GeometricParameters --* pybamm.parameters.thermal_parameters.ThermalParameters : geo
+' pybamm.parameters.geometric_parameters.ParticleGeometricParameters --* pybamm.parameters.geometric_parameters.DomainGeometricParameters : prim
+' pybamm.parameters.geometric_parameters.ParticleGeometricParameters --* pybamm.parameters.geometric_parameters.DomainGeometricParameters : sec
+' pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : n
+' pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : s
+' pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : p
+' pybamm.parameters.lead_acid_parameters.LeadAcidParameters --* pybamm.models.full_battery_models.lead_acid.base_lead_acid_model.BaseModel : param
+' pybamm.parameters.lead_acid_parameters.PhaseLeadAcidParameters --* pybamm.parameters.lead_acid_parameters.DomainLeadAcidParameters : prim
+' pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : n
+' pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : s
+' pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : p
+' pybamm.parameters.lithium_ion_parameters.LithiumIonParameters --* pybamm.models.full_battery_models.lithium_ion.base_lithium_ion_model.BaseModel : param
+' pybamm.parameters.lithium_ion_parameters.LithiumIonParameters --* pybamm.models.full_battery_models.lithium_ion.electrode_soh.ElectrodeSOHSolver : param
+' pybamm.parameters.lithium_ion_parameters.LithiumIonParameters --* pybamm.models.submodels.current_collector.effective_resistance_current_collector.AlternativeEffectiveResistance2D : param
+' pybamm.parameters.lithium_ion_parameters.LithiumIonParameters --* pybamm.models.submodels.current_collector.effective_resistance_current_collector.EffectiveResistance : param
+' pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters --* pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters : prim
+' pybamm.parameters.lithium_ion_parameters.ParticleLithiumIonParameters --* pybamm.parameters.lithium_ion_parameters.DomainLithiumIonParameters : sec
+' pybamm.parameters.thermal_parameters.DomainThermalParameters --* pybamm.parameters.thermal_parameters.ThermalParameters : n
+' pybamm.parameters.thermal_parameters.DomainThermalParameters --* pybamm.parameters.thermal_parameters.ThermalParameters : s
+' pybamm.parameters.thermal_parameters.DomainThermalParameters --* pybamm.parameters.thermal_parameters.ThermalParameters : p
+pybamm.parameters.thermal_parameters.ThermalParameters --* pybamm.parameters.lead_acid_parameters.LeadAcidParameters : therm
+pybamm.parameters.thermal_parameters.ThermalParameters --* pybamm.parameters.lithium_ion_parameters.LithiumIonParameters : therm
+' pybamm.plotting.quick_plot.LoopList --* pybamm.plotting.quick_plot.QuickPlot : colors
+' pybamm.plotting.quick_plot.LoopList --* pybamm.plotting.quick_plot.QuickPlot : colors
+' pybamm.plotting.quick_plot.LoopList --* pybamm.plotting.quick_plot.QuickPlot : linestyles
+' pybamm.plotting.quick_plot.QuickPlot --* pybamm.batch_study.BatchStudy : quick_plot
+' pybamm.plotting.quick_plot.QuickPlot --* pybamm.batch_study.BatchStudy : quick_plot
+' pybamm.plotting.quick_plot.QuickPlot --* pybamm.simulation.Simulation : quick_plot
+' pybamm.plotting.quick_plot.QuickPlot --* pybamm.simulation.Simulation : quick_plot
+' pybamm.plotting.quick_plot.QuickPlotAxes --* pybamm.plotting.quick_plot.QuickPlot : axes
+' pybamm.solvers.lrudict.LRUDict --* pybamm.solvers.casadi_solver.CasadiSolver : integrators
+' pybamm.solvers.lrudict.LRUDict --* pybamm.solvers.casadi_solver.CasadiSolver : integrator_specs
+' pybamm.solvers.summary_variable.SummaryVariables --* pybamm.solvers.solution.Solution : _summary_variables
+pybamm.util.FuzzyDict --* pybamm.models.base_model.BaseModel : _variables
+pybamm.util.FuzzyDict --* pybamm.models.base_model.BaseModel : variables
+' pybamm.util.FuzzyDict --* pybamm.parameters.parameter_values.ParameterValues : _dict_items
+pybamm.util.FuzzyDict --* pybamm.parameters.parameter_values.ParameterValues : _dict_items
+' pybamm.util.FuzzyDict --* pybamm.solvers.solution.Solution : _variables
+' pybamm.util.FuzzyDict --* pybamm.solvers.solution.Solution : _data
+' pybamm.util.TimerTime --* pybamm.solvers.solution.Solution : integration_time
+' pybamm.expression_tree.concatenations.NumpyConcatenation --o pybamm.models.base_model.BaseModel : concatenated_initial_conditions
+' pybamm.expression_tree.symbol.Symbol --o pybamm.expression_tree.operations.evaluate_python.EvaluatorPython : _symbol
+pybamm.models.full_battery_models.base_battery_model.BatteryModelOptions --o pybamm.models.full_battery_models.base_battery_model.BaseBatteryModel : _options
+' pybamm.models.full_battery_models.base_battery_model.BatteryModelOptions --o pybamm.models.submodels.base_submodel.BaseSubModel : options
+' pybamm.solvers.algebraic_solver.AlgebraicSolver --o pybamm.solvers.base_solver.BaseSolver : _root_method
+' pybamm.solvers.casadi_algebraic_solver.CasadiAlgebraicSolver --o pybamm.solvers.base_solver.BaseSolver : _root_method
+' pybamm.util.FuzzyDict --o pybamm.models.full_battery_models.equivalent_circuit.thevenin.Thevenin : options
+' pybamm.util.FuzzyDict --o pybamm.models.submodels.current_collector.effective_resistance_current_collector.BaseEffectiveResistance : _options
+@enduml

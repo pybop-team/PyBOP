@@ -1,0 +1,36 @@
+@startuml packages
+set namespaceSeparator none
+package "pybop.models" as pybop.models {
+}
+package "pybop.models._exponential_decay" as pybop.models._exponential_decay {
+}
+package "pybop.models.base_model" as pybop.models.base_model {
+}
+package "pybop.models.empirical" as pybop.models.empirical {
+}
+package "pybop.models.empirical.base_ecm" as pybop.models.empirical.base_ecm {
+}
+package "pybop.models.empirical.ecm" as pybop.models.empirical.ecm {
+}
+package "pybop.models.lithium_ion" as pybop.models.lithium_ion {
+}
+package "pybop.models.lithium_ion.base_echem" as pybop.models.lithium_ion.base_echem {
+}
+package "pybop.models.lithium_ion.basic_SPMe" as pybop.models.lithium_ion.basic_SPMe {
+}
+package "pybop.models.lithium_ion.echem" as pybop.models.lithium_ion.echem {
+}
+package "pybop.models.lithium_ion.weppner_huggins" as pybop.models.lithium_ion.weppner_huggins {
+}
+pybop.models._exponential_decay --> pybop.models.base_model
+pybop.models.empirical --> pybop.models.empirical.base_ecm
+pybop.models.empirical --> pybop.models.empirical.ecm
+pybop.models.empirical.base_ecm --> pybop.models.base_model
+pybop.models.empirical.ecm --> pybop.models.empirical.base_ecm
+pybop.models.lithium_ion --> pybop.models.lithium_ion.base_echem
+pybop.models.lithium_ion --> pybop.models.lithium_ion.echem
+pybop.models.lithium_ion.base_echem --> pybop.models.base_model
+pybop.models.lithium_ion.echem --> pybop.models.lithium_ion.base_echem
+pybop.models.lithium_ion.echem --> pybop.models.lithium_ion.basic_SPMe
+pybop.models.lithium_ion.echem --> pybop.models.lithium_ion.weppner_huggins
+@enduml

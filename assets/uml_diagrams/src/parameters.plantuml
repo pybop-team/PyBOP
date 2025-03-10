@@ -1,7 +1,7 @@
 @startuml parameters-all
 
 
-title PyBOP PyBamm Parameters Interface
+title PyBOP-PyBamm Parameters Interface
 
 ' group the pybop and pybamm classes separately
 
@@ -13,6 +13,7 @@ package "PyBaMM Parameters" {
 
 }
 
+' PyBOP PyBamm interface relationships
 pybop.parameters.parameter_set.ParameterSet ..> pybamm.parameters.parameter_values.ParameterValues
 
 @enduml
