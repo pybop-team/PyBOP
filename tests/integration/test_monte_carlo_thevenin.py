@@ -133,7 +133,7 @@ class TestSamplingThevenin:
             "chains": 2,
             "warm_up": 150,
             "cov0": [6e-3, 6e-3],
-            "max_iterations": 550,
+            "max_iterations": 1000 if sampler is SliceRankShrinkingMCMC else 550,
             "x0": x0,
         }
 
