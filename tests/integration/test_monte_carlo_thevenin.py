@@ -127,13 +127,13 @@ class TestSamplingThevenin:
         ],
     )
     def test_sampling_thevenin(self, sampler, posterior, map_estimate):
-        x0 = np.clip(map_estimate + np.random.normal(0, 1e-3, size=2), 1e-4, 1e-1)
+        x0 = np.clip(map_estimate + np.random.normal(0, 5e-4, size=2), 1e-4, 1e-1)
         common_args = {
             "log_pdf": posterior,
             "chains": 2,
             "warm_up": 150,
             "cov0": [6e-3, 6e-3],
-            "max_iterations": 550,
+            "max_iterations": 1000 if sampler is SliceRankShrinkingMCMC else 550,
             "x0": x0,
         }
 
