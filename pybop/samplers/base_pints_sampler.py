@@ -115,7 +115,7 @@ class BasePintsSampler(BaseSampler):
         # Set parallelisation
         self.set_parallel(self._parallel)
 
-    def _initialize_chain_processor(self):
+    def _initialise_chain_processor(self):
         """
         Initialise the appropriate chain processor based on configuration.
         """
@@ -162,7 +162,7 @@ class BasePintsSampler(BaseSampler):
 
         self._initialise_logging()
         self._check_stopping_criteria()
-        self._initialize_chain_processor()
+        self._initialise_chain_processor()
 
         # Initialise iterations and evaluations
         self._iteration = 0
@@ -181,7 +181,6 @@ class BasePintsSampler(BaseSampler):
 
             xs = self._ask_for_samples()
             self.fxs = evaluator.evaluate(xs)
-            # self._evaluations += len(self.fxs)
 
             self._process_chains()
             if self._single_chain:
