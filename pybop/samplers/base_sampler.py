@@ -1,4 +1,3 @@
-import logging
 from typing import Union
 
 import numpy as np
@@ -9,27 +8,29 @@ from pybop import CostInterface, LogPosterior
 
 class BaseSampler(CostInterface):
     """
-    Base class for Monte Carlo samplers. Samplers perform maximisation of the cost
-    function by default.
+    Base class for Monte Carlo samplers.
+
+    Parameters
+    ----------
+    log_pdf : pybop.LogPosterior or List[pybop.LogPosterior]
+        The posterior or PDF to be sampled.
+    chains : int
+        Number of chains to be used.
+    x0
+        List-like initial values of the parameters for Monte Carlo sampling.
+    cov0
+        The covariance matrix to be sampled.
+
+    Note: Samplers perform maximisation of the Posterior by default.
     """
 
     def __init__(
-        self, log_pdf: LogPosterior, x0, chains: int, cov0: Union[np.ndarray, float]
+        self,
+        log_pdf: Union[LogPosterior, list[LogPosterior]],
+        x0,
+        chains: int,
+        cov0: Union[np.ndarray, float],
     ):
-        """
-        Initialise the base sampler.
-
-        Parameters
-        ----------
-        log_pdf : pybop.LogPosterior or List[pybop.LogPosterior]
-            The posterior or PDF to be sampled.
-        chains : int
-            Number of chains to be used.
-        x0
-            List-like initial values of the parameters for Monte Carlo sampling.
-        cov0
-            The covariance matrix to be sampled.
-        """
         self._log_pdf = log_pdf
         self._cov0 = cov0
 
@@ -56,12 +57,14 @@ class BaseSampler(CostInterface):
         super().__init__(transformation=transformation)
 
         # Check initial conditions
-        if x0 is not None and len(x0) != self.n_parameters:
-            raise ValueError("x0 must have the same number of parameters as log_pdf")
-
-        # Set initial values, if x0 is None, initial values are unmodified
         if x0 is not None:
+            if len(x0) != self.n_parameters:
+                raise ValueError(
+                    "x0 must have the same number of parameters as log_pdf"
+                )
             self.parameters.update(initial_values=x0)
+
+        # Update x0 w/ transformation if applicable - reshape to align with chains
         self._x0 = self.parameters.reset_initial_value(apply_transform=True).reshape(
             1, -1
         )
@@ -111,87 +114,11 @@ class BaseSampler(CostInterface):
             If True, use as many worker processes as there are CPU cores. If an integer, use that many workers.
             If False or 0, disable parallelism (default: False).
         """
+        self._parallel = bool(parallel is True or parallel >= 1)
+
         if parallel is True:
-            self._parallel = True
             self._n_workers = ParallelEvaluator.cpu_count()
         elif parallel >= 1:
-            self._parallel = True
             self._n_workers = int(parallel)
         else:
-            self._parallel = False
             self._n_workers = 1
-
-    def _ask_for_samples(self):
-        if self._single_chain:
-            return [self._samplers[i].ask() for i in self._active]
-        else:
-            return self._samplers[0].ask()
-
-    def _check_initial_phase(self):
-        # Set initial phase if needed
-        if self._initial_phase:
-            for sampler in self._samplers:
-                sampler.set_initial_phase(True)
-
-    def _end_initial_phase(self):
-        for sampler in self._samplers:
-            sampler.set_initial_phase(False)
-        if self._log_to_screen:
-            logging.info("Initial phase completed.")
-
-    def _initialise_storage(self):
-        self._prior = None
-        if isinstance(self._log_pdf, LogPosterior):
-            self._prior = self._log_pdf.prior
-
-        # Storage of the received samples
-        self._sampled_logpdf = np.zeros(self._n_chains)
-        self._sampled_prior = np.zeros(self._n_chains)
-
-        # Pre-allocate arrays for chain storage
-        self._samples = np.zeros(
-            (self._n_chains, self._max_iterations, self.n_parameters)
-        )
-
-        # Pre-allocate arrays for evaluation storage
-        if self._prior:
-            # Store posterior, likelihood, prior
-            self._evaluations = np.zeros((self._n_chains, self._max_iterations, 3))
-        else:
-            # Store pdf
-            self._evaluations = np.zeros((self._n_chains, self._max_iterations))
-
-        # From PINTS:
-        # Some samplers need intermediate steps, where `None` is returned instead
-        # of a sample. But samplers can run asynchronously, so that one can return
-        # `None` while another returns a sample. To deal with this, we maintain a
-        # list of 'active' samplers that have not reached `max_iterations`,
-        # and store the number of samples so far in each chain.
-        if self._single_chain:
-            self._active = list(range(self._n_chains))
-            self._n_samples = [0] * self._n_chains
-
-    def _initialise_logging(self):
-        logging.basicConfig(format="%(message)s", level=logging.INFO)
-
-        if self._log_to_screen:
-            logging.info("Using " + str(self._samplers[0].name()))
-            logging.info("Generating " + str(self._n_chains) + " chains.")
-            if self._parallel:
-                logging.info(
-                    f"Running in parallel with {self._n_workers} worker processes."
-                )
-            else:
-                logging.info("Running in sequential mode.")
-            if self._chain_files:
-                logging.info("Writing chains to " + self._chain_files[0] + " etc.")
-            if self._evaluation_files:
-                logging.info(
-                    "Writing evaluations to " + self._evaluation_files[0] + " etc."
-                )
-
-    def _finalise_logging(self):
-        if self._log_to_screen:
-            logging.info(
-                f"Halting: Maximum number of iterations ({self._iteration}) reached."
-            )
