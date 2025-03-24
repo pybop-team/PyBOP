@@ -153,6 +153,23 @@ class TestPintsSamplers:
         assert samples is not None
         assert samples.shape == (chains, 1, 2)
 
+    def test_properties(self, log_posterior, x0, chains):
+        sampler = AdaptiveCovarianceMCMC(
+            log_pdf=log_posterior,
+            chains=chains,
+            x0=x0,
+        )
+
+        # Setters
+        sampler.evaluations = 11
+        assert sampler.evaluations == 11
+
+        sampler.samples = 91
+        assert sampler.samples == 91
+
+        sampler.intermediate_step = True
+        assert sampler.intermediate_step is True
+
     def test_effective_sample_size(self, log_posterior):
         chains = np.asarray([[[0, 0]]])
         summary = pybop.PosteriorSummary(chains)
@@ -234,7 +251,7 @@ class TestPintsSamplers:
         with pytest.raises(
             ValueError, match="All log pdf's must be instances of BaseCost"
         ):
-            sampler = pybop.MCMCSampler(
+            pybop.MCMCSampler(
                 log_pdf=incorrect_multi_log_posterior,
                 chains=chains,
                 sampler=HaarioBardenetACMC,
@@ -254,7 +271,7 @@ class TestPintsSamplers:
         with pytest.raises(
             ValueError, match="All log pdf's must have the same number of parameters"
         ):
-            sampler = pybop.MCMCSampler(
+            pybop.MCMCSampler(
                 log_pdf=[log_posterior, log_posterior, new_multi_log_posterior],
                 chains=chains,
                 sampler=HaarioBardenetACMC,
@@ -416,3 +433,12 @@ class TestPintsSamplers:
                 chains=chains,
                 sampler=log_posterior,  # Incorrect sampler
             )
+
+    def test_base_chain_processor(self, log_posterior, x0):
+        sampler = pybop.MALAMCMC(log_posterior, chains=1)
+        chain_processor = pybop.ChainProcessor(sampler)
+        with pytest.raises(NotImplementedError):
+            chain_processor.process_chain()
+
+        with pytest.raises(NotImplementedError):
+            chain_processor._extract_log_pdf(log_posterior, 0)
