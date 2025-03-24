@@ -381,15 +381,3 @@ class BasePintsSampler(BaseSampler):
     @property
     def samples(self):
         return self._samples
-
-    @samples.setter
-    def samples(self, samples):
-        self._samples = samples
-
-    @property
-    def intermediate_step(self):
-        return self._intermediate_step
-
-    @property
-    def evaluations(self):
-        return self._evaluations

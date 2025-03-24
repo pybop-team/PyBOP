@@ -153,16 +153,6 @@ class TestPintsSamplers:
         assert samples is not None
         assert samples.shape == (chains, 1, 2)
 
-    def test_properties(self, log_posterior, x0, chains):
-        sampler = AdaptiveCovarianceMCMC(
-            log_pdf=log_posterior,
-            chains=chains,
-            x0=x0,
-        )
-
-        sampler.samples = 91
-        assert sampler.samples == 91
-
     def test_effective_sample_size(self, log_posterior):
         chains = np.asarray([[[0, 0]]])
         summary = pybop.PosteriorSummary(chains)

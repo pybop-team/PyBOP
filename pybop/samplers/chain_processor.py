@@ -38,11 +38,11 @@ class ChainProcessor:
                 if self.sampler.single_chain
                 else np.s_[:, self.sampler.iteration]
             )
-            self.sampler.samples[idx] = values
         else:
             # If not storing, direct assignment with appropriate slicing
             idx = np.s_[chain_idx] if self.sampler.single_chain else np.s_[:]
-            self.sampler.samples[idx] = values
+
+        self.sampler._samples[idx] = values  # noqa: SLF001
 
     def update_accepted_sample(self, chain_idx, y, fy_value):
         """
