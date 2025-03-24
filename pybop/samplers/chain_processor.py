@@ -122,23 +122,22 @@ class MultiChainProcessor(ChainProcessor):
     def process_chain(self):
         reply = self.sampler.samplers[0].tell(self.sampler.fxs)
         self.sampler._intermediate_step = reply is None  # noqa: SLF001
-        if not reply:
-            return
 
-        ys, fys, accepted = reply
-        ys_store = np.asarray(self.sampler.transform_list_of_values(ys))
+        if reply:
+            ys, fys, accepted = reply
+            ys_store = np.asarray(self.sampler.transform_list_of_values(ys))
 
-        # Store samples
-        self.store_samples(ys_store, self.sampler.iteration)
+            # Store samples
+            self.store_samples(ys_store, self.sampler.iteration)
 
-        # Loop across chain's and store results
-        for i, y in enumerate(ys):
-            if accepted[i]:
-                self.update_accepted_sample(i, y, fys)
+            # Loop across chain's and store results
+            for i, y in enumerate(ys):
+                if accepted[i]:
+                    self.update_accepted_sample(i, y, fys)
 
-            # Get evaluations and store
-            e = self.get_evaluation_metrics(i)
-            self.sampler._evaluations[i, self.sampler.iteration] = e  # noqa: SLF001
+                # Get evaluations and store
+                e = self.get_evaluation_metrics(i)
+                self.sampler._evaluations[i, self.sampler.iteration] = e  # noqa: SLF001
 
     def _extract_log_pdf(self, fy_value, chain_idx):
         """

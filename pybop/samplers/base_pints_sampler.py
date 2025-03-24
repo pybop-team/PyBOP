@@ -181,8 +181,8 @@ class BasePintsSampler(BaseSampler):
 
             xs = self._ask_for_samples()
             self.fxs = evaluator.evaluate(xs)
-
             self._process_chains()
+
             if self._single_chain:
                 self._intermediate_step = min(self._n_samples) <= self._iteration
 
