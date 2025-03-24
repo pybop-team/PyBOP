@@ -80,6 +80,16 @@ class Dataset:
 
         return self.data[key]
 
+    def keys(self):
+        """
+        Return the keys of the data dictionary.
+
+        Returns
+        -------
+        dict_keys
+        """
+        return self.data.keys()
+
     def check(self, domain: str = None, signal: Union[str, list[str]] = None) -> bool:
         """
         Check the consistency of a PyBOP Dataset against the expected format.
