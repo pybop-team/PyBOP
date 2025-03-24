@@ -165,7 +165,7 @@ class BaseModel:
         if not self.pybamm_model._built:  # noqa: SLF001
             self.pybamm_model.build_model()
 
-        if dataset is not None:
+        if dataset is not None and "Time [s]" in dataset.keys():
             self.set_current_function(dataset)
 
         if self.eis:
