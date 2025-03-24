@@ -165,16 +165,15 @@ class BaseModel:
         if not self.pybamm_model._built:  # noqa: SLF001
             self.pybamm_model.build_model()
 
+        if dataset is not None:
+            self.set_current_function(dataset)
+
         if self.eis:
             self.set_up_for_eis(self.pybamm_model)
-            self._parameter_set["Current function [A]"] = 0
 
             V_scale = getattr(self.pybamm_model.variables["Voltage [V]"], "scale", 1)
             I_scale = getattr(self.pybamm_model.variables["Current [A]"], "scale", 1)
             self.z_scale = self._parameter_set.evaluate(V_scale / I_scale)
-
-        if dataset is not None and not self.eis:
-            self.set_current_function(dataset)
 
         if self._built_model:
             return
@@ -329,7 +328,9 @@ class BaseModel:
             "Current function [A]", {"Time [s]": pybamm.t}
         )
         model.algebraic[I_cell] = I - I_applied
-        model.initial_conditions[I_cell] = 0
+        model.initial_conditions[I_cell] = self._parameter_set.evaluate(
+            I_applied, {"Time [s]": 0}
+        )
 
     def clear(self):
         """
@@ -491,7 +492,11 @@ class BaseModel:
         return self._pybamm_solution
 
     def simulateEIS(
-        self, inputs: Inputs, f_eval: list, initial_state: Optional[dict] = None
+        self,
+        inputs: Inputs,
+        f_eval: list,
+        initial_state: Optional[dict] = None,
+        t_eval=None,
     ) -> dict[str, np.ndarray]:
         """
         Compute the forward model simulation with electrochemical impedance spectroscopy
@@ -504,10 +509,13 @@ class BaseModel:
             converted to a dictionary using the model's fit keys.
         f_eval : array-like
             An array of frequency points at which to evaluate the solution.
+        t_eval : array-like, optional
+            An array of time points at which to simulate operando EIS. Defaults to None,
+            indicating that stationary EIS should be simulated at time t=0, with I=0.
 
         Returns
         -------
-        array-like
+        dict
             The simulation result corresponding to the specified signal.
 
         Raises
@@ -516,6 +524,10 @@ class BaseModel:
             If the model has not been built before simulation.
         """
         inputs = self.parameters.verify(inputs)
+
+        # Perform stationary EIS by default
+        if t_eval is None:
+            self._parameter_set["Current function [A]"] = 0
 
         # Build or rebuild if required
         self.build(inputs=inputs, initial_state=initial_state)
@@ -526,12 +538,26 @@ class BaseModel:
         ):
             raise ValueError("These parameter values are infeasible.")
 
-        self.initialise_eis_simulation(inputs)
-        zs = [self.calculate_impedance(frequency) for frequency in f_eval]
+        self.initialise_eis_simulation(inputs, t_eval=t_eval)
 
-        return {"Impedance": np.asarray(zs) * self.z_scale}
+        if t_eval is None:
+            ## Stationary EIS
+            zs = [self.calculate_impedance(frequency) for frequency in f_eval]
+            return {"Impedance": np.asarray(zs) * self.z_scale}
 
-    def initialise_eis_simulation(self, inputs: Optional[Inputs] = None):
+        else:
+            ## Operando EIS
+            zs_at_t_eval = []
+            for i in range(len(t_eval)):
+                self.J = self.J_at_t_eval[i]
+                zs = [self.calculate_impedance(frequency) for frequency in f_eval]
+                zs_at_t_eval.append(zs)
+            return {
+                "Time [s]": np.asarray(t_eval),
+                "Impedance": np.asarray(zs_at_t_eval) * self.z_scale,
+            }
+
+    def initialise_eis_simulation(self, inputs: Optional[Inputs] = None, t_eval=None):
         """
         Initialise the Electrochemical Impedance Spectroscopy (EIS) simulation.
 
@@ -540,26 +566,28 @@ class BaseModel:
 
         Parameters
         ----------
-        inputs : dict (optional)
+        inputs : dict, optional
             The input parameters for the simulation.
+        t_eval : array-like, optional
+            An array of time points at which to simulate operando EIS. Defaults to None,
+            indicating that EIS should be simulated at the initial time point (t=0).
         """
         # Setup mass matrix, solver
         self.M = self._built_model.mass_matrix.entries
         self._solver.set_up(self._built_model, inputs=inputs)
 
         # Convert inputs to casadi format if needed
-        casadi_inputs = (
+        self._casadi_inputs = (
             casadi.vertcat(*inputs.values())
             if inputs is not None and self._built_model.convert_to_format == "casadi"
             else inputs or []
         )
 
+        ## Stationary EIS
         # Extract necessary attributes from the model
-        self.y0 = self._built_model.concatenated_initial_conditions.evaluate(
-            0, inputs=inputs
-        )
+        y = self._built_model.concatenated_initial_conditions.evaluate(0, inputs=inputs)
         self.J = self._built_model.jac_rhs_algebraic_eval(
-            0, self.y0, casadi_inputs
+            0, y, self._casadi_inputs
         ).sparse()
 
         # Convert to Compressed Sparse Column format
@@ -567,8 +595,27 @@ class BaseModel:
         self.J = csc_matrix(self.J)
 
         # Add forcing to the RHS on the current density
-        self.b = np.zeros(self.y0.shape)
+        self.b = np.zeros(y.shape)
         self.b[-1] = -1
+
+        ## Operando EIS
+        if t_eval is not None:
+            # Initial state
+            state = self.get_state(inputs or {}, 0, y)
+
+            self.J_at_t_eval = [self.J]
+            for t in t_eval[1:]:
+                # Step forwards in time
+                state = self.step(state, t)
+
+                # Extract necessary attributes from the model
+                y = state.as_ndarray()
+                J = self._built_model.jac_rhs_algebraic_eval(
+                    t, y, self._casadi_inputs
+                ).sparse()
+
+                # Convert to Compressed Sparse Column format
+                self.J_at_t_eval.append(csc_matrix(J))
 
     def calculate_impedance(self, frequency):
         """
