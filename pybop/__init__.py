@@ -172,7 +172,7 @@ from .optimisers.optimisation import Optimisation
 #
 # Monte Carlo classes
 #
-from .samplers.chain_processor import ChainProcessor,MultiChainProcessor, SingleChainProcessor
+from .samplers.chain_processor import ChainProcessor, MultiChainProcessor, SingleChainProcessor
 from .samplers.base_sampler import BaseSampler
 from .samplers.base_pints_sampler import BasePintsSampler
 from .samplers.pints_samplers import (

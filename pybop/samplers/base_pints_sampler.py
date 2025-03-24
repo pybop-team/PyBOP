@@ -377,7 +377,3 @@ class BasePintsSampler(BaseSampler):
     @property
     def max_iterations(self):
         return self._max_iterations
-
-    @property
-    def samples(self):
-        return self._samples
