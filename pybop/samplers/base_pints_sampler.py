@@ -208,10 +208,13 @@ class BasePintsSampler(BaseSampler):
 
         self._finalise_logging()
 
+        if not self._chains_in_memory:
+            return None
+
         if self._warm_up:
             self._samples = self._samples[:, self._warm_up :, :]
 
-        return self._samples if self._chains_in_memory else None
+        return self._samples
 
     def _process_chains(self):
         """
@@ -281,9 +284,12 @@ class BasePintsSampler(BaseSampler):
         self._sampled_prior = np.zeros(self._n_chains)
 
         # Pre-allocate arrays for chain storage
-        self._samples = np.zeros(
+        storage_shape = (
             (self._n_chains, self._max_iterations, self.n_parameters)
+            if self._chains_in_memory
+            else (self._n_chains, self.n_parameters)
         )
+        self._samples = np.zeros(storage_shape)
 
         # Pre-allocate arrays for evaluation storage
         if self._prior:
@@ -341,6 +347,10 @@ class BasePintsSampler(BaseSampler):
         return self._active
 
     @property
+    def single_chain(self):
+        return self._single_chain
+
+    @property
     def sampled_logpdf(self):
         return self._sampled_logpdf
 
@@ -380,14 +390,6 @@ class BasePintsSampler(BaseSampler):
     def intermediate_step(self):
         return self._intermediate_step
 
-    @intermediate_step.setter
-    def intermediate_step(self, intermediate_step):
-        self._intermediate_step = intermediate_step
-
     @property
     def evaluations(self):
         return self._evaluations
-
-    @evaluations.setter
-    def evaluations(self, evaluations):
-        self._evaluations = evaluations

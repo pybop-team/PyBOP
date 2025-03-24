@@ -29,11 +29,20 @@ class ChainProcessor:
     def store_samples(self, values, chain_idx):
         """
         Store samples based on memory configuration.
+        Samples shape: [n_chains, n_iterations, n_parameters]
         """
         if self.sampler.chains_in_memory:
-            self.sampler.samples[chain_idx] = values
+            # Create the index array using the `np.s_` slice method
+            idx = (
+                np.s_[chain_idx, self.sampler.n_samples[chain_idx]]
+                if self.sampler.single_chain
+                else np.s_[:, self.sampler.iteration]
+            )
+            self.sampler.samples[idx] = values
         else:
-            self.sampler.samples = values
+            # If not storing, direct assignment with appropriate slicing
+            idx = np.s_[chain_idx] if self.sampler.single_chain else np.s_[:]
+            self.sampler.samples[idx] = values
 
     def update_accepted_sample(self, chain_idx, y, fy_value):
         """
@@ -81,17 +90,14 @@ class SingleChainProcessor(ChainProcessor):
             y_store = self.sampler.transform_values(y)
 
             # Store samples
-            if self.sampler.chains_in_memory:
-                self.sampler.samples[i][self.sampler.n_samples[i]] = y_store
-            else:
-                self.sampler.samples[i] = y_store
+            self.store_samples(y_store, i)
 
             if accepted:
                 self.update_accepted_sample(i, y, fy)
 
             # Store evaluation results
             e = self.get_evaluation_metrics(i)
-            self.sampler.evaluations[i][self.sampler.n_samples[i]] = e
+            self.sampler._evaluations[i][self.sampler.n_samples[i]] = e  # noqa: SLF001
 
             # Increment sample counter and check if chain is complete
             self.sampler.n_samples[i] += 1
@@ -115,7 +121,7 @@ class MultiChainProcessor(ChainProcessor):
 
     def process_chain(self):
         reply = self.sampler.samplers[0].tell(self.sampler.fxs)
-        self.sampler.intermediate_step = reply is None
+        self.sampler._intermediate_step = reply is None  # noqa: SLF001
         if not reply:
             return
 
@@ -123,10 +129,7 @@ class MultiChainProcessor(ChainProcessor):
         ys_store = np.asarray(self.sampler.transform_list_of_values(ys))
 
         # Store samples
-        if self.sampler.chains_in_memory:
-            self.sampler.samples[:, self.sampler.iteration] = ys_store
-        else:
-            self.sampler.samples = ys_store
+        self.store_samples(ys_store, self.sampler.iteration)
 
         # Loop across chain's and store results
         for i, y in enumerate(ys):
@@ -135,7 +138,7 @@ class MultiChainProcessor(ChainProcessor):
 
             # Get evaluations and store
             e = self.get_evaluation_metrics(i)
-            self.sampler.evaluations[i, self.sampler.iteration] = e
+            self.sampler._evaluations[i, self.sampler.iteration] = e  # noqa: SLF001
 
     def _extract_log_pdf(self, fy_value, chain_idx):
         """

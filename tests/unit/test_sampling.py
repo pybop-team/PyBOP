@@ -160,15 +160,8 @@ class TestPintsSamplers:
             x0=x0,
         )
 
-        # Setters
-        sampler.evaluations = 11
-        assert sampler.evaluations == 11
-
         sampler.samples = 91
         assert sampler.samples == 91
-
-        sampler.intermediate_step = True
-        assert sampler.intermediate_step is True
 
     def test_effective_sample_size(self, log_posterior):
         chains = np.asarray([[[0, 0]]])
