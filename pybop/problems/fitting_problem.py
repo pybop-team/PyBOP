@@ -126,9 +126,6 @@ class FittingProblem(BaseProblem):
             The simulated model output y(t) for self.eis == False, and y(ω) for self.eis == True
             for the given inputs.
         """
-        inputs = self.parameters.verify(inputs)
-        if self.eis:
-            return self._evaluate(self._model.simulateEIS, inputs)
 
         return self._evaluate(self._model.simulate, inputs)
 
@@ -157,11 +154,16 @@ class FittingProblem(BaseProblem):
                     self.domain_data, inputs
                 )  # TODO: Add initial_state capabilities
             else:
-                sol = func(
-                    inputs,
-                    self._domain_data,
-                    initial_state=self.initial_state,
-                )
+                kwargs = {"inputs": inputs, "initial_state": self.initial_state}
+
+                # Set the appropriate evaluation domain
+                domain_key = "f_eval" if self.eis else "t_eval"
+                kwargs[domain_key] = self._domain_data
+
+                if self.eis:
+                    kwargs["eis"] = True
+                sol = func(**kwargs)
+
         except (SolverError, ZeroDivisionError, RuntimeError, ValueError) as e:
             if isinstance(e, ValueError) and str(e) not in self.exception:
                 raise  # Raise the error if it doesn't match the expected list

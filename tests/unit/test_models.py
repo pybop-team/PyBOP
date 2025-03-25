@@ -320,16 +320,27 @@ class TestModels:
         solved = model.simulate(inputs, t_eval)
         np.testing.assert_array_almost_equal(solved["y_0"].data, expected, decimal=5)
 
+        # Test ValueErrors
         with pytest.raises(ValueError):
             model_cls(n_states=-1)
+        with pytest.raises(
+            ValueError,
+            match="Model must be constructed for EIS before calling simulate",
+        ):
+            model.simulate(inputs, t_eval, eis=True)
 
-    def test_simulateEIS(self):
+        with pytest.raises(
+            ValueError, match="t_eval must be provided for time domain simulation"
+        ):
+            model.simulate(inputs)
+
+    def test_simulate_with_EIS(self):
         # Test EIS on SPM
         model = pybop.lithium_ion.SPM(eis=True)
 
         # Construct frequencies and solve
         f_eval = np.linspace(100, 1000, 5)
-        sol = model.simulateEIS(inputs={}, f_eval=f_eval)
+        sol = model.simulate(inputs={}, f_eval=f_eval, eis=True)
         assert np.isfinite(sol["Impedance"]).all()
 
         # Test infeasible parameter values
@@ -341,8 +352,14 @@ class TestModels:
         # Rebuild model
         model.build(inputs=inputs)
 
+        # Test ValueErrors
         with pytest.raises(ValueError, match="These parameter values are infeasible."):
-            model.simulateEIS(f_eval=f_eval, inputs=inputs)
+            model.simulate(f_eval=f_eval, inputs=inputs, eis=True)
+
+        with pytest.raises(
+            ValueError, match="f_eval must be provided for EIS simulation"
+        ):
+            model.simulate(inputs, eis=True)
 
     def test_basemodel(self):
         base = pybop.BaseModel()
