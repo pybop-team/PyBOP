@@ -151,7 +151,7 @@ class Minkowski(FittingCost):
 
         if dy is not None:
             de = np.sum(
-                (np.sign(r) * np.abs(r) ** (self.p - 1) * self.weighting) * dy,
+                ((np.sign(r) * np.abs(r) ** (self.p - 1)) * self.weighting) * dy,
                 axis=(1, 2),
             ) / (e ** (self.p - 1) + np.finfo(float).eps)
             return e, de
@@ -209,7 +209,7 @@ class SumOfPower(FittingCost):
 
         if dy is not None:
             de = self.p * np.sum(
-                (np.sign(r) * np.abs(r) ** (self.p - 1) * self.weighting) * dy,
+                ((np.sign(r) * np.abs(r) ** (self.p - 1)) * self.weighting) * dy,
                 axis=(1, 2),
             )
             return e, de

@@ -2,10 +2,12 @@
 
 ## Features
 
+- [#659](https://github.com/pybop-team/PyBOP/pull/659) - Enables user-defined weightings of the error measures.
 - [#674](https://github.com/pybop-team/PyBOP/issues/674) - Adds the reason for stopping to the `OptimisationResult`.
 
 ## Optimisations
 
+- [#676](https://github.com/pybop-team/PyBOP/pull/676) - Update the format of the problem sensitivities to a dict.
 - [#681](https://github.com/pybop-team/PyBOP/pull/681) - Update the spatial variable defaults of the `GroupedSPMe` model.
 
 ## Bug Fixes
