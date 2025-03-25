@@ -4,6 +4,7 @@
 
 - [#659](https://github.com/pybop-team/PyBOP/pull/659) - Enables user-defined weightings of the error measures.
 - [#674](https://github.com/pybop-team/PyBOP/issues/674) - Adds the reason for stopping to the `OptimisationResult`.
+- - [#663](https://github.com/pybop-team/PyBOP/pull/663) - Adds DFN fitting examples alongside synthetic data generation methods.
 
 ## Optimisations
 
@@ -16,7 +17,6 @@
 
 ## Breaking Changes
 
-- [#663](https://github.com/pybop-team/PyBOP/pull/663) - Changes default `initial_state` logic for `FittingProblem`. Building the model for every evaluation now requires `build_on_evaluation` to be `True` (default: `False`).
 - [#661](https://github.com/pybop-team/PyBOP/pull/661) - Adds `pybop.CostInterface` which aligns the optimisers and samplers with a unified `call_cost` in which transformations and sign inversions are applied. Also includes bug fixes for transformations and gradient calculations.
 
 
