@@ -229,26 +229,34 @@ class TestCosts:
     ):
         problem = pybop.FittingProblem(model, parameters, dataset)
         cost = cost_class(problem, weighting=1.0)
-        e, de = cost([0.5], calculate_grad=True)
+        x = [0.5]
+        e, de = cost(x, calculate_grad=True)
 
         # Test that the equal weighting is the same as weighting by one
         costE = cost_class(problem, weighting="equal")
-        eE, deE = costE([0.5], calculate_grad=True)
+        eE, deE = costE(x, calculate_grad=True)
         np.testing.assert_allclose(e, eE)
         np.testing.assert_allclose(de, deE)
 
         # Test that domain-basd weighting also matches for evenly spaced data
         costD = cost_class(problem, weighting="domain")
-        eD, deD = costD([0.5], calculate_grad=True)
+        eD, deD = costD(x, calculate_grad=True)
         np.testing.assert_allclose(e, eD)
         np.testing.assert_allclose(de, deD)
 
         # Test that the domain-based weighting accounts for random spacing in the dataset
         problemR = pybop.FittingProblem(model, parameters, randomly_spaced_dataset)
         costR = cost_class(problemR, weighting="domain")
-        eR, deR = costR([0.5], calculate_grad=True)
+        eR, deR = costR(x, calculate_grad=True)
         np.testing.assert_allclose(e, eR, rtol=1e-2, atol=1e-9)
         np.testing.assert_allclose(de, deR, rtol=1e-2, atol=1e-9)
+
+        # Check gradient calculation using finite difference
+        delta = 1e-6 * x[0]
+        cost_right = costR(x[0] + delta / 2)
+        cost_left = costR(x[0] - delta / 2)
+        numerical_grad = (cost_right - cost_left) / delta
+        np.testing.assert_allclose(deR, numerical_grad, rtol=6e-3)
 
     @pytest.fixture
     def design_problem(self, parameters, experiment):
