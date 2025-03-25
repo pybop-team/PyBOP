@@ -167,9 +167,6 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
             "Open-circuit voltage [V]": U,
         }
 
-        # Set the built property on creation to prevent unnecessary model rebuilds
-        self._built = True
-
     def U(self, sto):
         """
         Dimensional open-circuit potential [V], calculated as U(x) = U_ref(x).
