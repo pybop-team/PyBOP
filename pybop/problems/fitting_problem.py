@@ -31,10 +31,9 @@ class FittingProblem(BaseProblem):
     additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
     initial_state : dict, optional
-        A valid initial state, e.g. the initial open-circuit voltage (default: None).
-    build_on_evaluation : bool, optional
-        If true, the underlying model is rebuild on every problem evaluation (default: False).
-        NOTE: Sensitivities are not support when rebuilding the model on every evaluation.
+        A valid initial state, e.g. the initial open-circuit voltage (default: None) which will trigger
+        a model rebuild on each evaluation. NOTE: Sensitivities are not support when rebuilding the
+        model on every evaluation.
 
     Additional Attributes
     ---------------------
@@ -58,7 +57,6 @@ class FittingProblem(BaseProblem):
         domain: Optional[str] = None,
         additional_variables: Optional[list[str]] = None,
         initial_state: Optional[dict] = None,
-        build_on_evaluation: Optional[bool] = False,
     ):
         super().__init__(
             parameters=parameters,
@@ -71,7 +69,6 @@ class FittingProblem(BaseProblem):
         )
         self._dataset = dataset.data
         self._n_parameters = len(self.parameters)
-        self.build_on_evaluation = build_on_evaluation
 
         # Check that the dataset contains necessary variables
         dataset.check(domain=self.domain, signal=self.signal)
@@ -95,8 +92,7 @@ class FittingProblem(BaseProblem):
     def set_initial_state(self, initial_state: Optional[dict] = None):
         """
         Set the initial state to be applied to either the first model build,
-        or for every problem evaluation. This depends on the boolean argument
-        `build_on_evaluation`.
+        or for every problem evaluation.
 
         Parameters
         ----------
@@ -164,13 +160,7 @@ class FittingProblem(BaseProblem):
                     self.domain_data, inputs
                 )  # TODO: Add initial_state capabilities
             else:
-                sol = func(
-                    inputs,
-                    self._domain_data,
-                    initial_state=self.initial_state
-                    if self.build_on_evaluation
-                    else None,
-                )
+                sol = func(inputs, self._domain_data, initial_state=self.initial_state)
         except (SolverError, ZeroDivisionError, RuntimeError, ValueError) as e:
             if isinstance(e, ValueError) and str(e) not in self.exception:
                 raise  # Raise the error if it doesn't match the expected list

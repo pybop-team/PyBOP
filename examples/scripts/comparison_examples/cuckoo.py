@@ -36,8 +36,10 @@ parameters = pybop.Parameters(
     ),
 )
 
-# Import the synthetic dataset
+# Import the synthetic dataset, set model initial state
 csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
+initial_state = {"Initial open-circuit voltage [V]": csv_data[0, 2]}
+model.set_initial_state(initial_state=initial_state)
 
 # Form dataset
 dataset = pybop.Dataset(
@@ -53,7 +55,6 @@ problem = pybop.FittingProblem(
     model,
     parameters,
     dataset,
-    initial_state={"Initial open-circuit voltage [V]": csv_data[0, 2]},
 )
 cost = pybop.GaussianLogLikelihood(problem, sigma0=8e-3)
 optim = pybop.Optimisation(

@@ -53,22 +53,23 @@ dataset = pybop.Dataset(
 # In this example, we initialise the SPMe at the first voltage
 # point in `csv_data`, an optimise without rebuilding the
 # model on every evaluation.
+initial_state = {"Initial open-circuit voltage [V]": csv_data[0, 2]}
+model.set_initial_state(initial_state=initial_state)
 problem = pybop.FittingProblem(
     model,
     parameters,
     dataset,
-    initial_state={"Initial open-circuit voltage [V]": csv_data[0, 2]},
 )
 
-likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=2e-4)
-optim = pybop.IRPropPlus(
+likelihood = pybop.SumSquaredError(problem)
+optim = pybop.CMAES(
     likelihood,
     verbose=True,
     sigma0=0.02,
     max_iterations=100,
-    max_unchanged_iterations=40,
-    compute_sensitivities=True,
-    n_sensitivity_samples=64,  # Decrease samples for CI (increase for higher accuracy)
+    max_unchanged_iterations=30,
+    # compute_sensitivities=True,
+    # n_sensitivity_samples=64,  # Decrease samples for CI (increase for higher accuracy)
 )
 
 # Slow the step-size shrinking (default is 0.5)
