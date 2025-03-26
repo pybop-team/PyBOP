@@ -374,6 +374,23 @@ class TestOptimisation:
             assert optim.x0 == x0_new
             assert optim.x0 != x0
 
+    def test_set_parallel(self, cost):
+        optim = pybop.XNES(cost)
+
+        # Disable parallelism
+        optim.set_parallel(False)
+        assert optim._parallel is False
+        assert optim._n_workers == 1
+
+        # Enable parallelism
+        optim.set_parallel(True)
+        assert optim._parallel is True
+
+        # Enable parallelism with number of workers
+        optim.set_parallel(2)
+        assert optim._parallel is True
+        assert optim._n_workers == 2
+
     def test_cuckoo_no_bounds(self, cost):
         optim = pybop.CuckooSearch(cost=cost, bounds=None, max_iterations=1)
         optim.run()
