@@ -30,8 +30,8 @@ class BasePintsSampler(BaseSampler):
 
     Parameters
     ----------
-    log_pdf : pybop.LogPosterior or List[pybop.LogPosterior] or callable
-        An object to be sampled, which can be either a pybop.LogPosterior or callable function.
+    log_pdf : pybop.LogPosterior or List[pybop.LogPosterior]
+        An object to be sampled, currently supports the pybop.LogPosterior class.
     sampler : pybop.Sampler
         The sampling algorithm to use.
     chains : int
