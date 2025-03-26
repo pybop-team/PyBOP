@@ -71,6 +71,11 @@ class TestProblem:
         # Construct Problem
         problem = pybop.BaseProblem(parameters, model=model)
 
+        # Test properties
+        assert problem.n_parameters == 2
+        assert problem.n_outputs == 1
+        assert problem.output_variables == ["Voltage [V]"]
+
         with pytest.raises(NotImplementedError):
             problem.evaluate([1e-5, 1e-5])
         with pytest.raises(NotImplementedError):

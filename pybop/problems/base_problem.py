@@ -122,10 +122,6 @@ class BaseProblem:
             # Turn off this feature as there is no model
             self.infeasible_solutions = False
 
-    @property
-    def output_variables(self):
-        return list(set(self.signal + self.additional_variables))
-
     def evaluate(self, inputs: Inputs, eis=False):
         """
         Evaluate the model with the given parameters and return the signal.
@@ -194,6 +190,10 @@ class BaseProblem:
     @property
     def n_outputs(self):
         return len(self.signal)
+
+    @property
+    def output_variables(self):
+        return list(set(self.signal + self.additional_variables))
 
     @property
     def model(self):

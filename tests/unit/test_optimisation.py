@@ -734,6 +734,7 @@ class TestOptimisation:
             n_iterations=1,
             multistart=3,
             compute_sensitivities=True,
+            physical_viability=True,
             n_samples_sensitivity=8,
         )
         results = optim.run()
