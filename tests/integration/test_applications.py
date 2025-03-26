@@ -43,6 +43,19 @@ class TestApplications:
             {"Stoichiometry": charge_sto, "Voltage [V]": charge_voltage}
         )
 
+    def test_interpolant(self, parameter_set, discharge_dataset):
+        electrode = "positive"
+        parameter_set = convert_physical_to_electrode_parameters(
+            parameter_set, electrode=electrode
+        )
+        parameter_set["Electrode OCP [V]"] = pybop.Interpolant(
+            discharge_dataset["Stoichiometry"], discharge_dataset["Voltage [V]"]
+        )
+        model = pybop.lithium_ion.SPDiffusion(
+            parameter_set=parameter_set, electrode=electrode, build=True
+        )
+        model.predict(t_eval=np.linspace(0, 10))
+
     def test_ocp_blend(self, discharge_dataset, charge_dataset):
         ocp_blend = pybop.OCPBlend(
             ocp_discharge=discharge_dataset,
