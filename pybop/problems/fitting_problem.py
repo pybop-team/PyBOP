@@ -31,7 +31,9 @@ class FittingProblem(BaseProblem):
     additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
     initial_state : dict, optional
-        A valid initial state, e.g. the initial open-circuit voltage (default: None).
+        A valid initial state, e.g. the initial open-circuit voltage (default: None) which will trigger
+        a model rebuild on each evaluation. Example: {"Initial open-circuit potential [V]": 4.1}
+        NOTE: Sensitivities are not support with this arg due to the model rebuilding.
 
     Additional Attributes
     ---------------------
@@ -89,7 +91,7 @@ class FittingProblem(BaseProblem):
 
     def set_initial_state(self, initial_state: Optional[dict] = None):
         """
-        Set the initial state to be applied to evaluations of the problem.
+        Set the initial state to be applied for every problem evaluation.
 
         Parameters
         ----------
@@ -157,11 +159,7 @@ class FittingProblem(BaseProblem):
                     self.domain_data, inputs
                 )  # TODO: Add initial_state capabilities
             else:
-                sol = func(
-                    inputs,
-                    self._domain_data,
-                    initial_state=self.initial_state,
-                )
+                sol = func(inputs, self._domain_data, initial_state=self.initial_state)
         except (SolverError, ZeroDivisionError, RuntimeError, ValueError) as e:
             if isinstance(e, ValueError) and str(e) not in self.exception:
                 raise  # Raise the error if it doesn't match the expected list

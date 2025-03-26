@@ -5,6 +5,7 @@
 - [#644](https://github.com/pybop-team/PyBOP/pull/644) - Adds example applications for common battery experiments.
 - [#659](https://github.com/pybop-team/PyBOP/pull/659) - Enables user-defined weightings of the error measures.
 - [#674](https://github.com/pybop-team/PyBOP/issues/674) - Adds the reason for stopping to the `OptimisationResult`.
+- - [#663](https://github.com/pybop-team/PyBOP/pull/663) - Adds DFN fitting examples alongside synthetic data generation methods.
 
 ## Optimisations
 

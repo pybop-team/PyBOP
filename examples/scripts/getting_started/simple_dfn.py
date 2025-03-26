@@ -8,26 +8,26 @@ import pybop
 # Get the current directory location and convert to absolute path
 current_dir = os.path.dirname(os.path.abspath(__file__))
 dataset_path = os.path.join(
-    current_dir, "../../data/synthetic/spm_charge_discharge_75.csv"
+    current_dir, "../../data/synthetic/dfn_charge_discharge_75.csv"
 )
 
 # Define model and use high-performant solver for sensitivities
 solver = pybamm.IDAKLUSolver()
 parameter_set = pybop.ParameterSet("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
+model = pybop.lithium_ion.DFN(parameter_set=parameter_set, solver=solver)
 
 # Fitting parameters
 parameters = pybop.Parameters(
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         prior=pybop.Gaussian(0.68, 0.05),
-        initial_value=0.45,
+        initial_value=0.65,
         bounds=[0.4, 0.9],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
         prior=pybop.Gaussian(0.58, 0.05),
-        initial_value=0.45,
+        initial_value=0.65,
         bounds=[0.4, 0.9],
     ),
 )
@@ -55,22 +55,16 @@ problem = pybop.FittingProblem(
     dataset,
     signal=signal,
 )
-cost = pybop.SumOfPower(problem, p=2.5)
+cost = pybop.RootMeanSquaredError(problem)
 
-optim = pybop.AdamW(
+optim = pybop.IRPropPlus(
     cost,
     verbose=True,
-    allow_infeasible_solutions=True,
-    sigma0=0.02,
     max_iterations=100,
-    max_unchanged_iterations=45,
+    max_unchanged_iterations=20,
     compute_sensitivities=True,
-    n_sensitivity_samples=128,
+    n_sensitivity_samples=64,  # Decrease samples for CI (increase for higher accuracy)
 )
-# Reduce the momentum influence
-# for the reduced number of optimiser iterations
-optim.optimiser.b1 = 0.9
-optim.optimiser.b2 = 0.9
 
 # Run optimisation
 results = optim.run()
