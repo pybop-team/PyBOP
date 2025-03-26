@@ -30,8 +30,6 @@ experiment = pybop.Experiment(
     [
         "Discharge at 1C until 2.5 V (5 seconds period)",
         "Rest for 30 minutes (5 seconds period)",
-        # "Charge at 2C until 4.1 V (5 seconds period)",
-        # "Rest for 30 minutes (5 seconds period)",
     ],
 )
 
