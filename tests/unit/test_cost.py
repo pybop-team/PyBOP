@@ -173,7 +173,8 @@ class TestCosts:
             assert "Non-physical point encountered" in str(record[i].message)
 
         # Test infeasible locations
-        cost.problem.model.allow_infeasible_solutions = False
+        cost.problem.set_allow_infeasible_solutions(False)
+        cost.problem.model.apply_events()
         assert cost([1.1]) == np.inf
         assert cost([1.1], calculate_grad=True) == (np.inf, cost._de)
         assert cost([0.01]) == np.inf

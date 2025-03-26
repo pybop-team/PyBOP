@@ -104,9 +104,6 @@ class TestClassification:
             message = pybop.classify_using_hessian(results)
             assert message == "The optimiser has located a maximum."
 
-        # message = pybop.classify_using_hessian(results)
-        # assert message == "The optimiser has located a saddle point."
-
     def test_insensitive_classify_using_hessian(self, parameter_set):
         param_R0_a = pybop.Parameter(
             "R0_a [Ohm]",
@@ -165,6 +162,11 @@ class TestClassification:
         assert message == (
             "The cost variation is smaller than the cost tolerance: 0.01."
         )
+
+        # Restore model events and test classification
+        # Expected output here is infinite cost values
+        optim.cost.problem.model.apply_events()
+        results = pybop.OptimisationResult(x=x, optim=optim)
 
         message = pybop.classify_using_hessian(results, dx=[1, 1])
         assert message == (

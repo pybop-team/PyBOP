@@ -71,6 +71,11 @@ class TestProblem:
         # Construct Problem
         problem = pybop.BaseProblem(parameters, model=model)
 
+        # Test properties
+        assert problem.n_parameters == 2
+        assert problem.n_outputs == 1
+        assert problem.output_variables == ["Voltage [V]"]
+
         with pytest.raises(NotImplementedError):
             problem.evaluate([1e-5, 1e-5])
         with pytest.raises(NotImplementedError):
@@ -317,3 +322,19 @@ class TestProblem:
                 problem_output["Voltage [V]"],
                 atol=1e-6,
             )
+
+    def test_infeasible_solutions(self, dataset, model):
+        parameters = pybop.Parameters(
+            pybop.Parameter("Negative electrode active material volume fraction")
+        )
+        allow_infeasible = pybop.FittingProblem(
+            model, parameters, dataset, infeasible_solutions=True
+        )
+        no_infeasible = pybop.FittingProblem(
+            model, parameters, dataset, infeasible_solutions=False
+        )
+        assert allow_infeasible.infeasible_solutions is True
+        assert no_infeasible.infeasible_solutions is False
+
+        assert np.isfinite(allow_infeasible.evaluate([0.9])["Voltage [V]"].all())
+        assert not np.isfinite(no_infeasible.evaluate([0.9])["Voltage [V]"])

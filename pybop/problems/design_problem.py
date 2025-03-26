@@ -48,6 +48,7 @@ class DesignProblem(BaseProblem):
         domain: Optional[str] = None,
         additional_variables: Optional[list[str]] = None,
         initial_state: Optional[dict] = None,
+        infeasible_solutions: bool = True,
         update_capacity: bool = False,
     ):
         super().__init__(
@@ -58,6 +59,7 @@ class DesignProblem(BaseProblem):
             domain=domain,
             additional_variables=additional_variables,
             initial_state=initial_state,
+            infeasible_solutions=infeasible_solutions,
         )
         self.experiment = experiment
         self.warning_patterns = [

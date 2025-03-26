@@ -4,7 +4,7 @@
 
 - [#659](https://github.com/pybop-team/PyBOP/pull/659) - Enables user-defined weightings of the error measures.
 - [#674](https://github.com/pybop-team/PyBOP/issues/674) - Adds the reason for stopping to the `OptimisationResult`.
-- - [#663](https://github.com/pybop-team/PyBOP/pull/663) - Adds DFN fitting examples alongside synthetic data generation methods.
+- [#663](https://github.com/pybop-team/PyBOP/pull/663) - Adds DFN fitting examples alongside synthetic data generation methods.
 
 ## Optimisations
 
@@ -18,6 +18,7 @@
 
 ## Breaking Changes
 
+- [#672](https://github.com/pybop-team/PyBOP/pull/672) - Removes pybamm model events by default, removes `allow_infeasible_solutions` from optimisers and adds `infeasible_solutions` arg to problem classes.
 - [#661](https://github.com/pybop-team/PyBOP/pull/661) - Adds `pybop.CostInterface` which aligns the optimisers and samplers with a unified `call_cost` in which transformations and sign inversions are applied. Also includes bug fixes for transformations and gradient calculations.
 
 

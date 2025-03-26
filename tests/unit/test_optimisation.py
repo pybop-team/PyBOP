@@ -539,13 +539,14 @@ class TestOptimisation:
         )
 
         # Define the problem and cost
-        problem = pybop.FittingProblem(model, parameter, dataset)
+        problem = pybop.FittingProblem(
+            model, parameter, dataset, infeasible_solutions=False
+        )
         cost = pybop.SumSquaredError(problem)
 
         # Create the optimisation class with infeasible solutions disabled
         opt = pybop.SciPyMinimize(
             cost=cost,
-            allow_infeasible_solutions=False,
             max_iterations=1,
         )
 
@@ -573,13 +574,14 @@ class TestOptimisation:
         )
 
         # Define the problem and cost
-        problem = pybop.FittingProblem(model, parameter, dataset)
+        problem = pybop.FittingProblem(
+            model, parameter, dataset, infeasible_solutions=False
+        )
         cost = pybop.SumSquaredError(problem)
 
         # Create the optimisation class with infeasible solutions disabled
         opt = pybop.SciPyMinimize(
             cost=cost,
-            allow_infeasible_solutions=False,
             max_iterations=1,
         )
         with pytest.raises(
@@ -714,13 +716,21 @@ class TestOptimisation:
 
     def test_unphysical_result(self, cost):
         # Trigger parameters not physically viable warning
-        optim = pybop.Optimisation(cost=cost, max_iterations=3)
+        optim = pybop.Optimisation(
+            cost=cost, max_iterations=3, check_physical_viability=True
+        )
         results = optim.run()
-        results.check_physical_viability(np.array([2]))
+        with pytest.warns(
+            UserWarning,
+            match="Optimised parameters are not physically viable!",
+        ):
+            warnings.simplefilter("always")
+            results._check_physical_viability(np.array([2]))
 
     def test_optimisation_results(self, cost):
         # Construct OptimisationResult
-        optim = pybop.Optimisation(cost=cost)
+        cost.problem.model.apply_events()
+        optim = pybop.Optimisation(cost=cost, check_physical_viability=True)
         results = pybop.OptimisationResult(optim=optim, x=[1e-3], n_iterations=1)
 
         # Asserts
@@ -743,6 +753,7 @@ class TestOptimisation:
             n_iterations=1,
             multistart=3,
             compute_sensitivities=True,
+            check_physical_viability=True,
             n_samples_sensitivity=8,
         )
         results = optim.run()

@@ -160,6 +160,7 @@ class TestLikelihoods:
 
     def test_gaussian_log_likelihood_returns_negative_inf(self, one_signal_problem):
         likelihood = pybop.GaussianLogLikelihood(one_signal_problem)
+        likelihood.problem.model.apply_events()
         assert likelihood(np.array([0.01, 0.1])) == -np.inf  # parameter value too small
         assert (
             likelihood(np.array([0.01, 0.1]), calculate_grad=True)[0] == -np.inf
@@ -171,6 +172,7 @@ class TestLikelihoods:
         likelihood = pybop.GaussianLogLikelihoodKnownSigma(
             one_signal_problem, sigma0=np.array([0.2])
         )
+        likelihood.problem.model.apply_events()
         assert likelihood(np.array([0.01])) == -np.inf  # parameter value too small
         assert (
             likelihood(np.array([0.01]), calculate_grad=True)[0] == -np.inf
@@ -181,7 +183,7 @@ class TestLikelihoods:
             one_signal_problem, sigma0=0.02
         )
         scaled_likelihood = pybop.ScaledLogLikelihood(likelihood)
-
+        scaled_likelihood.problem.model.apply_events()
         assert scaled_likelihood._log_likelihood == likelihood
         assert (
             scaled_likelihood(np.array([0.01])) == -np.inf

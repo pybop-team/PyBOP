@@ -67,7 +67,7 @@ class EChemBaseModel(BaseModel):
         self._parameter_set = self._parameter_set or self.default_parameter_values
         self._unprocessed_parameter_set = self._parameter_set
 
-        # Define model geometry and discretization
+        # Define model geometry and discretisation
         self._geometry = geometry or self.pybamm_model.default_geometry
         self._submesh_types = submesh_types or self.pybamm_model.default_submesh_types
         self._var_pts = var_pts or self.pybamm_model.default_var_pts
@@ -115,24 +115,22 @@ class EChemBaseModel(BaseModel):
         bool
             A boolean which signifies whether the parameters are compatible.
         """
-        if self.pybamm_model.options["working electrode"] == "positive":
-            electrode_params = [
-                (
-                    "Positive electrode active material volume fraction",
-                    "Positive electrode porosity",
-                ),
-            ]
-        else:
-            electrode_params = [
+        electrode_params = [
+            (
+                "Positive electrode active material volume fraction",
+                "Positive electrode porosity",
+            )
+        ]
+
+        # Insert negative electrode parameters if not half-cell model
+        if self.pybamm_model.options["working electrode"] != "positive":
+            electrode_params.insert(
+                0,
                 (
                     "Negative electrode active material volume fraction",
                     "Negative electrode porosity",
                 ),
-                (
-                    "Positive electrode active material volume fraction",
-                    "Positive electrode porosity",
-                ),
-            ]
+            )
 
         related_parameters = {
             key: inputs.get(key) if inputs and key in inputs else parameter_set[key]

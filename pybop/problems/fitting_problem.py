@@ -57,6 +57,7 @@ class FittingProblem(BaseProblem):
         domain: Optional[str] = None,
         additional_variables: Optional[list[str]] = None,
         initial_state: Optional[dict] = None,
+        infeasible_solutions: bool = True,
     ):
         super().__init__(
             parameters=parameters,
@@ -66,6 +67,7 @@ class FittingProblem(BaseProblem):
             domain=domain,
             additional_variables=additional_variables,
             initial_state=initial_state,
+            infeasible_solutions=infeasible_solutions,
         )
         self._dataset = dataset.data
         self._n_parameters = len(self.parameters)
