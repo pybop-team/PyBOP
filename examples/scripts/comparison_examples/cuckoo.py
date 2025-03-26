@@ -1,6 +1,14 @@
+import os
+
 import numpy as np
 
 import pybop
+
+# Get the current directory location and convert to absolute path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+dataset_path = os.path.join(
+    current_dir, "../../data/synthetic/spm_charge_discharge_75.csv"
+)
 
 # Define model
 parameter_set = pybop.ParameterSet("Chen2020")
@@ -27,26 +35,18 @@ parameters = pybop.Parameters(
         initial_value=0.41,
     ),
 )
-experiment = pybop.Experiment(
-    [
-        "Rest for 5 seconds (1 second period)",
-        "Discharge at 0.5C for 3 minutes (4 second period)",
-        "Charge at 0.5C for 3 minutes (4 second period)",
-    ]
-)
-values = model.predict(experiment=experiment, initial_state={"Initial SoC": 0.65})
 
-sigma = 0.002
-corrupt_values = values["Voltage [V]"].data + np.random.normal(
-    0, sigma, len(values["Voltage [V]"].data)
-)
+# Import the synthetic dataset, set model initial state
+csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
+initial_state = {"Initial open-circuit voltage [V]": csv_data[0, 2]}
+model.set_initial_state(initial_state=initial_state)
 
 # Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": values["Time [s]"].data,
-        "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": corrupt_values,
+        "Time [s]": csv_data[:, 0],
+        "Current function [A]": csv_data[:, 1],
+        "Voltage [V]": csv_data[:, 2],
     }
 )
 
@@ -55,9 +55,8 @@ problem = pybop.FittingProblem(
     model,
     parameters,
     dataset,
-    initial_state={"Initial open-circuit voltage [V]": dataset["Voltage [V]"][0]},
 )
-cost = pybop.SumSquaredError(problem)
+cost = pybop.GaussianLogLikelihood(problem, sigma0=8e-3)
 optim = pybop.Optimisation(
     cost,
     optimiser=pybop.CuckooSearch,
