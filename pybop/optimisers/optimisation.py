@@ -20,10 +20,8 @@ class Optimisation:
         Initial step size or standard deviation for the optimiser (default: None).
     verbose : bool, optional
         If True, the optimisation progress is printed (default: False).
-    physical_viability : bool, optional
+    check_physical_viability : bool, optional
         If True, the feasibility of the optimised parameters is checked (default: True).
-    allow_infeasible_solutions : bool, optional
-        If True, infeasible parameter values will be allowed in the optimisation (default: True).
 
     Attributes
     ----------

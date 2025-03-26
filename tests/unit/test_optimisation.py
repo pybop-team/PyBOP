@@ -699,19 +699,21 @@ class TestOptimisation:
 
     def test_unphysical_result(self, cost):
         # Trigger parameters not physically viable warning
-        optim = pybop.Optimisation(cost=cost, max_iterations=3, physical_viability=True)
+        optim = pybop.Optimisation(
+            cost=cost, max_iterations=3, check_physical_viability=True
+        )
         results = optim.run()
         with pytest.warns(
             UserWarning,
             match="Optimised parameters are not physically viable!",
         ):
             warnings.simplefilter("always")
-            results.check_physical_viability(np.array([2]))
+            results._check_physical_viability(np.array([2]))
 
     def test_optimisation_results(self, cost):
         # Construct OptimisationResult
         cost.problem.model.apply_events()
-        optim = pybop.Optimisation(cost=cost, physical_viability=True)
+        optim = pybop.Optimisation(cost=cost, check_physical_viability=True)
         results = pybop.OptimisationResult(optim=optim, x=[1e-3], n_iterations=1)
 
         # Asserts
@@ -734,7 +736,7 @@ class TestOptimisation:
             n_iterations=1,
             multistart=3,
             compute_sensitivities=True,
-            physical_viability=True,
+            check_physical_viability=True,
             n_samples_sensitivity=8,
         )
         results = optim.run()

@@ -39,7 +39,7 @@ class BaseOptimiser(CostInterface):
             Not all methods will use this information.
         verbose : bool, optional
             If True, the optimisation progress is printed (default: False).
-        physical_viability : bool, optional
+        check_physical_viability : bool, optional
             If True, the feasibility of the optimised parameters is checked (default: False).
 
     Attributes
@@ -61,7 +61,7 @@ class BaseOptimiser(CostInterface):
         self.sigma0 = 0.02
         self.verbose = True
         self._needs_sensitivities = False
-        self.physical_viability = False
+        self.check_physical_viability = False
         self.default_max_iterations = 1000
         self.result = None
         transformation = None
@@ -151,6 +151,11 @@ class BaseOptimiser(CostInterface):
         )
         self.n_samples_sensitivity = self.unset_options.pop(
             "n_sensitivity_samples", 256
+        )
+
+        # Set physical viability
+        self.check_physical_viability = self.unset_options.pop(
+            "check_physical_viability", False
         )
 
     def _set_up_optimiser(self):

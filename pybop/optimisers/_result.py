@@ -152,8 +152,8 @@ class OptimisationResult:
         )
 
         # Check that the best parameters are physically viable
-        if self.optim.physical_viability:
-            self.check_physical_viability(self.x_best)
+        if self.optim.check_physical_viability:
+            self._check_physical_viability(self.x_best)
 
     def check_for_finite_cost(self) -> None:
         """
@@ -167,7 +167,7 @@ class OptimisationResult:
                 f"Optimised parameters {self.cost.parameters.as_dict()} do not produce a finite cost value"
             )
 
-    def check_physical_viability(self, x):
+    def _check_physical_viability(self, x):
         """
         Check if the optimised parameters are physically viable.
 
