@@ -29,19 +29,17 @@ class TestCosts:
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameter(
-            "Negative electrode active material volume fraction",
-            prior=pybop.Gaussian(0.5, 0.01),
-            bounds=[0.375, 0.625],
+        return pybop.Parameters(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.5, 0.01),
+                bounds=[0.375, 0.625],
+            )
         )
 
     @pytest.fixture
     def experiment(self):
-        return pybop.Experiment(
-            [
-                ("Discharge at 1C for 10 minutes (20 second period)"),
-            ]
-        )
+        return pybop.Experiment(["Discharge at 1C for 10 minutes (20 second period)"])
 
     @pytest.fixture
     def dataset(self, model, experiment):
@@ -54,33 +52,31 @@ class TestCosts:
             }
         )
 
-    @pytest.fixture
-    def signal(self):
-        return "Voltage [V]"
+    def test_base(self, model, parameters, dataset):
+        problem = pybop.FittingProblem(model, parameters, dataset)
+        for cost_class in [pybop.BaseCost, pybop.FittingCost, pybop.DesignCost]:
+            base_cost = cost_class(problem)
+            assert base_cost.problem == problem
+            with pytest.raises(NotImplementedError):
+                base_cost([0.5])
 
     @pytest.fixture(params=[2.5, 3.777])
-    def problem(self, model, parameters, dataset, signal, request):
+    def problem(self, model, parameters, dataset, request):
         cut_off = request.param
         model.parameter_set.update({"Lower voltage cut-off [V]": cut_off})
-        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
-        return problem
+        return pybop.FittingProblem(model, parameters, dataset)
 
     @pytest.fixture(
         params=[
-            pybop.RootMeanSquaredError,
-            pybop.SumSquaredError,
-            pybop.Minkowski,
-            pybop.SumofPower,
+            pybop.MeanAbsoluteError,
             pybop.ObserverCost,
             pybop.LogPosterior,
         ]
     )
-    def cost(self, problem, request):
+    def fitting_cost(self, problem, request):
         cls = request.param
-        if cls in [pybop.SumSquaredError, pybop.RootMeanSquaredError]:
+        if cls is pybop.MeanAbsoluteError:
             return cls(problem)
-        elif cls in [pybop.Minkowski, pybop.SumofPower]:
-            return cls(problem, p=2)
         elif cls is pybop.LogPosterior:
             return cls(pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.002))
         elif cls is pybop.ObserverCost:
@@ -104,19 +100,13 @@ class TestCosts:
                     process=process,
                     measure=1e-4,
                     dataset=dataset,
-                    signal=problem.signal,
                 ),
             )
 
-    def test_base(self, model, parameters, dataset):
-        problem = pybop.FittingProblem(model, parameters, dataset)
-        for cost_class in [pybop.BaseCost, pybop.FittingCost, pybop.DesignCost]:
-            base_cost = cost_class(problem)
-            assert base_cost.problem == problem
-            with pytest.raises(NotImplementedError):
-                base_cost([0.5])
+    def test_fitting_costs(self, fitting_cost, parameters):
+        cost = fitting_cost
 
-    def test_costs(self, cost):
+        # Test cost direction
         if isinstance(cost, pybop.BaseLikelihood):
             higher_cost = cost([0.52])
             lower_cost = cost([0.55])
@@ -129,45 +119,65 @@ class TestCosts:
 
         # Test type of returned value
         assert np.isscalar(cost([0.5]))
+        assert np.isscalar(cost(parameters.as_dict()))
 
         # Test UserWarnings
-        if isinstance(cost, (pybop.SumSquaredError, pybop.RootMeanSquaredError)):
+        if isinstance(cost, (pybop.MeanAbsoluteError)):
             assert cost([0.5]) >= 0
-            with pytest.warns(UserWarning) as record:
+            with pytest.warns(UserWarning):
                 cost([1.1])
 
             # Test option setting
             cost.set_fail_gradient(10)
             assert cost._de == 10
 
-        if not isinstance(cost, (pybop.ObserverCost, pybop.LogPosterior)):
-            e, de = cost([0.5], calculate_grad=True)
-
-            assert np.isscalar(e)
-            assert isinstance(de, np.ndarray)
-
-            # Test exception for non-numeric inputs
-            with pytest.raises(
-                TypeError, match="Inputs must be a dictionary or numeric."
-            ):
-                cost(["StringInputShouldNotWork"], calculate_grad=True)
-
-            with pytest.warns(UserWarning) as record:
-                cost([1.1], calculate_grad=True)
-
-            for i in range(len(record)):
-                assert "Non-physical point encountered" in str(record[i].message)
-
-            # Test infeasible locations
-            cost.problem.model.allow_infeasible_solutions = False
-            assert cost([1.1]) == np.inf
-            assert cost([1.1], calculate_grad=True) == (np.inf, cost._de)
-            assert cost([0.01]) == np.inf
-            assert cost([0.01], calculate_grad=True) == (np.inf, cost._de)
-
         # Test exception for non-numeric inputs
         with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
             cost(["StringInputShouldNotWork"])
+
+    @pytest.mark.parametrize(
+        "cost_class, expected_name",
+        [
+            (pybop.MeanSquaredError, "Mean Squared Error"),
+            (pybop.RootMeanSquaredError, "Root Mean Squared Error"),
+            (pybop.MeanAbsoluteError, "Mean Absolute Error"),
+            (pybop.SumSquaredError, "Sum Squared Error"),
+            (pybop.Minkowski, "Minkowski"),
+            (pybop.SumOfPower, "Sum Of Power"),
+        ],
+    )
+    def test_error_measures(self, problem, cost_class, expected_name):
+        cost = cost_class(problem)
+        assert cost.name == expected_name
+
+        # Test cost direction
+        higher_cost = cost([0.55])
+        lower_cost = cost([0.52])
+        assert higher_cost > lower_cost or (
+            higher_cost == lower_cost and not np.isfinite(higher_cost)
+        )
+
+        e, de = cost([0.5], calculate_grad=True)
+
+        assert np.isscalar(e)
+        assert isinstance(de, np.ndarray)
+
+        # Test exception for non-numeric inputs
+        with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
+            cost(["StringInputShouldNotWork"], calculate_grad=True)
+
+        with pytest.warns(UserWarning) as record:
+            cost([1.1], calculate_grad=True)
+
+        for i in range(len(record)):
+            assert "Non-physical point encountered" in str(record[i].message)
+
+        # Test infeasible locations
+        cost.problem.model.allow_infeasible_solutions = False
+        assert cost([1.1]) == np.inf
+        assert cost([1.1], calculate_grad=True) == (np.inf, cost._de)
+        assert cost([0.01]) == np.inf
+        assert cost([0.01], calculate_grad=True) == (np.inf, cost._de)
 
     def test_minkowski(self, problem):
         # Incorrect order
@@ -184,13 +194,72 @@ class TestCosts:
         with pytest.raises(
             ValueError, match="The order of 'p' must be greater than 0."
         ):
-            pybop.SumofPower(problem, p=-1)
+            pybop.SumOfPower(problem, p=-1)
 
         with pytest.raises(ValueError, match="p = np.inf is not yet supported."):
-            pybop.SumofPower(problem, p=np.inf)
+            pybop.SumOfPower(problem, p=np.inf)
 
     @pytest.fixture
-    def design_problem(self, parameters, experiment, signal):
+    def randomly_spaced_dataset(self, model):
+        t_eval = np.linspace(0, 10 * 60, 31) + np.concatenate(
+            ([0], np.random.normal(0, 1, 29), [0])
+        )
+        solution = model.predict(t_eval=t_eval)
+        return pybop.Dataset(
+            {
+                "Time [s]": solution["Time [s]"].data,
+                "Current function [A]": solution["Current [A]"].data,
+                "Voltage [V]": solution["Terminal voltage [V]"].data,
+            }
+        )
+
+    @pytest.mark.parametrize(
+        "cost_class",
+        [
+            pybop.MeanSquaredError,
+            pybop.RootMeanSquaredError,
+            pybop.MeanAbsoluteError,
+            pybop.SumSquaredError,
+            pybop.Minkowski,
+            pybop.SumOfPower,
+        ],
+    )
+    def test_error_weighting(
+        self, model, parameters, dataset, randomly_spaced_dataset, cost_class
+    ):
+        problem = pybop.FittingProblem(model, parameters, dataset)
+        cost = cost_class(problem, weighting=1.0)
+        x = [0.5]
+        e, de = cost(x, calculate_grad=True)
+
+        # Test that the equal weighting is the same as weighting by one
+        costE = cost_class(problem, weighting="equal")
+        eE, deE = costE(x, calculate_grad=True)
+        np.testing.assert_allclose(e, eE)
+        np.testing.assert_allclose(de, deE)
+
+        # Test that domain-basd weighting also matches for evenly spaced data
+        costD = cost_class(problem, weighting="domain")
+        eD, deD = costD(x, calculate_grad=True)
+        np.testing.assert_allclose(e, eD)
+        np.testing.assert_allclose(de, deD)
+
+        # Test that the domain-based weighting accounts for random spacing in the dataset
+        problemR = pybop.FittingProblem(model, parameters, randomly_spaced_dataset)
+        costR = cost_class(problemR, weighting="domain")
+        eR, deR = costR(x, calculate_grad=True)
+        np.testing.assert_allclose(e, eR, rtol=1e-2, atol=1e-9)
+        np.testing.assert_allclose(de, deR, rtol=1e-2, atol=1e-9)
+
+        # Check gradient calculation using finite difference
+        delta = 1e-6 * x[0]
+        cost_right = costR(x[0] + delta / 2)
+        cost_left = costR(x[0] - delta / 2)
+        numerical_grad = (cost_right - cost_left) / delta
+        np.testing.assert_allclose(deR, numerical_grad, rtol=6e-3)
+
+    @pytest.fixture
+    def design_problem(self, parameters, experiment):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
         parameter_set.update(
             {
@@ -217,7 +286,6 @@ class TestCosts:
             model,
             parameters,
             experiment,
-            signal=signal,
             initial_state={"Initial SoC": 0.5},
         )
 
@@ -400,3 +468,20 @@ class TestCosts:
             match="All problems must be of the same class type.",
         ):
             pybop.WeightedCost(cost1, cost2)
+
+    def test_parameter_sensitivities(self, problem):
+        cost = pybop.MeanAbsoluteError(problem)
+        result = cost.sensitivity_analysis(4)
+
+        # Assertions
+        assert isinstance(result, dict)
+        assert "S1" in result
+        assert "ST" in result
+        assert isinstance(result["S1"], np.ndarray)
+        assert isinstance(result["S2"], np.ndarray)
+        assert isinstance(result["ST"], np.ndarray)
+        assert isinstance(result["S1_conf"], np.ndarray)
+        assert isinstance(result["ST_conf"], np.ndarray)
+        assert isinstance(result["S2_conf"], np.ndarray)
+        assert result["S1"].shape == (1,)
+        assert result["ST"].shape == (1,)

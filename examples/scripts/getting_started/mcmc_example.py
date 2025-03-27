@@ -1,7 +1,12 @@
+import sys
+
 import numpy as np
 import pybamm
 
 import pybop
+
+# Set parallelization if on macOS / Unix
+parallel = True if sys.platform != "win32" else False
 
 # Parameter set and model definition
 solver = pybamm.IDAKLUSolver()
@@ -41,8 +46,8 @@ values = synth_model.predict(
 )
 
 
-def noise(sigma):
-    return np.random.normal(0, sigma, len(values["Voltage [V]"].data))
+def noisy(data, sigma):
+    return data + np.random.normal(0, sigma, len(data))
 
 
 # Form dataset
@@ -50,18 +55,20 @@ dataset = pybop.Dataset(
     {
         "Time [s]": values["Time [s]"].data,
         "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": values["Voltage [V]"].data + noise(sigma),
-        "Bulk open-circuit voltage [V]": values["Bulk open-circuit voltage [V]"].data
-        + noise(sigma),
+        "Voltage [V]": noisy(values["Voltage [V]"].data, sigma),
+        "Bulk open-circuit voltage [V]": noisy(
+            values["Bulk open-circuit voltage [V]"].data, sigma
+        ),
     }
 )
 
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=pybamm.IDAKLUSolver())
-model.build(initial_state={"Initial SoC": init_soc})
 signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 
 # Generate problem, likelihood, and sampler
-problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
+problem = pybop.FittingProblem(
+    model, parameters, dataset, signal=signal, initial_state={"Initial SoC": init_soc}
+)
 likelihood = pybop.GaussianLogLikelihood(problem)
 posterior = pybop.LogPosterior(likelihood)
 
@@ -71,7 +78,7 @@ sampler = pybop.DifferentialEvolutionMCMC(
     max_iterations=300,
     warm_up=100,
     verbose=True,
-    # parallel=True,  # uncomment to enable parallelisation (macOS/WSL/Linux only)
+    parallel=parallel,  # (macOS/WSL/Linux only)
 )
 chains = sampler.run()
 

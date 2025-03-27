@@ -36,8 +36,8 @@ experiment = pybop.Experiment(
 values = model.predict(experiment=experiment, initial_state={"Initial SoC": 0.5})
 
 
-def noise(sigma):
-    return np.random.normal(0, sigma, len(values["Voltage [V]"].data))
+def noisy(data, sigma):
+    return data + np.random.normal(0, sigma, len(data))
 
 
 # Form dataset
@@ -45,7 +45,7 @@ dataset = pybop.Dataset(
     {
         "Time [s]": values["Time [s]"].data,
         "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": values["Voltage [V]"].data + noise(sigma),
+        "Voltage [V]": noisy(values["Voltage [V]"].data, sigma),
     }
 )
 

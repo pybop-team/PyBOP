@@ -40,15 +40,15 @@ parameters = pybop.Parameters(
 )
 
 
-def noise(sigma, values):
+def noisy(data, sigma):
     # Generate real part noise
-    real_noise = np.random.normal(0, sigma, values)
+    real_noise = np.random.normal(0, sigma, len(data))
 
     # Generate imaginary part noise
-    imag_noise = np.random.normal(0, sigma, values)
+    imag_noise = np.random.normal(0, sigma, len(data))
 
     # Combine them into a complex noise
-    return real_noise + 1j * imag_noise
+    return data + real_noise + 1j * imag_noise
 
 
 # Form dataset
@@ -56,7 +56,7 @@ dataset = pybop.Dataset(
     {
         "Frequency [Hz]": f_eval,
         "Current function [A]": np.ones(n_frequency) * 0.0,
-        "Impedance": sim["Impedance"] + noise(sigma0, len(sim["Impedance"])),
+        "Impedance": noisy(sim["Impedance"], sigma0),
     }
 )
 

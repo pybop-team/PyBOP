@@ -45,7 +45,12 @@ signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
 cost = pybop.SumSquaredError(problem)
 optim = pybop.CMAES(
-    cost, sigma0=0.25, max_unchanged_iterations=10, verbose=True, max_iterations=40
+    cost,
+    sigma0=0.25,
+    max_unchanged_iterations=10,
+    verbose=True,
+    max_iterations=40,
+    multistart=2,
 )
 
 # Run the optimisation
@@ -56,7 +61,7 @@ print("True parameters:", parameters.true_value())
 pybop.plot.dataset(dataset)
 
 # Plot the timeseries output
-pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.quick(problem, problem_inputs=results.x_best, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot.convergence(optim)

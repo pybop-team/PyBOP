@@ -35,9 +35,9 @@ def contour(
         If True, the gradient is shown (default: False).
     bounds : numpy.ndarray, optional
         A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
-        `cost.parameters.get_bounds_for_plotly`.
+        `parameters.get_bounds_for_plotly`.
     apply_transform : bool, optional
-        Converts contour landscape into transformed landscape that was used by the optimiser.
+        Uses the transformed parameter values (as seen by the optimiser) for plotting.
     steps : int, optional
         The number of grid points to divide the parameter space into along each dimension (default: 10).
     show : bool, optional
@@ -67,16 +67,19 @@ def contour(
         plot_optim = True
         optim = call_object
         cost = optim.cost
-        cost_call = partial(optim.cost, apply_transform=apply_transform)
+        cost_call = partial(optim.cost)
     elif isinstance(call_object, BaseCost):
         cost = call_object
-        cost_call = partial(cost, apply_transform=apply_transform)
+        cost_call = partial(cost)
 
-    if isinstance(cost, BaseCost) and len(cost.parameters) < 2:
+    parameters = cost.parameters
+    names = list(parameters.keys())
+    additional_values = []
+
+    if len(parameters) < 2:
         raise ValueError("This cost function takes fewer than 2 parameters.")
 
-    additional_values = []
-    if isinstance(cost, BaseCost) and len(cost.parameters) > 2:
+    if len(parameters) > 2:
         warnings.warn(
             "This cost function requires more than 2 parameters. "
             "Plotting in 2d with fixed values for the additional parameters.",
@@ -86,14 +89,14 @@ def contour(
         for (
             i,
             param,
-        ) in enumerate(cost.parameters):
+        ) in enumerate(parameters):
             if i > 1:
                 additional_values.append(param.value)
                 print(f"Fixed {param.name}:", param.value)
 
     # Set up parameter bounds
     if bounds is None:
-        bounds = cost.parameters.get_bounds_for_plotly(apply_transform=apply_transform)
+        bounds = parameters.get_bounds_for_plotly()
 
     # Generate grid
     x = np.linspace(bounds[0, 0], bounds[0, 1], steps)
@@ -151,6 +154,20 @@ def contour(
         xf, yf = np.meshgrid(x, y)
         costs = griddata((flat_x, flat_y), flat_costs, (xf, yf), method="linear")
 
+    # Apply any transformation if requested
+    def transform_array_of_values(list_of_values, parameter):
+        """Apply transformation if requested."""
+        if apply_transform:
+            return np.asarray(
+                [parameter.transformation.to_search(value) for value in list_of_values]
+            ).flatten()
+        return list_of_values
+
+    x = transform_array_of_values(x, parameters[names[0]])
+    y = transform_array_of_values(y, parameters[names[1]])
+    bounds[0] = transform_array_of_values(bounds[0], parameters[names[0]])
+    bounds[1] = transform_array_of_values(bounds[1], parameters[names[1]])
+
     # Import plotly only when needed
     go = PlotlyManager().go
 
@@ -165,10 +182,12 @@ def contour(
         yaxis=dict(range=bounds[1], showexponent="last", exponentformat="e"),
         legend=dict(orientation="h", yanchor="bottom", y=1, xanchor="right", x=1),
     )
-    if hasattr(cost, "parameters"):
-        name = cost.parameters.keys()
-        layout_options["xaxis_title"] = name[0]
-        layout_options["yaxis_title"] = name[1]
+    layout_options["xaxis_title"] = (
+        "Transformed " + names[0] if apply_transform else names[0]
+    )
+    layout_options["yaxis_title"] = (
+        "Transformed " + names[1] if apply_transform else names[1]
+    )
     layout = go.Layout(layout_options)
 
     # Create contour plot and update the layout
@@ -181,10 +200,11 @@ def contour(
         # Plot the optimisation trace
         optim_trace = np.asarray([item[:2] for item in optim.log["x"]])
         optim_trace = optim_trace.reshape(-1, 2)
+
         fig.add_trace(
             go.Scatter(
-                x=optim_trace[:, 0],
-                y=optim_trace[:, 1],
+                x=transform_array_of_values(optim_trace[:, 0], parameters[names[0]]),
+                y=transform_array_of_values(optim_trace[:, 1], parameters[names[1]]),
                 mode="markers",
                 marker=dict(
                     color=[i / len(optim_trace) for i in range(len(optim_trace))],
@@ -197,11 +217,11 @@ def contour(
         )
 
         # Plot the initial guess
-        if optim.log["x0"] is not None:
+        if optim.x0 is not None:
             fig.add_trace(
                 go.Scatter(
-                    x=[optim.log["x0"][0]],
-                    y=[optim.log["x0"][1]],
+                    x=transform_array_of_values([optim.x0[0]], parameters[names[0]]),
+                    y=transform_array_of_values([optim.x0[1]], parameters[names[1]]),
                     mode="markers",
                     marker_symbol="x",
                     marker=dict(
@@ -219,8 +239,12 @@ def contour(
         if optim.log["x_best"] is not None:
             fig.add_trace(
                 go.Scatter(
-                    x=[optim.log["x_best"][-1][0]],
-                    y=[optim.log["x_best"][-1][1]],
+                    x=transform_array_of_values(
+                        [optim.log["x_best"][-1][0]], parameters[names[0]]
+                    ),
+                    y=transform_array_of_values(
+                        [optim.log["x_best"][-1][1]], parameters[names[1]]
+                    ),
                     mode="markers",
                     marker_symbol="cross",
                     marker=dict(

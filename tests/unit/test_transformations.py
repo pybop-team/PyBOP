@@ -13,6 +13,9 @@ class TestTransformation:
 
     pytestmark = pytest.mark.unit
 
+    def log_jacobian_determinant(self, jac):
+        return np.log(np.abs(np.linalg.det(jac)))
+
     @pytest.fixture
     def parameters(self):
         return pybop.Parameters(
@@ -38,8 +41,9 @@ class TestTransformation:
         transformation = parameters["Identity"].transformation
         assert np.array_equal(transformation.to_model(q), q)
         assert np.array_equal(transformation.to_search(q), q)
-        assert transformation.log_jacobian_det(q) == 0.0
-        assert transformation.log_jacobian_det_S1(q) == (0.0, np.zeros(1))
+        log_jac_det = self.log_jacobian_determinant(transformation.jacobian(q))
+        assert transformation.log_jacobian_det(q) == log_jac_det
+        assert transformation.log_jacobian_det_S1(q) == (log_jac_det, np.zeros(1))
         assert transformation.n_parameters == 1
         assert transformation.is_elementwise()
 
@@ -63,11 +67,10 @@ class TestTransformation:
 
         q_transformed = transformation.to_search(p)
         assert np.allclose(q_transformed, q)
-        assert np.allclose(
-            transformation.log_jacobian_det(q), np.sum(np.log(np.abs(2.0)))
-        )
+        log_jac_det = self.log_jacobian_determinant(transformation.jacobian(q))
+        assert np.allclose(transformation.log_jacobian_det(q), log_jac_det)
         log_jac_det_S1 = transformation.log_jacobian_det_S1(q)
-        assert log_jac_det_S1[0] == np.sum(np.log(np.abs(2.0)))
+        assert log_jac_det_S1[0] == log_jac_det
         assert log_jac_det_S1[1] == np.zeros(1)
 
         jac, jac_S1 = transformation.jacobian_S1(q)
@@ -94,11 +97,10 @@ class TestTransformation:
 
         q_transformed = transformation.to_search(p)
         assert np.allclose(q_transformed, q)
-        assert np.allclose(
-            transformation.log_jacobian_det(q), np.sum(np.log(np.abs(coeff)))
-        )
+        log_jac_det = self.log_jacobian_determinant(transformation.jacobian(q))
+        assert np.allclose(transformation.log_jacobian_det(q), log_jac_det)
         log_jac_det_S1 = transformation.log_jacobian_det_S1(q)
-        assert log_jac_det_S1[0] == np.sum(np.log(np.abs(coeff)))
+        assert log_jac_det_S1[0] == log_jac_det
         assert log_jac_det_S1[1] == np.zeros(1)
 
         jac, jac_S1 = transformation.jacobian_S1(q)
@@ -121,11 +123,12 @@ class TestTransformation:
 
         q_transformed = transformation.to_search(p)
         assert np.allclose(q_transformed, q)
-        assert np.allclose(transformation.log_jacobian_det(q), np.sum(q))
+        log_jac_det = self.log_jacobian_determinant(transformation.jacobian(q))
+        assert np.allclose(transformation.log_jacobian_det(q), log_jac_det)
 
         log_jac_det_S1 = transformation.log_jacobian_det_S1(q)
         n = transformation._n_parameters
-        assert log_jac_det_S1[0] == np.sum(q)
+        assert log_jac_det_S1[0] == log_jac_det
         assert log_jac_det_S1[1] == np.ones(n)
 
         jac, jac_S1 = transformation.jacobian_S1(q)
@@ -171,12 +174,11 @@ class TestTransformation:
         np.testing.assert_allclose(jac_S1[1][0, :, :], np.zeros((3, 3)))
         np.testing.assert_allclose(jac_S1[1][1, :, :], np.zeros((3, 3)))
 
-        correct_output = np.sum(np.log(np.abs(2.0))) + np.sum(10)
-        log_jac_det = transformation.log_jacobian_det(q)
-        assert log_jac_det == correct_output
+        log_jac_det = self.log_jacobian_determinant(transformation.jacobian(q))
+        assert transformation.log_jacobian_det(q) == log_jac_det
 
         log_jac_det_S1 = transformation.log_jacobian_det_S1(q)
-        assert log_jac_det_S1[0] == correct_output
+        assert log_jac_det_S1[0] == log_jac_det
         np.testing.assert_allclose(log_jac_det_S1[1], np.asarray([0.0, 0.0, 1.0]))
 
         # Test composed with no transformations

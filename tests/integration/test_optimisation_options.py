@@ -23,7 +23,7 @@ class TestOptimisation:
 
     @pytest.fixture
     def model(self):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set = pybop.ParameterSet("Chen2020")
         x = self.ground_truth
         parameter_set.update(
             {
@@ -58,8 +58,8 @@ class TestOptimisation:
     def cost_class(self, request):
         return request.param
 
-    def noise(self, sigma, values):
-        return np.random.normal(0, sigma, values)
+    def noisy(self, data, sigma):
+        return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
     def spm_costs(self, model, parameters, cost_class):
@@ -70,8 +70,7 @@ class TestOptimisation:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Voltage [V]"].data
-                + self.noise(0.002, len(solution["Time [s]"].data)),
+                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, 0.002),
             }
         )
 
@@ -110,7 +109,7 @@ class TestOptimisation:
 
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
-            if optim.minimising:
+            if results.minimising:
                 assert initial_cost > results.final_cost
             else:
                 assert initial_cost < results.final_cost

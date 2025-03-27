@@ -4,7 +4,7 @@ import pytest
 import pybop
 
 
-class TestCostsTransformations:
+class TestCostInterface:
     """
     Class for unit testing cost functions with transformations applied.
     """
@@ -13,8 +13,8 @@ class TestCostsTransformations:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.x1 = [0.5, 1]
-        self.x2 = [(self.x1[0] + 1) * -2.5, np.log(1)]
+        self.x_model = [0.525, 1.5]
+        self.x_search = [1 / 0.25 * (self.x_model[0] - 0.375), np.log(self.x_model[1])]
 
     @pytest.fixture
     def model(self):
@@ -28,12 +28,12 @@ class TestCostsTransformations:
                 prior=pybop.Gaussian(0.5, 0.01),
                 bounds=[0.375, 0.625],
                 transformation=pybop.ScaledTransformation(
-                    coefficient=-2.5, intercept=1
+                    coefficient=1 / 0.25, intercept=-0.375
                 ),
             ),
             pybop.Parameter(
                 "Positive electrode Bruggeman coefficient (electrode)",
-                prior=pybop.Gaussian(1, 0.1),
+                prior=pybop.Gaussian(1.5, 0.1),
                 transformation=pybop.LogTransformation(),
             ),
         )
@@ -68,7 +68,7 @@ class TestCostsTransformations:
             pybop.RootMeanSquaredError,
             pybop.SumSquaredError,
             pybop.Minkowski,
-            pybop.SumofPower,
+            pybop.SumOfPower,
             pybop.ObserverCost,
             pybop.LogPosterior,
             pybop.GaussianLogLikelihood,
@@ -112,27 +112,56 @@ class TestCostsTransformations:
 
     def test_cost_transformations(self, cost):
         if isinstance(cost, pybop.GaussianLogLikelihood):
-            self.x1.append(0.002)
-            self.x2.append(0.002)
+            self.x_model.append(0.002)
+            self.x_search.append(0.002)
 
-        # Asserts
-        non_transformed_cost = cost(self.x1)
-        transformed_cost = cost(self.x2, apply_transform=True)
-        np.testing.assert_allclose(non_transformed_cost, transformed_cost)
+        optim = pybop.Optimisation(cost=cost, x0=self.x_model)
+
+        true_cost = cost(self.x_model)
+        cost_with_transformation = optim.call_cost(self.x_search, cost=optim.cost) * (
+            1 if cost.minimising else -1
+        )
+        np.testing.assert_allclose(true_cost, cost_with_transformation)
 
     def test_cost_gradient_transformed(self, cost):
-        # Gradient transformations are not implmented on ObserverCost
+        # Gradient transformations are not implemented on ObserverCost
         if isinstance(cost, pybop.ObserverCost):
             return
 
         if isinstance(cost, pybop.GaussianLogLikelihood):
-            self.x1.append(0.002)
-            self.x2.append(0.002)
-        # Asserts
-        non_transformed_cost, grad = cost(self.x1, calculate_grad=True)
-        transformed_cost, transformed_gradient = cost(
-            self.x2, calculate_grad=True, apply_transform=True
+            self.x_model.append(0.002)
+            self.x_search.append(0.002)
+
+        optim = pybop.Optimisation(cost=cost, x0=self.x_model)
+
+        true_cost, grad_wrt_model_parameters = cost(self.x_model, calculate_grad=True)
+        cost_with_transformation, gradient_with_transformation = optim.call_cost(
+            self.x_search, cost=optim.cost, calculate_grad=True
         )
-        np.testing.assert_allclose(transformed_cost, non_transformed_cost)
-        with pytest.raises(AssertionError):
-            np.testing.assert_allclose(transformed_gradient, grad)
+        cost_with_transformation = cost_with_transformation * (
+            1 if cost.minimising else -1
+        )
+        gradient_with_transformation = gradient_with_transformation * (
+            1 if cost.minimising else -1
+        )
+
+        np.testing.assert_allclose(true_cost, cost_with_transformation)
+
+        numerical_grad = []
+        for i in range(len(self.x_model)):
+            delta = 1e-6 * self.x_model[i]
+            self.x_model[i] += delta / 2
+            cost_right = cost(self.x_model)
+            self.x_model[i] -= delta
+            cost_left = cost(self.x_model)
+            self.x_model[i] += delta / 2
+            numerical_grad.append((cost_right - cost_left) / delta)
+
+        np.testing.assert_allclose(grad_wrt_model_parameters, numerical_grad, rtol=6e-4)
+
+        jac = optim.transformation.jacobian(self.x_search)
+        gradient_wrt_search_parameters = np.matmul(grad_wrt_model_parameters, jac)
+
+        np.testing.assert_allclose(
+            gradient_wrt_search_parameters, gradient_with_transformation
+        )

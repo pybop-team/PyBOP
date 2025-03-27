@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 
 import pybop
 
@@ -34,9 +35,17 @@ dataset = pybop.Dataset(
 )
 
 # Generate problem, cost function, and optimisation class
+model.solver = pybamm.IDAKLUSolver()
 problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.SumofPower(problem, p=2)
-optim = pybop.SNES(cost, max_iterations=100)
+cost = pybop.SumSquaredError(problem)
+optim = pybop.SciPyMinimize(
+    cost,
+    max_iterations=100,
+    multistart=1,
+    method="L-BFGS-B",
+    jac=True,
+    n_sensitivity_samples=256,
+)
 
 results = optim.run()
 

@@ -1,6 +1,6 @@
 import numpy as np
-import pybamm
 import pytest
+from pybamm import IDAKLUSolver
 
 import pybop
 
@@ -21,7 +21,7 @@ class Test_Jax_Parameterisation:
 
     @pytest.fixture
     def model(self):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set = pybop.ParameterSet("Chen2020")
         x = self.ground_truth
         parameter_set.update(
             {
@@ -29,8 +29,7 @@ class Test_Jax_Parameterisation:
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        solver = pybamm.IDAKLUSolver()
-        return pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
+        return pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
     @pytest.fixture
     def parameters(self):
@@ -63,8 +62,8 @@ class Test_Jax_Parameterisation:
     def cost_cls(self, request):
         return request.param
 
-    def noise(self, sigma, values):
-        return np.random.normal(0, sigma, values)
+    def noisy(self, data, sigma):
+        return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture(
         params=[
@@ -90,12 +89,12 @@ class Test_Jax_Parameterisation:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Voltage [V]"].data
-                + self.noise(self.sigma0, len(solution["Time [s]"].data)),
+                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
             }
         )
 
         # Define the problem
+        model.solver = IDAKLUSolver()
         problem = pybop.FittingProblem(model, parameters, dataset)
 
         # Construct the cost
@@ -124,9 +123,10 @@ class Test_Jax_Parameterisation:
             pybop.SciPyDifferentialEvolution,
             pybop.CuckooSearch,
         ]:
-            common_args["bounds"] = [[0.375, 0.775], [0.375, 0.775]]
+            common_args["bounds"] = {"lower": [0.375, 0.375], "upper": [0.775, 0.775]}
             if isinstance(cost, pybop.GaussianLogLikelihood):
-                common_args["bounds"].extend([[0.0, 0.05]])
+                common_args["bounds"]["lower"].append(0.0)
+                common_args["bounds"]["upper"].append(0.05)
 
         # Set sigma0 and create optimiser
         optim = optimiser(**common_args)
@@ -151,7 +151,7 @@ class Test_Jax_Parameterisation:
         if np.allclose(x0, self.ground_truth, atol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
-        if optim.minimising:
+        if results.minimising:
             assert initial_cost > results.final_cost
         else:
             assert initial_cost < results.final_cost

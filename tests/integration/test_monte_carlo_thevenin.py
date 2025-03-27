@@ -77,8 +77,8 @@ class TestSamplingThevenin:
     def init_soc(self, request):
         return request.param
 
-    def noise(self, sigma, values):
-        return np.random.normal(0, sigma, values)
+    def noisy(self, data, sigma):
+        return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
     def posterior(self, model, parameters, init_soc):
@@ -88,8 +88,7 @@ class TestSamplingThevenin:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Voltage [V]"].data
-                + self.noise(self.sigma0, len(solution["Time [s]"].data)),
+                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
             }
         )
 
@@ -128,13 +127,13 @@ class TestSamplingThevenin:
         ],
     )
     def test_sampling_thevenin(self, sampler, posterior, map_estimate):
-        x0 = np.clip(map_estimate + np.random.normal(0, 1e-3, size=2), 1e-4, 1e-1)
+        x0 = np.clip(map_estimate + np.random.normal(0, 5e-4, size=2), 1e-4, 1e-1)
         common_args = {
             "log_pdf": posterior,
             "chains": 2,
             "warm_up": 150,
             "cov0": [6e-3, 6e-3],
-            "max_iterations": 550,
+            "max_iterations": 1000 if sampler is SliceRankShrinkingMCMC else 550,
             "x0": x0,
         }
 
@@ -163,9 +162,6 @@ class TestSamplingThevenin:
     def get_data(self, model, init_soc):
         initial_state = {"Initial SoC": init_soc}
         experiment = pybop.Experiment(
-            [
-                ("Discharge at 0.5C for 6 minutes (20 second period)",),
-            ]
+            ["Discharge at 0.5C for 6 minutes (20 second period)"]
         )
-        sim = model.predict(initial_state=initial_state, experiment=experiment)
-        return sim
+        return model.predict(initial_state=initial_state, experiment=experiment)

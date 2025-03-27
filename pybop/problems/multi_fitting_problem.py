@@ -98,7 +98,6 @@ class MultiFittingProblem(BaseProblem):
 
         combined_domain = []
         combined_signal = []
-        combined_solutions = []
 
         for problem in self.problems:
             problem_inputs = problem.parameters.as_dict()
@@ -108,14 +107,12 @@ class MultiFittingProblem(BaseProblem):
                 if problem.domain in problem_output.keys()
                 else problem.domain_data[: len(problem_output[problem.signal[0]])]
             )
-            combined_solutions.append(problem.solution)
 
             # Collect signals
             for signal in problem.signal:
                 combined_domain.extend(domain_data)
                 combined_signal.extend(problem_output[signal])
 
-        self._solution = combined_solutions
         return {
             self.domain: np.asarray(combined_domain),
             "Combined signal": np.asarray(combined_signal),
@@ -141,7 +138,9 @@ class MultiFittingProblem(BaseProblem):
 
         combined_domain = []
         combined_signal = []
-        all_derivatives = []
+        dy = dict.fromkeys(self.parameters.keys())
+        for key in self.parameters.keys():
+            dy[key] = {"Combined signal": []}
 
         for problem in self.problems:
             problem_inputs = problem.parameters.as_dict()
@@ -156,12 +155,19 @@ class MultiFittingProblem(BaseProblem):
             for signal in problem.signal:
                 combined_domain.extend(domain_data)
                 combined_signal.extend(problem_output[signal])
-            all_derivatives.append(dyi)
+                for key in self.parameters.keys():
+                    dy[key]["Combined signal"].extend(dyi[key][signal])
 
         y = {
             self.domain: np.asarray(combined_domain),
             "Combined signal": np.asarray(combined_signal),
         }
-        dy = np.concatenate(all_derivatives) if all_derivatives else None
 
         return (y, dy)
+
+    @property
+    def pybamm_solution(self):
+        solution_list = []
+        for problem in self.problems:
+            solution_list.append(problem.pybamm_solution)
+        return solution_list if any(solution_list) else None

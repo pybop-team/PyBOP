@@ -1,2 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Hide the diff for this file unless prompted
+uv.lock linguist-generated=true

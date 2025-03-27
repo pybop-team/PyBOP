@@ -28,8 +28,8 @@ t_eval = np.linspace(0, 10, 100)
 values = model.predict(t_eval=t_eval)
 
 
-def noise(sigma):
-    return np.random.normal(0, sigma, len(values["y_0"].data))
+def noisy(data, sigma):
+    return data + np.random.normal(0, sigma, len(data))
 
 
 # Form dataset
@@ -37,8 +37,8 @@ dataset = pybop.Dataset(
     {
         "Time [s]": t_eval,
         "Current function [A]": 0 * t_eval,
-        "y_0": values["y_0"].data + noise(sigma),
-        "y_1": values["y_1"].data + noise(sigma),
+        "y_0": noisy(values["y_0"].data, sigma),
+        "y_1": noisy(values["y_1"].data, sigma),
     }
 )
 
