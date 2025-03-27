@@ -32,19 +32,15 @@ class FittingCost(BaseCost):
             # Normalise the residuals by the domain spacing (for a uniform domain,
             # this is the same as a uniform weighting)
             domain_data = self.problem.domain_data
-            n_domain_data = len(domain_data)
             domain_spacing = domain_data[1:] - domain_data[:-1]
-            self.weighting = (
-                np.concatenate(
-                    (
-                        [domain_spacing[0]],
-                        (domain_spacing[1:] + domain_spacing[:-1]) / 2,
-                        [domain_spacing[-1]],
-                    )
+            mean_spacing = np.mean(domain_spacing)
+            self.weighting = np.concatenate(
+                (
+                    [(mean_spacing + domain_spacing[0]) / 2],
+                    (domain_spacing[1:] + domain_spacing[:-1]) / 2,
+                    [(domain_spacing[-1] + mean_spacing) / 2],
                 )
-                * (n_domain_data - 1)
-                / (domain_data[-1] - domain_data[0])
-            )
+            ) * ((len(domain_data) - 1) / (domain_data[-1] - domain_data[0]))
         else:
             self.weighting = np.asarray(weighting)
 
