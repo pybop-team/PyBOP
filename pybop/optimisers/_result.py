@@ -209,7 +209,6 @@ class OptimisationResult:
         # Format the sensitivities
         self.sense_format = ""
         if self._sensitivities:
-            self.sense_format = ""
             for value, conf in zip(
                 self._sensitivities["ST"], self._sensitivities["ST_conf"]
             ):
