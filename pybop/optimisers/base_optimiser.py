@@ -291,10 +291,10 @@ class BaseOptimiser(CostInterface):
             self.log.x_best.append(transformed_x_best)
 
         if cost is not None:
-            self.log.cost.extend(self._inverted_cost(self._to_list(cost)))
+            self.log.cost.extend(self._inverts_cost(self._to_list(cost)))
 
         if cost_best is not None:
-            self.log.cost_best.extend(self._inverted_cost(self._to_list(cost_best)))
+            self.log.cost_best.extend(self._inverts_cost(self._to_list(cost_best)))
 
         # Verbose output
         self._print_verbose_output()
