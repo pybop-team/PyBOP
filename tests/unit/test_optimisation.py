@@ -149,10 +149,10 @@ class TestOptimisation:
         def assert_log_update(optim):
             x_search = 0.7
             optim.log_update(x=[x_search], cost=[0.01])
-            assert optim.log["x_search"][-1] == x_search
-            assert optim.log["cost"][-1] == 0.01 * (-1 if optim.invert_cost else 1)
+            assert optim.log.x_search[-1] == x_search
+            assert optim.log.cost[-1] == 0.01 * (-1 if optim.invert_cost else 1)
             assert (
-                optim.log["x"][-1] == optim._transformation.to_model(x_search)
+                optim.log.x[-1] == optim._transformation.to_model(x_search)
                 if optim._transformation
                 else x_search
             )
@@ -173,7 +173,7 @@ class TestOptimisation:
         def check_multistart(optim, n_iters, multistarts):
             results = optim.run()
             if isinstance(optim, pybop.BasePintsOptimiser):
-                assert len(optim.log["x_best"]) == n_iters * multistarts
+                assert len(optim.log.x_best) == n_iters * multistarts
                 assert results.average_iterations() == n_iters
                 assert results.total_runtime() >= results.time[0]
 
@@ -647,8 +647,7 @@ class TestOptimisation:
         optim.set_threshold(np.inf)
         results = optim.run()
         assert (
-            "Halt: Objective function crossed threshold: inf."
-            in captured_output.getvalue()
+            "Objective function crossed threshold: inf." in captured_output.getvalue()
         )
 
         # Test pybamm solution
