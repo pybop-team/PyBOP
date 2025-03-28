@@ -61,10 +61,7 @@ cost = pybop.JaxLogNormalLikelihood(problem, sigma0=sigma)
 
 # Test gradient-based optimiser
 optim = pybop.IRPropMin(
-    cost,
-    sigma0=0.02,
-    max_unchanged_iterations=35,
-    max_iterations=100,
+    cost, sigma0=0.02, max_unchanged_iterations=35, max_iterations=100, verbose=True
 )
 
 results = optim.run()
