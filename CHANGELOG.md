@@ -2,6 +2,16 @@
 
 ## Features
 
+## Optimisations
+
+## Bug Fixes
+
+## Breaking Changes
+
+# [v25.3](https://github.com/pybop-team/PyBOP/tree/v25.3) - 2025-03-28
+
+## Features
+
 - [#649](https://github.com/pybop-team/PyBOP/pull/649) - Adds verbose outputs to Pints-based optimisers
 - [#659](https://github.com/pybop-team/PyBOP/pull/659) - Enables user-defined weightings of the error measures.
 - [#674](https://github.com/pybop-team/PyBOP/issues/674) - Adds the reason for stopping to the `OptimisationResult`.
@@ -21,7 +31,6 @@
 
 - [#684](https://github.com/pybop-team/PyBOP/pull/684) - Updates `plot.quick` to `plot.problem` for clarity.
 - [#661](https://github.com/pybop-team/PyBOP/pull/661) - Adds `pybop.CostInterface` which aligns the optimisers and samplers with a unified `call_cost` in which transformations and sign inversions are applied. Also includes bug fixes for transformations and gradient calculations.
-
 
 # [v25.1](https://github.com/pybop-team/PyBOP/tree/v25.1) - 2025-02-03
 
