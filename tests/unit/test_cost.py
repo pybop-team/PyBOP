@@ -238,7 +238,7 @@ class TestCosts:
         np.testing.assert_allclose(e, eE)
         np.testing.assert_allclose(de, deE)
 
-        # Test that domain-basd weighting also matches for evenly spaced data
+        # Test that domain-based weighting also matches for evenly spaced data
         costD = cost_class(problem, weighting="domain")
         eD, deD = costD(x, calculate_grad=True)
         np.testing.assert_allclose(e, eD)
@@ -250,6 +250,9 @@ class TestCosts:
         eR, deR = costR(x, calculate_grad=True)
         np.testing.assert_allclose(e, eR, rtol=1e-2, atol=1e-9)
         np.testing.assert_allclose(de, deR, rtol=1e-2, atol=1e-9)
+
+        # Check that the sum (and therefore mean) are the same as an even weighting
+        np.testing.assert_allclose(np.sum(costR.weighting), len(costR.weighting))
 
         # Check gradient calculation using finite difference
         delta = 1e-6 * x[0]
