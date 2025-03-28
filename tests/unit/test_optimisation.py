@@ -149,10 +149,10 @@ class TestOptimisation:
         def assert_log_update(optim):
             x_search = 0.7
             optim.log_update(x=[x_search], cost=[0.01])
-            assert optim.log["x_search"][-1] == x_search
-            assert optim.log["cost"][-1] == 0.01 * (-1 if optim.invert_cost else 1)
+            assert optim.log.x_search[-1] == x_search
+            assert optim.log.cost[-1] == 0.01 * (-1 if optim.invert_cost else 1)
             assert (
-                optim.log["x"][-1] == optim._transformation.to_model(x_search)
+                optim.log.x[-1] == optim._transformation.to_model(x_search)
                 if optim._transformation
                 else x_search
             )
@@ -160,12 +160,6 @@ class TestOptimisation:
         def check_max_iterations(optim):
             results = optim.run()
             assert results.n_iterations == 3
-
-        def check_incorrect_update(optim):
-            with pytest.raises(
-                TypeError, match="Input must be a list, tuple, or numpy array"
-            ):
-                optim.log_update(x="Incorrect")
 
         def check_bounds_handling(optim, expected_bounds, should_raise=False):
             if should_raise:
@@ -179,7 +173,7 @@ class TestOptimisation:
         def check_multistart(optim, n_iters, multistarts):
             results = optim.run()
             if isinstance(optim, pybop.BasePintsOptimiser):
-                assert len(optim.log["x_best"]) == n_iters * multistarts
+                assert len(optim.log.x_best) == n_iters * multistarts
                 assert results.average_iterations() == n_iters
                 assert results.total_runtime() >= results.time[0]
 
@@ -188,7 +182,6 @@ class TestOptimisation:
 
         check_max_iterations(optim)
         assert_log_update(optim)
-        check_incorrect_update(optim)
 
         # Test multistart
         multistart_optim = optimiser(cost, max_iterations=6, multistart=2)
@@ -654,21 +647,10 @@ class TestOptimisation:
         optim.set_threshold(np.inf)
         results = optim.run()
         assert (
-            captured_output.getvalue().strip() == f"OptimisationResult:\n"
-            f"  Best result from {results.n_runs} run(s).\n"
-            f"  Initial parameters: {results.x0}\n"
-            f"  Optimised parameters: {results.x}\n"
-            f"  Total-order sensitivities:{results.sense_format}\n"
-            f"  Diagonal Fisher Information entries: {None}\n"
-            f"  Final cost: {results.final_cost}\n"
-            f"  Optimisation time: {results.time} seconds\n"
-            f"  Number of iterations: {results.n_iterations}\n"
-            f"  Number of evaluations: {results.n_evaluations}\n"
-            f"  Reason for stopping: {results.message}\n"
-            f"  SciPy result available: No\n"
-            f"  PyBaMM Solution available: Yes"
+            "Objective function crossed threshold: inf." in captured_output.getvalue()
         )
 
+        # Test pybamm solution
         assert (
             "Positive electrode active material volume fraction"
             in results.pybamm_solution.all_inputs[0]

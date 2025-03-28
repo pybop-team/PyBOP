@@ -60,6 +60,7 @@ cost = pybop.SumOfPower(problem, p=2.5)
 optim = pybop.AdamW(
     cost,
     verbose=True,
+    verbose_print_rate=20,
     allow_infeasible_solutions=True,
     sigma0=0.02,
     max_iterations=100,
@@ -76,7 +77,7 @@ optim.optimiser.b2 = 0.9
 results = optim.run()
 
 # Plot the timeseries output
-pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot.convergence(optim)
