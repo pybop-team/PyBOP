@@ -143,10 +143,10 @@ def contour(
         flat_costs = costs.flatten()
 
         # Append the optimisation trace to the data
-        parameter_log = np.asarray(optim.log["x"])
+        parameter_log = np.asarray(optim.log.x)
         flat_x = np.concatenate((flat_x, parameter_log[:, 0]))
         flat_y = np.concatenate((flat_y, parameter_log[:, 1]))
-        flat_costs = np.concatenate((flat_costs, optim.log["cost"]))
+        flat_costs = np.concatenate((flat_costs, optim.log.cost))
 
         # Order the parameter values and estimate the cost using interpolation
         x = np.unique(flat_x)
@@ -198,7 +198,7 @@ def contour(
 
     if plot_optim:
         # Plot the optimisation trace
-        optim_trace = np.asarray([item[:2] for item in optim.log["x"]])
+        optim_trace = np.asarray([item[:2] for item in optim.log.x])
         optim_trace = optim_trace.reshape(-1, 2)
 
         fig.add_trace(
@@ -236,14 +236,14 @@ def contour(
             )
 
         # Plot optimised value
-        if optim.log["x_best"] is not None:
+        if optim.log.x_best is not None:
             fig.add_trace(
                 go.Scatter(
                     x=transform_array_of_values(
-                        [optim.log["x_best"][-1][0]], parameters[names[0]]
+                        [optim.log.x_best[-1][0]], parameters[names[0]]
                     ),
                     y=transform_array_of_values(
-                        [optim.log["x_best"][-1][1]], parameters[names[1]]
+                        [optim.log.x_best[-1][1]], parameters[names[1]]
                     ),
                     mode="markers",
                     marker_symbol="cross",

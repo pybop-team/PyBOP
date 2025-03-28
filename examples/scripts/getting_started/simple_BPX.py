@@ -40,7 +40,7 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.CMAES(cost, max_iterations=40)
+optim = pybop.CMAES(cost, max_iterations=40, verbose=True)
 
 # Run the optimisation
 results = optim.run()
