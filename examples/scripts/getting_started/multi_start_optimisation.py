@@ -43,7 +43,7 @@ cost = pybop.RootMeanSquaredError(problem)
 # Each of these runs has a random starting position sampled
 # from the parameter priors
 optim = pybop.GradientDescent(
-    cost, sigma0=[0.6, 0.02], max_iterations=50, multistart=10
+    cost, sigma0=[0.6, 0.02], max_iterations=50, multistart=10, verbose=True
 )
 
 # Run optimisation
@@ -51,7 +51,7 @@ results = optim.run()
 
 # We can plot the timeseries output, for the best run
 # using the results.x attribute
-pybop.plot.quick(problem, problem_inputs=results.x_best, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=results.x_best, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot.convergence(optim)

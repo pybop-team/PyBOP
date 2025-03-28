@@ -263,6 +263,8 @@ class BasePintsOptimiser(BaseOptimiser):
                 iteration += 1
                 _fs = [x[0] for x in fs] if self._needs_sensitivities else fs
                 self.log_update(
+                    iterations=iteration,
+                    evaluations=evaluations,
                     x=xs,
                     x_best=self.optimiser.x_best(),
                     cost=_fs,
@@ -397,14 +399,13 @@ class BasePintsOptimiser(BaseOptimiser):
             If True, use as many worker processes as there are CPU cores. If an integer, use that many workers.
             If False or 0, disable parallelism (default: False).
         """
+        self._parallel = bool(parallel is True or parallel >= 1)
+
         if parallel is True:
-            self._parallel = True
             self._n_workers = PintsParallelEvaluator.cpu_count()
         elif parallel >= 1:
-            self._parallel = True
             self._n_workers = int(parallel)
         else:
-            self._parallel = False
             self._n_workers = 1
 
     def set_max_iterations(self, iterations="default"):
