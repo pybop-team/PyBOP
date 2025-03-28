@@ -1,7 +1,15 @@
+import os
+
 import numpy as np
 import pybamm
 
 import pybop
+
+# Get the current directory location and convert to absolute path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+dataset_path = os.path.join(
+    current_dir, "../../data/synthetic/spm_charge_discharge_75.csv"
+)
 
 # Define model and use high-performant solver for sensitivities
 solver = pybamm.IDAKLUSolver()
@@ -20,38 +28,30 @@ parameters = pybop.Parameters(
     ),
 )
 
-# Generate data
-sigma = 0.003
-experiment = pybop.Experiment(
-    [
-        (
-            "Discharge at 0.5C for 3 minutes (3 second period)",
-            "Charge at 0.5C for 3 minutes (3 second period)",
-        ),
-    ]
-    * 2
-)
-values = model.predict(initial_state={"Initial SoC": 0.5}, experiment=experiment)
-
-
-def noise(sigma):
-    return np.random.normal(0, sigma, len(values["Voltage [V]"].data))
-
+# Import the synthetic dataset, set model initial state
+csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
+initial_state = {"Initial open-circuit voltage [V]": csv_data[0, 2]}
+model.set_initial_state(initial_state=initial_state)
 
 # Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": values["Time [s]"].data,
-        "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": values["Voltage [V]"].data + noise(sigma),
-        "Bulk open-circuit voltage [V]": values["Bulk open-circuit voltage [V]"].data
-        + noise(sigma),
+        "Time [s]": csv_data[:, 0],
+        "Current function [A]": csv_data[:, 1],
+        "Voltage [V]": csv_data[:, 2],
+        "Bulk open-circuit voltage [V]": csv_data[:, 3],
     }
 )
 
+
 signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 # Construct the problem and cost classes
-problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
+problem = pybop.FittingProblem(
+    model,
+    parameters,
+    dataset,
+    signal=signal,
+)
 cost = pybop.Minkowski(problem, p=2)
 
 # We construct the optimiser class the same as normal
@@ -82,6 +82,6 @@ for i in range(100):
         )
 
 # Plot the timeseries output
-pybop.plot.quick(
+pybop.plot.problem(
     problem, problem_inputs=optim.optimiser.x_best(), title="Optimised Comparison"
 )

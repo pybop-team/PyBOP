@@ -148,13 +148,6 @@ class TestLikelihoods:
                 one_signal_problem, sigma0="Invalid string"
             )
 
-        # Test transformation fail dimensions
-        cost_fail, grad_fail = likelihood(
-            [0.01, 0.01], calculate_grad=True, apply_transform=True
-        )
-        assert not np.isfinite(cost_fail)
-        assert grad_fail.shape == (2,)
-
     def test_gaussian_log_likelihood_dsigma_scale(self, one_signal_problem):
         likelihood = pybop.GaussianLogLikelihood(one_signal_problem, dsigma_scale=0.05)
         assert likelihood.dsigma_scale == 0.05

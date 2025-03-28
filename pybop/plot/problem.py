@@ -6,9 +6,9 @@ from pybop.parameters.parameter import Inputs
 from pybop.plot.standard_plots import StandardPlot
 
 
-def quick(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
+def problem(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
     """
-    Quickly plot the target dataset against optimised model output.
+    Produce a quick plot of the target dataset against optimised model output.
 
     Generates an interactive plot comparing the simulated model output with
     an optional target dataset and visualises uncertainty.

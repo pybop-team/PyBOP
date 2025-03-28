@@ -32,8 +32,8 @@ experiment = pybop.Experiment(
 values = model.predict(initial_state={"Initial SoC": 0.5}, experiment=experiment)
 
 
-def noise(sigma):
-    return np.random.normal(0, sigma, len(values["Voltage [V]"].data))
+def noisy(data, sigma):
+    return data + np.random.normal(0, sigma, len(data))
 
 
 # Form dataset
@@ -41,15 +41,22 @@ dataset = pybop.Dataset(
     {
         "Time [s]": values["Time [s]"].data,
         "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": values["Voltage [V]"].data + noise(sigma),
-        "Bulk open-circuit voltage [V]": values["Bulk open-circuit voltage [V]"].data
-        + noise(sigma),
+        "Voltage [V]": noisy(values["Voltage [V]"].data, sigma),
+        "Bulk open-circuit voltage [V]": noisy(
+            values["Bulk open-circuit voltage [V]"].data, sigma
+        ),
     }
 )
 
 # Generate problem, cost function, and optimisation class
 signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
-problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
+problem = pybop.FittingProblem(
+    model,
+    parameters,
+    dataset,
+    signal=signal,
+    initial_state={"Initial open-circuit voltage [V]": dataset["Voltage [V]"][0]},
+)
 cost = pybop.RootMeanSquaredError(problem)
 optim = pybop.NelderMead(
     cost,
@@ -64,7 +71,7 @@ optim = pybop.NelderMead(
 results = optim.run()
 
 # Plot the timeseries output
-pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot.convergence(optim)

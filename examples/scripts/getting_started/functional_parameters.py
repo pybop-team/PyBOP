@@ -78,13 +78,13 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.RootMeanSquaredError(problem)
-optim = pybop.SciPyMinimize(cost, sigma0=0.1, max_iterations=125)
+optim = pybop.SciPyMinimize(cost, sigma0=0.1, max_iterations=125, verbose=True)
 
 # Run optimisation
 results = optim.run()
 
 # Plot the timeseries output
-pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot.convergence(optim)

@@ -39,8 +39,8 @@ experiment = pybop.Experiment(
 values = model.predict(initial_state={"Initial SoC": 0.5}, experiment=experiment)
 
 
-def noise(sigma):
-    return np.random.normal(0, sigma, len(values["Voltage [V]"].data))
+def noisy(data, sigma):
+    return data + np.random.normal(0, sigma, len(data))
 
 
 # Form dataset
@@ -48,7 +48,7 @@ dataset = pybop.Dataset(
     {
         "Time [s]": values["Time [s]"].data,
         "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": values["Voltage [V]"].data + noise(sigma),
+        "Voltage [V]": noisy(values["Voltage [V]"].data, sigma),
     }
 )
 
@@ -61,10 +61,7 @@ cost = pybop.JaxLogNormalLikelihood(problem, sigma0=sigma)
 
 # Test gradient-based optimiser
 optim = pybop.IRPropMin(
-    cost,
-    sigma0=0.02,
-    max_unchanged_iterations=35,
-    max_iterations=100,
+    cost, sigma0=0.02, max_unchanged_iterations=35, max_iterations=100, verbose=True
 )
 
 results = optim.run()

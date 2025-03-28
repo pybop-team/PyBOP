@@ -1,6 +1,14 @@
+import os
+
 import numpy as np
 
 import pybop
+
+# Get the current directory location and convert to absolute path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+dataset_path = os.path.join(
+    current_dir, "../../data/synthetic/spm_charge_discharge_75.csv"
+)
 
 # Define model and use high-performant solver for sensitivities
 parameter_set = pybop.ParameterSet("Chen2020")
@@ -25,35 +33,27 @@ parameters = pybop.Parameters(
     ),
 )
 
-# Generate data
-sigma = 0.002
-experiment = pybop.Experiment(
-    [
-        (
-            "Discharge at 0.5C for 12 minutes (10 second period)",
-            "Charge at 0.5C for 12 minutes (10 second period)",
-        )
-    ]
-)
-values = model.predict(initial_state={"Initial SoC": 0.4}, experiment=experiment)
-
-
-def noise(sigma):
-    return np.random.normal(0, sigma, len(values["Voltage [V]"].data))
-
+# Import the synthetic dataset, set model initial state
+csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
+initial_state = {"Initial open-circuit voltage [V]": csv_data[0, 2]}
+model.set_initial_state(initial_state=initial_state)
 
 # Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": values["Time [s]"].data,
-        "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": values["Voltage [V]"].data + noise(sigma),
+        "Time [s]": csv_data[:, 0],
+        "Current function [A]": csv_data[:, 1],
+        "Voltage [V]": csv_data[:, 2],
     }
 )
 
 # Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset)
-likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=sigma * 1.05)
+problem = pybop.FittingProblem(
+    model,
+    parameters,
+    dataset,
+)
+likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=2e-3 * 1.05)
 posterior = pybop.LogPosterior(likelihood)
 optim = pybop.IRPropMin(
     posterior, max_iterations=125, max_unchanged_iterations=60, sigma0=0.01
@@ -63,7 +63,7 @@ results = optim.run()
 print(parameters.true_value())
 
 # Plot the timeseries output
-pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot.convergence(optim)
