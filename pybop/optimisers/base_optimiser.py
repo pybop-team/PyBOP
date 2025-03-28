@@ -1,5 +1,6 @@
 import warnings
 from copy import deepcopy
+from dataclasses import dataclass, field
 
 import jax.numpy as jnp
 import numpy as np
@@ -11,6 +12,20 @@ from pybop import (
     Parameter,
     Parameters,
 )
+
+
+@dataclass
+class OptimisationLog:
+    """Stores optimisation progress data."""
+
+    iterations: list[int] = field(default_factory=list)
+    evaluations: list[int] = field(default_factory=list)
+    x: list[list[float]] = field(default_factory=list)
+    x_best: list[list[float]] = field(default_factory=list)
+    x_search: list[list[float]] = field(default_factory=list)
+    x0: list[list[float]] = field(default_factory=list)
+    cost: list[float] = field(default_factory=list)
+    cost_best: list[float] = field(default_factory=list)
 
 
 class BaseOptimiser(CostInterface):
@@ -38,7 +53,9 @@ class BaseOptimiser(CostInterface):
             (same for all coordinates) or an array with one entry per dimension.
             Not all methods will use this information.
         verbose : bool, optional
-            If True, the optimisation progress is printed (default: False).
+            If True, the optimisation progress and final result is printed (default: False).
+        verbose_print_rate : int, optional
+            The frequency in iterations to print the optimisation progress (default: 50).
         physical_viability : bool, optional
             If True, the feasibility of the optimised parameters is checked (default: False).
         allow_infeasible_solutions : bool, optional
@@ -58,15 +75,17 @@ class BaseOptimiser(CostInterface):
         # First set attributes to default values
         self.parameters = Parameters()
         self.x0 = optimiser_kwargs.get("x0", None)
-        self.log = dict(x=[], x_best=[], x_search=[], cost=[], cost_best=[])
         self.bounds = None
         self.sigma0 = 0.02
-        self.verbose = True
+        self.verbose = False
+        self.verbose_print_rate = 50
         self._needs_sensitivities = False
         self.physical_viability = False
         self.allow_infeasible_solutions = False
         self.default_max_iterations = 1000
         self.result = None
+        self._iter_count = 0
+        self.log = OptimisationLog()
         transformation = None
         invert_cost = False
 
@@ -145,6 +164,9 @@ class BaseOptimiser(CostInterface):
 
         # Set other options
         self.verbose = self.unset_options.pop("verbose", self.verbose)
+        self.verbose_print_rate = self.unset_options.pop(
+            "verbose_print_rate", self.verbose_print_rate
+        )
         if "allow_infeasible_solutions" in self.unset_options.keys():
             self.set_allow_infeasible_solutions(
                 self.unset_options.pop("allow_infeasible_solutions")
@@ -224,56 +246,92 @@ class BaseOptimiser(CostInterface):
 
         return self.cost.sensitivity_analysis(self.n_samples_sensitivity)
 
-    def log_update(self, x=None, x_best=None, cost=None, cost_best=None):
+    def log_update(
+        self,
+        iterations=None,
+        evaluations=None,
+        x=None,
+        x_best=None,
+        cost=None,
+        cost_best=None,
+        x0=None,
+    ):
         """
         Update the log with new values.
 
         Parameters
         ----------
+        iterations : list or array-like, optional
+            Iteration indices to log (default: None).
+        evaluations: list or array-like, optional
+            Evaluation indices to log (default: None).
         x : list or array-like, optional
             Parameter values (default: None).
         x_best : list or array-like, optional
             Parameter values corresponding to the best cost yet (default: None).
         cost : list, optional
             Cost values corresponding to x (default: None).
-        cost_best
+        cost_best : list, optional
             Cost values corresponding to x_best (default: None).
+        x0 : list or array-like, optional
+            Initial parameter values (default: None).
         """
-
-        def convert_to_list(array_like):
-            """Helper function to convert input to a list, if necessary."""
-            if isinstance(array_like, (list, tuple, np.ndarray, jnp.ndarray)):
-                return list(array_like)
-            elif isinstance(array_like, (int, float)):
-                return [array_like]
-            else:
-                raise TypeError("Input must be a list, tuple, or numpy array")
+        # Update logs for each provided parameter
+        self._update_log_entry("iterations", iterations)
+        self._update_log_entry("evaluations", evaluations)
 
         if x is not None:
-            x = convert_to_list(x)
-            self.log["x_search"].extend(x)
-            x = self.transform_list_of_values(x)
-            self.log["x"].extend(x)
+            x_list = self._to_list(x)
+            self.log.x_search.extend(x_list)
+            transformed_x = self.transform_list_of_values(x_list)
+            self.log.x.extend(transformed_x)
 
         if x_best is not None:
-            x_best = self.transform_values(x_best)
-            self.log["x_best"].append(x_best)
+            transformed_x_best = self.transform_values(x_best)
+            self.log.x_best.append(transformed_x_best)
 
         if cost is not None:
-            cost = convert_to_list(cost)
-            cost = [
-                internal_cost * (-1 if self.invert_cost else 1)
-                for internal_cost in cost
-            ]
-            self.log["cost"].extend(cost)
+            self.log.cost.extend(self._inverts_cost(self._to_list(cost)))
 
         if cost_best is not None:
-            cost_best = convert_to_list(cost_best)
-            cost_best = [
-                internal_cost * (-1 if self.invert_cost else 1)
-                for internal_cost in cost_best
-            ]
-            self.log["cost_best"].extend(cost_best)
+            self.log.cost_best.extend(self._inverts_cost(self._to_list(cost_best)))
+
+        # Verbose output
+        self._print_verbose_output()
+        self._iter_count += 1
+
+    def _update_log_entry(self, key, value):
+        """Update a log entry if the value is provided."""
+        if value is not None:
+            getattr(self.log, key).extend(self._to_list(value))
+
+    def _to_list(self, array_like):
+        """Convert input to a list."""
+        if isinstance(array_like, (list, tuple, np.ndarray, jnp.ndarray)):
+            return list(array_like)
+        return [array_like]
+
+    def _print_verbose_output(self):
+        """Print verbose optimization information if enabled."""
+        if not self.verbose:
+            return
+
+        latest_iter = (
+            self.log.iterations[-1] if self.log.iterations else self._iter_count
+        )
+
+        # Only print on first 10 iterations, then every Nth iteration
+        if latest_iter > 10 and latest_iter % self.verbose_print_rate != 0:
+            return
+
+        latest_eval = self.log.evaluations[-1] if self.log.evaluations else "N/A"
+        latest_x_best = self.log.x_best[-1] if self.log.x_best else "N/A"
+        latest_cost_best = self.log.cost_best[-1] if self.log.cost_best else "N/A"
+
+        print(
+            f"Iter: {latest_iter} | Evals: {latest_eval} | "
+            f"Best Values: {latest_x_best} | Best Cost: {latest_cost_best} |"
+        )
 
     def name(self):
         """

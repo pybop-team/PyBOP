@@ -29,6 +29,13 @@ class CostInterface:
             return [self._transformation.to_model(values) for values in list_of_values]
         return list_of_values
 
+    def _inverts_cost(self, cost):
+        """
+        Returns the true cost if the optimiser is operating in the inverted space
+        else returns the cost as is.
+        """
+        return [v * (-1 if self.invert_cost else 1) for v in cost]
+
     def call_cost(
         self,
         x: Union[Inputs, list],

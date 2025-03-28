@@ -43,7 +43,7 @@ cost = pybop.RootMeanSquaredError(problem)
 # Each of these runs has a random starting position sampled
 # from the parameter priors
 optim = pybop.GradientDescent(
-    cost, sigma0=[0.6, 0.02], max_iterations=50, multistart=10
+    cost, sigma0=[0.6, 0.02], max_iterations=50, multistart=10, verbose=True
 )
 
 # Run optimisation

@@ -60,6 +60,7 @@ cost = pybop.SumOfPower(problem, p=2.5)
 optim = pybop.AdamW(
     cost,
     verbose=True,
+    verbose_print_rate=20,
     allow_infeasible_solutions=True,
     sigma0=0.02,
     max_iterations=100,
