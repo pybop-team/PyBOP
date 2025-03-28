@@ -61,7 +61,7 @@ print("True parameters:", parameters.true_value())
 pybop.plot.dataset(dataset)
 
 # Plot the timeseries output
-pybop.plot.quick(problem, problem_inputs=results.x_best, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=results.x_best, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot.convergence(optim)

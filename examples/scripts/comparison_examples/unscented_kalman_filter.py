@@ -63,7 +63,7 @@ optim.set_max_iterations(5)
 results = optim.run()
 
 # Plot the timeseries output (requires model that returns Voltage)
-pybop.plot.quick(observer, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(observer, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot.convergence(optim)

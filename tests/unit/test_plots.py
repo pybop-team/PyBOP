@@ -103,12 +103,12 @@ class TestPlots:
 
     def test_problem_plots(self, fitting_problem, design_problem, jax_fitting_problem):
         # Test plot of Problem objects
-        pybop.plot.quick(fitting_problem, title="Optimised Comparison")
-        pybop.plot.quick(design_problem)
-        pybop.plot.quick(jax_fitting_problem)
+        pybop.plot.problem(fitting_problem, title="Optimised Comparison")
+        pybop.plot.problem(design_problem)
+        pybop.plot.problem(jax_fitting_problem)
 
         # Test conversion of values into inputs
-        pybop.plot.quick(fitting_problem, problem_inputs=[0.6, 0.6])
+        pybop.plot.problem(fitting_problem, problem_inputs=[0.6, 0.6])
 
     @pytest.fixture
     def cost(self, fitting_problem):
