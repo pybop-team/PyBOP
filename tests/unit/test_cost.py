@@ -238,7 +238,7 @@ class TestCosts:
         np.testing.assert_allclose(e, eE)
         np.testing.assert_allclose(de, deE)
 
-        # Test that domain-basd weighting also matches for evenly spaced data
+        # Test that domain-based weighting also matches for evenly spaced data
         costD = cost_class(problem, weighting="domain")
         eD, deD = costD(x, calculate_grad=True)
         np.testing.assert_allclose(e, eD)
