@@ -2,6 +2,8 @@
 
 ## Features
 
+- [#644](https://github.com/pybop-team/PyBOP/pull/644) - Adds example applications for common battery experiments.
+
 ## Optimisations
 
 ## Bug Fixes
