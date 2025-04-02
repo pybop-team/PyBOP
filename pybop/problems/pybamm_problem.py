@@ -1,6 +1,7 @@
-import pybop
 import numpy as np
 import pybamm
+
+import pybop
 
 
 class PybammProblem(pybamm.Problem):

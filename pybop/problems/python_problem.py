@@ -1,6 +1,8 @@
-import pybop
 from typing import Callable
+
 import numpy as np
+
+import pybop
 
 
 class PythonProblem(pybop.Problem):

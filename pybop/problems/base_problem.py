@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class Problem(object):
+class Problem:
     """
     Defines the a callable function `f(x)` that returns the evaluation
     of a cost function. The input `x` is a set of parameters that are
