@@ -42,5 +42,4 @@ class PythonProblem(pybop.Problem):
         """
         Sets the parameters for the simulation and cost function.
         """
-        self.check_params(p)
-        self._params = p
+        self.check_and_store_params(p)
