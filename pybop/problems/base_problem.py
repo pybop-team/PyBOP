@@ -47,7 +47,7 @@ class Problem(object):
         """
         return self._param_names
 
-    def run(self) -> np.ndarray:
+    def run(self) -> float:
         """
         Evaluates the underlying simulation and cost function using the
         parameters set in the previous call to `set_params`.
@@ -56,7 +56,7 @@ class Problem(object):
 
     def run_with_sensitivities(
         self,
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[float, np.ndarray]:
         """
         Evaluates the underlying simulation and cost function using the
         parameters set in the previous call to `set_params`, returns

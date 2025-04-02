@@ -19,7 +19,7 @@ class PythonProblem(pybop.Problem):
         self._f = f
         self._f_with_sens = f_with_sens
 
-    def run(self) -> np.ndarray:
+    def run(self) -> float:
         """
         Evaluates the underlying simulation and cost function using the
         parameters set in the previous call to `set_params`.
@@ -27,7 +27,7 @@ class PythonProblem(pybop.Problem):
         self.check_set_params_called()
         return self._f(self.params)
 
-    def run_with_sensitivities(self) -> tuple[np.ndarray, np.ndarray]:
+    def run_with_sensitivities(self) -> tuple[float, np.ndarray]:
         """
         Evaluates the underlying simulation and cost function using the
         parameters set in the previous call to `set_params`, returns
