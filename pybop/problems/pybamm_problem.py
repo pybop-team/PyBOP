@@ -18,16 +18,23 @@ class PybammProblem(pybamm.Problem):
         self._pipeline = pybamm_pipeline
         self._cost_names = cost_names
 
+    def set_params(self, p: np.ndarray) -> None:
+        """
+        Sets the parameters for the simulation and cost function.
+        """
+        self.check_and_store_params(p)
+
+        # rebuild the pipeline (if needed)
+        self._pipeline.rebuild(self._params)
+
     def run(self) -> float:
         """
         Evaluates the underlying simulation and cost function using the
         parameters set in the previous call to `set_params`.
         """
         self.check_set_params_called()
-        self.check_params(self._params)
 
-        # rebuild the pipeline (if needed) and solve
-        self._pipeline.rebuild(self._params)
+        # run simulation
         sol = self._pipeline.solve()
 
         # extract and sum cost function values. These are assumed to all be scalar values
@@ -43,11 +50,9 @@ class PybammProblem(pybamm.Problem):
         parameters set in the previous call to `set_params`.
         """
         self.check_set_params_called()
-        self.check_params(self._params)
 
-        # rebuild the pipeline (if needed) and solve
-        self._pipeline.rebuild(self._params)
-        sol = self._pipeline.solve()
+        # run simulation
+        sol = self._pipeline.solve(calculate_sensitivities=True)
 
         # extract cost function values. These are assumed to all be scalar values
         # (not to self: test this is true in tests....)

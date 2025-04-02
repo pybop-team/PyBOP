@@ -15,7 +15,7 @@ class Problem(object):
         self._params = None
         self._param_names = param_names
 
-    def check_params(self, p: np.ndarray) -> None:
+    def check_and_store_params(self, p: np.ndarray) -> None:
         """
         Checks if the parameters are valid.
         """
@@ -23,6 +23,11 @@ class Problem(object):
             raise ValueError(
                 f"Expected {len(self._param_names)} parameters, but got {len(p)}."
             )
+        if not isinstance(p, np.ndarray):
+            raise TypeError("Parameters must be a numpy array.")
+        if not np.issubdtype(p.dtype, np.number):
+            raise TypeError("Parameters must be a numeric numpy array.")
+        self._params = p
 
     def check_set_params_called(self) -> None:
         """

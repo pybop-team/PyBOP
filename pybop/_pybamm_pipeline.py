@@ -112,10 +112,17 @@ class PybammPipeline:
         """
         return self._built_model
 
-    def solve(self) -> pybamm.Solution:
+    def solve(self, calculate_sensitivities: bool) -> pybamm.Solution:
         """
         Run the simulation using the built model and solver.
+
+        Arguments
+        ---------
+        calculate_sensitivities : bool
+            Whether to calculate sensitivities or not.
         """
         return self._solver.solve(
-            t_eval=[self._t_start, self._t_end], t_interp=self._t_interp
+            t_eval=[self._t_start, self._t_end],
+            t_interp=self._t_interp,
+            calculate_sensitivities=calculate_sensitivities,
         )
