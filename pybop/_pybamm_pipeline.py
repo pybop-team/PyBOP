@@ -12,15 +12,15 @@ class PybammPipeline:
         for the case where some of the parameters are geometric parameters which change the mesh
 
     To enable 2., you can pass a list of parameter names to the constructor, these parameters will be set
-    before the model is built each time (using the `rebuild` method).
+    before the model is built each time (using the `build` method).
     To enable 1, you can just pass an empty list. The model will be built once and subsequent calls
-    to the `rebuild` method will not change the model.
+    to the `build` method will not change the model.
     """
 
     def __init__(
         self,
         model: pybamm.BaseModel,
-        parameters: pybamm.ParameterValues = None,
+        parameter_values: pybamm.ParameterValues = None,
         solver: pybamm.BaseSolver = None,
         t_start: np.number = 0,
         t_end: np.number = 1,
@@ -32,7 +32,7 @@ class PybammPipeline:
         ---------
         model : pybamm.BaseModel
             The PyBaMM model to be used.
-        parameters : pybamm.ParameterValues
+        parameter_values : pybamm.ParameterValues
             The parameters to be used in the model.
         solver : pybamm.BaseSolver
             The solver to be used. If None, the idaklu solver will be used.
@@ -47,10 +47,12 @@ class PybammPipeline:
         """
         if rebuild_parameters is None:
             rebuild_parameters = []
-        params = np.array([parameters[n] for n in rebuild_parameters], dtype=float)
+        params = np.array(
+            [parameter_values[n] for n in rebuild_parameters], dtype=float
+        )
         self._parameter_names = rebuild_parameters
         self._model = model
-        self._parameters = parameters
+        self._parameter_values = parameter_values
         self._geometry = model.default_geometry
         self._methods = model.default_spatial_methods
         if solver is None:
@@ -70,13 +72,13 @@ class PybammPipeline:
         }
         self._submesh_types = model.default_submesh_types
         self._built_model = self._model
-        self.rebuild(params)
+        self.build(params)
 
-    def rebuild(self, params: np.ndarray):
+    def build(self, params: np.ndarray):
         """
-        Build the PyBaMM pipeline using the given parameters.
+        Build the PyBaMM pipeline using the given parameter_values.
         """
-        # if there are no parameters to rebuild, just return
+        # if there are no parameters to build, just return
         if len(self._parameter_names) == 0:
             return
 
@@ -84,15 +86,15 @@ class PybammPipeline:
         # and set them in the parameters object
         if len(params) != len(self._parameter_names):
             raise ValueError(
-                f"Expected {len(self._parameters)} parameters, but got {len(params)}."
+                f"Expected {len(self._parameter_values)} parameters, but got {len(params)}."
             )
         for name, value in zip(self._parameter_names, params):
-            self._parameters[name] = value
+            self._parameter_values[name] = value
 
         model = self._model.deep_copy()
         geometry = self._geometry.deep_copy()
-        self._parameters.process_geometry(geometry)
-        self._parameters.process_model(model)
+        self._parameter_values.process_geometry(geometry)
+        self._parameter_values.process_model(model)
 
         mesh = pybamm.Mesh(geometry, self._submesh_types, self._var_pts)
         disc = pybamm.Discretisation(mesh, self._methods)
@@ -101,7 +103,7 @@ class PybammPipeline:
         self._solver.set_up(model)
         # TODO: unfortunately, the solver will still call set_up on the model
         # if this is not done, need to fix this in PyBaMM!
-        self._solver._model_set_up.update(
+        self._solver._model_set_up.update(  # Noqa: SLF001
             {model: {"initial conditions": model.concatenated_initial_conditions}}
         )
 

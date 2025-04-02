@@ -1,17 +1,17 @@
 import numpy as np
-import pybamm
 
-import pybop
+from pybop._pybamm_pipeline import PybammPipeline
+from pybop.problems.base_problem import Problem
 
 
-class PybammProblem(pybamm.Problem):
+class PybammProblem(Problem):
     """
     Defines a problem that uses a PyBaMM model as the simulation + cost function to evaluate
     """
 
     def __init__(
         self,
-        pybamm_pipeline: pybop.PyBaMMPipeline,
+        pybamm_pipeline: PybammPipeline,
         param_names: list[str] = None,
         cost_names: list[str] = None,
     ):
@@ -26,7 +26,7 @@ class PybammProblem(pybamm.Problem):
         self.check_and_store_params(p)
 
         # rebuild the pipeline (if needed)
-        self._pipeline.rebuild(self._params)
+        self._pipeline.build(self._params)
 
     def run(self) -> float:
         """
