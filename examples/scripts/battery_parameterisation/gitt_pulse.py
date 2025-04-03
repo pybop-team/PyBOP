@@ -49,7 +49,7 @@ gitt_fit = pybop.GITTPulseFit(
 )
 
 # Plot the timeseries output
-pybop.plot.quick(
+pybop.plot.problem(
     gitt_fit.problem, problem_inputs=gitt_fit.results.x, title="Optimised Comparison"
 )
 
