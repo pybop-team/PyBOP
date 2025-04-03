@@ -602,11 +602,13 @@ def convert_physical_to_grouped_parameters(parameter_set):
     m_n = 6.48e-7  # (A/m2)(m3/mol)**1.5
     sigma_p = (
         parameter_set["Positive electrode conductivity [S.m-1]"]
-        * alpha_p**parameter_set["Positive electrode Bruggeman coefficient (electrode)"]
+        * alpha_p
+        ** parameter_set["Positive electrode Bruggeman coefficient (electrode)"]
     )
     sigma_n = (
         parameter_set["Negative electrode conductivity [S.m-1]"]
-        * alpha_n**parameter_set["Negative electrode Bruggeman coefficient (electrode)"]
+        * alpha_n
+        ** parameter_set["Negative electrode Bruggeman coefficient (electrode)"]
     )
 
     # Separator and electrolyte properties
