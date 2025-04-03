@@ -600,8 +600,16 @@ def convert_physical_to_grouped_parameters(parameter_set):
     Cdl_n = parameter_set["Negative electrode double-layer capacity [F.m-2]"]
     m_p = 3.42e-6  # (A/m2)(m3/mol)**1.5
     m_n = 6.48e-7  # (A/m2)(m3/mol)**1.5
-    sigma_p = parameter_set["Positive electrode conductivity [S.m-1]"]
-    sigma_n = parameter_set["Negative electrode conductivity [S.m-1]"]
+    sigma_p = (
+        parameter_set["Positive electrode conductivity [S.m-1]"]
+        * alpha_p
+        ** parameter_set["Positive electrode Bruggeman coefficient (electrode)"]
+    )
+    sigma_n = (
+        parameter_set["Negative electrode conductivity [S.m-1]"]
+        * alpha_n
+        ** parameter_set["Negative electrode Bruggeman coefficient (electrode)"]
+    )
 
     # Separator and electrolyte properties
     ce0 = parameter_set["Initial concentration in electrolyte [mol.m-3]"]
@@ -621,8 +629,8 @@ def convert_physical_to_grouped_parameters(parameter_set):
         L_p / (3 * epsilon_p**b_p)
         + L_s / (epsilon_sep**b_sep)
         + L_n / (3 * epsilon_n**b_n)
-    ) / sigma_e
-    Rs = (L_p / sigma_p + L_n / sigma_n) / 3
+    ) / (sigma_e * A)
+    Rs = (L_p / sigma_p + L_n / sigma_n) / (3 * A)
     R0 = Re + Rs + parameter_set["Contact resistance [Ohm]"]
 
     # Compute the stoichiometry limits and initial SOC
