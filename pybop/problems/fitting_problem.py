@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 from pybamm import IDAKLUJax, SolverError
@@ -89,6 +89,12 @@ class FittingProblem(BaseProblem):
                 initial_state=self.initial_state,
             )
 
+        self.error_out = {var: self.failure_output for var in self.output_variables}
+        self.error_sense = {
+            param: {var: self.failure_output for var in self.output_variables}
+            for param in self.parameters.keys()
+        }
+
     def set_initial_state(self, initial_state: Optional[dict] = None):
         """
         Set the initial state to be applied for every problem evaluation.
@@ -113,7 +119,12 @@ class FittingProblem(BaseProblem):
 
         self.initial_state = initial_state
 
-    def evaluate(self, inputs: Inputs) -> dict[str, np.ndarray[np.float64]]:
+    def evaluate(
+        self, inputs: Inputs, eis=False
+    ) -> Union[
+        dict[str, np.ndarray],
+        tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]],
+    ]:
         """
         Evaluate the model with the given parameters and return the signal.
 
@@ -136,7 +147,10 @@ class FittingProblem(BaseProblem):
 
     def _evaluate(
         self, func, inputs, calculate_grad=False
-    ) -> dict[str, np.ndarray[np.float64]]:
+    ) -> Union[
+        dict[str, np.ndarray],
+        tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]],
+    ]:
         """
         Perform simulation using the specified method and handle exceptions.
 
@@ -163,8 +177,9 @@ class FittingProblem(BaseProblem):
         except (SolverError, ZeroDivisionError, RuntimeError, ValueError) as e:
             if isinstance(e, ValueError) and str(e) not in self.exception:
                 raise  # Raise the error if it doesn't match the expected list
-            error_out = {s: self.failure_output for s in self.signal}
-            return (error_out, self.failure_output) if calculate_grad else error_out
+            if calculate_grad:
+                return self.error_out, self.error_sense
+            return self.error_out
 
         if self.eis:
             return sol
