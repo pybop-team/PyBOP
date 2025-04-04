@@ -89,6 +89,12 @@ class FittingProblem(BaseProblem):
                 initial_state=self.initial_state,
             )
 
+        self.error_out = {signal: self.failure_output for signal in self.signal}
+        self.sense_error = {
+            param: {var: self.failure_output for var in self.output_variables}
+            for param in self.parameters.keys()
+        }
+
     def set_initial_state(self, initial_state: Optional[dict] = None):
         """
         Set the initial state to be applied for every problem evaluation.
@@ -163,8 +169,9 @@ class FittingProblem(BaseProblem):
         except (SolverError, ZeroDivisionError, RuntimeError, ValueError) as e:
             if isinstance(e, ValueError) and str(e) not in self.exception:
                 raise  # Raise the error if it doesn't match the expected list
-            error_out = {s: self.failure_output for s in self.signal}
-            return (error_out, self.failure_output) if calculate_grad else error_out
+            if calculate_grad:
+                return (self.error_out, self.sense_error)
+            return self.error_out
 
         if self.eis:
             return sol
