@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 from pybamm import IDAKLUJax, SolverError
@@ -89,8 +89,8 @@ class FittingProblem(BaseProblem):
                 initial_state=self.initial_state,
             )
 
-        self.error_out = {signal: self.failure_output for signal in self.signal}
-        self.sense_error = {
+        self.error_out = {var: self.failure_output for var in self.output_variables}
+        self.error_sense = {
             param: {var: self.failure_output for var in self.output_variables}
             for param in self.parameters.keys()
         }
@@ -119,7 +119,12 @@ class FittingProblem(BaseProblem):
 
         self.initial_state = initial_state
 
-    def evaluate(self, inputs: Inputs) -> dict[str, np.ndarray[np.float64]]:
+    def evaluate(
+        self, inputs: Inputs, eis=False
+    ) -> Union[
+        dict[str, np.ndarray],
+        tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]],
+    ]:
         """
         Evaluate the model with the given parameters and return the signal.
 
@@ -142,7 +147,10 @@ class FittingProblem(BaseProblem):
 
     def _evaluate(
         self, func, inputs, calculate_grad=False
-    ) -> dict[str, np.ndarray[np.float64]]:
+    ) -> Union[
+        dict[str, np.ndarray],
+        tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]],
+    ]:
         """
         Perform simulation using the specified method and handle exceptions.
 
@@ -170,7 +178,7 @@ class FittingProblem(BaseProblem):
             if isinstance(e, ValueError) and str(e) not in self.exception:
                 raise  # Raise the error if it doesn't match the expected list
             if calculate_grad:
-                return (self.error_out, self.sense_error)
+                return self.error_out, self.error_sense
             return self.error_out
 
         if self.eis:

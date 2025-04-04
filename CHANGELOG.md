@@ -6,6 +6,8 @@
 
 ## Bug Fixes
 
+- [#705](https://github.com/pybop-team/PyBOP/pull/705) - Bug fix `fitting_problem.evaulate()` failure return type alongside fixes for Pybamm `v25.4`.
+
 ## Breaking Changes
 
 # [v25.3](https://github.com/pybop-team/PyBOP/tree/v25.3) - 2025-03-28
