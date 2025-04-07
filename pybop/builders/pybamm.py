@@ -1,7 +1,8 @@
 import pybamm
 
-from pybop import BaseCost, Parameter, builders
+from pybop import Parameter, Parameters, builders
 from pybop._pybamm_pipeline import PybammPipeline
+from pybop.costs.pybamm_cost import PybammCost
 from pybop.problems.pybamm_problem import PybammProblem
 
 
@@ -10,8 +11,9 @@ class Pybamm(builders.BaseBuilder):
         super().__init__()
         self._pybamm_model = None
         self._costs = []
+        self._cost_names = []
         self._dataset = None
-        self._parameters = []
+        self._parameters = Parameters()
         self._solver = None
         self._parameter_values = None
         self._rebuild_parameters = []
@@ -36,11 +38,12 @@ class Pybamm(builders.BaseBuilder):
         )
         self._solver = solver or self._pybamm_model.default_solver
 
-    def add_cost(self, cost: BaseCost) -> None:
+    def add_cost(self, cost: PybammCost) -> None:
         self._costs.append(cost)
+        self._cost_names.append(cost.variable_name())
 
     def add_parameter(self, parameter: Parameter) -> None:
-        self._parameters.append(parameter)
+        self._parameters.add(parameter)
 
     def _requires_rebuild(self, built_model: pybamm.BaseModel) -> bool:
         solver = pybamm.CasadiSolver(mode="safe", atol=1e-6, rtol=1e-3)
@@ -55,8 +58,8 @@ class Pybamm(builders.BaseBuilder):
         model = self._pybamm_model.deep_copy()
         param = self._parameter_values
 
-        if not self.pybamm_model._built:  # noqa: SLF001
-            self.pybamm_model.build_model()
+        if not self._pybamm_model._built:  # noqa: SLF001
+            self._pybamm_model.build_model()
 
         if self._dataset is not None:
             self.set_current_function()
@@ -85,7 +88,8 @@ class Pybamm(builders.BaseBuilder):
 
         return PybammProblem(
             pybamm_pipeline=self._pipeline,
-            # requires_rebuild=requires_rebuild,
+            param_names=self._parameters.keys(),
+            cost_names=self._cost_names,
         )
 
     def set_current_function(self) -> None:
@@ -97,13 +101,11 @@ class Pybamm(builders.BaseBuilder):
         dataset : pybop.Dataset or dict, optional
             The dataset to be used in the model construction.
         """
-        if "Current function [A]" in self._parameter_values.keys():
+        if "Current function [A]" in self._parameter_values:
             if "Current function [A]" not in self._parameters.keys():
                 current = pybamm.Interpolant(
                     self._dataset["Time [s]"],
                     self._dataset["Current function [A]"],
                     pybamm.t,
                 )
-                # Update both the active and unprocessed parameter sets for consistency
                 self._parameter_values["Current function [A]"] = current
-                # self._unprocessed_parameter_values["Current function [A]"] = current

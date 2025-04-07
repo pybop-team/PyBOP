@@ -86,7 +86,7 @@ class PybammPipeline:
         # and set them in the parameters object
         if len(params) != len(self._parameter_names):
             raise ValueError(
-                f"Expected {len(self._parameter_values)} parameters, but got {len(params)}."
+                f"Expected {len(self._parameter_names)} parameters, but got {len(params)}."
             )
         for name, value in zip(self._parameter_names, params):
             self._parameter_values[name] = value
@@ -106,6 +106,8 @@ class PybammPipeline:
         self._solver._model_set_up.update(  # Noqa: SLF001
             {model: {"initial conditions": model.concatenated_initial_conditions}}
         )
+
+        # self.n_states = self._built_model.len_rhs_and_alg  # len_rhs + len_alg
 
     @property
     def built_model(self):
