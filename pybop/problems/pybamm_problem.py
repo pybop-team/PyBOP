@@ -11,7 +11,7 @@ class PybammProblem(Problem):
 
     def __init__(
         self,
-        pybamm_pipeline: PybammPipeline,
+        pybamm_pipeline: list[PybammPipeline],
         param_names: list[str] = None,
         cost_names: list[str] = None,
     ):
@@ -26,21 +26,24 @@ class PybammProblem(Problem):
         self.check_and_store_params(p)
 
         # rebuild the pipeline (if needed)
-        self._pipeline.build(self._params)
+        for pipe in self._pipeline:
+            pipe.build(self._params)
 
     def run(self) -> float:
         """
         Evaluates the underlying simulation and cost function using the
         parameters set in the previous call to `set_params`.
         """
-        self.check_set_params_called()
+        cost = np.zeros_like(self._pipeline)
+        for pipe in self._pipeline:
+            self.check_set_params_called()
 
-        # run simulation
-        sol = self._pipeline.solve()
+            # run simulation
+            sol = pipe.solve()
 
-        # extract and sum cost function values. These are assumed to all be scalar values
-        # (not to self: test this is true in tests....)
-        cost = sum([sol[n].values[0] for n in self._cost_names])
+            # extract and sum cost function values. These are assumed to all be scalar values
+            # (not to self: test this is true in tests....)
+            cost += sum([sol[n].values[0] for n in self._cost_names])
         return cost
 
     def run_with_sensitivities(
@@ -50,21 +53,30 @@ class PybammProblem(Problem):
         Evaluates the underlying simulation and cost function using the
         parameters set in the previous call to `set_params`.
         """
-        self.check_set_params_called()
+        cost = np.zeros_like(self._pipeline)
+        cost_sens = np.zeros_like(self._pipeline)
 
-        # run simulation
-        sol = self._pipeline.solve(calculate_sensitivities=True)
+        for pipe in self._pipeline:
+            self.check_set_params_called()
 
-        # extract cost function values. These are assumed to all be scalar values
-        # (not to self: test this is true in tests....)
-        cost = sum([sol[n].values[0] for n in self._cost_names])
+            # run simulation
+            sol = pipe.solve(calculate_sensitivities=True)
 
-        # sensitivities will all be 1D arrays of length n_params, sum over the different
-        # cost functions to get the total sensitivity
-        cost_sens = np.array(
-            [
-                sum([sol[cost_n].sensitivities[param_n] for cost_n in self._cost_names])
-                for param_n in self._params
-            ]
-        )
+            # extract cost function values. These are assumed to all be scalar values
+            # (not to self: test this is true in tests....)
+            cost += sum([sol[n].values[0] for n in self._cost_names])
+
+            # sensitivities will all be 1D arrays of length n_params, sum over the different
+            # cost functions to get the total sensitivity
+            cost_sens += np.array(
+                [
+                    sum(
+                        [
+                            sol[cost_n].sensitivities[param_n]
+                            for cost_n in self._cost_names
+                        ]
+                    )
+                    for param_n in self._params
+                ]
+            )
         return cost, cost_sens

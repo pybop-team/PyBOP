@@ -8,35 +8,30 @@ from pybop.problems.pybamm_problem import PybammProblem
 
 class Pybamm(builders.BaseBuilder):
     def __init__(self):
-        super().__init__()
-        self._pybamm_model = None
+        self._pybamm_models = []
         self._costs = []
         self._cost_names = []
         self._dataset = None
         self._parameters = Parameters()
-        self._solver = None
-        self._parameter_values = None
+        self._solver = []
+        self._parameter_values = []
         self._rebuild_parameters = []
+        self._pipeline = []
 
-    def set_simulation(
+    def add_simulation(
         self,
         pybamm_model: pybamm.BaseModel,
         parameter_values: pybamm.ParameterValues = None,
         solver: pybamm.BaseSolver = None,
     ) -> None:
         """
-        Sets the simulation for the optimisation problem.
-
-        :param pybamm_model:
-        :param parameter_values:
-        :param solver:
-        :return:
+        Adds a simulation for the optimisation problem.
         """
-        self._pybamm_model = pybamm_model.new_copy()
-        self._parameter_values = (
-            parameter_values or self._pybamm_model.default_parameter_values
+        self._pybamm_models.append(pybamm_model.new_copy())
+        self._parameter_values.append(
+            parameter_values or pybamm_model.default_parameter_values
         )
-        self._solver = solver or self._pybamm_model.default_solver
+        self._solver.append(solver or pybamm_model.default_solver)
 
     def add_cost(self, cost: PybammCost) -> None:
         self._costs.append(cost)
@@ -55,42 +50,45 @@ class Pybamm(builders.BaseBuilder):
         return False
 
     def build(self) -> PybammProblem:
-        model = self._pybamm_model.deep_copy()
-        param = self._parameter_values
+        for i, pybamm_model in enumerate(self._pybamm_models):
+            model = pybamm_model.deep_copy()
+            param = self._parameter_values[i]
 
-        if not self._pybamm_model._built:  # noqa: SLF001
-            self._pybamm_model.build_model()
+            if not model._built:  # noqa: SLF001
+                model.build_model()
 
-        if self._dataset is not None:
-            self.set_current_function()
+            if self._dataset is not None:
+                self.set_current_function()
 
-        # add costs
-        for cost in self._costs:
-            cost.add_to_pybamm_model(model, param)
+            # add costs
+            for cost in self._costs:
+                cost.add_to_pybamm_model(model, param)
 
-        # set input parameters
-        for parameter in self._parameters:
-            param.update(parameter.name, "[input]")
+            # set input parameters
+            for parameter in self._parameters:
+                param.update(parameter.name, "[input]")
 
-        requires_rebuild = self._requires_rebuild(model)
+            requires_rebuild = self._requires_rebuild(model)
 
-        if requires_rebuild:
-            self.rebuild_parameters = (
-                self._parameters.keys()
-            )  # Needs to be parameters object
+            if requires_rebuild:
+                self.rebuild_parameters = (
+                    self._parameters.keys()
+                )  # Needs to be parameters object
 
-        self._pipeline = PybammPipeline(
-            self._pybamm_model,
-            self._parameter_values,
-            self._solver,
-            rebuild_parameters=self._rebuild_parameters,
-        )
+            self._pipeline.append(
+                PybammPipeline(
+                    model,
+                    param,
+                    self._solver[i],
+                    rebuild_parameters=self._rebuild_parameters,
+                )
+            )
 
-        return PybammProblem(
-            pybamm_pipeline=self._pipeline,
-            param_names=self._parameters.keys(),
-            cost_names=self._cost_names,
-        )
+            return PybammProblem(
+                pybamm_pipeline=self._pipeline,
+                param_names=self._parameters.keys(),
+                cost_names=self._cost_names,
+            )
 
     def set_current_function(self) -> None:
         """

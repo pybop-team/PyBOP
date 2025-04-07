@@ -74,7 +74,7 @@ class PybammPipeline:
         self._built_model = self._model
         self.build(params)
 
-    def build(self, params: np.ndarray):
+    def build(self, params: np.ndarray) -> None:
         """
         Build the PyBaMM pipeline using the given parameter_values.
         """
@@ -116,7 +116,7 @@ class PybammPipeline:
         """
         return self._built_model
 
-    def solve(self, calculate_sensitivities: bool) -> pybamm.Solution:
+    def solve(self, calculate_sensitivities: bool = False) -> pybamm.Solution:
         """
         Run the simulation using the built model and solver.
 
