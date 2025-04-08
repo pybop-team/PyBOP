@@ -72,7 +72,7 @@ class TestModelAndExperimentChanges:
         parameter_set = pybop.ParameterSet("Chen2020")
         parameter_set.update(parameters.as_dict("true"))
         initial_state = {"Initial SoC": 0.5}
-        experiment = pybop.Experiment(["Charge at 1C until 4.1 V (2 seconds period)"])
+        experiment = pybop.Experiment(["Charge at 1C until 4.1 V (30 seconds period)"])
 
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
         solution_1 = model.predict(initial_state=initial_state, experiment=experiment)
@@ -104,7 +104,7 @@ class TestModelAndExperimentChanges:
         signal = ["Voltage [V]"]
         problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
         cost = pybop.RootMeanSquaredError(problem)
-        optim = pybop.PSO(cost)
+        optim = pybop.NelderMead(cost)
         results = optim.run()
         return results.final_cost
 
