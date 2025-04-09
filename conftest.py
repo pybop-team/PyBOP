@@ -1,4 +1,5 @@
 import matplotlib
+import numpy as np
 import plotly
 import pytest
 
@@ -76,3 +77,8 @@ def pytest_collection_modifyitems(config, items):
                 reason=f"Test does not match the selected options: {', '.join(selected_markers)}"
             )
             item.add_marker(skip_this)
+
+
+@pytest.fixture(autouse=True)
+def set_random_seed():
+    np.random.seed(40)
