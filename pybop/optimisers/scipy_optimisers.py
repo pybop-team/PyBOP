@@ -370,7 +370,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
     """
 
     def __init__(self, cost, **optimiser_kwargs):
-        optimiser_options = dict(strategy="best1bin", popsize=15)
+        optimiser_options = dict(strategy="best1bin")
         optimiser_options.update(**optimiser_kwargs)
         super().__init__(cost, **optimiser_options)
 

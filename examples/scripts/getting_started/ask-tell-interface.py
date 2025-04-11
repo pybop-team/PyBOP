@@ -67,7 +67,7 @@ x_best = []
 f_best = []
 
 # Run optimisation
-for i in range(100):
+for i in range(50):
     x = optim.optimiser.ask()
     f = [cost(x[0], calculate_grad=True)]
     optim.optimiser.tell(f)

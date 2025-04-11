@@ -54,8 +54,8 @@ parameters = pybop.Parameters(
 # Define test protocol
 experiment = pybop.Experiment(
     [
-        "Discharge at 1C until 2.5 V (5 seconds period)",
-        "Hold at 2.5 V for 30 minutes or until 10 mA (5 seconds period)",
+        "Discharge at 1C until 2.5 V (10 seconds period)",
+        "Hold at 2.5 V for 30 minutes or until 10 mA (10 seconds period)",
     ],
 )
 signal = ["Voltage [V]", "Current [A]"]

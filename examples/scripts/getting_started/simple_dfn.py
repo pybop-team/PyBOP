@@ -60,8 +60,8 @@ cost = pybop.RootMeanSquaredError(problem)
 optim = pybop.IRPropPlus(
     cost,
     verbose=True,
-    max_iterations=100,
-    max_unchanged_iterations=20,
+    max_iterations=60,
+    max_unchanged_iterations=15,
     compute_sensitivities=True,
     n_sensitivity_samples=64,  # Decrease samples for CI (increase for higher accuracy)
 )
