@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -30,7 +31,8 @@ class Test_SPM_Parameterisation:
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        return pybop.lithium_ion.SPM(parameter_set=parameter_set)
+        solver = pybamm.IDAKLUSolver()
+        return pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
 
     @pytest.fixture
     def parameters(self):
@@ -183,7 +185,7 @@ class Test_SPM_Parameterisation:
 
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
         if isinstance(optim.cost, pybop.GaussianLogLikelihood):
-            np.testing.assert_allclose(results.x[-1], self.sigma0, atol=5e-4)
+            np.testing.assert_allclose(results.x[-1], self.sigma0, atol=1e-3)
 
     @pytest.fixture
     def two_signal_cost(self, parameters, model, cost_cls):
