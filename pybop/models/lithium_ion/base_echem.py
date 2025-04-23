@@ -76,8 +76,6 @@ class EChemBaseModel(BaseModel):
         )
         if solver is None:
             self._solver = self.pybamm_model.default_solver
-            self._solver.mode = "fast with events"
-            self._solver.max_step_decrease_count = 1
         else:
             self._solver = solver
 
