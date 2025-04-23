@@ -1,7 +1,6 @@
 import warnings
 
 import numpy as np
-import pybamm
 import pytest
 from packaging import version
 
@@ -83,7 +82,6 @@ class TestPlots:
 
     @pytest.fixture
     def jax_fitting_problem(self, model, parameters, dataset):
-        model.solver = pybamm.IDAKLUSolver()
         problem = pybop.FittingProblem(model, parameters, dataset)
         problem.model.jaxify_solver(t_eval=problem.domain_data)
         return problem
