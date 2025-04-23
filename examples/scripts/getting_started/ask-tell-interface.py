@@ -1,7 +1,6 @@
 import os
 
 import numpy as np
-import pybamm
 
 import pybop
 
@@ -11,10 +10,9 @@ dataset_path = os.path.join(
     current_dir, "../../data/synthetic/spm_charge_discharge_75.csv"
 )
 
-# Define model and use high-performant solver for sensitivities
-solver = pybamm.IDAKLUSolver()
+# Define model
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = pybop.Parameters(

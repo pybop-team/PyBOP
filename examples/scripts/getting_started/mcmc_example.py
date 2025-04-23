@@ -1,7 +1,6 @@
 import sys
 
 import numpy as np
-import pybamm
 
 import pybop
 
@@ -9,7 +8,6 @@ import pybop
 parallel = True if sys.platform != "win32" else False
 
 # Parameter set and model definition
-solver = pybamm.IDAKLUSolver()
 parameter_set = pybop.ParameterSet("Chen2020")
 parameter_set.update(
     {
@@ -17,7 +15,7 @@ parameter_set.update(
         "Positive electrode active material volume fraction": 0.71,
     }
 )
-synth_model = pybop.lithium_ion.SPMe(parameter_set=parameter_set, solver=solver)
+synth_model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -59,7 +57,7 @@ dataset = pybop.Dataset(
     }
 )
 
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=pybamm.IDAKLUSolver())
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 signal = ["Voltage [V]"]
 
 # Generate problem, likelihood, and sampler
