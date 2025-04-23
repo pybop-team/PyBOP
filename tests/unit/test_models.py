@@ -311,7 +311,10 @@ class TestModels:
     def test_simulate(self, model_cls):
         k = 0.1
         y0 = 1
-        model = model_cls(pybamm.ParameterValues({"k": k, "y0": y0}))
+        args = {"parameter_set": pybamm.ParameterValues({"k": k, "y0": y0})}
+        if model_cls == pybop.ExponentialDecayModel:
+            args["solver"] = pybamm.CasadiSolver()
+        model = model_cls(**args)
         model.build()
         model.signal = ["y_0"]
         inputs = {}
