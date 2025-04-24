@@ -3,7 +3,7 @@ import numpy as np
 
 class Problem:
     """
-    Defines the a callable function `f(x)` that returns the evaluation
+    Defines a callable function `f(x)` that returns the evaluation
     of a cost function. The input `x` is a set of parameters that are
     passed via the `set_params` method. The cost function is evaluated
     using the `run` method.
@@ -71,6 +71,6 @@ class Problem:
 
     def set_params(self, p: np.ndarray) -> None:
         """
-        sets the parameters for the simulation and cost function.
+        Sets the parameters for the simulation and cost function.
         """
         raise NotImplementedError

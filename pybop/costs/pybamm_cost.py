@@ -17,4 +17,25 @@ class PybammCost:
     def add_to_model(self, model: pybamm.BaseModel, param: pybamm.ParameterValues):
         model.variables[self.variable_name()] = self.variable_expression()
         for parameter, default_value in self.parameters():
-            param.update(parameter.name, default_value)
+            param.update({parameter: default_value}, check_already_exists=False)
+
+
+class SumSquaredError(PybammCost):
+    """
+    A SumSquaredError cost implementation within Pybamm.
+    """
+
+    @staticmethod
+    def variable_name():
+        return "SumSquaredError"
+
+    @staticmethod
+    def variable_expression():
+        return pybamm.ExplicitTimeIntegral(
+            (pybamm.Variable("Voltage [V]") - pybamm.Variable("Data Voltage [V]")) ** 2,
+            pybamm.Scalar(0.0),
+        )
+
+    @staticmethod
+    def parameters():
+        return [(None, None)]  # [("SumSquaredError", 0.0)]

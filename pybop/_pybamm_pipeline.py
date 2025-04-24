@@ -1,5 +1,9 @@
+from copy import copy
+
 import numpy as np
 import pybamm
+
+from pybop import Inputs
 
 
 class PybammPipeline:
@@ -25,7 +29,7 @@ class PybammPipeline:
         t_start: np.number = 0,
         t_end: np.number = 1,
         t_interp: np.ndarray = None,
-        rebuild_parameters: list[str] = None,
+        # rebuild_parameters: list[str] = None,
     ):
         """
         Arguments
@@ -45,12 +49,8 @@ class PybammPipeline:
         rebuild_parameters : list[str]
             The parameters that will be used to rebuild the model. If None, the model will not be rebuilt.
         """
-        if rebuild_parameters is None:
-            rebuild_parameters = []
-        params = np.array(
-            [parameter_values[n] for n in rebuild_parameters], dtype=float
-        )
-        self._parameter_names = rebuild_parameters
+        self.requires_rebuild = False
+        self._parameter_names = []  # rebuild_parameters
         self._model = model
         self._parameter_values = parameter_values
         self._geometry = model.default_geometry
@@ -72,14 +72,14 @@ class PybammPipeline:
         }
         self._submesh_types = model.default_submesh_types
         self._built_model = self._model
-        self.build(params)
+        # self.build(params)
 
-    def build(self, params: np.ndarray) -> None:
+    def rebuild(self, params: np.ndarray) -> None:
         """
         Build the PyBaMM pipeline using the given parameter_values.
         """
         # if there are no parameters to build, just return
-        if len(self._parameter_names) == 0:
+        if not self.requires_rebuild:
             return
 
         # we need to rebuild, so make sure we've got the right number of parameters
@@ -91,21 +91,30 @@ class PybammPipeline:
         for name, value in zip(self._parameter_names, params):
             self._parameter_values[name] = value
 
-        model = self._model.deep_copy()
-        geometry = self._geometry.deep_copy()
+        self.build()
+
+    def build(self) -> None:
+        """
+        Build the PyBaMM pipeline using the given parameter_values.
+        """
+
+        model = self._model.new_copy()
+        geometry = copy(self._geometry)  # copy?
+        self.requires_rebuild = self._parameters_require_rebuild(geometry)
         self._parameter_values.process_geometry(geometry)
         self._parameter_values.process_model(model)
 
         mesh = pybamm.Mesh(geometry, self._submesh_types, self._var_pts)
-        disc = pybamm.Discretisation(mesh, self._methods)
+        disc = pybamm.Discretisation(mesh, self._methods, check_model=True)
         disc.process_model(model)
         self._built_model = model
-        self._solver.set_up(model)
+        # self._solver.set_up(model) #Is this required? If so, we need to pass an `inputs` dict
+
         # TODO: unfortunately, the solver will still call set_up on the model
         # if this is not done, need to fix this in PyBaMM!
-        self._solver._model_set_up.update(  # Noqa: SLF001
-            {model: {"initial conditions": model.concatenated_initial_conditions}}
-        )
+        # self._solver._model_set_up.update(  # Noqa: SLF001
+        #     {model: {"initial conditions": model.concatenated_initial_conditions}}
+        # )
 
         # self.n_states = self._built_model.len_rhs_and_alg  # len_rhs + len_alg
 
@@ -116,7 +125,50 @@ class PybammPipeline:
         """
         return self._built_model
 
-    def solve(self, calculate_sensitivities: bool = False) -> pybamm.Solution:
+    @property
+    def parameter_names(self):
+        return self._parameter_names
+
+    @parameter_names.setter
+    def parameter_names(self, parameter_names):
+        self._parameter_names = parameter_names
+
+    def _parameters_require_rebuild(self, geometry) -> bool:
+        """
+        Checks whether the parameter values required be rebuilt.
+        """
+
+        try:
+            # Credit: PyBaMM Team
+            for domain in geometry:
+                for spatial_variable, spatial_limits in geometry[domain].items():
+                    # process tab information if using 1 or 2D current collectors
+                    if spatial_variable == "tabs":
+                        for _, position_info in spatial_limits.items():
+                            for _, sym in position_info.items():
+                                self._process_and_check(sym)
+                    else:
+                        for _, sym in spatial_limits.items():
+                            self._process_and_check(sym)
+        except ValueError:
+            return True
+        return False
+
+    def _process_and_check(self, sym):
+        """
+        Process and check the geometry for each parameter.
+        Credit: PyBaMM Team
+        """
+        new_sym = self._parameter_values.process_symbol(sym)
+        leaves = new_sym.post_order(filter=lambda node: len(node.children) == 0)
+        for leaf in leaves:
+            if not isinstance(leaf, pybamm.Scalar):
+                raise ValueError("Geometry parameters must be Scalars")
+        return new_sym
+
+    def solve(
+        self, inputs: Inputs = None, calculate_sensitivities: bool = False
+    ) -> pybamm.Solution:
         """
         Run the simulation using the built model and solver.
 
@@ -124,8 +176,12 @@ class PybammPipeline:
         ---------
         calculate_sensitivities : bool
             Whether to calculate sensitivities or not.
+        inputs : Inputs
+
         """
         return self._solver.solve(
+            model=self._built_model,
+            inputs=inputs,
             t_eval=[self._t_start, self._t_end],
             t_interp=self._t_interp,
             calculate_sensitivities=calculate_sensitivities,
