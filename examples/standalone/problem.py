@@ -1,6 +1,6 @@
 import numpy as np
 
-from pybop import BaseProblem
+from pybop import BaseProblem, Inputs
 
 
 class StandaloneProblem(BaseProblem):
@@ -40,21 +40,20 @@ class StandaloneProblem(BaseProblem):
                 )
         self._target = {signal: self._dataset[signal] for signal in self.signal}
 
-    def evaluate(self, inputs):
+    def evaluate(self, inputs: Inputs):
         """
         Evaluate the model with the given parameters and return the signal.
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             Parameters for evaluation of the model.
 
         Returns
         -------
-        y : np.ndarray
-            The model output y(t) simulated with given inputs.
+        dict[str, np.ndarray[np.float64]]
+            The model output y(t) simulated with the given inputs.
         """
-
         return {
             signal: inputs["Gradient"] * self._domain_data + inputs["Intercept"]
             for signal in self.signal
@@ -66,19 +65,22 @@ class StandaloneProblem(BaseProblem):
 
         Parameters
         ----------
-        inputs : Dict
+        inputs : Inputs
             Parameters for evaluation of the model.
 
         Returns
         -------
-        tuple
-            A tuple containing the simulation result y(t) and the sensitivities dy/dx(t) evaluated
-            with given inputs x.
+        tuple[dict[str, np.ndarray[np.float64]], dict[str, dict[str, np.ndarray]]]
+            A tuple containing the simulation result y(t) and the sensitivities dy/dx(t) for each
+            parameter x and signal y.
         """
 
         y = self.evaluate(inputs)
 
-        dy = np.zeros((self.n_data, self.n_outputs, self.n_parameters))
-        dy[:, 0, 0] = self._domain_data
+        dy = dict.fromkeys(inputs.keys())
+        dy["Gradient"] = {signal: self._domain_data for signal in self.signal}
+        dy["Intercept"] = {
+            signal: np.zeros((self.n_outputs, self.n_data)) for signal in self.signal
+        }
 
         return (y, dy)

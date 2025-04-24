@@ -1,6 +1,7 @@
 import itertools
 
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -46,7 +47,8 @@ class TestTransformation:
                 "R1 [Ohm]": self.ground_truth[1],
             }
         )
-        return pybop.empirical.Thevenin(parameter_set=parameter_set)
+        solver = pybamm.IDAKLUSolver()
+        return pybop.empirical.Thevenin(parameter_set=parameter_set, solver=solver)
 
     @pytest.fixture
     def parameters(self, transformation_r0, transformation_r1):
@@ -69,8 +71,8 @@ class TestTransformation:
     def init_soc(self, request):
         return request.param
 
-    def noise(self, sigma, values):
-        return np.random.normal(0, sigma, values)
+    def noisy(self, data, sigma):
+        return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture(
         params=[
@@ -91,8 +93,7 @@ class TestTransformation:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Voltage [V]"].data
-                + self.noise(self.sigma0, len(solution["Time [s]"].data)),
+                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
             }
         )
 
@@ -157,7 +158,7 @@ class TestTransformation:
         else:
             assert (
                 (initial_cost > results.final_cost)
-                if optim.minimising
+                if results.minimising
                 else (initial_cost < results.final_cost)
             )
             np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)

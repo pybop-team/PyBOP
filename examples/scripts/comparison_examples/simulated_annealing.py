@@ -4,9 +4,8 @@ import pybamm
 import pybop
 
 # Define model and use high-performant solver for sensitivities
-solver = pybamm.IDAKLUSolver()
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -38,6 +37,7 @@ dataset = pybop.Dataset(
 )
 
 # Generate problem, cost function, and optimisation class
+model.solver = pybamm.IDAKLUSolver()
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.RootMeanSquaredError(problem)
 optim = pybop.SimulatedAnnealing(
@@ -55,7 +55,7 @@ optim.optimiser.cooling_rate = 0.8
 results = optim.run()
 
 # Plot the timeseries output
-pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot.convergence(optim)

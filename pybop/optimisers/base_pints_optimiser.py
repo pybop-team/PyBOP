@@ -1,4 +1,3 @@
-import warnings
 from time import time
 
 import numpy as np
@@ -206,7 +205,9 @@ class BasePintsOptimiser(BaseOptimiser):
 
         # Choose method to evaluate
         def fun(x):
-            return self.cost_call(x, calculate_grad=self._needs_sensitivities)
+            return self.call_cost(
+                x, cost=self.cost, calculate_grad=self._needs_sensitivities
+            )
 
         # Create evaluator object
         if isinstance(self.cost, BaseJaxCost):
@@ -262,6 +263,8 @@ class BasePintsOptimiser(BaseOptimiser):
                 iteration += 1
                 _fs = [x[0] for x in fs] if self._needs_sensitivities else fs
                 self.log_update(
+                    iterations=iteration,
+                    evaluations=evaluations,
                     x=xs,
                     x_best=self.optimiser.x_best(),
                     cost=_fs,
@@ -338,8 +341,6 @@ class BasePintsOptimiser(BaseOptimiser):
             raise
 
         total_time = time() - start_time
-        if self.verbose:
-            print("Halt: " + halt_message)
 
         # Save post-run statistics
         self._evaluations = evaluations
@@ -353,18 +354,6 @@ class BasePintsOptimiser(BaseOptimiser):
             x = self.optimiser.x_best()
             f = self.optimiser.f_best()
 
-        # run the forward model once more to update the solution
-        try:
-            self.cost.problem.evaluate(x)
-            pybamm_solution = self.cost.problem.solution
-        except Exception:
-            warnings.warn(
-                "Failed to evaluate the model with best fit parameters.",
-                UserWarning,
-                stacklevel=2,
-            )
-            pybamm_solution = None
-
         return OptimisationResult(
             optim=self,
             x=x,
@@ -372,7 +361,7 @@ class BasePintsOptimiser(BaseOptimiser):
             n_iterations=self._iterations,
             n_evaluations=self._evaluations,
             time=total_time,
-            pybamm_solution=pybamm_solution,
+            message=halt_message,
         )
 
     def f_guessed_tracking(self):
@@ -410,14 +399,13 @@ class BasePintsOptimiser(BaseOptimiser):
             If True, use as many worker processes as there are CPU cores. If an integer, use that many workers.
             If False or 0, disable parallelism (default: False).
         """
+        self._parallel = bool(parallel is True or parallel >= 1)
+
         if parallel is True:
-            self._parallel = True
             self._n_workers = PintsParallelEvaluator.cpu_count()
         elif parallel >= 1:
-            self._parallel = True
             self._n_workers = int(parallel)
         else:
-            self._parallel = False
             self._n_workers = 1
 
     def set_max_iterations(self, iterations="default"):

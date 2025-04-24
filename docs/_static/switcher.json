@@ -4,10 +4,20 @@
       "url": "https://pybop-docs.readthedocs.io/en/latest/"
     },
     {
-      "name": "v24.12 (stable)",
-      "version": "v24.12",
-      "url": "https://pybop-docs.readthedocs.io/en/v24.12/",
+      "name": "v25.3 (stable)",
+      "version": "v25.3",
+      "url": "https://pybop-docs.readthedocs.io/en/v25.3/",
       "preferred": true
+    },
+    {
+      "name": "v25.1",
+      "version": "v25.1",
+      "url": "https://pybop-docs.readthedocs.io/en/v25.1/"
+    },
+    {
+      "name": "v24.12",
+      "version": "v24.12",
+      "url": "https://pybop-docs.readthedocs.io/en/v24.12/"
     },
     {
       "name": "v24.9",

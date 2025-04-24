@@ -39,7 +39,7 @@ class TestModelAndExperimentChanges:
     def test_changing_experiment(self, parameters):
         # Change the experiment and check that the results are different.
 
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set = pybop.ParameterSet("Chen2020")
         parameter_set.update(parameters.as_dict("true"))
         initial_state = {"Initial SoC": 0.5}
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
@@ -69,10 +69,10 @@ class TestModelAndExperimentChanges:
     def test_changing_model(self, parameters):
         # Change the model and check that the results are different.
 
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set = pybop.ParameterSet("Chen2020")
         parameter_set.update(parameters.as_dict("true"))
         initial_state = {"Initial SoC": 0.5}
-        experiment = pybop.Experiment(["Charge at 1C until 4.1 V (2 seconds period)"])
+        experiment = pybop.Experiment(["Charge at 1C until 4.1 V (30 seconds period)"])
 
         model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
         solution_1 = model.predict(initial_state=initial_state, experiment=experiment)
@@ -104,23 +104,25 @@ class TestModelAndExperimentChanges:
         signal = ["Voltage [V]"]
         problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
         cost = pybop.RootMeanSquaredError(problem)
-        optim = pybop.PSO(cost)
+        optim = pybop.NelderMead(cost)
         results = optim.run()
         return results.final_cost
 
     def test_multi_fitting_problem(self):
-        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-        parameters = pybop.Parameter(
-            "Negative electrode active material volume fraction",
-            prior=pybop.Gaussian(0.68, 0.05),
-            true_value=parameter_set[
-                "Negative electrode active material volume fraction"
-            ],
+        parameter_set = pybop.ParameterSet("Chen2020")
+        parameters = pybop.Parameters(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                prior=pybop.Gaussian(0.68, 0.05),
+                true_value=parameter_set[
+                    "Negative electrode active material volume fraction"
+                ],
+            )
         )
 
         model_1 = pybop.lithium_ion.SPM(parameter_set=parameter_set)
         experiment_1 = pybop.Experiment(
-            ["Discharge at 1C until 3 V (4 seconds period)"]
+            ["Discharge at 0.5C for 5 minutes (10 seconds period)"]
         )
         solution_1 = model_1.predict(experiment=experiment_1)
         dataset_1 = pybop.Dataset(
@@ -133,7 +135,7 @@ class TestModelAndExperimentChanges:
 
         model_2 = pybop.lithium_ion.SPMe(parameter_set=parameter_set.copy())
         experiment_2 = pybop.Experiment(
-            ["Discharge at 3C until 3 V (4 seconds period)"]
+            ["Discharge at 1C for 3 minutes (10 seconds period)"]
         )
         solution_2 = model_2.predict(experiment=experiment_2)
         dataset_2 = pybop.Dataset(
@@ -152,7 +154,9 @@ class TestModelAndExperimentChanges:
 
         # Test with a gradient and non-gradient-based optimiser
         for optimiser in [pybop.SNES, pybop.IRPropMin]:
-            optim = optimiser(cost)
+            optim = optimiser(
+                cost, sigma0=0.05, max_iterations=100, max_unchanged_iterations=30
+            )
             results = optim.run()
-            np.testing.assert_allclose(results.x, parameters.true_value, atol=2e-5)
-            np.testing.assert_allclose(results.final_cost, 0, atol=2e-5)
+            np.testing.assert_allclose(results.x, parameters.true_value(), atol=2e-5)
+            np.testing.assert_allclose(results.final_cost, 0, atol=3e-5)

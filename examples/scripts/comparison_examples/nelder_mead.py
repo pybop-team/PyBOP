@@ -1,12 +1,10 @@
 import numpy as np
-import pybamm
 
 import pybop
 
-# Define model and use high-performant solver for sensitivities
-solver = pybamm.IDAKLUSolver()
+# Parameter set and model definition
 parameter_set = pybop.ParameterSet("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -34,8 +32,8 @@ experiment = pybop.Experiment(
 values = model.predict(initial_state={"Initial SoC": 0.5}, experiment=experiment)
 
 
-def noise(sigma):
-    return np.random.normal(0, sigma, len(values["Voltage [V]"].data))
+def noisy(data, sigma):
+    return data + np.random.normal(0, sigma, len(data))
 
 
 # Form dataset
@@ -43,21 +41,28 @@ dataset = pybop.Dataset(
     {
         "Time [s]": values["Time [s]"].data,
         "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": values["Voltage [V]"].data + noise(sigma),
-        "Bulk open-circuit voltage [V]": values["Bulk open-circuit voltage [V]"].data
-        + noise(sigma),
+        "Voltage [V]": noisy(values["Voltage [V]"].data, sigma),
+        "Bulk open-circuit voltage [V]": noisy(
+            values["Bulk open-circuit voltage [V]"].data, sigma
+        ),
     }
 )
 
-signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
 # Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
-cost = pybop.Minkowski(problem, p=2)
-optim = pybop.AdamW(
+signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
+problem = pybop.FittingProblem(
+    model,
+    parameters,
+    dataset,
+    signal=signal,
+    initial_state={"Initial open-circuit voltage [V]": dataset["Voltage [V]"][0]},
+)
+cost = pybop.RootMeanSquaredError(problem)
+optim = pybop.NelderMead(
     cost,
     verbose=True,
     allow_infeasible_solutions=True,
-    sigma0=0.02,
+    sigma0=0.05,
     max_iterations=100,
     max_unchanged_iterations=20,
 )
@@ -66,7 +71,7 @@ optim = pybop.AdamW(
 results = optim.run()
 
 # Plot the timeseries output
-pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot.convergence(optim)

@@ -31,5 +31,5 @@ keywords:
 journal: "arXiv"
 date-released: 2024-12-20
 doi: 10.48550/arXiv.2412.15859
-version: "24.12" # Update this alongside new releases
+version: "25.3" # Update this alongside new releases
 repository-code: 'https://www.github.com/pybop-team/pybop'

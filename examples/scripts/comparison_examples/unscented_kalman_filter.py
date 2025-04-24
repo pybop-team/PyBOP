@@ -22,7 +22,7 @@ parameters = pybop.Parameters(
 
 # Make a prediction with measurement noise
 sigma = 0.001
-t_eval = np.arange(0, 250, 0.5)
+t_eval = np.arange(0, 150, 0.5)
 values = model.predict(t_eval=t_eval)
 corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
 
@@ -53,7 +53,7 @@ observer = pybop.UnscentedKalmanFilterObserver(
 
 # Generate problem, cost function, and optimisation class
 cost = pybop.ObserverCost(observer)
-optim = pybop.XNES(cost, verbose=True)
+optim = pybop.NelderMead(cost, verbose=True)
 
 # Parameter identification using the current observer implementation is very slow
 # so let's restrict the number of iterations and reduce the number of plots
@@ -63,13 +63,13 @@ optim.set_max_iterations(5)
 results = optim.run()
 
 # Plot the timeseries output (requires model that returns Voltage)
-pybop.plot.quick(observer, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(observer, problem_inputs=results.x, title="Optimised Comparison")
 
-# # Plot convergence
-# pybop.plot.convergence(optim)
+# Plot convergence
+pybop.plot.convergence(optim)
 
-# # Plot the parameter traces
-# pybop.plot.parameters(optim)
+# Plot the parameter traces
+pybop.plot.parameters(optim)
 
-# # Plot the cost landscape with optimisation path
-# pybop.plot.surface(optim)
+# Plot the cost landscape with optimisation path
+pybop.plot.surface(optim)

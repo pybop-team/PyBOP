@@ -1,8 +1,8 @@
 import warnings
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
-from pybamm import IDAKLUJax, Solution, SolverError
+from pybamm import IDAKLUJax, SolverError
 
 from pybop import BaseModel, BaseProblem, Dataset
 from pybop.parameters.parameter import Inputs, Parameters
@@ -10,45 +10,51 @@ from pybop.parameters.parameter import Inputs, Parameters
 
 class FittingProblem(BaseProblem):
     """
-    Problem class for fitting (parameter estimation) problems.
+        Problem class for fitting (parameter estimation) problems.
 
-    Extends `BaseProblem` with specifics for fitting a model to a dataset.
+        Extends `BaseProblem` with specifics for fitting a model to a dataset.
 
-    Parameters
-    ----------
-    model : object
-        The model to fit.
-    parameters : pybop.Parameter or pybop.Parameters
-        An object or list of the parameters for the problem.
-    dataset : Dataset
-        Dataset object containing the data to fit the model to.
-    check_model : bool, optional
-        Flag to indicate if the model should be checked (default: True).
-    signal : list[str], optional
-        A list of variables to fit (default: ["Voltage [V]"]).
-    domain : str, optional
-        The name of the domain (default: "Time [s]").
-    additional_variables : list[str], optional
-        Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
-    initial_state : dict, optional
-        A valid initial state, e.g. the initial open-circuit voltage (default: None).
-    parallelizable : bool, optional
-        Set to True to use the following workaround to enable parallel
-        model evaluation: deepcopy the model before every evaluation.
-        Note that this means no sensitivities are ever stored. If you
-        wish to compute them, set `parallelizable` to False again and
-        evaluate once more.
+        Parameters
+        ----------
+        model : object
+            The model to fit.
+        parameters : pybop.Parameter or pybop.Parameters
+            An object or list of the parameters for the problem.
+        dataset : Dataset
+            Dataset object containing the data to fit the model to.
+        check_model : bool, optional
+            Flag to indicate if the model should be checked (default: True).
+        signal : list[str], optional
+            A list of variables to fit (default: ["Voltage [V]"]).
+        domain : str, optional
+            The name of the domain (default: "Time [s]").
+        additional_variables : list[str], optional
+            Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
+        initial_state : dict, optional
+    <<<<<<< HEAD
+            A valid initial state, e.g. the initial open-circuit voltage (default: None).
+        parallelizable : bool, optional
+            Set to True to use the following workaround to enable parallel
+            model evaluation: deepcopy the model before every evaluation.
+            Note that this means no sensitivities are ever stored. If you
+            wish to compute them, set `parallelizable` to False again and
+            evaluate once more.
+    =======
+            A valid initial state, e.g. the initial open-circuit voltage (default: None) which will trigger
+            a model rebuild on each evaluation. Example: {"Initial open-circuit potential [V]": 4.1}
+            NOTE: Sensitivities are not support with this arg due to the model rebuilding.
+    >>>>>>> develop
 
-    Additional Attributes
-    ---------------------
-    dataset : dictionary
-        The dictionary from a Dataset object containing the signal keys and values to fit the model to.
-    domain_data : np.ndarray
-        The domain points in the dataset.
-    n_domain_data : int
-        The number of domain points.
-    target : np.ndarray
-        The target values of the signals.
+        Additional Attributes
+        ---------------------
+        dataset : dictionary
+            The dictionary from a Dataset object containing the signal keys and values to fit the model to.
+        domain_data : np.ndarray
+            The domain points in the dataset.
+        n_domain_data : int
+            The number of domain points.
+        target : np.ndarray
+            The target values of the signals.
     """
 
     def __init__(
@@ -95,9 +101,15 @@ class FittingProblem(BaseProblem):
                 initial_state=self.initial_state,
             )
 
+        self.error_out = {var: self.failure_output for var in self.output_variables}
+        self.error_sense = {
+            param: {var: self.failure_output for var in self.output_variables}
+            for param in self.parameters.keys()
+        }
+
     def set_initial_state(self, initial_state: Optional[dict] = None):
         """
-        Set the initial state to be applied to evaluations of the problem.
+        Set the initial state to be applied for every problem evaluation.
 
         Parameters
         ----------
@@ -119,7 +131,12 @@ class FittingProblem(BaseProblem):
 
         self.initial_state = initial_state
 
-    def evaluate(self, inputs: Inputs) -> dict[str, np.ndarray[np.float64]]:
+    def evaluate(
+        self, inputs: Inputs, eis=False
+    ) -> Union[
+        dict[str, np.ndarray],
+        tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]],
+    ]:
         """
         Evaluate the model with the given parameters and return the signal.
 
@@ -130,8 +147,9 @@ class FittingProblem(BaseProblem):
 
         Returns
         -------
-        y : np.ndarray
-            The simulated model output y(t) for self.eis == False, and y(ω) for self.eis == True for the given inputs.
+        dict[str, np.ndarray[np.float64]]
+            The simulated model output y(t) for self.eis == False, and y(ω) for self.eis == True
+            for the given inputs.
         """
         inputs = self.parameters.verify(inputs)
         if self.eis:
@@ -141,7 +159,10 @@ class FittingProblem(BaseProblem):
 
     def _evaluate(
         self, func, inputs, calculate_grad=False
-    ) -> dict[str, np.ndarray[np.float64]]:
+    ) -> Union[
+        dict[str, np.ndarray],
+        tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]],
+    ]:
         """
         Perform simulation using the specified method and handle exceptions.
 
@@ -154,8 +175,9 @@ class FittingProblem(BaseProblem):
 
         Returns
         -------
-        dict[str, np.ndarray[np.float64]]
-            The simulated model output.
+        dict[str, np.ndarray[np.float64]] or tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]]
+            The simulation result y(t) and, optionally, the sensitivities dy/dx(t) for each
+            parameter x and signal y.
         """
         try:
             if isinstance(self.model.solver, IDAKLUJax):
@@ -163,32 +185,38 @@ class FittingProblem(BaseProblem):
                     self.domain_data, inputs
                 )  # TODO: Add initial_state capabilities
             else:
-                sol = func(
-                    inputs,
-                    self._domain_data,
-                    initial_state=self.initial_state,
-                )
+                sol = func(inputs, self._domain_data, initial_state=self.initial_state)
         except (SolverError, ZeroDivisionError, RuntimeError, ValueError) as e:
             if isinstance(e, ValueError) and str(e) not in self.exception:
                 raise  # Raise the error if it doesn't match the expected list
-            error_out = {s: self.failure_output for s in self.signal}
-            return (error_out, self.failure_output) if calculate_grad else error_out
+            if calculate_grad:
+                return self.error_out, self.error_sense
+            return self.error_out
 
         if self.eis:
             return sol
 
-        self._solution = sol if isinstance(sol, Solution) else None
-
         if isinstance(self.model.solver, IDAKLUJax):
             return {signal: sol[:, i] for i, signal in enumerate(self.signal)}
+
         if calculate_grad:
-            signals = self.signal + self.additional_variables
+            param_keys = [
+                p
+                for p in self.parameters.keys()
+                if p in sol[self.signal[0]].sensitivities.keys()
+            ]
             return (
-                {s: sol[s].data for s in signals},
-                {s: sol[s].sensitivities for s in signals},
+                {s: sol[s].data for s in self.output_variables},
+                {
+                    p: {
+                        s: sol[s].sensitivities[p].toarray().reshape(-1)
+                        for s in self.output_variables
+                    }
+                    for p in param_keys
+                },
             )
 
-        return {s: sol[s].data for s in (self.signal + self.additional_variables)}
+        return {s: sol[s].data for s in self.output_variables}
 
     def evaluateS1(self, inputs: Inputs):
         """
@@ -201,27 +229,10 @@ class FittingProblem(BaseProblem):
 
         Returns
         -------
-        tuple[dict, np.ndarray]
-            A tuple containing the simulation result y(t) as a dictionary and the sensitivities
-            dy/dx(t) evaluated with given inputs.
+        tuple[dict[str, np.ndarray[np.float64]], dict[str, dict[str, np.ndarray]]]
+            A tuple containing the simulation result y(t) and the sensitivities dy/dx(t)
+            for each parameter x and signal y evaluated with the given inputs.
         """
         inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(inputs.values()))
-        y, sens = self._evaluate(self._model.simulateS1, inputs, calculate_grad=True)
-
-        if not any([np.isfinite(y[s]).any() for s in self.signal]):
-            return y, sens
-
-        # Extract the sensitivities for all signals at once
-        param_keys = self.parameters.keys()
-        dy = np.stack(
-            [
-                np.column_stack(
-                    [sens[signal][key].toarray()[:, 0] for key in param_keys]
-                )
-                for signal in self.signal
-            ],
-            axis=1,
-        )
-
-        return y, dy
+        return self._evaluate(self._model.simulateS1, inputs, calculate_grad=True)

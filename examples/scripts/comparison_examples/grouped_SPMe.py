@@ -30,8 +30,6 @@ experiment = pybop.Experiment(
     [
         "Discharge at 1C until 2.5 V (5 seconds period)",
         "Rest for 30 minutes (5 seconds period)",
-        # "Charge at 2C until 4.1 V (5 seconds period)",
-        # "Rest for 30 minutes (5 seconds period)",
     ],
 )
 
@@ -41,6 +39,7 @@ time_domain_SPMe = pybop.lithium_ion.SPMe(
     parameter_set=parameter_set,
     options=model_options,
 )
+time_domain_SPMe.solver = time_domain_SPMe.pybamm_model.default_solver
 simulation = time_domain_SPMe.predict(
     initial_state=initial_state, experiment=experiment
 )

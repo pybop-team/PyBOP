@@ -5,8 +5,7 @@ import pybop
 
 # Define model
 parameter_set = pybop.ParameterSet("Chen2020")
-solver = pybamm.IDAKLUSolver()
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -36,14 +35,22 @@ dataset = pybop.Dataset(
 )
 
 # Generate problem, cost function, and optimisation class
+model.solver = pybamm.IDAKLUSolver()
 problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.JaxSumSquaredError(problem)
-optim = pybop.SciPyMinimize(cost, max_iterations=100, method="L-BFGS-B", jac=True)
+cost = pybop.SumSquaredError(problem)
+optim = pybop.SciPyMinimize(
+    cost,
+    max_iterations=100,
+    multistart=1,
+    method="L-BFGS-B",
+    jac=True,
+    n_sensitivity_samples=256,
+)
 
 results = optim.run()
 
 # Plot the timeseries output
-pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot.convergence(optim)

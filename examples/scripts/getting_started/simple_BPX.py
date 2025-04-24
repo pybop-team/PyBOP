@@ -3,25 +3,28 @@ import numpy as np
 import pybop
 
 # Define model
-parameter_set = pybop.ParameterSet("Chen2020")
+parameter_set = pybop.ParameterSet(json_path="examples/parameters/example_BPX.json")
 model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = pybop.Parameters(
     pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.68, 0.05),
-        bounds=[0.5, 0.8],
+        "Negative particle radius [m]",
+        prior=pybop.Gaussian(6e-06, 0.1e-6),
+        bounds=[1e-6, 9e-6],
+        true_value=parameter_set["Negative particle radius [m]"],
     ),
     pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.58, 0.05),
-        bounds=[0.4, 0.7],
+        "Positive particle radius [m]",
+        prior=pybop.Gaussian(4.5e-07, 0.1e-6),
+        bounds=[1e-7, 9e-7],
+        true_value=parameter_set["Positive particle radius [m]"],
     ),
 )
 
+# Generate data
 sigma = 0.001
-t_eval = np.arange(0, 900, 3)
+t_eval = np.arange(0, 900, 5)
 values = model.predict(t_eval=t_eval)
 corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
 
@@ -37,12 +40,14 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.XNES(cost, max_iterations=100)
+optim = pybop.CMAES(cost, max_iterations=40, verbose=True)
 
+# Run the optimisation
 results = optim.run()
+print("True parameters:", parameters.true_value())
 
 # Plot the timeseries output
-pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot.convergence(optim)
@@ -52,6 +57,3 @@ pybop.plot.parameters(optim)
 
 # Plot the cost landscape with optimisation path
 pybop.plot.surface(optim)
-
-# Plot contour
-pybop.plot.contour(optim)

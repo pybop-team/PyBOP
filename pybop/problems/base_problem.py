@@ -93,7 +93,6 @@ class BaseProblem:
             self.domain = "Frequency [Hz]" if self.eis else "Time [s]"
 
         # If model.solver is IDAKLU, set output vars for improved performance
-        self.output_vars = tuple(self.signal + self.additional_variables)
         if self._model is not None and isinstance(self._model.solver, IDAKLUSolver):
             self._solver_copy = self._model.solver.copy()
             self._model.solver = IDAKLUSolver(
@@ -103,11 +102,8 @@ class BaseProblem:
                 root_tol=self._solver_copy.root_tol,
                 extrap_tol=self._solver_copy.extrap_tol,
                 options=self._solver_copy._options,  # noqa: SLF001
-                output_variables=self.output_vars,
+                output_variables=tuple(self.output_variables),
             )
-
-        # to store pybamm solution objects
-        self._solution = None
 
     def set_initial_state(self, initial_state: Optional[dict] = None):
         """
@@ -127,6 +123,10 @@ class BaseProblem:
     @property
     def n_outputs(self):
         return len(self.signal)
+
+    @property
+    def output_variables(self):
+        return list(set(self.signal + self.additional_variables))
 
     def evaluate(self, inputs: Inputs, eis=False):
         """
@@ -197,6 +197,10 @@ class BaseProblem:
             return self._model
 
     @property
+    def sensitivities_available(self):
+        return self._model.sensitivities_available
+
+    @property
     def target(self):
         return self._target
 
@@ -213,5 +217,5 @@ class BaseProblem:
         return self._dataset
 
     @property
-    def solution(self):
-        return self._solution
+    def pybamm_solution(self):
+        return self.model.pybamm_solution if self.model is not None else None
