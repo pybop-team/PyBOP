@@ -160,23 +160,18 @@ class Observer(BaseProblem):
             The model output y(t) simulated with given inputs.
         """
         inputs = self.parameters.verify(inputs)
-
         self.reset(inputs)
 
         output = {}
-        ys = []
-        if self._dataset is not None:
-            for signal in self.signal:
-                ym = self._target[signal]
-                for i, t in enumerate(self._domain_data):
-                    self.observe(t, ym[i])
-                    ys.append(self.get_current_measure())
-                output[signal] = np.vstack(ys)
-        else:
-            for signal in self.signal:
-                for t in self._domain_data:
-                    self.observe(t)
-                    ys.append(self.get_current_measure())
-                output[signal] = np.vstack(ys)
+        has_dataset = self._dataset is not None
+        for signal in self.signal:
+            ys = []
+            target = self._target[signal] if has_dataset else None
+
+            for i, t in enumerate(self._domain_data):
+                self.observe(t, target[i] if has_dataset else None)
+                ys.extend(self.get_current_measure())
+
+            output[signal] = np.asarray(ys).reshape(-1)
 
         return output

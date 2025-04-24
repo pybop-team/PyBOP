@@ -77,7 +77,9 @@ class BaseSciPyOptimiser(BaseOptimiser):
 
         # Choose method to evaluate
         def fun(x):
-            return self.cost_call(x, calculate_grad=self._needs_sensitivities)
+            return self.call_cost(
+                x, cost=self.cost, calculate_grad=self._needs_sensitivities
+            )
 
         # Create evaluator object
         self.evaluator = SciPyEvaluator(fun)
@@ -98,6 +100,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
             n_iterations=nit,
             scipy_result=result,
             time=total_time,
+            message=result.message,
         )
 
 
@@ -367,7 +370,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
     """
 
     def __init__(self, cost, **optimiser_kwargs):
-        optimiser_options = dict(strategy="best1bin", popsize=15)
+        optimiser_options = dict(strategy="best1bin")
         optimiser_options.update(**optimiser_kwargs)
         super().__init__(cost, **optimiser_options)
 

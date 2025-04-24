@@ -40,14 +40,14 @@ dataset = pybop.Dataset(
 # Generate problem, cost function, and optimisation class
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.SumSquaredError(problem)
-optim = pybop.CMAES(cost, max_iterations=40)
+optim = pybop.CMAES(cost, max_iterations=40, verbose=True)
 
 # Run the optimisation
 results = optim.run()
 print("True parameters:", parameters.true_value())
 
 # Plot the timeseries output
-pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot.convergence(optim)

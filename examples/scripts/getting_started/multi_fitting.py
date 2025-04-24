@@ -71,8 +71,8 @@ results = optim.run()
 print("True parameters:", parameters.true_value())
 
 # Plot the timeseries output
-pybop.plot.quick(problem_1, problem_inputs=results.x, title="Optimised Comparison")
-pybop.plot.quick(problem_2, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem_1, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem_2, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot.convergence(optim)

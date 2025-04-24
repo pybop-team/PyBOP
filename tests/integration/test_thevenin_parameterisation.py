@@ -32,7 +32,8 @@ class TestTheveninParameterisation:
                 "R1 [Ohm]": self.ground_truth[1],
             }
         )
-        return pybop.empirical.Thevenin(parameter_set=parameter_set)
+        solver = IDAKLUSolver()
+        return pybop.empirical.Thevenin(parameter_set=parameter_set, solver=solver)
 
     @pytest.fixture
     def parameters(self):
@@ -40,13 +41,13 @@ class TestTheveninParameterisation:
             pybop.Parameter(
                 "R0 [Ohm]",
                 prior=pybop.Gaussian(0.05, 0.01),
-                bounds=[0, 0.1],
+                bounds=[1e-6, 0.1],
                 transformation=pybop.LogTransformation(),
             ),
             pybop.Parameter(
                 "R1 [Ohm]",
                 prior=pybop.Gaussian(0.05, 0.01),
-                bounds=[0, 0.1],
+                bounds=[1e-6, 0.1],
                 transformation=pybop.LogTransformation(),
             ),
         )
@@ -70,19 +71,18 @@ class TestTheveninParameterisation:
     @pytest.mark.parametrize(
         "optimiser, method",
         [
-            (pybop.SciPyMinimize, "trust-constr"),
             (pybop.SciPyMinimize, "SLSQP"),
+            (pybop.SciPyMinimize, "trust-constr"),
             (pybop.SciPyMinimize, "L-BFGS-B"),
             (pybop.SciPyMinimize, "COBYLA"),
             (pybop.GradientDescent, ""),
             (pybop.PSO, ""),
         ],
     )
-    def test_optimisers_on_simple_model(
+    def test_optimisers_on_thevenin_model(
         self, model, parameters, dataset, cost_class, optimiser, method
     ):
         # Define the cost to optimise
-        model.solver = IDAKLUSolver()
         problem = pybop.FittingProblem(model, parameters, dataset)
         cost = cost_class(problem)
 
@@ -106,7 +106,7 @@ class TestTheveninParameterisation:
 
         # Assertions
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
-            if optim.minimising:
+            if results.minimising:
                 assert initial_cost > results.final_cost
             else:
                 assert initial_cost < results.final_cost
@@ -127,5 +127,5 @@ class TestTheveninParameterisation:
                 ),
             ]
         )
-        sim = model.predict(experiment=experiment)
-        return sim
+        sol = model.predict(experiment=experiment)
+        return sol

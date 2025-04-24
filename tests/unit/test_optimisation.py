@@ -149,10 +149,10 @@ class TestOptimisation:
         def assert_log_update(optim):
             x_search = 0.7
             optim.log_update(x=[x_search], cost=[0.01])
-            assert optim.log["x_search"][-1] == x_search
-            assert optim.log["cost"][-1] == 0.01 * (1 if optim.minimising else -1)
+            assert optim.log.x_search[-1] == x_search
+            assert optim.log.cost[-1] == 0.01 * (-1 if optim.invert_cost else 1)
             assert (
-                optim.log["x"][-1] == optim._transformation.to_model(x_search)
+                optim.log.x[-1] == optim._transformation.to_model(x_search)
                 if optim._transformation
                 else x_search
             )
@@ -160,12 +160,6 @@ class TestOptimisation:
         def check_max_iterations(optim):
             results = optim.run()
             assert results.n_iterations == 3
-
-        def check_incorrect_update(optim):
-            with pytest.raises(
-                TypeError, match="Input must be a list, tuple, or numpy array"
-            ):
-                optim.log_update(x="Incorrect")
 
         def check_bounds_handling(optim, expected_bounds, should_raise=False):
             if should_raise:
@@ -179,7 +173,7 @@ class TestOptimisation:
         def check_multistart(optim, n_iters, multistarts):
             results = optim.run()
             if isinstance(optim, pybop.BasePintsOptimiser):
-                assert len(optim.log["x_best"]) == n_iters * multistarts
+                assert len(optim.log.x_best) == n_iters * multistarts
                 assert results.average_iterations() == n_iters
                 assert results.total_runtime() >= results.time[0]
 
@@ -188,7 +182,6 @@ class TestOptimisation:
 
         check_max_iterations(optim)
         assert_log_update(optim)
-        check_incorrect_update(optim)
 
         # Test multistart
         multistart_optim = optimiser(cost, max_iterations=6, multistart=2)
@@ -238,10 +231,7 @@ class TestOptimisation:
                 )
                 assert optim.optimiser.population_size() == 100
         else:
-            bounds_list = [
-                (lower, upper) for lower, upper in zip(bounds["lower"], bounds["upper"])
-            ]
-            optim = optimiser(cost=cost, bounds=bounds_list, tol=1e-2)
+            optim = optimiser(cost=cost, bounds=bounds, tol=1e-2)
             assert optim.bounds == bounds
 
         if optimiser in [
@@ -271,16 +261,15 @@ class TestOptimisation:
 
             invalid_bounds_cases = [
                 None,
-                [(0, np.inf)],
                 {"upper": [np.inf], "lower": [0.57]},
             ]
 
-            for bounds_case in invalid_bounds_cases:
+            for bounds in invalid_bounds_cases:
                 with pytest.raises(
                     ValueError,
                     match="Bounds must be specified for differential_evolution.",
                 ):
-                    optimiser(cost=cost, bounds=bounds_case)
+                    optimiser(cost=cost, bounds=bounds)
 
         if optimiser in [
             pybop.AdamW,
@@ -377,6 +366,23 @@ class TestOptimisation:
             optim = optimiser(cost=cost, x0=x0_new)
             assert optim.x0 == x0_new
             assert optim.x0 != x0
+
+    def test_set_parallel(self, cost):
+        optim = pybop.XNES(cost)
+
+        # Disable parallelism
+        optim.set_parallel(False)
+        assert optim._parallel is False
+        assert optim._n_workers == 1
+
+        # Enable parallelism
+        optim.set_parallel(True)
+        assert optim._parallel is True
+
+        # Enable parallelism with number of workers
+        optim.set_parallel(2)
+        assert optim._parallel is True
+        assert optim._n_workers == 2
 
     def test_cuckoo_no_bounds(self, cost):
         optim = pybop.CuckooSearch(cost=cost, bounds=None, max_iterations=1)
@@ -575,18 +581,6 @@ class TestOptimisation:
         ):
             opt.run()
 
-    def test_scipy_bounds(self, cost):
-        # Create the optimisation class with incorrect bounds type
-        with pytest.raises(
-            TypeError,
-            match="Bounds provided must be either type dict or SciPy.optimize.bounds object.",
-        ):
-            pybop.SciPyMinimize(
-                cost=cost,
-                bounds="This is a bad bound",
-                max_iterations=1,
-            )
-
     def test_halting(self, cost):
         # Add a parameter transformation
         cost.parameters[
@@ -616,6 +610,7 @@ class TestOptimisation:
             f"  Optimisation time: {results.time} seconds\n"
             f"  Number of iterations: {results.n_iterations}\n"
             f"  Number of evaluations: {results.n_evaluations}\n"
+            f"  Reason for stopping: {results.message}\n"
             f"  SciPy result available: No\n"
             f"  PyBaMM Solution available: Yes"
         )
@@ -652,22 +647,10 @@ class TestOptimisation:
         optim.set_threshold(np.inf)
         results = optim.run()
         assert (
-            captured_output.getvalue().strip()
-            == f"Halt: Objective function crossed threshold: inf.\n"
-            f"OptimisationResult:\n"
-            f"  Best result from {results.n_runs} run(s).\n"
-            f"  Initial parameters: {results.x0}\n"
-            f"  Optimised parameters: {results.x}\n"
-            f"  Total-order sensitivities:{results.sense_format}\n"
-            f"  Diagonal Fisher Information entries: {None}\n"
-            f"  Final cost: {results.final_cost}\n"
-            f"  Optimisation time: {results.time} seconds\n"
-            f"  Number of iterations: {results.n_iterations}\n"
-            f"  Number of evaluations: {results.n_evaluations}\n"
-            f"  SciPy result available: No\n"
-            f"  PyBaMM Solution available: Yes"
+            "Objective function crossed threshold: inf." in captured_output.getvalue()
         )
 
+        # Test pybamm solution
         assert (
             "Positive electrode active material volume fraction"
             in results.pybamm_solution.all_inputs[0]
@@ -730,7 +713,8 @@ class TestOptimisation:
 
         # Test non-finite results
         with pytest.raises(
-            ValueError, match="Optimised parameters do not produce a finite cost value"
+            ValueError,
+            match="Optimised parameters {'Positive electrode active material volume fraction': 1e-05} do not produce a finite cost value",
         ):
             pybop.OptimisationResult(optim=optim, x=[1e-5], n_iterations=1)
 

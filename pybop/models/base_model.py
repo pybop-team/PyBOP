@@ -481,7 +481,7 @@ class BaseModel:
         ):
             raise ValueError("These parameter values are infeasible.")
 
-        self._pybamm_solution = self.solver.solve(
+        self._pybamm_solution = self._solver.solve(
             self._built_model,
             inputs=inputs,
             t_eval=[t_eval[0], t_eval[-1]]

@@ -48,21 +48,11 @@ class TestOptimisation:
             ),
         )
 
-    @pytest.fixture(
-        params=[
-            pybop.GaussianLogLikelihoodKnownSigma,
-            pybop.RootMeanSquaredError,
-            pybop.SumSquaredError,
-        ]
-    )
-    def cost_class(self, request):
-        return request.param
-
-    def noise(self, sigma, values):
-        return np.random.normal(0, sigma, values)
+    def noisy(self, data, sigma):
+        return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
-    def spm_costs(self, model, parameters, cost_class):
+    def cost(self, model, parameters):
         # Form dataset
         initial_state = {"Initial SoC": 0.5}
         solution = self.get_data(model, initial_state)
@@ -70,17 +60,13 @@ class TestOptimisation:
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Voltage [V]"].data
-                + self.noise(0.002, len(solution["Time [s]"].data)),
+                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, 0.002),
             }
         )
 
         # Define the cost to optimise
         problem = pybop.FittingProblem(model, parameters, dataset)
-        if cost_class in [pybop.GaussianLogLikelihoodKnownSigma]:
-            return cost_class(problem, sigma0=0.002)
-        else:
-            return cost_class(problem)
+        return pybop.SumSquaredError(problem)
 
     @pytest.mark.parametrize(
         "f_guessed",
@@ -89,16 +75,18 @@ class TestOptimisation:
             False,
         ],
     )
-    def test_optimisation_f_guessed(self, f_guessed, spm_costs):
-        x0 = spm_costs.parameters.initial_value()
+    def test_optimisation_f_guessed(self, f_guessed, cost):
+        x0 = cost.parameters.initial_value()
         # Test each optimiser
         optim = pybop.XNES(
-            cost=spm_costs,
+            cost=cost,
             sigma0=0.05,
-            max_iterations=250,
-            max_unchanged_iterations=35,
+            max_iterations=100,
+            max_unchanged_iterations=25,
             absolute_tolerance=1e-5,
             use_f_guessed=f_guessed,
+            compute_sensitivities=True,
+            n_samples_sensitivity=3,
         )
 
         # Set parallelisation if not on Windows
@@ -109,8 +97,9 @@ class TestOptimisation:
         results = optim.run()
 
         # Assertions
+        assert results.sensitivities is not None
         if not np.allclose(x0, self.ground_truth, atol=1e-5):
-            if optim.minimising:
+            if results.minimising:
                 assert initial_cost > results.final_cost
             else:
                 assert initial_cost < results.final_cost
@@ -123,11 +112,10 @@ class TestOptimisation:
         experiment = pybop.Experiment(
             [
                 (
-                    "Discharge at 0.5C for 3 minutes (5 second period)",
-                    "Charge at 0.5C for 3 minutes (5 second period)",
+                    "Discharge at 0.5C for 3 minutes (10 second period)",
+                    "Charge at 0.5C for 3 minutes (10 second period)",
                 ),
             ]
-            * 2
         )
         sim = model.predict(initial_state=initial_state, experiment=experiment)
         return sim

@@ -70,15 +70,15 @@ class TestEISParameterisation:
     def cost(self, request):
         return request.param
 
-    def noise(self, sigma, values):
+    def noisy(self, data, sigma):
         # Generate real part noise
-        real_noise = np.random.normal(0, sigma, values)
+        real_noise = np.random.normal(0, sigma, len(data))
 
         # Generate imaginary part noise
-        imag_noise = np.random.normal(0, sigma, values)
+        imag_noise = np.random.normal(0, sigma, len(data))
 
         # Combine them into a complex noise
-        return real_noise + 1j * imag_noise
+        return data + real_noise + 1j * imag_noise
 
     @pytest.fixture(
         params=[
@@ -103,8 +103,7 @@ class TestEISParameterisation:
             {
                 "Frequency [Hz]": f_eval,
                 "Current function [A]": np.ones(n_frequency) * 0.0,
-                "Impedance": solution["Impedance"]
-                + self.noise(self.sigma0, len(solution["Impedance"])),
+                "Impedance": self.noisy(solution["Impedance"], self.sigma0),
             }
         )
 
@@ -121,7 +120,7 @@ class TestEISParameterisation:
             cost = cost(
                 pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
             )
-        elif cost in [pybop.SumofPower, pybop.Minkowski]:
+        elif cost in [pybop.SumOfPower, pybop.Minkowski]:
             cost = cost(problem, p=2)
         else:
             cost = cost(problem)
@@ -129,12 +128,16 @@ class TestEISParameterisation:
         # Construct optimisation object
         common_args = {
             "cost": cost,
-            "max_iterations": 250,
+            "max_iterations": 100,
             "absolute_tolerance": 1e-6,
             "max_unchanged_iterations": 35,
             "sigma0": [0.05, 0.05, 1e-3]
             if isinstance(cost, pybop.GaussianLogLikelihood)
             else 0.02,
+            "polish": False
+            if isinstance(optimiser, pybop.SciPyDifferentialEvolution)
+            else None,
+            "population_size": 4,
         }
 
         # Create optimiser
@@ -160,7 +163,7 @@ class TestEISParameterisation:
         # Assert on identified values, without sigma for GaussianLogLikelihood
         # as the sigma values are small (5e-4), this is a difficult identification process
         # and requires a high number of iterations, and parameter dependent step sizes.
-        if optim.minimising:
+        if results.minimising:
             assert initial_cost > results.final_cost
         else:
             assert initial_cost < results.final_cost

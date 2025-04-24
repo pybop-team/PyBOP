@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 from pybamm import IDAKLUJax, SolverError
@@ -95,9 +95,15 @@ class FittingProblem(BaseProblem):
                 initial_state=self.initial_state,
             )
 
+        self.error_out = {var: self.failure_output for var in self.output_variables}
+        self.error_sense = {
+            param: {var: self.failure_output for var in self.output_variables}
+            for param in self.parameters.keys()
+        }
+
     def set_initial_state(self, initial_state: Optional[dict] = None):
         """
-        Set the initial state to be applied to evaluations of the problem.
+        Set the initial state to be applied for every problem evaluation.
 
         Parameters
         ----------
@@ -119,7 +125,12 @@ class FittingProblem(BaseProblem):
 
         self.initial_state = initial_state
 
-    def evaluate(self, inputs: Inputs) -> dict[str, np.ndarray[np.float64]]:
+    def evaluate(
+        self, inputs: Inputs, eis=False
+    ) -> Union[
+        dict[str, np.ndarray],
+        tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]],
+    ]:
         """
         Evaluate the model with the given parameters and return the signal.
 
@@ -130,8 +141,9 @@ class FittingProblem(BaseProblem):
 
         Returns
         -------
-        y : np.ndarray
-            The simulated model output y(t) for self.eis == False, and y(ω) for self.eis == True for the given inputs.
+        dict[str, np.ndarray[np.float64]]
+            The simulated model output y(t) for self.eis == False, and y(ω) for self.eis == True
+            for the given inputs.
         """
         inputs = self.parameters.verify(inputs)
         if self.eis:
@@ -141,7 +153,10 @@ class FittingProblem(BaseProblem):
 
     def _evaluate(
         self, func, inputs, calculate_grad=False
-    ) -> dict[str, np.ndarray[np.float64]]:
+    ) -> Union[
+        dict[str, np.ndarray],
+        tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]],
+    ]:
         """
         Perform simulation using the specified method and handle exceptions.
 
@@ -154,8 +169,9 @@ class FittingProblem(BaseProblem):
 
         Returns
         -------
-        dict[str, np.ndarray[np.float64]]
-            The simulated model output.
+        dict[str, np.ndarray[np.float64]] or tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]]
+            The simulation result y(t) and, optionally, the sensitivities dy/dx(t) for each
+            parameter x and signal y.
         """
         try:
             if isinstance(self.model.solver, IDAKLUJax):
@@ -163,30 +179,38 @@ class FittingProblem(BaseProblem):
                     self.domain_data, inputs
                 )  # TODO: Add initial_state capabilities
             else:
-                sol = func(
-                    inputs,
-                    self._domain_data,
-                    initial_state=self.initial_state,
-                )
+                sol = func(inputs, self._domain_data, initial_state=self.initial_state)
         except (SolverError, ZeroDivisionError, RuntimeError, ValueError) as e:
             if isinstance(e, ValueError) and str(e) not in self.exception:
                 raise  # Raise the error if it doesn't match the expected list
-            error_out = {s: self.failure_output for s in self.signal}
-            return (error_out, self.failure_output) if calculate_grad else error_out
+            if calculate_grad:
+                return self.error_out, self.error_sense
+            return self.error_out
 
         if self.eis:
             return sol
 
         if isinstance(self.model.solver, IDAKLUJax):
             return {signal: sol[:, i] for i, signal in enumerate(self.signal)}
+
         if calculate_grad:
-            signals = self.signal + self.additional_variables
+            param_keys = [
+                p
+                for p in self.parameters.keys()
+                if p in sol[self.signal[0]].sensitivities.keys()
+            ]
             return (
-                {s: sol[s].data for s in signals},
-                {s: sol[s].sensitivities for s in signals},
+                {s: sol[s].data for s in self.output_variables},
+                {
+                    p: {
+                        s: sol[s].sensitivities[p].toarray().reshape(-1)
+                        for s in self.output_variables
+                    }
+                    for p in param_keys
+                },
             )
 
-        return {s: sol[s].data for s in (self.signal + self.additional_variables)}
+        return {s: sol[s].data for s in self.output_variables}
 
     def evaluateS1(self, inputs: Inputs):
         """
@@ -199,27 +223,10 @@ class FittingProblem(BaseProblem):
 
         Returns
         -------
-        tuple[dict, np.ndarray]
-            A tuple containing the simulation result y(t) as a dictionary and the sensitivities
-            dy/dx(t) evaluated with given inputs.
+        tuple[dict[str, np.ndarray[np.float64]], dict[str, dict[str, np.ndarray]]]
+            A tuple containing the simulation result y(t) and the sensitivities dy/dx(t)
+            for each parameter x and signal y evaluated with the given inputs.
         """
         inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(inputs.values()))
-        y, sens = self._evaluate(self._model.simulateS1, inputs, calculate_grad=True)
-
-        if not any([np.isfinite(y[s]).any() for s in self.signal]):
-            return y, sens
-
-        # Extract the sensitivities for all signals at once
-        param_keys = self.parameters.keys()
-        dy = np.stack(
-            [
-                np.column_stack(
-                    [sens[signal][key].toarray()[:, 0] for key in param_keys]
-                )
-                for signal in self.signal
-            ],
-            axis=1,
-        )
-
-        return y, dy
+        return self._evaluate(self._model.simulateS1, inputs, calculate_grad=True)
