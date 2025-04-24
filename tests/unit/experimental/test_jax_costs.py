@@ -17,8 +17,7 @@ class TestJaxCosts:
 
     @pytest.fixture
     def model(self, ground_truth):
-        solver = pybamm.IDAKLUSolver()
-        model = pybop.lithium_ion.SPM(solver=solver)
+        model = pybop.lithium_ion.SPM()
         model.parameter_set["Negative electrode active material volume fraction"] = (
             ground_truth
         )

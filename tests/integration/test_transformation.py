@@ -1,7 +1,6 @@
 import itertools
 
 import numpy as np
-import pybamm
 import pytest
 
 import pybop
@@ -47,8 +46,7 @@ class TestTransformation:
                 "R1 [Ohm]": self.ground_truth[1],
             }
         )
-        solver = pybamm.IDAKLUSolver()
-        return pybop.empirical.Thevenin(parameter_set=parameter_set, solver=solver)
+        return pybop.empirical.Thevenin(parameter_set=parameter_set)
 
     @pytest.fixture
     def parameters(self, transformation_r0, transformation_r1):
