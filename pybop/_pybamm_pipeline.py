@@ -29,7 +29,6 @@ class PybammPipeline:
         t_start: np.number = 0,
         t_end: np.number = 1,
         t_interp: np.ndarray = None,
-        # rebuild_parameters: list[str] = None,
     ):
         """
         Arguments
@@ -72,9 +71,19 @@ class PybammPipeline:
         }
         self._submesh_types = model.default_submesh_types
         self._built_model = self._model
-        # self.build(params)
+        self._init_build()
 
-    def rebuild(self, params: np.ndarray) -> None:
+    def _init_build(self) -> None:
+        """
+        The initial build process, useful to determine if
+        rebuilding will be required.
+        """
+        model = self._model.new_copy()
+        self._parameter_values.process_geometry(self._geometry)
+        self._parameter_values.process_model(model)
+        self.requires_rebuild = self._parameters_require_rebuild(self._geometry)
+
+    def rebuild(self, params: Inputs) -> None:
         """
         Build the PyBaMM pipeline using the given parameter_values.
         """
@@ -88,8 +97,9 @@ class PybammPipeline:
             raise ValueError(
                 f"Expected {len(self._parameter_names)} parameters, but got {len(params)}."
             )
-        for name, value in zip(self._parameter_names, params):
-            self._parameter_values[name] = value
+
+        for key, value in params:
+            self._parameter_values[key] = value
 
         self.build()
 
@@ -100,7 +110,6 @@ class PybammPipeline:
 
         model = self._model.new_copy()
         geometry = copy(self._geometry)  # copy?
-        self.requires_rebuild = self._parameters_require_rebuild(geometry)
         self._parameter_values.process_geometry(geometry)
         self._parameter_values.process_model(model)
 
@@ -135,7 +144,7 @@ class PybammPipeline:
 
     def _parameters_require_rebuild(self, geometry) -> bool:
         """
-        Checks whether the parameter values required be rebuilt.
+        Checks whether the parameter values required a rebuild.
         """
 
         try:

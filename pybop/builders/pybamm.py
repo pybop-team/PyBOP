@@ -45,15 +45,6 @@ class Pybamm(builders.BaseBuilder):
     def add_parameter(self, parameter: Parameter) -> None:
         self._pybop_parameters.add(parameter)
 
-    def _requires_rebuild(self, built_model: pybamm.BaseModel) -> bool:
-        solver = pybamm.CasadiSolver(mode="safe", atol=1e-6, rtol=1e-3)
-        try:
-            solver.solve(built_model, t_eval=[0, 1])
-        except pybamm.SolverError:  # Change to ValueError (i3649)
-            # If the solver fails, it indicates that the model needs to be rebuilt
-            return True
-        return False
-
     def build(self) -> PybammProblem:
         """
         Build the Pybamm Problem.
@@ -87,10 +78,6 @@ class Pybamm(builders.BaseBuilder):
             for cost in self._costs:
                 cost.add_to_model(model, param)
 
-            # set input parameters
-            for parameter in self._pybop_parameters:
-                param.update({parameter.name: "[input]"})
-
             # Construct the pipeline
             pipeline = PybammPipeline(
                 model,
@@ -98,18 +85,22 @@ class Pybamm(builders.BaseBuilder):
                 self._solver[i],
             )
 
+            if not pipeline.requires_rebuild:
+                # set input parameters
+                for parameter in self._pybop_parameters:
+                    param.update({parameter.name: "[input]"})
+
             # Build the pipeline, determine if the parameters require rebuilding
             pipeline.build()
-            requires_rebuild = self._requires_rebuild(pipeline.built_model)
 
             # Add to the parameter names attr if rebuild required
-            if requires_rebuild:
+            if pipeline.requires_rebuild:
                 pipeline.parameter_names = self._pybop_parameters.keys()
             self._pipeline.append(pipeline)
 
         return PybammProblem(
             pybamm_pipeline=self._pipeline,
-            param_names=self._pybop_parameters.keys(),
+            pybop_params=self._pybop_parameters,
             cost_names=self._cost_names,
             simulation_weights=self._simulation_weights,
             cost_weights=self._cost_weights,

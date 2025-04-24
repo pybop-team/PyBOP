@@ -2,7 +2,7 @@ from typing import Union
 
 import numpy as np
 
-from pybop import Inputs
+from pybop import Inputs, Parameters
 from pybop._pybamm_pipeline import PybammPipeline
 from pybop.problems.base_problem import Problem
 
@@ -15,12 +15,12 @@ class PybammProblem(Problem):
     def __init__(
         self,
         pybamm_pipeline: list[PybammPipeline],
-        param_names: list[str] = None,
+        pybop_params: Parameters = None,
         cost_names: list[str] = None,
         simulation_weights: Union[list, np.array] = None,
         cost_weights: Union[list, np.array] = None,
     ):
-        super().__init__(param_names=param_names)
+        super().__init__(pybop_params=pybop_params)
         self._pipeline = pybamm_pipeline
         self._cost_names = cost_names
         self._simulation_weights = simulation_weights
@@ -34,7 +34,7 @@ class PybammProblem(Problem):
 
         # rebuild the pipeline (if needed)
         for pipe in self._pipeline:
-            pipe.rebuild(self._params)
+            pipe.rebuild(self._params.as_dict())
 
     def run(self, inputs: Inputs = None) -> float:
         """
@@ -89,7 +89,7 @@ class PybammProblem(Problem):
                                 for cost_n in self._cost_names
                             ],
                         )
-                        for param_n in self._params
+                        for param_n in self._params.keys()
                     ]
                 )
             )

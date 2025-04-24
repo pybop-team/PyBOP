@@ -107,7 +107,7 @@ class TestProblem:
         builder.set_dataset(dataset)
         builder.add_simulation(first_model, parameter_values=parameter_values)
         builder.add_parameter(
-            pybop.Parameter("Separator thickness [m]", initial_value=1e-6)
+            pybop.Parameter("Negative electrode thickness [m]", initial_value=1e-6)
         )
         builder.add_parameter(
             pybop.Parameter("Positive electrode thickness [m]", initial_value=2e-6)

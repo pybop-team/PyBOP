@@ -1,5 +1,7 @@
 import numpy as np
 
+from pybop import Parameters
+
 
 class Problem:
     """
@@ -9,11 +11,11 @@ class Problem:
     using the `run` method.
     """
 
-    def __init__(self, param_names: list[str] = None):
-        if param_names is None:
-            param_names = []
-        self._params = None
-        self._param_names = param_names
+    def __init__(self, pybop_params: Parameters = None):
+        if pybop_params is None:
+            self._param_names = []
+        self._params = pybop_params
+        self._param_names = pybop_params.keys()
 
     def check_and_store_params(self, p: np.ndarray) -> None:
         """
@@ -27,7 +29,7 @@ class Problem:
             raise TypeError("Parameters must be a numpy array.")
         if not np.issubdtype(p.dtype, np.number):
             raise TypeError("Parameters must be a numeric numpy array.")
-        self._params = p
+        self._params.update(values=p)
 
     def check_set_params_called(self) -> None:
         """
