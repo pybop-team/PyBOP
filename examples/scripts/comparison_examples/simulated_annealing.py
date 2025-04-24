@@ -1,5 +1,4 @@
 import numpy as np
-import pybamm
 
 import pybop
 
@@ -37,7 +36,6 @@ dataset = pybop.Dataset(
 )
 
 # Generate problem, cost function, and optimisation class
-model.solver = pybamm.IDAKLUSolver()
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.RootMeanSquaredError(problem)
 optim = pybop.SimulatedAnnealing(

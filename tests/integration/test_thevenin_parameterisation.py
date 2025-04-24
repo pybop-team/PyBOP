@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from pybamm import IDAKLUSolver
 
 import pybop
 
@@ -32,8 +31,7 @@ class TestTheveninParameterisation:
                 "R1 [Ohm]": self.ground_truth[1],
             }
         )
-        solver = IDAKLUSolver()
-        return pybop.empirical.Thevenin(parameter_set=parameter_set, solver=solver)
+        return pybop.empirical.Thevenin(parameter_set=parameter_set)
 
     @pytest.fixture
     def parameters(self):

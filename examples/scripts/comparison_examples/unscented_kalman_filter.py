@@ -1,10 +1,11 @@
 import numpy as np
+from pybamm import CasadiSolver
 
 import pybop
 
 # Parameter set and model definition
 parameter_set = pybop.ParameterSet("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+model = pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=CasadiSolver())
 
 # Fitting parameters
 parameters = pybop.Parameters(
