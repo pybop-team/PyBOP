@@ -2,7 +2,7 @@ from typing import Union
 
 import numpy as np
 
-from pybop import Inputs, Parameters
+from pybop import Parameters
 from pybop._pybamm_pipeline import PybammPipeline
 from pybop.problems.base_problem import Problem
 
@@ -36,7 +36,7 @@ class PybammProblem(Problem):
         for pipe in self._pipeline:
             pipe.rebuild(self._params.as_dict())
 
-    def run(self, inputs: Inputs = None) -> float:
+    def run(self) -> float:
         """
         Evaluates the underlying simulation and cost function using the
         parameters set in the previous call to `set_params`.
@@ -49,7 +49,7 @@ class PybammProblem(Problem):
             sol = pipe.solve(inputs=self._params.as_dict())
 
             # extract and sum cost function values. These are assumed to all be scalar values
-            # (not to self: test this is true in tests....)
+            # (note to self: test this is true in tests....)
             cost.append(
                 np.dot(self._cost_weights, [sol[n].values[0] for n in self._cost_names])
             )

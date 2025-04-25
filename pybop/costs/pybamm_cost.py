@@ -38,4 +38,4 @@ class SumSquaredError(PybammCost):
 
     @staticmethod
     def parameters():
-        return [(None, None)]  # [("SumSquaredError", 0.0)]
+        return [(None, None)]
