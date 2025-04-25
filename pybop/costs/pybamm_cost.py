@@ -20,7 +20,7 @@ class PybammCost:
             param.update({parameter: default_value}, check_already_exists=False)
 
 
-class SumSquaredError(PybammCost):
+class PybammSumSquaredError(PybammCost):
     """
     A SumSquaredError cost implementation within Pybamm.
     """

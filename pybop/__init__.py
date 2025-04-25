@@ -123,7 +123,7 @@ from .costs._likelihoods import (
     LogPosterior,
 )
 from .costs._weighted_cost import WeightedCost
-from .costs.pybamm_cost import PybammCost, SumSquaredError
+from .costs.pybamm_cost import PybammCost, PybammSumSquaredError
 
 #
 # Problem Builder
