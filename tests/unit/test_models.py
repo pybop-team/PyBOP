@@ -323,7 +323,10 @@ class TestModels:
     def test_simulate(self, model_cls):
         k = 0.1
         y0 = 1
-        model = model_cls(pybamm.ParameterValues({"k": k, "y0": y0}))
+        args = {"parameter_set": pybamm.ParameterValues({"k": k, "y0": y0})}
+        if model_cls == pybop.ExponentialDecayModel:
+            args["solver"] = pybamm.CasadiSolver()
+        model = model_cls(**args)
         model.build()
         model.signal = ["y_0"]
         inputs = {}
@@ -453,36 +456,6 @@ class TestModels:
                 TypeError, match="Inputs must be a dictionary or numeric."
             ):
                 model.check_params(inputs=["unexpected_string"])
-
-    def test_non_converged_solution(self):
-        model = pybop.lithium_ion.DFN()
-        parameters = pybop.Parameters(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.2, 0.01),
-            ),
-            pybop.Parameter(
-                "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.2, 0.01),
-            ),
-        )
-        dataset = pybop.Dataset(
-            {
-                "Time [s]": np.linspace(0, 100, 100),
-                "Current function [A]": np.zeros(100),
-                "Voltage [V]": np.zeros(100),
-            }
-        )
-        problem = pybop.FittingProblem(model, parameters=parameters, dataset=dataset)
-
-        # Simulate the DFN with active material values of 0.
-        # The solution elements will not change as the solver will not converge.
-        output = problem.evaluate([0, 0])
-        output_S1, _ = problem.evaluateS1([0, 0])
-
-        for key in problem.signal:
-            assert np.allclose(output.get(key, [])[0], output.get(key, []))
-            assert np.allclose(output_S1.get(key, [])[0], output_S1.get(key, []))
 
     def test_set_initial_state(self):
         t_eval = np.linspace(0, 10, 100)

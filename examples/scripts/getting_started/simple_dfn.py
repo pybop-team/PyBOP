@@ -1,7 +1,6 @@
 import os
 
 import numpy as np
-import pybamm
 
 import pybop
 
@@ -11,10 +10,9 @@ dataset_path = os.path.join(
     current_dir, "../../data/synthetic/dfn_charge_discharge_75.csv"
 )
 
-# Define model and use high-performant solver for sensitivities
-solver = pybamm.IDAKLUSolver()
+# Define model
 parameter_set = pybop.ParameterSet("Chen2020")
-model = pybop.lithium_ion.DFN(parameter_set=parameter_set, solver=solver)
+model = pybop.lithium_ion.DFN(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -60,8 +58,8 @@ cost = pybop.RootMeanSquaredError(problem)
 optim = pybop.IRPropPlus(
     cost,
     verbose=True,
-    max_iterations=100,
-    max_unchanged_iterations=20,
+    max_iterations=60,
+    max_unchanged_iterations=15,
     compute_sensitivities=True,
     n_sensitivity_samples=64,  # Decrease samples for CI (increase for higher accuracy)
 )

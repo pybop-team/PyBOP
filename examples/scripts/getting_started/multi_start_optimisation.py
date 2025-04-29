@@ -1,5 +1,4 @@
 import numpy as np
-import pybamm
 
 import pybop
 
@@ -37,7 +36,6 @@ dataset = pybop.Dataset(
 )
 
 # Generate problem, cost function classes
-model.solver = pybamm.IDAKLUSolver(atol=1e-5, rtol=1e-5)
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.RootMeanSquaredError(problem)
 
