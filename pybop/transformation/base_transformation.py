@@ -19,7 +19,7 @@ class Transformation(ABC):
     References
     -----------
     .. [1] Erik Jorgensen and Asger Roer Pedersen. "How to Obtain Those Nasty Standard Errors From Transformed Data."
-           http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.47.9023
+           https://tinyurl.com/mrxjynbj
     .. [2] Kaare Brandt Petersen and Michael Syskind Pedersen. "The Matrix Cookbook." 2012.
 
     """
