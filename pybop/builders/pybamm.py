@@ -1,41 +1,37 @@
 import pybamm
 
-from pybop import Parameter, Parameters, builders
+from pybop import Parameter, Parameters, PybammProblem, builders
 from pybop._pybamm_pipeline import PybammPipeline
 from pybop.costs.pybamm_cost import PybammCost
-from pybop.problems.pybamm_problem import PybammProblem
 
 
 class Pybamm(builders.BaseBuilder):
     def __init__(self):
-        self._pybamm_models = []
+        self._pybamm_model = None
         self._costs = []
         self._cost_names = []
         self._dataset = None
         self._pybop_parameters = Parameters()
-        self._solver = []
-        self._parameter_values = []
-        self._rebuild_parameters = []
-        self._simulation_weights = []
+        self._solver = None
+        self._parameter_values = None
+        self._rebuild_parameters = None
         self._cost_weights = []
-        self._pipeline = []
+        self._pipeline = None
 
-    def add_simulation(
+    def set_simulation(
         self,
         pybamm_model: pybamm.BaseModel,
         parameter_values: pybamm.ParameterValues = None,
         solver: pybamm.BaseSolver = None,
-        weight: float = 1.0,
     ) -> None:
         """
         Adds a simulation for the optimisation problem.
         """
-        self._pybamm_models.append(pybamm_model.new_copy())
-        self._parameter_values.append(
+        self._pybamm_model = pybamm_model.new_copy()
+        self._parameter_values = (
             parameter_values or pybamm_model.default_parameter_values
         )
-        self._solver.append(solver or pybamm_model.default_solver)
-        self._simulation_weights.append(weight)
+        self._solver = solver or pybamm_model.default_solver
 
     def add_cost(self, cost: PybammCost, weight: float = 1.0) -> None:
         self._costs.append(cost)
@@ -47,62 +43,74 @@ class Pybamm(builders.BaseBuilder):
 
     def build(self) -> PybammProblem:
         """
-        Build the Pybamm Problem.
+        Builds the Pybamm problem given the provided objects.
+
+        This method requires the following attributes to be set:
+            - Dataset
+            - Pybamm model
+            - Cost(s)
+            - Pybop parameters
+
+        Returns
+        -------
+        Problem : PybammProblem
+            A problem instance for optimisation.
         """
 
         # Checks
-        if not len(self._simulation_weights) == len(self._pybamm_models):
-            raise ValueError(
-                "Number of simulation weights and the number of pybamm models do not match"
-            )
-
         if not len(self._cost_weights) == len(self._costs):
             raise ValueError(
                 "Number of cost weights and the number of costs do not match"
             )
 
-        # Proceed to building the pipeline(s)
-        for i, pybamm_model in enumerate(self._pybamm_models):
-            model = pybamm_model.new_copy()
-            param = self._parameter_values[i]
+        if self._pybamm_model is None:
+            raise ValueError("A Pybamm model needs to be provided before building.")
 
-            # Build pybamm if not already built
-            if not model._built:  # noqa: SLF001
-                model.build_model()
+        if self._costs is None:
+            raise ValueError("A cost must be provided before building.")
 
-            # Set the control variable
-            if self._dataset is not None:
-                self._set_control_variable()
+        if self._dataset is None:
+            raise ValueError("A dataset must be provided before building.")
 
-            # add costs
-            for cost in self._costs:
-                cost.add_to_model(model, param)
+        # Proceed to building the pipeline
+        model = self._pybamm_model
+        param = self._parameter_values
 
-            # Construct the pipeline
-            pipeline = PybammPipeline(
-                model,
-                param,
-                self._solver[i],
-            )
+        # Build pybamm if not already built
+        if not model._built:  # noqa: SLF001
+            model.build_model()
 
-            if not pipeline.requires_rebuild:
-                # set input parameters
-                for parameter in self._pybop_parameters:
-                    param.update({parameter.name: "[input]"})
+        # Set the control variable
+        if self._dataset is not None:
+            self._set_control_variable()
 
-            # Build the pipeline, determine if the parameters require rebuilding
-            pipeline.build()
+        # add costs
+        for cost in self._costs:
+            cost.add_to_model(model, param)
 
-            # Add to the parameter names attr if rebuild required
-            if pipeline.requires_rebuild:
-                pipeline.parameter_names = self._pybop_parameters.keys()
-            self._pipeline.append(pipeline)
+        # Construct the pipeline
+        pipeline = PybammPipeline(
+            model,
+            param,
+            self._solver,
+        )
+
+        if not pipeline.requires_rebuild:
+            # set input parameters
+            for parameter in self._pybop_parameters:
+                param.update({parameter.name: "[input]"})
+
+        # Build the pipeline, determine if the parameters require rebuilding
+        pipeline.build()
+
+        # Add to the parameter names attr if rebuild required
+        if pipeline.requires_rebuild:
+            pipeline.parameter_names = self._pybop_parameters.keys()
 
         return PybammProblem(
-            pybamm_pipeline=self._pipeline,
+            pybamm_pipeline=pipeline,
             pybop_params=self._pybop_parameters,
             cost_names=self._cost_names,
-            simulation_weights=self._simulation_weights,
             cost_weights=self._cost_weights,
         )
 
@@ -115,15 +123,14 @@ class Pybamm(builders.BaseBuilder):
         control = (
             self._dataset.control_variable
         )  # Add a control attr to dataset w/ catches
-        for parameter_values in self._parameter_values:
-            if control in parameter_values:
-                if control not in self._pybop_parameters.keys():
-                    control_interpolant = pybamm.Interpolant(
-                        self._dataset["Time [s]"],
-                        self._dataset[control],
-                        pybamm.t,
-                    )
-                    if control == "Current [A]":
-                        parameter_values["Current function [A]"] = control_interpolant
-                    else:
-                        parameter_values[control] = control_interpolant
+        if control in self._parameter_values:
+            if control not in self._pybop_parameters.keys():
+                control_interpolant = pybamm.Interpolant(
+                    self._dataset["Time [s]"],
+                    self._dataset[control],
+                    pybamm.t,
+                )
+                if control == "Current [A]":
+                    self._parameter_values["Current function [A]"] = control_interpolant
+                else:
+                    self._parameter_values[control] = control_interpolant

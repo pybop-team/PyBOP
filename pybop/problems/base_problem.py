@@ -41,7 +41,7 @@ class Problem:
             )
 
     @property
-    def params(self) -> np.ndarray:
+    def params(self) -> Parameters:
         """
         Returns the parameters set for the simulation and cost function.
         """

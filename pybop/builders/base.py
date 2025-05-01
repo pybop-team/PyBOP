@@ -6,8 +6,7 @@ from pybop.problems.base_problem import Problem
 
 class BaseBuilder(ABC):
     """
-    dataset : pybop.Dataset or dict, optional
-        The dataset to be used in the simulation construction.
+    A base class for building problems.
     """
 
     def set_dataset(self, dataset: Dataset):
@@ -18,9 +17,5 @@ class BaseBuilder(ABC):
         raise NotImplementedError
 
 
-# Add docstring
-# Add ABC implementation
+# Add docstrings
 # Add default methods
-# add_cost
-# set_dataset
-# set_simulation to `add_simulation` -> enable multi-simulation problems (dataset is applied with it, or default single dataset is used)

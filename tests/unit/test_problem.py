@@ -81,32 +81,7 @@ class TestProblem:
     def test_builder(self, first_model, parameter_values, experiment, dataset):
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.add_simulation(first_model, parameter_values=parameter_values)
-        builder.add_parameter(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction", initial_value=0.6
-            )
-        )
-        builder.add_parameter(
-            pybop.Parameter(
-                "Positive electrode active material volume fraction", initial_value=0.6
-            )
-        )
-        # builder.add_cost(pybop.costs.SumSquaredError())
-        problem = builder.build()
-
-        assert problem is not None
-        problem.set_params(np.array([0.6, 0.6]))
-        assert problem.run() is not None
-
-    def test_multisim_builder(
-        self, first_model, second_model, parameter_values, experiment, dataset
-    ):
-        builder = pybop.builders.Pybamm()
-        builder.set_dataset(dataset)
-        builder.add_simulation(first_model, parameter_values=parameter_values)
-        builder.add_simulation(second_model, parameter_values=parameter_values)
-
+        builder.set_simulation(first_model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter(
                 "Negative electrode active material volume fraction", initial_value=0.6
@@ -129,7 +104,7 @@ class TestProblem:
     ):
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.add_simulation(first_model, parameter_values=parameter_values)
+        builder.set_simulation(first_model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter("Negative electrode thickness [m]", initial_value=1e-6)
         )
@@ -143,7 +118,20 @@ class TestProblem:
         problem.set_params(np.array([0.6, 0.6]))
         assert problem.run() is not None
 
+    def test_pure_python_builder(self):
+        dataset = pybop.Dataset(
+            {"Time / s": np.linspace(0, 1, 10), "Current [A]": np.ones(10)}
+        )
+
+        def model(x):
+            return x**2
+
+        builder = pybop.builders.Python()
+        builder.add_func(model)
+        builder.set_dataset(dataset)
+
+        # builder.add_cost()
+        # problem = builder.build()
+
         # Assertion to add
-        # Multi-simulation building
         # Parameters
-        # Rebuild required construction
