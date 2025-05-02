@@ -87,7 +87,9 @@ from .models.base_model import Inputs
 #
 # Problem classes
 #
-from .problems.base_problem import BaseProblem
+from .problems.pybamm_problem import PybammProblem
+from .problems.python_problem import PythonProblem
+from .problems.base_problem_old import BaseProblem
 from .problems.fitting_problem import FittingProblem
 from .problems.multi_fitting_problem import MultiFittingProblem
 from .problems.design_problem import DesignProblem
@@ -123,6 +125,12 @@ from .costs._likelihoods import (
     LogPosterior,
 )
 from .costs._weighted_cost import WeightedCost
+from .costs.pybamm_cost import PybammCost, PybammSumSquaredError
+
+#
+# Problem Builder
+#
+from . import builders
 
 #
 # Experimental

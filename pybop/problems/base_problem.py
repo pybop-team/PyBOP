@@ -1,19 +1,21 @@
 import numpy as np
 
+from pybop import Parameters
+
 
 class Problem:
     """
-    Defines the a callable function `f(x)` that returns the evaluation
+    Defines a callable function `f(x)` that returns the evaluation
     of a cost function. The input `x` is a set of parameters that are
     passed via the `set_params` method. The cost function is evaluated
     using the `run` method.
     """
 
-    def __init__(self, param_names: list[str] = None):
-        if param_names is None:
-            param_names = []
-        self._params = None
-        self._param_names = param_names
+    def __init__(self, pybop_params: Parameters = None):
+        if pybop_params is None:
+            self._param_names = []
+        self._params = pybop_params
+        self._param_names = pybop_params.keys()
 
     def check_and_store_params(self, p: np.ndarray) -> None:
         """
@@ -27,7 +29,7 @@ class Problem:
             raise TypeError("Parameters must be a numpy array.")
         if not np.issubdtype(p.dtype, np.number):
             raise TypeError("Parameters must be a numeric numpy array.")
-        self._params = p
+        self._params.update(values=p)
 
     def check_set_params_called(self) -> None:
         """
@@ -39,7 +41,7 @@ class Problem:
             )
 
     @property
-    def params(self) -> np.ndarray:
+    def params(self) -> Parameters:
         """
         Returns the parameters set for the simulation and cost function.
         """
@@ -71,6 +73,6 @@ class Problem:
 
     def set_params(self, p: np.ndarray) -> None:
         """
-        sets the parameters for the simulation and cost function.
+        Sets the parameters for the simulation and cost function.
         """
         raise NotImplementedError

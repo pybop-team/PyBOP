@@ -19,7 +19,12 @@ class Dataset:
         The domain of the dataset. Defaults to "Time [s]".
     """
 
-    def __init__(self, data_dictionary, domain: Optional[str] = None):
+    def __init__(
+        self,
+        data_dictionary,
+        domain: Optional[str] = None,
+        control_variable: Optional[str] = None,
+    ):
         """
         Initialise a Dataset instance with data and a set of names.
         """
@@ -30,6 +35,7 @@ class Dataset:
             raise TypeError("The input to pybop.Dataset must be a dictionary.")
         self.data = data_dictionary
         self.domain = domain or "Time [s]"
+        self.control_variable = control_variable or "Current function [A]"
 
     def __repr__(self):
         """

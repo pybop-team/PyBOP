@@ -7,13 +7,12 @@ import pybop
 from pybop.costs.base_cost import BaseCost
 from pybop.parameters.parameter import Inputs, Parameter, Parameters
 from pybop.parameters.priors import BasePrior, JointLogPrior, Uniform
-from pybop.problems.base_problem import BaseProblem
+from pybop.problems.base_problem_old import BaseProblem
 
 
 class BaseLikelihood(BaseCost):
     """
     Base class for likelihoods.
-
     """
 
     def __init__(self, problem: BaseProblem):
