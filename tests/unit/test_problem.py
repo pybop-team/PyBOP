@@ -97,7 +97,9 @@ class TestProblem:
 
         assert problem is not None
         problem.set_params(np.array([0.6, 0.6]))
-        assert problem.run() is not None
+        assert problem._pipeline.solve() is not None
+        sol = problem._pipeline.solve(calculate_sensitivities=True)
+        assert sol.sensitivities
 
     def test_builder_with_rebuild_params(
         self, first_model, parameter_values, experiment, dataset
@@ -109,14 +111,16 @@ class TestProblem:
             pybop.Parameter("Negative electrode thickness [m]", initial_value=1e-6)
         )
         builder.add_parameter(
-            pybop.Parameter("Positive electrode thickness [m]", initial_value=2e-6)
+            pybop.Parameter("Positive particle radius [m]", initial_value=1e-14)
         )
         # builder.add_cost(pybop.costs.SumSquaredError())
         problem = builder.build()
 
         assert problem is not None
-        problem.set_params(np.array([0.6, 0.6]))
-        assert problem.run() is not None
+        problem.set_params(np.array([2e-6, 1e-14]))
+        assert problem._pipeline.solve() is not None
+        sol = problem._pipeline.solve(calculate_sensitivities=True)
+        assert not sol.sensitivities
 
     def test_pure_python_builder(self):
         dataset = pybop.Dataset(

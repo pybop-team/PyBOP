@@ -41,7 +41,7 @@ class PybammProblem(Problem):
         self.check_set_params_called()
 
         # run simulation
-        sol = self._pipeline.solve(inputs=self._params.as_dict())
+        sol = self._pipeline.solve()
 
         # extract and sum cost function values. These are assumed to all be scalar values
         # (note to self: test this is true in tests....)

@@ -1,9 +1,9 @@
-from copy import copy
+from copy import copy, deepcopy
 
 import numpy as np
 import pybamm
 
-from pybop import Inputs
+from pybop import Inputs, Parameters
 
 
 class PybammPipeline:
@@ -25,6 +25,7 @@ class PybammPipeline:
         self,
         model: pybamm.BaseModel,
         parameter_values: pybamm.ParameterValues = None,
+        pybop_parameters: Parameters = None,
         solver: pybamm.BaseSolver = None,
         t_start: np.number = 0,
         t_end: np.number = 1,
@@ -49,9 +50,10 @@ class PybammPipeline:
             The parameters that will be used to rebuild the model. If None, the model will not be rebuilt.
         """
         self.requires_rebuild = False
-        self._parameter_names = []  # rebuild_parameters
         self._model = model
         self._parameter_values = parameter_values
+        self._pybop_parameters = pybop_parameters
+        self._parameter_names = pybop_parameters.keys()
         self._geometry = model.default_geometry
         self._methods = model.default_spatial_methods
         if solver is None:
@@ -71,17 +73,62 @@ class PybammPipeline:
         }
         self._submesh_types = model.default_submesh_types
         self._built_model = self._model
-        self._init_build()
+        self.requires_rebuild = self._determine_rebuild()
 
-    def _init_build(self) -> None:
+    def _determine_rebuild(self) -> bool:
         """
         The initial build process, useful to determine if
         rebuilding will be required.
         """
         model = self._model.new_copy()
-        self._parameter_values.process_geometry(self._geometry)
-        self._parameter_values.process_model(model)
-        self.requires_rebuild = self._parameters_require_rebuild(self._geometry)
+        parameter_values = self._parameter_values.copy()
+        geometry = deepcopy(self._geometry)
+
+        # Apply "[input]"
+        for parameter in self._pybop_parameters:
+            parameter_values.update({parameter.name: "[input]"})
+
+        parameter_values.process_geometry(geometry)
+        parameter_values.process_model(model)
+        requires_rebuild = self._parameters_require_rebuild(geometry)
+        if not requires_rebuild:
+            self._parameter_values = parameter_values
+        return requires_rebuild
+
+    def _parameters_require_rebuild(self, geometry) -> bool:
+        """
+        Checks whether the parameter values required a rebuild.
+        This is reimplemented with only the required functionality.
+        """
+        try:
+            # Credit: PyBaMM Team
+            for domain in geometry:
+                for spatial_variable, spatial_limits in geometry[domain].items():
+                    # process tab information if using 1 or 2D current collectors
+                    if spatial_variable == "tabs":
+                        for _, position_info in spatial_limits.items():
+                            for _, sym in position_info.items():
+                                self._process_and_check(sym)
+                    else:
+                        for _, sym in spatial_limits.items():
+                            self._process_and_check(sym)
+        except ValueError:
+            return True
+        return False
+
+    def _process_and_check(self, sym):
+        """
+        Process and check the geometry for each parameter.
+        This is reimplemented as geometric parameters are not
+        currently supported as InputParameters within Pybop.
+        Credit: PyBaMM Team
+        """
+        new_sym = self._parameter_values.process_symbol(sym)
+        leaves = new_sym.post_order(filter=lambda node: len(node.children) == 0)
+        for leaf in leaves:
+            if not isinstance(leaf, pybamm.Scalar):
+                raise ValueError("Geometry parameters must be Scalars")
+        return new_sym
 
     def rebuild(self, params: Inputs) -> None:
         """
@@ -98,7 +145,7 @@ class PybammPipeline:
                 f"Expected {len(self._parameter_names)} parameters, but got {len(params)}."
             )
 
-        for key, value in params:
+        for key, value in params.items():
             self._parameter_values[key] = value
 
         self.build()
@@ -142,42 +189,7 @@ class PybammPipeline:
     def parameter_names(self, parameter_names):
         self._parameter_names = parameter_names
 
-    def _parameters_require_rebuild(self, geometry) -> bool:
-        """
-        Checks whether the parameter values required a rebuild.
-        """
-
-        try:
-            # Credit: PyBaMM Team
-            for domain in geometry:
-                for spatial_variable, spatial_limits in geometry[domain].items():
-                    # process tab information if using 1 or 2D current collectors
-                    if spatial_variable == "tabs":
-                        for _, position_info in spatial_limits.items():
-                            for _, sym in position_info.items():
-                                self._process_and_check(sym)
-                    else:
-                        for _, sym in spatial_limits.items():
-                            self._process_and_check(sym)
-        except ValueError:
-            return True
-        return False
-
-    def _process_and_check(self, sym):
-        """
-        Process and check the geometry for each parameter.
-        Credit: PyBaMM Team
-        """
-        new_sym = self._parameter_values.process_symbol(sym)
-        leaves = new_sym.post_order(filter=lambda node: len(node.children) == 0)
-        for leaf in leaves:
-            if not isinstance(leaf, pybamm.Scalar):
-                raise ValueError("Geometry parameters must be Scalars")
-        return new_sym
-
-    def solve(
-        self, inputs: Inputs = None, calculate_sensitivities: bool = False
-    ) -> pybamm.Solution:
+    def solve(self, calculate_sensitivities: bool = False) -> pybamm.Solution:
         """
         Run the simulation using the built model and solver.
 
@@ -190,7 +202,7 @@ class PybammPipeline:
         """
         return self._solver.solve(
             model=self._built_model,
-            inputs=inputs,
+            inputs=self._pybop_parameters.as_dict(),
             t_eval=[self._t_start, self._t_end],
             t_interp=self._t_interp,
             calculate_sensitivities=calculate_sensitivities,

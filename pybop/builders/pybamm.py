@@ -75,6 +75,7 @@ class Pybamm(builders.BaseBuilder):
         # Proceed to building the pipeline
         model = self._pybamm_model
         param = self._parameter_values
+        pybop_parameters = self._pybop_parameters
 
         # Build pybamm if not already built
         if not model._built:  # noqa: SLF001
@@ -92,20 +93,12 @@ class Pybamm(builders.BaseBuilder):
         pipeline = PybammPipeline(
             model,
             param,
+            pybop_parameters,
             self._solver,
         )
 
-        if not pipeline.requires_rebuild:
-            # set input parameters
-            for parameter in self._pybop_parameters:
-                param.update({parameter.name: "[input]"})
-
-        # Build the pipeline, determine if the parameters require rebuilding
+        # Build the pipeline
         pipeline.build()
-
-        # Add to the parameter names attr if rebuild required
-        if pipeline.requires_rebuild:
-            pipeline.parameter_names = self._pybop_parameters.keys()
 
         return PybammProblem(
             pybamm_pipeline=pipeline,
