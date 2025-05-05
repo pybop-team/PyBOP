@@ -277,6 +277,11 @@ class WeppnerHuggins(EChemBaseModel):
         # Skip the usual electrochemical checks for this scaled model
         return True
 
+    def apply_parameter_grouping(parameter_set, electrode):
+        return BaseWeppnerHuggins.apply_parameter_grouping(
+            parameter_set=parameter_set, electrode=electrode
+        )
+
 
 class SPDiffusion(EChemBaseModel):
     """
@@ -309,6 +314,11 @@ class SPDiffusion(EChemBaseModel):
     def _check_params(self, inputs, parameter_set, allow_infeasible_solutions):
         # Skip the usual electrochemical checks for this scaled model
         return True
+
+    def apply_parameter_grouping(parameter_set, electrode):
+        return BaseSPDiffusion.apply_parameter_grouping(
+            parameter_set=parameter_set, electrode=electrode
+        )
 
 
 class GroupedSPMe(EChemBaseModel):
@@ -350,6 +360,9 @@ class GroupedSPMe(EChemBaseModel):
     def _check_params(self, inputs, parameter_set, allow_infeasible_solutions):
         # Skip the usual electrochemical checks for this scaled model
         return True
+
+    def apply_parameter_grouping(parameter_set):
+        return BaseGroupedSPMe.apply_parameter_grouping(parameter_set=parameter_set)
 
     def _set_initial_state(self, initial_state: dict, inputs=None):
         """

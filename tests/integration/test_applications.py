@@ -2,9 +2,6 @@ import numpy as np
 import pytest
 
 import pybop
-from pybop.models.lithium_ion.basic_SP_diffusion import (
-    convert_physical_to_electrode_parameters,
-)
 
 
 class TestApplications:
@@ -45,7 +42,7 @@ class TestApplications:
 
     def test_interpolant(self, parameter_set, discharge_dataset):
         electrode = "positive"
-        parameter_set = convert_physical_to_electrode_parameters(
+        parameter_set = pybop.lithium_ion.SPDiffusion.apply_parameter_grouping(
             parameter_set, electrode=electrode
         )
         parameter_set["Electrode OCP [V]"] = pybop.Interpolant(
@@ -169,7 +166,7 @@ class TestApplications:
         )
 
     def test_gitt_pulse_fit(self, half_cell_model, pulse_data):
-        parameter_set = convert_physical_to_electrode_parameters(
+        parameter_set = pybop.lithium_ion.SPDiffusion.apply_parameter_grouping(
             half_cell_model.parameter_set, electrode="positive"
         )
         diffusion_time = parameter_set["Particle diffusion time scale [s]"]
@@ -179,7 +176,7 @@ class TestApplications:
         np.testing.assert_allclose(gitt_fit.results.x[0], diffusion_time, rtol=5e-2)
 
     def test_gitt_fit(self, half_cell_model, pulse_data):
-        parameter_set = convert_physical_to_electrode_parameters(
+        parameter_set = pybop.lithium_ion.SPDiffusion.apply_parameter_grouping(
             half_cell_model.parameter_set, electrode="positive"
         )
         diffusion_time = parameter_set["Particle diffusion time scale [s]"]

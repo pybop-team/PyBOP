@@ -1,10 +1,6 @@
 import numpy as np
 
 import pybop
-from pybop.models.lithium_ion.basic_SP_diffusion import (
-    convert_physical_to_electrode_parameters,
-)
-from pybop.models.lithium_ion.weppner_huggins import convert_physical_to_gitt_parameters
 
 # Define model
 parameter_set = pybop.ParameterSet("Xu2019")
@@ -46,7 +42,7 @@ for model_type in [pybop.lithium_ion.WeppnerHuggins, pybop.lithium_ion.SPDiffusi
 
     if model_type == pybop.lithium_ion.WeppnerHuggins:
         # Define parameter set
-        parameter_set = convert_physical_to_gitt_parameters(
+        parameter_set = pybop.lithium_ion.WeppnerHuggins.apply_parameter_grouping(
             model.parameter_set, electrode="positive"
         )
 
@@ -80,7 +76,7 @@ for model_type in [pybop.lithium_ion.WeppnerHuggins, pybop.lithium_ion.SPDiffusi
 
     else:
         # Define parameter set
-        parameter_set = convert_physical_to_electrode_parameters(
+        parameter_set = pybop.lithium_ion.SPDiffusion.apply_parameter_grouping(
             model.parameter_set, electrode="positive"
         )
 

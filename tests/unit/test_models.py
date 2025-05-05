@@ -7,11 +7,6 @@ import pytest
 
 import pybop
 from examples.standalone.model import ExponentialDecay as StandaloneDecay
-from pybop.models.lithium_ion.basic_SP_diffusion import (
-    convert_physical_to_electrode_parameters,
-)
-from pybop.models.lithium_ion.basic_SPMe import convert_physical_to_grouped_parameters
-from pybop.models.lithium_ion.weppner_huggins import convert_physical_to_gitt_parameters
 
 
 class TestModels:
@@ -570,14 +565,16 @@ class TestModels:
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 
         with pytest.raises(ValueError, match="Unrecognised electrode type"):
-            convert_physical_to_gitt_parameters(parameter_set, electrode="both")
+            pybop.lithium_ion.WeppnerHuggins.apply_parameter_grouping(
+                parameter_set, electrode="both"
+            )
 
-        gitt_parameter_set = convert_physical_to_gitt_parameters(
+        gitt_parameter_set = pybop.lithium_ion.WeppnerHuggins.apply_parameter_grouping(
             parameter_set, electrode="negative"
         )
         model = pybop.lithium_ion.WeppnerHuggins(parameter_set=gitt_parameter_set)
 
-        gitt_parameter_set = convert_physical_to_gitt_parameters(
+        gitt_parameter_set = pybop.lithium_ion.WeppnerHuggins.apply_parameter_grouping(
             parameter_set, electrode="positive"
         )
         model = pybop.lithium_ion.WeppnerHuggins(
@@ -595,11 +592,15 @@ class TestModels:
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
 
         with pytest.raises(ValueError, match="Unrecognised electrode type"):
-            convert_physical_to_electrode_parameters(parameter_set, electrode="both")
+            pybop.lithium_ion.SPDiffusion.apply_parameter_grouping(
+                parameter_set, electrode="both"
+            )
 
         for electrode in ["positive", "negative"]:
-            electrode_parameter_set = convert_physical_to_electrode_parameters(
-                parameter_set, electrode=electrode
+            electrode_parameter_set = (
+                pybop.lithium_ion.SPDiffusion.apply_parameter_grouping(
+                    parameter_set, electrode=electrode
+                )
             )
             model = pybop.lithium_ion.SPDiffusion(
                 parameter_set=electrode_parameter_set, electrode=electrode
@@ -616,7 +617,9 @@ class TestModels:
         parameter_set["Electrolyte diffusivity [m2.s-1]"] = 1.769e-10
         parameter_set["Electrolyte conductivity [S.m-1]"] = 0.9487
 
-        grouped_parameter_set = convert_physical_to_grouped_parameters(parameter_set)
+        grouped_parameter_set = pybop.lithium_ion.GroupedSPMe.apply_parameter_grouping(
+            parameter_set
+        )
         model = pybop.lithium_ion.GroupedSPMe(parameter_set=grouped_parameter_set)
 
         with pytest.raises(

@@ -1,9 +1,6 @@
 import numpy as np
 
 import pybop
-from pybop.models.lithium_ion.basic_SP_diffusion import (
-    convert_physical_to_electrode_parameters,
-)
 
 # Define model
 parameter_set = pybop.ParameterSet("Xu2019")
@@ -37,7 +34,7 @@ dataset = pybop.Dataset(
 )
 
 # Define parameter set
-parameter_set = convert_physical_to_electrode_parameters(
+parameter_set = pybop.lithium_ion.SPDiffusion.apply_parameter_grouping(
     model.parameter_set, electrode="positive"
 )
 

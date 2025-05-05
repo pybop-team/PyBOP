@@ -251,69 +251,73 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
     def default_spatial_methods(self):
         return {"particle": pybamm.FiniteVolume()}
 
+    @staticmethod
+    def apply_parameter_grouping(parameter_set, electrode) -> dict:
+        """
+        A function to create an electrode parameter set from a standard
+        PyBaMM parameter set.
 
-def convert_physical_to_electrode_parameters(parameter_set, electrode) -> dict:
-    """
-    A function to create an electrode parameter set from a standard
-    PyBaMM parameter set.
+        Parameters
+        ----------
+        parameter_set : Union[dict, pybop.ParameterSet, pybamm.ParameterValues]
+            A dict-like object containing the parameter values.
+        electrode : str
+            Either "positive" or "negative" for the type of electrode.
 
-    Parameters
-    ----------
-    parameter_set : Union[dict, pybop.ParameterSet, pybamm.ParameterValues]
-        A dict-like object containing the parameter values.
-    electrode : str
-        Either "positive" or "negative" for the type of electrode.
+        Returns
+        -------
+        dict
+            A dictionary of the grouped parameters.
+        """
+        parameter_set = ParameterSet.to_pybamm(parameter_set)
 
-    Returns
-    -------
-    dict
-        A dictionary of the grouped parameters.
-    """
-    parameter_set = ParameterSet.to_pybamm(parameter_set)
+        # Unpack physical parameters
+        F = parameter_set["Faraday constant [C.mol-1]"]
+        if electrode == "positive":
+            alpha = parameter_set["Positive electrode active material volume fraction"]
+            c_max = parameter_set[
+                "Maximum concentration in positive electrode [mol.m-3]"
+            ]
+            L = parameter_set["Positive electrode thickness [m]"]
+            R = parameter_set["Positive particle radius [m]"]
+            D = parameter_set["Positive particle diffusivity [m2.s-1]"]
+            sto_init = (
+                parameter_set["Initial concentration in positive electrode [mol.m-3]"]
+                / c_max
+            )
+            ocp = parameter_set["Positive electrode OCP [V]"]
+        elif electrode == "negative":
+            alpha = parameter_set["Negative electrode active material volume fraction"]
+            c_max = parameter_set[
+                "Maximum concentration in negative electrode [mol.m-3]"
+            ]
+            L = parameter_set["Negative electrode thickness [m]"]
+            R = parameter_set["Negative particle radius [m]"]
+            D = parameter_set["Negative particle diffusivity [m2.s-1]"]
+            sto_init = (
+                parameter_set["Initial concentration in negative electrode [mol.m-3]"]
+                / c_max
+            )
+            ocp = parameter_set["Negative electrode OCP [V]"]
+        else:
+            raise ValueError(
+                f"Unrecognised electrode type: {electrode}, "
+                'expecting either "positive" or "negative".'
+            )
 
-    # Unpack physical parameters
-    F = parameter_set["Faraday constant [C.mol-1]"]
-    if electrode == "positive":
-        alpha = parameter_set["Positive electrode active material volume fraction"]
-        c_max = parameter_set["Maximum concentration in positive electrode [mol.m-3]"]
-        L = parameter_set["Positive electrode thickness [m]"]
-        R = parameter_set["Positive particle radius [m]"]
-        D = parameter_set["Positive particle diffusivity [m2.s-1]"]
-        sto_init = (
-            parameter_set["Initial concentration in positive electrode [mol.m-3]"]
-            / c_max
-        )
-        ocp = parameter_set["Positive electrode OCP [V]"]
-    elif electrode == "negative":
-        alpha = parameter_set["Negative electrode active material volume fraction"]
-        c_max = parameter_set["Maximum concentration in negative electrode [mol.m-3]"]
-        L = parameter_set["Negative electrode thickness [m]"]
-        R = parameter_set["Negative particle radius [m]"]
-        D = parameter_set["Negative particle diffusivity [m2.s-1]"]
-        sto_init = (
-            parameter_set["Initial concentration in negative electrode [mol.m-3]"]
-            / c_max
-        )
-        ocp = parameter_set["Negative electrode OCP [V]"]
-    else:
-        raise ValueError(
-            f"Unrecognised electrode type: {electrode}, "
-            'expecting either "positive" or "negative".'
-        )
+        # Compute the cell area
+        A = parameter_set["Electrode height [m]"] * parameter_set["Electrode width [m]"]
 
-    # Compute the cell area
-    A = parameter_set["Electrode height [m]"] * parameter_set["Electrode width [m]"]
+        # Grouped parameters
+        Q_th = F * alpha * c_max * L * A
+        tau_d = R**2 / D
 
-    # Grouped parameters
-    Q_th = F * alpha * c_max * L * A
-    tau_d = R**2 / D
-
-    return {
-        "Nominal cell capacity [A.h]": parameter_set["Nominal cell capacity [A.h]"],
-        "Current function [A]": parameter_set["Current function [A]"],
-        "Initial stoichiometry": sto_init,
-        "Electrode OCP [V]": ocp,
-        "Theoretical electrode capacity [A.s]": Q_th,
-        "Particle diffusion time scale [s]": tau_d,
-        "Series resistance [Ohm]": 1,
-    }
+        return {
+            "Nominal cell capacity [A.h]": parameter_set["Nominal cell capacity [A.h]"],
+            "Current function [A]": parameter_set["Current function [A]"],
+            "Initial stoichiometry": sto_init,
+            "Electrode OCP [V]": ocp,
+            "Theoretical electrode capacity [A.s]": Q_th,
+            "Particle diffusion time scale [s]": tau_d,
+            "Series resistance [Ohm]": 1,
+        }
