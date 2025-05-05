@@ -252,7 +252,7 @@ class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
         return {"particle": pybamm.FiniteVolume()}
 
 
-def convert_physical_to_electrode_parameters(parameter_set, electrode):
+def convert_physical_to_electrode_parameters(parameter_set, electrode) -> dict:
     """
     A function to create an electrode parameter set from a standard
     PyBaMM parameter set.

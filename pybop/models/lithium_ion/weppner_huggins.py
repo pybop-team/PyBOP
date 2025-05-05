@@ -130,7 +130,7 @@ class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
         return DummySolver()
 
 
-def convert_physical_to_gitt_parameters(parameter_set, electrode):
+def convert_physical_to_gitt_parameters(parameter_set, electrode) -> dict:
     """
     A function to create an electrode parameter set from a standard
     PyBaMM parameter set.
