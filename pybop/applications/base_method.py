@@ -1,3 +1,4 @@
+import warnings
 from typing import Callable, Optional
 
 import numpy as np
@@ -11,6 +12,13 @@ class BaseApplication:
     """
     A base class for PyBOP's application methods.
     """
+
+    def check_monotonicity(self, voltage):
+        if not (
+            all(x < y for x, y in zip(voltage, voltage[1:]))
+            or all(x > y for x, y in zip(voltage, voltage[1:]))
+        ):
+            warnings.warn("OCV is not strictly monotonic.", stacklevel=1)
 
 
 class Interpolant:

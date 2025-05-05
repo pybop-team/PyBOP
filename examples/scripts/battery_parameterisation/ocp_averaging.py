@@ -1,10 +1,11 @@
 import numpy as np
+from pybamm import CasadiSolver
 
 import pybop
 
 # Generate some synthetic data for testing
 parameter_set = pybop.ParameterSet("Chen2020")
-model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
+model = pybop.lithium_ion.SPMe(parameter_set=parameter_set, solver=CasadiSolver())
 
 # Create representative charge and discharge datasets
 discharge_solution = model.predict(
@@ -83,18 +84,19 @@ for discharge_dataset, charge_dataset in zip(
         charge_dataset,
         allow_stretching=False,
     )
+    average_dataset = ocp_average()
 
     # Verify the method through plotting
     stoichiometry = np.linspace(0, 1, 101)
     stos = [
         discharge_dataset["Stoichiometry"],
         charge_dataset["Stoichiometry"],
-        ocp_average.dataset["Stoichiometry"],
+        average_dataset["Stoichiometry"],
     ]
     volt = [
         discharge_dataset["Voltage [V]"],
         charge_dataset["Voltage [V]"],
-        ocp_average.dataset["Voltage [V]"],
+        average_dataset["Voltage [V]"],
     ]
     trace_names = ["Discharge", "Charge", "Averaged"]
     legend = dict(yanchor="top", y=0.99, xanchor="left", x=0.01)
@@ -112,9 +114,7 @@ for discharge_dataset, charge_dataset in zip(
             discharge_dataset["Stoichiometry"], discharge_dataset["Voltage [V]"]
         ),
         np.gradient(charge_dataset["Stoichiometry"], charge_dataset["Voltage [V]"]),
-        np.gradient(
-            ocp_average.dataset["Stoichiometry"], ocp_average.dataset["Voltage [V]"]
-        ),
+        np.gradient(average_dataset["Stoichiometry"], average_dataset["Voltage [V]"]),
     ]
     fig = pybop.plot.trajectories(
         x=stos,

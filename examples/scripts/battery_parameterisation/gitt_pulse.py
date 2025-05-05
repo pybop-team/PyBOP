@@ -44,10 +44,11 @@ gitt_fit = pybop.GITTPulseFit(
     parameter_set=parameter_set,
     electrode="positive",
 )
+gitt_results = gitt_fit()
 
 # Plot the timeseries output
 pybop.plot.problem(
-    gitt_fit.problem, problem_inputs=gitt_fit.results.x, title="Optimised Comparison"
+    gitt_fit.problem, problem_inputs=gitt_results.x, title="Optimised Comparison"
 )
 
 # Plot convergence

@@ -98,7 +98,7 @@ for model_type in [pybop.lithium_ion.WeppnerHuggins, pybop.lithium_ion.SPDiffusi
         if model_type == pybop.lithium_ion.WeppnerHuggins
         else dataset,
     )
-    cost = pybop.RootMeanSquaredError(problem)
+    cost = pybop.RootMeanSquaredError(problem, weighting="domain")
 
     # Build the optimisation problem
     optim = pybop.SciPyMinimize(cost=cost)

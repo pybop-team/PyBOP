@@ -65,12 +65,11 @@ gitt_fit = pybop.GITTFit(
     parameter_set=parameter_set,
     electrode="positive",
 )
+gitt_parameter_data = gitt_fit()
 
 # Plot the parameters
-pybop.plot.dataset(
-    gitt_fit.parameter_data, signal=["Particle diffusion time scale [s]"]
-)
-pybop.plot.dataset(gitt_fit.parameter_data, signal=["Series resistance [Ohm]"])
+pybop.plot.dataset(gitt_parameter_data, signal=["Particle diffusion time scale [s]"])
+pybop.plot.dataset(gitt_parameter_data, signal=["Series resistance [Ohm]"])
 
 # Run the identified model
 model = pybop.lithium_ion.SPDiffusion(
@@ -87,7 +86,7 @@ parameter_set = pybop.ParameterSet("Xu2019")
 # Update the diffusivity value
 diffusivity = np.mean(
     parameter_set["Positive particle radius [m]"] ** 2
-    / gitt_fit.parameter_data["Particle diffusion time scale [s]"]
+    / gitt_parameter_data["Particle diffusion time scale [s]"]
 )
 parameter_set.update({"Positive particle diffusivity [m2.s-1]": diffusivity})
 

@@ -29,44 +29,54 @@ class OCPMerge(BaseApplication):
         ocp_charge: pybop.Dataset,
         n_sto_points: int = 101,
     ):
+        self.ocp_discharge = ocp_discharge
+        self.ocp_charge = ocp_charge
+        self.n_sto_points = n_sto_points
+
+    def __call__(self) -> pybop.Dataset:
         # Use the discharge branch as the target to fit
         voltage_discharge = pybop.Interpolant(
-            ocp_discharge["Stoichiometry"], ocp_discharge["Voltage [V]"]
+            self.ocp_discharge["Stoichiometry"], self.ocp_discharge["Voltage [V]"]
         )
 
         # Use the charge branch as the model output
         voltage_charge = pybop.Interpolant(
-            ocp_charge["Stoichiometry"], ocp_charge["Voltage [V]"]
+            self.ocp_charge["Stoichiometry"], self.ocp_charge["Voltage [V]"]
         )
 
         if np.sign(
-            ocp_charge["Stoichiometry"][-1] - ocp_charge["Stoichiometry"][0]
-        ) == np.sign(ocp_charge["Voltage [V]"][-1] - ocp_charge["Voltage [V]"][0]):
+            self.ocp_charge["Stoichiometry"][-1] - self.ocp_charge["Stoichiometry"][0]
+        ) == np.sign(
+            self.ocp_charge["Voltage [V]"][-1] - self.ocp_charge["Voltage [V]"][0]
+        ):
             # Increasing stoichiometry corresponds to increasing voltage (full cell)
-            sto_min = np.min(ocp_charge["Stoichiometry"])
-            sto_max = np.max(ocp_discharge["Stoichiometry"])
+            sto_min = np.min(self.ocp_charge["Stoichiometry"])
+            sto_max = np.max(self.ocp_discharge["Stoichiometry"])
             low_sto_fit = voltage_charge
             high_sto_fit = voltage_discharge
         else:
             # Decreasing stoichiometry corresponds to increasing voltage (electrode)
-            sto_min = np.min(ocp_discharge["Stoichiometry"])
-            sto_max = np.max(ocp_charge["Stoichiometry"])
+            sto_min = np.min(self.ocp_discharge["Stoichiometry"])
+            sto_max = np.max(self.ocp_charge["Stoichiometry"])
             low_sto_fit = voltage_discharge
             high_sto_fit = voltage_charge
 
         # Generate evenly spaced data for dataset creation
-        sto_evenly_spaced = np.linspace(sto_min, sto_max, n_sto_points)
+        self.sto_evenly_spaced = np.linspace(sto_min, sto_max, self.n_sto_points)
 
         # Define a linear transition from the charge branch at low voltage
         # to the charge branch at high voltage
-        transition = np.linspace(0, 1, len(sto_evenly_spaced))
+        transition = np.linspace(0, 1, len(self.sto_evenly_spaced))
         voltage_merge = (1 - transition) * low_sto_fit(
-            sto_evenly_spaced
-        ) + transition * high_sto_fit(sto_evenly_spaced)
+            self.sto_evenly_spaced
+        ) + transition * high_sto_fit(self.sto_evenly_spaced)
 
         self.dataset = pybop.Dataset(
-            {"Stoichiometry": sto_evenly_spaced, "Voltage [V]": voltage_merge}
+            {"Stoichiometry": self.sto_evenly_spaced, "Voltage [V]": voltage_merge}
         )
+        self.check_monotonicity(voltage_merge)
+
+        return self.dataset
 
 
 class OCPAverage(BaseApplication):
@@ -106,34 +116,46 @@ class OCPAverage(BaseApplication):
         optimiser: Optional[pybop.BaseOptimiser] = pybop.SciPyMinimize,
         verbose: bool = True,
     ):
+        self.ocp_discharge = ocp_discharge
+        self.ocp_charge = ocp_charge
+        self.n_sto_points = n_sto_points
+        self.allow_stretching = allow_stretching
+        self.cost = cost
+        self.optimiser = optimiser
+        self.verbose = verbose
+
+    def __call__(self) -> pybop.Dataset:
         # Use the discharge branch as the target to fit
         voltage_discharge = pybop.Interpolant(
-            ocp_discharge["Stoichiometry"], ocp_discharge["Voltage [V]"]
+            self.ocp_discharge["Stoichiometry"], self.ocp_discharge["Voltage [V]"]
         )
         differential_capacity_discharge = pybop.Interpolant(
-            ocp_discharge["Stoichiometry"],
+            self.ocp_discharge["Stoichiometry"],
             np.nan_to_num(
                 np.gradient(
-                    ocp_discharge["Stoichiometry"], ocp_discharge["Voltage [V]"]
+                    self.ocp_discharge["Stoichiometry"],
+                    self.ocp_discharge["Voltage [V]"],
                 )
             ),
         )
 
         # Use the charge branch as the model output
         voltage_charge = pybop.Interpolant(
-            ocp_charge["Stoichiometry"], ocp_charge["Voltage [V]"]
+            self.ocp_charge["Stoichiometry"], self.ocp_charge["Voltage [V]"]
         )
         differential_capacity_charge = pybop.Interpolant(
-            ocp_charge["Stoichiometry"],
+            self.ocp_charge["Stoichiometry"],
             np.nan_to_num(
-                np.gradient(ocp_charge["Stoichiometry"], ocp_charge["Voltage [V]"])
+                np.gradient(
+                    self.ocp_charge["Stoichiometry"], self.ocp_charge["Voltage [V]"]
+                )
             ),
         )
 
         # Generate evenly spaced data for fitting
         sto_evenly_spaced = np.linspace(
-            np.min(ocp_discharge["Stoichiometry"]),
-            np.max(ocp_discharge["Stoichiometry"]),
+            np.min(self.ocp_discharge["Stoichiometry"]),
+            np.max(self.ocp_discharge["Stoichiometry"]),
             101,
         )
         interpolated_dataset = pybop.Dataset(
@@ -153,7 +175,7 @@ class OCPAverage(BaseApplication):
                 initial_value=0.05,
             ),
         )
-        if allow_stretching:
+        if self.allow_stretching:
             self.parameters.add(
                 pybop.Parameter(
                     "stretch",
@@ -163,7 +185,7 @@ class OCPAverage(BaseApplication):
 
         # Create the fitting problem
         class FunctionFitting(pybop.FittingProblem):
-            if allow_stretching:
+            if self.allow_stretching:
 
                 def evaluate(self, inputs):
                     return {
@@ -196,13 +218,13 @@ class OCPAverage(BaseApplication):
         )
 
         # Optimise the fit between the charge and discharge branches
-        self.cost = cost(self.problem, weighting="equal")
-        self.optim = optimiser(cost=self.cost, verbose=verbose)
+        self.cost = self.cost(self.problem, weighting="equal")
+        self.optim = self.optimiser(cost=self.cost, verbose=self.verbose)
         self.results = self.optim.run()
-        self.stretch = np.sqrt(self.results.x[1]) if allow_stretching else 1.0
+        self.stretch = np.sqrt(self.results.x[1]) if self.allow_stretching else 1.0
         self.shift = self.results.x[0] / (self.stretch + 1.0)
 
-        if verbose:
+        if self.verbose:
             print(
                 f"The stoichiometry stretch and shift values are ({self.stretch}, {self.shift})."
             )
@@ -215,14 +237,14 @@ class OCPAverage(BaseApplication):
 
         # Define the average OCP using the optimised parameters
         sto_min = np.maximum(
-            stretch_and_shift(np.min(ocp_discharge["Stoichiometry"])),
-            inverse_stretch_and_shift(np.min(ocp_charge["Stoichiometry"])),
+            stretch_and_shift(np.min(self.ocp_discharge["Stoichiometry"])),
+            inverse_stretch_and_shift(np.min(self.ocp_charge["Stoichiometry"])),
         )
         sto_max = np.minimum(
-            stretch_and_shift(np.max(ocp_discharge["Stoichiometry"])),
-            inverse_stretch_and_shift(np.max(ocp_charge["Stoichiometry"])),
+            stretch_and_shift(np.max(self.ocp_discharge["Stoichiometry"])),
+            inverse_stretch_and_shift(np.max(self.ocp_charge["Stoichiometry"])),
         )
-        sto_range = np.linspace(sto_min, sto_max, n_sto_points)
+        sto_range = np.linspace(sto_min, sto_max, self.n_sto_points)
         voltage = (
             voltage_discharge(inverse_stretch_and_shift(sto_range))
             + voltage_charge(stretch_and_shift(sto_range))
@@ -231,6 +253,9 @@ class OCPAverage(BaseApplication):
         self.dataset = pybop.Dataset(
             {"Stoichiometry": sto_range, "Voltage [V]": voltage}
         )
+        self.check_monotonicity(voltage)
+
+        return self.dataset
 
 
 class OCPCapacityToStoichiometry(BaseApplication):
@@ -261,6 +286,13 @@ class OCPCapacityToStoichiometry(BaseApplication):
         optimiser: Optional[pybop.BaseOptimiser] = pybop.SciPyMinimize,
         verbose: bool = True,
     ):
+        self.ocv_dataset = ocv_dataset
+        self.ocv_function = ocv_function
+        self.cost = cost
+        self.optimiser = optimiser
+        self.verbose = verbose
+
+    def __call__(self) -> pybop.Dataset:
         # Use the OCV dataset as the target to fit and the OCV function as the model
 
         # Define the optimisation parameters
@@ -271,12 +303,14 @@ class OCPCapacityToStoichiometry(BaseApplication):
             ),
             pybop.Parameter(
                 "stretch",
-                initial_value=np.max(ocv_dataset["Charge capacity [A.h]"])
-                - np.min(ocv_dataset["Charge capacity [A.h]"]),
+                initial_value=np.max(self.ocv_dataset["Charge capacity [A.h]"])
+                - np.min(self.ocv_dataset["Charge capacity [A.h]"]),
             ),
         )
 
         # Create the fitting problem
+        ocv_function = self.ocv_function
+
         class FunctionFitting(pybop.FittingProblem):
             def evaluate(self, inputs):
                 return {
@@ -289,32 +323,38 @@ class OCPCapacityToStoichiometry(BaseApplication):
         self.problem = FunctionFitting(
             model=self.model,
             parameters=self.parameters,
-            dataset=ocv_dataset,
+            dataset=self.ocv_dataset,
             signal=["Voltage [V]"],
             domain="Charge capacity [A.h]",
         )
 
         # Optimise the fit between the OCV function and the dataset
-        self.cost = cost(self.problem, weighting="domain")
-        self.optim = optimiser(cost=self.cost, verbose=verbose)
+        self.cost = self.cost(self.problem, weighting="domain")
+        self.optim = self.optimiser(cost=self.cost, verbose=self.verbose)
         self.results = self.optim.run()
         self.stretch = self.results.x[1]
         self.shift = self.results.x[0]
 
-        if verbose:
+        if self.verbose:
             print(
                 f"The capacity stretch and shift values are ({self.stretch} A.h, {self.shift} A.h)."
             )
 
         # Scale charge capacity into stoichiometry (ascending)
         stoichiometry = (
-            ocv_dataset["Charge capacity [A.h]"] - self.shift
+            self.ocv_dataset["Charge capacity [A.h]"] - self.shift
         ) / self.stretch
         self.dataset = pybop.Dataset(
-            {"Stoichiometry": stoichiometry, "Voltage [V]": ocv_dataset["Voltage [V]"]}
+            {
+                "Stoichiometry": stoichiometry,
+                "Voltage [V]": self.ocv_dataset["Voltage [V]"],
+            }
             if stoichiometry[-1] > stoichiometry[0]
             else {
                 "Stoichiometry": np.flipud(stoichiometry),
-                "Voltage [V]": np.flipud(ocv_dataset["Voltage [V]"]),
+                "Voltage [V]": np.flipud(self.ocv_dataset["Voltage [V]"]),
             }
         )
+        self.check_monotonicity(self.ocv_dataset["Voltage [V]"])
+
+        return self.dataset

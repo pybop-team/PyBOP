@@ -58,18 +58,19 @@ class TestApplications:
             ocp_discharge=discharge_dataset,
             ocp_charge=charge_dataset,
         )
+        merged_dataset = ocp_merge()
 
         np.testing.assert_allclose(
-            ocp_merge.dataset["Stoichiometry"][0], discharge_dataset["Stoichiometry"][0]
+            merged_dataset["Stoichiometry"][0], discharge_dataset["Stoichiometry"][0]
         )
         np.testing.assert_allclose(
-            ocp_merge.dataset["Voltage [V]"][0], discharge_dataset["Voltage [V]"][0]
+            merged_dataset["Voltage [V]"][0], discharge_dataset["Voltage [V]"][0]
         )
         np.testing.assert_allclose(
-            ocp_merge.dataset["Stoichiometry"][-1], charge_dataset["Stoichiometry"][0]
+            merged_dataset["Stoichiometry"][-1], charge_dataset["Stoichiometry"][0]
         )
         np.testing.assert_allclose(
-            ocp_merge.dataset["Voltage [V]"][-1], charge_dataset["Voltage [V]"][0]
+            merged_dataset["Voltage [V]"][-1], charge_dataset["Voltage [V]"][0]
         )
 
         # Test with opposite voltage gradient
@@ -79,19 +80,20 @@ class TestApplications:
             ocp_discharge=discharge_dataset,
             ocp_charge=charge_dataset,
         )
+        merged_dataset = ocp_merge()
 
         np.testing.assert_allclose(
-            ocp_merge.dataset["Stoichiometry"][0], charge_dataset["Stoichiometry"][-1]
+            merged_dataset["Stoichiometry"][0], charge_dataset["Stoichiometry"][-1]
         )
         np.testing.assert_allclose(
-            ocp_merge.dataset["Voltage [V]"][0], charge_dataset["Voltage [V]"][-1]
+            merged_dataset["Voltage [V]"][0], charge_dataset["Voltage [V]"][-1]
         )
         np.testing.assert_allclose(
-            ocp_merge.dataset["Stoichiometry"][-1],
+            merged_dataset["Stoichiometry"][-1],
             discharge_dataset["Stoichiometry"][-1],
         )
         np.testing.assert_allclose(
-            ocp_merge.dataset["Voltage [V]"][-1], discharge_dataset["Voltage [V]"][-1]
+            merged_dataset["Voltage [V]"][-1], discharge_dataset["Voltage [V]"][-1]
         )
 
     def test_ocp_average(self, discharge_dataset, charge_dataset):
@@ -102,6 +104,7 @@ class TestApplications:
                 ocp_charge=charge_dataset,
                 allow_stretching=allow_stretching,
             )
+            ocp_average()
 
             np.testing.assert_allclose(ocp_average.stretch, 1.0, rtol=1e-3, atol=1e-3)
             np.testing.assert_allclose(ocp_average.shift, 0.02, rtol=1e-3, atol=1e-3)
@@ -126,6 +129,7 @@ class TestApplications:
             ocv_dataset=ocv_dataset,
             ocv_function=ocv_function,
         )
+        ocv_fit()
 
         np.testing.assert_allclose(ocv_fit.stretch, nom_capacity, rtol=2e-3, atol=2e-3)
         np.testing.assert_allclose(
@@ -175,8 +179,9 @@ class TestApplications:
         diffusion_time = parameter_set["Particle diffusion time scale [s]"]
 
         gitt_fit = pybop.GITTPulseFit(pulse_data, parameter_set, electrode="positive")
+        gitt_results = gitt_fit()
 
-        np.testing.assert_allclose(gitt_fit.results.x[0], diffusion_time, rtol=5e-2)
+        np.testing.assert_allclose(gitt_results.x[0], diffusion_time, rtol=5e-2)
 
     def test_gitt_fit(self, half_cell_model, pulse_data):
         parameter_set = pybop.lithium_ion.SPDiffusion.apply_parameter_grouping(
@@ -187,11 +192,12 @@ class TestApplications:
         with pytest.raises(
             ValueError, match="The initial current in the pulse dataset must be zero."
         ):
-            pybop.GITTFit(
+            gitt_fit = pybop.GITTFit(
                 gitt_dataset=pulse_data,
                 pulse_index=[np.arange(2, len(pulse_data["Current function [A]"]))],
                 parameter_set=parameter_set,
             )
+            gitt_fit()
 
         gitt_fit = pybop.GITTFit(
             gitt_dataset=pulse_data,
@@ -199,10 +205,11 @@ class TestApplications:
             parameter_set=parameter_set,
             electrode="positive",
         )
+        gitt_parameter_data = gitt_fit()
 
         np.testing.assert_allclose(
-            gitt_fit.parameter_data["Particle diffusion time scale [s]"],
+            gitt_parameter_data["Particle diffusion time scale [s]"],
             np.asarray([diffusion_time]),
             rtol=5e-2,
         )
-        assert gitt_fit.parameter_data["Root Mean Squared Error [V]"][0] < 2e-3
+        assert gitt_parameter_data["Root Mean Squared Error [V]"][0] < 2e-3

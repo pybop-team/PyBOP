@@ -21,21 +21,16 @@ ocv_dataset = pybop.Dataset(
 )
 
 # Estimate the stoichiometry corresponding to the GITT-OCV
-ocv_fit = pybop.OCPCapacityToStoichiometry(
-    ocv_dataset,
-    ocv_function,
-)
+ocv_fit = pybop.OCPCapacityToStoichiometry(ocv_dataset, ocv_function)
+fitted_dataset = ocv_fit()
 
 # Verify the method through plotting
 stoichiometry = np.linspace(0, 1, 101)
 fig = pybop.plot.trajectories(
-    x=[
-        stoichiometry,
-        ocv_fit.dataset["Stoichiometry"],
-    ],
+    x=[stoichiometry, fitted_dataset["Stoichiometry"]],
     y=[
         parameter_set["Positive electrode OCP [V]"](stoichiometry),
-        ocv_fit.dataset["Voltage [V]"],
+        fitted_dataset["Voltage [V]"],
     ],
     trace_names=["Ground truth", "Data vs. stoichiometry"],
 )
