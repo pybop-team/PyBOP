@@ -53,45 +53,45 @@ class TestApplications:
         )
         model.predict(t_eval=np.linspace(0, 10))
 
-    def test_ocp_blend(self, discharge_dataset, charge_dataset):
-        ocp_blend = pybop.OCPBlend(
+    def test_ocp_merge(self, discharge_dataset, charge_dataset):
+        ocp_merge = pybop.OCPMerge(
             ocp_discharge=discharge_dataset,
             ocp_charge=charge_dataset,
         )
 
         np.testing.assert_allclose(
-            ocp_blend.dataset["Stoichiometry"][0], discharge_dataset["Stoichiometry"][0]
+            ocp_merge.dataset["Stoichiometry"][0], discharge_dataset["Stoichiometry"][0]
         )
         np.testing.assert_allclose(
-            ocp_blend.dataset["Voltage [V]"][0], discharge_dataset["Voltage [V]"][0]
+            ocp_merge.dataset["Voltage [V]"][0], discharge_dataset["Voltage [V]"][0]
         )
         np.testing.assert_allclose(
-            ocp_blend.dataset["Stoichiometry"][-1], charge_dataset["Stoichiometry"][0]
+            ocp_merge.dataset["Stoichiometry"][-1], charge_dataset["Stoichiometry"][0]
         )
         np.testing.assert_allclose(
-            ocp_blend.dataset["Voltage [V]"][-1], charge_dataset["Voltage [V]"][0]
+            ocp_merge.dataset["Voltage [V]"][-1], charge_dataset["Voltage [V]"][0]
         )
 
         # Test with opposite voltage gradient
         discharge_dataset["Voltage [V]"] = np.flipud(discharge_dataset["Voltage [V]"])
         charge_dataset["Voltage [V]"] = np.flipud(charge_dataset["Voltage [V]"])
-        ocp_blend = pybop.OCPBlend(
+        ocp_merge = pybop.OCPMerge(
             ocp_discharge=discharge_dataset,
             ocp_charge=charge_dataset,
         )
 
         np.testing.assert_allclose(
-            ocp_blend.dataset["Stoichiometry"][0], charge_dataset["Stoichiometry"][-1]
+            ocp_merge.dataset["Stoichiometry"][0], charge_dataset["Stoichiometry"][-1]
         )
         np.testing.assert_allclose(
-            ocp_blend.dataset["Voltage [V]"][0], charge_dataset["Voltage [V]"][-1]
+            ocp_merge.dataset["Voltage [V]"][0], charge_dataset["Voltage [V]"][-1]
         )
         np.testing.assert_allclose(
-            ocp_blend.dataset["Stoichiometry"][-1],
+            ocp_merge.dataset["Stoichiometry"][-1],
             discharge_dataset["Stoichiometry"][-1],
         )
         np.testing.assert_allclose(
-            ocp_blend.dataset["Voltage [V]"][-1], discharge_dataset["Voltage [V]"][-1]
+            ocp_merge.dataset["Voltage [V]"][-1], discharge_dataset["Voltage [V]"][-1]
         )
 
     def test_ocp_average(self, discharge_dataset, charge_dataset):
@@ -156,12 +156,15 @@ class TestApplications:
         corrupt_values = values["Voltage [V]"].data + np.random.normal(
             0, sigma, len(values["Voltage [V]"].data)
         )
+        start = np.where(values["Time [s]"].data == 1)[0][0] - 1
         return pybop.Dataset(
             {
-                "Time [s]": values["Time [s]"].data,
-                "Current function [A]": values["Current [A]"].data,
-                "Discharge capacity [A.h]": values["Discharge capacity [A.h]"].data,
-                "Voltage [V]": corrupt_values,
+                "Time [s]": values["Time [s]"].data[start:],
+                "Current function [A]": values["Current [A]"].data[start:],
+                "Discharge capacity [A.h]": values["Discharge capacity [A.h]"].data[
+                    start:
+                ],
+                "Voltage [V]": corrupt_values[start:],
             }
         )
 

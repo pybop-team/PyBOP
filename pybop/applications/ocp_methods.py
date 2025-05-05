@@ -6,10 +6,10 @@ import pybop
 from pybop import BaseApplication
 
 
-class OCPBlend(BaseApplication):
+class OCPMerge(BaseApplication):
     """
-    Blend the charge and discharge branches of the open-circuit potential (OCP) to
-    generate a broadly applicable open-circuit potential without hysteresis.
+    Generate a representative open-circuit potential (OCP) without hysteresis by
+    merging the provided charge and discharge branches of the OCP.
 
     Parameters
     ----------
@@ -19,12 +19,15 @@ class OCPBlend(BaseApplication):
     ocp_charge : pybop.Dataset
         A dataset containing the "Stoichiometry" and "Voltage [V]" obtained from a
         charge measurement.
+    n_sto_points : int, optional
+        The number of points in stoichiometry at which to calculate the voltage.
     """
 
     def __init__(
         self,
         ocp_discharge: pybop.Dataset,
         ocp_charge: pybop.Dataset,
+        n_sto_points: int = 101,
     ):
         # Use the discharge branch as the target to fit
         voltage_discharge = pybop.Interpolant(
@@ -52,17 +55,17 @@ class OCPBlend(BaseApplication):
             high_sto_fit = voltage_charge
 
         # Generate evenly spaced data for dataset creation
-        sto_evenly_spaced = np.linspace(sto_min, sto_max, 501)
+        sto_evenly_spaced = np.linspace(sto_min, sto_max, n_sto_points)
 
         # Define a linear transition from the charge branch at low voltage
         # to the charge branch at high voltage
         transition = np.linspace(0, 1, len(sto_evenly_spaced))
-        voltage_blend = (1 - transition) * low_sto_fit(
+        voltage_merge = (1 - transition) * low_sto_fit(
             sto_evenly_spaced
         ) + transition * high_sto_fit(sto_evenly_spaced)
 
         self.dataset = pybop.Dataset(
-            {"Stoichiometry": sto_evenly_spaced, "Voltage [V]": voltage_blend}
+            {"Stoichiometry": sto_evenly_spaced, "Voltage [V]": voltage_merge}
         )
 
 
@@ -80,6 +83,8 @@ class OCPAverage(BaseApplication):
     ocp_charge : pybop.Dataset
         A dataset containing the "Stoichiometry" and "Voltage [V]" obtained from a
         charge measurement.
+    n_sto_points : int, optional
+        The number of points in stoichiometry at which to calculate the voltage.
     allow_stretching : bool, optional
         If True, the OCPs are allowed to stretch as well as shift with respect to
         the stoichiometry (default: True)
@@ -95,6 +100,7 @@ class OCPAverage(BaseApplication):
         self,
         ocp_discharge: pybop.Dataset,
         ocp_charge: pybop.Dataset,
+        n_sto_points: int = 101,
         allow_stretching: bool = True,
         cost: Optional[pybop.BaseCost] = pybop.MeanAbsoluteError,
         optimiser: Optional[pybop.BaseOptimiser] = pybop.SciPyMinimize,
@@ -216,7 +222,7 @@ class OCPAverage(BaseApplication):
             stretch_and_shift(np.max(ocp_discharge["Stoichiometry"])),
             inverse_stretch_and_shift(np.max(ocp_charge["Stoichiometry"])),
         )
-        sto_range = np.linspace(sto_min, sto_max, 501)
+        sto_range = np.linspace(sto_min, sto_max, n_sto_points)
         voltage = (
             voltage_discharge(inverse_stretch_and_shift(sto_range))
             + voltage_charge(stretch_and_shift(sto_range))
