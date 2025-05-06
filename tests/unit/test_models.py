@@ -7,7 +7,6 @@ import pytest
 
 import pybop
 from examples.standalone.model import ExponentialDecay as StandaloneDecay
-from pybop.models.lithium_ion.basic_SPMe import convert_physical_to_grouped_parameters
 
 
 class TestModels:
@@ -22,14 +21,15 @@ class TestModels:
         [
             (pybop.lithium_ion.SPM, "Single Particle Model", None),
             (pybop.lithium_ion.SPMe, "Single Particle Model with Electrolyte", None),
-            (pybop.lithium_ion.DFN, "Doyle-Fuller-Newman", None),
+            (pybop.lithium_ion.DFN, "Doyle-Fuller-Newman Model", None),
             (pybop.lithium_ion.MPM, "Many Particle Model", None),
             (
                 pybop.lithium_ion.MSMR,
-                "Multi Species Multi Reactions Model",
+                "Multi-Species Multi-Reaction Model",
                 {"number of MSMR reactions": ("6", "4")},
             ),
-            (pybop.lithium_ion.WeppnerHuggins, "Weppner & Huggins model", None),
+            (pybop.lithium_ion.WeppnerHuggins, "Weppner & Huggins Model", None),
+            (pybop.lithium_ion.SPDiffusion, "Single Particle Diffusion Model", None),
             (
                 pybop.lithium_ion.GroupedSPMe,
                 "Grouped Single Particle Model with Electrolyte",
@@ -58,6 +58,7 @@ class TestModels:
             pybop.lithium_ion.MPM(),
             pybop.lithium_ion.MSMR(options={"number of MSMR reactions": ("6", "4")}),
             pybop.lithium_ion.WeppnerHuggins(),
+            pybop.lithium_ion.SPDiffusion(),
             pybop.lithium_ion.GroupedSPMe(),
             pybop.lithium_ion.GroupedSPMe(options={"surface form": "differential"}),
             pybop.empirical.Thevenin(),
@@ -102,6 +103,12 @@ class TestModels:
             inputs = {
                 "Negative electrode relative porosity": 0.52,
                 "Positive electrode relative porosity": 0.63,
+            }
+        elif isinstance(
+            model, (pybop.lithium_ion.WeppnerHuggins, pybop.lithium_ion.SPDiffusion)
+        ):
+            inputs = {
+                "Theoretical electrode capacity [A.s]": 5000,
             }
         elif isinstance(model, (pybop.lithium_ion.EChemBaseModel)):
             if model.pybamm_model.options["working electrode"] == "positive":
@@ -544,6 +551,7 @@ class TestModels:
         "model_class",
         [
             pybop.lithium_ion.WeppnerHuggins,
+            pybop.lithium_ion.SPDiffusion,
             pybop.lithium_ion.GroupedSPMe,
         ],
     )
@@ -553,12 +561,65 @@ class TestModels:
             assert "The input model_kwargs" in str(record[0].message)
             assert "are not currently used by " in str(record[0].message)
 
+    def test_weppner_huggins(self):
+        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+
+        with pytest.raises(ValueError, match="Unrecognised electrode type"):
+            pybop.lithium_ion.WeppnerHuggins.apply_parameter_grouping(
+                parameter_set, electrode="both"
+            )
+
+        gitt_parameter_set = pybop.lithium_ion.WeppnerHuggins.apply_parameter_grouping(
+            parameter_set, electrode="negative"
+        )
+        model = pybop.lithium_ion.WeppnerHuggins(parameter_set=gitt_parameter_set)
+
+        gitt_parameter_set = pybop.lithium_ion.WeppnerHuggins.apply_parameter_grouping(
+            parameter_set, electrode="positive"
+        )
+        model = pybop.lithium_ion.WeppnerHuggins(
+            parameter_set=gitt_parameter_set,
+            options={"working electrode": "positive"},
+        )
+
+        res = model.predict(t_eval=np.linspace(0, 10, 100))
+        assert len(res["Voltage [V]"].data) == 100
+
+        variable_list = model.pybamm_model.default_quick_plot_variables
+        assert isinstance(variable_list, list)
+
+    def test_SP_diffusion(self):
+        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+
+        with pytest.raises(ValueError, match="Unrecognised electrode type"):
+            pybop.lithium_ion.SPDiffusion.apply_parameter_grouping(
+                parameter_set, electrode="both"
+            )
+
+        for electrode in ["positive", "negative"]:
+            electrode_parameter_set = (
+                pybop.lithium_ion.SPDiffusion.apply_parameter_grouping(
+                    parameter_set, electrode=electrode
+                )
+            )
+            model = pybop.lithium_ion.SPDiffusion(
+                parameter_set=electrode_parameter_set, electrode=electrode
+            )
+
+            res = model.predict(t_eval=np.linspace(0, 10, 100))
+            assert len(res["Voltage [V]"].data) == 100
+
+        variable_list = model.pybamm_model.default_quick_plot_variables
+        assert isinstance(variable_list, list)
+
     def test_grouped_SPMe(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
         parameter_set["Electrolyte diffusivity [m2.s-1]"] = 1.769e-10
         parameter_set["Electrolyte conductivity [S.m-1]"] = 0.9487
 
-        grouped_parameter_set = convert_physical_to_grouped_parameters(parameter_set)
+        grouped_parameter_set = pybop.lithium_ion.GroupedSPMe.apply_parameter_grouping(
+            parameter_set
+        )
         model = pybop.lithium_ion.GroupedSPMe(parameter_set=grouped_parameter_set)
 
         with pytest.raises(
