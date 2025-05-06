@@ -9,7 +9,8 @@ from pybop import BaseApplication
 class GITTPulseFit(BaseApplication):
     """
     Fit the diffusion timescale of one pulse from a galvanostatic intermittent
-    titration technique (GITT) measurement.
+    titration technique (GITT) measurement using the diffusion model for a single,
+    spherical particle representing one electrode.
 
     Parameters
     ----------

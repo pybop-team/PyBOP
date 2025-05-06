@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import warnings
 
 import pybop
 
@@ -10,6 +11,13 @@ class TestApplications:
     """
 
     pytestmark = pytest.mark.integration
+
+    def test_monotonicity_check(self):
+        appl = pybop.BaseApplication()
+
+        with pytest.warns(UserWarning, match="OCV is not strictly monotonic."):
+            warnings.simplefilter("always")
+            appl.check_monotonicity(np.asarray([3,4,3]))
 
     @pytest.fixture
     def parameter_set(self):
@@ -51,7 +59,8 @@ class TestApplications:
         model = pybop.lithium_ion.SPDiffusion(
             parameter_set=parameter_set, electrode=electrode, build=True
         )
-        model.predict(t_eval=np.linspace(0, 10))
+        solution = model.predict(t_eval=np.linspace(0, 10, 100))
+        assert len(solution["Voltage [V]"].data) == 100
 
     def test_ocp_merge(self, discharge_dataset, charge_dataset):
         ocp_merge = pybop.OCPMerge(

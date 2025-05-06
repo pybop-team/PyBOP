@@ -22,7 +22,7 @@ from pybop import ParameterSet
 
 class BaseSPDiffusion(pybamm_lithium_ion.BaseModel):
     """
-    Diffusion model for a single particle representing a half-cell for GITT.
+    Diffusion model for a single, spherical particle representing a half-cell for GITT.
 
     This model can be used with PyBOP through the `pybop.SPDiffusion` class.
 
