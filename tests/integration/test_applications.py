@@ -1,6 +1,7 @@
+import warnings
+
 import numpy as np
 import pytest
-import warnings
 
 import pybop
 
@@ -17,7 +18,7 @@ class TestApplications:
 
         with pytest.warns(UserWarning, match="OCV is not strictly monotonic."):
             warnings.simplefilter("always")
-            appl.check_monotonicity(np.asarray([3,4,3]))
+            appl.check_monotonicity(np.asarray([3, 4, 3]))
 
     @pytest.fixture
     def parameter_set(self):
