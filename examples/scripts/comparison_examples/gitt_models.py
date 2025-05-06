@@ -105,6 +105,7 @@ for model_type in [pybop.lithium_ion.WeppnerHuggins, pybop.lithium_ion.SPDiffusi
 
     # Run the optimisation problem
     results = optim.run()
+    print("Diffusion time [s]:", results.x[0])
 
     # Plot the timeseries output
     pybop.plot.problem(problem, problem_inputs=results.x, title=model_type().name)
