@@ -43,8 +43,11 @@ class Interpolant:
 
     def __call__(self, x):
         try:
+            # Try to evaluate the interpolant numerically, this will return an
+            # error if x is a PyBaMM object
             return self.interp1d(x)
         except (Exception, SystemExit, KeyboardInterrupt):
+            # Evaluate the interpolant as a PyBaMM function for use in a model
             return PybammInterpolant(self.x, self.y, x, name=self.name)
 
 

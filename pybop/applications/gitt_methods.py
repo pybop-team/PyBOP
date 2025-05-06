@@ -12,6 +12,9 @@ class GITTPulseFit(BaseApplication):
     titration technique (GITT) measurement using the diffusion model for a single,
     spherical particle representing one electrode.
 
+    The cost function requires a "domain"-based weighting to fit (possibly non-uniform)
+    data consistently across the observed time period.
+
     Parameters
     ----------
     gitt_pulse : pybop.Dataset
