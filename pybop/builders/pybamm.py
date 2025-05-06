@@ -16,6 +16,7 @@ class Pybamm(builders.BaseBuilder):
         self._rebuild_parameters = None
         self._cost_weights = []
         self._pipeline = None
+        self.domain = "Time [s]"
 
     def set_simulation(
         self,
@@ -95,6 +96,9 @@ class Pybamm(builders.BaseBuilder):
             param,
             pybop_parameters,
             self._solver,
+            t_start=self._dataset[self.domain][0],
+            t_end=self._dataset[self.domain][-1],
+            t_interp=self._dataset[self.domain],
         )
 
         # Build the pipeline

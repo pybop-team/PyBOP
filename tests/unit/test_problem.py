@@ -55,13 +55,6 @@ class TestProblem:
 
     @pytest.fixture
     def dataset(self, first_model, parameter_values, experiment):
-        # x0 = np.array([2e-5, 0.5e-5])
-        # parameter_values.update(
-        #     {
-        #         "Negative particle radius [m]": x0[0],
-        #         "Positive particle radius [m]": x0[1],
-        #     }
-        # )
         sim = pybamm.Simulation(
             first_model, experiment, parameter_values=parameter_values
         )
@@ -71,6 +64,16 @@ class TestProblem:
                 "Time [s]": sol["Time [s]"].data,
                 "Current function [A]": sol["Current [A]"].data,
                 "Voltage [V]": sol["Terminal voltage [V]"].data,
+            }
+        )
+
+    @pytest.fixture
+    def eis_dataset(self):
+        return pybop.Dataset(
+            {
+                "Frequency [Hz]": np.logspace(-4, 5, 30),
+                "Current function [A]": np.ones(30) * 0.0,
+                "Impedance": np.ones(30) * 0.0,
             }
         )
 
@@ -133,6 +136,27 @@ class TestProblem:
         value2 = problem.run()
         assert (value1 - value2) / value1 > 1e-5
         # can't check sensitivities because these are geometric parameters
+
+    def test_eis_builder(self, first_model, parameter_values, experiment, eis_dataset):
+        builder = pybop.builders.PybammEIS()
+        builder.set_dataset(eis_dataset)
+        builder.set_simulation(first_model, parameter_values=parameter_values)
+        builder.add_parameter(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Positive electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        # builder.add_cost(pybop.costs.SumSquaredError())
+        problem = builder.build()
+
+        assert problem is not None
+        problem.set_params(np.array([0.6, 0.6]))
+        assert problem.run() is not None
 
     def test_pure_python_builder(self):
         dataset = pybop.Dataset(

@@ -30,6 +30,7 @@ class PybammPipeline:
         t_start: np.number = 0,
         t_end: np.number = 1,
         t_interp: np.ndarray = None,
+        var_pts: dict = None,
     ):
         """
         Arguments
@@ -49,28 +50,17 @@ class PybammPipeline:
         rebuild_parameters : list[str]
             The parameters that will be used to rebuild the model. If None, the model will not be rebuilt.
         """
-        self.requires_rebuild = False
         self._model = model
         self._parameter_values = parameter_values
         self._pybop_parameters = pybop_parameters
         self._parameter_names = pybop_parameters.keys()
         self._geometry = model.default_geometry
         self._methods = model.default_spatial_methods
-        if solver is None:
-            self._solver = pybamm.IDAKLUSolver()
-        else:
-            self._solver = solver
+        self._solver = pybamm.IDAKLUSolver() if solver is None else solver
         self._t_start = t_start
         self._t_end = t_end
         self._t_interp = t_interp
-        var = pybamm.standard_spatial_vars
-        self._var_pts = {
-            var.x_n: 30,
-            var.x_s: 30,
-            var.x_p: 30,
-            var.r_n: 10,
-            var.r_p: 10,
-        }
+        self._var_pts = var_pts or model.default_var_pts
         self._submesh_types = model.default_submesh_types
         self._built_model = self._model
         self.requires_rebuild = self._determine_rebuild()
@@ -168,7 +158,8 @@ class PybammPipeline:
         # reset the solver since we've built a new model
         self._solver = self._solver.copy()
 
-        # self._solver.set_up(model) #Is this required? If so, we need to pass an `inputs` dict
+        # Is the below required? If so, we need to pass an `inputs` dict
+        # self._solver.set_up(model)
 
         # TODO: unfortunately, the solver will still call set_up on the model
         # if this is not done, need to fix this in PyBaMM!
@@ -189,20 +180,19 @@ class PybammPipeline:
     def parameter_names(self):
         return self._parameter_names
 
-    @parameter_names.setter
-    def parameter_names(self, parameter_names):
-        self._parameter_names = parameter_names
-
     def solve(self, calculate_sensitivities: bool = False) -> pybamm.Solution:
         """
         Run the simulation using the built model and solver.
 
-        Arguments
+        Parameters
         ---------
         calculate_sensitivities : bool
             Whether to calculate sensitivities or not.
-        inputs : Inputs
 
+        Returns
+        -------
+        solution : pybamm.Solution
+            The pybamm solution object.
         """
         return self._solver.solve(
             model=self._built_model,

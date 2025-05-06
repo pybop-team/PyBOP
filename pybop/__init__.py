@@ -89,6 +89,7 @@ from .models.base_model import Inputs
 # Problem classes
 #
 from .problems.pybamm_problem import PybammProblem
+from .problems.pybamm_eis_problem import PybammEISProblem
 from .problems.python_problem import PythonProblem
 from .problems.base_problem_old import BaseProblem
 from .problems.fitting_problem import FittingProblem
