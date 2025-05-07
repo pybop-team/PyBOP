@@ -1,6 +1,8 @@
-import pybop
-import pybamm
 from typing import Optional
+
+import pybamm
+
+import pybop
 
 
 class PybammSumSquaredError(pybop.PybammCost):

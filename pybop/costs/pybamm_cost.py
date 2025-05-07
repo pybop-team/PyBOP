@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from typing import Dict, Optional
 from uuid import uuid4
-import numpy as np
+
 import pybamm
+
 import pybop
 
 
