@@ -87,7 +87,7 @@ class Pybamm(builders.BaseBuilder):
 
         # add costs
         for cost in self._costs:
-            cost.add_to_model(model, param)
+            cost.add_to_model(model, param, self._dataset)
 
         # Construct the pipeline
         pipeline = PybammPipeline(
