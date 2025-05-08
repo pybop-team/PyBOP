@@ -18,7 +18,6 @@ class PybammSumSquaredError(pybop.PybammCost):
         self._variable_name = variable_name
         self._data_name = data_name
 
-    @staticmethod
     def variable_expression(
         self,
         model: pybamm.BaseModel,
