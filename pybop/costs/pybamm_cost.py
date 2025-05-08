@@ -35,6 +35,15 @@ class PybammCost:
     def __init__(self):
         self._metadata = None
 
+    def metadata(self) -> PybammExpressionMetadata:
+        """
+        Returns the metadata for the cost function. This includes the variable name,
+        expression, and any parameters that are needed to evaluate the cost function.
+        """
+        if self._metadata is None:
+            raise ValueError("Cost function has not been added to model yet.")
+        return self._metadata
+
     @classmethod
     def make_unique_cost_name(cls) -> str:
         """

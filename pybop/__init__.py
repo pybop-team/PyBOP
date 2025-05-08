@@ -98,6 +98,13 @@ from .problems.design_problem import DesignProblem
 #
 # Cost classes
 #
+from .costs.pybamm_cost import (
+    PybammCost,
+    PybammExpressionMetadata,
+    PybammParameterMetadata,
+)
+from .costs.pybamm_sum_squared_error import PybammSumSquaredError
+
 from .costs.base_cost import BaseCost
 from .costs.fitting_costs import (
     FittingCost,
@@ -126,12 +133,7 @@ from .costs._likelihoods import (
     LogPosterior,
 )
 from .costs._weighted_cost import WeightedCost
-from .costs.pybamm_cost import (
-    PybammCost,
-    PybammExpressionMetadata,
-    PybammParameterMetadata,
-)
-from .costs.pybamm_sum_squared_error import PybammSumSquaredError
+
 
 #
 # Problem Builder

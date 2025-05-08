@@ -86,6 +86,9 @@ class Dataset:
 
         return self.data[key]
 
+    def __contains__(self, key):
+        return key in self.data
+
     def check(self, domain: str = None, signal: Union[str, list[str]] = None) -> bool:
         """
         Check the consistency of a PyBOP Dataset against the expected format.
