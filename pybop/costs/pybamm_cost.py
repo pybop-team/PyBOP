@@ -63,7 +63,7 @@ class PybammCost:
         dataset: Optional[pybop.Dataset] = None,
     ):
         # if dataset is provided, must contain time data
-        if dataset is not None and "time" not in dataset:
+        if dataset is not None and "Time [s]" not in dataset:
             raise ValueError("Dataset must contain time data for PybammCost.")
         self._metadata = self.variable_expression(model, dataset)
         model.variables[self._metadata.variable_name] = self._metadata.expression
