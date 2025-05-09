@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Optional
 from uuid import uuid4
 
 import pybamm
@@ -16,7 +16,7 @@ class PybammExpressionMetadata:
 
     variable_name: str
     expression: pybamm.Symbol
-    parameters: Dict[str, pybamm.Parameter]
+    parameters: dict[str, pybamm.Parameter]
 
 
 @dataclass
