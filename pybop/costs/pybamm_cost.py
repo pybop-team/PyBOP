@@ -1,49 +1,83 @@
+from dataclasses import dataclass
+from typing import Optional
+from uuid import uuid4
+
 import pybamm
+
+import pybop
+
+
+@dataclass
+class PybammExpressionMetadata:
+    """
+    Metadata for a PyBaMM cost function. This includes the variable name, expression,
+    and any parameters that are needed to evaluate the cost function.
+    """
+
+    variable_name: str
+    expression: pybamm.Symbol
+    parameters: dict[str, pybamm.Parameter]
+
+
+@dataclass
+class PybammParameterMetadata:
+    """
+    Metadata for a PyBaMM parameter. This includes the
+    pybamm parameter and the default value to use if the parameter is not
+    set explicitly.
+    """
+
+    parameter: pybamm.Parameter
+    default_value: float
 
 
 class PybammCost:
-    @staticmethod
-    def variable_name():
+    def __init__(self):
+        self._metadata = None
+
+    def metadata(self) -> PybammExpressionMetadata:
         """
-        Name of the corresponding cost variable added to pybamm model.
+        Returns the metadata for the cost function. This includes the variable name,
+        expression, and any parameters that are needed to evaluate the cost function.
+        """
+        if self._metadata is None:
+            raise ValueError("Cost function has not been added to model yet.")
+        return self._metadata
+
+    @classmethod
+    def make_unique_cost_name(cls) -> str:
+        """
+        Make a unique name for the cost function variable using the name of the class
+        and a UUID. This is used to avoid name collisions in the pybamm model.
+        """
+        return f"{cls.__class__.__name__}_{uuid4()}"
+
+    def variable_expression(
+        self,
+        model: pybamm.BaseModel,
+        dataset: Optional[pybop.Dataset] = None,
+    ) -> PybammExpressionMetadata:
+        """
+        Defines the variable expression for the cost function, returning a
+        PybammExpressionMetadata object. This should be implemented in the
+        subclass. The metadata object contains the variable name, expression,
+        and any parameters that are needed to evaluate the cost function.
         """
         raise NotImplementedError()
 
-    @staticmethod
-    def variable_expression(model):
-        """
-        The cost/likelihood expression to be added to pybamm model.
-        """
-        raise NotImplementedError()
-
-    @staticmethod
-    def parameters() -> [(pybamm.Parameter, float)]:
-        """
-        Adds any parameters needed by the cost to the pybamm model
-        """
-        raise NotImplementedError()
-
-    def add_to_model(self, model: pybamm.BaseModel, param: pybamm.ParameterValues):
-        model.variables[self.variable_name()] = self.variable_expression(model)
-        for parameter, default_value in self.parameters():
-            param.update({parameter: default_value}, check_already_exists=False)
-
-
-class PybammSumSquaredError(PybammCost):
-    """
-    A SumSquaredError cost implementation within Pybamm.
-    """
-
-    def variable_name(self):
-        return "SumSquaredError"
-
-    @staticmethod
-    def variable_expression(model):
-        return pybamm.ExplicitTimeIntegral(
-            (pybamm.Variable("Voltage [V]") - pybamm.Variable("Data Voltage [V]")) ** 2,
-            pybamm.Scalar(0.0),
-        )
-
-    @staticmethod
-    def parameters():
-        return []
+    def add_to_model(
+        self,
+        model: pybamm.BaseModel,
+        param: pybamm.ParameterValues,
+        dataset: Optional[pybop.Dataset] = None,
+    ):
+        # if dataset is provided, must contain time data
+        if dataset is not None and "Time [s]" not in dataset:
+            raise ValueError("Dataset must contain time data for PybammCost.")
+        self._metadata = self.variable_expression(model, dataset)
+        model.variables[self._metadata.variable_name] = self._metadata.expression
+        for parameter_name, parameter_metadata in self._metadata.parameters.items():
+            param.update(
+                {parameter_name: parameter_metadata.default_value},
+                check_already_exists=False,
+            )

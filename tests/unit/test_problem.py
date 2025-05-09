@@ -92,14 +92,22 @@ class TestProblem:
                 "Positive electrode active material volume fraction", initial_value=0.6
             )
         )
-        # builder.add_cost(pybop.costs.SumSquaredError())
+        builder.add_cost(pybop.PybammSumSquaredError("Voltage [V]", "Voltage [V]", 1.0))
         problem = builder.build()
 
         assert problem is not None
         problem.set_params(np.array([0.6, 0.6]))
-        assert problem._pipeline.solve() is not None
-        sol = problem._pipeline.solve(calculate_sensitivities=True)
-        assert sol.sensitivities
+        value1 = problem.run()
+        problem.set_params(np.array([0.7, 0.7]))
+        value2 = problem.run()
+        assert (value1 - value2) / value1 > 1e-5
+        problem.set_params(np.array([0.6, 0.6]))
+        value1s, grad1s = problem.run_with_sensitivities()
+        assert grad1s.shape == (2, 1)
+        problem.set_params(np.array([0.7, 0.7]))
+        value2s, grad2s = problem.run_with_sensitivities()
+        np.testing.assert_allclose(value1s, value1)
+        np.testing.assert_allclose(value2s, value2)
 
     def test_builder_with_rebuild_params(
         self, first_model, parameter_values, experiment, dataset
@@ -113,14 +121,18 @@ class TestProblem:
         builder.add_parameter(
             pybop.Parameter("Positive particle radius [m]", initial_value=1e-14)
         )
-        # builder.add_cost(pybop.costs.SumSquaredError())
+        builder.add_cost(pybop.PybammSumSquaredError("Voltage [V]", "Voltage [V]"))
         problem = builder.build()
 
         assert problem is not None
+
+        assert problem is not None
         problem.set_params(np.array([2e-6, 1e-14]))
-        assert problem._pipeline.solve() is not None
-        sol = problem._pipeline.solve(calculate_sensitivities=True)
-        assert not sol.sensitivities
+        value1 = problem.run()
+        problem.set_params(np.array([4e-6, 4e-14]))
+        value2 = problem.run()
+        assert (value1 - value2) / value1 > 1e-5
+        # can't check sensitivities because these are geometric parameters
 
     def test_pure_python_builder(self):
         dataset = pybop.Dataset(

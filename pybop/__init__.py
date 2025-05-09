@@ -13,18 +13,19 @@ from os import path
 #
 try:
     import multiprocessing as mp
+
     if sys.platform == "win32":
         mp.set_start_method("spawn")
     else:
         mp.set_start_method("fork")
-except Exception as e: # pragma: no cover
+except Exception as e:  # pragma: no cover
     error_message = (
         "Multiprocessing context could not be set. "
         "Continuing import without setting context.\n"
         f"Error: {e}"
-    ) # pragma: no cover
-    print(error_message) # pragma: no cover
-    pass # pragma: no cover
+    )  # pragma: no cover
+    print(error_message)  # pragma: no cover
+    pass  # pragma: no cover
 
 #
 # Version info
@@ -97,6 +98,13 @@ from .problems.design_problem import DesignProblem
 #
 # Cost classes
 #
+from .costs.pybamm_cost import (
+    PybammCost,
+    PybammExpressionMetadata,
+    PybammParameterMetadata,
+)
+from .costs.pybamm_sum_squared_error import PybammSumSquaredError
+
 from .costs.base_cost import BaseCost
 from .costs.fitting_costs import (
     FittingCost,
@@ -125,7 +133,7 @@ from .costs._likelihoods import (
     LogPosterior,
 )
 from .costs._weighted_cost import WeightedCost
-from .costs.pybamm_cost import PybammCost, PybammSumSquaredError
+
 
 #
 # Problem Builder
@@ -135,7 +143,12 @@ from . import builders
 #
 # Experimental
 #
-from .experimental.jax_costs import BaseJaxCost, JaxSumSquaredError, JaxLogNormalLikelihood, JaxGaussianLogLikelihoodKnownSigma
+from .experimental.jax_costs import (
+    BaseJaxCost,
+    JaxSumSquaredError,
+    JaxLogNormalLikelihood,
+    JaxGaussianLogLikelihoodKnownSigma,
+)
 
 #
 # Evaluation
@@ -159,7 +172,7 @@ from .optimisers.base_pints_optimiser import BasePintsOptimiser
 from .optimisers.scipy_optimisers import (
     BaseSciPyOptimiser,
     SciPyMinimize,
-    SciPyDifferentialEvolution
+    SciPyDifferentialEvolution,
 )
 from .optimisers.pints_optimisers import (
     GradientDescent,
@@ -180,19 +193,32 @@ from .optimisers.optimisation import Optimisation
 #
 # Monte Carlo classes
 #
-from .samplers.chain_processor import ChainProcessor, MultiChainProcessor, SingleChainProcessor
+from .samplers.chain_processor import (
+    ChainProcessor,
+    MultiChainProcessor,
+    SingleChainProcessor,
+)
 from .samplers.base_sampler import BaseSampler
 from .samplers.base_pints_sampler import BasePintsSampler
 from .samplers.pints_samplers import (
-    NUTS, DREAM, AdaptiveCovarianceMCMC,
-    DifferentialEvolutionMCMC, DramACMC,
+    NUTS,
+    DREAM,
+    AdaptiveCovarianceMCMC,
+    DifferentialEvolutionMCMC,
+    DramACMC,
     EmceeHammerMCMC,
-    HaarioACMC, HaarioBardenetACMC,
-    HamiltonianMCMC, MALAMCMC,
-    MetropolisRandomWalkMCMC, MonomialGammaHamiltonianMCMC,
-    PopulationMCMC, RaoBlackwellACMC,
-    RelativisticMCMC, SliceDoublingMCMC,
-    SliceRankShrinkingMCMC, SliceStepoutMCMC,
+    HaarioACMC,
+    HaarioBardenetACMC,
+    HamiltonianMCMC,
+    MALAMCMC,
+    MetropolisRandomWalkMCMC,
+    MonomialGammaHamiltonianMCMC,
+    PopulationMCMC,
+    RaoBlackwellACMC,
+    RelativisticMCMC,
+    SliceDoublingMCMC,
+    SliceRankShrinkingMCMC,
+    SliceStepoutMCMC,
 )
 from .samplers.mcmc_sampler import MCMCSampler
 

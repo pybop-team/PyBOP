@@ -44,8 +44,7 @@ class PybammProblem(Problem):
         sol = self._pipeline.solve()
 
         # extract and sum cost function values. These are assumed to all be scalar values
-        # (note to self: test this is true in tests....)
-        return np.dot(self._cost_weights, [sol[n].values[0] for n in self._cost_names])
+        return np.dot(self._cost_weights, [sol[n].data for n in self._cost_names])
 
     def run_with_sensitivities(
         self,
@@ -61,16 +60,22 @@ class PybammProblem(Problem):
         sol = self._pipeline.solve(calculate_sensitivities=True)
 
         # extract cost function values. These are assumed to all be scalar values
-        # (note to self: test this is true in tests....)
-        cost = np.dot(self._cost_weights, [sol[n].values[0] for n in self._cost_names])
+        cost = np.dot(self._cost_weights, [sol[n].data for n in self._cost_names])
 
         # sensitivities will all be 1D arrays of length n_params, sum over the different
         # cost functions to get the total sensitivity
+        # Note: current pybamm version has a bug where the sensitivities are not
+        # summed over the discrete time points, so we do that here
+        # REMEMBER TO REMOVE THIS WHEN THE BUG IS FIXED!!!
+        # https://github.com/pybamm-team/PyBaMM/pull/5008
         cost_sens = np.array(
             [
                 np.dot(
+                    [
+                        np.sum(sol[cost_n].sensitivities[param_n], axis=0)
+                        for cost_n in self._cost_names
+                    ],
                     self._cost_weights,
-                    [sol[cost_n].sensitivities[param_n] for cost_n in self._cost_names],
                 )
                 for param_n in self._params.keys()
             ]

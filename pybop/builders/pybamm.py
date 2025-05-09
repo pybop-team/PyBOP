@@ -9,7 +9,6 @@ class Pybamm(builders.BaseBuilder):
     def __init__(self):
         self._pybamm_model = None
         self._costs = []
-        self._cost_names = []
         self._dataset = None
         self._pybop_parameters = Parameters()
         self._solver = None
@@ -35,7 +34,6 @@ class Pybamm(builders.BaseBuilder):
 
     def add_cost(self, cost: PybammCost, weight: float = 1.0) -> None:
         self._costs.append(cost)
-        self._cost_names.append(cost.variable_name())
         self._cost_weights.append(weight)
 
     def add_parameter(self, parameter: Parameter) -> None:
@@ -86,8 +84,10 @@ class Pybamm(builders.BaseBuilder):
             self._set_control_variable()
 
         # add costs
+        cost_names = []
         for cost in self._costs:
-            cost.add_to_model(model, param)
+            cost.add_to_model(model, param, self._dataset)
+            cost_names.append(cost.metadata().variable_name)
 
         # Construct the pipeline
         pipeline = PybammPipeline(
@@ -103,7 +103,7 @@ class Pybamm(builders.BaseBuilder):
         return PybammProblem(
             pybamm_pipeline=pipeline,
             pybop_params=self._pybop_parameters,
-            cost_names=self._cost_names,
+            cost_names=cost_names,
             cost_weights=self._cost_weights,
         )
 

@@ -164,6 +164,10 @@ class PybammPipeline:
         disc = pybamm.Discretisation(mesh, self._methods, check_model=True)
         disc.process_model(model)
         self._built_model = model
+
+        # reset the solver since we've built a new model
+        self._solver = self._solver.copy()
+
         # self._solver.set_up(model) #Is this required? If so, we need to pass an `inputs` dict
 
         # TODO: unfortunately, the solver will still call set_up on the model
