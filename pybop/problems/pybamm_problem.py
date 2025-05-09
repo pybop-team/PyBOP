@@ -64,10 +64,17 @@ class PybammProblem(Problem):
 
         # sensitivities will all be 1D arrays of length n_params, sum over the different
         # cost functions to get the total sensitivity
+        # Note: current pybamm version has a bug where the sensitivities are not
+        # summed over the discrete time points, so we do that here
+        # REMEMBER TO REMOVE THIS WHEN THE BUG IS FIXED!!!
+        # https://github.com/pybamm-team/PyBaMM/pull/5008
         cost_sens = np.array(
             [
                 np.dot(
-                    [sol[cost_n].sensitivities[param_n] for cost_n in self._cost_names],
+                    [
+                        np.sum(sol[cost_n].sensitivities[param_n], axis=0)
+                        for cost_n in self._cost_names
+                    ],
                     self._cost_weights,
                 )
                 for param_n in self._params.keys()

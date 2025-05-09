@@ -103,7 +103,7 @@ class TestProblem:
         assert (value1 - value2) / value1 > 1e-5
         problem.set_params(np.array([0.6, 0.6]))
         value1s, grad1s = problem.run_with_sensitivities()
-        assert grad1s.shape == (2,)
+        assert grad1s.shape == (2, 1)
         problem.set_params(np.array([0.7, 0.7]))
         value2s, grad2s = problem.run_with_sensitivities()
         np.testing.assert_allclose(value1s, value1)
