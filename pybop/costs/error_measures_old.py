@@ -3,10 +3,9 @@ from typing import Optional, Union
 import numpy as np
 
 from pybop import FittingCost
-from pybop.costs.base_cost import BaseCost
 
 
-class NewMeanSquaredError(BaseCost):
+class MeanSquaredError(FittingCost):
     """
     Mean square error (MSE) cost function.
 
@@ -15,15 +14,15 @@ class NewMeanSquaredError(BaseCost):
     observed values.
     """
 
-    @staticmethod
-    def __call__(
+    def _error_measure(
+        self,
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        e = np.mean(np.abs(r) ** 2)
+        e = np.mean((np.abs(r) ** 2) * self.weighting)
 
         if dy is not None:
-            de = 2 * np.mean((r) * dy, axis=(1, 2))
+            de = 2 * np.mean((r * self.weighting) * dy, axis=(1, 2))
             return e, de
 
         return e

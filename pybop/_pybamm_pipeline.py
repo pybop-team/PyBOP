@@ -1,4 +1,5 @@
 from copy import copy, deepcopy
+from typing import Union
 
 import numpy as np
 import pybamm
@@ -31,6 +32,7 @@ class PybammPipeline:
         t_end: np.number = 1,
         t_interp: np.ndarray = None,
         var_pts: dict = None,
+        initial_state: Union[float, str] = None,
     ):
         """
         Arguments
@@ -49,9 +51,13 @@ class PybammPipeline:
             The time points at which to interpolate the solution. If None, no interpolation will be done.
         rebuild_parameters : list[str]
             The parameters that will be used to rebuild the model. If None, the model will not be rebuilt.
+        initial_state: float | str
+            The initial state of charge or voltage for the battery model. If float it will be represented
+            as SoC and must be in range 0 to 1. If str it will be represented as voltage and needs be in
+            the format: "3.4 V".
         """
         self._model = model
-        self._parameter_values = parameter_values
+        self._parameter_values = parameter_values or model.default_parameter_values
         self._pybop_parameters = pybop_parameters
         self._parameter_names = pybop_parameters.keys()
         self._geometry = model.default_geometry
@@ -60,10 +66,12 @@ class PybammPipeline:
         self._t_start = t_start
         self._t_end = t_end
         self._t_interp = t_interp
+        self._initial_state = initial_state
+        self._built_initial_soc = None
         self._var_pts = var_pts or model.default_var_pts
         self._submesh_types = model.default_submesh_types
         self._built_model = self._model
-        self.requires_rebuild = self._determine_rebuild()
+        self.requires_rebuild = True if initial_state else self._determine_rebuild()
 
     def _determine_rebuild(self) -> bool:
         """
@@ -144,8 +152,11 @@ class PybammPipeline:
         """
         Build the PyBaMM pipeline using the given parameter_values.
         """
-
         model = self._model.new_copy()
+
+        if self._initial_state is not None:
+            self._set_initial_state(model, self._initial_state)
+
         geometry = copy(self._geometry)  # copy?
         self._parameter_values.process_geometry(geometry)
         self._parameter_values.process_model(model)
@@ -201,3 +212,40 @@ class PybammPipeline:
             t_interp=self._t_interp,
             calculate_sensitivities=calculate_sensitivities,
         )
+
+    def _set_initial_state(self, model, initial_state) -> None:
+        """
+        Sets the initial state of the model.
+
+        Parameters
+        ----------
+        model : pybamm.Model
+
+        initial_state : float | str
+            Can be either a float between 0 and 1 representing the initial SoC,
+            or a string representing the initial voltage i.e. "3.4 V"
+        """
+
+        options = model.options
+        param = model.param
+        if options["open-circuit potential"] == "MSMR":
+            self._parameter_values.set_initial_ocps(
+                initial_state, param=param, options=options
+            )
+        elif options["working electrode"] == "positive":
+            self._parameter_values.set_initial_stoichiometry_half_cell(
+                initial_state,
+                param=param,
+                options=options,
+                inputs=self._pybop_parameters.as_dict(),
+            )
+        else:
+            self._parameter_values.set_initial_stoichiometries(
+                initial_state,
+                param=param,
+                options=options,
+                inputs=self._pybop_parameters.as_dict(),
+            )
+
+        # Save solved initial SOC in case we need to re-build the model
+        self._built_initial_state = initial_state

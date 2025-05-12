@@ -1,6 +1,7 @@
 import numpy as np
 import pybamm
 import pytest
+from pybamm import IDAKLUSolver
 
 import pybop
 
@@ -84,7 +85,11 @@ class TestProblem:
     def test_builder(self, first_model, parameter_values, experiment, dataset):
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(first_model, parameter_values=parameter_values)
+        builder.set_simulation(
+            first_model,
+            parameter_values=parameter_values,
+            solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
+        )
         builder.add_parameter(
             pybop.Parameter(
                 "Negative electrode active material volume fraction", initial_value=0.6
@@ -117,7 +122,11 @@ class TestProblem:
     ):
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(first_model, parameter_values=parameter_values)
+        builder.set_simulation(
+            first_model,
+            parameter_values=parameter_values,
+            solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
+        )
         builder.add_parameter(
             pybop.Parameter("Negative electrode thickness [m]", initial_value=1e-6)
         )
@@ -151,7 +160,7 @@ class TestProblem:
                 "Positive electrode active material volume fraction", initial_value=0.6
             )
         )
-        # builder.add_cost(pybop.costs.SumSquaredError())
+        builder.add_cost(pybop.NewMeanSquaredError())
         problem = builder.build()
 
         assert problem is not None
@@ -175,3 +184,43 @@ class TestProblem:
 
         # Assertion to add
         # Parameters
+
+    def test_build_with_initial_state(
+        self, first_model, parameter_values, experiment, dataset
+    ):
+        builder = pybop.builders.Pybamm()
+        builder.set_dataset(dataset)
+        builder.set_simulation(
+            first_model,
+            parameter_values=parameter_values,
+            solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
+            initial_state="4.0 V",
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Positive electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        builder.add_cost(pybop.PybammSumSquaredError("Voltage [V]", "Voltage [V]", 1.0))
+        problem = builder.build()
+
+        assert problem is not None
+
+        # First build
+        problem.set_params(np.array([0.6, 0.6]))
+        value1 = problem.run()
+        built_model_1 = problem._pipeline.built_model.new_copy()
+
+        # Second build
+        problem.set_params(np.array([0.7, 0.7]))
+        value2 = problem.run()
+        built_model_2 = problem._pipeline.built_model.new_copy()
+
+        # Assert builds are different
+        assert (value1 - value2) / value1 > 1e-5
+        assert built_model_1 != built_model_2

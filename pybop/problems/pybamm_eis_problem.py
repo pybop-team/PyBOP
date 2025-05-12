@@ -17,13 +17,15 @@ class PybammEISProblem(Problem):
         self,
         pybamm_pipeline: PybammEISPipeline,
         pybop_params: Parameters = None,
-        cost_names: list[str] = None,
+        costs: list = None,
         cost_weights: Union[list, np.array] = None,
+        fitting_data: list = None,
     ):
         super().__init__(pybop_params=pybop_params)
         self._pipeline = pybamm_pipeline
-        self._cost_names = cost_names
+        self._costs = costs
         self._cost_weights = cost_weights
+        self._fitting_data = fitting_data
 
     def set_params(self, p: np.ndarray) -> None:
         """
@@ -43,8 +45,8 @@ class PybammEISProblem(Problem):
 
         # run simulation
         self._pipeline.initialise_eis_pipeline()
-        sol = self._pipeline.solve()
+        res = self._pipeline.solve() - self._fitting_data
 
         # extract and sum cost function values. These are assumed to all be scalar values
         # (note to self: test this is true in tests....)
-        return np.dot(self._cost_weights, [sol[n].values[0] for n in self._cost_names])
+        return np.dot(self._cost_weights, [cost(res) for cost in self._costs])

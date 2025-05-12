@@ -171,7 +171,7 @@ class PybammEISPipeline(PybammPipeline):
         # Calculate the impedance
         return -x[-2] / x[-1]
 
-    def solve(self, calculate_sensitivities: bool = False) -> dict:
+    def solve(self, calculate_sensitivities: bool = False) -> np.ndarray:
         """
         Run the simulation using the built model and solver.
 
@@ -187,4 +187,4 @@ class PybammEISPipeline(PybammPipeline):
         """
         zs = [self.calculate_impedance(frequency) for frequency in self._f_eval]
 
-        return {"Impedance": np.asarray(zs) * self.z_scale}
+        return np.asarray(zs) * self.z_scale
