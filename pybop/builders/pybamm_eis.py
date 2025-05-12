@@ -1,9 +1,11 @@
-from typing import Callable
+from typing import Callable, Union
 
+import numpy as np
 import pybamm
 
 from pybop import PybammEISProblem, builders
 from pybop._pybamm_eis_pipeline import PybammEISPipeline
+from pybop.costs.base_cost import BaseCost
 
 
 class PybammEIS(builders.BaseBuilder):
@@ -25,13 +27,31 @@ class PybammEIS(builders.BaseBuilder):
         self._parameter_values = parameter_values or model.default_parameter_values
         self._solver = pybamm.CasadiSolver()
 
-    def add_cost(self, cost: Callable, weight: float = 1.0) -> None:
-        """
-        Add domain weighting option here? Or maybe, set_simulation? Or maybe dataset
-        Options: "equal"(default), "domain", or a custom numpy array.
-        """
+    def add_cost(self, cost: Union[Callable, BaseCost], weight: float = 1.0) -> None:
+        """Adds a cost to the problem."""
+        if isinstance(cost, BaseCost):
+            if cost.weighting is None or cost.weighting == "equal":
+                cost.weighting = 1.0
+            elif cost.weighting == "domain":
+                self._set_cost_domain_weighting(cost)
+
         self._costs.append(cost)
         self._cost_weights.append(weight)
+
+    def _set_cost_domain_weighting(self, cost):
+        """Calculate domain-based weighting."""
+        domain_data = self._dataset[self.domain]
+        domain_spacing = domain_data[1:] - domain_data[:-1]
+        mean_spacing = np.mean(domain_spacing)
+
+        # Create a domain weighting array in one operation
+        cost.weighting = np.concatenate(
+            (
+                [(mean_spacing + domain_spacing[0]) / 2],
+                (domain_spacing[1:] + domain_spacing[:-1]) / 2,
+                [(domain_spacing[-1] + mean_spacing) / 2],
+            )
+        ) * ((len(domain_data) - 1) / (domain_data[-1] - domain_data[0]))
 
     def build(self) -> PybammEISProblem:
         """

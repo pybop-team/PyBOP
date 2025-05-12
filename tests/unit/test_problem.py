@@ -125,13 +125,12 @@ class TestProblem:
         builder.set_simulation(
             first_model,
             parameter_values=parameter_values,
-            solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
         )
         builder.add_parameter(
             pybop.Parameter("Negative electrode thickness [m]", initial_value=1e-6)
         )
         builder.add_parameter(
-            pybop.Parameter("Positive particle radius [m]", initial_value=1e-14)
+            pybop.Parameter("Positive particle radius [m]", initial_value=1e-5)
         )
         builder.add_cost(pybop.PybammSumSquaredError("Voltage [V]", "Voltage [V]"))
         problem = builder.build()
@@ -139,11 +138,13 @@ class TestProblem:
         assert problem is not None
 
         assert problem is not None
-        problem.set_params(np.array([2e-6, 1e-14]))
+        problem.set_params(np.array([2e-5, 1.5e-6]))
         value1 = problem.run()
-        problem.set_params(np.array([4e-6, 4e-14]))
+        problem.set_params(np.array([1e-5, 0.5e-6]))
         value2 = problem.run()
-        assert (value1 - value2) / value1 > 1e-5
+        assert (
+            value1 - value2
+        ) / value1 < 1e-5  # value2 represents a higher cost than value1
         # can't check sensitivities because these are geometric parameters
 
     def test_eis_builder(self, first_model, parameter_values, experiment, eis_dataset):
@@ -160,7 +161,7 @@ class TestProblem:
                 "Positive electrode active material volume fraction", initial_value=0.6
             )
         )
-        builder.add_cost(pybop.NewMeanSquaredError())
+        builder.add_cost(pybop.NewMeanSquaredError(weighting="equal"))
         problem = builder.build()
 
         assert problem is not None

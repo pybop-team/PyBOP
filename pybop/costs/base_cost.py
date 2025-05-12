@@ -11,34 +11,14 @@ class BaseCost:
     ----------
     weighting : np.ndarray, optional
         The type of weighting array to use when taking the sum or mean of the error
-        measure.
+        measure. Options: "equal"(default), "domain", or a custom numpy array.
     """
 
-    def __init__(self, weighting: np.ndarray = None):
-        if weighting is None or weighting == "equal":
-            self.weighting = 1.0
-        elif weighting == "domain":
-            self._set_domain_weighting()
-        else:
-            self.weighting = np.asarray(weighting)
+    def __init__(self, weighting: Union[str, np.ndarray] = None):
+        self.weighting = weighting
 
-    def _set_domain_weighting(self):
-        """Calculate domain-based weighting."""
-        domain_data = self.problem.domain_data
-        domain_spacing = domain_data[1:] - domain_data[:-1]
-        mean_spacing = np.mean(domain_spacing)
-
-        # Create weights array in one operation
-        self.weighting = np.concatenate(
-            (
-                [(mean_spacing + domain_spacing[0]) / 2],
-                (domain_spacing[1:] + domain_spacing[:-1]) / 2,
-                [(domain_spacing[-1] + mean_spacing) / 2],
-            )
-        ) * ((len(domain_data) - 1) / (domain_data[-1] - domain_data[0]))
-
-    @staticmethod
     def __call__(
+        self,
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
