@@ -1,3 +1,5 @@
+import warnings
+
 import casadi
 import numpy as np
 import pybamm
@@ -10,7 +12,7 @@ from pybop._pybamm_pipeline import PybammPipeline
 
 class PybammEISPipeline(PybammPipeline):
     """
-    A class to build a PyBaMM pipeline for a given model and data, and run the resultant simulation.
+    A class to build an EIS PyBaMM pipeline for a given model and data, and run the resultant simulation.
 
     There are two contexts in which this class can be used:
     1. A pybamm model needs to be built once, and then run multiple times with different input parameters
@@ -26,14 +28,14 @@ class PybammEISPipeline(PybammPipeline):
     def __init__(
         self,
         model: pybamm.BaseModel,
+        f_eval: list,
         parameter_values: pybamm.ParameterValues = None,
         pybop_parameters: Parameters = None,
         solver: pybamm.BaseSolver = None,
-        f_eval: list = None,
         var_pts: dict = None,
     ):
         """
-        Arguments
+        Parameters
         ---------
         model : pybamm.BaseModel
             The PyBaMM model to be used.
@@ -41,14 +43,10 @@ class PybammEISPipeline(PybammPipeline):
             The parameters to be used in the model.
         solver : pybamm.BaseSolver
             The solver to be used. If None, the idaklu solver will be used.
-        t_start : number
-            The start time of the simulation.
-        t_end : number
-            The end time of the simulation.
-        t_interp : np.ndarray
-            The time points at which to interpolate the solution. If None, no interpolation will be done.
-        rebuild_parameters : list[str]
-            The parameters that will be used to rebuild the model. If None, the model will not be rebuilt.
+        f_eval : list
+            The frequencies at which to evaluate the impedance.
+        var_pts : dict
+            The number of points at which to discretise the model.
         """
         super().__init__(
             model,
@@ -63,21 +61,44 @@ class PybammEISPipeline(PybammPipeline):
         self._model = self.set_up_for_eis(model.new_copy())
         self._parameter_values["Current function [A]"] = 0
 
+        # Initialise
+        self.M = None
+        self._jac = None
+        self.b = None
+
         v_scale = getattr(model.variables["Voltage [V]"], "scale", 1)
         i_scale = getattr(model.variables["Current [A]"], "scale", 1)
         self.z_scale = self._parameter_values.evaluate(v_scale / i_scale)
 
-    def set_up_for_eis(self, model):
+    def set_up_for_eis(self, model: pybamm.BaseModel) -> pybamm.BaseModel:
         """
         Set up the model for electrochemical impedance spectroscopy (EIS) simulations.
-        This method sets up the model for EIS simulations by adding the necessary
-        algebraic equations and variables to the model.
+        This method adds the necessary algebraic equations and variables to the model.
         Originally developed by pybamm-eis: https://github.com/pybamm-team/pybamm-eis
+
         Parameters
         ----------
-        model : pybamm.Model
+        model : pybamm.BaseModel
             The PyBaMM model to be used for EIS simulations.
+
+        Returns
+        -------
+        pybamm.BaseModel
+            The modified model ready for EIS simulations.
+
+        Raises
+        ------
+        ValueError
+            If the model is missing required variables.
         """
+        # Verify model has required variables
+        required_vars = ["Voltage [V]", "Current [A]"]
+        for var in required_vars:
+            if var not in model.variables:
+                raise ValueError(
+                    f"Model must contain variable '{var}' for EIS simulation"
+                )
+
         V_cell = pybamm.Variable("Voltage variable [V]")
         model.variables["Voltage variable [V]"] = V_cell
         V = model.variables["Voltage [V]"]
@@ -123,7 +144,12 @@ class PybammEISPipeline(PybammPipeline):
         """
         Initialise the Electrochemical Impedance Spectroscopy (EIS) simulation.
         This method sets up the mass matrix and solver, converts inputs to the appropriate format,
-        extracts necessary attributes from the model, and prepares matrices for the simulation.
+        extracts the necessary attributes from the model, and prepares matrices for the simulation.
+
+        Raises
+        ------
+        RuntimeError
+            If the model hasn't been built yet.
         """
         inputs = self._pybop_parameters.as_dict()
         M = self.built_model.mass_matrix.entries
@@ -136,7 +162,7 @@ class PybammEISPipeline(PybammPipeline):
             else inputs or []
         )
 
-        # Extract necessary attributes from the model
+        # Extract the necessary attributes from the model
         y0 = self.built_model.concatenated_initial_conditions.evaluate(0, inputs=inputs)
         jac = self.built_model.jac_rhs_algebraic_eval(0, y0, casadi_inputs).sparse()
 
@@ -151,40 +177,51 @@ class PybammEISPipeline(PybammPipeline):
     def calculate_impedance(self, frequency):
         """
         Calculate the impedance for a given frequency.
+
         This method computes the system matrix, solves the linear system, and calculates
         the impedance based on the solution.
 
         Parameters
         ----------
-            frequency (np.ndarray | list like): The frequency at which to calculate the impedance.
+        frequency : float
+            The frequency at which to calculate the impedance in Hz.
 
         Returns
         -------
-            The calculated impedance (complex np.ndarray).
+        complex
+            The calculated impedance.
         """
+
         # Compute the system matrix
         A = 1.0j * 2 * np.pi * frequency * self.M - self._jac
 
         # Solve the system
         x = spsolve(A, self.b)
 
-        # Calculate the impedance
+        # Calculate the impedance (voltage / current)
         return -x[-2] / x[-1]
 
     def solve(self, calculate_sensitivities: bool = False) -> np.ndarray:
         """
-        Run the simulation using the built model and solver.
+        Run the EIS simulation to calculate impedance at all specified frequencies.
 
         Parameters
         ---------
-        calculate_sensitivities : bool
-            Whether to calculate sensitivities or not.
+        calculate_sensitivities : bool, optional
+            Whether to calculate sensitivities or not. Default is False.
+            Currently not implemented for EIS.
 
         Returns
         -------
-        sol : dictionary
-            A dictionary containing the impedance values with corresponding frequencies.
+        np.ndarray
+            Complex array containing the impedance values with corresponding frequencies.
         """
+        if calculate_sensitivities:
+            warnings.warn(
+                "Sensitivity calculation not implemented for EIS simulations",
+                stacklevel=2,
+            )
+
         zs = [self.calculate_impedance(frequency) for frequency in self._f_eval]
 
         return np.asarray(zs) * self.z_scale

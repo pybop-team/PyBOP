@@ -35,7 +35,7 @@ class PybammPipeline:
         initial_state: Union[float, str] = None,
     ):
         """
-        Arguments
+        Parameters
         ---------
         model : pybamm.BaseModel
             The PyBaMM model to be used.
@@ -49,11 +49,9 @@ class PybammPipeline:
             The end time of the simulation.
         t_interp : np.ndarray
             The time points at which to interpolate the solution. If None, no interpolation will be done.
-        rebuild_parameters : list[str]
-            The parameters that will be used to rebuild the model. If None, the model will not be rebuilt.
         initial_state: float | str
-            The initial state of charge or voltage for the battery model. If float it will be represented
-            as SoC and must be in range 0 to 1. If str it will be represented as voltage and needs be in
+            The initial state of charge or voltage for the battery model. If float, it will be represented
+            as SoC and must be in range 0 to 1. If str, it will be represented as voltage and needs to be in
             the format: "3.4 V".
         """
         self._model = model

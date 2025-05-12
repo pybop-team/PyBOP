@@ -96,10 +96,10 @@ class PybammEIS(builders.BaseBuilder):
         # Construct the pipeline
         pipeline = PybammEISPipeline(
             model,
+            self._dataset[self.domain],
             param,
             pybop_parameters,
             self._solver,
-            f_eval=self._dataset[self.domain],
         )
 
         # Build and initialise the pipeline

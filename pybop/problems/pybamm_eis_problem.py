@@ -9,7 +9,7 @@ from pybop.problems.base_problem import Problem
 
 class PybammEISProblem(Problem):
     """
-    Defines a problem that uses a PyBaMM model as the simulation + cost function to evaluate
+    Defines a problem that uses a PyBaMM model as the simulation to evaluate
     the electrochemical impedance via electrochemical impedance spectroscopy (EIS).
     """
 
@@ -47,6 +47,4 @@ class PybammEISProblem(Problem):
         self._pipeline.initialise_eis_pipeline()
         res = self._pipeline.solve() - self._fitting_data
 
-        # extract and sum cost function values. These are assumed to all be scalar values
-        # (note to self: test this is true in tests....)
         return np.dot(self._cost_weights, [cost(res) for cost in self._costs])
