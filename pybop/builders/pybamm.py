@@ -1,16 +1,15 @@
 import pybamm
+import pybop
 
-from pybop import Parameter, Parameters, PybammProblem, builders
 from pybop._pybamm_pipeline import PybammPipeline
 from pybop.costs.pybamm_cost import PybammCost
 
 
-class Pybamm(builders.BaseBuilder):
+class Pybamm(pybop.builders.BaseBuilder):
     def __init__(self):
         self._pybamm_model = None
         self._costs = []
         self._dataset = None
-        self._pybop_parameters = Parameters()
         self._solver = None
         self._parameter_values = None
         self._rebuild_parameters = None
@@ -36,10 +35,7 @@ class Pybamm(builders.BaseBuilder):
         self._costs.append(cost)
         self._cost_weights.append(weight)
 
-    def add_parameter(self, parameter: Parameter) -> None:
-        self._pybop_parameters.add(parameter)
-
-    def build(self) -> PybammProblem:
+    def build(self) -> pybop.PybammProblem:
         """
         Builds the Pybamm problem given the provided objects.
 
@@ -73,7 +69,7 @@ class Pybamm(builders.BaseBuilder):
         # Proceed to building the pipeline
         model = self._pybamm_model
         param = self._parameter_values
-        pybop_parameters = self._pybop_parameters
+        pybop_parameters = self.build_parameters()
 
         # Build pybamm if not already built
         if not model._built:  # noqa: SLF001

@@ -3,6 +3,7 @@ from collections import OrderedDict
 from typing import Optional
 
 import numpy as np
+import pybop
 
 from pybop import ComposedTransformation, IdentityTransformation, LogTransformation
 from pybop._utils import is_numeric
@@ -229,13 +230,11 @@ class Parameters:
 
     Parameters
     ----------
-    parameter_list : pybop.Parameter or Dict
+    parameter_list : dict of pybop.Parameter
     """
 
-    def __init__(self, *args):
-        self.param = OrderedDict()
-        for param in args:
-            self.add(param)
+    def __init__(self, params: dict[pybop.Parameter]):
+        self._params = params
         self.initial_value()
 
     def __getitem__(self, key: str) -> Parameter:
@@ -287,25 +286,6 @@ class Parameters:
         """
         Construct the parameter class with a name, initial value, prior, and bounds.
         """
-        if isinstance(parameter, Parameter):
-            if parameter.name in self.param.keys():
-                raise ValueError(
-                    f"There is already a parameter with the name {parameter.name} "
-                    "in the Parameters object. Please remove the duplicate entry."
-                )
-            self.param[parameter.name] = parameter
-        elif isinstance(parameter, dict):
-            if "name" not in parameter.keys():
-                raise Exception("Parameter requires a name.")
-            name = parameter["name"]
-            if name in self.param.keys():
-                raise ValueError(
-                    f"There is already a parameter with the name {name} "
-                    "in the Parameters object. Please remove the duplicate entry."
-                )
-            self.param[name] = Parameter(**parameter)
-        else:
-            raise TypeError("Each parameter input must be a Parameter or a dictionary.")
 
     def remove(self, parameter_name):
         """
