@@ -5,6 +5,7 @@ import numpy as np
 from pybamm import Solution
 
 from pybop import BaseCost, BaseLikelihood, Inputs
+from pybop.problems.base_problem import Problem
 
 if TYPE_CHECKING:
     from pybop import BaseOptimiser
@@ -34,7 +35,7 @@ class OptimisationResult:
 
     def __init__(
         self,
-        optim: "BaseOptimiser",
+        problem: Problem,
         x: Union[Inputs, np.ndarray] = None,
         final_cost: Optional[float] = None,
         sensitivities: Optional[dict] = None,
@@ -44,7 +45,7 @@ class OptimisationResult:
         message: Optional[str] = None,
         scipy_result=None,
     ):
-        self.optim = optim
+        self._problem = problem
         self.cost = self.optim.cost
         self.minimising = not self.optim.invert_cost
         self._transformation = self.optim.transformation

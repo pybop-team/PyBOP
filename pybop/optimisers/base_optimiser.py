@@ -4,14 +4,8 @@ from dataclasses import dataclass, field
 
 import jax.numpy as jnp
 import numpy as np
-
-from pybop import (
-    BaseCost,
-    CostInterface,
-    OptimisationResult,
-    Parameter,
-    Parameters,
-)
+import pybop
+from pybop.problems.base_problem import Problem
 
 
 @dataclass
@@ -28,230 +22,20 @@ class OptimisationLog:
     cost_best: list[float] = field(default_factory=list)
 
 
-class BaseOptimiser(CostInterface):
-    """
-    A base class for defining optimisation methods. Optimisers perform minimisation of the cost
-    function; maximisation may be performed instead using the option invert_cost=True.
-
-    This class serves as a base class for creating optimisers. It provides a basic structure for
-    an optimisation algorithm, including the initial setup and a method stub for performing the
-    optimisation process. Child classes should override _set_up_optimiser and the _run method with
-    a specific algorithm.
-
-    Parameters
-    ----------
-    cost : pybop.BaseCost or callable
-        An objective function to be optimised, which can be either a pybop.Cost or callable function.
-    **optimiser_kwargs : optional
-        Valid option keys and their values, for example:
-        x0 : numpy.ndarray
-            Initial values of the parameters for the optimisation.
-        bounds : dict
-            Dictionary containing bounds for the parameters with keys 'lower' and 'upper'.
-        sigma0 : float or sequence
-            Initial step size or standard deviation in the (search) parameters. Either a scalar value
-            (same for all coordinates) or an array with one entry per dimension.
-            Not all methods will use this information.
-        verbose : bool, optional
-            If True, the optimisation progress and final result is printed (default: False).
-        verbose_print_rate : int, optional
-            The frequency in iterations to print the optimisation progress (default: 50).
-        physical_viability : bool, optional
-            If True, the feasibility of the optimised parameters is checked (default: False).
-        allow_infeasible_solutions : bool, optional
-            If True, infeasible parameter values will be allowed in the optimisation (default: True).
-
-    Attributes
-    ----------
-    log : dict
-        A log of the parameter values tried during the optimisation and associated costs.
-    """
-
-    def __init__(
-        self,
-        cost,
-        **optimiser_kwargs,
-    ):
-        # First set attributes to default values
-        self.parameters = Parameters()
-        self.x0 = optimiser_kwargs.get("x0", None)
-        self.bounds = None
-        self.sigma0 = 0.02
-        self.verbose = False
-        self.verbose_print_rate = 50
-        self._needs_sensitivities = False
-        self.physical_viability = False
-        self.allow_infeasible_solutions = False
-        self.default_max_iterations = 1000
-        self.result = None
+class OptimisationLogger:
+    def __init__(self, verbose: bool = False, verbose_print_rate: int = 50):
+        self._verbose = verbose
+        self._verbose_print_rate = verbose_print_rate
         self._iter_count = 0
-        self.log = OptimisationLog()
-        transformation = None
-        invert_cost = False
-
-        if isinstance(cost, BaseCost):
-            self.cost = cost
-            self.parameters = deepcopy(self.cost.parameters)
-            transformation = self.parameters.construct_transformation()
-            self.set_allow_infeasible_solutions()
-            invert_cost = not self.cost.minimising
-
-        else:
-            try:
-                x0 = optimiser_kwargs.get("x0", [])
-                for i, value in enumerate(x0):
-                    self.parameters.add(
-                        Parameter(name=f"Parameter {i}", initial_value=value)
-                    )
-                cost_test = cost(x0)
-                warnings.warn(
-                    "The cost is not an instance of pybop.BaseCost, but let's continue "
-                    "assuming that it is a callable function to be minimised.",
-                    UserWarning,
-                    stacklevel=2,
-                )
-                self.cost = cost
-
-            except Exception as e:
-                raise Exception(
-                    "The cost is not a recognised cost object or function."
-                ) from e
-
-            if not np.isscalar(cost_test) or not np.isreal(cost_test):
-                raise TypeError(
-                    f"Cost returned {type(cost_test)}, not a scalar numeric value."
-                )
-
-        if len(self.parameters) == 0:
-            raise ValueError("There are no parameters to optimise.")
-
-        super().__init__(transformation=transformation, invert_cost=invert_cost)
-
-        self.unset_options = optimiser_kwargs
-        self.unset_options_store = optimiser_kwargs.copy()
-        self.set_base_options()
-        self._set_up_optimiser()
-
-        # Throw a warning if any options remain
-        if self.unset_options:
-            warnings.warn(
-                f"Unrecognised keyword arguments: {self.unset_options} will not be used.",
-                UserWarning,
-                stacklevel=2,
-            )
-
-    def set_base_options(self):
-        """
-        Update the base optimiser options and remove them from the options dictionary.
-        """
-        # Set initial search-space parameter values
-        x0 = self.unset_options.pop("x0", None)
-        if x0 is not None:
-            self.parameters.update(initial_values=x0)
-        self.x0 = self.parameters.reset_initial_value(apply_transform=True)
-
-        # Set the search-space parameter bounds (for all or no parameters)
-        bounds = self.unset_options.pop("bounds", self.parameters.get_bounds())
-        if bounds is not None:
-            self.parameters.update(bounds=bounds)
-            bounds = self.parameters.get_bounds(apply_transform=True)
-        self.bounds = bounds  # can be None or current parameter bounds
-
-        # Set default initial standard deviation (for all or no parameters)
-        self.sigma0 = self.unset_options.pop(
-            "sigma0", self.parameters.get_sigma0(apply_transform=True) or self.sigma0
-        )
-
-        # Set other options
-        self.verbose = self.unset_options.pop("verbose", self.verbose)
-        self.verbose_print_rate = self.unset_options.pop(
-            "verbose_print_rate", self.verbose_print_rate
-        )
-        if "allow_infeasible_solutions" in self.unset_options.keys():
-            self.set_allow_infeasible_solutions(
-                self.unset_options.pop("allow_infeasible_solutions")
-            )
-
-        # Set multistart
-        self.multistart = self.unset_options.pop("multistart", 1)
-
-        # Parameter sensitivities
-        self.compute_sensitivities = self.unset_options.pop(
-            "compute_sensitivities", False
-        )
-        self.n_samples_sensitivity = self.unset_options.pop(
-            "n_sensitivity_samples", 256
-        )
-
-    def _set_up_optimiser(self):
-        """
-        Parse optimiser options and prepare the optimiser.
-
-        This method should be implemented by child classes.
-
-        Raises
-        ------
-        NotImplementedError
-            If the method has not been implemented by the subclass.
-        """
-        raise NotImplementedError
-
-    def run(self):
-        """
-        Run the optimisation and return the optimised parameters and final cost.
-
-        Returns
-        -------
-        results: OptimisationResult
-            The pybop optimisation result class.
-        """
-        self.result = OptimisationResult(optim=self)
-
-        for i in range(self.multistart):
-            if i >= 1:
-                self.unset_options = self.unset_options_store.copy()
-                self.parameters.update(initial_values=self.parameters.rvs(1))
-                self.x0 = self.parameters.reset_initial_value(apply_transform=True)
-                self._set_up_optimiser()
-
-            self.result.add_result(self._run())
-
-        # Store the optimised parameters
-        self.parameters.update(values=self.result.x_best)
-
-        # Compute sensitivities
-        self.result.sensitivities = self._parameter_sensitivities()
-
-        if self.verbose:
-            print(self.result)
-
-        return self.result
-
-    def _run(self):
-        """
-        Contains the logic for the optimisation algorithm.
-
-        This method should be implemented by child classes to perform the actual optimisation.
-
-        Raises
-        ------
-        NotImplementedError
-            If the method has not been implemented by the subclass.
-        """
-        raise NotImplementedError
-
-    def _parameter_sensitivities(self):
-        if not self.compute_sensitivities:
-            return None
-
-        return self.cost.sensitivity_analysis(self.n_samples_sensitivity)
 
     def log_update(
         self,
         iterations=None,
         evaluations=None,
-        x=None,
-        x_best=None,
+        x_model=None,
+        x_search=None,
+        x_model_best=None,
+        x_seach_best=None,
         cost=None,
         cost_best=None,
         x0=None,
@@ -265,10 +49,14 @@ class BaseOptimiser(CostInterface):
             Iteration indices to log (default: None).
         evaluations: list or array-like, optional
             Evaluation indices to log (default: None).
-        x : list or array-like, optional
-            Parameter values (default: None).
-        x_best : list or array-like, optional
-            Parameter values corresponding to the best cost yet (default: None).
+        x_model : list or array-like, optional
+            Parameter values in model space (default: None).
+        x_search : list or array-like, optional
+            Search parameter values in search space (default: None).
+        x_best_model : list or array-like, optional
+            Parameter values in model space corresponding to the best cost yet (default: None).
+        x_best_search : list or array-like, optional
+            Parameter values in search space corresponding to the best cost yet (default: None).
         cost : list, optional
             Cost values corresponding to x (default: None).
         cost_best : list, optional
@@ -279,22 +67,13 @@ class BaseOptimiser(CostInterface):
         # Update logs for each provided parameter
         self._update_log_entry("iterations", iterations)
         self._update_log_entry("evaluations", evaluations)
-
-        if x is not None:
-            x_list = self._to_list(x)
-            self.log.x_search.extend(x_list)
-            transformed_x = self.transform_list_of_values(x_list)
-            self.log.x.extend(transformed_x)
-
-        if x_best is not None:
-            transformed_x_best = self.transform_values(x_best)
-            self.log.x_best.append(transformed_x_best)
-
-        if cost is not None:
-            self.log.cost.extend(self._inverts_cost(self._to_list(cost)))
-
-        if cost_best is not None:
-            self.log.cost_best.extend(self._inverts_cost(self._to_list(cost_best)))
+        self._update_log_entry("x_model", x_model)
+        self._update_log_entry("x_search", x_search)
+        self._update_log_entry("x_model_best", x_model_best)
+        self._update_log_entry("x_search_best", x_seach_best)
+        self._update_log_entry("x0", x0)
+        self._update_log_entry("cost", cost)
+        self._update_log_entry("cost_best", cost_best)
 
         # Verbose output
         self._print_verbose_output()
@@ -313,7 +92,7 @@ class BaseOptimiser(CostInterface):
 
     def _print_verbose_output(self):
         """Print verbose optimization information if enabled."""
-        if not self.verbose:
+        if not self._verbose:
             return
 
         latest_iter = (
@@ -321,7 +100,7 @@ class BaseOptimiser(CostInterface):
         )
 
         # Only print on first 10 iterations, then every Nth iteration
-        if latest_iter > 10 and latest_iter % self.verbose_print_rate != 0:
+        if latest_iter > 10 and latest_iter % self._verbose_print_rate != 0:
             return
 
         latest_eval = self.log.evaluations[-1] if self.log.evaluations else "N/A"
@@ -332,6 +111,118 @@ class BaseOptimiser(CostInterface):
             f"Iter: {latest_iter} | Evals: {latest_eval} | "
             f"Best Values: {latest_x_best} | Best Cost: {latest_cost_best} |"
         )
+
+
+class BaseOptimiser:
+    """
+    A base class for defining optimisation methods.
+
+    This class serves as a base class for creating optimisers. It provides a basic structure for
+    an optimisation algorithm, including the initial setup and a method stub for performing the
+    optimisation process. Child classes should override _set_up_optimiser and the _run method with
+    a specific algorithm.
+
+    Parameters
+    ----------
+    problem : pybop.Problem
+        An objective function to be optimised.
+    x0 : np.ndarray
+        Initial values of the parameters for the optimisation.
+    sigma0 : np.ndarray (optional)
+        Initial step size or standard deviation in the (search) parameters. Either a scalar value
+        (same for all coordinates) or an array with one entry per dimension.
+        Not all methods will use this information.
+    logger: pybop.OptimisationLogger (optional)
+        An object to log the optimisation progress. If None, the default logger is used.
+    multistart: int (optional)
+        Number of multistart runs to perform. Default is 1.
+    max_iterations: int (optional)
+        Maximum number of iterations for the optimisation. Default is 1000.
+
+    """
+
+    default_max_iterations = 1000
+
+    def __init__(
+        self,
+        problem: Problem,
+        multistart: int = 1,
+        max_iterations: int = default_max_iterations,
+    ):
+
+        self._problem = problem
+        self._logger = OptimisationLogger()
+        self._multistart = multistart
+        self._max_iterations = max_iterations
+        self._set_up_optimiser()
+
+    @property
+    def max_iterations(self):
+        """
+        Returns the maximum number of iterations for the optimisation.
+        """
+        return self._max_iterations
+
+    def set_max_iterations(self, iterations="default"):
+        """
+        Set the maximum number of iterations as a stopping criterion.
+        Credit: PINTS
+
+        Parameters
+        ----------
+        iterations : int, optional
+            The maximum number of iterations to run.
+            Set to `None` to remove this stopping criterion.
+        """
+        if iterations == "default":
+            iterations = self.default_max_iterations
+        if iterations is not None:
+            iterations = int(iterations)
+            if iterations < 0:
+                raise ValueError("Maximum number of iterations cannot be negative.")
+        self._max_iterations = iterations
+
+    @property
+    def problem(self) -> Problem:
+        return self._problem
+
+    @property
+    def logger(self) -> OptimisationLogger:
+        """
+        Returns the logger object used for logging optimisation progress.
+
+        Returns
+        -------
+        OptimisationLogger
+            The logger object.
+        """
+        return self._logger
+
+    def _set_up_optimiser(self):
+        """
+        Parse optimiser options and prepare the optimiser.
+
+        This method should be implemented by child classes.
+
+        Raises
+        ------
+        NotImplementedError
+            If the method has not been implemented by the subclass.
+        """
+        raise NotImplementedError
+
+    def _run(self):
+        """
+        Contains the logic for the optimisation algorithm.
+
+        This method should be implemented by child classes to perform the actual optimisation.
+
+        Raises
+        ------
+        NotImplementedError
+            If the method has not been implemented by the subclass.
+        """
+        raise NotImplementedError
 
     def name(self):
         """
@@ -344,32 +235,33 @@ class BaseOptimiser(CostInterface):
         """
         raise NotImplementedError  # pragma: no cover
 
-    def set_allow_infeasible_solutions(self, allow: bool = True):
+    def run(self):
         """
-        Set whether to allow infeasible solutions or not.
+        Run the optimisation and return the optimised parameters and final cost.
 
-        Parameters
-        ----------
-        iterations : bool, optional
-            Whether to allow infeasible solutions.
+        Returns
+        -------
+        results: OptimisationResult
+            The pybop optimisation result class.
         """
-        # Set whether to allow infeasible locations
-        self.physical_viability = allow
-        self.allow_infeasible_solutions = allow
+        self.result = pybop.OptimisationResult(problem=self._problem)
 
-        if (
-            isinstance(self.cost, BaseCost)
-            and self.cost.problem is not None
-            and self.cost.problem.model is not None
-        ):
-            self.cost.problem.model.allow_infeasible_solutions = (
-                self.allow_infeasible_solutions
-            )
-        else:
-            # Turn off this feature as there is no model
-            self.physical_viability = False
-            self.allow_infeasible_solutions = False
+        for i in range(self._multistart):
+            if i >= 1:
+                self.unset_options = self.unset_options_store.copy()
+                self.parameters.update(initial_values=self.parameters.rvs(1))
+                self.x0 = self.parameters.reset_initial_value(apply_transform=True)
+                self._set_up_optimiser()
 
-    @property
-    def needs_sensitivities(self):
-        return self._needs_sensitivities
+            self.result.add_result(self._run())
+
+        # Store the optimised parameters
+        self.parameters.update(values=self.result.x_best)
+
+        # Compute sensitivities
+        self.result.sensitivities = self._parameter_sensitivities()
+
+        if self.verbose:
+            print(self.result)
+
+        return self.result

@@ -233,9 +233,15 @@ class Parameters:
     parameter_list : dict of pybop.Parameter
     """
 
-    def __init__(self, params: dict[pybop.Parameter]):
+    def __init__(self, params: dict[Parameter]):
         self._params = params
-        self.initial_value()
+        self._transform = self._construct_transformation()
+
+    def transformation(self) -> pybop.Transformation:
+        """
+        Get the transformation for the parameters.
+        """
+        return self._transform
 
     def __getitem__(self, key: str) -> Parameter:
         """
@@ -256,19 +262,19 @@ class Parameters:
         ValueError
             The key must be the name of one of the parameters.
         """
-        if key not in self.param.keys():
+        if key not in self._params.keys():
             raise ValueError(f"The key {key} is not the name of a parameter.")
 
-        return self.param[key]
+        return self._params[key]
 
     def __len__(self) -> int:
-        return len(self.param)
+        return len(self._params)
 
     def keys(self) -> list:
         """
         A list of parameter names
         """
-        return list(self.param.keys())
+        return list(self._params.keys())
 
     def __iter__(self):
         self.index = 0
@@ -280,7 +286,7 @@ class Parameters:
             raise StopIteration
         name = parameter_names[self.index]
         self.index = self.index + 1
-        return self.param[name]
+        return self._params[name]
 
     def add(self, parameter):
         """
@@ -293,11 +299,11 @@ class Parameters:
         """
         if not isinstance(parameter_name, str):
             raise TypeError("The input parameter_name is not a string.")
-        if parameter_name not in self.param.keys():
+        if parameter_name not in self._params.keys():
             raise ValueError("This parameter does not exist in the Parameters object.")
 
         # Remove the parameter
-        self.param.pop(parameter_name)
+        self._params.pop(parameter_name)
 
     def join(self, parameters=None):
         """
@@ -308,7 +314,7 @@ class Parameters:
         parameters : pybop.Parameters
         """
         for param in parameters:
-            if param not in self.param.values():
+            if param not in self._params.values():
                 self.add(param)
             else:
                 print(f"Discarding duplicate {param.name}.")
@@ -323,7 +329,7 @@ class Parameters:
             If True, the transformation is applied to the output (default: False).
         """
         bounds = {"lower": [], "upper": []}
-        for param in self.param.values():
+        for param in self._params.values():
             lower, upper = param.bounds or (-np.inf, np.inf)
 
             if (
@@ -356,7 +362,7 @@ class Parameters:
         """
         Set value of each parameter.
         """
-        for i, param in enumerate(self.param.values()):
+        for i, param in enumerate(self._params.values()):
             if initial_values is not None:
                 param.update(initial_value=initial_values[i])
             if values is not None:
@@ -388,7 +394,7 @@ class Parameters:
         """
         all_samples = []
 
-        for param in self.param.values():
+        for param in self._params.values():
             samples = param.rvs(n_samples, apply_transform=apply_transform)
             all_samples.append(samples)
 
@@ -409,7 +415,7 @@ class Parameters:
         all_have_sigma = True  # assumption
         sigma0 = []
 
-        for param in self.param.values():
+        for param in self._params.values():
             if hasattr(param.prior, "sigma"):
                 if apply_transform and param.transformation is not None:
                     sigma0.append(
@@ -432,7 +438,7 @@ class Parameters:
         """
         Return the prior distribution of each parameter.
         """
-        return [param.prior for param in self.param.values()]
+        return [param.prior for param in self._params.values()]
 
     def initial_value(self, apply_transform: bool = False) -> np.ndarray:
         """
@@ -445,28 +451,8 @@ class Parameters:
         """
         initial_values = []
 
-        for param in self.param.values():
+        for param in self._params.values():
             initial_value = param.get_initial_value(apply_transform=apply_transform)
-            initial_values.append(initial_value)
-
-        return np.asarray(initial_values)
-
-    def reset_initial_value(self, apply_transform: bool = False) -> np.ndarray:
-        """
-        Reset and return the initial value of each parameter.
-
-        Parameters
-        ----------
-        apply_transform : bool
-            If True, the transformation is applied to the output (default: False).
-        """
-        initial_values = []
-
-        for param in self.param.values():
-            initial_value = param.get_initial_value(apply_transform=apply_transform)
-            if initial_value is not None:
-                # Reset the current value as well
-                param.update(value=param.get_initial_value())
             initial_values.append(initial_value)
 
         return np.asarray(initial_values)
@@ -477,7 +463,7 @@ class Parameters:
         """
         current_values = []
 
-        for param in self.param.values():
+        for param in self._params.values():
             current_values.append(param.value)
 
         return np.asarray(current_values)
@@ -488,7 +474,7 @@ class Parameters:
         """
         true_values = []
 
-        for param in self.param.values():
+        for param in self._params.values():
             true_values.append(param.true_value)
 
         return np.asarray(true_values)
@@ -499,12 +485,12 @@ class Parameters:
         """
         transformations = []
 
-        for param in self.param.values():
+        for param in self._params.values():
             transformations.append(param.transformation)
 
         return transformations
 
-    def construct_transformation(self):
+    def _construct_transformation(self):
         """
         Create a ComposedTransformation object from the individual parameter transformations.
         """
@@ -526,7 +512,7 @@ class Parameters:
         bounds : numpy.ndarray
             An array of shape (n_parameters, 2) containing the bounds for each parameter.
         """
-        for param in self.param.values():
+        for param in self._params.values():
             if param.applied_prior_bounds:
                 warnings.warn(
                     "Bounds were created from prior distributions. "
@@ -563,7 +549,7 @@ class Parameters:
                 values = self.initial_value()
             elif values == "true":
                 values = self.true_value()
-        return {key: values[i] for i, key in enumerate(self.param.keys())}
+        return {key: values[i] for i, key in enumerate(self._params.keys())}
 
     def verify(self, inputs: Optional[Inputs] = None):
         """
@@ -598,6 +584,6 @@ class Parameters:
         """
         param_summary = "\n".join(
             f" {name}: prior= {param.prior}, value={param.value}, bounds={param.bounds}"
-            for name, param in self.param.items()
+            for name, param in self._params.items()
         )
         return f"Parameters({len(self)}):\n{param_summary}"

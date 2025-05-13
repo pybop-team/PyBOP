@@ -138,7 +138,9 @@ from .costs._weighted_cost import WeightedCost
 #
 # Problem Builder
 #
-from . import builders
+from .builders.base import BaseBuilder
+from .builders.pybamm import Pybamm
+from .builders.python import Python
 
 #
 # Experimental
@@ -167,8 +169,8 @@ from .optimisers._simulated_annealing import SimulatedAnnealingImpl
 from .optimisers._irprop_plus import IRPropPlusImpl
 from .optimisers._cost_interface import CostInterface
 from .optimisers._result import OptimisationResult
-from .optimisers.base_optimiser import BaseOptimiser
-from .optimisers.base_pints_optimiser import BasePintsOptimiser
+from .optimisers.base_optimiser import BaseOptimiser, OptimisationLogger
+from .optimisers.base_pints_optimiser import BasePintsOptimiser, PintsOptions
 from .optimisers.scipy_optimisers import (
     BaseSciPyOptimiser,
     SciPyMinimize,

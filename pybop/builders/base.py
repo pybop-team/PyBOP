@@ -19,7 +19,7 @@ class BaseBuilder(ABC):
         Adds a parameter to the builder.
         """
         if isinstance(parameter, pybop.Parameter):
-            if parameter.name in self.param.keys():
+            if parameter.name in self._params.keys():
                 raise ValueError(
                     f"There is already a parameter with the name {parameter.name} "
                     "in the Parameters object. Please remove the duplicate entry."
@@ -29,7 +29,7 @@ class BaseBuilder(ABC):
             if "name" not in parameter.keys():
                 raise Exception("Parameter requires a name.")
             name = parameter["name"]
-            if name in self.param.keys():
+            if name in self._params.keys():
                 raise ValueError(
                     f"There is already a parameter with the name {name} "
                     "in the Parameters object. Please remove the duplicate entry."
@@ -44,7 +44,7 @@ class BaseBuilder(ABC):
         """
         if not self._params:
             raise ValueError("No parameters have been added to the builder.")
-        self._params = pybop.Parameters(self._params)
+        return pybop.Parameters(self._params)
 
     @abstractmethod
     def build(self) -> Problem:

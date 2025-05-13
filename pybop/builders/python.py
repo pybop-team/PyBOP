@@ -1,10 +1,9 @@
 import pybop
 from pybop import PythonProblem
-from pybop.builders import BaseBuilder
 from pybop.problems.base_problem import Problem
 
 
-class Python(BaseBuilder):
+class Python(pybop.BaseBuilder):
     """
     dataset : pybop.Dataset or dict, optional
         The dataset to be used in the simulation construction.
