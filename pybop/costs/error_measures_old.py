@@ -2,39 +2,33 @@ from typing import Optional, Union
 
 import numpy as np
 
-from pybop.costs.base_cost import BaseCost
+from pybop import FittingCost
 
 
-class NewMeanSquaredError(BaseCost):
+class MeanSquaredError(FittingCost):
     """
     Mean square error (MSE) cost function.
 
     Computes the mean square error between model predictions and the target
     data, providing a measure of the differences between predicted values and
     observed values.
-
-    Parameters
-    ----------
-    weighting : np.ndarray, optional
-        The type of weighting array to use when taking the sum or mean of the error
-        measure. Options: "equal"(default), "domain", or a custom numpy array.
     """
 
-    def __call__(
+    def _error_measure(
         self,
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
     ) -> Union[float, tuple[float, np.ndarray]]:
-        e = np.sum(np.abs(r) ** 2 * self.weighting)
+        e = np.mean((np.abs(r) ** 2) * self.weighting)
 
         if dy is not None:
-            de = 2 * np.sum((r * self.weighting) * dy, axis=(1, 2))
+            de = 2 * np.mean((r * self.weighting) * dy, axis=(1, 2))
             return e, de
 
         return e
 
 
-class RootMeanSquaredError(BaseCost):
+class RootMeanSquaredError(FittingCost):
     """
     Root mean square error (RMSE) cost function.
 
@@ -43,7 +37,7 @@ class RootMeanSquaredError(BaseCost):
     observed values.
     """
 
-    def __call__(
+    def _error_measure(
         self,
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
@@ -59,22 +53,16 @@ class RootMeanSquaredError(BaseCost):
         return e
 
 
-class MeanAbsoluteError(BaseCost):
+class MeanAbsoluteError(FittingCost):
     """
     Mean absolute error (MAE) cost function.
 
     Computes the mean absolute error (MAE) between model predictions
     and target data. The MAE is a measure of the average magnitude
     of errors in a set of predictions, without considering their direction.
-
-    Parameters
-    ----------
-    weighting : np.ndarray, optional
-        The type of weighting array to use when taking the sum or mean of the error
-        measure. Options: "equal"(default), "domain", or a custom numpy array.
     """
 
-    def __call__(
+    def _error_measure(
         self,
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
@@ -88,7 +76,7 @@ class MeanAbsoluteError(BaseCost):
         return e
 
 
-class SumSquaredError(BaseCost):
+class SumSquaredError(FittingCost):
     """
     Sum of squared error (SSE) cost function.
 
@@ -97,7 +85,7 @@ class SumSquaredError(BaseCost):
     predicted and observed values.
     """
 
-    def __call__(
+    def _error_measure(
         self,
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
@@ -111,7 +99,7 @@ class SumSquaredError(BaseCost):
         return e
 
 
-class Minkowski(BaseCost):
+class Minkowski(FittingCost):
     """
     The Minkowski distance is a generalisation of several distance metrics,
     including the Euclidean and Manhattan distances. It is defined as:
@@ -143,7 +131,7 @@ class Minkowski(BaseCost):
     def __init__(
         self, problem, p: float = 2.0, weighting: Union[str, np.ndarray] = None
     ):
-        super().__init__()
+        super().__init__(problem, weighting=weighting)
         if p < 0:
             raise ValueError(
                 "The order of the Minkowski distance must be greater than 0."
@@ -154,7 +142,7 @@ class Minkowski(BaseCost):
             )
         self.p = float(p)
 
-    def __call__(
+    def _error_measure(
         self,
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,
@@ -171,7 +159,7 @@ class Minkowski(BaseCost):
         return e
 
 
-class SumOfPower(BaseCost):
+class SumOfPower(FittingCost):
     """
     The Sum of Power [1] is a generalised cost function based on the p-th power
     of absolute differences between two vectors. It is defined as:
@@ -205,14 +193,14 @@ class SumOfPower(BaseCost):
     def __init__(
         self, problem, p: float = 2.0, weighting: Union[str, np.ndarray] = None
     ):
-        super().__init__()
+        super().__init__(problem, weighting=weighting)
         if p < 0:
             raise ValueError("The order of 'p' must be greater than 0.")
         elif not np.isfinite(p):
             raise ValueError("p = np.inf is not yet supported.")
         self.p = float(p)
 
-    def __call__(
+    def _error_measure(
         self,
         r: np.ndarray,
         dy: Optional[np.ndarray] = None,

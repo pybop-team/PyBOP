@@ -23,6 +23,7 @@ class PybammProblem(Problem):
         self._pipeline = pybamm_pipeline
         self._cost_names = cost_names
         self._cost_weights = cost_weights
+        self._domain = "Time [s]"
 
     def set_params(self, p: np.ndarray) -> None:
         """

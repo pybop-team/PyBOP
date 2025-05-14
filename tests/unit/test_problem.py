@@ -1,6 +1,7 @@
 import numpy as np
 import pybamm
 import pytest
+from pybamm import IDAKLUSolver
 
 import pybop
 
@@ -55,13 +56,6 @@ class TestProblem:
 
     @pytest.fixture
     def dataset(self, first_model, parameter_values, experiment):
-        # x0 = np.array([2e-5, 0.5e-5])
-        # parameter_values.update(
-        #     {
-        #         "Negative particle radius [m]": x0[0],
-        #         "Positive particle radius [m]": x0[1],
-        #     }
-        # )
         sim = pybamm.Simulation(
             first_model, experiment, parameter_values=parameter_values
         )
@@ -75,13 +69,27 @@ class TestProblem:
         )
 
     @pytest.fixture
+    def eis_dataset(self):
+        return pybop.Dataset(
+            {
+                "Frequency [Hz]": np.logspace(-4, 5, 30),
+                "Current function [A]": np.ones(30) * 0.0,
+                "Impedance": np.ones(30) * 0.0,
+            }
+        )
+
+    @pytest.fixture
     def signal(self):
         return "Voltage [V]"
 
     def test_builder(self, first_model, parameter_values, experiment, dataset):
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(first_model, parameter_values=parameter_values)
+        builder.set_simulation(
+            first_model,
+            parameter_values=parameter_values,
+            solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
+        )
         builder.add_parameter(
             pybop.Parameter(
                 "Negative electrode active material volume fraction", initial_value=0.6
@@ -114,12 +122,15 @@ class TestProblem:
     ):
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(first_model, parameter_values=parameter_values)
+        builder.set_simulation(
+            first_model,
+            parameter_values=parameter_values,
+        )
         builder.add_parameter(
             pybop.Parameter("Negative electrode thickness [m]", initial_value=1e-6)
         )
         builder.add_parameter(
-            pybop.Parameter("Positive particle radius [m]", initial_value=1e-14)
+            pybop.Parameter("Positive particle radius [m]", initial_value=1e-5)
         )
         builder.add_cost(pybop.PybammSumSquaredError("Voltage [V]", "Voltage [V]"))
         problem = builder.build()
@@ -127,12 +138,57 @@ class TestProblem:
         assert problem is not None
 
         assert problem is not None
-        problem.set_params(np.array([2e-6, 1e-14]))
+        problem.set_params(np.array([1e-5, 0.5e-6]))
         value1 = problem.run()
-        problem.set_params(np.array([4e-6, 4e-14]))
+        problem.set_params(np.array([2e-5, 1.5e-6]))
         value2 = problem.run()
         assert (value1 - value2) / value1 > 1e-5
-        # can't check sensitivities because these are geometric parameters
+
+    def test_eis_builder(self, first_model, parameter_values, experiment, eis_dataset):
+        builder = pybop.builders.PybammEIS()
+        builder.set_dataset(eis_dataset)
+        builder.set_simulation(first_model, parameter_values=parameter_values)
+        builder.add_parameter(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Positive electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        builder.add_cost(pybop.NewMeanSquaredError(weighting="equal"))
+        problem = builder.build()
+
+        assert problem is not None
+        problem.set_params(np.array([0.6, 0.6]))
+        value1 = problem.run()
+        problem.set_params(np.array([0.7, 0.7]))
+        value2 = problem.run()
+        assert (value1 - value2) / value1 > 1e-5
+
+    def test_eis_builder_with_rebuild_parameters(
+        self, first_model, parameter_values, experiment, eis_dataset
+    ):
+        builder = pybop.builders.PybammEIS()
+        builder.set_dataset(eis_dataset)
+        builder.set_simulation(first_model, parameter_values=parameter_values)
+        builder.add_parameter(
+            pybop.Parameter("Negative electrode thickness [m]", initial_value=1e-6)
+        )
+        builder.add_parameter(
+            pybop.Parameter("Positive particle radius [m]", initial_value=1e-5)
+        )
+        builder.add_cost(pybop.NewMeanSquaredError(weighting="domain"))
+        problem = builder.build()
+
+        assert problem is not None
+        problem.set_params(np.array([1e-5, 0.5e-6]))
+        value1 = problem.run()
+        problem.set_params(np.array([2e-5, 1.5e-6]))
+        value2 = problem.run()
+        assert (value1 - value2) / value1 > 1e-5
 
     def test_pure_python_builder(self):
         dataset = pybop.Dataset(
@@ -151,3 +207,43 @@ class TestProblem:
 
         # Assertion to add
         # Parameters
+
+    def test_build_with_initial_state(
+        self, first_model, parameter_values, experiment, dataset
+    ):
+        builder = pybop.builders.Pybamm()
+        builder.set_dataset(dataset)
+        builder.set_simulation(
+            first_model,
+            parameter_values=parameter_values,
+            solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
+            initial_state="4.0 V",
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Positive electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        builder.add_cost(pybop.PybammSumSquaredError("Voltage [V]", "Voltage [V]", 1.0))
+        problem = builder.build()
+
+        assert problem is not None
+
+        # First build
+        problem.set_params(np.array([0.6, 0.6]))
+        value1 = problem.run()
+        built_model_1 = problem._pipeline.built_model.new_copy()
+
+        # Second build
+        problem.set_params(np.array([0.7, 0.7]))
+        value2 = problem.run()
+        built_model_2 = problem._pipeline.built_model.new_copy()
+
+        # Assert builds are different
+        assert (value1 - value2) / value1 > 1e-5
+        assert built_model_1 != built_model_2

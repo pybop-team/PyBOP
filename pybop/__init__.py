@@ -89,6 +89,7 @@ from .models.base_model import Inputs
 # Problem classes
 #
 from .problems.pybamm_problem import PybammProblem
+from .problems.pybamm_eis_problem import PybammEISProblem
 from .problems.python_problem import PythonProblem
 from .problems.base_problem_old import BaseProblem
 from .problems.fitting_problem import FittingProblem
@@ -105,12 +106,12 @@ from .costs.pybamm_cost import (
 )
 from .costs.pybamm_sum_squared_error import PybammSumSquaredError
 
-from .costs.base_cost import BaseCost
+from .costs.base_cost_old import BaseCost
 from .costs.fitting_costs import (
     FittingCost,
     ObserverCost,
 )
-from .costs.error_measures import (
+from .costs.error_measures_old import (
     RootMeanSquaredError,
     MeanAbsoluteError,
     MeanSquaredError,
@@ -118,6 +119,7 @@ from .costs.error_measures import (
     Minkowski,
     SumOfPower,
 )
+from .costs.error_measures import NewMeanSquaredError
 from .costs.design_costs import (
     DesignCost,
     GravimetricEnergyDensity,
