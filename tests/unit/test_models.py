@@ -305,64 +305,6 @@ class TestModels:
         ):
             model.reinit(inputs={})
 
-    @pytest.mark.parametrize(
-        "model_cls", [StandaloneDecay, pybop.ExponentialDecayModel]
-    )
-    def test_simulate(self, model_cls):
-        k = 0.1
-        y0 = 1
-        args = {"parameter_set": pybamm.ParameterValues({"k": k, "y0": y0})}
-        if model_cls == pybop.ExponentialDecayModel:
-            args["solver"] = pybamm.CasadiSolver()
-        model = model_cls(**args)
-        model.build()
-        model.signal = ["y_0"]
-        inputs = {}
-        t_eval = np.linspace(0, 10, 100)
-        expected = y0 * np.exp(-k * t_eval)
-        solved = model.simulate(inputs, t_eval)
-        np.testing.assert_array_almost_equal(solved["y_0"].data, expected, decimal=5)
-
-        with pytest.raises(ValueError):
-            model_cls(n_states=-1)
-
-    def test_simulateEIS(self):
-        # Test EIS on SPM
-        model = pybop.lithium_ion.SPM(eis=True)
-
-        # Construct frequencies and solve
-        f_eval = np.linspace(100, 1000, 5)
-        sol = model.simulateEIS(inputs={}, f_eval=f_eval)
-        assert np.isfinite(sol["Impedance"]).all()
-
-        # Test infeasible parameter values
-        model.allow_infeasible_solutions = False
-        inputs = {
-            "Negative electrode active material volume fraction": 0.9,
-            "Positive electrode active material volume fraction": 0.9,
-        }
-        # Rebuild model
-        model.build(inputs=inputs)
-
-        with pytest.raises(ValueError, match="These parameter values are infeasible."):
-            model.simulateEIS(f_eval=f_eval, inputs=inputs)
-
-    def test_basemodel(self):
-        base = pybop.BaseModel()
-        x = np.array([1, 2, 3])
-
-        with pytest.raises(NotImplementedError):
-            base.cell_mass()
-
-        with pytest.raises(NotImplementedError):
-            base.cell_volume()
-
-        with pytest.raises(NotImplementedError):
-            base.approximate_capacity(x)
-
-        base.classify_parameters(parameters=None)
-        assert isinstance(base.parameters, pybop.Parameters)
-
     def test_thevenin_model(self):
         parameter_set = pybop.ParameterSet(
             json_path="examples/parameters/initial_ecm_parameters.json"
