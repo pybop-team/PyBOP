@@ -4,7 +4,7 @@ import numpy as np
 import scipy.stats as stats
 
 import pybop
-from pybop.costs.base_cost import BaseCost
+from pybop import BaseCost
 from pybop.parameters.parameter import Inputs, Parameter, Parameters
 from pybop.parameters.priors import BasePrior, JointLogPrior, Uniform
 from pybop.problems.base_problem_old import BaseProblem

@@ -2,7 +2,7 @@ from typing import Optional, Union
 
 import numpy as np
 
-from pybop.costs.base_cost import BaseCost
+from pybop import BaseCost
 
 
 class DesignCost(BaseCost):

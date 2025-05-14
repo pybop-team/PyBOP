@@ -1,3 +1,5 @@
+from typing import Union
+
 import pybamm
 import pybop
 
@@ -7,29 +9,30 @@ from pybop.costs.pybamm_cost import PybammCost
 
 class Pybamm(pybop.BaseBuilder):
     def __init__(self):
-        self._pybamm_model = None
+        self._model = None
         self._costs = []
         self._dataset = None
         self._solver = None
         self._parameter_values = None
         self._rebuild_parameters = None
-        self._cost_weights = []
+        self._initial_state = None
         self._pipeline = None
+        self.domain = "Time [s]"
 
     def set_simulation(
         self,
-        pybamm_model: pybamm.BaseModel,
+        model: pybamm.BaseModel,
         parameter_values: pybamm.ParameterValues = None,
         solver: pybamm.BaseSolver = None,
+        initial_state: Union[float, str] = None,
     ) -> None:
         """
         Adds a simulation for the optimisation problem.
         """
-        self._pybamm_model = pybamm_model.new_copy()
-        self._parameter_values = (
-            parameter_values or pybamm_model.default_parameter_values
-        )
-        self._solver = solver or pybamm_model.default_solver
+        self._model = model.new_copy()
+        self._initial_state = initial_state
+        self._parameter_values = parameter_values or model.default_parameter_values
+        self._solver = solver or model.default_solver
 
     def add_cost(self, cost: PybammCost, weight: float = 1.0) -> None:
         self._costs.append(cost)
@@ -57,7 +60,7 @@ class Pybamm(pybop.BaseBuilder):
                 "Number of cost weights and the number of costs do not match"
             )
 
-        if self._pybamm_model is None:
+        if self._model is None:
             raise ValueError("A Pybamm model needs to be provided before building.")
 
         if self._costs is None:
@@ -67,7 +70,7 @@ class Pybamm(pybop.BaseBuilder):
             raise ValueError("A dataset must be provided before building.")
 
         # Proceed to building the pipeline
-        model = self._pybamm_model
+        model = self._model
         pybamm_parameter_values = self._parameter_values
         pybop_parameters = self.build_parameters()
 
@@ -91,6 +94,10 @@ class Pybamm(pybop.BaseBuilder):
             pybamm_parameter_values,
             pybop_parameters,
             self._solver,
+            t_start=self._dataset[self.domain][0],
+            t_end=self._dataset[self.domain][-1],
+            t_interp=self._dataset[self.domain],
+            initial_state=self._initial_state,
         )
 
         # Build the pipeline
