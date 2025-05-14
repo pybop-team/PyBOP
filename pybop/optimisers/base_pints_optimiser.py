@@ -73,6 +73,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         options = options or PintsOptions()
         self.set_parallel(options.parallel)
         self.set_min_iterations(options.min_iterations)
+        self.set_max_iterations(options.max_iterations)
         self._unchanged_max_iterations = options.max_unchanged_iterations
         self._absolute_tolerance = options.absolute_tolerance
         self._relative_tolerance = options.relative_tolerance
@@ -88,8 +89,33 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         super().__init__(
             problem,
             multistart=options.multistart,
-            max_iterations=options.max_iterations,
         )
+
+    @property
+    def max_iterations(self):
+        """
+        Returns the maximum number of iterations for the optimisation.
+        """
+        return self._max_iterations
+
+    def set_max_iterations(self, iterations="default"):
+        """
+        Set the maximum number of iterations as a stopping criterion.
+        Credit: PINTS
+
+        Parameters
+        ----------
+        iterations : int, optional
+            The maximum number of iterations to run.
+            Set to `None` to remove this stopping criterion.
+        """
+        if iterations == "default":
+            iterations = self.default_max_iterations
+        if iterations is not None:
+            iterations = int(iterations)
+            if iterations < 0:
+                raise ValueError("Maximum number of iterations cannot be negative.")
+        self._max_iterations = iterations
 
     @property
     def optimiser(self) -> pints.Optimiser:

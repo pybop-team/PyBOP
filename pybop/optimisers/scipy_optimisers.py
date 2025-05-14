@@ -6,6 +6,7 @@ import numpy as np
 from scipy.optimize import Bounds, OptimizeResult, differential_evolution, minimize
 
 from pybop import BaseOptimiser, OptimisationResult, SciPyEvaluator
+from pybop.problems.base_problem import Problem
 
 
 class BaseSciPyOptimiser(BaseOptimiser):
@@ -22,50 +23,26 @@ class BaseSciPyOptimiser(BaseOptimiser):
         Valid SciPy option keys and their values.
     """
 
-    def __init__(self, cost, **optimiser_kwargs):
-        self.num_resamples = 40
-        self.key_mapping = {"max_iterations": "maxiter", "population_size": "popsize"}
-        super().__init__(cost, **optimiser_kwargs)
+    def __init__(
+        self,
+        problem: Problem,
+        multistart: int = 1,
+    ):
+        super().__init__(problem, multistart=multistart)
 
-    def _sanitise_inputs(self):
-        """
-        Check and remove any duplicate optimiser options.
-        """
-        # Unpack values from any nested options dictionary
-        if "options" in self.unset_options.keys():
-            key_list = list(self.unset_options["options"].keys())
-            for key in key_list:
-                if key not in self.unset_options.keys():
-                    self.unset_options[key] = self.unset_options["options"].pop(key)
-                else:
-                    raise Exception(
-                        f"A duplicate {key} option was found in the options dictionary."
-                    )
-            self.unset_options.pop("options")
-
-        # Convert PyBOP keys to SciPy
-        for pybop_key, scipy_key in self.key_mapping.items():
-            if pybop_key in self.unset_options:
-                if scipy_key in self.unset_options:
-                    raise Exception(
-                        f"The alternative {pybop_key} option was passed in addition to the expected {scipy_key} option."
-                    )
-                # Rename the key
-                self.unset_options[scipy_key] = self.unset_options.pop(pybop_key)
-
+    def scipy_bounds(self) -> Bounds:
+        bounds = self.problem.params.get_bounds()
         # Convert bounds to SciPy format
-        if isinstance(self.bounds, dict):
-            self._scipy_bounds = Bounds(
-                self.bounds["lower"], self.bounds["upper"], True
-            )
-        elif isinstance(self.bounds, Bounds) or self.bounds is None:
-            self._scipy_bounds = self.bounds
+        if isinstance(bounds, dict):
+            return Bounds(bounds["lower"], bounds["upper"], True)
+        elif isinstance(bounds, Bounds) or bounds is None:
+            return bounds
         else:
             raise TypeError(
                 "Bounds provided must be either type dict or SciPy.optimize.bounds object."
             )
 
-    def _run(self):
+    def evaluator(self) -> SciPyEvaluator:
         """
         Internal method to run the optimisation using a PyBOP optimiser.
 
@@ -82,26 +59,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
             )
 
         # Create evaluator object
-        self.evaluator = SciPyEvaluator(fun)
-
-        # Run with timing
-        start_time = time()
-        result = self._run_optimiser()
-        total_time = time() - start_time
-
-        try:
-            nit = result.nit
-        except AttributeError:
-            nit = -1
-
-        return OptimisationResult(
-            optim=self,
-            x=result.x,
-            n_iterations=nit,
-            scipy_result=result,
-            time=total_time,
-            message=result.message,
-        )
+        return SciPyEvaluator(fun)
 
 
 class SciPyMinimize(BaseSciPyOptimiser):
@@ -113,6 +71,10 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
     Parameters
     ----------
+    problem : pybop.Problem
+        The problem to be optimised.
+    multistart : int, optional
+        Number of independent runs of the optimisation algorithm. Default is 1.
     **optimiser_kwargs : optional
         Valid SciPy Minimize option keys and their values:
         x0 : array_like
@@ -160,47 +122,34 @@ class SciPyMinimize(BaseSciPyOptimiser):
     documentation for method-specific options and constraints.
     """
 
-    def __init__(self, cost, **optimiser_kwargs):
-        optimiser_options = dict(method="Nelder-Mead", jac=False)
-        optimiser_options.update(**optimiser_kwargs)
-        super().__init__(cost, **optimiser_options)
+    def __init__(
+        self,
+        problem: Problem,
+        multistart: int = 1,
+        **optimiser_kwargs,
+    ):
+        self._options = dict(method="Nelder-Mead", jac=False)
+        self._options.update(**optimiser_kwargs)
+        self._needs_sensitivities = (
+            "jac" in self._options and self._options["jac"] is not False
+        )
+        super().__init__(problem=problem, multistart=multistart)
         self._cost0 = 1.0
 
     def _set_up_optimiser(self):
         """
         Parse optimiser options.
         """
-        # Check and remove any duplicate keywords in self.unset_options
-        self._sanitise_inputs()
+
+        self._scipy_bounds = self.scipy_bounds()
+        self._evaluator = self.evaluator()
 
         # Apply default maxiter
-        self._options = dict()
-        self._options["options"] = dict()
-        self._options["options"]["maxiter"] = self.default_max_iterations
+        if "maxiter" not in self._options["options"]:
+            self._options["options"]["maxiter"] = self.default_max_iterations
 
-        # Apply additional options and remove them from the options dictionary
-        key_list = list(self.unset_options.keys())
-        for key in key_list:
-            if key in [
-                "method",
-                "hess",
-                "hessp",
-                "constraints",
-                "tol",
-            ]:
-                self._options.update({key: self.unset_options.pop(key)})
-            elif key == "jac":
-                if self.unset_options["jac"] not in [True, False, None]:
-                    raise ValueError(
-                        f"Expected the jac option to be either True, False or None. Received: {self.unset_options[key]}"
-                    )
-                self._options.update({key: self.unset_options.pop(key)})
-            elif key == "maxiter":
-                # Nest this option within an options dictionary for SciPy minimize
-                self._options["options"]["maxiter"] = self.unset_options.pop(key)
-
-        if self._options["jac"] is True:
-            self._needs_sensitivities = True
+        # set x0
+        self._options["x0"] = self.problem.params.initial_value()
 
     def cost_wrapper(self, x):
         """
@@ -221,7 +170,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         self.log_update(x=[x], cost=L)
         return (L / self._cost0, dl / self._cost0)
 
-    def _run_optimiser(self):
+    def _run(self):
         """
         Executes the optimisation process using SciPy's minimize function.
 
@@ -245,7 +194,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 cost_best = intermediate_result.fun * self._cost0
             else:
                 x_best = intermediate_result
-                result = self.evaluator.evaluate(x_best)
+                result = self._evaluator.evaluate(x_best)
                 cost_best = result[0] if self._needs_sensitivities else result
 
             self.log_update(x_best=x_best, cost_best=cost_best)
@@ -257,7 +206,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         )
 
         # Compute the absolute initial cost and resample if required
-        result = self.evaluator.evaluate(self.x0)
+        result = self._evaluator.evaluate(self.x0)
         self._cost0 = np.abs(result[0] if self._needs_sensitivities else result)
         if np.isinf(self._cost0):
             for _i in range(1, self.num_resamples):
@@ -270,7 +219,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
                         stacklevel=2,
                     )
                     break
-                result = self.evaluator.evaluate(self.x0)
+                result = self._evaluator.evaluate(self.x0)
                 self._cost0 = np.abs(result[0] if self._needs_sensitivities else result)
                 if not np.isinf(self._cost0):
                     break
@@ -279,12 +228,28 @@ class SciPyMinimize(BaseSciPyOptimiser):
                     "The initial parameter values return an infinite cost."
                 )
 
-        return minimize(
+        start_time = time()
+        result = minimize(
             self.cost_wrapper,
             self.x0,
             bounds=self._scipy_bounds,
             callback=callback,
             **self._options,
+        )
+        total_time = time() - start_time
+
+        try:
+            nit = result.nit
+        except AttributeError:
+            nit = -1
+
+        return OptimisationResult(
+            optim=self,
+            x=result.x,
+            n_iterations=nit,
+            scipy_result=result,
+            time=total_time,
+            message=result.message,
         )
 
     def name(self):
@@ -301,9 +266,10 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
     Parameters
     ----------
-    bounds : dict, sequence or scipy.optimize.Bounds
-        Bounds for variables. Must be provided as it is essential for differential evolution.
-        Each element is a tuple (min, max) for the corresponding variable.
+    problem : pybop.Problem
+        The problem to be optimised.
+    multistart : int, optional
+        Number of independent runs of the optimisation algorithm. Default is 1.
     **optimiser_kwargs : optional
         Valid SciPy differential_evolution options:
         strategy : str, optional
@@ -369,17 +335,17 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
     iteration.
     """
 
-    def __init__(self, cost, **optimiser_kwargs):
-        optimiser_options = dict(strategy="best1bin")
-        optimiser_options.update(**optimiser_kwargs)
-        super().__init__(cost, **optimiser_options)
+    def __init__(self, problem: Problem, multistart: int = 1, **optimiser_kwargs):
+        self._options = dict(strategy="best1bin")
+        self._options.update(**optimiser_kwargs)
+        super().__init__(problem=problem, multistart=multistart)
 
     def _set_up_optimiser(self):
         """
         Parse optimiser options.
         """
-        # Check and remove any duplicate keywords in self.unset_options
-        self._sanitise_inputs()
+        self._scipy_bounds = self.scipy_bounds()
+        self._evaluator = self.evaluator()
 
         # Check bounds
         if self._scipy_bounds is None:
@@ -390,33 +356,10 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
                 raise ValueError("Bounds must be specified for differential_evolution.")
 
         # Apply default maxiter and tolerance
-        self._options = dict()
-        self._options["maxiter"] = self.default_max_iterations
-        self._options["tol"] = 1e-5
-
-        # Apply additional options and remove them from the options dictionary
-        key_list = list(self.unset_options.keys())
-        for key in key_list:
-            if key in [
-                "strategy",
-                "maxiter",
-                "popsize",
-                "tol",
-                "mutation",
-                "recombination",
-                "seed",
-                "disp",
-                "polish",
-                "init",
-                "atol",
-                "updating",
-                "workers",
-                "constraints",
-                "tol",
-                "integrality",
-                "vectorized",
-            ]:
-                self._options.update({key: self.unset_options.pop(key)})
+        if "maxiter" not in self._options:
+            self._options["maxiter"] = self.default_max_iterations
+        if "tol" not in self._options:
+            self._options["tol"] = 1e-5
 
     def _run_optimiser(self):
         """
@@ -427,11 +370,6 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         result : scipy.optimize.OptimizeResult
             The result of the optimisation including the optimised parameter values and cost.
         """
-        if self.x0 is not None:
-            print(
-                "Ignoring x0. Initial conditions are not used for differential_evolution."
-            )
-            self.x0 = None
 
         # Add callback storing history of parameter values
         def callback(intermediate_result: OptimizeResult):
@@ -445,11 +383,27 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             self.log_update(x=[x], cost=cost)
             return cost
 
-        return differential_evolution(
+        start_time = time()
+        result = differential_evolution(
             cost_wrapper,
             self._scipy_bounds,
             callback=callback,
             **self._options,
+        )
+        total_time = time() - start_time
+
+        try:
+            nit = result.nit
+        except AttributeError:
+            nit = -1
+
+        return OptimisationResult(
+            optim=self,
+            x=result.x,
+            n_iterations=nit,
+            scipy_result=result,
+            time=total_time,
+            message=result.message,
         )
 
     def name(self):

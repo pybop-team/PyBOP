@@ -147,40 +147,12 @@ class BaseOptimiser:
         self,
         problem: Problem,
         multistart: int = 1,
-        max_iterations: int = default_max_iterations,
     ):
 
         self._problem = problem
         self._logger = OptimisationLogger()
         self._multistart = multistart
-        self._max_iterations = max_iterations
         self._set_up_optimiser()
-
-    @property
-    def max_iterations(self):
-        """
-        Returns the maximum number of iterations for the optimisation.
-        """
-        return self._max_iterations
-
-    def set_max_iterations(self, iterations="default"):
-        """
-        Set the maximum number of iterations as a stopping criterion.
-        Credit: PINTS
-
-        Parameters
-        ----------
-        iterations : int, optional
-            The maximum number of iterations to run.
-            Set to `None` to remove this stopping criterion.
-        """
-        if iterations == "default":
-            iterations = self.default_max_iterations
-        if iterations is not None:
-            iterations = int(iterations)
-            if iterations < 0:
-                raise ValueError("Maximum number of iterations cannot be negative.")
-        self._max_iterations = iterations
 
     @property
     def problem(self) -> Problem:
