@@ -15,14 +15,14 @@ class PybammEISProblem(Problem):
 
     def __init__(
         self,
-        pybamm_pipeline: PybammEISPipeline,
+        eis_pipeline: PybammEISPipeline,
         pybop_params: Parameters = None,
         costs: list = None,
         cost_weights: Union[list, np.array] = None,
         fitting_data: list = None,
     ):
         super().__init__(pybop_params=pybop_params)
-        self._pipeline = pybamm_pipeline
+        self._pipeline = eis_pipeline
         self._costs = costs
         self._cost_weights = cost_weights
         self._fitting_data = fitting_data
@@ -34,7 +34,7 @@ class PybammEISProblem(Problem):
         self.check_and_store_params(p)
 
         # rebuild the pipeline (if needed)
-        self._pipeline.rebuild(self._params.as_dict())
+        self._pipeline.pybamm_pipeline.rebuild(self._params.as_dict())
 
     def run(self) -> float:
         """

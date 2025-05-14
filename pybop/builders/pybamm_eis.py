@@ -103,10 +103,10 @@ class PybammEIS(builders.BaseBuilder):
         )
 
         # Build and initialise the pipeline
-        pipeline.build()
+        pipeline.pybamm_pipeline.build()
 
         return PybammEISProblem(
-            pybamm_pipeline=pipeline,
+            eis_pipeline=pipeline,
             pybop_params=self._pybop_parameters,
             costs=self._costs,
             cost_weights=self._cost_weights,

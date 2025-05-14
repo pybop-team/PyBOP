@@ -138,14 +138,11 @@ class TestProblem:
         assert problem is not None
 
         assert problem is not None
-        problem.set_params(np.array([2e-5, 1.5e-6]))
-        value1 = problem.run()
         problem.set_params(np.array([1e-5, 0.5e-6]))
+        value1 = problem.run()
+        problem.set_params(np.array([2e-5, 1.5e-6]))
         value2 = problem.run()
-        assert (
-            value1 - value2
-        ) / value1 < 1e-5  # value2 represents a higher cost than value1
-        # can't check sensitivities because these are geometric parameters
+        assert (value1 - value2) / value1 > 1e-5
 
     def test_eis_builder(self, first_model, parameter_values, experiment, eis_dataset):
         builder = pybop.builders.PybammEIS()
@@ -166,7 +163,32 @@ class TestProblem:
 
         assert problem is not None
         problem.set_params(np.array([0.6, 0.6]))
-        assert problem.run() is not None
+        value1 = problem.run()
+        problem.set_params(np.array([0.7, 0.7]))
+        value2 = problem.run()
+        assert (value1 - value2) / value1 > 1e-5
+
+    def test_eis_builder_with_rebuild_parameters(
+        self, first_model, parameter_values, experiment, eis_dataset
+    ):
+        builder = pybop.builders.PybammEIS()
+        builder.set_dataset(eis_dataset)
+        builder.set_simulation(first_model, parameter_values=parameter_values)
+        builder.add_parameter(
+            pybop.Parameter("Negative electrode thickness [m]", initial_value=1e-6)
+        )
+        builder.add_parameter(
+            pybop.Parameter("Positive particle radius [m]", initial_value=1e-5)
+        )
+        builder.add_cost(pybop.NewMeanSquaredError(weighting="domain"))
+        problem = builder.build()
+
+        assert problem is not None
+        problem.set_params(np.array([1e-5, 0.5e-6]))
+        value1 = problem.run()
+        problem.set_params(np.array([2e-5, 1.5e-6]))
+        value2 = problem.run()
+        assert (value1 - value2) / value1 > 1e-5
 
     def test_pure_python_builder(self):
         dataset = pybop.Dataset(

@@ -247,3 +247,22 @@ class PybammPipeline:
 
         # Save solved initial SOC in case we need to re-build the model
         self._built_initial_state = initial_state
+
+    def set_parameter_value(self, key, value):
+        self._parameter_values[key] = value
+
+    @property
+    def model(self):
+        return self._model
+
+    @property
+    def pybop_parameters(self):
+        return self._pybop_parameters
+
+    @property
+    def parameter_values(self):
+        return self._parameter_values
+
+    @property
+    def solver(self):
+        return self._solver

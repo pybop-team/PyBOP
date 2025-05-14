@@ -10,7 +10,7 @@ from pybop import Parameters, SymbolReplacer
 from pybop._pybamm_pipeline import PybammPipeline
 
 
-class PybammEISPipeline(PybammPipeline):
+class PybammEISPipeline:
     """
     A class to build an EIS PyBaMM pipeline for a given model and data, and run the resultant simulation.
 
@@ -48,7 +48,8 @@ class PybammEISPipeline(PybammPipeline):
         var_pts : dict
             The number of points at which to discretise the model.
         """
-        super().__init__(
+
+        self._pybamm_pipeline = PybammPipeline(
             model,
             parameter_values=parameter_values,
             pybop_parameters=pybop_parameters,
@@ -58,8 +59,8 @@ class PybammEISPipeline(PybammPipeline):
 
         # Set-up model for EIS
         self._f_eval = f_eval
-        self._model = self.set_up_for_eis(model.new_copy())
-        self._parameter_values["Current function [A]"] = 0
+        self.set_up_for_eis(self._pybamm_pipeline.model)
+        self._pybamm_pipeline.set_parameter_value("Current function [A]", 0)
 
         # Initialise
         self.M = None
@@ -68,9 +69,11 @@ class PybammEISPipeline(PybammPipeline):
 
         v_scale = getattr(model.variables["Voltage [V]"], "scale", 1)
         i_scale = getattr(model.variables["Current [A]"], "scale", 1)
-        self.z_scale = self._parameter_values.evaluate(v_scale / i_scale)
+        self.z_scale = self._pybamm_pipeline.parameter_values.evaluate(
+            v_scale / i_scale
+        )
 
-    def set_up_for_eis(self, model: pybamm.BaseModel) -> pybamm.BaseModel:
+    def set_up_for_eis(self, model: pybamm.BaseModel) -> None:
         """
         Set up the model for electrochemical impedance spectroscopy (EIS) simulations.
         This method adds the necessary algebraic equations and variables to the model.
@@ -138,8 +141,6 @@ class PybammEISPipeline(PybammPipeline):
         model.algebraic[I_cell] = I - I_applied
         model.initial_conditions[I_cell] = 0
 
-        return model
-
     def initialise_eis_pipeline(self):
         """
         Initialise the Electrochemical Impedance Spectroscopy (EIS) simulation.
@@ -151,20 +152,21 @@ class PybammEISPipeline(PybammPipeline):
         RuntimeError
             If the model hasn't been built yet.
         """
-        inputs = self._pybop_parameters.as_dict()
-        M = self.built_model.mass_matrix.entries
-        self._solver.set_up(self.built_model, inputs=inputs)
+        built_model = self._pybamm_pipeline.built_model
+        inputs = self._pybamm_pipeline.pybop_parameters.as_dict()
+        M = self._pybamm_pipeline.built_model.mass_matrix.entries
+        self._pybamm_pipeline.solver.set_up(built_model, inputs=inputs)
 
         # Convert inputs to casadi format if needed
         casadi_inputs = (
             casadi.vertcat(*inputs.values())
-            if inputs is not None and self.built_model.convert_to_format == "casadi"
+            if inputs is not None and built_model.convert_to_format == "casadi"
             else inputs or []
         )
 
         # Extract the necessary attributes from the model
-        y0 = self.built_model.concatenated_initial_conditions.evaluate(0, inputs=inputs)
-        jac = self.built_model.jac_rhs_algebraic_eval(0, y0, casadi_inputs).sparse()
+        y0 = built_model.concatenated_initial_conditions.evaluate(0, inputs=inputs)
+        jac = built_model.jac_rhs_algebraic_eval(0, y0, casadi_inputs).sparse()
 
         # Convert to Compressed Sparse Column format
         self.M = csc_matrix(M)
@@ -225,3 +227,7 @@ class PybammEISPipeline(PybammPipeline):
         zs = [self.calculate_impedance(frequency) for frequency in self._f_eval]
 
         return np.asarray(zs) * self.z_scale
+
+    @property
+    def pybamm_pipeline(self):
+        return self._pybamm_pipeline
