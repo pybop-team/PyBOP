@@ -91,8 +91,8 @@ class TestProblem:
             pybamm.lithium_ion.MPM(),
             pybamm.lithium_ion.MSMR(options={"number of MSMR reactions": ("6", "4")}),
             pybamm.equivalent_circuit.Thevenin(),
-            # pybop.lithium_ion.WeppnerHuggins(),
-            # pybop.lithium_ion.GroupedSPMe(),
+            pybop.lithium_ion.WeppnerHuggins(),
+            pybop.lithium_ion.GroupedSPMe(),
         ],
     )
     def test_builder(self, parameter_values, experiment, dataset, model):
@@ -105,12 +105,6 @@ class TestProblem:
         if isinstance(model, pybamm.equivalent_circuit.Thevenin):
             builder.add_parameter(pybop.Parameter("R0 [Ohm]", initial_value=1e-3))
         else:
-            builder.add_parameter(
-                pybop.Parameter(
-                    "Negative electrode active material volume fraction",
-                    initial_value=0.6,
-                )
-            )
             builder.add_parameter(
                 pybop.Parameter(
                     "Positive electrode active material volume fraction",
