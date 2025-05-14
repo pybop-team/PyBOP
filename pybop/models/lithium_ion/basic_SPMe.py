@@ -14,10 +14,6 @@ from pybamm import (
 )
 from pybamm import lithium_ion as pybamm_lithium_ion
 from pybamm import t as pybamm_t
-from pybamm.input.parameters.lithium_ion.Chen2020 import (
-    graphite_LGM50_ocp_Chen2020,
-    nmc_LGM50_ocp_Chen2020,
-)
 from pybamm.models.full_battery_models.lithium_ion.electrode_soh import (
     get_min_max_stoichiometries,
 )
@@ -25,7 +21,7 @@ from pybamm.models.full_battery_models.lithium_ion.electrode_soh import (
 from pybop import ParameterSet
 
 
-class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
+class GroupedSPMe(pybamm_lithium_ion.BaseModel):
     """
     A grouped parameter version of the single particle model with electrolyte (SPMe).
 
@@ -443,38 +439,40 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
 
     @property
     def default_parameter_values(self):
-        parameter_dictionary = {
-            "Nominal cell capacity [A.h]": 3,
-            "Current function [A]": 3,
-            "Initial temperature [K]": 298.15,
-            "Initial SoC": 0.5,
-            "Minimum negative stoichiometry": 0.026,
-            "Maximum negative stoichiometry": 0.911,
-            "Minimum positive stoichiometry": 0.264,
-            "Maximum positive stoichiometry": 0.854,
-            "Lower voltage cut-off [V]": 2.5,
-            "Upper voltage cut-off [V]": 4.2,
-            "Positive electrode OCP [V]": nmc_LGM50_ocp_Chen2020,
-            "Negative electrode OCP [V]": graphite_LGM50_ocp_Chen2020,
-            "Measured cell capacity [A.s]": 3000,
-            "Reference electrolyte capacity [A.s]": 1000,
-            "Positive electrode relative porosity": 1,
-            "Negative electrode relative porosity": 1,
-            "Positive particle diffusion time scale [s]": 2000,
-            "Negative particle diffusion time scale [s]": 2000,
-            "Positive electrode electrolyte diffusion time scale [s]": 300,
-            "Negative electrode electrolyte diffusion time scale [s]": 300,
-            "Separator electrolyte diffusion time scale [s]": 300,
-            "Positive electrode charge transfer time scale [s]": 500,
-            "Negative electrode charge transfer time scale [s]": 500,
-            "Positive electrode capacitance [F]": 1,
-            "Negative electrode capacitance [F]": 1,
-            "Cation transference number": 0.25,
-            "Positive electrode relative thickness": 0.47,
-            "Negative electrode relative thickness": 0.47,
-            "Series resistance [Ohm]": 0.01,
-        }
-        return ParameterValues(values=parameter_dictionary)
+        default_parameter_values = ParameterValues("Chen2020")
+        default_parameter_values.update(
+            {
+                "Nominal cell capacity [A.h]": 3,
+                "Current function [A]": 3,
+                "Initial temperature [K]": 298.15,
+                "Initial SoC": 0.5,
+                "Minimum negative stoichiometry": 0.026,
+                "Maximum negative stoichiometry": 0.911,
+                "Minimum positive stoichiometry": 0.264,
+                "Maximum positive stoichiometry": 0.854,
+                "Lower voltage cut-off [V]": 2.5,
+                "Upper voltage cut-off [V]": 4.2,
+                "Measured cell capacity [A.s]": 3000,
+                "Reference electrolyte capacity [A.s]": 1000,
+                "Positive electrode relative porosity": 1,
+                "Negative electrode relative porosity": 1,
+                "Positive particle diffusion time scale [s]": 2000,
+                "Negative particle diffusion time scale [s]": 2000,
+                "Positive electrode electrolyte diffusion time scale [s]": 300,
+                "Negative electrode electrolyte diffusion time scale [s]": 300,
+                "Separator electrolyte diffusion time scale [s]": 300,
+                "Positive electrode charge transfer time scale [s]": 500,
+                "Negative electrode charge transfer time scale [s]": 500,
+                "Positive electrode capacitance [F]": 1,
+                "Negative electrode capacitance [F]": 1,
+                "Cation transference number": 0.25,
+                "Positive electrode relative thickness": 0.47,
+                "Negative electrode relative thickness": 0.47,
+                "Series resistance [Ohm]": 0.01,
+            },
+            check_already_exists=False,
+        )
+        return default_parameter_values
 
     @property
     def default_quick_plot_variables(self):
