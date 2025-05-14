@@ -54,24 +54,8 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         The problem to be minimized.
     pints_optimiser : class
         The PINTS optimiser class to be used.
-    max_iterations : int, optional
-        Maximum number of iterations for the optimisation.
-    min_iterations : int, optional (default=2)
-        Minimum number of iterations before termination.
-    max_unchanged_iterations : int, optional (default=15)
-        Maximum number of iterations without improvement before termination.
-    parallel : bool, optional (default=False)
-        Whether to run the optimisation in parallel.
-    use_f_guessed : bool, optional (default=False)
-        Whether to track guessed function values.
-    absolute_tolerance : float, optional (default=1e-5)
-        Absolute tolerance for convergence checking.
-    relative_tolerance : float, optional (default=1e-5)
-        Relative tolerance for convergence checking.
-    max_evaluations : int, optional (default=None)
-        Maximum number of function evaluations. If None, no limit is set.
-    threshold : float, optional (default=None)
-        Threshold value for early termination. If None, no threshold is set.
+    options: PintsOptions (optional)
+        Options for the PINTS optimiser. If None, default options are used.
     """
 
     def __init__(
