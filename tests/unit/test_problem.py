@@ -158,7 +158,9 @@ class TestProblem:
                 "Positive electrode active material volume fraction", initial_value=0.6
             )
         )
-        builder.add_cost(pybop.NewMeanSquaredError(weighting="equal"))
+        builder.add_cost(
+            pybop.NewMeanSquaredError("Voltage [V]", "Voltage [V]", weighting="equal")
+        )
         problem = builder.build()
 
         assert problem is not None
@@ -180,7 +182,9 @@ class TestProblem:
         builder.add_parameter(
             pybop.Parameter("Positive particle radius [m]", initial_value=1e-5)
         )
-        builder.add_cost(pybop.NewMeanSquaredError(weighting="domain"))
+        builder.add_cost(
+            pybop.NewMeanSquaredError("Voltage [V]", "Voltage [V]", weighting="domain")
+        )
         problem = builder.build()
 
         assert problem is not None
@@ -192,18 +196,30 @@ class TestProblem:
 
     def test_pure_python_builder(self):
         dataset = pybop.Dataset(
-            {"Time / s": np.linspace(0, 1, 10), "Current [A]": np.ones(10)}
+            {"Time / s": np.linspace(0, 1, 10), "Output": np.ones(10)}
         )
 
-        def model(x):
-            return x**2
+        def model(params, dataset):
+            output = []
+            x = params["x"].value
+            for i in dataset["Time / s"]:
+                output.append(x * i**2)
+            return {"Output": output}
 
         builder = pybop.builders.Python()
-        builder.add_func(model)
+        builder.add_parameter(pybop.Parameter("x", initial_value=1))
+        builder.set_simulation(model)
         builder.set_dataset(dataset)
 
-        # builder.add_cost()
-        # problem = builder.build()
+        builder.add_cost(
+            pybop.NewMeanSquaredError("Output", "Output", weighting="equal")
+        )
+        problem = builder.build()
+
+        assert problem is not None
+        problem.set_params(np.array([3]))
+        value1 = problem.run()
+        assert value1 > 0
 
         # Assertion to add
         # Parameters
