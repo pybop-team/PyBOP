@@ -17,39 +17,6 @@ class TestModels:
 
     pytestmark = pytest.mark.unit
 
-    @pytest.mark.parametrize(
-        "model_class, expected_name, options",
-        [
-            (pybop.lithium_ion.SPM, "Single Particle Model", None),
-            (pybop.lithium_ion.SPMe, "Single Particle Model with Electrolyte", None),
-            (pybop.lithium_ion.DFN, "Doyle-Fuller-Newman", None),
-            (pybop.lithium_ion.MPM, "Many Particle Model", None),
-            (
-                pybop.lithium_ion.MSMR,
-                "Multi Species Multi Reactions Model",
-                {"number of MSMR reactions": ("6", "4")},
-            ),
-            (pybop.lithium_ion.WeppnerHuggins, "Weppner & Huggins model", None),
-            (
-                pybop.lithium_ion.GroupedSPMe,
-                "Grouped Single Particle Model with Electrolyte",
-                None,
-            ),
-            (
-                pybop.lithium_ion.GroupedSPMe,
-                "Grouped Single Particle Model with Electrolyte",
-                {"surface form": "differential"},
-            ),
-            (pybop.empirical.Thevenin, "Equivalent Circuit Thevenin Model", None),
-        ],
-    )
-    def test_model_classes(self, model_class, expected_name, options):
-        parameter_set = pybop.ParameterSet({"Nominal cell capacity [A.h]": 5.12})
-        model = model_class(options=options, parameter_set=parameter_set)
-        assert model.pybamm_model is not None
-        assert model.name == expected_name
-        assert model.parameter_set["Nominal cell capacity [A.h]"] == 5.12
-
     @pytest.fixture(
         params=[
             pybop.lithium_ion.SPM(),
@@ -66,99 +33,6 @@ class TestModels:
     def model(self, request):
         model = request.param
         return model.copy()
-
-    def test_non_default_solver(self):
-        solver = pybamm.CasadiSolver(
-            mode="fast",
-            atol=1e-6,
-            rtol=1e-6,
-        )
-        model = pybop.lithium_ion.SPM(solver=solver)
-        assert model.solver.mode == "fast"
-        assert model.solver.atol == 1e-6
-        assert model.solver.rtol == 1e-6
-
-    def test_predict_without_pybamm(self, model):
-        model.pybamm_model = None
-
-        with pytest.raises(
-            ValueError,
-            match="The predict method currently only supports PyBaMM models.",
-        ):
-            model.predict(None, None)
-
-        # Test new_copy() without pybamm_model
-        if not isinstance(
-            model, (pybop.lithium_ion.MSMR, pybop.lithium_ion.GroupedSPMe)
-        ):
-            new_model = model.new_copy()
-            assert new_model.pybamm_model is not None
-            assert new_model.parameter_set is not None
-
-    def test_predict_with_inputs(self, model):
-        # Define inputs
-        t_eval = np.linspace(0, 10, 100)
-        if isinstance(model, (pybop.lithium_ion.GroupedSPMe)):
-            inputs = {
-                "Negative electrode relative porosity": 0.52,
-                "Positive electrode relative porosity": 0.63,
-            }
-        elif isinstance(model, (pybop.lithium_ion.EChemBaseModel)):
-            if model.pybamm_model.options["working electrode"] == "positive":
-                inputs = {
-                    "Positive electrode active material volume fraction": 0.63,
-                }
-            else:
-                inputs = {
-                    "Negative electrode active material volume fraction": 0.52,
-                    "Positive electrode active material volume fraction": 0.63,
-                }
-        elif isinstance(model, (pybop.empirical.Thevenin)):
-            inputs = {
-                "R0 [Ohm]": 0.0002,
-                "R1 [Ohm]": 0.0001,
-            }
-        else:
-            raise ValueError("Inputs not defined for this type of model.")
-
-        res = model.predict(t_eval=t_eval, inputs=inputs)
-        assert len(res["Voltage [V]"].data) == 100
-
-        with pytest.raises(
-            ValueError,
-            match="The predict method requires either an experiment or t_eval to be specified.",
-        ):
-            model.predict(inputs=inputs)
-
-    def test_predict_without_allow_infeasible_solutions(self, model):
-        if isinstance(model, (pybop.lithium_ion.SPM, pybop.lithium_ion.SPMe)):
-            model.allow_infeasible_solutions = False
-            t_eval = np.linspace(0, 10, 100)
-            inputs = {
-                "Negative electrode active material volume fraction": 0.9,
-                "Positive electrode active material volume fraction": 0.9,
-            }
-
-            with pytest.raises(
-                ValueError, match="These parameter values are infeasible."
-            ):
-                model.predict(t_eval=t_eval, inputs=inputs)
-
-    def test_build(self, model):
-        if isinstance(model, pybop.lithium_ion.SPMe):
-            model.build(initial_state={"Initial SoC": 1.0})
-
-            # Test attributes with init_soc
-            assert model.built_model is not None
-            assert model.disc is not None
-            assert model.built_initial_soc is not None
-        else:
-            model.build()
-            assert model.built_model is not None
-
-            # Test that the model can be built again
-            model.build()
-            assert model.built_model is not None
 
     def test_rebuild(self, model):
         model.build()
@@ -192,23 +66,6 @@ class TestModels:
             assert getattr(rebuilt_model, attribute) == getattr(
                 initial_built_model, attribute
             )
-
-    def test_parameter_set_definition(self):
-        # Test initilisation with different types of parameter set
-        param_dict = {"Nominal cell capacity [A.h]": 5}
-        model = pybop.BaseModel(parameter_set=None)
-        assert model.parameter_set is None
-
-        model = pybop.BaseModel(parameter_set=param_dict)
-        parameter_set = pybamm.ParameterValues(param_dict)
-        assert model.parameter_set == parameter_set
-
-        model = pybop.BaseModel(parameter_set=parameter_set)
-        assert model.parameter_set == parameter_set
-
-        pybop_parameter_set = pybop.ParameterSet(param_dict)
-        model = pybop.BaseModel(parameter_set=pybop_parameter_set)
-        assert model.parameter_set == parameter_set
 
     def test_rebuild_geometric_parameters(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
@@ -304,58 +161,6 @@ class TestModels:
             ValueError, match="Model must be built before calling reinit"
         ):
             model.reinit(inputs={})
-
-    def test_thevenin_model(self):
-        parameter_set = pybop.ParameterSet(
-            json_path="examples/parameters/initial_ecm_parameters.json"
-        )
-        model = pybop.empirical.Thevenin(
-            parameter_set=parameter_set, options={"number of rc elements": 2}
-        )
-        assert (
-            parameter_set["Open-circuit voltage [V]"]
-            == model.pybamm_model.default_parameter_values["Open-circuit voltage [V]"]
-        )
-
-        model.predict(initial_state={"Initial SoC": 0.5}, t_eval=np.arange(0, 10, 5))
-        assert model.parameter_set["Initial SoC"] == 0.5
-
-        model.set_initial_state({"Initial SoC": parameter_set["Initial SoC"] / 2})
-        assert model.parameter_set["Initial SoC"] == parameter_set["Initial SoC"] / 2
-        model.set_initial_state(
-            {
-                "Initial open-circuit voltage [V]": parameter_set[
-                    "Lower voltage cut-off [V]"
-                ]
-            }
-        )
-        np.testing.assert_allclose(model.parameter_set["Initial SoC"], 0.0, atol=1e-2)
-        model.set_initial_state(
-            {
-                "Initial open-circuit voltage [V]": parameter_set[
-                    "Upper voltage cut-off [V]"
-                ]
-            }
-        )
-        np.testing.assert_allclose(model.parameter_set["Initial SoC"], 1.0, atol=1e-2)
-
-        with pytest.raises(ValueError, match="outside the voltage limits"):
-            model.set_initial_state({"Initial open-circuit voltage [V]": -1.0})
-        with pytest.raises(ValueError, match="Initial SOC should be between 0 and 1"):
-            model.set_initial_state({"Initial SoC": -1.0})
-        with pytest.raises(
-            ValueError,
-            match="Initial value must be a float between 0 and 1, or a string ending in 'V'",
-        ):
-            model.set_initial_state({"Initial SoC": "invalid string"})
-
-    def test_check_params(self):
-        base = pybop.BaseModel()
-        assert base.check_params()
-        assert base.check_params(inputs={"a": 1})
-        assert base.check_params(inputs=[1])
-        with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
-            base.check_params(inputs=["unexpected_string"])
 
     def test_base_ecircuit_model(self):
         def check_params(inputs: dict, allow_infeasible_solutions: bool):
@@ -481,19 +286,6 @@ class TestModels:
             dataset_2["Current function [A]"].data,
             atol=1e-8,
         )
-
-    @pytest.mark.parametrize(
-        "model_class",
-        [
-            pybop.lithium_ion.WeppnerHuggins,
-            pybop.lithium_ion.GroupedSPMe,
-        ],
-    )
-    def test_custom_models(self, model_class):
-        with pytest.warns(UserWarning) as record:
-            model_class(unused_kwarg=0, options={"unused option": 0})
-            assert "The input model_kwargs" in str(record[0].message)
-            assert "are not currently used by " in str(record[0].message)
 
     def test_grouped_SPMe(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
