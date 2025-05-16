@@ -2,8 +2,8 @@ import warnings
 from typing import Optional
 
 import numpy as np
-import pybop
 
+import pybop
 from pybop import ComposedTransformation, IdentityTransformation, LogTransformation
 from pybop._utils import is_numeric
 

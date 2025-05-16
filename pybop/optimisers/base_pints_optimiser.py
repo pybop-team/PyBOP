@@ -12,18 +12,15 @@ from pints import PopulationBasedOptimiser
 from pints import PopulationBasedOptimiser as PintsPopulationBasedOptimiser
 from pints import RectangularBoundaries as PintsRectangularBoundaries
 from pints import SequentialEvaluator as PintsSequentialEvaluator
-
 from pints import strfloat as PintsStrFloat
-from pybop.problems.base_problem import Problem
 
 import pybop
 from pybop import (
     AdamWImpl,
-    BaseJaxCost,
     GradientDescentImpl,
     OptimisationResult,
-    SequentialJaxEvaluator,
 )
+from pybop.problems.base_problem import Problem
 
 
 @dataclass

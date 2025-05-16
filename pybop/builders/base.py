@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-import pybop
 
-from pybop import Parameter, Parameters
+import pybop
+from pybop import Parameter
 from pybop._dataset import Dataset
 from pybop.problems.base_problem import Problem
 

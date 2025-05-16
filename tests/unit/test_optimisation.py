@@ -1,12 +1,10 @@
 import io
 import re
 import sys
-import warnings
 
 import numpy as np
-import pytest
 import pybamm
-from pints import PopulationBasedOptimiser
+import pytest
 
 import pybop
 
@@ -239,7 +237,6 @@ class TestOptimisation:
         ],
     )
     def test_optimiser_kwargs(self, cost, optimiser):
-
         if optimiser == pybop.SciPyDifferentialEvolution:
             pop_maxiter_optim = optimiser(cost=cost, maxiter=3, popsize=5)
             assert pop_maxiter_optim._options["maxiter"] == 3

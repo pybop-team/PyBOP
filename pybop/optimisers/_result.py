@@ -1,10 +1,8 @@
-import warnings
-from typing import TYPE_CHECKING, Optional, Union
+from typing import Optional
 
 import numpy as np
 import scipy.optimize
 
-from pybop import BaseCost, Inputs
 from pybop.problems.base_problem import Problem
 
 

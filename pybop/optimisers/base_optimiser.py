@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import numpy as np
+
 import pybop
 from pybop.problems.base_problem import Problem
 
@@ -126,7 +127,6 @@ class BaseOptimiser:
         logger: OptimisationLogger,
         options: OptimiserOptions,
     ):
-
         self._problem = problem
         self._logger = logger
         self._multistart = options.multistart

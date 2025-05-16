@@ -1,4 +1,5 @@
 from typing import Optional
+
 from pints import CMAES as PintsCMAES
 from pints import PSO as PintsPSO
 from pints import SNES as PintsSNES
@@ -6,7 +7,6 @@ from pints import XNES as PintsXNES
 from pints import IRPropMin as PintsIRPropMin
 from pints import NelderMead as PintsNelderMead
 
-from pybop.problems.base_problem import Problem
 import pybop
 from pybop import (
     AdamWImpl,
@@ -17,6 +17,7 @@ from pybop import (
     RandomSearchImpl,
     SimulatedAnnealingImpl,
 )
+from pybop.problems.base_problem import Problem
 
 
 class GradientDescent(BasePintsOptimiser):

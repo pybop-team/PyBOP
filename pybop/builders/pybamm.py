@@ -1,8 +1,8 @@
 from typing import Union
 
 import pybamm
-import pybop
 
+import pybop
 from pybop._pybamm_pipeline import PybammPipeline
 from pybop.costs.pybamm_cost import PybammCost
 
