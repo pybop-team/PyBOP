@@ -15,13 +15,12 @@ class BaseBuilder(ABC):
         self._costs = []
         self._cost_weights = []
         self._dataset = None
-        self._pybop_parameters = Parameters()
+        self._params = {}
 
     def set_dataset(self, dataset: Dataset):
         self._dataset = dataset
-        self._params = {}
 
-    def add_parameter(self, parameter):
+    def add_parameter(self, parameter: Parameter):
         """
         Adds a parameter to the builder.
         """
@@ -52,9 +51,6 @@ class BaseBuilder(ABC):
         if not self._params:
             raise ValueError("No parameters have been added to the builder.")
         return pybop.Parameters(self._params)
-
-    def add_parameter(self, parameter: Parameter) -> None:
-        self._pybop_parameters.add(parameter)
 
     @abstractmethod
     def build(self) -> Problem:

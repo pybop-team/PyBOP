@@ -43,7 +43,7 @@ class GradientDescent(BasePintsOptimiser):
     def __init__(
         self,
         problem: Problem,
-        options: Optional[pybop.PintsOptions],
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
             problem,
@@ -78,7 +78,7 @@ class AdamW(BasePintsOptimiser):
     def __init__(
         self,
         problem: Problem,
-        options: Optional[pybop.PintsOptions],
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
             problem,
@@ -110,7 +110,7 @@ class IRPropMin(BasePintsOptimiser):
     def __init__(
         self,
         problem: Problem,
-        options: Optional[pybop.PintsOptions],
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
             problem,
@@ -141,7 +141,7 @@ class IRPropPlus(BasePintsOptimiser):
     def __init__(
         self,
         problem: Problem,
-        options: Optional[pybop.PintsOptions],
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
             problem,
@@ -173,7 +173,7 @@ class PSO(BasePintsOptimiser):
     def __init__(
         self,
         problem: Problem,
-        options: Optional[pybop.PintsOptions],
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
             problem,
@@ -205,7 +205,7 @@ class SNES(BasePintsOptimiser):
     def __init__(
         self,
         problem: Problem,
-        options: Optional[pybop.PintsOptions],
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
             problem,
@@ -237,7 +237,7 @@ class XNES(BasePintsOptimiser):
     def __init__(
         self,
         problem: Problem,
-        options: Optional[pybop.PintsOptions],
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
             problem,
@@ -271,7 +271,7 @@ class NelderMead(BasePintsOptimiser):
     def __init__(
         self,
         problem: Problem,
-        options: Optional[pybop.PintsOptions],
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
             problem,
@@ -303,7 +303,7 @@ class CMAES(BasePintsOptimiser):
     def __init__(
         self,
         problem: Problem,
-        options: Optional[pybop.PintsOptions],
+        options: Optional[pybop.PintsOptions] = None,
     ):
         if len(problem.params) == 1:
             raise ValueError(
@@ -339,7 +339,7 @@ class CuckooSearch(BasePintsOptimiser):
     def __init__(
         self,
         problem: Problem,
-        options: Optional[pybop.PintsOptions],
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
             problem,
@@ -373,7 +373,7 @@ class RandomSearch(BasePintsOptimiser):
     def __init__(
         self,
         problem: Problem,
-        options: Optional[pybop.PintsOptions],
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
             problem,
@@ -410,7 +410,7 @@ class SimulatedAnnealing(BasePintsOptimiser):
     def __init__(
         self,
         problem: Problem,
-        options: Optional[pybop.PintsOptions],
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
             problem,

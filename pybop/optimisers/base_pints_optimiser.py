@@ -1,4 +1,6 @@
+from dataclasses import dataclass
 from time import time
+from typing import Optional
 
 import numpy as np
 import pints
@@ -24,24 +26,22 @@ from pybop import (
 )
 
 
-class PintsOptions:
+@dataclass
+class PintsOptions(pybop.OptimiserOptions):
     """
     A class to hold PINTS options for the optimisation process.
     """
 
     default_max_iterations = 1000
-
-    def __init__(self):
-        self.max_iterations: int = self.default_max_iterations
-        self.min_iterations: int = 2
-        self.max_unchanged_iterations: int = 15
-        self.multistart: int = 1
-        self.parallel: bool = False
-        self.use_f_guessed: bool = False
-        self.absolute_tolerance: float = 1e-5
-        self.relative_tolerance: float = 1e-2
-        self.max_evaluations: int = None
-        self.threshold: float = None
+    max_iterations: int = default_max_iterations
+    min_iterations: int = 2
+    max_unchanged_iterations: int = 15
+    parallel: bool = False
+    use_f_guessed: bool = False
+    absolute_tolerance: float = 1e-5
+    relative_tolerance: float = 1e-2
+    max_evaluations: Optional[int] = None
+    threshold: Optional[float] = None
 
 
 class BasePintsOptimiser(pybop.BaseOptimiser):
@@ -62,7 +62,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         self,
         problem: Problem,
         pints_optimiser,
-        options: PintsOptions = None,
+        options: Optional[PintsOptions] = None,
     ):
         # First set attributes to default values
         self._boundaries = None
@@ -86,10 +86,24 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         self._threshold = options.threshold
         self._pints_optimiser = pints_optimiser
         self._optimizer = None
+        logger = pybop.OptimisationLogger()
         super().__init__(
             problem,
-            multistart=options.multistart,
+            options=options,
+            logger=logger,
         )
+
+    @staticmethod
+    def default_options() -> PintsOptions:
+        """
+        Returns the default options for the PINTS optimiser.
+
+        Returns
+        -------
+        PintsOptions
+            The default options for the PINTS optimiser.
+        """
+        return PintsOptions()
 
     @property
     def max_iterations(self):
@@ -98,7 +112,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         """
         return self._max_iterations
 
-    def set_max_iterations(self, iterations="default"):
+    def set_max_iterations(self, iterations: str | int | None = "default"):
         """
         Set the maximum number of iterations as a stopping criterion.
         Credit: PINTS
@@ -135,7 +149,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
             if issubclass(self._pints_optimiser, PintsPSO):
                 if not all(
                     np.isfinite(value)
-                    for sublist in self.bounds.values()
+                    for sublist in bounds.values()
                     for value in sublist
                 ):
                     raise ValueError(
@@ -200,32 +214,28 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         if self._needs_sensitivities:
 
             def fun(x):
-                model_x = self.problem.params.to_model(x)
-                self.problem.set_params(model_x)
-                self.problem.run_with_sensitivities()
+                self.problem.set_params(x)
+                return self.problem.run_with_sensitivities()
 
         else:
 
             def fun(x):
-                model_x = self.problem.params.to_model(x)
-                self.problem.set_params(model_x)
-                self.problem.run()
+                self.problem.set_params(x)
+                return self.problem.run()
 
         # Create evaluator object
-        if isinstance(self.cost, BaseJaxCost):
-            evaluator = SequentialJaxEvaluator(fun)
+        if self._parallel:
+            # Get number of workers
+            n_workers = self._n_workers
+            if isinstance(self._optimiser, PintsPopulationBasedOptimiser):
+                population_size = self._optimiser.population_size()
+                if population_size is None:
+                    n_workers = self._n_workers
+                else:
+                    n_workers = min(self._n_workers, population_size)
+            evaluator = PintsParallelEvaluator(fun, n_workers=n_workers)
         else:
-            if self._parallel:
-                # Get number of workers
-                n_workers = self._n_workers
-
-                # For population based optimisers, don't use more workers than
-                # particles!
-                if isinstance(self._optimiser, PintsPopulationBasedOptimiser):
-                    n_workers = min(n_workers, self._optimiser.population_size())
-                evaluator = PintsParallelEvaluator(fun, n_workers=n_workers)
-            else:
-                evaluator = PintsSequentialEvaluator(fun)
+            evaluator = PintsSequentialEvaluator(fun)
 
         # Keep track of current best and best-guess scores.
         fb = fg = np.inf
@@ -235,13 +245,19 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
 
         # Run the ask-and-tell loop
         running = True
+        halt_message = None
         try:
             while running:
                 # Ask optimiser for new points
-                xs = self._optimiser.ask()
+                xs_raw = self._optimiser.ask()
+                xs: list[np.ndarray] = [x for x in xs_raw]
+
+                model_xs = [
+                    self.problem.params.transformation().to_model(x) for x in xs
+                ]
 
                 # Evaluate points
-                fs = evaluator.evaluate(xs)
+                fs = evaluator.evaluate(model_xs)
 
                 # Tell optimiser about function values
                 self._optimiser.tell(fs)
@@ -264,11 +280,15 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
                 evaluations += len(fs)
                 iteration += 1
                 _fs = [x[0] for x in fs] if self._needs_sensitivities else fs
-                self.log_update(
+                self.logger.log_update(
                     iterations=iteration,
                     evaluations=evaluations,
-                    x=xs,
-                    x_best=self._optimiser.x_best(),
+                    x_search=xs,
+                    x_model=model_xs,
+                    x_search_best=self._optimiser.x_best(),
+                    x_model_best=self.problem.params.transformation().to_model(
+                        self._optimiser.x_best()
+                    ),
                     cost=_fs,
                     cost_best=fb,
                 )
@@ -357,8 +377,8 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
             f = self._optimiser.f_best()
 
         return OptimisationResult(
-            optim=self,
-            x=x,
+            problem=self._problem,
+            x=self._problem.params.transformation().to_model(x),
             final_cost=f,
             n_iterations=self._iterations,
             n_evaluations=self._evaluations,

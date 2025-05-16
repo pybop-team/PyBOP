@@ -1,10 +1,11 @@
-import warnings
+from dataclasses import dataclass
 from time import time
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 from scipy.optimize import Bounds, OptimizeResult, differential_evolution, minimize
 
+import pybop
 from pybop import BaseOptimiser, OptimisationResult, SciPyEvaluator
 from pybop.problems.base_problem import Problem
 
@@ -26,9 +27,36 @@ class BaseSciPyOptimiser(BaseOptimiser):
     def __init__(
         self,
         problem: Problem,
-        multistart: int = 1,
+        needs_sensitivities: bool,
+        options: pybop.OptimiserOptions,
     ):
-        super().__init__(problem, multistart=multistart)
+        logger = pybop.OptimisationLogger()
+        self._needs_sensitivities = needs_sensitivities
+        self._intermediate_x_search = []
+        self._intermediate_x_model = []
+        self._intermediate_cost = []
+        super().__init__(problem, options=options, logger=logger)
+
+    def store_intermediate_results(
+        self,
+        x_search: np.ndarray,
+        x_model: np.ndarray,
+        cost: float,
+    ):
+        self._intermediate_x_search.append(x_search)
+        self._intermediate_x_model.append(x_model)
+        self._intermediate_cost.append(cost)
+
+    def get_and_reset_itermediate_results(self):
+        ret = (
+            self._intermediate_x_search,
+            self._intermediate_x_model,
+            self._intermediate_cost,
+        )
+        self._intermediate_x_search = []
+        self._intermediate_x_model = []
+        self._intermediate_cost = []
+        return ret
 
     def scipy_bounds(self) -> Bounds:
         bounds = self.problem.params.get_bounds()
@@ -53,13 +81,92 @@ class BaseSciPyOptimiser(BaseOptimiser):
         """
 
         # Choose method to evaluate
-        def fun(x):
-            return self.call_cost(
-                x, cost=self.cost, calculate_grad=self._needs_sensitivities
-            )
+        if self._needs_sensitivities:
+
+            def fun(x):
+                self.problem.set_params(x)
+                return self.problem.run_with_sensitivities()
+
+        else:
+
+            def fun(x):
+                self.problem.set_params(x)
+                return self.problem.run()
 
         # Create evaluator object
         return SciPyEvaluator(fun)
+
+
+@dataclass
+class ScipyMinimizeOptions(pybop.OptimiserOptions):
+    """
+    Options for the SciPy minimization method.
+    Parameters
+    ----------
+    method : str
+        The optimisation method to use. Default is 'Nelder-Mead'.
+    jac : bool
+        Method for computing the gradient vector. Default is False.
+    tol : float, optional
+        Tolerance for termination. Default is None.
+    maxiter : int
+        Maximum number of iterations. Default is 1000.
+    disp : bool, optional
+        Set to True to print convergence messages. Default is False.
+    ftol : float, optional
+        Function tolerance for termination. Default is None.
+    gtol : float, optional
+        Gradient tolerance for termination. Default is None.
+    eps : float, optional
+        Step size for finite difference approximation. Default is None.
+    maxcor : int, optional
+        Maximum number of variable metric corrections. Default is None.
+    maxfev : int, optional
+        Maximum number of function evaluations. Default is None.
+
+    """
+
+    method: str = "Nelder-Mead"
+    jac: bool = False
+    tol: Optional[float] = None
+    maxiter: int = 1000
+    disp: Optional[bool] = False
+    ftol: Optional[float] = None
+    gtol: Optional[float] = None
+    eps: Optional[float] = None
+    maxcor: Optional[int] = None
+    maxfev: Optional[int] = None
+
+    def to_dict(self) -> dict:
+        """
+        Convert the options to a dictionary format.
+
+        Returns
+        -------
+        dict
+            Dictionary representation of the options.
+        """
+        ret = {
+            "method": self.method,
+            "jac": self.jac,
+            "options": {
+                "maxiter": self.maxiter,
+            },
+        }
+        if self.tol is not None:
+            ret["tol"] = self.tol
+        optional_keys = [
+            "disp",
+            "ftol",
+            "gtol",
+            "eps",
+            "maxcor",
+            "maxfev",
+        ]
+        for key in optional_keys:
+            if getattr(self, key) is not None:
+                ret["options"][key] = getattr(self, key)
+        return ret
 
 
 class SciPyMinimize(BaseSciPyOptimiser):
@@ -73,44 +180,8 @@ class SciPyMinimize(BaseSciPyOptimiser):
     ----------
     problem : pybop.Problem
         The problem to be optimised.
-    multistart : int, optional
-        Number of independent runs of the optimisation algorithm. Default is 1.
-    **optimiser_kwargs : optional
-        Valid SciPy Minimize option keys and their values:
-        x0 : array_like
-            Initial position from which optimisation will start.
-        method : str
-            The optimisation method, options include:
-            'Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG', 'L-BFGS-B', 'TNC', 'COBYLA',
-            'SLSQP', 'trust-constr', 'dogleg', 'trust-ncg', 'trust-exact', 'trust-krylov'.
-        jac : {callable, '2-point', '3-point', 'cs', bool}, optional
-            Method for computing the gradient vector.
-        hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy}, optional
-            Method for computing the Hessian matrix.
-        hessp : callable, optional
-            Hessian of objective function times an arbitrary vector p.
-        bounds : sequence or scipy.optimize.Bounds, optional
-            Bounds on variables for L-BFGS-B, TNC, SLSQP, trust-constr methods.
-        constraints : {Constraint, dict} or List of {Constraint, dict}, optional
-            Constraints definition for constrained optimisation.
-        tol : float, optional
-            Tolerance for termination.
-        options : dict, optional
-            Method-specific options. Common options include:
-            maxiter : int
-                Maximum number of iterations.
-            disp : bool
-                Set to True to print convergence messages.
-            ftol : float
-                Function tolerance for termination.
-            gtol : float
-                Gradient tolerance for termination.
-            eps : float
-                Step size for finite difference approximation.
-            maxfev : int
-                Maximum number of function evaluations.
-            maxcor : int
-                Maximum number of variable metric corrections (L-BFGS-B).
+    options: ScipyMinizeOptions, optional
+        Options for the SciPy minimisation method. Default is None.
 
     See Also
     --------
@@ -125,39 +196,45 @@ class SciPyMinimize(BaseSciPyOptimiser):
     def __init__(
         self,
         problem: Problem,
-        multistart: int = 1,
-        **optimiser_kwargs,
+        options: Optional[ScipyMinimizeOptions] = None,
     ):
-        self._options = dict(method="Nelder-Mead", jac=False)
-        self._options.update(**optimiser_kwargs)
-        self._needs_sensitivities = (
-            "jac" in self._options and self._options["jac"] is not False
+        self._options = {}
+        options = options or ScipyMinimizeOptions()
+        self._options = options.to_dict()
+        self._iteration = 0
+        super().__init__(
+            problem=problem, options=options, needs_sensitivities=options.jac
         )
-        super().__init__(problem=problem, multistart=multistart)
+        self._evaluator = self.evaluator()
         self._cost0 = 1.0
+
+    @staticmethod
+    def default_options() -> ScipyMinimizeOptions:
+        """
+        Returns the default options for the optimiser.
+
+        Returns
+        -------
+        ScipyMinimizeOptions
+            The default options for the optimiser.
+        """
+        return ScipyMinimizeOptions()
 
     def _set_up_optimiser(self):
         """
         Parse optimiser options.
         """
-
         self._scipy_bounds = self.scipy_bounds()
         self._evaluator = self.evaluator()
-
-        # Apply default maxiter
-        if "maxiter" not in self._options["options"]:
-            self._options["options"]["maxiter"] = self.default_max_iterations
-
-        # set x0
-        self._options["x0"] = self.problem.params.initial_value()
 
     def cost_wrapper(self, x):
         """
         Scale the cost function, preserving the sign convention, and eliminate nan values
         """
+        x_model = self.problem.params.transformation().to_model(x)
         if not self._options["jac"]:
-            cost = self.evaluator.evaluate(x)
-            self.log_update(x=[x], cost=cost)
+            cost = self._evaluator.evaluate(x_model)
+            self.store_intermediate_results(x_search=x, x_model=x_model, cost=cost)
             scaled_cost = cost / self._cost0
             if np.isinf(scaled_cost):
                 self.inf_count += 1
@@ -166,8 +243,8 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 )  # for fake finite gradient
             return scaled_cost
 
-        L, dl = self.evaluator.evaluate(x)
-        self.log_update(x=[x], cost=L)
+        L, dl = self._evaluator.evaluate(x_model)
+        self.store_intermediate_results(x_search=x, x_model=x_model, cost=L)
         return (L / self._cost0, dl / self._cost0)
 
     def _run(self):
@@ -180,6 +257,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
             The result of the optimisation including the optimised parameter values and cost.
         """
         self.inf_count = 0
+        self._iteration = 0
 
         # Add callback storing history of parameter values
         def base_callback(intermediate_result: Union[OptimizeResult, np.ndarray]):
@@ -197,7 +275,22 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 result = self._evaluator.evaluate(x_best)
                 cost_best = result[0] if self._needs_sensitivities else result
 
-            self.log_update(x_best=x_best, cost_best=cost_best)
+            x_model_best = self.problem.params.transformation().to_model(x_best)
+
+            (x_search, x_model, cost) = self.get_and_reset_itermediate_results()
+            evaluations = len(x_search)
+            self._iteration += 1
+
+            self.logger.log_update(
+                iterations=self._iteration,
+                evaluations=evaluations,
+                x_search_best=x_best,
+                x_model_best=x_model_best,
+                cost_best=cost_best,
+                x_search=x_search,
+                x_model=x_model,
+                cost=cost,
+            )
 
         callback = (
             base_callback
@@ -205,33 +298,13 @@ class SciPyMinimize(BaseSciPyOptimiser):
             else lambda x, intermediate_result: base_callback(intermediate_result)
         )
 
-        # Compute the absolute initial cost and resample if required
-        result = self._evaluator.evaluate(self.x0)
-        self._cost0 = np.abs(result[0] if self._needs_sensitivities else result)
-        if np.isinf(self._cost0):
-            for _i in range(1, self.num_resamples):
-                try:
-                    self.x0 = self.parameters.rvs(apply_transform=True)
-                except AttributeError:
-                    warnings.warn(
-                        "Parameter does not have a prior distribution. Stopping resampling.",
-                        UserWarning,
-                        stacklevel=2,
-                    )
-                    break
-                result = self._evaluator.evaluate(self.x0)
-                self._cost0 = np.abs(result[0] if self._needs_sensitivities else result)
-                if not np.isinf(self._cost0):
-                    break
-            if np.isinf(self._cost0):
-                raise ValueError(
-                    "The initial parameter values return an infinite cost."
-                )
+        x0 = self.problem.params.initial_value()
+        self._cost0 = self._evaluator.evaluate(x0)
 
         start_time = time()
-        result = minimize(
+        result: OptimizeResult = minimize(
             self.cost_wrapper,
-            self.x0,
+            x0,
             bounds=self._scipy_bounds,
             callback=callback,
             **self._options,
@@ -243,10 +316,17 @@ class SciPyMinimize(BaseSciPyOptimiser):
         except AttributeError:
             nit = -1
 
+        try:
+            nfev = result.nfev
+        except AttributeError:
+            nfev = -1
+
         return OptimisationResult(
-            optim=self,
-            x=result.x,
+            final_cost=result.fun * self._cost0,
             n_iterations=nit,
+            n_evaluations=nfev,
+            problem=self.problem,
+            x=result.x,
             scipy_result=result,
             time=total_time,
             message=result.message,
@@ -255,6 +335,112 @@ class SciPyMinimize(BaseSciPyOptimiser):
     def name(self):
         """Provides the name of the optimisation strategy."""
         return "SciPyMinimize"
+
+
+@dataclass
+class SciPyDifferentialEvolutionOptions(pybop.OptimiserOptions):
+    """
+    Options for the SciPy differential evolution method.
+
+    Parameters
+    ----------
+
+    strategy : str, optional
+        The differential evolution strategy to use. Should be one of:
+        - 'best1bin'
+        - 'best1exp'
+        - 'rand1exp'
+        - 'randtobest1exp'
+        - 'currenttobest1exp'
+        - 'best2exp'
+        - 'rand2exp'
+        - 'randtobest1bin'
+        - 'currenttobest1bin'
+        - 'best2bin'
+        - 'rand2bin'
+        - 'rand1bin'
+        Default is 'best1bin'.
+    maxiter : int, optional
+        Maximum number of generations. Default is 1000.
+    popsize : int, optional
+        Multiplier for setting the total population size. The population has
+        popsize * len(x) individuals. Default is 15.
+    tol : float, optional
+        Relative tolerance for convergence. Default is 0.01.
+    mutation : float or tuple(float, float), optional
+        The mutation constant. If specified as a float, should be in [0, 2].
+        If specified as a tuple (min, max), dithering is used. Default is (0.5, 1.0).
+    recombination : float, optional
+        The recombination constant, should be in [0, 1]. Default is 0.7.
+    seed : int, optional
+        Random seed for reproducibility.
+    disp : bool, optional
+        Display status messages. Default is False.
+    callback : callable, optional
+        Called after each iteration with the current result as argument.
+    polish : bool, optional
+        If True, performs a local optimisation on the solution. Default is True.
+    init : str or array-like, optional
+        Specify initial population. Can be 'latinhypercube', 'random',
+        or an array of shape (M, len(x)).
+    atol : float, optional
+        Absolute tolerance for convergence. Default is 0.
+    updating : {'immediate', 'deferred'}, optional
+        If 'immediate', best solution vector is continuously updated within
+        a single generation. Default is 'immediate'.
+    workers : int or map-like callable, optional
+        If workers is an int the population is subdivided into workers
+        sections and evaluated in parallel. Default is 1.
+    constraints : {NonlinearConstraint, LinearConstraint, Bounds}, optional
+        Constraints on the solver.
+    """
+
+    strategy: str = "best1bin"
+    max_iterations: int = 1000
+    tol: float = 0.01
+    popsize: Optional[int] = None
+    mutation: Union[float, tuple, None] = None
+    recombination: Optional[float] = None
+    seed: Optional[int] = None
+    disp: Optional[bool] = None
+    callback: Optional[callable] = None
+    polish: Optional[bool] = None
+    init: Optional[Union[str, np.ndarray]] = None
+    atol: Optional[float] = None
+    updating: Optional[str] = None
+    workers: Optional[Union[int, callable]] = None
+
+    def to_dict(self) -> dict:
+        """
+        Convert the options to a dictionary format.
+
+        Returns
+        -------
+        dict
+            Dictionary representation of the options.
+        """
+        ret = {
+            "strategy": self.strategy,
+            "maxiter": self.max_iterations,
+            "tol": self.tol,
+        }
+        optional_keys = [
+            "popsize",
+            "mutation",
+            "recombination",
+            "seed",
+            "disp",
+            "callback",
+            "polish",
+            "init",
+            "atol",
+            "updating",
+            "workers",
+        ]
+        for key in optional_keys:
+            if getattr(self, key) is not None:
+                ret[key] = getattr(self, key)
+        return ret
 
 
 class SciPyDifferentialEvolution(BaseSciPyOptimiser):
@@ -270,56 +456,8 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         The problem to be optimised.
     multistart : int, optional
         Number of independent runs of the optimisation algorithm. Default is 1.
-    **optimiser_kwargs : optional
-        Valid SciPy differential_evolution options:
-        strategy : str, optional
-            The differential evolution strategy to use. Should be one of:
-            - 'best1bin'
-            - 'best1exp'
-            - 'rand1exp'
-            - 'randtobest1exp'
-            - 'currenttobest1exp'
-            - 'best2exp'
-            - 'rand2exp'
-            - 'randtobest1bin'
-            - 'currenttobest1bin'
-            - 'best2bin'
-            - 'rand2bin'
-            - 'rand1bin'
-            Default is 'best1bin'.
-        maxiter : int, optional
-            Maximum number of generations. Default is 1000.
-        popsize : int, optional
-            Multiplier for setting the total population size. The population has
-            popsize * len(x) individuals. Default is 15.
-        tol : float, optional
-            Relative tolerance for convergence. Default is 0.01.
-        mutation : float or tuple(float, float), optional
-            The mutation constant. If specified as a float, should be in [0, 2].
-            If specified as a tuple (min, max), dithering is used. Default is (0.5, 1.0).
-        recombination : float, optional
-            The recombination constant, should be in [0, 1]. Default is 0.7.
-        seed : int, optional
-            Random seed for reproducibility.
-        disp : bool, optional
-            Display status messages. Default is False.
-        callback : callable, optional
-            Called after each iteration with the current result as argument.
-        polish : bool, optional
-            If True, performs a local optimisation on the solution. Default is True.
-        init : str or array-like, optional
-            Specify initial population. Can be 'latinhypercube', 'random',
-            or an array of shape (M, len(x)).
-        atol : float, optional
-            Absolute tolerance for convergence. Default is 0.
-        updating : {'immediate', 'deferred'}, optional
-            If 'immediate', best solution vector is continuously updated within
-            a single generation. Default is 'immediate'.
-        workers : int or map-like callable, optional
-            If workers is an int the population is subdivided into workers
-            sections and evaluated in parallel. Default is 1.
-        constraints : {NonlinearConstraint, LinearConstraint, Bounds}, optional
-            Constraints on the solver.
+    options: SciPyDifferentialEvolutionOptions, optional
+        Options for the SciPy differential evolution method. Default is None.
 
     See Also
     --------
@@ -335,10 +473,28 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
     iteration.
     """
 
-    def __init__(self, problem: Problem, multistart: int = 1, **optimiser_kwargs):
-        self._options = dict(strategy="best1bin")
-        self._options.update(**optimiser_kwargs)
-        super().__init__(problem=problem, multistart=multistart)
+    def __init__(
+        self,
+        problem: Problem,
+        options: Optional[SciPyDifferentialEvolutionOptions] = None,
+    ):
+        options = options or SciPyDifferentialEvolutionOptions()
+        self._options = options.to_dict()
+        super().__init__(problem=problem, options=options, needs_sensitivities=False)
+        self._evaluator = self.evaluator()
+        self._iterations = 0
+
+    @staticmethod
+    def default_options() -> SciPyDifferentialEvolutionOptions:
+        """
+        Returns the default options for the optimiser.
+
+        Returns
+        -------
+        SciPyDifferentialEvolutionOptions
+            The default options for the optimiser.
+        """
+        return SciPyDifferentialEvolutionOptions()
 
     def _set_up_optimiser(self):
         """
@@ -361,7 +517,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         if "tol" not in self._options:
             self._options["tol"] = 1e-5
 
-    def _run_optimiser(self):
+    def _run(self):
         """
         Executes the optimization process using SciPy's differential_evolution function.
 
@@ -370,20 +526,33 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         result : scipy.optimize.OptimizeResult
             The result of the optimisation including the optimised parameter values and cost.
         """
+        self._iterations = 0
 
         # Add callback storing history of parameter values
         def callback(intermediate_result: OptimizeResult):
-            self.log_update(
-                x_best=intermediate_result.x,
+            (x_search, x_model, cost) = self.get_and_reset_itermediate_results()
+            self._iterations += 1
+            self.logger.log_update(
+                iterations=self._iterations,
+                evaluations=len(x_search),
+                x_search_best=intermediate_result.x,
+                x_model_best=self.problem.params.transformation().to_model(
+                    intermediate_result.x
+                ),
                 cost_best=intermediate_result.fun,
+                x_search=x_search,
+                x_model=x_model,
+                cost=cost,
             )
 
         def cost_wrapper(x):
-            cost = self.evaluator.evaluate(x)
-            self.log_update(x=[x], cost=cost)
+            x_model = self.problem.params.transformation().to_model(x)
+            cost = self._evaluator.evaluate(x_model)
+            self.store_intermediate_results(x_search=x, x_model=x_model, cost=cost)
             return cost
 
         start_time = time()
+        print("options", self._options)
         result = differential_evolution(
             cost_wrapper,
             self._scipy_bounds,
@@ -396,9 +565,15 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             nit = result.nit
         except AttributeError:
             nit = -1
+        try:
+            nfev = result.nfev
+        except AttributeError:
+            nfev = -1
 
         return OptimisationResult(
-            optim=self,
+            final_cost=result.fun,
+            n_evaluations=nfev,
+            problem=self.problem,
             x=result.x,
             n_iterations=nit,
             scipy_result=result,

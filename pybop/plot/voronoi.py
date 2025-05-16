@@ -3,7 +3,7 @@ from typing import Union
 import numpy as np
 from scipy.spatial import Voronoi, cKDTree
 
-from pybop import BaseOptimiser, Optimisation
+from pybop import BaseOptimiser
 from pybop.plot.plotly_manager import PlotlyManager
 
 
@@ -226,7 +226,7 @@ def assign_nearest_value(x, y, f, xi, yi):
 
 
 def surface(
-    optim: Union[BaseOptimiser, Optimisation],
+    optim: BaseOptimiser,
     bounds=None,
     normalise=True,
     resolution=250,
@@ -238,7 +238,7 @@ def surface(
 
     Parameters:
     -----------
-    optim : pybop.BaseOptimiser | pybop.Optimisation
+    optim : pybop.BaseOptimiser
         Solved optimisation object
     bounds : numpy.ndarray, optional
         A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses

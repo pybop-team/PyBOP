@@ -18,6 +18,7 @@ class Pybamm(pybop.BaseBuilder):
         self._initial_state = None
         self._pipeline = None
         self.domain = "Time [s]"
+        super().__init__()
 
     def set_simulation(
         self,

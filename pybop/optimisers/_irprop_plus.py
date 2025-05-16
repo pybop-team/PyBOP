@@ -118,6 +118,7 @@ class IRPropPlusImpl(PintsOptimiser):
 
         self._ready_for_tell = False
         f_new, gradient_new = reply[0]
+        gradient_new = gradient_new.flatten()
 
         # Setup for first iteration
         if self._gradient_previous is None:

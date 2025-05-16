@@ -1,5 +1,4 @@
 import warnings
-from collections import OrderedDict
 from typing import Optional
 
 import numpy as np
@@ -63,7 +62,9 @@ class Parameter:
         self.set_bounds(bounds)
         self.margin = 1e-4
 
-    def rvs(self, n_samples: int = 1, random_state=None, apply_transform: bool = False):
+    def rvs(
+        self, n_samples: int = 1, random_state=None, apply_transform: bool = False
+    ) -> Optional[np.ndarray]:
         """
         Draw random samples from the parameter's prior distribution.
 
@@ -81,9 +82,12 @@ class Parameter:
 
         Returns
         -------
-        array-like
+        array-like or None
             An array of samples drawn from the prior distribution within the parameter's bounds.
+            If the prior is None, returns None.
         """
+        if self.prior is None:
+            return None
         samples = self.prior.rvs(n_samples, random_state=random_state)
 
         # Constrain samples to be within bounds
@@ -233,7 +237,7 @@ class Parameters:
     parameter_list : dict of pybop.Parameter
     """
 
-    def __init__(self, params: dict[Parameter]):
+    def __init__(self, params: dict[str, Parameter]):
         self._params = params
         self._transform = self._construct_transformation()
 
@@ -373,7 +377,9 @@ class Parameters:
                 else:
                     param.set_bounds(bounds=bounds[i])
 
-    def rvs(self, n_samples: int = 1, apply_transform: bool = False) -> np.ndarray:
+    def rvs(
+        self, n_samples: int = 1, apply_transform: bool = False
+    ) -> Optional[np.ndarray]:
         """
         Draw random samples from each parameter's prior distribution.
 
@@ -389,13 +395,16 @@ class Parameters:
 
         Returns
         -------
-        array-like
+        array-like or None
             An array of samples drawn from the prior distribution within each parameter's bounds.
+            If any prior is None, returns None.
         """
         all_samples = []
 
         for param in self._params.values():
             samples = param.rvs(n_samples, apply_transform=apply_transform)
+            if samples is None:
+                return None
             all_samples.append(samples)
 
         if n_samples > 1:
@@ -479,7 +488,7 @@ class Parameters:
 
         return np.asarray(true_values)
 
-    def get_transformations(self):
+    def _get_transformations(self) -> list[pybop.Transformation]:
         """
         Get the transformations for each parameter.
         """
@@ -490,13 +499,13 @@ class Parameters:
 
         return transformations
 
-    def _construct_transformation(self):
+    def _construct_transformation(self) -> pybop.Transformation:
         """
         Create a ComposedTransformation object from the individual parameter transformations.
         """
-        transformations = self.get_transformations()
-        if not transformations or all(t is None for t in transformations):
-            return None
+        transformations = self._get_transformations()
+        if all(t is None for t in transformations):
+            return IdentityTransformation()
 
         valid_transformations = [
             t if t is not None else IdentityTransformation() for t in transformations

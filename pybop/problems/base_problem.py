@@ -17,6 +17,26 @@ class Problem:
         self._params = pybop_params
         self._param_names = pybop_params.keys()
 
+        # TODO: found this in scipy optimisers, not sure if we want to make it general but just in case...
+        # Compute the absolute initial cost and resample if required
+        x0 = self._params.initial_value()
+        self.set_params(x0)
+        cost0 = self.run()
+        nsamples = 0
+        while np.isinf(abs(cost0)) and nsamples < 10:
+            x0 = self._params.rvs(apply_transform=True)
+            if x0 is None:
+                break
+
+            self.set_params(x0)
+            cost0 = self.run()
+            nsamples += 1
+        if nsamples > 0:
+            pybop_params.update(initial_values=x0)
+
+        if np.isinf(np.abs(cost0)):
+            raise ValueError("The initial parameter values return an infinite cost.")
+
     def check_and_store_params(self, p: np.ndarray) -> None:
         """
         Checks if the parameters are valid.
@@ -53,6 +73,12 @@ class Problem:
         Returns the names of the parameters set for the simulation and cost function.
         """
         return self._param_names
+
+    def observed_fisher(self, x: np.ndarray) -> np.ndarray:
+        """
+        Returns the observed Fisher information matrix.
+        """
+        raise NotImplementedError
 
     def run(self) -> float:
         """

@@ -106,11 +106,6 @@ class TestOptimisation:
 
         assert optim.name() == expected_name
 
-        # Test pybop.Optimisation construction
-        optim = pybop.Optimisation(problem=problem, optimiser=optimiser)
-
-        assert optim.name() == expected_name
-
     def test_no_optimisation_parameters(self, model, dataset):
         builder = pybop.Pybamm()
         builder.set_simulation(model)
@@ -139,26 +134,51 @@ class TestOptimisation:
         ],
     )
     def test_optimiser_common(self, problem, optimiser):
-        optim = optimiser(problem=problem, max_iterations=3, tol=1e-6)
+        options = optimiser.default_options()
+        options.max_iterations = 3
+        options.tol = 1e-6
+        optim = optimiser(problem, options)
 
         # check max iterations
         results = optim.run()
         assert results.n_iterations == 3
 
-        # test log update
-        x_search = 0.7
-        optim.log_update(x=[x_search], cost=[0.01])
-        assert optim.log.x_search[-1] == x_search
-        assert optim.log.cost[-1] == 0.01 * (-1 if optim.invert_cost else 1)
-        assert (
-            optim.log.x[-1] == optim._transformation.to_model(x_search)
-            if optim._transformation
-            else x_search
-        )
-
-        # Check default bounds setter
+    def test_set_max_iterations(self, problem):
+        optim = pybop.AdamW(problem)
         optim.set_max_iterations("default")
-        assert optim.max_iterations() == optim.default_max_iterations
+        assert optim.max_iterations == optim.default_max_iterations
+
+    def test_log_update(self, problem):
+        # Test log update
+        log = pybop.OptimisationLogger(problem)
+        x_search = np.array(0.7)
+        x_model = problem.transformation().to_model(x_search)
+        cost = 0.01
+        iterations = 1
+        evaluations = 1
+        x_model_best = x_model
+        x_search_best = x_search
+        cost_best = cost
+        log.log_update(
+            x_search=[x_search],
+            x_model=[x_model],
+            cost=[cost],
+            iterations=iterations,
+            evaluations=evaluations,
+            x_model_best=x_model_best,
+            x_search_best=x_search_best,
+            cost_best=cost_best,
+        )
+        assert log.x_model == [x_model]
+        assert log.x_search == [x_search]
+        assert log.cost == [cost]
+        assert log.iterations == iterations
+        assert log.evaluations == evaluations
+        assert log.x_model_best == x_model_best
+        assert log.x_search_best == x_search_best
+        assert log.cost_best == cost_best
+        assert log.x0 == [problem.parameters.initial_value()]
+        assert log.verbose is False
 
     @pytest.mark.parametrize(
         "optimiser",
@@ -176,7 +196,7 @@ class TestOptimisation:
             pybop.SimulatedAnnealing,
         ],
     )
-    def test_optimiser_pints(self, problem, optimiser):
+    def test_optimiser_multistart(self, problem, optimiser):
         # Test multistart
         n_iters = 6
         multistarts = 2
@@ -185,19 +205,6 @@ class TestOptimisation:
         assert len(optim.log.x_best) == n_iters * multistarts
         assert results.average_iterations() == n_iters
         assert results.total_runtime() >= results.time[0]
-
-        optim = optimiser(
-            problem=problem,
-            use_f_guessed=True,
-            parallel=False,
-            min_iterations=3,
-            max_unchanged_iterations=5,
-            absolute_tolerance=1e-2,
-            relative_tolerance=1e-4,
-            max_evaluations=20,
-            threshold=1e-4,
-        )
-        assert not optim.optimiser.running()
 
     @pytest.mark.parametrize(
         "optimiser",
