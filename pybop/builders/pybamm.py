@@ -37,11 +37,6 @@ class Pybamm(builders.BaseBuilder):
     def add_cost(self, cost: PybammCost, weight: float = 1.0) -> None:
         self._costs.append(cost)
         self._cost_weights.append(weight)
-        #
-        # if isinstance(cost, HyperParameterLikehood):
-        #     likelihood_parameters = cost._set_sigma()
-        #     for param in likelihood_parameters:
-        #         self.add_parameter(param)
 
     def build(self) -> PybammProblem:
         """
