@@ -100,7 +100,12 @@ class TestProblem:
                 "Positive electrode active material volume fraction", initial_value=0.6
             )
         )
-        builder.add_cost(pybop.PybammSumSquaredError("Voltage [V]", "Voltage [V]", 1.0))
+        builder.add_cost(
+            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]", 1.0)
+        )
+        builder.add_cost(
+            pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]", "Voltage [V]")
+        )
         problem = builder.build()
 
         assert problem is not None
@@ -111,7 +116,7 @@ class TestProblem:
         assert (value1 - value2) / value1 > 1e-5
         problem.set_params(np.array([0.6, 0.6]))
         value1s, grad1s = problem.run_with_sensitivities()
-        assert grad1s.shape == (2, 1)
+        assert grad1s.shape == (2,)
         problem.set_params(np.array([0.7, 0.7]))
         value2s, grad2s = problem.run_with_sensitivities()
         np.testing.assert_allclose(value1s, value1)
@@ -132,7 +137,9 @@ class TestProblem:
         builder.add_parameter(
             pybop.Parameter("Positive particle radius [m]", initial_value=1e-5)
         )
-        builder.add_cost(pybop.PybammSumSquaredError("Voltage [V]", "Voltage [V]"))
+        builder.add_cost(
+            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]", 1.0)
+        )
         problem = builder.build()
 
         assert problem is not None
@@ -143,6 +150,47 @@ class TestProblem:
         problem.set_params(np.array([2e-5, 1.5e-6]))
         value2 = problem.run()
         assert (value1 - value2) / value1 > 1e-5
+
+    def test_builder_with_cost_hypers(
+        self, first_model, parameter_values, experiment, dataset
+    ):
+        builder = pybop.builders.Pybamm()
+        builder.set_dataset(dataset)
+        builder.set_simulation(
+            first_model,
+            parameter_values=parameter_values,
+            solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Positive electrode active material volume fraction", initial_value=0.6
+            )
+        )
+
+        # Add cost without a sigma parameter
+        builder.add_cost(
+            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
+        )
+        problem = builder.build()
+
+        assert problem is not None
+        problem.set_params(np.array([0.6, 0.6, 0.01]))
+        value1 = problem.run()
+        problem.set_params(np.array([0.7, 0.7, 0.01]))
+        value2 = problem.run()
+        assert (value1 - value2) / value1 > 1e-5
+        problem.set_params(np.array([0.6, 0.6, 0.01]))
+        value1s, grad1s = problem.run_with_sensitivities()
+        assert grad1s.shape == (3, 1)
+        problem.set_params(np.array([0.7, 0.7, 0.01]))
+        value2s, grad2s = problem.run_with_sensitivities()
+        np.testing.assert_allclose(value1s, value1)
+        np.testing.assert_allclose(value2s, value2)
 
     def test_eis_builder(self, first_model, parameter_values, experiment, eis_dataset):
         builder = pybop.builders.PybammEIS()
@@ -229,7 +277,9 @@ class TestProblem:
                 "Positive electrode active material volume fraction", initial_value=0.6
             )
         )
-        builder.add_cost(pybop.PybammSumSquaredError("Voltage [V]", "Voltage [V]", 1.0))
+        builder.add_cost(
+            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]", 1.0)
+        )
         problem = builder.build()
 
         assert problem is not None

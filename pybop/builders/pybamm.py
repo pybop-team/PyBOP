@@ -2,9 +2,10 @@ from typing import Union
 
 import pybamm
 
+from pybop import Parameter as PybopParameter
 from pybop import PybammProblem, builders
 from pybop._pybamm_pipeline import PybammPipeline
-from pybop.costs.pybamm_cost import PybammCost
+from pybop.costs.pybamm import BaseCost as PybammCost
 
 
 class Pybamm(builders.BaseBuilder):
@@ -36,6 +37,11 @@ class Pybamm(builders.BaseBuilder):
     def add_cost(self, cost: PybammCost, weight: float = 1.0) -> None:
         self._costs.append(cost)
         self._cost_weights.append(weight)
+        #
+        # if isinstance(cost, HyperParameterLikehood):
+        #     likelihood_parameters = cost._set_sigma()
+        #     for param in likelihood_parameters:
+        #         self.add_parameter(param)
 
     def build(self) -> PybammProblem:
         """
@@ -86,6 +92,13 @@ class Pybamm(builders.BaseBuilder):
         for cost in self._costs:
             cost.add_to_model(model, param, self._dataset)
             cost_names.append(cost.metadata().variable_name)
+
+            # Add hypers to pybop parameters
+            if cost.metadata().parameters:
+                for name, obj in cost.metadata().parameters.items():
+                    pybop_parameters.add(
+                        PybopParameter(name, initial_value=obj.default_value)
+                    )
 
         # Construct the pipeline
         pipeline = PybammPipeline(

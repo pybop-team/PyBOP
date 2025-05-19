@@ -86,6 +86,11 @@ from .models.base_model import TimeSeriesState
 from .models.base_model import Inputs
 
 #
+# Cost classes
+#
+from . import costs
+
+#
 # Problem classes
 #
 from .problems.pybamm_problem import PybammProblem
@@ -99,13 +104,6 @@ from .problems.design_problem import DesignProblem
 #
 # Cost classes
 #
-from .costs.pybamm_cost import (
-    PybammCost,
-    PybammExpressionMetadata,
-    PybammParameterMetadata,
-)
-from .costs.pybamm_sum_squared_error import PybammSumSquaredError
-
 from .costs.base_cost_old import BaseCost
 from .costs.fitting_costs import (
     FittingCost,

@@ -69,16 +69,20 @@ class PybammProblem(Problem):
         # summed over the discrete time points, so we do that here
         # REMEMBER TO REMOVE THIS WHEN THE BUG IS FIXED!!!
         # https://github.com/pybamm-team/PyBaMM/pull/5008
-        cost_sens = np.array(
-            [
-                np.dot(
-                    [
-                        np.sum(sol[cost_n].sensitivities[param_n], axis=0)
-                        for cost_n in self._cost_names
-                    ],
-                    self._cost_weights,
-                )
-                for param_n in self._params.keys()
-            ]
-        )
-        return cost, cost_sens
+        cost_sens = []
+        for param_name in self._params.keys():
+            aggregated_sens = np.asarray(
+                [
+                    np.sum(sol[cost_name].sensitivities[param_name], axis=0)
+                    for cost_name in self._cost_names
+                ]
+            )
+
+            # Remove unnecessary dimensions and apply weights
+            weighted_sensitivity = np.dot(
+                np.squeeze(aggregated_sens), self._cost_weights
+            )
+
+            cost_sens.append(weighted_sensitivity)
+
+        return cost, np.array(cost_sens)
