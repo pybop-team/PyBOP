@@ -1,9 +1,8 @@
 from typing import Optional
-import numpy as np
-from pints import Optimiser as PintsOptimiser
-import pints
 
-import pybop
+import numpy as np
+import pints
+from pints import Optimiser as PintsOptimiser
 
 
 class SimulatedAnnealingImpl(PintsOptimiser):

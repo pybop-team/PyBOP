@@ -1,9 +1,8 @@
 from typing import Optional
-import numpy as np
-from pints import PopulationBasedOptimiser
-import pints
 
-import pybop
+import numpy as np
+import pints
+from pints import PopulationBasedOptimiser
 
 
 class RandomSearchImpl(PopulationBasedOptimiser):

@@ -2,14 +2,12 @@
 # Initially based off Pints' Adam class, adds weight decay
 #
 
-from dataclasses import dataclass
-from typing import Optional
 import warnings
+from typing import Optional
 
 import numpy as np
-from pints import Optimiser as PintsOptimiser
-import pybop
 import pints
+from pints import Optimiser as PintsOptimiser
 
 
 class AdamWImpl(PintsOptimiser):

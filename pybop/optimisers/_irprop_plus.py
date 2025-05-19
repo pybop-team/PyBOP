@@ -3,12 +3,11 @@
 #
 
 from typing import Optional
+
 import numpy as np
+import pints
 from pints import Optimiser as PintsOptimiser
 from pints import RectangularBoundaries
-import pints
-
-import pybop
 
 
 class IRPropPlusImpl(PintsOptimiser):

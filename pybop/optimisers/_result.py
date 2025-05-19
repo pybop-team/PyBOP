@@ -1,7 +1,6 @@
 from typing import Optional
 
 import numpy as np
-import scipy.optimize
 
 from pybop.problems.base_problem import Problem
 

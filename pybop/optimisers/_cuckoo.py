@@ -1,11 +1,9 @@
-from dataclasses import dataclass
 from typing import Optional
-import numpy as np
-from pints import PopulationBasedOptimiser
-import pints
-from scipy.special import gamma
 
-import pybop
+import numpy as np
+import pints
+from pints import PopulationBasedOptimiser
+from scipy.special import gamma
 
 
 class CuckooSearchImpl(PopulationBasedOptimiser):
