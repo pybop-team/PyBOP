@@ -34,20 +34,16 @@ class OptimisationResult:
         n_iterations: int,
         n_evaluations: int,
         time: float,
-        sensitivities: Optional[dict] = None,
         message: Optional[str] = None,
-        scipy_result: Optional[scipy.optimize.OptimizeResult] = None,
     ):
         self._problem = problem
         self.n_runs = 0
         self._best_run = None
         self._x = [x]
         self._final_cost = [final_cost]
-        self._sensitivities = sensitivities if sensitivities is not None else {}
         self._n_iterations = [n_iterations]
         self._n_evaluations = [n_evaluations]
         self._message = [message]
-        self._scipy_result = [scipy_result]
         self._time = [time]
 
         x0 = self._problem.params.initial_value()
@@ -87,15 +83,8 @@ class OptimisationResult:
         ret._n_iterations = [x for result in results for x in result._n_iterations]
         ret._n_evaluations = [x for result in results for x in result._n_evaluations]
         ret._message = [x for result in results for x in result._message]
-        ret._scipy_result = [x for result in results for x in result._scipy_result]
         ret._time = [x for result in results for x in result._time]
         ret._x0 = [x for result in results for x in result._x0]
-        ret._sensitivities = {}
-        for result in results:
-            for key, value in result._sensitivities.items():
-                if key not in ret._sensitivities:
-                    ret._sensitivities[key] = []
-                ret._sensitivities[key].extend(value)
         ret._best_run = None
         ret.n_runs = len(results)
         ret._validate()
@@ -125,27 +114,17 @@ class OptimisationResult:
         Returns:
             str: A formatted string containing optimisation result information.
         """
-        # Format the sensitivities
-        self.sense_format = ""
-        if self._sensitivities:
-            for value, conf in zip(
-                self._sensitivities["ST"], self._sensitivities["ST_conf"]
-            ):
-                self.sense_format += f" {value:.3f} ± {conf:.3f},"
-
         return (
             f"OptimisationResult:\n"
             f"  Best result from {self.n_runs} run(s).\n"
             f"  Initial parameters: {self.x0_best}\n"
             f"  Optimised parameters: {self.x_best}\n"
-            f"  Total-order sensitivities:{self.sense_format}\n"
             f"  Diagonal Fisher Information entries: {self.fisher_best}\n"
             f"  Final cost: {self.final_cost_best}\n"
             f"  Optimisation time: {self.time_best} seconds\n"
             f"  Number of iterations: {self.n_iterations_best}\n"
             f"  Number of evaluations: {self.n_evaluations_best}\n"
-            f"  Reason for stopping: {self.message_best}\n"
-            f"  SciPy result available: {'Yes' if self.scipy_result_best else 'No'}\n"
+            f"  Reason for stopping: {self.message_best}"
         )
 
     def average_iterations(self) -> Optional[np.floating]:
@@ -189,14 +168,6 @@ class OptimisationResult:
         return self._get_single_or_all("_fisher")
 
     @property
-    def sensitivities(self):
-        return self._get_single_or_all("_sensitivities")
-
-    @sensitivities.setter
-    def sensitivities(self, obj: dict):
-        self._sensitivities = obj
-
-    @property
     def fisher_best(self):
         return self._fisher[self._best_run] if self._best_run is not None else None
 
@@ -227,16 +198,6 @@ class OptimisationResult:
     @property
     def message_best(self):
         return self._message[self._best_run] if self._best_run is not None else None
-
-    @property
-    def scipy_result(self):
-        return self._get_single_or_all("_scipy_result")
-
-    @property
-    def scipy_result_best(self):
-        return (
-            self._scipy_result[self._best_run] if self._best_run is not None else None
-        )
 
     @property
     def time(self):

@@ -30,12 +30,11 @@ class BaseSciPyOptimiser(BaseOptimiser):
         needs_sensitivities: bool,
         options: pybop.OptimiserOptions,
     ):
-        logger = pybop.OptimisationLogger()
         self._needs_sensitivities = needs_sensitivities
         self._intermediate_x_search = []
         self._intermediate_x_model = []
         self._intermediate_cost = []
-        super().__init__(problem, options=options, logger=logger)
+        super().__init__(problem, options=options)
 
     def store_intermediate_results(
         self,
@@ -69,6 +68,17 @@ class BaseSciPyOptimiser(BaseOptimiser):
             raise TypeError(
                 "Bounds provided must be either type dict or SciPy.optimize.bounds object."
             )
+
+    def needs_sensitivities(self) -> bool:
+        """
+        Returns whether the optimiser needs sensitivities.
+
+        Returns
+        -------
+        bool
+            True if the optimiser needs sensitivities, False otherwise.
+        """
+        return self._needs_sensitivities
 
     def evaluator(self) -> SciPyEvaluator:
         """
@@ -137,6 +147,17 @@ class ScipyMinimizeOptions(pybop.OptimiserOptions):
     maxcor: Optional[int] = None
     maxfev: Optional[int] = None
 
+    def validate(self):
+        super().validate()
+        if self.maxiter <= 0:
+            raise ValueError("maxiter must be a positive integer.")
+        if self.tol is not None and self.tol <= 0:
+            raise ValueError("tol must be a positive float.")
+        if self.eps is not None and self.eps <= 0:
+            raise ValueError("eps must be a positive float.")
+        if not isinstance(self.jac, bool):
+            raise ValueError("jac must be a boolean value.")
+
     def to_dict(self) -> dict:
         """
         Convert the options to a dictionary format.
@@ -198,9 +219,8 @@ class SciPyMinimize(BaseSciPyOptimiser):
         problem: Problem,
         options: Optional[ScipyMinimizeOptions] = None,
     ):
-        self._options = {}
         options = options or ScipyMinimizeOptions()
-        self._options = options.to_dict()
+        self._options_dict = options.to_dict()
         self._iteration = 0
         super().__init__(
             problem=problem, options=options, needs_sensitivities=options.jac
@@ -232,7 +252,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         Scale the cost function, preserving the sign convention, and eliminate nan values
         """
         x_model = self.problem.params.transformation().to_model(x)
-        if not self._options["jac"]:
+        if not self._options_dict["jac"]:
             cost = self._evaluator.evaluate(x_model)
             self.store_intermediate_results(x_search=x, x_model=x_model, cost=cost)
             scaled_cost = cost / self._cost0
@@ -294,12 +314,15 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
         callback = (
             base_callback
-            if self._options["method"] != "trust-constr"
+            if self._options_dict["method"] != "trust-constr"
             else lambda x, intermediate_result: base_callback(intermediate_result)
         )
 
         x0 = self.problem.params.initial_value()
-        self._cost0 = self._evaluator.evaluate(x0)
+        if self.needs_sensitivities():
+            self._cost0 = self._evaluator.evaluate(x0)[0]
+        else:
+            self._cost0 = self._evaluator.evaluate(x0)
 
         start_time = time()
         result: OptimizeResult = minimize(
@@ -307,7 +330,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
             x0,
             bounds=self._scipy_bounds,
             callback=callback,
-            **self._options,
+            **self._options_dict,
         )
         total_time = time() - start_time
 
@@ -327,7 +350,6 @@ class SciPyMinimize(BaseSciPyOptimiser):
             n_evaluations=nfev,
             problem=self.problem,
             x=result.x,
-            scipy_result=result,
             time=total_time,
             message=result.message,
         )
@@ -479,7 +501,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         options: Optional[SciPyDifferentialEvolutionOptions] = None,
     ):
         options = options or SciPyDifferentialEvolutionOptions()
-        self._options = options.to_dict()
+        self._options_dict = options.to_dict()
         super().__init__(problem=problem, options=options, needs_sensitivities=False)
         self._evaluator = self.evaluator()
         self._iterations = 0
@@ -510,12 +532,6 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             bnds = self._scipy_bounds
             if not (np.isfinite(bnds.lb).all() and np.isfinite(bnds.ub).all()):
                 raise ValueError("Bounds must be specified for differential_evolution.")
-
-        # Apply default maxiter and tolerance
-        if "maxiter" not in self._options:
-            self._options["maxiter"] = self.default_max_iterations
-        if "tol" not in self._options:
-            self._options["tol"] = 1e-5
 
     def _run(self):
         """
@@ -552,12 +568,11 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             return cost
 
         start_time = time()
-        print("options", self._options)
         result = differential_evolution(
             cost_wrapper,
             self._scipy_bounds,
             callback=callback,
-            **self._options,
+            **self._options_dict,
         )
         total_time = time() - start_time
 
@@ -576,7 +591,6 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             problem=self.problem,
             x=result.x,
             n_iterations=nit,
-            scipy_result=result,
             time=total_time,
             message=result.message,
         )

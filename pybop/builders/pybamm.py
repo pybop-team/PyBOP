@@ -5,9 +5,10 @@ import pybamm
 import pybop
 from pybop._pybamm_pipeline import PybammPipeline
 from pybop.costs.pybamm_cost import PybammCost
+from .base import BaseBuilder
 
 
-class Pybamm(pybop.BaseBuilder):
+class Pybamm(BaseBuilder):
     def __init__(self):
         self._model = None
         self._costs = []

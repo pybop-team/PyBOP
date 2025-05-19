@@ -1,5 +1,9 @@
+from typing import Optional
 import numpy as np
 from pints import PopulationBasedOptimiser
+import pints
+
+import pybop
 
 
 class RandomSearchImpl(PopulationBasedOptimiser):
@@ -24,11 +28,45 @@ class RandomSearchImpl(PopulationBasedOptimiser):
     The implementation inherits from the PINTS PopulationOptimiser.
     """
 
-    def __init__(self, x0, sigma0=0.05, boundaries=None):
+    def __init__(
+        self,
+        x0: np.ndarray,
+        sigma0: Optional[list[float]],
+        boundaries: Optional[pints.Boundaries],
+    ):
+        sigma0 = sigma0 or [0.05] * len(x0)
         super().__init__(x0, sigma0, boundaries=boundaries)
 
         # Problem dimensionality
         self._dim = len(x0)
+
+        # if boundaries are all inf, use a gaussian distribution instead
+        if (
+            boundaries is None
+            or all(np.isinf(boundaries.lower()))
+            or all(np.isinf(boundaries.upper()))
+        ):
+            self._use_boundaries = False
+        else:
+            self._use_boundaries = True
+
+        self._lower = None
+        self._upper = None
+        if self._use_boundaries:
+            self._lower = []
+            for l in self._boundaries.lower():
+                if np.isinf(l):
+                    val = np.finfo(np.float64).min / 10
+                else:
+                    val = l
+                self._lower.append(val)
+            self._upper = []
+            for u in self._boundaries.upper():
+                if np.isinf(u):
+                    val = np.finfo(np.float64).max / 10
+                else:
+                    val = u
+                self._upper.append(val)
 
         # Initialise best solution
         self._x_best = np.copy(x0)
@@ -44,10 +82,10 @@ class RandomSearchImpl(PopulationBasedOptimiser):
         self._running = True
 
         # Generate random solutions
-        if self._boundaries:
+        if self._lower:
             self._candidates = np.random.uniform(
-                low=self._boundaries.lower(),
-                high=self._boundaries.upper(),
+                low=self._lower,
+                high=self._upper,
                 size=(self._population_size, self._dim),
             )
             return self._candidates

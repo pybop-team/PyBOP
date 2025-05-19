@@ -2,9 +2,13 @@
 # Initially based of Pints' IRProp- class.
 #
 
+from typing import Optional
 import numpy as np
 from pints import Optimiser as PintsOptimiser
 from pints import RectangularBoundaries
+import pints
+
+import pybop
 
 
 class IRPropPlusImpl(PintsOptimiser):
@@ -44,14 +48,20 @@ class IRPropPlusImpl(PintsOptimiser):
         Maximum allowable step size. Default is None (unlimited).
     """
 
-    def __init__(self, x0, sigma0=0.05, boundaries=None):
+    def __init__(
+        self,
+        x0: np.ndarray,
+        sigma0: Optional[list[float]],
+        boundaries: Optional[pints.Boundaries],
+    ):
+        sigma0 = sigma0 or [0.05] * len(x0)
         super().__init__(x0, sigma0, boundaries)
 
         # Set hypers
         self.eta_min = 0.5
         self.eta_max = 1.2
         self.step_min = 1e-4 * np.min(self._sigma0)
-        self.step_max = None
+        self.step_max: Optional[float] = None
 
         # Store the previous update for backtracking
         self._update_previous = np.zeros_like(x0, dtype=float)

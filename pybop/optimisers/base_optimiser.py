@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 import numpy as np
 
@@ -14,7 +15,6 @@ class OptimisationLogger:
         self.x_search = []
         self.x_model_best = []
         self.x_search_best = []
-        self.x0 = []
         self.cost = []
         self.cost_best = []
         self.iterations = []
@@ -96,6 +96,22 @@ class OptimisationLogger:
 @dataclass
 class OptimiserOptions:
     multistart: int = 1
+    verbose: bool = False
+    verbose_print_rate: int = 50
+
+    def validate(self):
+        """
+        Validate the options.
+
+        Raises
+        ------
+        ValueError
+            If the options are invalid.
+        """
+        if self.multistart < 1:
+            raise ValueError("Multistart must be greater than or equal to 1.")
+        if self.verbose_print_rate < 1:
+            raise ValueError("Verbose print rate must be greater than or equal to 1.")
 
 
 class BaseOptimiser:
@@ -113,7 +129,7 @@ class BaseOptimiser:
         An objective function to be optimised.
     logger: pybop.OptimisationLogger
         An object to log the optimisation progress.
-    options: pybop.OptimiserOptions
+    options: pybop.OptimiserOptions (optional)
         Options for the optimiser, such as multistart.
 
 
@@ -124,11 +140,15 @@ class BaseOptimiser:
     def __init__(
         self,
         problem: Problem,
-        logger: OptimisationLogger,
-        options: OptimiserOptions,
+        options: Optional[OptimiserOptions] = None,
     ):
+        if not isinstance(problem, Problem):
+            raise TypeError(f"Expected a pybop.Problem instance, got {type(problem)}")
         self._problem = problem
-        self._logger = logger
+        options = options or self.default_options()
+        options.validate()
+        self._options = options
+        self._logger = OptimisationLogger(options.verbose, options.verbose_print_rate)
         self._multistart = options.multistart
         self._set_up_optimiser()
 
@@ -147,6 +167,30 @@ class BaseOptimiser:
     @property
     def problem(self) -> Problem:
         return self._problem
+
+    @property
+    def log(self) -> OptimisationLogger:
+        """
+        Returns the logger object used for logging optimisation progress.
+
+        Returns
+        -------
+        OptimisationLogger
+            The logger object.
+        """
+        return self._logger
+
+    @property
+    def options(self) -> OptimiserOptions:
+        """
+        Returns the options for the optimiser.
+
+        Returns
+        -------
+        OptimiserOptions
+            The options for the optimiser.
+        """
+        return self._options
 
     @property
     def logger(self) -> OptimisationLogger:

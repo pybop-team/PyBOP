@@ -2,10 +2,14 @@
 # Initially based off Pints' Adam class, adds weight decay
 #
 
+from dataclasses import dataclass
+from typing import Optional
 import warnings
 
 import numpy as np
 from pints import Optimiser as PintsOptimiser
+import pybop
+import pints
 
 
 class AdamWImpl(PintsOptimiser):
@@ -55,7 +59,13 @@ class AdamWImpl(PintsOptimiser):
            https://doi.org/10.48550/arXiv.1711.05101
     """
 
-    def __init__(self, x0, sigma0=0.015, boundaries=None):
+    def __init__(
+        self,
+        x0: np.ndarray,
+        sigma0: Optional[list[float]],
+        boundaries: Optional[pints.Boundaries],
+    ):
+        sigma0 = sigma0 or [0.05] * len(x0)
         if boundaries is not None:
             warnings.warn(
                 "Boundaries ignored by AdamW",

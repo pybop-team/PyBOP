@@ -40,6 +40,33 @@ class PintsOptions(pybop.OptimiserOptions):
     max_evaluations: Optional[int] = None
     threshold: Optional[float] = None
 
+    def validate(self):
+        super().validate()
+        if self.max_iterations is not None and self.max_iterations < 0:
+            raise ValueError("Maximum number of iterations cannot be negative.")
+        if self.min_iterations is not None and self.min_iterations < 0:
+            raise ValueError("Minimum number of iterations cannot be negative.")
+        if (
+            self.max_unchanged_iterations is not None
+            and self.max_unchanged_iterations < 0
+        ):
+            raise ValueError(
+                "Maximum number of unchanged iterations cannot be negative."
+            )
+        if self.absolute_tolerance < 0:
+            raise ValueError("Absolute tolerance cannot be negative.")
+        if self.relative_tolerance < 0:
+            raise ValueError("Relative tolerance cannot be negative.")
+        if (
+            self.max_iterations is None
+            and self.max_evaluations is None
+            and self.threshold is None
+            and self.max_unchanged_iterations is None
+        ):
+            raise ValueError(
+                "At least one stopping criterion must be set: max_iterations, max_evaluations, threshold, or max_unchanged_iterations."
+            )
+
 
 class BasePintsOptimiser(pybop.BaseOptimiser):
     """
@@ -83,11 +110,9 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         self._threshold = options.threshold
         self._pints_optimiser = pints_optimiser
         self._optimizer = None
-        logger = pybop.OptimisationLogger()
         super().__init__(
             problem,
             options=options,
-            logger=logger,
         )
 
     @staticmethod

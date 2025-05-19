@@ -1,3 +1,4 @@
+from typing import Optional
 import numpy as np
 
 from pybop import Parameters
@@ -11,7 +12,7 @@ class Problem:
     using the `run` method.
     """
 
-    def __init__(self, pybop_params: Parameters = None):
+    def __init__(self, pybop_params: Optional[Parameters] = None):
         if pybop_params is None:
             self._param_names = []
         self._params = pybop_params

@@ -61,6 +61,19 @@ class Parameter:
         self.upper_bound = None
         self.set_bounds(bounds)
         self.margin = 1e-4
+        self.validate()
+
+    def validate(self):
+        # initial value should be within bounds
+        if self.bounds is not None:
+            if self.initial_value is not None:
+                if (
+                    self.initial_value < self.lower_bound
+                    or self.initial_value > self.upper_bound
+                ):
+                    raise ValueError(
+                        f'Parameter "{self.name}": Initial value {self.initial_value} is outside the bounds {self.bounds}'
+                    )
 
     def rvs(
         self, n_samples: int = 1, random_state=None, apply_transform: bool = False
@@ -274,11 +287,17 @@ class Parameters:
     def __len__(self) -> int:
         return len(self._params)
 
-    def keys(self) -> list:
+    def keys(self):
         """
         A list of parameter names
         """
-        return list(self._params.keys())
+        return self._params.keys()
+
+    def values(self) -> list:
+        """
+        A list of parameter values
+        """
+        return self._params.values()
 
     def __iter__(self):
         self.index = 0
@@ -288,16 +307,26 @@ class Parameters:
         parameter_names = self.keys()
         if self.index == len(parameter_names):
             raise StopIteration
-        name = parameter_names[self.index]
+        name = list(parameter_names)[self.index]
         self.index = self.index + 1
         return self._params[name]
 
-    def add(self, parameter):
+    def add(self, parameter: Parameter):
         """
         Construct the parameter class with a name, initial value, prior, and bounds.
         """
+        if not isinstance(parameter, pybop.Parameter):
+            raise TypeError("The input parameter is not a Parameter object.")
+        if parameter.name in self._params.keys():
+            raise ValueError(
+                f"There is already a parameter with the name {parameter.name} "
+                "in the Parameters object. Please remove the duplicate entry."
+            )
 
-    def remove(self, parameter_name):
+        # Add the parameter
+        self._params[parameter.name] = parameter
+
+    def remove(self, parameter_name: str):
         """
         Remove the `Parameter` object from the `Parameters` dictionary.
         """
@@ -309,7 +338,7 @@ class Parameters:
         # Remove the parameter
         self._params.pop(parameter_name)
 
-    def join(self, parameters=None):
+    def join(self, parameters: "Parameters"):
         """
         Join two Parameters objects into the first by copying across each Parameter.
 

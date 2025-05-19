@@ -87,7 +87,7 @@ class PybammEIS(builders.BaseBuilder):
         # Proceed to build the pipeline
         model = self._model
         param = self._parameter_values
-        pybop_parameters = self._pybop_parameters
+        pybop_parameters = self.build_parameters()
 
         # Build pybamm if not already built
         if not model._built:  # noqa: SLF001
@@ -107,7 +107,7 @@ class PybammEIS(builders.BaseBuilder):
 
         return PybammEISProblem(
             eis_pipeline=pipeline,
-            pybop_params=self._pybop_parameters,
+            pybop_params=pybop_parameters,
             costs=self._costs,
             cost_weights=self._cost_weights,
             fitting_data=self._dataset["Impedance"],
