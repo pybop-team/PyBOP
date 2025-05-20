@@ -122,6 +122,47 @@ class TestProblem:
         np.testing.assert_allclose(value1s, value1)
         np.testing.assert_allclose(value2s, value2)
 
+    def test_builder_likelihoods(
+        self, first_model, parameter_values, experiment, dataset
+    ):
+        builder = pybop.builders.Pybamm()
+        builder.set_dataset(dataset)
+        builder.set_simulation(
+            first_model,
+            parameter_values=parameter_values,
+            solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Positive electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        builder.add_cost(
+            pybop.costs.pybamm.NegativeGaussianLogLikelihood(
+                "Voltage [V]", "Voltage [V]", 1e-2
+            )
+        )
+        problem = builder.build()
+
+        assert problem is not None
+        problem.set_params(np.array([0.6, 0.6]))
+        value1 = problem.run()
+        problem.set_params(np.array([0.7, 0.7]))
+        value2 = problem.run()
+        assert (value1 - value2) / value1 < 0.0
+        problem.set_params(np.array([0.6, 0.6]))
+        value1s, grad1s = problem.run_with_sensitivities()
+        assert grad1s.shape == (2,)
+        problem.set_params(np.array([0.7, 0.7]))
+        value2s, grad2s = problem.run_with_sensitivities()
+        np.testing.assert_allclose(value1s, value1)
+        np.testing.assert_allclose(value2s, value2)
+
     def test_builder_with_rebuild_params(
         self, first_model, parameter_values, experiment, dataset
     ):
@@ -137,17 +178,22 @@ class TestProblem:
         builder.add_parameter(
             pybop.Parameter("Positive particle radius [m]", initial_value=1e-5)
         )
+        sigma = pybop.Parameter("sigma", bounds=[0, 1], initial_value=0.5)
         builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]", 1.0)
+            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]", sigma)
         )
+        builder.add_cost(
+            pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]", "Voltage [V]")
+        )
+
         problem = builder.build()
 
         assert problem is not None
 
         assert problem is not None
-        problem.set_params(np.array([1e-5, 0.5e-6]))
+        problem.set_params(np.array([1e-5, 0.5e-6, 1e-3]))
         value1 = problem.run()
-        problem.set_params(np.array([2e-5, 1.5e-6]))
+        problem.set_params(np.array([2e-5, 1.5e-6, 1e-3]))
         value2 = problem.run()
         assert (value1 - value2) / value1 > 1e-5
 
@@ -186,7 +232,7 @@ class TestProblem:
         assert (value1 - value2) / value1 > 1e-5
         problem.set_params(np.array([0.6, 0.6, 0.01]))
         value1s, grad1s = problem.run_with_sensitivities()
-        assert grad1s.shape == (3, 1)
+        assert grad1s.shape == (3,)
         problem.set_params(np.array([0.7, 0.7, 0.01]))
         value2s, grad2s = problem.run_with_sensitivities()
         np.testing.assert_allclose(value1s, value1)

@@ -22,7 +22,7 @@ class PybammProblem(Problem):
         super().__init__(pybop_params=pybop_params)
         self._pipeline = pybamm_pipeline
         self._cost_names = cost_names
-        self._cost_weights = cost_weights
+        self._cost_weights = np.asarray(cost_weights)
         self._domain = "Time [s]"
 
     def set_params(self, p: np.ndarray) -> None:
@@ -73,16 +73,12 @@ class PybammProblem(Problem):
         for param_name in self._params.keys():
             aggregated_sens = np.asarray(
                 [
-                    np.sum(sol[cost_name].sensitivities[param_name], axis=0)
+                    np.sum(sol[cost_name].sensitivities[param_name])
                     for cost_name in self._cost_names
                 ]
             )
 
-            # Remove unnecessary dimensions and apply weights
-            weighted_sensitivity = np.dot(
-                np.squeeze(aggregated_sens), self._cost_weights
-            )
-
+            weighted_sensitivity = np.dot(aggregated_sens, self._cost_weights)
             cost_sens.append(weighted_sensitivity)
 
-        return cost, np.array(cost_sens)
+        return cost, np.asarray(cost_sens)

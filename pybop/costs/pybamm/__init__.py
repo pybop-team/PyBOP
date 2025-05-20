@@ -3,5 +3,6 @@ from .pybamm_cost import (
     PybammExpressionMetadata,
     PybammParameterMetadata,
     SumSquaredError,
-    MeanAbsoluteError
+    MeanAbsoluteError,
+    NegativeGaussianLogLikelihood,
 )

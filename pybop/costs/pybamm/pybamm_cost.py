@@ -1,11 +1,12 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 from uuid import uuid4
 
 import numpy as np
 import pybamm
 
-import pybop
+from pybop import Dataset
+from pybop import Parameter as PybopParameter
 
 
 @dataclass
@@ -59,7 +60,7 @@ class BaseCost:
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[pybop.Dataset] = None,
+        dataset: Optional[Dataset] = None,
     ) -> PybammExpressionMetadata:
         """
         Defines the variable expression for the cost function, returning a
@@ -73,7 +74,7 @@ class BaseCost:
         self,
         model: pybamm.BaseModel,
         param: pybamm.ParameterValues,
-        dataset: Optional[pybop.Dataset] = None,
+        dataset: Optional[Dataset] = None,
     ):
         # if dataset is provided, must contain time data
         if dataset is not None and "Time [s]" not in dataset:
@@ -86,6 +87,16 @@ class BaseCost:
                 check_already_exists=False,
             )
 
+    def _construct_discrete_time_node(self, dataset, model, name):
+        """
+        Constructs the pybamm DiscreteTimeData node in the expression tree
+        """
+        times = dataset["Time [s]"]
+        values = dataset[self._data_name]
+        data = pybamm.DiscreteTimeData(times, values, f"{name}_data")
+        var = model.variables[self._variable_name]
+        return data, var
+
     def _check_state(self, dataset, model, name) -> None:
         # dataset must be provided and contain the data
         if dataset is None:
@@ -96,6 +107,26 @@ class BaseCost:
         if self._variable_name not in model.variables:
             raise ValueError(f"Model must contain {self._variable_name} for {name}.")
 
+    def _get_sigma_parameter(self, cost_name, parameters) -> pybamm.Parameter:
+        """
+        Returns the sigma node, either fixed or as an estimated parameter.
+        Updates metadata if sigma is estimated.
+        """
+
+        if isinstance(self._sigma, PybopParameter) or self._sigma is None:
+            sigma_name = self._sigma.name if self._sigma else f"sigma_{cost_name}"
+            sigma = pybamm.Parameter(sigma_name)
+            parameters[sigma_name] = PybammParameterMetadata(
+                parameter=sigma,
+                default_value=self._sigma.value if self._sigma else 1.0,
+            )
+        elif isinstance(self._sigma, (float, int)):
+            sigma = pybamm.Scalar(self._sigma)
+        else:
+            sigma = self._sigma  # Assume pybamm.Parameter
+
+        return sigma
+
 
 class SumSquaredError(BaseCost):
     """
@@ -103,7 +134,10 @@ class SumSquaredError(BaseCost):
     """
 
     def __init__(
-        self, variable_name: str, data_name: str, sigma: Optional[float] = None
+        self,
+        variable_name: str,
+        data_name: str,
+        sigma: Optional[Union[float, PybopParameter]] = None,
     ):
         super().__init__()
         self._sigma = sigma
@@ -113,29 +147,15 @@ class SumSquaredError(BaseCost):
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[pybop.Dataset] = None,
+        dataset: Optional[Dataset] = None,
     ) -> PybammExpressionMetadata:
         # Check args
         name = SumSquaredError.make_unique_cost_name()
         self._check_state(dataset, model, name)
-
-        # Construct cost
-        times = dataset["Time [s]"]
-        values = dataset[self._data_name]
-        data = pybamm.DiscreteTimeData(times, values, f"{name}_data")
-        var = model.variables[self._variable_name]
-
-        # Create Expression
+        data, var = self._construct_discrete_time_node(dataset, model, name)
         parameters = {}
-        if self._sigma is None:
-            sigma_name = f"sigma_{name}"
-            sigma = pybamm.Parameter(sigma_name)
-            sum_expr = (var - data) ** 2 / sigma**2
-            parameters[sigma_name] = PybammParameterMetadata(
-                parameter=sigma, default_value=1.0
-            )
-        else:
-            sum_expr = (var - data) ** 2 / self._sigma**2
+        sigma = self._get_sigma_parameter(name, parameters)
+        sum_expr = (var - data) ** 2 / sigma**2
 
         return PybammExpressionMetadata(
             variable_name=name,
@@ -167,18 +187,12 @@ class MeanAbsoluteError(BaseCost):
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[pybop.Dataset] = None,
+        dataset: Optional[Dataset] = None,
     ) -> PybammExpressionMetadata:
         # Check args
         name = SumSquaredError.make_unique_cost_name()
         self._check_state(dataset, model, name)
-
-        # Construct cost
-        times = dataset["Time [s]"]
-        values = dataset[self._data_name]
-        name = SumSquaredError.make_unique_cost_name()
-        data = pybamm.DiscreteTimeData(times, values, f"{name}_data")
-        var = model.variables[self._variable_name]
+        data, var = self._construct_discrete_time_node(dataset, model, name)
 
         # Create Expression
         sum_expr = pybamm.AbsoluteValue(var - data) / len(data.y)
@@ -207,17 +221,12 @@ class MeanSquaredError(BaseCost):
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[pybop.Dataset] = None,
+        dataset: Optional[Dataset] = None,
     ) -> PybammExpressionMetadata:
         # Check args
         name = MeanSquaredError.make_unique_cost_name()
         self._check_state(dataset, model, name)
-
-        # Construct cost
-        times = dataset["Time [s]"]
-        values = dataset[self._data_name]
-        data = pybamm.DiscreteTimeData(times, values, f"{name}_data")
-        var = model.variables[self._variable_name]
+        data, var = self._construct_discrete_time_node(dataset, model, name)
 
         # Create Expression
         squared_error = (var - data) ** 2
@@ -247,17 +256,12 @@ class RootMeanSquaredError(BaseCost):
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[pybop.Dataset] = None,
+        dataset: Optional[Dataset] = None,
     ) -> PybammExpressionMetadata:
         # Check args
         name = RootMeanSquaredError.make_unique_cost_name()
         self._check_state(dataset, model, name)
-
-        # Construct cost
-        times = dataset["Time [s]"]
-        values = dataset[self._data_name]
-        data = pybamm.DiscreteTimeData(times, values, f"{name}_data")
-        var = model.variables[self._variable_name]
+        data, var = self._construct_discrete_time_node(dataset, model, name)
 
         # Create Expression
         squared_error = (var - data) ** 2
@@ -303,17 +307,12 @@ class Minkowski(BaseCost):
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[pybop.Dataset] = None,
+        dataset: Optional[Dataset] = None,
     ) -> PybammExpressionMetadata:
         # Check args
         name = Minkowski.make_unique_cost_name()
         self._check_state(dataset, model, name)
-
-        # Construct cost
-        times = dataset["Time [s]"]
-        values = dataset[self._data_name]
-        data = pybamm.DiscreteTimeData(times, values, f"{name}_data")
-        var = model.variables[self._variable_name]
+        data, var = self._construct_discrete_time_node(dataset, model, name)
 
         # Create Expression
         diff = var - data
@@ -368,17 +367,12 @@ class SumOfPower(BaseCost):
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[pybop.Dataset] = None,
+        dataset: Optional[Dataset] = None,
     ) -> PybammExpressionMetadata:
         # Check args
         name = SumOfPower.make_unique_cost_name()
         self._check_state(dataset, model, name)
-
-        # Construct cost
-        times = dataset["Time [s]"]
-        values = dataset[self._data_name]
-        data = pybamm.DiscreteTimeData(times, values, f"{name}_data")
-        var = model.variables[self._variable_name]
+        data, var = self._construct_discrete_time_node(dataset, model, name)
 
         # Create Expression
         diff = var - data
@@ -389,4 +383,51 @@ class SumOfPower(BaseCost):
             variable_name=name,
             expression=pybamm.DiscreteTimeSum(sum_expr),
             parameters={},
+        )
+
+
+class NegativeGaussianLogLikelihood(BaseCost):
+    """
+    This class represents a Gaussian log-likelihood, which computes the log-likelihood under
+    the assumption that measurement noise on the target data follows a Gaussian distribution.
+
+    This class estimates the standard deviation of the Gaussian distribution alongside the
+    parameters of the model.
+
+    """
+
+    def __init__(
+        self,
+        variable_name: str,
+        data_name: str,
+        sigma: Optional[Union[float, PybopParameter]] = None,
+    ):
+        super().__init__()
+        self._sigma = sigma
+        self._variable_name = variable_name
+        self._data_name = data_name
+        self._log2pi = np.log(2 * np.pi)
+
+    def variable_expression(
+        self,
+        model: pybamm.BaseModel,
+        dataset: Optional[Dataset] = None,
+    ) -> PybammExpressionMetadata:
+        # Check args
+        name = SumSquaredError.make_unique_cost_name()
+        self._check_state(dataset, model, name)
+        data, var = self._construct_discrete_time_node(dataset, model, name)
+
+        parameters = {}
+        sigma = self._get_sigma_parameter(name, parameters)
+        sum_expr = -1 * (
+            -0.5 * self._log2pi
+            - pybamm.log(sigma)
+            - (var - data) ** 2 / (2.0 * sigma**2.0)
+        )
+
+        return PybammExpressionMetadata(
+            variable_name=name,
+            expression=pybamm.DiscreteTimeSum(sum_expr),
+            parameters=parameters,
         )
