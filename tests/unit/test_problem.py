@@ -14,12 +14,8 @@ class TestProblem:
     pytestmark = pytest.mark.unit
 
     @pytest.fixture
-    def first_model(self):
+    def model(self):
         return pybamm.lithium_ion.SPM()
-
-    @pytest.fixture
-    def second_model(self):
-        return pybamm.lithium_ion.SPMe()
 
     @pytest.fixture
     def parameters(self):
@@ -55,10 +51,8 @@ class TestProblem:
         )
 
     @pytest.fixture
-    def dataset(self, first_model, parameter_values, experiment):
-        sim = pybamm.Simulation(
-            first_model, experiment, parameter_values=parameter_values
-        )
+    def dataset(self, model, parameter_values, experiment):
+        sim = pybamm.Simulation(model, experiment, parameter_values=parameter_values)
         sol = sim.solve()
         return pybop.Dataset(
             {
@@ -82,11 +76,11 @@ class TestProblem:
     def signal(self):
         return "Voltage [V]"
 
-    def test_builder(self, first_model, parameter_values, experiment, dataset):
+    def test_builder(self, model, parameter_values, experiment, dataset):
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(
-            first_model,
+            model,
             parameter_values=parameter_values,
             solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
         )
@@ -122,13 +116,16 @@ class TestProblem:
         np.testing.assert_allclose(value1s, value1)
         np.testing.assert_allclose(value2s, value2)
 
-    def test_builder_likelihoods(
-        self, first_model, parameter_values, experiment, dataset
-    ):
+        # Test building twice
+        problem2 = builder.build()
+        assert problem2 is not None
+        assert problem2 != problem
+
+    def test_builder_likelihoods(self, model, parameter_values, experiment, dataset):
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(
-            first_model,
+            model,
             parameter_values=parameter_values,
             solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
         )
@@ -163,13 +160,30 @@ class TestProblem:
         np.testing.assert_allclose(value1s, value1)
         np.testing.assert_allclose(value2s, value2)
 
+        # Test with estimated sigma
+        builder.add_cost(
+            pybop.costs.pybamm.NegativeGaussianLogLikelihood(
+                "Voltage [V]",
+                "Voltage [V]",
+            )
+        )
+        problem2 = builder.build()
+        problem2.set_params(np.array([0.6, 0.6, 1e-2]))
+        value3 = problem2.run()
+        np.testing.assert_allclose(2 * value1, value3)
+
+        # Different sigma
+        problem2.set_params(np.array([0.6, 0.6, 1e-3]))
+        value4 = problem2.run()
+        assert np.not_equal(2 * value1, value4)
+
     def test_builder_with_rebuild_params(
-        self, first_model, parameter_values, experiment, dataset
+        self, model, parameter_values, experiment, dataset
     ):
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(
-            first_model,
+            model,
             parameter_values=parameter_values,
         )
         builder.add_parameter(
@@ -185,10 +199,7 @@ class TestProblem:
         builder.add_cost(
             pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]", "Voltage [V]")
         )
-
         problem = builder.build()
-
-        assert problem is not None
 
         assert problem is not None
         problem.set_params(np.array([1e-5, 0.5e-6, 1e-3]))
@@ -198,12 +209,12 @@ class TestProblem:
         assert (value1 - value2) / value1 > 1e-5
 
     def test_builder_with_cost_hypers(
-        self, first_model, parameter_values, experiment, dataset
+        self, model, parameter_values, experiment, dataset
     ):
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(
-            first_model,
+            model,
             parameter_values=parameter_values,
             solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
         )
@@ -238,10 +249,10 @@ class TestProblem:
         np.testing.assert_allclose(value1s, value1)
         np.testing.assert_allclose(value2s, value2)
 
-    def test_eis_builder(self, first_model, parameter_values, experiment, eis_dataset):
+    def test_eis_builder(self, model, parameter_values, experiment, eis_dataset):
         builder = pybop.builders.PybammEIS()
         builder.set_dataset(eis_dataset)
-        builder.set_simulation(first_model, parameter_values=parameter_values)
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter(
                 "Negative electrode active material volume fraction", initial_value=0.6
@@ -263,11 +274,11 @@ class TestProblem:
         assert (value1 - value2) / value1 > 1e-5
 
     def test_eis_builder_with_rebuild_parameters(
-        self, first_model, parameter_values, experiment, eis_dataset
+        self, model, parameter_values, experiment, eis_dataset
     ):
         builder = pybop.builders.PybammEIS()
         builder.set_dataset(eis_dataset)
-        builder.set_simulation(first_model, parameter_values=parameter_values)
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter("Negative electrode thickness [m]", initial_value=1e-6)
         )
@@ -303,12 +314,12 @@ class TestProblem:
         # Parameters
 
     def test_build_with_initial_state(
-        self, first_model, parameter_values, experiment, dataset
+        self, model, parameter_values, experiment, dataset
     ):
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(
-            first_model,
+            model,
             parameter_values=parameter_values,
             solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
             initial_state="4.0 V",
