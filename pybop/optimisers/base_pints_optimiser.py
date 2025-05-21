@@ -109,7 +109,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         self._max_evaluations = options.max_evaluations
         self._threshold = options.threshold
         self._pints_optimiser = pints_optimiser
-        self._optimizer = None
+        self._optimiser = None
         super().__init__(
             problem,
             options=options,
