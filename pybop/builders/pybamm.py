@@ -4,8 +4,8 @@ import pybamm
 
 import pybop
 from pybop._pybamm_pipeline import PybammPipeline
-from pybop.costs.pybamm_cost import PybammCost
 from pybop.builders.base import BaseBuilder
+from pybop.costs.pybamm_cost import PybammCost
 
 
 class Pybamm(BaseBuilder):
