@@ -73,7 +73,7 @@ class OptimisationLogger:
         self._print_verbose_output()
 
     def _print_verbose_output(self):
-        """Print verbose optimization information if enabled."""
+        """Print verbose optimisation information if enabled."""
         if not self._verbose:
             return
 
