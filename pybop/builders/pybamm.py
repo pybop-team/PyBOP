@@ -5,15 +5,12 @@ import pybamm
 import pybop
 from pybop._pybamm_pipeline import PybammPipeline
 from pybop.costs.pybamm_cost import PybammCost
-
-from .base import BaseBuilder
+from pybop.builders.base import BaseBuilder
 
 
 class Pybamm(BaseBuilder):
     def __init__(self):
         self._model = None
-        self._costs = []
-        self._dataset = None
         self._solver = None
         self._parameter_values = None
         self._rebuild_parameters = None

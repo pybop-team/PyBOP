@@ -99,20 +99,6 @@ class Problem:
         """
         raise NotImplementedError
 
-    def to_search(self, p: np.ndarray) -> np.ndarray:
-        """
-        Converts the parameters from model space to search space.
-        The arg `p` is a numpy array of parameters in the model space.
-        """
-        self._params.sea
-
-    def from_search(self, p: np.ndarray) -> np.ndarray:
-        """
-        Converts the parameters from search space to model space.
-        The arg `p` is a numpy array of parameters in the search space.
-        """
-        raise NotImplementedError
-
     def set_params(self, p: np.ndarray) -> None:
         """
         Sets the parameters for the simulation and cost function.
