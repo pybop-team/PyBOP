@@ -354,3 +354,12 @@ class TestProblem:
         # Assert builds are different
         assert (value1 - value2) / value1 > 1e-5
         assert built_model_1 != built_model_2
+
+    def test_build_no_parameters(self, dataset):
+        builder = pybop.builders.Python()
+        builder.add_func(lambda x: x**2)
+        builder.set_dataset(dataset)
+        with pytest.raises(
+            ValueError, match="No parameters have been added to the builder."
+        ):
+            builder.build()

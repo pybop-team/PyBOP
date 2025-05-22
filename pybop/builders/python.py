@@ -1,6 +1,6 @@
 import pybop
 from pybop import PythonProblem
-from pybop.builders import BaseBuilder
+from pybop.builders.base import BaseBuilder
 from pybop.problems.base_problem import Problem
 
 
@@ -13,8 +13,9 @@ class Python(BaseBuilder):
     def __init__(self):
         self._model = None
         self._params = None
-        self._costs = None
+        self._costs = []
         self._cost_weights = []
+        self._func = None
 
     def add_func(self, func):
         self._func = func
@@ -36,7 +37,7 @@ class Python(BaseBuilder):
             )
 
         if self._func is None:
-            raise ValueError("A Pybamm model needs to be provided before building.")
+            raise ValueError("A Python function needs to be provided before building.")
 
         if self._costs is None:
             raise ValueError("A cost must be provided before building.")
@@ -44,6 +45,9 @@ class Python(BaseBuilder):
         if self._dataset is None:
             raise ValueError("A dataset must be provided before building.")
 
+        pybop_parameters = self.build_parameters()
+
         return PythonProblem(
             self._func,
+            params=pybop_parameters,
         )
