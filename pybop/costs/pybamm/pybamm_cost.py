@@ -414,7 +414,7 @@ class NegativeGaussianLogLikelihood(BaseCost):
         dataset: Optional[Dataset] = None,
     ) -> PybammExpressionMetadata:
         # Check args
-        name = SumSquaredError.make_unique_cost_name()
+        name = NegativeGaussianLogLikelihood.make_unique_cost_name()
         self._check_state(dataset, model, name)
         data, var = self._construct_discrete_time_node(dataset, model, name)
 

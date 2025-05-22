@@ -177,6 +177,48 @@ class TestProblem:
         value4 = problem2.run()
         assert np.not_equal(2 * value1, value4)
 
+    def test_builder_posterior(self, model, parameter_values, experiment, dataset):
+        builder = pybop.builders.Pybamm()
+        builder.set_dataset(dataset)
+        builder.set_simulation(
+            model,
+            parameter_values=parameter_values,
+            solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                initial_value=0.6,
+                prior=pybop.Gaussian(0.6, 0.1),
+            )
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Positive electrode active material volume fraction",
+                initial_value=0.6,
+                prior=pybop.Gaussian(0.6, 0.1),
+            )
+        )
+        likelihood = pybop.costs.pybamm.NegativeGaussianLogLikelihood(
+            "Voltage [V]", "Voltage [V]", 1e-2
+        )
+        builder.add_posterior(likelihood)
+        problem = builder.build()
+
+        assert problem is not None
+        problem.set_params(np.array([0.6, 0.6]))
+        value1 = problem.run()
+        problem.set_params(np.array([0.7, 0.7]))
+        value2 = problem.run()
+        assert (value1 - value2) / value1 < 0.0
+        problem.set_params(np.array([0.6, 0.6]))
+        value1s, grad1s = problem.run_with_sensitivities()
+        assert grad1s.shape == (2,)
+        problem.set_params(np.array([0.7, 0.7]))
+        value2s, grad2s = problem.run_with_sensitivities()
+        np.testing.assert_allclose(value1s, value1)
+        np.testing.assert_allclose(value2s, value2)
+
     def test_builder_with_rebuild_params(
         self, model, parameter_values, experiment, dataset
     ):

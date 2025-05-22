@@ -1,8 +1,9 @@
 from typing import Union
 
 import numpy as np
+from pybamm import Solution
 
-from pybop import Parameters
+from pybop import JointLogPrior, Parameters
 from pybop._pybamm_pipeline import PybammPipeline
 from pybop.problems.base_problem import Problem
 
@@ -18,11 +19,24 @@ class PybammProblem(Problem):
         pybop_params: Parameters = None,
         cost_names: list[str] = None,
         cost_weights: Union[list, np.array] = None,
+        use_posterior: bool = False,
     ):
         self._pipeline = pybamm_pipeline
-        self._cost_names = cost_names
-        self._cost_weights = np.asarray(cost_weights)
+        self._cost_names = cost_names or []
+        self._cost_weights = (
+            np.asarray(cost_weights)
+            if cost_weights is not None
+            else np.ones(len(self._cost_names))
+        )
         self._domain = "Time [s]"
+        self._use_posterior = use_posterior
+
+        # Set up priors if we're using the posterior
+        if self._use_posterior and pybop_params is not None:
+            self._priors = JointLogPrior(*pybop_params.priors())
+        else:
+            self._priors = None
+
         super().__init__(pybop_params=pybop_params)
 
     def set_params(self, p: np.ndarray) -> None:
@@ -34,34 +48,67 @@ class PybammProblem(Problem):
         # rebuild the pipeline (if needed)
         self._pipeline.rebuild(self._params.as_dict())
 
+    def _compute_cost(self, solution: Solution) -> float:
+        """
+        Compute the cost function value from a solution.
+        """
+        return np.dot(self._cost_weights, [solution[n].data for n in self._cost_names])
+
+    def _add_prior_contribution(self, cost: float) -> float:
+        """
+        Add the prior contribution to the cost if using posterior.
+        """
+        if not self._use_posterior or self._priors is None:
+            return cost
+
+        return cost + self._priors.logpdf(self._params.current_value())
+
+    def _compute_cost_with_prior(self, solution: Solution) -> float:
+        """
+        Compute the cost function with optional prior contribution.
+        """
+        cost = self._compute_cost(solution)
+        return self._add_prior_contribution(cost)
+
     def run(self) -> float:
         """
         Evaluates the underlying simulation and cost function using the
         parameters set in the previous call to `set_params`.
+
+        Returns:
+            The computed cost value
         """
         self.check_set_params_called()
 
-        # run simulation
-        sol = self._pipeline.solve()
+        # Run simulation
+        solution = self._pipeline.solve()
 
-        # extract and sum cost function values. These are assumed to all be scalar values
-        return np.dot(self._cost_weights, [sol[n].data for n in self._cost_names])
+        # Compute cost with optional prior contribution
+        return self._compute_cost_with_prior(solution)
 
-    def run_with_sensitivities(
-        self,
-    ) -> tuple[float, np.ndarray]:
+    def run_with_sensitivities(self) -> tuple[float, np.ndarray]:
         """
-        Evaluates the underlying simulation and cost function using the
-        parameters set in the previous call to `set_params`.
-        """
+        Evaluates the simulation and cost function with parameter sensitivities
+        using the parameters set in the previous call to `set_params`.
 
+        Returns:
+            Tuple of (cost_value, sensitivities)
+        """
         self.check_set_params_called()
+        prior_derivatives = np.zeros(len(self._params.keys()))
 
-        # run simulation
-        sol = self._pipeline.solve(calculate_sensitivities=True)
+        # Compute prior contribution and derivatives if using posterior
+        log_prior = 0.0
+        if self._use_posterior and self._priors is not None:
+            log_prior, prior_derivatives = self._priors.logpdfS1(
+                self._params.current_value()
+            )
 
-        # extract cost function values. These are assumed to all be scalar values
-        cost = np.dot(self._cost_weights, [sol[n].data for n in self._cost_names])
+        # Solve with sensitivities, calculate cost
+        solution = self._pipeline.solve(calculate_sensitivities=True)
+        cost = self._compute_cost(solution)
+        if self._use_posterior:
+            cost += log_prior
 
         # sensitivities will all be 1D arrays of length n_params, sum over the different
         # cost functions to get the total sensitivity
@@ -70,15 +117,20 @@ class PybammProblem(Problem):
         # REMEMBER TO REMOVE THIS WHEN THE BUG IS FIXED!!!
         # https://github.com/pybamm-team/PyBaMM/pull/5008
         cost_sens = []
-        for param_name in self._params.keys():
+        for param_idx, param_name in enumerate(self._params.keys()):
             aggregated_sens = np.asarray(
                 [
-                    np.sum(sol[cost_name].sensitivities[param_name])
+                    np.sum(solution[cost_name].sensitivities[param_name])
                     for cost_name in self._cost_names
                 ]
             )
 
             weighted_sensitivity = np.dot(aggregated_sens, self._cost_weights)
+
+            # Add prior derivative contribution if using posterior
+            if self._use_posterior:
+                weighted_sensitivity += prior_derivatives[param_idx]
+
             cost_sens.append(weighted_sensitivity)
 
         return cost, np.asarray(cost_sens)

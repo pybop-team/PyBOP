@@ -18,6 +18,7 @@ class Pybamm(BaseBuilder):
         self._initial_state = None
         self._pipeline = None
         self.domain = "Time [s]"
+        self._use_posterior = False
         super().__init__()
 
     def set_simulation(
@@ -38,6 +39,10 @@ class Pybamm(BaseBuilder):
     def add_cost(self, cost: PybammCost, weight: float = 1.0) -> None:
         self._costs.append(cost)
         self._cost_weights.append(weight)
+
+    def add_posterior(self, cost: PybammCost, weight: float = 1.0) -> None:
+        self.add_cost(cost, weight)
+        self._use_posterior = True
 
     def build(self) -> pybop.PybammProblem:
         """
@@ -116,6 +121,7 @@ class Pybamm(BaseBuilder):
             pybop_params=pybop_parameters,
             cost_names=cost_names,
             cost_weights=self._cost_weights,
+            use_posterior=self._use_posterior,
         )
 
     def _set_control_variable(self, pybop_parameters: pybop.Parameters) -> None:
