@@ -255,4 +255,4 @@ class TestProblem:
         with pytest.raises(
             ValueError, match="No parameters have been added to the builder."
         ):
-            problem = builder.build()
+            builder.build()
