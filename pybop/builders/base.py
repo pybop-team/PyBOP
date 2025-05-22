@@ -11,19 +11,8 @@ class BaseBuilder(ABC):
     Base class for building optimisation problems.
 
     This abstract class provides a foundation for specialised builders
-    like Pybamm, PybammEIS and PurePython. It handles common functionality such as
-    managing parameters, datasets, and costs for optimisation problems.
-
-    Attributes
-    ----------
-    _costs : list
-        List of cost functions to be minimised during optimisation
-    _cost_weights : list
-        A list of weights corresponding to the relative weighting of each cost function
-    _dataset : Dataset
-        The dataset containing experimental data for fitting or design optimisation
-    _pybop_parameters : Parameters
-        Container for optimisation parameters
+    like Pybamm, PybammEIS, and Python. It handles common functionality such as
+    managing parameters, datasets, and costs for the pybop problems.
 
     Methods
     -------
@@ -31,6 +20,8 @@ class BaseBuilder(ABC):
         Set the dataset for the optimisation problem
     add_parameter(parameter)
         Add a parameter to be optimised
+    build_parameters()
+        Builds the pybop parameters container
     build()
         Build and return the optimisation problem (to be implemented by subclasses)
     """
