@@ -77,16 +77,24 @@ class OptimisationResult:
             raise ValueError("No results to combine.")
         ret = results[0]
         ret._x = [x for result in results for x in result._x]  # noqa: SLF001
-        ret._final_cost = [x for result in results for x in result._final_cost]
-        ret._fisher = [x for result in results for x in result._fisher]
-        ret._n_iterations = [x for result in results for x in result._n_iterations]
-        ret._n_evaluations = [x for result in results for x in result._n_evaluations]
-        ret._message = [x for result in results for x in result._message]
-        ret._time = [x for result in results for x in result._time]
-        ret._x0 = [x for result in results for x in result._x0]
-        ret._best_run = None
+        ret._final_cost = [  # noqa: SLF001
+            x for result in results for x in result._final_cost  # noqa: SLF001
+        ]
+        ret._fisher = [x for result in results for x in result._fisher]  # noqa: SLF001
+        ret._n_iterations = [  # noqa: SLF001
+            x for result in results for x in result._n_iterations  # noqa: SLF001
+        ]
+        ret._n_evaluations = [  # noqa: SLF001
+            x for result in results for x in result._n_evaluations  # noqa: SLF001
+        ]
+        ret._message = [  # noqa: SLF001
+            x for result in results for x in result._message  # noqa: SLF001
+        ]
+        ret._time = [x for result in results for x in result._time]  # noqa: SLF001
+        ret._x0 = [x for result in results for x in result._x0]  # noqa: SLF001
+        ret._best_run = None  # noqa: SLF001
         ret.n_runs = len(results)
-        ret._validate()
+        ret._validate()  #  noqa: SLF001
         return ret
 
     def _validate(self):

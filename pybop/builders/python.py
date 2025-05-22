@@ -2,7 +2,7 @@ import pybop
 from pybop import PythonProblem
 from pybop.problems.base_problem import Problem
 
-from .base import BaseBuilder
+from pybop.builders.base import BaseBuilder
 
 
 class Python(BaseBuilder):
