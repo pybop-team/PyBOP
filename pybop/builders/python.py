@@ -1,8 +1,7 @@
 import pybop
 from pybop import PythonProblem
-from pybop.problems.base_problem import Problem
-
 from pybop.builders.base import BaseBuilder
+from pybop.problems.base_problem import Problem
 
 
 class Python(BaseBuilder):
