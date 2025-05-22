@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pints import CMAES as PintsCMAES
 from pints import PSO as PintsPSO
 from pints import SNES as PintsSNES
@@ -5,6 +7,7 @@ from pints import XNES as PintsXNES
 from pints import IRPropMin as PintsIRPropMin
 from pints import NelderMead as PintsNelderMead
 
+import pybop
 from pybop import (
     AdamWImpl,
     BasePintsOptimiser,
@@ -14,6 +17,7 @@ from pybop import (
     RandomSearchImpl,
     SimulatedAnnealingImpl,
 )
+from pybop.problems.base_problem import Problem
 
 
 class GradientDescent(BasePintsOptimiser):
@@ -27,38 +31,10 @@ class GradientDescent(BasePintsOptimiser):
 
     Parameters
     ----------
-    cost : callable
+    problem: pybop.Problem
         The cost function to be minimised.
-    max_iterations : int, optional
-        Maximum number of iterations for the optimisation.
-    min_iterations : int, optional (default=2)
-        Minimum number of iterations before termination.
-    max_unchanged_iterations : int, optional (default=15)
-        Maximum number of iterations without improvement before termination.
-    multistart : int, optional (default=1)
-        Number of optimiser restarts from randomly sample position. These positions
-        are sampled from the priors.
-    parallel : bool, optional (default=False)
-        Whether to run the optimisation in parallel.
-    **optimiser_kwargs : optional
-        Valid PINTS option keys and their values, for example:
-        x0 : array_like
-            Initial position from which optimisation will start.
-        sigma0 : float
-            Initial step size or standard deviation depending on the optimiser.
-        bounds : dict
-            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
-            upper bounds on the parameters.
-        use_f_guessed : bool
-            Whether to return the guessed function values.
-        absolute_tolerance : float
-            Absolute tolerance for convergence checking.
-        relative_tolerance : float
-            Relative tolerance for convergence checking.
-        max_evaluations : int
-            Maximum number of function evaluations.
-        threshold : float
-            Threshold value for early termination.
+    options: pybop.PintsOptions
+        optimisation options
 
     See Also
     --------
@@ -67,23 +43,13 @@ class GradientDescent(BasePintsOptimiser):
 
     def __init__(
         self,
-        cost,
-        max_iterations: int = None,
-        min_iterations: int = 2,
-        max_unchanged_iterations: int = 15,
-        multistart: int = 1,
-        parallel: bool = False,
-        **optimiser_kwargs,
+        problem: Problem,
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
-            cost,
+            problem,
             GradientDescentImpl,
-            max_iterations,
-            min_iterations,
-            max_unchanged_iterations,
-            multistart,
-            parallel,
-            **optimiser_kwargs,
+            options,
         )
 
 
@@ -100,38 +66,10 @@ class AdamW(BasePintsOptimiser):
 
     Parameters
     ----------
-    cost : callable
+    problem: pybop.Problem
         The cost function to be minimised.
-    max_iterations : int, optional
-        Maximum number of iterations for the optimisation.
-    min_iterations : int, optional (default=2)
-        Minimum number of iterations before termination.
-    max_unchanged_iterations : int, optional (default=15)
-        Maximum number of iterations without improvement before termination.
-    multistart : int, optional (default=1)
-        Number of optimiser restarts from randomly sample position. These positions
-        are sampled from the priors.
-    parallel : bool, optional (default=False)
-        Whether to run the optimisation in parallel.
-    **optimiser_kwargs : optional
-        Valid PINTS option keys and their values, for example:
-        x0 : array_like
-            Initial position from which optimisation will start.
-        sigma0 : float
-            Initial step size or standard deviation depending on the optimiser.
-        bounds : dict
-            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
-            upper bounds on the parameters.
-        use_f_guessed : bool
-            Whether to return the guessed function values.
-        absolute_tolerance : float
-            Absolute tolerance for convergence checking.
-        relative_tolerance : float
-            Relative tolerance for convergence checking.
-        max_evaluations : int
-            Maximum number of function evaluations.
-        threshold : float
-            Threshold value for early termination.
+    options: pybop.PintsOptions
+        optimisation options
 
     See Also
     --------
@@ -140,23 +78,13 @@ class AdamW(BasePintsOptimiser):
 
     def __init__(
         self,
-        cost,
-        max_iterations: int = None,
-        min_iterations: int = 2,
-        max_unchanged_iterations: int = 15,
-        multistart: int = 1,
-        parallel: bool = False,
-        **optimiser_kwargs,
+        problem: Problem,
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
-            cost,
+            problem,
             AdamWImpl,
-            max_iterations,
-            min_iterations,
-            max_unchanged_iterations,
-            multistart,
-            parallel,
-            **optimiser_kwargs,
+            options,
         )
 
 
@@ -170,38 +98,10 @@ class IRPropMin(BasePintsOptimiser):
 
     Parameters
     ----------
-    cost : callable
+    problem: pybop.Problem
         The cost function to be minimised.
-    max_iterations : int, optional
-        Maximum number of iterations for the optimisation.
-    min_iterations : int, optional (default=2)
-        Minimum number of iterations before termination.
-    max_unchanged_iterations : int, optional (default=15)
-        Maximum number of iterations without improvement before termination.
-    multistart : int, optional (default=1)
-        Number of optimiser restarts from randomly sample position. These positions
-        are sampled from the priors.
-    parallel : bool, optional (default=False)
-        Whether to run the optimisation in parallel.
-    **optimiser_kwargs : optional
-        Valid PINTS option keys and their values, for example:
-        x0 : array_like
-            Initial position from which optimisation will start.
-        sigma0 : float
-            Initial step size or standard deviation depending on the optimiser.
-        bounds : dict
-            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
-            upper bounds on the parameters.
-        use_f_guessed : bool
-            Whether to return the guessed function values.
-        absolute_tolerance : float
-            Absolute tolerance for convergence checking.
-        relative_tolerance : float
-            Relative tolerance for convergence checking.
-        max_evaluations : int
-            Maximum number of function evaluations.
-        threshold : float
-            Threshold value for early termination.
+    options: pybop.PintsOptions
+        optimisation options
 
     See Also
     --------
@@ -210,23 +110,13 @@ class IRPropMin(BasePintsOptimiser):
 
     def __init__(
         self,
-        cost,
-        max_iterations: int = None,
-        min_iterations: int = 2,
-        max_unchanged_iterations: int = 15,
-        multistart: int = 1,
-        parallel: bool = False,
-        **optimiser_kwargs,
+        problem: Problem,
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
-            cost,
+            problem,
             PintsIRPropMin,
-            max_iterations,
-            min_iterations,
-            max_unchanged_iterations,
-            multistart,
-            parallel,
-            **optimiser_kwargs,
+            options,
         )
 
 
@@ -239,38 +129,10 @@ class IRPropPlus(BasePintsOptimiser):
 
     Parameters
     ----------
-    cost : callable
-        The cost function to be minimized.
-    max_iterations : int, optional
-        Maximum number of iterations for the optimisation.
-    min_iterations : int, optional (default=2)
-        Minimum number of iterations before termination.
-    max_unchanged_iterations : int, optional (default=15)
-        Maximum number of iterations without improvement before termination.
-    multistart : int, optional (default=1)
-        Number of optimiser restarts from randomly sample position. These positions
-        are sampled from the priors.
-    parallel : bool, optional (default=False)
-        Whether to run the optimisation in parallel.
-    **optimiser_kwargs : optional
-        Valid PINTS option keys and their values, for example:
-        x0 : array_like
-            Initial position from which optimisation will start.
-        sigma0 : float
-            Initial step size or standard deviation depending on the optimiser.
-        bounds : dict
-            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
-            upper bounds on the parameters.
-        use_f_guessed : bool
-            Whether to return the guessed function values.
-        absolute_tolerance : float
-            Absolute tolerance for convergence checking.
-        relative_tolerance : float
-            Relative tolerance for convergence checking.
-        max_evaluations : int
-            Maximum number of function evaluations.
-        threshold : float
-            Threshold value for early termination.
+    problem: pybop.Problem
+        The cost function to be minimised.
+    options: pybop.PintsOptions
+        optimisation options
 
     See Also
     --------
@@ -279,23 +141,13 @@ class IRPropPlus(BasePintsOptimiser):
 
     def __init__(
         self,
-        cost,
-        max_iterations: int = None,
-        min_iterations: int = 2,
-        max_unchanged_iterations: int = 15,
-        multistart: int = 1,
-        parallel: bool = False,
-        **optimiser_kwargs,
+        problem: Problem,
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
-            cost,
+            problem,
             IRPropPlusImpl,
-            max_iterations,
-            min_iterations,
-            max_unchanged_iterations,
-            multistart,
-            parallel,
-            **optimiser_kwargs,
+            options,
         )
 
 
@@ -309,38 +161,10 @@ class PSO(BasePintsOptimiser):
 
     Parameters
     ----------
-    cost : callable
+    problem: pybop.Problem
         The cost function to be minimised.
-    max_iterations : int, optional
-        Maximum number of iterations for the optimisation.
-    min_iterations : int, optional (default=2)
-        Minimum number of iterations before termination.
-    max_unchanged_iterations : int, optional (default=15)
-        Maximum number of iterations without improvement before termination.
-    multistart : int, optional (default=1)
-        Number of optimiser restarts from randomly sample position. These positions
-        are sampled from the priors.
-    parallel : bool, optional (default=False)
-        Whether to run the optimisation in parallel.
-    **optimiser_kwargs : optional
-        Valid PINTS option keys and their values, for example:
-        x0 : array_like
-            Initial position from which optimisation will start.
-        sigma0 : float
-            Initial step size or standard deviation depending on the optimiser.
-        bounds : dict
-            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
-            upper bounds on the parameters.
-        use_f_guessed : bool
-            Whether to return the guessed function values.
-        absolute_tolerance : float
-            Absolute tolerance for convergence checking.
-        relative_tolerance : float
-            Relative tolerance for convergence checking.
-        max_evaluations : int
-            Maximum number of function evaluations.
-        threshold : float
-            Threshold value for early termination.
+    options: pybop.PintsOptions
+        optimisation options
 
     See Also
     --------
@@ -349,23 +173,13 @@ class PSO(BasePintsOptimiser):
 
     def __init__(
         self,
-        cost,
-        max_iterations: int = None,
-        min_iterations: int = 2,
-        max_unchanged_iterations: int = 15,
-        multistart: int = 1,
-        parallel: bool = False,
-        **optimiser_kwargs,
+        problem: Problem,
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
-            cost,
+            problem,
             PintsPSO,
-            max_iterations,
-            min_iterations,
-            max_unchanged_iterations,
-            multistart,
-            parallel,
-            **optimiser_kwargs,
+            options,
         )
 
 
@@ -379,38 +193,10 @@ class SNES(BasePintsOptimiser):
 
     Parameters
     ----------
-    cost : callable
+    problem: pybop.Problem
         The cost function to be minimised.
-    max_iterations : int, optional
-        Maximum number of iterations for the optimisation.
-    min_iterations : int, optional (default=2)
-        Minimum number of iterations before termination.
-    max_unchanged_iterations : int, optional (default=15)
-        Maximum number of iterations without improvement before termination.
-    multistart : int, optional (default=1)
-        Number of optimiser restarts from randomly sample position. These positions
-        are sampled from the priors.
-    parallel : bool, optional (default=False)
-        Whether to run the optimisation in parallel.
-    **optimiser_kwargs : optional
-        Valid PINTS option keys and their values, for example:
-        x0 : array_like
-            Initial position from which optimisation will start.
-        sigma0 : float
-            Initial step size or standard deviation depending on the optimiser.
-        bounds : dict
-            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
-            upper bounds on the parameters.
-        use_f_guessed : bool
-            Whether to return the guessed function values.
-        absolute_tolerance : float
-            Absolute tolerance for convergence checking.
-        relative_tolerance : float
-            Relative tolerance for convergence checking.
-        max_evaluations : int
-            Maximum number of function evaluations.
-        threshold : float
-            Threshold value for early termination.
+    options: pybop.PintsOptions
+        optimisation options
 
     See Also
     --------
@@ -419,23 +205,13 @@ class SNES(BasePintsOptimiser):
 
     def __init__(
         self,
-        cost,
-        max_iterations: int = None,
-        min_iterations: int = 2,
-        max_unchanged_iterations: int = 15,
-        multistart: int = 1,
-        parallel: bool = False,
-        **optimiser_kwargs,
+        problem: Problem,
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
-            cost,
+            problem,
             PintsSNES,
-            max_iterations,
-            min_iterations,
-            max_unchanged_iterations,
-            multistart,
-            parallel,
-            **optimiser_kwargs,
+            options,
         )
 
 
@@ -449,38 +225,10 @@ class XNES(BasePintsOptimiser):
 
     Parameters
     ----------
-    cost : callable
-        The cost function to be minimised.
-    max_iterations : int, optional
-        Maximum number of iterations for the optimisation.
-    min_iterations : int, optional (default=2)
-        Minimum number of iterations before termination.
-    max_unchanged_iterations : int, optional (default=15)
-        Maximum number of iterations without improvement before termination.
-    multistart : int, optional (default=1)
-        Number of optimiser restarts from randomly sample position. These positions
-        are sampled from the priors.
-    parallel : bool, optional (default=False)
-        Whether to run the optimisation in parallel.
-    **optimiser_kwargs : optional
-        Valid PINTS option keys and their values, for example:
-        x0 : array_like
-            Initial position from which optimisation will start.
-        sigma0 : float
-            Initial step size or standard deviation depending on the optimiser.
-        bounds : dict
-            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
-            upper bounds on the parameters.
-        use_f_guessed : bool
-            Whether to return the guessed function values.
-        absolute_tolerance : float
-            Absolute tolerance for convergence checking.
-        relative_tolerance : float
-            Relative tolerance for convergence checking.
-        max_evaluations : int
-            Maximum number of function evaluations.
-        threshold : float
-            Threshold value for early termination.
+    problem: pybop.Problem
+        the cost function to be minimised.
+    options: pybop.PintsOptions
+        optimisation options
 
     See Also
     --------
@@ -489,23 +237,13 @@ class XNES(BasePintsOptimiser):
 
     def __init__(
         self,
-        cost,
-        max_iterations: int = None,
-        min_iterations: int = 2,
-        max_unchanged_iterations: int = 15,
-        multistart: int = 1,
-        parallel: bool = False,
-        **optimiser_kwargs,
+        problem: Problem,
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
-            cost,
+            problem,
             PintsXNES,
-            max_iterations,
-            min_iterations,
-            max_unchanged_iterations,
-            multistart,
-            parallel,
-            **optimiser_kwargs,
+            options,
         )
 
 
@@ -521,38 +259,10 @@ class NelderMead(BasePintsOptimiser):
 
     Parameters
     ----------
-    cost : callable
-        The cost function to be minimised.
-    max_iterations : int, optional
-        Maximum number of iterations for the optimisation.
-    min_iterations : int, optional (default=2)
-        Minimum number of iterations before termination.
-    max_unchanged_iterations : int, optional (default=15)
-        Maximum number of iterations without improvement before termination.
-    multistart : int, optional (default=1)
-        Number of optimiser restarts from randomly sample position. These positions
-        are sampled from the priors.
-    parallel : bool, optional (default=False)
-        Whether to run the optimisation in parallel.
-    **optimiser_kwargs : optional
-        Valid PINTS option keys and their values, for example:
-        x0 : array_like
-            Initial position from which optimisation will start.
-        sigma0 : float
-            Initial step size or standard deviation depending on the optimiser.
-        bounds : dict
-            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
-            upper bounds on the parameters.
-        use_f_guessed : bool
-            Whether to return the guessed function values.
-        absolute_tolerance : float
-            Absolute tolerance for convergence checking.
-        relative_tolerance : float
-            Relative tolerance for convergence checking.
-        max_evaluations : int
-            Maximum number of function evaluations.
-        threshold : float
-            Threshold value for early termination.
+    problem: pybop.Problem
+        the cost function to be minimised.
+    options: pybop.PintsOptions
+        optimisation options
 
     See Also
     --------
@@ -561,23 +271,13 @@ class NelderMead(BasePintsOptimiser):
 
     def __init__(
         self,
-        cost,
-        max_iterations: int = None,
-        min_iterations: int = 2,
-        max_unchanged_iterations: int = 15,
-        multistart: int = 1,
-        parallel: bool = False,
-        **optimiser_kwargs,
+        problem: Problem,
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
-            cost,
+            problem,
             PintsNelderMead,
-            max_iterations,
-            min_iterations,
-            max_unchanged_iterations,
-            multistart,
-            parallel,
-            **optimiser_kwargs,
+            options,
         )
 
 
@@ -591,38 +291,10 @@ class CMAES(BasePintsOptimiser):
 
     Parameters
     ----------
-    cost : callable
-        The cost function to be minimised.
-    max_iterations : int, optional
-        Maximum number of iterations for the optimisation.
-    min_iterations : int, optional (default=2)
-        Minimum number of iterations before termination.
-    max_unchanged_iterations : int, optional (default=15)
-        Maximum number of iterations without improvement before termination.
-    multistart : int, optional (default=1)
-        Number of optimiser restarts from randomly sample position. These positions
-        are sampled from the priors.
-    parallel : bool, optional (default=False)
-        Whether to run the optimisation in parallel.
-    **optimiser_kwargs : optional
-        Valid PINTS option keys and their values, for example:
-        x0 : array_like
-            Initial position from which optimisation will start.
-        sigma0 : float
-            Initial step size or standard deviation depending on the optimiser.
-        bounds : dict
-            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
-            upper bounds on the parameters.
-        use_f_guessed : bool
-            Whether to return the guessed function values.
-        absolute_tolerance : float
-            Absolute tolerance for convergence checking.
-        relative_tolerance : float
-            Relative tolerance for convergence checking.
-        max_evaluations : int
-            Maximum number of function evaluations.
-        threshold : float
-            Threshold value for early termination.
+    problem: pybop.Problem
+        the cost function to be minimised.
+    options: pybop.PintsOptions
+        optimisation options
 
     See Also
     --------
@@ -631,29 +303,18 @@ class CMAES(BasePintsOptimiser):
 
     def __init__(
         self,
-        cost,
-        max_iterations: int = None,
-        min_iterations: int = 2,
-        max_unchanged_iterations: int = 15,
-        multistart: int = 1,
-        parallel: bool = False,
-        **optimiser_kwargs,
+        problem: Problem,
+        options: Optional[pybop.PintsOptions] = None,
     ):
-        x0 = optimiser_kwargs.get("x0", cost.parameters.initial_value())
-        if len(x0) == 1 or len(cost.parameters) == 1:
+        if len(problem.params) == 1:
             raise ValueError(
                 "CMAES requires optimisation of >= 2 parameters at once. "
                 "Please choose another optimiser."
             )
         super().__init__(
-            cost,
+            problem,
             PintsCMAES,
-            max_iterations,
-            min_iterations,
-            max_unchanged_iterations,
-            multistart,
-            parallel,
-            **optimiser_kwargs,
+            options,
         )
 
 
@@ -666,38 +327,10 @@ class CuckooSearch(BasePintsOptimiser):
 
     Parameters
     ----------
-    cost : callable
-        The cost function to be minimised.
-    max_iterations : int, optional
-        Maximum number of iterations for the optimisation.
-    min_iterations : int, optional (default=2)
-        Minimum number of iterations before termination.
-    max_unchanged_iterations : int, optional (default=15)
-        Maximum number of iterations without improvement before termination.
-    multistart : int, optional (default=1)
-        Number of optimiser restarts from randomly sample position. These positions
-        are sampled from the priors.
-    parallel : bool, optional (default=False)
-        Whether to run the optimisation in parallel.
-    **optimiser_kwargs : optional
-        Valid PINTS option keys and their values, for example:
-        x0 : array_like
-            Initial position from which optimisation will start.
-        sigma0 : float
-            Initial step size or standard deviation depending on the optimiser.
-        bounds : dict
-            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
-            upper bounds on the parameters.
-        use_f_guessed : bool
-            Whether to return the guessed function values.
-        absolute_tolerance : float
-            Absolute tolerance for convergence checking.
-        relative_tolerance : float
-            Relative tolerance for convergence checking.
-        max_evaluations : int
-            Maximum number of function evaluations.
-        threshold : float
-            Threshold value for early termination.
+    problem: pybop.Problem
+        the cost function to be minimised.
+    options: pybop.PintsOptions
+        optimisation options
 
     See Also
     --------
@@ -706,23 +339,13 @@ class CuckooSearch(BasePintsOptimiser):
 
     def __init__(
         self,
-        cost,
-        max_iterations: int = None,
-        min_iterations: int = 2,
-        max_unchanged_iterations: int = 15,
-        multistart: int = 1,
-        parallel: bool = False,
-        **optimiser_kwargs,
+        problem: Problem,
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
-            cost,
+            problem,
             CuckooSearchImpl,
-            max_iterations,
-            min_iterations,
-            max_unchanged_iterations,
-            multistart,
-            parallel,
-            **optimiser_kwargs,
+            options,
         )
 
 
@@ -738,36 +361,10 @@ class RandomSearch(BasePintsOptimiser):
 
     Parameters
     ----------
-    cost : callable
-        The cost function to be minimised.
-    max_iterations : int, optional
-        Maximum number of iterations for the optimisation.
-    min_iterations : int, optional (default=2)
-        Minimum number of iterations before termination.
-    max_unchanged_iterations : int, optional (default=15)
-        Maximum number of iterations without improvement before termination.
-    multistart : int, optional (default=1)
-        Number of optimiser restarts from randomly sample position. These positions
-        are sampled from the priors.
-    parallel : bool, optional (default=False)
-        Whether to run the optimisation in parallel.
-    **optimiser_kwargs : optional
-        Valid PINTS option keys and their values, for example:
-        x0 : array_like
-            Initial position from which optimisation will start.
-        population_size : int
-            Number of solutions to evaluate per iteration.
-        bounds : dict
-            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
-            upper bounds on the parameters.
-        absolute_tolerance : float
-            Absolute tolerance for convergence checking.
-        relative_tolerance : float
-            Relative tolerance for convergence checking.
-        max_evaluations : int
-            Maximum number of function evaluations.
-        threshold : float
-            Threshold value for early termination.
+    problem: pybop.Problem
+        the cost function to be minimised.
+    options: pybop.PintsOptions
+        optimisation options
 
     See Also
     --------
@@ -776,23 +373,13 @@ class RandomSearch(BasePintsOptimiser):
 
     def __init__(
         self,
-        cost,
-        max_iterations: int = None,
-        min_iterations: int = 2,
-        max_unchanged_iterations: int = 15,
-        multistart: int = 1,
-        parallel: bool = False,
-        **optimiser_kwargs,
+        problem: Problem,
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
-            cost,
+            problem,
             RandomSearchImpl,
-            max_iterations,
-            min_iterations,
-            max_unchanged_iterations,
-            multistart,
-            parallel,
-            **optimiser_kwargs,
+            options,
         )
 
 
@@ -811,40 +398,10 @@ class SimulatedAnnealing(BasePintsOptimiser):
 
     Parameters
     ----------
-    cost : callable
-        The cost function to be minimised.
-    max_iterations : int, optional
-        Maximum number of iterations for the optimisation.
-    min_iterations : int, optional (default=2)
-        Minimum number of iterations before termination.
-    max_unchanged_iterations : int, optional (default=15)
-        Maximum number of iterations without improvement before termination.
-    multistart : int, optional (default=1)
-        Number of optimiser restarts from randomly sample position. These positions
-        are sampled from the priors.
-    parallel : bool, optional (default=False)
-        Whether to run the optimisation in parallel.
-    **optimiser_kwargs : optional
-        Valid PINTS option keys and their values, for example:
-        x0 : array_like
-            Initial position from which optimisation will start.
-        sigma0 : float
-            Initial step size or standard deviation for parameter perturbation.
-        bounds : dict
-            A dictionary with 'lower' and 'upper' keys containing arrays for lower and
-            upper bounds on the parameters.
-        cooling_schedule : callable, optional
-            Function that determines how temperature decreases over time.
-        initial_temperature : float, optional
-            Starting temperature for the annealing process.
-        absolute_tolerance : float
-            Absolute tolerance for convergence checking.
-        relative_tolerance : float
-            Relative tolerance for convergence checking.
-        max_evaluations : int
-            Maximum number of function evaluations.
-        threshold : float
-            Threshold value for early termination.
+    problem: pybop.Problem
+        the cost function to be minimised.
+    options: pybop.PintsOptions
+        optimisation options
 
     See Also
     --------
@@ -853,21 +410,11 @@ class SimulatedAnnealing(BasePintsOptimiser):
 
     def __init__(
         self,
-        cost,
-        max_iterations: int = None,
-        min_iterations: int = 2,
-        max_unchanged_iterations: int = 15,
-        multistart: int = 1,
-        parallel: bool = False,
-        **optimiser_kwargs,
+        problem: Problem,
+        options: Optional[pybop.PintsOptions] = None,
     ):
         super().__init__(
-            cost,
+            problem,
             SimulatedAnnealingImpl,
-            max_iterations,
-            min_iterations,
-            max_unchanged_iterations,
-            multistart,
-            parallel,
-            **optimiser_kwargs,
+            options,
         )
