@@ -33,10 +33,13 @@ class Python(BaseBuilder):
         ----------
         model : Callable
             Function that takes parameters and dataset, returns simulation results
-            Expected signature: func(params: dict, dataset: dict) -> dict
+            Expected signature: func(params: list[float] or float) -> dict
         model_with_sens : Callable, optional
             Function that returns both results and sensitivities
-            Expected signature: func(params: dict, dataset: dict) -> tuple[dict, np.ndarray]
+            Expected signature: func(params: list[float] or float) -> tuple[dict, dict]
+
+        where the keys in the dicts match the signal names and the values are
+        list-like objects containing the predicted values.
         """
         if model is not None and not callable(model):
             raise TypeError("The model must be a callable obj")
