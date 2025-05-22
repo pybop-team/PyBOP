@@ -476,7 +476,9 @@ class Parameters:
         """
         Return the prior distribution of each parameter.
         """
-        return [param.prior for param in self._params.values()]
+        return [
+            param.prior for param in self._params.values() if param.prior is not None
+        ]
 
     def initial_value(self, apply_transform: bool = False) -> np.ndarray:
         """

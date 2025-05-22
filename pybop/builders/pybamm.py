@@ -37,10 +37,18 @@ class Pybamm(BaseBuilder):
         self._solver = solver or model.default_solver
 
     def add_cost(self, cost: PybammCost, weight: float = 1.0) -> None:
+        """
+        Add a cost to the problem with optional weighting.
+        """
         self._costs.append(cost)
         self._cost_weights.append(weight)
 
     def add_posterior(self, cost: PybammCost, weight: float = 1.0) -> None:
+        """
+        Add a posterior to the problem. The convention is to provide a
+        negative log-likelihood object, with the prior information contained
+        within the `add_parameters` method.
+        """
         self.add_cost(cost, weight)
         self._use_posterior = True
 
@@ -100,6 +108,10 @@ class Pybamm(BaseBuilder):
                     pybop_parameters.add(
                         PybopParameter(name, initial_value=obj.default_value)
                     )
+        if self._use_posterior and not pybop_parameters.priors():
+            raise ValueError(
+                "Posterior requires priors to be defined within the `add_parameters` method."
+            )
 
         # Construct the pipeline
         pipeline = PybammPipeline(
