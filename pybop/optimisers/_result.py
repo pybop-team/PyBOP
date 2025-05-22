@@ -78,17 +78,25 @@ class OptimisationResult:
         ret = results[0]
         ret._x = [x for result in results for x in result._x]  # noqa: SLF001
         ret._final_cost = [  # noqa: SLF001
-            x for result in results for x in result._final_cost  # noqa: SLF001
+            x
+            for result in results
+            for x in result._final_cost  # noqa: SLF001
         ]
         ret._fisher = [x for result in results for x in result._fisher]  # noqa: SLF001
         ret._n_iterations = [  # noqa: SLF001
-            x for result in results for x in result._n_iterations  # noqa: SLF001
+            x
+            for result in results
+            for x in result._n_iterations  # noqa: SLF001
         ]
         ret._n_evaluations = [  # noqa: SLF001
-            x for result in results for x in result._n_evaluations  # noqa: SLF001
+            x
+            for result in results
+            for x in result._n_evaluations  # noqa: SLF001
         ]
         ret._message = [  # noqa: SLF001
-            x for result in results for x in result._message  # noqa: SLF001
+            x
+            for result in results
+            for x in result._message  # noqa: SLF001
         ]
         ret._time = [x for result in results for x in result._time]  # noqa: SLF001
         ret._x0 = [x for result in results for x in result._x0]  # noqa: SLF001
