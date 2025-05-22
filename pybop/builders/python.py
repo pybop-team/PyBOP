@@ -18,31 +18,34 @@ class Python(BaseBuilder):
 
     def __init__(self):
         super().__init__()
-        self._model_func = None
-        self._model_func_with_sens = None
+        self._model = None
+        self._model_with_sens = None
 
     def set_simulation(
         self,
-        model_func: Callable,
-        model_func_with_sens: Callable = None,
+        model: Callable = None,
+        model_with_sens: Callable = None,
     ) -> None:
         """
         Set the simulation functions for the problem.
 
         Parameters
         ----------
-        model_func : Callable
+        model : Callable
             Function that takes parameters and dataset, returns simulation results
             Expected signature: func(params: dict, dataset: dict) -> dict
-        model_func_with_sens : Callable, optional
+        model_with_sens : Callable, optional
             Function that returns both results and sensitivities
             Expected signature: func(params: dict, dataset: dict) -> tuple[dict, np.ndarray]
         """
-        if not callable(model_func):
-            raise TypeError("model_func must be a callable")
+        if model is not None and not callable(model):
+            raise TypeError("The model must be a callable obj")
 
-        self._model_func = model_func
-        self._model_func_with_sens = model_func_with_sens
+        if model_with_sens is not None and not callable(model_with_sens):
+            raise TypeError("The model must be a callable obj")
+
+        self._model = model
+        self._model_with_sens = model_with_sens
 
     def add_cost(self, cost: Union[BaseCost, Callable], weight: float = 1.0) -> None:
         """
@@ -94,7 +97,7 @@ class Python(BaseBuilder):
             If required components are missing
         """
         # Validate required components
-        if self._model_func is None:
+        if self._model is None and self._model_with_sens is None:
             raise ValueError("A model function must be provided before building")
 
         if not self._costs:
@@ -108,8 +111,8 @@ class Python(BaseBuilder):
 
         # Create and return the problem
         return PythonProblem(
-            model_func=self._model_func,
-            model_func_with_sens=self._model_func_with_sens,
+            model=self._model,
+            model_with_sens=self._model_with_sens,
             pybop_params=self._pybop_parameters,
             costs=self._costs,
             cost_weights=self._cost_weights,

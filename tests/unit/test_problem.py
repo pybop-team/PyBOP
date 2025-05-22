@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 import pybamm
 import pytest
@@ -199,9 +201,8 @@ class TestProblem:
             {"Time / s": np.linspace(0, 1, 10), "Output": np.ones(10)}
         )
 
-        def model(params, dataset):
+        def model(x: Union[float, list]):
             output = []
-            x = params["x"].value
             for i in dataset["Time / s"]:
                 output.append(x * i**2)
             return {"Output": output}
@@ -217,12 +218,27 @@ class TestProblem:
         problem = builder.build()
 
         assert problem is not None
-        problem.set_params(np.array([3]))
+        problem.set_params(np.array([3.0]))
         value1 = problem.run()
         assert value1 > 0
 
-        # Assertion to add
-        # Parameters
+        # Test sensitivities
+        def model_with_sens(x: Union[float, list]):
+            output = x * dataset["Time / s"] ** 2
+            sens = 2 * x * dataset["Time / s"]
+            return {"Output": output}, {"Output": sens}
+
+        builder.set_simulation(model_with_sens=model_with_sens)
+        problem_sens = builder.build()
+        assert problem_sens is not None
+        problem_sens.set_params(np.asarray([3.0]))
+        val, sens = problem_sens.run_with_sensitivities()
+        assert val > 0
+        assert sens > 0
+
+        # Test incorrect model
+        with pytest.raises(TypeError, match="The model must be a callable obj"):
+            builder.set_simulation([2.0])
 
     def test_build_with_initial_state(
         self, first_model, parameter_values, experiment, dataset

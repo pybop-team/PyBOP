@@ -28,7 +28,7 @@ class NewMeanSquaredError(BaseCost):
         e = np.sum(np.abs(r) ** 2 * self.weighting)
 
         if dy is not None:
-            de = 2 * np.sum((r * self.weighting) * dy, axis=(1, 2))
+            de = 2 * np.sum((r * self.weighting) * dy)
             return e, de
 
         return e
