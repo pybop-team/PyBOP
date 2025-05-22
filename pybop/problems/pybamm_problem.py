@@ -61,7 +61,8 @@ class PybammProblem(Problem):
         if not self._use_posterior or self._priors is None:
             return cost
 
-        return cost + self._priors.logpdf(self._params.current_value())
+        # Likelihoods and priors are negative by convention
+        return cost - self._priors.logpdf(self._params.current_value())
 
     def _compute_cost_with_prior(self, solution: Solution) -> float:
         """
@@ -108,7 +109,7 @@ class PybammProblem(Problem):
         solution = self._pipeline.solve(calculate_sensitivities=True)
         cost = self._compute_cost(solution)
         if self._use_posterior:
-            cost += log_prior
+            cost -= log_prior
 
         # sensitivities will all be 1D arrays of length n_params, sum over the different
         # cost functions to get the total sensitivity
