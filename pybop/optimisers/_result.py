@@ -76,7 +76,7 @@ class OptimisationResult:
         if len(results) == 0:
             raise ValueError("No results to combine.")
         ret = results[0]
-        ret._x = [x for result in results for x in result._x]
+        ret._x = [x for result in results for x in result._x]  # noqa: SLF001
         ret._final_cost = [x for result in results for x in result._final_cost]
         ret._fisher = [x for result in results for x in result._fisher]
         ret._n_iterations = [x for result in results for x in result._n_iterations]
