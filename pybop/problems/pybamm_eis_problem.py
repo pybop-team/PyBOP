@@ -21,11 +21,12 @@ class PybammEISProblem(Problem):
         cost_weights: Union[list, np.ndarray, None] = None,
         fitting_data: Optional[list] = None,
     ):
+        super().__init__(pybop_params=pybop_params)
         self._pipeline = eis_pipeline
         self._costs = costs
         self._cost_weights = cost_weights
         self._fitting_data = fitting_data
-        super().__init__(pybop_params=pybop_params)
+        self._compute_initial_cost_and_resample()
 
     def set_params(self, p: np.ndarray) -> None:
         """

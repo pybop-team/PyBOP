@@ -40,7 +40,6 @@ class BaseBuilder(ABC):
         self._cost_weights = []
         self._dataset = None
         self._params = {}
-        self.domain = None
 
     def set_dataset(self, dataset: Dataset) -> None:
         """

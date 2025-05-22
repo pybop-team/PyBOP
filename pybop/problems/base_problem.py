@@ -19,7 +19,7 @@ class Problem:
         self._params = pybop_params
         self._param_names = pybop_params.keys()
 
-        # TODO: found this in scipy optimisers, not sure if we want to make it general but just in case...
+    def _compute_initial_cost_and_resample(self):
         # Compute the absolute initial cost and resample if required
         x0 = self._params.initial_value()
         self.set_params(x0)
@@ -34,7 +34,7 @@ class Problem:
             cost0 = self.run()
             nsamples += 1
         if nsamples > 0:
-            pybop_params.update(initial_values=x0)
+            self._params.update(initial_values=x0)
 
         if np.isinf(np.abs(cost0)):
             raise ValueError("The initial parameter values return an infinite cost.")

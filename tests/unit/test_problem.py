@@ -282,8 +282,11 @@ class TestProblem:
 
     def test_build_no_parameters(self, dataset):
         builder = pybop.builders.Python()
-        builder.add_func(lambda x: x**2)
+        builder.set_simulation(lambda x: x**2)
         builder.set_dataset(dataset)
+        builder.add_cost(
+            pybop.NewMeanSquaredError("Output", "Output", weighting="equal")
+        )
         with pytest.raises(
             ValueError, match="No parameters have been added to the builder."
         ):
