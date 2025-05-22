@@ -19,11 +19,11 @@ class PybammProblem(Problem):
         cost_names: list[str] = None,
         cost_weights: Union[list, np.array] = None,
     ):
-        super().__init__(pybop_params=pybop_params)
         self._pipeline = pybamm_pipeline
         self._cost_names = cost_names
         self._cost_weights = cost_weights
         self._domain = "Time [s]"
+        super().__init__(pybop_params=pybop_params)
 
     def set_params(self, p: np.ndarray) -> None:
         """

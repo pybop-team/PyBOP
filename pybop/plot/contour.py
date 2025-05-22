@@ -5,7 +5,7 @@ from typing import Union
 import numpy as np
 from scipy.interpolate import griddata
 
-from pybop import BaseCost, BaseOptimiser, Optimisation
+from pybop import BaseCost, BaseOptimiser
 from pybop.plot.plotly_manager import PlotlyManager
 
 
@@ -63,7 +63,7 @@ def contour(
     cost = cost_call = call_object
 
     # Assign input as a cost or optimisation object
-    if isinstance(call_object, (BaseOptimiser, Optimisation)):
+    if isinstance(call_object, BaseOptimiser):
         plot_optim = True
         optim = call_object
         cost = optim.cost

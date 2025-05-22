@@ -3,7 +3,7 @@ from typing import Callable, Union
 import numpy as np
 
 from pybop import PythonProblem
-from pybop.builders import BaseBuilder
+from pybop.builders.base import BaseBuilder
 from pybop.costs.base_cost import BaseCost
 
 
@@ -109,11 +109,13 @@ class Python(BaseBuilder):
         if len(self._costs) != len(self._cost_weights):
             raise ValueError("Number of cost weights and costs do not match")
 
+        pybop_parameters = self.build_parameters()
+
         # Create and return the problem
         return PythonProblem(
             model=self._model,
             model_with_sens=self._model_with_sens,
-            pybop_params=self._pybop_parameters,
+            pybop_params=pybop_parameters,
             costs=self._costs,
             cost_weights=self._cost_weights,
             dataset=self._dataset.as_dict()

@@ -3,8 +3,10 @@
 #
 
 import warnings
+from typing import Optional
 
 import numpy as np
+import pints
 from pints import Optimiser as PintsOptimiser
 
 
@@ -55,7 +57,13 @@ class AdamWImpl(PintsOptimiser):
            https://doi.org/10.48550/arXiv.1711.05101
     """
 
-    def __init__(self, x0, sigma0=0.015, boundaries=None):
+    def __init__(
+        self,
+        x0: np.ndarray,
+        sigma0: Optional[list[float]],
+        boundaries: Optional[pints.Boundaries],
+    ):
+        sigma0 = sigma0 or [0.015] * len(x0)
         if boundaries is not None:
             warnings.warn(
                 "Boundaries ignored by AdamW",

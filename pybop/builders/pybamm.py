@@ -2,14 +2,14 @@ from typing import Union
 
 import pybamm
 
-from pybop import PybammProblem, builders
+import pybop
 from pybop._pybamm_pipeline import PybammPipeline
+from pybop.builders.base import BaseBuilder
 from pybop.costs.pybamm_cost import PybammCost
 
 
-class Pybamm(builders.BaseBuilder):
+class Pybamm(BaseBuilder):
     def __init__(self):
-        super().__init__()
         self._model = None
         self._solver = None
         self._parameter_values = None
@@ -17,6 +17,7 @@ class Pybamm(builders.BaseBuilder):
         self._initial_state = None
         self._pipeline = None
         self.domain = "Time [s]"
+        super().__init__()
 
     def set_simulation(
         self,
@@ -37,7 +38,7 @@ class Pybamm(builders.BaseBuilder):
         self._costs.append(cost)
         self._cost_weights.append(weight)
 
-    def build(self) -> PybammProblem:
+    def build(self) -> pybop.PybammProblem:
         """
         Builds the Pybamm problem given the provided objects.
 
@@ -70,8 +71,8 @@ class Pybamm(builders.BaseBuilder):
 
         # Proceed to building the pipeline
         model = self._model
-        param = self._parameter_values
-        pybop_parameters = self._pybop_parameters
+        pybamm_parameter_values = self._parameter_values
+        pybop_parameters = self.build_parameters()
 
         # Build pybamm if not already built
         if not model._built:  # noqa: SLF001
@@ -79,18 +80,18 @@ class Pybamm(builders.BaseBuilder):
 
         # Set the control variable
         if self._dataset is not None:
-            self._set_control_variable()
+            self._set_control_variable(pybop_parameters)
 
         # add costs
         cost_names = []
         for cost in self._costs:
-            cost.add_to_model(model, param, self._dataset)
+            cost.add_to_model(model, pybamm_parameter_values, self._dataset)
             cost_names.append(cost.metadata().variable_name)
 
         # Construct the pipeline
         pipeline = PybammPipeline(
             model,
-            param,
+            pybamm_parameter_values,
             pybop_parameters,
             self._solver,
             t_start=self._dataset[self.domain][0],
@@ -102,14 +103,14 @@ class Pybamm(builders.BaseBuilder):
         # Build the pipeline
         pipeline.build()
 
-        return PybammProblem(
+        return pybop.PybammProblem(
             pybamm_pipeline=pipeline,
-            pybop_params=self._pybop_parameters,
+            pybop_params=pybop_parameters,
             cost_names=cost_names,
             cost_weights=self._cost_weights,
         )
 
-    def _set_control_variable(self) -> None:
+    def _set_control_variable(self, pybop_parameters: pybop.Parameters) -> None:
         """
         Updates the pybamm parameter values to match the control variable
         time-series. This is conventionally the applied current; however,
@@ -119,7 +120,7 @@ class Pybamm(builders.BaseBuilder):
             self._dataset.control_variable
         )  # Add a control attr to dataset w/ catches
         if control in self._parameter_values:
-            if control not in self._pybop_parameters.keys():
+            if control not in pybop_parameters:
                 control_interpolant = pybamm.Interpolant(
                     self._dataset["Time [s]"],
                     self._dataset[control],
