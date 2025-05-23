@@ -405,3 +405,49 @@ class TestProblem:
             ValueError, match="No parameters have been added to the builder."
         ):
             builder.build()
+
+    def test_parameter_sensitivities(
+        self, model, parameter_values, experiment, dataset
+    ):
+        builder = pybop.builders.Pybamm()
+        builder.set_dataset(dataset)
+        builder.set_simulation(
+            model,
+            parameter_values=parameter_values,
+            solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction",
+                initial_value=0.6,
+                bounds=[0.5, 0.8],
+            )
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Positive electrode active material volume fraction",
+                initial_value=0.6,
+                bounds=[0.5, 0.8],
+            )
+        )
+        builder.add_cost(
+            pybop.costs.pybamm.NegativeGaussianLogLikelihood(
+                "Voltage [V]", "Voltage [V]", 1e-2
+            )
+        )
+        problem = builder.build()
+
+        result = problem.sensitivity_analysis(4)
+
+        # Assertions
+        assert isinstance(result, dict)
+        assert "S1" in result
+        assert "ST" in result
+        assert isinstance(result["S1"], np.ndarray)
+        assert isinstance(result["S2"], np.ndarray)
+        assert isinstance(result["ST"], np.ndarray)
+        assert isinstance(result["S1_conf"], np.ndarray)
+        assert isinstance(result["ST_conf"], np.ndarray)
+        assert isinstance(result["S2_conf"], np.ndarray)
+        assert result["S1"].shape == (2,)
+        assert result["ST"].shape == (2,)

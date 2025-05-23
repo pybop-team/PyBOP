@@ -2,7 +2,12 @@ from .pybamm_cost import (
     BaseCost,
     PybammExpressionMetadata,
     PybammParameterMetadata,
-    SumSquaredError,
+    SumOfPower,
+    Minkowski,
+    RootMeanSquaredError,
+    MeanSquaredError,
     MeanAbsoluteError,
+    SumSquaredError,
     NegativeGaussianLogLikelihood,
+    ScaledCost,
 )

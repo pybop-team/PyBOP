@@ -431,3 +431,40 @@ class NegativeGaussianLogLikelihood(BaseCost):
             expression=pybamm.DiscreteTimeSum(sum_expr),
             parameters=parameters,
         )
+
+
+class ScaledCost(BaseCost):
+    """
+    This class scales a BaseCost class by the number of observations.
+    The scaling factor is given below:
+
+    .. math::
+       \\mathcal{\\hat{L(\theta)}} = \frac{1}{N} \\mathcal{L(\theta)}
+
+    This class returns scaled numerical values with lower magnitude than the
+    BaseCost, which can improve optimiser convergence in certain cases.
+    """
+
+    def __init__(
+        self,
+        loglikelihood: BaseCost,
+    ):
+        super().__init__()
+        self._loglikelihood = loglikelihood
+
+    def variable_expression(
+        self,
+        model: pybamm.BaseModel,
+        dataset: Optional[Dataset] = None,
+    ) -> PybammExpressionMetadata:
+        # Check args
+        name = NegativeGaussianLogLikelihood.make_unique_cost_name()
+        loglikelihood_metadata = self._loglikelihood.variable_expression(model, dataset)
+
+        return PybammExpressionMetadata(
+            variable_name=name,
+            expression=loglikelihood_metadata.expression
+            * pybamm.Scalar(1.0)
+            / len(dataset[self._data_name]),
+            parameters=loglikelihood_metadata.parameters,
+        )

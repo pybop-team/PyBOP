@@ -1,6 +1,8 @@
 from typing import Optional
 
 import numpy as np
+from SALib.analyze import sobol
+from SALib.sample.sobol import sample
 
 from pybop import Parameters
 
@@ -75,6 +77,43 @@ class Problem:
         Returns the names of the parameters set for the simulation and cost function.
         """
         return self._param_names
+
+    def sensitivity_analysis(self, n_samples: int = 256):
+        """
+        Computes the parameter sensitivities on the cost function using
+        SOBOL analyse from the SALib module [1].
+
+        Parameters
+        ----------
+        n_samples : int, optional
+            Number of samples for SOBOL sensitivity analysis,
+            performs best as order of 2, i.e. 128, 256, etc.
+
+        References
+        ----------
+        .. [1] Iwanaga, T., Usher, W., & Herman, J. (2022). Toward SALib 2.0:
+               Advancing the accessibility and interpretability of global sensitivity
+               analyses. Socio-Environmental Systems Modelling, 4, 18155. doi:10.18174/sesmo.18155
+
+        Returns
+        -------
+        Sensitivities : dict
+        """
+
+        salib_dict = {
+            "names": list(self._params.keys()),
+            "bounds": self._params.bounds_as_numpy(),
+            "num_vars": len(self._params.keys()),
+        }
+
+        # Create samples, compute cost
+        param_values = sample(salib_dict, n_samples)
+        costs = []
+        for val in param_values:
+            self.set_params(val)
+            costs.append(self.run())
+
+        return sobol.analyze(salib_dict, np.asarray(costs))
 
     def observed_fisher(self, x: np.ndarray) -> np.ndarray:
         """

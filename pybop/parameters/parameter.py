@@ -543,9 +543,9 @@ class Parameters:
         ]
         return ComposedTransformation(valid_transformations)
 
-    def get_bounds_for_plotly(self, apply_transform: bool = False) -> np.ndarray:
+    def bounds_as_numpy(self, apply_transform: bool = False) -> np.ndarray:
         """
-        Retrieve parameter bounds in the format expected by Plotly.
+        Retrieve parameter bounds in numpy format.
 
         Returns
         -------

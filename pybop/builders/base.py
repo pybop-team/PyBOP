@@ -55,7 +55,3 @@ class BaseBuilder(ABC):
     @abstractmethod
     def build(self) -> Problem:
         raise NotImplementedError
-
-
-# Add docstrings
-# Add default methods
