@@ -116,38 +116,60 @@ class TestCosts:
 
         np.testing.assert_allclose(val2 / val1, 5.5)
 
-    def test_error_measures(self, problem, cost_class, expected_name):
-        cost = cost_class(problem)
-        assert cost.name == expected_name
+    @pytest.mark.parametrize(
+        "pybop_cost",
+        [
+            pybop.MeanSquaredError,
+            pybop.RootMeanSquaredError,
+            pybop.MeanAbsoluteError,
+            pybop.SumSquaredError,
+            pybop.Minkowski,
+            pybop.SumOfPower,
+            # pybop.NegativeGaussianLogLikelihood,
+        ],
+    )
+    def test_error_measures(self, pybop_cost):
+        res = np.asarray([i for i in range(10)])
+        dy = np.ones((2, 10))
 
-        # Test cost direction
-        higher_cost = cost([0.55])
-        lower_cost = cost([0.52])
-        assert higher_cost > lower_cost or (
-            higher_cost == lower_cost and not np.isfinite(higher_cost)
-        )
+        # Test w/o sensitivities
+        cost = pybop_cost(weighting=1)
+        val = cost(res)
+        assert val > 0
 
-        e, de = cost([0.5], calculate_grad=True)
+        # Test w/ sensitivities
+        val, grad = cost(res, dy)
+        assert val > 0
+        assert grad > 0
 
-        assert np.isscalar(e)
-        assert isinstance(de, np.ndarray)
-
-        # Test exception for non-numeric inputs
-        with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
-            cost(["StringInputShouldNotWork"], calculate_grad=True)
-
-        with pytest.warns(UserWarning) as record:
-            cost([1.1], calculate_grad=True)
-
-        for i in range(len(record)):
-            assert "Non-physical point encountered" in str(record[i].message)
-
-        # Test infeasible locations
-        cost.problem.model.allow_infeasible_solutions = False
-        assert cost([1.1]) == np.inf
-        assert cost([1.1], calculate_grad=True) == (np.inf, cost._de)
-        assert cost([0.01]) == np.inf
-        assert cost([0.01], calculate_grad=True) == (np.inf, cost._de)
+        # # Test cost direction
+        # higher_cost = cost([0.55])
+        # lower_cost = cost([0.52])
+        # assert higher_cost > lower_cost or (
+        #     higher_cost == lower_cost and not np.isfinite(higher_cost)
+        # )
+        #
+        # e, de = cost([0.5], calculate_grad=True)
+        #
+        # assert np.isscalar(e)
+        # assert isinstance(de, np.ndarray)
+        #
+        # # Test exception for non-numeric inputs
+        # with pytest.raises(TypeError, match="Inputs must be a dictionary or numeric."):
+        #     cost(["StringInputShouldNotWork"], calculate_grad=True)
+        #
+        # with pytest.warns(UserWarning) as record:
+        #     cost([1.1], calculate_grad=True)
+        #
+        # for i in range(len(record)):
+        #     assert "Non-physical point encountered" in str(record[i].message)
+        #
+        # # Test infeasible locations
+        # cost.problem.model.allow_infeasible_solutions = False
+        # assert cost([1.1]) == np.inf
+        # assert cost([1.1], calculate_grad=True) == (np.inf, cost._de)
+        # assert cost([0.01]) == np.inf
+        # assert cost([0.01], calculate_grad=True) == (np.inf, cost._de)
 
     def test_minkowski(self):
         # Incorrect order

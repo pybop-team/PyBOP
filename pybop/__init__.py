@@ -109,7 +109,7 @@ from .costs.fitting_costs import (
     FittingCost,
     ObserverCost,
 )
-from .costs.error_measures_old import (
+from .costs.error_measures import (
     RootMeanSquaredError,
     MeanAbsoluteError,
     MeanSquaredError,
@@ -117,7 +117,6 @@ from .costs.error_measures_old import (
     Minkowski,
     SumOfPower,
 )
-from .costs.error_measures import NewMeanSquaredError
 from .costs.design_costs import (
     DesignCost,
     GravimetricEnergyDensity,

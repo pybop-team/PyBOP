@@ -5,7 +5,7 @@ import numpy as np
 from pybop.costs.base_cost import BaseCost
 
 
-class NewMeanSquaredError(BaseCost):
+class MeanSquaredError(BaseCost):
     """
     Mean square error (MSE) cost function.
 
@@ -140,10 +140,8 @@ class Minkowski(BaseCost):
         The order of the Minkowski distance.
     """
 
-    def __init__(
-        self, problem, p: float = 2.0, weighting: Union[str, np.ndarray] = None
-    ):
-        super().__init__()
+    def __init__(self, p: float = 2.0, weighting: Union[str, np.ndarray] = None):
+        super().__init__(weighting=weighting)
         if p < 0:
             raise ValueError(
                 "The order of the Minkowski distance must be greater than 0."
@@ -202,10 +200,8 @@ class SumOfPower(BaseCost):
         The power order for Sum of Power.
     """
 
-    def __init__(
-        self, problem, p: float = 2.0, weighting: Union[str, np.ndarray] = None
-    ):
-        super().__init__()
+    def __init__(self, p: float = 2.0, weighting: Union[str, np.ndarray] = None):
+        super().__init__(weighting=weighting)
         if p < 0:
             raise ValueError("The order of 'p' must be greater than 0.")
         elif not np.isfinite(p):

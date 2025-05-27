@@ -305,7 +305,7 @@ class TestProblem:
                 "Positive electrode active material volume fraction", initial_value=0.6
             )
         )
-        builder.add_cost(pybop.NewMeanSquaredError(weighting="equal"))
+        builder.add_cost(pybop.MeanSquaredError(weighting="equal"))
         problem = builder.build()
 
         assert problem is not None
@@ -327,7 +327,7 @@ class TestProblem:
         builder.add_parameter(
             pybop.Parameter("Positive particle radius [m]", initial_value=1e-5)
         )
-        builder.add_cost(pybop.NewMeanSquaredError(weighting="domain"))
+        builder.add_cost(pybop.MeanSquaredError(weighting="domain"))
         problem = builder.build()
 
         assert problem is not None
