@@ -1,9 +1,9 @@
-from typing import Callable
+from collections.abc import Sequence
+from typing import Callable, Optional
 
 import numpy as np
 
 from pybop import Parameters
-from pybop.costs.base_cost import BaseCost
 from pybop.problems.base_problem import Problem
 
 
@@ -11,125 +11,150 @@ class PythonProblem(Problem):
     """
     Defines a problem that uses Python callables for simulation and cost evaluation.
 
-    This problem type allows for direct integration with custom Python functions
-    instead of relying on external simulation frameworks like PyBaMM.
+    Provides a flexible interface for custom Python functions instead of relying
+    on external simulation frameworks like PyBaMM. Designed to work with the Python
+    builder pattern for progressive model composition.
+
+    The problem supports either standard models OR models with sensitivities, but not both
+    simultaneously.
 
     Parameters
     ----------
-    model : Callable
-        The function that performs the simulation
-    model_with_sens : Callable, optional
-        Function that performs simulation and returns sensitivities
-    pybop_params : Parameters
-        Container for optimisation parameters
-    costs : list
-        Cost objects either Callable | BaseCost
-    cost_weights : list
-        Weights for each cost component
+    model : Sequence[Callable], optional
+        Sequence of functions that perform simulation. Each function should accept
+        parameter values and return a numeric result or dict of results.
+    model_with_sens : Sequence[Callable], optional
+        Sequence of functions that perform simulation and return sensitivities.
+        Each function should accept parameter values and return (results, gradients).
+    pybop_params : Parameters, optional
+        Container for optimisation parameters defining the parameter space.
+    weights : Sequence[float], optional
+        Weights for each callable component. Length must match the number of models.
+
+    Raises
+    ------
+    ValueError
+        If both model types are provided, if neither is provided, or if weights
+        length doesn't match model count.
+
+    Examples
+    --------
+    >>> def quadratic_model(params):
+    ...     return np.sum(params**2)
+    >>>
+    >>> problem = PythonProblem(
+    ...     model=[quadratic_model],
+    ...     pybop_params=my_params,
+    ...     weights=[1.0]
+    ... )
+    >>> result = problem.run()
+
+    Notes
+    -----
+    This class is typically instantiated via the Python builder class rather
+    than directly, which provides a more convenient fluent interface.
     """
 
     def __init__(
         self,
-        model: Callable,
-        model_with_sens: Callable = None,
-        pybop_params: Parameters = None,
-        costs: list[BaseCost] = None,
-        cost_weights: list[float] = None,
-        dataset: dict[str, np.ndarray] = None,
+        model: Optional[Sequence[Callable]] = None,
+        model_with_sens: Optional[Sequence[Callable]] = None,
+        pybop_params: Optional[Parameters] = None,
+        weights: Optional[Sequence[float]] = None,
     ):
         super().__init__(pybop_params=pybop_params)
-        self._model = model
-        self._model_with_sens = model_with_sens
-        self._costs = costs
-        self._cost_weights = cost_weights
-        self._dataset = dataset
+        self._model = tuple(model) if model is not None else None
+        self._model_with_sens = (
+            tuple(model_with_sens) if model_with_sens is not None else None
+        )
+        self._weights = weights
 
     def run(self) -> float:
         """
-        Evaluates the model and computes the weighted cost.
+        Execute all standard models with current parameters and return weighted sum.
+
+        This method evaluates each model function with the current parameter values,
+        applies the corresponding weights, and returns the sum.
 
         Returns
         -------
         float
-            The weighted sum of all cost components
+            Weighted sum of all model results
+
+        Raises
+        ------
+        RuntimeError
+            If no standard models are available (i.e., only sensitivity models exist)
         """
-        self.check_set_params_called()
 
-        # Run the model with current parameters
-        results = self._model(self.params.current_value())
+        if self._model is None:
+            raise RuntimeError(
+                "No standard models configured. This problem uses sensitivity models. "
+                "Use run_with_sensitivities() instead."
+            )
 
-        total_cost: float = 0.0
+        # Vectorised evaluation
+        try:
+            results = np.fromiter(
+                (model(self.params.current_value()) for model in self._model),
+                dtype=np.float64,
+                count=len(self._model),
+            )
+        except (TypeError, ValueError) as e:
+            raise RuntimeError(f"Model evaluation failed: {e}") from e
 
-        # Calculate weighted costs and gradients
-        for i, cost_func in enumerate(self._costs):
-            if hasattr(cost_func, "model_variable") and hasattr(
-                cost_func, "data_column"
-            ):
-                for column, signal in zip(
-                    cost_func.data_column, cost_func.model_variable
-                ):
-                    if signal not in results or column not in self._dataset:
-                        raise KeyError(
-                            f"Signal '{signal}' or column '{column}' not found"
-                        )
-
-                    residual = results[signal] - self._dataset[column]
-                    val = cost_func(residual)
-                    total_cost += val * self._cost_weights[i]
-            else:
-                raise RuntimeError(
-                    "Cost function must have model_variable and data_column"
-                )
-
-        return total_cost
+        return np.dot(results, self._weights)
 
     def run_with_sensitivities(self) -> tuple[float, np.ndarray]:
         """
-        Evaluates the model and returns both cost and sensitivities.
+        Execute all sensitivity models and return weighted results with gradients.
+
+        This method evaluates each sensitivity model function, which returns both
+        values and gradients, then computes weighted sums for both components.
 
         Returns
         -------
         tuple[float, np.ndarray]
-            The cost value and array of parameter gradients
+            Tuple containing:
+            - Weighted sum of model values (float)
+            - Weighted sum of parameter gradients (np.ndarray)
+
+        Raises
+        ------
+        RuntimeError
+            If no sensitivity models are available or if model evaluation fails
         """
-        self.check_set_params_called()
         if self._model_with_sens is None:
-            raise RuntimeError("No sensitivity function provided")
+            raise RuntimeError(
+                "No sensitivity models configured. This problem uses standard models. "
+                "Use run() instead."
+            )
 
-        # Run the model with current parameters
-        results, sens = self._model_with_sens(self.params.current_value())
+        # Pre-allocate arrays
+        n_models = len(self._model_with_sens)
+        values = np.empty(n_models, dtype=np.float64)
+        gradients = []
 
-        if results is None or sens is None:
-            raise RuntimeError("Model returned empty results or sensitivities")
+        # Evaluate models and collect results
+        try:
+            for i, model in enumerate(self._model_with_sens):
+                val, grad = model(self.params.current_value())
+                values[i] = float(val)  # Ensure scalar
+                gradients.append(np.asarray(grad, dtype=np.float64))
+        except (TypeError, ValueError, AttributeError) as e:
+            raise RuntimeError(f"Sensitivity model evaluation failed: {e}") from e
 
-        total_cost = 0.0
-        total_grad = np.zeros(len(self.params))
+        # Compute weighted results
+        weighted_value = np.dot(values, self._weights)
 
-        # Calculate weighted costs and gradients
-        for i, cost_func in enumerate(self._costs):
-            if hasattr(cost_func, "model_variable") and hasattr(
-                cost_func, "data_column"
-            ):
-                for column, signal in zip(
-                    cost_func.data_column, cost_func.model_variable
-                ):
-                    if signal not in results or column not in self._dataset:
-                        raise KeyError(
-                            f"Signal '{signal}' or column '{column}' not found"
-                        )
-                    if signal not in sens:
-                        raise KeyError(f"Sensitivity for '{signal}' not found")
+        # Stack and weight gradients
+        if gradients:
+            grad_matrix = np.stack(gradients, axis=0)
+            weighted_gradient = np.dot(self._weights, grad_matrix)
+        else:
+            weighted_gradient = np.array([])
 
-                    residual = results[signal] - self._dataset[column]
-                    val, grad = cost_func(residual, dy=sens[signal])
-                    total_cost += val * self._cost_weights[i]
-                    total_grad += grad * self._cost_weights[i]
-            else:
-                raise RuntimeError(
-                    "Cost function must have model_variable and data_column"
-                )
-
-        return total_cost, total_grad
+        return weighted_value, weighted_gradient
 
     def set_params(self, p: np.ndarray) -> None:
         """

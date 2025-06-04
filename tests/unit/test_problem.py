@@ -202,19 +202,13 @@ class TestProblem:
         )
 
         def model(x: Union[float, list]):
-            output = []
-            for i in dataset["Time / s"]:
-                output.append(x * i**2)
-            return {"Output": output}
+            output = x * dataset["Time / s"] ** 2
+            sse = np.sum((output - dataset["Output"]) ** 2)
+            return sse
 
         builder = pybop.builders.Python()
         builder.add_parameter(pybop.Parameter("x", initial_value=1))
-        builder.set_simulation(model)
-        builder.set_dataset(dataset)
-
-        builder.add_cost(
-            pybop.NewMeanSquaredError("Output", "Output", weighting="equal")
-        )
+        builder.add_func(model)
         problem = builder.build()
 
         assert problem is not None
@@ -226,9 +220,13 @@ class TestProblem:
         def model_with_sens(x: Union[float, list]):
             output = x * dataset["Time / s"] ** 2
             sens = 2 * x * dataset["Time / s"]
-            return {"Output": output}, {"Output": sens}
+            sse = np.sum((output - dataset["Output"]) ** 2)
+            sse_grad = 2 * np.sum(output - dataset["Output"]) * np.sum(sens)
+            return sse, sse_grad
 
-        builder.set_simulation(model_with_sens=model_with_sens)
+        builder = pybop.builders.Python()
+        builder.add_parameter(pybop.Parameter("x", initial_value=1))
+        builder.add_func_with_sens(model_with_sens=model_with_sens)
         problem_sens = builder.build()
         assert problem_sens is not None
         problem_sens.set_params(np.asarray([3.0]))
@@ -237,8 +235,8 @@ class TestProblem:
         assert sens > 0
 
         # Test incorrect model
-        with pytest.raises(TypeError, match="The model must be a callable obj"):
-            builder.set_simulation([2.0])
+        with pytest.raises(TypeError, match="Model must be callable"):
+            builder.add_func([2.0])
 
     def test_build_with_initial_state(
         self, first_model, parameter_values, experiment, dataset
@@ -282,11 +280,7 @@ class TestProblem:
 
     def test_build_no_parameters(self, dataset):
         builder = pybop.builders.Python()
-        builder.set_simulation(lambda x: x**2)
-        builder.set_dataset(dataset)
-        builder.add_cost(
-            pybop.NewMeanSquaredError("Output", "Output", weighting="equal")
-        )
+        builder.add_func(lambda x: x**2)
         with pytest.raises(
             ValueError, match="No parameters have been added to the builder."
         ):

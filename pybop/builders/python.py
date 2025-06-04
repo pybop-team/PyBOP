@@ -1,127 +1,127 @@
-from typing import Callable, Union
-
-import numpy as np
+from typing import Callable
 
 from pybop import PythonProblem
 from pybop.builders.base import BaseBuilder
-from pybop.costs.base_cost import BaseCost
 
 
 class Python(BaseBuilder):
     """
-    Builder for Python-based optimisation problems.
+    Builder for Python-based problems.
 
-    This builder allows for the creation of optimisation problems using custom
-    Python functions instead of specialised simulation frameworks.
+    This builder creates problems using custom Python functions instead of
+    specialised simulation frameworks. It supports both standard models and
+    models with sensitivity analysis.
 
+    If this problem is used by Pybop Optimisation or Sampling classes, the
+    functions will be minimised.
+
+    Examples
+    --------
+    >>> builder = Python()
+    >>> builder.add_func(my_model_function, weight=1.5)
+    >>> problem = builder.build()
     """
 
     def __init__(self):
         super().__init__()
-        self._model = None
-        self._model_with_sens = None
+        self._models: list[Callable] = []
+        self._models_with_sens: list[Callable] = []
+        self._weights: list[float] = []
 
-    def set_simulation(
-        self,
-        model: Callable = None,
-        model_with_sens: Callable = None,
-    ) -> None:
+    def add_func(self, model: Callable, weight: float = 1.0) -> "Python":
         """
-        Set the simulation functions for the problem.
+        Add a simulation function to the problem.
 
         Parameters
         ----------
         model : Callable
-            Function that takes parameters and dataset, returns simulation results
-            Expected signature: func(params: list[float] or float) -> dict
-        model_with_sens : Callable, optional
-            Function that returns both results and sensitivities
-            Expected signature: func(params: list[float] or float) -> tuple[dict, dict]
+            Function with signature: func(params: Union[List[float], float]) -> dict
+            Returns dict where keys match signal names and values are predictions.
+        weight : float, default=1.0
+            Weight for this model in multi-objective optimisation.
 
-        where the keys in the dicts match the signal names and the values are
-        list-like objects containing the predicted values.
+        Returns
+        -------
+        Python
+            Self for method chaining.
+
+        Raises
+        ------
+        TypeError
+            If model is not callable.
         """
-        if model is not None and not callable(model):
-            raise TypeError("The model must be a callable obj")
+        if not callable(model):
+            raise TypeError("Model must be callable")
 
-        if model_with_sens is not None and not callable(model_with_sens):
-            raise TypeError("The model must be a callable obj")
+        self._models.append(model)
+        self._weights.append(weight)
+        return self
 
-        self._model = model
-        self._model_with_sens = model_with_sens
-
-    def add_cost(self, cost: Union[BaseCost, Callable], weight: float = 1.0) -> None:
+    def add_func_with_sens(
+        self, model_with_sens: Callable, weight: float = 1.0
+    ) -> "Python":
         """
-        Add a cost component to the problem.
+        Add a simulation function with sensitivity analysis to the problem.
 
         Parameters
         ----------
-        cost : Union[BaseCost, Callable]
-            Cost function
-        weight : float, optional
-            Weight for this cost component, by default 1.0
+        model_with_sens : Callable
+            Function with signature: func(params: Union[List[float], float]) -> Tuple[dict, dict]
+            Returns (results, sensitivities) where both dicts have keys matching
+            signal names.
+        weight : float, default=1.0
+            Weight for this model in multi-objective optimisation.
+
+        Returns
+        -------
+        Python
+            Self for method chaining.
+
+        Raises
+        ------
+        TypeError
+            If model_with_sens is not callable.
         """
-        if isinstance(cost, BaseCost):
-            if cost.weighting is None or cost.weighting == "equal":
-                cost.weighting = 1.0
-            elif cost.weighting == "domain" and self.domain is not None:
-                self._set_cost_domain_weighting(cost)
+        if not callable(model_with_sens):
+            raise TypeError("Model with sensitivities must be callable")
 
-        self._costs.append(cost)
-        self._cost_weights.append(weight)
-
-    def _set_cost_domain_weighting(self, cost):
-        """Calculate domain-based weighting."""
-        domain_data = self._dataset[self.domain]
-        domain_spacing = domain_data[1:] - domain_data[:-1]
-        mean_spacing = np.mean(domain_spacing)
-
-        # Create a domain weighting array in one operation
-        cost.weighting = np.concatenate(
-            (
-                [(mean_spacing + domain_spacing[0]) / 2],
-                (domain_spacing[1:] + domain_spacing[:-1]) / 2,
-                [(domain_spacing[-1] + mean_spacing) / 2],
-            )
-        ) * ((len(domain_data) - 1) / (domain_data[-1] - domain_data[0]))
+        self._models_with_sens.append(model_with_sens)
+        self._weights.append(weight)
+        return self
 
     def build(self) -> PythonProblem:
         """
-        Build the Python problem with the configured components.
+        Build the Python problem.
 
         Returns
         -------
         PythonProblem
-            The constructed optimisation problem
+            The constructed problem with all configured components.
 
         Raises
         ------
         ValueError
-            If required components are missing
+            If no models are provided or if both model types are specified.
         """
-        # Validate required components
-        if self._model is None and self._model_with_sens is None:
-            raise ValueError("A model function must be provided before building")
+        if not self._models and not self._models_with_sens:
+            raise ValueError("At least one model function must be provided")
 
-        if not self._costs:
-            raise ValueError("At least one cost must be provided before building")
+        if self._models and self._models_with_sens:
+            raise ValueError(
+                "Cannot specify both standard models and models with sensitivities"
+            )
 
-        if self._dataset is None:
-            raise ValueError("A dataset must be provided before building")
-
-        if len(self._costs) != len(self._cost_weights):
-            raise ValueError("Number of cost weights and costs do not match")
-
-        pybop_parameters = self.build_parameters()
-
-        # Create and return the problem
         return PythonProblem(
-            model=self._model,
-            model_with_sens=self._model_with_sens,
-            pybop_params=pybop_parameters,
-            costs=self._costs,
-            cost_weights=self._cost_weights,
-            dataset=self._dataset.as_dict()
-            if hasattr(self._dataset, "as_dict")
-            else self._dataset,
+            model=self._models or None,
+            model_with_sens=self._models_with_sens or None,
+            pybop_params=self.build_parameters(),
+            weights=self._weights,
+        )
+
+    def __repr__(self) -> str:
+        """Return string representation of the builder state."""
+        return (
+            f"Python(models={len(self._models)}, "
+            f"models_with_sens={len(self._models_with_sens)}, "
+            f"weights={len(self._weights)})"
         )
