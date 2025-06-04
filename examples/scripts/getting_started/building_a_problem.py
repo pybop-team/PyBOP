@@ -45,9 +45,8 @@ builder.add_parameter(
         initial_value=0.6,
     )
 )
-builder.add_cost(
-    pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", "Voltage [V]")
-)
+builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]", 1.0))
+builder.set_experiment(experiment)
 
 # Build the problem
 problem = builder.build()

@@ -16,6 +16,7 @@ class Pybamm(BaseBuilder):
         self._rebuild_parameters = None
         self._initial_state = None
         self._pipeline = None
+        self._experiment = None
         self._costs: list[PybammCost] = []
         self._cost_weights: list[float] = []
         self.domain = "Time [s]"
@@ -66,6 +67,9 @@ class Pybamm(BaseBuilder):
         """
         self._costs.append(cost)
         self._cost_weights.append(weight)
+
+    def set_experiment(self, experiment: pybamm.Experiment) -> None:
+        self._experiment = experiment
 
     def build(self) -> pybop.PybammProblem:
         """
@@ -151,6 +155,7 @@ class Pybamm(BaseBuilder):
             pybamm_parameter_values,
             pybop_parameters,
             self._solver,
+            experiment=self._experiment,
             t_start=self._dataset[self.domain][0],
             t_end=self._dataset[self.domain][-1],
             t_interp=self._dataset[self.domain],

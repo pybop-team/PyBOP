@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Union
 
 import pybop
 from pybop import Parameter
@@ -42,7 +43,7 @@ class BaseBuilder(ABC):
         """
         self._dataset = dataset.copy()
 
-    def add_parameter(self, parameter: Parameter):
+    def add_parameter(self, parameter: Union[Parameter, dict]):
         """
         Add a parameter to be optimised.
 
