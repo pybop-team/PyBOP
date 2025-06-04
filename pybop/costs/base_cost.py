@@ -21,8 +21,6 @@ class BaseCost:
         weighting: Union[str, np.ndarray] = None,
     ):
         self.weighting = weighting
-        self._model_variable = [model_variable]
-        self._data_column = [data_column]
 
     def __call__(
         self,
@@ -48,11 +46,3 @@ class BaseCost:
             gradient with dimension (len(parameters)), otherwise returns only the cost.
         """
         raise NotImplementedError
-
-    @property
-    def model_variable(self):
-        return self._model_variable
-
-    @property
-    def data_column(self):
-        return self._data_column
