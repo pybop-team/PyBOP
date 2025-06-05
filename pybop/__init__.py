@@ -207,8 +207,8 @@ from .samplers.chain_processor import (
     MultiChainProcessor,
     SingleChainProcessor,
 )
-from .samplers.base_sampler import BaseSampler
-from .samplers.base_pints_sampler import BasePintsSampler
+from .samplers.base_sampler import BaseSampler, SamplerOptions
+from .samplers.base_pints_sampler import BasePintsSampler, PintsSamplerOptions
 from .samplers.pints_samplers import (
     NUTS,
     DREAM,

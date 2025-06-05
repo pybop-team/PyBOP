@@ -49,7 +49,7 @@ class TestPintsSamplers:
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
+        return [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.6, 0.2),
@@ -60,7 +60,7 @@ class TestPintsSamplers:
                 prior=pybop.Gaussian(0.55, 0.05),
                 bounds=[0.53, 0.57],
             ),
-        )
+        ]
 
     @pytest.fixture
     def model(self):
@@ -68,18 +68,13 @@ class TestPintsSamplers:
 
     @pytest.fixture
     def log_posterior(self, model, parameters, dataset):
-        problem = pybop.FittingProblem(
-            model,
-            parameters,
-            dataset,
-        )
-        likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=0.01)
-        prior1 = pybop.Gaussian(0.7, 0.02)
-        prior2 = pybop.Gaussian(0.6, 0.02)
-        composed_prior = pybop.JointLogPrior(prior1, prior2)
-        log_posterior = pybop.LogPosterior(likelihood, composed_prior)
-
-        return log_posterior
+        builder = pybop.Pybamm()
+        builder.set_simulation(model)
+        builder.set_dataset(dataset)
+        for p in parameters:
+            builder.add_parameter(p)
+        builder.add_cost(pybop.GaussianLogLikelihoodKnownSigma(sigma0=0.01))
+        return builder.build()
 
     @pytest.fixture
     def x0(self):
