@@ -14,12 +14,7 @@ class BaseCost:
         measure. Options: "equal"(default), "domain", or a custom numpy array.
     """
 
-    def __init__(
-        self,
-        model_variable: str,
-        data_column: str,
-        weighting: Union[str, np.ndarray] = None,
-    ):
+    def __init__(self, weighting: Union[str, np.ndarray] = None):
         self.weighting = weighting
 
     def __call__(
