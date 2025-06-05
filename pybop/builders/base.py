@@ -8,7 +8,7 @@ from pybop.problems.base_problem import Problem
 
 class BaseBuilder(ABC):
     """
-    Base class for building optimisation problems.
+    Base class for building problems with parameters that can be evaluated to return a scalar cost value
 
     This abstract class provides a foundation for specialised builders
     like Pybamm, PybammEIS, and Python. It handles common functionality such as
