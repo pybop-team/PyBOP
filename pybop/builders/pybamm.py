@@ -1,3 +1,5 @@
+from typing import Optional, Union
+
 import pybamm
 
 import pybop
@@ -8,15 +10,19 @@ from pybop.builders.utils import cell_mass, set_formation_concentrations
 from pybop.costs.pybamm import BaseLikelihood, DesignCost, PybammCost
 
 
+class TIME_PARAMS:
+    """Enum-like class for time params"""
+
+    time_params = {"t_start": None, "t_end": None, "t_interp": None}
+
+
 class Pybamm(BaseBuilder):
     def __init__(self):
-        self._model = None
-        self._solver = None
-        self._parameter_values = None
-        self._rebuild_parameters = None
-        self._initial_state = None
-        self._pipeline = None
-        self._experiment = None
+        self._model: Optional[pybamm.BaseModel] = None
+        self._solver: Optional[pybamm.BaseSolver] = None
+        self._parameter_values: Optional[pybamm.ParameterValues] = None
+        self._initial_state: Optional[Union[float, str]] = None
+        self._experiment: Optional[pybamm.Experiment] = None
         self._costs: list[PybammCost] = []
         self._cost_weights: list[float] = []
         self.domain = "Time [s]"
@@ -68,6 +74,10 @@ class Pybamm(BaseBuilder):
         self._costs.append(cost)
         self._cost_weights.append(weight)
 
+    def remove_costs(self) -> None:
+        self._costs = []
+        self._cost_weights = []
+
     def set_experiment(self, experiment: pybamm.Experiment) -> None:
         self._experiment = experiment
 
@@ -76,7 +86,7 @@ class Pybamm(BaseBuilder):
         Builds the Pybamm problem given the provided objects.
 
         This method requires the following attributes to be set:
-            - Dataset
+            - Dataset | Experiment
             - Pybamm model
             - Cost(s)
             - Pybop parameters
@@ -88,32 +98,22 @@ class Pybamm(BaseBuilder):
         """
 
         # Checks
-        if not len(self._cost_weights) == len(self._costs):
-            raise ValueError(
-                "Number of cost weights and the number of costs do not match"
-            )
-
-        if self._model is None:
-            raise ValueError("A Pybamm model needs to be provided before building.")
-
-        if self._costs is None:
-            raise ValueError("A cost must be provided before building.")
-
-        if self._dataset is None:
-            raise ValueError("A dataset must be provided before building.")
+        self._validate_build_requirements()
 
         # Proceed to building the pipeline
         model = self._model
         pybamm_parameter_values = self._parameter_values
         pybop_parameters = self.build_parameters()
+        time_params = TIME_PARAMS.time_params
 
         # Build pybamm if not already built
-        if not model._built:  # noqa: SLF001
+        if not model.built:
             model.build_model()
 
         # Set the control variable
         if self._dataset is not None:
             self._set_control_variable(pybop_parameters)
+            time_params = self._extract_time_parameters()
 
         # add costs
         cost_names = []
@@ -156,9 +156,9 @@ class Pybamm(BaseBuilder):
             pybop_parameters,
             self._solver,
             experiment=self._experiment,
-            t_start=self._dataset[self.domain][0],
-            t_end=self._dataset[self.domain][-1],
-            t_interp=self._dataset[self.domain],
+            t_start=time_params["t_start"],
+            t_end=time_params["t_end"],
+            t_interp=time_params["t_interp"],
             initial_state=self._initial_state,
             build_on_eval=self._build_on_eval,
         )
@@ -175,23 +175,46 @@ class Pybamm(BaseBuilder):
             use_last_cost_index=use_last_index,
         )
 
+    def _extract_time_parameters(self) -> dict:
+        """Extract time-related parameters from dataset."""
+        domain_data = self._dataset[self.domain]
+        return {
+            "t_start": domain_data[0],
+            "t_end": domain_data[-1],
+            "t_interp": domain_data,
+        }
+
+    def _validate_build_requirements(self) -> None:
+        """Validate all required components are set before building."""
+        if len(self._cost_weights) != len(self._costs):
+            raise ValueError("Number of cost weights and costs do not match")
+
+        if self._model is None:
+            raise ValueError("A Pybamm model needs to be provided before building")
+
+        if not self._costs:
+            raise ValueError("A cost must be provided before building")
+
+        if self._experiment is None and self._dataset is None:
+            raise ValueError("A dataset must be provided before building")
+
     def _set_control_variable(self, pybop_parameters: pybop.Parameters) -> None:
         """
         Updates the pybamm parameter values to match the control variable
         time-series. This is conventionally the applied current; however,
         alternative control methods are supported.
         """
-        control = (
-            self._dataset.control_variable
-        )  # Add a control attr to dataset w/ catches
-        if control in self._parameter_values:
-            if control not in pybop_parameters:
-                control_interpolant = pybamm.Interpolant(
-                    self._dataset["Time [s]"],
-                    self._dataset[control],
-                    pybamm.t,
-                )
-                if control == "Current [A]":
-                    self._parameter_values["Current function [A]"] = control_interpolant
-                else:
-                    self._parameter_values[control] = control_interpolant
+        control = self._dataset.control_variable
+
+        if control not in self._parameter_values or control in pybop_parameters:
+            return
+
+        control_interpolant = pybamm.Interpolant(
+            self._dataset["Time [s]"],
+            self._dataset[control],
+            pybamm.t,
+        )
+
+        # Handle special case for current
+        param_key = "Current function [A]" if control == "Current [A]" else control
+        self._parameter_values[param_key] = control_interpolant

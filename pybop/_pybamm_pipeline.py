@@ -44,6 +44,7 @@ class PybammPipeline:
         var_pts: dict | None = None,
         initial_state: float | str | None = None,
         build_on_eval: bool | None = None,
+        save_at_cycles: list[int] = None,
     ):
         """
         Parameters
@@ -93,11 +94,12 @@ class PybammPipeline:
             else self._determine_rebuild()
         )
         self._setup_operating_mode(experiment)
-
-        self._save_at_cycles = None
-        self.callbacks = None
+        self._save_at_cycles = save_at_cycles
+        self._callbacks = None
         self._starting_solution = None
         self._calc_esoh = False
+
+        self.requires_rebuild = True if initial_state else self._determine_rebuild()
         self.steps_to_built_models = None
         self.steps_to_built_solvers = None
         self.experiment_unique_steps_to_model = None
@@ -233,8 +235,10 @@ class PybammPipeline:
         return disc
 
     def build_for_experiment(self, geometry) -> None:
-        if self.steps_to_built_models:
-            return
+        # Rebuild handled through the rebuild method above, if this method
+        # has been called, we've already decided to rebuild
+        # if self.steps_to_built_models:
+        #     return
 
         self._setup_experiment_models()
         self._parameter_values.process_geometry(geometry)
@@ -330,7 +334,7 @@ class PybammPipeline:
                 self._solver,
                 self._calc_esoh,
                 self._starting_solution,
-                self.callbacks,
+                self._callbacks,
                 self._pybop_parameters.as_dict(),
                 # kwargs,
             )
@@ -441,7 +445,7 @@ class ExperimentRunner:
         self.solver = solver
         self.calc_esoh = calc_esoh
         self.save_at_cycles = self.sim.save_at_cycles
-        self.callbacks = callbacks
+        self._callbacks = callbacks
         self.inputs = inputs
         self.logs = logs
         self.timer = pybamm.Timer()
@@ -595,7 +599,7 @@ class ExperimentRunner:
                     model,
                     dt,
                     t_eval=step_t_eval,
-                    # t_interp=t_interp_processed,
+                    t_interp=t_interp_processed,
                     save=save_this_cycle,
                     inputs=step_inputs,
                     **kwargs,
@@ -614,7 +618,7 @@ class ExperimentRunner:
                         fail_text in term_reason.lower()
                         for fail_text in ["failure", "error", "diverged"]
                     ):
-                        self.callbacks.on_cycle_end(
+                        self._callbacks.on_cycle_end(
                             self.logs,
                             abs_cycle_num,
                             cycle_summary={"termination": "solver_failure"},
@@ -632,7 +636,7 @@ class ExperimentRunner:
                 pybamm.logger.error(
                     f"Step {step_num} in cycle {abs_cycle_num} failed: {e}"
                 )
-                # self.callbacks.on_cycle_end(
+                # self._callbacks.on_cycle_end(
                 #     self.logs,
                 #     abs_cycle_num,
                 #     cycle_summary={"termination": "step_failure", "error": str(e)},
@@ -668,7 +672,7 @@ class ExperimentRunner:
             solution_data["first_states"].append(cycle_first_state)
 
             # Log cycle completion
-            # self.callbacks.on_cycle_end(self.logs, abs_cycle_num, cycle_sum_vars)
+            # self._callbacks.on_cycle_end(self.logs, abs_cycle_num, cycle_sum_vars)
 
             return {
                 "continue": True,
@@ -679,7 +683,7 @@ class ExperimentRunner:
             }
         else:
             # For cycles not saved, still track basic info
-            self.callbacks.on_cycle_end(self.logs, abs_cycle_num, {})
+            self._callbacks.on_cycle_end(self.logs, abs_cycle_num, {})
 
             return {
                 "continue": True,
