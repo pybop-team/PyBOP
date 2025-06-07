@@ -20,6 +20,7 @@ class PybammProblem(Problem):
         cost_names: list[str] = None,
         cost_weights: Union[list, np.array] = None,
         use_posterior: bool = False,
+        use_last_cost_index: list[bool] = None,
     ):
         self._pipeline = pybamm_pipeline
         self._cost_names = cost_names or []
@@ -30,6 +31,7 @@ class PybammProblem(Problem):
         )
         self._domain = "Time [s]"
         self._use_posterior = use_posterior
+        self._use_last_cost_index = use_last_cost_index
 
         # Set up priors if we're using the posterior
         if self._use_posterior and pybop_params is not None:
@@ -52,7 +54,12 @@ class PybammProblem(Problem):
         """
         Compute the cost function value from a solution.
         """
-        return np.dot(self._cost_weights, [solution[n].data for n in self._cost_names])
+
+        costs = [
+            solution[name].data[-1] if use_last else solution[name].data
+            for use_last, name in zip(self._use_last_cost_index, self._cost_names)
+        ]
+        return np.dot(self._cost_weights, costs)
 
     def _add_prior_contribution(self, cost: float) -> float:
         """
@@ -117,21 +124,19 @@ class PybammProblem(Problem):
         # summed over the discrete time points, so we do that here
         # REMEMBER TO REMOVE THIS WHEN THE BUG IS FIXED!!!
         # https://github.com/pybamm-team/PyBaMM/pull/5008
-        cost_sens = []
-        for param_idx, param_name in enumerate(self._params.keys()):
-            aggregated_sens = np.asarray(
-                [
-                    np.sum(solution[cost_name].sensitivities[param_name])
-                    for cost_name in self._cost_names
-                ]
-            )
+        aggregated_sens = np.sum(
+            [
+                solution[cost_name].sensitivities["all"]
+                for cost_name in self._cost_names
+            ],
+            axis=0,
+        )
 
-            weighted_sensitivity = np.dot(aggregated_sens, self._cost_weights)
+        weighted_sensitivity = np.dot(aggregated_sens, self._cost_weights)
 
-            # Add prior derivative contribution if using posterior
-            if self._use_posterior:
+        # Add prior derivative contribution if using posterior
+        if self._use_posterior:
+            for param_idx, _param_name in enumerate(self._params.keys()):
                 weighted_sensitivity += prior_derivatives[param_idx]
 
-            cost_sens.append(weighted_sensitivity)
-
-        return cost, np.asarray(cost_sens)
+        return cost, weighted_sensitivity

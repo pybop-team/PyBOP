@@ -85,11 +85,10 @@ from .models._exponential_decay import ExponentialDecayModel
 from .models.base_model import TimeSeriesState
 from .models.base_model import Inputs
 
-#
 # Cost classes
 #
 from . import costs
-
+from .costs.base_cost import BaseCost
 #
 # Problem classes
 #

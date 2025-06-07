@@ -6,7 +6,7 @@ import pybop
 from pybop import Parameter as PybopParameter
 from pybop._pybamm_pipeline import PybammPipeline
 from pybop.builders.base import BaseBuilder
-from pybop.costs.pybamm import BaseCost as PybammCost
+from pybop.costs.pybamm import BaseCost, BaseLikelihood, DesignCost
 
 
 class Pybamm(BaseBuilder):
@@ -36,21 +36,12 @@ class Pybamm(BaseBuilder):
         self._parameter_values = parameter_values or model.default_parameter_values
         self._solver = solver or model.default_solver
 
-    def add_cost(self, cost: PybammCost, weight: float = 1.0) -> None:
+    def add_cost(self, cost: BaseCost, weight: float = 1.0) -> None:
         """
         Add a cost to the problem with optional weighting.
         """
         self._costs.append(cost)
         self._cost_weights.append(weight)
-
-    def add_posterior(self, cost: PybammCost, weight: float = 1.0) -> None:
-        """
-        Add a posterior to the problem. The convention is to provide a
-        negative log-likelihood object, with the prior information contained
-        within the `add_parameters` method.
-        """
-        self.add_cost(cost, weight)
-        self._use_posterior = True
 
     def build(self) -> pybop.PybammProblem:
         """
@@ -98,9 +89,13 @@ class Pybamm(BaseBuilder):
 
         # add costs
         cost_names = []
+        use_last_index = []
         for cost in self._costs:
             cost.add_to_model(model, pybamm_parameter_values, self._dataset)
             cost_names.append(cost.metadata().variable_name)
+            use_last_index.append(
+                isinstance(cost.metadata().expression, pybamm.ExplicitTimeIntegral)
+            )
 
             # Add hypers to pybop parameters
             if cost.metadata().parameters:
@@ -108,10 +103,17 @@ class Pybamm(BaseBuilder):
                     pybop_parameters.add(
                         PybopParameter(name, initial_value=obj.default_value)
                     )
-        if self._use_posterior and not pybop_parameters.priors():
-            raise ValueError(
-                "Posterior requires priors to be defined within the `add_parameters` method."
-            )
+
+            # Posterior Logic
+            if (
+                isinstance(cost, BaseLikelihood)
+                and pybop_parameters.priors() is not None
+            ):
+                self._use_posterior = True
+
+            # Design Costs
+            if isinstance(cost, DesignCost):
+                self.cell_mass(pybamm_parameter_values)
 
         # Construct the pipeline
         pipeline = PybammPipeline(
@@ -134,6 +136,7 @@ class Pybamm(BaseBuilder):
             cost_names=cost_names,
             cost_weights=self._cost_weights,
             use_posterior=self._use_posterior,
+            use_last_cost_index=use_last_index,
         )
 
     def _set_control_variable(self, pybop_parameters: pybop.Parameters) -> None:
@@ -156,3 +159,71 @@ class Pybamm(BaseBuilder):
                     self._parameter_values["Current function [A]"] = control_interpolant
                 else:
                     self._parameter_values[control] = control_interpolant
+
+    @staticmethod
+    def cell_mass(parameter_values: pybamm.ParameterValues) -> None:
+        """
+        Calculate the total cell mass in kilograms.
+
+        This method uses the provided parameter set to calculate the mass of different
+        components of the cell, such as electrodes, separator, and current collectors,
+        based on their densities, porosities, and thicknesses. It then calculates the
+        total mass by summing the mass of each component.
+
+        Parameters
+        ----------
+        parameter_values : dict
+            A dictionary containing the parameter values necessary for the calculation.
+
+        Returns
+        -------
+        float
+            The total mass of the cell in kilograms.#
+        """
+        params = parameter_values
+
+        # Pre-calculate cross-sectional area (shared calculation)
+        cross_sectional_area = pybamm.Parameter(
+            "Electrode height [m]"
+        ) * pybamm.Parameter("Electrode width [m]")
+
+        # Calculate electrode mass densities using vectorized approach
+        def electrode_mass_density(electrode_type):
+            """Calculate mass density for positive or negative electrode."""
+            prefix = f"{electrode_type} electrode"
+            active_vol_frac = pybamm.Parameter(
+                f"{prefix} active material volume fraction"
+            )
+            density = pybamm.Parameter(f"{prefix} active material density [kg.m-3]")
+            porosity = pybamm.Parameter(f"{prefix} porosity")
+            electrolyte_density = pybamm.Parameter("Electrolyte density [kg.m-3]")
+            cb_density = pybamm.Parameter(f"{prefix} carbon-binder density [kg.m-3]")
+
+            return (
+                active_vol_frac * density
+                + porosity * electrolyte_density
+                + (1.0 - active_vol_frac - porosity) * cb_density
+            )
+
+        # Calculate all area densities in one pass
+        area_densities = [
+            # Electrodes
+            pybamm.Parameter("Positive electrode thickness [m]")
+            * electrode_mass_density("Positive"),
+            pybamm.Parameter("Negative electrode thickness [m]")
+            * electrode_mass_density("Negative"),
+            # Separator
+            pybamm.Parameter("Separator thickness [m]")
+            * pybamm.Parameter("Separator density [kg.m-3]"),
+            # Current collectors
+            pybamm.Parameter("Positive current collector thickness [m]")
+            * pybamm.Parameter("Positive current collector density [kg.m-3]"),
+            pybamm.Parameter("Negative current collector thickness [m]")
+            * pybamm.Parameter("Negative current collector density [kg.m-3]"),
+        ]
+
+        # Add Cell mass to parameter_values dict
+        params.update(
+            {"Cell mass [kg]": cross_sectional_area * sum(area_densities)},
+            check_already_exists=False,
+        )
