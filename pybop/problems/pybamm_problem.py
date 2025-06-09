@@ -65,7 +65,7 @@ class PybammProblem(Problem):
         """
         Add the prior contribution to the cost if using posterior.
         """
-        if not self._use_posterior or self._priors is None:
+        if not self._use_posterior:
             return cost
 
         # Likelihoods and priors are negative by convention
@@ -89,10 +89,10 @@ class PybammProblem(Problem):
         self.check_set_params_called()
 
         # Run simulation
-        solution = self._pipeline.solve()
+        sol = self._pipeline.solve()
 
         # Compute cost with optional prior contribution
-        return self._compute_cost_with_prior(solution)
+        return self._compute_cost_with_prior(sol)
 
     def run_with_sensitivities(self) -> tuple[float, np.ndarray]:
         """
@@ -106,37 +106,25 @@ class PybammProblem(Problem):
         prior_derivatives = np.zeros(len(self._params.keys()))
 
         # Compute prior contribution and derivatives if using posterior
-        log_prior = 0.0
-        if self._use_posterior and self._priors is not None:
+        if self._use_posterior:
             log_prior, prior_derivatives = self._priors.logpdfS1(
                 self._params.current_value()
             )
 
         # Solve with sensitivities, calculate cost
-        solution = self._pipeline.solve(calculate_sensitivities=True)
-        cost = self._compute_cost(solution)
-        if self._use_posterior:
-            cost -= log_prior
+        sol = self._pipeline.solve(calculate_sensitivities=True)
+        cost = self._compute_cost_with_prior(sol)
 
-        # sensitivities will all be 1D arrays of length n_params, sum over the different
-        # cost functions to get the total sensitivity
-        # Note: current pybamm version has a bug where the sensitivities are not
-        # summed over the discrete time points, so we do that here
-        # REMEMBER TO REMOVE THIS WHEN THE BUG IS FIXED!!!
-        # https://github.com/pybamm-team/PyBaMM/pull/5008
-        aggregated_sens = np.sum(
-            [
-                solution[cost_name].sensitivities["all"]
-                for cost_name in self._cost_names
-            ],
-            axis=0,
+        aggregated_sens = np.asarray(
+            [sol[n].sensitivities["all"] for n in self._cost_names]
+        ).squeeze(axis=1)
+        weighted_sensitivity = np.sum(
+            aggregated_sens * self._cost_weights[:, None], axis=0
         )
-
-        weighted_sensitivity = np.dot(aggregated_sens, self._cost_weights)
 
         # Add prior derivative contribution if using posterior
         if self._use_posterior:
             for param_idx, _param_name in enumerate(self._params.keys()):
-                weighted_sensitivity += prior_derivatives[param_idx]
+                weighted_sensitivity[param_idx] -= prior_derivatives[param_idx]
 
         return cost, weighted_sensitivity

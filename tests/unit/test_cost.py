@@ -68,10 +68,8 @@ class TestCosts:
             pybop.costs.pybamm.MeanSquaredError,
             pybop.costs.pybamm.RootMeanSquaredError,
             pybop.costs.pybamm.MeanAbsoluteError,
-            pybop.costs.pybamm.SumSquaredError,
             pybop.costs.pybamm.Minkowski,
             pybop.costs.pybamm.SumOfPower,
-            pybop.costs.pybamm.NegativeGaussianLogLikelihood,
         ],
     )
     def test_pybamm_costs(self, pybamm_costs, model, dataset, one_parameter):

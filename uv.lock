@@ -1911,7 +1911,7 @@ wheels = [
 
 [[package]]
 name = "posthog"
-version = "4.4.2"
+version = "4.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "backoff" },
@@ -1920,9 +1920,9 @@ dependencies = [
     { name = "requests" },
     { name = "six" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2b/79/3324ee71cdee98198ad38ba070659dc0ef61dfa3803a7e599dc96b7d5c75/posthog-4.4.2.tar.gz", hash = "sha256:00327143eaca87ce882fe6aa6ee682fee530edc10df1afa5adc9bdb7cb23e864", size = 83026, upload-time = "2025-06-09T10:51:00.516Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c6/a1/fea31e54964afb2b07b364caf4f81ff17505cd36a6f8aaf14d120a6dc667/posthog-4.6.0.tar.gz", hash = "sha256:72cb6439f2c959dd8e51946887db685e3e1d705220fc5c7dc3c3b0b33780e0db", size = 84416, upload-time = "2025-06-09T13:33:12.296Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b2/7e/8fa2fca3af421b2258be8b036c7f6975c71d312dbe92f7023a4287613700/posthog-4.4.2-py3-none-any.whl", hash = "sha256:c0236cdfd3b63e6d4146810c092fac48dbd65a71d35a17e4ddb311bcb2bd67cd", size = 99836, upload-time = "2025-06-09T10:50:58.836Z" },
+    { url = "https://files.pythonhosted.org/packages/70/7f/5cf59c217d01bfba27889bd1ac7c23879d97ab7539e1a4851db101e933e6/posthog-4.6.0-py3-none-any.whl", hash = "sha256:6a5404b4a3dbaebe64372c486ebe89f20d2c0b02367f86dbf473d17cd816566d", size = 101852, upload-time = "2025-06-09T13:33:10.506Z" },
 ]
 
 [[package]]
@@ -1988,8 +1988,8 @@ wheels = [
 
 [[package]]
 name = "pybamm"
-version = "25.6.1.dev13+gcbdaef876"
-source = { git = "https://github.com/pybamm-team/PyBaMM?rev=i5039-dts-generalise#cbdaef8762c4b7594ebe067bbe786211bf483c98" }
+version = "25.6.1.dev15+gb28a55186"
+source = { git = "https://github.com/pybamm-team/PyBaMM?rev=i5039-dts-generalise#b28a551860a30a05abe6e15cec0915e68186355f" }
 dependencies = [
     { name = "anytree", version = "2.12.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9.2'" },
     { name = "anytree", version = "2.13.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9.2'" },

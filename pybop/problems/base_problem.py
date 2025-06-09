@@ -109,12 +109,12 @@ class Problem:
 
         # Create samples, compute cost
         param_values = sample(salib_dict, n_samples)
-        costs = []
-        for val in param_values:
+        costs = np.empty(param_values.shape[0])
+        for i, val in enumerate(param_values):
             self.set_params(val)
-            costs.append(self.run())
+            costs[i] = self.run()
 
-        return sobol.analyze(salib_dict, np.asarray(costs))
+        return sobol.analyze(salib_dict, costs)
 
     def observed_fisher(self, x: np.ndarray) -> np.ndarray:
         """

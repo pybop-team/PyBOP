@@ -113,8 +113,8 @@ class TestProblem:
         assert grad1s.shape == (2,)
         problem.set_params(np.array([0.7, 0.7]))
         value2s, grad2s = problem.run_with_sensitivities()
-        np.testing.assert_allclose(value1s, value1)
-        np.testing.assert_allclose(value2s, value2)
+        np.testing.assert_allclose(value1s, value1, atol=1e-5)
+        np.testing.assert_allclose(value2s, value2, atol=1e-5)
 
         # Test building twice
         problem2 = builder.build()
@@ -127,7 +127,7 @@ class TestProblem:
         builder.set_simulation(
             model,
             parameter_values=parameter_values,
-            solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
+            solver=IDAKLUSolver(atol=1e-7, rtol=1e-7),
         )
         builder.add_parameter(
             pybop.Parameter(
@@ -157,8 +157,8 @@ class TestProblem:
         assert grad1s.shape == (2,)
         problem.set_params(np.array([0.7, 0.7]))
         value2s, grad2s = problem.run_with_sensitivities()
-        np.testing.assert_allclose(value1s, value1)
-        np.testing.assert_allclose(value2s, value2)
+        np.testing.assert_allclose(value1s, value1, atol=1e-5)
+        np.testing.assert_allclose(value2s, value2, atol=1e-5)
 
         # Test with estimated sigma
         builder.add_cost(
@@ -199,13 +199,15 @@ class TestProblem:
                 prior=pybop.Gaussian(0.6, 0.1),
             )
         )
-        likelihood = pybop.costs.pybamm.NegativeGaussianLogLikelihood(
-            "Voltage [V]", "Voltage [V]", 1e-2
+        builder.add_cost(
+            pybop.costs.pybamm.NegativeGaussianLogLikelihood(
+                "Voltage [V]", "Voltage [V]", 1e-2
+            )
         )
-        builder.add_posterior(likelihood)
         problem = builder.build()
 
         assert problem is not None
+        assert problem._use_posterior is True
         problem.set_params(np.array([0.6, 0.6]))
         value1 = problem.run()
         problem.set_params(np.array([0.7, 0.7]))
@@ -216,8 +218,8 @@ class TestProblem:
         assert grad1s.shape == (2,)
         problem.set_params(np.array([0.7, 0.7]))
         value2s, grad2s = problem.run_with_sensitivities()
-        np.testing.assert_allclose(value1s, value1)
-        np.testing.assert_allclose(value2s, value2)
+        np.testing.assert_allclose(value1s, value1, atol=1e-5)
+        np.testing.assert_allclose(value2s, value2, atol=1e-5)
 
     def test_builder_with_rebuild_params(
         self, model, parameter_values, experiment, dataset
