@@ -654,7 +654,7 @@ class BaseModel:
         if isinstance(self._solver, pybamm.CasadiSolver):
             warnings.warn(
                 "Casadi solver does not support sensitivity analysis. Sensitivities will be disabled."
-                )
+            )
             cal_sensitivity = False
         else:
             cal_sensitivity = True

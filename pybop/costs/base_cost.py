@@ -67,9 +67,9 @@ class BaseCost:
         """
 
         if (
-            self.problem is not None and
-            getattr(self.problem, "model", None) is not None and
-            getattr(self.problem.model, "solver", None) is not None
+            self.problem is not None
+            and getattr(self.problem, "model", None) is not None
+            and getattr(self.problem.model, "solver", None) is not None
         ):
             solver = self.problem.model.solver
             solver_class_name = type(solver).__name__
@@ -81,7 +81,6 @@ class BaseCost:
                 return False
 
         return requested
-
 
     def __call__(
         self,
