@@ -37,7 +37,8 @@ class ExponentialDecayModel(BaseModel):
 
         self.n_states = n_states
         if solver is None:
-            self._solver = pybamm.IDAKLUSolver()
+            self._solver = pybamm.IDAKLUSolver(rtol=1e-6)
+            self._solver.max_step_decrease_count = 1
         else:
             self._solver = solver
 
@@ -69,7 +70,7 @@ class ExponentialDecayModel(BaseModel):
         self._submesh_types = self.pybamm_model.default_submesh_types
         self._var_pts = self.pybamm_model.default_var_pts
         self._spatial_methods = self.pybamm_model.default_spatial_methods
-        self._solver = pybamm.IDAKLUSolver()
+        self._solver = pybamm.IDAKLUSolver(rtol=1e-6)
 
         # Additional attributes for solver and discretisation
         self._model_with_set_params = None
