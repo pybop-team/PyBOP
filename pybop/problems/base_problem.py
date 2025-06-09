@@ -1,3 +1,4 @@
+import numbers
 from typing import Optional
 
 import numpy as np
@@ -49,10 +50,10 @@ class Problem:
             raise ValueError(
                 f"Expected {len(self._param_names)} parameters, but got {len(p)}."
             )
-        if not isinstance(p, np.ndarray):
-            raise TypeError("Parameters must be a numpy array.")
-        if not np.issubdtype(p.dtype, np.number):
-            raise TypeError("Parameters must be a numeric numpy array.")
+        if not isinstance(p, (np.ndarray, list)):
+            raise TypeError("Parameters must be a numpy array or list.")
+        if not isinstance(p[0], numbers.Number):
+            raise TypeError("Parameters must be a number.")
         self._params.update(values=p)
 
     def check_set_params_called(self) -> None:

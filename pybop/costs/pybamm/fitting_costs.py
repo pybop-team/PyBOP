@@ -200,11 +200,8 @@ class Minkowski(BaseCost):
 
         # Create Expression
         diff = var - data
-        p = pybamm.Scalar(self._p)
         abs_diff = pybamm.AbsoluteValue(diff)
-        powered_diff = pybamm.Power(abs_diff, p)
-        sum_powered = pybamm.DiscreteTimeSum(powered_diff)
-        expression = pybamm.Power(sum_powered, 1 / p)
+        expression = pybamm.DiscreteTimeSum(abs_diff**self._p) ** (1 / self._p)
 
         return PybammExpressionMetadata(
             variable_name=name,

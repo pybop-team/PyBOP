@@ -105,10 +105,7 @@ class Pybamm(BaseBuilder):
                     )
 
             # Posterior Logic
-            if (
-                isinstance(cost, BaseLikelihood)
-                and pybop_parameters.priors() is not None
-            ):
+            if isinstance(cost, BaseLikelihood) and pybop_parameters.priors():
                 self._use_posterior = True
 
             # Design Costs
