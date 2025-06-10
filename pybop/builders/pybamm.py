@@ -165,26 +165,22 @@ class Pybamm(BaseBuilder):
         This method uses the provided parameter set to calculate the mass of different
         components of the cell, such as electrodes, separator, and current collectors,
         based on their densities, porosities, and thicknesses. It then calculates the
-        total mass by summing the mass of each component.
+        total mass by summing the mass of each component and adds it as a parameter,
+        `Cell mass [kg]` in the parameter_values dictionary.
 
         Parameters
         ----------
         parameter_values : dict
             A dictionary containing the parameter values necessary for the calculation.
 
-        Returns
-        -------
-        float
-            The total mass of the cell in kilograms.#
         """
         params = parameter_values
 
-        # Pre-calculate cross-sectional area (shared calculation)
+        # Pre-calculate cross-sectional area
         cross_sectional_area = pybamm.Parameter(
             "Electrode height [m]"
         ) * pybamm.Parameter("Electrode width [m]")
 
-        # Calculate electrode mass densities using vectorized approach
         def electrode_mass_density(electrode_type):
             """Calculate mass density for positive or negative electrode."""
             prefix = f"{electrode_type} electrode"
@@ -202,7 +198,7 @@ class Pybamm(BaseBuilder):
                 + (1.0 - active_vol_frac - porosity) * cb_density
             )
 
-        # Calculate all area densities in one pass
+        # Calculate all area densities
         area_densities = [
             # Electrodes
             pybamm.Parameter("Positive electrode thickness [m]")
@@ -219,7 +215,7 @@ class Pybamm(BaseBuilder):
             * pybamm.Parameter("Negative current collector density [kg.m-3]"),
         ]
 
-        # Add Cell mass to parameter_values dict
+        # Add cell mass to parameter_values
         params.update(
             {"Cell mass [kg]": cross_sectional_area * sum(area_densities)},
             check_already_exists=False,
