@@ -1,6 +1,9 @@
+import numbers
 from typing import Optional
 
 import numpy as np
+from SALib.analyze import sobol
+from SALib.sample.sobol import sample
 
 from pybop import Parameters
 
@@ -47,10 +50,10 @@ class Problem:
             raise ValueError(
                 f"Expected {len(self._param_names)} parameters, but got {len(p)}."
             )
-        if not isinstance(p, np.ndarray):
-            raise TypeError("Parameters must be a numpy array.")
-        if not np.issubdtype(p.dtype, np.number):
-            raise TypeError("Parameters must be a numeric numpy array.")
+        if not isinstance(p, (np.ndarray, list)):
+            raise TypeError("Parameters must be a numpy array or list.")
+        if not isinstance(p[0], numbers.Number):
+            raise TypeError("Parameters must be a number.")
         self._params.update(values=p)
 
     def check_set_params_called(self) -> None:
@@ -75,6 +78,43 @@ class Problem:
         Returns the names of the parameters set for the simulation and cost function.
         """
         return self._param_names
+
+    def sensitivity_analysis(self, n_samples: int = 256):
+        """
+        Computes the parameter sensitivities on the cost function using
+        SOBOL analyse from the SALib module [1].
+
+        Parameters
+        ----------
+        n_samples : int, optional
+            Number of samples for SOBOL sensitivity analysis,
+            performs best as order of 2, i.e. 128, 256, etc.
+
+        References
+        ----------
+        .. [1] Iwanaga, T., Usher, W., & Herman, J. (2022). Toward SALib 2.0:
+               Advancing the accessibility and interpretability of global sensitivity
+               analyses. Socio-Environmental Systems Modelling, 4, 18155. doi:10.18174/sesmo.18155
+
+        Returns
+        -------
+        Sensitivities : dict
+        """
+
+        salib_dict = {
+            "names": list(self._params.keys()),
+            "bounds": self._params.bounds_as_numpy(),
+            "num_vars": len(self._params.keys()),
+        }
+
+        # Create samples, compute cost
+        param_values = sample(salib_dict, n_samples)
+        costs = np.empty(param_values.shape[0])
+        for i, val in enumerate(param_values):
+            self.set_params(val)
+            costs[i] = self.run()
+
+        return sobol.analyze(salib_dict, costs)
 
     def observed_fisher(self, x: np.ndarray) -> np.ndarray:
         """

@@ -4,7 +4,8 @@ from uuid import uuid4
 
 import pybamm
 
-import pybop
+from pybop import Dataset
+from pybop import Parameter as PybopParameter
 
 
 @dataclass
@@ -31,9 +32,12 @@ class PybammParameterMetadata:
     default_value: float
 
 
-class PybammCost:
+class BaseCost:
     def __init__(self):
         self._metadata = None
+        self._data_name = None
+        self._variable_name = None
+        self._sigma = None
 
     def metadata(self) -> PybammExpressionMetadata:
         """
@@ -55,7 +59,7 @@ class PybammCost:
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[pybop.Dataset] = None,
+        dataset: Optional[Dataset] = None,
     ) -> PybammExpressionMetadata:
         """
         Defines the variable expression for the cost function, returning a
@@ -69,7 +73,7 @@ class PybammCost:
         self,
         model: pybamm.BaseModel,
         param: pybamm.ParameterValues,
-        dataset: Optional[pybop.Dataset] = None,
+        dataset: Optional[Dataset] = None,
     ):
         # if dataset is provided, must contain time data
         if dataset is not None and "Time [s]" not in dataset:
@@ -81,3 +85,55 @@ class PybammCost:
                 {parameter_name: parameter_metadata.default_value},
                 check_already_exists=False,
             )
+
+    def _construct_discrete_time_node(self, dataset, model, name):
+        """
+        Constructs the pybamm DiscreteTimeData node in the expression tree
+        """
+        times = dataset["Time [s]"]
+        values = dataset[self._data_name]
+        data = pybamm.DiscreteTimeData(times, values, f"{name}_data")
+        var = model.variables[self._variable_name]
+        return data, var
+
+    def _check_state(self, dataset, model, name) -> None:
+        # dataset must be provided and contain the data
+        if dataset is None:
+            raise ValueError(f"Dataset must be provided for {name}.")
+        if self._data_name not in dataset:
+            raise ValueError(f"Dataset must contain {self._data_name} for {name}.")
+        # model must contain the variable
+        if self._variable_name not in model.variables:
+            raise ValueError(f"Model must contain {self._variable_name} for {name}.")
+
+    def _get_sigma_parameter(self, cost_name, parameters) -> pybamm.Parameter:
+        """
+        Returns the sigma node, either fixed or as an estimated parameter.
+        Updates metadata if sigma is estimated.
+        """
+
+        if isinstance(self._sigma, PybopParameter) or self._sigma is None:
+            sigma_name = self._sigma.name if self._sigma else f"sigma_{cost_name}"
+            sigma = pybamm.Parameter(sigma_name)
+            parameters[sigma_name] = PybammParameterMetadata(
+                parameter=sigma,
+                default_value=self._sigma.value if self._sigma else 1.0,
+            )
+        elif isinstance(self._sigma, (float, int)):
+            sigma = pybamm.Scalar(self._sigma)
+        else:
+            sigma = self._sigma  # Assume pybamm.Parameter
+
+        return sigma
+
+    @property
+    def data_name(self) -> str:
+        return self._data_name
+
+
+class BaseLikelihood(BaseCost):
+    """
+    A base class for likelihood functions.
+    These functions should be implemented as negative likelihoods for
+    use within the pybop optimisation and sampling framework.
+    """
