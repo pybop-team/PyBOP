@@ -5,14 +5,14 @@ from .base_cost import (
     PybammParameterMetadata,
 )
 from .fitting_costs import (
-SumOfPower,
-Minkowski,
-RootMeanSquaredError,
-MeanSquaredError,
-MeanAbsoluteError,
-SumSquaredError,
-NegativeGaussianLogLikelihood,
-ScaledCost,
+    SumOfPower,
+    Minkowski,
+    RootMeanSquaredError,
+    MeanSquaredError,
+    MeanAbsoluteError,
+    SumSquaredError,
+    NegativeGaussianLogLikelihood,
+    ScaledCost,
 )
 
 from .design_costs import (

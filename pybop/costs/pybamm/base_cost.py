@@ -126,6 +126,10 @@ class BaseCost:
 
         return sigma
 
+    @property
+    def data_name(self) -> str:
+        return self._data_name
+
 
 class BaseLikelihood(BaseCost):
     """

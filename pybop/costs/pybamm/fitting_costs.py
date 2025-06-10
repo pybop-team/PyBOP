@@ -347,6 +347,6 @@ class ScaledCost(BaseCost):
             variable_name=name,
             expression=loglikelihood_metadata.expression
             * pybamm.Scalar(1.0)
-            / len(dataset[self._data_name]),
+            / len(dataset[self._loglikelihood.data_name]),
             parameters=loglikelihood_metadata.parameters,
         )

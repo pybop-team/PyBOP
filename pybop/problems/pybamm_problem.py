@@ -1,6 +1,7 @@
 from typing import Union
 
 import numpy as np
+import pybamm
 from pybamm import Solution
 
 from pybop import JointLogPrior, Parameters
@@ -128,3 +129,7 @@ class PybammProblem(Problem):
                 weighted_sensitivity[param_idx] -= prior_derivatives[param_idx]
 
         return cost, weighted_sensitivity
+
+    @property
+    def pipeline(self) -> pybamm.Pipeline:
+        return self._pipeline

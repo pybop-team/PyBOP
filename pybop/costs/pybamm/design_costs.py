@@ -108,12 +108,6 @@ class GravimetricPowerDensity(DesignCost):
     and V is the voltage. The factor of 1/3600 is included to convert from seconds
     to hours.
 
-    Inherits all parameters and attributes from ``DesignCost``.
-
-    Additional parameters
-    ---------------------
-    target_time : int
-        The length of time (seconds) over which the power should be sustained.
     """
 
     def variable_expression(
@@ -154,12 +148,6 @@ class VolumetricPowerDensity(DesignCost):
     and V is the voltage. The factor of 1/3600 is included to convert from seconds
     to hours.
 
-    Inherits all parameters and attributes from ``DesignCost``.
-
-    Additional parameters
-    ---------------------
-    target_time : int
-        The length of time (seconds) over which the power should be sustained.
     """
 
     def variable_expression(
