@@ -1,7 +1,6 @@
 from typing import Union
 
 import numpy as np
-import pybamm
 from pybamm import Solution
 
 from pybop import JointLogPrior, Parameters
@@ -23,6 +22,7 @@ class PybammProblem(Problem):
         use_posterior: bool = False,
         use_last_cost_index: list[bool] = None,
     ):
+        super().__init__(pybop_params=pybop_params)
         self._pipeline = pybamm_pipeline
         self._cost_names = cost_names or []
         self._cost_weights = (
@@ -39,8 +39,7 @@ class PybammProblem(Problem):
             self._priors = JointLogPrior(*pybop_params.priors())
         else:
             self._priors = None
-
-        super().__init__(pybop_params=pybop_params)
+        self._compute_initial_cost_and_resample()
 
     def set_params(self, p: np.ndarray) -> None:
         """
@@ -131,5 +130,5 @@ class PybammProblem(Problem):
         return cost, weighted_sensitivity
 
     @property
-    def pipeline(self) -> pybamm.Pipeline:
+    def pipeline(self):
         return self._pipeline

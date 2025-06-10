@@ -1,53 +1,126 @@
-import pybop
+from typing import Callable
+
 from pybop import PythonProblem
 from pybop.builders.base import BaseBuilder
-from pybop.problems.base_problem import Problem
 
 
 class Python(BaseBuilder):
     """
-    dataset : pybop.Dataset or dict, optional
-        The dataset to be used in the simulation construction.
+    Builder for Python-based problems.
+
+    This builder creates problems using custom Python functions instead of
+    specialised simulation frameworks. It supports both standard models and
+    models with sensitivity analysis.
+
+    If this problem is used by Pybop Optimisation or Sampling classes, the
+    functions will be minimised.
+
+    Examples
+    --------
+    >>> builder = Python()
+    >>> builder.add_func(my_model_function, weight=1.5)
+    >>> problem = builder.build()
     """
 
     def __init__(self):
-        self._model = None
-        self._params = None
-        self._costs = []
-        self._cost_weights = []
-        self._func = None
+        super().__init__()
+        self._models: list[Callable] = []
+        self._models_with_sens: list[Callable] = []
+        self._weights: list[float] = []
 
-    def add_func(self, func):
-        self._func = func
-
-    def add_cost(self, cost: pybop.BaseCost, weight: float = 1.0) -> None:
+    def add_func(self, model: Callable, weight: float = 1.0) -> "Python":
         """
-        Adds cost to the problem.
-        ToDo: BaseCost needs to be updated to support array/list-like execution
+        Add a simulation function to the problem.
+
+        Parameters
+        ----------
+        model : Callable
+            Function with signature: func(params: np.ndarray) -> float
+        weight : float, default=1.0
+            Weight for this model in multi-objective optimisation.
+
+        Returns
+        -------
+        Python
+            Self for method chaining.
+
+        Raises
+        ------
+        TypeError
+            If model is not callable.
         """
-        self._costs.append(cost)
-        self._cost_weights.append(weight)
+        if not callable(model):
+            raise TypeError("Model must be callable")
 
-    def build(self) -> Problem:
-        """Build a pure python problem."""
+        self._models.append(model)
+        self._weights.append(weight)
+        return self
 
-        if not len(self._cost_weights) == len(self._costs):
+    def add_func_with_sens(
+        self, model_with_sens: Callable, weight: float = 1.0
+    ) -> "Python":
+        """
+        Add a simulation function with sensitivity analysis to the problem.
+
+        Parameters
+        ----------
+        model_with_sens : Callable
+            Function with signature: func(params: np.ndarray) -> Tuple[float, np.ndarray]
+            where the first returned element is the callable value and the second is the
+            corresponding parameter sensitivities wrt the callable value.
+        weight : float, default=1.0
+            Weight for this model in multi-objective optimisation.
+
+        Returns
+        -------
+        Python
+            Self for method chaining.
+
+        Raises
+        ------
+        TypeError
+            If model_with_sens is not callable.
+        """
+        if not callable(model_with_sens):
+            raise TypeError("Model with sensitivities must be callable")
+
+        self._models_with_sens.append(model_with_sens)
+        self._weights.append(weight)
+        return self
+
+    def build(self) -> PythonProblem:
+        """
+        Build the Python problem.
+
+        Returns
+        -------
+        PythonProblem
+            The constructed problem with all configured components.
+
+        Raises
+        ------
+        ValueError
+            If no models are provided or if both model types are specified.
+        """
+        if not self._models and not self._models_with_sens:
+            raise ValueError("At least one model function must be provided")
+
+        if self._models and self._models_with_sens:
             raise ValueError(
-                "Number of cost weights and the number of costs do not match"
+                "Cannot specify both standard models and models with sensitivities"
             )
 
-        if self._func is None:
-            raise ValueError("A Python function needs to be provided before building.")
-
-        if self._costs is None:
-            raise ValueError("A cost must be provided before building.")
-
-        if self._dataset is None:
-            raise ValueError("A dataset must be provided before building.")
-
-        pybop_parameters = self.build_parameters()
-
         return PythonProblem(
-            self._func,
-            params=pybop_parameters,
+            model=self._models or None,
+            model_with_sens=self._models_with_sens or None,
+            pybop_params=self.build_parameters(),
+            weights=self._weights,
+        )
+
+    def __repr__(self) -> str:
+        """Return string representation of the builder state."""
+        return (
+            f"Python(models={len(self._models)}, "
+            f"models_with_sens={len(self._models_with_sens)}, "
+            f"weights={len(self._weights)})"
         )
