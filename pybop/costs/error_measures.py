@@ -5,7 +5,7 @@ import numpy as np
 from pybop.costs.base_cost import BaseCost
 
 
-class NewMeanSquaredError(BaseCost):
+class MeanSquaredError(BaseCost):
     """
     Mean square error (MSE) cost function.
 
@@ -51,9 +51,7 @@ class RootMeanSquaredError(BaseCost):
         e = np.sqrt(np.mean((np.abs(r) ** 2) * self.weighting))
 
         if dy is not None:
-            de = np.mean((r * self.weighting) * dy, axis=(1, 2)) / (
-                e + np.finfo(float).eps
-            )
+            de = np.mean((r * self.weighting) * dy) / (e + np.finfo(float).eps)
             return e, de
 
         return e
@@ -82,7 +80,7 @@ class MeanAbsoluteError(BaseCost):
         e = np.mean(np.abs(r) * self.weighting)
 
         if dy is not None:
-            de = np.mean((np.sign(r) * self.weighting) * dy, axis=(1, 2))
+            de = np.mean((np.sign(r) * self.weighting) * dy)
             return e, de
 
         return e
@@ -105,7 +103,7 @@ class SumSquaredError(BaseCost):
         e = np.sum(np.abs(r) ** 2 * self.weighting)
 
         if dy is not None:
-            de = 2 * np.sum((r * self.weighting) * dy, axis=(1, 2))
+            de = 2 * np.sum((r * self.weighting) * dy)
             return e, de
 
         return e
@@ -140,10 +138,8 @@ class Minkowski(BaseCost):
         The order of the Minkowski distance.
     """
 
-    def __init__(
-        self, problem, p: float = 2.0, weighting: Union[str, np.ndarray] = None
-    ):
-        super().__init__()
+    def __init__(self, p: float = 2.0, weighting: Union[str, np.ndarray] = None):
+        super().__init__(weighting=weighting)
         if p < 0:
             raise ValueError(
                 "The order of the Minkowski distance must be greater than 0."
@@ -163,8 +159,7 @@ class Minkowski(BaseCost):
 
         if dy is not None:
             de = np.sum(
-                ((np.sign(r) * np.abs(r) ** (self.p - 1)) * self.weighting) * dy,
-                axis=(1, 2),
+                ((np.sign(r) * np.abs(r) ** (self.p - 1)) * self.weighting) * dy
             ) / (e ** (self.p - 1) + np.finfo(float).eps)
             return e, de
 
@@ -202,10 +197,8 @@ class SumOfPower(BaseCost):
         The power order for Sum of Power.
     """
 
-    def __init__(
-        self, problem, p: float = 2.0, weighting: Union[str, np.ndarray] = None
-    ):
-        super().__init__()
+    def __init__(self, p: float = 2.0, weighting: Union[str, np.ndarray] = None):
+        super().__init__(weighting=weighting)
         if p < 0:
             raise ValueError("The order of 'p' must be greater than 0.")
         elif not np.isfinite(p):
@@ -221,8 +214,7 @@ class SumOfPower(BaseCost):
 
         if dy is not None:
             de = self.p * np.sum(
-                ((np.sign(r) * np.abs(r) ** (self.p - 1)) * self.weighting) * dy,
-                axis=(1, 2),
+                ((np.sign(r) * np.abs(r) ** (self.p - 1)) * self.weighting) * dy
             )
             return e, de
 

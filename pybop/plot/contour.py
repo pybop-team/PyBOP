@@ -35,7 +35,7 @@ def contour(
         If True, the gradient is shown (default: False).
     bounds : numpy.ndarray, optional
         A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
-        `parameters.get_bounds_for_plotly`.
+        `parameters.bounds_as_numpy`.
     apply_transform : bool, optional
         Uses the transformed parameter values (as seen by the optimiser) for plotting.
     steps : int, optional
@@ -96,7 +96,7 @@ def contour(
 
     # Set up parameter bounds
     if bounds is None:
-        bounds = parameters.get_bounds_for_plotly()
+        bounds = parameters.bounds_as_numpy()
 
     # Generate grid
     x = np.linspace(bounds[0, 0], bounds[0, 1], steps)

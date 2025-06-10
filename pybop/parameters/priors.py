@@ -366,6 +366,9 @@ class JointLogPrior(BasePrior):
     def __init__(self, *priors: BasePrior):
         super().__init__()
 
+        if all(prior is None for prior in priors):
+            return
+
         if not all(isinstance(prior, BasePrior) for prior in priors):
             raise ValueError("All priors must be instances of BasePrior")
 
