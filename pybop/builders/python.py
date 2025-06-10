@@ -35,8 +35,7 @@ class Python(BaseBuilder):
         Parameters
         ----------
         model : Callable
-            Function with signature: func(params: Union[List[float], float]) -> dict
-            Returns dict where keys match signal names and values are predictions.
+            Function with signature: func(params: np.ndarray) -> float
         weight : float, default=1.0
             Weight for this model in multi-objective optimisation.
 
@@ -66,9 +65,9 @@ class Python(BaseBuilder):
         Parameters
         ----------
         model_with_sens : Callable
-            Function with signature: func(params: Union[List[float], float]) -> Tuple[dict, dict]
-            Returns (results, sensitivities) where both dicts have keys matching
-            signal names.
+            Function with signature: func(params: np.ndarray) -> Tuple[float, np.ndarray]
+            where the first returned element is the callable value and the second is the
+            corresponding parameter sensitivities wrt the callable value.
         weight : float, default=1.0
             Weight for this model in multi-objective optimisation.
 
