@@ -17,7 +17,7 @@ class PybammProblem(Problem):
         pybop_params: Parameters = None,
         cost_names: list[str] = None,
         cost_weights: list | np.ndarray = None,
-        use_posterior: bool = False,
+        is_posterior: bool = False,
         use_last_cost_index: list[bool] = None,
     ):
         super().__init__(pybop_params=pybop_params)
@@ -29,11 +29,11 @@ class PybammProblem(Problem):
             else np.ones(len(self._cost_names))
         )
         self._domain = "Time [s]"
-        self._use_posterior = use_posterior
+        self.is_posterior = is_posterior
         self._use_last_cost_index = use_last_cost_index
 
         # Set up priors if we're using the posterior
-        if self._use_posterior and pybop_params is not None:
+        if self.is_posterior and pybop_params is not None:
             self._priors = JointLogPrior(*pybop_params.priors())
         else:
             self._priors = None
@@ -65,7 +65,7 @@ class PybammProblem(Problem):
         """
         Add the prior contribution to the cost if using posterior.
         """
-        if not self._use_posterior:
+        if not self.is_posterior:
             return cost
 
         # Likelihoods and priors are negative by convention
@@ -106,7 +106,7 @@ class PybammProblem(Problem):
         prior_derivatives = np.zeros(len(self._params))
 
         # Compute prior contribution and derivatives if using posterior
-        if self._use_posterior:
+        if self.is_posterior:
             log_prior, prior_derivatives = self._priors.logpdfS1(
                 self._params.get_values()
             )
@@ -128,7 +128,7 @@ class PybammProblem(Problem):
         )
 
         # Add prior derivative contribution if using posterior
-        if self._use_posterior:
+        if self.is_posterior:
             for param_idx, _param_name in enumerate(self._params.keys()):
                 weighted_sensitivity[param_idx] -= prior_derivatives[param_idx]
 

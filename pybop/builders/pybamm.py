@@ -26,7 +26,7 @@ class Pybamm(BaseBuilder):
         self._costs: list[PybammCost] = []
         self._cost_weights: list[float] = []
         self.domain = "Time [s]"
-        self._use_posterior = False
+        self.is_posterior = False
         super().__init__()
 
     def set_simulation(
@@ -144,6 +144,10 @@ class Pybamm(BaseBuilder):
                         )
                     )
 
+            # Posterior Flag
+            if isinstance(cost, BaseLikelihood) and pybop_parameters.priors():
+                self.is_posterior = True
+
             # Design Costs
             if isinstance(cost, DesignCost):
                 cell_mass(pybamm_parameter_values)
@@ -171,7 +175,7 @@ class Pybamm(BaseBuilder):
             pybop_params=pybop_parameters,
             cost_names=cost_names,
             cost_weights=self._cost_weights,
-            use_posterior=self._use_posterior,
+            is_posterior=self.is_posterior,
             use_last_cost_index=use_last_index,
         )
 
