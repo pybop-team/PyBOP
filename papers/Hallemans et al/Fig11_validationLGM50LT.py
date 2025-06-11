@@ -1,11 +1,9 @@
 import matplotlib.pyplot as plt
-import numpy as np
-import pybop
 import pybamm
 import scipy
-from pybop.models.lithium_ion.basic_SPMe import convert_physical_to_grouped_parameters
-from scipy.io import savemat
 
+import pybop
+from pybop.models.lithium_ion.basic_SPMe import convert_physical_to_grouped_parameters
 
 ## Grouped parameter set
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")

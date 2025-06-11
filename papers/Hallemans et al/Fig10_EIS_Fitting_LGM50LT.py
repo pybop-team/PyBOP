@@ -1,13 +1,12 @@
-import numpy as np
-import scipy
-import pybop
-import pybamm
-import pickle
-import matplotlib.pyplot as plt
 import time as timer
-from scipy.io import savemat
-from pybop.models.lithium_ion.basic_SPMe import convert_physical_to_grouped_parameters
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pybamm
+import scipy
+
+import pybop
+from pybop.models.lithium_ion.basic_SPMe import convert_physical_to_grouped_parameters
 
 ## Parameter set
 
@@ -293,7 +292,7 @@ for ii in range(len(SOCs)):
     ax.plot(
         np.real(impedanceshat[:, ii]), -np.imag(impedanceshat[:, ii]), color=colors(ii)
     )
-ax.set(xlabel="$Z_r(\omega)$ [$\Omega$]", ylabel="$-Z_j(\omega)$ [$\Omega$]")
+ax.set(xlabel=r"$Z_r(\omega)$ [$\Omega$]", ylabel=r"$-Z_j(\omega)$ [$\Omega$]")
 ax.grid()
 ax.set_aspect("equal", "box")
 plt.show()
