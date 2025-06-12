@@ -436,10 +436,7 @@ class Parameters:
                 return None
             all_samples.append(samples)
 
-        if n_samples > 1:
-            return np.asarray(all_samples).T
-
-        return np.concatenate(all_samples)
+        return np.asarray(all_samples).T
 
     def get_sigma0(self, apply_transform: bool = False) -> list:
         """

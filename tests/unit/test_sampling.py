@@ -152,12 +152,12 @@ class TestPintsSamplers:
 
         # Non mixed chains
         ess = summary.effective_sample_size()
-        assert len(ess) == log_posterior.n_parameters * n_chains
+        assert len(ess) == len(log_posterior.params) * options.n_chains
         assert all(e > 0 for e in ess)  # ESS should be positive
 
         # Mixed chains
         ess = summary.effective_sample_size(mixed_chains=True)
-        assert len(ess) == log_posterior.n_parameters
+        assert len(ess) == len(log_posterior.params)
         assert all(e > 0 for e in ess)
 
     def test_single_parameter_sampling(self, model, dataset, MCMC, chains):

@@ -56,7 +56,7 @@ class PybammProblem(Problem):
         """
 
         costs = [
-            solution[name].data[-1] if use_last else solution[name].data
+            solution[name].data[-1] if use_last else solution[name].data[0]
             for use_last, name in zip(self._use_last_cost_index, self._cost_names)
         ]
         return np.dot(self._cost_weights, costs)

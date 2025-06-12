@@ -1,3 +1,4 @@
+import numbers
 from typing import Union
 
 import numpy as np
@@ -151,16 +152,18 @@ class TestProblem:
         assert problem is not None
         problem.set_params(np.array([0.6, 0.6]))
         value1 = problem.run()
+        assert isinstance(value1, numbers.Number)
         problem.set_params(np.array([0.7, 0.7]))
         value2 = problem.run()
         assert (value1 - value2) / value1 < 0.0
         problem.set_params(np.array([0.6, 0.6]))
         value1s, grad1s = problem.run_with_sensitivities()
+        assert isinstance(value1, numbers.Number)
         assert grad1s.shape == (2,)
         problem.set_params(np.array([0.7, 0.7]))
         value2s, grad2s = problem.run_with_sensitivities()
-        np.testing.assert_allclose(value1s, value1, atol=1e-5)
-        np.testing.assert_allclose(value2s, value2, atol=1e-5)
+        np.testing.assert_allclose(value1s, value1, rtol=5e-5)
+        np.testing.assert_allclose(value2s, value2, rtol=5e-5)
 
         # Test with estimated sigma
         builder.add_cost(

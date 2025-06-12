@@ -127,11 +127,13 @@ class BaseSampler:
             If True, use as many worker processes as there are CPU cores. If an integer, use that many workers.
             If False or 0, disable parallelism (default: False).
         """
-        self._options.parallel = parallel
         if parallel is True:
+            self._options.parallel = parallel
             self._options.n_workers = ParallelEvaluator.cpu_count()
         elif parallel >= 1:
+            self._options.parallel = True
             self._options.n_workers = int(parallel)
         else:
+            self._options.parallel = False
             self._options.n_workers = 1
         self._options.n_workers = min(self._options.n_workers, self._options.n_chains)
