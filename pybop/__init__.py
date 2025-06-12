@@ -85,6 +85,10 @@ from .models._exponential_decay import ExponentialDecayModel
 from .models.base_model import TimeSeriesState
 from .models.base_model import Inputs
 
+# Cost classes
+#
+from . import costs
+from .costs.base_cost import BaseCost
 #
 # Problem classes
 #
@@ -99,19 +103,12 @@ from .problems.design_problem import DesignProblem
 #
 # Cost classes
 #
-from .costs.pybamm_cost import (
-    PybammCost,
-    PybammExpressionMetadata,
-    PybammParameterMetadata,
-)
-from .costs.pybamm_sum_squared_error import PybammSumSquaredError
-
 from .costs.base_cost_old import BaseCost
 from .costs.fitting_costs import (
     FittingCost,
     ObserverCost,
 )
-from .costs.error_measures_old import (
+from .costs.error_measures import (
     RootMeanSquaredError,
     MeanAbsoluteError,
     MeanSquaredError,
@@ -119,7 +116,6 @@ from .costs.error_measures_old import (
     Minkowski,
     SumOfPower,
 )
-from .costs.error_measures import NewMeanSquaredError
 from .costs.design_costs import (
     DesignCost,
     GravimetricEnergyDensity,

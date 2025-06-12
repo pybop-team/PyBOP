@@ -240,7 +240,7 @@ def surface(
         Solved optimisation object
     bounds : numpy.ndarray, optional
         A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
-        `cost.parameters.get_bounds_for_plotly`.
+        `parameters.bounds_as_numpy`.
     normalise : bool, optional
         If True, the voronoi regions are computed using the Euclidean distance between
         points normalised with respect to the bounds (default: True).

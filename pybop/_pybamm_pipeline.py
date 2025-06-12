@@ -55,6 +55,7 @@ class PybammPipeline:
             the format: "3.4 V".
         """
         self._model = model
+        self._model.events = []
         self._parameter_values = parameter_values or model.default_parameter_values
         self._pybop_parameters = pybop_parameters
         self._parameter_names = pybop_parameters.keys()
