@@ -114,6 +114,10 @@ class BasePintsSampler(BaseSampler):
         if self._initial_phase:
             self.set_initial_phase_iterations()
 
+    @staticmethod
+    def default_options() -> PintsSamplerOptions:
+        return PintsSamplerOptions()
+
     def _initialise_chain_processor(self):
         """
         Initialise the appropriate chain processor based on configuration.

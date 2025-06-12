@@ -59,6 +59,16 @@ class BaseSampler:
         self._x0 = x0
         self._cov0 = np.diag(problem.params.get_sigma0())
 
+    @staticmethod
+    def default_options() -> SamplerOptions:
+        """
+        Get the default options for the sampler.
+
+        Returns:
+            SamplerOptions: Default options for the sampler.
+        """
+        return SamplerOptions()
+
     @property
     def x0(self) -> np.ndarray:
         return self._x0

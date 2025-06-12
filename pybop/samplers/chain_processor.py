@@ -87,7 +87,7 @@ class SingleChainProcessor(ChainProcessor):
                 continue
 
             y, fy, accepted = reply
-            y_store = self.sampler.transform_values(y)
+            y_store = self.sampler.problem.params.transformation().to_model(y)
 
             # Store samples
             self.store_samples(y_store, i)
@@ -125,7 +125,9 @@ class MultiChainProcessor(ChainProcessor):
 
         if reply:
             ys, fys, accepted = reply
-            ys_store = np.asarray(self.sampler.transform_list_of_values(ys))
+            ys_store = np.asarray(
+                [self.sampler.problem.params.transformation().to_model(y) for y in ys]
+            )
 
             # Store samples
             self.store_samples(ys_store, self.sampler.iteration)

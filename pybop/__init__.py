@@ -89,6 +89,7 @@ from .models.base_model import Inputs
 #
 from . import costs
 from .costs.base_cost import BaseCost
+
 #
 # Problem classes
 #
@@ -225,7 +226,6 @@ from .samplers.pints_samplers import (
     SliceRankShrinkingMCMC,
     SliceStepoutMCMC,
 )
-from .samplers.mcmc_sampler import MCMCSampler
 
 #
 # Observer classes
