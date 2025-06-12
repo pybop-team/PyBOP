@@ -1,4 +1,5 @@
 from typing import Optional
+
 from pints import MALAMCMC as PintsMALAMCMC
 from pints import AdaptiveCovarianceMCMC as PintsAdaptiveCovarianceMCMC
 from pints import DifferentialEvolutionMCMC as PintsDifferentialEvolutionMCMC

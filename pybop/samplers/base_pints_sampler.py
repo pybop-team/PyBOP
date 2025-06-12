@@ -1,17 +1,13 @@
-from dataclasses import dataclass
 import logging
 import time
-from functools import partial
-from typing import Optional, Type, Union
+from dataclasses import dataclass
+from typing import Optional, Type
 
 import numpy as np
 import pints
 
-
 from pybop import (
-    BaseCost,
     BaseSampler,
-    LogPosterior,
     MultiChainProcessor,
     SingleChainProcessor,
 )

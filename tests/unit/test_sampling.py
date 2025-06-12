@@ -1,12 +1,9 @@
-import copy
 import logging
-import re
 from unittest.mock import call, patch
 
 import numpy as np
-import pytest
-from pints import ParallelEvaluator
 import pybamm
+import pytest
 
 import pybop
 from pybop import (
