@@ -102,7 +102,7 @@ class TestUKF:
         np.testing.assert_allclose(SquareRootUKF.hypot(f, j, 1.0), float(0))
 
     def test_unscented_kalman_filter(self, dataset, observer):
-        observer.model.solver = pybamm.CasadiSolver(mode='fast')
+        observer.model.solver = pybamm.CasadiSolver(mode="fast")
         t_eval = dataset["Time [s]"]
         measurements = dataset["y"]
         inputs = observer._state.inputs
@@ -134,7 +134,7 @@ class TestUKF:
             observer.observe(0, None)
 
     def test_observe_decreasing_time(self, observer):
-        observer.model.solver = pybamm.CasadiSolver(mode='fast')
+        observer.model.solver = pybamm.CasadiSolver(mode="fast")
         observer.observe(0, np.array([2]))
         observer.observe(0.1, np.array([2]))
         with pytest.raises(ValueError):
