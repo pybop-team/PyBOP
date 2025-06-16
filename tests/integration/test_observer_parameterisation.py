@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -30,7 +31,6 @@ class TestObservers:
         return pybop.ExponentialDecayModel(
             parameter_set=parameter_set,
             n_states=1,
-            solver=pybop.CasadiSolver(mode="fast"),
         )
 
     @pytest.fixture
@@ -85,6 +85,7 @@ class TestObservers:
             dataset,
             signal=signal,
         )
+        observer.model.solver = pybamm.CasadiSolver(mode="fast")
 
         # Generate cost function, and optimisation class
         cost = pybop.ObserverCost(observer)
