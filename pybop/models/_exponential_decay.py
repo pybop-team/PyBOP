@@ -37,7 +37,8 @@ class ExponentialDecayModel(BaseModel):
 
         self.n_states = n_states
         if solver is None:
-            self._solver = pybamm.IDAKLUSolver(rtol=1e-6)
+            self._solver = pybamm.CasadiSolver
+            self._solver.mode = "fast with events"
             self._solver.max_step_decrease_count = 1
         else:
             self._solver = solver
