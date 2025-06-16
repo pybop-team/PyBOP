@@ -251,23 +251,24 @@ class TestModels:
 
         # Test with CasadiSolver to trigger warning
         Casadi_param = pybop.Parameters(
-        pybop.Parameter(
-            "Current function [A]",
-            prior=pybop.Gaussian(1.0, 0.1),
-            bounds=[0.5, 1.5],
-            initial_value=1.0,
-        )
+            pybop.Parameter(
+                "Current function [A]",
+                prior=pybop.Gaussian(1.0, 0.1),
+                bounds=[0.5, 1.5],
+                initial_value=1.0,
+            )
         )
         casadi_model = pybop.lithium_ion.SPM()
         casadi_model._solver = pybamm.CasadiSolver()
         casadi_model.build(parameters=Casadi_param)
 
-        with pytest.warns(UserWarning, match="Casadi solver does not support sensitivity analysis"):
+        with pytest.warns(
+            UserWarning, match="Casadi solver does not support sensitivity analysis"
+        ):
             sol = casadi_model.simulateS1(t_eval=t_eval, inputs=Casadi_param.as_dict())
 
         assert isinstance(sol, pybamm.Solution)
         assert sol.sensitivities in (None, {})
-
 
         # Test that the model can be rebuilt with different geometric parameters
         parameters["Positive particle radius [m]"].update(5e-06)
