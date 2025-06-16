@@ -76,7 +76,8 @@ class BaseCost:
 
             if solver_class_name == "CasadiSolver":
                 warnings.warn(
-                    "Casadi solver does not support sensitivity analysis. Gradient will not be calculated.", stacklevel=2
+                    "Casadi solver does not support sensitivity analysis. Gradient will not be calculated.",
+                    stacklevel=2,
                 )
                 return False
 

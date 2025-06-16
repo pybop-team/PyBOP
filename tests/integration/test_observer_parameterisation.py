@@ -27,7 +27,11 @@ class TestObservers:
 
     @pytest.fixture
     def model(self, parameter_set):
-        return pybop.ExponentialDecayModel(parameter_set=parameter_set, n_states=1, solver=pybop.pybamm.CasadiSolver(mode="fast"))
+        return pybop.ExponentialDecayModel(
+            parameter_set=parameter_set,
+            n_states=1,
+            solver=pybop.pybamm.CasadiSolver(mode="fast"),
+        )
 
     @pytest.fixture
     def parameters(self, parameter_set):

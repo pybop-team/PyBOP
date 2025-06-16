@@ -39,7 +39,7 @@ class TestObserver:
     def test_observer(self, model, parameters):
         n = model.n_states
         observer = pybop.Observer(parameters, model, signal=["y_0"])
-        observer.model.solver = pybamm.CasadiSolver(mode='fast')
+        observer.model.solver = pybamm.CasadiSolver(mode="fast")
         t_eval = np.linspace(0, 20, 10)
         expected = parameters["y0"].initial_value * np.exp(
             -parameters["k"].initial_value * t_eval
@@ -104,7 +104,7 @@ class TestObserver:
             signal=["y_0", "y_0"],
             initial_state=initial_state,
         )
-        observer.model.solver = pybamm.CasadiSolver(mode='fast')
+        observer.model.solver = pybamm.CasadiSolver(mode="fast")
         assert observer.initial_state == initial_state
 
         with pytest.raises(
