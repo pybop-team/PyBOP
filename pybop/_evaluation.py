@@ -1,6 +1,23 @@
 import numpy as np
 from pints import Evaluator as PintsEvaluator
 
+class PopulationEvaluator(PintsEvaluator):
+    """
+    Evaluates a function (or callable object)
+    for multiple positions.
+
+    Parameters
+    ----------
+    function : callable
+        The function to evaluate. This function should accept a list-like
+        object of positions to be evaluated.
+    args : sequence, optional
+        A sequence containing extra arguments to be passed to the function.
+        If specified, the function will be called as `function(x, *args)`.
+    """
+
+    def _evaluate(self, positions):
+        return self._function(positions, *self._args)
 
 class SciPyEvaluator(PintsEvaluator):
     """

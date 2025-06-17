@@ -37,7 +37,6 @@ class PybammProblem(Problem):
             self._priors = JointLogPrior(*pybop_params.priors())
         else:
             self._priors = None
-        self._compute_initial_cost_and_resample()
 
     def set_params(self, p: np.ndarray) -> None:
         """
@@ -48,18 +47,17 @@ class PybammProblem(Problem):
         # rebuild the pipeline (if needed)
         self._pipeline.rebuild(self._params.to_dict())
 
-    def _compute_cost(self, solution: Solution) -> float:
+    def _compute_cost(self, solution: list[Solution]) -> list[float]:
         """
         Compute the cost function value from a solution.
         """
-
         costs = [
-            solution[name].data[-1] if use_last else solution[name].data[0]
-            for use_last, name in zip(
-                self._use_last_cost_index, self._cost_names, strict=False
-            )
+            sol[name].data[-1] if use_last else sol[name].data
+            for use_last, name in zip(self._use_last_cost_index, self._cost_names)
+            for sol in solution
         ]
-        return np.dot(self._cost_weights, costs)
+        costs = np.sum(costs, axis=1)
+        return [np.dot(self._cost_weights, cost) for cost in costs]
 
     def _add_prior_contribution(self, cost: float) -> float:
         """

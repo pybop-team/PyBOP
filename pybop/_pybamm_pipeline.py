@@ -1,3 +1,4 @@
+import multiprocessing as mp
 from copy import copy, deepcopy
 
 import numpy as np
@@ -33,6 +34,7 @@ class PybammPipeline:
         var_pts: dict | None = None,
         initial_state: float | str | None = None,
         build_on_eval: bool | None = None,
+        cost_names: list = None,
     ):
         """
         Parameters
@@ -42,7 +44,7 @@ class PybammPipeline:
         parameter_values : pybamm.ParameterValues
             The parameters to be used in the model.
         solver : pybamm.BaseSolver
-            The solver to be used. If None, the idaklu solver will be used.
+            The solver to be used. If None, the idaklu solver will be used with multithreading.
         t_start : number
             The start time of the simulation.
         t_end : number
@@ -65,7 +67,7 @@ class PybammPipeline:
         self._parameter_names = self.pybop_parameters.keys()
         self._geometry = model.default_geometry
         self._methods = model.default_spatial_methods
-        self._solver = pybamm.IDAKLUSolver() if solver is None else solver
+        self._threads = self.get_avaliable_thread_count()
         self._t_start = np.float64(t_start)
         self._t_end = np.float64(t_end)
         self._t_interp = t_interp
@@ -81,6 +83,21 @@ class PybammPipeline:
             if initial_state is not None
             else self._determine_rebuild()
         )
+        self._solver = (
+            pybamm.IDAKLUSolver(
+                output_variables=cost_names, options={"num_threads": self._threads}
+            )
+            if solver is None
+            else solver
+        )
+
+    @staticmethod
+    def get_avaliable_thread_count():
+        """
+        Returns the number of available threads available for processing
+        with a lower limit of 1.
+        """
+        return max(1, mp.cpu_count())
 
     def _determine_rebuild(self) -> bool:
         """
@@ -189,7 +206,7 @@ class PybammPipeline:
     def parameter_names(self):
         return self._parameter_names
 
-    def solve(self, calculate_sensitivities: bool = False) -> pybamm.Solution:
+    def solve(self, calculate_sensitivities: bool = False) -> list[pybamm.Solution]:
         """
         Run the simulation using the built model and solver.
 
@@ -203,13 +220,18 @@ class PybammPipeline:
         solution : pybamm.Solution
             The pybamm solution object.
         """
-        return self._solver.solve(
+        sol = self._solver.solve(
             model=self._built_model,
-            inputs=self._pybop_parameters.to_dict(),
+            inputs=self._pybop_parameters.as_pybamm_multiprocessing(),
             t_eval=[self._t_start, self._t_end],
             t_interp=self._t_interp,
             calculate_sensitivities=calculate_sensitivities,
         )
+
+        if not isinstance(sol, list):
+            return [sol]
+
+        return sol
 
     def _set_initial_state(self, model, initial_state) -> None:
         """

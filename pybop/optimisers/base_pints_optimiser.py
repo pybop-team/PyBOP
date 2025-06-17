@@ -6,9 +6,7 @@ import pints
 from pints import PSO as PintsPSO
 from pints import NelderMead as PintsNelderMead
 from pints import Optimiser as PintsOptimiser
-from pints import ParallelEvaluator as PintsParallelEvaluator
 from pints import PopulationBasedOptimiser
-from pints import PopulationBasedOptimiser as PintsPopulationBasedOptimiser
 from pints import RectangularBoundaries as PintsRectangularBoundaries
 from pints import SequentialEvaluator as PintsSequentialEvaluator
 from pints import strfloat as PintsStrFloat
@@ -18,6 +16,7 @@ from pybop import (
     AdamWImpl,
     GradientDescentImpl,
     OptimisationResult,
+    PopulationEvaluator,
 )
 from pybop.problems.base_problem import Problem
 
@@ -97,7 +96,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         self._n_workers = 1
         self._callback = None
         options = options or PintsOptions()
-        self.set_parallel(options.parallel)
+        self._parallel = options.parallel
         self.set_min_iterations(options.min_iterations)
         self.set_max_iterations(options.max_iterations)
         self._unchanged_max_iterations = options.max_unchanged_iterations
@@ -252,15 +251,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
 
         # Create evaluator object
         if self._parallel:
-            # Get number of workers
-            n_workers = self._n_workers
-            if isinstance(self._optimiser, PintsPopulationBasedOptimiser):
-                population_size = self._optimiser.population_size()
-                if population_size is None:
-                    n_workers = self._n_workers
-                else:
-                    n_workers = min(self._n_workers, population_size)
-            evaluator = PintsParallelEvaluator(fun, n_workers=n_workers)
+            evaluator = PopulationEvaluator(fun)
         else:
             evaluator = PintsSequentialEvaluator(fun)
 
@@ -436,26 +427,6 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
             If True, track f_guessed; otherwise, track f_best (default: False).
         """
         self._use_f_guessed = bool(use_f_guessed)
-
-    def set_parallel(self, parallel=False):
-        """
-        Enable or disable parallel evaluation.
-        Credit: PINTS
-
-        Parameters
-        ----------
-        parallel : bool or int, optional
-            If True, use as many worker processes as there are CPU cores. If an integer, use that many workers.
-            If False or 0, disable parallelism (default: False).
-        """
-        self._parallel = bool(parallel is True or parallel >= 1)
-
-        if parallel is True:
-            self._n_workers = PintsParallelEvaluator.cpu_count()
-        elif parallel >= 1:
-            self._n_workers = int(parallel)
-        else:
-            self._n_workers = 1
 
     def set_min_iterations(self, iterations=2):
         """

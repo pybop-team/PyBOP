@@ -53,7 +53,7 @@ class Pybamm(BaseBuilder):
         self._model = model.new_copy()
         self._initial_state = initial_state
         self._build_on_eval = build_on_eval
-        self._solver = solver or model.default_solver
+        self._solver = solver
         self._parameter_values = (
             parameter_values.copy()
             if parameter_values
@@ -156,6 +156,7 @@ class Pybamm(BaseBuilder):
             t_interp=self._dataset[self.domain],
             initial_state=self._initial_state,
             build_on_eval=self._build_on_eval,
+            cost_names=cost_names,
         )
 
         # Build the pipeline

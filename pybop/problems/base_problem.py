@@ -44,14 +44,15 @@ class Problem:
         Checks if the parameters are valid. p should be a numpy array of one dimensions,
         with length equal to the number of parameters in the model.
         """
-        if not isinstance(p, np.ndarray):
-            raise TypeError("Parameters must be a numpy array.")
-        if p.ndim != 1:
-            raise ValueError("Parameters must be a 1D numpy array.")
-        if len(p) != len(self._params):
-            raise ValueError(
-                f"Expected {len(self._params)} parameters, but got {len(p)}."
-            )
+        if not isinstance(p, (np.ndarray, list)):
+            raise TypeError("Parameters must be a numpy array or list")
+        if isinstance(p, list):
+            try:
+                p = np.asarray(p)
+            except TypeError as e:
+                raise TypeError(
+                    "Parameters cannot be converted to a numpy array."
+                ) from e
         self._params.update(values=p)
 
     def check_set_params_called(self) -> None:
