@@ -209,7 +209,7 @@ class BasePintsSampler(BaseSampler):
         self._finalise_logging()
 
         if not self._chains_in_memory:
-            return None
+            return np.array([]).reshape((0, self._max_iterations, self._n_parameters))
 
         if self._warm_up > 0:
             self._samples = self._samples[:, self._warm_up :, :]
@@ -270,12 +270,7 @@ class BasePintsSampler(BaseSampler):
         if self.options.parallel:
             return pints.ParallelEvaluator(f, n_workers=self.options.n_workers)
 
-        # Construct a dict for various return types
-        evaluator_map = {
-            False: pints.SequentialEvaluator,
-            True: pints.MultiSequentialEvaluator,
-        }
-        return evaluator_map[False](fun)
+        return pints.SequentialEvaluator(fun)
 
     def _initialise_storage(self):
         # Storage of the received samples

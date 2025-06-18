@@ -215,7 +215,8 @@ class TestPintsSamplers:
 
         # Run the sampler
         samples = sampler.run()
-        assert samples is None
+        print(samples)
+        assert samples.shape == (0, options.max_iterations, len(log_posterior.params))
 
     @patch("logging.basicConfig")
     @patch("logging.info")
