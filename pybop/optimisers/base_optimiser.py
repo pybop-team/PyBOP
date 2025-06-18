@@ -253,7 +253,8 @@ class BaseOptimiser:
         results = []
         for i in range(self._multistart):
             if i >= 1:
-                self.problem.params.update(initial_values=self.problem.params.rvs(1))
+                initial_values = self.problem.params.rvs(1)[0]
+                self.problem.params.update(initial_values=initial_values)
                 self._set_up_optimiser()
             results.append(self._run())
 

@@ -51,22 +51,11 @@ class ChainProcessor:
         log_pdf = self._extract_log_pdf(fy_value, chain_idx)
         self.sampler.sampled_logpdf[chain_idx] = log_pdf
 
-        if self.sampler.prior:
-            self.sampler.sampled_prior[chain_idx] = self.sampler.prior(y)
-
     def get_evaluation_metrics(self, chain_idx):
         """
         Get evaluation metrics for the current sample.
         """
         e = self.sampler.sampled_logpdf[chain_idx]
-
-        if self.sampler.prior:
-            e = [
-                e,  # Log posterior
-                self.sampler.sampled_logpdf[chain_idx]
-                - self.sampler.sampled_prior[chain_idx],  # Log likelihood
-                self.sampler.sampled_prior[chain_idx],  # Log prior
-            ]
 
         return e
 
@@ -87,7 +76,7 @@ class SingleChainProcessor(ChainProcessor):
                 continue
 
             y, fy, accepted = reply
-            y_store = self.sampler.transform_values(y)
+            y_store = self.sampler.problem.params.transformation().to_model(y)
 
             # Store samples
             self.store_samples(y_store, i)
@@ -125,7 +114,9 @@ class MultiChainProcessor(ChainProcessor):
 
         if reply:
             ys, fys, accepted = reply
-            ys_store = np.asarray(self.sampler.transform_list_of_values(ys))
+            ys_store = np.asarray(
+                [self.sampler.problem.params.transformation().to_model(y) for y in ys]
+            )
 
             # Store samples
             self.store_samples(ys_store, self.sampler.iteration)

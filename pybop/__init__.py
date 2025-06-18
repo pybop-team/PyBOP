@@ -89,6 +89,7 @@ from .models.base_model import Inputs
 #
 from . import costs
 from .costs.base_cost import BaseCost
+
 #
 # Problem classes
 #
@@ -203,8 +204,8 @@ from .samplers.chain_processor import (
     MultiChainProcessor,
     SingleChainProcessor,
 )
-from .samplers.base_sampler import BaseSampler
-from .samplers.base_pints_sampler import BasePintsSampler
+from .samplers.base_sampler import BaseSampler, SamplerOptions
+from .samplers.base_pints_sampler import BasePintsSampler, PintsSamplerOptions
 from .samplers.pints_samplers import (
     NUTS,
     DREAM,
@@ -225,7 +226,6 @@ from .samplers.pints_samplers import (
     SliceRankShrinkingMCMC,
     SliceStepoutMCMC,
 )
-from .samplers.mcmc_sampler import MCMCSampler
 
 #
 # Observer classes

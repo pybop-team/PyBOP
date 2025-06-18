@@ -1,3 +1,4 @@
+import numbers
 import warnings
 from typing import Optional
 
@@ -52,6 +53,7 @@ class Parameter:
         self.name = name
         self.prior = prior
         self.true_value = true_value
+
         self.initial_value = initial_value
         self.value = initial_value
         self.transformation = transformation
@@ -64,6 +66,13 @@ class Parameter:
         self.validate()
 
     def validate(self):
+        if self.initial_value is not None and not isinstance(
+            self.initial_value, (numbers.Number, np.number)
+        ):
+            raise TypeError(
+                f'Parameter "{self.name}": Initial value must be a number, got {type(self.initial_value)}'
+            )
+
         # initial value should be within bounds
         if self.bounds is not None:
             if self.initial_value is not None:
@@ -134,6 +143,7 @@ class Parameter:
             self.value = value
         if initial_value is None and value is None:
             raise ValueError("No value provided to update parameter")
+        self.validate()
 
     def __repr__(self):
         """
@@ -426,6 +436,7 @@ class Parameters:
         -------
         array-like or None
             An array of samples drawn from the prior distribution within each parameter's bounds.
+            The shape is (n_samples, n_parameters).
             If any prior is None, returns None.
         """
         all_samples = []
@@ -436,10 +447,7 @@ class Parameters:
                 return None
             all_samples.append(samples)
 
-        if n_samples > 1:
-            return np.asarray(all_samples).T
-
-        return np.concatenate(all_samples)
+        return np.asarray(all_samples).T
 
     def get_sigma0(self, apply_transform: bool = False) -> list:
         """
