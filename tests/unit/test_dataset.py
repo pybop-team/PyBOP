@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 import pybop
+import pybamm
 
 
 class TestDataset:
@@ -13,8 +14,8 @@ class TestDataset:
 
     def test_dataset(self):
         # Construct and simulate model
-        model = pybop.lithium_ion.SPM()
-        solution = model.predict(t_eval=np.linspace(0, 10, 100))
+        model = pybamm.lithium_ion.SPM()
+        solution = pybamm.Simulation(model).solve(t_eval=[0, 3600])
 
         # Form dataset
         data_dictionary = {
