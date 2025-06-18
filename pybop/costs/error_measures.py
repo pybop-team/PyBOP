@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import numpy as np
 
 from pybop.costs.base_cost import BaseCost
@@ -23,8 +21,8 @@ class MeanSquaredError(BaseCost):
     def __call__(
         self,
         r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         e = np.sum(np.abs(r) ** 2 * self.weighting)
 
         if dy is not None:
@@ -46,8 +44,8 @@ class RootMeanSquaredError(BaseCost):
     def __call__(
         self,
         r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         e = np.sqrt(np.mean((np.abs(r) ** 2) * self.weighting))
 
         if dy is not None:
@@ -75,8 +73,8 @@ class MeanAbsoluteError(BaseCost):
     def __call__(
         self,
         r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         e = np.mean(np.abs(r) * self.weighting)
 
         if dy is not None:
@@ -98,8 +96,8 @@ class SumSquaredError(BaseCost):
     def __call__(
         self,
         r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         e = np.sum(np.abs(r) ** 2 * self.weighting)
 
         if dy is not None:
@@ -138,7 +136,7 @@ class Minkowski(BaseCost):
         The order of the Minkowski distance.
     """
 
-    def __init__(self, p: float = 2.0, weighting: Union[str, np.ndarray] = None):
+    def __init__(self, p: float = 2.0, weighting: str | np.ndarray = None):
         super().__init__(weighting=weighting)
         if p < 0:
             raise ValueError(
@@ -153,8 +151,8 @@ class Minkowski(BaseCost):
     def __call__(
         self,
         r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         e = np.sum((np.abs(r) ** self.p) * self.weighting) ** (1 / self.p)
 
         if dy is not None:
@@ -197,7 +195,7 @@ class SumOfPower(BaseCost):
         The power order for Sum of Power.
     """
 
-    def __init__(self, p: float = 2.0, weighting: Union[str, np.ndarray] = None):
+    def __init__(self, p: float = 2.0, weighting: str | np.ndarray = None):
         super().__init__(weighting=weighting)
         if p < 0:
             raise ValueError("The order of 'p' must be greater than 0.")
@@ -208,8 +206,8 @@ class SumOfPower(BaseCost):
     def __call__(
         self,
         r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         e = np.sum((np.abs(r) ** self.p) * self.weighting)
 
         if dy is not None:

@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import numpy as np
 
 from pybop import Parameters
@@ -16,10 +14,10 @@ class PybammEISProblem(Problem):
     def __init__(
         self,
         eis_pipeline: PybammEISPipeline,
-        pybop_params: Optional[Parameters] = None,
-        costs: Optional[list] = None,
-        cost_weights: Union[list, np.ndarray, None] = None,
-        fitting_data: Optional[list] = None,
+        pybop_params: Parameters | None = None,
+        costs: list | None = None,
+        cost_weights: list | np.ndarray | None = None,
+        fitting_data: list | None = None,
     ):
         super().__init__(pybop_params=pybop_params)
         self._pipeline = eis_pipeline

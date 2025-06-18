@@ -1,5 +1,3 @@
-from typing import Union
-
 import numpy as np
 import scipy.stats as stats
 
@@ -111,7 +109,7 @@ class BasePrior:
         ValueError
             If the size parameter is negative.
         """
-        if not isinstance(size, (int, tuple)):
+        if not isinstance(size, int | tuple):
             raise ValueError(
                 "size must be a positive integer or tuple of positive integers"
             )
@@ -375,7 +373,7 @@ class JointLogPrior(BasePrior):
         self._n_parameters = len(priors)
         self._priors: list[BasePrior] = list(priors)
 
-    def logpdf(self, x: Union[float, np.ndarray]) -> float:
+    def logpdf(self, x: float | np.ndarray) -> float:
         """
         Evaluates the joint log-prior distribution at a given point.
 
@@ -395,9 +393,9 @@ class JointLogPrior(BasePrior):
                 f"Input x must have length {self._n_parameters}, got {len(x)}"
             )
 
-        return sum(prior(x) for prior, x in zip(self._priors, x))
+        return sum(prior(x) for prior, x in zip(self._priors, x, strict=False))
 
-    def _logpdfS1(self, x: Union[float, np.ndarray]) -> tuple[float, np.ndarray]:
+    def _logpdfS1(self, x: float | np.ndarray) -> tuple[float, np.ndarray]:
         """
         Evaluates the first derivative of the joint log-prior distribution at a given point.
 
@@ -420,7 +418,7 @@ class JointLogPrior(BasePrior):
         log_probs = []
         derivatives = []
 
-        for prior, xi in zip(self._priors, x):
+        for prior, xi in zip(self._priors, x, strict=False):
             p, dp = prior.logpdfS1(xi)
             log_probs.append(p)
             derivatives.append(dp)

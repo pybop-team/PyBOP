@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import numpy as np
 
 
@@ -14,14 +12,14 @@ class BaseCost:
         measure. Options: "equal"(default), "domain", or a custom numpy array.
     """
 
-    def __init__(self, weighting: Union[str, np.ndarray] = None):
+    def __init__(self, weighting: str | np.ndarray = None):
         self.weighting = weighting
 
     def __call__(
         self,
         r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         """
         Computes the cost function for the given residuals.
 

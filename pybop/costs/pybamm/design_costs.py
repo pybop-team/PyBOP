@@ -1,5 +1,3 @@
-from typing import Optional
-
 import pybamm
 
 from pybop import Dataset
@@ -35,7 +33,7 @@ class GravimetricEnergyDensity(DesignCost):
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[Dataset] = None,
+        dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
         # Check args
         name = GravimetricEnergyDensity.make_unique_cost_name()
@@ -74,7 +72,7 @@ class VolumetricEnergyDensity(DesignCost):
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[Dataset] = None,
+        dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
         # Check args
         name = VolumetricEnergyDensity.make_unique_cost_name()
@@ -113,7 +111,7 @@ class GravimetricPowerDensity(DesignCost):
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[Dataset] = None,
+        dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
         # Check args
         name = GravimetricPowerDensity.make_unique_cost_name()
@@ -153,7 +151,7 @@ class VolumetricPowerDensity(DesignCost):
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[Dataset] = None,
+        dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
         # Check args
         name = VolumetricPowerDensity.make_unique_cost_name()

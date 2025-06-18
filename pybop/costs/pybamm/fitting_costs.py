@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import numpy as np
 import pybamm
 
@@ -21,7 +19,7 @@ class SumSquaredError(BaseCost):
         self,
         variable_name: str,
         data_name: str,
-        sigma: Optional[Union[float, PybopParameter]] = None,
+        sigma: float | PybopParameter | None = None,
     ):
         super().__init__()
         self._sigma = sigma
@@ -31,7 +29,7 @@ class SumSquaredError(BaseCost):
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[Dataset] = None,
+        dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
         # Check args
         name = SumSquaredError.make_unique_cost_name()
@@ -71,7 +69,7 @@ class MeanAbsoluteError(BaseCost):
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[Dataset] = None,
+        dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
         # Check args
         name = SumSquaredError.make_unique_cost_name()
@@ -105,7 +103,7 @@ class MeanSquaredError(BaseCost):
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[Dataset] = None,
+        dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
         # Check args
         name = MeanSquaredError.make_unique_cost_name()
@@ -140,7 +138,7 @@ class RootMeanSquaredError(BaseCost):
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[Dataset] = None,
+        dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
         # Check args
         name = RootMeanSquaredError.make_unique_cost_name()
@@ -191,7 +189,7 @@ class Minkowski(BaseCost):
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[Dataset] = None,
+        dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
         # Check args
         name = Minkowski.make_unique_cost_name()
@@ -249,7 +247,7 @@ class SumOfPower(BaseCost):
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[Dataset] = None,
+        dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
         # Check args
         name = SumOfPower.make_unique_cost_name()
@@ -282,7 +280,7 @@ class NegativeGaussianLogLikelihood(BaseLikelihood):
         self,
         variable_name: str,
         data_name: str,
-        sigma: Optional[Union[float, PybopParameter]] = None,
+        sigma: float | PybopParameter | None = None,
     ):
         super().__init__()
         self._sigma = sigma
@@ -293,7 +291,7 @@ class NegativeGaussianLogLikelihood(BaseLikelihood):
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[Dataset] = None,
+        dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
         # Check args
         name = NegativeGaussianLogLikelihood.make_unique_cost_name()
@@ -337,7 +335,7 @@ class ScaledCost(BaseCost):
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[Dataset] = None,
+        dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
         # Check args
         name = NegativeGaussianLogLikelihood.make_unique_cost_name()

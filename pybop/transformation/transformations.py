@@ -1,5 +1,3 @@
-from typing import Union
-
 import numpy as np
 
 from pybop import Transformation
@@ -85,8 +83,8 @@ class ScaledTransformation(Transformation):
 
     def __init__(
         self,
-        coefficient: Union[list, float, np.ndarray],
-        intercept: Union[list, float, np.ndarray] = 0,
+        coefficient: list | float | np.ndarray,
+        intercept: list | float | np.ndarray = 0,
         n_parameters: int = 1,
     ):
         self._n_parameters = n_parameters
@@ -157,8 +155,8 @@ class UnitHyperCube(ScaledTransformation):
 
     def __init__(
         self,
-        lower: Union[float, list, np.ndarray],
-        upper: Union[float, list, np.ndarray],
+        lower: float | list | np.ndarray,
+        upper: float | list | np.ndarray,
     ):
         self.lower = lower
         self.upper = upper

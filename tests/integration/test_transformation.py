@@ -130,7 +130,7 @@ class TestTransformation:
         optim = optimiser(
             cost=cost,
             sigma0=[0.02, 0.02, 2e-3]
-            if isinstance(cost, (pybop.GaussianLogLikelihood, pybop.LogPosterior))
+            if isinstance(cost, pybop.GaussianLogLikelihood | pybop.LogPosterior)
             else [0.02, 0.02],
             max_iterations=250,
             max_unchanged_iterations=45,
@@ -141,7 +141,7 @@ class TestTransformation:
         results = optim.run()
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
-        if isinstance(optim.cost, (pybop.GaussianLogLikelihood, pybop.LogPosterior)):
+        if isinstance(optim.cost, pybop.GaussianLogLikelihood | pybop.LogPosterior):
             self.ground_truth = np.concatenate(
                 (self.ground_truth, np.asarray([self.sigma0]))
             )

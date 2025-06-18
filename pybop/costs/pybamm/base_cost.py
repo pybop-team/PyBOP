@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 from uuid import uuid4
 
 import pybamm
@@ -59,7 +58,7 @@ class BaseCost:
     def variable_expression(
         self,
         model: pybamm.BaseModel,
-        dataset: Optional[Dataset] = None,
+        dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
         """
         Defines the variable expression for the cost function, returning a
@@ -73,7 +72,7 @@ class BaseCost:
         self,
         model: pybamm.BaseModel,
         param: pybamm.ParameterValues,
-        dataset: Optional[Dataset] = None,
+        dataset: Dataset | None = None,
     ):
         # if dataset is provided, must contain time data
         if dataset is not None and "Time [s]" not in dataset:
@@ -119,7 +118,7 @@ class BaseCost:
                 parameter=sigma,
                 default_value=self._sigma.value if self._sigma else 1.0,
             )
-        elif isinstance(self._sigma, (float, int)):
+        elif isinstance(self._sigma, float | int):
             sigma = pybamm.Scalar(self._sigma)
         else:
             sigma = self._sigma  # Assume pybamm.Parameter

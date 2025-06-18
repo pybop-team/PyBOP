@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 
 from pybop import BaseProblem
@@ -40,10 +38,10 @@ class Observer(BaseProblem):
         parameters: Parameters,
         model: BaseModel,
         check_model: bool = True,
-        signal: Optional[list[str]] = None,
-        domain: Optional[str] = None,
-        additional_variables: Optional[list[str]] = None,
-        initial_state: Optional[dict] = None,
+        signal: list[str] | None = None,
+        domain: str | None = None,
+        additional_variables: list[str] | None = None,
+        initial_state: dict | None = None,
     ) -> None:
         super().__init__(
             parameters=parameters,
@@ -63,7 +61,7 @@ class Observer(BaseProblem):
     def reset(self, inputs: Inputs) -> None:
         self._state = self._model.reinit(inputs)
 
-    def observe(self, time: float, value: Optional[np.ndarray] = None) -> float:
+    def observe(self, time: float, value: np.ndarray | None = None) -> float:
         """
         Predict the time series model until t = `time` and optionally observe the measurement `value`.
 
@@ -105,7 +103,7 @@ class Observer(BaseProblem):
                 raise ValueError("values and times must have the same length.")
             log_likelihood = 0.0
             self.reset(inputs)
-            for t, v in zip(times, values[signal]):
+            for t, v in zip(times, values[signal], strict=False):
                 try:
                     log_likelihood += self.observe(t, v)
                 except Exception:

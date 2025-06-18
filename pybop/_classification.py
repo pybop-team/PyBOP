@@ -1,12 +1,10 @@
-from typing import Optional
-
 import numpy as np
 
 from pybop import OptimisationResult
 
 
 def classify_using_hessian(
-    result: OptimisationResult, dx=None, cost_tolerance: Optional[float] = 1e-5
+    result: OptimisationResult, dx=None, cost_tolerance: float | None = 1e-5
 ):
     """
     A simple check for parameter correlations based on numerical approximation

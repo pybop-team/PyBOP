@@ -1,7 +1,6 @@
 import logging
 import time
 from dataclasses import dataclass
-from typing import Optional, Type
 
 import numpy as np
 import pints
@@ -21,13 +20,13 @@ class PintsSamplerOptions(SamplerOptions):
     n_workers: int = 1
     chains_in_memory: bool = True
     log_to_screen: bool = True
-    log_filename: Optional[str] = None
+    log_filename: str | None = None
     initial_phase_iterations: int = 250
     parallel: bool = False
     verbose: bool = False
     warm_up_iterations: int = 0
-    chain_files: Optional[list[str]] = None
-    evaluation_files: Optional[list[str]] = None
+    chain_files: list[str] | None = None
+    evaluation_files: list[str] | None = None
 
     def validate(self):
         """
@@ -72,8 +71,8 @@ class BasePintsSampler(BaseSampler):
     def __init__(
         self,
         problem: Problem,
-        sampler: Type[pints.SingleChainMCMC | pints.MultiChainMCMC],
-        options: Optional[PintsSamplerOptions] = None,
+        sampler: type[pints.SingleChainMCMC | pints.MultiChainMCMC],
+        options: PintsSamplerOptions | None = None,
     ):
         options = options or PintsSamplerOptions()
         super().__init__(problem, options=options)
@@ -268,7 +267,7 @@ class BasePintsSampler(BaseSampler):
 
         # Handle parallel case
         if self.options.parallel:
-            return pints.ParallelEvaluator(f, n_workers=self.options.n_workers)
+            return pints.ParallelEvaluator(fun, n_workers=self.options.n_workers)
 
         return pints.SequentialEvaluator(fun)
 

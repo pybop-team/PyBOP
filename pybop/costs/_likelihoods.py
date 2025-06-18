@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import numpy as np
 import scipy.stats as stats
 
@@ -20,9 +18,7 @@ class BaseLikelihood(BaseCost):
         self.n_data = problem.n_data
         self.minimising = False
 
-    def observed_fisher(
-        self, inputs: Union[Inputs, list, np.ndarray]
-    ) -> Union[np.ndarray, None]:
+    def observed_fisher(self, inputs: Inputs | list | np.ndarray) -> np.ndarray | None:
         """
         Compute the observed Fisher Information Matrix (FIM) for the given data.
 
@@ -94,7 +90,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
         for all coordinates) or an array with one entry per dimension.
     """
 
-    def __init__(self, problem: BaseProblem, sigma0: Union[list[float], float]):
+    def __init__(self, problem: BaseProblem, sigma0: list[float] | float):
         super().__init__(problem)
         sigma0 = self.check_sigma0(sigma0)
         self.sigma2 = sigma0**2.0
@@ -104,8 +100,8 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
     def compute(
         self,
         y: dict,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         """
         Compute the Gaussian log-likelihood for the given parameters with known sigma.
 
@@ -126,7 +122,7 @@ class GaussianLogLikelihoodKnownSigma(BaseLikelihood):
 
         return l
 
-    def check_sigma0(self, sigma0: Union[np.ndarray, float]):
+    def check_sigma0(self, sigma0: np.ndarray | float):
         """
         Check the validity of sigma0.
         """
@@ -160,7 +156,7 @@ class GaussianLogLikelihood(BaseLikelihood):
     def __init__(
         self,
         problem: BaseProblem,
-        sigma0: Union[float, list[float], list[Parameter]] = 1e-2,
+        sigma0: float | list[float] | list[Parameter] = 1e-2,
         dsigma_scale: float = 1.0,
     ):
         super().__init__(problem)
@@ -191,7 +187,7 @@ class GaussianLogLikelihood(BaseLikelihood):
     def _add_single_sigma(self, index, value):
         if isinstance(value, Parameter):
             self.sigma.add(value)
-        elif isinstance(value, (int, float)):
+        elif isinstance(value, int | float):
             self.sigma.add(
                 Parameter(
                     f"Sigma for output {index + 1}",
@@ -222,8 +218,8 @@ class GaussianLogLikelihood(BaseLikelihood):
     def compute(
         self,
         y: dict,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         """
         Compute the Gaussian log-likelihood for the given parameters.
 
@@ -283,8 +279,8 @@ class ScaledLogLikelihood(BaseMetaLikelihood):
     def compute(
         self,
         y: dict,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         likelihood = self._log_likelihood.compute(y, dy)
         scaling_factor = 1 / self.n_data
 
@@ -317,7 +313,7 @@ class LogPosterior(BaseMetaLikelihood):
     def __init__(
         self,
         log_likelihood: BaseLikelihood,
-        log_prior: Optional[Union[pybop.BasePrior, stats.rv_continuous]] = None,
+        log_prior: pybop.BasePrior | stats.rv_continuous | None = None,
         gradient_step: float = 1e-3,
     ):
         self.gradient_step = gradient_step
@@ -333,8 +329,8 @@ class LogPosterior(BaseMetaLikelihood):
     def compute(
         self,
         y: dict,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         """
         Calculate the posterior cost for a given forward model prediction.
 
@@ -363,7 +359,7 @@ class LogPosterior(BaseMetaLikelihood):
                 delta = self.parameters.current_value() * self.gradient_step
                 dp = []
 
-                for parameter, step_size in zip(self.parameters, delta):
+                for parameter, step_size in zip(self.parameters, delta, strict=False):
                     param_value = parameter.value
                     upper_value = param_value + step_size
                     lower_value = param_value - step_size
