@@ -436,7 +436,7 @@ class Parameters:
         -------
         array-like or None
             An array of samples drawn from the prior distribution within each parameter's bounds.
-            The shape is (n_parameters, n_samples).
+            The shape is (n_samples, n_parameters).
             If any prior is None, returns None.
         """
         all_samples = []
@@ -447,7 +447,7 @@ class Parameters:
                 return None
             all_samples.append(samples)
 
-        return np.asarray(all_samples)
+        return np.asarray(all_samples).T
 
     def get_sigma0(self, apply_transform: bool = False) -> list:
         """
