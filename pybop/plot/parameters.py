@@ -1,4 +1,3 @@
-from pybop import GaussianLogLikelihood
 from pybop.plot.standard_plots import StandardSubplot
 
 
@@ -33,10 +32,6 @@ def parameters(optim, show=True, **layout_kwargs):
     trace_names = parameters.keys()
     for name in trace_names:
         axis_titles.append(("Function Call", name))
-
-    if isinstance(optim.cost, GaussianLogLikelihood):
-        axis_titles.append(("Function Call", "Sigma"))
-        trace_names.append("Sigma")
 
     # Set subplot layout options
     layout_options = dict(

@@ -5,7 +5,7 @@ import jax.numpy as jnp
 import numpy as np
 from pybamm import IDAKLUSolver
 
-from pybop import BaseCost, BaseLikelihood, BaseProblem, Inputs
+from pybop import BaseCost, BaseProblem, Inputs
 
 
 class BaseJaxCost(BaseCost):
@@ -112,71 +112,3 @@ class JaxSumSquaredError(BaseJaxCost):
         y = self.problem.evaluate(inputs)
         residuals = jnp.asarray([y[s] - self._target[s] for s in self.signal])
         return jnp.sum(jnp.square(residuals))
-
-
-class JaxLogNormalLikelihood(BaseJaxCost, BaseLikelihood):
-    """
-    A Log-Normal Likelihood function. This function represents the
-    underlining observed data sampled from a Log-Normal distribution.
-
-    Parameters
-    ----------
-    problem : BaseProblem
-        The problem to fit, of type `pybop.BaseProblem`.
-    sigma0 : float, optional (default=0.02)
-        The standard deviation of the measured data.
-    """
-
-    def __init__(self, problem: BaseProblem, sigma0: Union[list[float], float]):
-        super().__init__(problem)
-        self.sigma = self.check_sigma0(sigma0)
-        self.sigma2 = jnp.square(self.sigma)
-        self._offset = 0.5 * self.n_data * jnp.log(2 * jnp.pi)
-        self._target_as_array = jnp.asarray([self._target[s] for s in self.signal])
-        self._log_target_sum = jnp.sum(jnp.log(self._target_as_array))
-        self._precompute()
-
-    def _precompute(self):
-        self._constant_term = (
-            -self._offset - self.n_data * jnp.log(self.sigma) - self._log_target_sum
-        )
-
-    def evaluate(self, inputs):
-        """
-        Computes the log-normal likelihood.
-        """
-        y = self.problem.evaluate(inputs)
-        residuals = jnp.asarray(
-            [jnp.log(y[s]) - jnp.log(self._target[s]) for s in self.signal]
-        )
-        return self._constant_term - jnp.sum(jnp.square(residuals)) / (2 * self.sigma2)
-
-
-class JaxGaussianLogLikelihoodKnownSigma(BaseJaxCost, BaseLikelihood):
-    """
-    A Jax implementation of the Gaussian Likelihood function.
-    This function represents the underlining observed data sampled
-    from a Gaussian distribution with known noise, `sigma0`.
-
-    Parameters
-    -----------
-    problem: BaseProblem
-        The problem to fit of type `pybop.BaseProblem`
-    sigma0: float, optional
-        The variance in the measured data
-    """
-
-    def __init__(self, problem: BaseProblem, sigma0: Union[list[float], float]):
-        super().__init__(problem)
-        self.sigma = self.check_sigma0(sigma0)
-        self.sigma2 = jnp.square(self.sigma)
-        self._offset = -0.5 * self.n_data * jnp.log(2 * jnp.pi * self.sigma2)
-        self._multip = -1 / (2.0 * self.sigma2)
-
-    def evaluate(self, inputs):
-        """
-        Computes the Gaussian log-likelihood.
-        """
-        y = self.problem.evaluate(inputs)
-        residuals = jnp.asarray([y[s] - self._target[s] for s in self.signal])
-        return self._offset + jnp.sum(self._multip * jnp.sum(jnp.square(residuals)))
