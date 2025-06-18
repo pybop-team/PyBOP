@@ -63,6 +63,9 @@ class PybammProblem(Problem):
         # when output_variables is not used for the DiscreteTimeSum node.
         if costs[0].shape != self._params.current_value().shape:
             costs = np.sum(costs, axis=1).reshape(self._cost_weights.shape[0], -1)
+        weighted_costs = np.dot(self._cost_weights, costs)
+        if weighted_costs.size == 1:
+            return weighted_costs[0]
         return np.dot(self._cost_weights, costs)
 
     def _add_prior_contribution(self, cost: float) -> float:
