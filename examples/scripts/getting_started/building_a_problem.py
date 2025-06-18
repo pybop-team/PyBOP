@@ -47,7 +47,7 @@ problem = builder.build()
 
 options = pybop.PintsOptions(max_iterations=3, parallel=True)
 optim = pybop.CMAES(problem, options=options)
-optim.set_population_size(1000)
+optim.set_population_size(100)
 results = optim.run()
 print(results)
 

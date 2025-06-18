@@ -53,11 +53,17 @@ class PybammProblem(Problem):
         """
         costs = [
             sol[name].data[-1] if use_last else sol[name].data
-            for use_last, name in zip(self._use_last_cost_index, self._cost_names)
+            for use_last, name in zip(
+                self._use_last_cost_index, self._cost_names, strict=False
+            )
             for sol in solution
         ]
-        costs = np.sum(costs, axis=1)
-        return [np.dot(self._cost_weights, cost) for cost in costs]
+        # NOTE: The below is needed until pybamm issue: https://github.com/pybamm-team/PyBaMM/issues/5063
+        # is closed. The below code sums across the time axis, replicating the processing that occurs
+        # when output_variables is not used for the DiscreteTimeSum node.
+        if costs[0].shape != self._params.current_value().shape:
+            costs = np.sum(costs, axis=1).reshape(self._cost_weights.shape[0], -1)
+        return np.dot(self._cost_weights, costs)
 
     def _add_prior_contribution(self, cost: float) -> float:
         """
@@ -113,14 +119,15 @@ class PybammProblem(Problem):
         sol = self._pipeline.solve(calculate_sensitivities=True)
         cost = self._compute_cost_with_prior(sol)
 
-        try:
-            aggregated_sens = np.asarray(
-                [sol[n].sensitivities["all"] for n in self._cost_names]
-            ).squeeze(axis=1)
-        except KeyError as e:
-            raise KeyError(
-                "Sensitivities not available, ensure problem is formulated to enable sensitivities"
-            ) from e
+        # Below is a patch for output_variables until the
+        # DiscreteTimeSum functionality is added.
+        aggregated_sens = np.asarray(
+            [
+                np.sum(s[n].sensitivities["all"], axis=0)
+                for n in self._cost_names
+                for s in sol
+            ]
+        )
         weighted_sensitivity = np.sum(
             aggregated_sens * self._cost_weights[:, None], axis=0
         )
