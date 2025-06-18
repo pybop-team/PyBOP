@@ -1,8 +1,8 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
-import pybamm
 
 
 class TestDataset:

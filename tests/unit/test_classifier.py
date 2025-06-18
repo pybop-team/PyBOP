@@ -1,6 +1,5 @@
-import numpy as np
-import pytest
 import pybamm
+import pytest
 
 import pybop
 
