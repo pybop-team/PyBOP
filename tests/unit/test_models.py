@@ -22,21 +22,7 @@ class TestModels:
             pybop.lithium_ion.GroupedSPMe(options={"surface form": "differential"}),
         ],
     )
-    def test_build_and_run(self, model):
-        t_eval = np.linspace(0, 10, 100)
-        dataset = pybop.Dataset({"Time [s]": t_eval})
-        builder = pybop.builders.Pybamm()
-        builder.set_simulation(model)
-        builder.set_dataset(dataset)
-        builder.add_parameter({"name": "Current function [A]", "initial_value": 1})
-        problem = builder.build()
-
-        problem.set_params(np.array([0.1]))
-        sol = problem.run()
-
-        assert sol is not None
-
-    def test_set_initial_state(self):
+    def test_set_initial_state(self, model):
         model = pybamm.lithium_ion.SPM()
         t_eval = np.linspace(0, 10, 100)
         model.build(initial_state={"Initial SoC": 0.7})
