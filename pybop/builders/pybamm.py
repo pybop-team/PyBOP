@@ -13,7 +13,7 @@ from pybop.costs.pybamm import BaseLikelihood, DesignCost, PybammCost
 class TIME_PARAMS:
     """Enum-like class for time params"""
 
-    time_params = {"t_start": None, "t_end": None, "t_interp": None}
+    time_params = {"t_eval": None, "t_interp": None}
 
 
 class Pybamm(BaseBuilder):
@@ -160,8 +160,7 @@ class Pybamm(BaseBuilder):
             pybop_parameters,
             self._solver,
             experiment=self._experiment,
-            t_start=time_params["t_start"],
-            t_end=time_params["t_end"],
+            t_eval=time_params["t_eval"],
             t_interp=time_params["t_interp"],
             initial_state=self._initial_state,
             build_on_eval=self._build_on_eval,
@@ -183,8 +182,7 @@ class Pybamm(BaseBuilder):
         """Extract time-related parameters from dataset."""
         domain_data = self._dataset[self.domain]
         return {
-            "t_start": domain_data[0],
-            "t_end": domain_data[-1],
+            "t_eval": [domain_data[0], domain_data[-1]],
             "t_interp": domain_data,
         }
 

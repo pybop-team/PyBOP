@@ -38,8 +38,7 @@ class PybammPipeline:
         pybop_parameters: Parameters | None = None,
         solver: pybamm.BaseSolver | None = None,
         experiment: pybamm.Experiment = None,
-        t_start: np.number = 0.0,
-        t_end: np.number = 1.0,
+        t_eval: np.ndarray = None,
         t_interp: np.ndarray | None = None,
         var_pts: dict | None = None,
         initial_state: float | str | None = None,
@@ -55,10 +54,9 @@ class PybammPipeline:
             The parameters to be used in the model.
         solver : pybamm.BaseSolver
             The solver to be used. If None, the idaklu solver will be used.
-        t_start : number
-            The start time of the simulation.
-        t_end : number
-            The end time of the simulation.
+        t_eval : np.ndarray
+            The time points to stop the solver at. These points should be used to inform the
+            solver of discontinuities in the solution.
         t_interp : np.ndarray
             The time points at which to interpolate the solution. If None, no interpolation will be done.
         initial_state: float | str
@@ -79,8 +77,7 @@ class PybammPipeline:
         self._var_pts = var_pts or model.default_var_pts
         self._spatial_methods = model.default_spatial_methods  # allow user input
         self._solver = model.default_solver if solver is None else solver
-        self._t_start = np.float64(t_start)
-        self._t_end = np.float64(t_end)
+        self._t_eval = t_eval
         self._t_interp = t_interp
         self._initial_state = initial_state
         self._built_initial_soc = None
@@ -235,11 +232,9 @@ class PybammPipeline:
         return disc
 
     def build_for_experiment(self, geometry) -> None:
-        # Rebuild handled through the rebuild method above, if this method
-        # has been called, we've already decided to rebuild
-        # if self.steps_to_built_models:
-        #     return
-
+        """
+        Build the Pybamm pipeline for an experiment definition.
+        """
         self._setup_experiment_models()
         self._parameter_values.process_geometry(geometry)
         disc = self._create_mesh_and_discretisation(geometry)
@@ -247,7 +242,6 @@ class PybammPipeline:
 
     def _setup_experiment_models(self) -> None:
         self._validate_experiment_parameters()
-
         parameter_values = self._parameter_values.copy()
 
         init_temp = self.experiment.steps[0].temperature
@@ -325,7 +319,7 @@ class PybammPipeline:
             return self._solver.solve(
                 model=self._built_model,
                 inputs=self._pybop_parameters.to_dict(),
-                t_eval=[self._t_start, self._t_end],
+                t_eval=self._t_eval,
                 t_interp=self._t_interp,
                 calculate_sensitivities=calculate_sensitivities,
             )
@@ -352,7 +346,7 @@ class PybammPipeline:
         kwargs = {}
         # callbacks.on_experiment_start(logs)
 
-        # Initialize experiment execution
+        # Initialise experiment execution
         experiment_runner = ExperimentRunner(
             self,
             solver,
@@ -365,6 +359,26 @@ class PybammPipeline:
         solution = experiment_runner.run(starting_solution, **kwargs)
         # callbacks.on_experiment_end(logs)
         return solution
+
+    def run_padding_rest(self, kwargs, rest_time, step_solution, inputs):
+        model = self.steps_to_built_models["Rest for padding"]
+        solver = self.steps_to_built_solvers["Rest for padding"]
+
+        # Make sure we take at least 2 timesteps. The period is hardcoded to 10
+        # minutes,the user can always override it by adding a rest step
+        npts = max(round(rest_time / 600) + 1, 2)
+
+        step_solution_with_rest = solver.step(
+            step_solution,
+            model,
+            rest_time,
+            t_eval=np.linspace(0, rest_time, npts),
+            save=False,
+            inputs=inputs,
+            **kwargs,
+        )
+
+        return step_solution_with_rest
 
     def _set_initial_state(self, model, initial_state) -> None:
         """
@@ -441,8 +455,8 @@ class PybammPipeline:
 
 class ExperimentRunner:
     def __init__(self, simulation, solver, calc_esoh, callbacks, inputs, logs):
-        self.sim = simulation
-        self.solver = solver
+        self.sim: PybammPipeline = simulation
+        self.solver: pybamm.BaseSolver = solver
         self.calc_esoh = calc_esoh
         self.save_at_cycles = self.sim.save_at_cycles
         self._callbacks = callbacks
@@ -452,12 +466,12 @@ class ExperimentRunner:
         self.esoh_solver = simulation.get_esoh_solver(calc_esoh)
 
     def run(self, starting_solution, **kwargs):
-        solution_data = self._initialize_solution_data(starting_solution)
+        solution_data = self._initialise_solution_data(starting_solution)
         initial_start_time = self._setup_timing(starting_solution)
 
         return self._run_cycles(solution_data, initial_start_time, **kwargs)
 
-    def _initialize_solution_data(self, starting_solution) -> dict:
+    def _initialise_solution_data(self, starting_solution) -> dict:
         if starting_solution is None:
             return {"cycles": [], "summary_variables": [], "first_states": []}
         elif not hasattr(starting_solution, "all_summary_variables"):
@@ -553,7 +567,7 @@ class ExperimentRunner:
             self.save_at_cycles is None or abs_cycle_num in self.save_at_cycles
         )
 
-        # Initialize cycle state
+        # Initialise cycle state
         inputs = self.inputs.copy()
         min_voltage = None
 
