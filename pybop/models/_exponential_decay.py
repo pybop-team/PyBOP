@@ -1,6 +1,5 @@
 import pybamm
-
-from pybop.models.base_model import BaseModel
+from pybamm.models.base_model import BaseModel
 
 
 class ExponentialDecayModel(BaseModel):

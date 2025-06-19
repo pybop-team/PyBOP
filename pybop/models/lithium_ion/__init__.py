@@ -1,7 +1,5 @@
 #
 # Import lithium ion based models
 #
-from .base_echem import EChemBaseModel
-# from .echem import SPM, SPMe, DFN, MPM, MSMR, WeppnerHuggins, GroupedSPMe
-from .basic_SPMe import GroupedSPMe
+from .grouped_spme import GroupedSPMe
 from .weppner_huggins import WeppnerHuggins

@@ -3,7 +3,7 @@ import numpy as np
 from scipy.io import savemat
 
 import pybop
-from pybop.models.lithium_ion.basic_SPMe import convert_physical_to_grouped_parameters
+from pybop.models.lithium_ion.grouped_spme import convert_physical_to_grouped_parameters
 
 ## Grouped parameter set
 R0 = 0.01
