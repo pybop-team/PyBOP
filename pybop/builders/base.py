@@ -68,7 +68,7 @@ class BaseBuilder(ABC):
                     f"There is already a parameter with the name {name} "
                     "in the Parameters object. Please remove the duplicate entry."
                 )
-            self._params[name] = pybop.Parameter(**parameter)
+            self._params = pybop.Parameter(**parameter)
         else:
             raise TypeError("Each parameter input must be a Parameter or a dictionary.")
 
