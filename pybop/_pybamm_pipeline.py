@@ -155,7 +155,7 @@ class PybammPipeline:
         if self._initial_state is not None:
             self._set_initial_state(model, self._initial_state)
 
-        geometry = copy(self._geometry)  # copy?
+        geometry = copy(self._geometry)
         self._parameter_values.process_geometry(geometry)
         self._parameter_values.process_model(model)
 
@@ -166,17 +166,6 @@ class PybammPipeline:
 
         # reset the solver since we've built a new model
         self._solver = self._solver.copy()
-
-        # Is the below required? If so, we need to pass an `inputs` dict
-        # self._solver.set_up(model)
-
-        # TODO: unfortunately, the solver will still call set_up on the model
-        # if this is not done, need to fix this in PyBaMM!
-        # self._solver._model_set_up.update(  # Noqa: SLF001
-        #     {model: {"initial conditions": model.concatenated_initial_conditions}}
-        # )
-
-        # self.n_states = self._built_model.len_rhs_and_alg  # len_rhs + len_alg
 
     @property
     def built_model(self):
