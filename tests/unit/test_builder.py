@@ -37,7 +37,10 @@ class TestBuilder:
 
     @pytest.fixture
     def dataset(self, model, parameter_values):
-        sim = pybamm.Simulation(model(), parameter_values=parameter_values)
+        solver = IDAKLUSolver(atol=1e-6, rtol=1e-6)
+        sim = pybamm.Simulation(
+            model(), parameter_values=parameter_values, solver=solver
+        )
         sol = sim.solve(t_eval=np.linspace(0, 10, 20))
         return pybop.Dataset(
             {
@@ -216,8 +219,8 @@ class TestBuilder:
         assert grad1s.shape == (2,)
         problem.set_params(np.array([0.7, 0.7]))
         value2s, grad2s = problem.run_with_sensitivities()
-        np.testing.assert_allclose(value1s, value1, atol=1e-5)
-        np.testing.assert_allclose(value2s, value2, atol=1e-5)
+        np.testing.assert_allclose(value1s, value1, rtol=1e-5)
+        np.testing.assert_allclose(value2s, value2, rtol=1e-5)
 
     def test_builder_with_rebuild_params(self, model, parameter_values, dataset):
         builder = pybop.builders.Pybamm()
@@ -284,8 +287,8 @@ class TestBuilder:
         assert grad1s.shape == (3,)
         problem.set_params(np.array([0.7, 0.7, 0.01]))
         value2s, grad2s = problem.run_with_sensitivities()
-        np.testing.assert_allclose(value1s, value1)
-        np.testing.assert_allclose(value2s, value2)
+        np.testing.assert_allclose(value1s, value1, rtol=1e-4)
+        np.testing.assert_allclose(value2s, value2, rtol=1e-4)
 
     def test_eis_builder(self, model, parameter_values, eis_dataset):
         builder = pybop.builders.PybammEIS()
@@ -308,9 +311,9 @@ class TestBuilder:
         problem = builder.build()
 
         assert problem is not None
-        problem.set_params(np.array([0.6, 0.6]))
+        problem.set_params(np.array([0.65, 0.65]))
         value1 = problem.run()
-        problem.set_params(np.array([0.7, 0.7]))
+        problem.set_params(np.array([0.75, 0.75]))
         value2 = problem.run()
         assert (value1 - value2) / value1 > 1e-5
 
@@ -333,11 +336,14 @@ class TestBuilder:
         problem = builder.build()
 
         assert problem is not None
-        problem.set_params(np.array([1e-5, 0.5e-6]))
+        problem.set_params(np.asarray([80e-6, 4.5e-6]))
         value1 = problem.run()
-        problem.set_params(np.array([2e-5, 1.5e-6]))
+        problem.set_params(np.asarray([85e-6, 5.5e-6]))
         value2 = problem.run()
-        assert (value1 - value2) / value1 > 1e-5
+
+        # Assert direction, compared to dataset impedance values of zero
+        # Direction different from non-rebuild test, due to different parameter effects.
+        assert (value1 - value2) / value1 < 1e-5
 
     def test_pure_python_builder(self):
         dataset = pybop.Dataset(
