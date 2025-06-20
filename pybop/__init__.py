@@ -124,13 +124,6 @@ from .costs.design_costs import (
     GravimetricPowerDensity,
     VolumetricPowerDensity,
 )
-from .costs._likelihoods import (
-    BaseLikelihood,
-    GaussianLogLikelihood,
-    GaussianLogLikelihoodKnownSigma,
-    ScaledLogLikelihood,
-    LogPosterior,
-)
 from .costs._weighted_cost import WeightedCost
 
 
@@ -147,8 +140,6 @@ from .builders.python import Python
 from .experimental.jax_costs import (
     BaseJaxCost,
     JaxSumSquaredError,
-    JaxLogNormalLikelihood,
-    JaxGaussianLogLikelihoodKnownSigma,
 )
 
 #
