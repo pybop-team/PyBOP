@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import numpy as np
 
 from pybop import BaseCost
@@ -21,7 +19,7 @@ class FittingCost(BaseCost):
         measure.
     """
 
-    def __init__(self, problem, weighting: Union[str, np.ndarray] = None):
+    def __init__(self, problem, weighting: str | np.ndarray = None):
         super().__init__(problem)
         self.weighting = None
 
@@ -46,8 +44,8 @@ class FittingCost(BaseCost):
     def compute(
         self,
         y: dict,
-        dy: Optional[dict] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: dict | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         """
         Computes the cost function for the given predictions.
 
@@ -80,8 +78,8 @@ class FittingCost(BaseCost):
     def _error_measure(
         self,
         r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         """
         Computes the cost function for the given predictions.
 

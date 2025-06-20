@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 
 from pybop import BaseProblem, Dataset
@@ -67,7 +65,7 @@ class MultiFittingProblem(BaseProblem):
         self.n_domain_data = len(self._domain_data)
         self.set_target(combined_dataset)
 
-    def set_initial_state(self, initial_state: Optional[dict] = None):
+    def set_initial_state(self, initial_state: dict | None = None):
         """
         Set the initial state to be applied to evaluations of the problem.
 

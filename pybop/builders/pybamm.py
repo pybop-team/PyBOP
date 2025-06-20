@@ -1,5 +1,3 @@
-from typing import Union
-
 import pybamm
 
 import pybop
@@ -26,7 +24,7 @@ class Pybamm(BaseBuilder):
         model: pybamm.BaseModel,
         parameter_values: pybamm.ParameterValues = None,
         solver: pybamm.BaseSolver = None,
-        initial_state: Union[float, str] = None,
+        initial_state: float | str = None,
     ) -> None:
         """
         Adds a simulation for the optimisation problem.

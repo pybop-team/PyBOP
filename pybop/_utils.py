@@ -1,5 +1,4 @@
 import re
-from typing import Optional
 
 import numpy as np
 import pybamm
@@ -9,7 +8,7 @@ def is_numeric(x):
     """
     Check if a variable is numeric.
     """
-    return isinstance(x, (int, float, np.number))
+    return isinstance(x, int | float | np.number)
 
 
 def add_spaces(string):
@@ -40,7 +39,7 @@ class SymbolReplacer:
     def __init__(
         self,
         symbol_replacement_map: dict[pybamm.Symbol, pybamm.Symbol],
-        processed_symbols: Optional[dict[pybamm.Symbol, pybamm.Symbol]] = None,
+        processed_symbols: dict[pybamm.Symbol, pybamm.Symbol] | None = None,
         process_initial_conditions: bool = True,
     ):
         self._symbol_replacement_map = symbol_replacement_map

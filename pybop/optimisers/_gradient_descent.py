@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 import pints
 from pints import Optimiser as PintsOptimiser
@@ -62,8 +60,8 @@ class GradientDescentImpl(PintsOptimiser):
     def __init__(
         self,
         x0: np.ndarray,
-        sigma0: Optional[list[float]],
-        boundaries: Optional[pints.Boundaries],
+        sigma0: list[float] | None,
+        boundaries: pints.Boundaries | None,
     ):
         sigma0 = sigma0 or [0.02] * len(x0)
         super().__init__(x0, sigma0, boundaries)

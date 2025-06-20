@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 import pints
 from pints import PopulationBasedOptimiser
@@ -53,8 +51,8 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
     def __init__(
         self,
         x0: np.ndarray,
-        sigma0: Optional[list[float]],
-        boundaries: Optional[pints.Boundaries],
+        sigma0: list[float] | None,
+        boundaries: pints.Boundaries | None,
     ):
         sigma0 = sigma0 or [0.05] * len(x0)
         super().__init__(x0, sigma0, boundaries=boundaries)
@@ -220,6 +218,6 @@ class CuckooSearchImpl(PopulationBasedOptimiser):
     @pa.setter
     def pa(self, pa):
         """Setter for abandonment rate"""
-        if not isinstance(pa, (int, float)) or not 0 < pa <= 1:
+        if not isinstance(pa, int | float) or not 0 < pa <= 1:
             raise ValueError("pa must be a numeric value between 0 and 1.")
         self._pa = float(pa)

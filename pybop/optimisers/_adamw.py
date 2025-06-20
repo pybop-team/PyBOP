@@ -3,7 +3,6 @@
 #
 
 import warnings
-from typing import Optional
 
 import numpy as np
 import pints
@@ -60,8 +59,8 @@ class AdamWImpl(PintsOptimiser):
     def __init__(
         self,
         x0: np.ndarray,
-        sigma0: Optional[list[float]],
-        boundaries: Optional[pints.Boundaries],
+        sigma0: list[float] | None,
+        boundaries: pints.Boundaries | None,
     ):
         sigma0 = sigma0 or [0.015] * len(x0)
         if boundaries is not None:
@@ -229,7 +228,7 @@ class AdamWImpl(PintsOptimiser):
         Sets the lam decay constant. This is the weight decay rate
         that helps in finding the optimal solution.
         """
-        if not isinstance(lam, (int, float)) or not 0 < lam <= 1:
+        if not isinstance(lam, int | float) or not 0 < lam <= 1:
             raise ValueError("lam must be a numeric value between 0 and 1.")
 
         self._lam = float(lam)
@@ -243,7 +242,7 @@ class AdamWImpl(PintsOptimiser):
         """
         Sets the b1 momentum decay constant.
         """
-        if not isinstance(b1, (int, float)) or not 0 < b1 <= 1:
+        if not isinstance(b1, int | float) or not 0 < b1 <= 1:
             raise ValueError("b1 must be a numeric value between 0 and 1.")
 
         self._b1 = float(b1)
@@ -257,7 +256,7 @@ class AdamWImpl(PintsOptimiser):
         """
         Sets the b2 momentum decay constant.
         """
-        if not isinstance(b2, (int, float)) or not 0 < b2 <= 1:
+        if not isinstance(b2, int | float) or not 0 < b2 <= 1:
             raise ValueError("b2 must be a numeric value between 0 and 1.")
 
         self._b2 = float(b2)

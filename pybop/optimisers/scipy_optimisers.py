@@ -1,6 +1,6 @@
+from collections.abc import Callable
 from dataclasses import dataclass
 from time import time
-from typing import Optional, Union
 
 import numpy as np
 from scipy.optimize import Bounds, OptimizeResult, differential_evolution, minimize
@@ -138,14 +138,14 @@ class ScipyMinimizeOptions(pybop.OptimiserOptions):
 
     method: str = "Nelder-Mead"
     jac: bool = False
-    tol: Optional[float] = None
+    tol: float | None = None
     maxiter: int = 1000
-    disp: Optional[bool] = False
-    ftol: Optional[float] = None
-    gtol: Optional[float] = None
-    eps: Optional[float] = None
-    maxcor: Optional[int] = None
-    maxfev: Optional[int] = None
+    disp: bool | None = False
+    ftol: float | None = None
+    gtol: float | None = None
+    eps: float | None = None
+    maxcor: int | None = None
+    maxfev: int | None = None
 
     def validate(self):
         super().validate()
@@ -217,7 +217,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
     def __init__(
         self,
         problem: Problem,
-        options: Optional[ScipyMinimizeOptions] = None,
+        options: ScipyMinimizeOptions | None = None,
     ):
         options = options or ScipyMinimizeOptions()
         self._options_dict = options.to_dict()
@@ -280,7 +280,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         self._iteration = 0
 
         # Add callback storing history of parameter values
-        def base_callback(intermediate_result: Union[OptimizeResult, np.ndarray]):
+        def base_callback(intermediate_result: OptimizeResult | np.ndarray):
             """
             Log intermediate optimisation solutions. Depending on the
             optimisation algorithm, intermediate_result may be either
@@ -398,7 +398,7 @@ class SciPyDifferentialEvolutionOptions(pybop.OptimiserOptions):
         Random seed for reproducibility.
     disp : bool, optional
         Display status messages. Default is False.
-    callback : callable, optional
+    callback : Callable, optional
         Called after each iteration with the current result as argument.
     polish : bool, optional
         If True, performs a local optimisation on the solution. Default is True.
@@ -410,7 +410,7 @@ class SciPyDifferentialEvolutionOptions(pybop.OptimiserOptions):
     updating : {'immediate', 'deferred'}, optional
         If 'immediate', best solution vector is continuously updated within
         a single generation. Default is 'immediate'.
-    workers : int or map-like callable, optional
+    workers : int or map-like Callable, optional
         If workers is an int the population is subdivided into workers
         sections and evaluated in parallel. Default is 1.
     constraints : {NonlinearConstraint, LinearConstraint, Bounds}, optional
@@ -420,17 +420,17 @@ class SciPyDifferentialEvolutionOptions(pybop.OptimiserOptions):
     strategy: str = "best1bin"
     max_iterations: int = 1000
     tol: float = 0.01
-    popsize: Optional[int] = None
-    mutation: Union[float, tuple, None] = None
-    recombination: Optional[float] = None
-    seed: Optional[int] = None
-    disp: Optional[bool] = None
-    callback: Optional[callable] = None
-    polish: Optional[bool] = None
-    init: Optional[Union[str, np.ndarray]] = None
-    atol: Optional[float] = None
-    updating: Optional[str] = None
-    workers: Optional[Union[int, callable]] = None
+    popsize: int | None = None
+    mutation: float | tuple | None = None
+    recombination: float | None = None
+    seed: int | None = None
+    disp: bool | None = None
+    callback: Callable | None = None
+    polish: bool | None = None
+    init: str | np.ndarray | None = None
+    atol: float | None = None
+    updating: str | None = None
+    workers: int | Callable | None = None
 
     def to_dict(self) -> dict:
         """
@@ -498,7 +498,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
     def __init__(
         self,
         problem: Problem,
-        options: Optional[SciPyDifferentialEvolutionOptions] = None,
+        options: SciPyDifferentialEvolutionOptions | None = None,
     ):
         options = options or SciPyDifferentialEvolutionOptions()
         self._options_dict = options.to_dict()

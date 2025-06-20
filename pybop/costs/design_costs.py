@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import numpy as np
 
 from pybop import BaseCost
@@ -38,7 +36,7 @@ class GravimetricEnergyDensity(DesignCost):
     def compute(
         self,
         y: dict,
-        dy: Optional[np.ndarray] = None,
+        dy: np.ndarray | None = None,
     ) -> float:
         """
         Computes the cost function for the given predictions.
@@ -92,7 +90,7 @@ class VolumetricEnergyDensity(DesignCost):
     def compute(
         self,
         y: dict,
-        dy: Optional[np.ndarray] = None,
+        dy: np.ndarray | None = None,
     ) -> float:
         """
         Computes the cost function for the given predictions.
@@ -145,14 +143,14 @@ class GravimetricPowerDensity(DesignCost):
         The length of time (seconds) over which the power should be sustained.
     """
 
-    def __init__(self, problem, target_time: Union[int, float] = 3600):
+    def __init__(self, problem, target_time: int | float = 3600):
         super().__init__(problem)
         self.target_time = target_time
 
     def compute(
         self,
         y: dict,
-        dy: Optional[np.ndarray] = None,
+        dy: np.ndarray | None = None,
     ) -> float:
         """
         Computes the cost function for the given predictions.
@@ -205,14 +203,14 @@ class VolumetricPowerDensity(DesignCost):
         The length of time (seconds) over which the power should be sustained.
     """
 
-    def __init__(self, problem, target_time: Union[int, float] = 3600):
+    def __init__(self, problem, target_time: int | float = 3600):
         super().__init__(problem)
         self.target_time = target_time
 
     def compute(
         self,
         y: dict,
-        dy: Optional[np.ndarray] = None,
+        dy: np.ndarray | None = None,
     ) -> float:
         """
         Computes the cost function for the given predictions.

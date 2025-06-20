@@ -256,11 +256,10 @@ class TestPintsSamplers:
     def test_check_stopping_criteria(self, log_posterior, x0, chains):
         options = AdaptiveCovarianceMCMC.default_options()
         options.n_chains = chains
-        options.max_iterations
         sampler = AdaptiveCovarianceMCMC(log_posterior, options=options)
 
         # Set stopping criteria
-        sampler.set_max_iterations(10)
+        sampler.set_max_iterations(options.max_iterations)
 
         # Incorrect stopping criteria
         with pytest.raises(

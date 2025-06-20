@@ -1,4 +1,4 @@
-from typing import Callable, Union
+from collections.abc import Callable
 
 import numpy as np
 import pybamm
@@ -27,7 +27,7 @@ class PybammEIS(builders.BaseBuilder):
         self._parameter_values = parameter_values or model.default_parameter_values
         self._solver = pybamm.CasadiSolver()
 
-    def add_cost(self, cost: Union[Callable, BaseCost], weight: float = 1.0) -> None:
+    def add_cost(self, cost: Callable | BaseCost, weight: float = 1.0) -> None:
         """Adds a cost to the problem."""
         if isinstance(cost, BaseCost):
             if cost.weighting is None or cost.weighting == "equal":

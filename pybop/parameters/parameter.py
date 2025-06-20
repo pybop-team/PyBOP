@@ -1,6 +1,5 @@
 import numbers
 import warnings
-from typing import Optional
 
 import numpy as np
 
@@ -67,7 +66,7 @@ class Parameter:
 
     def validate(self):
         if self.initial_value is not None and not isinstance(
-            self.initial_value, (numbers.Number, np.number)
+            self.initial_value, numbers.Number | np.number
         ):
             raise TypeError(
                 f'Parameter "{self.name}": Initial value must be a number, got {type(self.initial_value)}'
@@ -86,7 +85,7 @@ class Parameter:
 
     def rvs(
         self, n_samples: int = 1, random_state=None, apply_transform: bool = False
-    ) -> Optional[np.ndarray]:
+    ) -> np.ndarray | None:
         """
         Draw random samples from the parameter's prior distribution.
 
@@ -418,7 +417,7 @@ class Parameters:
 
     def rvs(
         self, n_samples: int = 1, apply_transform: bool = False
-    ) -> Optional[np.ndarray]:
+    ) -> np.ndarray | None:
         """
         Draw random samples from each parameter's prior distribution.
 
@@ -599,7 +598,7 @@ class Parameters:
                 values = self.true_value()
         return {key: values[i] for i, key in enumerate(self._params.keys())}
 
-    def verify(self, inputs: Optional[Inputs] = None):
+    def verify(self, inputs: Inputs | None = None):
         """
         Verify that the inputs are an Inputs dictionary or numeric values
         which can be used to construct an Inputs dictionary

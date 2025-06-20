@@ -1,5 +1,4 @@
 from copy import copy, deepcopy
-from typing import Union
 
 import numpy as np
 import pybamm
@@ -32,7 +31,7 @@ class PybammPipeline:
         t_end: np.number = 1,
         t_interp: np.ndarray = None,
         var_pts: dict = None,
-        initial_state: Union[float, str] = None,
+        initial_state: float | str = None,
     ):
         """
         Parameters

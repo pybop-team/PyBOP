@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from collections.abc import Callable
 
 import numpy as np
 
@@ -12,7 +12,7 @@ class CostInterface:
     """
 
     def __init__(
-        self, transformation: Optional[Transformation] = None, invert_cost: bool = False
+        self, transformation: Transformation | None = None, invert_cost: bool = False
     ):
         self.invert_cost = invert_cost
         self.transformation = transformation
@@ -38,10 +38,10 @@ class CostInterface:
 
     def call_cost(
         self,
-        x: Union[Inputs, list],
-        cost: Union[BaseCost, callable],
+        x: Inputs | list,
+        cost: BaseCost | Callable,
         calculate_grad: bool = False,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+    ) -> float | tuple[float, np.ndarray]:
         """
         Provides the interface between the cost and the optimiser.
 

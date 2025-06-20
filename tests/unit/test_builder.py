@@ -1,5 +1,4 @@
 import numbers
-from typing import Union
 
 import numpy as np
 import pybamm
@@ -338,7 +337,7 @@ class TestBuilder:
             {"Time / s": np.linspace(0, 1, 10), "Output": np.ones(10)}
         )
 
-        def model(x: Union[float, list]):
+        def model(x: float | list):
             output = x * dataset["Time / s"] ** 2
             sse = np.sum((output - dataset["Output"]) ** 2)
             return sse
@@ -354,7 +353,7 @@ class TestBuilder:
         assert value1 > 0
 
         # Test sensitivities
-        def model_with_sens(x: Union[float, list]):
+        def model_with_sens(x: float | list):
             output = x * dataset["Time / s"] ** 2
             sens = 2 * x * dataset["Time / s"]
             sse = np.sum((output - dataset["Output"]) ** 2)

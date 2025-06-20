@@ -1,4 +1,4 @@
-from typing import Callable
+from collections.abc import Callable
 
 from pybop import PythonProblem
 from pybop.builders.base import BaseBuilder
