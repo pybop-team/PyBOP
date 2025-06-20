@@ -1,4 +1,3 @@
-import jax.numpy as jnp
 import numpy as np
 
 from pybop import Problem
@@ -41,12 +40,6 @@ def problem(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
     domain_data = problem.domain_data
     model_output = problem.evaluate(problem_inputs)
     target_output = problem.get_target()
-
-    # Convert model_output to np if Jax array
-    if isinstance(model_output[problem.signal[0]], jnp.ndarray):
-        model_output = {
-            signal: np.asarray(model_output[signal]) for signal in problem.signal
-        }
 
     # Create a plot for each output
     figure_list = []

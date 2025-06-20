@@ -18,8 +18,6 @@ from pybamm.models.full_battery_models.lithium_ion.electrode_soh import (
     get_min_max_stoichiometries,
 )
 
-from pybop import ParameterSet
-
 
 class GroupedSPMe(pybamm_lithium_ion.BaseModel):
     """
@@ -560,145 +558,147 @@ class GroupedSPMe(pybamm_lithium_ion.BaseModel):
             "positive particle": pybamm.FiniteVolume(),
         }
 
+    @staticmethod
+    def create_grouped_parameters(
+        parameter_values: pybamm.ParameterValues,
+    ) -> pybamm.ParameterValues:
+        """
+        A function to create a grouped SPMe parameter set from a standard
+        PyBaMM ParameterValues object.
 
-def convert_physical_to_grouped_parameters(parameter_set):
-    """
-    A function to create a grouped SPMe parameter set from a standard
-    PyBaMM parameter set.
+        Parameters
+        ----------
+        parameter_values : pybamm.ParameterValues
+            A pybamm ParameterValues object containing the parameter values.
 
-    Parameters
-    ----------
-    parameter_set : Union[dict, pybop.ParameterSet, pybamm.ParameterValues]
-        A dict-like object containing the parameter values.
+        Returns
+        -------
+        parameter_values : pybamm.ParameterValues
+            A new parameter values object.
+        """
+        params = parameter_values
 
-    Returns
-    -------
-    dict
-        A dictionary of the grouped parameters.
-    """
-    parameter_set = ParameterSet.to_pybamm(parameter_set)
-
-    # Unpack physical parameters
-    F = parameter_set["Faraday constant [C.mol-1]"]
-    alpha_p = parameter_set["Positive electrode active material volume fraction"]
-    alpha_n = parameter_set["Negative electrode active material volume fraction"]
-    c_max_p = parameter_set["Maximum concentration in positive electrode [mol.m-3]"]
-    c_max_n = parameter_set["Maximum concentration in negative electrode [mol.m-3]"]
-    L_p = parameter_set["Positive electrode thickness [m]"]
-    L_n = parameter_set["Negative electrode thickness [m]"]
-    epsilon_p = parameter_set["Positive electrode porosity"]
-    epsilon_n = parameter_set["Negative electrode porosity"]
-    R_p = parameter_set["Positive particle radius [m]"]
-    R_n = parameter_set["Negative particle radius [m]"]
-    D_p = parameter_set["Positive particle diffusivity [m2.s-1]"]
-    D_n = parameter_set["Negative particle diffusivity [m2.s-1]"]
-    b_p = parameter_set["Positive electrode Bruggeman coefficient (electrolyte)"]
-    b_n = parameter_set["Negative electrode Bruggeman coefficient (electrolyte)"]
-    Cdl_p = parameter_set["Positive electrode double-layer capacity [F.m-2]"]
-    Cdl_n = parameter_set["Negative electrode double-layer capacity [F.m-2]"]
-    m_p = 3.42e-6  # (A/m2)(m3/mol)**1.5
-    m_n = 6.48e-7  # (A/m2)(m3/mol)**1.5
-    sigma_p = (
-        parameter_set["Positive electrode conductivity [S.m-1]"]
-        * alpha_p
-        ** parameter_set["Positive electrode Bruggeman coefficient (electrode)"]
-    )
-    sigma_n = (
-        parameter_set["Negative electrode conductivity [S.m-1]"]
-        * alpha_n
-        ** parameter_set["Negative electrode Bruggeman coefficient (electrode)"]
-    )
-
-    # Separator and electrolyte properties
-    ce0 = parameter_set["Initial concentration in electrolyte [mol.m-3]"]
-    De = parameter_set["Electrolyte diffusivity [m2.s-1]"]  # (ce0, T)
-    L_s = parameter_set["Separator thickness [m]"]
-    epsilon_sep = parameter_set["Separator porosity"]
-    b_sep = parameter_set["Separator Bruggeman coefficient (electrolyte)"]
-    t_plus = parameter_set["Cation transference number"]
-    sigma_e = parameter_set["Electrolyte conductivity [S.m-1]"]  # (ce0, T)
-
-    # Compute the cell area and thickness
-    A = parameter_set["Electrode height [m]"] * parameter_set["Electrode width [m]"]
-    L = L_p + L_n + L_s
-
-    # Compute the series resistance
-    Re = (
-        L_p / (3 * epsilon_p**b_p)
-        + L_s / (epsilon_sep**b_sep)
-        + L_n / (3 * epsilon_n**b_n)
-    ) / (sigma_e * A)
-    Rs = (L_p / sigma_p + L_n / sigma_n) / (3 * A)
-    R0 = Re + Rs + parameter_set["Contact resistance [Ohm]"]
-
-    # Compute the stoichiometry limits and initial SOC
-    x_0, x_100, y_100, y_0 = get_min_max_stoichiometries(parameter_set)
-    sto_p_init = (
-        parameter_set["Initial concentration in positive electrode [mol.m-3]"] / c_max_p
-    )
-    soc_init = (sto_p_init - y_0) / (y_100 - y_0)
-
-    # Compute the capacity within the stoichiometry limits
-    Q_th_p = F * alpha_p * c_max_p * L_p * A
-    Q_th_n = F * alpha_n * c_max_n * L_n * A
-    Q_meas_p = (y_0 - y_100) * Q_th_p
-    Q_meas_n = (x_100 - x_0) * Q_th_n
-    if abs(Q_meas_n / Q_meas_p - 1) > 1e-6:
-        raise ValueError(
-            "The measured capacity should be the same for both electrodes."
+        # Unpack physical parameters
+        F = params["Faraday constant [C.mol-1]"]
+        alpha_p = params["Positive electrode active material volume fraction"]
+        alpha_n = params["Negative electrode active material volume fraction"]
+        c_max_p = params["Maximum concentration in positive electrode [mol.m-3]"]
+        c_max_n = params["Maximum concentration in negative electrode [mol.m-3]"]
+        L_p = params["Positive electrode thickness [m]"]
+        L_n = params["Negative electrode thickness [m]"]
+        epsilon_p = params["Positive electrode porosity"]
+        epsilon_n = params["Negative electrode porosity"]
+        R_p = params["Positive particle radius [m]"]
+        R_n = params["Negative particle radius [m]"]
+        D_p = params["Positive particle diffusivity [m2.s-1]"]
+        D_n = params["Negative particle diffusivity [m2.s-1]"]
+        b_p = params["Positive electrode Bruggeman coefficient (electrolyte)"]
+        b_n = params["Negative electrode Bruggeman coefficient (electrolyte)"]
+        Cdl_p = params["Positive electrode double-layer capacity [F.m-2]"]
+        Cdl_n = params["Negative electrode double-layer capacity [F.m-2]"]
+        m_p = 3.42e-6  # (A/m2)(m3/mol)**1.5
+        m_n = 6.48e-7  # (A/m2)(m3/mol)**1.5
+        sigma_p = (
+            params["Positive electrode conductivity [S.m-1]"]
+            * alpha_p ** params["Positive electrode Bruggeman coefficient (electrode)"]
+        )
+        sigma_n = (
+            params["Negative electrode conductivity [S.m-1]"]
+            * alpha_n ** params["Negative electrode Bruggeman coefficient (electrode)"]
         )
 
-    # Grouped parameters
-    Q_meas = (Q_meas_n + Q_meas_p) / 2
-    Q_e = F * epsilon_sep * ce0 * L * A
+        # Separator and electrolyte properties
+        ce0 = params["Initial concentration in electrolyte [mol.m-3]"]
+        De = params["Electrolyte diffusivity [m2.s-1]"]  # (ce0, T)
+        L_s = params["Separator thickness [m]"]
+        epsilon_sep = params["Separator porosity"]
+        b_sep = params["Separator Bruggeman coefficient (electrolyte)"]
+        t_plus = params["Cation transference number"]
+        sigma_e = params["Electrolyte conductivity [S.m-1]"]  # (ce0, T)
 
-    zeta_p = epsilon_p / epsilon_sep
-    zeta_n = epsilon_n / epsilon_sep
+        # Compute the cell area and thickness
+        A = params["Electrode height [m]"] * params["Electrode width [m]"]
+        L = L_p + L_n + L_s
 
-    tau_d_p = R_p**2 / D_p
-    tau_d_n = R_n**2 / D_n
+        # Compute the series resistance
+        Re = (
+            L_p / (3 * epsilon_p**b_p)
+            + L_s / (epsilon_sep**b_sep)
+            + L_n / (3 * epsilon_n**b_n)
+        ) / (sigma_e * A)
+        Rs = (L_p / sigma_p + L_n / sigma_n) / (3 * A)
+        R0 = Re + Rs + params["Contact resistance [Ohm]"]
 
-    tau_e_p = epsilon_sep * L**2 / (epsilon_p**b_p * De)
-    tau_e_n = epsilon_sep * L**2 / (epsilon_n**b_n * De)
-    tau_e_sep = epsilon_sep * L**2 / (epsilon_sep**b_sep * De)
+        # Compute the stoichiometry limits and initial SOC
+        x_0, x_100, y_100, y_0 = get_min_max_stoichiometries(params)
+        sto_p_init = (
+            params["Initial concentration in positive electrode [mol.m-3]"] / c_max_p
+        )
+        soc_init = (sto_p_init - y_0) / (y_100 - y_0)
 
-    tau_ct_p = F * R_p / (m_p * np.sqrt(ce0))
-    tau_ct_n = F * R_n / (m_n * np.sqrt(ce0))
+        # Compute the capacity within the stoichiometry limits
+        Q_th_p = F * alpha_p * c_max_p * L_p * A
+        Q_th_n = F * alpha_n * c_max_n * L_n * A
+        Q_meas_p = (y_0 - y_100) * Q_th_p
+        Q_meas_n = (x_100 - x_0) * Q_th_n
+        if abs(Q_meas_n / Q_meas_p - 1) > 1e-6:
+            raise ValueError(
+                "The measured capacity should be the same for both electrodes."
+            )
 
-    C_p = 3 * alpha_p * Cdl_p * L_p * A / R_p
-    C_n = 3 * alpha_n * Cdl_n * L_n * A / R_n
+        # Grouped parameters
+        Q_meas = (Q_meas_n + Q_meas_p) / 2
+        Q_e = F * epsilon_sep * ce0 * L * A
 
-    l_p = L_p / L
-    l_n = L_n / L
+        zeta_p = epsilon_p / epsilon_sep
+        zeta_n = epsilon_n / epsilon_sep
 
-    return {
-        "Nominal cell capacity [A.h]": parameter_set["Nominal cell capacity [A.h]"],
-        "Current function [A]": parameter_set["Current function [A]"],
-        "Initial temperature [K]": parameter_set["Ambient temperature [K]"],
-        "Initial SoC": soc_init,
-        "Minimum negative stoichiometry": x_0,
-        "Maximum negative stoichiometry": x_100,
-        "Minimum positive stoichiometry": y_100,
-        "Maximum positive stoichiometry": y_0,
-        "Lower voltage cut-off [V]": parameter_set["Lower voltage cut-off [V]"],
-        "Upper voltage cut-off [V]": parameter_set["Upper voltage cut-off [V]"],
-        "Positive electrode OCP [V]": parameter_set["Positive electrode OCP [V]"],
-        "Negative electrode OCP [V]": parameter_set["Negative electrode OCP [V]"],
-        "Measured cell capacity [A.s]": Q_meas,
-        "Reference electrolyte capacity [A.s]": Q_e,
-        "Positive electrode relative porosity": zeta_p,
-        "Negative electrode relative porosity": zeta_n,
-        "Positive particle diffusion time scale [s]": tau_d_p,
-        "Negative particle diffusion time scale [s]": tau_d_n,
-        "Positive electrode electrolyte diffusion time scale [s]": tau_e_p,
-        "Negative electrode electrolyte diffusion time scale [s]": tau_e_n,
-        "Separator electrolyte diffusion time scale [s]": tau_e_sep,
-        "Positive electrode charge transfer time scale [s]": tau_ct_p,
-        "Negative electrode charge transfer time scale [s]": tau_ct_n,
-        "Positive electrode capacitance [F]": C_p,
-        "Negative electrode capacitance [F]": C_n,
-        "Cation transference number": t_plus,
-        "Positive electrode relative thickness": l_p,
-        "Negative electrode relative thickness": l_n,
-        "Series resistance [Ohm]": R0,
-    }
+        tau_d_p = R_p**2 / D_p
+        tau_d_n = R_n**2 / D_n
+
+        tau_e_p = epsilon_sep * L**2 / (epsilon_p**b_p * De)
+        tau_e_n = epsilon_sep * L**2 / (epsilon_n**b_n * De)
+        tau_e_sep = epsilon_sep * L**2 / (epsilon_sep**b_sep * De)
+
+        tau_ct_p = F * R_p / (m_p * np.sqrt(ce0))
+        tau_ct_n = F * R_n / (m_n * np.sqrt(ce0))
+
+        C_p = 3 * alpha_p * Cdl_p * L_p * A / R_p
+        C_n = 3 * alpha_n * Cdl_n * L_n * A / R_n
+
+        l_p = L_p / L
+        l_n = L_n / L
+
+        return pybamm.ParameterValues(
+            {
+                "Nominal cell capacity [A.h]": params["Nominal cell capacity [A.h]"],
+                "Current function [A]": params["Current function [A]"],
+                "Initial temperature [K]": params["Ambient temperature [K]"],
+                "Initial SoC": soc_init,
+                "Minimum negative stoichiometry": x_0,
+                "Maximum negative stoichiometry": x_100,
+                "Minimum positive stoichiometry": y_100,
+                "Maximum positive stoichiometry": y_0,
+                "Lower voltage cut-off [V]": params["Lower voltage cut-off [V]"],
+                "Upper voltage cut-off [V]": params["Upper voltage cut-off [V]"],
+                "Positive electrode OCP [V]": params["Positive electrode OCP [V]"],
+                "Negative electrode OCP [V]": params["Negative electrode OCP [V]"],
+                "Measured cell capacity [A.s]": Q_meas,
+                "Reference electrolyte capacity [A.s]": Q_e,
+                "Positive electrode relative porosity": zeta_p,
+                "Negative electrode relative porosity": zeta_n,
+                "Positive particle diffusion time scale [s]": tau_d_p,
+                "Negative particle diffusion time scale [s]": tau_d_n,
+                "Positive electrode electrolyte diffusion time scale [s]": tau_e_p,
+                "Negative electrode electrolyte diffusion time scale [s]": tau_e_n,
+                "Separator electrolyte diffusion time scale [s]": tau_e_sep,
+                "Positive electrode charge transfer time scale [s]": tau_ct_p,
+                "Negative electrode charge transfer time scale [s]": tau_ct_n,
+                "Positive electrode capacitance [F]": C_p,
+                "Negative electrode capacitance [F]": C_n,
+                "Cation transference number": t_plus,
+                "Positive electrode relative thickness": l_p,
+                "Negative electrode relative thickness": l_n,
+                "Series resistance [Ohm]": R0,
+            }
+        )
