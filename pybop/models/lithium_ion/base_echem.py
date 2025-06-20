@@ -1,6 +1,5 @@
 import sys
 import warnings
-from typing import Optional
 
 from pybamm import LithiumIonParameters, Simulation
 from pybamm import lithium_ion as pybamm_lithium_ion
@@ -154,7 +153,7 @@ class EChemBaseModel(BaseModel):
 
         return True
 
-    def _set_initial_state(self, initial_state: dict, inputs: Optional[Inputs] = None):
+    def _set_initial_state(self, initial_state: dict, inputs: Inputs | None = None):
         """
         Set the initial state of charge or concentrations for the battery model.
 
@@ -185,7 +184,7 @@ class EChemBaseModel(BaseModel):
         del self._unprocessed_parameter_values
         del self._parameter_values
 
-    def cell_volume(self, parameter_set: Optional[ParameterSet] = None):
+    def cell_volume(self, parameter_set: ParameterSet | None = None):
         """
         Calculate the total cell volume in m3.
 
@@ -224,7 +223,7 @@ class EChemBaseModel(BaseModel):
 
         return ParameterSet.evaluate_symbol(cell_volume, parameter_set)
 
-    def cell_mass(self, parameter_set: Optional[ParameterSet] = None):
+    def cell_mass(self, parameter_set: ParameterSet | None = None):
         """
         Calculate the total cell mass in kilograms.
 
@@ -315,7 +314,7 @@ class EChemBaseModel(BaseModel):
 
         return ParameterSet.evaluate_symbol(cell_mass, parameter_set)
 
-    def approximate_capacity(self, parameter_set: Optional[ParameterSet] = None):
+    def approximate_capacity(self, parameter_set: ParameterSet | None = None):
         """
         Calculate an estimate for the nominal cell capacity. The estimate is computed
         by estimating the capacity of the positive electrode that lies between the

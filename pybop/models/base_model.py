@@ -1,6 +1,6 @@
 import copy
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Optional, Union
 
 import casadi
 import numpy as np
@@ -70,7 +70,7 @@ class BaseModel:
     def __init__(
         self,
         name: str = "Base Model",
-        parameter_set: Optional[ParameterSet] = None,
+        parameter_set: ParameterSet | None = None,
         check_params: Callable = None,
         eis: bool = False,
     ):
@@ -122,10 +122,10 @@ class BaseModel:
 
     def build(
         self,
-        parameters: Union[Parameters, dict] = None,
-        inputs: Optional[Inputs] = None,
-        initial_state: Optional[dict] = None,
-        dataset: Optional[Dataset] = None,
+        parameters: Parameters | dict = None,
+        inputs: Inputs | None = None,
+        initial_state: dict | None = None,
+        dataset: Dataset | None = None,
         check_model: bool = True,
     ) -> None:
         """
@@ -228,7 +228,7 @@ class BaseModel:
         else:
             raise ValueError(f'Unrecognised initial state: "{list(initial_state)[0]}"')
 
-    def set_initial_state(self, initial_state: dict, inputs: Optional[Inputs] = None):
+    def set_initial_state(self, initial_state: dict, inputs: Inputs | None = None):
         """
         Set the initial state of charge or concentrations for the battery model.
 
@@ -246,7 +246,7 @@ class BaseModel:
         # Use a copy of the updated default parameter set
         self._parameter_set = self._unprocessed_parameter_set.copy()
 
-    def set_current_function(self, dataset: Union[Dataset, dict]):
+    def set_current_function(self, dataset: Dataset | dict):
         """
         Update the input current function according to the data.
 
@@ -351,7 +351,7 @@ class BaseModel:
         self._geometry = self._unprocessed_model.default_geometry
 
     def classify_parameters(
-        self, parameters: Optional[Parameters] = None, inputs: Optional[Inputs] = None
+        self, parameters: Parameters | None = None, inputs: Inputs | None = None
     ):
         """
         Check for any 'rebuild_parameters' which require a model rebuild and
@@ -403,7 +403,7 @@ class BaseModel:
         return standard_parameters
 
     def reinit(
-        self, inputs: Inputs, t: float = 0.0, x: Optional[np.ndarray] = None
+        self, inputs: Inputs, t: float = 0.0, x: np.ndarray | None = None
     ) -> TimeSeriesState:
         """
         Initialises the solver with the given inputs and returns the initial state of the problem
@@ -449,8 +449,8 @@ class BaseModel:
         return TimeSeriesState(sol=new_sol, inputs=state.inputs, t=time)
 
     def simulate(
-        self, inputs: Inputs, t_eval: np.array, initial_state: Optional[dict] = None
-    ) -> Union[pybamm.Solution, list[np.float64]]:
+        self, inputs: Inputs, t_eval: np.array, initial_state: dict | None = None
+    ) -> pybamm.Solution | list[np.float64]:
         """
         Execute the forward model simulation and return the result.
 
@@ -499,7 +499,7 @@ class BaseModel:
         return self._pybamm_solution
 
     def simulateEIS(
-        self, inputs: Inputs, f_eval: list, initial_state: Optional[dict] = None
+        self, inputs: Inputs, f_eval: list, initial_state: dict | None = None
     ) -> dict[str, np.ndarray]:
         """
         Compute the forward model simulation with electrochemical impedance spectroscopy
@@ -539,7 +539,7 @@ class BaseModel:
 
         return {"Impedance": np.asarray(zs) * self.z_scale}
 
-    def initialise_eis_simulation(self, inputs: Optional[Inputs] = None):
+    def initialise_eis_simulation(self, inputs: Inputs | None = None):
         """
         Initialise the Electrochemical Impedance Spectroscopy (EIS) simulation.
 
@@ -603,7 +603,7 @@ class BaseModel:
         return -x[-2] / x[-1]
 
     def simulateS1(
-        self, inputs: Inputs, t_eval: np.array, initial_state: Optional[dict] = None
+        self, inputs: Inputs, t_eval: np.array, initial_state: dict | None = None
     ):
         """
         Perform the forward model simulation with sensitivities.
@@ -663,11 +663,11 @@ class BaseModel:
 
     def predict(
         self,
-        inputs: Optional[Inputs] = None,
-        t_eval: Optional[np.array] = None,
-        parameter_set: Optional[ParameterSet] = None,
-        experiment: Optional[Experiment] = None,
-        initial_state: Optional[dict] = None,
+        inputs: Inputs | None = None,
+        t_eval: np.ndarray | None = None,
+        parameter_set: ParameterSet | None = None,
+        experiment: Experiment | None = None,
+        initial_state: dict | None = None,
     ) -> dict[str, np.ndarray[np.float64]]:
         """
         Solve the model using PyBaMM's simulation framework and return the solution.
@@ -778,7 +778,7 @@ class BaseModel:
         """
         self._calculate_sensitivities = calculate_sensitivities
 
-        if not isinstance(self._solver, (pybamm.IDAKLUSolver, pybamm.IDAKLUJax)):
+        if not isinstance(self._solver, pybamm.IDAKLUSolver | pybamm.IDAKLUJax):
             raise ValueError("Solver must be pybamm.IDAKLUSolver to jaxify.")
 
         # Store original solver if not already stored, and create local copy
@@ -798,8 +798,8 @@ class BaseModel:
 
     def check_params(
         self,
-        inputs: Optional[Inputs] = None,
-        parameter_set: Optional[ParameterSet] = None,
+        inputs: Inputs | None = None,
+        parameter_set: ParameterSet | None = None,
         allow_infeasible_solutions: bool = True,
     ):
         """

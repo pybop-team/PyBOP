@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pints import MALAMCMC as PintsMALAMCMC
 from pints import AdaptiveCovarianceMCMC as PintsAdaptiveCovarianceMCMC
 from pints import DifferentialEvolutionMCMC as PintsDifferentialEvolutionMCMC
@@ -40,7 +38,7 @@ class NUTS(BasePintsSampler):
         Additional options for the sampler.
     """
 
-    def __init__(self, problem: Problem, options: Optional[PintsSamplerOptions] = None):
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
         super().__init__(problem, NoUTurnMCMC, options=options)
 
 
@@ -60,7 +58,7 @@ class DREAM(BasePintsSampler):
         Additional options for the sampler.
     """
 
-    def __init__(self, problem: Problem, options: Optional[PintsSamplerOptions] = None):
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
         super().__init__(problem, PintsDREAM, options=options)
 
 
@@ -80,7 +78,7 @@ class AdaptiveCovarianceMCMC(BasePintsSampler):
         Additional options for the sampler.
     """
 
-    def __init__(self, problem: Problem, options: Optional[PintsSamplerOptions] = None):
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
         super().__init__(problem, PintsAdaptiveCovarianceMCMC, options=options)
 
 
@@ -100,7 +98,7 @@ class DifferentialEvolutionMCMC(BasePintsSampler):
         Additional options for the sampler.
     """
 
-    def __init__(self, problem: Problem, options: Optional[PintsSamplerOptions] = None):
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
         super().__init__(problem, PintsDifferentialEvolutionMCMC, options=options)
 
 
@@ -119,7 +117,7 @@ class DramACMC(BasePintsSampler):
         Additional options for the sampler.
     """
 
-    def __init__(self, problem: Problem, options: Optional[PintsSamplerOptions] = None):
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
         super().__init__(problem, PintsDramACMC, options=options)
 
 
@@ -139,7 +137,7 @@ class EmceeHammerMCMC(BasePintsSampler):
         Additional options for the sampler.
     """
 
-    def __init__(self, problem: Problem, options: Optional[PintsSamplerOptions] = None):
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
         super().__init__(problem, PintsEmceeHammerMCMC, options=options)
 
 
@@ -159,7 +157,7 @@ class HaarioACMC(BasePintsSampler):
         Additional options for the sampler.
     """
 
-    def __init__(self, problem: Problem, options: Optional[PintsSamplerOptions] = None):
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
         super().__init__(problem, PintsHaarioACMC, options=options)
 
 
@@ -179,7 +177,7 @@ class HaarioBardenetACMC(BasePintsSampler):
         Additional options for the sampler.
     """
 
-    def __init__(self, problem: Problem, options: Optional[PintsSamplerOptions] = None):
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
         super().__init__(problem, PintsHaarioBardenetACMC, options=options)
 
 
@@ -199,7 +197,7 @@ class HamiltonianMCMC(BasePintsSampler):
         Additional options for the sampler.
     """
 
-    def __init__(self, problem: Problem, options: Optional[PintsSamplerOptions] = None):
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
         super().__init__(problem, PintsHamiltonianMCMC, options=options)
 
 
@@ -219,7 +217,7 @@ class MALAMCMC(BasePintsSampler):
         Additional options for the sampler.
     """
 
-    def __init__(self, problem: Problem, options: Optional[PintsSamplerOptions] = None):
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
         super().__init__(problem, PintsMALAMCMC, options=options)
 
 
@@ -239,7 +237,7 @@ class MetropolisRandomWalkMCMC(BasePintsSampler):
         Additional options for the sampler.
     """
 
-    def __init__(self, problem: Problem, options: Optional[PintsSamplerOptions] = None):
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
         super().__init__(problem, PintsMetropolisRandomWalkMCMC, options=options)
 
 
@@ -259,7 +257,7 @@ class MonomialGammaHamiltonianMCMC(BasePintsSampler):
         Additional options for the sampler.
     """
 
-    def __init__(self, problem: Problem, options: Optional[PintsSamplerOptions] = None):
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
         super().__init__(problem, PintsMonomialGammaHamiltonianMCMC, options=options)
 
 
@@ -279,7 +277,7 @@ class PopulationMCMC(BasePintsSampler):
         Additional options for the sampler.
     """
 
-    def __init__(self, problem: Problem, options: Optional[PintsSamplerOptions] = None):
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
         super().__init__(problem, PintsPopulationMCMC, options=options)
 
 
@@ -299,7 +297,7 @@ class RaoBlackwellACMC(BasePintsSampler):
         Additional options for the sampler.
     """
 
-    def __init__(self, problem: Problem, options: Optional[PintsSamplerOptions] = None):
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
         super().__init__(problem, PintsRaoBlackwellACMC, options=options)
 
 
@@ -319,7 +317,7 @@ class RelativisticMCMC(BasePintsSampler):
         Additional options for the sampler.
     """
 
-    def __init__(self, problem: Problem, options: Optional[PintsSamplerOptions] = None):
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
         super().__init__(problem, PintsRelativisticMCMC, options=options)
 
 
@@ -339,7 +337,7 @@ class SliceDoublingMCMC(BasePintsSampler):
         Additional options for the sampler.
     """
 
-    def __init__(self, problem: Problem, options: Optional[PintsSamplerOptions] = None):
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
         super().__init__(problem, PintsSliceDoublingMCMC, options=options)
 
 
@@ -359,7 +357,7 @@ class SliceRankShrinkingMCMC(BasePintsSampler):
         Additional options for the sampler.
     """
 
-    def __init__(self, problem: Problem, options: Optional[PintsSamplerOptions] = None):
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
         super().__init__(problem, PintsSliceRankShrinkingMCMC, options=options)
 
 
@@ -379,5 +377,5 @@ class SliceStepoutMCMC(BasePintsSampler):
         Additional options to pass to the sampler.
     """
 
-    def __init__(self, problem: Problem, options: Optional[PintsSamplerOptions] = None):
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
         super().__init__(problem, PintsSliceStepoutMCMC, options=options)

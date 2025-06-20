@@ -34,7 +34,9 @@ class StandaloneOptimiser(BaseOptimiser):
         if isinstance(self.bounds, dict):
             self._scipy_bounds = [
                 (lower, upper)
-                for lower, upper in zip(self.bounds["lower"], self.bounds["upper"])
+                for lower, upper in zip(
+                    self.bounds["lower"], self.bounds["upper"], strict=False
+                )
             ]
         else:
             self._scipy_bounds = self.bounds

@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 
 from pybop.problems.base_problem import Problem
@@ -33,7 +31,7 @@ class OptimisationResult:
         n_iterations: int,
         n_evaluations: int,
         time: float,
-        message: Optional[str] = None,
+        message: str | None = None,
     ):
         self._problem = problem
         self.n_runs = 0
@@ -142,11 +140,11 @@ class OptimisationResult:
             f"  Reason for stopping: {self.message_best}"
         )
 
-    def average_iterations(self) -> Optional[np.floating]:
+    def average_iterations(self) -> np.floating | None:
         """Calculates the average number of iterations across all runs."""
         return np.mean(self._n_iterations) if len(self._n_iterations) > 0 else None
 
-    def total_runtime(self) -> Optional[np.floating]:
+    def total_runtime(self) -> np.floating | None:
         """Calculates the total runtime across all runs."""
         return np.sum(self._time) if len(self._time) > 0 else None
 

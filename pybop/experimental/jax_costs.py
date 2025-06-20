@@ -1,5 +1,3 @@
-from typing import Union
-
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -39,7 +37,7 @@ class BaseJaxCost(BaseCost):
         self,
         inputs: Inputs,
         calculate_grad: bool = False,
-    ) -> Union[np.array, tuple[float, np.ndarray]]:
+    ) -> np.ndarray | tuple[float, np.ndarray]:
         """
         Compute the JAX cost function and (optionally) its gradient for given inputs.
 
@@ -84,7 +82,7 @@ class BaseJaxCost(BaseCost):
     @staticmethod
     def check_sigma0(sigma0):
         """Validates the sigma0 parameter."""
-        if not isinstance(sigma0, (int, float)) or sigma0 <= 0:
+        if not isinstance(sigma0, int | float) or sigma0 <= 0:
             raise ValueError("sigma0 must be a positive number")
         return float(sigma0)
 

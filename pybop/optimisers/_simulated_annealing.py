@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 import pints
 from pints import Optimiser as PintsOptimiser
@@ -45,8 +43,8 @@ class SimulatedAnnealingImpl(PintsOptimiser):
     def __init__(
         self,
         x0: np.ndarray,
-        sigma0: Optional[list[float]],
-        boundaries: Optional[pints.Boundaries],
+        sigma0: list[float] | None,
+        boundaries: pints.Boundaries | None,
     ):
         sigma0 = sigma0 or [0.05] * len(x0)
         super().__init__(x0, sigma0, boundaries)
@@ -175,7 +173,7 @@ class SimulatedAnnealingImpl(PintsOptimiser):
         Sets the temperature attribute, to be used
         for initialisation before optimisation occurs.
         """
-        if not isinstance(temp, (int, float)):
+        if not isinstance(temp, int | float):
             raise TypeError("Temperature must be a number")
         if temp < 0.0:
             raise ValueError("Temperature must be positive")
@@ -190,7 +188,7 @@ class SimulatedAnnealingImpl(PintsOptimiser):
         """
         Sets the cooling rate for the temperature schedule.
         """
-        if not isinstance(alpha, (int, float)):
+        if not isinstance(alpha, int | float):
             raise TypeError("Cooling rate must be a number")
         if not 0 < alpha < 1:
             raise ValueError("Cooling rate must be between 0 and 1")

@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import numpy as np
 from SALib.analyze import sobol
 from SALib.sample.sobol import sample
@@ -41,7 +39,7 @@ class BaseCost:
 
         pass
 
-    def __init__(self, problem: Optional[BaseProblem] = None):
+    def __init__(self, problem: BaseProblem | None = None):
         self._parameters = Parameters()
         self.problem = problem
         self.verbose = False
@@ -61,9 +59,9 @@ class BaseCost:
 
     def __call__(
         self,
-        inputs: Union[Inputs, list, np.ndarray],
+        inputs: Inputs | list | np.ndarray,
         calculate_grad: bool = False,
-    ) -> Union[float, list, tuple[float, np.ndarray], list[tuple[float, np.ndarray]]]:
+    ) -> float | list | tuple[float, np.ndarray] | list[tuple[float, np.ndarray]]:
         """
         Compute cost and optional gradient for given input parameters.
 
@@ -99,9 +97,9 @@ class BaseCost:
 
     def single_call(
         self,
-        inputs: Union[Inputs, np.ndarray],
+        inputs: Inputs | np.ndarray,
         calculate_grad: bool,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+    ) -> float | tuple[float, np.ndarray]:
         """Evaluate the cost and (optionally) the gradient for a single set of inputs."""
         model_inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(model_inputs.values()))
@@ -118,7 +116,7 @@ class BaseCost:
 
         return self.compute(y, dy=dy)
 
-    def compute(self, y: dict, dy: Optional[np.ndarray]):
+    def compute(self, y: dict, dy: np.ndarray | None):
         """
         Compute the cost and, if dy is not None, its gradient with respect to the
         parameters.

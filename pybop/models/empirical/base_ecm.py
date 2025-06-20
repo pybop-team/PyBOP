@@ -1,5 +1,3 @@
-from typing import Optional
-
 import numpy as np
 import pybamm
 
@@ -125,7 +123,7 @@ class ECircuitModel(BaseModel):
             return self.param_checker(inputs, allow_infeasible_solutions)
         return True
 
-    def _set_initial_state(self, initial_state: dict, inputs: Optional[Inputs] = None):
+    def _set_initial_state(self, initial_state: dict, inputs: Inputs | None = None):
         """
         Set the initial state of charge or concentrations for the battery model.
 
@@ -211,7 +209,7 @@ class ECircuitModel(BaseModel):
             # Ensure that the result lies between 0 and 1
             initial_soc = np.minimum(np.maximum(initial_soc, 0.0), 1.0)
 
-        elif isinstance(initial_value, (int, float)):
+        elif isinstance(initial_value, int | float):
             if not 0 <= initial_value <= 1:
                 raise ValueError("Initial SOC should be between 0 and 1")
             initial_soc = initial_value

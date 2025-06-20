@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional, Union
 
 import numpy as np
 import scipy.linalg as linalg
@@ -46,15 +45,15 @@ class UnscentedKalmanFilterObserver(Observer):
         self,
         parameters: list[Parameter],
         model: BaseModel,
-        sigma0: Union[Covariance, float],
-        process: Union[Covariance, float],
-        measure: Union[Covariance, float],
-        dataset: Optional[Dataset] = None,
+        sigma0: Covariance | float,
+        process: Covariance | float,
+        measure: Covariance | float,
+        dataset: Dataset | None = None,
         check_model: bool = True,
-        signal: Optional[list[str]] = None,
-        domain: Optional[str] = None,
-        additional_variables: Optional[list[str]] = None,
-        initial_state: Optional[float] = None,
+        signal: list[str] | None = None,
+        domain: str | None = None,
+        additional_variables: list[str] | None = None,
+        initial_state: float | None = None,
     ) -> None:
         if model is not None:
             # Clear any existing built model and its properties
@@ -304,7 +303,7 @@ class SquareRootUKF:
         w_m: np.ndarray,
         w_c: np.ndarray,
         sqrtR: np.ndarray,
-        states: Optional[np.ndarray] = None,
+        states: np.ndarray | None = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Performs the unscented transform

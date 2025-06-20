@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from time import time
-from typing import Optional
 
 import numpy as np
 import pints
@@ -37,8 +36,8 @@ class PintsOptions(pybop.OptimiserOptions):
     use_f_guessed: bool = False
     absolute_tolerance: float = 1e-5
     relative_tolerance: float = 1e-2
-    max_evaluations: Optional[int] = None
-    threshold: Optional[float] = None
+    max_evaluations: int | None = None
+    threshold: float | None = None
 
     def validate(self):
         super().validate()
@@ -86,7 +85,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         self,
         problem: Problem,
         pints_optimiser,
-        options: Optional[PintsOptions] = None,
+        options: PintsOptions | None = None,
     ):
         # First set attributes to default values
         self._boundaries = None
