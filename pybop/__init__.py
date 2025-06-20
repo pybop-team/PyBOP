@@ -105,15 +105,6 @@ from .costs.error_measures import (
     Minkowski,
     SumOfPower,
 )
-from .costs.design_costs import (
-    DesignCost,
-    GravimetricEnergyDensity,
-    VolumetricEnergyDensity,
-    GravimetricPowerDensity,
-    VolumetricPowerDensity,
-)
-from .costs._weighted_cost import WeightedCost
-
 
 #
 # Problem Builder
