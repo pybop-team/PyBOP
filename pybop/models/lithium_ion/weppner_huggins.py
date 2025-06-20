@@ -1,12 +1,11 @@
 import warnings
 
 import numpy as np
-from pybamm import DummySolver, Parameter, ParameterValues, citations
-from pybamm import lithium_ion as pybamm_lithium_ion
+from pybamm import DummySolver, Parameter, ParameterValues, citations, lithium_ion
 from pybamm import t as pybamm_t
 
 
-class WeppnerHuggins(pybamm_lithium_ion.BaseModel):
+class WeppnerHuggins(lithium_ion.BaseModel):
     """
     Represents the Weppner & Huggins model to fit diffusion coefficients to GITT data.
 

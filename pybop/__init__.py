@@ -71,19 +71,15 @@ from .transformation.transformations import (
 #
 # Parameter classes
 #
-from .parameters.parameter import Parameter, Parameters
+from .parameters.parameter import Parameter, Parameters, Inputs
 from .parameters.parameter_set import ParameterSet
 from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointLogPrior
 
 #
 # Model classes
 #
-from .models.base_model import BaseModel
 from .models import lithium_ion
-from .models import empirical
 from .models._exponential_decay import ExponentialDecayModel
-from .models.base_model import TimeSeriesState
-from .models.base_model import Inputs
 
 # Cost classes
 #
@@ -93,22 +89,14 @@ from .costs.base_cost import BaseCost
 #
 # Problem classes
 #
+from .problems.base_problem import Problem
 from .problems.pybamm_problem import PybammProblem
 from .problems.pybamm_eis_problem import PybammEISProblem
 from .problems.python_problem import PythonProblem
-from .problems.base_problem_old import BaseProblem
-from .problems.fitting_problem import FittingProblem
-from .problems.multi_fitting_problem import MultiFittingProblem
-from .problems.design_problem import DesignProblem
 
 #
 # Cost classes
 #
-from .costs.base_cost_old import BaseCost
-from .costs.fitting_costs import (
-    FittingCost,
-    ObserverCost,
-)
 from .costs.error_measures import (
     RootMeanSquaredError,
     MeanAbsoluteError,
@@ -134,13 +122,6 @@ from .builders.base import BaseBuilder
 from .builders.pybamm import Pybamm
 from .builders.python import Python
 
-#
-# Experimental
-#
-from .experimental.jax_costs import (
-    BaseJaxCost,
-    JaxSumSquaredError,
-)
 
 #
 # Evaluation
@@ -217,12 +198,6 @@ from .samplers.pints_samplers import (
     SliceRankShrinkingMCMC,
     SliceStepoutMCMC,
 )
-
-#
-# Observer classes
-#
-from .observers.unscented_kalman import UnscentedKalmanFilterObserver
-from .observers.observer import Observer
 
 #
 # Classification classes
