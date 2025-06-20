@@ -35,6 +35,9 @@ class PybammEISProblem(Problem):
         # rebuild the pipeline (if needed)
         self._pipeline.pybamm_pipeline.rebuild(self._params.as_dict())
 
+        # Initialise the pipeline
+        self._pipeline.initialise_eis_pipeline()
+
     def run(self) -> float:
         """
         Evaluates the underlying simulation and cost function using the
@@ -43,7 +46,10 @@ class PybammEISProblem(Problem):
         self.check_set_params_called()
 
         # run simulation
-        self._pipeline.initialise_eis_pipeline()
         res = self._pipeline.solve() - self._fitting_data
 
         return np.dot(self._cost_weights, [cost(res) for cost in self._costs])
+
+    @property
+    def pipeline(self):
+        return self._pipeline
