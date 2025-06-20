@@ -36,7 +36,7 @@ class TestBuilder:
 
     @pytest.fixture
     def dataset(self, model, parameter_values):
-        sim = pybamm.Simulation(model, parameter_values=parameter_values)
+        sim = pybamm.Simulation(model(), parameter_values=parameter_values)
         sol = sim.solve(t_eval=np.linspace(0, 10, 20))
         return pybop.Dataset(
             {
@@ -50,7 +50,7 @@ class TestBuilder:
     def eis_dataset(self):
         return pybop.Dataset(
             {
-                "Frequency [Hz]": np.logspace(-4, 5, 30),
+                "Frequency [Hz]": np.logspace(-4.5, 5, 30),
                 "Current function [A]": np.ones(30) * 0.0,
                 "Impedance": np.ones(30) * 0.0,
             }
@@ -58,9 +58,9 @@ class TestBuilder:
 
     @pytest.fixture(
         params=[
-            pybamm.lithium_ion.SPM(),
-            pybamm.lithium_ion.SPMe(),
-            pybamm.lithium_ion.DFN(),
+            pybamm.lithium_ion.SPM,
+            pybamm.lithium_ion.SPMe,
+            pybamm.lithium_ion.DFN,
             # pybamm.lithium_ion.MPM(),
             # pybamm.lithium_ion.MSMR(options={"number of MSMR reactions": ("6", "4")}),
             # pybamm.equivalent_circuit.Thevenin(),
@@ -75,7 +75,7 @@ class TestBuilder:
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(
-            model,
+            model(),
             parameter_values=parameter_values,
             solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
         )
@@ -120,7 +120,7 @@ class TestBuilder:
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(
-            model,
+            model(),
             parameter_values=parameter_values,
             solver=IDAKLUSolver(atol=1e-7, rtol=1e-7),
         )
@@ -178,7 +178,7 @@ class TestBuilder:
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(
-            model,
+            model(),
             parameter_values=parameter_values,
             solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
         )
@@ -222,7 +222,7 @@ class TestBuilder:
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(
-            model,
+            model(),
             parameter_values=parameter_values,
         )
         builder.add_parameter(
@@ -251,7 +251,7 @@ class TestBuilder:
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(
-            model,
+            model(),
             parameter_values=parameter_values,
             solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
         )
@@ -289,7 +289,10 @@ class TestBuilder:
     def test_eis_builder(self, model, parameter_values, eis_dataset):
         builder = pybop.builders.PybammEIS()
         builder.set_dataset(eis_dataset)
-        builder.set_simulation(model, parameter_values=parameter_values)
+        builder.set_simulation(
+            model(options={"surface form": "differential"}),
+            parameter_values=parameter_values,
+        )
         builder.add_parameter(
             pybop.Parameter(
                 "Negative electrode active material volume fraction", initial_value=0.6
@@ -315,7 +318,10 @@ class TestBuilder:
     ):
         builder = pybop.builders.PybammEIS()
         builder.set_dataset(eis_dataset)
-        builder.set_simulation(model, parameter_values=parameter_values)
+        builder.set_simulation(
+            model(options={"surface form": "differential"}),
+            parameter_values=parameter_values,
+        )
         builder.add_parameter(
             pybop.Parameter("Negative electrode thickness [m]", initial_value=1e-6)
         )
@@ -378,7 +384,7 @@ class TestBuilder:
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(
-            model,
+            model(),
             parameter_values=parameter_values,
             solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
             initial_state="4.0 V",
@@ -405,13 +411,20 @@ class TestBuilder:
         value1 = problem.run()
         built_model_1 = problem._pipeline.built_model.new_copy()
 
-        # Second build
-        problem.set_params(np.array([0.7, 0.7]))
-        value2 = problem.run()
-        built_model_2 = problem._pipeline.built_model.new_copy()
+        # Second build w/ SOC instead of Voltage
+        builder.set_simulation(
+            model(),
+            parameter_values=parameter_values,
+            solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
+            initial_state=0.5,
+        )
+        problem2 = builder.build()
+        problem2.set_params(np.array([0.6, 0.6]))
+        value2 = problem2.run()
+        built_model_2 = problem2._pipeline.built_model.new_copy()
 
         # Assert builds are different
-        assert (value1 - value2) / value1 > 1e-5
+        assert (value1 - value2) / value1 < 1e-5  # Value2 is a worse fit
         assert built_model_1 != built_model_2
 
     def test_build_no_parameters(self, dataset):
