@@ -1,5 +1,3 @@
-from typing import Union
-
 import numpy as np
 from pybamm import Solution
 
@@ -18,7 +16,7 @@ class PybammProblem(Problem):
         pybamm_pipeline: PybammPipeline,
         pybop_params: Parameters = None,
         cost_names: list[str] = None,
-        cost_weights: Union[list, np.array] = None,
+        cost_weights: list | np.ndarray = None,
         use_posterior: bool = False,
         use_last_cost_index: list[bool] = None,
     ):
@@ -57,7 +55,9 @@ class PybammProblem(Problem):
 
         costs = [
             solution[name].data[-1] if use_last else solution[name].data[0]
-            for use_last, name in zip(self._use_last_cost_index, self._cost_names)
+            for use_last, name in zip(
+                self._use_last_cost_index, self._cost_names, strict=False
+            )
         ]
         return np.dot(self._cost_weights, costs)
 

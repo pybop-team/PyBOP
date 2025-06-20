@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 
@@ -140,7 +139,7 @@ class BaseOptimiser:
     def __init__(
         self,
         problem: Problem,
-        options: Optional[OptimiserOptions] = None,
+        options: OptimiserOptions | None = None,
     ):
         if not isinstance(problem, Problem):
             raise TypeError(f"Expected a pybop.Problem instance, got {type(problem)}")

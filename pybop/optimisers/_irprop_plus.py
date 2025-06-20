@@ -2,7 +2,6 @@
 # Initially based of Pints' IRProp- class.
 #
 
-from typing import Optional
 
 import numpy as np
 import pints
@@ -50,8 +49,8 @@ class IRPropPlusImpl(PintsOptimiser):
     def __init__(
         self,
         x0: np.ndarray,
-        sigma0: Optional[list[float]],
-        boundaries: Optional[pints.Boundaries],
+        sigma0: list[float] | None,
+        boundaries: pints.Boundaries | None,
     ):
         sigma0 = sigma0 or [0.05] * len(x0)
         super().__init__(x0, sigma0, boundaries)
@@ -60,7 +59,7 @@ class IRPropPlusImpl(PintsOptimiser):
         self.eta_min = 0.5
         self.eta_max = 1.2
         self.step_min = 1e-4 * np.min(self._sigma0)
-        self.step_max: Optional[float] = None
+        self.step_max: float | None = None
 
         # Store the previous update for backtracking
         self._update_previous = np.zeros_like(x0, dtype=float)

@@ -42,7 +42,7 @@ dataset = pybop.Dataset(
 
 # Create the list of input dicts
 n = 150  # Number of solves
-inputs = list(zip(np.linspace(0.45, 0.6, n), np.linspace(0.45, 0.6, n)))
+inputs = list(zip(np.linspace(0.45, 0.6, n), np.linspace(0.45, 0.6, n), strict=False))
 
 # Iterate over the solvers and print benchmarks
 for solver in solvers:

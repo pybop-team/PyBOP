@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 from pints import ParallelEvaluator
@@ -43,7 +42,7 @@ class BaseSampler:
     def __init__(
         self,
         problem: Problem,
-        options: Optional[SamplerOptions] = None,
+        options: SamplerOptions | None = None,
     ):
         self._problem = problem
         self._options = options or SamplerOptions()

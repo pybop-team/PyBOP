@@ -1,5 +1,4 @@
-from collections.abc import Sequence
-from typing import Callable, Optional
+from collections.abc import Callable, Sequence
 
 import numpy as np
 
@@ -57,10 +56,10 @@ class PythonProblem(Problem):
 
     def __init__(
         self,
-        model: Optional[Sequence[Callable]] = None,
-        model_with_sens: Optional[Sequence[Callable]] = None,
-        pybop_params: Optional[Parameters] = None,
-        weights: Optional[Sequence[float]] = None,
+        model: Sequence[Callable] | None = None,
+        model_with_sens: Sequence[Callable] | None = None,
+        pybop_params: Parameters | None = None,
+        weights: Sequence[float] | None = None,
     ):
         super().__init__(pybop_params=pybop_params)
         self._model = tuple(model) if model is not None else None
