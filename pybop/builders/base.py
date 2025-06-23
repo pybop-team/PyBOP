@@ -62,7 +62,9 @@ class BaseBuilder(ABC):
             self._params.append(parameter)
         elif isinstance(parameter, list):
             if not isinstance(parameter[0], pybop.Parameter):
-                raise TypeError("A object in parameter list must be of type Parameter.")
+                raise TypeError(
+                    "All objects in parameter list must be of type Parameter."
+                )
             if parameter[0].name in self._params_keys:
                 raise ValueError(
                     f"There is already a parameter with the name {parameter[0].name} "
@@ -70,7 +72,9 @@ class BaseBuilder(ABC):
                 )
             self._params.append(parameter[0])
         else:
-            raise TypeError("Each parameter input must be a Parameter or a dictionary.")
+            raise TypeError(
+                "Each parameter input must be of type pybop.Parameter or list(pybop.Parameter)."
+            )
 
         self._params_keys.append(parameter.name)
 
