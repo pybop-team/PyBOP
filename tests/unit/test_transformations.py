@@ -19,25 +19,25 @@ class TestTransformation:
     @pytest.fixture
     def parameters(self):
         return pybop.Parameters(
-            {
-                "Identity": pybop.Parameter(
+            [
+                pybop.Parameter(
                     "Identity",
                     transformation=pybop.IdentityTransformation(),
                 ),
-                "Scaled": pybop.Parameter(
+                pybop.Parameter(
                     "Scaled",
                     transformation=pybop.ScaledTransformation(
                         coefficient=2.0, intercept=1
                     ),
                 ),
-                "Log": pybop.Parameter(
+                pybop.Parameter(
                     "Log",
                     transformation=pybop.LogTransformation(),
                 ),
-                "UnitHyperCube": pybop.Parameter(
+                pybop.Parameter(
                     "UnitHyperCube", transformation=pybop.UnitHyperCube(10, 100)
                 ),
-            }
+            ]
         )
 
     def test_identity_transformation(self, parameters):
