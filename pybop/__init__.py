@@ -117,7 +117,7 @@ from .builders.python import Python
 #
 # Evaluation
 #
-from ._evaluation import SequentialJaxEvaluator, SciPyEvaluator
+from ._evaluation import SciPyEvaluator
 
 #
 # Optimiser classes
