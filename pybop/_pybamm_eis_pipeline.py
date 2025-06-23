@@ -33,6 +33,7 @@ class PybammEISPipeline:
         pybop_parameters: Parameters = None,
         solver: pybamm.BaseSolver = None,
         var_pts: dict = None,
+        initial_state: float | str = None,
     ):
         """
         Parameters
@@ -55,6 +56,7 @@ class PybammEISPipeline:
             pybop_parameters=pybop_parameters,
             solver=solver,
             var_pts=var_pts,
+            initial_state=initial_state,
         )
 
         # Set-up model for EIS
@@ -125,7 +127,7 @@ class PybammEISPipeline:
                 symbol_replacement_map[model.variables[name]] = variable
 
         # Don't replace initial conditions, as these should not contain
-        # Variable objects
+        # variable objects
         replacer = SymbolReplacer(
             symbol_replacement_map, process_initial_conditions=False
         )

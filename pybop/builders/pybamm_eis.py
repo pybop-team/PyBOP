@@ -17,14 +17,16 @@ class PybammEIS(builders.BaseBuilder):
         self,
         model: pybamm.BaseModel,
         parameter_values: pybamm.ParameterValues = None,
-        initial_state: tuple = None,
+        initial_state: float | str = None,
     ) -> None:
         """
         Adds a simulation for the optimisation problem.
         """
         self._model = model.new_copy()
         self._initial_state = initial_state
-        self._parameter_values = parameter_values or model.default_parameter_values
+        self._parameter_values = (
+            parameter_values.copy() or model.default_parameter_values
+        )
         self._solver = pybamm.CasadiSolver()
 
     def add_cost(self, cost: Callable | BaseCost, weight: float = 1.0) -> None:
@@ -100,6 +102,7 @@ class PybammEIS(builders.BaseBuilder):
             param,
             pybop_parameters,
             self._solver,
+            initial_state=self._initial_state,
         )
 
         # Build and initialise the pipeline

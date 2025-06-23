@@ -31,8 +31,12 @@ class Pybamm(BaseBuilder):
         """
         self._model = model.new_copy()
         self._initial_state = initial_state
-        self._parameter_values = parameter_values or model.default_parameter_values
         self._solver = solver or model.default_solver
+        self._parameter_values = (
+            parameter_values.copy()
+            if parameter_values
+            else model.default_parameter_values
+        )
 
     def add_cost(self, cost: BaseCost, weight: float = 1.0) -> None:
         """

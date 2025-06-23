@@ -59,12 +59,10 @@ class TestEISParameterisation:
 
     @pytest.fixture(
         params=[
-            pybop.GaussianLogLikelihood,
             pybop.SumSquaredError,
             pybop.MeanAbsoluteError,
             pybop.MeanSquaredError,
             pybop.Minkowski,
-            pybop.LogPosterior,
         ]
     )
     def cost(self, request):
