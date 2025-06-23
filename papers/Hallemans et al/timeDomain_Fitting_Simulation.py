@@ -3,7 +3,7 @@ import scipy
 from scipy.io import savemat
 
 import pybop
-from pybop.models.lithium_ion.basic_SPMe import convert_physical_to_grouped_parameters
+from pybop.models.lithium_ion.grouped_spme import convert_physical_to_grouped_parameters
 
 # To duplicate paper results, modify the below:
 n_runs = 1  # 10

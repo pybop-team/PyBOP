@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import pybop
-from pybop.models.lithium_ion.basic_SPMe import convert_physical_to_grouped_parameters
+from pybop.models.lithium_ion.grouped_spme import convert_physical_to_grouped_parameters
 
 # Prepare figure
 layout_options = dict(

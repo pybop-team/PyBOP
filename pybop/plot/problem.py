@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 import numpy as np
 
-from pybop import DesignProblem, FittingProblem, MultiFittingProblem
+from pybop import Problem
 from pybop.parameters.parameter import Inputs
 from pybop.plot.standard_plots import StandardPlot
 
@@ -65,8 +65,8 @@ def problem(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
             if domain in model_output.keys()
             else domain_data[: len(model_output[signal])],
             y=model_output[signal],
-            name="Optimised" if isinstance(problem, DesignProblem) else "Model",
-            mode="markers" if isinstance(problem, MultiFittingProblem) else "lines",
+            name="Model",
+            mode="markers",
             showlegend=True,
         )
         plot_dict.traces.append(model_trace)
@@ -80,7 +80,7 @@ def problem(problem, problem_inputs: Inputs = None, show=True, **layout_kwargs):
         )
         plot_dict.traces.append(target_trace)
 
-        if isinstance(problem, FittingProblem) and len(model_output[signal]) == len(
+        if isinstance(problem, Problem) and len(model_output[signal]) == len(
             target_output[signal]
         ):
             # Compute the standard deviation as proxy for uncertainty
