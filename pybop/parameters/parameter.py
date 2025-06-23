@@ -256,11 +256,11 @@ class Parameters:
 
     Parameters
     ----------
-    parameter_list : dict of pybop.Parameter
+    params : list of pybop.Parameter
     """
 
-    def __init__(self, params: dict[str, Parameter]):
-        self._params = params
+    def __init__(self, params: list[Parameter]):
+        self._params = {param.name: param for param in params}
         self._transform = self._construct_transformation()
 
     def transformation(self) -> pybop.Transformation:

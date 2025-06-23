@@ -18,21 +18,6 @@ class TestProblem:
         return pybamm.lithium_ion.SPM()
 
     @pytest.fixture
-    def parameters(self):
-        return pybop.Parameters(
-            pybop.Parameter(
-                "Negative particle radius [m]",
-                prior=pybop.Gaussian(2e-05, 0.1e-5),
-                bounds=[1e-6, 5e-5],
-            ),
-            pybop.Parameter(
-                "Positive particle radius [m]",
-                prior=pybop.Gaussian(0.5e-05, 0.1e-5),
-                bounds=[1e-6, 5e-5],
-            ),
-        )
-
-    @pytest.fixture
     def parameter_values(self):
         return pybamm.ParameterValues("Chen2020")
 

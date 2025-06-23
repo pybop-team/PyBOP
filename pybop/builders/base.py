@@ -30,7 +30,8 @@ class BaseBuilder(ABC):
         self._costs = []
         self._cost_weights = []
         self._dataset = None
-        self._params = {}
+        self._params = []
+        self._params_keys = []
 
     def set_dataset(self, dataset: Dataset) -> None:
         """
@@ -53,24 +54,29 @@ class BaseBuilder(ABC):
             The parameter to add to the optimisation problem
         """
         if isinstance(parameter, pybop.Parameter):
-            if parameter.name in self._params.keys():
+            if parameter.name in self._params_keys:
                 raise ValueError(
                     f"There is already a parameter with the name {parameter.name} "
                     "in the Parameters object. Please remove the duplicate entry."
                 )
-            self._params[parameter.name] = parameter
-        elif isinstance(parameter, dict):
-            if "name" not in parameter.keys():
-                raise Exception("Parameter requires a name.")
-            name = parameter["name"]
-            if name in self._params.keys():
+            self._params.append(parameter)
+        elif isinstance(parameter, list):
+            if not isinstance(parameter[0], pybop.Parameter):
+                raise TypeError(
+                    "All objects in parameter list must be of type Parameter."
+                )
+            if parameter[0].name in self._params_keys:
                 raise ValueError(
-                    f"There is already a parameter with the name {name} "
+                    f"There is already a parameter with the name {parameter[0].name} "
                     "in the Parameters object. Please remove the duplicate entry."
                 )
-            self._params[name] = pybop.Parameter(**parameter)
+            self._params.append(parameter[0])
         else:
-            raise TypeError("Each parameter input must be a Parameter or a dictionary.")
+            raise TypeError(
+                "Each parameter input must be of type pybop.Parameter or list(pybop.Parameter)."
+            )
+
+        self._params_keys.append(parameter.name)
 
     def build_parameters(self) -> pybop.Parameters:
         """
