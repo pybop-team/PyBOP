@@ -25,18 +25,20 @@ builder.set_simulation(
     parameter_values=parameter_values,
 )
 builder.add_parameter(
-    {
-        "name": "Negative electrode active material volume fraction",
-        "initial_value": 0.6,
-        "bounds": [0.5, 0.8],
-    }
+    pybop.Parameter(
+        "Negative electrode active material volume fraction",
+        initial_value=0.6,
+        prior=pybop.Gaussian(0.6, 0.01),
+        bounds=[0.5, 0.8],
+    )
 )
 builder.add_parameter(
-    {
-        "name": "Positive electrode active material volume fraction",
-        "initial_value": 0.6,
-        "bounds": [0.5, 0.8],
-    }
+    pybop.Parameter(
+        "Positive electrode active material volume fraction",
+        initial_value=0.6,
+        prior=pybop.Gaussian(0.6, 0.01),
+        bounds=[0.5, 0.8],
+    )
 )
 builder.add_cost(
     pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", "Voltage [V]")

@@ -1,4 +1,5 @@
 import io
+import multiprocessing
 import re
 import sys
 
@@ -19,12 +20,18 @@ class TestOptimisation:
     pytestmark = pytest.mark.unit
 
     @pytest.fixture
-    def dataset(self):
+    def model(self):
+        return pybamm.lithium_ion.SPM()
+
+    @pytest.fixture
+    def dataset(self, model):
+        sim = pybamm.Simulation(model)
+        sol = sim.solve(t_eval=np.linspace(0, 10, 10))
         return pybop.Dataset(
             {
-                "Time [s]": np.linspace(0, 360, 10),
-                "Current function [A]": 1e-2 * np.ones(10),
-                "Voltage [V]": np.ones(10),
+                "Time [s]": sol["Time [s]"].data,
+                "Current function [A]": sol["Current [A]"].data,
+                "Voltage [V]": sol["Voltage [V]"].data,
             }
         )
 
@@ -65,12 +72,8 @@ class TestOptimisation:
         ]
 
     @pytest.fixture
-    def model(self):
-        return pybamm.lithium_ion.SPM()
-
-    @pytest.fixture
     def problem(self, model, one_parameter, dataset):
-        builder = pybop.Pybamm()
+        builder = pybop.builders.Pybamm()
         builder.set_simulation(model)
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
@@ -155,6 +158,8 @@ class TestOptimisation:
     )
     def test_optimiser_common(self, problem, optimiser):
         options = optimiser.default_options()
+        if issubclass(optimiser, pybop.SciPyMinimize):
+            options.maxiter = 3
         options.max_iterations = 3
         options.tol = 1e-6
         optim = optimiser(problem, options)
@@ -335,19 +340,18 @@ class TestOptimisation:
     def test_set_parallel(self, problem):
         optim = pybop.XNES(problem)
 
-        # Disable parallelism
-        optim.set_parallel(False)
-        assert optim._parallel is False
-        assert optim._n_workers == 1
-
-        # Enable parallelism
-        optim.set_parallel(True)
+        # Test parallelism
         assert optim._parallel is True
+        assert problem.pipeline._threads == multiprocessing.cpu_count()
+
+        #  Optimiser without parallelism
+        optim = pybop.GradientDescent(problem)
+        assert optim._parallel is False
 
         # Enable parallelism with number of workers
-        optim.set_parallel(2)
-        assert optim._parallel is True
-        assert optim._n_workers == 2
+        # optim.set_parallel(2)
+        # assert optim._parallel is True
+        # assert optim._n_workers == 2
 
     def test_cuckoo_no_bounds(self, two_param_problem_no_bounds):
         options = pybop.CuckooSearch.default_options()

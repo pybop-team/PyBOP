@@ -92,7 +92,6 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         self._boundaries = None
         self._needs_sensitivities = None
         self._use_f_guessed = None
-        self._n_workers = 1
         self._callback = None
         options = options or PintsOptions()
         self._parallel = issubclass(pints_optimiser, PopulationBasedOptimiser)
