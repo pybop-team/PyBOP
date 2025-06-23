@@ -1,6 +1,7 @@
 import subprocess
 from importlib.metadata import distributions
 from shutil import which
+import pybamm
 
 import numpy as np
 import plotly
@@ -120,8 +121,10 @@ def is_package_installed(package_name):
 @pytest.fixture
 def dataset(plotly_installed):
     # Construct and simulate model
-    model = pybop.lithium_ion.SPM()
-    solution = model.predict(t_eval=np.linspace(0, 10, 100))
+    model = pybamm.lithium_ion.SPM()
+    solution = pybamm.Simulation(model).solve(
+        t_eval=[0, 10], t_interp=np.linspace(0, 10, 100)
+    )
 
     # Form dataset
     data_dictionary = {
