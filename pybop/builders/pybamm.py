@@ -4,7 +4,7 @@ import pybop
 from pybop import Parameter as PybopParameter
 from pybop._pybamm_pipeline import PybammPipeline
 from pybop.builders.base import BaseBuilder
-from pybop.costs.pybamm import BaseCost, BaseLikelihood, DesignCost
+from pybop.costs.pybamm import PybammCost, BaseLikelihood, DesignCost
 
 
 class Pybamm(BaseBuilder):
@@ -15,6 +15,8 @@ class Pybamm(BaseBuilder):
         self._rebuild_parameters = None
         self._initial_state = None
         self._pipeline = None
+        self._costs: list[PybammCost] = []
+        self._cost_weights: list[float] = []
         self.domain = "Time [s]"
         self._use_posterior = False
         super().__init__()
@@ -38,7 +40,7 @@ class Pybamm(BaseBuilder):
             else model.default_parameter_values
         )
 
-    def add_cost(self, cost: BaseCost, weight: float = 1.0) -> None:
+    def add_cost(self, cost: PybammCost, weight: float = 1.0) -> None:
         """
         Add a cost to the problem with optional weighting.
         """

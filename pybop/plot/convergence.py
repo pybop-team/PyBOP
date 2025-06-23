@@ -1,13 +1,14 @@
 from pybop.plot.standard_plots import StandardPlot
+from pybop import BaseOptimiser
 
 
-def convergence(optim, show=True, **layout_kwargs):
+def convergence(optim: BaseOptimiser, show: bool = True, **layout_kwargs):
     """
     Plot the convergence of the optimisation algorithm.
 
     Parameters
     -----------
-    optim : object
+    optim : pybop.BaseOptimiser
         Optimisation object containing the cost function and optimiser.
     show : bool, optional
         If True, the figure is shown upon creation (default: True).

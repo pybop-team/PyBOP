@@ -84,7 +84,7 @@ from .models._exponential_decay import ExponentialDecayModel
 # Cost classes
 #
 from . import costs
-from .costs.base_cost import BaseCost
+from .costs.base_cost import CallableCost
 
 #
 # Problem classes

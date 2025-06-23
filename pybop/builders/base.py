@@ -12,7 +12,7 @@ class BaseBuilder(ABC):
 
     This abstract class provides a foundation for specialised builders
     like Pybamm, PybammEIS, and Python. It handles common functionality such as
-    managing parameters, datasets, and costs for the pybop problems.
+    managing parameters, datasets for the pybop problems.
 
     Methods
     -------
@@ -27,9 +27,7 @@ class BaseBuilder(ABC):
     """
 
     def __init__(self):
-        self._costs = []
-        self._cost_weights = []
-        self._dataset = None
+        self._dataset: Dataset | None = None
         self._params = {}
 
     def set_dataset(self, dataset: Dataset) -> None:

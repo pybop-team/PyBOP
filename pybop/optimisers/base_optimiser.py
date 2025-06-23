@@ -24,6 +24,20 @@ class OptimisationLogger:
         """Get the verbosity level."""
         return self._verbose
 
+    @property
+    def x0(self):
+        """Get the initial parameter values."""
+        if self.x_model:
+            return self.x_model[0]
+        return None
+
+    @property
+    def last_x_model_best(self):
+        """Get the best model parameters found during optimisation."""
+        if self.x_model_best:
+            return self.x_model_best[-1]
+        return None
+
     def log_update(
         self,
         x_model: list[np.ndarray],
@@ -59,9 +73,9 @@ class OptimisationLogger:
 
         """
         # Update logs for each provided parameter
-        self.x_model.append(x_model)
-        self.x_search.append(x_search)
-        self.cost.append(cost)
+        self.x_model.extend(x_model)
+        self.x_search.extend(x_search)
+        self.cost.extend(cost)
         self.iterations.append(iterations)
         self.evaluations.append(evaluations)
         self.x_model_best.append(x_model_best)

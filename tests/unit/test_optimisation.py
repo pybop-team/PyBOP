@@ -196,13 +196,13 @@ class TestOptimisation:
             x_search_best=x_search_best,
             cost_best=cost_best,
         )
-        assert log.x_model == [[x_model]]
-        assert log.x_search == [[x_search]]
-        assert log.cost == [[cost]]
+        assert log.x_model == [x_model]
+        assert log.x_search == [x_search]
+        assert log.cost == [cost]
         assert log.iterations == [iterations]
         assert log.evaluations == [evaluations]
-        assert log.x_model_best == [[x_model_best]]
-        assert log.x_search_best == [[x_search_best]]
+        assert log.x_model_best == [x_model_best]
+        assert log.x_search_best == [x_search_best]
         assert log.cost_best == [cost_best]
         assert not log.verbose
 

@@ -2,40 +2,59 @@ from collections.abc import Callable
 
 import numpy as np
 import pybamm
+import pybop
 
 from pybop import PybammEISProblem, builders
 from pybop._pybamm_eis_pipeline import PybammEISPipeline
-from pybop.costs.base_cost import BaseCost
+from pybop.costs.base_cost import CallableCost
 
 
 class PybammEIS(builders.BaseBuilder):
     def __init__(self):
         super().__init__()
         self.domain = "Frequency [Hz]"
+        self._costs: list[CallableCost] = []
+        self._cost_weights: list[float] = []
 
     def set_simulation(
         self,
         model: pybamm.BaseModel,
-        parameter_values: pybamm.ParameterValues = None,
-        initial_state: float | str = None,
+        parameter_values: pybamm.ParameterValues | None = None,
+        initial_state: float | str | None = None,
     ) -> None:
         """
         Adds a simulation for the optimisation problem.
         """
         self._model = model.new_copy()
         self._initial_state = initial_state
-        self._parameter_values = (
-            parameter_values.copy() or model.default_parameter_values
-        )
+        if parameter_values is None:
+            parameter_values = model.default_parameter_values
+        elif isinstance(parameter_values, pybamm.ParameterValues):
+            parameter_values = parameter_values.copy()
+        else:
+            raise TypeError(
+                "parameter_values must be a pybamm.ParameterValues instance or None"
+            )
+        self._parameter_values = parameter_values
         self._solver = pybamm.CasadiSolver()
 
-    def add_cost(self, cost: Callable | BaseCost, weight: float = 1.0) -> None:
+    def add_cost(self, cost: Callable | CallableCost, weight: float = 1.0) -> None:
         """Adds a cost to the problem."""
-        if isinstance(cost, BaseCost):
-            if cost.weighting is None or cost.weighting == "equal":
-                cost.weighting = 1.0
-            elif cost.weighting == "domain":
-                self._set_cost_domain_weighting(cost)
+        if not isinstance(cost, CallableCost):
+            if not isinstance(cost, Callable):
+                raise TypeError(
+                    "cost must be a callable or an instance of CallableCost"
+                )
+            cost = pybop.costs.CallableError(cost)
+        if cost.weighting is None or cost.weighting == "equal":
+            cost.weighting = np.array(1.0)
+        elif cost.weighting == "domain":
+            self._set_cost_domain_weighting(cost)
+        else:
+            raise ValueError(
+                "cost.weighting must be 'equal', 'domain', or a custom numpy array"
+                f", got {cost.weighting}"
+            )
 
         self._costs.append(cost)
         self._cost_weights.append(weight)

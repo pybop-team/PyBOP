@@ -598,7 +598,7 @@ class Parameters:
                 values = self.true_value()
         return {key: values[i] for i, key in enumerate(self._params.keys())}
 
-    def verify(self, inputs: Inputs | None = None):
+    def verify(self, inputs: Inputs) -> dict[str, float]:
         """
         Verify that the inputs are an Inputs dictionary or numeric values
         which can be used to construct an Inputs dictionary
@@ -607,7 +607,7 @@ class Parameters:
         ----------
         inputs : Inputs or numeric
         """
-        if inputs is None or isinstance(inputs, dict):
+        if isinstance(inputs, dict):
             return inputs
         if isinstance(inputs, np.ndarray) and inputs.ndim == 0:
             inputs = inputs[np.newaxis]

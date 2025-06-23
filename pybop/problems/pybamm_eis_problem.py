@@ -2,6 +2,7 @@ import numpy as np
 
 from pybop import Parameters
 from pybop._pybamm_eis_pipeline import PybammEISPipeline
+from pybop.parameters.parameter import Inputs
 from pybop.problems.base_problem import Problem
 
 
@@ -17,7 +18,7 @@ class PybammEISProblem(Problem):
         pybop_params: Parameters | None = None,
         costs: list | None = None,
         cost_weights: list | np.ndarray | None = None,
-        fitting_data: list | None = None,
+        fitting_data: np.ndarray | None = None,
     ):
         super().__init__(pybop_params=pybop_params)
         self._pipeline = eis_pipeline
@@ -50,6 +51,15 @@ class PybammEISProblem(Problem):
 
         return np.dot(self._cost_weights, [cost(res) for cost in self._costs])
 
+    def simulate(self, inputs: Inputs) -> np.ndarray:
+        self._pipeline.pybamm_pipeline.rebuild(inputs)
+        self._pipeline.initialise_eis_pipeline()
+        return self._pipeline.solve()
+
     @property
     def pipeline(self):
         return self._pipeline
+
+    @property
+    def fitting_data(self):
+        return self._fitting_data
