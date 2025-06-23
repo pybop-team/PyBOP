@@ -34,7 +34,7 @@ affiliations:
    index: 2
  - name: Research Software Engineering Group, University of Oxford, Oxford, UK
    index: 3
- - name: Quansight Labs
+ - name: Quansight PBC
    index: 4
  - name:  Mathematics Institute, University of Warwick, Coventry, UK
    index: 5
