@@ -32,7 +32,6 @@ class PintsOptions(pybop.OptimiserOptions):
     min_iterations: int = 2
     sigma: float | np.ndarray = 5e-2
     max_unchanged_iterations: int = 15
-    parallel: bool = False
     use_f_guessed: bool = False
     absolute_tolerance: float = 1e-5
     relative_tolerance: float = 1e-2
@@ -96,7 +95,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         self._n_workers = 1
         self._callback = None
         options = options or PintsOptions()
-        self._parallel = options.parallel
+        self._parallel = issubclass(pints_optimiser, PopulationBasedOptimiser)
         self.set_min_iterations(options.min_iterations)
         self.set_max_iterations(options.max_iterations)
         self._unchanged_max_iterations = options.max_unchanged_iterations

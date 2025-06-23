@@ -44,7 +44,7 @@ class Problem:
         Checks if the parameters are valid. p should be a numpy array of one dimensions,
         with length equal to the number of parameters in the model.
         """
-        if not isinstance(p, (np.ndarray, list)):
+        if not isinstance(p, np.ndarray | list):
             raise TypeError("Parameters must be a numpy array or list")
         if isinstance(p, list):
             try:

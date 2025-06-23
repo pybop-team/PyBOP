@@ -1,6 +1,7 @@
 import numpy as np
 from pints import Evaluator as PintsEvaluator
 
+
 class PopulationEvaluator(PintsEvaluator):
     """
     Evaluates a function (or callable object)
@@ -18,6 +19,7 @@ class PopulationEvaluator(PintsEvaluator):
 
     def _evaluate(self, positions):
         return self._function(positions, *self._args)
+
 
 class SciPyEvaluator(PintsEvaluator):
     """

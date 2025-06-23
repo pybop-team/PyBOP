@@ -45,17 +45,8 @@ builder.add_cost(
 # Build the problem
 problem = builder.build()
 
-options = pybop.PintsOptions(max_iterations=3, parallel=True)
+options = pybop.PintsOptions(max_iterations=3)
 optim = pybop.CMAES(problem, options=options)
 optim.set_population_size(100)
 results = optim.run()
 print(results)
-
-# # Solve
-# problem.set_params(np.array([0.6, 0.6]))
-# sol = problem.pipeline.solve()
-#
-# # Plot
-# fig, ax = plt.subplots()
-# ax.scatter(sol["Time [s]"].data, sol["Voltage [V]"].data)
-# plt.show()
