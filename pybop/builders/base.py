@@ -28,7 +28,7 @@ class BaseBuilder(ABC):
 
     def __init__(self):
         self._dataset: Dataset | None = None
-        self._params = {}
+        self._params = []
         self._params_keys = []
 
     def set_dataset(self, dataset: Dataset) -> None:
