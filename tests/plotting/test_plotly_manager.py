@@ -1,10 +1,10 @@
 import subprocess
 from importlib.metadata import distributions
 from shutil import which
-import pybamm
 
 import numpy as np
 import plotly
+import pybamm
 import pytest
 
 import pybop

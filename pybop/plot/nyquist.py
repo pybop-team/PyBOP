@@ -1,8 +1,8 @@
+from plotly.graph_objs import Figure
+
+from pybop import PybammEISProblem
 from pybop.parameters.parameter import Inputs
 from pybop.plot.standard_plots import StandardPlot
-from pybop import PybammEISProblem
-from plotly.graph_objs import Figure
-import numpy as np
 
 
 def nyquist(

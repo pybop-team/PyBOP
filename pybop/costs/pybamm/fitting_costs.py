@@ -4,8 +4,8 @@ import pybamm
 from pybop import Dataset
 from pybop import Parameter as PybopParameter
 from pybop.costs.pybamm.base_cost import (
-    PybammCost,
     BaseLikelihood,
+    PybammCost,
     PybammExpressionMetadata,
 )
 

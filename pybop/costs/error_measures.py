@@ -1,4 +1,5 @@
-from typing import Callable
+from collections.abc import Callable
+
 import numpy as np
 
 from pybop.costs.base_cost import CallableCost
@@ -21,7 +22,7 @@ class CallableError(CallableCost):
 
     def __init__(self, callable: Callable, weighting: str | np.ndarray = None):
         # should have two parameters: r and dy
-        if not callable or not callable.__code__.co_argcount in (1, 2):
+        if not callable or callable.__code__.co_argcount not in (1, 2):
             raise ValueError(
                 "Callable must accept one or two parameters: r and dy (optional)."
             )

@@ -1,9 +1,8 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
-import pybamm
-
 import pybop._pybamm_eis_pipeline
 
 

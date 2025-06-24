@@ -1,8 +1,8 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
-import pybamm
 
 
 class Test_SPM_Parameterisation:
@@ -134,7 +134,6 @@ class Test_SPM_Parameterisation:
 
     @pytest.fixture
     def optim(self, optimiser, problem):
-
         options = optimiser.default_options()
         options.max_iterations = 450
         if isinstance(options, pybop.SciPyDifferentialEvolutionOptions):

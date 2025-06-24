@@ -2,8 +2,8 @@ from collections.abc import Callable
 
 import numpy as np
 import pybamm
-import pybop
 
+import pybop
 from pybop import PybammEISProblem, builders
 from pybop._pybamm_eis_pipeline import PybammEISPipeline
 from pybop.costs.base_cost import CallableCost

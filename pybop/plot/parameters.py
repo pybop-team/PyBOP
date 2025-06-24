@@ -1,5 +1,5 @@
-from pybop.plot.standard_plots import StandardSubplot
 from pybop import BaseOptimiser
+from pybop.plot.standard_plots import StandardSubplot
 
 
 def parameters(optim: BaseOptimiser, show=True, **layout_kwargs):

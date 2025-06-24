@@ -1,5 +1,5 @@
-from pybop.plot.standard_plots import StandardPlot
 from pybop import BaseOptimiser
+from pybop.plot.standard_plots import StandardPlot
 
 
 def convergence(optim: BaseOptimiser, show: bool = True, **layout_kwargs):

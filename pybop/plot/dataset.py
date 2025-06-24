@@ -1,11 +1,10 @@
-from typing import List
-from pybop.plot.standard_plots import StandardPlot, trajectories
 from pybop import Dataset
+from pybop.plot.standard_plots import StandardPlot, trajectories
 
 
 def dataset(
     dataset: Dataset,
-    signal: List[str] | str | None = None,
+    signal: list[str] | str | None = None,
     trace_names=None,
     show=True,
     **layout_kwargs,

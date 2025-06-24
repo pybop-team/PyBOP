@@ -1,10 +1,9 @@
 import warnings
-from functools import partial
 
 import numpy as np
 from scipy.interpolate import griddata
 
-from pybop import Problem, BaseOptimiser
+from pybop import BaseOptimiser, Problem
 from pybop.plot.plotly_manager import PlotlyManager
 
 

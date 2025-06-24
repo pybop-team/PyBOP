@@ -1,12 +1,11 @@
 import warnings
 
 import numpy as np
+import pybamm
 import pytest
 from packaging import version
 
 import pybop
-import pybamm
-
 import pybop.builders
 
 

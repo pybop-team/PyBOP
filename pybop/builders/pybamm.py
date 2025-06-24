@@ -4,7 +4,7 @@ import pybop
 from pybop import Parameter as PybopParameter
 from pybop._pybamm_pipeline import PybammPipeline
 from pybop.builders.base import BaseBuilder
-from pybop.costs.pybamm import PybammCost, BaseLikelihood, DesignCost
+from pybop.costs.pybamm import BaseLikelihood, DesignCost, PybammCost
 
 
 class Pybamm(BaseBuilder):

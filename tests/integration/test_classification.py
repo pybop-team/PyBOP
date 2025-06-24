@@ -1,8 +1,9 @@
+import json
+
 import numpy as np
+import pybamm
 import pybamm.models
 import pytest
-import pybamm
-import json
 
 import pybop
 
@@ -41,7 +42,7 @@ class TestClassification:
     @pytest.fixture
     def parameter_values(self, model):
         params = model.default_parameter_values
-        with open("examples/parameters/initial_ecm_parameters.json", "r") as f:
+        with open("examples/parameters/initial_ecm_parameters.json") as f:
             new_params = json.load(f)
             for key, value in new_params.items():
                 if key not in params:

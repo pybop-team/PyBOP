@@ -2,16 +2,16 @@ import numbers
 import warnings
 
 import numpy as np
+from scipy.stats import rv_continuous
 
 import pybop
 from pybop import (
+    BasePrior,
     ComposedTransformation,
     IdentityTransformation,
     LogTransformation,
-    BasePrior,
 )
 from pybop._utils import is_numeric
-from scipy.stats import rv_continuous
 
 Inputs = dict[str, float]
 
