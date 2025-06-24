@@ -2,6 +2,7 @@ import numpy as np
 import pybamm.models
 import pytest
 import pybamm
+import json
 
 import pybop
 
@@ -40,6 +41,12 @@ class TestClassification:
     @pytest.fixture
     def parameter_values(self, model):
         params = model.default_parameter_values
+        with open("examples/parameters/initial_ecm_parameters.json", "r") as f:
+            new_params = json.load(f)
+            for key, value in new_params.items():
+                if key not in params:
+                    continue
+                params.update({key: value})
         params.update({"C1 [F]": 1000})
         return params
 
@@ -49,6 +56,7 @@ class TestClassification:
 
     @pytest.fixture
     def dataset(self, model, parameter_values, parameters):
+        parameters = pybop.Parameters(parameters)
         parameter_values.update(parameters.as_dict(parameters.true_value()))
         experiment = pybop.Experiment(
             [
@@ -87,7 +95,6 @@ class TestClassification:
         problem.set_params(x0)
         final_cost = problem.run()
         bounds = problem.params.get_bounds()
-        optim = pybop.XNES(problem)
         results = pybop.OptimisationResult(
             problem=problem,
             x=x0,
@@ -119,11 +126,13 @@ class TestClassification:
         param_R0_a = pybop.Parameter(
             "R0_a [Ohm]",
             bounds=[0, 0.002],
+            initial_value=0.001,
             true_value=0.001,
         )
         param_R0_b = pybop.Parameter(
             "R0_b [Ohm]",
             bounds=[-1e-4, 1e-4],
+            initial_value=0,
             true_value=0,
         )
         parameter_values.update(

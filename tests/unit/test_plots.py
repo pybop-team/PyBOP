@@ -264,13 +264,13 @@ class TestPlots:
             )
         )
 
-        cost = builder.build()
+        problem = builder.build()
         with pytest.warns(
             UserWarning,
             match="Bounds were created from prior distributions.",
         ):
             warnings.simplefilter("always")
-            pybop.plot.contour(cost)
+            pybop.plot.contour(problem)
 
     def test_nyquist(self):
         # Define model

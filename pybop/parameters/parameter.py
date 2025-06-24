@@ -4,7 +4,12 @@ import warnings
 import numpy as np
 
 import pybop
-from pybop import ComposedTransformation, IdentityTransformation, LogTransformation
+from pybop import (
+    ComposedTransformation,
+    IdentityTransformation,
+    LogTransformation,
+    BasePrior,
+)
 from pybop._utils import is_numeric
 from scipy.stats import rv_continuous
 
@@ -25,7 +30,7 @@ class Parameter:
         The name of the parameter.
     initial_value : float, optional
         The initial value to be assigned to the parameter. Defaults to None.
-    prior : scipy.stats distribution, optional
+    prior : scipy.stats distribution or pybop.BasePrior, optional
         The prior distribution from which parameter values are drawn. Defaults to None.
     bounds : list[float], optional
         A tuple defining the lower and upper bounds for the parameter.
@@ -45,7 +50,7 @@ class Parameter:
         name,
         initial_value: float | None = None,
         true_value: float | None = None,
-        prior: rv_continuous | None = None,
+        prior: rv_continuous | BasePrior | None = None,
         bounds: list[float] | None = None,
         transformation: pybop.Transformation | None = None,
     ):
@@ -256,8 +261,8 @@ class Parameters:
     parameter_list : dict of pybop.Parameter
     """
 
-    def __init__(self, params: dict[str, Parameter]):
-        self._params = params
+    def __init__(self, params: list[Parameter]):
+        self._params = {p.name: p for p in params}
         self._transform = self._construct_transformation()
 
     def transformation(self) -> pybop.Transformation:

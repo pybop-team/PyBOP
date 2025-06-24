@@ -24,14 +24,14 @@ class PybammPipeline:
     def __init__(
         self,
         model: pybamm.BaseModel,
-        parameter_values: pybamm.ParameterValues = None,
-        pybop_parameters: Parameters = None,
-        solver: pybamm.BaseSolver = None,
-        t_start: np.number = 0,
-        t_end: np.number = 1,
-        t_interp: np.ndarray = None,
-        var_pts: dict = None,
-        initial_state: float | str = None,
+        parameter_values: pybamm.ParameterValues | None = None,
+        pybop_parameters: Parameters | None = None,
+        solver: pybamm.BaseSolver | None = None,
+        t_start: np.number = np.float64(0.0),
+        t_end: np.number = np.float64(1.0),
+        t_interp: np.ndarray | None = None,
+        var_pts: dict | None = None,
+        initial_state: float | str | None = None,
     ):
         """
         Parameters
@@ -56,8 +56,8 @@ class PybammPipeline:
         self._model = model
         self._model.events = []
         self._parameter_values = parameter_values or model.default_parameter_values
-        self._pybop_parameters = pybop_parameters
-        self._parameter_names = pybop_parameters.keys()
+        self._pybop_parameters = pybop_parameters or Parameters([])
+        self._parameter_names = self.pybop_parameters.keys()
         self._geometry = model.default_geometry
         self._methods = model.default_spatial_methods
         self._solver = pybamm.IDAKLUSolver() if solver is None else solver

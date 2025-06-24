@@ -71,9 +71,9 @@ from .transformation.transformations import (
 #
 # Parameter classes
 #
+from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointLogPrior
 from .parameters.parameter import Parameter, Parameters, Inputs
 from .parameters.parameter_set import ParameterSet
-from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointLogPrior
 
 #
 # Model classes
@@ -111,6 +111,7 @@ from .costs.error_measures import (
 #
 from .builders.base import BaseBuilder
 from .builders.pybamm import Pybamm
+from .builders.pybamm_eis import PybammEIS
 from .builders.python import Python
 
 

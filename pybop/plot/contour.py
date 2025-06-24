@@ -60,24 +60,24 @@ def contour(
     """
     if isinstance(call_object, BaseOptimiser):
         optim = call_object
-        cost = optim.problem
+        problem = optim.problem
     elif isinstance(call_object, Problem):
-        cost = call_object
+        problem = call_object
         optim = None
     else:
         raise TypeError(
             "The `call_object` must be a pybop.Problem or pybop.BaseOptimiser instance."
         )
-    parameters = cost.params
+    parameters = problem.params
     names = list(parameters.keys())
     additional_values = []
 
     if len(parameters) < 2:
-        raise ValueError("This cost function takes fewer than 2 parameters.")
+        raise ValueError("This problem takes fewer than 2 parameters.")
 
     if len(parameters) > 2:
         warnings.warn(
-            "This cost function requires more than 2 parameters. "
+            "This problem requires more than 2 parameters. "
             "Plotting in 2d with fixed values for the additional parameters.",
             UserWarning,
             stacklevel=2,
@@ -114,13 +114,13 @@ def contour(
     for i, xi in enumerate(x):
         for j, yj in enumerate(y):
             p = np.asarray([xi, yj] + additional_values)
-            cost.set_params(p)
+            problem.set_params(p)
             if gradient:
-                costs[j, i], (*current_grads,) = cost.run_with_sensitivities()
+                costs[j, i], (*current_grads,) = problem.run_with_sensitivities()
                 for k, grad_output in enumerate(current_grads):
                     grads[k][j, i] = grad_output
             else:
-                costs[j, i] = cost.run()
+                costs[j, i] = problem.run()
 
     # Append the arrays to the grad_parameter_costs list
     if gradient:
