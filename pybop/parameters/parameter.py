@@ -6,6 +6,7 @@ import numpy as np
 import pybop
 from pybop import ComposedTransformation, IdentityTransformation, LogTransformation
 from pybop._utils import is_numeric
+from scipy.stats import rv_continuous
 
 Inputs = dict[str, float]
 
@@ -26,9 +27,11 @@ class Parameter:
         The initial value to be assigned to the parameter. Defaults to None.
     prior : scipy.stats distribution, optional
         The prior distribution from which parameter values are drawn. Defaults to None.
-    bounds : tuple, optional
+    bounds : list[float], optional
         A tuple defining the lower and upper bounds for the parameter.
         Defaults to None.
+    transformation : pybop.Transformation, optional
+        An optional transformation applied to the parameter values during optimisation and sampling
 
     Raises
     ------
@@ -40,11 +43,11 @@ class Parameter:
     def __init__(
         self,
         name,
-        initial_value=None,
-        true_value=None,
-        prior=None,
-        bounds=None,
-        transformation=None,
+        initial_value: float | None = None,
+        true_value: float | None = None,
+        prior: rv_continuous | None = None,
+        bounds: list[float] | None = None,
+        transformation: pybop.Transformation | None = None,
     ):
         """
         Construct the parameter class with a name, initial value, prior, and bounds.
@@ -228,20 +231,14 @@ class Parameter:
         if self.initial_value is None:
             if self.prior is not None:
                 sample = self.rvs(1)[0]
-                self.update(initial_value=sample)
+                return sample
             else:
-                warnings.warn(
-                    "Initial value and prior are None, proceeding without an initial value.",
-                    UserWarning,
-                    stacklevel=2,
+                raise ValueError(
+                    f"Parameter {self.name} has no initial value or prior distribution."
                 )
 
-        if (
-            self.initial_value is not None
-            and apply_transform
-            and self.transformation is not None
-        ):
-            return float(self.transformation.to_search(self.initial_value))
+        if apply_transform and self.transformation is not None:
+            return float(self.transformation.to_search(np.array(self.initial_value)))
 
         return self.initial_value
 
@@ -256,11 +253,11 @@ class Parameters:
 
     Parameters
     ----------
-    params : list of pybop.Parameter
+    parameter_list : dict of pybop.Parameter
     """
 
-    def __init__(self, params: list[Parameter]):
-        self._params = {param.name: param for param in params}
+    def __init__(self, params: dict[str, Parameter]):
+        self._params = params
         self._transform = self._construct_transformation()
 
     def transformation(self) -> pybop.Transformation:
