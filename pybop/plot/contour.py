@@ -26,7 +26,7 @@ def contour(
 
     Parameters
     ----------
-    call_object : Union([pybop.BaseCost,pybop.BaseOptimiser, pybop.Problem])
+    call_object : Union([pybop.BaseCost, pybop.BaseOptimiser, pybop.Problem])
         Either:
         - the cost function to be evaluated. Must accept a list of parameter values and return a cost value.
         - an Optimisation object which provides a specific optimisation trace overlaid on the cost landscape.
