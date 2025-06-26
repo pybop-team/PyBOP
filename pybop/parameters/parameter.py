@@ -7,7 +7,6 @@ from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
-from scipy.stats import rv_continuous
 
 from pybop import (
     ComposedTransformation,
