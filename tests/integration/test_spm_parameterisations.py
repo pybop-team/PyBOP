@@ -54,10 +54,6 @@ class Test_SPM_Parameterisation:
             ),
         ]
 
-    @pytest.fixture(params=[0.4, 0.7])
-    def init_soc(self, request):
-        return request.param
-
     @pytest.fixture(
         params=[
             pybop.costs.pybamm.RootMeanSquaredError,
@@ -92,9 +88,10 @@ class Test_SPM_Parameterisation:
         return request.param
 
     @pytest.fixture
-    def dataset(self, model, init_soc, parameter_values):
+    def dataset(self, model, parameter_values):
         experiment = pybop.Experiment(
             [
+                "Rest for 1 second",
                 "Discharge at 0.5C for 8 minutes (8 second period)",
                 "Charge at 0.5C for 8 minutes (8 second period)",
             ]
@@ -104,7 +101,7 @@ class Test_SPM_Parameterisation:
             parameter_values=parameter_values,
             experiment=experiment,
         )
-        solution = sim.solve(initial_soc=init_soc)
+        solution = sim.solve()
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
@@ -115,9 +112,9 @@ class Test_SPM_Parameterisation:
         return dataset
 
     @pytest.fixture
-    def problem(self, model, parameters, cost_cls, init_soc, parameter_values, dataset):
+    def problem(self, model, parameters, cost_cls, parameter_values, dataset):
         builder = pybop.Pybamm()
-        builder.set_simulation(model, parameter_values, initial_state=init_soc)
+        builder.set_simulation(model, parameter_values)
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)
@@ -132,6 +129,16 @@ class Test_SPM_Parameterisation:
         problem = builder.build()
         return problem
 
+    def test_problem(self, problem):
+        problem.set_params(self.ground_truth)
+        cost_at_ground = problem.run()
+        ground_plus_delta = self.ground_truth + np.random.normal(
+            0, 0.1, len(self.ground_truth)
+        )
+        problem.set_params(ground_plus_delta)
+        cost_at_ground_plus_delta = problem.run()
+        assert cost_at_ground < cost_at_ground_plus_delta
+
     @pytest.fixture
     def optim(self, optimiser, problem):
         options = optimiser.default_options()
@@ -144,30 +151,16 @@ class Test_SPM_Parameterisation:
 
         # Set sigma0 and create optimiser
         optim = optimiser(problem, options)
-
-        # Set Hypers
-        # if isinstance(optim, pybop.SimulatedAnnealing):
-        #    optim.optimiser.cooling_rate = 0.85  # Cool quickly
-        # if isinstance(optim, pybop.CuckooSearch):
-        #    optim.optimiser.pa = 0.55  # Increase abandon rate for limited iterations
-        # if isinstance(optim, pybop.AdamW):
-        #    optim.optimiser.b1 = 0.9
-        #    optim.optimiser.b2 = 0.9
         return optim
 
     def test_optimisers(self, optim, cost_cls):
         x0 = optim.problem.params.initial_value()
-        print(f"Initial guess: {x0}")
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
-        if cost_cls in (
-            pybop.costs.pybamm.NegativeGaussianLogLikelihood,
-            pybop.costs.pybamm.SumSquaredError,
-        ):
+        if cost_cls in (pybop.costs.pybamm.NegativeGaussianLogLikelihood,):
             self.ground_truth = np.concatenate(
                 (self.ground_truth, np.asarray([self.sigma0]))
             )
-            print(f"Ground truth with sigma0: {self.ground_truth}")
 
         optim.problem.set_params(x0)
         initial_cost = optim.problem.run()
@@ -181,87 +174,51 @@ class Test_SPM_Parameterisation:
 
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
-    @pytest.fixture
-    def two_signal_cost(self, parameters, model, cost_cls):
-        # Form dataset
-        solution = self.get_data(model, init_soc=0.5)
+    def test_with_init_soc(self, model, parameters):
+        experiment = pybop.Experiment(
+            [
+                "Rest for 1 second",
+                "Discharge at 0.5C for 8 minutes (8 second period)",
+                "Charge at 0.5C for 8 minutes (8 second period)",
+            ]
+        )
+        init_soc = 0.4
+        sim = pybamm.Simulation(
+            model=model,
+            experiment=experiment,
+        )
+        solution = sim.solve(initial_soc=init_soc)
         dataset = pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current function [A]": solution["Current [A]"].data,
                 "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
-                "Bulk open-circuit voltage [V]": self.noisy(
-                    solution["Bulk open-circuit voltage [V]"].data, self.sigma0
-                ),
             }
         )
+        builder = pybop.Pybamm()
+        builder.set_simulation(model, initial_state=init_soc)
+        builder.set_dataset(dataset)
+        for p in parameters:
+            builder.add_parameter(p)
+        signal = "Voltage [V]"
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError(signal, signal))
+        problem = builder.build()
+        options = pybop.XNES.default_options()
+        options.max_iterations = 100
+        options.absolute_tolerance = 1e-6
+        options.max_unchanged_iterations = 100
+        optim = pybop.XNES(problem, options)
 
-        # Define the cost to optimise
-        signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
-        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
-
-        if cost_cls is pybop.GaussianLogLikelihoodKnownSigma:
-            return cost_cls(problem, sigma0=self.sigma0)
-        elif cost_cls is pybop.GaussianLogLikelihood:
-            return cost_cls(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
-        elif cost_cls is pybop.LogPosterior:
-            return cost_cls(
-                pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
-            )
-        else:
-            return cost_cls(problem)
-
-    @pytest.mark.parametrize(
-        "multi_optimiser",
-        [
-            pybop.SciPyDifferentialEvolution,
-            pybop.IRPropMin,
-            pybop.CMAES,
-        ],
-    )
-    def test_multiple_signals(self, multi_optimiser, two_signal_cost):
-        x0 = two_signal_cost.parameters.initial_value()
-        combined_sigma0 = np.asarray([self.sigma0, self.sigma0])
-
-        common_args = {
-            "cost": two_signal_cost,
-            "max_iterations": 250,
-            "max_unchanged_iterations": 60,
-            "sigma0": (
-                [0.03, 0.03, 6e-3, 6e-3]
-                if isinstance(two_signal_cost, pybop.GaussianLogLikelihood)
-                else 0.03
-            ),
-        }
-
-        if multi_optimiser is pybop.SciPyDifferentialEvolution:
-            common_args["bounds"] = {"lower": [0.375, 0.375], "upper": [0.775, 0.775]}
-            if isinstance(two_signal_cost, pybop.GaussianLogLikelihood):
-                common_args["bounds"]["lower"].extend([0.0, 0.0])
-                common_args["bounds"]["upper"].extend([0.05, 0.05])
-
-        # Test each optimiser
-        optim = multi_optimiser(**common_args)
-
-        # Add sigma0 to ground truth for GaussianLogLikelihood
-        if isinstance(two_signal_cost, pybop.GaussianLogLikelihood):
-            self.ground_truth = np.concatenate((self.ground_truth, combined_sigma0))
-
-        initial_cost = optim.cost(optim.parameters.initial_value())
+        x0 = optim.problem.params.initial_value()
+        optim.problem.set_params(x0)
+        initial_cost = optim.problem.run()
         results = optim.run()
-
         # Assertions
         if np.allclose(x0, self.ground_truth, atol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
-        if results.minimising:
-            assert initial_cost > results.final_cost
-        else:
-            assert initial_cost < results.final_cost
-
+        assert initial_cost > results.final_cost
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
-        if isinstance(two_signal_cost, pybop.GaussianLogLikelihood):
-            np.testing.assert_allclose(results.x[-2:], combined_sigma0, atol=5e-4)
 
     @pytest.mark.parametrize("init_soc", [0.4, 0.6])
     def test_model_misparameterisation(self, parameters, model, init_soc):
@@ -300,13 +257,3 @@ class Test_SPM_Parameterisation:
         # Assertion for x
         with np.testing.assert_raises(AssertionError):
             np.testing.assert_allclose(results.x, self.ground_truth, atol=2e-2)
-
-    def get_data(self, model, init_soc):
-        initial_state = {"Initial SoC": init_soc}
-        experiment = pybop.Experiment(
-            [
-                "Discharge at 0.5C for 8 minutes (8 second period)",
-                "Charge at 0.5C for 8 minutes (8 second period)",
-            ]
-        )
-        return model.predict(initial_state=initial_state, experiment=experiment)

@@ -277,9 +277,6 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
                 model_xs = [
                     self.problem.params.transformation().to_model(x) for x in xs
                 ]
-                print("Evaluating points:")
-                for x in model_xs:
-                    print(f" - {x}")
 
                 # Evaluate points
                 fs = evaluator.evaluate(model_xs)

@@ -19,10 +19,8 @@ class SumSquaredError(PybammCost):
         self,
         variable_name: str,
         data_name: str,
-        sigma: float | PybopParameter | None = None,
     ):
         super().__init__()
-        self._sigma = sigma
         self._variable_name = variable_name
         self._data_name = data_name
 
@@ -36,8 +34,7 @@ class SumSquaredError(PybammCost):
         self._check_state(dataset, model, name)
         data, var = self._construct_discrete_time_node(dataset, model, name)
         parameters = {}
-        sigma = self._get_sigma_parameter(name, parameters)
-        sum_expr = (var - data) ** 2 / sigma**2
+        sum_expr = (var - data) ** 2
 
         return PybammExpressionMetadata(
             variable_name=name,
