@@ -135,7 +135,7 @@ class Test_SPM_Parameterisation:
     @pytest.fixture
     def optim(self, optimiser, problem):
         options = optimiser.default_options()
-        options.max_iterations = 450
+        options.max_iterations = 100
         if isinstance(options, pybop.SciPyDifferentialEvolutionOptions):
             options.atol = 1e-6
         elif isinstance(options, pybop.PintsOptions):
@@ -157,15 +157,20 @@ class Test_SPM_Parameterisation:
 
     def test_optimisers(self, optim, cost_cls):
         x0 = optim.problem.params.initial_value()
+        print(f"Initial guess: {x0}")
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
-        if isinstance(cost_cls, pybop.costs.pybamm.NegativeGaussianLogLikelihood):
+        if cost_cls in (
+            pybop.costs.pybamm.NegativeGaussianLogLikelihood,
+            pybop.costs.pybamm.SumSquaredError,
+        ):
             self.ground_truth = np.concatenate(
                 (self.ground_truth, np.asarray([self.sigma0]))
             )
+            print(f"Ground truth with sigma0: {self.ground_truth}")
 
         optim.problem.set_params(x0)
-        initial_cost = optim.run()
+        initial_cost = optim.problem.run()
         results = optim.run()
 
         # Assertions

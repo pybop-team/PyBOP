@@ -212,6 +212,9 @@ class BasePrior:
         """
         return self.scale
 
+    def default_bounds(self) -> tuple[float, float]:
+        raise NotImplementedError()
+
 
 class Gaussian(BasePrior):
     """
@@ -251,6 +254,12 @@ class Gaussian(BasePrior):
             The value(s) of the first derivative at x.
         """
         return self.__call__(x), (self.loc - x) / self.scale**2
+
+    def default_bounds(self) -> tuple[float, float]:
+        multiplier = 15
+        lower = self.loc - multiplier * self.scale
+        upper = self.loc + multiplier * self.scale
+        return lower, upper
 
 
 class Uniform(BasePrior):
@@ -310,6 +319,9 @@ class Uniform(BasePrior):
         """
         return (self.upper - self.lower) / (2 * np.sqrt(3))
 
+    def default_bounds(self) -> tuple[float, float]:
+        return self.lower, self.upper
+
 
 class Exponential(BasePrior):
     """
@@ -349,6 +361,11 @@ class Exponential(BasePrior):
         log_pdf = self.__call__(x)
         dlog_pdf = -1 / self.scale * np.ones_like(x)
         return log_pdf, dlog_pdf
+
+    def default_bounds(self) -> tuple[float, float]:
+        lower = self.loc
+        upper = self.loc + 15 * self.scale
+        return lower, upper
 
 
 class JointLogPrior(BasePrior):

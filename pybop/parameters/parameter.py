@@ -185,7 +185,7 @@ class Parameter:
 
         self.margin = margin
 
-    def set_bounds(self, bounds=None, boundary_multiplier=15):
+    def set_bounds(self, bounds=None):
         """
         Set the upper and lower bounds and applies default values
         from the prior if no bounds are provided. The default values
@@ -213,10 +213,9 @@ class Parameter:
             else:
                 self.lower_bound = bounds[0]
                 self.upper_bound = bounds[1]
-        elif self.prior is not None:
+        elif self.prior is not None and isinstance(self.prior, BasePrior):
             self.applied_prior_bounds = True
-            self.lower_bound = self.prior.mean - boundary_multiplier * self.prior.sigma
-            self.upper_bound = self.prior.mean + boundary_multiplier * self.prior.sigma
+            self.lower_bound, self.upper_bound = self.prior.default_bounds()
             print("Default bounds applied based on prior distribution.")
         else:
             self.bounds = None

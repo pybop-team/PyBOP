@@ -167,6 +167,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
             self._boundaries = None
         else:
             bounds = self.problem.params.get_bounds(apply_transform=True)
+            print(f"Using bounds: {bounds}")
             if issubclass(self._pints_optimiser, PintsPSO):
                 if not all(
                     np.isfinite(value)
@@ -276,6 +277,9 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
                 model_xs = [
                     self.problem.params.transformation().to_model(x) for x in xs
                 ]
+                print("Evaluating points:")
+                for x in model_xs:
+                    print(f" - {x}")
 
                 # Evaluate points
                 fs = evaluator.evaluate(model_xs)
