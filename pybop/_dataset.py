@@ -1,5 +1,5 @@
 import numpy as np
-from pybamm import solvers
+from pybamm import Solution
 
 
 class Dataset:
@@ -11,7 +11,7 @@ class Dataset:
 
     Parameters
     ----------
-    data_dictionary : dict or instance of pybamm.solvers.solution.Solution
+    data_dictionary : dict[str, np.ndarray|list] or instance of pybamm.Solution
         The experimental data to store within the dataset.
     domain : str, optional
         The domain of the dataset. Defaults to "Time [s]".
@@ -19,7 +19,7 @@ class Dataset:
 
     def __init__(
         self,
-        data_dictionary,
+        data_dictionary: dict[str, np.ndarray | list] | Solution,
         domain: str | None = None,
         control_variable: str | None = None,
     ):
@@ -27,11 +27,30 @@ class Dataset:
         Initialise a Dataset instance with data and a set of names.
         """
 
-        if isinstance(data_dictionary, solvers.solution.Solution):
+        if isinstance(data_dictionary, Solution):
             data_dictionary = data_dictionary.get_data_dict()
         if not isinstance(data_dictionary, dict):
             raise TypeError("The input to pybop.Dataset must be a dictionary.")
-        self.data = data_dictionary
+        # convert any lists to numpy arrays
+        data_ndarray: dict[str, np.ndarray] = {}
+        for key, value in data_dictionary.items():
+            if isinstance(value, list):
+                data_ndarray[key] = np.array(value)
+            elif isinstance(value, np.ndarray):
+                data_ndarray[key] = value
+            else:
+                raise TypeError(
+                    f"Data for key {key} must be a list or numpy array, "
+                    f"but got {type(value)}."
+                )
+        # make sure all data is the same length
+        lengths = {len(v) for v in data_ndarray.values()}
+        if len(lengths) != 1:
+            raise ValueError(
+                "All data series in the dataset must have the same length, "
+                f"but found lengths: {lengths}."
+            )
+        self.data = data_ndarray
         self.domain = domain or "Time [s]"
         self.control_variable = control_variable or "Current function [A]"
 
@@ -58,6 +77,8 @@ class Dataset:
         value : list or np.ndarray
             The data series to be stored in the dataset.
         """
+        if isinstance(value, list):
+            value = np.array(value)
         self.data[key] = value
 
     def __getitem__(self, key):
@@ -87,7 +108,9 @@ class Dataset:
     def __contains__(self, key):
         return key in self.data
 
-    def check(self, domain: str = None, signal: str | list[str] = None) -> bool:
+    def check(
+        self, domain: str | None = None, signal: str | list[str] | None = None
+    ) -> bool:
         """
         Check the consistency of a PyBOP Dataset against the expected format.
 

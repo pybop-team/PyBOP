@@ -71,6 +71,7 @@ from .transformation.transformations import (
 #
 # Parameter classes
 #
+from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointLogPrior
 from .parameters.parameter import Parameter, Parameters, Inputs
 from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointLogPrior
 
@@ -83,7 +84,7 @@ from .models._exponential_decay import ExponentialDecayModel
 # Cost classes
 #
 from . import costs
-from .costs.base_cost import BaseCost
+from .costs.base_cost import CallableCost
 
 #
 # Problem classes
@@ -110,6 +111,7 @@ from .costs.error_measures import (
 #
 from .builders.base import BaseBuilder
 from .builders.pybamm import Pybamm
+from .builders.pybamm_eis import PybammEIS
 from .builders.python import Python
 
 

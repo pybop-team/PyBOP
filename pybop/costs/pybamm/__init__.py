@@ -1,5 +1,5 @@
 from .base_cost import (
-    BaseCost,
+    PybammCost,
     BaseLikelihood,
     PybammExpressionMetadata,
     PybammParameterMetadata,

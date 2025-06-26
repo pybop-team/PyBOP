@@ -75,7 +75,7 @@ class TestOptimisation:
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
         builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]", 1)
+            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
         )
         return builder.build()
 
@@ -87,7 +87,7 @@ class TestOptimisation:
         for p in two_parameters:
             builder.add_parameter(p)
         builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]", 1)
+            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
         )
         return builder.build()
 
@@ -99,7 +99,7 @@ class TestOptimisation:
         for p in two_parameters_no_bounds:
             builder.add_parameter(p)
         builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]", 1)
+            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
         )
         return builder.build()
 
@@ -196,13 +196,13 @@ class TestOptimisation:
             x_search_best=x_search_best,
             cost_best=cost_best,
         )
-        assert log.x_model == [[x_model]]
-        assert log.x_search == [[x_search]]
-        assert log.cost == [[cost]]
+        assert log.x_model == [x_model]
+        assert log.x_search == [x_search]
+        assert log.cost == [cost]
         assert log.iterations == [iterations]
         assert log.evaluations == [evaluations]
-        assert log.x_model_best == [[x_model_best]]
-        assert log.x_search_best == [[x_search_best]]
+        assert log.x_model_best == [x_model_best]
+        assert log.x_search_best == [x_search_best]
         assert log.cost_best == [cost_best]
         assert not log.verbose
 

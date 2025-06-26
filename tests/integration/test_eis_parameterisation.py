@@ -1,7 +1,9 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
+import pybop._pybamm_eis_pipeline
 
 
 class TestEISParameterisation:
@@ -21,24 +23,26 @@ class TestEISParameterisation:
         )
 
     @pytest.fixture
-    def model(self):
-        parameter_set = pybop.ParameterSet("Chen2020")
+    def parameter_values(self):
+        params = pybamm.ParameterValues("Chen2020")
         x = self.ground_truth
-        parameter_set.update(
+        params.update(
             {
                 "Negative electrode active material volume fraction": x[0],
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        return pybop.lithium_ion.SPM(
-            parameter_set=parameter_set,
-            eis=True,
+        return params
+
+    @pytest.fixture
+    def model(self):
+        return pybamm.lithium_ion.SPM(
             options={"surface form": "differential"},
         )
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
+        return [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Uniform(0.3, 0.9),
@@ -51,7 +55,7 @@ class TestEISParameterisation:
                 initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
                 bounds=[0.375, 0.775],
             ),
-        )
+        ]
 
     @pytest.fixture(params=[0.5])
     def init_soc(self, request):
@@ -90,68 +94,94 @@ class TestEISParameterisation:
         return request.param
 
     @pytest.fixture
-    def optim(self, optimiser, model, parameters, cost, init_soc):
+    def dataset(self, model, parameters, init_soc, parameter_values):
         n_frequency = 15
         # Set frequency set
         f_eval = np.logspace(-4, 5, n_frequency)
 
-        # Form dataset
-        solution = self.get_data(model, init_soc, f_eval)
+        dummy_dataset = pybop.Dataset(
+            {
+                "Frequency [Hz]": f_eval,
+                "Current function [A]": np.ones(n_frequency) * 0.0,
+                "Impedance": np.ones(n_frequency) * 0.0,
+            }
+        )
+        builder = pybop.PybammEIS()
+        builder.set_simulation(model, parameter_values, initial_state=init_soc)
+        builder.set_dataset(dummy_dataset)
+        for p in parameters:
+            builder.add_parameter(p)
+        problem = builder.build()
+        sol = problem.simulate(
+            {
+                "Negative electrode active material volume fraction": self.ground_truth[
+                    0
+                ],
+                "Positive electrode active material volume fraction": self.ground_truth[
+                    1
+                ],
+            }
+        )
+
         dataset = pybop.Dataset(
             {
                 "Frequency [Hz]": f_eval,
                 "Current function [A]": np.ones(n_frequency) * 0.0,
-                "Impedance": self.noisy(solution["Impedance"], self.sigma0),
+                "Impedance": self.noisy(sol, self.sigma0),
+                "Impedance No Noise": sol,
             }
         )
+        return dataset
 
-        # Define the problem
-        signal = ["Impedance"]
-        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
+    @pytest.fixture
+    def problem(self, model, parameters, cost, init_soc, parameter_values, dataset):
+        builder = pybop.PybammEIS()
+        builder.set_simulation(model, parameter_values, initial_state=init_soc)
+        builder.set_dataset(dataset)
+        for p in parameters:
+            builder.add_parameter(p)
+        builder.add_cost(cost())
+        problem = builder.build()
+        return problem
 
-        # Construct the cost
-        if cost is pybop.GaussianLogLikelihoodKnownSigma:
-            cost = cost(problem, sigma0=self.sigma0)
-        elif cost is pybop.GaussianLogLikelihood:
-            cost = cost(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
-        elif cost is pybop.LogPosterior:
-            cost = cost(
-                pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
-            )
-        elif cost in [pybop.SumOfPower, pybop.Minkowski]:
-            cost = cost(problem, p=2)
-        else:
-            cost = cost(problem)
-
-        # Construct optimisation object
-        common_args = {
-            "cost": cost,
-            "max_iterations": 100,
-            "absolute_tolerance": 1e-6,
-            "max_unchanged_iterations": 35,
-            "sigma0": [0.05, 0.05, 1e-3]
-            if isinstance(cost, pybop.GaussianLogLikelihood)
-            else 0.02,
-            "polish": False
-            if isinstance(optimiser, pybop.SciPyDifferentialEvolution)
-            else None,
-            "population_size": 4,
-        }
+    @pytest.fixture
+    def optim(self, optimiser, problem):
+        options = optimiser.default_options()
+        if isinstance(options, pybop.SciPyDifferentialEvolutionOptions):
+            options.max_iterations = 100
+            options.atol = 1e-6
+        elif isinstance(options, pybop.PintsOptions):
+            options.max_unchanged_iterations = 35
+            options.max_iterations = 100
+            options.absolute_tolerance = 1e-6
 
         # Create optimiser
-        optim = optimiser(**common_args)
+        optim = optimiser(problem, options=options)
         return optim
 
-    def test_eis_optimisers(self, optim):
-        x0 = optim.parameters.initial_value()
+    def test_eis_optimisers(self, optim, dataset):
+        optim.problem.set_params(self.ground_truth)
+        sol = optim.problem.simulate(
+            {
+                "Negative electrode active material volume fraction": self.ground_truth[
+                    0
+                ],
+                "Positive electrode active material volume fraction": self.ground_truth[
+                    1
+                ],
+            }
+        )
+        # Check that the simulated impedance matches the dataset impedance
+        np.testing.assert_allclose(
+            sol,
+            dataset["Impedance No Noise"],
+            atol=1e-5,
+            err_msg="Simulated impedance does not match dataset impedance",
+        )
+        x0 = optim.problem.params.initial_value()
 
-        # Add sigma0 to ground truth for GaussianLogLikelihood
-        if isinstance(optim.cost, pybop.GaussianLogLikelihood):
-            self.ground_truth = np.concatenate(
-                (self.ground_truth, np.asarray([self.sigma0]))
-            )
-
-        initial_cost = optim.cost(x0)
+        optim.problem.set_params(x0)
+        initial_cost = optim.problem.run()
         results = optim.run()
 
         # Assertions
@@ -161,25 +191,5 @@ class TestEISParameterisation:
         # Assert on identified values, without sigma for GaussianLogLikelihood
         # as the sigma values are small (5e-4), this is a difficult identification process
         # and requires a high number of iterations, and parameter dependent step sizes.
-        if results.minimising:
-            assert initial_cost > results.final_cost
-        else:
-            assert initial_cost < results.final_cost
+        assert initial_cost > results.final_cost
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
-
-    def get_data(self, model, init_soc, f_eval):
-        initial_state = {"Initial SoC": init_soc}
-        sim = model.simulateEIS(
-            inputs={
-                "Negative electrode active material volume fraction": self.ground_truth[
-                    0
-                ],
-                "Positive electrode active material volume fraction": self.ground_truth[
-                    1
-                ],
-            },
-            f_eval=f_eval,
-            initial_state=initial_state,
-        )
-
-        return sim

@@ -1,9 +1,42 @@
+from collections.abc import Callable
+
 import numpy as np
 
-from pybop.costs.base_cost import BaseCost
+from pybop.costs.base_cost import CallableCost
 
 
-class MeanSquaredError(BaseCost):
+class CallableError(CallableCost):
+    """
+    Mean square error (MSE) cost function.
+
+    Computes the mean square error between model predictions and the target
+    data, providing a measure of the differences between predicted values and
+    observed values.
+
+    Parameters
+    ----------
+    weighting : np.ndarray, optional
+        The type of weighting array to use when taking the sum or mean of the error
+        measure. Options: "equal"(default), "domain", or a custom numpy array.
+    """
+
+    def __init__(self, callable: Callable, weighting: str | np.ndarray = None):
+        # should have two parameters: r and dy
+        if not callable or callable.__code__.co_argcount not in (1, 2):
+            raise ValueError(
+                "Callable must accept one or two parameters: r and dy (optional)."
+            )
+        self._callable = callable
+
+    def __call__(
+        self,
+        r: np.ndarray,
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
+        return self._callable(r, dy)
+
+
+class MeanSquaredError(CallableCost):
     """
     Mean square error (MSE) cost function.
 
@@ -32,7 +65,7 @@ class MeanSquaredError(BaseCost):
         return e
 
 
-class RootMeanSquaredError(BaseCost):
+class RootMeanSquaredError(CallableCost):
     """
     Root mean square error (RMSE) cost function.
 
@@ -55,7 +88,7 @@ class RootMeanSquaredError(BaseCost):
         return e
 
 
-class MeanAbsoluteError(BaseCost):
+class MeanAbsoluteError(CallableCost):
     """
     Mean absolute error (MAE) cost function.
 
@@ -84,7 +117,7 @@ class MeanAbsoluteError(BaseCost):
         return e
 
 
-class SumSquaredError(BaseCost):
+class SumSquaredError(CallableCost):
     """
     Sum of squared error (SSE) cost function.
 
@@ -107,7 +140,7 @@ class SumSquaredError(BaseCost):
         return e
 
 
-class Minkowski(BaseCost):
+class Minkowski(CallableCost):
     """
     The Minkowski distance is a generalisation of several distance metrics,
     including the Euclidean and Manhattan distances. It is defined as:
@@ -164,7 +197,7 @@ class Minkowski(BaseCost):
         return e
 
 
-class SumOfPower(BaseCost):
+class SumOfPower(CallableCost):
     """
     The Sum of Power [1] is a generalised cost function based on the p-th power
     of absolute differences between two vectors. It is defined as:

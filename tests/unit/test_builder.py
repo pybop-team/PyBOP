@@ -78,7 +78,7 @@ class TestBuilder:
             )
         )
         builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]", 1.0)
+            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
         )
         builder.add_cost(
             pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]", "Voltage [V]")
@@ -219,9 +219,8 @@ class TestBuilder:
         builder.add_parameter(
             pybop.Parameter("Positive particle radius [m]", initial_value=1e-5)
         )
-        sigma = pybop.Parameter("sigma", bounds=[0, 1], initial_value=0.5)
         builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]", sigma)
+            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
         )
         builder.add_cost(
             pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]", "Voltage [V]")
@@ -229,9 +228,9 @@ class TestBuilder:
         problem = builder.build()
 
         assert problem is not None
-        problem.set_params(np.array([1e-5, 0.5e-6, 1e-3]))
+        problem.set_params(np.array([1e-5, 0.5e-6]))
         value1 = problem.run()
-        problem.set_params(np.array([2e-5, 1.5e-6, 1e-3]))
+        problem.set_params(np.array([2e-5, 1.5e-6]))
         value2 = problem.run()
         assert (value1 - value2) / value1 > 1e-5
 
@@ -261,15 +260,15 @@ class TestBuilder:
         problem = builder.build()
 
         assert problem is not None
-        problem.set_params(np.array([0.6, 0.6, 0.01]))
+        problem.set_params(np.array([0.6, 0.6]))
         value1 = problem.run()
-        problem.set_params(np.array([0.7, 0.7, 0.01]))
+        problem.set_params(np.array([0.7, 0.7]))
         value2 = problem.run()
         assert (value1 - value2) / value1 > 1e-5
-        problem.set_params(np.array([0.6, 0.6, 0.01]))
+        problem.set_params(np.array([0.6, 0.6]))
         value1s, grad1s = problem.run_with_sensitivities()
-        assert grad1s.shape == (3,)
-        problem.set_params(np.array([0.7, 0.7, 0.01]))
+        assert grad1s.shape == (2,)
+        problem.set_params(np.array([0.7, 0.7]))
         value2s, grad2s = problem.run_with_sensitivities()
         np.testing.assert_allclose(value1s, value1, rtol=1e-4)
         np.testing.assert_allclose(value2s, value2, rtol=1e-4)
@@ -391,7 +390,7 @@ class TestBuilder:
             )
         )
         builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]", 1.0)
+            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
         )
         problem = builder.build()
 

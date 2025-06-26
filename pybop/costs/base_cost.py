@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class BaseCost:
+class CallableCost:
     """
     Base class for defining cost functions.
 

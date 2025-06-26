@@ -1,15 +1,14 @@
 import warnings
-from functools import partial
 
 import numpy as np
 from scipy.interpolate import griddata
 
-from pybop import BaseCost, BaseOptimiser
+from pybop import BaseOptimiser, Problem
 from pybop.plot.plotly_manager import PlotlyManager
 
 
 def contour(
-    call_object: BaseCost | BaseOptimiser,
+    call_object: Problem | BaseOptimiser,
     gradient: bool = False,
     bounds: np.ndarray | None = None,
     apply_transform: bool = False,
@@ -26,7 +25,7 @@ def contour(
 
     Parameters
     ----------
-    call_object : Union([pybop.BaseCost,pybop.BaseOptimiser, pybop.BasePrior])
+    call_object : Union([pybop.BaseCost, pybop.BaseOptimiser, pybop.Problem])
         Either:
         - the cost function to be evaluated. Must accept a list of parameter values and return a cost value.
         - an Optimisation object which provides a specific optimisation trace overlaid on the cost landscape.
@@ -58,29 +57,26 @@ def contour(
     ValueError
         If the cost function does not return a valid cost when called with a parameter list.
     """
-    plot_optim = False
-    cost = cost_call = call_object
-
-    # Assign input as a cost or optimisation object
     if isinstance(call_object, BaseOptimiser):
-        plot_optim = True
         optim = call_object
-        cost = optim.cost
-        cost_call = partial(optim.cost)
-    elif isinstance(call_object, BaseCost):
-        cost = call_object
-        cost_call = partial(cost)
-
-    parameters = cost.parameters
+        problem = optim.problem
+    elif isinstance(call_object, Problem):
+        problem = call_object
+        optim = None
+    else:
+        raise TypeError(
+            "The `call_object` must be a pybop.Problem or pybop.BaseOptimiser instance."
+        )
+    parameters = problem.params
     names = list(parameters.keys())
     additional_values = []
 
     if len(parameters) < 2:
-        raise ValueError("This cost function takes fewer than 2 parameters.")
+        raise ValueError("This problem takes fewer than 2 parameters.")
 
     if len(parameters) > 2:
         warnings.warn(
-            "This cost function requires more than 2 parameters. "
+            "This problem requires more than 2 parameters. "
             "Plotting in 2d with fixed values for the additional parameters.",
             UserWarning,
             stacklevel=2,
@@ -104,14 +100,11 @@ def contour(
     # Initialize cost matrix
     costs = np.zeros((len(y), len(x)))
 
+    grads = []
+    grad_parameter_costs = []
     if gradient:
-        grad_parameter_costs = []
-
         # Determine the number of gradient outputs from cost.compute
-        num_gradients = cost_call(
-            np.asarray([x[0], y[0]] + additional_values),
-            calculate_grad=True,
-        )[1].shape[0]
+        num_gradients = len(parameters)
 
         # Create an array to hold each gradient output
         grads = [np.zeros((len(y), len(x))) for _ in range(num_gradients)]
@@ -119,30 +112,27 @@ def contour(
     # Populate cost matrix
     for i, xi in enumerate(x):
         for j, yj in enumerate(y):
+            p = np.asarray([xi, yj] + additional_values)
+            problem.set_params(p)
             if gradient:
-                costs[j, i], (*current_grads,) = cost_call(
-                    np.asarray([xi, yj] + additional_values),
-                    calculate_grad=True,
-                )
+                costs[j, i], (*current_grads,) = problem.run_with_sensitivities()
                 for k, grad_output in enumerate(current_grads):
                     grads[k][j, i] = grad_output
             else:
-                costs[j, i] = cost_call(
-                    np.asarray([xi, yj] + additional_values),
-                )
+                costs[j, i] = problem.run()
 
     # Append the arrays to the grad_parameter_costs list
     if gradient:
         grad_parameter_costs.extend(grads)
 
-    if plot_optim and use_optim_log:
+    if optim is not None and use_optim_log:
         # Flatten the cost matrix and parameter values
         flat_x = np.tile(x, len(y))
         flat_y = np.repeat(y, len(x))
         flat_costs = costs.flatten()
 
         # Append the optimisation trace to the data
-        parameter_log = np.asarray(optim.log.x)
+        parameter_log = np.asarray(optim.log.x_model)
         flat_x = np.concatenate((flat_x, parameter_log[:, 0]))
         flat_y = np.concatenate((flat_y, parameter_log[:, 1]))
         flat_costs = np.concatenate((flat_costs, optim.log.cost))
@@ -195,9 +185,9 @@ def contour(
         layout=layout,
     )
 
-    if plot_optim:
+    if optim is not None:
         # Plot the optimisation trace
-        optim_trace = np.asarray([item[:2] for item in optim.log.x])
+        optim_trace = np.asarray([item[:2] for item in optim.log.x_model])
         optim_trace = optim_trace.reshape(-1, 2)
 
         fig.add_trace(
@@ -216,11 +206,12 @@ def contour(
         )
 
         # Plot the initial guess
-        if optim.x0 is not None:
+        if optim.log.x0 is not None:
+            x0 = optim.log.x0
             fig.add_trace(
                 go.Scatter(
-                    x=transform_array_of_values([optim.x0[0]], parameters[names[0]]),
-                    y=transform_array_of_values([optim.x0[1]], parameters[names[1]]),
+                    x=transform_array_of_values([x0[0]], parameters[names[0]]),
+                    y=transform_array_of_values([x0[1]], parameters[names[1]]),
                     mode="markers",
                     marker_symbol="x",
                     marker=dict(
@@ -235,14 +226,14 @@ def contour(
             )
 
         # Plot optimised value
-        if optim.log.x_best is not None:
+        if optim.log.last_x_model_best is not None:
             fig.add_trace(
                 go.Scatter(
                     x=transform_array_of_values(
-                        [optim.log.x_best[-1][0]], parameters[names[0]]
+                        [optim.log.last_x_model_best[0]], parameters[names[0]]
                     ),
                     y=transform_array_of_values(
-                        [optim.log.x_best[-1][1]], parameters[names[1]]
+                        [optim.log.last_x_model_best[1]], parameters[names[1]]
                     ),
                     mode="markers",
                     marker_symbol="cross",

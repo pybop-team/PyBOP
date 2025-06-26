@@ -28,12 +28,12 @@ class PybammEISPipeline:
     def __init__(
         self,
         model: pybamm.BaseModel,
-        f_eval: list,
-        parameter_values: pybamm.ParameterValues = None,
-        pybop_parameters: Parameters = None,
-        solver: pybamm.BaseSolver = None,
-        var_pts: dict = None,
-        initial_state: float | str = None,
+        f_eval: np.ndarray | list[float],
+        parameter_values: pybamm.ParameterValues | None = None,
+        pybop_parameters: Parameters | None = None,
+        solver: pybamm.BaseSolver | None = None,
+        var_pts: dict | None = None,
+        initial_state: float | str | None = None,
     ):
         """
         Parameters

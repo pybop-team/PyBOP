@@ -31,7 +31,7 @@ class PybammParameterMetadata:
     default_value: float
 
 
-class BaseCost:
+class PybammCost:
     def __init__(self):
         self._metadata = None
         self._data_name = None
@@ -130,7 +130,7 @@ class BaseCost:
         return self._data_name
 
 
-class BaseLikelihood(BaseCost):
+class BaseLikelihood(PybammCost):
     """
     A base class for likelihood functions.
     These functions should be implemented as negative likelihoods for

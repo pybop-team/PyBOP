@@ -2,12 +2,12 @@ import pybamm
 
 from pybop import Dataset
 from pybop.costs.pybamm.base_cost import (
-    BaseCost,
+    PybammCost,
     PybammExpressionMetadata,
 )
 
 
-class DesignCost(BaseCost):
+class DesignCost(PybammCost):
     """
     Base Class for Design Costs.
     """

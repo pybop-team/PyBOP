@@ -2,9 +2,15 @@ import numbers
 import warnings
 
 import numpy as np
+from scipy.stats import rv_continuous
 
 import pybop
-from pybop import ComposedTransformation, IdentityTransformation, LogTransformation
+from pybop import (
+    BasePrior,
+    ComposedTransformation,
+    IdentityTransformation,
+    LogTransformation,
+)
 from pybop._utils import is_numeric
 
 Inputs = dict[str, float]
@@ -24,11 +30,13 @@ class Parameter:
         The name of the parameter.
     initial_value : float, optional
         The initial value to be assigned to the parameter. Defaults to None.
-    prior : scipy.stats distribution, optional
+    prior : scipy.stats distribution or pybop.BasePrior, optional
         The prior distribution from which parameter values are drawn. Defaults to None.
-    bounds : tuple, optional
+    bounds : list[float], optional
         A tuple defining the lower and upper bounds for the parameter.
         Defaults to None.
+    transformation : pybop.Transformation, optional
+        An optional transformation applied to the parameter values during optimisation and sampling
 
     Raises
     ------
@@ -40,11 +48,11 @@ class Parameter:
     def __init__(
         self,
         name,
-        initial_value=None,
-        true_value=None,
-        prior=None,
-        bounds=None,
-        transformation=None,
+        initial_value: float | None = None,
+        true_value: float | None = None,
+        prior: rv_continuous | BasePrior | None = None,
+        bounds: list[float] | None = None,
+        transformation: pybop.Transformation | None = None,
     ):
         """
         Construct the parameter class with a name, initial value, prior, and bounds.
@@ -177,7 +185,7 @@ class Parameter:
 
         self.margin = margin
 
-    def set_bounds(self, bounds=None, boundary_multiplier=15):
+    def set_bounds(self, bounds=None):
         """
         Set the upper and lower bounds and applies default values
         from the prior if no bounds are provided. The default values
@@ -205,10 +213,9 @@ class Parameter:
             else:
                 self.lower_bound = bounds[0]
                 self.upper_bound = bounds[1]
-        elif self.prior is not None:
+        elif self.prior is not None and isinstance(self.prior, BasePrior):
             self.applied_prior_bounds = True
-            self.lower_bound = self.prior.mean - boundary_multiplier * self.prior.sigma
-            self.upper_bound = self.prior.mean + boundary_multiplier * self.prior.sigma
+            self.lower_bound, self.upper_bound = self.prior.default_bounds()
             print("Default bounds applied based on prior distribution.")
         else:
             self.bounds = None
@@ -228,20 +235,14 @@ class Parameter:
         if self.initial_value is None:
             if self.prior is not None:
                 sample = self.rvs(1)[0]
-                self.update(initial_value=sample)
+                return sample
             else:
-                warnings.warn(
-                    "Initial value and prior are None, proceeding without an initial value.",
-                    UserWarning,
-                    stacklevel=2,
+                raise ValueError(
+                    f"Parameter {self.name} has no initial value or prior distribution."
                 )
 
-        if (
-            self.initial_value is not None
-            and apply_transform
-            and self.transformation is not None
-        ):
-            return float(self.transformation.to_search(self.initial_value))
+        if apply_transform and self.transformation is not None:
+            return float(self.transformation.to_search(np.array(self.initial_value)))
 
         return self.initial_value
 
@@ -256,11 +257,11 @@ class Parameters:
 
     Parameters
     ----------
-    params : list of pybop.Parameter
+    parameter_list : dict of pybop.Parameter
     """
 
     def __init__(self, params: list[Parameter]):
-        self._params = {param.name: param for param in params}
+        self._params = {p.name: p for p in params}
         self._transform = self._construct_transformation()
 
     def transformation(self) -> pybop.Transformation:
@@ -598,7 +599,7 @@ class Parameters:
                 values = self.true_value()
         return {key: values[i] for i, key in enumerate(self._params.keys())}
 
-    def verify(self, inputs: Inputs | None = None):
+    def verify(self, inputs: Inputs) -> dict[str, float]:
         """
         Verify that the inputs are an Inputs dictionary or numeric values
         which can be used to construct an Inputs dictionary
@@ -607,7 +608,7 @@ class Parameters:
         ----------
         inputs : Inputs or numeric
         """
-        if inputs is None or isinstance(inputs, dict):
+        if isinstance(inputs, dict):
             return inputs
         if isinstance(inputs, np.ndarray) and inputs.ndim == 0:
             inputs = inputs[np.newaxis]

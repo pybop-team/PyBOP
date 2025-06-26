@@ -4,13 +4,13 @@ import pybamm
 from pybop import Dataset
 from pybop import Parameter as PybopParameter
 from pybop.costs.pybamm.base_cost import (
-    BaseCost,
     BaseLikelihood,
+    PybammCost,
     PybammExpressionMetadata,
 )
 
 
-class SumSquaredError(BaseCost):
+class SumSquaredError(PybammCost):
     """
     A SumSquaredError cost implementation within Pybamm.
     """
@@ -19,10 +19,8 @@ class SumSquaredError(BaseCost):
         self,
         variable_name: str,
         data_name: str,
-        sigma: float | PybopParameter | None = None,
     ):
         super().__init__()
-        self._sigma = sigma
         self._variable_name = variable_name
         self._data_name = data_name
 
@@ -36,8 +34,7 @@ class SumSquaredError(BaseCost):
         self._check_state(dataset, model, name)
         data, var = self._construct_discrete_time_node(dataset, model, name)
         parameters = {}
-        sigma = self._get_sigma_parameter(name, parameters)
-        sum_expr = (var - data) ** 2 / sigma**2
+        sum_expr = (var - data) ** 2
 
         return PybammExpressionMetadata(
             variable_name=name,
@@ -46,7 +43,7 @@ class SumSquaredError(BaseCost):
         )
 
 
-class MeanAbsoluteError(BaseCost):
+class MeanAbsoluteError(PybammCost):
     """
     Mean absolute error (MAE) cost function.
 
@@ -86,7 +83,7 @@ class MeanAbsoluteError(BaseCost):
         )
 
 
-class MeanSquaredError(BaseCost):
+class MeanSquaredError(PybammCost):
     """
     Mean square error (MSE) cost function.
 
@@ -121,7 +118,7 @@ class MeanSquaredError(BaseCost):
         )
 
 
-class RootMeanSquaredError(BaseCost):
+class RootMeanSquaredError(PybammCost):
     """
     Root mean square error (RMSE) cost function.
 
@@ -157,7 +154,7 @@ class RootMeanSquaredError(BaseCost):
         )
 
 
-class Minkowski(BaseCost):
+class Minkowski(PybammCost):
     """
     The Minkowski distance is a generalisation of several distance metrics,
     including the Euclidean and Manhattan distances. It is defined as:
@@ -208,7 +205,7 @@ class Minkowski(BaseCost):
         )
 
 
-class SumOfPower(BaseCost):
+class SumOfPower(PybammCost):
     """
     The Sum of Power [1] is a generalised cost function based on the p-th power
     of absolute differences between two vectors. It is defined as:
@@ -313,7 +310,7 @@ class NegativeGaussianLogLikelihood(BaseLikelihood):
         )
 
 
-class ScaledCost(BaseCost):
+class ScaledCost(PybammCost):
     """
     This class scales a BaseCost class by the number of observations.
     The scaling factor is given below:
@@ -327,7 +324,7 @@ class ScaledCost(BaseCost):
 
     def __init__(
         self,
-        loglikelihood: BaseCost,
+        loglikelihood: PybammCost,
     ):
         super().__init__()
         self._loglikelihood = loglikelihood
