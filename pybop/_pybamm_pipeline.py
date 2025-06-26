@@ -27,8 +27,8 @@ class PybammPipeline:
         parameter_values: pybamm.ParameterValues | None = None,
         pybop_parameters: Parameters | None = None,
         solver: pybamm.BaseSolver | None = None,
-        t_start: np.number = np.float64(0.0),
-        t_end: np.number = np.float64(1.0),
+        t_start: np.number = 0.0,
+        t_end: np.number = 1.0,
         t_interp: np.ndarray | None = None,
         var_pts: dict | None = None,
         initial_state: float | str | None = None,
@@ -61,8 +61,8 @@ class PybammPipeline:
         self._geometry = model.default_geometry
         self._methods = model.default_spatial_methods
         self._solver = pybamm.IDAKLUSolver() if solver is None else solver
-        self._t_start = t_start
-        self._t_end = t_end
+        self._t_start = np.float64(t_start)
+        self._t_end = np.float64(t_end)
         self._t_interp = t_interp
         self._initial_state = initial_state
         self._built_initial_soc = None
