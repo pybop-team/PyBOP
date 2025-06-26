@@ -55,7 +55,8 @@ def nyquist(
     if problem_inputs is None:
         problem_inputs = problem.params.to_dict()
     else:
-        problem_inputs = problem.params.verify(problem_inputs)
+        problem.params.update(values=problem_inputs)
+        problem_inputs = problem.params.to_dict()
 
     model_output = problem.simulate(problem_inputs)
     domain_data = model_output.real
