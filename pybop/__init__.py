@@ -73,7 +73,7 @@ from .transformation.transformations import (
 #
 from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointLogPrior
 from .parameters.parameter import Parameter, Parameters, Inputs
-from .parameters.parameter_set import ParameterSet
+from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointLogPrior
 
 #
 # Model classes

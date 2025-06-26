@@ -425,3 +425,16 @@ class TestBuilder:
             ValueError, match="No parameters have been added to the builder."
         ):
             builder.build()
+
+    def test_set_formation_concentrations(self):
+        parameter_values = pybamm.ParameterValues("Chen2020")
+        pybop.builders.set_formation_concentrations(parameter_values)
+
+        assert (
+            parameter_values["Initial concentration in negative electrode [mol.m-3]"]
+            == 0
+        )
+        assert (
+            parameter_values["Initial concentration in positive electrode [mol.m-3]"]
+            > 0
+        )
