@@ -53,7 +53,7 @@ def nyquist(
             "e.g. pybop.EISProblem or pybop.PybammEISProblem."
         )
     if problem_inputs is None:
-        problem_inputs = problem.params.as_dict()
+        problem_inputs = problem.params.to_dict()
     else:
         problem_inputs = problem.params.verify(problem_inputs)
 

@@ -31,6 +31,7 @@ class PintsOptions(pybop.OptimiserOptions):
     default_max_iterations = 1000
     max_iterations: int = default_max_iterations
     min_iterations: int = 2
+    sigma: float | np.ndarray = 5e-2
     max_unchanged_iterations: int = 15
     parallel: bool = False
     use_f_guessed: bool = False
@@ -52,6 +53,8 @@ class PintsOptions(pybop.OptimiserOptions):
             raise ValueError(
                 "Maximum number of unchanged iterations cannot be negative."
             )
+        if self.sigma is not None and self.sigma <= 0:
+            raise ValueError("Sigma must be positive.")
         if self.absolute_tolerance < 0:
             raise ValueError("Absolute tolerance cannot be negative.")
         if self.relative_tolerance < 0:
@@ -100,6 +103,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         self._unchanged_max_iterations = options.max_unchanged_iterations
         self._absolute_tolerance = options.absolute_tolerance
         self._relative_tolerance = options.relative_tolerance
+        self._sigma0 = options.sigma
         self._max_evaluations = None
         self._threshold = None
         self._evaluations = None
@@ -166,7 +170,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
             print(f"NOTE: Boundaries ignored by {self._pints_optimiser}")
             self._boundaries = None
         else:
-            bounds = self.problem.params.get_bounds(apply_transform=True)
+            bounds = self.problem.params.get_bounds(transformed=True)
             print(f"Using bounds: {bounds}")
             if issubclass(self._pints_optimiser, PintsPSO):
                 if not all(
@@ -183,11 +187,15 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
 
         # Create an instance of the PINTS optimiser class
         if issubclass(self._pints_optimiser, PintsOptimiser):
-            x0 = self.problem.params.initial_value(apply_transform=True)
-            sigma0 = self.problem.params.get_sigma0(apply_transform=True)
+            x0 = self.problem.params.get_initial_values(transformed=True)
+            param_dims = len(x0)
+            if self._sigma0 is None:
+                self._sigma0 = np.ones(param_dims) * 0.05
+            elif np.isscalar(self._sigma0):
+                self._sigma0 = np.ones(param_dims) * self._sigma0
             self._optimiser = self._pints_optimiser(
                 x0,
-                sigma0=sigma0,
+                sigma0=self._sigma0,
                 boundaries=self._boundaries,
             )
         else:

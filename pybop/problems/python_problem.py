@@ -95,7 +95,7 @@ class PythonProblem(Problem):
         # Vectorised evaluation
         try:
             results = np.fromiter(
-                (model(self.params.current_value()) for model in self._model),
+                (model(self.params.get_values()) for model in self._model),
                 dtype=np.float64,
                 count=len(self._model),
             )
@@ -137,7 +137,7 @@ class PythonProblem(Problem):
         # Evaluate models and collect results
         try:
             for i, model in enumerate(self._model_with_sens):
-                val, grad = model(self.params.current_value())
+                val, grad = model(self.params.get_values())
                 values[i] = float(val)  # Ensure scalar
                 gradients.append(np.asarray(grad, dtype=np.float64))
         except (TypeError, ValueError, AttributeError) as e:

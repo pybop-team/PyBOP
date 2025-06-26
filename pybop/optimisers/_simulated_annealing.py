@@ -46,7 +46,6 @@ class SimulatedAnnealingImpl(PintsOptimiser):
         sigma0: list[float] | None,
         boundaries: pints.Boundaries | None,
     ):
-        sigma0 = sigma0 or [0.05] * len(x0)
         super().__init__(x0, sigma0, boundaries)
 
         # Set optimiser state

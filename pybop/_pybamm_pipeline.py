@@ -136,9 +136,9 @@ class PybammPipeline:
 
         # we need to rebuild, so make sure we've got the right number of parameters
         # and set them in the parameters object
-        if len(params) != len(self._parameter_names):
+        if len(params) != len(self._pybop_parameters):
             raise ValueError(
-                f"Expected {len(self._parameter_names)} parameters, but got {len(params)}."
+                f"Expected {len(self._pybop_parameters)} parameters, but got {len(params)}."
             )
 
         for key, value in params.items():
@@ -194,7 +194,7 @@ class PybammPipeline:
         """
         return self._solver.solve(
             model=self._built_model,
-            inputs=self._pybop_parameters.as_dict(),
+            inputs=self._pybop_parameters.to_dict(),
             t_eval=[self._t_start, self._t_end],
             t_interp=self._t_interp,
             calculate_sensitivities=calculate_sensitivities,
@@ -224,14 +224,14 @@ class PybammPipeline:
                 initial_state,
                 param=param,
                 options=options,
-                inputs=self._pybop_parameters.as_dict(),
+                inputs=self._pybop_parameters.to_dict(),
             )
         else:
             self._parameter_values.set_initial_stoichiometries(
                 initial_state,
                 param=param,
                 options=options,
-                inputs=self._pybop_parameters.as_dict(),
+                inputs=self._pybop_parameters.to_dict(),
             )
 
         # Save solved initial SOC in case we need to re-build the model

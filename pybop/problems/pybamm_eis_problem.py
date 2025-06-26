@@ -34,7 +34,7 @@ class PybammEISProblem(Problem):
         self.check_and_store_params(p)
 
         # rebuild the pipeline (if needed)
-        self._pipeline.pybamm_pipeline.rebuild(self._params.as_dict())
+        self._pipeline.pybamm_pipeline.rebuild(self._params.to_dict())
 
         # Initialise the pipeline
         self._pipeline.initialise_eis_pipeline()

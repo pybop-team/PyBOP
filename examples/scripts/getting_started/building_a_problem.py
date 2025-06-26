@@ -1,5 +1,3 @@
-import matplotlib.pyplot as plt
-import numpy as np
 import pybamm
 
 import pybop
@@ -8,16 +6,19 @@ model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
 experiment = pybamm.Experiment(
     [
+        "Rest for 1 seconds",
         "Discharge at 1C for 2 minutes",
         "Charge at 0.1C for 1 minutes",
     ]
 )
-sim = pybamm.Simulation(model=model, experiment=experiment)
+sim = pybamm.Simulation(
+    model=model, parameter_values=parameter_values, experiment=experiment
+)
 sol = sim.solve()
 
 dataset = pybop.Dataset(
     {
-        "Time [s]": sol["Time [s]"].data,
+        "Time [s]": sol.t,
         "Voltage [V]": sol["Voltage [V]"].data,
         "Current function [A]": sol["Current [A]"].data,
     }
@@ -29,23 +30,34 @@ builder.set_dataset(dataset)
 builder.set_simulation(
     model,
     parameter_values=parameter_values,
+    initial_state=f"{sol['Voltage [V]'].data[0]} V",
 )
 builder.add_parameter(
-    {"name": "Negative electrode active material volume fraction", "initial_value": 0.6}
+    pybop.Parameter(
+        "Negative electrode active material volume fraction", initial_value=0.6
+    )
 )
 builder.add_parameter(
-    {"name": "Positive electrode active material volume fraction", "initial_value": 0.6}
+    pybop.Parameter(
+        "Positive electrode active material volume fraction", initial_value=0.6
+    )
 )
 builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]", 1.0))
 
 # Build the problem
 problem = builder.build()
 
-# Solve
-problem.set_params(np.array([0.6, 0.6]))
-sol = problem.pipeline.solve()
+options = pybop.PintsOptions(sigma=0.01)
+optim = pybop.CMAES(problem, options=options)
+results = optim.run()
+print(results)
 
-# Plot
-fig, ax = plt.subplots()
-ax.scatter(sol["Time [s]"].data, sol["Voltage [V]"].data)
-plt.show()
+
+# Solve
+# problem.set_params(np.array([0.6, 0.6]))
+# sol = problem.pipeline.solve()
+#
+# # Plot
+# fig, ax = plt.subplots()
+# ax.scatter(sol["Time [s]"].data, sol["Voltage [V]"].data)
+# plt.show()

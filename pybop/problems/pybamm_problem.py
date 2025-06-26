@@ -46,7 +46,7 @@ class PybammProblem(Problem):
         self.check_and_store_params(p)
 
         # rebuild the pipeline (if needed)
-        self._pipeline.rebuild(self._params.as_dict())
+        self._pipeline.rebuild(self._params.to_dict())
 
     def _compute_cost(self, solution: Solution) -> float:
         """
@@ -69,7 +69,7 @@ class PybammProblem(Problem):
             return cost
 
         # Likelihoods and priors are negative by convention
-        return cost - self._priors.logpdf(self._params.current_value())
+        return cost - self._priors.logpdf(self._params.get_values())
 
     def _compute_cost_with_prior(self, solution: Solution) -> float:
         """
@@ -103,12 +103,12 @@ class PybammProblem(Problem):
             Tuple of (cost_value, sensitivities)
         """
         self.check_set_params_called()
-        prior_derivatives = np.zeros(len(self._params.keys()))
+        prior_derivatives = np.zeros(len(self._params))
 
         # Compute prior contribution and derivatives if using posterior
         if self._use_posterior:
             log_prior, prior_derivatives = self._priors.logpdfS1(
-                self._params.current_value()
+                self._params.get_values()
             )
 
         # Solve with sensitivities, calculate cost

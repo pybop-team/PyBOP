@@ -72,7 +72,7 @@ from .transformation.transformations import (
 # Parameter classes
 #
 from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointLogPrior
-from .parameters.parameter import Parameter, Parameters, Inputs
+from .parameters.parameter import Parameter, Parameters, Inputs, ParameterError, ParameterNotFoundError, ParameterValidationError, ParameterValueValidator
 from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointLogPrior
 
 #

@@ -38,6 +38,8 @@ class PintsSamplerOptions(SamplerOptions):
             If the options are invalid.
         """
         super().validate()
+        if self.cov is not None and self.cov <= 0:
+            raise ValueError("Sigma must be positive.")
         if self.warm_up_iterations < 0:
             raise ValueError("Number of warm-up steps must be non-negative.")
         if self.max_iterations < 1:

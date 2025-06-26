@@ -116,7 +116,7 @@ class PybammCost:
             sigma = pybamm.Parameter(sigma_name)
             parameters[sigma_name] = PybammParameterMetadata(
                 parameter=sigma,
-                default_value=self._sigma.value if self._sigma else 1.0,
+                default_value=self._sigma.current_value if self._sigma else 1.0,
             )
         elif isinstance(self._sigma, float | int):
             sigma = pybamm.Scalar(self._sigma)
