@@ -115,9 +115,14 @@ class PybammProblem(Problem):
         sol = self._pipeline.solve(calculate_sensitivities=True)
         cost = self._compute_cost_with_prior(sol)
 
-        aggregated_sens = np.asarray(
-            [sol[n].sensitivities["all"] for n in self._cost_names]
-        ).squeeze(axis=1)
+        try:
+            aggregated_sens = np.asarray(
+                [sol[n].sensitivities["all"] for n in self._cost_names]
+            ).squeeze(axis=1)
+        except KeyError as e:
+            raise KeyError(
+                "Sensitivities not available, ensure problem is formulated to enable sensitivities"
+            ) from e
         weighted_sensitivity = np.sum(
             aggregated_sens * self._cost_weights[:, None], axis=0
         )

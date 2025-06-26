@@ -180,7 +180,6 @@ class Parameter:
         prior: Any | None = None,
         transformation: Transformation | None = None,
         margin: float = 1e-4,
-        boundary_multiplier: float = 15.0,
     ) -> None:
         """
         Initialise a Parameter.
