@@ -104,7 +104,7 @@ class IRPropPlusImpl(PintsOptimiser):
             self._running = True
 
         self._ready_for_tell = True
-        return self._proposed
+        return [self._proposed]
 
     def tell(self, reply):
         """

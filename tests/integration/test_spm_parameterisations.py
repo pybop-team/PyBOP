@@ -50,7 +50,7 @@ class Test_SPM_Parameterisation:
                 "Positive electrode active material volume fraction",
                 prior=pybop.Uniform(0.3, 0.9),
                 initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
-                # no bounds
+                bounds=[0.3, 0.8],
             ),
         ]
 
@@ -154,7 +154,7 @@ class Test_SPM_Parameterisation:
         return optim
 
     def test_optimisers(self, optim, cost_cls):
-        x0 = optim.problem.params.initial_value()
+        x0 = optim.problem.params.get_initial_values()
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
         if cost_cls in (pybop.costs.pybamm.NegativeGaussianLogLikelihood,):
@@ -211,7 +211,7 @@ class Test_SPM_Parameterisation:
         options.max_unchanged_iterations = 100
         optim = pybop.XNES(problem, options)
 
-        x0 = optim.problem.params.initial_value()
+        x0 = optim.problem.params.get_initial_values()
         optim.problem.set_params(x0)
         initial_cost = optim.problem.run()
         results = optim.run()
