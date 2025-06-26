@@ -1,5 +1,4 @@
 import numpy as np
-import pybamm
 
 import pybop
 
@@ -8,8 +7,7 @@ parameter_set = pybop.ParameterSet("Chen2020")
 
 # The Jaxified IDAKLU performs very well on high iteration
 # identification tasks, due to the just-in-time compilation
-solver = pybamm.IDAKLUSolver()
-model = pybop.lithium_ion.SPMe(parameter_set=parameter_set, solver=solver)
+model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = pybop.Parameters(
@@ -61,10 +59,7 @@ cost = pybop.JaxLogNormalLikelihood(problem, sigma0=sigma)
 
 # Test gradient-based optimiser
 optim = pybop.IRPropMin(
-    cost,
-    sigma0=0.02,
-    max_unchanged_iterations=35,
-    max_iterations=100,
+    cost, sigma0=0.02, max_unchanged_iterations=35, max_iterations=100, verbose=True
 )
 
 results = optim.run()

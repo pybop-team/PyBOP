@@ -1,6 +1,7 @@
 from pybamm import lithium_ion as pybamm_lithium_ion
 
 from pybop.models.lithium_ion.base_echem import EChemBaseModel
+from pybop.models.lithium_ion.basic_SP_diffusion import BaseSPDiffusion
 from pybop.models.lithium_ion.basic_SPMe import BaseGroupedSPMe
 from pybop.models.lithium_ion.weppner_huggins import BaseWeppnerHuggins
 
@@ -15,7 +16,7 @@ class SPM(EChemBaseModel):
     Parameters
     ----------
     name : str, optional
-        The name for the model instance, defaulting to "Single Particle Model".
+        A name for the model instance, defaulting to "Single Particle Model".
     eis : bool, optional
         A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
@@ -64,7 +65,7 @@ class SPMe(EChemBaseModel):
     Parameters
     ----------
     name: str, optional
-        A name for the model instance, defaults to "Single Particle Model with Electrolyte".
+        A name for the model instance, defaulting to "Single Particle Model with Electrolyte".
     eis : bool, optional
         A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
@@ -113,7 +114,7 @@ class DFN(EChemBaseModel):
     Parameters
     ----------
     name : str, optional
-        The name for the model instance, defaulting to "Doyle-Fuller-Newman".
+        A name for the model instance, defaulting to "Doyle-Fuller-Newman Model".
     eis : bool, optional
         A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
@@ -138,7 +139,7 @@ class DFN(EChemBaseModel):
 
     def __init__(
         self,
-        name="Doyle-Fuller-Newman",
+        name="Doyle-Fuller-Newman Model",
         eis: bool = False,
         **model_kwargs,
     ):
@@ -152,7 +153,7 @@ class DFN(EChemBaseModel):
 
 class MPM(EChemBaseModel):
     """
-    Wraps the Multi-Particle-Model (MPM) model for simulating lithium-ion batteries, as implemented in PyBaMM.
+    Wraps the Many Particle Model (MPM) for simulating lithium-ion batteries, as implemented in PyBaMM.
 
     The MPM represents lithium-ion battery dynamics using a distribution of spherical particles
     for each electrode. This model inherits the SPM class.
@@ -160,7 +161,7 @@ class MPM(EChemBaseModel):
     Parameters
     ----------
     name : str, optional
-        The name for the model instance, defaulting to "Many Particle Model".
+        A name for the model instance, defaulting to "Many Particle Model".
     eis : bool, optional
         A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
@@ -199,7 +200,7 @@ class MPM(EChemBaseModel):
 
 class MSMR(EChemBaseModel):
     """
-    Wraps the Multi-Species-Multi-Reactions (MSMR) model for simulating lithium-ion batteries, as implemented in PyBaMM.
+    Wraps the Multi-Species Multi-Reaction (MSMR) model for simulating lithium-ion batteries, as implemented in PyBaMM.
 
     The MSMR represents lithium-ion battery dynamics using a distribution of spherical particles for each electrode.
     This model inherits the DFN class.
@@ -207,7 +208,7 @@ class MSMR(EChemBaseModel):
     Parameters
     ----------
     name : str, optional
-        The name for the model instance, defaulting to "Multi Species Multi Reactions Model".
+        A name for the model instance, defaulting to "Multi-Species Multi-Reaction Model".
     eis : bool, optional
         A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
@@ -232,7 +233,7 @@ class MSMR(EChemBaseModel):
 
     def __init__(
         self,
-        name="Multi Species Multi Reactions Model",
+        name="Multi-Species Multi-Reaction Model",
         eis: bool = False,
         **model_kwargs,
     ):
@@ -246,33 +247,25 @@ class MSMR(EChemBaseModel):
 
 class WeppnerHuggins(EChemBaseModel):
     """
-    Represents the Weppner & Huggins model to fit diffusion coefficients to GITT data.
+    Represents the Weppner & Huggins model for GITT pulses.
 
     Parameters
     ----------
     name: str, optional
-        A name for the model instance, defaults to "Weppner & Huggins model".
+        A name for the model instance, defaulting to "Weppner & Huggins Model".
     eis : bool, optional
         A flag to build the forward model for EIS predictions. Defaults to False.
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values, for example:
         parameter_set : pybamm.ParameterValues or dict, optional
             The parameters for the model. If None, default parameters provided by PyBaMM are used.
-        geometry : dict, optional
-            The geometry definitions for the model. If None, default geometry from PyBaMM is used.
-        submesh_types : dict, optional
-            The types of submeshes to use. If None, default submesh types from PyBaMM are used.
-        var_pts : dict, optional
-            The discretization points for each variable in the model. If None, default points from PyBaMM are used.
-        spatial_methods : dict, optional
-            The spatial methods used for discretization. If None, default spatial methods from PyBaMM are used.
-        solver : pybamm.Solver, optional
-            The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
+        options : dict, optional
+            A dictionary of options to customise the behaviour of the PyBaMM model.
     """
 
     def __init__(
         self,
-        name="Weppner & Huggins model",
+        name="Weppner & Huggins Model",
         eis: bool = False,
         **model_kwargs,
     ):
@@ -280,15 +273,62 @@ class WeppnerHuggins(EChemBaseModel):
             pybamm_model=BaseWeppnerHuggins, name=name, eis=eis, **model_kwargs
         )
 
+    def _check_params(self, inputs, parameter_set, allow_infeasible_solutions):
+        # Skip the usual electrochemical checks for this scaled model
+        return True
 
-class GroupedSPMe(EChemBaseModel):
+    def apply_parameter_grouping(parameter_set, electrode):
+        return BaseWeppnerHuggins.apply_parameter_grouping(
+            parameter_set=parameter_set, electrode=electrode
+        )
+
+
+class SPDiffusion(EChemBaseModel):
     """
-    Represents the grouped-parameter version of the SPMe.
+    Represents the Single Particle Diffusion Model for GITT pulses.
 
     Parameters
     ----------
     name: str, optional
-        A name for the model instance, defaults to "Grouped SPMe".
+        A name for the model instance, defaulting to "Single Particle Diffusion Model".
+    eis : bool, optional
+        A flag to build the forward model for EIS predictions. Defaults to False.
+    **model_kwargs : optional
+        Valid PyBaMM model option keys and their values, for example:
+        parameter_set : pybamm.ParameterValues or dict, optional
+            The parameters for the model. If None, default parameters provided by PyBaMM are used.
+        options : dict, optional
+            A dictionary of options to customise the behaviour of the PyBaMM model.
+    """
+
+    def __init__(
+        self,
+        name="Single Particle Diffusion Model",
+        eis: bool = False,
+        **model_kwargs,
+    ):
+        super().__init__(
+            pybamm_model=BaseSPDiffusion, name=name, eis=eis, **model_kwargs
+        )
+
+    def _check_params(self, inputs, parameter_set, allow_infeasible_solutions):
+        # Skip the usual electrochemical checks for this scaled model
+        return True
+
+    def apply_parameter_grouping(parameter_set, electrode):
+        return BaseSPDiffusion.apply_parameter_grouping(
+            parameter_set=parameter_set, electrode=electrode
+        )
+
+
+class GroupedSPMe(EChemBaseModel):
+    """
+    Represents the grouped-parameter version of the Single Particle Model with Electrolyte (SPMe).
+
+    Parameters
+    ----------
+    name: str, optional
+        A name for the model instance, defaulting to "Grouped Single Particle Model with Electrolyte".
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values, for example:
         parameter_set : pybamm.ParameterValues or dict, optional
@@ -318,8 +358,11 @@ class GroupedSPMe(EChemBaseModel):
         )
 
     def _check_params(self, inputs, parameter_set, allow_infeasible_solutions):
-        # Skip the usual electrochemical checks for this dimensionless model
+        # Skip the usual electrochemical checks for this scaled model
         return True
+
+    def apply_parameter_grouping(parameter_set):
+        return BaseGroupedSPMe.apply_parameter_grouping(parameter_set=parameter_set)
 
     def _set_initial_state(self, initial_state: dict, inputs=None):
         """

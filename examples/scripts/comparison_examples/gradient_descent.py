@@ -1,5 +1,4 @@
 import numpy as np
-import pybamm
 
 import pybop
 
@@ -23,19 +22,20 @@ parameters = pybop.Parameters(
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
 values = model.predict(t_eval=t_eval)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
+corrupt_values = values["Voltage [V]"].data + np.random.normal(
+    0, sigma, len(values["Voltage [V]"].data)
+)
 
 # Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": t_eval,
+        "Time [s]": values["Time [s]"].data,
         "Current function [A]": values["Current [A]"].data,
         "Voltage [V]": corrupt_values,
     }
 )
 
 # Generate problem, cost function, and optimisation class
-model.solver = pybamm.IDAKLUSolver()
 problem = pybop.FittingProblem(model, parameters, dataset)
 cost = pybop.RootMeanSquaredError(problem)
 optim = pybop.GradientDescent(
@@ -49,7 +49,7 @@ optim = pybop.GradientDescent(
 results = optim.run()
 
 # Plot the timeseries output
-pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
 pybop.plot.convergence(optim)

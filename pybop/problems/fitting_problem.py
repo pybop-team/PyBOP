@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 from pybamm import IDAKLUJax, SolverError
@@ -31,7 +31,9 @@ class FittingProblem(BaseProblem):
     additional_variables : list[str], optional
         Additional variables to observe and store in the solution (default additions are: ["Time [s]"]).
     initial_state : dict, optional
-        A valid initial state, e.g. the initial open-circuit voltage (default: None).
+        A valid initial state, e.g. the initial open-circuit voltage (default: None) which will trigger
+        a model rebuild on each evaluation. Example: {"Initial open-circuit potential [V]": 4.1}
+        NOTE: Sensitivities are not support with this arg due to the model rebuilding.
 
     Additional Attributes
     ---------------------
@@ -87,9 +89,15 @@ class FittingProblem(BaseProblem):
                 initial_state=self.initial_state,
             )
 
+        self.error_out = {var: self.failure_output for var in self.output_variables}
+        self.error_sense = {
+            param: {var: self.failure_output for var in self.output_variables}
+            for param in self.parameters.keys()
+        }
+
     def set_initial_state(self, initial_state: Optional[dict] = None):
         """
-        Set the initial state to be applied to evaluations of the problem.
+        Set the initial state to be applied for every problem evaluation.
 
         Parameters
         ----------
@@ -111,7 +119,12 @@ class FittingProblem(BaseProblem):
 
         self.initial_state = initial_state
 
-    def evaluate(self, inputs: Inputs) -> dict[str, np.ndarray[np.float64]]:
+    def evaluate(
+        self, inputs: Inputs, eis=False
+    ) -> Union[
+        dict[str, np.ndarray],
+        tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]],
+    ]:
         """
         Evaluate the model with the given parameters and return the signal.
 
@@ -134,7 +147,10 @@ class FittingProblem(BaseProblem):
 
     def _evaluate(
         self, func, inputs, calculate_grad=False
-    ) -> dict[str, np.ndarray[np.float64]]:
+    ) -> Union[
+        dict[str, np.ndarray],
+        tuple[dict[str, np.ndarray], dict[str, dict[str, np.ndarray]]],
+    ]:
         """
         Perform simulation using the specified method and handle exceptions.
 
@@ -157,16 +173,13 @@ class FittingProblem(BaseProblem):
                     self.domain_data, inputs
                 )  # TODO: Add initial_state capabilities
             else:
-                sol = func(
-                    inputs,
-                    self._domain_data,
-                    initial_state=self.initial_state,
-                )
+                sol = func(inputs, self._domain_data, initial_state=self.initial_state)
         except (SolverError, ZeroDivisionError, RuntimeError, ValueError) as e:
             if isinstance(e, ValueError) and str(e) not in self.exception:
                 raise  # Raise the error if it doesn't match the expected list
-            error_out = {s: self.failure_output for s in self.signal}
-            return (error_out, self.failure_output) if calculate_grad else error_out
+            if calculate_grad:
+                return self.error_out, self.error_sense
+            return self.error_out
 
         if self.eis:
             return sol

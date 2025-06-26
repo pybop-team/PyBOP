@@ -2,12 +2,31 @@
 
 ## Features
 
+- [#644](https://github.com/pybop-team/PyBOP/pull/644) - Adds example applications for common battery experiments.
+
+## Optimisations
+
+## Bug Fixes
+
+- [#705](https://github.com/pybop-team/PyBOP/pull/705) - Bug fix `fitting_problem.evaulate()` failure return type alongside fixes for Pybamm `v25.4`.
+- [#546](https://github.com/pybop-team/PyBOP/pull/546) - Default Pybamm solver to `IDAKLU`, changes required for Pybamm v25.4.1
+
+## Breaking Changes
+
+# [v25.3](https://github.com/pybop-team/PyBOP/tree/v25.3) - 2025-03-28
+
+## Features
+
+- [#649](https://github.com/pybop-team/PyBOP/pull/649) - Adds verbose outputs to Pints-based optimisers
+- [#659](https://github.com/pybop-team/PyBOP/pull/659) - Enables user-defined weightings of the error measures.
 - [#674](https://github.com/pybop-team/PyBOP/issues/674) - Adds the reason for stopping to the `OptimisationResult`.
+- [#663](https://github.com/pybop-team/PyBOP/pull/663) - Adds DFN fitting examples alongside synthetic data generation methods.
 
 ## Optimisations
 
 - [#676](https://github.com/pybop-team/PyBOP/pull/676) - Update the format of the problem sensitivities to a dict.
 - [#681](https://github.com/pybop-team/PyBOP/pull/681) - Update the spatial variable defaults of the `GroupedSPMe` model.
+- [#692](https://github.com/pybop-team/PyBOP/pull/692) - Improvements/fixes for `BaseSampler` and `BasePintsSampler` classes, adds `ChainProcessor` classes w/ clearer structure.
 
 ## Bug Fixes
 
@@ -15,8 +34,8 @@
 
 ## Breaking Changes
 
+- [#684](https://github.com/pybop-team/PyBOP/pull/684) - Updates `plot.quick` to `plot.problem` for clarity.
 - [#661](https://github.com/pybop-team/PyBOP/pull/661) - Adds `pybop.CostInterface` which aligns the optimisers and samplers with a unified `call_cost` in which transformations and sign inversions are applied. Also includes bug fixes for transformations and gradient calculations.
-
 
 # [v25.1](https://github.com/pybop-team/PyBOP/tree/v25.1) - 2025-02-03
 

@@ -1,5 +1,4 @@
 import numpy as np
-import pybamm
 import pytest
 
 import pybop
@@ -14,8 +13,7 @@ class TestLikelihoods:
 
     @pytest.fixture
     def model(self, ground_truth):
-        solver = pybamm.IDAKLUSolver()
-        model = pybop.lithium_ion.SPM(solver=solver)
+        model = pybop.lithium_ion.SPM()
         model.parameter_set.update(
             {
                 "Negative electrode active material volume fraction": ground_truth,

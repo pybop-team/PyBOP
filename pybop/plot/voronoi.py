@@ -257,13 +257,13 @@ def surface(
     """
 
     # Append the optimisation trace to the data
-    points = optim.log["x"]
+    points = optim.log.x
 
     if points[0].shape[0] != 2:
         raise ValueError("This plot method requires two parameters.")
 
     x_optim, y_optim = map(list, zip(*points))
-    f = optim.log["cost"]
+    f = optim.log.cost
 
     # Translate bounds, taking only the first two elements
     xlim, ylim = (
@@ -386,11 +386,11 @@ def surface(
         )
 
         # Plot optimised value
-        if optim.log["x_best"] is not None:
+        if optim.log.x_best is not None:
             fig.add_trace(
                 go.Scatter(
-                    x=[optim.log["x_best"][-1][0]],
-                    y=[optim.log["x_best"][-1][1]],
+                    x=[optim.log.x_best[-1][0]],
+                    y=[optim.log.x_best[-1][1]],
                     mode="markers",
                     marker_symbol="cross",
                     marker=dict(

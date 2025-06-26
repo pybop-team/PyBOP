@@ -172,6 +172,7 @@ from .optimisers.optimisation import Optimisation
 #
 # Monte Carlo classes
 #
+from .samplers.chain_processor import ChainProcessor, MultiChainProcessor, SingleChainProcessor
 from .samplers.base_sampler import BaseSampler
 from .samplers.base_pints_sampler import BasePintsSampler
 from .samplers.pints_samplers import (
@@ -197,6 +198,13 @@ from .observers.observer import Observer
 # Classification classes
 #
 from ._classification import classify_using_hessian
+
+#
+# Applications
+#
+from .applications.base_method import BaseApplication, Interpolant, InverseOCV
+from .applications.ocp_methods import OCPMerge, OCPAverage, OCPCapacityToStoichiometry
+from .applications.gitt_methods import GITTPulseFit, GITTFit
 
 #
 # Plotting classes

@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import pybop
-from pybop.models.lithium_ion.basic_SPMe import convert_physical_to_grouped_parameters
 
 # Prepare figure
 layout_options = dict(
@@ -30,8 +29,6 @@ experiment = pybop.Experiment(
     [
         "Discharge at 1C until 2.5 V (5 seconds period)",
         "Rest for 30 minutes (5 seconds period)",
-        # "Charge at 2C until 4.1 V (5 seconds period)",
-        # "Rest for 30 minutes (5 seconds period)",
     ],
 )
 
@@ -55,7 +52,9 @@ dataset = pybop.Dataset(
 plot_dict.add_traces(dataset["Time [s]"], dataset["Voltage [V]"])
 
 # Test model in the time domain
-grouped_parameter_set = convert_physical_to_grouped_parameters(parameter_set)
+grouped_parameter_set = pybop.lithium_ion.GroupedSPMe.apply_parameter_grouping(
+    parameter_set
+)
 time_domain_grouped = pybop.lithium_ion.GroupedSPMe(
     parameter_set=grouped_parameter_set,
     options=model_options,

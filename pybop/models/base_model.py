@@ -295,6 +295,14 @@ class BaseModel:
         model : pybamm.Model
             The PyBaMM model to be used for EIS simulations.
         """
+        if not isinstance(self._solver, pybamm.CasadiSolver):
+            print(
+                "CasadiSolver is required for EIS predictions, the solver has been changed."
+            )
+            self._solver = pybamm.CasadiSolver(
+                atol=self._solver.atol, rtol=self._solver.rtol
+            )
+
         V_cell = pybamm.Variable("Voltage variable [V]")
         model.variables["Voltage variable [V]"] = V_cell
         V = model.variables["Voltage [V]"]
@@ -479,7 +487,7 @@ class BaseModel:
         ):
             raise ValueError("These parameter values are infeasible.")
 
-        self._pybamm_solution = self.solver.solve(
+        self._pybamm_solution = self._solver.solve(
             self._built_model,
             inputs=inputs,
             t_eval=[t_eval[0], t_eval[-1]]

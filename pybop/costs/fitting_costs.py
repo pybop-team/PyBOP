@@ -14,10 +14,35 @@ class FittingCost(BaseCost):
     for evaluating model predictions against a set of data. The cost function
     quantifies the goodness-of-fit between the model predictions and the
     observed data, with a lower cost value indicating a better fit.
+
+    Additional Parameters
+    ---------------------
+    weighting : Union[str, np.ndarray], optional
+        The type of weighting to use when taking the sum or mean of the error
+        measure.
     """
 
-    def __init__(self, problem):
+    def __init__(self, problem, weighting: Union[str, np.ndarray] = None):
         super().__init__(problem)
+        self.weighting = None
+
+        if weighting == "equal" or weighting is None:
+            self.weighting = 1.0
+        elif weighting == "domain":
+            # Normalise the residuals by the domain spacing (for a uniform domain,
+            # this is the same as a uniform weighting)
+            domain_data = self.problem.domain_data
+            domain_spacing = domain_data[1:] - domain_data[:-1]
+            mean_spacing = np.mean(domain_spacing)
+            self.weighting = np.concatenate(
+                (
+                    [(mean_spacing + domain_spacing[0]) / 2],
+                    (domain_spacing[1:] + domain_spacing[:-1]) / 2,
+                    [(domain_spacing[-1] + mean_spacing) / 2],
+                )
+            ) * ((len(domain_data) - 1) / (domain_data[-1] - domain_data[0]))
+        else:
+            self.weighting = np.asarray(weighting)
 
     def compute(
         self,

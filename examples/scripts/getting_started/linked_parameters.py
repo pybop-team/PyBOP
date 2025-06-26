@@ -54,8 +54,8 @@ parameters = pybop.Parameters(
 # Define test protocol
 experiment = pybop.Experiment(
     [
-        "Discharge at 1C until 2.5 V (5 seconds period)",
-        "Hold at 2.5 V for 30 minutes or until 10 mA (5 seconds period)",
+        "Discharge at 1C until 2.5 V (10 seconds period)",
+        "Hold at 2.5 V for 30 minutes or until 10 mA (10 seconds period)",
     ],
 )
 signal = ["Voltage [V]", "Current [A]"]
@@ -82,7 +82,7 @@ print(f"Initial gravimetric energy density: {cost(optim.x0):.2f} Wh.kg-1")
 print(f"Optimised gravimetric energy density: {cost(results.x):.2f} Wh.kg-1")
 
 # Plot the timeseries output
-pybop.plot.quick(problem, problem_inputs=results.x, title="Optimised Comparison")
+pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot the cost landscape with optimisation path
 pybop.plot.surface(optim)

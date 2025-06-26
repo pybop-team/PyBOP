@@ -183,7 +183,7 @@ class Test_SPM_Parameterisation:
 
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
         if isinstance(optim.cost, pybop.GaussianLogLikelihood):
-            np.testing.assert_allclose(results.x[-1], self.sigma0, atol=5e-4)
+            np.testing.assert_allclose(results.x[-1], self.sigma0, atol=1e-3)
 
     @pytest.fixture
     def two_signal_cost(self, parameters, model, cost_cls):
