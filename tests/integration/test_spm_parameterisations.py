@@ -196,7 +196,9 @@ class Test_SPM_Parameterisation:
             }
         )
         builder = pybop.Pybamm()
-        builder.set_simulation(model, initial_state=init_soc)
+        builder.set_simulation(
+            model, initial_state=f"{solution['Voltage [V]'].data[0]} V"
+        )
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)

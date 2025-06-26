@@ -39,7 +39,7 @@ class TestClassifier:
             )
         )
         builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]", 1)
+            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
         )
         return builder.build()
 

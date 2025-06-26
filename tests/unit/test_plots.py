@@ -86,7 +86,7 @@ class TestPlots:
         for p in parameters:
             builder.add_parameter(p)
         builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]", 1)
+            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
         )
         return builder.build()
 
@@ -215,11 +215,11 @@ class TestPlots:
             )
         )
         builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]", 1)
+            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
         )
         fitting_problem = builder.build()
         with pytest.raises(
-            ValueError, match="This cost function takes fewer than 2 parameters."
+            ValueError, match="This problem takes fewer than 2 parameters."
         ):
             pybop.plot.contour(fitting_problem, steps=5)
 

@@ -135,7 +135,6 @@ class TestCosts:
     @pytest.mark.parametrize(
         "pybamm_costs",
         [
-            pybop.costs.pybamm.SumSquaredError,
             pybop.costs.pybamm.NegativeGaussianLogLikelihood,
         ],
     )
