@@ -171,7 +171,6 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
             self._boundaries = None
         else:
             bounds = self.problem.params.get_bounds(transformed=True)
-            print(f"Using bounds: {bounds}")
             if issubclass(self._pints_optimiser, PintsPSO):
                 if not all(
                     np.isfinite(value)

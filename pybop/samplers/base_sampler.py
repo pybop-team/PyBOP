@@ -10,6 +10,7 @@ from pybop.problems.base_problem import Problem
 class SamplerOptions:
     n_chains: int = 1
     n_workers: int = 1
+    x0: float | np.ndarray | None = None
     cov: float | np.ndarray = 0.05
     parallel: bool = False
 
@@ -53,9 +54,14 @@ class BaseSampler:
         self.set_parallel(self.options.parallel)
 
         # Get initial conditions
-        x0 = problem.params.sample_from_priors(
-            n_samples=self._options.n_chains, transformed=True
-        )
+        if self._options.x0 is not None and np.isscalar(self._options.x0):
+            x0 = self._problem.params.transformation.to_search(
+                np.ones(self._options.n_chains) * self._options.x0
+            )
+        else:
+            x0 = problem.params.sample_from_priors(
+                n_samples=self._options.n_chains, transformed=True
+            )
         if x0 is None:
             raise ValueError("Initial parameter values could not be sampled.")
         self._x0 = x0

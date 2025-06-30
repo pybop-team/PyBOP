@@ -265,7 +265,7 @@ class BasePintsSampler(BaseSampler):
 
             def fun(x):
                 self.problem.set_params(x)
-                return self.problem.run()
+                return -self.problem.run()
 
         # Handle parallel case
         if self.options.parallel:
