@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+import numpy as np
 import pybamm
 
 import pybop
@@ -30,34 +32,31 @@ builder.set_dataset(dataset)
 builder.set_simulation(
     model,
     parameter_values=parameter_values,
-    initial_state=f"{sol['Voltage [V]'].data[0]} V",
 )
 builder.add_parameter(
     pybop.Parameter(
-        "Negative electrode active material volume fraction", initial_value=0.6
+        "Negative electrode active material volume fraction",
+        initial_value=0.6,
     )
 )
 builder.add_parameter(
     pybop.Parameter(
-        "Positive electrode active material volume fraction", initial_value=0.6
+        "Positive electrode active material volume fraction",
+        initial_value=0.6,
     )
 )
-builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]", 1.0))
+builder.add_cost(
+    pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", "Voltage [V]")
+)
 
 # Build the problem
 problem = builder.build()
 
-options = pybop.PintsOptions(sigma=0.01)
-optim = pybop.CMAES(problem, options=options)
-results = optim.run()
-print(results)
-
-
 # Solve
-# problem.set_params(np.array([0.6, 0.6]))
-# sol = problem.pipeline.solve()
-#
-# # Plot
-# fig, ax = plt.subplots()
-# ax.scatter(sol["Time [s]"].data, sol["Voltage [V]"].data)
-# plt.show()
+problem.set_params(np.array([0.6, 0.6, 1e-3]))
+sol = problem.pipeline.solve()
+
+# Plot
+fig, ax = plt.subplots()
+ax.scatter(sol["Time [s]"].data, sol["Voltage [V]"].data)
+plt.show()
