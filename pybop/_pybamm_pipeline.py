@@ -27,11 +27,12 @@ class PybammPipeline:
         parameter_values: pybamm.ParameterValues | None = None,
         pybop_parameters: Parameters | None = None,
         solver: pybamm.BaseSolver | None = None,
-        t_start: np.number = np.float64(0.0),
-        t_end: np.number = np.float64(1.0),
+        t_start: np.number = 0.0,
+        t_end: np.number = 1.0,
         t_interp: np.ndarray | None = None,
         var_pts: dict | None = None,
         initial_state: float | str | None = None,
+        build_on_eval: bool | None = None,
     ):
         """
         Parameters
@@ -52,6 +53,10 @@ class PybammPipeline:
             The initial state of charge or voltage for the battery model. If float, it will be represented
             as SoC and must be in range 0 to 1. If str, it will be represented as voltage and needs to be in
             the format: "3.4 V".
+        build_on_eval : bool
+            Boolean to determine if the model will be rebuilt every evaluation. If `initial_state` is provided,
+            the model will be rebuilt every evaluation unless `build_on_eval` is `False`, in which case the model
+            is built with the parameter values from construction only.
         """
         self._model = model
         self._model.events = []
@@ -61,15 +66,21 @@ class PybammPipeline:
         self._geometry = model.default_geometry
         self._methods = model.default_spatial_methods
         self._solver = pybamm.IDAKLUSolver() if solver is None else solver
-        self._t_start = t_start
-        self._t_end = t_end
+        self._t_start = np.float64(t_start)
+        self._t_end = np.float64(t_end)
         self._t_interp = t_interp
         self._initial_state = initial_state
         self._built_initial_soc = None
         self._var_pts = var_pts or model.default_var_pts
         self._submesh_types = model.default_submesh_types
         self._built_model = self._model
-        self.requires_rebuild = True if initial_state else self._determine_rebuild()
+        self.requires_rebuild = (
+            build_on_eval
+            if build_on_eval is not None
+            else True
+            if initial_state is not None
+            else self._determine_rebuild()
+        )
 
     def _determine_rebuild(self) -> bool:
         """
