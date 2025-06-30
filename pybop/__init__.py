@@ -109,6 +109,7 @@ from .builders.base import BaseBuilder
 from .builders.pybamm import Pybamm
 from .builders.pybamm_eis import PybammEIS
 from .builders.python import Python
+from .builders.multi_fitting import MultiFitting
 
 
 #

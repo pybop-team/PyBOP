@@ -340,7 +340,7 @@ class TestBuilder:
 
         builder = pybop.builders.Python()
         builder.add_parameter(pybop.Parameter("x", initial_value=1))
-        builder.add_func(model)
+        builder.add_fun(model)
         problem = builder.build()
 
         assert problem is not None
@@ -358,7 +358,7 @@ class TestBuilder:
 
         builder = pybop.builders.Python()
         builder.add_parameter(pybop.Parameter("x", initial_value=1))
-        builder.add_func_with_sens(model_with_sens=model_with_sens)
+        builder.add_fun_with_sens(model_with_sens=model_with_sens)
         problem_sens = builder.build()
         assert problem_sens is not None
         problem_sens.set_params(np.asarray([3.0]))
@@ -368,7 +368,7 @@ class TestBuilder:
 
         # Test incorrect model
         with pytest.raises(TypeError, match="Model must be callable"):
-            builder.add_func([2.0])
+            builder.add_fun([2.0])
 
     def test_build_with_initial_state(self, model, parameter_values, dataset):
         builder = pybop.builders.Pybamm()
@@ -419,7 +419,7 @@ class TestBuilder:
 
     def test_build_no_parameters(self, dataset):
         builder = pybop.builders.Python()
-        builder.add_func(lambda x: x**2)
+        builder.add_fun(lambda x: x**2)
         with pytest.raises(
             ValueError, match="No parameters have been added to the builder."
         ):
@@ -437,3 +437,60 @@ class TestBuilder:
             parameter_values["Initial concentration in positive electrode [mol.m-3]"]
             > 0
         )
+
+    def test_multi_fitting_builder(self, model, parameter_values, dataset):
+        builder = pybop.builders.Pybamm()
+        builder.set_dataset(dataset)
+        builder.set_simulation(
+            model(),
+            parameter_values=parameter_values,
+            solver=IDAKLUSolver(),
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Positive electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        builder.add_cost(
+            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
+        )
+        problem = builder.build()
+        problem2 = builder.build()
+
+        # Compute costs for each problem
+        problem.set_params(np.asarray([0.6, 0.6]))
+        value1 = problem.run()
+
+        problem2.set_params(np.asarray([0.6, 0.6]))
+        value2 = problem2.run()
+
+        # Build multi-problem
+        multi_builder = pybop.builders.MultiFitting()
+        multi_builder.add_problem(problem)
+        multi_builder.add_problem(problem2)
+        multi_problem = multi_builder.build()
+
+        # Compute costs
+        multi_problem.set_params(np.asarray([0.6, 0.6]))
+        value3 = multi_problem.run()
+
+        multi_problem.set_params(np.asarray([0.7, 0.7]))
+        value4 = multi_problem.run()
+
+        assert (value1 + value2) == value3  # Ind. problems == multi-problem
+        assert (value3 - value4) / value3 > 1e-5
+
+        multi_problem.set_params(np.asarray([0.6, 0.6]))
+        value3s, grad3s = multi_problem.run_with_sensitivities()
+        assert grad3s.shape == (2,)
+
+        multi_problem.set_params(np.asarray([0.7, 0.7]))
+        value4s, grad4s = multi_problem.run_with_sensitivities()
+
+        np.testing.assert_allclose(value3s, value3, atol=1e-5)
+        np.testing.assert_allclose(value4s, value4, atol=1e-5)
