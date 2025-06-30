@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -157,7 +158,7 @@ class TestSamplingThevenin:
 
     def get_data(self, model, init_soc):
         initial_state = {"Initial SoC": init_soc}
-        experiment = pybop.Experiment(
+        experiment = pybamm.Experiment(
             ["Discharge at 0.5C for 3 minutes (20 second period)"]
         )
         return model.predict(initial_state=initial_state, experiment=experiment)

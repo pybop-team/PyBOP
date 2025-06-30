@@ -66,7 +66,7 @@ class Test_Sampling_SPM:
 
     @pytest.fixture
     def dataset(self, model, parameter_values):
-        experiment = pybop.Experiment(
+        experiment = pybamm.Experiment(
             [
                 "Rest for 1 second",
                 "Discharge at 0.5C for 8 minutes (8 second period)",

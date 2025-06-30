@@ -89,7 +89,7 @@ class Test_SPM_Parameterisation:
 
     @pytest.fixture
     def dataset(self, model, parameter_values):
-        experiment = pybop.Experiment(
+        experiment = pybamm.Experiment(
             [
                 "Rest for 1 second",
                 "Discharge at 0.5C for 8 minutes (8 second period)",
@@ -175,7 +175,7 @@ class Test_SPM_Parameterisation:
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
     def test_with_init_soc(self, model, parameters):
-        experiment = pybop.Experiment(
+        experiment = pybamm.Experiment(
             [
                 "Rest for 1 second",
                 "Discharge at 0.5C for 8 minutes (8 second period)",

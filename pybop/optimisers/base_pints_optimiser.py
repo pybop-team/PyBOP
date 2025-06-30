@@ -188,9 +188,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         if issubclass(self._pints_optimiser, PintsOptimiser):
             x0 = self.problem.params.get_initial_values(transformed=True)
             param_dims = len(x0)
-            if self._sigma0 is None:
-                self._sigma0 = np.ones(param_dims) * 0.05
-            elif np.isscalar(self._sigma0):
+            if np.isscalar(self._sigma0):
                 self._sigma0 = np.ones(param_dims) * self._sigma0
             self._optimiser = self._pints_optimiser(
                 x0,
