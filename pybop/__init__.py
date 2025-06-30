@@ -46,10 +46,6 @@ script_path = path.dirname(__file__)
 #
 from ._utils import is_numeric, SymbolReplacer
 
-#
-# Experiment class
-#
-from ._experiment import Experiment
 
 #
 # Dataset class
@@ -130,7 +126,6 @@ from .optimisers._adamw import AdamWImpl
 from .optimisers._gradient_descent import GradientDescentImpl
 from .optimisers._simulated_annealing import SimulatedAnnealingImpl
 from .optimisers._irprop_plus import IRPropPlusImpl
-from .optimisers._cost_interface import CostInterface
 from .optimisers._result import OptimisationResult
 from .optimisers.base_optimiser import (
     BaseOptimiser,
