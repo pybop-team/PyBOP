@@ -58,7 +58,7 @@ class TestClassification:
     @pytest.fixture
     def dataset(self, model, parameter_values, parameters):
         parameters = pybop.Parameters(parameters)
-        parameter_values.update(parameters.as_dict(parameters.true_value()))
+        parameter_values.update(parameters.to_dict(parameters.true_values()))
         experiment = pybop.Experiment(
             [
                 "Discharge at 0.5C for 2 minutes (4 seconds period)",

@@ -208,7 +208,7 @@ class Test_SPM_Parameterisation:
         options = pybop.XNES.default_options()
         options.max_iterations = 100
         options.absolute_tolerance = 1e-6
-        options.max_unchanged_iterations = 100
+        options.max_unchanged_iterations = 30
         optim = pybop.XNES(problem, options)
 
         x0 = optim.problem.params.get_initial_values()
