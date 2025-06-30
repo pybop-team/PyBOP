@@ -209,17 +209,17 @@ class TestOptimisation:
     @pytest.mark.parametrize(
         "optimiser",
         [
-            # pybop.GradientDescent,
-            # pybop.AdamW,
-            # pybop.SNES,
-            # pybop.XNES,
-            # pybop.PSO,
-            # pybop.IRPropMin,
+            pybop.GradientDescent,
+            pybop.AdamW,
+            pybop.SNES,
+            pybop.XNES,
+            pybop.PSO,
+            pybop.IRPropMin,
             pybop.IRPropPlus,
-            # pybop.NelderMead,
-            # pybop.CuckooSearch,
-            # pybop.RandomSearch,
-            # pybop.SimulatedAnnealing,
+            pybop.NelderMead,
+            pybop.CuckooSearch,
+            pybop.RandomSearch,
+            pybop.SimulatedAnnealing,
         ],
     )
     def test_optimiser_multistart(self, problem, optimiser):

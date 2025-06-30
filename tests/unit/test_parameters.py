@@ -63,20 +63,26 @@ class TestParameter:
         parameter.update_initial_value(0.654)
         assert parameter.initial_value == 0.654
 
-    # def test_invalid_inputs(self, parameter):
-    #     # Test error with invalid value
-    #     with pytest.raises(ValueError, match="Margin must be between 0 and 1"):
-    #         parameter.set_margin(margin=-1)
-    #
-    #     # Test error with no parameter value
-    #     with pytest.raises(ValueError, match="No value provided to update parameter"):
-    #         parameter.update()
-    #
-    #     # Test error with opposite bounds
-    #     with pytest.raises(
-    #         ValueError, match="Lower bound must be less than upper bound"
-    #     ):
-    #         pybop.Parameter("Name", bounds=[0.7, 0.3])
+    def test_invalid_inputs(self, parameter):
+        # Test error with invalid value
+        with pytest.raises(
+            pybop.ParameterValidationError, match="Margin must be between 0 and 1"
+        ):
+            pybop.Parameter("Test", margin=0)
+
+        # Test None with no parameter value
+        # Test error with no parameter value
+        with pytest.raises(
+            TypeError, match="missing 1 required positional argument: 'value'"
+        ):
+            parameter.update_value()
+
+        # Test error with opposite bounds
+        with pytest.raises(
+            pybop.ParameterValidationError,
+            match=re.escape("Lower bound (0.7) must be less than upper bound (0.3)"),
+        ):
+            pybop.Parameter("Name", bounds=[0.7, 0.3])
 
     def test_sample_initial_values(self):
         parameter = pybop.Parameter(
