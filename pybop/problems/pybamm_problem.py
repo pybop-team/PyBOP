@@ -18,7 +18,6 @@ class PybammProblem(Problem):
         cost_names: list[str] = None,
         cost_weights: list | np.ndarray = None,
         use_posterior: bool = False,
-        use_last_cost_index: list[bool] = None,
     ):
         super().__init__(pybop_params=pybop_params)
         self._pipeline = pybamm_pipeline
@@ -30,7 +29,6 @@ class PybammProblem(Problem):
         )
         self._domain = "Time [s]"
         self._use_posterior = use_posterior
-        self._use_last_cost_index = use_last_cost_index
 
         # Set up priors if we're using the posterior
         if self._use_posterior and pybop_params is not None:
@@ -47,26 +45,26 @@ class PybammProblem(Problem):
         # rebuild the pipeline (if needed)
         self._pipeline.rebuild(self._params.to_dict())
 
-    def _compute_cost(self, solution: list[Solution]) -> list[float]:
+    def _compute_cost(self, solution: list[Solution]) -> np.ndarray:
         """
         Compute the cost function value from a solution.
         """
-        costs = [
-            sol[name].data[-1] if use_last else sol[name].data
-            for use_last, name in zip(
-                self._use_last_cost_index, self._cost_names, strict=False
-            )
-            for sol in solution
-        ]
-        # NOTE: The below is needed until pybamm issue: https://github.com/pybamm-team/PyBaMM/issues/5063
-        # is closed. The below code sums across the time axis, replicating the processing that occurs
-        # when output_variables is not used for the DiscreteTimeSum node.
-        if costs[0].shape != self._params.current_value().shape:
-            costs = np.sum(costs, axis=1).reshape(self._cost_weights.shape[0], -1)
-        weighted_costs = np.dot(self._cost_weights, costs)
-        if weighted_costs.size == 1:
+        n_solutions = len(solution)
+        n_costs = len(self._cost_names)
+        cost_matrix = np.empty((n_costs, n_solutions))
+
+        # Extract each costs corresponding solution values
+        for cost_idx, name in enumerate(self._cost_names):
+            cost_matrix[cost_idx, :] = [sol[name].data[0] for sol in solution]
+
+        # Apply cost weights via matrix multiplication
+        weighted_costs = self._cost_weights @ cost_matrix
+        if weighted_costs.ndim == 1 and weighted_costs.size == 1:
             return weighted_costs[0]
-        return np.dot(self._cost_weights, costs)
+        elif weighted_costs.ndim == 2 and weighted_costs.shape[0] == 1:
+            return weighted_costs.flatten()
+
+        return weighted_costs
 
     def _add_prior_contribution(self, cost: float) -> float:
         """
@@ -122,15 +120,10 @@ class PybammProblem(Problem):
         sol = self._pipeline.solve(calculate_sensitivities=True)
         cost = self._compute_cost_with_prior(sol)
 
-        # Below is a patch for output_variables until the
-        # DiscreteTimeSum functionality is added.
         aggregated_sens = np.asarray(
-            [
-                np.sum(s[n].sensitivities["all"], axis=0)
-                for n in self._cost_names
-                for s in sol
-            ]
+            [s[n].sensitivities["all"] for n in self._cost_names for s in sol]
         )
+
         weighted_sensitivity = np.sum(
             aggregated_sens * self._cost_weights[:, None], axis=0
         )

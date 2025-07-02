@@ -113,13 +113,9 @@ class Pybamm(BaseBuilder):
 
         # add costs
         cost_names = []
-        use_last_index = []
         for cost in self._costs:
             cost.add_to_model(model, pybamm_parameter_values, self._dataset)
             cost_names.append(cost.metadata().variable_name)
-            use_last_index.append(
-                isinstance(cost.metadata().expression, pybamm.ExplicitTimeIntegral)
-            )
 
             # Posterior Logic
             if isinstance(cost, BaseLikelihood) and pybop_parameters.priors():
@@ -168,7 +164,6 @@ class Pybamm(BaseBuilder):
             cost_names=cost_names,
             cost_weights=self._cost_weights,
             use_posterior=self._use_posterior,
-            use_last_cost_index=use_last_index,
         )
 
     def _set_control_variable(self, pybop_parameters: pybop.Parameters) -> None:
