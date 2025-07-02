@@ -9,26 +9,26 @@ class Python(BaseBuilder):
     Builder for Python-based problems.
 
     This builder creates problems using custom Python functions instead of
-    specialised simulation frameworks. It supports both standard models and
-    models with sensitivity analysis.
+    specialised simulation frameworks. It supports both standard functions and
+    functions with sensitivity analysis.
 
     If this problem is used by Pybop Optimisation or Sampling classes, the
     functions will be minimised.
 
     Examples
     --------
-    >>> builder = Python()
-    >>> builder.add_func(my_model_function, weight=1.5)
+    >>> builder = pybop.builders.Python()
+    >>> builder.add_fun(my_model_function, weight=1.5)
     >>> problem = builder.build()
     """
 
     def __init__(self):
         super().__init__()
-        self._models: list[Callable] = []
-        self._models_with_sens: list[Callable] = []
+        self._funs: list[Callable] = []
+        self._funs_with_sens: list[Callable] = []
         self._weights: list[float] = []
 
-    def add_func(self, model: Callable, weight: float = 1.0) -> "Python":
+    def add_fun(self, model: Callable, weight: float = 1.0) -> "Python":
         """
         Add a simulation function to the problem.
 
@@ -52,11 +52,11 @@ class Python(BaseBuilder):
         if not callable(model):
             raise TypeError("Model must be callable")
 
-        self._models.append(model)
+        self._funs.append(model)
         self._weights.append(weight)
         return self
 
-    def add_func_with_sens(
+    def add_fun_with_sens(
         self, model_with_sens: Callable, weight: float = 1.0
     ) -> "Python":
         """
@@ -84,7 +84,7 @@ class Python(BaseBuilder):
         if not callable(model_with_sens):
             raise TypeError("Model with sensitivities must be callable")
 
-        self._models_with_sens.append(model_with_sens)
+        self._funs_with_sens.append(model_with_sens)
         self._weights.append(weight)
         return self
 
@@ -100,19 +100,19 @@ class Python(BaseBuilder):
         Raises
         ------
         ValueError
-            If no models are provided or if both model types are specified.
+            If no functions are provided or if both model types are specified.
         """
-        if not self._models and not self._models_with_sens:
+        if not self._funs and not self._funs_with_sens:
             raise ValueError("At least one model function must be provided")
 
-        if self._models and self._models_with_sens:
+        if self._funs and self._funs_with_sens:
             raise ValueError(
-                "Cannot specify both standard models and models with sensitivities"
+                "Cannot specify both standard functions and functions with sensitivities"
             )
 
         return PythonProblem(
-            model=self._models or None,
-            model_with_sens=self._models_with_sens or None,
+            funs=self._funs or None,
+            funs_with_sens=self._funs_with_sens or None,
             pybop_params=self.build_parameters(),
             weights=self._weights,
         )
@@ -120,7 +120,7 @@ class Python(BaseBuilder):
     def __repr__(self) -> str:
         """Return string representation of the builder state."""
         return (
-            f"Python(models={len(self._models)}, "
-            f"models_with_sens={len(self._models_with_sens)}, "
+            f"Python(func={len(self._funs)}, "
+            f"funcs_with_sens={len(self._funs_with_sens)}, "
             f"weights={len(self._weights)})"
         )

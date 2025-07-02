@@ -12,37 +12,37 @@ class PythonProblem(Problem):
 
     Provides a flexible interface for custom Python functions instead of relying
     on external simulation frameworks like PyBaMM. Designed to work with the Python
-    builder pattern for progressive model composition.
+    builder pattern for progressive function composition.
 
-    The problem supports either standard models OR models with sensitivities, but not both
+    The problem supports either standard funcs OR funcs with sensitivities, but not both
     simultaneously.
 
     Parameters
     ----------
-    model : Sequence[Callable], optional
+    func : Sequence[Callable], optional
         Sequence of functions that perform simulation. Each function should accept
         parameter values and return a numeric result or dict of results.
-    model_with_sens : Sequence[Callable], optional
+    func_with_sens : Sequence[Callable], optional
         Sequence of functions that perform simulation and return sensitivities.
         Each function should accept parameter values and return (results, gradients).
     pybop_params : Parameters, optional
         Container for optimisation parameters defining the parameter space.
     weights : Sequence[float], optional
-        Weights for each callable component. Length must match the number of models.
+        Weights for each callable component. Length must match the number of functions.
 
     Raises
     ------
     ValueError
-        If both model types are provided, if neither is provided, or if weights
-        length doesn't match model count.
+        If both function types are provided, if neither is provided, or if weights
+        length doesn't match function count.
 
     Examples
     --------
-    >>> def quadratic_model(params):
+    >>> def quadratic_func(params):
     ...     return np.sum(params**2)
     >>>
     >>> problem = PythonProblem(
-    ...     model=[quadratic_model],
+    ...     func=[quadratic_func],
     ...     pybop_params=my_params,
     ...     weights=[1.0]
     ... )
@@ -56,92 +56,92 @@ class PythonProblem(Problem):
 
     def __init__(
         self,
-        model: Sequence[Callable] | None = None,
-        model_with_sens: Sequence[Callable] | None = None,
+        funs: Sequence[Callable] | None = None,
+        funs_with_sens: Sequence[Callable] | None = None,
         pybop_params: Parameters | None = None,
         weights: Sequence[float] | None = None,
     ):
         super().__init__(pybop_params=pybop_params)
-        self._model = tuple(model) if model is not None else None
-        self._model_with_sens = (
-            tuple(model_with_sens) if model_with_sens is not None else None
+        self._funs = tuple(funs) if funs is not None else None
+        self._funs_with_sens = (
+            tuple(funs_with_sens) if funs_with_sens is not None else None
         )
         self._weights = weights
 
     def run(self) -> float:
         """
-        Execute all standard models with current parameters and return weighted sum.
+        Execute all standard functions with current parameters and return weighted sum.
 
-        This method evaluates each model function with the current parameter values,
+        This method evaluates each function with the current parameter values,
         applies the corresponding weights, and returns the sum.
 
         Returns
         -------
         float
-            Weighted sum of all model results
+            Weighted sum of all function results
 
         Raises
         ------
         RuntimeError
-            If no standard models are available (i.e., only sensitivity models exist)
+            If no standard functions are available (i.e., only sensitivity functions exist)
         """
 
-        if self._model is None:
+        if self._funs is None:
             raise RuntimeError(
-                "No standard models configured. This problem uses sensitivity models. "
+                "No standard functions configured. This problem uses sensitivity functions. "
                 "Use run_with_sensitivities() instead."
             )
 
         # Vectorised evaluation
         try:
             results = np.fromiter(
-                (model(self.params.get_values()) for model in self._model),
+                (func(self.params.get_values()) for func in self._funs),
                 dtype=np.float64,
-                count=len(self._model),
+                count=len(self._funs),
             )
         except (TypeError, ValueError) as e:
-            raise RuntimeError(f"Model evaluation failed: {e}") from e
+            raise RuntimeError(f"function evaluation failed: {e}") from e
 
         return np.dot(results, self._weights)
 
     def run_with_sensitivities(self) -> tuple[float, np.ndarray]:
         """
-        Execute all sensitivity models and return weighted results with gradients.
+        Execute all sensitivity functions and return weighted results with gradients.
 
-        This method evaluates each sensitivity model function, which returns both
+        This method evaluates each sensitivity function, which returns both
         values and gradients, then computes weighted sums for both components.
 
         Returns
         -------
         tuple[float, np.ndarray]
             Tuple containing:
-            - Weighted sum of model values (float)
+            - Weighted sum of function values (float)
             - Weighted sum of parameter gradients (np.ndarray)
 
         Raises
         ------
         RuntimeError
-            If no sensitivity models are available or if model evaluation fails
+            If no sensitivity functions are available or if function evaluation fails
         """
-        if self._model_with_sens is None:
+        if self._funs_with_sens is None:
             raise RuntimeError(
-                "No sensitivity models configured. This problem uses standard models. "
+                "No sensitivity functions configured. This problem uses standard functions. "
                 "Use run() instead."
             )
 
         # Pre-allocate arrays
-        n_models = len(self._model_with_sens)
-        values = np.empty(n_models, dtype=np.float64)
+        n_funs = len(self._funs_with_sens)
+        values = np.empty(n_funs, dtype=np.float64)
         gradients = []
 
-        # Evaluate models and collect results
+        # Evaluate funcs and collect results
         try:
-            for i, model in enumerate(self._model_with_sens):
-                val, grad = model(self.params.get_values())
+            for i, func in enumerate(self._funs_with_sens):
+                val, grad = func(self.params.get_values())
                 values[i] = float(val)  # Ensure scalar
                 gradients.append(np.asarray(grad, dtype=np.float64))
         except (TypeError, ValueError, AttributeError) as e:
-            raise RuntimeError(f"Sensitivity model evaluation failed: {e}") from e
+            raise RuntimeError(f"Sensitivity function evaluation failed: {e}") from e
 
         # Compute weighted results
         weighted_value = np.dot(values, self._weights)
