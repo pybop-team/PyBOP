@@ -101,7 +101,6 @@ class TestBuilder:
 
         # Test building twice
         problem2 = builder.build()
-        assert problem2 is not None
         assert problem2 != problem
 
     def test_builder_likelihoods(self, model, parameter_values, dataset):
@@ -129,7 +128,6 @@ class TestBuilder:
         )
         problem = builder.build()
 
-        assert problem is not None
         problem.set_params(np.array([0.6, 0.6]))
         value1 = problem.run()
         assert isinstance(value1, numbers.Number)
@@ -191,7 +189,6 @@ class TestBuilder:
         )
         problem = builder.build()
 
-        assert problem is not None
         assert problem._use_posterior is True
         problem.set_params(np.array([0.6, 0.6]))
         value1 = problem.run()
@@ -227,7 +224,6 @@ class TestBuilder:
         )
         problem = builder.build()
 
-        assert problem is not None
         problem.set_params(np.array([1e-5, 0.5e-6]))
         value1 = problem.run()
         problem.set_params(np.array([2e-5, 1.5e-6]))
@@ -259,7 +255,6 @@ class TestBuilder:
         )
         problem = builder.build()
 
-        assert problem is not None
         problem.set_params(np.array([0.6, 0.6]))
         value1 = problem.run()
         problem.set_params(np.array([0.7, 0.7]))
@@ -293,7 +288,6 @@ class TestBuilder:
         builder.add_cost(pybop.MeanSquaredError(weighting="equal"))
         problem = builder.build()
 
-        assert problem is not None
         problem.set_params(np.array([0.65, 0.65]))
         value1 = problem.run()
         problem.set_params(np.array([0.75, 0.75]))
@@ -318,7 +312,6 @@ class TestBuilder:
         builder.add_cost(pybop.MeanSquaredError(weighting="domain"))
         problem = builder.build()
 
-        assert problem is not None
         problem.set_params(np.asarray([80e-6, 4.5e-6]))
         value1 = problem.run()
         problem.set_params(np.asarray([85e-6, 5.5e-6]))
@@ -343,7 +336,6 @@ class TestBuilder:
         builder.add_fun(model)
         problem = builder.build()
 
-        assert problem is not None
         problem.set_params(np.array([3.0]))
         value1 = problem.run()
         assert value1 > 0
@@ -360,7 +352,6 @@ class TestBuilder:
         builder.add_parameter(pybop.Parameter("x", initial_value=1))
         builder.add_fun_with_sens(model_with_sens=model_with_sens)
         problem_sens = builder.build()
-        assert problem_sens is not None
         problem_sens.set_params(np.asarray([3.0]))
         val, sens = problem_sens.run_with_sensitivities()
         assert val > 0
@@ -394,12 +385,10 @@ class TestBuilder:
         )
         problem = builder.build()
 
-        assert problem is not None
-
         # First build
         problem.set_params(np.array([0.6, 0.6]))
         value1 = problem.run()
-        built_model_1 = problem._pipeline.built_model.new_copy()
+        built_model_1 = problem.pipeline.built_model.new_copy()
 
         # Second build w/ SOC instead of Voltage
         builder.set_simulation(
@@ -411,10 +400,58 @@ class TestBuilder:
         problem2 = builder.build()
         problem2.set_params(np.array([0.6, 0.6]))
         value2 = problem2.run()
-        built_model_2 = problem2._pipeline.built_model.new_copy()
+        built_model_2 = problem2.pipeline.built_model.new_copy()
 
         # Assert builds are different
         assert (value1 - value2) / value1 < 1e-5  # Value2 is a worse fit
+        assert built_model_1 != built_model_2
+
+    def test_build_on_eval(self, model, parameter_values, dataset):
+        builder = pybop.builders.Pybamm()
+        builder.set_dataset(dataset)
+        builder.set_simulation(
+            model(),
+            parameter_values=parameter_values,
+            solver=IDAKLUSolver(),
+            initial_state=0.5,
+            build_on_eval=False,
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Positive electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        builder.add_cost(
+            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
+        )
+        problem = builder.build()
+        assert not problem.pipeline.requires_rebuild
+
+        # First build w/o `build_on_eval`
+        problem.set_params(np.array([0.5, 0.5]))
+        value1 = problem.run()
+        built_model_1 = problem.pipeline.built_model.new_copy()
+
+        # Second build w/ `build_on_eval`
+        builder.set_simulation(
+            model(),
+            parameter_values=parameter_values,
+            solver=IDAKLUSolver(),
+            initial_state=0.5,
+            build_on_eval=True,
+        )
+        problem2 = builder.build()
+        problem2.set_params(np.array([0.5, 0.5]))
+        value2 = problem2.run()
+        built_model_2 = problem2._pipeline.built_model.new_copy()
+
+        # Assert builds are different
+        assert value1 != value2
         assert built_model_1 != built_model_2
 
     def test_build_no_parameters(self, dataset):
