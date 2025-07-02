@@ -34,6 +34,7 @@ class PybammEISPipeline:
         solver: pybamm.BaseSolver | None = None,
         var_pts: dict | None = None,
         initial_state: float | str | None = None,
+        build_on_eval: bool | None = None,
     ):
         """
         Parameters
@@ -57,6 +58,7 @@ class PybammEISPipeline:
             solver=solver,
             var_pts=var_pts,
             initial_state=initial_state,
+            build_on_eval=build_on_eval,
         )
 
         # Set-up model for EIS

@@ -21,12 +21,31 @@ class PybammEIS(builders.BaseBuilder):
         model: pybamm.BaseModel,
         parameter_values: pybamm.ParameterValues | None = None,
         initial_state: float | str | None = None,
+        build_on_eval: bool | None = None,
     ) -> None:
         """
         Adds a simulation for the optimisation problem.
+
+        Parameters
+        ----------
+        model : pybamm.BaseModel
+            The PyBaMM model to be used.
+        parameter_values : pybamm.ParameterValues
+            The parameters to be used in the model.
+        solver : pybamm.BaseSolver
+            The solver to be used. If None, the idaklu solver will be used.
+        initial_state: float | str
+            The initial state of charge or voltage for the battery model. If float, it will be represented
+            as SoC and must be in range 0 to 1. If str, it will be represented as voltage and needs to be in
+            the format: "3.4 V".
+        build_on_eval : bool
+            Boolean to determine if the model will be rebuilt every evaluation. If `initial_state` is provided,
+            the model will be rebuilt every evaluation unless `build_on_eval` is `False`, in which case the model
+            is built with the parameter values from construction only.
         """
         self._model = model.new_copy()
         self._initial_state = initial_state
+        self._build_on_eval = build_on_eval
         if parameter_values is None:
             parameter_values = model.default_parameter_values
         elif isinstance(parameter_values, pybamm.ParameterValues):
@@ -122,6 +141,7 @@ class PybammEIS(builders.BaseBuilder):
             pybop_parameters,
             self._solver,
             initial_state=self._initial_state,
+            build_on_eval=self._build_on_eval,
         )
 
         # Build and initialise the pipeline
