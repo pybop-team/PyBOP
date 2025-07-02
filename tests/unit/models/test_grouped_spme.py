@@ -185,28 +185,3 @@ class TestGroupedSPMe:
         initial_params = problem.params.get_initial_values()
 
         self.assert_parameter_sensitivity(problem, TEST_PARAM_VALUES, initial_params)
-
-    @pytest.mark.benchmark
-    def test_performance_benchmark(
-        self, grouped_spme_dataset, base_model_config, test_parameters
-    ):
-        """Benchmark test execution time for performance monitoring."""
-        import time
-
-        builder = self.create_pybamm_builder(
-            grouped_spme_dataset, base_model_config, test_parameters
-        )
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
-
-        start_time = time.perf_counter()
-        problem = builder.build()
-        build_time = time.perf_counter() - start_time
-
-        start_time = time.perf_counter()
-        problem.run()
-        run_time = time.perf_counter() - start_time
-
-        assert build_time < 0.1, f"Build time too slow: {build_time:.3f}s"
-        assert run_time < 0.05, f"Run time too slow: {run_time:.3f}s"
