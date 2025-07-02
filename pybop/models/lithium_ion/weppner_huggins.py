@@ -1,8 +1,6 @@
-import warnings
-
 import numpy as np
+import pybamm
 from pybamm import DummySolver, Parameter, ParameterValues, citations, lithium_ion
-from pybamm import t as pybamm_t
 
 
 class WeppnerHuggins(lithium_ion.BaseModel):
@@ -29,13 +27,8 @@ class WeppnerHuggins(lithium_ion.BaseModel):
             The solver to use for simulating the model. If None, the default solver from PyBaMM is used.
     """
 
-    def __init__(self, name="Weppner & Huggins model", **model_kwargs):
-        # Model kwargs (build, options) are not implemented, keeping here for consistent interface
-        if model_kwargs is not dict(build=True):
-            unused_kwargs_warning = "The input model_kwargs are not currently used by the Weppner & Huggins model."
-            warnings.warn(unused_kwargs_warning, UserWarning, stacklevel=2)
-
-        super().__init__({}, name)
+    def __init__(self, name="Weppner & Huggins model", options=None):
+        super().__init__(options, name, build=False)
 
         citations.register("""
             @article{Weppner1977,
@@ -57,7 +50,6 @@ class WeppnerHuggins(lithium_ion.BaseModel):
         self.options["working electrode"] = "positive"
         self._summary_variables = []
 
-        t = pybamm_t
         ######################
         # Parameters
         ######################
@@ -86,17 +78,20 @@ class WeppnerHuggins(lithium_ion.BaseModel):
         u_surf = (
             (2 / (np.pi**0.5))
             * (i_app / ((d_s**0.5) * a * self.param.F * l_w))
-            * (t**0.5)
+            * (pybamm.t**0.5)
         )
         # Linearised voltage
         V = U + (U_prime * u_surf) / c_s_max
         ######################
         # (Some) variables
         ######################
+        I = self.param.current_with_time
         self.variables = {
             "Voltage [V]": V,
-            "Time [s]": t,
-            "Current [A]": self.param.current_with_time,
+            "Terminal voltage [V]": V,
+            "Time [s]": pybamm.t,
+            "Current [A]": I,
+            "Current variable [A]": I,  # for compatibility with pybamm.Experiment
         }
 
         # Set the built property on creation to prevent unnecessary model rebuilds

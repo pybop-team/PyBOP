@@ -50,17 +50,13 @@ class GroupedSPMe(pybamm_lithium_ion.BaseModel):
     """
 
     def __init__(
-        self, name="Grouped Single Particle Model with Electrolyte", **model_kwargs
+        self,
+        options: dict = None,
+        name="Grouped Single Particle Model with Electrolyte",
     ):
         unused_keys = []
-        for key in model_kwargs.keys():
-            if key not in ["build", "parameter_set", "options"]:
-                unused_keys.append(key)
-        if model_kwargs.get("build", True) is False:
-            unused_keys.append("build")
-        options = {"surface form": "false", "contact resistance": "true"}
-        if model_kwargs.get("options", None) is not None:
-            for key, value in model_kwargs["options"].items():
+        if options is not None:
+            for key, value in options.items():
                 if key in ["surface form", "contact resistance"]:
                     options[key] = value
                 else:

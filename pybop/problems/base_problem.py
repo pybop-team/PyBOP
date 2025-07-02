@@ -26,7 +26,7 @@ class Problem:
         cost0 = self.run()
         nsamples = 0
         while np.isinf(abs(cost0)) and nsamples < 10:
-            x0 = self._params.sample_from_priors(transformed=True)
+            x0 = self._params.sample_from_priors()
             if x0 is None:
                 break
 
