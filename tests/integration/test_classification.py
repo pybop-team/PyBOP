@@ -58,8 +58,8 @@ class TestClassification:
     @pytest.fixture
     def dataset(self, model, parameter_values, parameters):
         parameters = pybop.Parameters(parameters)
-        parameter_values.update(parameters.as_dict(parameters.true_value()))
-        experiment = pybop.Experiment(
+        parameter_values.update(parameters.to_dict(parameters.true_values()))
+        experiment = pybamm.Experiment(
             [
                 "Discharge at 0.5C for 2 minutes (4 seconds period)",
                 "Charge at 0.5C for 2 minutes (4 seconds period)",
@@ -148,7 +148,7 @@ class TestClassification:
         )
         model = pybamm.equivalent_circuit.Thevenin()
 
-        experiment = pybop.Experiment(
+        experiment = pybamm.Experiment(
             ["Discharge at 0.5C for 2 minutes (4 seconds period)"]
         )
         solution = pybamm.Simulation(

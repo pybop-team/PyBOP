@@ -62,7 +62,6 @@ class AdamWImpl(PintsOptimiser):
         sigma0: list[float] | None,
         boundaries: pints.Boundaries | None,
     ):
-        sigma0 = sigma0 or [0.015] * len(x0)
         if boundaries is not None:
             warnings.warn(
                 "Boundaries ignored by AdamW",

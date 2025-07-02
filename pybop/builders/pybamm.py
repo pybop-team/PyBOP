@@ -121,16 +121,24 @@ class Pybamm(BaseBuilder):
                 isinstance(cost.metadata().expression, pybamm.ExplicitTimeIntegral)
             )
 
-            # Add hypers to pybop parameters
-            if cost.metadata().parameters:
-                for name, obj in cost.metadata().parameters.items():
-                    pybop_parameters.add(
-                        PybopParameter(name, initial_value=obj.default_value)
-                    )
-
             # Posterior Logic
             if isinstance(cost, BaseLikelihood) and pybop_parameters.priors():
                 self._use_posterior = True
+
+            # Add hypers to pybop parameters
+            if cost.metadata().parameters:
+                for name, obj in cost.metadata().parameters.items():
+                    delta = obj.default_value * 0.5  # Create prior w/ large variance
+                    prior = (
+                        pybop.Gaussian(obj.default_value, delta)
+                        if self._use_posterior
+                        else None
+                    )
+                    pybop_parameters.add(
+                        PybopParameter(
+                            name, initial_value=obj.default_value, prior=prior
+                        )
+                    )
 
             # Design Costs
             if isinstance(cost, DesignCost):

@@ -1,6 +1,7 @@
 import sys
 
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -109,7 +110,7 @@ class TestOptimisation:
 
     def get_data(self, model, initial_state):
         # Update the initial state and save the ground truth initial concentrations
-        experiment = pybop.Experiment(
+        experiment = pybamm.Experiment(
             [
                 (
                     "Discharge at 0.5C for 3 minutes (10 second period)",

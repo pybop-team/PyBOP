@@ -43,7 +43,7 @@ class OptimisationResult:
         self._message = [message]
         self._time = [time]
 
-        x0 = self._problem.params.initial_value()
+        x0 = self._problem.params.get_initial_values()
         self._x0 = [x0]
 
         # Calculate Fisher Information if available
@@ -117,7 +117,7 @@ class OptimisationResult:
         """
         if not any(np.isfinite(self._final_cost)):
             raise ValueError(
-                f"Optimised parameters {self._problem.params.as_dict()} do not produce a finite cost value"
+                f"Optimised parameters {self._problem.params.to_dict()} do not produce a finite cost value"
             )
 
     def __str__(self) -> str:

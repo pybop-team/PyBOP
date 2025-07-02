@@ -46,7 +46,7 @@ class PybammProblem(Problem):
         self.check_and_store_params(p)
 
         # rebuild the pipeline (if needed)
-        self._pipeline.rebuild(self._params.as_dict())
+        self._pipeline.rebuild(self._params.to_dict())
 
     def _compute_cost(self, solution: Solution) -> float:
         """
@@ -69,7 +69,7 @@ class PybammProblem(Problem):
             return cost
 
         # Likelihoods and priors are negative by convention
-        return cost - self._priors.logpdf(self._params.current_value())
+        return cost - self._priors.logpdf(self._params.get_values())
 
     def _compute_cost_with_prior(self, solution: Solution) -> float:
         """
@@ -103,21 +103,26 @@ class PybammProblem(Problem):
             Tuple of (cost_value, sensitivities)
         """
         self.check_set_params_called()
-        prior_derivatives = np.zeros(len(self._params.keys()))
+        prior_derivatives = np.zeros(len(self._params))
 
         # Compute prior contribution and derivatives if using posterior
         if self._use_posterior:
             log_prior, prior_derivatives = self._priors.logpdfS1(
-                self._params.current_value()
+                self._params.get_values()
             )
 
         # Solve with sensitivities, calculate cost
         sol = self._pipeline.solve(calculate_sensitivities=True)
         cost = self._compute_cost_with_prior(sol)
 
-        aggregated_sens = np.asarray(
-            [sol[n].sensitivities["all"] for n in self._cost_names]
-        ).squeeze(axis=1)
+        try:
+            aggregated_sens = np.asarray(
+                [sol[n].sensitivities["all"] for n in self._cost_names]
+            ).squeeze(axis=1)
+        except KeyError as e:
+            raise KeyError(
+                "Sensitivities not available, ensure problem is formulated to enable sensitivities"
+            ) from e
         weighted_sensitivity = np.sum(
             aggregated_sens * self._cost_weights[:, None], axis=0
         )

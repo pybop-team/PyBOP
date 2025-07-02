@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 from pybamm import Solution
 
@@ -185,3 +187,19 @@ class Dataset:
             data[key] = self[key][index]
 
         return Dataset(data, domain=self.domain)
+
+    def copy(self):
+        """
+        Create a deep copy of the Dataset instance.
+
+        Returns
+        -------
+        Dataset
+            A new Dataset instance with copied data, domain, and control_variable.
+        """
+        copied_data = copy.deepcopy(self.data)
+        return Dataset(
+            data_dictionary=copied_data,
+            domain=self.domain,
+            control_variable=self.control_variable,
+        )

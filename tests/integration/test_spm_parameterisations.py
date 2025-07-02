@@ -50,7 +50,7 @@ class Test_SPM_Parameterisation:
                 "Positive electrode active material volume fraction",
                 prior=pybop.Uniform(0.3, 0.9),
                 initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
-                # no bounds
+                bounds=[0.3, 0.8],
             ),
         ]
 
@@ -89,7 +89,7 @@ class Test_SPM_Parameterisation:
 
     @pytest.fixture
     def dataset(self, model, parameter_values):
-        experiment = pybop.Experiment(
+        experiment = pybamm.Experiment(
             [
                 "Rest for 1 second",
                 "Discharge at 0.5C for 8 minutes (8 second period)",
@@ -154,7 +154,7 @@ class Test_SPM_Parameterisation:
         return optim
 
     def test_optimisers(self, optim, cost_cls):
-        x0 = optim.problem.params.initial_value()
+        x0 = optim.problem.params.get_initial_values()
 
         # Add sigma0 to ground truth for GaussianLogLikelihood
         if cost_cls in (pybop.costs.pybamm.NegativeGaussianLogLikelihood,):
@@ -175,7 +175,7 @@ class Test_SPM_Parameterisation:
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
     def test_with_init_soc(self, model, parameters):
-        experiment = pybop.Experiment(
+        experiment = pybamm.Experiment(
             [
                 "Rest for 1 second",
                 "Discharge at 0.5C for 8 minutes (8 second period)",
@@ -208,10 +208,10 @@ class Test_SPM_Parameterisation:
         options = pybop.XNES.default_options()
         options.max_iterations = 100
         options.absolute_tolerance = 1e-6
-        options.max_unchanged_iterations = 100
+        options.max_unchanged_iterations = 30
         optim = pybop.XNES(problem, options)
 
-        x0 = optim.problem.params.initial_value()
+        x0 = optim.problem.params.get_initial_values()
         optim.problem.set_params(x0)
         initial_cost = optim.problem.run()
         results = optim.run()

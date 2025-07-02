@@ -40,7 +40,7 @@ class BaseBuilder(ABC):
         dataset : Dataset
             The dataset containing experimental data
         """
-        self._dataset = dataset
+        self._dataset = dataset.copy()
 
     def add_parameter(self, parameter: Parameter):
         """

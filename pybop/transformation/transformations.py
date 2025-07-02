@@ -56,7 +56,7 @@ class IdentityTransformation(Transformation):
 
     def _transform(self, x: np.ndarray, method: str) -> np.ndarray:
         """See :meth:`Transformation._transform`."""
-        return np.asarray(x)
+        return self.verify_input(x)
 
 
 class ScaledTransformation(Transformation):

@@ -157,7 +157,7 @@ class PybammEISPipeline:
             If the model hasn't been built yet.
         """
         built_model = self._pybamm_pipeline.built_model
-        inputs = self._pybamm_pipeline.pybop_parameters.as_dict()
+        inputs = self._pybamm_pipeline.pybop_parameters.to_dict()
         M = self._pybamm_pipeline.built_model.mass_matrix.entries
         self._pybamm_pipeline.solver.set_up(built_model, inputs=inputs)
 

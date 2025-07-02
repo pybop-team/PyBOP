@@ -21,12 +21,12 @@ class Problem:
 
     def _compute_initial_cost_and_resample(self):
         # Compute the absolute initial cost and resample if required
-        x0 = self._params.initial_value()
+        x0 = self._params.get_initial_values()
         self.set_params(x0)
         cost0 = self.run()
         nsamples = 0
         while np.isinf(abs(cost0)) and nsamples < 10:
-            x0 = self._params.rvs(apply_transform=True)
+            x0 = self._params.sample_from_priors(transformed=True)
             if x0 is None:
                 break
 
@@ -48,9 +48,9 @@ class Problem:
             raise TypeError("Parameters must be a numpy array.")
         if p.ndim != 1:
             raise ValueError("Parameters must be a 1D numpy array.")
-        if len(p) != len(self._param_names):
+        if len(p) != len(self._params):
             raise ValueError(
-                f"Expected {len(self._param_names)} parameters, but got {len(p)}."
+                f"Expected {len(self._params)} parameters, but got {len(p)}."
             )
         self._params.update(values=p)
 
@@ -101,8 +101,8 @@ class Problem:
 
         salib_dict = {
             "names": list(self._params.keys()),
-            "bounds": self._params.bounds_as_numpy(),
-            "num_vars": len(self._params.keys()),
+            "bounds": self._params.get_bounds_array(),
+            "num_vars": len(self._params),
         }
 
         # Create samples, compute cost

@@ -69,7 +69,7 @@ class MeanAbsoluteError(PybammCost):
         dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
         # Check args
-        name = SumSquaredError.make_unique_cost_name()
+        name = MeanAbsoluteError.make_unique_cost_name()
         self._check_state(dataset, model, name)
         data, var = self._construct_discrete_time_node(dataset, model, name)
 
@@ -324,10 +324,10 @@ class ScaledCost(PybammCost):
 
     def __init__(
         self,
-        loglikelihood: PybammCost,
+        cost: PybammCost,
     ):
         super().__init__()
-        self._loglikelihood = loglikelihood
+        self._cost = cost
 
     def variable_expression(
         self,
@@ -335,13 +335,13 @@ class ScaledCost(PybammCost):
         dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
         # Check args
-        name = NegativeGaussianLogLikelihood.make_unique_cost_name()
-        loglikelihood_metadata = self._loglikelihood.variable_expression(model, dataset)
+        name = ScaledCost.make_unique_cost_name()
+        cost_metadata = self._cost.variable_expression(model, dataset)
 
         return PybammExpressionMetadata(
             variable_name=name,
-            expression=loglikelihood_metadata.expression
+            expression=cost_metadata.expression
             * pybamm.Scalar(1.0)
-            / len(dataset[self._loglikelihood.data_name]),
-            parameters=loglikelihood_metadata.parameters,
+            / len(dataset[self._cost.data_name]),
+            parameters=cost_metadata.parameters,
         )
