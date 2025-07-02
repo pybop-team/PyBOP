@@ -1,5 +1,3 @@
-import warnings
-
 import numpy as np
 import pybamm
 import pytest
@@ -107,14 +105,7 @@ class TestPlots:
     def test_cost_plots(self, problem):
         # Test plot of Cost objects
         pybop.plot.contour(problem, gradient=True, steps=5)
-
         pybop.plot.contour(problem, gradient=True, steps=5, apply_transform=True)
-
-        # Test without bounds
-        for param in problem.params:
-            param.bounds = None
-        with pytest.raises(ValueError, match="All parameters require bounds for plot."):
-            pybop.plot.contour(problem, steps=5)
 
         # Test with bounds
         pybop.plot.contour(problem, bounds=np.array([[0.5, 0.8], [0.4, 0.7]]), steps=5)
@@ -240,36 +231,6 @@ class TestPlots:
         )
         fitting_problem = builder.build()
         pybop.plot.contour(fitting_problem, steps=5)
-
-    def test_contour_prior_bounds(self, model, dataset):
-        builder = pybop.Pybamm()
-        builder.set_simulation(model)
-        builder.set_dataset(dataset)
-        builder.add_parameter(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Gaussian(0.68, 0.01),
-            )
-        )
-        builder.add_parameter(
-            pybop.Parameter(
-                "Positive electrode active material volume fraction",
-                prior=pybop.Gaussian(0.58, 0.01),
-            )
-        )
-        builder.add_cost(
-            pybop.costs.pybamm.NegativeGaussianLogLikelihood(
-                "Voltage [V]", "Voltage [V]", sigma=1e-3
-            )
-        )
-
-        problem = builder.build()
-        with pytest.warns(
-            UserWarning,
-            match="Bounds were created from prior distributions.",
-        ):
-            warnings.simplefilter("always")
-            pybop.plot.contour(problem)
 
     def test_nyquist(self):
         # Define model

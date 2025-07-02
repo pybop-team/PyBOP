@@ -20,13 +20,13 @@ class CallableError(CallableCost):
         measure. Options: "equal"(default), "domain", or a custom numpy array.
     """
 
-    def __init__(self, callable: Callable, weighting: str | np.ndarray = None):
+    def __init__(self, callable_fun: Callable, weighting: str | np.ndarray = None):
         # should have two parameters: r and dy
-        if not callable or callable.__code__.co_argcount not in (1, 2):
+        if not callable_fun or callable_fun.__code__.co_argcount not in (1, 2):
             raise ValueError(
                 "Callable must accept one or two parameters: r and dy (optional)."
             )
-        self._callable = callable
+        self._callable = callable_fun
 
     def __call__(
         self,

@@ -86,12 +86,12 @@ def contour(
             param,
         ) in enumerate(parameters):
             if i > 1:
-                additional_values.append(param.value)
-                print(f"Fixed {param.name}:", param.value)
+                additional_values.append(param.current_value)
+                print(f"Fixed {param.name}:", param.current_value)
 
     # Set up parameter bounds
     if bounds is None:
-        bounds = parameters.bounds_as_numpy()
+        bounds = parameters.get_bounds_array()
 
     # Generate grid
     x = np.linspace(bounds[0, 0], bounds[0, 1], steps)

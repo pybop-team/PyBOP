@@ -34,7 +34,7 @@ class PybammEISProblem(Problem):
         self.check_and_store_params(p)
 
         # rebuild the pipeline (if needed)
-        self._pipeline.pybamm_pipeline.rebuild(self._params.as_dict())
+        self._pipeline.pybamm_pipeline.rebuild(self._params.to_dict())
 
         # Initialise the pipeline
         self._pipeline.initialise_eis_pipeline()
@@ -52,7 +52,9 @@ class PybammEISProblem(Problem):
         return np.dot(self._cost_weights, [cost(res) for cost in self._costs])
 
     def simulate(self, inputs: Inputs) -> np.ndarray:
-        self._pipeline.pybamm_pipeline.rebuild(inputs)
+        for key, value in inputs.items():
+            self._pipeline.pybamm_pipeline.parameter_values[key] = value
+        self._pipeline.pybamm_pipeline.build()
         self._pipeline.initialise_eis_pipeline()
         return self._pipeline.solve()
 

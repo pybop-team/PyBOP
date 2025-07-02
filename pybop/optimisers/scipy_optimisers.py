@@ -318,7 +318,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
             else lambda x, intermediate_result: base_callback(intermediate_result)
         )
 
-        x0 = self.problem.params.initial_value()
+        x0 = self.problem.params.get_initial_values(transformed=True)
         if self.needs_sensitivities():
             self._cost0 = self._evaluator.evaluate(x0)[0]
         else:
