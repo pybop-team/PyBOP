@@ -8,9 +8,9 @@ import pybop
 
 # Test configuration constants
 TIME_POINTS = 20
-TIME_MAX = 100
+TIME_MAX = 20
 FREQ_POINTS = 30
-TEST_PARAM_VALUES = np.asarray([1, 1])
+TEST_PARAM_VALUES = np.asarray([1, 2])
 RELATIVE_TOLERANCE = 5e-5
 ABSOLUTE_TOLERANCE = 5e-5
 
@@ -32,7 +32,7 @@ class TestDecay:
         return {
             "model": model,
             "parameter_values": model.default_parameter_values,
-            "solver": model.default_solver,
+            "solver": pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6),
         }
 
     @pytest.fixture
@@ -71,7 +71,9 @@ class TestDecay:
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(
-            model_config["model"], parameter_values=model_config["parameter_values"]
+            model_config["model"],
+            parameter_values=model_config["parameter_values"],
+            solver=model_config["solver"],
         )
 
         for parameter in parameters:
@@ -137,7 +139,7 @@ class TestDecay:
 
         # Test against analytic solution
         sol = problem.pipeline.solve()
-        analytical_sol = TEST_PARAM_VALUES[0] * np.exp(
-            -TEST_PARAM_VALUES[1] * dataset["Time [s]"]
+        analytical_sol = TEST_PARAM_VALUES[1] * np.exp(
+            -TEST_PARAM_VALUES[0] * dataset["Time [s]"]
         )
-        np.testing.assert_allclose(analytical_sol, sol["y_0"].data, atol=2e-4)
+        np.testing.assert_allclose(analytical_sol, sol["y_0"].data, atol=1e-5)
