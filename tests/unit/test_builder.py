@@ -453,16 +453,17 @@ class TestBuilder:
         built_model_2 = problem2.pipeline.built_model.new_copy()
 
         # Assert builds are different
-        assert (value1 - value2) / value1 < 1e-5  # Value2 is a worse fit
+        assert abs((value1 - value2) / value1) > 1e-5
         assert built_model_1 != built_model_2
 
-    def test_build_on_eval(self, model, parameter_values, dataset):
+    def test_build_on_eval(self, model_and_params, solver, dataset):
+        model, parameter_values = model_and_params
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(
-            model(),
+            model,
             parameter_values=parameter_values,
-            solver=IDAKLUSolver(),
+            solver=solver,
             initial_state=0.5,
             build_on_eval=False,
         )
@@ -489,9 +490,9 @@ class TestBuilder:
 
         # Second build w/ `build_on_eval`
         builder.set_simulation(
-            model(),
+            model,
             parameter_values=parameter_values,
-            solver=IDAKLUSolver(),
+            solver=solver,
             initial_state=0.5,
             build_on_eval=True,
         )
@@ -525,13 +526,14 @@ class TestBuilder:
             > 0
         )
 
-    def test_multi_fitting_builder(self, model, parameter_values, dataset):
+    def test_multi_fitting_builder(self, model_and_params, solver, dataset):
+        model, parameter_values = model_and_params
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(
-            model(),
+            model,
             parameter_values=parameter_values,
-            solver=IDAKLUSolver(),
+            solver=solver,
         )
         builder.add_parameter(
             pybop.Parameter(
@@ -570,7 +572,7 @@ class TestBuilder:
         value4 = multi_problem.run()
 
         assert (value1 + value2) == value3  # Ind. problems == multi-problem
-        assert (value3 - value4) / value3 > 1e-5
+        assert abs((value3 - value4) / value3) > 1e-5
 
         multi_problem.set_params(np.asarray([0.6, 0.6]))
         value3s, grad3s = multi_problem.run_with_sensitivities()
