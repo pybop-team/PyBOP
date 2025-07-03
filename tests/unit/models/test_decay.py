@@ -134,3 +134,10 @@ class TestDecay:
         np.testing.assert_allclose(
             value2_sens, value2, atol=ABSOLUTE_TOLERANCE, rtol=RELATIVE_TOLERANCE
         )
+
+        # Test against analytic solution
+        sol = problem.pipeline.solve()
+        analytical_sol = TEST_PARAM_VALUES[0] * np.exp(
+            -TEST_PARAM_VALUES[1] * dataset["Time [s]"]
+        )
+        np.testing.assert_allclose(analytical_sol, sol["y_0"].data, atol=2e-4)
