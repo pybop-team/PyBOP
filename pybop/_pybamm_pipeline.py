@@ -84,9 +84,7 @@ class PybammPipeline:
             else self._determine_rebuild()
         )
         self._solver = (
-            pybamm.IDAKLUSolver(
-                output_variables=cost_names, options={"num_threads": self._threads}
-            )
+            pybamm.IDAKLUSolver(options={"num_threads": self._threads})
             if solver is None
             else solver
         )

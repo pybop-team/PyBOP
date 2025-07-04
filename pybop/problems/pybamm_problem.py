@@ -45,7 +45,7 @@ class PybammProblem(Problem):
         # rebuild the pipeline (if needed)
         self._pipeline.rebuild(self._params.to_dict())
 
-    def _compute_cost(self, solution: list[Solution]) -> np.ndarray:
+    def _compute_cost(self, solution: list[Solution]) -> np.ndarray | np.number:
         """
         Compute the cost function value from a solution.
         """
@@ -66,7 +66,7 @@ class PybammProblem(Problem):
 
         return weighted_costs
 
-    def _add_prior_contribution(self, cost: float) -> float:
+    def _add_prior_contribution(self, cost: np.number | np.ndarray) -> np.number:
         """
         Add the prior contribution to the cost if using posterior.
         """
@@ -76,7 +76,7 @@ class PybammProblem(Problem):
         # Likelihoods and priors are negative by convention
         return cost - self._priors.logpdf(self._params.get_values())
 
-    def _compute_cost_with_prior(self, solution: list[Solution]) -> float:
+    def _compute_cost_with_prior(self, solution: list[Solution]) -> np.number:
         """
         Compute the cost function with optional prior contribution.
         """
