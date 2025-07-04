@@ -1,4 +1,5 @@
 import multiprocessing as mp
+import platform
 from copy import copy, deepcopy
 
 import numpy as np
@@ -83,8 +84,12 @@ class PybammPipeline:
             if initial_state is not None
             else self._determine_rebuild()
         )
+        solver_options = {}
+        if platform.system() != "Windows":
+            solver_options["num_threads"] = self._threads
+
         self._solver = (
-            pybamm.IDAKLUSolver(options={"num_threads": self._threads})
+            pybamm.IDAKLUSolver(output_variables=cost_names, options=solver_options)
             if solver is None
             else solver
         )
