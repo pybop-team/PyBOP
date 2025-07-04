@@ -222,7 +222,7 @@ class PybammPipeline:
         """
         sol = self._solver.solve(
             model=self._built_model,
-            inputs=self._pybop_parameters.as_pybamm_multiprocessing(),
+            inputs=self._pybop_parameters.to_pybamm_multiprocessing(),
             t_eval=[self._t_start, self._t_end],
             t_interp=self._t_interp,
             calculate_sensitivities=calculate_sensitivities,

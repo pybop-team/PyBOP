@@ -275,6 +275,12 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
                 # Evaluate points
                 fs = evaluator.evaluate(model_xs)
 
+                # For XNES/SNES where initial conditions
+                # are computed separate from
+                # later population candidates
+                if np.isscalar(fs):
+                    fs = [fs]
+
                 # Tell optimiser about function values
                 self._optimiser.tell(fs)
 

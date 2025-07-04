@@ -520,7 +520,7 @@ class Parameters:
             values_array = np.atleast_1d(values)
             param_list = list(self._parameters.values())
 
-            for param, value in zip(param_list, values_array, strict=False):
+            for param, value in zip(param_list, values_array.T, strict=False):
                 param.update_value(value)
 
     def _bulk_update_initial_values(self, values: ArrayLike | ParameterDict) -> None:
@@ -748,7 +748,7 @@ class Parameters:
                 )
             return dict(zip(self._parameters.keys(), values_array, strict=False))
 
-    def as_pybamm_multiprocessing(self) -> list:
+    def to_pybamm_multiprocessing(self) -> list:
         """
         Return parameter values as a list of dictionaries in the format
         required for pybamm multiprocessing.

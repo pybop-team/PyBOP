@@ -266,6 +266,8 @@ class BaseOptimiser:
         results = []
         for i in range(self._multistart):
             if i >= 1:
+                if self.problem.params.priors() is None:
+                    raise RuntimeError("Priors must be provided for multistart")
                 initial_values = self.problem.params.sample_from_priors(1)[0]
                 self.problem.params.update(initial_values=initial_values)
                 self._set_up_optimiser()

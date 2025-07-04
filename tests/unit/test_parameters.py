@@ -145,9 +145,11 @@ class TestParameters:
         assert values == val
         assert bounds == {"lower": [0.375], "upper": [0.7]}
 
-        val_vector = np.asarray([np.ones(10)])
+        # Test multi-value
+        val_vector = np.ones([10, 1])
         params.update(values=val_vector)
-        np.testing.assert_allclose(params.get_values(), val_vector)
+        param_vals = params.get_values()
+        np.testing.assert_allclose(param_vals, val_vector.T)
 
     def test_parameters_naming(self, parameter):
         params = pybop.Parameters([parameter])

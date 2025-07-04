@@ -76,7 +76,7 @@ class PybammProblem(Problem):
         # Likelihoods and priors are negative by convention
         return cost - self._priors.logpdf(self._params.get_values())
 
-    def _compute_cost_with_prior(self, solution: Solution) -> float:
+    def _compute_cost_with_prior(self, solution: list[Solution]) -> float:
         """
         Compute the cost function with optional prior contribution.
         """
@@ -122,7 +122,7 @@ class PybammProblem(Problem):
 
         aggregated_sens = np.asarray(
             [s[n].sensitivities["all"] for n in self._cost_names for s in sol]
-        )
+        ).squeeze(axis=1)
 
         weighted_sensitivity = np.sum(
             aggregated_sens * self._cost_weights[:, None], axis=0

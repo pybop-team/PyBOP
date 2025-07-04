@@ -25,11 +25,11 @@ class TestOptimisation:
 
     @pytest.fixture
     def dataset(self, model):
-        sim = pybamm.Simulation(model)
-        sol = sim.solve(t_eval=np.linspace(0, 10, 10))
+        sim = pybamm.Simulation(model, parameter_values=model.default_parameter_values)
+        sol = sim.solve(t_eval=np.linspace(0, 30, 10))
         return pybop.Dataset(
             {
-                "Time [s]": sol["Time [s]"].data,
+                "Time [s]": sol.t,
                 "Current function [A]": sol["Current [A]"].data,
                 "Voltage [V]": sol["Voltage [V]"].data,
             }
@@ -40,7 +40,7 @@ class TestOptimisation:
         return pybop.Parameter(
             "Positive electrode active material volume fraction",
             prior=pybop.Gaussian(0.5, 0.02),
-            bounds=[0.48, 0.52],
+            bounds=[0.45, 0.55],
         )
 
     @pytest.fixture
@@ -49,12 +49,12 @@ class TestOptimisation:
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Gaussian(0.6, 0.02),
-                bounds=[0.58, 0.62],
+                bounds=[0.55, 0.65],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
                 prior=pybop.Gaussian(0.5, 0.05),
-                bounds=[0.48, 0.52],
+                bounds=[0.45, 0.55],
             ),
         ]
 
@@ -74,7 +74,7 @@ class TestOptimisation:
     @pytest.fixture
     def problem(self, model, one_parameter, dataset):
         builder = pybop.builders.Pybamm()
-        builder.set_simulation(model)
+        builder.set_simulation(model, parameter_values=model.default_parameter_values)
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
         builder.add_cost(
@@ -85,7 +85,7 @@ class TestOptimisation:
     @pytest.fixture
     def two_param_problem(self, model, two_parameters, dataset):
         builder = pybop.Pybamm()
-        builder.set_simulation(model)
+        builder.set_simulation(model, parameter_values=model.default_parameter_values)
         builder.set_dataset(dataset)
         for p in two_parameters:
             builder.add_parameter(p)
@@ -97,7 +97,7 @@ class TestOptimisation:
     @pytest.fixture
     def two_param_problem_no_bounds(self, model, two_parameters_no_bounds, dataset):
         builder = pybop.Pybamm()
-        builder.set_simulation(model)
+        builder.set_simulation(model, parameter_values=model.default_parameter_values)
         builder.set_dataset(dataset)
         for p in two_parameters_no_bounds:
             builder.add_parameter(p)
@@ -348,11 +348,6 @@ class TestOptimisation:
         optim = pybop.GradientDescent(problem)
         assert optim._parallel is False
 
-        # Enable parallelism with number of workers
-        # optim.set_parallel(2)
-        # assert optim._parallel is True
-        # assert optim._n_workers == 2
-
     def test_cuckoo_no_bounds(self, two_param_problem_no_bounds):
         options = pybop.CuckooSearch.default_options()
         options.max_iterations = 1
@@ -363,13 +358,13 @@ class TestOptimisation:
         assert all(np.isinf(optim.problem.params.get_bounds()["upper"]))
 
     def test_randomsearch_bounds(self, two_param_problem, two_param_problem_no_bounds):
-        # Test clip_candidates with bound
+        # Test clip_candidates with bounds
         options = pybop.RandomSearch.default_options()
         options.max_iterations = 1
         optim = pybop.RandomSearch(problem=two_param_problem, options=options)
-        candidates = np.array([[0.57, 0.55], [0.63, 0.44]])
+        candidates = np.array([[0.54, 0.66], [0.66, 0.44]])
         clipped_candidates = optim.optimiser.clip_candidates(candidates)
-        expected_clipped = np.array([[0.58, 0.52], [0.62, 0.48]])
+        expected_clipped = np.array([[0.55, 0.55], [0.65, 0.45]])
         assert np.allclose(clipped_candidates, expected_clipped)
 
         # Test clip_candidates without bound
@@ -426,7 +421,7 @@ class TestOptimisation:
             match="jac must be a boolean value.",
         ):
             options.jac = "Invalid string"
-            optim = pybop.SciPyMinimize(problem=problem, options=options)
+            pybop.SciPyMinimize(problem=problem, options=options)
 
     def test_single_parameter(self, problem):
         # Test catch for optimisers that can only run with multiple parameters
@@ -461,6 +456,7 @@ class TestOptimisation:
         # Test max unchanged iterations
         options = pybop.GradientDescent.default_options()
         options.max_unchanged_iterations = 1
+        options.sigma = 1e-6
         options.min_iterations = 1
         optim = pybop.GradientDescent(problem=problem, options=options)
         results = optim.run()
@@ -499,9 +495,9 @@ class TestOptimisation:
             optim.set_max_evaluations(-1)
 
         # Reset optim
-        options = pybop.XNES.default_options()
+        options = pybop.NelderMead.default_options()
         options.verbose = True
-        optim = pybop.XNES(problem=problem, options=options)
+        optim = pybop.NelderMead(problem=problem, options=options)
 
         # Confirm setting threshold == None
         optim.set_threshold(None)
@@ -521,7 +517,7 @@ class TestOptimisation:
         # Construct OptimisationResult
         results = pybop.OptimisationResult(
             problem=problem,
-            x=np.array([1e-3]),
+            x=np.asarray([1e-3]),
             n_iterations=1,
             final_cost=0.1,
             n_evaluations=1,
