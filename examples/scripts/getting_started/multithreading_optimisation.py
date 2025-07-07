@@ -1,11 +1,9 @@
-import time
-
 import numpy as np
 import pybamm
 
 import pybop
 
-model = pybamm.lithium_ion.DFN()
+model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
 t_eval = np.linspace(0, 100, 240)
 sim = pybamm.Simulation(model=model, parameter_values=parameter_values)
@@ -30,7 +28,7 @@ builder.add_parameter(
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         initial_value=0.6,
-        prior=pybop.Gaussian(0.6, 0.01),
+        prior=pybop.Gaussian(0.6, 0.2),
         transformation=pybop.LogTransformation(),
         bounds=[0.5, 0.8],
     )
@@ -39,27 +37,19 @@ builder.add_parameter(
     pybop.Parameter(
         "Positive electrode active material volume fraction",
         initial_value=0.6,
-        prior=pybop.Gaussian(0.6, 0.01),
+        prior=pybop.Gaussian(0.6, 0.2),
         transformation=pybop.LogTransformation(),
         bounds=[0.5, 0.8],
     )
 )
-builder.add_cost(
-    pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", "Voltage [V]")
-)
-builder.add_cost(
-    pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", "Voltage [V]")
-)
+
+builder.add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]"))
 
 # Build the problem
 problem = builder.build()
 
-options = pybop.PintsOptions(max_iterations=50)
+options = pybop.PintsOptions(max_iterations=5)
 optim = pybop.CMAES(problem, options=options)
-optim.set_population_size(100)
+optim.set_population_size(20)
 results = optim.run()
 print(results)
-
-start_time = time.time()
-pybop.plot.contour(optim, steps=40)
-print("Time taken:", time.time() - start_time)

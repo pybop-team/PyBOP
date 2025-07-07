@@ -11,7 +11,7 @@ from pybop.plot.plotly_manager import PlotlyManager
 
 @dataclass
 class ContourConfig:
-    """Container for Contour Config"""
+    """Container for contour config"""
 
     gradient: bool = (False,)
     bounds: np.ndarray | None = (None,)
@@ -35,7 +35,7 @@ class PlotData:
 
 class ContourPlotter:
     """
-    A class to plot contour plots.
+    A class for contour plots.
     """
 
     def __init__(self, problem: Problem, optim: BaseOptimiser = None):
@@ -44,15 +44,13 @@ class ContourPlotter:
         self.params = self.problem.params
         self.parameter_names = list(self.params.keys())
         self._additional_params = []
-
-        # Cache expensive computations
         self._parameter_objects_cache = None
-
         self._validate_parameters()
 
     def _validate_parameters(
         self,
     ):
+        """Validate parameter dimensions"""
         if len(self.params) < 2:
             raise ValueError("This problem takes fewer than 2 parameters.")
 
@@ -66,6 +64,7 @@ class ContourPlotter:
             self._log_fixed_params()
 
     def _log_fixed_params(self):
+        """Log fixed parameters."""
         for i, param in enumerate(self.params):
             if i > 1:
                 print(f"Fixed {param.name}:", param.current_value)
@@ -74,7 +73,7 @@ class ContourPlotter:
     def _get_bounds(
         self, bounds_tuple: tuple[tuple[float, float], ...] | None
     ) -> np.ndarray:
-        """Get bounds array with caching to avoid repeated computation."""
+        """Get bounds array"""
         if bounds_tuple is not None:
             return np.array(bounds_tuple)
         return self.params.get_bounds_array()
@@ -84,13 +83,13 @@ class ContourPlotter:
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Create a grid of parameter values for evaluation.
 
-        Returns x_values, y_values, and coordinates for efficiency.
+        Returns x_values, y_values, and coordinates
         """
         x_values = np.linspace(bounds[0, 0], bounds[0, 1], steps)
         y_values = np.linspace(bounds[1, 0], bounds[1, 1], steps)
         vals = [self.params[param].current_value for param in self._additional_params]
 
-        # Use more efficient meshgrid indexing
+        # Create a mesh and append fixed parameters to generate coords.
         x_mesh, y_mesh = np.meshgrid(x_values, y_values, indexing="ij")
         vals = [np.ones(x_mesh.size) * val for val in vals]
         coordinates = np.stack([x_mesh.ravel(), y_mesh.ravel(), *vals], axis=1)
@@ -103,9 +102,10 @@ class ContourPlotter:
         """Evaluate the cost function over the parameter grid."""
         self.problem.set_params(coordinates)
 
+        # Todo: transform gradient with corresponding parameter transformations
         if compute_gradients:
-            costs, gradients = self.problem.run_with_sensitivities()
-            return costs, gradients
+            costs, grad = self.problem.run_with_sensitivities()
+            return costs, grad
         else:
             costs = self.problem.run()
             return costs, None
@@ -117,10 +117,10 @@ class ContourPlotter:
         if self.optim is None or not hasattr(self.optim, "log"):
             return x_values, y_values, costs
 
-        # Pre-allocate arrays for better performance
+        # Pre-allocate arrays
         param_log = np.asarray(self.optim.log.x_model)
 
-        # Use numpy operations for flattening instead of tile/repeat
+        # Create a meshgrid
         x_indices, y_indices = np.meshgrid(
             np.arange(steps), np.arange(steps), indexing="ij"
         )
@@ -162,15 +162,11 @@ class ContourPlotter:
 
         param_obj = self._get_parameter_objects()[parameter_index]
 
-        # Use vectorised transformation if available
-        if hasattr(param_obj.transformation, "to_search_vectorised"):
-            return param_obj.transformation.to_search_vectorised(values)
-
-        # Fallback to list comprehension, but optimise for common cases
+        # List comprehension for common dimension
         if len(values) == 1:
             return np.array([param_obj.transformation.to_search(values[0])])
 
-        # Use numpy vectorise for better performance than list comprehension
+        # Alternative vectorized implementation
         vectorised_transform = np.vectorize(param_obj.transformation.to_search)
         return vectorised_transform(values)
 
@@ -183,15 +179,13 @@ class ContourPlotter:
 
         bounds = self._get_bounds(bounds_tuple)
 
-        # Create parameter grid - now returns x_values, y_values, coordinates
+        # Create parameter grid
         x_values, y_values, coordinates = self._create_parameter_grid(
             bounds, config.steps
         )
 
-        # Evaluate cost function
+        # Evaluate cost function and reshape
         costs, gradients = self._evaluate_cost_function(coordinates, config.gradient)
-
-        # Reshape costs to match grid shape for better performance
         costs = costs.reshape(config.steps, config.steps)
 
         # Apply optimisation log interpolation if requested
@@ -217,7 +211,7 @@ class ContourPlotter:
                 bounds[1], 1, True
             )
 
-        # Process gradients if available
+        # Process gradients
         processed_gradients = None
         if gradients is not None:
             target_shape = (config.steps, config.steps)
@@ -432,7 +426,7 @@ class ContourPlotter:
         # Create base layout
         base_layout = self._create_base_layout(plot_data, config)
 
-        # Create main contour figure
+        # Create base contour figure
         fig = go.Figure(
             data=[
                 go.Contour(
@@ -449,10 +443,9 @@ class ContourPlotter:
         # Add optimisation traces if available
         self._add_optimisation_traces(fig, config)
 
-        # Apply custom layout options
+        # Apply custom layout options, show fig
         fig.update_layout(**layout_kwargs)
 
-        # Show figure if requested
         if config.show:
             fig.show()
 
@@ -498,13 +491,13 @@ def contour(
         A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
         the parameter bounds from the problem.
     apply_transform : bool, optional
-        Uses the transformed parameter values (as seen by the optimiser) for plotting.
+        Uses the transformed parameter values (as seen by the optimiser) for plotting. (Default: False)
     steps : int, optional
         The number of grid points to divide the parameter space into along each dimension (default: 10).
     show : bool, optional
         If True, the figure is shown upon creation (default: True).
     use_optim_log : bool, optional
-        If True, the optimisation log is used to shape the cost landscape (default: False).
+        If True, the optimisation log is used to overlay the optimiser convergence trace (default: False).
     **layout_kwargs : optional
         Valid Plotly layout keys and their values.
 
