@@ -239,7 +239,10 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
 
             def fun(x):
                 self.problem.set_params(x)
-                return self.problem.run_with_sensitivities()
+                cost, grad = self.problem.run_with_sensitivities()
+                # get jacobian
+                # apply jacobian
+                return cost, grad
 
         else:
 

@@ -121,7 +121,7 @@ class Problem:
         """
         raise NotImplementedError
 
-    def run(self) -> float:
+    def run(self) -> np.ndarray:
         """
         Evaluates the underlying simulation and cost function using the
         parameters set in the previous call to `set_params`.
