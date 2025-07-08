@@ -223,6 +223,19 @@ class PybammPipeline:
         solution : pybamm.Solution
             The pybamm solution object.
         """
+        # if self.requires_rebuild:
+        #     sol = []
+        #     for params in self._pybop_parameters.to_dict():
+        #         self.rebuild()
+        #         sol.append(self._solver.solve(
+        #             model=self._built_model,
+        #             inputs=params,
+        #             t_eval=[self._t_start, self._t_end],
+        #             t_interp=self._t_interp,
+        #             calculate_sensitivities=calculate_sensitivities,
+        #         ))
+        #     return sol
+
         sol = self._solver.solve(
             model=self._built_model,
             inputs=self._pybop_parameters.to_pybamm_multiprocessing(),
