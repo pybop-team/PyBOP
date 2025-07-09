@@ -633,6 +633,12 @@ class TestModels:
         variable_list = model.pybamm_model.default_quick_plot_variables
         assert isinstance(variable_list, list)
 
+        with pytest.raises(
+            ValueError,
+            match="SPDiffusion can currently only accept an initial stoichiometry.",
+        ):
+            model.set_initial_state({"Initial open-circuit voltage [V]": 3.7})
+
     def test_grouped_SPMe(self):
         parameter_set = pybop.ParameterSet.pybamm("Chen2020")
         parameter_set["Electrolyte diffusivity [m2.s-1]"] = 1.769e-10

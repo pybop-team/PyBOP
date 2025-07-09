@@ -333,7 +333,7 @@ class SPDiffusion(EChemBaseModel):
         """
         if list(initial_state.keys()) != ["Initial stoichiometry"]:
             raise ValueError(
-                "GroupedSPMe can currently only accept an initial stoichiometry."
+                "SPDiffusion can currently only accept an initial stoichiometry."
             )
 
         self._unprocessed_parameter_set.update(initial_state)
