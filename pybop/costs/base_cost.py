@@ -1,3 +1,4 @@
+import warnings
 from typing import Optional, Union
 
 import numpy as np
@@ -59,6 +60,29 @@ class BaseCost:
             self.grad_fail = None
             self.set_fail_gradient()
 
+    def _can_calculate_grad(self, requested: bool) -> bool:
+        """
+        Returns False if CasadiSolver is used, even if gradient was requested.
+        Falls back to the requested value if solver info is unavailable.
+        """
+
+        if (
+            self.problem is not None
+            and getattr(self.problem, "model", None) is not None
+            and getattr(self.problem.model, "solver", None) is not None
+        ):
+            solver = self.problem.model.solver
+            solver_class_name = type(solver).__name__
+
+            if solver_class_name == "CasadiSolver":
+                warnings.warn(
+                    "Casadi solver does not support sensitivity analysis. Gradient will not be calculated.",
+                    stacklevel=2,
+                )
+                return False
+
+        return requested
+
     def __call__(
         self,
         inputs: Union[Inputs, list, np.ndarray],
@@ -92,6 +116,7 @@ class BaseCost:
 
         results = []
         for inputs in inputs_list:
+            calculate_grad = self._can_calculate_grad(calculate_grad)
             result = self.single_call(inputs, calculate_grad=calculate_grad)
             results.append(result)
 
@@ -105,6 +130,8 @@ class BaseCost:
         """Evaluate the cost and (optionally) the gradient for a single set of inputs."""
         model_inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(model_inputs.values()))
+
+        calculate_grad = self._can_calculate_grad(calculate_grad)
 
         y = self.DeferredPrediction
         dy = self.DeferredPrediction if calculate_grad else None
