@@ -223,7 +223,7 @@ class Test_Arbitrary_Models:
 
         np.testing.assert_allclose(results.x, [-1, -2], atol=1e-2)
 
-    def test_system_odes_exp(self):
+    def test_system_odes_trig(self):
         model = SystemODEs()
 
         t = np.linspace(0, 3, 100)
