@@ -1,8 +1,8 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
-import pybamm
 
 
 class DiffusionModel(pybamm.BaseModel):
@@ -79,10 +79,11 @@ class DiffusionModel(pybamm.BaseModel):
     def default_parameter_values(self):
         return pybamm.ParameterValues({"a": 0.05})
 
+
 class SystemODEs(pybamm.BaseModel):
     """
     A simple system of ODEs for testing purposes.
-    """    
+    """
 
     def __init__(self, name="Diffusion Model"):
         super().__init__(name=name)
@@ -113,14 +114,17 @@ class SystemODEs(pybamm.BaseModel):
 
     @property
     def default_parameter_values(self):
-        return pybamm.ParameterValues({
-            "a": -1,
-            "b": 0,
-            "c": 0,
-            "d": -2,
-            "u0": 1,
-            "v0": 1,
-        })
+        return pybamm.ParameterValues(
+            {
+                "a": -1,
+                "b": 0,
+                "c": 0,
+                "d": -2,
+                "u0": 1,
+                "v0": 1,
+            }
+        )
+
 
 class Test_Arbitrary_Models:
     """
@@ -176,12 +180,9 @@ class Test_Arbitrary_Models:
         dataset = pybop.Dataset(
             {
                 "Time [s]": t,
-                "u": np.exp(- t) + np.random.normal(
-                    loc=0.0, scale=0.01, size=t.shape
-                ),
-                "v": np.exp(-2 * t) + np.random.normal(
-                    loc=0.0, scale=0.01, size=t.shape
-                ),
+                "u": np.exp(-t) + np.random.normal(loc=0.0, scale=0.01, size=t.shape),
+                "v": np.exp(-2 * t)
+                + np.random.normal(loc=0.0, scale=0.01, size=t.shape),
             }
         )
 
@@ -204,12 +205,8 @@ class Test_Arbitrary_Models:
             )
         )
 
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("u", "u")
-        )
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("v", "v")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("u", "u"))
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("v", "v"))
 
         # Build the problem
         problem = builder.build()
@@ -233,12 +230,10 @@ class Test_Arbitrary_Models:
         dataset = pybop.Dataset(
             {
                 "Time [s]": t,
-                "u": np.sin(2 * t) + np.random.normal(
-                    loc=0.0, scale=0.01, size=t.shape
-                ),
-                "v": np.cos(2 * t) + np.random.normal(
-                    loc=0.0, scale=0.01, size=t.shape
-                ),
+                "u": np.sin(2 * t)
+                + np.random.normal(loc=0.0, scale=0.01, size=t.shape),
+                "v": np.cos(2 * t)
+                + np.random.normal(loc=0.0, scale=0.01, size=t.shape),
             }
         )
 
@@ -246,14 +241,16 @@ class Test_Arbitrary_Models:
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         parameter_values = model.default_parameter_values
-        parameter_values.update({
-            "a": 0,
-            "b": 2,
-            "c": -2,
-            "d": 0,
-            "u0": 0,
-            "v0": 1,
-        })
+        parameter_values.update(
+            {
+                "a": 0,
+                "b": 2,
+                "c": -2,
+                "d": 0,
+                "u0": 0,
+                "v0": 1,
+            }
+        )
         builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter(
@@ -270,12 +267,8 @@ class Test_Arbitrary_Models:
             )
         )
 
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("u", "u")
-        )
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("v", "v")
-        )
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("u", "u"))
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError("v", "v"))
 
         # Build the problem
         problem = builder.build()
