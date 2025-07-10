@@ -6,6 +6,8 @@
 
 ## Optimisations
 
+- [#763](https://github.com/pybop-team/PyBOP/pull/763) - Updates the GITT pulse fitting method to allow iteration over many pulses.
+
 ## Bug Fixes
 
 - [#737](https://github.com/pybop-team/PyBOP/pull/737) - Sensitivities no longer available for CasadiSolver in Pybamm v25.6 onwards.
