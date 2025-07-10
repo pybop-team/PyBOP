@@ -320,6 +320,24 @@ class SPDiffusion(EChemBaseModel):
             parameter_set=parameter_set, electrode=electrode
         )
 
+    def _set_initial_state(self, initial_state: dict, inputs=None):
+        """
+        Set the initial state of charge for the grouped SPMe. Inputs are not used.
+
+        Parameters
+        ----------
+        initial_state : dict
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+        inputs : Inputs, optional
+            The input parameters to be used when building the model.
+        """
+        if list(initial_state.keys()) != ["Initial stoichiometry"]:
+            raise ValueError(
+                "SPDiffusion can currently only accept an initial stoichiometry."
+            )
+
+        self._unprocessed_parameter_set.update(initial_state)
+
 
 class GroupedSPMe(EChemBaseModel):
     """
