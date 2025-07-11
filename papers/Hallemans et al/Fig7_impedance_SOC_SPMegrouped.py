@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import pybop
-from pybop.models.lithium_ion.basic_SPMe import convert_physical_to_grouped_parameters
+from pybop.models.lithium_ion.basic_SPMe import BaseGroupedSPMe
 
 ## Group parameter set
 R0 = 0.01
@@ -13,7 +13,7 @@ parameter_set["Electrolyte conductivity [S.m-1]"] = 1e16
 parameter_set["Negative electrode conductivity [S.m-1]"] = 1e16
 parameter_set["Positive electrode conductivity [S.m-1]"] = 1e16
 
-grouped_parameters = convert_physical_to_grouped_parameters(parameter_set)
+grouped_parameters = BaseGroupedSPMe.apply_parameter_grouping(parameter_set)
 grouped_parameters["Series resistance [Ohm]"] = R0
 
 ## Create model
@@ -48,6 +48,3 @@ ax.grid()
 ax.set_aspect("equal", "box")
 plt.show()
 
-## Save data
-# mdic = {"Z": impedances, "f": frequencies, "SOC": SOCs}
-# savemat("Data/Z_SPMegrouped_SOC_chen2020.mat", mdic)

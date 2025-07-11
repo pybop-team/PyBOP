@@ -1,9 +1,11 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import savemat
 
 import pybop
-from pybop.models.lithium_ion.basic_SPMe import convert_physical_to_grouped_parameters
+from pybop.models.lithium_ion.basic_SPMe import BaseGroupedSPMe
 
 SOC = 0.2
 
@@ -22,7 +24,7 @@ parameter_set["Electrolyte conductivity [S.m-1]"] = 1e16
 parameter_set["Negative electrode conductivity [S.m-1]"] = 1e16
 parameter_set["Positive electrode conductivity [S.m-1]"] = 1e16
 
-grouped_parameters = convert_physical_to_grouped_parameters(parameter_set)
+grouped_parameters = BaseGroupedSPMe.apply_parameter_grouping(parameter_set)
 grouped_parameters["Series resistance [Ohm]"] = R0
 model_options = {"surface form": "differential", "contact resistance": "true"}
 var_pts = {"x_n": 100, "x_s": 20, "x_p": 100, "r_n": 100, "r_p": 100}
@@ -62,4 +64,6 @@ ax.set_aspect("equal", "box")
 plt.show()
 
 mdic = {"Z": impedances, "f": frequencies, "name": parameter_name}
-savemat("Data/Z_SPMegrouped_taudn_20.mat", mdic)
+current_dir = Path(__file__).parent
+save_path = current_dir / "Data" / "Z_SPMegrouped_taudn_20.mat"
+savemat(save_path, mdic)

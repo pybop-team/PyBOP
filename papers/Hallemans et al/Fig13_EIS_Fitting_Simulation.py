@@ -1,10 +1,12 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from scipy.io import savemat
 
 import pybop
-from pybop.models.lithium_ion.basic_SPMe import convert_physical_to_grouped_parameters
+from pybop.models.lithium_ion.basic_SPMe import BaseGroupedSPMe
 
 # To duplicate paper results, modify the below:
 n_runs = 1  # 10
@@ -19,7 +21,7 @@ parameter_set["Electrolyte conductivity [S.m-1]"] = 1e16
 parameter_set["Negative electrode conductivity [S.m-1]"] = 1e16
 parameter_set["Positive electrode conductivity [S.m-1]"] = 1e16
 
-grouped_parameters = convert_physical_to_grouped_parameters(parameter_set)
+grouped_parameters = BaseGroupedSPMe.apply_parameter_grouping(parameter_set)
 grouped_parameters["Series resistance [Ohm]"] = R0
 model_options = {"surface form": "differential", "contact resistance": "true"}
 var_pts = {"x_n": 100, "x_s": 20, "x_p": 100, "r_n": 100, "r_p": 100}
@@ -202,7 +204,9 @@ parameters = pybop.Parameters(
 
 
 ## Read simulated impedance data
-EIS_data = scipy.io.loadmat("Data/Z_SPMegrouped_SOC_chen2020.mat")
+current_dir = Path(__file__).parent
+EIS_data_path = current_dir / "Data" / "Z_SPMegrouped_SOC_chen2020.mat"
+EIS_data = scipy.io.loadmat(EIS_data_path)
 
 impedances = EIS_data.get("Z")
 frequencies = EIS_data.get("f")
@@ -300,4 +304,5 @@ mdic = {
     "thetahatbest": results.best_x,
     "computationTime": results.time,
 }
-savemat("Data/Zhat_SOC_SPMe_Simulation.mat", mdic)
+save_path = current_dir / "Data" / "Zhat_SOC_SPMe_Simulation.mat"
+savemat(save_path, mdic)

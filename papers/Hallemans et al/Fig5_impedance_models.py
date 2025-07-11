@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.io import savemat
@@ -59,4 +61,6 @@ plt.show()
 
 ## Save
 mdic = {"Z": impedances, "f": frequencies}
-savemat("Data/Z_SPM_SPMe_DFN_Pybop_chen2020.mat", mdic)
+current_dir = Path(__file__).parent
+save_path = current_dir / "Data" / "Z_SPM_SPMe_DFN_Pybop_chen2020.mat"
+savemat(save_path, mdic)

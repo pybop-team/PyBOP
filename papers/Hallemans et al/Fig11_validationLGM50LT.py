@@ -1,9 +1,12 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import pybamm
 import scipy
+from scipy.io import savemat
 
 import pybop
-from pybop.models.lithium_ion.basic_SPMe import convert_physical_to_grouped_parameters
+from pybop.models.lithium_ion.basic_SPMe import BaseGroupedSPMe
 
 ## Grouped parameter set
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
@@ -12,10 +15,12 @@ parameter_set["Electrolyte conductivity [S.m-1]"] = 1e16
 parameter_set["Negative electrode conductivity [S.m-1]"] = 1e16
 parameter_set["Positive electrode conductivity [S.m-1]"] = 1e16
 
-grouped_parameters = convert_physical_to_grouped_parameters(parameter_set)
+grouped_parameters = BaseGroupedSPMe.apply_parameter_grouping(parameter_set)
 
 ## Information battery About:Energy
-OCP_data = scipy.io.loadmat("Data/LGM50LT/OCP_LGM50LT.mat")
+current_dir = Path(__file__).parent
+OCP_data_path = current_dir / "Data" / "LGM50LT" / "OCP_LGM50LT.mat"
+OCP_data = scipy.io.loadmat(OCP_data_path)
 x_pos_d = OCP_data.get("x_pos")
 x_pos_d = x_pos_d.flatten()
 x_neg_d = OCP_data.get("x_neg")
@@ -69,7 +74,8 @@ grouped_parameters.update(
 )
 
 ## Our parametrisation of the remaining parameters
-params = scipy.io.loadmat("Data/LGM50LT/Zhat3mV_SOC_SPMe_LGM50LT.mat")
+params_path = current_dir / "Data" / "LGM50LT" / "Zhat3mV_SOC_SPMe_LGM50LT.mat"
+params = scipy.io.loadmat(params_path)
 thetahat = params.get("thetahat")
 thetahat = thetahat.flatten()
 
@@ -146,7 +152,8 @@ model = pybop.lithium_ion.GroupedSPMe(
 )
 
 ## Load drive cycle
-drivecycle = scipy.io.loadmat("Data/LGM50LT/DrivecycleMeasurement_80to20.mat")
+drivecycle_path = current_dir / "Data" / "LGM50LT" / "DrivecycleMeasurement_80to20.mat"
+drivecycle = scipy.io.loadmat(drivecycle_path)
 time = drivecycle.get("t")
 current = drivecycle.get("i")
 time = time.flatten()
@@ -191,4 +198,5 @@ i = dataset["Current function [A]"].data
 v = dataset["Voltage [V]"].data
 
 mdic = {"t": t, "i": i, "v": v, "SOC0": SOC0}
-# savemat("Data/Validation_SPMegrouped80to20.mat", mdic)
+save_path = current_dir / "Data" / "Validation_SPMegrouped80to20.mat"
+savemat(save_path, mdic)
