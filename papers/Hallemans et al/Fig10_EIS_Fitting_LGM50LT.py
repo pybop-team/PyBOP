@@ -8,7 +8,6 @@ import scipy
 from scipy.io import savemat
 
 import pybop
-from pybop.models.lithium_ion.basic_SPMe import BaseGroupedSPMe
 
 ## Parameter set
 
@@ -18,7 +17,9 @@ parameter_set["Electrolyte conductivity [S.m-1]"] = 1e16  # 0.9487
 parameter_set["Negative electrode conductivity [S.m-1]"] = 1e16
 parameter_set["Positive electrode conductivity [S.m-1]"] = 1e16
 
-grouped_parameters = pybop.lithium_ion.GroupedSPMe.apply_parameter_grouping(parameter_set)
+grouped_parameters = pybop.lithium_ion.GroupedSPMe.apply_parameter_grouping(
+    parameter_set
+)
 
 ## Information battery About:Energy
 OCP_data = scipy.io.loadmat("Data/LGM50LT/OCP_LGM50LT.mat")
