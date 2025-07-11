@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from pybamm import IDAKLUSolver
 
 import pybop
 
@@ -94,7 +93,6 @@ class Test_Jax_Parameterisation:
         )
 
         # Define the problem
-        model.solver = IDAKLUSolver()
         problem = pybop.FittingProblem(model, parameters, dataset)
 
         # Construct the cost

@@ -1,5 +1,4 @@
 import numpy as np
-import pybamm
 import pytest
 
 import pybop
@@ -31,8 +30,7 @@ class Test_SPM_Parameterisation:
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        solver = pybamm.IDAKLUSolver()
-        return pybop.lithium_ion.SPM(parameter_set=parameter_set, solver=solver)
+        return pybop.lithium_ion.SPM(parameter_set=parameter_set)
 
     @pytest.fixture
     def parameters(self):

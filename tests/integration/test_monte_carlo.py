@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-from pybamm import IDAKLUSolver
 
 import pybop
 from pybop import (
@@ -78,7 +77,6 @@ class Test_Sampling_SPM:
         )
 
         # Define the posterior to optimise
-        model.solver = IDAKLUSolver()
         problem = pybop.FittingProblem(model, parameters, dataset)
         likelihood = pybop.GaussianLogLikelihood(problem, sigma0=0.002 * 1.2)
         return pybop.LogPosterior(likelihood)

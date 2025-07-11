@@ -1,7 +1,6 @@
 import os
 
 import numpy as np
-import pybamm
 
 import pybop
 
@@ -17,7 +16,7 @@ dataset_path = os.path.join(current_dir, "../../data/synthetic/spme_pulse_15.csv
 # Define model and use high-performant solver for sensitivities
 parameter_set = pybop.ParameterSet("Chen2020")
 model = pybop.lithium_ion.SPMe(
-    parameter_set=parameter_set, solver=pybamm.IDAKLUSolver(atol=1e-7, rtol=1e-7)
+    parameter_set=parameter_set,
 )
 
 # Fitting parameters

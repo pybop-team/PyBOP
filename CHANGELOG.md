@@ -2,11 +2,14 @@
 
 ## Features
 
+- [#644](https://github.com/pybop-team/PyBOP/pull/644) - Adds example applications for common battery experiments.
+
 ## Optimisations
 
 ## Bug Fixes
 
 - [#705](https://github.com/pybop-team/PyBOP/pull/705) - Bug fix `fitting_problem.evaulate()` failure return type alongside fixes for Pybamm `v25.4`.
+- [#546](https://github.com/pybop-team/PyBOP/pull/546) - Default Pybamm solver to `IDAKLU`, changes required for Pybamm v25.4.1
 
 ## Breaking Changes
 

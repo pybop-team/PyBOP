@@ -1,7 +1,6 @@
 import os
 
 import numpy as np
-import pybamm
 
 import pybop
 
@@ -19,8 +18,7 @@ parameter_set.update(
         "Positive electrode active material volume fraction": 0.51,
     }
 )
-solver = pybamm.IDAKLUSolver()
-model = pybop.lithium_ion.SPMe(parameter_set=parameter_set, solver=solver)
+model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
 # Fitting parameters
 parameters = pybop.Parameters(
