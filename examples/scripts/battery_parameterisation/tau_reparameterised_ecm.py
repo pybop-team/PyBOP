@@ -1,124 +1,150 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import pybop
 import pybamm
 
-import pybop
-
-"""
-An alternative approach to the problem described in
-examples/scripts/ecm_tau_constraints.py in which constraints are placed
-on tau1 = R1 * C1. Here, tau1 is introduced as a parameter of the model
-and C1 is replaced by 1/R1 so that the bounds can be applied directly.
-"""
-
-# Define the initial parameter set
-parameter_set = pybop.ParameterSet("ECM_Example")
-parameter_set.update(
+# Generate a synthetic dataset to fit to. When working with an
+# experiment we wouldn't need to generate synthetic data, but here it
+# gives us a known ground-truth to work to.
+model = pybamm.equivalent_circuit.Thevenin()
+parameters = pybamm.ParameterValues(
     {
         "Initial SoC": 0.75,
+        "Entropic change [V/K]": 0,
+        "Cell thermal mass [J/K]": np.inf,
+        "Cell-jig heat transfer coefficient [W/K]": 0,
+        "Jig thermal mass [J/K]": np.inf,
+        "Jig-air heat transfer coefficient [W/K]": 0,
+        "Ambient temperature [K]": 25,
+        "Initial temperature [K]": 25,
         "Cell capacity [A.h]": 5,
         "Nominal cell capacity [A.h]": 5,
         "Current function [A]": 5,
         "Upper voltage cut-off [V]": 4.2,
         "Lower voltage cut-off [V]": 3.0,
-        "Open-circuit voltage [V]": pybop.empirical.Thevenin().default_parameter_values[
+        "Open-circuit voltage [V]": pybamm.equivalent_circuit.Thevenin().default_parameter_values[
             "Open-circuit voltage [V]"
         ],
         "R0 [Ohm]": 0.001,
-        "R1 [Ohm]": 0.0002,
+        "R1 [Ohm]": 0.002,
         "C1 [F]": 10000,
         "Element-1 initial overpotential [V]": 0,
     }
 )
-# Add definitions for R's, C's, and initial overpotentials for any additional RC elements
-parameter_set.update(
-    {
-        "R2 [Ohm]": 0.0003,
-        "C2 [F]": 5000,
-        "Element-2 initial overpotential [V]": 0,
-    },
-    check_already_exists=False,
+experiment = pybamm.Experiment(
+    [
+        "Rest for 1 minute",
+        "Discharge at 1C for 2 minutes",
+        "Charge at 1C for 1 minutes",
+        "Rest for 1 minute",
+    ]
 )
-
-# Define the model
-parameter_set.update(
-    {
-        "tau1 [s]": parameter_set["R1 [Ohm]"] * parameter_set["C1 [F]"],
-        "tau2 [s]": parameter_set["R2 [Ohm]"] * parameter_set["C2 [F]"],
-    },
-    check_already_exists=False,
-)
-parameter_set.update(
-    {
-        "C1 [F]": pybamm.Parameter("tau1 [s]") / pybamm.Parameter("R1 [Ohm]"),
-        "C2 [F]": pybamm.Parameter("tau2 [s]") / pybamm.Parameter("R2 [Ohm]"),
-    }
-)
-model = pybop.empirical.Thevenin(
-    parameter_set=parameter_set,
-    options={"number of rc elements": 2},
-)
-
-# Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "R0 [Ohm]",
-        prior=pybop.Gaussian(0.0002, 0.0001),
-        bounds=[1e-4, 1e-2],
-    ),
-    pybop.Parameter(
-        "R1 [Ohm]",
-        prior=pybop.Gaussian(0.0001, 0.0001),
-        bounds=[1e-5, 1e-2],
-    ),
-    pybop.Parameter(
-        "tau1 [s]",
-        prior=pybop.Gaussian(1.0, 0.025),
-        bounds=[0, 3.0],
-    ),
-)
-
+sim = pybamm.Simulation(model=model, parameter_values=parameters, experiment=experiment)
+sol = sim.solve()
 sigma = 0.001
-t_eval = np.arange(0, 600, 3)
-values = model.predict(t_eval=t_eval)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
-
-# Form dataset
-dataset = pybop.Dataset(
+corrupt_values = sol["Voltage [V]"].data + np.random.normal(0, sigma, len(sol.t))
+fitting_data = pybop.Dataset(
     {
-        "Time [s]": t_eval,
-        "Current function [A]": values["Current [A]"].data,
+        "Time [s]": sol.t,
+        "Current function [A]": sol["Current [A]"].data,
         "Voltage [V]": corrupt_values,
     }
 )
 
-# Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.RootMeanSquaredError(problem)
-optim = pybop.XNES(
-    cost,
-    sigma0=[1e-4, 1e-4, 0.02],  # Set parameter specific step size
-    allow_infeasible_solutions=False,
-    max_unchanged_iterations=30,
-    max_iterations=125,
+
+# Now, let's pretend we never did any of the previous, and we're
+# trying to fit a 1-RC model to some data (fitting_data) taken from an
+# experiment. First, we define the model to fit, then tell PyBOP about
+# the necessary parameters, cost func, etc., then optimise!
+
+# Set up the model
+model = pybamm.equivalent_circuit.Thevenin()
+
+# This contains both known and unknown parameters. Here, we're trying
+# to fit R0, R1, C1, We don't know what the right values are for them
+# yet, but we need to define them anyway. Let's start with a guess
+# that's close to, but different from, the true values our data were
+# generated with. Note how R0, R1, C1 differ from previously.
+parameters = pybamm.ParameterValues(
+    {
+        "Initial SoC": 0.75,
+        "Entropic change [V/K]": 0,
+        "Cell thermal mass [J/K]": np.inf,
+        "Cell-jig heat transfer coefficient [W/K]": 0,
+        "Jig thermal mass [J/K]": np.inf,
+        "Jig-air heat transfer coefficient [W/K]": 0,
+        "Ambient temperature [K]": 25,
+        "Initial temperature [K]": 25,
+        "Cell capacity [A.h]": 5,
+        "Nominal cell capacity [A.h]": 5,
+        "Current function [A]": 5,
+        "Upper voltage cut-off [V]": 4.2,
+        "Lower voltage cut-off [V]": 3.0,
+        "Open-circuit voltage [V]": pybamm.equivalent_circuit.Thevenin().default_parameter_values[
+            "Open-circuit voltage [V]"
+        ],
+        "R0 [Ohm]": 0.0008,
+        "R1 [Ohm]": 0.001,
+        "C1 [F]": 10150,
+        "Element-1 initial overpotential [V]": 0,
+    }
 )
 
-results = optim.run()
-print(
-    "True parameters:",
-    [
-        parameter_set["R0 [Ohm]"],
-        parameter_set["R1 [Ohm]"],
-        parameter_set["tau1 [s]"],
-        parameter_set.parameter_values.evaluate(pybamm.Parameter("C1 [F]")),
-    ],
+# PyBaMM wants to see capacitances, but it's better to fit
+# time-constants, so let's introduce some parameters to enable that
+parameters.update(
+    {
+        "tau1 [s]": parameters["R1 [Ohm]"] * parameters["C1 [F]"],
+    },
+    check_already_exists=False,
 )
-print("Estimated parameters:", results.x.tolist() + [results.x[2] / results.x[1]])
+parameters.update(
+    {
+        "C1 [F]": pybamm.Parameter("tau1 [s]") / pybamm.Parameter("R1 [Ohm]"),
+    }
+)
 
-# Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
+# Now we build a problem, and run the optimiser on it
+builder = pybop.builders.Pybamm()
+builder.set_dataset(fitting_data)
+builder.set_simulation(model, parameter_values=parameters)
+builder.add_parameter(
+    pybop.Parameter(
+        "R0 [Ohm]",
+        initial_value=0.0008,
+    )
+)
+builder.add_parameter(
+    pybop.Parameter(
+        "R1 [Ohm]",
+        initial_value=0.001,
+    )
+)
+builder.add_parameter(
+    pybop.Parameter(
+        "tau1 [s]",
+        initial_value=10.15,
+    )
+)
+builder.add_cost(
+    pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]"),
+)
+problem = builder.build()
 
-# Plot convergence
-pybop.plot.convergence(optim)
+optimiser = pybop.SciPyMinimize(
+    problem, pybop.ScipyMinimizeOptions(method="Nelder-Mead")
+)
+fit = optimiser.run()
+print(fit)
 
-# Plot the parameter traces
-pybop.plot.parameters(optim)
+
+# Plot fitted result!
+problem.set_params(fit.x)
+fitsol = problem.pipeline.solve()
+_, ax = plt.subplots()
+ax.plot(sol.t, sol["Voltage [V]"].data, label="Target")
+ax.plot(fitsol.t, fitsol["Voltage [V]"].data, label="Fit")
+ax.legend()
+ax.set_xlabel("Time [s]")
+ax.set_ylabel("Voltage [V]")
+plt.show()
