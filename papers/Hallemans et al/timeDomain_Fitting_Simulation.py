@@ -5,7 +5,6 @@ import scipy
 from scipy.io import savemat
 
 import pybop
-from pybop.models.lithium_ion.basic_SPMe import BaseGroupedSPMe
 
 # To duplicate paper results, modify the below:
 n_runs = 1  # 10
