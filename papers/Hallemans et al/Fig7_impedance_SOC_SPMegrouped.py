@@ -47,4 +47,3 @@ ax.set(xlabel=r"$Z_r(\omega)$ [$\Omega$]", ylabel=r"$-Z_j(\omega)$ [$\Omega$]")
 ax.grid()
 ax.set_aspect("equal", "box")
 plt.show()
-
