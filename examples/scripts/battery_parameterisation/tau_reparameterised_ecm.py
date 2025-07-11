@@ -1,7 +1,8 @@
-import numpy as np
 import matplotlib.pyplot as plt
-import pybop
+import numpy as np
 import pybamm
+
+import pybop
 
 # Generate a synthetic dataset to fit to. When working with an
 # experiment we wouldn't need to generate synthetic data, but here it
