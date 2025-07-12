@@ -102,14 +102,13 @@ class Test_SPM_Parameterisation:
             experiment=experiment,
         )
         solution = sim.solve()
-        dataset = pybop.Dataset(
+        return pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current function [A]": solution["Current [A]"].data,
                 "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
             }
         )
-        return dataset
 
     @pytest.fixture
     def problem(self, model, parameters, cost_cls, parameter_values, dataset):
@@ -126,8 +125,7 @@ class Test_SPM_Parameterisation:
         else:
             cost = cost_cls(signal, signal)
         builder.add_cost(cost)
-        problem = builder.build()
-        return problem
+        return builder.build()
 
     def test_problem(self, problem):
         problem.set_params(self.ground_truth)
@@ -150,8 +148,7 @@ class Test_SPM_Parameterisation:
             options.max_unchanged_iterations = 100
 
         # Set sigma0 and create optimiser
-        optim = optimiser(problem, options)
-        return optim
+        return optimiser(problem, options)
 
     def test_optimisers(self, optim, cost_cls):
         x0 = optim.problem.params.get_initial_values()

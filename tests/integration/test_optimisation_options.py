@@ -118,5 +118,4 @@ class TestOptimisation:
                 ),
             ]
         )
-        sim = model.predict(initial_state=initial_state, experiment=experiment)
-        return sim
+        return model.predict(initial_state=initial_state, experiment=experiment)

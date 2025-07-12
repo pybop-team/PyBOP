@@ -123,7 +123,7 @@ class TestEISParameterisation:
             }
         )
 
-        dataset = pybop.Dataset(
+        return pybop.Dataset(
             {
                 "Frequency [Hz]": f_eval,
                 "Current function [A]": np.ones(n_frequency) * 0.0,
@@ -131,7 +131,6 @@ class TestEISParameterisation:
                 "Impedance No Noise": sol,
             }
         )
-        return dataset
 
     @pytest.fixture
     def problem(self, model, parameters, cost, init_soc, parameter_values, dataset):
@@ -141,8 +140,7 @@ class TestEISParameterisation:
         for p in parameters:
             builder.add_parameter(p)
         builder.add_cost(cost())
-        problem = builder.build()
-        return problem
+        return builder.build()
 
     @pytest.fixture
     def optim(self, optimiser, problem):
@@ -156,8 +154,7 @@ class TestEISParameterisation:
             options.absolute_tolerance = 1e-6
 
         # Create optimiser
-        optim = optimiser(problem, options=options)
-        return optim
+        return optimiser(problem, options=options)
 
     def test_eis_optimisers(self, optim, dataset):
         optim.problem.set_params(self.ground_truth)

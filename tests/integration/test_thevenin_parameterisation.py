@@ -126,5 +126,4 @@ class TestTheveninParameterisation:
                 ),
             ]
         )
-        sol = model.predict(experiment=experiment)
-        return sol
+        return model.predict(experiment=experiment)
