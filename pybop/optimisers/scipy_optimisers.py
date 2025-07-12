@@ -6,11 +6,11 @@ import numpy as np
 from scipy.optimize import Bounds, OptimizeResult, differential_evolution, minimize
 
 import pybop
-from pybop import BaseOptimiser, OptimisationResult, SciPyEvaluator
+from pybop import BaseOptimiser, OptimisationResult, ScipyEvaluator
 from pybop.problems.base_problem import Problem
 
 
-class BaseSciPyOptimiser(BaseOptimiser):
+class BaseScipyOptimiser(BaseOptimiser):
     """
     A base class for defining optimisation methods from the SciPy library.
 
@@ -66,7 +66,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
             return bounds
         else:
             raise TypeError(
-                "Bounds provided must be either type dict or SciPy.optimize.bounds object."
+                "Bounds provided must be either type dict or scipy.optimize.bounds object."
             )
 
     def needs_sensitivities(self) -> bool:
@@ -80,7 +80,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
         """
         return self._needs_sensitivities
 
-    def evaluator(self) -> SciPyEvaluator:
+    def evaluator(self) -> ScipyEvaluator:
         """
         Internal method to run the optimisation using a PyBOP optimiser.
 
@@ -104,7 +104,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
                 return self.problem.run()
 
         # Create evaluator object
-        return SciPyEvaluator(fun)
+        return ScipyEvaluator(fun)
 
 
 @dataclass
@@ -190,7 +190,7 @@ class ScipyMinimizeOptions(pybop.OptimiserOptions):
         return ret
 
 
-class SciPyMinimize(BaseSciPyOptimiser):
+class ScipyMinimize(BaseScipyOptimiser):
     """
     Adapts SciPy's minimize function for use as an optimisation strategy.
 
@@ -354,13 +354,9 @@ class SciPyMinimize(BaseSciPyOptimiser):
             message=result.message,
         )
 
-    def name(self):
-        """Provides the name of the optimisation strategy."""
-        return "SciPyMinimize"
-
 
 @dataclass
-class SciPyDifferentialEvolutionOptions(pybop.OptimiserOptions):
+class ScipyDifferentialEvolutionOptions(pybop.OptimiserOptions):
     """
     Options for the SciPy differential evolution method.
 
@@ -465,7 +461,7 @@ class SciPyDifferentialEvolutionOptions(pybop.OptimiserOptions):
         return ret
 
 
-class SciPyDifferentialEvolution(BaseSciPyOptimiser):
+class ScipyDifferentialEvolution(BaseScipyOptimiser):
     """
     Adapts SciPy's differential_evolution function for global optimisation.
 
@@ -478,7 +474,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         The problem to be optimised.
     multistart : int, optional
         Number of independent runs of the optimisation algorithm. Default is 1.
-    options: SciPyDifferentialEvolutionOptions, optional
+    options: ScipyDifferentialEvolutionOptions, optional
         Options for the SciPy differential evolution method. Default is None.
 
     See Also
@@ -498,25 +494,25 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
     def __init__(
         self,
         problem: Problem,
-        options: SciPyDifferentialEvolutionOptions | None = None,
+        options: ScipyDifferentialEvolutionOptions | None = None,
     ):
-        options = options or SciPyDifferentialEvolutionOptions()
+        options = options or ScipyDifferentialEvolutionOptions()
         self._options_dict = options.to_dict()
         super().__init__(problem=problem, options=options, needs_sensitivities=False)
         self._evaluator = self.evaluator()
         self._iterations = 0
 
     @staticmethod
-    def default_options() -> SciPyDifferentialEvolutionOptions:
+    def default_options() -> ScipyDifferentialEvolutionOptions:
         """
         Returns the default options for the optimiser.
 
         Returns
         -------
-        SciPyDifferentialEvolutionOptions
+        ScipyDifferentialEvolutionOptions
             The default options for the optimiser.
         """
-        return SciPyDifferentialEvolutionOptions()
+        return ScipyDifferentialEvolutionOptions()
 
     def _set_up_optimiser(self):
         """
@@ -594,7 +590,3 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             time=total_time,
             message=result.message,
         )
-
-    def name(self):
-        """Provides the name of the optimisation strategy."""
-        return "SciPyDifferentialEvolution"

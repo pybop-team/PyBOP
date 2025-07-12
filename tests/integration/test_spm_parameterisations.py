@@ -72,7 +72,7 @@ class Test_SPM_Parameterisation:
 
     @pytest.fixture(
         params=[
-            pybop.SciPyDifferentialEvolution,
+            pybop.ScipyDifferentialEvolution,
             pybop.SimulatedAnnealing,
             pybop.CuckooSearch,
             pybop.NelderMead,
@@ -141,7 +141,7 @@ class Test_SPM_Parameterisation:
     def optim(self, optimiser, problem):
         options = optimiser.default_options()
         options.max_iterations = 100
-        if isinstance(options, pybop.SciPyDifferentialEvolutionOptions):
+        if isinstance(options, pybop.ScipyDifferentialEvolutionOptions):
             options.atol = 1e-6
         elif isinstance(options, pybop.PintsOptions):
             options.absolute_tolerance = 1e-6

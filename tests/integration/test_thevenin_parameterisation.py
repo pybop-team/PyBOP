@@ -70,10 +70,10 @@ class TestTheveninParameterisation:
     @pytest.mark.parametrize(
         "optimiser, method",
         [
-            (pybop.SciPyMinimize, "SLSQP"),
-            (pybop.SciPyMinimize, "trust-constr"),
-            (pybop.SciPyMinimize, "L-BFGS-B"),
-            (pybop.SciPyMinimize, "COBYLA"),
+            (pybop.ScipyMinimize, "SLSQP"),
+            (pybop.ScipyMinimize, "trust-constr"),
+            (pybop.ScipyMinimize, "L-BFGS-B"),
+            (pybop.ScipyMinimize, "COBYLA"),
             (pybop.GradientDescent, ""),
             (pybop.PSO, ""),
         ],
@@ -113,7 +113,7 @@ class TestTheveninParameterisation:
             raise ValueError("Initial value is the same as the ground truth value.")
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
-        if isinstance(optimiser, pybop.SciPyMinimize):
+        if isinstance(optimiser, pybop.ScipyMinimize):
             assert results.scipy_result.success is True
 
     def get_data(self, model):

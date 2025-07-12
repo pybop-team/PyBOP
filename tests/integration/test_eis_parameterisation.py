@@ -84,7 +84,7 @@ class TestEISParameterisation:
 
     @pytest.fixture(
         params=[
-            pybop.SciPyDifferentialEvolution,
+            pybop.ScipyDifferentialEvolution,
             pybop.CMAES,
             pybop.CuckooSearch,
             pybop.XNES,
@@ -145,7 +145,7 @@ class TestEISParameterisation:
     @pytest.fixture
     def optim(self, optimiser, problem):
         options = optimiser.default_options()
-        if isinstance(options, pybop.SciPyDifferentialEvolutionOptions):
+        if isinstance(options, pybop.ScipyDifferentialEvolutionOptions):
             options.max_iterations = 100
             options.atol = 1e-6
         elif isinstance(options, pybop.PintsOptions):

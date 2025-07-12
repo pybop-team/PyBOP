@@ -201,6 +201,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         # Check if sensitivities are required
         self._needs_sensitivities = self._optimiser.needs_sensitivities()
 
+    @property
     def name(self):
         """Returns the name of the PINTS optimisation strategy."""
         return self._optimiser.name()

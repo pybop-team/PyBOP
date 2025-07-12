@@ -115,7 +115,7 @@ from .builders.multi_fitting import MultiFitting
 #
 # Evaluation
 #
-from ._evaluation import SciPyEvaluator
+from ._evaluation import ScipyEvaluator
 
 #
 # Optimiser classes
@@ -135,11 +135,11 @@ from .optimisers.base_optimiser import (
 )
 from .optimisers.base_pints_optimiser import BasePintsOptimiser, PintsOptions
 from .optimisers.scipy_optimisers import (
-    BaseSciPyOptimiser,
-    SciPyMinimize,
+    BaseScipyOptimiser,
+    ScipyMinimize,
     ScipyMinimizeOptions,
-    SciPyDifferentialEvolution,
-    SciPyDifferentialEvolutionOptions,
+    ScipyDifferentialEvolution,
+    ScipyDifferentialEvolutionOptions,
 )
 from .optimisers.pints_optimisers import (
     GradientDescent,

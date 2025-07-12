@@ -38,7 +38,7 @@ def convergence(optim: BaseOptimiser, show: bool = True, **layout_kwargs):
             yaxis_title="Cost",
             title="Convergence",
         ),
-        trace_names=optim.name(),
+        trace_names=optim.name,
     )
 
     # Generate and display the figure
