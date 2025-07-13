@@ -89,7 +89,9 @@ class TestGroupedSPMe:
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(
-            model_config["model"], parameter_values=model_config["parameter_values"]
+            model_config["model"],
+            parameter_values=model_config["parameter_values"],
+            build_on_eval=False,
         )
 
         for parameter in parameters:
@@ -102,7 +104,11 @@ class TestGroupedSPMe:
         model = pybop.lithium_ion.GroupedSPMe(options={"surface form": "differential"})
         builder = pybop.builders.PybammEIS()
         builder.set_dataset(dataset)
-        builder.set_simulation(model, parameter_values=model_config["parameter_values"])
+        builder.set_simulation(
+            model,
+            parameter_values=model_config["parameter_values"],
+            build_on_eval=False,
+        )
 
         for parameter in parameters:
             builder.add_parameter(parameter)
