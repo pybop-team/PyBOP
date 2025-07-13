@@ -240,6 +240,8 @@ class PybammEISPipeline:
         np.ndarray
             Complex array containing the impedance values with corresponding frequencies.
         """
+        self.initialise_eis_pipeline()
+
         if calculate_sensitivities:
             warnings.warn(
                 "Sensitivity calculation not implemented for EIS simulations",
@@ -254,28 +256,14 @@ class PybammEISPipeline:
     def pybamm_pipeline(self):
         return self._pybamm_pipeline
 
+    @property
+    def pybop_parameters(self):
+        return self._pybamm_pipeline.pybop_parameters
+
     def rebuild(self, inputs: Inputs) -> None:
-        """
-        Build the PyBaMM pipeline using the given parameter_values.
-        """
-        # if there are no parameters to build, just initialise again
-        if not self.pybamm_pipeline.requires_rebuild:
-            self.initialise_eis_pipeline()
-            return
-
-        # we need to rebuild, so make sure we've got the right number of parameters
-        # and set them in the parameters object
-        if len(inputs) != len(self.pybamm_pipeline.pybop_parameters):
-            raise ValueError(
-                f"Expected {len(self.pybamm_pipeline.pybop_parameters)} parameters, but got {len(inputs)}."
-            )
-
-        self.pybamm_pipeline.parameter_values.update(inputs)
-        self.build()
+        """Build the PyBaMM pipeline using the given parameter_values."""
+        return self._pybamm_pipeline.rebuild(inputs=inputs)
 
     def build(self) -> None:
-        """
-        Build the PyBaMM pipeline using the given parameter_values.
-        """
-        self._pybamm_pipeline.build()
-        return self.initialise_eis_pipeline()
+        """Build the PyBaMM pipeline using the given parameter_values."""
+        return self._pybamm_pipeline.build()
