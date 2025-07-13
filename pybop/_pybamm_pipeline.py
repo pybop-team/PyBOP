@@ -228,9 +228,6 @@ class PybammPipeline:
                 initial_state, param=param, options=options, inputs=inputs
             )
 
-    def set_parameter_value(self, key, value):
-        self._parameter_values[key] = value
-
     @property
     def built_model(self):
         """The built PyBaMM model."""

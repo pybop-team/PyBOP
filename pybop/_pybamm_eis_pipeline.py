@@ -64,7 +64,7 @@ class PybammEISPipeline:
         # Set-up model for EIS
         self._f_eval = f_eval
         self.set_up_for_eis(self._pybamm_pipeline.model)
-        self._pybamm_pipeline.set_parameter_value("Current function [A]", 0)
+        self._pybamm_pipeline.parameter_values["Current function [A]"] = 0
 
         # Initialise
         self.M = None
