@@ -90,7 +90,11 @@ class Test_Sampling_SPM:
     @pytest.fixture
     def problem(self, model, parameters, parameter_values, dataset):
         builder = pybop.Pybamm()
-        builder.set_simulation(model, parameter_values)
+        builder.set_simulation(
+            model,
+            parameter_values=parameter_values,
+            build_on_eval=False,
+        )
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)
