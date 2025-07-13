@@ -717,7 +717,7 @@ class Parameters:
 
         return np.column_stack(all_samples)
 
-    def to_dict(self, values: str | ArrayLike | None = None) -> ParameterDict:
+    def to_dict(self, values: str | ArrayLike = "current") -> ParameterDict:
         """
         Convert to parameter dictionary.
 
@@ -732,12 +732,17 @@ class Parameters:
             Dictionary mapping parameter names to values
         """
         params = self._parameters.items()
-        if values is None or values == "current":
-            return {name: param.current_value for name, param in params}
-        elif values == "initial":
-            return {name: param.initial_value for name, param in params}
-        elif values == "true":
-            return {name: param.true_value for name, param in params}
+        if isinstance(values, str):
+            if values == "current":
+                return {name: param.current_value for name, param in params}
+            elif values == "initial":
+                return {name: param.initial_value for name, param in params}
+            elif values == "true":
+                return {name: param.true_value for name, param in params}
+            else:
+                raise ValueError(
+                    "String input to Parameters.to_dict() must be 'current', 'initial' or 'true'."
+                )
         else:
             # Custom values array
             values_array = np.atleast_1d(values)
