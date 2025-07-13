@@ -74,7 +74,7 @@ class TestCosts:
     )
     def test_pybamm_costs(self, pybamm_costs, model, dataset, one_parameter):
         builder = pybop.Pybamm()
-        builder.set_simulation(model)
+        builder.set_simulation(model, build_on_eval=False)
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
         builder.add_cost(pybamm_costs("Voltage [V]", "Voltage [V]"))
@@ -120,7 +120,9 @@ class TestCosts:
         )
         builder = pybop.Pybamm()
         model.events = []
-        builder.set_simulation(model, parameter_values=parameter_values)
+        builder.set_simulation(
+            model, parameter_values=parameter_values, build_on_eval=False
+        )
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
         builder.add_cost(pybamm_costs())
@@ -141,7 +143,7 @@ class TestCosts:
     )
     def test_pybamm_costs_with_sigma(self, pybamm_costs, model, dataset, one_parameter):
         builder = pybop.Pybamm()
-        builder.set_simulation(model)
+        builder.set_simulation(model, build_on_eval=False)
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
         builder.add_cost(pybamm_costs("Voltage [V]", "Voltage [V]"))
@@ -156,7 +158,7 @@ class TestCosts:
 
     def test_pybamm_scaled_cost(self, model, dataset, one_parameter):
         builder = pybop.Pybamm()
-        builder.set_simulation(model)
+        builder.set_simulation(model, build_on_eval=False)
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
         cost = pybop.costs.pybamm.SumOfPower("Voltage [V]", "Voltage [V]")
@@ -173,7 +175,7 @@ class TestCosts:
     def test_multi_cost_weighting(self, model, dataset, one_parameter):
         def problem(weights):
             builder = pybop.builders.Pybamm()
-            builder.set_simulation(model)
+            builder.set_simulation(model, build_on_eval=False)
             builder.set_dataset(dataset)
             builder.add_parameter(one_parameter)
             builder.add_cost(

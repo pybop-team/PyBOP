@@ -30,7 +30,7 @@ class TestClassifier:
             }
         )
         builder = pybop.Pybamm()
-        builder.set_simulation(model)
+        builder.set_simulation(model, build_on_eval=False)
         builder.set_dataset(dataset)
         builder.add_parameter(
             pybop.Parameter(

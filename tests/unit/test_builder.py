@@ -76,6 +76,7 @@ class TestBuilder:
             model,
             parameter_values=parameter_values,
             solver=solver,
+            build_on_eval=False,
         )
         builder.add_parameter(
             pybop.Parameter(
@@ -121,6 +122,7 @@ class TestBuilder:
             model,
             parameter_values=parameter_values,
             solver=solver,
+            build_on_eval=False,
         )
         builder.add_parameter(
             pybop.Parameter(
@@ -180,6 +182,7 @@ class TestBuilder:
             model,
             parameter_values=parameter_values,
             solver=solver,
+            build_on_eval=False,
         )
         builder.add_parameter(
             pybop.Parameter(
@@ -254,6 +257,7 @@ class TestBuilder:
             model,
             parameter_values=parameter_values,
             solver=solver,
+            build_on_eval=False,
         )
         builder.add_parameter(
             pybop.Parameter(
@@ -293,6 +297,7 @@ class TestBuilder:
         builder.set_simulation(
             model,
             parameter_values=parameter_values,
+            build_on_eval=False,
         )
         builder.add_parameter(
             pybop.Parameter(
@@ -346,6 +351,7 @@ class TestBuilder:
             model,
             parameter_values=parameter_values,
             solver=solver,
+            build_on_eval=False,
         )
         builder.add_parameter(pybop.Parameter("R0 [Ohm]", initial_value=1e-3))
         builder.add_parameter(pybop.Parameter("R1 [Ohm]", initial_value=3e-3))
@@ -426,12 +432,14 @@ class TestBuilder:
             )
             builder.add_parameter(
                 pybop.Parameter(
-                    "Negative electrode active material volume fraction", initial_value=0.5
+                    "Negative electrode active material volume fraction",
+                    initial_value=0.5,
                 )
             )
             builder.add_parameter(
                 pybop.Parameter(
-                    "Positive electrode active material volume fraction", initial_value=0.5
+                    "Positive electrode active material volume fraction",
+                    initial_value=0.5,
                 )
             )
             builder.add_cost(
@@ -537,6 +545,7 @@ class TestBuilder:
             model,
             parameter_values=parameter_values,
             solver=solver,
+            build_on_eval=False,
         )
         builder.add_parameter(
             pybop.Parameter(
