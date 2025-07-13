@@ -160,10 +160,8 @@ class PybammPipeline:
         model = self._model.new_copy()
         geometry = copy(self._geometry)
 
-        if self._initial_state is not None:
-            self._set_initial_state(model, self._initial_state)
-
         # set parameters in place
+        self._set_initial_state()
         self._parameter_values.process_model(model)
         self._parameter_values.process_geometry(geometry)
 
@@ -197,34 +195,26 @@ class PybammPipeline:
             calculate_sensitivities=calculate_sensitivities,
         )
 
-    def _set_initial_state(self, model, initial_state) -> None:
+    def _set_initial_state(self) -> None:
         """
-        Sets the initial state of the model.
-
-        Parameters
-        ----------
-        model : pybamm.Model
-
-        initial_state : float | str
-            Can be either a float between 0 and 1 representing the initial SoC,
-            or a string representing the initial voltage i.e. "3.4 V"
+        Sets the parameter values which define the initial state of the model.
         """
-
-        options = model.options
-        param = model.param
-        inputs = self._pybop_parameters.to_dict()
-        if options["open-circuit potential"] == "MSMR":
-            self._parameter_values.set_initial_ocps(
-                initial_state, param=param, options=options, inputs=inputs
-            )
-        elif options["working electrode"] == "positive":
-            self._parameter_values.set_initial_stoichiometry_half_cell(
-                initial_state, param=param, options=options, inputs=inputs
-            )
-        else:
-            self._parameter_values.set_initial_stoichiometries(
-                initial_state, param=param, options=options, inputs=inputs
-            )
+        if self._initial_state is not None:
+            param = self.model.param
+            options = self.model.options
+            inputs = self._pybop_parameters.to_dict()
+            if options["open-circuit potential"] == "MSMR":
+                self._parameter_values.set_initial_ocps(
+                    self._initial_state, param=param, options=options, inputs=inputs
+                )
+            elif options["working electrode"] == "positive":
+                self._parameter_values.set_initial_stoichiometry_half_cell(
+                    self._initial_state, param=param, options=options, inputs=inputs
+                )
+            else:
+                self._parameter_values.set_initial_stoichiometries(
+                    self._initial_state, param=param, options=options, inputs=inputs
+                )
 
     @property
     def built_model(self):
