@@ -135,7 +135,7 @@ class PybammPipeline:
                 raise ValueError("Geometry parameters must be Scalars")
         return new_sym
 
-    def rebuild(self, params: Inputs) -> None:
+    def rebuild(self, inputs: Inputs) -> None:
         """
         Build the PyBaMM pipeline using the given parameter_values.
         """
@@ -145,14 +145,12 @@ class PybammPipeline:
 
         # we need to rebuild, so make sure we've got the right number of parameters
         # and set them in the parameters object
-        if len(params) != len(self._pybop_parameters):
+        if len(inputs) != len(self._pybop_parameters):
             raise ValueError(
-                f"Expected {len(self._pybop_parameters)} parameters, but got {len(params)}."
+                f"Expected {len(self._pybop_parameters)} parameters, but got {len(inputs)}."
             )
 
-        for key, value in params.items():
-            self._parameter_values[key] = value
-
+        self._parameter_values.update(inputs)
         self.build()
 
     def build(self) -> None:

@@ -228,6 +228,7 @@ class TestBuilder:
             model,
             parameter_values=parameter_values,
             solver=solver,
+            build_on_eval=False,  # should be overwritten for geometric parameters
         )
         builder.add_parameter(
             pybop.Parameter("Negative electrode thickness [m]", initial_value=5e-5)
@@ -326,6 +327,7 @@ class TestBuilder:
         builder.set_simulation(
             model,
             parameter_values=parameter_values,
+            build_on_eval=False,  # should be overwritten for geometric parameters
         )
         builder.add_parameter(
             pybop.Parameter("Negative electrode thickness [m]", initial_value=5e-5)

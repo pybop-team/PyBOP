@@ -6,7 +6,7 @@ import pybamm
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
 
-from pybop import Parameters, SymbolReplacer
+from pybop import Inputs, Parameters, SymbolReplacer
 from pybop.pipelines._pybamm_pipeline import PybammPipeline
 
 
@@ -163,7 +163,7 @@ class PybammEISPipeline:
         model.algebraic[I_cell] = I - I_applied
         model.initial_conditions[I_cell] = 0
 
-    def initialise_eis_pipeline(self):
+    def initialise_eis_pipeline(self) -> None:
         """
         Initialise the electrochemical impedance spectroscopy (EIS) simulation.
         This method sets up the mass matrix and solver, converts inputs to the appropriate format,
@@ -253,3 +253,29 @@ class PybammEISPipeline:
     @property
     def pybamm_pipeline(self):
         return self._pybamm_pipeline
+
+    def rebuild(self, inputs: Inputs) -> None:
+        """
+        Build the PyBaMM pipeline using the given parameter_values.
+        """
+        # if there are no parameters to build, just initialise again
+        if not self.pybamm_pipeline.requires_rebuild:
+            self.initialise_eis_pipeline()
+            return
+
+        # we need to rebuild, so make sure we've got the right number of parameters
+        # and set them in the parameters object
+        if len(inputs) != len(self.pybamm_pipeline.pybop_parameters):
+            raise ValueError(
+                f"Expected {len(self.pybamm_pipeline.pybop_parameters)} parameters, but got {len(inputs)}."
+            )
+
+        self.pybamm_pipeline.parameter_values.update(inputs)
+        self.build()
+
+    def build(self) -> None:
+        """
+        Build the PyBaMM pipeline using the given parameter_values.
+        """
+        self._pybamm_pipeline.build()
+        return self.initialise_eis_pipeline()
