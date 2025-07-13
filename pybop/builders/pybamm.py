@@ -147,10 +147,10 @@ class Pybamm(BaseBuilder):
 
         # Construct the pipeline
         pipeline = PybammPipeline(
-            model,
-            pybamm_parameter_values,
-            pybop_parameters,
-            self._solver,
+            model=model,
+            parameter_values=pybamm_parameter_values,
+            pybop_parameters=pybop_parameters,
+            solver=self._solver,
             t_start=self._dataset[self.domain][0],
             t_end=self._dataset[self.domain][-1],
             t_interp=self._dataset[self.domain],

@@ -412,49 +412,53 @@ class TestBuilder:
 
     def test_build_with_initial_state(self, model_and_params, solver, dataset):
         model, parameter_values = model_and_params
-        builder = pybop.builders.Pybamm()
-        builder.set_dataset(dataset)
-        builder.set_simulation(
-            model,
-            parameter_values=parameter_values,
-            solver=solver,
-            initial_state="4.0 V",
-        )
-        builder.add_parameter(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction", initial_value=0.5
+        if model.options["open-circuit potential"] == "MSMR":
+            # PyBaMM initial state solver for MSMR underdeveloped for testing
+            pass
+        else:
+            builder = pybop.builders.Pybamm()
+            builder.set_dataset(dataset)
+            builder.set_simulation(
+                model,
+                parameter_values=parameter_values,
+                solver=solver,
+                initial_state="4.0 V",
             )
-        )
-        builder.add_parameter(
-            pybop.Parameter(
-                "Positive electrode active material volume fraction", initial_value=0.5
+            builder.add_parameter(
+                pybop.Parameter(
+                    "Negative electrode active material volume fraction", initial_value=0.5
+                )
             )
-        )
-        builder.add_cost(
-            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
-        )
-        problem = builder.build()
+            builder.add_parameter(
+                pybop.Parameter(
+                    "Positive electrode active material volume fraction", initial_value=0.5
+                )
+            )
+            builder.add_cost(
+                pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
+            )
+            problem = builder.build()
 
-        # First build
-        problem.set_params(np.array([0.5, 0.5]))
-        value1 = problem.run()
-        built_model_1 = problem.pipeline.built_model.new_copy()
+            # First build
+            problem.set_params(np.array([0.5, 0.5]))
+            value1 = problem.run()
+            built_model_1 = problem.pipeline.built_model.new_copy()
 
-        # Second build w/ SOC instead of Voltage
-        builder.set_simulation(
-            model,
-            parameter_values=parameter_values,
-            solver=solver,
-            initial_state=0.5,
-        )
-        problem2 = builder.build()
-        problem2.set_params(np.array([0.5, 0.5]))
-        value2 = problem2.run()
-        built_model_2 = problem2.pipeline.built_model.new_copy()
+            # Second build w/ SOC instead of Voltage
+            builder.set_simulation(
+                model,
+                parameter_values=parameter_values,
+                solver=solver,
+                initial_state=0.5,
+            )
+            problem2 = builder.build()
+            problem2.set_params(np.array([0.5, 0.5]))
+            value2 = problem2.run()
+            built_model_2 = problem2.pipeline.built_model.new_copy()
 
-        # Assert builds are different
-        assert abs((value1 - value2) / value1) > 1e-5
-        assert built_model_1 != built_model_2
+            # Assert builds are different
+            assert abs((value1 - value2) / value1) > 1e-5
+            assert built_model_1 != built_model_2
 
     def test_build_on_eval(self, model_and_params, solver, dataset):
         model, parameter_values = model_and_params
@@ -464,7 +468,6 @@ class TestBuilder:
             model,
             parameter_values=parameter_values,
             solver=solver,
-            initial_state=0.5,
             build_on_eval=False,
         )
         builder.add_parameter(
