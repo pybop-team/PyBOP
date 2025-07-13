@@ -12,51 +12,69 @@ from pybop.pipelines._pybamm_pipeline import PybammPipeline
 
 class PybammEISPipeline:
     """
-    A class to build an EIS PyBaMM pipeline for a given model and data, and run the resultant simulation.
+    A class to build an EIS PyBaMM pipeline for a given model and experiment, and run the resultant
+    simulation.
 
     There are two contexts in which this class can be used:
-    1. A pybamm model needs to be built once, and then run multiple times with different input parameters
-    2. A pybamm model needs to be built multiple times with different parameter values,
-        for the case where some of the parameters are geometric parameters which change the mesh
-
-    To enable 2., you can pass a list of parameter names to the constructor, these parameters will be set
-    before the model is built each time (using the `build` method).
-    To enable 1, you can just pass an empty list. The model will be built once and subsequent calls
-    to the `build` method will not change the model.
+    1. build_on_eval=True: A pybamm model needs to be built multiple times with different parameter
+        values, for the case where any parameters is a geometric parameter, which changes the mesh.
+    2. build_on_eval=False: A pybamm model needs to be built once, and then run multiple times with
+        different input parameters.
     """
 
     def __init__(
         self,
         model: pybamm.BaseModel,
         f_eval: np.ndarray | list[float],
+        geometry: pybamm.Geometry | None = None,
         parameter_values: pybamm.ParameterValues | None = None,
-        pybop_parameters: Parameters | None = None,
-        solver: pybamm.BaseSolver | None = None,
+        submesh_types: dict | None = None,
         var_pts: dict | None = None,
+        spatial_methods: dict | None = None,
+        solver: pybamm.BaseSolver | None = None,
+        pybop_parameters: Parameters | None = None,
         initial_state: float | str | None = None,
-        build_on_eval: bool | None = None,
+        build_on_eval: bool = True,
     ):
         """
         Parameters
         ---------
         model : pybamm.BaseModel
             The PyBaMM model to be used.
-        parameter_values : pybamm.ParameterValues
-            The parameters to be used in the model.
-        solver : pybamm.BaseSolver
-            The solver to be used. If None, the idaklu solver will be used.
         f_eval : list
             The frequencies at which to evaluate the impedance.
-        var_pts : dict
-            The number of points at which to discretise the model.
+        geometry: pybamm.Geometry (optional)
+            The geometry upon which to solve the model.
+        parameter_values : pybamm.ParameterValues (optional)
+            Parameters and their corresponding numerical values.
+        submesh_types : dict (optional)
+            A dictionary of the types of submesh to use on each subdomain.
+        var_pts : dict (optional)
+            A dictionary of the number of points used by each spatial variable.
+        spatial_methods : dict (optional)
+            A dictionary of the types of spatial method to use on each.
+            domain (e.g. pybamm.FiniteVolume)
+        solver : pybamm.BaseSolver (optional)
+            The solver to use to solve the model.
+        pybop_parameters : pybop.Parameters (optional)
+            The parameters to be optimised.
+        initial_state: float | str (optional)
+            The initial state of charge or voltage for the battery model. If float, it will be
+            represented as SoC and must be in range 0 to 1. If str, it will be represented as voltage and
+            needs to be in the format: "3.4 V".
+        build_on_eval : bool
+            Boolean to determine if the model will be rebuilt every evaluation (default: True).
         """
 
         self._pybamm_pipeline = PybammPipeline(
             model,
+            geometry=geometry,
             parameter_values=parameter_values,
-            pybop_parameters=pybop_parameters,
-            solver=solver,
+            submesh_types=submesh_types,
             var_pts=var_pts,
+            spatial_methods=spatial_methods,
+            solver=solver,
+            pybop_parameters=pybop_parameters,
             initial_state=initial_state,
             build_on_eval=build_on_eval,
         )
@@ -147,7 +165,7 @@ class PybammEISPipeline:
 
     def initialise_eis_pipeline(self):
         """
-        Initialise the Electrochemical Impedance Spectroscopy (EIS) simulation.
+        Initialise the electrochemical impedance spectroscopy (EIS) simulation.
         This method sets up the mass matrix and solver, converts inputs to the appropriate format,
         extracts the necessary attributes from the model, and prepares matrices for the simulation.
 
