@@ -5,8 +5,8 @@ import pybamm
 
 import pybop
 from pybop import PybammEISProblem, builders
-from pybop._pybamm_eis_pipeline import PybammEISPipeline
 from pybop.costs.base_cost import CallableCost
+from pybop.pipelines._pybamm_eis_pipeline import PybammEISPipeline
 
 
 class PybammEIS(builders.BaseBuilder):
