@@ -10,17 +10,22 @@ from pybop.pipelines._pybamm_pipeline import PybammPipeline
 
 class Pybamm(BaseBuilder):
     def __init__(self):
+        super().__init__()
         self._model = None
-        self._solver = None
+        self._geometry = None
         self._parameter_values = None
-        self._rebuild_parameters = None
+        self._submesh_types = None
+        self._var_pts = None
+        self._spatial_methods = None
+        self._solver = None
         self._initial_state = None
+        self._build_on_eval = None
         self._pipeline = None
+        self._rebuild_parameters = None
+        self.domain = "Time [s]"
         self._costs: list[PybammCost] = []
         self._cost_weights: list[float] = []
-        self.domain = "Time [s]"
         self._use_posterior = False
-        super().__init__()
 
     def set_simulation(
         self,
