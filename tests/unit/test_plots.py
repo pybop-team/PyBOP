@@ -210,7 +210,7 @@ class TestPlots:
         )
         fitting_problem = builder.build()
         with pytest.raises(
-            TypeError, match="This problem takes fewer than 2 parameters."
+            ValueError, match="This problem takes fewer than 2 parameters."
         ):
             pybop.plot.contour(fitting_problem, steps=5)
 

@@ -91,7 +91,9 @@ class PybammPipeline:
 
         self._solver = (
             pybamm.IDAKLUSolver(
-                output_variables=self._cost_names, options=solver_options
+                output_variables=self._cost_names,
+                on_failure="ignore",
+                options=solver_options,
             )
             if solver is None
             else solver
@@ -225,34 +227,26 @@ class PybammPipeline:
 
         Returns
         -------
-        solution : pybamm.Solution
+        solution : list[pybamm.Solution]
             The pybamm solution object.
         """
+        inputs = self._pybop_parameters.to_pybamm_multiprocessing()
+
         if self.requires_rebuild:
             sol = []
-            for params in self._pybop_parameters.to_dict():
-                self.rebuild()
+            for param in inputs:
+                self.rebuild(param)
                 sol.append(
-                    self._solver.solve(
-                        model=self._built_model,
-                        inputs=params,
-                        t_eval=[self._t_start, self._t_end],
-                        t_interp=self._t_interp,
-                        calculate_sensitivities=calculate_sensitivities,
+                    self._pybamm_solve(
+                        param, calculate_sensitivities=calculate_sensitivities
                     )
                 )
-            return sol
-
-        inputs = self._pybop_parameters.to_pybamm_multiprocessing()
-        sol = self._solver.solve(
-            model=self._built_model,
-            inputs=inputs,
-            t_eval=[self._t_start, self._t_end],
-            t_interp=self._t_interp,
-            calculate_sensitivities=calculate_sensitivities,
-        )
-        if not isinstance(sol, list):
-            sol = [sol]
+        else:
+            sol = self._pybamm_solve(
+                inputs, calculate_sensitivities=calculate_sensitivities
+            )
+            if not isinstance(sol, list):
+                sol = [sol]
 
         sol[:] = [
             FailedSolution(self._cost_names, list(self._parameter_names))
@@ -261,6 +255,20 @@ class PybammPipeline:
             for s in sol
         ]
 
+        return sol
+
+    def _pybamm_solve(
+        self, inputs: Inputs | list, calculate_sensitivities: bool
+    ) -> list[pybamm.Solution]:
+        """A function that runs the simulation using the built model."""
+
+        sol = self._solver.solve(
+            model=self._built_model,
+            inputs=inputs,
+            t_eval=[self._t_start, self._t_end],
+            t_interp=self._t_interp,
+            calculate_sensitivities=calculate_sensitivities,
+        )
         return sol
 
     def _set_initial_state(self, model, initial_state) -> None:

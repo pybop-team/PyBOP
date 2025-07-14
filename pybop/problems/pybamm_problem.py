@@ -42,9 +42,6 @@ class PybammProblem(Problem):
         """
         self.check_and_store_params(p)
 
-        # rebuild the pipeline (if needed)
-        self._pipeline.rebuild(self._params.to_dict())
-
     def _compute_cost(self, solution: list[Solution]) -> np.ndarray | np.number:
         """
         Compute the cost function value from a solution.
