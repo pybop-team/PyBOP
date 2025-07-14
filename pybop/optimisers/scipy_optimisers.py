@@ -46,7 +46,7 @@ class BaseScipyOptimiser(BaseOptimiser):
         self._intermediate_x_model.append(x_model)
         self._intermediate_cost.append(cost)
 
-    def get_and_reset_itermediate_results(self):
+    def get_and_reset_intermediate_results(self):
         ret = (
             self._intermediate_x_search,
             self._intermediate_x_model,
@@ -297,7 +297,7 @@ class ScipyMinimize(BaseScipyOptimiser):
 
             x_model_best = self.problem.params.transformation().to_model(x_best)
 
-            (x_search, x_model, cost) = self.get_and_reset_itermediate_results()
+            (x_search, x_model, cost) = self.get_and_reset_intermediate_results()
             evaluations = len(x_search)
             self._iteration += 1
 
@@ -542,7 +542,7 @@ class ScipyDifferentialEvolution(BaseScipyOptimiser):
 
         # Add callback storing history of parameter values
         def callback(intermediate_result: OptimizeResult):
-            (x_search, x_model, cost) = self.get_and_reset_itermediate_results()
+            (x_search, x_model, cost) = self.get_and_reset_intermediate_results()
             self._iterations += 1
             self.logger.log_update(
                 iterations=self._iterations,
