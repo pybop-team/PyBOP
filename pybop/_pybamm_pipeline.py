@@ -5,7 +5,7 @@ from copy import copy, deepcopy
 import numpy as np
 import pybamm
 
-from pybop import Inputs, Parameters
+from pybop import FailedSolution, Inputs, Parameters
 
 
 class PybammPipeline:
@@ -77,6 +77,7 @@ class PybammPipeline:
         self._var_pts = var_pts or model.default_var_pts
         self._submesh_types = model.default_submesh_types
         self._built_model = self._model
+        self._cost_names = cost_names
         self.requires_rebuild = (
             build_on_eval
             if build_on_eval is not None
@@ -84,12 +85,14 @@ class PybammPipeline:
             if initial_state is not None
             else self._determine_rebuild()
         )
-        solver_options = {}
+        solver_options = {"max_error_test_failures": 1, "max_convergence_failures": 5}
         if platform.system() != "Windows":
             solver_options["num_threads"] = self._threads
 
         self._solver = (
-            pybamm.IDAKLUSolver(output_variables=cost_names, options=solver_options)
+            pybamm.IDAKLUSolver(
+                output_variables=self._cost_names, options=solver_options
+            )
             if solver is None
             else solver
         )
@@ -209,7 +212,9 @@ class PybammPipeline:
     def parameter_names(self):
         return self._parameter_names
 
-    def solve(self, calculate_sensitivities: bool = False) -> list[pybamm.Solution]:
+    def solve(
+        self, calculate_sensitivities: bool = False
+    ) -> list[pybamm.Solution | FailedSolution]:
         """
         Run the simulation using the built model and solver.
 
@@ -223,29 +228,38 @@ class PybammPipeline:
         solution : pybamm.Solution
             The pybamm solution object.
         """
-        # if self.requires_rebuild:
-        #     sol = []
-        #     for params in self._pybop_parameters.to_dict():
-        #         self.rebuild()
-        #         sol.append(self._solver.solve(
-        #             model=self._built_model,
-        #             inputs=params,
-        #             t_eval=[self._t_start, self._t_end],
-        #             t_interp=self._t_interp,
-        #             calculate_sensitivities=calculate_sensitivities,
-        #         ))
-        #     return sol
+        if self.requires_rebuild:
+            sol = []
+            for params in self._pybop_parameters.to_dict():
+                self.rebuild()
+                sol.append(
+                    self._solver.solve(
+                        model=self._built_model,
+                        inputs=params,
+                        t_eval=[self._t_start, self._t_end],
+                        t_interp=self._t_interp,
+                        calculate_sensitivities=calculate_sensitivities,
+                    )
+                )
+            return sol
 
+        inputs = self._pybop_parameters.to_pybamm_multiprocessing()
         sol = self._solver.solve(
             model=self._built_model,
-            inputs=self._pybop_parameters.to_pybamm_multiprocessing(),
+            inputs=inputs,
             t_eval=[self._t_start, self._t_end],
             t_interp=self._t_interp,
             calculate_sensitivities=calculate_sensitivities,
         )
-
         if not isinstance(sol, list):
-            return [sol]
+            sol = [sol]
+
+        sol[:] = [
+            FailedSolution(self._cost_names, list(self._parameter_names))
+            if s.termination == "failure"
+            else s
+            for s in sol
+        ]
 
         return sol
 

@@ -434,7 +434,7 @@ class ContourPlotter:
                     y=plot_data.y,
                     z=plot_data.costs,
                     colorscale="Viridis",
-                    connectgaps=True,
+                    connectgaps=False,
                 )
             ],
             layout=go.Layout(base_layout),

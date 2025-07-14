@@ -108,10 +108,8 @@ class Problem:
 
         # Create samples, compute cost
         param_values = sample(salib_dict, n_samples)
-        costs = np.empty(param_values.shape[0])
-        for i, val in enumerate(param_values):
-            self.set_params(val)
-            costs[i] = self.run()
+        self.set_params(param_values)
+        costs = self.run()
 
         return sobol.analyze(salib_dict, costs)
 
