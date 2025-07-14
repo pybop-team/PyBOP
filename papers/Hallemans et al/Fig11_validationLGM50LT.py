@@ -6,7 +6,6 @@ import scipy
 from scipy.io import savemat
 
 import pybop
-from pybop.models.lithium_ion.basic_SPMe import BaseGroupedSPMe
 
 ## Grouped parameter set
 parameter_set = pybop.ParameterSet.pybamm("Chen2020")
