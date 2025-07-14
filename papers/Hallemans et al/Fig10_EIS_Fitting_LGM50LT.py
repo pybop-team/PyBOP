@@ -22,7 +22,9 @@ grouped_parameters = pybop.lithium_ion.GroupedSPMe.apply_parameter_grouping(
 )
 
 ## Information battery About:Energy
-OCP_data = scipy.io.loadmat("Data/LGM50LT/OCP_LGM50LT.mat")
+current_dir = Path(__file__).parent
+OCP_data_path = current_dir / "Data" / "LGM50LT" / "OCP_LGM50LT.mat"
+OCP_data = scipy.io.loadmat(OCP_data_path)
 x_pos_d = OCP_data.get("x_pos")
 x_pos_d = x_pos_d.flatten()
 x_neg_d = OCP_data.get("x_neg")
@@ -81,7 +83,10 @@ var_pts = {"x_n": 100, "x_s": 20, "x_p": 100, "r_n": 100, "r_p": 100}
 
 ## Model
 model = pybop.lithium_ion.GroupedSPMe(
-    parameter_set=grouped_parameters, eis=True, var_pts=var_pts, options=model_options
+    parameter_set=grouped_parameters,
+    eis=True, var_pts=var_pts,
+    options=model_options,
+    solver=pybamm.CasadiSolver()
 )
 
 ## Choose parameter bounds for optimisation
@@ -197,7 +202,8 @@ parameters = pybop.Parameters(
 
 
 ## Read impedance data LG M50LT
-EIS_data = scipy.io.loadmat("Data/LGM50LT/impedanceLGM50LT_Hybrid_4h_3mVrms.mat")
+EIS_data_path = current_dir / "Data" / "LGM50LT" / "impedanceLGM50LT_Hybrid_4h_3mVrms.mat"
+EIS_data = scipy.io.loadmat(EIS_data_path)
 
 impedances = EIS_data.get("Z")
 frequencies = EIS_data.get("f")
@@ -276,6 +282,7 @@ modelhat = pybop.lithium_ion.GroupedSPMe(
     eis=True,
     var_pts=var_pts,
     options=model_options,
+    solver=pybamm.CasadiSolver()
 )
 
 Nfreq = len(frequencies)
@@ -308,6 +315,5 @@ mdic = {
     "thetahat": thetahat,
     "computationTime": computationTime,
 }
-current_dir = Path(__file__).parent
 save_path = current_dir / "Data" / "Zhat3mV_SOC_SPMe_LGM50LT.mat"
 savemat(save_path, mdic)

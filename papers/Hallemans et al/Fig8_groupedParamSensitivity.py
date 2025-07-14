@@ -2,6 +2,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pybamm
 from scipy.io import savemat
 
 import pybop
@@ -60,6 +61,7 @@ for ii, param in enumerate(params):
         eis=True,
         options=model_options,
         var_pts=var_pts,
+        solver=pybamm.CasadiSolver()
     )
     model.build(
         initial_state={"Initial SoC": SOC},

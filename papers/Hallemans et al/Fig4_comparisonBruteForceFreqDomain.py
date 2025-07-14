@@ -41,6 +41,7 @@ parameter_set.update(
 model = pybop.lithium_ion.DFN(
     parameter_set=parameter_set,
     options=model_options,
+    solver=pybamm.CasadiSolver()
 )
 var_pts = model.pybamm_model.default_var_pts
 var_pts["x_n"] = 100
@@ -59,6 +60,7 @@ model_freq = pybop.lithium_ion.DFN(
     options=model_options,
     var_pts=var_pts,
     eis=True,
+    solver=pybamm.CasadiSolver()
 )
 parameters = pybop.Parameters(pybop.Parameter("Frequency [Hz]", initial_value=10))
 model_time.build(parameters=parameters, initial_state={"Initial SoC": SOC})

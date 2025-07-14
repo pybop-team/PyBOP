@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pybamm
 
 import pybop
 
@@ -19,7 +20,11 @@ grouped_parameters["Series resistance [Ohm]"] = R0
 model_options = {"surface form": "differential", "contact resistance": "true"}
 var_pts = {"x_n": 100, "x_s": 20, "x_p": 100, "r_n": 100, "r_p": 100}
 model = pybop.lithium_ion.GroupedSPMe(
-    parameter_set=grouped_parameters, eis=True, var_pts=var_pts, options=model_options
+    parameter_set=grouped_parameters,
+    eis=True,
+    var_pts=var_pts,
+    options=model_options,
+    solver=pybamm.CasadiSolver()
 )
 
 ## Simulate impedance

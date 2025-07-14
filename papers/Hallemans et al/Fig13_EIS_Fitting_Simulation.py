@@ -2,6 +2,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pybamm
 import scipy
 from scipy.io import savemat
 
@@ -27,7 +28,11 @@ var_pts = {"x_n": 100, "x_s": 20, "x_p": 100, "r_n": 100, "r_p": 100}
 
 ## Construct model
 model = pybop.lithium_ion.GroupedSPMe(
-    parameter_set=grouped_parameters, eis=True, var_pts=var_pts, options=model_options
+    parameter_set=grouped_parameters,
+    eis=True,
+    var_pts=var_pts,
+    options=model_options,
+    solver=pybamm.CasadiSolver()
 )
 
 ## Parameter bounds for optimisation
@@ -252,7 +257,7 @@ results = optim.run()
 
 # Print optimised parameters
 print("True grouped parameters", parameters.true_value())
-grouped_parameters.update(parameters.as_dict(results.best_x))
+grouped_parameters.update(parameters.as_dict(results.x))
 
 # Plot convergence
 pybop.plot.convergence(optim)
@@ -266,6 +271,7 @@ model_hat = pybop.lithium_ion.GroupedSPMe(
     eis=True,
     var_pts=var_pts,
     options=model_options,
+    solver=pybamm.CasadiSolver()
 )
 
 Nfreq = len(frequencies)
@@ -300,7 +306,7 @@ mdic = {
     "final_cost": results.final_cost,
     "theta": parameters.true_value(),
     "thetahat": results.x,
-    "thetahatbest": results.best_x,
+    "thetahatbest": results.x,
     "computationTime": results.time,
 }
 save_path = current_dir / "Data" / "Zhat_SOC_SPMe_Simulation.mat"

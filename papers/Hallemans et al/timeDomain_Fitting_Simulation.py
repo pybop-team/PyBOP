@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import numpy as np
+import pybamm
 import scipy
 from scipy.io import savemat
 
@@ -26,7 +27,10 @@ var_pts = {"x_n": 100, "x_s": 20, "x_p": 100, "r_n": 100, "r_p": 100}
 
 ## Construct model
 model = pybop.lithium_ion.GroupedSPMe(
-    parameter_set=grouped_parameters, var_pts=var_pts, options=model_options
+    parameter_set=grouped_parameters,
+    var_pts=var_pts,
+    options=model_options,
+    solver=pybamm.CasadiSolver()
 )
 
 ## Parameter bounds for optimisation
@@ -249,7 +253,10 @@ pybop.plot.parameters(optim)
 
 ## Save estimated voltage
 model_hat = pybop.lithium_ion.GroupedSPMe(
-    parameter_set=grouped_parameters, var_pts=var_pts, options=model_options
+    parameter_set=grouped_parameters,
+    var_pts=var_pts,
+    options=model_options,
+    solver=pybamm.CasadiSolver()
 )
 
 # Grouped SPMe
