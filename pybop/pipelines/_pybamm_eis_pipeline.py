@@ -242,8 +242,6 @@ class PybammEISPipeline:
         np.ndarray
             Complex array containing the impedance values with corresponding frequencies.
         """
-        self.initialise_eis_pipeline()
-
         if calculate_sensitivities:
             warnings.warn(
                 "Sensitivity calculation not implemented for EIS simulations",
@@ -263,9 +261,11 @@ class PybammEISPipeline:
         return self._pybamm_pipeline.pybop_parameters
 
     def rebuild(self, inputs: Inputs) -> None:
-        """Build the PyBaMM pipeline using the given parameter_values."""
-        return self._pybamm_pipeline.rebuild(inputs=inputs)
+        """Build the PyBaMM EIS pipeline using the given parameter_values."""
+        self._pybamm_pipeline.rebuild(inputs=inputs)
+        return self.initialise_eis_pipeline()
 
     def build(self) -> None:
-        """Build the PyBaMM pipeline using the given parameter_values."""
-        return self._pybamm_pipeline.build()
+        """Build the PyBaMM EIS pipeline using the given parameter_values."""
+        self._pybamm_pipeline.build()
+        return self.initialise_eis_pipeline()
