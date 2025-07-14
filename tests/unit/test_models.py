@@ -31,6 +31,16 @@ class TestModels:
             (pybop.lithium_ion.WeppnerHuggins, "Weppner & Huggins Model", None),
             (pybop.lithium_ion.SPDiffusion, "Single Particle Diffusion Model", None),
             (
+                pybop.lithium_ion.GroupedSPM,
+                "Grouped Single Particle Model",
+                None,
+            ),
+            (
+                pybop.lithium_ion.GroupedSPM,
+                "Grouped Single Particle Model",
+                {"surface form": "differential"},
+            ),
+            (
                 pybop.lithium_ion.GroupedSPMe,
                 "Grouped Single Particle Model with Electrolyte",
                 None,
@@ -59,6 +69,8 @@ class TestModels:
             pybop.lithium_ion.MSMR(options={"number of MSMR reactions": ("6", "4")}),
             pybop.lithium_ion.WeppnerHuggins(),
             pybop.lithium_ion.SPDiffusion(),
+            pybop.lithium_ion.GroupedSPM(),
+            pybop.lithium_ion.GroupedSPM(options={"surface form": "differential"}),
             pybop.lithium_ion.GroupedSPMe(),
             pybop.lithium_ion.GroupedSPMe(options={"surface form": "differential"}),
             pybop.empirical.Thevenin(),
@@ -90,7 +102,12 @@ class TestModels:
 
         # Test new_copy() without pybamm_model
         if not isinstance(
-            model, (pybop.lithium_ion.MSMR, pybop.lithium_ion.GroupedSPMe)
+            model,
+            (
+                pybop.lithium_ion.MSMR,
+                pybop.lithium_ion.GroupedSPM,
+                pybop.lithium_ion.GroupedSPMe,
+            ),
         ):
             new_model = model.new_copy()
             assert new_model.pybamm_model is not None
@@ -103,6 +120,10 @@ class TestModels:
             inputs = {
                 "Negative electrode relative porosity": 0.52,
                 "Positive electrode relative porosity": 0.63,
+            }
+        elif isinstance(model, (pybop.lithium_ion.GroupedSPM)):
+            inputs = {
+                "Series resistance [Ohm]": 0.01,
             }
         elif isinstance(
             model, (pybop.lithium_ion.WeppnerHuggins, pybop.lithium_ion.SPDiffusion)
@@ -552,6 +573,7 @@ class TestModels:
         [
             pybop.lithium_ion.WeppnerHuggins,
             pybop.lithium_ion.SPDiffusion,
+            pybop.lithium_ion.GroupedSPM,
             pybop.lithium_ion.GroupedSPMe,
         ],
     )
@@ -608,6 +630,28 @@ class TestModels:
 
             res = model.predict(t_eval=np.linspace(0, 10, 100))
             assert len(res["Voltage [V]"].data) == 100
+
+        variable_list = model.pybamm_model.default_quick_plot_variables
+        assert isinstance(variable_list, list)
+
+    def test_grouped_SPM(self):
+        parameter_set = pybop.ParameterSet.pybamm("Chen2020")
+        parameter_set["Electrolyte diffusivity [m2.s-1]"] = 1.769e-10
+        parameter_set["Electrolyte conductivity [S.m-1]"] = 0.9487
+
+        grouped_parameter_set = pybop.lithium_ion.GroupedSPM.apply_parameter_grouping(
+            parameter_set
+        )
+        model = pybop.lithium_ion.GroupedSPM(parameter_set=grouped_parameter_set)
+
+        with pytest.raises(
+            ValueError, match="GroupedSPM can currently only accept an initial SoC."
+        ):
+            model.set_initial_state({"Initial open-circuit voltage [V]": 3.7})
+
+        model.set_initial_state({"Initial SoC": 1.0})
+        res = model.predict(t_eval=np.linspace(0, 10, 100))
+        assert len(res["Voltage [V]"].data) == 100
 
         variable_list = model.pybamm_model.default_quick_plot_variables
         assert isinstance(variable_list, list)
