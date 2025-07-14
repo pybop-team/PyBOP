@@ -75,8 +75,6 @@ class PybammPipeline:
         self._var_pts = var_pts or model.default_var_pts
         self._spatial_methods = spatial_methods or model.default_spatial_methods
         self._solver = solver or model.default_solver
-        if not isinstance(self._solver, pybamm.IDAKLUSolver):
-            raise SolverError("PyBOP only supports the IDAKLU solver.")
 
         self._pybop_parameters = pybop_parameters or Parameters([])
         self._t_start = np.float64(t_start)
