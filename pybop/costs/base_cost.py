@@ -1,4 +1,3 @@
-import warnings
 from typing import Optional, Union
 
 import numpy as np
@@ -75,10 +74,6 @@ class BaseCost:
             solver_class_name = type(solver).__name__
 
             if solver_class_name == "CasadiSolver":
-                warnings.warn(
-                    "Casadi solver does not support sensitivity analysis. Gradient will not be calculated.",
-                    stacklevel=2,
-                )
                 return False
 
         return requested
