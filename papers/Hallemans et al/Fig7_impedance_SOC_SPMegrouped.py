@@ -1,6 +1,9 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pybamm
+from scipy.io import savemat
 
 import pybop
 
@@ -53,3 +56,9 @@ ax.set(xlabel=r"$Z_r(\omega)$ [$\Omega$]", ylabel=r"$-Z_j(\omega)$ [$\Omega$]")
 ax.grid()
 ax.set_aspect("equal", "box")
 plt.show()
+
+# Save data
+mdic = {"Z": impedances, "f": frequencies, "SOC": SOCs}
+current_dir = Path(__file__).parent
+save_path = current_dir / "Data" / "Z_SPMegrouped_SOC_chen2020.mat"
+savemat(save_path, mdic)
