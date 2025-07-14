@@ -5,7 +5,6 @@ import numpy as np
 from scipy.io import savemat
 
 import pybop
-from pybop.models.lithium_ion.basic_SPMe import BaseGroupedSPMe
 
 SOC = 0.2
 
