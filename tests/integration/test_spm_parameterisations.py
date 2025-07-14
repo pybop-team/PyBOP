@@ -23,7 +23,9 @@ class Test_SPM_Parameterisation:
 
     @pytest.fixture
     def model(self):
-        return pybamm.lithium_ion.SPM()
+        model = pybamm.lithium_ion.SPM()
+        model.events = []
+        return model
 
     @pytest.fixture
     def parameter_values(self):
