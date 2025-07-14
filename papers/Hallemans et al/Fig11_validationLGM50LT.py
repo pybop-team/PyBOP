@@ -14,7 +14,7 @@ parameter_set["Electrolyte conductivity [S.m-1]"] = 1e16
 parameter_set["Negative electrode conductivity [S.m-1]"] = 1e16
 parameter_set["Positive electrode conductivity [S.m-1]"] = 1e16
 
-grouped_parameters = BaseGroupedSPMe.apply_parameter_grouping(parameter_set)
+grouped_parameters = pybop.lithium_ion.GroupedSPMe.apply_parameter_grouping(parameter_set)
 
 ## Information battery About:Energy
 current_dir = Path(__file__).parent
