@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import pybop
-from pybop.models.lithium_ion.basic_SPMe import BaseGroupedSPMe
 
 ## Group parameter set
 R0 = 0.01
