@@ -13,7 +13,9 @@ parameter_set["Electrolyte conductivity [S.m-1]"] = 1e16
 parameter_set["Negative electrode conductivity [S.m-1]"] = 1e16
 parameter_set["Positive electrode conductivity [S.m-1]"] = 1e16
 
-grouped_parameters = pybop.lithium_ion.GroupedSPMe.apply_parameter_grouping(parameter_set)
+grouped_parameters = pybop.lithium_ion.GroupedSPMe.apply_parameter_grouping(
+    parameter_set
+)
 grouped_parameters["Series resistance [Ohm]"] = R0
 
 ## Create model
@@ -24,7 +26,7 @@ model = pybop.lithium_ion.GroupedSPMe(
     eis=True,
     var_pts=var_pts,
     options=model_options,
-    solver=pybamm.CasadiSolver()
+    solver=pybamm.CasadiSolver(),
 )
 
 ## Simulate impedance

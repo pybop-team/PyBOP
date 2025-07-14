@@ -84,9 +84,10 @@ var_pts = {"x_n": 100, "x_s": 20, "x_p": 100, "r_n": 100, "r_p": 100}
 ## Model
 model = pybop.lithium_ion.GroupedSPMe(
     parameter_set=grouped_parameters,
-    eis=True, var_pts=var_pts,
+    eis=True,
+    var_pts=var_pts,
     options=model_options,
-    solver=pybamm.CasadiSolver()
+    solver=pybamm.CasadiSolver(),
 )
 
 ## Choose parameter bounds for optimisation
@@ -202,7 +203,9 @@ parameters = pybop.Parameters(
 
 
 ## Read impedance data LG M50LT
-EIS_data_path = current_dir / "Data" / "LGM50LT" / "impedanceLGM50LT_Hybrid_4h_3mVrms.mat"
+EIS_data_path = (
+    current_dir / "Data" / "LGM50LT" / "impedanceLGM50LT_Hybrid_4h_3mVrms.mat"
+)
 EIS_data = scipy.io.loadmat(EIS_data_path)
 
 impedances = EIS_data.get("Z")
@@ -282,7 +285,7 @@ modelhat = pybop.lithium_ion.GroupedSPMe(
     eis=True,
     var_pts=var_pts,
     options=model_options,
-    solver=pybamm.CasadiSolver()
+    solver=pybamm.CasadiSolver(),
 )
 
 Nfreq = len(frequencies)

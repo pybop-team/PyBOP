@@ -24,7 +24,9 @@ parameter_set["Electrolyte conductivity [S.m-1]"] = 1e16
 parameter_set["Negative electrode conductivity [S.m-1]"] = 1e16
 parameter_set["Positive electrode conductivity [S.m-1]"] = 1e16
 
-grouped_parameters = pybop.lithium_ion.GroupedSPMe.apply_parameter_grouping(parameter_set)
+grouped_parameters = pybop.lithium_ion.GroupedSPMe.apply_parameter_grouping(
+    parameter_set
+)
 grouped_parameters["Series resistance [Ohm]"] = R0
 model_options = {"surface form": "differential", "contact resistance": "true"}
 var_pts = {"x_n": 100, "x_s": 20, "x_p": 100, "r_n": 100, "r_p": 100}
@@ -45,7 +47,7 @@ for ii, param in enumerate(params):
         eis=True,
         options=model_options,
         var_pts=var_pts,
-        solver=pybamm.CasadiSolver()
+        solver=pybamm.CasadiSolver(),
     )
     model.build(
         initial_state={"Initial SoC": SOC},

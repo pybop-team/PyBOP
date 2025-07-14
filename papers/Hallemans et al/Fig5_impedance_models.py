@@ -26,9 +26,10 @@ var_pts = {"x_n": 100, "x_s": 20, "x_p": 100, "r_n": 100, "r_p": 100}
 ## SPM
 model = pybop.lithium_ion.SPM(
     parameter_set=parameter_set,
-    options=model_options, eis=True,
+    options=model_options,
+    eis=True,
     var_pts=var_pts,
-    solver=pybamm.CasadiSolver()
+    solver=pybamm.CasadiSolver(),
 )
 model.build(initial_state={"Initial SoC": SOC})
 
@@ -41,7 +42,7 @@ model = pybop.lithium_ion.SPMe(
     options=model_options,
     eis=True,
     var_pts=var_pts,
-    solver=pybamm.CasadiSolver()
+    solver=pybamm.CasadiSolver(),
 )
 model.build(initial_state={"Initial SoC": SOC})
 simulation = model.simulateEIS(inputs=None, f_eval=frequencies)
@@ -53,7 +54,7 @@ model = pybop.lithium_ion.DFN(
     options=model_options,
     eis=True,
     var_pts=var_pts,
-    solver=pybamm.CasadiSolver()
+    solver=pybamm.CasadiSolver(),
 )
 model.build(initial_state={"Initial SoC": SOC})
 simulation = model.simulateEIS(inputs=None, f_eval=frequencies)
