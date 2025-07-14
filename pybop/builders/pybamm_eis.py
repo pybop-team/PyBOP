@@ -36,7 +36,7 @@ class PybammEIS(builders.BaseBuilder):
         var_pts: dict | None = None,
         spatial_methods: dict | None = None,
         initial_state: float | str | None = None,
-        build_on_eval: bool = True,
+        build_on_eval: bool = False,
     ) -> None:
         """
         Adds a simulation for the optimisation problem.
@@ -61,7 +61,9 @@ class PybammEIS(builders.BaseBuilder):
             represented as SoC and must be in range 0 to 1. If str, it will be represented as voltage and
             needs to be in the format: "3.4 V".
         build_on_eval : bool
-            Boolean to determine if the model will be rebuilt every evaluation (default: True).
+            Boolean to determine if the model will be rebuilt every evaluation. If `initial_state` is provided,
+            the model will be rebuilt every evaluation unless `build_on_eval` is `False`, in which case the model
+            is built with the parameter values from construction only.
         """
         self._model = model.new_copy()
         self._geometry = geometry
