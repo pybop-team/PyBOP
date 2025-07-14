@@ -140,7 +140,6 @@ class TestProblem:
             model,
             parameter_values=parameter_values,
             solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
-            build_on_eval=False,
         )
         builder.add_parameter(
             pybop.Parameter(

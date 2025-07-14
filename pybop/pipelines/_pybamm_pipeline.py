@@ -31,7 +31,7 @@ class PybammPipeline:
         t_end: np.number = 1.0,
         t_interp: np.ndarray | None = None,
         initial_state: float | str | None = None,
-        build_on_eval: bool = True,
+        build_on_eval: bool = False,
     ):
         """
         Parameters
@@ -64,7 +64,9 @@ class PybammPipeline:
             represented as SoC and must be in range 0 to 1. If str, it will be represented as voltage and
             needs to be in the format: "3.4 V".
         build_on_eval : bool
-            Boolean to determine if the model will be rebuilt every evaluation (default: True).
+            Boolean to determine if the model will be rebuilt every evaluation. If `initial_state` is provided,
+            the model will be rebuilt every evaluation unless `build_on_eval` is `False`, in which case the model
+            is built with the parameter values from construction only.
         """
         self._model = model
         self._geometry = geometry or model.default_geometry
@@ -73,6 +75,8 @@ class PybammPipeline:
         self._var_pts = var_pts or model.default_var_pts
         self._spatial_methods = spatial_methods or model.default_spatial_methods
         self._solver = solver or model.default_solver
+        if not isinstance(self._solver, pybamm.IDAKLUSolver):
+            raise SolverError("PyBOP only supports the IDAKLU solver.")
 
         self._pybop_parameters = pybop_parameters or Parameters([])
         self._t_start = np.float64(t_start)
@@ -118,6 +122,9 @@ class PybammPipeline:
                     else:
                         for _, sym in spatial_limits.items():
                             self._process_and_check(sym)
+
+            # Also check initial state calculation (shouldn't be needed in future)
+            self._set_initial_state()
         except ValueError:
             return True
         return False

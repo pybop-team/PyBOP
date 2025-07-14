@@ -79,7 +79,7 @@ class TestPlots:
     @pytest.fixture
     def problem(self, model, parameters, dataset):
         builder = pybop.Pybamm()
-        builder.set_simulation(model, build_on_eval=False)
+        builder.set_simulation(model)
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)
@@ -91,7 +91,7 @@ class TestPlots:
     @pytest.fixture
     def likelihood_problem(self, model, parameters, dataset):
         builder = pybop.Pybamm()
-        builder.set_simulation(model, build_on_eval=False)
+        builder.set_simulation(model)
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)
@@ -196,7 +196,7 @@ class TestPlots:
 
     def test_contour_incorrect_number_of_parameters(self, model, dataset):
         builder = pybop.Pybamm()
-        builder.set_simulation(model, build_on_eval=False)
+        builder.set_simulation(model)
         builder.set_dataset(dataset)
         builder.add_parameter(
             pybop.Parameter(
@@ -252,7 +252,7 @@ class TestPlots:
             }
         )
         builder = pybop.builders.PybammEIS()
-        builder.set_simulation(model, build_on_eval=False)
+        builder.set_simulation(model)
         builder.set_dataset(dataset)
         builder.add_parameter(parameter)
         builder.add_cost(pybop.costs.SumSquaredError())

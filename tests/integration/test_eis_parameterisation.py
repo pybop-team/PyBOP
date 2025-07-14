@@ -109,11 +109,7 @@ class TestEISParameterisation:
             }
         )
         builder = pybop.PybammEIS()
-        builder.set_simulation(
-            model,
-            parameter_values=parameter_values,
-            build_on_eval=False,
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.set_dataset(dummy_dataset)
         for p in parameters:
             builder.add_parameter(p)
@@ -132,11 +128,7 @@ class TestEISParameterisation:
     @pytest.fixture
     def problem(self, model, parameters, cost, init_soc, parameter_values, dataset):
         builder = pybop.PybammEIS()
-        builder.set_simulation(
-            model,
-            parameter_values=parameter_values,
-            build_on_eval=False,
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)

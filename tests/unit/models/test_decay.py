@@ -74,7 +74,6 @@ class TestDecay:
             model_config["model"],
             parameter_values=model_config["parameter_values"],
             solver=model_config["solver"],
-            build_on_eval=False,
         )
 
         for parameter in parameters:

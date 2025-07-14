@@ -137,7 +137,3 @@ class PybammProblem(Problem):
     @property
     def pipeline(self):
         return self._pipeline
-
-    @property
-    def fitting_data(self):
-        return self._fitting_data
