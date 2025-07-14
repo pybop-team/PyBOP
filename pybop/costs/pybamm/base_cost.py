@@ -10,8 +10,8 @@ from pybop import Parameter as PybopParameter
 @dataclass
 class PybammExpressionMetadata:
     """
-    Metadata for a PyBaMM cost function. This includes the variable name, expression,
-    and any parameters that are needed to evaluate the cost function.
+    Metadata for a PyBaMM variable. This includes the variable name, expression,
+    and any parameters that are needed to evaluate the variable.
     """
 
     variable_name: str
@@ -22,9 +22,8 @@ class PybammExpressionMetadata:
 @dataclass
 class PybammParameterMetadata:
     """
-    Metadata for a PyBaMM parameter. This includes the
-    pybamm parameter and the default value to use if the parameter is not
-    set explicitly.
+    Metadata for a PyBaMM parameter. This includes the pybamm parameter and the
+    default value to use if the parameter is not set explicitly.
     """
 
     parameter: pybamm.Parameter
@@ -40,18 +39,18 @@ class PybammCost:
 
     def metadata(self) -> PybammExpressionMetadata:
         """
-        Returns the metadata for the cost function. This includes the variable name,
-        expression, and any parameters that are needed to evaluate the cost function.
+        Returns the metadata for the variable. This includes the variable name,
+        expression, and any parameters that are needed to evaluate the variable.
         """
         if self._metadata is None:
-            raise ValueError("Cost function has not been added to model yet.")
+            raise ValueError("Variable has not been added to model yet.")
         return self._metadata
 
     @classmethod
-    def make_unique_cost_name(cls) -> str:
+    def make_unique_variable_name(cls) -> str:
         """
-        Make a unique name for the cost function variable using the name of the class
-        and a UUID. This is used to avoid name collisions in the pybamm model.
+        Make a unique name for the variable using the name of the class and a
+        UUID. This is used to avoid name collisions in the pybamm model.
         """
         return f"{cls.__class__.__name__}_{uuid4()}"
 
@@ -61,7 +60,7 @@ class PybammCost:
         dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
         """
-        Defines the variable expression for the cost function, returning a
+        Defines the expression for the variable, returning a
         PybammExpressionMetadata object. This should be implemented in the
         subclass. The metadata object contains the variable name, expression,
         and any parameters that are needed to evaluate the cost function.
@@ -87,7 +86,7 @@ class PybammCost:
 
     def _construct_discrete_time_node(self, dataset, model, name):
         """
-        Constructs the pybamm DiscreteTimeData node in the expression tree
+        Constructs the pybamm DiscreteTimeData node in the expression tree.
         """
         times = dataset["Time [s]"]
         values = dataset[self._data_name]

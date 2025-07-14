@@ -35,8 +35,11 @@ class GravimetricEnergyDensity(DesignCost):
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
-        # Check args
-        name = GravimetricEnergyDensity.make_unique_cost_name()
+        """
+        Defines the variable name, expression, and any parameters that are
+        needed to evaluate the cost function.
+        """
+        name = GravimetricEnergyDensity.make_unique_variable_name()
         expression = (
             1
             / 3600
@@ -44,11 +47,11 @@ class GravimetricEnergyDensity(DesignCost):
             * model.variables["Current [A]"]
             / pybamm.Parameter("Cell mass [kg]")
         )
-        parameters = {}
+
         return PybammExpressionMetadata(
             variable_name=name,
             expression=pybamm.ExplicitTimeIntegral(expression, pybamm.Scalar(0.0)),
-            parameters=parameters,
+            parameters={},
         )
 
 
@@ -74,8 +77,11 @@ class VolumetricEnergyDensity(DesignCost):
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
-        # Check args
-        name = VolumetricEnergyDensity.make_unique_cost_name()
+        """
+        Defines the variable name, expression, and any parameters that are
+        needed to evaluate the cost function.
+        """
+        name = VolumetricEnergyDensity.make_unique_variable_name()
         expression = (
             model.variables["Voltage [V]"]
             * model.variables["Current [A]"]
@@ -114,20 +120,19 @@ class GravimetricPowerDensity(DesignCost):
         dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
         # Check args
-        name = GravimetricPowerDensity.make_unique_cost_name()
+        name = GravimetricPowerDensity.make_unique_variable_name()
         expression = (
             model.variables["Voltage [V]"]
             * model.variables["Current [A]"]
             / pybamm.Parameter("Cell mass [kg]")
         )
 
-        parameters = {}
         return PybammExpressionMetadata(
             variable_name=name,
             expression=pybamm.ExplicitTimeIntegral(
                 expression, pybamm.Scalar(0.0)
             ),  # This needs a continuous mean operator
-            parameters=parameters,
+            parameters={},
         )
 
 
@@ -153,8 +158,11 @@ class VolumetricPowerDensity(DesignCost):
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
-        # Check args
-        name = VolumetricPowerDensity.make_unique_cost_name()
+        """
+        Defines the variable name, expression, and any parameters that are
+        needed to evaluate the cost function.
+        """
+        name = VolumetricPowerDensity.make_unique_variable_name()
         expression = (
             model.variables["Voltage [V]"]
             * model.variables["Current [A]"]

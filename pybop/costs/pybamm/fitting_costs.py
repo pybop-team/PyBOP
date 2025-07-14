@@ -10,16 +10,12 @@ from pybop.costs.pybamm.base_cost import (
 )
 
 
-class SumSquaredError(PybammCost):
+class PybammErrorMeasure(PybammCost):
     """
-    A SumSquaredError cost implementation within Pybamm.
+    A base class for error measure implementations within Pybamm.
     """
 
-    def __init__(
-        self,
-        variable_name: str,
-        data_name: str,
-    ):
+    def __init__(self, variable_name: str = None, data_name: str = None):
         super().__init__()
         self._variable_name = variable_name
         self._data_name = data_name
@@ -29,21 +25,41 @@ class SumSquaredError(PybammCost):
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
-        # Check args
-        name = SumSquaredError.make_unique_cost_name()
+        """
+        Defines the variable name, expression, and any parameters that are
+        needed to evaluate the cost function.
+        """
+        name = PybammErrorMeasure.make_unique_variable_name()
         self._check_state(dataset, model, name)
         data, var = self._construct_discrete_time_node(dataset, model, name)
-        parameters = {}
-        sum_expr = (var - data) ** 2
 
         return PybammExpressionMetadata(
             variable_name=name,
-            expression=pybamm.DiscreteTimeSum(sum_expr),
-            parameters=parameters,
+            expression=self.expression(var=var, data=data),
+            parameters={},
         )
 
+    def expression(self, var, data):
+        raise NotImplementedError
 
-class MeanAbsoluteError(PybammCost):
+
+class SumSquaredError(PybammErrorMeasure):
+    """
+    Sum of squared error (SSE) cost function.
+
+    Compute the sum of the squares of the differences between model predictions
+    and target data, which serves as a measure of the total error between the
+    predicted and observed values.
+    """
+
+    def __init__(self, variable_name: str, data_name: str):
+        super().__init__(variable_name=variable_name, data_name=data_name)
+
+    def expression(self, var, data):
+        return pybamm.DiscreteTimeSum((var - data) ** 2)
+
+
+class MeanAbsoluteError(PybammErrorMeasure):
     """
     Mean absolute error (MAE) cost function.
 
@@ -59,31 +75,14 @@ class MeanAbsoluteError(PybammCost):
     """
 
     def __init__(self, variable_name: str, data_name: str):
-        super().__init__()
-        self._variable_name = variable_name
-        self._data_name = data_name
+        super().__init__(variable_name=variable_name, data_name=data_name)
 
-    def variable_expression(
-        self,
-        model: pybamm.BaseModel,
-        dataset: Dataset | None = None,
-    ) -> PybammExpressionMetadata:
-        # Check args
-        name = MeanAbsoluteError.make_unique_cost_name()
-        self._check_state(dataset, model, name)
-        data, var = self._construct_discrete_time_node(dataset, model, name)
-
-        # Create Expression
-        sum_expr = pybamm.AbsoluteValue(var - data) / len(data.y)
-
-        return PybammExpressionMetadata(
-            variable_name=name,
-            expression=pybamm.DiscreteTimeSum(sum_expr),
-            parameters={},
-        )
+    def expression(self, var, data):
+        abs_diff = pybamm.AbsoluteValue(var - data)
+        return pybamm.DiscreteTimeSum(abs_diff) / len(data.y)
 
 
-class MeanSquaredError(PybammCost):
+class MeanSquaredError(PybammErrorMeasure):
     """
     Mean square error (MSE) cost function.
 
@@ -93,32 +92,13 @@ class MeanSquaredError(PybammCost):
     """
 
     def __init__(self, variable_name: str, data_name: str):
-        super().__init__()
-        self._variable_name = variable_name
-        self._data_name = data_name
+        super().__init__(variable_name=variable_name, data_name=data_name)
 
-    def variable_expression(
-        self,
-        model: pybamm.BaseModel,
-        dataset: Dataset | None = None,
-    ) -> PybammExpressionMetadata:
-        # Check args
-        name = MeanSquaredError.make_unique_cost_name()
-        self._check_state(dataset, model, name)
-        data, var = self._construct_discrete_time_node(dataset, model, name)
-
-        # Create Expression
-        squared_error = (var - data) ** 2
-        sum_expr = squared_error / len(data.y)
-
-        return PybammExpressionMetadata(
-            variable_name=name,
-            expression=pybamm.DiscreteTimeSum(sum_expr),
-            parameters={},
-        )
+    def expression(self, var, data):
+        return pybamm.DiscreteTimeSum((var - data) ** 2) / len(data.y)
 
 
-class RootMeanSquaredError(PybammCost):
+class RootMeanSquaredError(PybammErrorMeasure):
     """
     Root mean square error (RMSE) cost function.
 
@@ -128,33 +108,15 @@ class RootMeanSquaredError(PybammCost):
     """
 
     def __init__(self, variable_name: str, data_name: str):
-        super().__init__()
-        self._variable_name = variable_name
-        self._data_name = data_name
+        super().__init__(variable_name=variable_name, data_name=data_name)
 
-    def variable_expression(
-        self,
-        model: pybamm.BaseModel,
-        dataset: Dataset | None = None,
-    ) -> PybammExpressionMetadata:
-        # Check args
-        name = RootMeanSquaredError.make_unique_cost_name()
-        self._check_state(dataset, model, name)
-        data, var = self._construct_discrete_time_node(dataset, model, name)
-
-        # Create Expression
+    def expression(self, var, data):
         squared_error = (var - data) ** 2
-        mean_squared_error = squared_error / len(data.y)
-        sum_expr = pybamm.sqrt(mean_squared_error)
-
-        return PybammExpressionMetadata(
-            variable_name=name,
-            expression=pybamm.DiscreteTimeSum(sum_expr),
-            parameters={},
-        )
+        mean_squared_error = pybamm.DiscreteTimeSum(squared_error) / len(data.y)
+        return pybamm.sqrt(mean_squared_error)
 
 
-class Minkowski(PybammCost):
+class Minkowski(PybammErrorMeasure):
     """
     The Minkowski distance is a generalisation of several distance metrics,
     including the Euclidean and Manhattan distances. It is defined as:
@@ -170,7 +132,7 @@ class Minkowski(PybammCost):
     """
 
     def __init__(self, variable_name: str, data_name: str, p: float = 2.0):
-        super().__init__()
+        super().__init__(variable_name=variable_name, data_name=data_name)
         if p <= 0:
             raise ValueError(
                 "The order of the Minkowski distance must be greater than 0."
@@ -179,33 +141,14 @@ class Minkowski(PybammCost):
             raise ValueError(
                 "For p = infinity, an implementation of the Chebyshev distance is required."
             )
-        self._variable_name = variable_name
-        self._data_name = data_name
         self._p = p
 
-    def variable_expression(
-        self,
-        model: pybamm.BaseModel,
-        dataset: Dataset | None = None,
-    ) -> PybammExpressionMetadata:
-        # Check args
-        name = Minkowski.make_unique_cost_name()
-        self._check_state(dataset, model, name)
-        data, var = self._construct_discrete_time_node(dataset, model, name)
-
-        # Create Expression
-        diff = var - data
-        abs_diff = pybamm.AbsoluteValue(diff)
-        expression = pybamm.DiscreteTimeSum(abs_diff**self._p) ** (1 / self._p)
-
-        return PybammExpressionMetadata(
-            variable_name=name,
-            expression=expression,
-            parameters={},
-        )
+    def expression(self, var, data):
+        abs_diff = pybamm.AbsoluteValue(var - data)
+        return pybamm.DiscreteTimeSum(abs_diff**self._p) ** (1 / self._p)
 
 
-class SumOfPower(PybammCost):
+class SumOfPower(PybammErrorMeasure):
     """
     The Sum of Power [1] is a generalised cost function based on the p-th power
     of absolute differences between two vectors. It is defined as:
@@ -232,35 +175,16 @@ class SumOfPower(PybammCost):
     """
 
     def __init__(self, variable_name: str, data_name: str, p: float = 2.0):
-        super().__init__()
+        super().__init__(variable_name=variable_name, data_name=data_name)
         if p < 0:
             raise ValueError("The order of 'p' must be greater than 0.")
         elif not np.isfinite(p):
             raise ValueError("p = np.inf is not yet supported.")
-        self._variable_name = variable_name
-        self._data_name = data_name
         self._p = float(p)
 
-    def variable_expression(
-        self,
-        model: pybamm.BaseModel,
-        dataset: Dataset | None = None,
-    ) -> PybammExpressionMetadata:
-        # Check args
-        name = SumOfPower.make_unique_cost_name()
-        self._check_state(dataset, model, name)
-        data, var = self._construct_discrete_time_node(dataset, model, name)
-
-        # Create Expression
-        diff = var - data
-        abs_diff = pybamm.AbsoluteValue(diff)
-        sum_expr = abs_diff**self._p
-
-        return PybammExpressionMetadata(
-            variable_name=name,
-            expression=pybamm.DiscreteTimeSum(sum_expr),
-            parameters={},
-        )
+    def expression(self, var, data):
+        abs_diff = pybamm.AbsoluteValue(var - data)
+        return pybamm.DiscreteTimeSum(abs_diff**self._p)
 
 
 class NegativeGaussianLogLikelihood(BaseLikelihood):
@@ -290,8 +214,11 @@ class NegativeGaussianLogLikelihood(BaseLikelihood):
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
-        # Check args
-        name = NegativeGaussianLogLikelihood.make_unique_cost_name()
+        """
+        Defines the variable name, expression, and any parameters that are
+        needed to evaluate the cost function.
+        """
+        name = NegativeGaussianLogLikelihood.make_unique_variable_name()
         self._check_state(dataset, model, name)
         data, var = self._construct_discrete_time_node(dataset, model, name)
 
@@ -322,10 +249,7 @@ class ScaledCost(PybammCost):
     BaseCost, which can improve optimiser convergence in certain cases.
     """
 
-    def __init__(
-        self,
-        cost: PybammCost,
-    ):
+    def __init__(self, cost: PybammCost):
         super().__init__()
         self._cost = cost
 
@@ -334,8 +258,11 @@ class ScaledCost(PybammCost):
         model: pybamm.BaseModel,
         dataset: Dataset | None = None,
     ) -> PybammExpressionMetadata:
-        # Check args
-        name = ScaledCost.make_unique_cost_name()
+        """
+        Defines the variable name, expression, and any parameters that are
+        needed to evaluate the cost function.
+        """
+        name = ScaledCost.make_unique_variable_name()
         cost_metadata = self._cost.variable_expression(model, dataset)
 
         return PybammExpressionMetadata(
