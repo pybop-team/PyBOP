@@ -54,17 +54,9 @@ class BaseSampler:
         self.set_parallel(self.options.parallel)
 
         # Get initial conditions
-        if self._options.x0 is not None and np.isscalar(self._options.x0):
-            x0 = self._problem.params.transformation.to_search(
-                np.ones(self._options.n_chains) * self._options.x0
-            )
-        else:
-            x0 = problem.params.sample_from_priors(
-                n_samples=self._options.n_chains, transformed=True
-            )
-        if x0 is None:
-            raise ValueError("Initial parameter values could not be sampled.")
-        self._x0 = x0
+        self._x0 = self.problem.params.get_initial_values(transformed=True) * np.ones(
+            [self._options.n_chains, 1]
+        )
 
         param_dims = len(self.problem.params)
         if np.isscalar(self._options.cov):

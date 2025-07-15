@@ -181,7 +181,9 @@ class BasePintsSampler(BaseSampler):
                 self._end_initial_phase()
 
             xs = self._ask_for_samples()
-            self.fxs = evaluator.evaluate(xs)
+            model_xs = [self.problem.params.transformation().to_model(x) for x in xs]
+
+            self.fxs = evaluator.evaluate(model_xs)
             self._process_chains()
 
             if self._single_chain:
@@ -259,7 +261,10 @@ class BasePintsSampler(BaseSampler):
 
             def fun(x):
                 self.problem.set_params(x)
-                return self.problem.run_with_sensitivities()
+                loss, grad = self.problem.run_with_sensitivities()
+                jac = self.problem.params.transformation().jacobian(x)
+                grad = np.matmul(grad, jac)
+                return (-loss, -grad)
 
         else:
 
