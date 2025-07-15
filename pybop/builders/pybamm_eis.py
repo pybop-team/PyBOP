@@ -57,7 +57,9 @@ class PybammEIS(builders.BaseBuilder):
         self._parameter_values = parameter_values
         self._solver = pybamm.CasadiSolver()
 
-    def add_cost(self, cost: Callable | CallableCost, weight: float = 1.0) -> None:
+    def add_cost(
+        self, cost: Callable | CallableCost, weight: float = 1.0
+    ) -> "PybammEIS":
         """Adds a cost to the problem."""
         if not isinstance(cost, CallableCost):
             if not isinstance(cost, Callable):
@@ -77,6 +79,8 @@ class PybammEIS(builders.BaseBuilder):
 
         self._costs.append(cost)
         self._cost_weights.append(weight)
+
+        return self
 
     def _set_cost_domain_weighting(self, cost):
         """Calculate domain-based weighting."""

@@ -38,7 +38,7 @@ class Pybamm(BaseBuilder):
         solver: pybamm.BaseSolver = None,
         initial_state: float | str = None,
         build_on_eval: bool = None,
-    ) -> None:
+    ) -> "Pybamm":
         """
         Adds a simulation for the optimisation problem.
 
@@ -69,12 +69,16 @@ class Pybamm(BaseBuilder):
             else model.default_parameter_values
         )
 
-    def add_cost(self, cost: PybammCost, weight: float = 1.0) -> None:
+        return self
+
+    def add_cost(self, cost: PybammCost, weight: float = 1.0) -> "Pybamm":
         """
         Adds a cost to the problem with optional weighting.
         """
         self._costs.append(cost)
         self._cost_weights.append(weight)
+
+        return self
 
     def build(self) -> pybop.PybammProblem:
         """
