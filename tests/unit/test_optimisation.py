@@ -4,6 +4,7 @@ import sys
 import warnings
 
 import numpy as np
+import pybamm
 import pytest
 from pints import PopulationBasedOptimiser
 
@@ -126,6 +127,14 @@ class TestOptimisation:
         cost = pybop.RootMeanSquaredError(problem)
         with pytest.raises(ValueError, match="There are no parameters to optimise."):
             pybop.Optimisation(cost=cost)
+
+    def test_sensitivities_not_available(self, cost):
+        cost.problem.model.solver = pybamm.CasadiSolver()
+        with pytest.raises(
+            ValueError,
+            match="This optimiser needs sensitivities, but sensitivities are not supported by this model/solver.",
+        ):
+            pybop.GradientDescent(cost=cost)
 
     @pytest.mark.parametrize(
         "optimiser",

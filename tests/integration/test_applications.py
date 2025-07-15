@@ -188,8 +188,8 @@ class TestApplications:
         )
         diffusion_time = parameter_set["Particle diffusion time scale [s]"]
 
-        gitt_fit = pybop.GITTPulseFit(pulse_data, parameter_set, electrode="positive")
-        gitt_results = gitt_fit()
+        gitt_fit = pybop.GITTPulseFit(parameter_set=parameter_set, electrode="positive")
+        gitt_results = gitt_fit(gitt_pulse=pulse_data)
 
         np.testing.assert_allclose(gitt_results.x[0], diffusion_time, rtol=5e-2)
 

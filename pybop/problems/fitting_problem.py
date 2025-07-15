@@ -223,4 +223,9 @@ class FittingProblem(BaseProblem):
         """
         inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(inputs.values()))
-        return self._evaluate(self._model.simulateS1, inputs, calculate_grad=True)
+        calc_grad = (
+            self.model.check_sensitivities_available()
+            if self.model is not None
+            else True
+        )
+        return self._evaluate(self._model.simulateS1, inputs, calculate_grad=calc_grad)
