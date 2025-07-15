@@ -23,19 +23,17 @@ class TestClassification:
         ]
     )
     def parameters(self, request):
-        ground_truth = request.param
+        self.ground_truth = request.param
         return [
             pybop.Parameter(
                 "R0 [Ohm]",
                 prior=pybop.Gaussian(0.05, 0.01),
                 bounds=[0.02, 0.08],
-                true_value=ground_truth[0],
             ),
             pybop.Parameter(
                 "R1 [Ohm]",
                 prior=pybop.Gaussian(0.05, 0.01),
                 bounds=[0.02, 0.08],
-                true_value=ground_truth[1],
             ),
         ]
 
@@ -58,7 +56,8 @@ class TestClassification:
     @pytest.fixture
     def dataset(self, model, parameter_values, parameters):
         parameters = pybop.Parameters(parameters)
-        parameter_values.update(parameters.to_dict(parameters.true_values()))
+        parameters.update(values=self.ground_truth)
+        parameter_values.update(parameters.to_dict())
         experiment = pybamm.Experiment(
             [
                 "Discharge at 0.5C for 2 minutes (4 seconds period)",
@@ -90,7 +89,7 @@ class TestClassification:
         return builder.build()
 
     def test_classify_using_hessian(self, problem):
-        x = problem.params.true_value()
+        x = self.ground_truth
         bounds = problem.params.get_bounds()
         x0 = np.clip(x, bounds["lower"], bounds["upper"])
         problem.set_params(x0)
@@ -124,17 +123,16 @@ class TestClassification:
             raise Exception(f"Please add a check for these values: {x}")
 
     def test_insensitive_classify_using_hessian(self, parameter_values):
+        true_values = np.asarray([0.001, 0.0])
         param_R0_a = pybop.Parameter(
             "R0_a [Ohm]",
             bounds=[0, 0.002],
             initial_value=0.001,
-            true_value=0.001,
         )
         param_R0_b = pybop.Parameter(
             "R0_b [Ohm]",
             bounds=[-1e-4, 1e-4],
             initial_value=0,
-            true_value=0,
         )
         parameter_values.update(
             {"R0_a [Ohm]": 0.001, "R0_b [Ohm]": 0},
@@ -178,12 +176,11 @@ class TestClassification:
             )
             problem = builder.build()
 
-            x = problem.params.true_value()
-            problem.set_params(x)
+            problem.set_params(true_values)
             final_cost = problem.run()
             results = pybop.OptimisationResult(
                 problem=problem,
-                x=x,
+                x=true_values,
                 final_cost=final_cost,
                 n_iterations=1,
                 n_evaluations=1,
@@ -192,8 +189,7 @@ class TestClassification:
 
             message = pybop.classify_using_hessian(problem, results)
             assert message == (
-                "The cost variation is too small to classify with certainty."
-                " The cost is insensitive to a change of 1e-42 in R0_b [Ohm]."
+                "The cost variation is smaller than the cost tolerance: 1e-05."
             )
 
             message = pybop.classify_using_hessian(

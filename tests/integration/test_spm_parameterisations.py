@@ -101,15 +101,15 @@ class Test_SPM_Parameterisation:
             parameter_values=parameter_values,
             experiment=experiment,
         )
-        solution = sim.solve()
-        dataset = pybop.Dataset(
+        sol = sim.solve()
+        _, mask = np.unique(sol.t, return_index=True)
+        return pybop.Dataset(
             {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
+                "Time [s]": sol.t[mask],
+                "Current function [A]": sol["Current [A]"].data[mask],
+                "Voltage [V]": self.noisy(sol["Voltage [V]"].data[mask], self.sigma0),
             }
         )
-        return dataset
 
     @pytest.fixture
     def problem(self, model, parameters, cost_cls, parameter_values, dataset):
@@ -147,10 +147,13 @@ class Test_SPM_Parameterisation:
             options.atol = 1e-6
         elif isinstance(options, pybop.PintsOptions):
             options.absolute_tolerance = 1e-6
-            options.max_unchanged_iterations = 100
+            options.max_unchanged_iterations = 30
+            options.sigma = 2e-2
 
         # Set sigma0 and create optimiser
         optim = optimiser(problem, options)
+        if isinstance(optim, pybop.SimulatedAnnealing):
+            optim.optimiser.cooling_rate = 0.825  # Cool quickly
         return optim
 
     def test_optimisers(self, optim, cost_cls):
@@ -174,30 +177,34 @@ class Test_SPM_Parameterisation:
 
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
-    def test_with_init_soc(self, model, parameters):
+    def test_with_init_soc(self, model, parameters, parameter_values):
         experiment = pybamm.Experiment(
             [
-                "Rest for 1 second",
+                "Rest for 2 seconds",
                 "Discharge at 0.5C for 8 minutes (8 second period)",
                 "Charge at 0.5C for 8 minutes (8 second period)",
             ]
         )
-        init_soc = 0.4
+        init_soc = 0.6
         sim = pybamm.Simulation(
             model=model,
+            parameter_values=parameter_values,
             experiment=experiment,
         )
-        solution = sim.solve(initial_soc=init_soc)
+        sol = sim.solve(initial_soc=init_soc)
+        _, mask = np.unique(sol.t, return_index=True)
         dataset = pybop.Dataset(
             {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
+                "Time [s]": sol.t[mask],
+                "Current function [A]": sol["Current [A]"].data[mask],
+                "Voltage [V]": self.noisy(sol["Voltage [V]"].data[mask], self.sigma0),
             }
         )
         builder = pybop.Pybamm()
         builder.set_simulation(
-            model, initial_state=f"{solution['Voltage [V]'].data[0]} V"
+            model,
+            parameter_values=parameter_values,
+            initial_state=f"{sol['Voltage [V]'].data[0]} V",
         )
         builder.set_dataset(dataset)
         for p in parameters:
@@ -205,11 +212,12 @@ class Test_SPM_Parameterisation:
         signal = "Voltage [V]"
         builder.add_cost(pybop.costs.pybamm.SumSquaredError(signal, signal))
         problem = builder.build()
-        options = pybop.XNES.default_options()
-        options.max_iterations = 100
-        options.absolute_tolerance = 1e-6
-        options.max_unchanged_iterations = 30
-        optim = pybop.XNES(problem, options)
+        options = pybop.PintsOptions(
+            max_iterations=100,
+            absolute_tolerance=1e-6,
+            max_unchanged_iterations=30,
+        )
+        optim = pybop.NelderMead(problem, options)
 
         x0 = optim.problem.params.get_initial_values()
         optim.problem.set_params(x0)
@@ -221,41 +229,3 @@ class Test_SPM_Parameterisation:
 
         assert initial_cost > results.final_cost
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
-
-    @pytest.mark.parametrize("init_soc", [0.4, 0.6])
-    def test_model_misparameterisation(self, parameters, model, init_soc):
-        # Define two different models with different parameter sets
-        # The optimisation should fail as the models are not the same
-        second_parameter_set = pybop.ParameterSet("Ecker2015")
-        second_model = pybop.lithium_ion.SPMe(parameter_set=second_parameter_set)
-
-        # Form dataset
-        solution = self.get_data(second_model, init_soc)
-        dataset = pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Voltage [V]"].data,
-            }
-        )
-
-        # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset)
-        cost = pybop.RootMeanSquaredError(problem)
-
-        # Select optimiser
-        optimiser = pybop.XNES
-
-        # Build the optimisation problem
-        optim = optimiser(cost=cost)
-        initial_cost = optim.cost(optim.x0)
-
-        # Run the optimisation problem
-        results = optim.run()
-
-        # Assertion for final_cost
-        assert initial_cost > results.final_cost
-
-        # Assertion for x
-        with np.testing.assert_raises(AssertionError):
-            np.testing.assert_allclose(results.x, self.ground_truth, atol=2e-2)

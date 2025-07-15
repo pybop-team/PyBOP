@@ -113,6 +113,22 @@ class TestBuilder:
         problem2 = builder.build()
         assert problem2 != problem
 
+        # Test chaining
+        builder = (
+            pybop.builders.Pybamm()
+            .set_dataset(dataset)
+            .set_simulation(model, parameter_values=parameter_values)
+            .add_parameter(
+                pybop.Parameter("Positive particle radius [m]", initial_value=5e-6)
+            )
+            .add_parameter(
+                pybop.Parameter("Negative particle radius [m]", initial_value=5e-6)
+            )
+            .add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]"))
+        )
+
+        builder.build()
+
         # Test setting number of threads
         builder.set_n_threads(3)
         problem_single_core = builder.build()
