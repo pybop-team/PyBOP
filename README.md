@@ -145,7 +145,7 @@ Thanks goes to these wonderful people:
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/pipliggins"><img src="https://avatars.githubusercontent.com/u/55396775?v=4?s=100" width="100px;" alt="Pip Liggins"/><br /><sub><b>Pip Liggins</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=pipliggins" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/you"><img src="https://avatars.githubusercontent.com/u/57100752?v=4?s=100" width="100px;" alt="you"/><br /><sub><b>you</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=you" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/vpratz"><img src="https://avatars.githubusercontent.com/u/112951103?v=4?s=100" width="100px;" alt="Valentin Pratz"/><br /><sub><b>Valentin Pratz</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=vpratz" title="Examples">💡</a></td>
     </tr>
   </tbody>
 </table>
