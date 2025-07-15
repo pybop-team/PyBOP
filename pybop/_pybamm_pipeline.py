@@ -85,7 +85,8 @@ class PybammPipeline:
             if initial_state is not None
             else self._determine_rebuild()
         )
-        solver_options = {"max_error_test_failures": 1, "max_convergence_failures": 5}
+
+        solver_options = {}
         if platform.system() != "Windows":
             solver_options["num_threads"] = self._threads
 

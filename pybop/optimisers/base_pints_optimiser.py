@@ -114,6 +114,8 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
             problem,
             options=options,
         )
+        # Transform sigma
+        self._transform_sigma()
 
     @staticmethod
     def default_options() -> PintsOptions:
@@ -126,6 +128,14 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
             The default options for the PINTS optimiser.
         """
         return PintsOptions()
+
+    def _transform_sigma(self) -> np.ndarray:
+        """transforms sigma from model to search space."""
+        if np.isscalar(self._sigma0):
+            param_dims = len(self.problem.params)
+            self._sigma0 = np.ones(param_dims) * self._sigma0
+
+        return self.problem.params.transformation().to_search(self._sigma0)
 
     @property
     def max_iterations(self):
@@ -184,9 +194,6 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         # Create an instance of the PINTS optimiser class
         if issubclass(self._pints_optimiser, PintsOptimiser):
             x0 = self.problem.params.get_initial_values(transformed=True)
-            param_dims = len(x0)
-            if np.isscalar(self._sigma0):
-                self._sigma0 = np.ones(param_dims) * self._sigma0
             self._optimiser = self._pints_optimiser(
                 x0,
                 sigma0=self._sigma0,
