@@ -106,6 +106,13 @@ class BaseCost:
         model_inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(model_inputs.values()))
 
+        if (
+            calculate_grad
+            and self.problem is not None
+            and self.problem.model is not None
+        ):
+            calculate_grad = self.problem.model.check_sensitivities_available()
+
         y = self.DeferredPrediction
         dy = self.DeferredPrediction if calculate_grad else None
 
