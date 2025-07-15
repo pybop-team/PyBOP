@@ -34,8 +34,8 @@ class TestClassifier:
         builder.add_parameter(
             pybop.Parameter(
                 "R0 [Ohm]",
-                prior=pybop.Uniform(0.001, 0.1),
-                bounds=[1e-4, 0.1],
+                prior=pybop.Uniform(1e-3, 1e-2),
+                bounds=[1e-4, 1e-2],
             )
         )
         builder.add_cost(
@@ -46,6 +46,7 @@ class TestClassifier:
     def test_classify_using_hessian_invalid(self, problem):
         options = pybop.GradientDescent.default_options()
         options.max_iterations = 1
+        options.sigma = 1e-2
         results = pybop.GradientDescent(problem, options).run()
 
         with pytest.raises(
