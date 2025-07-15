@@ -83,8 +83,16 @@ class BaseGroupedSPMe(pybamm_lithium_ion.BaseModel):
         pybamm.citations.register("Chen2020")  # for the OCPs
         pybamm.citations.register(
             """
-            @article{HallemansPreprint,
-            title={{Hallemans Preprint}},
+            @article{Hallemans2025,
+            title     = {{Physics-Based Battery Model Parametrisation from Impedance Data}},
+            author    = {Hallemans, Noël and Courtier, Nicola E. and Please, Colin P. and Planden, Brady and Dhoot, Rishit and Timms, Robert and Chapman, S. Jon and Howey, David and Duncan, Stephen R.},
+            journal   = {Journal of the Electrochemical Society},
+            volume    = {172},
+            number    = {6},
+            pages     = {060507},
+            year      = {2025},
+            publisher = {The Electrochemical Society},
+            doi       = {10.1149/1945-7111/add41b}
             }
         """
         )
