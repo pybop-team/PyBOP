@@ -59,25 +59,6 @@ class BaseCost:
             self.grad_fail = None
             self.set_fail_gradient()
 
-    def _can_calculate_grad(self, requested: bool) -> bool:
-        """
-        Returns False if CasadiSolver is used, even if gradient was requested.
-        Falls back to the requested value if solver info is unavailable.
-        """
-
-        if (
-            self.problem is not None
-            and getattr(self.problem, "model", None) is not None
-            and getattr(self.problem.model, "solver", None) is not None
-        ):
-            solver = self.problem.model.solver
-            solver_class_name = type(solver).__name__
-
-            if solver_class_name == "CasadiSolver":
-                return False
-
-        return requested
-
     def __call__(
         self,
         inputs: Union[Inputs, list, np.ndarray],
@@ -111,7 +92,6 @@ class BaseCost:
 
         results = []
         for inputs in inputs_list:
-            calculate_grad = self._can_calculate_grad(calculate_grad)
             result = self.single_call(inputs, calculate_grad=calculate_grad)
             results.append(result)
 
@@ -126,7 +106,12 @@ class BaseCost:
         model_inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(model_inputs.values()))
 
-        calculate_grad = self._can_calculate_grad(calculate_grad)
+        if (
+            calculate_grad
+            and self.problem is not None
+            and self.problem.model is not None
+        ):
+            calculate_grad = self.problem.model.check_sensitivities_available()
 
         y = self.DeferredPrediction
         dy = self.DeferredPrediction if calculate_grad else None

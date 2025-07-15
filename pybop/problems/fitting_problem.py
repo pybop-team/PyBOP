@@ -223,8 +223,8 @@ class FittingProblem(BaseProblem):
         """
         inputs = self.parameters.verify(inputs)
         self.parameters.update(values=list(inputs.values()))
-        if "CasadiSolver" in type(self.model.solver).__name__:
-            calc_grad = False
+        if self.model is not None:
+            calc_grad = self.model.check_sensitivities_available()
         else:
             calc_grad = True
         return self._evaluate(self._model.simulateS1, inputs, calculate_grad=calc_grad)
