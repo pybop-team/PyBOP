@@ -132,6 +132,17 @@ class BaseOptimiser(CostInterface):
         self.set_base_options()
         self._set_up_optimiser()
 
+        if (
+            self._needs_sensitivities
+            and isinstance(self.cost, BaseCost)
+            and self.cost.problem is not None
+            and self.cost.problem.model is not None
+            and not self.cost.problem.model.check_sensitivities_available()
+        ):
+            raise ValueError(
+                "This optimiser needs sensitivities, but sensitivities are not supported by this model/solver."
+            )
+
         # Throw a warning if any options remain
         if self.unset_options:
             warnings.warn(

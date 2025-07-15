@@ -6,8 +6,11 @@
 
 ## Optimisations
 
+- [#763](https://github.com/pybop-team/PyBOP/pull/763) - Updates the GITT pulse fitting method to allow iteration over many pulses.
+
 ## Bug Fixes
 
+- [#737](https://github.com/pybop-team/PyBOP/pull/737) - Sensitivities no longer available for CasadiSolver in Pybamm v25.6 onwards. Updates Hallemans example scripts.
 - [#705](https://github.com/pybop-team/PyBOP/pull/705) - Bug fix `fitting_problem.evaulate()` failure return type alongside fixes for Pybamm `v25.4`.
 - [#546](https://github.com/pybop-team/PyBOP/pull/546) - Default Pybamm solver to `IDAKLU`, changes required for Pybamm v25.4.1
 
