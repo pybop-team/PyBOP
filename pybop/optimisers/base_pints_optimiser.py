@@ -25,6 +25,18 @@ from pybop.problems.base_problem import Problem
 class PintsOptions(pybop.OptimiserOptions):
     """
     A class to hold PINTS options for the optimisation process.
+
+    Attributes:
+            default_max_iterations (int): Default maximum number of iterations (1000).
+            max_iterations (int): Maximum number of iterations for the optimization.
+            min_iterations (int): Minimum number of iterations required.
+            sigma (float | np.ndarray): Standard deviation parameter for the optimizer.
+            max_unchanged_iterations (int): Maximum iterations without improvement before stopping.
+            use_f_guessed (bool): Whether to use guessed function values.
+            absolute_tolerance (float): Absolute tolerance for convergence.
+            relative_tolerance (float): Relative tolerance for convergence.
+            max_evaluations (int | None): Maximum number of function evaluations.
+            threshold (float | None): Threshold value for optimization stopping criteria.
     """
 
     default_max_iterations = 1000

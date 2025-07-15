@@ -108,6 +108,15 @@ class OptimisationLogger:
 
 @dataclass
 class OptimiserOptions:
+    """
+    A base class for optimiser options.
+
+    Attributes:
+        multistart (int): Number of times to multistart the optimiser
+        verbose (bool): The verbosity level
+        verbose_print_rate (int): The distance between iterations to print verbose output
+    """
+
     multistart: int = 1
     verbose: bool = False
     verbose_print_rate: int = 50
