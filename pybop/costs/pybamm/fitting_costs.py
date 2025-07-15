@@ -5,12 +5,12 @@ from pybop import Dataset
 from pybop import Parameter as PybopParameter
 from pybop.costs.pybamm.base_cost import (
     BaseLikelihood,
-    PybammCost,
     PybammExpressionMetadata,
+    PybammVariable,
 )
 
 
-class PybammErrorMeasure(PybammCost):
+class PybammErrorMeasure(PybammVariable):
     """
     A base class for error measure implementations within Pybamm.
     """
@@ -237,7 +237,7 @@ class NegativeGaussianLogLikelihood(BaseLikelihood):
         )
 
 
-class ScaledCost(PybammCost):
+class ScaledCost(PybammVariable):
     """
     This class scales a BaseCost class by the number of observations.
     The scaling factor is given below:
@@ -249,7 +249,7 @@ class ScaledCost(PybammCost):
     BaseCost, which can improve optimiser convergence in certain cases.
     """
 
-    def __init__(self, cost: PybammCost):
+    def __init__(self, cost: PybammVariable):
         super().__init__()
         self._cost = cost
 

@@ -4,7 +4,7 @@ import pybop
 from pybop import Parameter as PybopParameter
 from pybop.builders.base import BaseBuilder
 from pybop.builders.utils import cell_mass, set_formation_concentrations
-from pybop.costs.pybamm import BaseLikelihood, DesignCost, PybammCost
+from pybop.costs.pybamm import BaseLikelihood, DesignCost, PybammVariable
 from pybop.pipelines._pybamm_pipeline import PybammPipeline
 
 
@@ -23,7 +23,8 @@ class Pybamm(BaseBuilder):
         self._pipeline = None
         self._rebuild_parameters = None
         self.domain = "Time [s]"
-        self._costs: list[PybammCost] = []
+        self._extra_vars = []
+        self._costs: list[PybammVariable] = []
         self._cost_weights: list[float] = []
         self._use_posterior = False
 
@@ -83,10 +84,18 @@ class Pybamm(BaseBuilder):
         self._initial_state = initial_state
         self._build_on_eval = build_on_eval
 
-    def add_cost(self, cost: PybammCost, weight: float = 1.0) -> None:
+    def add_variable(self, variable: PybammVariable) -> None:
         """
         Adds a cost to the problem with optional weighting.
         """
+        self._extra_vars.append(variable)
+
+    def add_cost(self, cost: PybammVariable, weight: float = 1.0) -> None:
+        """
+        Adds a cost to the problem with optional weighting.
+        """
+        if isinstance(cost, PybammVariable):
+            self.add_variable(cost)
         self._costs.append(cost)
         self._cost_weights.append(weight)
 
@@ -134,23 +143,26 @@ class Pybamm(BaseBuilder):
         if self._dataset is not None:
             self._set_control_variable(pybop_parameters)
 
-        # add costs
+        # Add extra variables
+        for variable in self._extra_vars:
+            variable.add_to_model(model, pybamm_parameter_values, self._dataset)
+
+        # Add costs
         cost_names = []
         use_last_index = []
-        for cost in self._costs:
-            cost.add_to_model(model, pybamm_parameter_values, self._dataset)
-            cost_names.append(cost.metadata().variable_name)
+        for variable in self._costs:
+            cost_names.append(variable.metadata().variable_name)
             use_last_index.append(
-                isinstance(cost.metadata().expression, pybamm.ExplicitTimeIntegral)
+                isinstance(variable.metadata().expression, pybamm.ExplicitTimeIntegral)
             )
 
             # Posterior Logic
-            if isinstance(cost, BaseLikelihood) and pybop_parameters.priors():
+            if isinstance(variable, BaseLikelihood) and pybop_parameters.priors():
                 self._use_posterior = True
 
             # Add hypers to pybop parameters
-            if cost.metadata().parameters:
-                for name, obj in cost.metadata().parameters.items():
+            if variable.metadata().parameters:
+                for name, obj in variable.metadata().parameters.items():
                     delta = obj.default_value * 0.5  # Create prior w/ large variance
                     prior = (
                         pybop.Gaussian(obj.default_value, delta)
@@ -164,7 +176,7 @@ class Pybamm(BaseBuilder):
                     )
 
             # Design Costs
-            if isinstance(cost, DesignCost):
+            if isinstance(variable, DesignCost):
                 cell_mass(pybamm_parameter_values)
                 set_formation_concentrations(pybamm_parameter_values)
 
