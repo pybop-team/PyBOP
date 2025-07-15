@@ -2,6 +2,7 @@
 
 ## Features
 
+- [#767](https://github.com/pybop-team/PyBOP/pull/767) - Adds the `GroupedSPM` model for parameter identification.
 - [#644](https://github.com/pybop-team/PyBOP/pull/644) - Adds example applications for common battery experiments.
 
 ## Optimisations

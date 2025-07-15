@@ -93,8 +93,8 @@ The table below lists the currently supported [models](https://github.com/pybop-
 | Multi-Species Multi-Reaction (MSMR)           | Minkowski                          | Weight Decayed Adaptive Moment Estimation (AdamW) <tr></tr>        |
 | Weppner-Huggins                               | Sum of Power                       | Improved Resilient Backpropagation (iRProp-) <tr></tr>             |
 | Equivalent Circuit Models (ECM)               | Gaussian Log Likelihood            | SciPy Minimize & Differential Evolution  <tr></tr>                 |
-| Grouped-parameter SPMe (GroupedSPMe)          | Log Posterior                      | Cuckoo Search  <tr></tr>                                           |
-|                                               | Gravimetric Energy / Power Density | Simulated Annealing  <tr></tr>                                     |
+| Grouped-parameter SPM (GroupedSPM)            | Log Posterior                      | Cuckoo Search  <tr></tr>                                           |
+| Grouped-parameter SPMe (GroupedSPMe)          | Gravimetric Energy / Power Density | Simulated Annealing  <tr></tr>                                     |
 |                                               | Volumetric Energy / Power Density  | Random Search <tr></tr>                                            |
 |                                               |                                    | Gradient Descent <tr></tr>                                         |
 |                                               |                                    | Nelder Mead <tr></tr>                                              |
