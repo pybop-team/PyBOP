@@ -90,11 +90,7 @@ class TestModels:
             )
         )
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            half_cell_model,
-            parameter_values=parameter_values,
-            build_on_eval=False,
-        )
+        builder.set_simulation(half_cell_model, parameter_values=parameter_values)
         builder.add_cost(
             pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]", "Voltage [V]")
         )
@@ -120,11 +116,7 @@ class TestModels:
             )
         )
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            half_cell_model,
-            parameter_values=parameter_values,
-            build_on_eval=False,
-        )
+        builder.set_simulation(half_cell_model, parameter_values=parameter_values)
         builder.add_cost(pybop.costs.pybamm.GravimetricEnergyDensity())
         return builder.build()
 
