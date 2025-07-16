@@ -31,7 +31,7 @@ class FailedVariable:
 
 class FailedSolution:
     """
-    Container for a failed PyBaMM solution that returns np.inf for processed variables.
+    Container for a failed PyBaMM solution that returns [np.inf] for all processed variables.
 
     This class mimics the interface of a successful PyBaMM solution but returns
     infinity values to indicate failure while maintaining API compatibility.

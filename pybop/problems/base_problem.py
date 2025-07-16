@@ -119,7 +119,7 @@ class Problem:
         """
         raise NotImplementedError
 
-    def run(self) -> np.ndarray:
+    def run(self) -> float | np.ndarray:
         """
         Evaluates the underlying simulation and cost function using the
         parameters set in the previous call to `set_params`.
@@ -128,7 +128,7 @@ class Problem:
 
     def run_with_sensitivities(
         self,
-    ) -> tuple[float, np.ndarray]:
+    ) -> tuple[float | np.ndarray, np.ndarray]:
         """
         Evaluates the underlying simulation and cost function using the
         parameters set in the previous call to `set_params`, returns

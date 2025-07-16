@@ -229,7 +229,7 @@ class PybammPipeline:
 
         Returns
         -------
-        solution : list[pybamm.Solution]
+        solution : list[pybamm.Solution | pybop.FailedSolution]
             The pybamm solution object.
         """
         inputs = self._pybop_parameters.to_pybamm_multiprocessing()
