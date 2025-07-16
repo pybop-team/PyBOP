@@ -19,11 +19,11 @@ class PybammEISPipeline:
     1. A pybamm model needs to be built once, and then run multiple times with different input parameters
     2. A pybamm model needs to be built multiple times with different parameter values,
         for the case where some of the parameters are geometric parameters which change the mesh
-     
-    The logic for (1) and (2) occurs within the composed PybammPipeline and happens automatically. 
+
+    The logic for (1) and (2) occurs within the composed PybammPipeline and happens automatically.
     To override this logic, the argument `build_on_eval` can be set to `True` which will force (2) to
     occur.
-    
+
     """
 
     def __init__(
