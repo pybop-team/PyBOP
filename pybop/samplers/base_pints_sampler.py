@@ -8,6 +8,7 @@ import pints
 from pybop import (
     BaseSampler,
     MultiChainProcessor,
+    PopulationEvaluator,
     SingleChainProcessor,
 )
 from pybop.problems.base_problem import Problem
@@ -89,6 +90,7 @@ class BasePintsSampler(BaseSampler):
         self._n_parameters = len(self.problem.params)
         self._chain_files = options.chain_files
         self._evaluation_files = options.evaluation_files
+        self._n_evaluations = 0
         self._loop_iters = 0
         self._iteration = 0
         self.iter_time = 0.0
@@ -160,7 +162,7 @@ class BasePintsSampler(BaseSampler):
             - Finalises and returns the collected samples, or None if
             chains are not stored in memory.
         """
-
+        self._start_time = time.time()
         self._initialise_logging()
         self._check_stopping_criteria()
         self._initialise_chain_processor()
@@ -181,7 +183,7 @@ class BasePintsSampler(BaseSampler):
                 self._end_initial_phase()
 
             xs = self._ask_for_samples()
-            model_xs = [self.problem.params.transformation().to_model(x) for x in xs]
+            model_xs = [self.problem.params.transformation.to_model(x) for x in xs]
 
             self.fxs = evaluator.evaluate(model_xs)
             self._process_chains()
@@ -194,6 +196,7 @@ class BasePintsSampler(BaseSampler):
                 continue
 
             self._iteration += 1
+            self._n_evaluations += len(xs)
             if self._log_to_screen and self._verbose:
                 if self._iteration <= 10 or self._iteration % 50 == 0:
                     timing_iterations = self._iteration - self._loop_iters
@@ -262,8 +265,15 @@ class BasePintsSampler(BaseSampler):
             def fun(x):
                 self.problem.set_params(x)
                 loss, grad = self.problem.run_with_sensitivities()
-                jac = self.problem.params.transformation().jacobian(x)
-                grad = np.matmul(grad, jac)
+
+                if grad.ndim == 1:
+                    jac = self.problem.params.transformation.jacobian(x)
+                    grad = np.dot(grad, jac)
+                else:
+                    for i in range(len(grad)):
+                        jac = self.problem.params.transformation.jacobian(x[i])
+                        grad[i] = np.dot(grad[i], jac)
+
                 return (-loss, -grad)
 
         else:
@@ -276,7 +286,7 @@ class BasePintsSampler(BaseSampler):
         if self.options.parallel:
             return pints.ParallelEvaluator(fun, n_workers=self.options.n_workers)
 
-        return pints.SequentialEvaluator(fun)
+        return PopulationEvaluator(fun)
 
     def _initialise_storage(self):
         # Storage of the received samples
@@ -291,7 +301,6 @@ class BasePintsSampler(BaseSampler):
             else (n_chains, self._n_parameters)
         )
         self._samples = np.zeros(storage_shape)
-
         self._evaluations = np.zeros((n_chains, self._max_iterations))
 
         # From PINTS:
@@ -328,6 +337,8 @@ class BasePintsSampler(BaseSampler):
             logging.info(
                 f"Halting: Maximum number of iterations ({self._iteration}) reached."
             )
+            logging.info(f"Total time: {time.time() - self._start_time} seconds.")
+            logging.info(f"Total number of evaluations: ({self._n_evaluations}).")
 
     @property
     def samplers(self):

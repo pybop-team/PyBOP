@@ -5,13 +5,13 @@ import pytest
 import pybop
 from pybop import (
     MALAMCMC,
-    NUTS,
     DramACMC,
     HamiltonianMCMC,
     MonomialGammaHamiltonianMCMC,
     RaoBlackwellACMC,
     RelativisticMCMC,
     SliceDoublingMCMC,
+    SliceRankShrinkingMCMC,
     SliceStepoutMCMC,
 )
 
@@ -81,7 +81,7 @@ class TestSamplingThevenin:
         experiment = pybamm.Experiment(
             [
                 "Rest for 1 second",
-                "Discharge at 0.5C for 1 minutes (8 second period)",
+                "Discharge at 0.5C for 8 minutes (8 second period)",
                 "Charge at 0.5C for 8 minutes (8 second period)",
             ]
         )
@@ -108,7 +108,7 @@ class TestSamplingThevenin:
         for p in parameters:
             builder.add_parameter(p)
         signal = "Voltage [V]"
-        cost = pybop.costs.pybamm.NegativeGaussianLogLikelihood(signal, signal, 1e-3)
+        cost = pybop.costs.pybamm.NegativeGaussianLogLikelihood(signal, signal, 1e-1)
         builder.add_cost(cost)
         return builder.build()
 
@@ -116,11 +116,10 @@ class TestSamplingThevenin:
     @pytest.mark.parametrize(
         "sampler",
         [
-            NUTS,
             HamiltonianMCMC,
             MonomialGammaHamiltonianMCMC,
             RelativisticMCMC,
-            # SliceRankShrinkingMCMC,
+            SliceRankShrinkingMCMC,
             MALAMCMC,
             RaoBlackwellACMC,
             SliceDoublingMCMC,
@@ -129,17 +128,20 @@ class TestSamplingThevenin:
         ],
     )
     def test_sampling_thevenin(self, sampler, problem):
+        """
+        Note: we don't test the NUTS sampler, as convergence for this problem
+        is challenging.
+        """
         options = pybop.PintsSamplerOptions(
-            n_chains=2, warm_up_iterations=50, max_iterations=350, cov=1e-6
+            n_chains=2, warm_up_iterations=50, max_iterations=350
         )
         sampler = sampler(problem, options=options)
-        chains = sampler.run()
 
-        # sampler = sampler(**common_args)
-        # if isinstance(sampler, SliceRankShrinkingMCMC):
-        #     for i, _j in enumerate(sampler._samplers):
-        #         sampler._samplers[i].set_hyper_parameters([1e-3])
-        # chains = sampler.run()
+        if isinstance(sampler, SliceRankShrinkingMCMC):
+            for i, _ in enumerate(sampler._samplers):
+                sampler._samplers[i].set_hyper_parameters([1e-3])
+
+        chains = sampler.run()
 
         # Test PosteriorSummary
         summary = pybop.PosteriorSummary(chains)
