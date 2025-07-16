@@ -159,6 +159,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "vpratz",
+      "name": "Valentin Pratz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/112951103?v=4",
+      "profile": "https://https://github.com/vpratz",
+      "contributions": [
+        "example"
+      ]
     }
   ],
   "contributorsPerLine": 7,

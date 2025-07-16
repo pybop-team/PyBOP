@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 import pytest
 from numpy.testing import assert_allclose, assert_array_equal
 
@@ -151,6 +152,14 @@ class TestProblem:
         problem.verbose = True
         out = problem.evaluate(inputs=[0.0, 0.0])
         assert not np.isfinite(out["Voltage [V]"])
+
+        # Force CasadiSolver to hit calc_grad=False in evaluateS1
+        problem.model._solver = pybamm.CasadiSolver()
+        with pytest.raises(
+            ValueError,
+            match="Cannot use sensitivities for parameters which require a model rebuild",
+        ):
+            problem.evaluateS1(inputs=[1e-5, 1e-5])
 
         # Test problem construction errors
         for bad_dataset in [

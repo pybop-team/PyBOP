@@ -39,12 +39,8 @@ parameter_set = pybop.lithium_ion.SPDiffusion.apply_parameter_grouping(
 )
 
 # Fit the GITT pulse using the single particle diffusion model
-gitt_fit = pybop.GITTPulseFit(
-    gitt_pulse=dataset,
-    parameter_set=parameter_set,
-    electrode="positive",
-)
-gitt_results = gitt_fit()
+gitt_fit = pybop.GITTPulseFit(parameter_set=parameter_set, electrode="positive")
+gitt_results = gitt_fit(gitt_pulse=dataset)
 
 # Plot the timeseries output
 pybop.plot.problem(
