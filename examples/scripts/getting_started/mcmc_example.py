@@ -1,80 +1,65 @@
-import sys
-
 import numpy as np
+import pybamm
 
 import pybop
 
-# Set parallelization if on macOS / Unix
-parallel = True if sys.platform != "win32" else False
-
-# Parameter set and model definition
-parameter_set = pybop.ParameterSet("Chen2020")
-parameter_set.update(
-    {
-        "Negative electrode active material volume fraction": 0.63,
-        "Positive electrode active material volume fraction": 0.71,
-    }
+model = pybamm.lithium_ion.SPM()
+parameter_values = pybamm.ParameterValues("Chen2020")
+t_eval = np.linspace(0, 100, 240)
+sim = pybamm.Simulation(
+    model=model,
+    parameter_values=parameter_values,
 )
-synth_model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
+sol = sim.solve(t_eval=t_eval)
 
-# Fitting parameters
-parameters = pybop.Parameters(
-    pybop.Parameter(
-        "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.68, 0.02),
-        transformation=pybop.LogTransformation(),
-    ),
-    pybop.Parameter(
-        "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.65, 0.02),
-        transformation=pybop.LogTransformation(),
-    ),
-)
-
-# Generate data
-init_soc = 0.5
-sigma = 0.005
-experiment = pybop.Experiment(
-    [
-        ("Discharge at 0.5C for 3 minutes (5 second period)",),
-    ]
-)
-values = synth_model.predict(
-    initial_state={"Initial SoC": init_soc}, experiment=experiment
-)
-
-
-def noisy(data, sigma):
-    return data + np.random.normal(0, sigma, len(data))
-
-
-# Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": values["Time [s]"].data,
-        "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": noisy(values["Voltage [V]"].data, sigma),
+        "Time [s]": sol.t,
+        "Voltage [V]": sol["Voltage [V]"].data,
+        "Current function [A]": sol["Current [A]"].data,
     }
 )
 
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
-signal = ["Voltage [V]"]
-
-# Generate problem, likelihood, and sampler
-problem = pybop.FittingProblem(
-    model, parameters, dataset, signal=signal, initial_state={"Initial SoC": init_soc}
+# Create the builder
+builder = pybop.builders.Pybamm()
+builder.set_dataset(dataset)
+builder.set_simulation(
+    model,
+    parameter_values=parameter_values,
 )
-likelihood = pybop.GaussianLogLikelihood(problem)
-posterior = pybop.LogPosterior(likelihood)
+builder.add_parameter(
+    pybop.Parameter(
+        "Negative electrode active material volume fraction",
+        initial_value=0.6,
+        prior=pybop.Gaussian(0.6, 0.2),
+        transformation=pybop.LogTransformation(),
+        bounds=[0.5, 0.8],
+    )
+)
+builder.add_parameter(
+    pybop.Parameter(
+        "Positive electrode active material volume fraction",
+        initial_value=0.6,
+        prior=pybop.Gaussian(0.6, 0.2),
+        transformation=pybop.LogTransformation(),
+        bounds=[0.5, 0.8],
+    )
+)
 
-sampler = pybop.DifferentialEvolutionMCMC(
-    posterior,
-    chains=3,
-    max_iterations=250,  # Reduced for CI, increase for improved posteriors
-    warm_up=100,
+builder.add_cost(
+    pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", "Voltage [V]")
+)
+# Build the problem
+problem = builder.build()
+
+options = pybop.PintsSamplerOptions(
+    n_chains=2,
+    warm_up_iterations=50,
+    max_iterations=400,
     verbose=True,
-    parallel=parallel,  # (macOS/WSL/Linux only)
+    cov=1e-2,
 )
+sampler = pybop.AdaptiveCovarianceMCMC(problem, options=options)
 chains = sampler.run()
 
 # Summary statistics
