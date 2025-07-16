@@ -2,6 +2,16 @@
 
 ## Features
 
+## Optimisations
+
+## Bug Fixes
+
+## Breaking Changes
+
+# [v25.6](https://github.com/pybop-team/PyBOP/tree/v25.6) - 2025-07-16
+
+## Features
+
 - [#767](https://github.com/pybop-team/PyBOP/pull/767) - Adds the `GroupedSPM` model for parameter identification.
 - [#644](https://github.com/pybop-team/PyBOP/pull/644) - Adds example applications for common battery experiments.
 
