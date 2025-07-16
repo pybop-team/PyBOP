@@ -14,6 +14,7 @@ class Pybamm(BaseBuilder):
         self._solver = None
         self._parameter_values = None
         self._rebuild_parameters = None
+        self._n_threads = None
         self._initial_state = None
         self._pipeline = None
         self._costs: list[PybammCost] = []
@@ -21,6 +22,14 @@ class Pybamm(BaseBuilder):
         self.domain = "Time [s]"
         self._use_posterior = False
         super().__init__()
+
+    def set_n_threads(self, threads: int) -> None:
+        """
+        Directly sets the number of threads to use for parallel computing.
+        If the number of threads is not set, the total number of CPU cores is
+        used.
+        """
+        self._n_threads = threads
 
     def set_simulation(
         self,
@@ -153,6 +162,7 @@ class Pybamm(BaseBuilder):
             initial_state=self._initial_state,
             build_on_eval=self._build_on_eval,
             cost_names=cost_names,
+            n_threads=self._n_threads,
         )
 
         # Build the pipeline

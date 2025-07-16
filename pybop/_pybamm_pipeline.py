@@ -36,6 +36,7 @@ class PybammPipeline:
         initial_state: float | str | None = None,
         build_on_eval: bool | None = None,
         cost_names: list = None,
+        n_threads: int = None,
     ):
         """
         Parameters
@@ -68,7 +69,7 @@ class PybammPipeline:
         self._parameter_names = self.pybop_parameters.keys()
         self._geometry = model.default_geometry
         self._methods = model.default_spatial_methods
-        self._threads = self.get_avaliable_thread_count()
+        self._n_threads = n_threads or self.get_avaliable_thread_count()
         self._t_start = np.float64(t_start)
         self._t_end = np.float64(t_end)
         self._t_interp = t_interp
@@ -88,7 +89,7 @@ class PybammPipeline:
 
         solver_options = {}
         if platform.system() != "Windows":
-            solver_options["num_threads"] = self._threads
+            solver_options["num_threads"] = self._n_threads
 
         self._solver = (
             pybamm.IDAKLUSolver(
@@ -327,3 +328,7 @@ class PybammPipeline:
     @property
     def solver(self):
         return self._solver
+
+    @property
+    def n_threads(self):
+        return self._n_threads

@@ -42,7 +42,7 @@ class PybammProblem(Problem):
         """
         self.check_and_store_params(p)
 
-    def _compute_cost(self, solution: list[Solution]) -> np.ndarray | np.number:
+    def _compute_cost(self, solution: list[Solution]) -> float | np.ndarray:
         """
         Compute the cost function value from a solution.
         """
@@ -63,7 +63,9 @@ class PybammProblem(Problem):
 
         return weighted_costs
 
-    def _add_prior_contribution(self, cost: np.number | np.ndarray) -> np.number:
+    def _add_prior_contribution(
+        self, cost: np.number | np.ndarray
+    ) -> float | np.ndarray:
         """
         Add the prior contribution to the cost if using posterior.
         """
@@ -73,20 +75,24 @@ class PybammProblem(Problem):
         # Likelihoods and priors are negative by convention
         return cost - self._priors.logpdf(self._params.get_values())
 
-    def _compute_cost_with_prior(self, solution: list[Solution]) -> np.number:
+    def _compute_cost_with_prior(self, solution: list[Solution]) -> float | np.ndarray:
         """
         Compute the cost function with optional prior contribution.
         """
         cost = self._compute_cost(solution)
         return self._add_prior_contribution(cost)
 
-    def run(self) -> np.ndarray:
+    def run(self) -> float | np.ndarray:
         """
         Evaluates the underlying simulation and cost function using the
         parameters set in the previous call to `set_params`.
 
+        The parameters can be set as singular proposals: np.array(N,)
+        Or as an array of multiple proposals: np.array(M, N), where
+        M is the number of proposals to solve.
+
         Returns:
-            The computed cost value
+            The computed cost value(s)
         """
         self.check_set_params_called()
 
@@ -96,10 +102,14 @@ class PybammProblem(Problem):
         # Compute cost with optional prior contribution
         return self._compute_cost_with_prior(sol)
 
-    def run_with_sensitivities(self) -> tuple[np.ndarray, np.ndarray]:
+    def run_with_sensitivities(self) -> tuple[float | np.ndarray, np.ndarray]:
         """
         Evaluates the simulation and cost function with parameter sensitivities
         using the parameters set in the previous call to `set_params`.
+
+        The parameters can be set as singular proposals: np.array(N,)
+        Or as an array of multiple proposals: np.array(M,N), where
+        M is the number of proposals to solve.
 
         Returns:
             Tuple of (cost_value, sensitivities)

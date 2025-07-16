@@ -113,6 +113,11 @@ class TestBuilder:
         problem2 = builder.build()
         assert problem2 != problem
 
+        # Test setting number of threads
+        builder.set_n_threads(3)
+        problem_single_core = builder.build()
+        assert problem_single_core.pipeline.n_threads == 3
+
     def test_builder_likelihoods(self, model_and_params, dataset, solver):
         model, parameter_values = model_and_params
         builder = pybop.builders.Pybamm()
