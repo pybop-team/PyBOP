@@ -64,7 +64,6 @@ class Pybamm(BaseBuilder):
             represented as SoC and must be in range 0 to 1. If str, it will be represented as voltage and
             needs to be in the format: "3.4 V".
         build_on_eval : bool
-            build_on_eval : bool
             Boolean to determine if the model will be rebuilt every evaluation. If `initial_state` is provided,
             the model will be rebuilt every evaluation unless `build_on_eval` is `False`, in which case the model
             is built with the parameter values from construction only.
