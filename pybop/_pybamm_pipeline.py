@@ -95,6 +95,8 @@ class PybammPipeline:
             pybamm.IDAKLUSolver(
                 output_variables=self._cost_names,
                 on_failure="ignore",
+                atol=1e-6,
+                rtol=1e-6,
                 options=solver_options,
             )
             if solver is None

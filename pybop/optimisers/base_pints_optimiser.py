@@ -126,8 +126,6 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
             problem,
             options=options,
         )
-        # Transform sigma
-        self._transform_sigma()
 
     @staticmethod
     def default_options() -> PintsOptions:
@@ -140,14 +138,6 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
             The default options for the PINTS optimiser.
         """
         return PintsOptions()
-
-    def _transform_sigma(self) -> np.ndarray:
-        """transforms sigma from model to search space."""
-        if np.isscalar(self._sigma0):
-            param_dims = len(self.problem.params)
-            self._sigma0 = np.ones(param_dims) * self._sigma0
-
-        return self.problem.params.transformation().to_search(self._sigma0)
 
     @property
     def max_iterations(self):
@@ -206,6 +196,10 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         # Create an instance of the PINTS optimiser class
         if issubclass(self._pints_optimiser, PintsOptimiser):
             x0 = self.problem.params.get_initial_values(transformed=True)
+            if np.isscalar(self._sigma0):
+                param_dims = len(self.problem.params)
+                self._sigma0 = np.ones(param_dims) * self._sigma0
+
             self._optimiser = self._pints_optimiser(
                 x0,
                 sigma0=self._sigma0,
@@ -259,7 +253,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
             def fun(x):
                 self.problem.set_params(x)
                 cost, grad = self.problem.run_with_sensitivities()
-                jac = self.problem.params.transformation().jacobian(x)
+                jac = self.problem.params.transformation.jacobian(x)
                 grad = np.matmul(grad, jac)
                 return cost, grad
 
@@ -290,9 +284,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
                 xs_raw = self._optimiser.ask()
                 xs: list[np.ndarray] = [x for x in xs_raw]
 
-                model_xs = [
-                    self.problem.params.transformation().to_model(x) for x in xs
-                ]
+                model_xs = [self.problem.params.transformation.to_model(x) for x in xs]
 
                 # Evaluate points
                 fs = evaluator.evaluate(model_xs)
@@ -330,7 +322,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
                     x_search=xs,
                     x_model=model_xs,
                     x_search_best=self._optimiser.x_best(),
-                    x_model_best=self.problem.params.transformation().to_model(
+                    x_model_best=self.problem.params.transformation.to_model(
                         self._optimiser.x_best()
                     ),
                     cost=_fs,
@@ -422,7 +414,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
 
         return OptimisationResult(
             problem=self._problem,
-            x=self._problem.params.transformation().to_model(x),
+            x=self._problem.params.transformation.to_model(x),
             final_cost=f,
             n_iterations=self._iterations,
             n_evaluations=self._evaluations,

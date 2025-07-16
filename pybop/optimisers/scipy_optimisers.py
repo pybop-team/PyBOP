@@ -251,7 +251,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         """
         Scale the cost function, preserving the sign convention, and eliminate nan values
         """
-        x_model = self.problem.params.transformation().to_model(x)
+        x_model = self.problem.params.transformation.to_model(x)
         if not self._options_dict["jac"]:
             cost = self._evaluator.evaluate(x_model)
             self.store_intermediate_results(x_search=x, x_model=x_model, cost=cost)
@@ -295,7 +295,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 result = self._evaluator.evaluate(x_best)
                 cost_best = result[0] if self._needs_sensitivities else result
 
-            x_model_best = self.problem.params.transformation().to_model(x_best)
+            x_model_best = self.problem.params.transformation.to_model(x_best)
 
             (x_search, x_model, cost) = self.get_and_reset_itermediate_results()
             evaluations = len(x_search)
@@ -550,7 +550,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
                 iterations=self._iterations,
                 evaluations=len(x_search),
                 x_search_best=intermediate_result.x,
-                x_model_best=self.problem.params.transformation().to_model(
+                x_model_best=self.problem.params.transformation.to_model(
                     intermediate_result.x
                 ),
                 cost_best=intermediate_result.fun,
@@ -560,7 +560,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             )
 
         def cost_wrapper(x):
-            x_model = self.problem.params.transformation().to_model(x)
+            x_model = self.problem.params.transformation.to_model(x)
             cost = self._evaluator.evaluate(x_model)
             self.store_intermediate_results(x_search=x, x_model=x_model, cost=cost)
             return cost
