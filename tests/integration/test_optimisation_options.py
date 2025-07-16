@@ -87,6 +87,7 @@ class TestOptimisation:
             use_f_guessed=f_guessed,
             compute_sensitivities=True,
             n_sensitivity_samples=3,
+            allow_infeasible_solutions=False,
         )
 
         # Set parallelisation if not on Windows
