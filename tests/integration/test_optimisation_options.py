@@ -86,7 +86,7 @@ class TestOptimisation:
             absolute_tolerance=1e-5,
             use_f_guessed=f_guessed,
             compute_sensitivities=True,
-            n_samples_sensitivity=3,
+            n_sensitivity_samples=3,
         )
 
         # Set parallelisation if not on Windows

@@ -190,7 +190,7 @@ class BaseOptimiser(CostInterface):
         self.compute_sensitivities = self.unset_options.pop(
             "compute_sensitivities", False
         )
-        self.n_samples_sensitivity = self.unset_options.pop(
+        self.n_sensitivity_samples = self.unset_options.pop(
             "n_sensitivity_samples", 256
         )
 
@@ -255,7 +255,7 @@ class BaseOptimiser(CostInterface):
         if not self.compute_sensitivities:
             return None
 
-        return self.cost.sensitivity_analysis(self.n_samples_sensitivity)
+        return self.cost.sensitivity_analysis(self.n_sensitivity_samples)
 
     def log_update(
         self,
