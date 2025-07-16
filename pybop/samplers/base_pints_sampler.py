@@ -17,13 +17,25 @@ from pybop.samplers.base_sampler import SamplerOptions
 
 @dataclass
 class PintsSamplerOptions(SamplerOptions):
+    """
+    Pints sampler options.
+
+    Attributes:
+        max_iterations (int): Maximum number of iterations to run. (Default: 500)
+        verbose (bool): If `True`, additional information will be printed. (Default: False)
+        warm_up_iterations (int): Number of iterations to warm up the sampler. (Default: 250)
+        chains_in_memory (bool): Whether to store the chains in memory. (Default: True)
+        log_to_screen (bool): If `True` (default), the sampler will print information during the sampling
+        log_filename (str): The name of the file to save the sampler log to. (Default: None)
+        chain_files (list): The name of the file to save the chains in. (Default: None)
+        evaluation_files (list): The name of the file to save the evaluations in. (Default: None)
+    """
+
     max_iterations: int = 500
-    n_workers: int = 1
     chains_in_memory: bool = True
     log_to_screen: bool = True
     log_filename: str | None = None
     initial_phase_iterations: int = 250
-    parallel: bool = False
     verbose: bool = False
     warm_up_iterations: int = 0
     chain_files: list[str] | None = None
@@ -45,8 +57,6 @@ class PintsSamplerOptions(SamplerOptions):
             raise ValueError("Number of warm-up steps must be non-negative.")
         if self.max_iterations < 1:
             raise ValueError("Maximum number of iterations must be greater than 0.")
-        if self.n_workers < 1:
-            raise ValueError("Number of workers must be greater than 0.")
         if self.initial_phase_iterations < 1:
             raise ValueError(
                 "Number of initial phase iterations must be greater than 0."
@@ -282,10 +292,6 @@ class BasePintsSampler(BaseSampler):
                 self.problem.set_params(x)
                 return -self.problem.run()
 
-        # Handle parallel case
-        if self.options.parallel:
-            return pints.ParallelEvaluator(fun, n_workers=self.options.n_workers)
-
         return PopulationEvaluator(fun)
 
     def _initialise_storage(self):
@@ -319,12 +325,6 @@ class BasePintsSampler(BaseSampler):
         if self._log_to_screen:
             logging.info("Using " + str(self._samplers[0].name()))
             logging.info("Generating " + str(self.options.n_chains) + " chains.")
-            if self.options.parallel:
-                logging.info(
-                    f"Running in parallel with {self.options.n_workers} worker processes."
-                )
-            else:
-                logging.info("Running in sequential mode.")
             if self._chain_files:
                 logging.info("Writing chains to " + self._chain_files[0] + " etc.")
             if self._evaluation_files:

@@ -28,15 +28,15 @@ class PintsOptions(pybop.OptimiserOptions):
 
     Attributes:
             default_max_iterations (int): Default maximum number of iterations (1000).
-            max_iterations (int): Maximum number of iterations for the optimization.
+            max_iterations (int): Maximum number of iterations for the optimisation.
             min_iterations (int): Minimum number of iterations required.
-            sigma (float | np.ndarray): Standard deviation parameter for the optimizer.
+            sigma (float | np.ndarray): Standard deviation or step-size parameter for the optimiser.
             max_unchanged_iterations (int): Maximum iterations without improvement before stopping.
             use_f_guessed (bool): Whether to use guessed function values.
             absolute_tolerance (float): Absolute tolerance for convergence.
             relative_tolerance (float): Relative tolerance for convergence.
             max_evaluations (int | None): Maximum number of function evaluations.
-            threshold (float | None): Threshold value for optimization stopping criteria.
+            threshold (float | None): Threshold value for optimisation stopping criteria.
     """
 
     default_max_iterations = 1000
