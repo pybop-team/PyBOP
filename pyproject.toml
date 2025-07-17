@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pybop"
-version = "25.3"
+version = "25.6"
 authors = [
   {name = "The PyBOP Team"},
 ]
@@ -26,7 +26,7 @@ classifiers = [
 ]
 requires-python = ">=3.9, <3.13"
 dependencies = [
-    "pybamm[jax]>=24.9",
+    "pybamm[jax]>=24.5.1",
     "numpy>=1.16, <2.0",
     "scipy>=1.3",
     "pints>=0.5",

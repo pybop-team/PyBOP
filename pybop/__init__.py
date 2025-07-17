@@ -200,6 +200,13 @@ from .observers.observer import Observer
 from ._classification import classify_using_hessian
 
 #
+# Applications
+#
+from .applications.base_method import BaseApplication, Interpolant, InverseOCV
+from .applications.ocp_methods import OCPMerge, OCPAverage, OCPCapacityToStoichiometry
+from .applications.gitt_methods import GITTPulseFit, GITTFit
+
+#
 # Plotting classes
 #
 from . import plot as plot

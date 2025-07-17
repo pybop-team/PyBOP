@@ -132,6 +132,17 @@ class BaseOptimiser(CostInterface):
         self.set_base_options()
         self._set_up_optimiser()
 
+        if (
+            self._needs_sensitivities
+            and isinstance(self.cost, BaseCost)
+            and self.cost.problem is not None
+            and self.cost.problem.model is not None
+            and not self.cost.problem.model.check_sensitivities_available()
+        ):
+            raise ValueError(
+                "This optimiser needs sensitivities, but sensitivities are not supported by this model/solver."
+            )
+
         # Throw a warning if any options remain
         if self.unset_options:
             warnings.warn(
@@ -179,7 +190,7 @@ class BaseOptimiser(CostInterface):
         self.compute_sensitivities = self.unset_options.pop(
             "compute_sensitivities", False
         )
-        self.n_samples_sensitivity = self.unset_options.pop(
+        self.n_sensitivity_samples = self.unset_options.pop(
             "n_sensitivity_samples", 256
         )
 
@@ -244,7 +255,7 @@ class BaseOptimiser(CostInterface):
         if not self.compute_sensitivities:
             return None
 
-        return self.cost.sensitivity_analysis(self.n_samples_sensitivity)
+        return self.cost.sensitivity_analysis(self.n_sensitivity_samples)
 
     def log_update(
         self,

@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -18,7 +19,8 @@ class TestCostInterface:
 
     @pytest.fixture
     def model(self):
-        return pybop.lithium_ion.SPM()
+        solver = pybamm.IDAKLUSolver(atol=5e-6, rtol=5e-6)
+        return pybop.lithium_ion.SPM(solver=solver)
 
     @pytest.fixture
     def parameters(self):

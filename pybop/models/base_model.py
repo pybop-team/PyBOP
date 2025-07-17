@@ -1,4 +1,5 @@
 import copy
+import warnings
 from dataclasses import dataclass
 from typing import Callable, Optional, Union
 
@@ -295,6 +296,14 @@ class BaseModel:
         model : pybamm.Model
             The PyBaMM model to be used for EIS simulations.
         """
+        if not isinstance(self._solver, pybamm.CasadiSolver):
+            print(
+                "CasadiSolver is required for EIS predictions, the solver has been changed."
+            )
+            self._solver = pybamm.CasadiSolver(
+                atol=self._solver.atol, rtol=self._solver.rtol
+            )
+
         V_cell = pybamm.Variable("Voltage variable [V]")
         model.variables["Voltage variable [V]"] = V_cell
         V = model.variables["Voltage [V]"]
@@ -641,17 +650,34 @@ class BaseModel:
         ):
             raise ValueError("These parameter values are infeasible.")
 
+        # Check solver and adjust sensitivity calculation flag
+        self.check_sensitivities_available()
+
         self._pybamm_solution = self._solver.solve(
             self._built_model,
             inputs=inputs,
             t_eval=[t_eval[0], t_eval[-1]]
             if isinstance(self._solver, IDAKLUSolver)
             else t_eval,
-            calculate_sensitivities=True,
+            calculate_sensitivities=self._sensitivities_available,
             t_interp=t_eval if self._solver.supports_interp else None,
         )
 
         return self._pybamm_solution
+
+    def check_sensitivities_available(self):
+        """
+        Check whether the solver can provide sensitivities and set the corresponding attribute.
+        """
+        if self._sensitivities_available is True and isinstance(
+            self._solver, pybamm.CasadiSolver
+        ):
+            warnings.warn(
+                "Casadi solver does not support sensitivity analysis. Sensitivities will be disabled.",
+                stacklevel=2,
+            )
+            self._sensitivities_available = False
+        return self._sensitivities_available
 
     def predict(
         self,

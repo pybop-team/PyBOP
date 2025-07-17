@@ -4,11 +4,8 @@ import pybamm
 import pybop
 
 # Define model and use high-performant solver for sensitivities
-solver = pybamm.IDAKLUSolver
 parameter_set = pybamm.ParameterValues({"k": 1, "y0": 0.5})
-model = pybop.ExponentialDecayModel(
-    parameter_set=parameter_set, solver=solver, n_states=2
-)
+model = pybop.ExponentialDecayModel(parameter_set=parameter_set, n_states=2)
 
 # Fitting parameters
 parameters = pybop.Parameters(
