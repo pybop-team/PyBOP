@@ -36,7 +36,7 @@ class Pybamm(BaseBuilder):
         var_pts: dict | None = None,
         spatial_methods: dict | None = None,
         solver: pybamm.BaseSolver | None = None,
-        initial_state: float | str | None = None,
+        initial_state: dict | None = None,
         build_on_eval: bool = False,
     ) -> None:
         """
@@ -59,10 +59,8 @@ class Pybamm(BaseBuilder):
             domain (e.g. pybamm.FiniteVolume)
         solver : pybamm.BaseSolver (optional)
             The solver to use to solve the model.
-        initial_state: float | str (optional)
-            The initial state of charge or voltage for the battery model. If float, it will be
-            represented as SoC and must be in range 0 to 1. If str, it will be represented as voltage and
-            needs to be in the format: "3.4 V".
+        initial_state: dict (optional)
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
         build_on_eval : bool
             Boolean to determine if the model will be rebuilt every evaluation. If `initial_state` is provided,
             the model will be rebuilt every evaluation unless `build_on_eval` is `False`, in which case the model

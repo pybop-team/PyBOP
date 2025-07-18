@@ -34,7 +34,7 @@ class PybammPipeline:
         t_start: np.number = 0.0,
         t_end: np.number = 1.0,
         t_interp: np.ndarray | None = None,
-        initial_state: float | str | None = None,
+        initial_state: dict | None = None,
         build_on_eval: bool = False,
     ):
         """
