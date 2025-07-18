@@ -12,8 +12,7 @@ from pybop.pipelines._pybamm_pipeline import PybammPipeline
 
 class PybammEISPipeline:
     """
-    A class to build an EIS PyBaMM pipeline for a given model and experiment, and run the resultant
-    simulation.
+    A class to build an EIS PyBaMM pipeline for a given model and data, and run the resultant simulation.
 
     There are two contexts in which this class can be used:
     1. A pybamm model needs to be built once, and then run multiple times with different input parameters

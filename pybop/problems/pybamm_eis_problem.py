@@ -50,7 +50,6 @@ class PybammEISProblem(Problem):
 
     def simulate(self, inputs: Inputs) -> np.ndarray:
         self.set_params(p=np.asarray([v for v in inputs.values()]))
-        self._pipeline.rebuild(inputs)
         return self._pipeline.solve()
 
     @property

@@ -432,14 +432,12 @@ class TestBuilder:
         )
         builder.add_parameter(
             pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                initial_value=0.5,
+                "Negative electrode active material volume fraction", initial_value=0.5
             )
         )
         builder.add_parameter(
             pybop.Parameter(
-                "Positive electrode active material volume fraction",
-                initial_value=0.5,
+                "Positive electrode active material volume fraction", initial_value=0.5
             )
         )
         builder.add_cost(
