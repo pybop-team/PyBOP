@@ -69,7 +69,11 @@ for c in [
     "Initial concentration in negative electrode [mol.m-3]",
     "Initial concentration in positive electrode [mol.m-3]",
 ]:
-    parameter_values[c] = eis_pipeline.pybamm_pipeline.parameter_values[c]
+    if eis_pipeline.pybamm_pipeline.requires_rebuild:
+        parameter_values[c] = eis_pipeline.pybamm_pipeline.parameter_values[c]
+    else:
+        all_inputs = eis_pipeline.pybamm_pipeline.get_all_inputs()
+        parameter_values[c] = all_inputs[c]
 
 # Create an EIS problem
 builder = pybop.PybammEIS()
