@@ -58,7 +58,7 @@ class BaseScipyOptimiser(BaseOptimiser):
         return ret
 
     def scipy_bounds(self) -> Bounds:
-        bounds = self.problem.params.get_bounds()
+        bounds = self.problem.params.get_bounds(transformed=True)
         # Convert bounds to SciPy format
         if isinstance(bounds, dict):
             return Bounds(bounds["lower"], bounds["upper"], True)
@@ -93,14 +93,14 @@ class BaseScipyOptimiser(BaseOptimiser):
         # Choose method to evaluate
         if self._needs_sensitivities:
 
-            def fun(x):
-                self.problem.set_params(x)
+            def fun(x_model):
+                self.problem.set_params(x_model)
                 return self.problem.run_with_sensitivities()
 
         else:
 
-            def fun(x):
-                self.problem.set_params(x)
+            def fun(x_model):
+                self.problem.set_params(x_model)
                 return self.problem.run()
 
         # Create evaluator object
@@ -247,14 +247,16 @@ class ScipyMinimize(BaseScipyOptimiser):
         self._scipy_bounds = self.scipy_bounds()
         self._evaluator = self.evaluator()
 
-    def cost_wrapper(self, x):
+    def cost_wrapper(self, x_search):
         """
         Scale the cost function, preserving the sign convention, and eliminate nan values
         """
-        x_model = self.problem.params.transformation().to_model(x)
+        x_model = self.problem.params.transformation().to_model(x_search)
         if not self._options_dict["jac"]:
             cost = self._evaluator.evaluate(x_model)
-            self.store_intermediate_results(x_search=x, x_model=x_model, cost=cost)
+            self.store_intermediate_results(
+                x_search=x_search, x_model=x_model, cost=cost
+            )
             scaled_cost = cost / self._cost0
             if np.isinf(scaled_cost):
                 self.inf_count += 1
@@ -264,7 +266,7 @@ class ScipyMinimize(BaseScipyOptimiser):
             return scaled_cost
 
         L, dl = self._evaluator.evaluate(x_model)
-        self.store_intermediate_results(x_search=x, x_model=x_model, cost=L)
+        self.store_intermediate_results(x_search=x_search, x_model=x_model, cost=L)
         return (L / self._cost0, dl / self._cost0)
 
     def _run(self):
@@ -288,14 +290,18 @@ class ScipyMinimize(BaseScipyOptimiser):
             try/except ensuring both cases are handled correctly.
             """
             if isinstance(intermediate_result, OptimizeResult):
-                x_best = intermediate_result.x
+                x_search_best = intermediate_result.x
+                x_model_best = self.problem.params.transformation().to_model(
+                    x_search_best
+                )
                 cost_best = intermediate_result.fun * self._cost0
             else:
-                x_best = intermediate_result
-                result = self._evaluator.evaluate(x_best)
+                x_search_best = intermediate_result
+                x_model_best = self.problem.params.transformation().to_model(
+                    x_search_best
+                )
+                result = self._evaluator.evaluate(x_model_best)
                 cost_best = result[0] if self._needs_sensitivities else result
-
-            x_model_best = self.problem.params.transformation().to_model(x_best)
 
             (x_search, x_model, cost) = self.get_and_reset_intermediate_results()
             evaluations = len(x_search)
@@ -304,7 +310,7 @@ class ScipyMinimize(BaseScipyOptimiser):
             self.logger.log_update(
                 iterations=self._iteration,
                 evaluations=evaluations,
-                x_search_best=x_best,
+                x_search_best=x_search_best,
                 x_model_best=x_model_best,
                 cost_best=cost_best,
                 x_search=x_search,
@@ -327,7 +333,7 @@ class ScipyMinimize(BaseScipyOptimiser):
         start_time = time()
         result: OptimizeResult = minimize(
             self.cost_wrapper,
-            x0,
+            self.problem.params.transformation().to_search(x0),
             bounds=self._scipy_bounds,
             callback=callback,
             **self._options_dict,
@@ -349,7 +355,7 @@ class ScipyMinimize(BaseScipyOptimiser):
             n_iterations=nit,
             n_evaluations=nfev,
             problem=self.problem,
-            x=result.x,
+            x=self.problem.params.transformation().to_model(result.x),
             time=total_time,
             message=result.message,
         )
@@ -557,10 +563,12 @@ class ScipyDifferentialEvolution(BaseScipyOptimiser):
                 cost=cost,
             )
 
-        def cost_wrapper(x):
-            x_model = self.problem.params.transformation().to_model(x)
+        def cost_wrapper(x_search):
+            x_model = self.problem.params.transformation().to_model(x_search)
             cost = self._evaluator.evaluate(x_model)
-            self.store_intermediate_results(x_search=x, x_model=x_model, cost=cost)
+            self.store_intermediate_results(
+                x_search=x_search, x_model=x_model, cost=cost
+            )
             return cost
 
         start_time = time()
@@ -585,7 +593,7 @@ class ScipyDifferentialEvolution(BaseScipyOptimiser):
             final_cost=result.fun,
             n_evaluations=nfev,
             problem=self.problem,
-            x=result.x,
+            x=self.problem.params.transformation().to_model(result.x),
             n_iterations=nit,
             time=total_time,
             message=result.message,
