@@ -420,6 +420,13 @@ class TestBuilder:
         assert abs((value1 - value2) / value1) > 1e-5
         assert built_model_1 != built_model_2
 
+        # Check that inputs remain as inputs
+        assert problem2._pipeline.requires_rebuild is False
+        assert any(
+            isinstance(v, pybamm.InputParameter)
+            for v in problem2._pipeline.parameter_values.values()
+        )
+
     def test_build_with_initial_state_rebuild(self, model_and_params, solver, dataset):
         model, parameter_values = model_and_params
         builder = pybop.builders.Pybamm()

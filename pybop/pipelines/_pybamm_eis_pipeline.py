@@ -6,7 +6,7 @@ import pybamm
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
 
-from pybop import Inputs, Parameters, SymbolReplacer
+from pybop import Parameters, SymbolReplacer
 from pybop.pipelines._pybamm_pipeline import PybammPipeline
 
 
@@ -64,9 +64,8 @@ class PybammEISPipeline:
         initial_state: dict (optional)
             A valid initial state, e.g. the initial state of charge or open-circuit voltage.
         build_on_eval : bool
-            Boolean to determine if the model will be rebuilt every evaluation. If `initial_state` is provided,
-            the model will be rebuilt every evaluation unless `build_on_eval` is `False`, in which case the model
-            is built with the parameter values from construction only.
+            Boolean to determine if the model will be rebuilt every evaluation. By default, the model will
+            only be rebuilt if needed, for example for an initial state or geometric parameters.
         """
 
         self._pybamm_pipeline = PybammPipeline(
@@ -137,9 +136,9 @@ class PybammEISPipeline:
 
         # Create the FunctionControl submodel and extract variables
         external_circuit_variables = pybamm.external_circuit.FunctionControl(
-            model.param,
-            None,
-            model.options,
+            param=model.param,
+            external_circuit_function=None,
+            options=model.options,
             control="algebraic",
         ).get_fundamental_variables()
 
@@ -178,19 +177,23 @@ class PybammEISPipeline:
             If the model hasn't been built yet.
         """
         built_model = self._pybamm_pipeline.built_model
-        inputs = self._pybamm_pipeline.pybop_parameters.to_dict()
-        M = self._pybamm_pipeline.built_model.mass_matrix.entries
-        self._pybamm_pipeline.solver.set_up(built_model, inputs=inputs)
+        all_inputs = (
+            self._pybamm_pipeline.get_all_inputs()
+            if not self.requires_rebuild
+            else None
+        )
+        self._pybamm_pipeline.solver.set_up(built_model, inputs=all_inputs)
 
         # Convert inputs to casadi format if needed
         casadi_inputs = (
-            casadi.vertcat(*inputs.values())
-            if inputs is not None and built_model.convert_to_format == "casadi"
-            else inputs or []
+            casadi.vertcat(*all_inputs.values())
+            if all_inputs is not None and built_model.convert_to_format == "casadi"
+            else all_inputs or []
         )
 
         # Extract the necessary attributes from the model
-        y0 = built_model.concatenated_initial_conditions.evaluate(0, inputs=inputs)
+        M = self._pybamm_pipeline.built_model.mass_matrix.entries
+        y0 = built_model.concatenated_initial_conditions.evaluate(0, inputs=all_inputs)
         jac = built_model.jac_rhs_algebraic_eval(0, y0, casadi_inputs).sparse()
 
         # Convert to Compressed Sparse Column format
@@ -261,12 +264,16 @@ class PybammEISPipeline:
     def pybop_parameters(self):
         return self._pybamm_pipeline.pybop_parameters
 
-    def rebuild(self, inputs: Inputs) -> None:
-        """Build the PyBaMM EIS pipeline using the given parameter_values."""
-        self._pybamm_pipeline.rebuild(inputs=inputs)
+    @property
+    def requires_rebuild(self):
+        return self._pybamm_pipeline.requires_rebuild
+
+    def rebuild(self) -> None:
+        """Update the parameter values and rebuild the PyBaMM EIS pipeline."""
+        self._pybamm_pipeline.rebuild()
         return self.initialise_eis_pipeline()
 
     def build(self) -> None:
-        """Build the PyBaMM EIS pipeline using the given parameter_values."""
+        """Build the PyBaMM EIS pipeline."""
         self._pybamm_pipeline.build()
         return self.initialise_eis_pipeline()

@@ -3,7 +3,7 @@ from copy import copy, deepcopy
 import numpy as np
 import pybamm
 
-from pybop import Inputs, Parameters
+from pybop import Parameters
 
 
 class PybammPipeline:
@@ -66,9 +66,8 @@ class PybammPipeline:
         initial_state: dict (optional)
             A valid initial state, e.g. the initial state of charge or open-circuit voltage.
         build_on_eval : bool
-            Boolean to determine if the model will be rebuilt every evaluation. If `initial_state` is provided,
-            the model will be rebuilt every evaluation unless `build_on_eval` is `False`, in which case the model
-            is built with the parameter values from construction only.
+            Boolean to determine if the model will be rebuilt every evaluation. By default, the model will
+            only be rebuilt if needed, for example for an initial state or geometric parameters.
         """
         self._model = model
         self._geometry = geometry or model.default_geometry
@@ -111,7 +110,7 @@ class PybammPipeline:
 
     def _parameters_require_rebuild(self, geometry, parameter_values) -> bool:
         """
-        Checks whether the parameter values required a rebuild. This is reimplemented with only the
+        Checks whether the parameter values require a rebuild. This is reimplemented with only the
         required functionality.
         """
         try:
@@ -128,7 +127,7 @@ class PybammPipeline:
                             self._process_and_check(sym)
 
             # Also check initial state calculation
-            self._get_initial_state_inputs(parameter_values)
+            self._get_initial_state_inputs(parameter_values=parameter_values)
         except ValueError:
             return True
         return False
@@ -146,22 +145,16 @@ class PybammPipeline:
                 raise ValueError("Geometry parameters must be Scalars")
         return new_sym
 
-    def rebuild(self, inputs: Inputs) -> None:
+    def rebuild(self) -> None:
         """
-        Build the PyBaMM pipeline using the given parameter_values.
+        Update the parameter values and rebuild the PyBaMM pipeline, if required.
         """
-        # if there are no parameters to build, just return
         if not self.requires_rebuild:
+            # Parameter values will be passed to the solver as inputs
             return
 
-        # we need to rebuild, so make sure we've got the right number of parameters
-        # and set them in the parameters object
-        if len(inputs) != len(self._pybop_parameters):
-            raise ValueError(
-                f"Expected {len(self._pybop_parameters)} parameters, but got {len(inputs)}."
-            )
-
-        all_inputs = {**inputs, **self._get_initial_state_inputs()}
+        # Update the parameter values and build again
+        all_inputs = self.get_all_inputs()
         self._parameter_values.update(all_inputs)
         self.build()
 
@@ -198,10 +191,7 @@ class PybammPipeline:
         solution : pybamm.Solution
             The pybamm solution object.
         """
-        all_inputs = {
-            **self._pybop_parameters.to_dict(),
-            **self._get_initial_state_inputs(),
-        }
+        all_inputs = self.get_all_inputs() if not self.requires_rebuild else None
         return self._solver.solve(
             model=self._built_model,
             inputs=all_inputs,
@@ -249,8 +239,7 @@ class PybammPipeline:
         if self._initial_state is None:
             return []
 
-        options = self.model.options
-        ocp_type = options.get("open-circuit potential", None)
+        ocp_type = self.model.options.get("open-circuit potential", None)
         if ocp_type is None:
             return ["Initial SoC"]  # for equivalent circuit models
         elif ocp_type == "MSMR":
@@ -262,32 +251,36 @@ class PybammPipeline:
             return [
                 "Initial concentration in positive electrode [mol.m-3]",
             ]
-        elif ocp_type == "single":
+        else:
             return [
                 "Initial concentration in negative electrode [mol.m-3]",
                 "Initial concentration in positive electrode [mol.m-3]",
             ]
-        else:
-            raise ValueError(
-                "Initial state calculation not implemented for this model."
-            )
 
-    def _get_initial_state_inputs(self, parameter_values=None) -> dict:
+    def _get_initial_state_inputs(self, parameter_values=None, inputs=None) -> dict:
         """
-        Returns a dictionary of the parameters which define the initial state of the model.
+        Returns a dictionary of the parameters which define the initial state of the model,
+        without modifying the parameter_values attribute.
         """
         if self._initial_state is None:
             return {}
 
         param = self.model.param
         options = self.model.options
-        inputs = self._pybop_parameters.to_dict()
-        parameter_values = parameter_values or self._parameter_values
+        parameter_values = parameter_values or self._parameter_values.copy()
+
+        # Update parameter values as well as passing inputs to cope with non-/rebuild cases
+        parameter_values.update(inputs or {})
+
         ocp_type = options.get("open-circuit potential", None)
         if ocp_type is None:
             values = {
                 "Initial SoC": self._get_ecm_initial_state(
-                    self._initial_state, param=param, options=options, inputs=inputs
+                    self._initial_state,
+                    parameter_values,
+                    param=param,
+                    options=options,
+                    inputs=inputs,
                 )
             }
         elif ocp_type == "MSMR":
@@ -306,7 +299,7 @@ class PybammPipeline:
                 inputs=inputs,
                 inplace=False,
             )
-        elif ocp_type == "single":
+        else:
             values = parameter_values.set_initial_stoichiometries(
                 self._initial_state,
                 param=param,
@@ -314,16 +307,21 @@ class PybammPipeline:
                 inputs=inputs,
                 inplace=False,
             )
-        else:
-            raise ValueError(
-                "Initial state calculation not implemented for this model."
-            )
 
         return {param: values[param] for param in self._initial_state_parameters}
+
+    def get_all_inputs(self) -> dict:
+        """
+        Returns a dictionary of all inputs including the parameters which define the
+        initial state of the model, without modifying the parameter_values attribute.
+        """
+        inputs = self._pybop_parameters.to_dict()
+        return {**inputs, **self._get_initial_state_inputs(inputs=inputs)}
 
     def _get_ecm_initial_state(
         self,
         initial_value,
+        parameter_values,
         param=None,
         options=None,
         inputs=None,
@@ -339,6 +337,8 @@ class PybammPipeline:
             Target initial value.
             If float, interpreted as SOC, must be between 0 and 1.
             If string e.g. "4 V", interpreted as voltage, must be between V_min and V_max.
+        parameter_values : pybamm.ParameterValues
+            Parameters and their corresponding values.
         param : :class:`pybamm.LithiumIonParameters`, optional
             The symbolic parameter set to use for the simulation.
             If not provided, the default parameter set will be used.
@@ -357,8 +357,6 @@ class PybammPipeline:
         initial_soc : float
             The initial state of charge
         """
-        parameter_values = self._parameter_values.copy()
-
         if isinstance(initial_value, str) and initial_value.endswith("V"):
             V_init = float(initial_value[:-1])
             V_min = parameter_values.evaluate(param.voltage_low_cut, inputs=inputs)

@@ -46,7 +46,7 @@ class PybammProblem(Problem):
         self.check_and_store_params(p)
 
         # rebuild the pipeline (if needed)
-        self._pipeline.rebuild(self._params.to_dict())
+        self._pipeline.rebuild()
 
     def _compute_cost(self, solution: Solution) -> float:
         """

@@ -34,7 +34,7 @@ class PybammEISProblem(Problem):
         self.check_and_store_params(p)
 
         # rebuild the pipeline (if needed)
-        self._pipeline.rebuild(self._params.to_dict())
+        self._pipeline.rebuild()
 
     def run(self) -> float:
         """
