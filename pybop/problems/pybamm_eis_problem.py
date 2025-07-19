@@ -2,7 +2,7 @@ import numpy as np
 
 from pybop import Parameters
 from pybop.parameters.parameter import Inputs
-from pybop.pipelines._pybamm_eis_pipeline import PybammEISPipeline
+from pybop.pipelines import PybammEISPipeline
 from pybop.problems.base_problem import Problem
 
 

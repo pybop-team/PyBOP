@@ -2,7 +2,7 @@ import numpy as np
 from pybamm import Solution
 
 from pybop import JointLogPrior, Parameters
-from pybop.pipelines._pybamm_pipeline import PybammPipeline
+from pybop.pipelines import PybammPipeline
 from pybop.problems.base_problem import Problem
 
 

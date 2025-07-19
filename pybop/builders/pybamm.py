@@ -5,7 +5,7 @@ from pybop import Parameter as PybopParameter
 from pybop.builders.base import BaseBuilder
 from pybop.builders.utils import cell_mass, set_formation_concentrations
 from pybop.costs.pybamm import BaseLikelihood, DesignCost, PybammCost
-from pybop.pipelines._pybamm_pipeline import PybammPipeline
+from pybop.pipelines import PybammPipeline
 
 
 class Pybamm(BaseBuilder):

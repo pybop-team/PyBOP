@@ -6,7 +6,7 @@ import pybamm
 import pybop
 from pybop import PybammEISProblem, builders
 from pybop.costs.base_cost import CallableCost
-from pybop.pipelines._pybamm_eis_pipeline import PybammEISPipeline
+from pybop.pipelines import PybammEISPipeline
 
 
 class PybammEIS(builders.BaseBuilder):
@@ -146,7 +146,6 @@ class PybammEIS(builders.BaseBuilder):
 
         # Proceed to build the pipeline
         model = self._model
-        param = self._parameter_values
         pybop_parameters = self.build_parameters()
 
         # Build pybamm if not already built
@@ -158,7 +157,7 @@ class PybammEIS(builders.BaseBuilder):
             model,
             f_eval=self._dataset[self.domain],
             geometry=self._geometry,
-            parameter_values=param,
+            parameter_values=self._parameter_values,
             submesh_types=self._submesh_types,
             var_pts=self._var_pts,
             spatial_methods=self._spatial_methods,
