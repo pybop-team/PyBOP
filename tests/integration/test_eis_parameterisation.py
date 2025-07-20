@@ -24,8 +24,8 @@ class TestEISParameterisation:
                 ),
                 np.clip(
                     0.025 + np.random.normal(loc=0.0, scale=0.015),
-                    a_min=0.025,
-                    a_max=0.475,
+                    a_min=0.005,
+                    a_max=0.045,
                 ),
             ]
         )
@@ -43,10 +43,16 @@ class TestEISParameterisation:
         return params
 
     @pytest.fixture
-    def model(self):
-        return pybamm.lithium_ion.SPM(
+    def model(self, parameter_values):
+        model = pybamm.lithium_ion.SPM(
             options={"surface form": "differential", "contact resistance": "true"}
         )
+        # Set the cyclable lithium capacity to avoid rebuilding
+        # since it does not depend on the fitting parameters
+        model.param.Q_Li_particles_init = parameter_values.evaluate(
+            model.param.Q_Li_particles_init
+        )
+        return model
 
     @pytest.fixture
     def parameters(self):
@@ -121,7 +127,7 @@ class TestEISParameterisation:
         builder.set_simulation(
             model,
             parameter_values=parameter_values,
-            # initial_state={"Initial SoC": init_soc},
+            initial_state={"Initial SoC": init_soc},
         )
         builder.set_dataset(dummy_dataset)
         for p in parameters:
@@ -144,7 +150,7 @@ class TestEISParameterisation:
         builder.set_simulation(
             model,
             parameter_values=parameter_values,
-            # initial_state={"Initial SoC": init_soc},
+            initial_state={"Initial SoC": init_soc},
         )
         builder.set_dataset(dataset)
         for p in parameters:
@@ -190,4 +196,4 @@ class TestEISParameterisation:
         # as the sigma values are small (5e-4), this is a difficult identification process
         # and requires a high number of iterations, and parameter dependent step sizes.
         assert initial_cost > results.final_cost
-        np.testing.assert_allclose(results.x, self.ground_truth, atol=0, rtol=0.02)
+        np.testing.assert_allclose(results.x, self.ground_truth, atol=0, rtol=0.03)

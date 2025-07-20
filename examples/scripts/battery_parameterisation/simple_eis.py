@@ -30,6 +30,12 @@ parameters = pybop.Parameters(
     ]
 )
 
+# Set the cyclable lithium capacity to avoid rebuilding
+# since it does not depend on the fitting parameters
+model.param.Q_Li_particles_init = parameter_values.evaluate(
+    model.param.Q_Li_particles_init
+)
+
 # Create synthetic data for parameter inference
 eis_pipeline = pybop.pipelines.PybammEISPipeline(
     model,
@@ -64,20 +70,13 @@ dataset = pybop.Dataset(
     }
 )
 
-# Pass the initial state to avoid rebuilding
-for c in [
-    "Initial concentration in negative electrode [mol.m-3]",
-    "Initial concentration in positive electrode [mol.m-3]",
-]:
-    if eis_pipeline.pybamm_pipeline.requires_rebuild:
-        parameter_values[c] = eis_pipeline.pybamm_pipeline.parameter_values[c]
-    else:
-        all_inputs = eis_pipeline.pybamm_pipeline.get_all_inputs()
-        parameter_values[c] = all_inputs[c]
-
 # Create an EIS problem
 builder = pybop.PybammEIS()
-builder.set_simulation(model, parameter_values=parameter_values)
+builder.set_simulation(
+    model,
+    parameter_values=parameter_values,
+    initial_state=initial_state,
+)
 builder.set_dataset(dataset)
 for p in parameters:
     builder.add_parameter(p)
