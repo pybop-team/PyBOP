@@ -3,7 +3,6 @@ import pybamm
 import pytest
 
 import pybop
-import pybop._pybamm_eis_pipeline
 
 
 class TestEISParameterisation:
@@ -16,10 +15,19 @@ class TestEISParameterisation:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.sigma0 = 5e-4
-        self.ground_truth = np.clip(
-            np.asarray([0.55, 0.55]) + np.random.normal(loc=0.0, scale=0.05, size=2),
-            a_min=0.4,
-            a_max=0.75,
+        self.ground_truth = np.asarray(
+            [
+                np.clip(
+                    4e-15 + np.random.normal(loc=0.0, scale=1e-15),
+                    a_min=3e-15,
+                    a_max=5e-15,
+                ),
+                np.clip(
+                    0.025 + np.random.normal(loc=0.0, scale=0.015),
+                    a_min=0.005,
+                    a_max=0.045,
+                ),
+            ]
         )
 
     @pytest.fixture
@@ -28,34 +36,43 @@ class TestEISParameterisation:
         x = self.ground_truth
         params.update(
             {
-                "Negative electrode active material volume fraction": x[0],
-                "Positive electrode active material volume fraction": x[1],
+                "Positive particle diffusivity [m2.s-1]": x[0],
+                "Contact resistance [Ohm]": x[1],
             }
         )
         return params
 
     @pytest.fixture
-    def model(self):
-        return pybamm.lithium_ion.SPM(
-            options={"surface form": "differential"},
+    def model(self, parameter_values):
+        model = pybamm.lithium_ion.SPM(
+            options={"surface form": "differential", "contact resistance": "true"}
         )
+        # Set the cyclable lithium capacity to avoid rebuilding
+        # since it does not depend on the fitting parameters
+        model.param.Q_Li_particles_init = parameter_values.evaluate(
+            model.param.Q_Li_particles_init
+        )
+        return model
 
     @pytest.fixture
     def parameters(self):
-        return [
-            pybop.Parameter(
-                "Negative electrode active material volume fraction",
-                prior=pybop.Uniform(0.3, 0.9),
-                initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
-                bounds=[0.375, 0.775],
-            ),
-            pybop.Parameter(
-                "Positive electrode active material volume fraction",
-                prior=pybop.Uniform(0.3, 0.9),
-                initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
-                bounds=[0.375, 0.775],
-            ),
-        ]
+        return pybop.Parameters(
+            [
+                pybop.Parameter(
+                    "Positive particle diffusivity [m2.s-1]",
+                    prior=pybop.Uniform(2e-15, 6e-15),
+                    initial_value=pybop.Uniform(2e-15, 6e-15).rvs()[0],
+                    bounds=[2e-15, 6e-15],
+                    transformation=pybop.LogTransformation(),
+                ),
+                pybop.Parameter(
+                    "Contact resistance [Ohm]",
+                    prior=pybop.Uniform(0, 0.05),
+                    initial_value=pybop.Uniform(0, 0.05).rvs()[0],
+                    bounds=[0, 0.05],
+                ),
+            ]
+        )
 
     @pytest.fixture(params=[0.5])
     def init_soc(self, request):
@@ -84,7 +101,7 @@ class TestEISParameterisation:
 
     @pytest.fixture(
         params=[
-            pybop.SciPyDifferentialEvolution,
+            pybop.ScipyDifferentialEvolution,
             pybop.CMAES,
             pybop.CuckooSearch,
             pybop.XNES,
@@ -107,23 +124,18 @@ class TestEISParameterisation:
             }
         )
         builder = pybop.PybammEIS()
-        builder.set_simulation(model, parameter_values, initial_state=init_soc)
+        builder.set_simulation(
+            model,
+            parameter_values=parameter_values,
+            initial_state={"Initial SoC": init_soc},
+        )
         builder.set_dataset(dummy_dataset)
         for p in parameters:
             builder.add_parameter(p)
         problem = builder.build()
-        sol = problem.simulate(
-            {
-                "Negative electrode active material volume fraction": self.ground_truth[
-                    0
-                ],
-                "Positive electrode active material volume fraction": self.ground_truth[
-                    1
-                ],
-            }
-        )
+        sol = problem.simulate(parameters.to_dict(self.ground_truth))
 
-        dataset = pybop.Dataset(
+        return pybop.Dataset(
             {
                 "Frequency [Hz]": f_eval,
                 "Current function [A]": np.ones(n_frequency) * 0.0,
@@ -131,23 +143,25 @@ class TestEISParameterisation:
                 "Impedance No Noise": sol,
             }
         )
-        return dataset
 
     @pytest.fixture
     def problem(self, model, parameters, cost, init_soc, parameter_values, dataset):
         builder = pybop.PybammEIS()
-        builder.set_simulation(model, parameter_values, initial_state=init_soc)
+        builder.set_simulation(
+            model,
+            parameter_values=parameter_values,
+            initial_state={"Initial SoC": init_soc},
+        )
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)
         builder.add_cost(cost())
-        problem = builder.build()
-        return problem
+        return builder.build()
 
     @pytest.fixture
     def optim(self, optimiser, problem):
         options = optimiser.default_options()
-        if isinstance(options, pybop.SciPyDifferentialEvolutionOptions):
+        if isinstance(options, pybop.ScipyDifferentialEvolutionOptions):
             options.max_iterations = 100
             options.atol = 1e-6
         elif isinstance(options, pybop.PintsOptions):
@@ -156,21 +170,11 @@ class TestEISParameterisation:
             options.absolute_tolerance = 1e-6
 
         # Create optimiser
-        optim = optimiser(problem, options=options)
-        return optim
+        return optimiser(problem, options=options)
 
-    def test_eis_optimisers(self, optim, dataset):
-        optim.problem.set_params(self.ground_truth)
-        sol = optim.problem.simulate(
-            {
-                "Negative electrode active material volume fraction": self.ground_truth[
-                    0
-                ],
-                "Positive electrode active material volume fraction": self.ground_truth[
-                    1
-                ],
-            }
-        )
+    def test_eis_optimisers(self, optim, dataset, parameters):
+        sol = optim.problem.simulate(parameters.to_dict(self.ground_truth))
+
         # Check that the simulated impedance matches the dataset impedance
         np.testing.assert_allclose(
             sol,
@@ -178,18 +182,18 @@ class TestEISParameterisation:
             atol=1e-5,
             err_msg="Simulated impedance does not match dataset impedance",
         )
-        x0 = optim.problem.params.initial_value()
+        x0 = optim.problem.params.get_initial_values()
 
         optim.problem.set_params(x0)
         initial_cost = optim.problem.run()
         results = optim.run()
 
         # Assertions
-        if np.allclose(x0, self.ground_truth, atol=1e-5):
+        if np.allclose(x0, self.ground_truth, atol=0, rtol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
         # Assert on identified values, without sigma for GaussianLogLikelihood
         # as the sigma values are small (5e-4), this is a difficult identification process
         # and requires a high number of iterations, and parameter dependent step sizes.
         assert initial_cost > results.final_cost
-        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
+        np.testing.assert_allclose(results.x, self.ground_truth, atol=0, rtol=0.03)

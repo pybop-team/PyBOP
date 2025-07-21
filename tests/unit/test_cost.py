@@ -119,6 +119,7 @@ class TestCosts:
             check_already_exists=False,
         )
         builder = pybop.Pybamm()
+        model.events = []
         builder.set_simulation(model, parameter_values=parameter_values)
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)

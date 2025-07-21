@@ -79,19 +79,18 @@ class Test_Sampling_SPM:
             experiment=experiment,
         )
         solution = sim.solve()
-        dataset = pybop.Dataset(
+        return pybop.Dataset(
             {
                 "Time [s]": solution.t,
                 "Current function [A]": solution["Current [A]"].data,
                 "Voltage [V]": self.noisy(solution["Voltage [V]"].data, 1e-3),
             }
         )
-        return dataset
 
     @pytest.fixture
     def problem(self, model, parameters, parameter_values, dataset):
         builder = pybop.Pybamm()
-        builder.set_simulation(model, parameter_values)
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)

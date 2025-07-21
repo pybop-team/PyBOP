@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import numpy as np
 
 import pybop
+from pybop._utils import add_spaces
 from pybop.problems.base_problem import Problem
 
 
@@ -243,16 +244,10 @@ class BaseOptimiser:
         """
         raise NotImplementedError
 
+    @property
     def name(self):
-        """
-        Returns the name of the optimiser, to be overwritten by child classes.
-
-        Returns
-        -------
-        str
-            The name of the optimiser
-        """
-        raise NotImplementedError  # pragma: no cover
+        """Returns the name of the optimiser."""
+        return add_spaces(type(self).__name__)
 
     def run(self):
         """

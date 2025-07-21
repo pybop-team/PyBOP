@@ -123,21 +123,15 @@ class AdamWImpl(PintsOptimiser):
         return [self._proposed]
 
     def f_best(self):
-        """
-        Returns the best score found so far.
-        """
+        """Returns the best score found so far."""
         return self._f_best
 
     def f_guessed(self):
-        """
-        Returns the score of the last guessed point.
-        """
+        """Returns the score of the last guessed point."""
         return self._current_f
 
     def name(self):
-        """
-        Returns the name of the optimiser.
-        """
+        """Returns the name of the optimiser."""
         return "AdamW"
 
     def needs_sensitivities(self):

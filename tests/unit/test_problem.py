@@ -93,13 +93,18 @@ class TestProblem:
 
         # Test basic problem
         problem = self._create_eis_problem(
-            model, parameter_values, eis_dataset, parameters, "equal"
+            model, parameter_values, eis_dataset, parameters, cost_weighting="equal"
         )
         sol1 = self._test_eis_problem_pipeline(problem)
 
         # Test with initial_state
         problem_with_initial_state = self._create_eis_problem(
-            model, parameter_values, eis_dataset, parameters, "equal", initial_state=0.5
+            model,
+            parameter_values,
+            eis_dataset,
+            parameters,
+            cost_weighting="equal",
+            initial_state={"Initial SoC": 0.5},
         )
         problem_with_initial_state.set_params(np.array([0.75, 0.665]))
         sol3 = problem_with_initial_state.pipeline.solve()
@@ -114,7 +119,7 @@ class TestProblem:
 
         # Test basic problem
         problem = self._create_eis_problem(
-            model, parameter_values, eis_dataset, parameters, "domain"
+            model, parameter_values, eis_dataset, parameters, cost_weighting="domain"
         )
         sol1 = self._test_eis_problem_pipeline(problem)
 
@@ -124,8 +129,8 @@ class TestProblem:
             parameter_values,
             eis_dataset,
             parameters,
-            "domain",
-            initial_state=0.5,
+            cost_weighting="domain",
+            initial_state={"Initial SoC": 0.5},
         )
         problem_with_initial_state.set_params(np.array([0.75, 0.665]))
         sol3 = problem_with_initial_state.pipeline.solve()

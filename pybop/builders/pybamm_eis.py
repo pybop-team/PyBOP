@@ -5,13 +5,24 @@ import pybamm
 
 import pybop
 from pybop import PybammEISProblem, builders
-from pybop._pybamm_eis_pipeline import PybammEISPipeline
 from pybop.costs.base_cost import CallableCost
+from pybop.pipelines import PybammEISPipeline
 
 
 class PybammEIS(builders.BaseBuilder):
     def __init__(self):
         super().__init__()
+        self._model = None
+        self._geometry = None
+        self._parameter_values = None
+        self._submesh_types = None
+        self._var_pts = None
+        self._spatial_methods = None
+        self._solver = None
+        self._initial_state = None
+        self._build_on_eval = None
+        self._pipeline = None
+        self._rebuild_parameters = None
         self.domain = "Frequency [Hz]"
         self._costs: list[CallableCost] = []
         self._cost_weights: list[float] = []
@@ -19,9 +30,13 @@ class PybammEIS(builders.BaseBuilder):
     def set_simulation(
         self,
         model: pybamm.BaseModel,
+        geometry: pybamm.Geometry | None = None,
         parameter_values: pybamm.ParameterValues | None = None,
-        initial_state: float | str | None = None,
-        build_on_eval: bool | None = None,
+        submesh_types: dict | None = None,
+        var_pts: dict | None = None,
+        spatial_methods: dict | None = None,
+        initial_state: dict | None = None,
+        build_on_eval: bool = False,
     ) -> None:
         """
         Adds a simulation for the optimisation problem.
@@ -30,32 +45,37 @@ class PybammEIS(builders.BaseBuilder):
         ----------
         model : pybamm.BaseModel
             The PyBaMM model to be used.
-        parameter_values : pybamm.ParameterValues
-            The parameters to be used in the model.
-        solver : pybamm.BaseSolver
-            The solver to be used. If None, the idaklu solver will be used.
-        initial_state: float | str
-            The initial state of charge or voltage for the battery model. If float, it will be represented
-            as SoC and must be in range 0 to 1. If str, it will be represented as voltage and needs to be in
-            the format: "3.4 V".
+        geometry: pybamm.Geometry (optional)
+            The geometry upon which to solve the model.
+        parameter_values : pybamm.ParameterValues (optional)
+            Parameters and their corresponding numerical values.
+        submesh_types : dict (optional)
+            A dictionary of the types of submesh to use on each subdomain.
+        var_pts : dict (optional)
+            A dictionary of the number of points used by each spatial variable.
+        spatial_methods : dict (optional)
+            A dictionary of the types of spatial method to use on each.
+            domain (e.g. pybamm.FiniteVolume)
+        initial_state: dict (optional)
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
         build_on_eval : bool
             Boolean to determine if the model will be rebuilt every evaluation. If `initial_state` is provided,
             the model will be rebuilt every evaluation unless `build_on_eval` is `False`, in which case the model
             is built with the parameter values from construction only.
         """
         self._model = model.new_copy()
+        self._geometry = geometry
+        self._parameter_values = (
+            parameter_values.copy()
+            if parameter_values
+            else model.default_parameter_values
+        )
+        self._submesh_types = submesh_types
+        self._var_pts = var_pts
+        self._spatial_methods = spatial_methods
+        self._solver = pybamm.CasadiSolver()
         self._initial_state = initial_state
         self._build_on_eval = build_on_eval
-        if parameter_values is None:
-            parameter_values = model.default_parameter_values
-        elif isinstance(parameter_values, pybamm.ParameterValues):
-            parameter_values = parameter_values.copy()
-        else:
-            raise TypeError(
-                "parameter_values must be a pybamm.ParameterValues instance or None"
-            )
-        self._parameter_values = parameter_values
-        self._solver = pybamm.CasadiSolver()
 
     def add_cost(self, cost: Callable | CallableCost, weight: float = 1.0) -> None:
         """Adds a cost to the problem."""
@@ -126,7 +146,6 @@ class PybammEIS(builders.BaseBuilder):
 
         # Proceed to build the pipeline
         model = self._model
-        param = self._parameter_values
         pybop_parameters = self.build_parameters()
 
         # Build pybamm if not already built
@@ -136,16 +155,20 @@ class PybammEIS(builders.BaseBuilder):
         # Construct the pipeline
         pipeline = PybammEISPipeline(
             model,
-            self._dataset[self.domain],
-            param,
-            pybop_parameters,
-            self._solver,
+            f_eval=self._dataset[self.domain],
+            geometry=self._geometry,
+            parameter_values=self._parameter_values,
+            submesh_types=self._submesh_types,
+            var_pts=self._var_pts,
+            spatial_methods=self._spatial_methods,
+            solver=self._solver,
+            pybop_parameters=pybop_parameters,
             initial_state=self._initial_state,
             build_on_eval=self._build_on_eval,
         )
 
         # Build and initialise the pipeline
-        pipeline.pybamm_pipeline.build()
+        pipeline.build()
 
         return PybammEISProblem(
             eis_pipeline=pipeline,

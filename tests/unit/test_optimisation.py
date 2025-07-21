@@ -106,9 +106,9 @@ class TestOptimisation:
     @pytest.mark.parametrize(
         "optimiser, expected_name, sensitivities",
         [
-            (pybop.SciPyMinimize, "SciPyMinimize", False),
-            (pybop.SciPyDifferentialEvolution, "SciPyDifferentialEvolution", False),
-            (pybop.GradientDescent, "Gradient descent", True),
+            (pybop.ScipyMinimize, "Scipy Minimize", False),
+            (pybop.ScipyDifferentialEvolution, "Scipy Differential Evolution", False),
+            (pybop.GradientDescent, "Gradient Descent", True),
             (pybop.AdamW, "AdamW", True),
             (
                 pybop.CMAES,
@@ -133,13 +133,13 @@ class TestOptimisation:
         problem = two_param_problem
         optim = optimiser(problem=problem)
 
-        assert optim.name() == expected_name
+        assert optim.name == expected_name
 
     @pytest.mark.parametrize(
         "optimiser",
         [
-            pybop.SciPyMinimize,
-            pybop.SciPyDifferentialEvolution,
+            pybop.ScipyMinimize,
+            pybop.ScipyDifferentialEvolution,
             pybop.GradientDescent,
             pybop.AdamW,
             pybop.SNES,
@@ -251,8 +251,8 @@ class TestOptimisation:
     @pytest.mark.parametrize(
         "optimiser",
         [
-            pybop.SciPyMinimize,
-            pybop.SciPyDifferentialEvolution,
+            pybop.ScipyMinimize,
+            pybop.ScipyDifferentialEvolution,
             pybop.GradientDescent,
             pybop.AdamW,
             pybop.SNES,
@@ -267,8 +267,8 @@ class TestOptimisation:
         ],
     )
     def test_optimiser_kwargs(self, problem, optimiser):
-        if optimiser == pybop.SciPyDifferentialEvolution:
-            options = pybop.SciPyDifferentialEvolution.default_options()
+        if optimiser == pybop.ScipyDifferentialEvolution:
+            options = pybop.ScipyDifferentialEvolution.default_options()
             options.maxiter = 3
             options.popsize = 5
             pop_maxiter_optim = optimiser(problem=problem, options=options)
@@ -410,11 +410,11 @@ class TestOptimisation:
 
     def test_scipy_minimize_with_jac(self, problem):
         # Check a method that uses gradient information
-        options = pybop.SciPyMinimize.default_options()
+        options = pybop.ScipyMinimize.default_options()
         options.method = "L-BFGS-B"
         options.jac = True
         options.maxiter = 1
-        optim = pybop.SciPyMinimize(problem=problem, options=options)
+        optim = pybop.ScipyMinimize(problem=problem, options=options)
         optim.run()
 
         with pytest.raises(
@@ -422,7 +422,7 @@ class TestOptimisation:
             match="jac must be a boolean value.",
         ):
             options.jac = "Invalid string"
-            optim = pybop.SciPyMinimize(problem=problem, options=options)
+            optim = pybop.ScipyMinimize(problem=problem, options=options)
 
     def test_single_parameter(self, problem):
         # Test catch for optimisers that can only run with multiple parameters

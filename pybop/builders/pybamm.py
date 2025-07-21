@@ -2,33 +2,42 @@ import pybamm
 
 import pybop
 from pybop import Parameter as PybopParameter
-from pybop._pybamm_pipeline import PybammPipeline
 from pybop.builders.base import BaseBuilder
 from pybop.builders.utils import cell_mass, set_formation_concentrations
 from pybop.costs.pybamm import BaseLikelihood, DesignCost, PybammCost
+from pybop.pipelines import PybammPipeline
 
 
 class Pybamm(BaseBuilder):
     def __init__(self):
+        super().__init__()
         self._model = None
-        self._solver = None
+        self._geometry = None
         self._parameter_values = None
-        self._rebuild_parameters = None
+        self._submesh_types = None
+        self._var_pts = None
+        self._spatial_methods = None
+        self._solver = None
         self._initial_state = None
+        self._build_on_eval = None
         self._pipeline = None
+        self._rebuild_parameters = None
+        self.domain = "Time [s]"
         self._costs: list[PybammCost] = []
         self._cost_weights: list[float] = []
-        self.domain = "Time [s]"
         self._use_posterior = False
-        super().__init__()
 
     def set_simulation(
         self,
         model: pybamm.BaseModel,
-        parameter_values: pybamm.ParameterValues = None,
-        solver: pybamm.BaseSolver = None,
-        initial_state: float | str = None,
-        build_on_eval: bool = None,
+        geometry: pybamm.Geometry | None = None,
+        parameter_values: pybamm.ParameterValues | None = None,
+        submesh_types: dict | None = None,
+        var_pts: dict | None = None,
+        spatial_methods: dict | None = None,
+        solver: pybamm.BaseSolver | None = None,
+        initial_state: dict | None = None,
+        build_on_eval: bool = False,
     ) -> None:
         """
         Adds a simulation for the optimisation problem.
@@ -37,28 +46,39 @@ class Pybamm(BaseBuilder):
         ----------
         model : pybamm.BaseModel
             The PyBaMM model to be used.
-        parameter_values : pybamm.ParameterValues
-            The parameters to be used in the model.
-        solver : pybamm.BaseSolver
-            The solver to be used. If None, the idaklu solver will be used.
-        initial_state: float | str
-            The initial state of charge or voltage for the battery model. If float, it will be represented
-            as SoC and must be in range 0 to 1. If str, it will be represented as voltage and needs to be in
-            the format: "3.4 V".
+        geometry: pybamm.Geometry (optional)
+            The geometry upon which to solve the model.
+        parameter_values : pybamm.ParameterValues (optional)
+            Parameters and their corresponding numerical values.
+        submesh_types : dict (optional)
+            A dictionary of the types of submesh to use on each subdomain.
+        var_pts : dict (optional)
+            A dictionary of the number of points used by each spatial variable.
+        spatial_methods : dict (optional)
+            A dictionary of the types of spatial method to use on each.
+            domain (e.g. pybamm.FiniteVolume)
+        solver : pybamm.BaseSolver (optional)
+            The solver to use to solve the model.
+        initial_state: dict (optional)
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
         build_on_eval : bool
             Boolean to determine if the model will be rebuilt every evaluation. If `initial_state` is provided,
             the model will be rebuilt every evaluation unless `build_on_eval` is `False`, in which case the model
             is built with the parameter values from construction only.
         """
         self._model = model.new_copy()
-        self._initial_state = initial_state
-        self._build_on_eval = build_on_eval
-        self._solver = solver or model.default_solver
+        self._geometry = geometry
         self._parameter_values = (
             parameter_values.copy()
             if parameter_values
             else model.default_parameter_values
         )
+        self._submesh_types = submesh_types
+        self._var_pts = var_pts
+        self._spatial_methods = spatial_methods
+        self._solver = solver
+        self._initial_state = initial_state
+        self._build_on_eval = build_on_eval
 
     def add_cost(self, cost: PybammCost, weight: float = 1.0) -> None:
         """
@@ -147,10 +167,14 @@ class Pybamm(BaseBuilder):
 
         # Construct the pipeline
         pipeline = PybammPipeline(
-            model,
-            pybamm_parameter_values,
-            pybop_parameters,
-            self._solver,
+            model=model,
+            geometry=self._geometry,
+            parameter_values=pybamm_parameter_values,
+            submesh_types=self._submesh_types,
+            var_pts=self._var_pts,
+            spatial_methods=self._spatial_methods,
+            solver=self._solver,
+            pybop_parameters=pybop_parameters,
             t_start=self._dataset[self.domain][0],
             t_end=self._dataset[self.domain][-1],
             t_interp=self._dataset[self.domain],

@@ -2,7 +2,7 @@ import numpy as np
 from pints import Evaluator as PintsEvaluator
 
 
-class SciPyEvaluator(PintsEvaluator):
+class ScipyEvaluator(PintsEvaluator):
     """
     Evaluates a function (or callable object) for the SciPy optimisers
     for either a single or multiple positions.

@@ -107,27 +107,19 @@ class RandomSearchImpl(PopulationBasedOptimiser):
                 self._x_best = self._candidates[i]
 
     def running(self):
-        """
-        Returns ``True`` if the optimisation is in progress.
-        """
+        """Returns ``True`` if the optimisation is in progress."""
         return self._running
 
     def x_best(self):
-        """
-        Returns the best parameter values found so far.
-        """
+        """Returns the best parameter values found so far."""
         return self._x_best
 
     def f_best(self):
-        """
-        Returns the best score found so far.
-        """
+        """Returns the best score found so far."""
         return self._f_best
 
     def name(self):
-        """
-        Returns the name of the optimiser.
-        """
+        """Returns the name of the optimiser."""
         return "Random Search"
 
     def clip_candidates(self, x):

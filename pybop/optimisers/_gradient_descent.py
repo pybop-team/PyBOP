@@ -132,7 +132,7 @@ class GradientDescentImpl(PintsOptimiser):
 
     def name(self):
         """Returns the name of the optimiser."""
-        return "Gradient descent"
+        return "Gradient Descent"
 
     def n_hyper_parameters(self):
         """Returns the number of hyper-parameters (learning rate)."""

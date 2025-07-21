@@ -127,39 +127,27 @@ class SimulatedAnnealingImpl(PintsOptimiser):
         self._iterations += 1
 
     def name(self):
-        """
-        Returns the name of this optimiser.
-        """
+        """Returns the name of this optimiser."""
         return "Simulated Annealing"
 
     def needs_sensitivities(self):
-        """
-        Returns whether this method needs sensitivities.
-        """
+        """Returns whether this method needs sensitivities."""
         return False
 
     def n_hyper_parameters(self):
-        """
-        Returns the number of hyper-parameters for this optimiser.
-        """
+        """Returns the number of hyper-parameters for this optimiser."""
         return 2
 
     def running(self):
-        """
-        Returns whether the optimisation is still running.
-        """
+        """Returns whether the optimisation is still running."""
         return self._running
 
     def x_best(self):
-        """
-        Returns the best position found.
-        """
+        """Returns the best position found."""
         return self._x_best
 
     def f_best(self):
-        """
-        Returns the best score found.
-        """
+        """Returns the best score found."""
         return self._f_best
 
     @property

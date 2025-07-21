@@ -23,7 +23,9 @@ class Test_SPM_Parameterisation:
 
     @pytest.fixture
     def model(self):
-        return pybamm.lithium_ion.SPM()
+        model = pybamm.lithium_ion.SPM()
+        model.events = []
+        return model
 
     @pytest.fixture
     def parameter_values(self):
@@ -72,7 +74,7 @@ class Test_SPM_Parameterisation:
 
     @pytest.fixture(
         params=[
-            pybop.SciPyDifferentialEvolution,
+            pybop.ScipyDifferentialEvolution,
             pybop.SimulatedAnnealing,
             pybop.CuckooSearch,
             pybop.NelderMead,
@@ -102,19 +104,18 @@ class Test_SPM_Parameterisation:
             experiment=experiment,
         )
         solution = sim.solve()
-        dataset = pybop.Dataset(
+        return pybop.Dataset(
             {
                 "Time [s]": solution["Time [s]"].data,
                 "Current function [A]": solution["Current [A]"].data,
                 "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
             }
         )
-        return dataset
 
     @pytest.fixture
     def problem(self, model, parameters, cost_cls, parameter_values, dataset):
         builder = pybop.Pybamm()
-        builder.set_simulation(model, parameter_values)
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)
@@ -126,8 +127,7 @@ class Test_SPM_Parameterisation:
         else:
             cost = cost_cls(signal, signal)
         builder.add_cost(cost)
-        problem = builder.build()
-        return problem
+        return builder.build()
 
     def test_problem(self, problem):
         problem.set_params(self.ground_truth)
@@ -143,15 +143,14 @@ class Test_SPM_Parameterisation:
     def optim(self, optimiser, problem):
         options = optimiser.default_options()
         options.max_iterations = 100
-        if isinstance(options, pybop.SciPyDifferentialEvolutionOptions):
+        if isinstance(options, pybop.ScipyDifferentialEvolutionOptions):
             options.atol = 1e-6
         elif isinstance(options, pybop.PintsOptions):
             options.absolute_tolerance = 1e-6
             options.max_unchanged_iterations = 100
 
         # Set sigma0 and create optimiser
-        optim = optimiser(problem, options)
-        return optim
+        return optimiser(problem, options)
 
     def test_optimisers(self, optim, cost_cls):
         x0 = optim.problem.params.get_initial_values()
@@ -197,7 +196,10 @@ class Test_SPM_Parameterisation:
         )
         builder = pybop.Pybamm()
         builder.set_simulation(
-            model, initial_state=f"{solution['Voltage [V]'].data[0]} V"
+            model,
+            initial_state={
+                "Initial open-circuit voltage [V]": solution["Voltage [V]"].data[0]
+            },
         )
         builder.set_dataset(dataset)
         for p in parameters:
@@ -226,8 +228,8 @@ class Test_SPM_Parameterisation:
     def test_model_misparameterisation(self, parameters, model, init_soc):
         # Define two different models with different parameter sets
         # The optimisation should fail as the models are not the same
-        second_parameter_set = pybop.ParameterSet("Ecker2015")
-        second_model = pybop.lithium_ion.SPMe(parameter_set=second_parameter_set)
+        second_parameter_set = pybamm.ParameterValues("Ecker2015")
+        second_model = pybamm.lithium_ion.SPMe(parameter_set=second_parameter_set)
 
         # Form dataset
         solution = self.get_data(second_model, init_soc)

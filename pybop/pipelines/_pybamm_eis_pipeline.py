@@ -7,7 +7,7 @@ from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
 
 from pybop import Parameters, SymbolReplacer
-from pybop._pybamm_pipeline import PybammPipeline
+from pybop.pipelines._pybamm_pipeline import PybammPipeline
 
 
 class PybammEISPipeline:
@@ -19,44 +19,64 @@ class PybammEISPipeline:
     2. A pybamm model needs to be built multiple times with different parameter values,
         for the case where some of the parameters are geometric parameters which change the mesh
 
-    To enable 2., you can pass a list of parameter names to the constructor, these parameters will be set
-    before the model is built each time (using the `build` method).
-    To enable 1, you can just pass an empty list. The model will be built once and subsequent calls
-    to the `build` method will not change the model.
+    The logic for (1) and (2) occurs within the composed PybammPipeline and happens automatically.
+    To override this logic, the argument `build_on_eval` can be set to `True` which will force (2) to
+    occur.
+
     """
 
     def __init__(
         self,
         model: pybamm.BaseModel,
         f_eval: np.ndarray | list[float],
+        geometry: pybamm.Geometry | None = None,
         parameter_values: pybamm.ParameterValues | None = None,
-        pybop_parameters: Parameters | None = None,
-        solver: pybamm.BaseSolver | None = None,
+        submesh_types: dict | None = None,
         var_pts: dict | None = None,
-        initial_state: float | str | None = None,
-        build_on_eval: bool | None = None,
+        spatial_methods: dict | None = None,
+        solver: pybamm.BaseSolver | None = None,
+        pybop_parameters: Parameters | None = None,
+        initial_state: dict | None = None,
+        build_on_eval: bool = False,
     ):
         """
         Parameters
         ---------
         model : pybamm.BaseModel
             The PyBaMM model to be used.
-        parameter_values : pybamm.ParameterValues
-            The parameters to be used in the model.
-        solver : pybamm.BaseSolver
-            The solver to be used. If None, the idaklu solver will be used.
         f_eval : list
             The frequencies at which to evaluate the impedance.
-        var_pts : dict
-            The number of points at which to discretise the model.
+        geometry: pybamm.Geometry (optional)
+            The geometry upon which to solve the model.
+        parameter_values : pybamm.ParameterValues (optional)
+            Parameters and their corresponding numerical values.
+        submesh_types : dict (optional)
+            A dictionary of the types of submesh to use on each subdomain.
+        var_pts : dict (optional)
+            A dictionary of the number of points used by each spatial variable.
+        spatial_methods : dict (optional)
+            A dictionary of the types of spatial method to use on each.
+            domain (e.g. pybamm.FiniteVolume)
+        solver : pybamm.BaseSolver (optional)
+            The solver to use to solve the model.
+        pybop_parameters : pybop.Parameters (optional)
+            The parameters to be optimised.
+        initial_state: dict (optional)
+            A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+        build_on_eval : bool
+            Boolean to determine if the model will be rebuilt every evaluation. By default, the model will
+            only be rebuilt if needed, for example for an initial state or geometric parameters.
         """
 
         self._pybamm_pipeline = PybammPipeline(
             model,
+            geometry=geometry,
             parameter_values=parameter_values,
-            pybop_parameters=pybop_parameters,
-            solver=solver,
+            submesh_types=submesh_types,
             var_pts=var_pts,
+            spatial_methods=spatial_methods,
+            solver=solver,
+            pybop_parameters=pybop_parameters,
             initial_state=initial_state,
             build_on_eval=build_on_eval,
         )
@@ -64,7 +84,7 @@ class PybammEISPipeline:
         # Set-up model for EIS
         self._f_eval = f_eval
         self.set_up_for_eis(self._pybamm_pipeline.model)
-        self._pybamm_pipeline.set_parameter_value("Current function [A]", 0)
+        self._pybamm_pipeline.parameter_values["Current function [A]"] = 0
 
         # Initialise
         self.M = None
@@ -116,9 +136,9 @@ class PybammEISPipeline:
 
         # Create the FunctionControl submodel and extract variables
         external_circuit_variables = pybamm.external_circuit.FunctionControl(
-            model.param,
-            None,
-            model.options,
+            param=model.param,
+            external_circuit_function=None,
+            options=model.options,
             control="algebraic",
         ).get_fundamental_variables()
 
@@ -145,9 +165,9 @@ class PybammEISPipeline:
         model.algebraic[I_cell] = I - I_applied
         model.initial_conditions[I_cell] = 0
 
-    def initialise_eis_pipeline(self):
+    def initialise_eis_pipeline(self) -> None:
         """
-        Initialise the Electrochemical Impedance Spectroscopy (EIS) simulation.
+        Initialise the electrochemical impedance spectroscopy (EIS) simulation.
         This method sets up the mass matrix and solver, converts inputs to the appropriate format,
         extracts the necessary attributes from the model, and prepares matrices for the simulation.
 
@@ -157,19 +177,23 @@ class PybammEISPipeline:
             If the model hasn't been built yet.
         """
         built_model = self._pybamm_pipeline.built_model
-        inputs = self._pybamm_pipeline.pybop_parameters.to_dict()
-        M = self._pybamm_pipeline.built_model.mass_matrix.entries
-        self._pybamm_pipeline.solver.set_up(built_model, inputs=inputs)
+        all_inputs = (
+            self._pybamm_pipeline.get_all_inputs()
+            if not self.requires_rebuild
+            else None
+        )
+        self._pybamm_pipeline.solver.set_up(built_model, inputs=all_inputs)
 
         # Convert inputs to casadi format if needed
         casadi_inputs = (
-            casadi.vertcat(*inputs.values())
-            if inputs is not None and built_model.convert_to_format == "casadi"
-            else inputs or []
+            casadi.vertcat(*all_inputs.values())
+            if all_inputs is not None and built_model.convert_to_format == "casadi"
+            else all_inputs or []
         )
 
         # Extract the necessary attributes from the model
-        y0 = built_model.concatenated_initial_conditions.evaluate(0, inputs=inputs)
+        M = self._pybamm_pipeline.built_model.mass_matrix.entries
+        y0 = built_model.concatenated_initial_conditions.evaluate(0, inputs=all_inputs)
         jac = built_model.jac_rhs_algebraic_eval(0, y0, casadi_inputs).sparse()
 
         # Convert to Compressed Sparse Column format
@@ -235,3 +259,21 @@ class PybammEISPipeline:
     @property
     def pybamm_pipeline(self):
         return self._pybamm_pipeline
+
+    @property
+    def pybop_parameters(self):
+        return self._pybamm_pipeline.pybop_parameters
+
+    @property
+    def requires_rebuild(self):
+        return self._pybamm_pipeline.requires_rebuild
+
+    def rebuild(self) -> None:
+        """Update the parameter values and rebuild the PyBaMM EIS pipeline."""
+        self._pybamm_pipeline.rebuild()
+        return self.initialise_eis_pipeline()
+
+    def build(self) -> None:
+        """Build the PyBaMM EIS pipeline."""
+        self._pybamm_pipeline.build()
+        return self.initialise_eis_pipeline()
