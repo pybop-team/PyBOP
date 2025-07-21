@@ -458,21 +458,25 @@ class TestBuilder:
         value1 = problem.run()
         built_model_1 = problem.pipeline.built_model.new_copy()
 
-        # Second build w/ SOC instead of Voltage
-        builder.set_simulation(
-            model,
-            parameter_values=parameter_values,
-            solver=solver,
-            initial_state={"Initial SoC": 0.5},
-        )
-        problem2 = builder.build()
-        problem2.set_params(np.array([0.5, 0.5]))
-        value2 = problem2.run()
-        built_model_2 = problem2.pipeline.built_model.new_copy()
+        if model.options["open-circuit potential"] == "MSMR":
+            # PyBaMM initial state solver for MSMR underdeveloped for testing
+            pass
+        else:
+            # Second build w/ SOC instead of Voltage
+            builder.set_simulation(
+                model,
+                parameter_values=parameter_values,
+                solver=solver,
+                initial_state={"Initial SoC": 0.5},
+            )
+            problem2 = builder.build()
+            problem2.set_params(np.array([0.5, 0.5]))
+            value2 = problem2.run()
+            built_model_2 = problem2.pipeline.built_model.new_copy()
 
-        # Assert builds are different
-        assert abs((value1 - value2) / value1) > 1e-5
-        assert built_model_1 != built_model_2
+            # Assert builds are different
+            assert abs((value1 - value2) / value1) > 1e-5
+            assert built_model_1 != built_model_2
 
     def test_build_on_eval(self, model_and_params, solver, dataset):
         model, parameter_values = model_and_params
@@ -500,22 +504,26 @@ class TestBuilder:
         value1 = problem.run()
         built_model_1 = problem.pipeline.built_model.new_copy()
 
-        # Second build w/ `build_on_eval`
-        builder.set_simulation(
-            model,
-            parameter_values=parameter_values,
-            solver=solver,
-            initial_state={"Initial SoC": 0.5},
-            build_on_eval=True,
-        )
-        problem2 = builder.build()
-        problem2.set_params(np.array([0.5, 0.5]))
-        value2 = problem2.run()
-        built_model_2 = problem2._pipeline.built_model.new_copy()
+        if model.options["open-circuit potential"] == "MSMR":
+            # PyBaMM initial state solver for MSMR underdeveloped for testing
+            pass
+        else:
+            # Second build w/ `build_on_eval`
+            builder.set_simulation(
+                model,
+                parameter_values=parameter_values,
+                solver=solver,
+                initial_state={"Initial SoC": 0.5},
+                build_on_eval=True,
+            )
+            problem2 = builder.build()
+            problem2.set_params(np.array([0.5, 0.5]))
+            value2 = problem2.run()
+            built_model_2 = problem2._pipeline.built_model.new_copy()
 
-        # Assert builds are different
-        assert abs((value1 - value2) / value1) > 1e-5
-        assert built_model_1 != built_model_2
+            # Assert builds are different
+            assert abs((value1 - value2) / value1) > 1e-5
+            assert built_model_1 != built_model_2
 
     def test_build_no_parameters(self, dataset):
         builder = pybop.builders.Python()
