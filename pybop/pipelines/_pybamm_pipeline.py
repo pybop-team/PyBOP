@@ -35,6 +35,7 @@ class PybammPipeline:
         t_end: np.number = 1.0,
         t_interp: np.ndarray | None = None,
         initial_state: dict | None = None,
+        initial_state_parameters: list | None = None,
         build_on_eval: bool = False,
     ):
         """
@@ -65,6 +66,9 @@ class PybammPipeline:
             The time points at which to interpolate the solution. If None, no interpolation will be done.
         initial_state: dict (optional)
             A valid initial state, e.g. the initial state of charge or open-circuit voltage.
+        initial_state_parameters: list (optional)
+            The names of the parameters which define initial state of the model. Only required for a
+            custom model with initial state setting.
         build_on_eval : bool
             Boolean to determine if the model will be rebuilt every evaluation. By default, the model will
             only be rebuilt if needed, for example for an initial state or geometric parameters.
@@ -82,7 +86,9 @@ class PybammPipeline:
         self._t_end = np.float64(t_end)
         self._t_interp = t_interp
         self._initial_state = self._convert_to_pybamm_initial_state(initial_state)
-        self._initial_state_parameters = self._get_initial_state_parameters()
+        self._initial_state_parameters = (
+            initial_state_parameters or self._get_initial_state_parameters()
+        )
         self._built_model = self._model
         self.requires_rebuild = build_on_eval or self._determine_rebuild()
 
