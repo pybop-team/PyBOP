@@ -81,6 +81,22 @@ class TestDecay:
 
         return builder
 
+    def create_diffsol_builder(self, dataset, model_config: dict[str, Any], parameters):
+        """Factory function for creating Diffsol builders."""
+        builder = pybop.builders.Diffsol()
+        builder.set_dataset(dataset)
+        builder.set_code(
+            """
+            u { y = y0 }
+            F { -k * y }
+            """
+        )
+
+        for parameter in parameters:
+            builder.add_parameter(parameter)
+
+        return builder
+
     def assert_parameter_sensitivity(
         self, problem, initial_params, test_params, tolerance=RELATIVE_TOLERANCE
     ):
@@ -92,9 +108,9 @@ class TestDecay:
         value2 = problem.run()
 
         relative_change = abs((value1 - value2) / value1)
-        assert relative_change > tolerance, (
-            f"Parameter change insufficient: {relative_change}"
-        )
+        assert (
+            relative_change > tolerance
+        ), f"Parameter change insufficient: {relative_change}"
 
         return value1, value2
 
@@ -123,12 +139,12 @@ class TestDecay:
         value2_sens, grad2 = problem.run_with_sensitivities()
 
         # Validate gradient shape and value consistency
-        assert grad1.shape == (len(test_parameters),), (
-            f"Gradient shape mismatch: {grad1.shape}"
-        )
-        assert grad2.shape == (len(test_parameters),), (
-            f"Gradient shape mismatch: {grad2.shape}"
-        )
+        assert grad1.shape == (
+            len(test_parameters),
+        ), f"Gradient shape mismatch: {grad1.shape}"
+        assert grad2.shape == (
+            len(test_parameters),
+        ), f"Gradient shape mismatch: {grad2.shape}"
 
         np.testing.assert_allclose(
             value1_sens, value1, atol=ABSOLUTE_TOLERANCE, rtol=RELATIVE_TOLERANCE
@@ -143,3 +159,31 @@ class TestDecay:
             -TEST_PARAM_VALUES[0] * dataset["Time [s]"]
         )
         np.testing.assert_allclose(analytical_sol, sol["y_0"].data, atol=1e-5)
+
+    def test_decay_diffsol(self, dataset, base_model_config, test_parameters):
+        pybamm_builder = self.create_pybamm_builder(
+            dataset, base_model_config, test_parameters
+        )
+        pybamm_builder.add_cost(pybop.costs.pybamm.SumSquaredError("y_0", "y_0"))
+        diffsol_builder = self.create_diffsol_builder(
+            dataset, base_model_config, test_parameters
+        )
+        diffsol_builder.set_cost(pybop.costs.DiffsolSumOfSquares("y", "y_0"))
+
+        pybamm_problem = pybamm_builder.build()
+        diffsol_problem = diffsol_builder.build()
+
+        initial_params = pybamm_problem.params.get_initial_values()
+        pybamm_problem.set_params(initial_params)
+        diffsol_problem.set_params(initial_params)
+
+        # test cost value
+        np.testing.assert_allclose(
+            pybamm_problem.run(), diffsol_problem.run(), atol=ABSOLUTE_TOLERANCE
+        )
+
+        # test sensitivities
+        pybamm_value, pybamm_grad = pybamm_problem.run_with_sensitivities()
+        diffsol_value, diffsol_grad = diffsol_problem.run_with_sensitivities()
+        np.testing.assert_allclose(pybamm_value, diffsol_value, atol=ABSOLUTE_TOLERANCE)
+        np.testing.assert_allclose(pybamm_grad, diffsol_grad, atol=ABSOLUTE_TOLERANCE)

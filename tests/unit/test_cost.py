@@ -86,6 +86,8 @@ class TestCosts:
         lower_cost = problem.run()
 
         assert higher_cost > lower_cost
+        # cost should just be a number
+        assert isinstance(higher_cost, np.number)
 
     @pytest.mark.parametrize(
         "pybamm_costs",

@@ -68,7 +68,15 @@ from .transformation.transformations import (
 # Parameter classes
 #
 from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointLogPrior
-from .parameters.parameter import Parameter, Parameters, Inputs, ParameterError, ParameterNotFoundError, ParameterValidationError, ParameterValueValidator
+from .parameters.parameter import (
+    Parameter,
+    Parameters,
+    Inputs,
+    ParameterError,
+    ParameterNotFoundError,
+    ParameterValidationError,
+    ParameterValueValidator,
+)
 from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointLogPrior
 
 #
@@ -87,6 +95,7 @@ from .costs.base_cost import CallableCost
 #
 from .problems.base_problem import Problem
 from .problems.pybamm_problem import PybammProblem
+from .problems.diffsol import DiffsolProblem
 from .problems.pybamm_eis_problem import PybammEISProblem
 from .problems.python_problem import PythonProblem
 
@@ -100,6 +109,17 @@ from .costs.error_measures import (
     SumSquaredError,
     Minkowski,
     SumOfPower,
+)
+
+from .costs.diffsol import (
+    DiffsolCost,
+    DiffsolNegativeGaussianLogLikelihood,
+    DiffsolSumOfPower,
+    DiffsolMinkowski,
+    DiffsolSumOfSquares,
+    DiffsolMeanAbsoluteError,
+    DiffsolMeanSquaredError,
+    DiffsolRootMeanSquaredError,
 )
 
 #
