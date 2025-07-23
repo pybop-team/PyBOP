@@ -784,6 +784,7 @@ class Parameters:
             if param.prior is not None
         ]
 
+    @property
     def transformation(self) -> Transformation:
         """
         Get the transformation for the parameters.

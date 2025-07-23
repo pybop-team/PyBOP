@@ -111,28 +111,28 @@ class BaseSciPyOptimiser(BaseOptimiser):
 class ScipyMinimizeOptions(pybop.OptimiserOptions):
     """
     Options for the SciPy minimization method.
-    Parameters
-    ----------
-    method : str
-        The optimisation method to use. Default is 'Nelder-Mead'.
-    jac : bool
-        Method for computing the gradient vector. Default is False.
-    tol : float, optional
-        Tolerance for termination. Default is None.
-    maxiter : int
-        Maximum number of iterations. Default is 1000.
-    disp : bool, optional
-        Set to True to print convergence messages. Default is False.
-    ftol : float, optional
-        Function tolerance for termination. Default is None.
-    gtol : float, optional
-        Gradient tolerance for termination. Default is None.
-    eps : float, optional
-        Step size for finite difference approximation. Default is None.
-    maxcor : int, optional
-        Maximum number of variable metric corrections. Default is None.
-    maxfev : int, optional
-        Maximum number of function evaluations. Default is None.
+
+    Attributes:
+        method : str
+            The optimisation method to use. Default is 'Nelder-Mead'.
+        jac : bool
+            Method for computing the gradient vector. Default is False.
+        tol : float, optional
+            Tolerance for termination. Default is None.
+        maxiter : int
+            Maximum number of iterations. Default is 1000.
+        disp : bool, optional
+            Set to True to print convergence messages. Default is False.
+        ftol : float, optional
+            Function tolerance for termination. Default is None.
+        gtol : float, optional
+            Gradient tolerance for termination. Default is None.
+        eps : float, optional
+            Step size for finite difference approximation. Default is None.
+        maxcor : int, optional
+            Maximum number of variable metric corrections. Default is None.
+        maxfev : int, optional
+            Maximum number of function evaluations. Default is None.
 
     """
 
@@ -251,7 +251,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         """
         Scale the cost function, preserving the sign convention, and eliminate nan values
         """
-        x_model = self.problem.params.transformation().to_model(x)
+        x_model = self.problem.params.transformation.to_model(x)
         if not self._options_dict["jac"]:
             cost = self._evaluator.evaluate(x_model)
             self.store_intermediate_results(x_search=x, x_model=x_model, cost=cost)
@@ -295,7 +295,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 result = self._evaluator.evaluate(x_best)
                 cost_best = result[0] if self._needs_sensitivities else result
 
-            x_model_best = self.problem.params.transformation().to_model(x_best)
+            x_model_best = self.problem.params.transformation.to_model(x_best)
 
             (x_search, x_model, cost) = self.get_and_reset_itermediate_results()
             evaluations = len(x_search)
@@ -364,57 +364,55 @@ class SciPyDifferentialEvolutionOptions(pybop.OptimiserOptions):
     """
     Options for the SciPy differential evolution method.
 
-    Parameters
-    ----------
-
-    strategy : str, optional
-        The differential evolution strategy to use. Should be one of:
-        - 'best1bin'
-        - 'best1exp'
-        - 'rand1exp'
-        - 'randtobest1exp'
-        - 'currenttobest1exp'
-        - 'best2exp'
-        - 'rand2exp'
-        - 'randtobest1bin'
-        - 'currenttobest1bin'
-        - 'best2bin'
-        - 'rand2bin'
-        - 'rand1bin'
-        Default is 'best1bin'.
-    maxiter : int, optional
-        Maximum number of generations. Default is 1000.
-    popsize : int, optional
-        Multiplier for setting the total population size. The population has
-        popsize * len(x) individuals. Default is 15.
-    tol : float, optional
-        Relative tolerance for convergence. Default is 0.01.
-    mutation : float or tuple(float, float), optional
-        The mutation constant. If specified as a float, should be in [0, 2].
-        If specified as a tuple (min, max), dithering is used. Default is (0.5, 1.0).
-    recombination : float, optional
-        The recombination constant, should be in [0, 1]. Default is 0.7.
-    seed : int, optional
-        Random seed for reproducibility.
-    disp : bool, optional
-        Display status messages. Default is False.
-    callback : Callable, optional
-        Called after each iteration with the current result as argument.
-    polish : bool, optional
-        If True, performs a local optimisation on the solution. Default is True.
-    init : str or array-like, optional
-        Specify initial population. Can be 'latinhypercube', 'random',
-        or an array of shape (M, len(x)).
-    atol : float, optional
-        Absolute tolerance for convergence. Default is 0.
-    updating : {'immediate', 'deferred'}, optional
-        If 'immediate', best solution vector is continuously updated within
-        a single generation. Default is 'immediate'.
-    workers : int or map-like Callable, optional
-        If workers is an int the population is subdivided into workers
-        sections and evaluated in parallel. Default is 1.
-    constraints : {NonlinearConstraint, LinearConstraint, Bounds}, optional
-        Constraints on the solver.
+    Attributes:
+        strategy : str, optional
+            The differential evolution strategy to use. Should be one of:
+            - 'best1bin'
+            - 'best1exp'
+            - 'rand1exp'
+            - 'randtobest1exp'
+            - 'currenttobest1exp'
+            - 'best2exp'
+            - 'rand2exp'
+            - 'randtobest1bin'
+            - 'currenttobest1bin'
+            - 'best2bin'
+            - 'rand2bin'
+            - 'rand1bin'
+            Default is 'best1bin'.
+        maxiter : int, optional
+            Maximum number of generations. Default is 1000.
+        popsize : int, optional
+            Multiplier for setting the total population size. The population has
+            popsize * len(x) individuals. Default is 15.
+        tol : float, optional
+            Relative tolerance for convergence. Default is 0.01.
+        mutation : float or tuple(float, float), optional
+            The mutation constant. If specified as a float, should be in [0, 2].
+            If specified as a tuple (min, max), dithering is used. Default is (0.5, 1.0).
+        recombination : float, optional
+            The recombination constant, should be in [0, 1]. Default is 0.7.
+        seed : int, optional
+            Random seed for reproducibility.
+        disp : bool, optional
+            Display status messages. Default is False.
+        callback : Callable, optional
+            Called after each iteration with the current result as argument.
+        polish : bool, optional
+            If True, performs a local optimisation on the solution. Default is True.
+        init : str or array-like, optional
+            Specify initial population. Can be 'latinhypercube', 'random',
+            or an array of shape (M, len(x)).
+        atol : float, optional
+            Absolute tolerance for convergence. Default is 0.
+        updating : {'immediate', 'deferred'}, optional
+            If 'immediate', best solution vector is continuously updated within
+            a single generation. Default is 'immediate'.
+        workers : int or map-like Callable, optional
+            If workers is an int the population is subdivided into workers
+            sections and evaluated in parallel. Default is 1.
+        constraints : {NonlinearConstraint, LinearConstraint, Bounds}, optional
+            Constraints on the solver.
     """
 
     strategy: str = "best1bin"
@@ -552,7 +550,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
                 iterations=self._iterations,
                 evaluations=len(x_search),
                 x_search_best=intermediate_result.x,
-                x_model_best=self.problem.params.transformation().to_model(
+                x_model_best=self.problem.params.transformation.to_model(
                     intermediate_result.x
                 ),
                 cost_best=intermediate_result.fun,
@@ -562,7 +560,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             )
 
         def cost_wrapper(x):
-            x_model = self.problem.params.transformation().to_model(x)
+            x_model = self.problem.params.transformation.to_model(x)
             cost = self._evaluator.evaluate(x_model)
             self.store_intermediate_results(x_search=x, x_model=x_model, cost=cost)
             return cost

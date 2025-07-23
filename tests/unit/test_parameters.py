@@ -70,7 +70,6 @@ class TestParameter:
         ):
             pybop.Parameter("Test", margin=0)
 
-        # Test None with no parameter value
         # Test error with no parameter value
         with pytest.raises(
             TypeError, match="missing 1 required positional argument: 'value'"

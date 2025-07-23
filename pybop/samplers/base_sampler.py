@@ -1,18 +1,24 @@
 from dataclasses import dataclass
 
 import numpy as np
-from pints import ParallelEvaluator
 
 from pybop.problems.base_problem import Problem
 
 
 @dataclass
 class SamplerOptions:
+    """
+    Base options for the sampler.
+
+    Attributes:
+        n_chains (int): The number of chains to concurrently sample from.
+        x0 (float | np.ndarray): Initial guess for the parameter values.
+        cov (float | np.ndarray): Covariance matrix.
+    """
+
     n_chains: int = 1
-    n_workers: int = 1
     x0: float | np.ndarray | None = None
     cov: float | np.ndarray = 0.05
-    parallel: bool = False
 
     def validate(self):
         """
@@ -25,8 +31,6 @@ class SamplerOptions:
         """
         if self.n_chains < 1:
             raise ValueError("Number of chains must be greater than 0.")
-        if self.n_workers < 1:
-            raise ValueError("Number of workers must be greater than 0.")
 
 
 class BaseSampler:
@@ -50,21 +54,10 @@ class BaseSampler:
         self._options = options or SamplerOptions()
         self._options.validate()
 
-        # Set parallelisation
-        self.set_parallel(self.options.parallel)
-
         # Get initial conditions
-        if self._options.x0 is not None and np.isscalar(self._options.x0):
-            x0 = self._problem.params.transformation.to_search(
-                np.ones(self._options.n_chains) * self._options.x0
-            )
-        else:
-            x0 = problem.params.sample_from_priors(
-                n_samples=self._options.n_chains, transformed=True
-            )
-        if x0 is None:
-            raise ValueError("Initial parameter values could not be sampled.")
-        self._x0 = x0
+        self._x0 = self.problem.params.get_initial_values(transformed=True) * np.ones(
+            [self._options.n_chains, 1]
+        )
 
         param_dims = len(self.problem.params)
         if np.isscalar(self._options.cov):
@@ -128,25 +121,3 @@ class BaseSampler:
             raise ValueError("Number of iterations must be greater than 0")
 
         self._max_iterations = iterations
-
-    def set_parallel(self, parallel=False):
-        """
-        Enable or disable parallel evaluation.
-        Credit: PINTS
-
-        Parameters
-        ----------
-        parallel : bool or int, optional
-            If True, use as many worker processes as there are CPU cores. If an integer, use that many workers.
-            If False or 0, disable parallelism (default: False).
-        """
-        if parallel is True:
-            self._options.parallel = parallel
-            self._options.n_workers = ParallelEvaluator.cpu_count()
-        elif parallel >= 1:
-            self._options.parallel = True
-            self._options.n_workers = int(parallel)
-        else:
-            self._options.parallel = False
-            self._options.n_workers = 1
-        self._options.n_workers = min(self._options.n_workers, self._options.n_chains)

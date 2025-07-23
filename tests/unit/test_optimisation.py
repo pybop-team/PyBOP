@@ -184,7 +184,7 @@ class TestOptimisation:
         # Test log update
         log = pybop.OptimisationLogger()
         x_search = np.array([0.7])
-        x_model = problem.params.transformation().to_model(x_search)
+        x_model = problem.params.transformation.to_model(x_search)
         cost = 0.01
         iterations = 1
         evaluations = 1

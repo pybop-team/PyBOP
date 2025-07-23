@@ -168,7 +168,12 @@ class TestProblem:
         problem_with_initial_state.set_params(np.array([0.75, 0.665]))
         sol3 = problem_with_initial_state.pipeline.solve()
 
+        # Test solutions
         assert not np.allclose(sol1, sol3)
+
+        # Test run
+        val = problem.run()
+        assert val.shape == (1,)
 
     def test_eis_rebuild_parameters_problem(self, model, parameter_values, eis_dataset):
         parameters = [

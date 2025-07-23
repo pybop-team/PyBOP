@@ -152,7 +152,7 @@ class TestEISParameterisation:
             options.atol = 1e-6
         elif isinstance(options, pybop.PintsOptions):
             options.max_unchanged_iterations = 35
-            options.max_iterations = 100
+            options.max_iterations = 30
             options.absolute_tolerance = 1e-6
 
         # Create optimiser
@@ -178,7 +178,7 @@ class TestEISParameterisation:
             atol=1e-5,
             err_msg="Simulated impedance does not match dataset impedance",
         )
-        x0 = optim.problem.params.initial_value()
+        x0 = optim.problem.params.get_initial_values()
 
         optim.problem.set_params(x0)
         initial_cost = optim.problem.run()
