@@ -1,9 +1,11 @@
+import multiprocessing as mp
+import platform
 from copy import copy, deepcopy
 
 import numpy as np
 import pybamm
 
-from pybop import Inputs, Parameters
+from pybop import FailedSolution, Inputs, Parameters
 
 
 class PybammPipeline:
@@ -33,6 +35,8 @@ class PybammPipeline:
         var_pts: dict | None = None,
         initial_state: float | str | None = None,
         build_on_eval: bool | None = None,
+        cost_names: list = None,
+        n_threads: int = None,
     ):
         """
         Parameters
@@ -42,7 +46,7 @@ class PybammPipeline:
         parameter_values : pybamm.ParameterValues
             The parameters to be used in the model.
         solver : pybamm.BaseSolver
-            The solver to be used. If None, the idaklu solver will be used.
+            The solver to be used. If None, the idaklu solver will be used with multithreading.
         t_start : number
             The start time of the simulation.
         t_end : number
@@ -65,7 +69,7 @@ class PybammPipeline:
         self._parameter_names = self.pybop_parameters.keys()
         self._geometry = model.default_geometry
         self._methods = model.default_spatial_methods
-        self._solver = pybamm.IDAKLUSolver() if solver is None else solver
+        self._n_threads = n_threads or self.get_avaliable_thread_count()
         self._t_start = np.float64(t_start)
         self._t_end = np.float64(t_end)
         self._t_interp = t_interp
@@ -74,6 +78,7 @@ class PybammPipeline:
         self._var_pts = var_pts or model.default_var_pts
         self._submesh_types = model.default_submesh_types
         self._built_model = self._model
+        self._cost_names = cost_names
         self.requires_rebuild = (
             build_on_eval
             if build_on_eval is not None
@@ -81,6 +86,30 @@ class PybammPipeline:
             if initial_state is not None
             else self._determine_rebuild()
         )
+
+        solver_options = {}
+        if platform.system() != "Windows":
+            solver_options["num_threads"] = self._n_threads
+
+        self._solver = (
+            pybamm.IDAKLUSolver(
+                output_variables=self._cost_names,
+                on_failure="ignore",
+                atol=1e-6,
+                rtol=1e-6,
+                options=solver_options,
+            )
+            if solver is None
+            else solver
+        )
+
+    @staticmethod
+    def get_avaliable_thread_count():
+        """
+        Returns the number of available threads available for processing
+        with a lower limit of 1.
+        """
+        return max(1, mp.cpu_count())
 
     def _determine_rebuild(self) -> bool:
         """
@@ -189,7 +218,9 @@ class PybammPipeline:
     def parameter_names(self):
         return self._parameter_names
 
-    def solve(self, calculate_sensitivities: bool = False) -> pybamm.Solution:
+    def solve(
+        self, calculate_sensitivities: bool = False
+    ) -> list[pybamm.Solution | FailedSolution]:
         """
         Run the simulation using the built model and solver.
 
@@ -200,16 +231,49 @@ class PybammPipeline:
 
         Returns
         -------
-        solution : pybamm.Solution
+        solution : list[pybamm.Solution | pybop.FailedSolution]
             The pybamm solution object.
         """
-        return self._solver.solve(
+        inputs = self._pybop_parameters.to_pybamm_multiprocessing()
+
+        if self.requires_rebuild:
+            sol = []
+            for param in inputs:
+                self.rebuild(param)
+                sol.append(
+                    self._pybamm_solve(
+                        param, calculate_sensitivities=calculate_sensitivities
+                    )
+                )
+        else:
+            sol = self._pybamm_solve(
+                inputs, calculate_sensitivities=calculate_sensitivities
+            )
+            if not isinstance(sol, list):
+                sol = [sol]
+
+        sol[:] = [
+            FailedSolution(self._cost_names, list(self._parameter_names))
+            if s.termination == "failure"
+            else s
+            for s in sol
+        ]
+
+        return sol
+
+    def _pybamm_solve(
+        self, inputs: Inputs | list, calculate_sensitivities: bool
+    ) -> list[pybamm.Solution]:
+        """A function that runs the simulation using the built model."""
+
+        sol = self._solver.solve(
             model=self._built_model,
-            inputs=self._pybop_parameters.to_dict(),
+            inputs=inputs,
             t_eval=[self._t_start, self._t_end],
             t_interp=self._t_interp,
             calculate_sensitivities=calculate_sensitivities,
         )
+        return sol
 
     def _set_initial_state(self, model, initial_state) -> None:
         """
@@ -266,3 +330,7 @@ class PybammPipeline:
     @property
     def solver(self):
         return self._solver
+
+    @property
+    def n_threads(self):
+        return self._n_threads

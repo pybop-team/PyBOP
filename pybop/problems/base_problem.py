@@ -44,14 +44,15 @@ class Problem:
         Checks if the parameters are valid. p should be a numpy array of one dimensions,
         with length equal to the number of parameters in the model.
         """
-        if not isinstance(p, np.ndarray):
-            raise TypeError("Parameters must be a numpy array.")
-        if p.ndim != 1:
-            raise ValueError("Parameters must be a 1D numpy array.")
-        if len(p) != len(self._params):
-            raise ValueError(
-                f"Expected {len(self._params)} parameters, but got {len(p)}."
-            )
+        if not isinstance(p, np.ndarray | list):
+            raise TypeError("Parameters must be a numpy array or list")
+        if isinstance(p, list):
+            try:
+                p = np.asarray(p)
+            except TypeError as e:
+                raise TypeError(
+                    "Parameters cannot be converted to a numpy array."
+                ) from e
         self._params.update(values=p)
 
     def check_set_params_called(self) -> None:
@@ -107,10 +108,8 @@ class Problem:
 
         # Create samples, compute cost
         param_values = sample(salib_dict, n_samples)
-        costs = np.empty(param_values.shape[0])
-        for i, val in enumerate(param_values):
-            self.set_params(val)
-            costs[i] = self.run()
+        self.set_params(param_values)
+        costs = self.run()
 
         return sobol.analyze(salib_dict, costs)
 
@@ -120,7 +119,7 @@ class Problem:
         """
         raise NotImplementedError
 
-    def run(self) -> float:
+    def run(self) -> np.ndarray:
         """
         Evaluates the underlying simulation and cost function using the
         parameters set in the previous call to `set_params`.
@@ -129,7 +128,7 @@ class Problem:
 
     def run_with_sensitivities(
         self,
-    ) -> tuple[float, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
         Evaluates the underlying simulation and cost function using the
         parameters set in the previous call to `set_params`, returns

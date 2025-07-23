@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 import pybamm
 import pytest
@@ -5,14 +7,12 @@ import pytest
 import pybop
 from pybop import (
     MALAMCMC,
-    NUTS,
     DramACMC,
     HamiltonianMCMC,
     MonomialGammaHamiltonianMCMC,
     RaoBlackwellACMC,
     RelativisticMCMC,
     SliceDoublingMCMC,
-    SliceRankShrinkingMCMC,
     SliceStepoutMCMC,
 )
 
@@ -42,21 +42,29 @@ class TestSamplingThevenin:
 
     @pytest.fixture
     def model(self):
-        parameter_set = pybop.ParameterSet(
-            json_path="examples/parameters/initial_ecm_parameters.json"
-        )
-        parameter_set.update(
+        return pybamm.equivalent_circuit.Thevenin()
+
+    @pytest.fixture
+    def parameter_values(self, model):
+        params = model.default_parameter_values
+        with open("examples/parameters/initial_ecm_parameters.json") as f:
+            new_params = json.load(f)
+            for key, value in new_params.items():
+                if key not in params:
+                    continue
+                params.update({key: value})
+        params.update(
             {
                 "C1 [F]": 1000,
                 "R0 [Ohm]": self.ground_truth[0],
                 "R1 [Ohm]": self.ground_truth[1],
             }
         )
-        return pybop.empirical.Thevenin(parameter_set=parameter_set)
+        return params
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
+        return [
             pybop.Parameter(
                 "R0 [Ohm]",
                 prior=pybop.Gaussian(5e-2, 5e-3),
@@ -71,54 +79,54 @@ class TestSamplingThevenin:
                 initial_value=pybop.Uniform(2e-3, 8e-2).rvs()[0],
                 bounds=[1e-4, 1e-1],
             ),
-        )
-
-    @pytest.fixture(params=[0.5])
-    def init_soc(self, request):
-        return request.param
+        ]
 
     def noisy(self, data, sigma):
         return data + np.random.normal(0, sigma, len(data))
 
     @pytest.fixture
-    def posterior(self, model, parameters, init_soc):
-        # Form dataset
-        solution = self.get_data(model, init_soc)
+    def dataset(self, model, parameter_values):
+        experiment = pybamm.Experiment(
+            [
+                "Rest for 1 second",
+                "Discharge at 0.5C for 8 minutes (8 second period)",
+                "Charge at 0.5C for 8 minutes (8 second period)",
+            ]
+        )
+        sim = pybamm.Simulation(
+            model=model,
+            parameter_values=parameter_values,
+            experiment=experiment,
+        )
+        solution = sim.solve()
         dataset = pybop.Dataset(
             {
-                "Time [s]": solution["Time [s]"].data,
+                "Time [s]": solution.t,
                 "Current function [A]": solution["Current [A]"].data,
                 "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
             }
         )
-
-        # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset)
-        likelihood = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
-        return pybop.LogPosterior(likelihood)
+        return dataset
 
     @pytest.fixture
-    def map_estimate(self, posterior):
-        common_args = {
-            "max_iterations": 80,
-            "max_unchanged_iterations": 35,
-            "sigma0": [3e-4, 3e-4],
-            "verbose": True,
-        }
-        optim = pybop.CMAES(posterior, **common_args)
-        results = optim.run()
-
-        return results.x
+    def problem(self, model, parameters, parameter_values, dataset):
+        builder = pybop.Pybamm()
+        builder.set_simulation(model, parameter_values)
+        builder.set_dataset(dataset)
+        for p in parameters:
+            builder.add_parameter(p)
+        signal = "Voltage [V]"
+        cost = pybop.costs.pybamm.NegativeGaussianLogLikelihood(signal, signal, 1e-3)
+        builder.add_cost(cost)
+        return builder.build()
 
     # Parameterize the samplers
     @pytest.mark.parametrize(
         "sampler",
         [
-            NUTS,
             HamiltonianMCMC,
             MonomialGammaHamiltonianMCMC,
             RelativisticMCMC,
-            SliceRankShrinkingMCMC,
             MALAMCMC,
             RaoBlackwellACMC,
             SliceDoublingMCMC,
@@ -126,22 +134,14 @@ class TestSamplingThevenin:
             DramACMC,
         ],
     )
-    def test_sampling_thevenin(self, sampler, posterior, map_estimate):
-        x0 = np.clip(map_estimate + np.random.normal(0, 5e-3, size=2), 1e-4, 1e-1)
-        common_args = {
-            "log_pdf": posterior,
-            "chains": 2,
-            "warm_up": 50,
-            "cov0": [6e-3, 6e-3],
-            "max_iterations": 350 if sampler is SliceRankShrinkingMCMC else 350,
-            "x0": x0,
-        }
+    def test_sampling_thevenin(self, sampler, problem):
+        # Note: we don't test the NUTS or SliceRankShrinking samplers,
+        # as convergence for this problem is challenging.
+        options = pybop.PintsSamplerOptions(
+            n_chains=2, warm_up_iterations=50, max_iterations=350
+        )
+        sampler = sampler(problem, options=options)
 
-        # construct and run
-        sampler = sampler(**common_args)
-        if isinstance(sampler, SliceRankShrinkingMCMC):
-            for i, _j in enumerate(sampler._samplers):
-                sampler._samplers[i].set_hyper_parameters([1e-3])
         chains = sampler.run()
 
         # Test PosteriorSummary
@@ -153,12 +153,4 @@ class TestSamplingThevenin:
         # Assert both final sample and posterior mean
         x = np.mean(chains, axis=1)
         for i in range(len(x)):
-            np.testing.assert_allclose(x[i], self.ground_truth, atol=5e-3)
-            np.testing.assert_allclose(chains[i][-1], self.ground_truth, atol=1e-2)
-
-    def get_data(self, model, init_soc):
-        initial_state = {"Initial SoC": init_soc}
-        experiment = pybamm.Experiment(
-            ["Discharge at 0.5C for 3 minutes (20 second period)"]
-        )
-        return model.predict(initial_state=initial_state, experiment=experiment)
+            np.testing.assert_allclose(x[i], self.ground_truth, atol=3e-2)

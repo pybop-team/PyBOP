@@ -23,8 +23,10 @@ class PybammEISProblem(Problem):
         super().__init__(pybop_params=pybop_params)
         self._pipeline = eis_pipeline
         self._costs = costs
-        self._cost_weights = cost_weights
         self._fitting_data = fitting_data
+        self._cost_weights = (
+            np.asarray(cost_weights) if cost_weights is not None else None
+        )
         self._compute_initial_cost_and_resample()
 
     def set_params(self, p: np.ndarray) -> None:
@@ -39,17 +41,27 @@ class PybammEISProblem(Problem):
         # Initialise the pipeline
         self._pipeline.initialise_eis_pipeline()
 
-    def run(self) -> float:
+    def run(self) -> np.ndarray:
         """
         Evaluates the underlying simulation and cost function using the
         parameters set in the previous call to `set_params`.
+
+        Returns
+        -------
+        np.ndarray
+            cost (np.ndarray): 1D weighted sum of cost variables.
         """
         self.check_set_params_called()
 
         # run simulation
         res = self._pipeline.solve() - self._fitting_data
 
-        return np.dot(self._cost_weights, [cost(res) for cost in self._costs])
+        # Weighted cost w/ new axis to ensure the returned object is np.ndarray
+        weighted_cost = np.dot(
+            self._cost_weights[np.newaxis, :], [cost(res) for cost in self._costs]
+        )
+
+        return weighted_cost
 
     def simulate(self, inputs: Inputs) -> np.ndarray:
         for key, value in inputs.items():

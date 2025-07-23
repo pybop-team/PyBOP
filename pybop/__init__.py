@@ -44,7 +44,7 @@ script_path = path.dirname(__file__)
 #
 # Utilities
 #
-from ._utils import is_numeric, SymbolReplacer
+from ._utils import add_spaces, FailedVariable, FailedSolution, SymbolReplacer
 
 
 #
@@ -115,7 +115,7 @@ from .builders.multi_fitting import MultiFitting
 #
 # Evaluation
 #
-from ._evaluation import SciPyEvaluator
+from ._evaluation import SciPyEvaluator, PopulationEvaluator
 
 #
 # Optimiser classes
