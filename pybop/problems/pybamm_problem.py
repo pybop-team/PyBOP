@@ -42,7 +42,7 @@ class PybammProblem(Problem):
         """
         self.check_and_store_params(p)
 
-    def _compute_cost(self, solution: list[Solution]) -> float | np.ndarray:
+    def _compute_cost(self, solution: list[Solution]) -> np.ndarray:
         """
         Compute the cost function value from a solution.
         """
@@ -54,18 +54,10 @@ class PybammProblem(Problem):
         for cost_idx, name in enumerate(self._cost_names):
             cost_matrix[cost_idx, :] = [sol[name].data[0] for sol in solution]
 
-        # Apply cost weights
-        weighted_costs = self._cost_weights @ cost_matrix
-        if weighted_costs.ndim == 1 and weighted_costs.size == 1:
-            return weighted_costs[0]
-        elif weighted_costs.ndim == 2 and weighted_costs.shape[0] == 1:
-            return weighted_costs.reshape(-1)
+        # return weighted costs
+        return self._cost_weights @ cost_matrix
 
-        return weighted_costs
-
-    def _add_prior_contribution(
-        self, cost: np.number | np.ndarray
-    ) -> float | np.ndarray:
+    def _add_prior_contribution(self, cost: np.number | np.ndarray) -> np.ndarray:
         """
         Add the prior contribution to the cost if using posterior.
         """
@@ -75,14 +67,14 @@ class PybammProblem(Problem):
         # Likelihoods and priors are negative by convention
         return cost - self._priors.logpdf(self._params.get_values())
 
-    def _compute_cost_with_prior(self, solution: list[Solution]) -> float | np.ndarray:
+    def _compute_cost_with_prior(self, solution: list[Solution]) -> np.ndarray:
         """
         Compute the cost function with optional prior contribution.
         """
         cost = self._compute_cost(solution)
         return self._add_prior_contribution(cost)
 
-    def run(self) -> float | np.ndarray:
+    def run(self) -> np.ndarray:
         """
         Evaluates the underlying simulation and cost function using the
         parameters set in the previous call to `set_params`.
@@ -91,8 +83,11 @@ class PybammProblem(Problem):
         Or as an array of multiple proposals: np.array(M, N), where
         M is the number of proposals to solve.
 
-        Returns:
-            The computed cost value(s)
+        Returns
+        -------
+        np.ndarray
+            cost (np.ndarray): Weighted sum of cost variables for each proposal.
+            The dimensionality is np.ndarray(M,) to match the number of proposals.
         """
         self.check_set_params_called()
 
@@ -102,7 +97,7 @@ class PybammProblem(Problem):
         # Compute cost with optional prior contribution
         return self._compute_cost_with_prior(sol)
 
-    def run_with_sensitivities(self) -> tuple[float | np.ndarray, np.ndarray]:
+    def run_with_sensitivities(self) -> tuple[np.ndarray, np.ndarray]:
         """
         Evaluates the simulation and cost function with parameter sensitivities
         using the parameters set in the previous call to `set_params`.
@@ -111,8 +106,13 @@ class PybammProblem(Problem):
         Or as an array of multiple proposals: np.array(M,N), where
         M is the number of proposals to solve.
 
-        Returns:
-            Tuple of (cost_value, sensitivities)
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray]
+            A tuple containing the cost and parameter sensitivities:
+
+            - cost ( np.ndarray(M,) ): Weighted sum of cost values for each proposal.
+            - sensitivities ( np.ndarray(M, n_params) ): Weighted sum of parameter gradients for each proposal.
         """
         self.check_set_params_called()
         prior_derivatives = np.zeros(len(self._params))

@@ -66,9 +66,9 @@ class PythonProblem(Problem):
         self._funs_with_sens = (
             tuple(funs_with_sens) if funs_with_sens is not None else None
         )
-        self._weights = weights
+        self._weights = np.asarray(weights) if weights is not None else None
 
-    def run(self) -> float:
+    def run(self) -> np.ndarray:
         """
         Execute all standard functions with current parameters and return weighted sum.
 
@@ -77,8 +77,8 @@ class PythonProblem(Problem):
 
         Returns
         -------
-        float
-            Weighted sum of all function results
+        np.ndarray
+            value (np.ndarray): Weighted sum of function values as a 1D array
 
         Raises
         ------
@@ -102,9 +102,9 @@ class PythonProblem(Problem):
         except (TypeError, ValueError) as e:
             raise RuntimeError(f"function evaluation failed: {e}") from e
 
-        return np.dot(results, self._weights)
+        return np.dot(results, self._weights[:, np.newaxis])
 
-    def run_with_sensitivities(self) -> tuple[float, np.ndarray]:
+    def run_with_sensitivities(self) -> tuple[np.ndarray, np.ndarray]:
         """
         Execute all sensitivity functions and return weighted results with gradients.
 
@@ -113,10 +113,12 @@ class PythonProblem(Problem):
 
         Returns
         -------
-        tuple[float, np.ndarray]
-            Tuple containing:
-            - Weighted sum of function values (float)
-            - Weighted sum of parameter gradients (np.ndarray)
+        tuple[np.ndarray, np.ndarray]
+            A tuple containing the cost and parameter sensitivities:
+
+            - value (np.ndarray): Weighted sum of function values as a 1D array
+            - sensitivities (np.ndarray): Weighted sum of parameter gradients
+              with shape (n_params,)
 
         Raises
         ------
@@ -144,7 +146,7 @@ class PythonProblem(Problem):
             raise RuntimeError(f"Sensitivity function evaluation failed: {e}") from e
 
         # Compute weighted results
-        weighted_value = np.dot(values, self._weights)
+        weighted_value = np.dot(values, self._weights[:, np.newaxis])
 
         # Stack and weight gradients
         if gradients:

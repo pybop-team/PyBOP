@@ -295,6 +295,11 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
                 if np.isscalar(fs):
                     fs = [fs]
 
+                # Nelder-Mead requires a list
+                # of np.scalar values
+                if isinstance(self._optimiser, pints.NelderMead):
+                    fs = [v[0] for v in fs]
+
                 # Tell optimiser about function values
                 self._optimiser.tell(fs)
 

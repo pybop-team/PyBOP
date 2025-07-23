@@ -1,5 +1,3 @@
-import numbers
-
 import numpy as np
 import pybamm
 import pytest
@@ -160,14 +158,14 @@ class TestBuilder:
 
         problem.set_params(np.array([0.5, 0.5]))
         value1 = problem.run()
-        assert isinstance(value1, numbers.Number)
+        assert isinstance(value1, np.ndarray)
         problem.set_params(np.array([0.65, 0.65]))
         value2 = problem.run()
         assert abs((value1 - value2) / value1) > 1e-5
 
         problem.set_params(np.array([0.5, 0.5]))
         value1s, grad1s = problem.run_with_sensitivities()
-        assert isinstance(value1, numbers.Number)
+        assert isinstance(value1, np.ndarray)
         assert grad1s.shape == (2,)
         problem.set_params(np.array([0.65, 0.65]))
         value2s, grad2s = problem.run_with_sensitivities()
