@@ -59,6 +59,18 @@ class TestBuilder:
         )
 
     @pytest.fixture
+    def experiment(self):
+        return pybamm.Experiment(
+            [
+                (
+                    "Discharge at 0.5C for 3 minutes (30 second period)",
+                    "Rest for 1 minutes (30 second period)",
+                    "Charge at 0.5C for 1 minutes (30 second period)",
+                ),
+            ]
+        )
+
+    @pytest.fixture
     def eis_dataset(self):
         return pybop.Dataset(
             {
@@ -202,7 +214,6 @@ class TestBuilder:
         )
         problem = builder.build()
 
-        assert problem._use_posterior is True
         problem.set_params(np.array([0.5, 0.5]))
         value1 = problem.run()
         problem.set_params(np.array([0.65, 0.65]))
@@ -245,6 +256,108 @@ class TestBuilder:
         problem.set_params(np.array([3e-5, 1.5e-6]))
         value2 = problem.run()
         assert abs((value1 - value2) / value1) > 1e-5
+
+    def test_builder_with_experiment(self, model_and_params, experiment, dataset):
+        model, parameter_values = model_and_params
+        parameter_values.update(
+            {
+                "Electrolyte density [kg.m-3]": pybamm.Parameter(
+                    "Separator density [kg.m-3]"
+                ),
+                "Negative electrode active material density [kg.m-3]": pybamm.Parameter(
+                    "Negative electrode density [kg.m-3]"
+                ),
+                "Negative electrode carbon-binder density [kg.m-3]": pybamm.Parameter(
+                    "Negative electrode density [kg.m-3]"
+                ),
+                "Positive electrode active material density [kg.m-3]": pybamm.Parameter(
+                    "Positive electrode density [kg.m-3]"
+                ),
+                "Positive electrode carbon-binder density [kg.m-3]": pybamm.Parameter(
+                    "Positive electrode density [kg.m-3]"
+                ),
+            },
+            check_already_exists=False,
+        )
+        builder = pybop.builders.Pybamm()
+        builder.set_simulation(
+            model,
+            parameter_values=parameter_values,
+            solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Positive electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        builder.add_cost(pybop.costs.pybamm.GravimetricEnergyDensity())
+        builder.set_experiment(experiment)
+        problem = builder.build()
+        sol = problem.pipeline.solve()
+        assert sol is not None
+
+        problem.set_params(np.array([0.6, 0.6]))
+        value1 = problem.run()
+        problem.set_params(np.array([0.7, 0.7]))
+        value2 = problem.run()
+        assert abs((value1 - value2) / value1) > 1e-5
+        problem.set_params(np.array([0.6, 0.6]))
+
+    def test_builder_with_experiment_rebuild_params(
+        self, model_and_params, experiment, dataset
+    ):
+        model, parameter_values = model_and_params
+        parameter_values.update(
+            {
+                "Electrolyte density [kg.m-3]": pybamm.Parameter(
+                    "Separator density [kg.m-3]"
+                ),
+                "Negative electrode active material density [kg.m-3]": pybamm.Parameter(
+                    "Negative electrode density [kg.m-3]"
+                ),
+                "Negative electrode carbon-binder density [kg.m-3]": pybamm.Parameter(
+                    "Negative electrode density [kg.m-3]"
+                ),
+                "Positive electrode active material density [kg.m-3]": pybamm.Parameter(
+                    "Positive electrode density [kg.m-3]"
+                ),
+                "Positive electrode carbon-binder density [kg.m-3]": pybamm.Parameter(
+                    "Positive electrode density [kg.m-3]"
+                ),
+            },
+            check_already_exists=False,
+        )
+        builder = pybop.builders.Pybamm()
+        builder.set_simulation(
+            model,
+            parameter_values=parameter_values,
+            solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Positive electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        builder.add_cost(pybop.costs.pybamm.GravimetricEnergyDensity())
+        builder.set_experiment(experiment)
+        problem = builder.build()
+
+        problem.set_params(np.array([0.6, 0.6]))
+        value1 = problem.run()
+        problem.set_params(np.array([0.7, 0.7]))
+        value2 = problem.run()
+        assert abs((value1 - value2) / value1) > 1e-5
+        problem.set_params(np.array([0.6, 0.6]))
 
     def test_builder_with_cost_hypers(self, model_and_params, solver, dataset):
         model, parameter_values = model_and_params

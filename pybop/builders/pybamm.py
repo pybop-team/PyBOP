@@ -1,5 +1,3 @@
-from typing import Optional, Union
-
 import pybamm
 
 import pybop
@@ -18,11 +16,11 @@ class TIME_PARAMS:
 
 class Pybamm(BaseBuilder):
     def __init__(self):
-        self._model: Optional[pybamm.BaseModel] = None
-        self._solver: Optional[pybamm.BaseSolver] = None
-        self._parameter_values: Optional[pybamm.ParameterValues] = None
-        self._initial_state: Optional[Union[float, str]] = None
-        self._experiment: Optional[pybamm.Experiment] = None
+        self._model: pybamm.BaseModel | None = None
+        self._solver: pybamm.BaseSolver | None = None
+        self._parameter_values: pybamm.ParameterValues | None = None
+        self._initial_state: float | str | None = None
+        self._experiment: pybamm.Experiment | None = None
         self._costs: list[PybammCost] = []
         self._cost_weights: list[float] = []
         self.domain = "Time [s]"
@@ -127,7 +125,7 @@ class Pybamm(BaseBuilder):
 
             # Posterior Logic
             if isinstance(cost, BaseLikelihood) and pybop_parameters.priors():
-                self._use_posterior = True
+                self.is_posterior = True
 
             # Add hypers to pybop parameters
             if cost.metadata().parameters:
@@ -135,7 +133,7 @@ class Pybamm(BaseBuilder):
                     delta = obj.default_value * 0.5  # Create prior w/ large variance
                     prior = (
                         pybop.Gaussian(obj.default_value, delta)
-                        if self._use_posterior
+                        if self.is_posterior
                         else None
                     )
                     pybop_parameters.add(

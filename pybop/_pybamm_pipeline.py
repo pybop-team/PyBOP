@@ -1,7 +1,6 @@
 import warnings
 from copy import copy, deepcopy
 from functools import lru_cache
-from typing import Union
 
 import numpy as np
 import pybamm
@@ -76,7 +75,7 @@ class PybammPipeline:
         self._geometry = model.default_geometry
         self._var_pts = var_pts or model.default_var_pts
         self._spatial_methods = model.default_spatial_methods  # allow user input
-        self._solver = model.default_solver if solver is None else solver
+        self._solver = pybamm.IDAKLUSolver() if solver is None else solver
         self._t_eval = t_eval
         self._t_interp = t_interp
         self._initial_state = initial_state
@@ -96,7 +95,6 @@ class PybammPipeline:
         self._starting_solution = None
         self._calc_esoh = False
 
-        self.requires_rebuild = True if initial_state else self._determine_rebuild()
         self.steps_to_built_models = None
         self.steps_to_built_solvers = None
         self.experiment_unique_steps_to_model = None
@@ -120,7 +118,7 @@ class PybammPipeline:
             self.experiment = None
 
     def _process_experiment(self, experiment) -> pybamm.Experiment:
-        if isinstance(experiment, (str, pybamm.step.BaseStep)):
+        if isinstance(experiment, str | pybamm.step.BaseStep):
             return pybamm.Experiment([experiment]).copy()
         elif isinstance(experiment, list):
             return pybamm.Experiment(experiment).copy()
@@ -139,8 +137,8 @@ class PybammPipeline:
         geometry = deepcopy(self._geometry)
 
         # Apply "[input]"
-        for name in self._parameter_names:
-            parameter_values[name] = "[input]"
+        for parameter in self._pybop_parameters:
+            parameter_values.update({parameter.name: "[input]"})
 
         parameter_values.process_geometry(geometry)
         parameter_values.process_model(model)
@@ -294,13 +292,6 @@ class PybammPipeline:
                     f"Cannot use '{key}' as input parameter. Restricted: {restrict_list}"
                 )
 
-    @property
-    def built_model(self):
-        """
-        The built PyBaMM model.
-        """
-        return self._built_model
-
     def solve(self, calculate_sensitivities: bool = False) -> pybamm.Solution:
         """
         Run the simulation using the built model and solver.
@@ -329,7 +320,7 @@ class PybammPipeline:
                 self._calc_esoh,
                 self._starting_solution,
                 self._callbacks,
-                self._pybop_parameters.as_dict(),
+                self._pybop_parameters.to_dict(),
                 # kwargs,
             )
 
@@ -422,6 +413,7 @@ class PybammPipeline:
 
     @property
     def built_model(self):
+        """The built Pybamm model."""
         return self._built_model
 
     @property
