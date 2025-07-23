@@ -128,10 +128,8 @@ class TestSamplingThevenin:
         ],
     )
     def test_sampling_thevenin(self, sampler, problem):
-        """
-        Note: we don't test the NUTS sampler, as convergence for this problem
-        is challenging.
-        """
+        # Note: we don't test the NUTS sampler, as convergence for this problem
+        # is challenging.
         options = pybop.PintsSamplerOptions(
             n_chains=2, warm_up_iterations=50, max_iterations=350
         )

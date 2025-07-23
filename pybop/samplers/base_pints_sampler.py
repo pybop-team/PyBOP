@@ -276,11 +276,13 @@ class BasePintsSampler(BaseSampler):
                 self.problem.set_params(x)
                 loss, grad = self.problem.run_with_sensitivities()
 
+                # Transform the gradient, for multiple parameters
+                # iterate across each and apply the transformation.
                 if grad.ndim == 1:
                     jac = self.problem.params.transformation.jacobian(x)
                     grad = np.dot(grad, jac)
                 else:
-                    for i in range(len(grad)):
+                    for i in range(grad.shape[0]):
                         jac = self.problem.params.transformation.jacobian(x[i])
                         grad[i] = np.dot(grad[i], jac)
 
