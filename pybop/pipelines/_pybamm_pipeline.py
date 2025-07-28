@@ -278,41 +278,13 @@ class PybammPipeline:
         # Update parameter values as well as passing inputs to cope with non-/rebuild cases
         parameter_values.update(inputs or {})
 
-        ocp_type = options.get("open-circuit potential", None)
-        if ocp_type is None:
-            values = {
-                "Initial SoC": self._get_ecm_initial_state(
-                    self._initial_state,
-                    parameter_values,
-                    param=param,
-                    options=options,
-                    inputs=inputs,
-                )
-            }
-        elif ocp_type == "MSMR":
-            values = parameter_values.set_initial_ocps(
-                self._initial_state,
-                param=param,
-                options=options,
-                inputs=inputs,
-                inplace=False,
-            )
-        elif ocp_type == "positive":
-            values = parameter_values.set_initial_stoichiometry_half_cell(
-                self._initial_state,
-                param=param,
-                options=options,
-                inputs=inputs,
-                inplace=False,
-            )
-        else:
-            values = parameter_values.set_initial_stoichiometries(
-                self._initial_state,
-                param=param,
-                options=options,
-                inputs=inputs,
-                inplace=False,
-            )
+        values = parameter_values.set_initial_state(
+            self._initial_state,
+            param=param,
+            inplace=False,
+            options=options,
+            inputs=inputs,
+        )
 
         return {param: values[param] for param in self._initial_state_parameters}
 
@@ -323,87 +295,6 @@ class PybammPipeline:
         """
         inputs = self._pybop_parameters.to_dict()
         return {**inputs, **self._get_initial_state_inputs(inputs=inputs)}
-
-    def _get_ecm_initial_state(
-        self,
-        initial_value,
-        parameter_values,
-        param=None,
-        options=None,
-        inputs=None,
-        tol=1e-6,
-    ):
-        """
-        Calculate the initial state of charge given an open-circuit voltage, voltage limits
-        and the open-circuit voltage function defined by the parameter set.
-
-        Parameters
-        ----------
-        initial_value : float
-            Target initial value.
-            If float, interpreted as SOC, must be between 0 and 1.
-            If string e.g. "4 V", interpreted as voltage, must be between V_min and V_max.
-        parameter_values : pybamm.ParameterValues
-            Parameters and their corresponding values.
-        param : :class:`pybamm.LithiumIonParameters`, optional
-            The symbolic parameter set to use for the simulation.
-            If not provided, the default parameter set will be used.
-        options : dict-like, optional
-            A dictionary of options to be passed to the model, see
-            :class:`pybamm.BatteryModelOptions`.
-        inputs : dict, optional
-            A dictionary of input parameters to pass to the model when solving.
-        tol : float, optional
-            The tolerance for the solver used to compute the initial stoichiometries.
-            A lower value results in higher precision but may increase computation time.
-            Default is 1e-6.
-
-        Returns
-        -------
-        initial_soc : float
-            The initial state of charge
-        """
-        if isinstance(initial_value, str) and initial_value.endswith("V"):
-            V_init = float(initial_value[:-1])
-            V_min = parameter_values.evaluate(param.voltage_low_cut, inputs=inputs)
-            V_max = parameter_values.evaluate(param.voltage_high_cut, inputs=inputs)
-
-            if not V_min <= V_init <= V_max:
-                raise ValueError(
-                    f"Initial voltage {V_init}V is outside the voltage limits "
-                    f"({V_min}, {V_max})"
-                )
-
-            # Solve simple model for initial soc based on target voltage
-            soc_model = pybamm.BaseModel()
-            soc = pybamm.Variable("soc")
-            ocv = param.ocv
-            soc_model.algebraic[soc] = ocv(soc) - V_init
-
-            # initial guess for soc linearly interpolates between 0 and 1
-            # based on V linearly interpolating between V_max and V_min
-            soc_model.initial_conditions[soc] = (V_init - V_min) / (V_max - V_min)
-            soc_model.variables["soc"] = soc
-            parameter_values.process_model(soc_model)
-            initial_soc = (
-                pybamm.AlgebraicSolver(tol=tol).solve(soc_model, [0])["soc"].data[0]
-            )
-
-            # Ensure that the result lies between 0 and 1
-            initial_soc = np.minimum(np.maximum(initial_soc, 0.0), 1.0)
-
-        elif isinstance(initial_value, int | float):
-            if not 0 <= initial_value <= 1:
-                raise ValueError("Initial SOC should be between 0 and 1")
-            initial_soc = initial_value
-
-        else:
-            raise ValueError(
-                "Initial value must be a float between 0 and 1, "
-                "or a string ending in 'V'"
-            )
-
-        return initial_soc
 
     @property
     def built_model(self):
