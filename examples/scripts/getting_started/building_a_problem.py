@@ -1,8 +1,14 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import pybamm
 
 import pybop
+
+# In this example we will introduce PyBOP's problem builder
+# class. This builder allows for flexible building
+# of Pybop's key class, the `Problem`. Builders can
+# be reused and modified to generate multiple problem
+# objects.
+
 
 model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
@@ -52,11 +58,12 @@ builder.add_cost(
 # Build the problem
 problem = builder.build()
 
-# Solve
+# Run
 problem.set_params(np.array([0.6, 0.6, 1e-3]))
-sol = problem.pipeline.solve()
+cost = problem.run()
+print(f"The likelihood value for is: {cost[0]}")
 
-# Plot
-fig, ax = plt.subplots()
-ax.scatter(sol["Time [s]"].data, sol["Voltage [V]"].data)
-plt.show()
+# Run w/ sensitivities
+problem.set_params(np.array([0.6, 0.6, 1e-3]))
+cost = problem.run_with_sensitivities()
+print(f"The gradient is: {cost[1]}")

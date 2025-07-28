@@ -3,19 +3,16 @@ import pybamm
 
 import pybop
 
-# In this example, we introduce Pybop's functionality
-# for combining multiple cost into a single Pybop
-# problem. This is commonly used for model identification
-# with multiple "signals". In this case, we identify
-# two parameters based on cell terminal voltage, and
-# average cell temperature.
+# In this example, we introduce the Exponential
+# Natural Evolution Strategy (XNES). XNES is a
+# population-based heuristic algorithm which
+# samples from a normal distribution for candidate
+# proposals while updating this distribution from
+# the cost landscape.
 
 # Define model and parameter values
 parameter_values = pybamm.ParameterValues("Chen2020")
-parameter_values["Contact resistance [Ohm]"] = 2e-2
-model = pybamm.lithium_ion.SPMe(
-    options={"thermal": "lumped", "contact resistance": "true"}
-)
+model = pybamm.lithium_ion.SPM()
 
 # Fitting parameters
 parameters = [
@@ -26,15 +23,16 @@ parameters = [
         bounds=[0.4, 0.9],
     ),
     pybop.Parameter(
-        "Contact resistance [Ohm]",
-        prior=pybop.Gaussian(1e-2, 2e-3),
-        bounds=[1e-4, 5e-2],
+        "Positive electrode active material volume fraction",
+        prior=pybop.Gaussian(0.58, 0.05),
+        initial_value=0.65,
+        bounds=[0.4, 0.9],
     ),
 ]
 
 # Generate the synthetic dataset
 sigma = 5e-3
-t_eval = np.linspace(0, 300, 240)
+t_eval = np.linspace(0, 500, 240)
 sim = pybamm.Simulation(
     model=model,
     parameter_values=parameter_values,
@@ -47,39 +45,23 @@ dataset = pybop.Dataset(
         "Voltage [V]": sol["Voltage [V]"].data
         + np.random.normal(0, sigma, len(t_eval)),
         "Current function [A]": sol["Current [A]"].data,
-        "X-averaged cell temperature [K]": sol["X-averaged cell temperature [K]"].data,
     }
 )
 
-# Construct the problem builder, with weighting on each cost
-# Each cost represents a different observed signal in this example
+# Construct the problem builder with a Minkowski cost function with order 1.25
 builder = (
     pybop.builders.Pybamm()
     .set_dataset(dataset)
     .set_simulation(model, parameter_values=parameter_values)
-    .add_cost(pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]", "Voltage [V]"))
-    .add_cost(
-        pybop.costs.pybamm.SumOfPower(
-            "X-averaged cell temperature [K]",
-            "X-averaged cell temperature [K]",
-            p=np.sqrt(2),
-        ),
-        weight=1 / 273.15,
-    )
+    .add_cost(pybop.costs.pybamm.Minkowski("Voltage [V]", "Voltage [V]", p=1.25))
 )
 for param in parameters:
     builder.add_parameter(param)
 problem = builder.build()
 
 # Set optimiser and options
-# We use the Improved Backpropagation Plus implementation
-# This is a gradient-based optimiser, with a step-size
-# which is decoupled from the gradient magnitude
 options = pybop.PintsOptions(
-    sigma=np.asarray([0.01, 1e-4]),
-    verbose=True,
-    max_iterations=60,
-    max_unchanged_iterations=15,
+    sigma=2e-2, verbose=True, max_iterations=100, max_unchanged_iterations=30
 )
 optim = pybop.XNES(problem, options=options)
 results = optim.run()
@@ -89,7 +71,7 @@ results = optim.run()
 identified_parameter_values = results.parameter_values
 
 # Plot convergence
-pybop.plot.convergence(optim)
+# pybop.plot.convergence(optim)
 
 # Plot the parameter traces
 pybop.plot.parameters(optim)
