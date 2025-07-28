@@ -80,7 +80,7 @@ class Problem:
 
     def sensitivity_analysis(self, n_samples: int = 256):
         """
-        Computes the parameter sensitivities on the cost function using
+        Computes the parameter sensitivities on the combined cost function using
         SOBOL analyse from the SALib module [1].
 
         Parameters
@@ -111,7 +111,7 @@ class Problem:
         self.set_params(param_values)
         costs = self.run()
 
-        return sobol.analyze(salib_dict, costs)
+        return sobol.analyze(salib_dict, costs, calc_second_order=False)
 
     def observed_fisher(self, x: np.ndarray) -> np.ndarray:
         """

@@ -238,10 +238,8 @@ class TestProblem:
         assert "S1" in result
         assert "ST" in result
         assert isinstance(result["S1"], np.ndarray)
-        assert isinstance(result["S2"], np.ndarray)
         assert isinstance(result["ST"], np.ndarray)
         assert isinstance(result["S1_conf"], np.ndarray)
         assert isinstance(result["ST_conf"], np.ndarray)
-        assert isinstance(result["S2_conf"], np.ndarray)
         assert result["S1"].shape == (2,)
         assert result["ST"].shape == (2,)
