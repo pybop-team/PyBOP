@@ -92,17 +92,12 @@ class PythonProblem(Problem):
                 "Use run_with_sensitivities() instead."
             )
 
-        # Vectorised evaluation
         try:
-            results = np.fromiter(
-                (func(self.params.get_values()) for func in self._funs),
-                dtype=np.float64,
-                count=len(self._funs),
-            )
+            results = [func(self.params.get_values().T) for func in self._funs]
         except (TypeError, ValueError) as e:
             raise RuntimeError(f"function evaluation failed: {e}") from e
 
-        return np.dot(results, self._weights[:, np.newaxis])
+        return np.dot(self._weights, results)
 
     def run_with_sensitivities(self) -> tuple[np.ndarray, np.ndarray]:
         """
