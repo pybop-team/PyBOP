@@ -64,13 +64,14 @@ for param in parameters:
 problem = builder.build()
 
 # Set optimiser and options
-# We use the Improved Backpropagation Plus implementation
-# This is a gradient-based optimiser, with a step-size
-# which is decoupled from the gradient magnitude
+# We use the Nelder-Mead simplex based
+# optimiser for this example. Additionally,
+# the step-size value (sigma) is increased to 0.1
+# to search across the landscape further per iteration
 options = pybop.PintsOptions(
     sigma=0.1, verbose=True, max_iterations=60, max_unchanged_iterations=15
 )
-optim = pybop.CMAES(problem, options=options)
+optim = pybop.NelderMead(problem, options=options)
 results = optim.run()
 
 # Obtain the fully identified pybamm.ParameterValues object

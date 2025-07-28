@@ -81,3 +81,6 @@ print(results)  # 0.640 seconds
 # Run the second
 results = optim2.run()
 print(results)  # 0.896 seconds
+
+# Surface plot of first optim
+pybop.plot.surface(optim1)
