@@ -23,13 +23,15 @@ class Pybamm(BaseBuilder):
         self._use_posterior = False
         super().__init__()
 
-    def set_n_threads(self, threads: int) -> None:
+    def set_n_threads(self, threads: int) -> "Pybamm":
         """
         Directly sets the number of threads to use for parallel computing.
         If the number of threads is not set, the total number of CPU cores is
         used.
         """
         self._n_threads = threads
+
+        return self
 
     def set_simulation(
         self,
