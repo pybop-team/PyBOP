@@ -186,7 +186,9 @@ class ContourPlotter:
 
         # Evaluate cost function and reshape
         costs, gradients = self._evaluate_cost_function(coordinates, config.gradient)
-        costs = costs.reshape(config.steps, config.steps)
+        costs = costs.reshape(
+            config.steps, config.steps, order="F"
+        )  # Column-major reshape
 
         # Apply optimisation log interpolation if requested
         if config.use_optim_log and self.optim is not None:
