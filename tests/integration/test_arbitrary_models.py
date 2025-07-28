@@ -85,7 +85,7 @@ class SystemODEs(pybamm.BaseModel):
     A simple system of ODEs for testing purposes.
     """
 
-    def __init__(self, name="Diffusion Model"):
+    def __init__(self, name="System ODE"):
         super().__init__(name=name)
         u = pybamm.Variable("u")
         v = pybamm.Variable("v")
@@ -215,7 +215,7 @@ class Test_Arbitrary_Models:
         problem.set_params(np.array([-4, -4]))
 
         # Optimise
-        optim = pybop.SciPyMinimize(
+        optim = pybop.IRPropPlus(
             problem,
         )
 
