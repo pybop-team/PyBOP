@@ -9,25 +9,6 @@ import sys
 from os import path
 
 #
-# Multiprocessing
-#
-try:
-    import multiprocessing as mp
-
-    if sys.platform == "win32":
-        mp.set_start_method("spawn")
-    else:
-        mp.set_start_method("fork")
-except Exception as e:  # pragma: no cover
-    error_message = (
-        "Multiprocessing context could not be set. "
-        "Continuing import without setting context.\n"
-        f"Error: {e}"
-    )  # pragma: no cover
-    print(error_message)  # pragma: no cover
-    pass  # pragma: no cover
-
-#
 # Version info
 #
 from pybop._version import __version__
