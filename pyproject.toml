@@ -34,7 +34,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-plot = ["plotly>=5.0"]
+plot = ["plotly<6.1"]
 docs = [
     "pydata-sphinx-theme",
     "sphinx>=6",
