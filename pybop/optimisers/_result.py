@@ -1,6 +1,7 @@
 import numpy as np
+from pybamm import ParameterValues
 
-from pybop.problems.base_problem import Problem
+from pybop import Problem, PybammEISProblem, PybammProblem
 
 
 class OptimisationResult:
@@ -42,6 +43,7 @@ class OptimisationResult:
         self._n_evaluations = [n_evaluations]
         self._message = [message]
         self._time = [time]
+        self._parameter_values = self._set_optimal_parameter_values()
 
         x0 = self._problem.params.get_initial_values()
         self._x0 = [x0]
@@ -75,6 +77,7 @@ class OptimisationResult:
             raise ValueError("No results to combine.")
         ret = results[0]
         ret._x = [x for result in results for x in result._x]  # noqa: SLF001
+        ret._parameter_values = [result._parameter_values for result in results]  # noqa: SLF001
         ret._final_cost = [  # noqa: SLF001
             x
             for result in results
@@ -102,6 +105,15 @@ class OptimisationResult:
         ret.n_runs = len(results)
         ret._validate()  #  noqa: SLF001
         return ret
+
+    def _set_optimal_parameter_values(self) -> ParameterValues | dict:
+        if isinstance(self._problem, PybammProblem | PybammEISProblem):
+            pybamm_params = self._problem.pipeline.parameter_values
+            for i, param in enumerate(self._problem.params):
+                pybamm_params.update({param.name: self._x[0][i]})
+            return pybamm_params
+
+        return {}
 
     def _validate(self):
         # Check that there is a finite cost and update best run
@@ -155,6 +167,10 @@ class OptimisationResult:
     @property
     def x(self):
         return self._get_single_or_all("_x")
+
+    @property
+    def parameter_values(self):
+        return self._get_single_or_all("_parameter_values")
 
     @property
     def x_best(self):
