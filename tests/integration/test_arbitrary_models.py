@@ -277,7 +277,7 @@ class Test_Arbitrary_Models:
         problem.set_params(np.array([-1, -1]))
 
         # Optimise
-        optim = pybop.SciPyMinimize(
+        optim = pybop.NelderMead(
             problem,
         )
 
