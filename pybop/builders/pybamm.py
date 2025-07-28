@@ -14,6 +14,7 @@ class Pybamm(BaseBuilder):
         self._solver = None
         self._parameter_values = None
         self._rebuild_parameters = None
+        self._n_threads = None
         self._initial_state = None
         self._pipeline = None
         self._costs: list[PybammCost] = []
@@ -22,6 +23,14 @@ class Pybamm(BaseBuilder):
         self._use_posterior = False
         super().__init__()
 
+    def set_n_threads(self, threads: int) -> None:
+        """
+        Directly sets the number of threads to use for parallel computing.
+        If the number of threads is not set, the total number of CPU cores is
+        used.
+        """
+        self._n_threads = threads
+
     def set_simulation(
         self,
         model: pybamm.BaseModel,
@@ -29,7 +38,7 @@ class Pybamm(BaseBuilder):
         solver: pybamm.BaseSolver = None,
         initial_state: float | str = None,
         build_on_eval: bool = None,
-    ) -> None:
+    ) -> "Pybamm":
         """
         Adds a simulation for the optimisation problem.
 
@@ -53,19 +62,23 @@ class Pybamm(BaseBuilder):
         self._model = model.new_copy()
         self._initial_state = initial_state
         self._build_on_eval = build_on_eval
-        self._solver = solver or model.default_solver
+        self._solver = solver
         self._parameter_values = (
             parameter_values.copy()
             if parameter_values
             else model.default_parameter_values
         )
 
-    def add_cost(self, cost: PybammCost, weight: float = 1.0) -> None:
+        return self
+
+    def add_cost(self, cost: PybammCost, weight: float = 1.0) -> "Pybamm":
         """
         Adds a cost to the problem with optional weighting.
         """
         self._costs.append(cost)
         self._cost_weights.append(weight)
+
+        return self
 
     def build(self) -> pybop.PybammProblem:
         """
@@ -113,13 +126,9 @@ class Pybamm(BaseBuilder):
 
         # add costs
         cost_names = []
-        use_last_index = []
         for cost in self._costs:
             cost.add_to_model(model, pybamm_parameter_values, self._dataset)
             cost_names.append(cost.metadata().variable_name)
-            use_last_index.append(
-                isinstance(cost.metadata().expression, pybamm.ExplicitTimeIntegral)
-            )
 
             # Posterior Logic
             if isinstance(cost, BaseLikelihood) and pybop_parameters.priors():
@@ -156,6 +165,8 @@ class Pybamm(BaseBuilder):
             t_interp=self._dataset[self.domain],
             initial_state=self._initial_state,
             build_on_eval=self._build_on_eval,
+            cost_names=cost_names,
+            n_threads=self._n_threads,
         )
 
         # Build the pipeline
@@ -167,7 +178,6 @@ class Pybamm(BaseBuilder):
             cost_names=cost_names,
             cost_weights=self._cost_weights,
             use_posterior=self._use_posterior,
-            use_last_cost_index=use_last_index,
         )
 
     def _set_control_variable(self, pybop_parameters: pybop.Parameters) -> None:

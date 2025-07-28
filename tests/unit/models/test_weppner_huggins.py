@@ -75,7 +75,9 @@ class TestWeppnerHuggins:
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(
-            model_config["model"], parameter_values=model_config["parameter_values"]
+            model_config["model"],
+            parameter_values=model_config["parameter_values"],
+            solver=model_config["solver"],
         )
 
         for parameter in parameters:

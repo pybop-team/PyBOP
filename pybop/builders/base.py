@@ -31,7 +31,7 @@ class BaseBuilder(ABC):
         self._params = []
         self._params_keys = []
 
-    def set_dataset(self, dataset: Dataset) -> None:
+    def set_dataset(self, dataset: Dataset) -> "BaseBuilder":
         """
         Set the dataset for the optimisation problem.
 
@@ -42,7 +42,9 @@ class BaseBuilder(ABC):
         """
         self._dataset = dataset.copy()
 
-    def add_parameter(self, parameter: Parameter):
+        return self
+
+    def add_parameter(self, parameter: Parameter) -> "BaseBuilder":
         """
         Add a parameter to be optimised.
 
@@ -75,6 +77,8 @@ class BaseBuilder(ABC):
             )
 
         self._params_keys.append(parameter.name)
+
+        return self
 
     def build_parameters(self) -> pybop.Parameters:
         """

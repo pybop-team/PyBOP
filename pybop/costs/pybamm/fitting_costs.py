@@ -265,12 +265,28 @@ class SumOfPower(PybammCost):
 
 class NegativeGaussianLogLikelihood(BaseLikelihood):
     """
-    This class represents a Gaussian log-likelihood, which computes the log-likelihood under
-    the assumption that measurement noise on the target data follows a Gaussian distribution.
+    Negative Gaussian log-likelihood with Gaussian noise.
 
-    This class estimates the standard deviation of the Gaussian distribution alongside the
-    parameters of the model.
+    This class computes the negative log-likelihood under the assumption that the
+    measurement noise on the target data follows a Gaussian (normal) distribution.
 
+    The likelihood function assumes:
+    - Target values y are normally distributed around predicted values μ
+    - Constant variance σ² across all observations (homoscedastic noise)
+
+    The negative log-likelihood is computed as:
+    -ℓ(θ, σ²) = n/2 * log(2πσ²) + 1/(2σ²) * Σ(yᵢ - μᵢ(θ))²
+
+    where n is the number of observations, θ represents model parameters, and
+    μᵢ(θ) is the predicted value for observation i.
+
+    If a `sigma` argument is not provided, this implementation estimates
+    both the model parameters θ and the noise standard deviation σ
+    simultaneously during optimisation.
+
+    Reference:
+        Pawitan, Y. "In all likelihood: Statistical modelling and inference
+        using likelihood"
     """
 
     def __init__(
@@ -297,15 +313,17 @@ class NegativeGaussianLogLikelihood(BaseLikelihood):
 
         parameters = {}
         sigma = self._get_sigma_parameter(name, parameters)
-        sum_expr = -1 * (
-            -0.5 * self._log2pi
-            - pybamm.log(sigma)
-            - (var - data) ** 2 / (2.0 * sigma**2.0)
+        sum_expr = pybamm.DiscreteTimeSum((data - var) ** 2.0)
+
+        nll = (
+            data.size * self._log2pi / 2.0
+            + data.size * pybamm.log(sigma)
+            + sum_expr / (2.0 * sigma**2.0)
         )
 
         return PybammExpressionMetadata(
             variable_name=name,
-            expression=pybamm.DiscreteTimeSum(sum_expr),
+            expression=nll,
             parameters=parameters,
         )
 

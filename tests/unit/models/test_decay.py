@@ -138,7 +138,7 @@ class TestDecay:
         )
 
         # Test against analytic solution
-        sol = problem.pipeline.solve()
+        sol = problem.pipeline.solve()[0]
         analytical_sol = TEST_PARAM_VALUES[1] * np.exp(
             -TEST_PARAM_VALUES[0] * dataset["Time [s]"]
         )

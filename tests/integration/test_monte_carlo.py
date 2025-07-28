@@ -111,7 +111,7 @@ class Test_Sampling_SPM:
             PopulationMCMC,
         ],
     )
-    def test_sampling_spm(self, quick_sampler, problem):  # , map_estimate):
+    def test_sampling_spm(self, quick_sampler, problem):
         options = pybop.PintsSamplerOptions(
             n_chains=3, warm_up_iterations=150, max_iterations=750
         )

@@ -1,5 +1,4 @@
 import itertools
-import json
 
 import numpy as np
 import pybamm
@@ -30,43 +29,38 @@ class TestTransformation:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ground_truth = np.clip(
-            np.asarray([0.05, 0.05]) + np.random.normal(loc=0.0, scale=0.01, size=2),
-            a_min=0.0,
-            a_max=0.1,
+            np.asarray([1e-3, 2e-4]) + np.random.normal(loc=0.0, scale=2e-5, size=2),
+            a_min=1e-5,
+            a_max=2e-3,
         )
 
     @pytest.fixture
     def parameter_values(self, model):
-        params = model.default_parameter_values
-        with open("examples/parameters/initial_ecm_parameters.json") as f:
-            new_params = json.load(f)
-            for key, value in new_params.items():
-                if key not in params:
-                    continue
-                params.update({key: value})
-        params.update(
+        parameter_values = model.default_parameter_values
+        parameter_values.update(
             {
-                "C1 [F]": 1000,
                 "R0 [Ohm]": self.ground_truth[0],
                 "R1 [Ohm]": self.ground_truth[1],
             }
         )
-        return params
+        return parameter_values
 
     @pytest.fixture
     def parameters(self, transformation_r0, transformation_r1):
         return [
             pybop.Parameter(
                 "R0 [Ohm]",
-                prior=pybop.Gaussian(0.05, 0.02),
-                bounds=[1e-4, 0.1],
+                prior=pybop.Gaussian(1e-3, 5e-4),
                 transformation=transformation_r0,
+                initial_value=pybop.Uniform(1e-4, 1.5e-3).rvs()[0],
+                bounds=[1e-5, 3e-3],
             ),
             pybop.Parameter(
                 "R1 [Ohm]",
-                prior=pybop.Gaussian(0.05, 0.02),
-                bounds=[1e-4, 0.1],
+                prior=pybop.Gaussian(2e-4, 5e-5),
                 transformation=transformation_r1,
+                initial_value=pybop.Uniform(1e-5, 4e-4).rvs()[0],
+                bounds=[1e-5, 1e-3],
             ),
         ]
 
@@ -76,7 +70,7 @@ class TestTransformation:
 
     @pytest.fixture
     def dataset(self, model, parameter_values):
-        t_eval = np.linspace(0, 10, 100)
+        t_eval = np.linspace(0, 100, 20)
         solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
             t_eval=t_eval
         )
@@ -124,6 +118,10 @@ class TestTransformation:
         problem.set_params(x0)
         initial_cost = problem.run()
 
+        options = pybop.PintsOptions()
+        options.sigma = 2e-2
+        options.max_iterations = 50
+        options.maximum_iterations = 20
         optim = optimiser(problem)
         results = optim.run()
 
