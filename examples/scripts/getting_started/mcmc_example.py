@@ -3,71 +3,89 @@ import pybamm
 
 import pybop
 
+# In this example, we present a Pybop's Monte Carlo
+# Sampler framework. Monte Carlo sampling provides
+# a method to resolve intractable integration problems.
+# In Pybop, we use this to integrate Bayes formula
+# providing uncertainty insights via the sampled
+# posterior.
+
+# Set the model and parameter values
 model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
-t_eval = np.linspace(0, 100, 240)
+
+# Generate the synthetic dataset
+sigma = 5e-3
+t_eval = np.linspace(0, 1000, 240)
 sim = pybamm.Simulation(
     model=model,
     parameter_values=parameter_values,
 )
-sol = sim.solve(t_eval=t_eval)
+sol = sim.solve(t_eval=t_eval, t_interp=t_eval)
 
 dataset = pybop.Dataset(
     {
         "Time [s]": sol.t,
         "Voltage [V]": sol["Voltage [V]"].data,
-        "Current function [A]": sol["Current [A]"].data,
+        "Current function [A]": sol["Current [A]"].data
+        + np.random.normal(0, sigma, len(t_eval)),
     }
 )
 
-# Create the builder
-builder = pybop.builders.Pybamm()
-builder.set_dataset(dataset)
-builder.set_simulation(
-    model,
-    parameter_values=parameter_values,
-)
-builder.add_parameter(
+# Construct the parameters to be sampled
+parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         initial_value=0.6,
         prior=pybop.Gaussian(0.6, 0.2),
         transformation=pybop.LogTransformation(),
         bounds=[0.5, 0.8],
-    )
-)
-builder.add_parameter(
+    ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
         initial_value=0.6,
         prior=pybop.Gaussian(0.6, 0.2),
         transformation=pybop.LogTransformation(),
         bounds=[0.5, 0.8],
+    ),
+]
+
+# Create the builder
+builder = (
+    pybop.builders.Pybamm()
+    .set_dataset(dataset)
+    .set_simulation(
+        model,
+        parameter_values=parameter_values,
+    )
+    # We leave sigma non-defined in the below cost as we want to estimate it alongside the parameters
+    .add_cost(
+        pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", "Voltage [V]")
     )
 )
+for param in parameters:
+    builder.add_parameter(param)
 
-builder.add_cost(
-    pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", "Voltage [V]")
-)
 # Build the problem
 problem = builder.build()
 
+# Set the sampler options and construct the sampler
 options = pybop.PintsSamplerOptions(
-    n_chains=2,
-    warm_up_iterations=50,
-    max_iterations=400,
+    n_chains=3,
+    warm_up_iterations=50,  # Extend this for accurate posteriors
+    max_iterations=300,  # Extend this for accurate posteriors
     verbose=True,
     cov=1e-2,
 )
-sampler = pybop.AdaptiveCovarianceMCMC(problem, options=options)
+sampler = pybop.DifferentialEvolutionMCMC(problem, options=options)
 chains = sampler.run()
 
-# Summary statistics
+# Summary statistics and plotting
 posterior_summary = pybop.PosteriorSummary(chains)
 print(posterior_summary.get_summary_statistics())
 posterior_summary.plot_trace()
 posterior_summary.summary_table()
-posterior_summary.plot_posterior()
 posterior_summary.plot_chains()
+posterior_summary.plot_posterior()
 posterior_summary.effective_sample_size()
 print(f"rhat: {posterior_summary.rhat()}")

@@ -1,21 +1,23 @@
-import os
-
+import matplotlib.pyplot as plt
 import numpy as np
+import pybamm
 
 import pybop
 
-# Get the current directory location and convert to absolute path
-current_dir = os.path.dirname(os.path.abspath(__file__))
-dataset_path = os.path.join(
-    current_dir, "../../data/synthetic/spm_charge_discharge_75.csv"
-)
+# In this example, we will introduce the ask-tell optimiser interface
+# for the Pints' based optimisers. This interface provides a simple
+# method for flexible optimisation workflows.
 
-# Define model
-parameter_set = pybop.ParameterSet.pybamm("Chen2020")
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+# Define model and parameter values
+parameter_values = pybamm.ParameterValues("Chen2020")
+model = pybamm.lithium_ion.SPM()
+
+# Generate data
+sim = pybamm.Simulation(model=model, parameter_values=parameter_values)
+sol = sim.solve(t_eval=np.linspace(0, 100, 100))
 
 # Fitting parameters
-parameters = pybop.Parameters(
+parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         prior=pybop.Gaussian(0.55, 0.05),
@@ -24,33 +26,35 @@ parameters = pybop.Parameters(
         "Positive electrode active material volume fraction",
         prior=pybop.Gaussian(0.55, 0.05),
     ),
-)
-
-# Import the synthetic dataset, set model initial state
-csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
-initial_state = {"Initial open-circuit voltage [V]": csv_data[0, 2]}
-model.set_initial_state(initial_state=initial_state)
+]
 
 # Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": csv_data[:, 0],
-        "Current function [A]": csv_data[:, 1],
-        "Voltage [V]": csv_data[:, 2],
-        "Bulk open-circuit voltage [V]": csv_data[:, 3],
+        "Time [s]": sol.t,
+        "Current function [A]": sol["Current [A]"].data,
+        "Voltage [V]": sol["Voltage [V]"].data,
+        "Bulk open-circuit voltage [V]": sol["Bulk open-circuit voltage [V]"].data,
     }
 )
 
 
-signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
-# Construct the problem and cost classes
-problem = pybop.FittingProblem(
-    model,
-    parameters,
-    dataset,
-    signal=signal,
+# Construct the problem class
+builder = (
+    pybop.builders.Pybamm()
+    .set_dataset(dataset)
+    .set_simulation(model, parameter_values=parameter_values)
+    .add_cost(pybop.costs.pybamm.Minkowski("Voltage [V]", "Voltage [V]"))
+    .add_cost(
+        pybop.costs.pybamm.Minkowski(
+            "Bulk open-circuit voltage [V]", "Bulk open-circuit voltage [V]", p=2
+        ),
+        weight=0.5,
+    )
 )
-cost = pybop.Minkowski(problem, p=2)
+for param in parameters:
+    builder.add_parameter(param)
+problem = builder.build()
 
 # We construct the optimiser class the same as normal
 # but will be using the `optimiser` attribute directly
@@ -58,16 +62,19 @@ cost = pybop.Minkowski(problem, p=2)
 # non SciPy-based optimisers.
 # Warning: not all arguments are supported via this
 # interface.
-optim = pybop.AdamW(cost)
+options = pybop.PintsOptions(sigma=1e-2)
+optim = pybop.AdamW(problem, options=options)
+
 
 # Create storage vars
 x_best = []
 f_best = []
 
 # Run optimisation
-for i in range(50):
+for i in range(70):
     x = optim.optimiser.ask()
-    f = [cost(x[0], calculate_grad=True)]
+    problem.set_params(x)
+    f = [problem.run_with_sensitivities()]
     optim.optimiser.tell(f)
 
     # Store best solution so far
@@ -79,7 +86,19 @@ for i in range(50):
             f"Iteration: {i} | Cost: {optim.optimiser.f_best()} | Parameters: {optim.optimiser.x_best()}"
         )
 
+# Manually apply the optimal parameters to the ParameterValues object
+# Next, we solve the forward model with the PyBaMM Simulation class
+for i, param in enumerate(problem.params):
+    parameter_values.update({param.name: x_best[-1][i]})
+sim = pybamm.Simulation(model=model, parameter_values=parameter_values)
+sol = sim.solve(t_eval=[dataset["Time [s]"][0], dataset["Time [s]"][-1]])
+
+
 # Plot the timeseries output
-pybop.plot.problem(
-    problem, problem_inputs=optim.optimiser.x_best(), title="Optimised Comparison"
-)
+fig, ax = plt.subplots()
+ax.plot(dataset["Time [s]"], dataset["Voltage [V]"], label="Experimental")
+ax.plot(sol.t, sol["Voltage [V]"].data, label="Predicted")
+ax.set(xlabel="Time (s)", ylabel="Voltage [V]")
+ax.legend()
+ax.grid()
+plt.show()
