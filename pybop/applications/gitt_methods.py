@@ -1,7 +1,7 @@
 from copy import copy
-from typing import Optional
 
 import numpy as np
+from pybamm import ParameterValues
 
 import pybop
 from pybop import BaseApplication
@@ -21,11 +21,11 @@ class GITTPulseFit(BaseApplication):
     gitt_pulse : pybop.Dataset
         A dataset containing the "Time [s]", "Current function [A]" and "Voltage [V]"
         for one pulse obtained from a GITT measurement.
-    parameter_set : pybop.ParameterSet
+    parameter_set : pybamm.ParameterValues
         A parameter set containing values for the parameters of the SPDiffusion model.
     electrode : str, optional
         Either "positive" or "negative" depending on the type of electrode.
-    cost : pybop.BaseCost, optional
+    cost : pybop.CallableCost, optional
         The cost function to quantify the error (default: pybop.RootMeanSquaredError).
     optimiser : pybop.BaseOptimiser, optional
         The optimisation algorithm to use (default: pybop.SciPyMinimize).
@@ -35,10 +35,10 @@ class GITTPulseFit(BaseApplication):
 
     def __init__(
         self,
-        parameter_set: pybop.ParameterSet,
-        electrode: Optional[str] = "negative",
-        cost: Optional[pybop.BaseCost] = pybop.RootMeanSquaredError,
-        optimiser: Optional[pybop.BaseOptimiser] = pybop.SciPyMinimize,
+        parameter_set: ParameterValues,
+        electrode: str | None = "negative",
+        cost: pybop.CallableCost | None = pybop.RootMeanSquaredError,
+        optimiser: pybop.BaseOptimiser | None = pybop.SciPyMinimize,
         verbose: bool = True,
     ):
         self.electrode = electrode
@@ -100,11 +100,11 @@ class GITTFit(BaseApplication):
         for a GITT measurement.
     pulse_index : list[np.ndarray]
         A nested list of integers representing the indices of each pulse in the dataset.
-    parameter_set : pybop.ParameterSet
+    parameter_set : pybamm.ParameterValues
         A parameter set containing values for the parameters of the SPDiffusion model.
     electrode : str, optional
         Either "positive" or "negative" depending on the type of electrode.
-    cost : pybop.BaseCost, optional
+    cost : pybop.CallableCost, optional
         The cost function to quantify the error (default: pybop.RootMeanSquaredError).
     optimiser : pybop.BaseOptimiser, optional
         The optimisation algorithm to use (default: pybop.SciPyMinimize).
@@ -116,10 +116,10 @@ class GITTFit(BaseApplication):
         self,
         gitt_dataset: pybop.Dataset,
         pulse_index: list[np.ndarray],
-        parameter_set: pybop.ParameterSet,
-        electrode: Optional[str] = "negative",
-        cost: Optional[pybop.BaseCost] = pybop.RootMeanSquaredError,
-        optimiser: Optional[pybop.BaseOptimiser] = pybop.SciPyMinimize,
+        parameter_set: ParameterValues,
+        electrode: str | None = "negative",
+        cost: pybop.CallableCost | None = pybop.RootMeanSquaredError,
+        optimiser: pybop.BaseOptimiser | None = pybop.SciPyMinimize,
         verbose: bool = False,
     ):
         self.gitt_dataset = gitt_dataset
