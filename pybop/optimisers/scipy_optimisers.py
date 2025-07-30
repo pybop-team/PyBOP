@@ -27,10 +27,8 @@ class BaseScipyOptimiser(BaseOptimiser):
     def __init__(
         self,
         problem: Problem,
-        needs_sensitivities: bool,
         options: pybop.OptimiserOptions,
     ):
-        self._needs_sensitivities = needs_sensitivities
         self._intermediate_x_search = []
         self._intermediate_x_model = []
         self._intermediate_cost = []
@@ -69,17 +67,6 @@ class BaseScipyOptimiser(BaseOptimiser):
                 "Bounds provided must be either type dict or scipy.optimize.bounds object."
             )
 
-    def needs_sensitivities(self) -> bool:
-        """
-        Returns whether the optimiser needs sensitivities.
-
-        Returns
-        -------
-        bool
-            True if the optimiser needs sensitivities, False otherwise.
-        """
-        return self._needs_sensitivities
-
     def evaluator(self) -> ScipyEvaluator:
         """
         Internal method to run the optimisation using a PyBOP optimiser.
@@ -116,7 +103,7 @@ class ScipyMinimizeOptions(pybop.OptimiserOptions):
     method : str
         The optimisation method to use. Default is 'Nelder-Mead'.
     jac : bool
-        Method for computing the gradient vector. Default is False.
+        Method for computing the gradient vector. Default is None.
     tol : float, optional
         Tolerance for termination. Default is None.
     maxiter : int
@@ -137,7 +124,7 @@ class ScipyMinimizeOptions(pybop.OptimiserOptions):
     """
 
     method: str = "Nelder-Mead"
-    jac: bool = False
+    jac: bool | None = None
     tol: float | None = None
     maxiter: int = 1000
     disp: bool | None = False
@@ -155,7 +142,7 @@ class ScipyMinimizeOptions(pybop.OptimiserOptions):
             raise ValueError("tol must be a positive float.")
         if self.eps is not None and self.eps <= 0:
             raise ValueError("eps must be a positive float.")
-        if not isinstance(self.jac, bool):
+        if self.jac is not None and not isinstance(self.jac, bool):
             raise ValueError("jac must be a boolean value.")
 
     def to_dict(self) -> dict:
@@ -222,9 +209,7 @@ class ScipyMinimize(BaseScipyOptimiser):
         options = options or ScipyMinimizeOptions()
         self._options_dict = options.to_dict()
         self._iteration = 0
-        super().__init__(
-            problem=problem, options=options, needs_sensitivities=options.jac
-        )
+        super().__init__(problem=problem, options=options)
         self._evaluator = self.evaluator()
         self._cost0 = 1.0
 
@@ -244,6 +229,10 @@ class ScipyMinimize(BaseScipyOptimiser):
         """
         Parse optimiser options.
         """
+        self._options_dict["jac"] = (
+            self._options_dict["jac"] or self.problem.has_sensitivities
+        )
+        self._needs_sensitivities = self._options_dict["jac"]
         self._scipy_bounds = self.scipy_bounds()
         self._evaluator = self.evaluator()
 
@@ -325,7 +314,7 @@ class ScipyMinimize(BaseScipyOptimiser):
         )
 
         x0 = self.problem.params.get_initial_values(transformed=True)
-        if self.needs_sensitivities():
+        if self._needs_sensitivities:
             self._cost0 = self._evaluator.evaluate(x0)[0]
         else:
             self._cost0 = self._evaluator.evaluate(x0)
@@ -504,7 +493,7 @@ class ScipyDifferentialEvolution(BaseScipyOptimiser):
     ):
         options = options or ScipyDifferentialEvolutionOptions()
         self._options_dict = options.to_dict()
-        super().__init__(problem=problem, options=options, needs_sensitivities=False)
+        super().__init__(problem=problem, options=options)
         self._evaluator = self.evaluator()
         self._iterations = 0
 
@@ -524,6 +513,7 @@ class ScipyDifferentialEvolution(BaseScipyOptimiser):
         """
         Parse optimiser options.
         """
+        self._needs_sensitivities = False
         self._scipy_bounds = self.scipy_bounds()
         self._evaluator = self.evaluator()
 

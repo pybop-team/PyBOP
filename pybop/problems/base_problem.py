@@ -18,6 +18,7 @@ class Problem:
             self._param_names = []
         self._params = pybop_params
         self._param_names = pybop_params.keys()
+        self._has_sensitivities = False
 
     def _compute_initial_cost_and_resample(self):
         # Compute the absolute initial cost and resample if required
@@ -76,6 +77,10 @@ class Problem:
         Returns the names of the parameters set for the simulation and cost function.
         """
         return self._param_names
+
+    @property
+    def has_sensitivities(self) -> bool:
+        return self._has_sensitivities
 
     def sensitivity_analysis(self, n_samples: int = 256):
         """

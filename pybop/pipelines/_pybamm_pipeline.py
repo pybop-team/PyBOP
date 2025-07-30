@@ -85,7 +85,7 @@ class PybammPipeline:
         self._t_start = np.float64(t_start)
         self._t_end = np.float64(t_end)
         self._t_interp = t_interp
-        self._initial_state = self._convert_to_pybamm_initial_state(initial_state)
+        self.initial_state = self._convert_to_pybamm_initial_state(initial_state)
         self._initial_state_parameters = (
             initial_state_parameters or self._get_initial_state_parameters()
         )
@@ -242,7 +242,7 @@ class PybammPipeline:
         """
         Returns the names of the parameters which define the initial state of the model.
         """
-        if self._initial_state is None:
+        if self.initial_state is None:
             return []
 
         ocp_type = self.model.options.get("open-circuit potential", None)
@@ -268,7 +268,7 @@ class PybammPipeline:
         Returns a dictionary of the parameters which define the initial state of the model,
         without modifying the parameter_values attribute.
         """
-        if self._initial_state is None:
+        if self.initial_state is None:
             return {}
 
         param = self.model.param
@@ -279,7 +279,7 @@ class PybammPipeline:
         parameter_values.update(inputs or {})
 
         values = parameter_values.set_initial_state(
-            self._initial_state,
+            self.initial_state,
             param=param,
             inplace=False,
             options=options,

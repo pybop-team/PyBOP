@@ -66,6 +66,7 @@ class PythonProblem(Problem):
         self._funs_with_sens = (
             tuple(funs_with_sens) if funs_with_sens is not None else None
         )
+        self._has_sensitivities = True if funs_with_sens is not None else False
         self._weights = weights
 
     def run(self) -> float:

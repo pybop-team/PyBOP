@@ -165,6 +165,8 @@ class BaseOptimiser:
         self._logger = OptimisationLogger(options.verbose, options.verbose_print_rate)
         self._multistart = options.multistart
         self._set_up_optimiser()
+        if self._needs_sensitivities and not self.problem.has_sensitivities:
+            raise ValueError("This problem does not return sensitivities.")
 
     @staticmethod
     def default_options() -> OptimiserOptions:
