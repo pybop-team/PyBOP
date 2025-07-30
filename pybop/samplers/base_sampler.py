@@ -1,76 +1,95 @@
-from typing import Union
+from dataclasses import dataclass
 
 import numpy as np
-from pints import ParallelEvaluator
 
-from pybop import CostInterface, LogPosterior
+from pybop.problems.base_problem import Problem
 
 
-class BaseSampler(CostInterface):
+@dataclass
+class SamplerOptions:
+    """
+    Base options for the sampler.
+
+    Attributes:
+        n_chains (int): The number of chains to concurrently sample from.
+        x0 (float | np.ndarray): Initial guess for the parameter values.
+        cov (float | np.ndarray): Covariance matrix.
+    """
+
+    n_chains: int = 1
+    x0: float | np.ndarray | None = None
+    cov: float | np.ndarray = 0.05
+
+    def validate(self):
+        """
+        Validate the options.
+
+        Raises
+        ------
+        ValueError
+            If the options are invalid.
+        """
+        if self.n_chains < 1:
+            raise ValueError("Number of chains must be greater than 0.")
+
+
+class BaseSampler:
     """
     Base class for Monte Carlo samplers.
 
     Parameters
     ----------
-    log_pdf : pybop.LogPosterior or List[pybop.LogPosterior]
-        The posterior or PDF to be sampled.
-    chains : int
-        Number of chains to be used.
-    x0
-        List-like initial values of the parameters for Monte Carlo sampling.
-    cov0
-        The covariance matrix to be sampled.
-
-    Note: Samplers perform maximisation of the Posterior by default.
+    problem : Problem
+        The problem representing the negative unnormalised posterior distribution.
+    options : SamplerOptions, optional
+        Options for the sampler, by default SamplerOptions().
     """
 
     def __init__(
         self,
-        log_pdf: Union[LogPosterior, list[LogPosterior]],
-        x0,
-        chains: int,
-        cov0: Union[np.ndarray, float],
+        problem: Problem,
+        options: SamplerOptions | None = None,
     ):
-        self._log_pdf = log_pdf
-        self._cov0 = cov0
+        self._problem = problem
+        self._options = options or SamplerOptions()
+        self._options.validate()
 
-        # Number of chains
-        self._n_chains = chains
-        if self._n_chains < 1:
-            raise ValueError("Number of chains must be greater than 0")
-
-        # Set up parameters based on log_pdf
-        if isinstance(log_pdf, LogPosterior):
-            self.parameters = log_pdf.parameters
-            self.n_parameters = log_pdf.n_parameters
-        elif isinstance(log_pdf, (list, np.ndarray)) and isinstance(
-            log_pdf[0], LogPosterior
-        ):
-            self.parameters = log_pdf[0].parameters
-            self.n_parameters = log_pdf[0].n_parameters
-        else:
-            raise ValueError(
-                "log_pdf must be a LogPosterior or List[LogPosterior]"
-            )  # TODO: Update for more general sampling
-
-        transformation = self.parameters.construct_transformation()
-        super().__init__(transformation=transformation)
-
-        # Check initial conditions
-        if x0 is not None:
-            if len(x0) != self.n_parameters:
-                raise ValueError(
-                    "x0 must have the same number of parameters as log_pdf"
-                )
-            self.parameters.update(initial_values=x0)
-
-        # Update x0 w/ transformation if applicable - reshape to align with chains
-        self._x0 = self.parameters.reset_initial_value(apply_transform=True).reshape(
-            1, -1
+        # Get initial conditions
+        self._x0 = self.problem.params.get_initial_values(transformed=True) * np.ones(
+            [self._options.n_chains, 1]
         )
 
-        if len(self._x0) != self._n_chains or len(self._x0) == 1:
-            self._x0 = np.tile(self._x0, (self._n_chains, 1))
+        param_dims = len(self.problem.params)
+        if np.isscalar(self._options.cov):
+            self._cov0 = np.eye(param_dims) * self._options.cov
+        else:
+            self._cov0 = np.atleast_2d(self._options.cov)
+
+    @staticmethod
+    def default_options() -> SamplerOptions:
+        """
+        Get the default options for the sampler.
+
+        Returns:
+            SamplerOptions: Default options for the sampler.
+        """
+        return SamplerOptions()
+
+    @property
+    def x0(self) -> np.ndarray:
+        return self._x0
+
+    @property
+    def cov0(self) -> np.ndarray:
+        return self._cov0
+
+    @property
+    def problem(self) -> Problem:
+        return self._problem
+
+    @property
+    def options(self) -> SamplerOptions:
+        return self._options
 
     def run(self) -> np.ndarray:
         """
@@ -102,23 +121,3 @@ class BaseSampler(CostInterface):
             raise ValueError("Number of iterations must be greater than 0")
 
         self._max_iterations = iterations
-
-    def set_parallel(self, parallel=False):
-        """
-        Enable or disable parallel evaluation.
-        Credit: PINTS
-
-        Parameters
-        ----------
-        parallel : bool or int, optional
-            If True, use as many worker processes as there are CPU cores. If an integer, use that many workers.
-            If False or 0, disable parallelism (default: False).
-        """
-        self._parallel = bool(parallel is True or parallel >= 1)
-
-        if parallel is True:
-            self._n_workers = ParallelEvaluator.cpu_count()
-        elif parallel >= 1:
-            self._n_workers = int(parallel)
-        else:
-            self._n_workers = 1

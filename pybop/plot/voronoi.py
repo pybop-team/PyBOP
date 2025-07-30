@@ -1,9 +1,7 @@
-from typing import Union
-
 import numpy as np
 from scipy.spatial import Voronoi, cKDTree
 
-from pybop import BaseOptimiser, Optimisation
+from pybop import BaseOptimiser
 from pybop.plot.plotly_manager import PlotlyManager
 
 
@@ -50,7 +48,7 @@ def _voronoi_regions(x, y, f, xlim, ylim):
 
     # Create regions
     regions = [set() for _ in range(len(x))]
-    for (p1, p2), (v1, v2) in zip(vor.ridge_points, vor.ridge_vertices):
+    for (p1, p2), (v1, v2) in zip(vor.ridge_points, vor.ridge_vertices, strict=False):
         v1, v2 = sorted([v1, v2])  # Sort the vertices
         x2 = vor.vertices[v2]
         y1, y2 = vor.points[p1], vor.points[p2]
@@ -226,7 +224,7 @@ def assign_nearest_value(x, y, f, xi, yi):
 
 
 def surface(
-    optim: Union[BaseOptimiser, Optimisation],
+    optim: BaseOptimiser,
     bounds=None,
     normalise=True,
     resolution=250,
@@ -238,11 +236,11 @@ def surface(
 
     Parameters:
     -----------
-    optim : pybop.BaseOptimiser | pybop.Optimisation
+    optim : pybop.BaseOptimiser
         Solved optimisation object
     bounds : numpy.ndarray, optional
         A 2x2 array specifying the [min, max] bounds for each parameter. If None, uses
-        `cost.parameters.get_bounds_for_plotly`.
+        `parameters.bounds_as_numpy`.
     normalise : bool, optional
         If True, the voronoi regions are computed using the Euclidean distance between
         points normalised with respect to the bounds (default: True).
@@ -257,17 +255,19 @@ def surface(
     """
 
     # Append the optimisation trace to the data
-    points = optim.log.x
+    points = optim.log.x_model
 
     if points[0].shape[0] != 2:
         raise ValueError("This plot method requires two parameters.")
 
-    x_optim, y_optim = map(list, zip(*points))
+    x_optim, y_optim = map(list, zip(*points, strict=False))
     f = optim.log.cost
 
     # Translate bounds, taking only the first two elements
     xlim, ylim = (
-        bounds if bounds is not None else [param.bounds for param in optim.parameters]
+        bounds
+        if bounds is not None
+        else [param.bounds for param in optim.problem.params]
     )[:2]
 
     # Create a grid for plot
@@ -334,7 +334,7 @@ def surface(
     )
 
     # Add Voronoi edges
-    for region, size in zip(regions, relative_sizes):
+    for region, size in zip(regions, relative_sizes, strict=False):
         x_region = region[:, 0].tolist() + [region[0, 0]]
         y_region = region[:, 1].tolist() + [region[0, 1]]
 
@@ -367,11 +367,11 @@ def surface(
     )
 
     # Plot the initial guess
-    if optim.x0 is not None:
+    if optim.log.x0 is not None:
         fig.add_trace(
             go.Scatter(
-                x=[optim.x0[0]],
-                y=[optim.x0[1]],
+                x=[optim.log.x0[0]],
+                y=[optim.log.x0[1]],
                 mode="markers",
                 marker_symbol="x",
                 marker=dict(
@@ -386,11 +386,11 @@ def surface(
         )
 
         # Plot optimised value
-        if optim.log.x_best is not None:
+        if optim.log.last_x_model_best is not None:
             fig.add_trace(
                 go.Scatter(
-                    x=[optim.log.x_best[-1][0]],
-                    y=[optim.log.x_best[-1][1]],
+                    x=[optim.log.last_x_model_best[0]],
+                    y=[optim.log.last_x_model_best[1]],
                     mode="markers",
                     marker_symbol="cross",
                     marker=dict(
@@ -404,7 +404,7 @@ def surface(
                 )
             )
 
-    names = optim.cost.parameters.keys()
+    names = list(optim.problem.params.keys())
     fig.update_layout(
         title="Voronoi Cost Landscape",
         title_x=0.5,

@@ -17,198 +17,128 @@ from pints import SliceDoublingMCMC as PintsSliceDoublingMCMC
 from pints import SliceRankShrinkingMCMC as PintsSliceRankShrinkingMCMC
 from pints import SliceStepoutMCMC as PintsSliceStepoutMCMC
 
-from pybop import BasePintsSampler
+from pybop import BasePintsSampler, PintsSamplerOptions
+from pybop.problems.base_problem import Problem
 
 
 class NUTS(BasePintsSampler):
     """
     Implements the No-U-Turn Sampler (NUTS) algorithm.
 
-    This class extends the NUTS sampler from the PINTS library.
+    This class wraps the NUTS sampler from the PINTS library.
     NUTS is a Markov chain Monte Carlo (MCMC) method for sampling
-    from a probability distribution. It is an extension of the
-    Hamiltonian Monte Carlo (HMC) method, which uses a dynamic
-    integration time to explore the parameter space more efficiently.
+    from a probability distribution, extending Hamiltonian Monte Carlo
+    with an adaptive integration time for efficient exploration.
 
     Parameters
     ----------
-    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
-        A function that calculates the log-probability density.
-    chains : int
-        The number of chains to run.
-    x0 : ndarray, optional
-        Initial positions for the chains.
-    cov0 : ndarray, optional
-        Initial covariance matrix.
-    **kwargs
-        Additional arguments to pass to the NUTS sampler.
+    problem : pybop.problems.base_problem.Problem
+        The problem to solve, providing the log-posterior.
+    options : pybop.PintsSamplerOptions, optional
+        Additional options for the sampler.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
-        super().__init__(
-            log_pdf, NoUTurnMCMC, chains=chains, x0=x0, cov0=cov0, **kwargs
-        )
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
+        super().__init__(problem, NoUTurnMCMC, options=options)
 
 
 class DREAM(BasePintsSampler):
     """
     Implements the DiffeRential Evolution Adaptive Metropolis (DREAM) algorithm.
 
-    This class extends the DREAM sampler from the PINTS library.
-    DREAM is a Markov chain Monte Carlo (MCMC) method for sampling
-    from a probability distribution. It combines the Differential
-    Evolution (DE) algorithm with the Adaptive Metropolis (AM) algorithm
-    to explore the parameter space more efficiently.
+    This class wraps the DREAM sampler from the PINTS library.
+    DREAM combines Differential Evolution and Adaptive Metropolis to efficiently
+    explore complex parameter spaces using a population of chains.
 
     Parameters
     ----------
-    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
-        A function that calculates the log-probability density.
-    chains : int
-        The number of chains to run.
-    x0 : ndarray, optional
-        Initial positions for the chains.
-    cov0 : ndarray, optional
-        Initial covariance matrix.
-    **kwargs
-        Additional arguments to pass to the DREAM sampler.
+    problem : pybop.problems.base_problem.Problem
+        The problem to solve, providing the log-posterior.
+    options : pybop.PintsSamplerOptions, optional
+        Additional options for the sampler.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
-        super().__init__(log_pdf, PintsDREAM, chains=chains, x0=x0, cov0=cov0, **kwargs)
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
+        super().__init__(problem, PintsDREAM, options=options)
 
 
 class AdaptiveCovarianceMCMC(BasePintsSampler):
     """
     Implements the Adaptive Covariance Markov Chain Monte Carlo (MCMC) algorithm.
 
-    This class extends the Adaptive Covariance MCMC sampler from the PINTS library.
-    This MCMC method adapts the proposal distribution covariance matrix
-    during the sampling process to improve efficiency and convergence.
+    This class wraps the Adaptive Covariance MCMC sampler from the PINTS library.
+    The proposal distribution's covariance matrix is adapted during sampling
+    to improve efficiency and convergence.
 
     Parameters
     ----------
-    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
-        A function that calculates the log-probability density.
-    chains : int
-        The number of chains to run.
-    x0 : ndarray, optional
-        Initial positions for the chains.
-    cov0 : ndarray, optional
-        Initial covariance matrix.
-    **kwargs
-        Additional arguments to pass to the Adaptive Covariance MCMC sampler.
+    problem : pybop.problems.base_problem.Problem
+        The problem to solve, providing the log-posterior.
+    options : pybop.PintsSamplerOptions, optional
+        Additional options for the sampler.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
-        super().__init__(
-            log_pdf,
-            PintsAdaptiveCovarianceMCMC,
-            chains=chains,
-            x0=x0,
-            cov0=cov0,
-            **kwargs,
-        )
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
+        super().__init__(problem, PintsAdaptiveCovarianceMCMC, options=options)
 
 
 class DifferentialEvolutionMCMC(BasePintsSampler):
     """
     Implements the Differential Evolution Markov Chain Monte Carlo (MCMC) algorithm.
 
-    This class extends the Differential Evolution MCMC sampler from the PINTS library.
-    This MCMC method uses the Differential Evolution algorithm to explore the
-    parameter space more efficiently by evolving a population of chains.
+    This class wraps the Differential Evolution MCMC sampler from the PINTS library.
+    Uses a population of chains and differential evolution proposals for efficient
+    exploration of the parameter space.
 
     Parameters
     ----------
-    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
-        A function that calculates the log-probability density.
-    chains : int
-        The number of chains to run.
-    x0 : ndarray, optional
-        Initial positions for the chains.
-    cov0 : ndarray, optional
-        Initial covariance matrix.
-    **kwargs
-        Additional arguments to pass to the Differential Evolution MCMC sampler.
+    problem : pybop.problems.base_problem.Problem
+        The problem to solve, providing the log-posterior.
+    options : pybop.PintsSamplerOptions, optional
+        Additional options for the sampler.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
-        super().__init__(
-            log_pdf,
-            PintsDifferentialEvolutionMCMC,
-            chains=chains,
-            x0=x0,
-            cov0=cov0,
-            **kwargs,
-        )
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
+        super().__init__(problem, PintsDifferentialEvolutionMCMC, options=options)
 
 
 class DramACMC(BasePintsSampler):
     """
-    Implements the Delayed Rejection Adaptive Metropolis (DRAM) Adaptive Covariance Markov Chain
-    Monte Carlo (MCMC) algorithm.
+    Implements the Delayed Rejection Adaptive Metropolis (DRAM) Adaptive Covariance MCMC algorithm.
 
-    This class extends the DRAM Adaptive Covariance MCMC sampler from the PINTS library.
-    This MCMC method combines Delayed Rejection with Adaptive Metropolis to enhance
-    the efficiency and robustness of the sampling process.
+    This class wraps the DRAM Adaptive Covariance MCMC sampler from the PINTS library.
+    Combines delayed rejection and adaptive covariance for robust and efficient sampling.
 
     Parameters
     ----------
-    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
-        A function that calculates the log-probability density.
-    chains : int
-        The number of chains to run.
-    x0 : ndarray, optional
-        Initial positions for the chains.
-    cov0 : ndarray, optional
-        Initial covariance matrix.
-    **kwargs
-        Additional arguments to pass to the DRAM Adaptive Covariance MCMC sampler.
+    problem : pybop.problems.base_problem.Problem
+        The problem to solve, providing the log-posterior.
+    options : pybop.PintsSamplerOptions, optional
+        Additional options for the sampler.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
-        super().__init__(
-            log_pdf,
-            PintsDramACMC,
-            chains=chains,
-            x0=x0,
-            cov0=cov0,
-            **kwargs,
-        )
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
+        super().__init__(problem, PintsDramACMC, options=options)
 
 
 class EmceeHammerMCMC(BasePintsSampler):
     """
     Implements the Emcee Hammer Markov Chain Monte Carlo (MCMC) algorithm.
 
-    This class extends the Emcee Hammer MCMC sampler from the PINTS library.
-    The Emcee Hammer is an affine-invariant ensemble sampler for MCMC, which is
-    particularly effective for high-dimensional parameter spaces.
+    This class wraps the Emcee Hammer MCMC sampler from the PINTS library.
+    The Emcee Hammer is an affine-invariant ensemble sampler, effective for
+    high-dimensional parameter spaces.
 
     Parameters
     ----------
-    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
-        A function that calculates the log-probability density.
-    chains : int
-        The number of chains to run.
-    x0 : ndarray, optional
-        Initial positions for the chains.
-    cov0 : ndarray, optional
-        Initial covariance matrix.
-    **kwargs
-        Additional arguments to pass to the Emcee Hammer MCMC sampler.
+    problem : pybop.problems.base_problem.Problem
+        The problem to solve, providing the log-posterior.
+    options : pybop.PintsSamplerOptions, optional
+        Additional options for the sampler.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
-        super().__init__(
-            log_pdf,
-            PintsEmceeHammerMCMC,
-            chains=chains,
-            x0=x0,
-            cov0=cov0,
-            **kwargs,
-        )
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
+        super().__init__(problem, PintsEmceeHammerMCMC, options=options)
 
 
 class HaarioACMC(BasePintsSampler):
@@ -221,27 +151,14 @@ class HaarioACMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
-        A function that calculates the log-probability density.
-    chains : int
-        The number of chains to run.
-    x0 : ndarray, optional
-        Initial positions for the chains.
-    cov0 : ndarray, optional
-        Initial covariance matrix.
-    **kwargs
-        Additional arguments to pass to the Haario Adaptive Covariance MCMC sampler.
+    problem : pybop.problems.base_problem.Problem
+        The problem to solve, providing the log-posterior.
+    options : pybop.PintsSamplerOptions, optional
+        Additional options for the sampler.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
-        super().__init__(
-            log_pdf,
-            PintsHaarioACMC,
-            chains=chains,
-            x0=x0,
-            cov0=cov0,
-            **kwargs,
-        )
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
+        super().__init__(problem, PintsHaarioACMC, options=options)
 
 
 class HaarioBardenetACMC(BasePintsSampler):
@@ -254,27 +171,14 @@ class HaarioBardenetACMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
-        A function that calculates the log-probability density.
-    chains : int
-        The number of chains to run.
-    x0 : ndarray, optional
-        Initial positions for the chains.
-    cov0 : ndarray, optional
-        Initial covariance matrix.
-    **kwargs
-        Additional arguments to pass to the Haario-Bardenet Adaptive Covariance MCMC sampler.
+    problem : pybop.problems.base_problem.Problem
+        The problem to solve, providing the log-posterior.
+    options : pybop.PintsSamplerOptions, optional
+        Additional options for the sampler.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
-        super().__init__(
-            log_pdf,
-            PintsHaarioBardenetACMC,
-            chains=chains,
-            x0=x0,
-            cov0=cov0,
-            **kwargs,
-        )
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
+        super().__init__(problem, PintsHaarioBardenetACMC, options=options)
 
 
 class HamiltonianMCMC(BasePintsSampler):
@@ -287,27 +191,14 @@ class HamiltonianMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
-        A function that calculates the log-probability density.
-    chains : int
-        The number of chains to run.
-    x0 : ndarray, optional
-        Initial positions for the chains.
-    cov0 : ndarray, optional
-        Initial covariance matrix.
-    **kwargs
-        Additional arguments to pass to the Hamiltonian MCMC sampler.
+    problem : pybop.problems.base_problem.Problem
+        The problem to solve, providing the log-posterior.
+    options : pybop.PintsSamplerOptions, optional
+        Additional options for the sampler.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
-        super().__init__(
-            log_pdf,
-            PintsHamiltonianMCMC,
-            chains=chains,
-            x0=x0,
-            cov0=cov0,
-            **kwargs,
-        )
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
+        super().__init__(problem, PintsHamiltonianMCMC, options=options)
 
 
 class MALAMCMC(BasePintsSampler):
@@ -320,27 +211,14 @@ class MALAMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
-        A function that calculates the log-probability density.
-    chains : int
-        The number of chains to run.
-    x0 : ndarray, optional
-        Initial positions for the chains.
-    cov0 : ndarray, optional
-        Initial covariance matrix.
-    **kwargs
-        Additional arguments to pass to the MALA MCMC sampler.
+    problem : pybop.problems.base_problem.Problem
+        The problem to solve, providing the log-posterior.
+    options : pybop.PintsSamplerOptions, optional
+        Additional options for the sampler.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
-        super().__init__(
-            log_pdf,
-            PintsMALAMCMC,
-            chains=chains,
-            x0=x0,
-            cov0=cov0,
-            **kwargs,
-        )
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
+        super().__init__(problem, PintsMALAMCMC, options=options)
 
 
 class MetropolisRandomWalkMCMC(BasePintsSampler):
@@ -353,27 +231,14 @@ class MetropolisRandomWalkMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
-        A function that calculates the log-probability density.
-    chains : int
-        The number of chains to run.
-    x0 : ndarray, optional
-        Initial positions for the chains.
-    cov0 : ndarray, optional
-        Initial covariance matrix.
-    **kwargs
-        Additional arguments to pass to the Metropolis Random Walk MCMC sampler.
+    problem : pybop.problems.base_problem.Problem
+        The problem to solve, providing the log-posterior.
+    options : pybop.PintsSamplerOptions, optional
+        Additional options for the sampler.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
-        super().__init__(
-            log_pdf,
-            PintsMetropolisRandomWalkMCMC,
-            chains=chains,
-            x0=x0,
-            cov0=cov0,
-            **kwargs,
-        )
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
+        super().__init__(problem, PintsMetropolisRandomWalkMCMC, options=options)
 
 
 class MonomialGammaHamiltonianMCMC(BasePintsSampler):
@@ -386,27 +251,14 @@ class MonomialGammaHamiltonianMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
-        A function that calculates the log-probability density.
-    chains : int
-        The number of chains to run.
-    x0 : ndarray, optional
-        Initial positions for the chains.
-    cov0 : ndarray, optional
-        Initial covariance matrix.
-    **kwargs
-        Additional arguments to pass to the Monomial Gamma Hamiltonian MCMC sampler.
+    problem : pybop.problems.base_problem.Problem
+        The problem to solve, providing the log-posterior.
+    options : pybop.PintsSamplerOptions, optional
+        Additional options for the sampler.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
-        super().__init__(
-            log_pdf,
-            PintsMonomialGammaHamiltonianMCMC,
-            chains=chains,
-            x0=x0,
-            cov0=cov0,
-            **kwargs,
-        )
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
+        super().__init__(problem, PintsMonomialGammaHamiltonianMCMC, options=options)
 
 
 class PopulationMCMC(BasePintsSampler):
@@ -419,27 +271,14 @@ class PopulationMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
-        A function that calculates the log-probability density.
-    chains : int
-        The number of chains to run.
-    x0 : ndarray, optional
-        Initial positions for the chains.
-    cov0 : ndarray, optional
-        Initial covariance matrix.
-    **kwargs
-        Additional arguments to pass to the Population MCMC sampler.
+    problem : pybop.problems.base_problem.Problem
+        The problem to solve, providing the log-posterior.
+    options : pybop.PintsSamplerOptions, optional
+        Additional options for the sampler.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
-        super().__init__(
-            log_pdf,
-            PintsPopulationMCMC,
-            chains=chains,
-            x0=x0,
-            cov0=cov0,
-            **kwargs,
-        )
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
+        super().__init__(problem, PintsPopulationMCMC, options=options)
 
 
 class RaoBlackwellACMC(BasePintsSampler):
@@ -452,27 +291,14 @@ class RaoBlackwellACMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
-        A function that calculates the log-probability density.
-    chains : int
-        The number of chains to run.
-    x0 : ndarray, optional
-        Initial positions for the chains.
-    cov0 : ndarray, optional
-        Initial covariance matrix.
-    **kwargs
-        Additional arguments to pass to the Rao-Blackwell Adaptive Covariance MCMC sampler.
+    problem : pybop.problems.base_problem.Problem
+        The problem to solve, providing the log-posterior.
+    options : pybop.PintsSamplerOptions, optional
+        Additional options for the sampler.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
-        super().__init__(
-            log_pdf,
-            PintsRaoBlackwellACMC,
-            chains=chains,
-            x0=x0,
-            cov0=cov0,
-            **kwargs,
-        )
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
+        super().__init__(problem, PintsRaoBlackwellACMC, options=options)
 
 
 class RelativisticMCMC(BasePintsSampler):
@@ -485,27 +311,14 @@ class RelativisticMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
-        A function that calculates the log-probability density.
-    chains : int
-        The number of chains to run.
-    x0 : ndarray, optional
-        Initial positions for the chains.
-    cov0 : ndarray, optional
-        Initial covariance matrix.
-    **kwargs
-        Additional arguments to pass to the Relativistic MCMC sampler.
+    problem : pybop.problems.base_problem.Problem
+        The problem to solve, providing the log-posterior.
+    options : pybop.PintsSamplerOptions, optional
+        Additional options for the sampler.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
-        super().__init__(
-            log_pdf,
-            PintsRelativisticMCMC,
-            chains=chains,
-            x0=x0,
-            cov0=cov0,
-            **kwargs,
-        )
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
+        super().__init__(problem, PintsRelativisticMCMC, options=options)
 
 
 class SliceDoublingMCMC(BasePintsSampler):
@@ -518,27 +331,14 @@ class SliceDoublingMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
-        A function that calculates the log-probability density.
-    chains : int
-        The number of chains to run.
-    x0 : ndarray, optional
-        Initial positions for the chains.
-    cov0 : ndarray, optional
-        Initial covariance matrix.
-    **kwargs
-        Additional arguments to pass to the Slice Doubling MCMC sampler.
+    problem : pybop.problems.base_problem.Problem
+        The problem to solve, providing the log-posterior.
+    options : pybop.PintsSamplerOptions, optional
+        Additional options for the sampler.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
-        super().__init__(
-            log_pdf,
-            PintsSliceDoublingMCMC,
-            chains=chains,
-            x0=x0,
-            cov0=cov0,
-            **kwargs,
-        )
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
+        super().__init__(problem, PintsSliceDoublingMCMC, options=options)
 
 
 class SliceRankShrinkingMCMC(BasePintsSampler):
@@ -551,27 +351,14 @@ class SliceRankShrinkingMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
-        A function that calculates the log-probability density.
-    chains : int
-        The number of chains to run.
-    x0 : ndarray, optional
-        Initial positions for the chains.
-    cov0 : ndarray, optional
-        Initial covariance matrix.
-    **kwargs
-        Additional arguments to pass to the Slice Rank Shrinking MCMC sampler.
+    problem : pybop.problems.base_problem.Problem
+        The problem to solve, providing the log-posterior.
+    options : pybop.PintsSamplerOptions, optional
+        Additional options for the sampler.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
-        super().__init__(
-            log_pdf,
-            PintsSliceRankShrinkingMCMC,
-            chains=chains,
-            x0=x0,
-            cov0=cov0,
-            **kwargs,
-        )
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
+        super().__init__(problem, PintsSliceRankShrinkingMCMC, options=options)
 
 
 class SliceStepoutMCMC(BasePintsSampler):
@@ -584,24 +371,11 @@ class SliceStepoutMCMC(BasePintsSampler):
 
     Parameters
     ----------
-    log_pdf : (pybop.LogPosterior or List[pybop.LogPosterior])
-        A function that calculates the log-probability density.
-    chains : int
-        The number of chains to run.
-    x0 : ndarray, optional
-        Initial positions for the chains.
-    cov0 : ndarray, optional
-        Initial covariance matrix.
-    **kwargs
-        Additional arguments to pass to the Slice Stepout MCMC sampler.
+    problem : pybop.problems.base_problem.Problem
+        The problem to solve, providing the log-posterior.
+    options : pybop.PintsSamplerOptions, optional
+        Additional options to pass to the sampler.
     """
 
-    def __init__(self, log_pdf, chains, x0=None, cov0=None, **kwargs):
-        super().__init__(
-            log_pdf,
-            PintsSliceStepoutMCMC,
-            chains=chains,
-            x0=x0,
-            cov0=cov0,
-            **kwargs,
-        )
+    def __init__(self, problem: Problem, options: PintsSamplerOptions | None = None):
+        super().__init__(problem, PintsSliceStepoutMCMC, options=options)

@@ -13,18 +13,19 @@ from os import path
 #
 try:
     import multiprocessing as mp
+
     if sys.platform == "win32":
         mp.set_start_method("spawn")
     else:
         mp.set_start_method("fork")
-except Exception as e: # pragma: no cover
+except Exception as e:  # pragma: no cover
     error_message = (
         "Multiprocessing context could not be set. "
         "Continuing import without setting context.\n"
         f"Error: {e}"
-    ) # pragma: no cover
-    print(error_message) # pragma: no cover
-    pass # pragma: no cover
+    )  # pragma: no cover
+    print(error_message)  # pragma: no cover
+    pass  # pragma: no cover
 
 #
 # Version info
@@ -43,12 +44,8 @@ script_path = path.dirname(__file__)
 #
 # Utilities
 #
-from ._utils import is_numeric, SymbolReplacer
+from ._utils import add_spaces, FailedVariable, FailedSolution, SymbolReplacer
 
-#
-# Experiment class
-#
-from ._experiment import Experiment
 
 #
 # Dataset class
@@ -70,36 +67,32 @@ from .transformation.transformations import (
 #
 # Parameter classes
 #
-from .parameters.parameter import Parameter, Parameters
-from .parameters.parameter_set import ParameterSet
+from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointLogPrior
+from .parameters.parameter import Parameter, Parameters, Inputs, ParameterError, ParameterNotFoundError, ParameterValidationError, ParameterValueValidator
 from .parameters.priors import BasePrior, Gaussian, Uniform, Exponential, JointLogPrior
 
 #
 # Model classes
 #
-from .models.base_model import BaseModel
 from .models import lithium_ion
-from .models import empirical
 from .models._exponential_decay import ExponentialDecayModel
-from .models.base_model import TimeSeriesState
-from .models.base_model import Inputs
+
+# Cost classes
+#
+from . import costs
+from .costs.base_cost import CallableCost
 
 #
 # Problem classes
 #
-from .problems.base_problem import BaseProblem
-from .problems.fitting_problem import FittingProblem
-from .problems.multi_fitting_problem import MultiFittingProblem
-from .problems.design_problem import DesignProblem
+from .problems.base_problem import Problem
+from .problems.pybamm_problem import PybammProblem
+from .problems.pybamm_eis_problem import PybammEISProblem
+from .problems.python_problem import PythonProblem
 
 #
 # Cost classes
 #
-from .costs.base_cost import BaseCost
-from .costs.fitting_costs import (
-    FittingCost,
-    ObserverCost,
-)
 from .costs.error_measures import (
     RootMeanSquaredError,
     MeanAbsoluteError,
@@ -108,31 +101,21 @@ from .costs.error_measures import (
     Minkowski,
     SumOfPower,
 )
-from .costs.design_costs import (
-    DesignCost,
-    GravimetricEnergyDensity,
-    VolumetricEnergyDensity,
-    GravimetricPowerDensity,
-    VolumetricPowerDensity,
-)
-from .costs._likelihoods import (
-    BaseLikelihood,
-    GaussianLogLikelihood,
-    GaussianLogLikelihoodKnownSigma,
-    ScaledLogLikelihood,
-    LogPosterior,
-)
-from .costs._weighted_cost import WeightedCost
 
 #
-# Experimental
+# Problem Builder
 #
-from .experimental.jax_costs import BaseJaxCost, JaxSumSquaredError, JaxLogNormalLikelihood, JaxGaussianLogLikelihoodKnownSigma
+from .builders.base import BaseBuilder
+from .builders.pybamm import Pybamm
+from .builders.pybamm_eis import PybammEIS
+from .builders.python import Python
+from .builders.multi_fitting import MultiFitting
+
 
 #
 # Evaluation
 #
-from ._evaluation import SequentialJaxEvaluator, SciPyEvaluator
+from ._evaluation import SciPyEvaluator, PopulationEvaluator
 
 #
 # Optimiser classes
@@ -144,14 +127,19 @@ from .optimisers._adamw import AdamWImpl
 from .optimisers._gradient_descent import GradientDescentImpl
 from .optimisers._simulated_annealing import SimulatedAnnealingImpl
 from .optimisers._irprop_plus import IRPropPlusImpl
-from .optimisers._cost_interface import CostInterface
 from .optimisers._result import OptimisationResult
-from .optimisers.base_optimiser import BaseOptimiser
-from .optimisers.base_pints_optimiser import BasePintsOptimiser
+from .optimisers.base_optimiser import (
+    BaseOptimiser,
+    OptimisationLogger,
+    OptimiserOptions,
+)
+from .optimisers.base_pints_optimiser import BasePintsOptimiser, PintsOptions
 from .optimisers.scipy_optimisers import (
     BaseSciPyOptimiser,
     SciPyMinimize,
-    SciPyDifferentialEvolution
+    ScipyMinimizeOptions,
+    SciPyDifferentialEvolution,
+    SciPyDifferentialEvolutionOptions,
 )
 from .optimisers.pints_optimisers import (
     GradientDescent,
@@ -167,32 +155,37 @@ from .optimisers.pints_optimisers import (
     AdamW,
     SimulatedAnnealing,
 )
-from .optimisers.optimisation import Optimisation
 
 #
 # Monte Carlo classes
 #
-from .samplers.chain_processor import ChainProcessor, MultiChainProcessor, SingleChainProcessor
-from .samplers.base_sampler import BaseSampler
-from .samplers.base_pints_sampler import BasePintsSampler
-from .samplers.pints_samplers import (
-    NUTS, DREAM, AdaptiveCovarianceMCMC,
-    DifferentialEvolutionMCMC, DramACMC,
-    EmceeHammerMCMC,
-    HaarioACMC, HaarioBardenetACMC,
-    HamiltonianMCMC, MALAMCMC,
-    MetropolisRandomWalkMCMC, MonomialGammaHamiltonianMCMC,
-    PopulationMCMC, RaoBlackwellACMC,
-    RelativisticMCMC, SliceDoublingMCMC,
-    SliceRankShrinkingMCMC, SliceStepoutMCMC,
+from .samplers.chain_processor import (
+    ChainProcessor,
+    MultiChainProcessor,
+    SingleChainProcessor,
 )
-from .samplers.mcmc_sampler import MCMCSampler
-
-#
-# Observer classes
-#
-from .observers.unscented_kalman import UnscentedKalmanFilterObserver
-from .observers.observer import Observer
+from .samplers.base_sampler import BaseSampler, SamplerOptions
+from .samplers.base_pints_sampler import BasePintsSampler, PintsSamplerOptions
+from .samplers.pints_samplers import (
+    NUTS,
+    DREAM,
+    AdaptiveCovarianceMCMC,
+    DifferentialEvolutionMCMC,
+    DramACMC,
+    EmceeHammerMCMC,
+    HaarioACMC,
+    HaarioBardenetACMC,
+    HamiltonianMCMC,
+    MALAMCMC,
+    MetropolisRandomWalkMCMC,
+    MonomialGammaHamiltonianMCMC,
+    PopulationMCMC,
+    RaoBlackwellACMC,
+    RelativisticMCMC,
+    SliceDoublingMCMC,
+    SliceRankShrinkingMCMC,
+    SliceStepoutMCMC,
+)
 
 #
 # Classification classes

@@ -113,7 +113,9 @@ class StandardPlot:
 
         return fig
 
-    def add_traces(self, x, y, trace_names=None, **trace_options):
+    def add_traces(
+        self, x, y, trace_names: str | list[str] | None = None, **trace_options
+    ):
         """
         Add a set of traces to the plot dictionary.
 

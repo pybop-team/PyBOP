@@ -1,4 +1,5 @@
 import numpy as np
+import pints
 from pints import Optimiser as PintsOptimiser
 
 
@@ -56,7 +57,12 @@ class GradientDescentImpl(PintsOptimiser):
         the objective function.
     """
 
-    def __init__(self, x0, sigma0=0.02, boundaries=None):
+    def __init__(
+        self,
+        x0: np.ndarray,
+        sigma0: list[float] | None,
+        boundaries: pints.Boundaries | None,
+    ):
         super().__init__(x0, sigma0, boundaries)
 
         # Initialise state

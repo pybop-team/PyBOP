@@ -1,12 +1,14 @@
-from typing import Optional
-
 import numpy as np
 
 from pybop import OptimisationResult
+from pybop.problems.base_problem import Problem
 
 
 def classify_using_hessian(
-    result: OptimisationResult, dx=None, cost_tolerance: Optional[float] = 1e-5
+    problem: Problem,
+    result: OptimisationResult,
+    dx=None,
+    cost_tolerance: float | None = 1e-5,
 ):
     """
     A simple check for parameter correlations based on numerical approximation
@@ -25,9 +27,12 @@ def classify_using_hessian(
     x = result.x
     dx = np.asarray(dx) if dx is not None else np.maximum(x, 1e-40) * 1e-2
     final_cost = result.final_cost
-    cost = result.cost
-    parameters = cost.parameters
-    minimising = result.minimising
+
+    def cost(x):
+        problem.set_params(x)
+        return problem.run()
+
+    parameters = problem.params
 
     n = len(x)
     if n != 2 or len(dx) != n:
@@ -62,9 +67,7 @@ def classify_using_hessian(
         return ""
 
     # Classify the result
-    if (minimising and np.any(costs < final_cost)) or (
-        not minimising and np.any(costs > final_cost)
-    ):
+    if np.any(costs < final_cost):
         message = "The optimiser has not converged to a stationary point."
         message += check_proximity_to_bounds(parameters, x, dx, names)
 

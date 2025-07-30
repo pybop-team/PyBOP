@@ -1,5 +1,3 @@
-from typing import Union
-
 import numpy as np
 import scipy.stats as stats
 
@@ -111,7 +109,7 @@ class BasePrior:
         ValueError
             If the size parameter is negative.
         """
-        if not isinstance(size, (int, tuple)):
+        if not isinstance(size, int | tuple):
             raise ValueError(
                 "size must be a positive integer or tuple of positive integers"
             )
@@ -214,6 +212,9 @@ class BasePrior:
         """
         return self.scale
 
+    def default_bounds(self) -> tuple[float, float]:
+        raise NotImplementedError()
+
 
 class Gaussian(BasePrior):
     """
@@ -253,6 +254,12 @@ class Gaussian(BasePrior):
             The value(s) of the first derivative at x.
         """
         return self.__call__(x), (self.loc - x) / self.scale**2
+
+    def default_bounds(self) -> tuple[float, float]:
+        multiplier = 15
+        lower = self.loc - multiplier * self.scale
+        upper = self.loc + multiplier * self.scale
+        return lower, upper
 
 
 class Uniform(BasePrior):
@@ -312,6 +319,9 @@ class Uniform(BasePrior):
         """
         return (self.upper - self.lower) / (2 * np.sqrt(3))
 
+    def default_bounds(self) -> tuple[float, float]:
+        return self.lower, self.upper
+
 
 class Exponential(BasePrior):
     """
@@ -352,6 +362,11 @@ class Exponential(BasePrior):
         dlog_pdf = -1 / self.scale * np.ones_like(x)
         return log_pdf, dlog_pdf
 
+    def default_bounds(self) -> tuple[float, float]:
+        lower = self.loc
+        upper = self.loc + 15 * self.scale
+        return lower, upper
+
 
 class JointLogPrior(BasePrior):
     """
@@ -366,13 +381,16 @@ class JointLogPrior(BasePrior):
     def __init__(self, *priors: BasePrior):
         super().__init__()
 
+        if all(prior is None for prior in priors):
+            return
+
         if not all(isinstance(prior, BasePrior) for prior in priors):
             raise ValueError("All priors must be instances of BasePrior")
 
         self._n_parameters = len(priors)
         self._priors: list[BasePrior] = list(priors)
 
-    def logpdf(self, x: Union[float, np.ndarray]) -> float:
+    def logpdf(self, x: float | np.ndarray) -> float:
         """
         Evaluates the joint log-prior distribution at a given point.
 
@@ -392,9 +410,9 @@ class JointLogPrior(BasePrior):
                 f"Input x must have length {self._n_parameters}, got {len(x)}"
             )
 
-        return sum(prior(x) for prior, x in zip(self._priors, x))
+        return sum(prior(x) for prior, x in zip(self._priors, x, strict=False))
 
-    def _logpdfS1(self, x: Union[float, np.ndarray]) -> tuple[float, np.ndarray]:
+    def _logpdfS1(self, x: float | np.ndarray) -> tuple[float, np.ndarray]:
         """
         Evaluates the first derivative of the joint log-prior distribution at a given point.
 
@@ -417,15 +435,18 @@ class JointLogPrior(BasePrior):
         log_probs = []
         derivatives = []
 
-        for prior, xi in zip(self._priors, x):
+        for prior, xi in zip(self._priors, x, strict=False):
             p, dp = prior.logpdfS1(xi)
             log_probs.append(p)
             derivatives.append(dp)
 
         output = sum(log_probs)
-        doutput = np.array(derivatives)
+        doutput = np.asarray(derivatives)
 
-        return output, doutput
+        if doutput.ndim == 1:
+            return output, doutput
+
+        return output, doutput.T
 
     def __repr__(self) -> str:
         priors_repr = ", ".join([repr(prior) for prior in self._priors])

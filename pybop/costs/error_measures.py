@@ -1,34 +1,71 @@
-from typing import Optional, Union
+from collections.abc import Callable
 
 import numpy as np
 
-from pybop import FittingCost
+from pybop.costs.base_cost import CallableCost
 
 
-class MeanSquaredError(FittingCost):
+class CallableError(CallableCost):
     """
     Mean square error (MSE) cost function.
 
     Computes the mean square error between model predictions and the target
     data, providing a measure of the differences between predicted values and
     observed values.
+
+    Parameters
+    ----------
+    weighting : np.ndarray, optional
+        The type of weighting array to use when taking the sum or mean of the error
+        measure. Options: "equal"(default), "domain", or a custom numpy array.
     """
 
-    def _error_measure(
+    def __init__(self, callable_fun: Callable, weighting: str | np.ndarray = None):
+        # should have two parameters: r and dy
+        if not callable_fun or callable_fun.__code__.co_argcount not in (1, 2):
+            raise ValueError(
+                "Callable must accept one or two parameters: r and dy (optional)."
+            )
+        self._callable = callable_fun
+
+    def __call__(
         self,
         r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
-        e = np.mean((np.abs(r) ** 2) * self.weighting)
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
+        return self._callable(r, dy)
+
+
+class MeanSquaredError(CallableCost):
+    """
+    Mean square error (MSE) cost function.
+
+    Computes the mean square error between model predictions and the target
+    data, providing a measure of the differences between predicted values and
+    observed values.
+
+    Parameters
+    ----------
+    weighting : np.ndarray, optional
+        The type of weighting array to use when taking the sum or mean of the error
+        measure. Options: "equal"(default), "domain", or a custom numpy array.
+    """
+
+    def __call__(
+        self,
+        r: np.ndarray,
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
+        e = np.sum(np.abs(r) ** 2 * self.weighting)
 
         if dy is not None:
-            de = 2 * np.mean((r * self.weighting) * dy, axis=(1, 2))
+            de = 2 * np.sum((r * self.weighting) * dy)
             return e, de
 
         return e
 
 
-class RootMeanSquaredError(FittingCost):
+class RootMeanSquaredError(CallableCost):
     """
     Root mean square error (RMSE) cost function.
 
@@ -37,46 +74,50 @@ class RootMeanSquaredError(FittingCost):
     observed values.
     """
 
-    def _error_measure(
+    def __call__(
         self,
         r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         e = np.sqrt(np.mean((np.abs(r) ** 2) * self.weighting))
 
         if dy is not None:
-            de = np.mean((r * self.weighting) * dy, axis=(1, 2)) / (
-                e + np.finfo(float).eps
-            )
+            de = np.mean((r * self.weighting) * dy) / (e + np.finfo(float).eps)
             return e, de
 
         return e
 
 
-class MeanAbsoluteError(FittingCost):
+class MeanAbsoluteError(CallableCost):
     """
     Mean absolute error (MAE) cost function.
 
     Computes the mean absolute error (MAE) between model predictions
     and target data. The MAE is a measure of the average magnitude
     of errors in a set of predictions, without considering their direction.
+
+    Parameters
+    ----------
+    weighting : np.ndarray, optional
+        The type of weighting array to use when taking the sum or mean of the error
+        measure. Options: "equal"(default), "domain", or a custom numpy array.
     """
 
-    def _error_measure(
+    def __call__(
         self,
         r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         e = np.mean(np.abs(r) * self.weighting)
 
         if dy is not None:
-            de = np.mean((np.sign(r) * self.weighting) * dy, axis=(1, 2))
+            de = np.mean((np.sign(r) * self.weighting) * dy)
             return e, de
 
         return e
 
 
-class SumSquaredError(FittingCost):
+class SumSquaredError(CallableCost):
     """
     Sum of squared error (SSE) cost function.
 
@@ -85,21 +126,21 @@ class SumSquaredError(FittingCost):
     predicted and observed values.
     """
 
-    def _error_measure(
+    def __call__(
         self,
         r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         e = np.sum(np.abs(r) ** 2 * self.weighting)
 
         if dy is not None:
-            de = 2 * np.sum((r * self.weighting) * dy, axis=(1, 2))
+            de = 2 * np.sum((r * self.weighting) * dy)
             return e, de
 
         return e
 
 
-class Minkowski(FittingCost):
+class Minkowski(CallableCost):
     """
     The Minkowski distance is a generalisation of several distance metrics,
     including the Euclidean and Manhattan distances. It is defined as:
@@ -128,10 +169,8 @@ class Minkowski(FittingCost):
         The order of the Minkowski distance.
     """
 
-    def __init__(
-        self, problem, p: float = 2.0, weighting: Union[str, np.ndarray] = None
-    ):
-        super().__init__(problem, weighting=weighting)
+    def __init__(self, p: float = 2.0, weighting: str | np.ndarray = None):
+        super().__init__(weighting=weighting)
         if p < 0:
             raise ValueError(
                 "The order of the Minkowski distance must be greater than 0."
@@ -142,24 +181,23 @@ class Minkowski(FittingCost):
             )
         self.p = float(p)
 
-    def _error_measure(
+    def __call__(
         self,
         r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         e = np.sum((np.abs(r) ** self.p) * self.weighting) ** (1 / self.p)
 
         if dy is not None:
             de = np.sum(
-                ((np.sign(r) * np.abs(r) ** (self.p - 1)) * self.weighting) * dy,
-                axis=(1, 2),
+                ((np.sign(r) * np.abs(r) ** (self.p - 1)) * self.weighting) * dy
             ) / (e ** (self.p - 1) + np.finfo(float).eps)
             return e, de
 
         return e
 
 
-class SumOfPower(FittingCost):
+class SumOfPower(CallableCost):
     """
     The Sum of Power [1] is a generalised cost function based on the p-th power
     of absolute differences between two vectors. It is defined as:
@@ -190,27 +228,24 @@ class SumOfPower(FittingCost):
         The power order for Sum of Power.
     """
 
-    def __init__(
-        self, problem, p: float = 2.0, weighting: Union[str, np.ndarray] = None
-    ):
-        super().__init__(problem, weighting=weighting)
+    def __init__(self, p: float = 2.0, weighting: str | np.ndarray = None):
+        super().__init__(weighting=weighting)
         if p < 0:
             raise ValueError("The order of 'p' must be greater than 0.")
         elif not np.isfinite(p):
             raise ValueError("p = np.inf is not yet supported.")
         self.p = float(p)
 
-    def _error_measure(
+    def __call__(
         self,
         r: np.ndarray,
-        dy: Optional[np.ndarray] = None,
-    ) -> Union[float, tuple[float, np.ndarray]]:
+        dy: np.ndarray | None = None,
+    ) -> float | tuple[float, np.ndarray]:
         e = np.sum((np.abs(r) ** self.p) * self.weighting)
 
         if dy is not None:
             de = self.p * np.sum(
-                ((np.sign(r) * np.abs(r) ** (self.p - 1)) * self.weighting) * dy,
-                axis=(1, 2),
+                ((np.sign(r) * np.abs(r) ** (self.p - 1)) * self.weighting) * dy
             )
             return e, de
 

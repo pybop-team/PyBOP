@@ -1,4 +1,5 @@
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -22,19 +23,23 @@ class Test_SPM_Parameterisation:
 
     @pytest.fixture
     def model(self):
-        parameter_set = pybop.ParameterSet("Chen2020")
+        return pybamm.lithium_ion.SPM()
+
+    @pytest.fixture
+    def parameter_values(self):
+        parameter_values = pybamm.ParameterValues("Chen2020")
         x = self.ground_truth
-        parameter_set.update(
+        parameter_values.update(
             {
                 "Negative electrode active material volume fraction": x[0],
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        return pybop.lithium_ion.SPM(parameter_set=parameter_set)
+        return parameter_values
 
     @pytest.fixture
     def parameters(self):
-        return pybop.Parameters(
+        return [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
                 prior=pybop.Uniform(0.3, 0.9),
@@ -45,25 +50,18 @@ class Test_SPM_Parameterisation:
                 "Positive electrode active material volume fraction",
                 prior=pybop.Uniform(0.3, 0.9),
                 initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
-                # no bounds
+                bounds=[0.3, 0.8],
             ),
-        )
-
-    @pytest.fixture(params=[0.4, 0.7])
-    def init_soc(self, request):
-        return request.param
+        ]
 
     @pytest.fixture(
         params=[
-            pybop.GaussianLogLikelihoodKnownSigma,
-            pybop.GaussianLogLikelihood,
-            pybop.RootMeanSquaredError,
-            pybop.MeanAbsoluteError,
-            pybop.MeanSquaredError,
-            pybop.SumSquaredError,
-            pybop.SumOfPower,
-            pybop.Minkowski,
-            pybop.LogPosterior,
+            pybop.costs.pybamm.RootMeanSquaredError,
+            pybop.costs.pybamm.MeanAbsoluteError,
+            pybop.costs.pybamm.MeanSquaredError,
+            pybop.costs.pybamm.SumSquaredError,
+            pybop.costs.pybamm.SumOfPower,
+            pybop.costs.pybamm.Minkowski,
         ]
     )
     def cost_cls(self, request):
@@ -90,225 +88,144 @@ class Test_SPM_Parameterisation:
         return request.param
 
     @pytest.fixture
-    def optim(self, optimiser, model, parameters, cost_cls, init_soc):
-        # Form dataset
-        solution = self.get_data(model, init_soc)
-        dataset = pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
-            }
-        )
-
-        # Define the problem
-        problem = pybop.FittingProblem(model, parameters, dataset)
-
-        # Construct the cost
-        if cost_cls is pybop.GaussianLogLikelihoodKnownSigma:
-            cost = cost_cls(problem, sigma0=self.sigma0)
-        elif cost_cls is pybop.GaussianLogLikelihood:
-            cost = cost_cls(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
-        elif cost_cls is pybop.LogPosterior:
-            cost = cost_cls(
-                pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
-            )
-        elif cost_cls in [pybop.SumOfPower, pybop.Minkowski]:
-            cost = cost_cls(problem, p=2.5)
-        else:
-            cost = cost_cls(problem)
-
-        max_unchanged_iter = 100
-        sigma0 = (
-            [0.02, 0.02, 2e-3]
-            if isinstance(cost, pybop.GaussianLogLikelihood)
-            else 0.02
-        )
-        if optimiser is pybop.SimulatedAnnealing:
-            max_unchanged_iter = 450
-            sigma0 = [0.05, 0.05]
-            if isinstance(cost, pybop.GaussianLogLikelihood):
-                sigma0.append(2e-3)
-
-        # Construct optimisation object
-        common_args = {
-            "cost": cost,
-            "max_iterations": 450,
-            "max_unchanged_iterations": max_unchanged_iter,
-            "sigma0": sigma0,
-        }
-
-        if optimiser in [
-            pybop.SciPyDifferentialEvolution,
-            pybop.CuckooSearch,
-        ]:
-            common_args["bounds"] = {"lower": [0.375, 0.375], "upper": [0.775, 0.775]}
-            if isinstance(cost, pybop.GaussianLogLikelihood):
-                common_args["bounds"]["lower"].append(0.0)
-                common_args["bounds"]["upper"].append(0.05)
-
-        # Set sigma0 and create optimiser
-        optim = optimiser(**common_args)
-
-        # Set Hypers
-        if isinstance(optim, pybop.SimulatedAnnealing):
-            optim.optimiser.cooling_rate = 0.85  # Cool quickly
-        if isinstance(optim, pybop.CuckooSearch):
-            optim.optimiser.pa = 0.55  # Increase abandon rate for limited iterations
-        if isinstance(optim, pybop.AdamW):
-            optim.optimiser.b1 = 0.9
-            optim.optimiser.b2 = 0.9
-        return optim
-
-    def test_optimisers(self, optim):
-        x0 = optim.parameters.initial_value()
-
-        # Add sigma0 to ground truth for GaussianLogLikelihood
-        if isinstance(optim.cost, pybop.GaussianLogLikelihood):
-            self.ground_truth = np.concatenate(
-                (self.ground_truth, np.asarray([self.sigma0]))
-            )
-
-        initial_cost = optim.cost(x0)
-        results = optim.run()
-
-        # Assertions
-        if np.allclose(x0, self.ground_truth, atol=1e-5):
-            raise AssertionError("Initial guess is too close to ground truth")
-
-        if results.minimising:
-            assert initial_cost > results.final_cost
-        else:
-            assert initial_cost < results.final_cost
-
-        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
-        if isinstance(optim.cost, pybop.GaussianLogLikelihood):
-            np.testing.assert_allclose(results.x[-1], self.sigma0, atol=1e-3)
-
-    @pytest.fixture
-    def two_signal_cost(self, parameters, model, cost_cls):
-        # Form dataset
-        solution = self.get_data(model, init_soc=0.5)
-        dataset = pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
-                "Bulk open-circuit voltage [V]": self.noisy(
-                    solution["Bulk open-circuit voltage [V]"].data, self.sigma0
-                ),
-            }
-        )
-
-        # Define the cost to optimise
-        signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
-        problem = pybop.FittingProblem(model, parameters, dataset, signal=signal)
-
-        if cost_cls is pybop.GaussianLogLikelihoodKnownSigma:
-            return cost_cls(problem, sigma0=self.sigma0)
-        elif cost_cls is pybop.GaussianLogLikelihood:
-            return cost_cls(problem, sigma0=self.sigma0 * 4)  # Initial sigma0 guess
-        elif cost_cls is pybop.LogPosterior:
-            return cost_cls(
-                pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=self.sigma0)
-            )
-        else:
-            return cost_cls(problem)
-
-    @pytest.mark.parametrize(
-        "multi_optimiser",
-        [
-            pybop.SciPyDifferentialEvolution,
-            pybop.IRPropMin,
-            pybop.CMAES,
-        ],
-    )
-    def test_multiple_signals(self, multi_optimiser, two_signal_cost):
-        x0 = two_signal_cost.parameters.initial_value()
-        combined_sigma0 = np.asarray([self.sigma0, self.sigma0])
-
-        common_args = {
-            "cost": two_signal_cost,
-            "max_iterations": 250,
-            "max_unchanged_iterations": 60,
-            "sigma0": [0.03, 0.03, 6e-3, 6e-3]
-            if isinstance(two_signal_cost, pybop.GaussianLogLikelihood)
-            else 0.03,
-        }
-
-        if multi_optimiser is pybop.SciPyDifferentialEvolution:
-            common_args["bounds"] = {"lower": [0.375, 0.375], "upper": [0.775, 0.775]}
-            if isinstance(two_signal_cost, pybop.GaussianLogLikelihood):
-                common_args["bounds"]["lower"].extend([0.0, 0.0])
-                common_args["bounds"]["upper"].extend([0.05, 0.05])
-
-        # Test each optimiser
-        optim = multi_optimiser(**common_args)
-
-        # Add sigma0 to ground truth for GaussianLogLikelihood
-        if isinstance(two_signal_cost, pybop.GaussianLogLikelihood):
-            self.ground_truth = np.concatenate((self.ground_truth, combined_sigma0))
-
-        initial_cost = optim.cost(optim.parameters.initial_value())
-        results = optim.run()
-
-        # Assertions
-        if np.allclose(x0, self.ground_truth, atol=1e-5):
-            raise AssertionError("Initial guess is too close to ground truth")
-
-        if results.minimising:
-            assert initial_cost > results.final_cost
-        else:
-            assert initial_cost < results.final_cost
-
-        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
-        if isinstance(two_signal_cost, pybop.GaussianLogLikelihood):
-            np.testing.assert_allclose(results.x[-2:], combined_sigma0, atol=5e-4)
-
-    @pytest.mark.parametrize("init_soc", [0.4, 0.6])
-    def test_model_misparameterisation(self, parameters, model, init_soc):
-        # Define two different models with different parameter sets
-        # The optimisation should fail as the models are not the same
-        second_parameter_set = pybop.ParameterSet("Ecker2015")
-        second_model = pybop.lithium_ion.SPMe(parameter_set=second_parameter_set)
-
-        # Form dataset
-        solution = self.get_data(second_model, init_soc)
-        dataset = pybop.Dataset(
-            {
-                "Time [s]": solution["Time [s]"].data,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": solution["Voltage [V]"].data,
-            }
-        )
-
-        # Define the cost to optimise
-        problem = pybop.FittingProblem(model, parameters, dataset)
-        cost = pybop.RootMeanSquaredError(problem)
-
-        # Select optimiser
-        optimiser = pybop.XNES
-
-        # Build the optimisation problem
-        optim = optimiser(cost=cost)
-        initial_cost = optim.cost(optim.x0)
-
-        # Run the optimisation problem
-        results = optim.run()
-
-        # Assertion for final_cost
-        assert initial_cost > results.final_cost
-
-        # Assertion for x
-        with np.testing.assert_raises(AssertionError):
-            np.testing.assert_allclose(results.x, self.ground_truth, atol=2e-2)
-
-    def get_data(self, model, init_soc):
-        initial_state = {"Initial SoC": init_soc}
-        experiment = pybop.Experiment(
+    def dataset(self, model, parameter_values):
+        experiment = pybamm.Experiment(
             [
+                "Rest for 1 second",
                 "Discharge at 0.5C for 8 minutes (8 second period)",
                 "Charge at 0.5C for 8 minutes (8 second period)",
             ]
         )
-        return model.predict(initial_state=initial_state, experiment=experiment)
+        sim = pybamm.Simulation(
+            model=model,
+            parameter_values=parameter_values,
+            experiment=experiment,
+        )
+        sol = sim.solve()
+        _, mask = np.unique(sol.t, return_index=True)
+        return pybop.Dataset(
+            {
+                "Time [s]": sol.t[mask],
+                "Current function [A]": sol["Current [A]"].data[mask],
+                "Voltage [V]": self.noisy(sol["Voltage [V]"].data[mask], self.sigma0),
+            }
+        )
+
+    @pytest.fixture
+    def problem(self, model, parameters, cost_cls, parameter_values, dataset):
+        builder = pybop.Pybamm()
+        builder.set_simulation(model, parameter_values)
+        builder.set_dataset(dataset)
+        for p in parameters:
+            builder.add_parameter(p)
+        signal = "Voltage [V]"
+        if cost_cls is pybop.costs.pybamm.NegativeGaussianLogLikelihood:
+            cost = cost_cls(signal, signal)
+        elif cost_cls in [pybop.SumOfPower, pybop.Minkowski]:
+            cost = cost_cls(signal, signal, p=2.5)
+        else:
+            cost = cost_cls(signal, signal)
+        builder.add_cost(cost)
+        problem = builder.build()
+        return problem
+
+    def test_problem(self, problem):
+        problem.set_params(self.ground_truth)
+        cost_at_ground = problem.run()
+        ground_plus_delta = self.ground_truth + np.random.normal(
+            0, 0.1, len(self.ground_truth)
+        )
+        problem.set_params(ground_plus_delta)
+        cost_at_ground_plus_delta = problem.run()
+        assert cost_at_ground < cost_at_ground_plus_delta
+
+    @pytest.fixture
+    def optim(self, optimiser, problem):
+        options = optimiser.default_options()
+        options.max_iterations = 100
+        if isinstance(options, pybop.SciPyDifferentialEvolutionOptions):
+            options.atol = 1e-6
+        elif isinstance(options, pybop.PintsOptions):
+            options.absolute_tolerance = 1e-6
+            options.max_unchanged_iterations = 30
+            options.sigma = 2e-2
+
+        # Set sigma0 and create optimiser
+        optim = optimiser(problem, options)
+        if isinstance(optim, pybop.SimulatedAnnealing):
+            optim.optimiser.cooling_rate = 0.825  # Cool quickly
+        return optim
+
+    def test_optimisers(self, optim, cost_cls):
+        x0 = optim.problem.params.get_initial_values()
+
+        # Add sigma0 to ground truth for GaussianLogLikelihood
+        if cost_cls in (pybop.costs.pybamm.NegativeGaussianLogLikelihood,):
+            self.ground_truth = np.concatenate(
+                (self.ground_truth, np.asarray([self.sigma0]))
+            )
+
+        optim.problem.set_params(x0)
+        initial_cost = optim.problem.run()
+        results = optim.run()
+
+        # Assertions
+        if np.allclose(x0, self.ground_truth, atol=1e-5):
+            raise AssertionError("Initial guess is too close to ground truth")
+
+        assert initial_cost > results.final_cost
+
+        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
+
+    def test_with_init_soc(self, model, parameters, parameter_values):
+        experiment = pybamm.Experiment(
+            [
+                "Rest for 2 seconds",
+                "Discharge at 0.5C for 8 minutes (8 second period)",
+                "Charge at 0.5C for 8 minutes (8 second period)",
+            ]
+        )
+        init_soc = 0.6
+        sim = pybamm.Simulation(
+            model=model,
+            parameter_values=parameter_values,
+            experiment=experiment,
+        )
+        sol = sim.solve(initial_soc=init_soc)
+        _, mask = np.unique(sol.t, return_index=True)
+        dataset = pybop.Dataset(
+            {
+                "Time [s]": sol.t[mask],
+                "Current function [A]": sol["Current [A]"].data[mask],
+                "Voltage [V]": self.noisy(sol["Voltage [V]"].data[mask], self.sigma0),
+            }
+        )
+        builder = pybop.Pybamm()
+        builder.set_simulation(
+            model,
+            parameter_values=parameter_values,
+            initial_state=f"{sol['Voltage [V]'].data[0]} V",
+        )
+        builder.set_dataset(dataset)
+        for p in parameters:
+            builder.add_parameter(p)
+        signal = "Voltage [V]"
+        builder.add_cost(pybop.costs.pybamm.SumSquaredError(signal, signal))
+        problem = builder.build()
+        options = pybop.PintsOptions(
+            max_iterations=100,
+            absolute_tolerance=1e-6,
+            max_unchanged_iterations=30,
+        )
+        optim = pybop.NelderMead(problem, options)
+
+        x0 = optim.problem.params.get_initial_values()
+        optim.problem.set_params(x0)
+        initial_cost = optim.problem.run()
+        results = optim.run()
+        # Assertions
+        if np.allclose(x0, self.ground_truth, atol=1e-5):
+            raise AssertionError("Initial guess is too close to ground truth")
+
+        assert initial_cost > results.final_cost
+        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)

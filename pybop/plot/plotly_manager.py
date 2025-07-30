@@ -31,10 +31,7 @@ class PlotlyManager:
         """
         Initialize the PlotlyManager, ensuring Plotly is installed and configured.
         """
-        self.go = None
-        self.pio = None
-        self.make_subplots = None
-        self.ensure_plotly_installed()
+        self.go, self.pio, self.make_subplots = self.ensure_plotly_installed()
         self.check_renderer_settings()
         self.check_browser_availability()
 
@@ -47,11 +44,10 @@ class PlotlyManager:
             import plotly.io as pio
             from plotly.subplots import make_subplots
 
-            self.go = go
-            self.pio = pio
-            self.make_subplots = make_subplots
+            make_subplots = make_subplots
         except ImportError:
-            self.prompt_for_plotly_installation()
+            go, pio, make_subplots = self.prompt_for_plotly_installation()
+        return go, pio, make_subplots
 
     def prompt_for_plotly_installation(self):
         """
@@ -66,7 +62,7 @@ class PlotlyManager:
         )
         if user_input == "y":
             self.install_plotly()
-            self.post_install_setup()
+            return self.post_install_setup()
         else:
             print("Installation cancelled by user.")
             sys.exit(1)  # Exit if user cancels installation
@@ -90,14 +86,12 @@ class PlotlyManager:
         import plotly.io as pio
         from plotly.subplots import make_subplots
 
-        self.go = go
-        self.pio = pio
-        self.make_subplots = make_subplots
         if pio.renderers.default == "":
             pio.renderers.default = "browser"
             print(
                 'Set default renderer to "browser" as it was empty after installation.'
             )
+        return go, pio, make_subplots
 
     def check_renderer_settings(self):
         """

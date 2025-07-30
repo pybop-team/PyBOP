@@ -1,18 +1,11 @@
-import warnings
-
 import numpy as np
-from pybamm import DummySolver, Parameter, ParameterValues, citations
-from pybamm import lithium_ion as pybamm_lithium_ion
-from pybamm import t as pybamm_t
-
-from pybop import ParameterSet
+import pybamm
+from pybamm import DummySolver, Parameter, ParameterValues, citations, lithium_ion
 
 
-class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
+class WeppnerHuggins(lithium_ion.BaseModel):
     """
-    WeppnerHuggins Model for GITT. Credit: pybamm-param team.
-
-    This model can be used with PyBOP through the `pybop.WeppnerHuggins` class.
+    Represents the Weppner & Huggins model to fit diffusion coefficients to GITT data.
 
     Parameters
     ----------
@@ -59,6 +52,13 @@ class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
             }
         """)
 
+        # `self.param` is a class containing all the relevant parameters and functions for
+        # this model. These are purely symbolic at this stage, and will be set by the
+        # `ParameterValues` class when the model is processed.
+        self.options["working electrode"] = "positive"
+        self._summary_variables = []
+
+        t = pybamm_t
         ######################
         # Parameters
         ######################
@@ -80,19 +80,22 @@ class BaseWeppnerHuggins(pybamm_lithium_ion.BaseModel):
         ######################
         # Governing equations
         ######################
-        # Surface stoichiometry
-        sto_surf = 2 * I / (3 * Q_th) * (pybamm_t * tau_d / np.pi) ** 0.5
+        u_surf = (
+            (2 / (np.pi**0.5))
+            * (i_app / ((d_s**0.5) * a * self.param.F * l_w))
+            * (t**0.5)
+        )
         # Linearised voltage
         V = U + U_prime * sto_surf
 
         ######################
         # (Some) variables
         ######################
+        I = self.param.current_with_time
         self.variables = {
             "Voltage [V]": V,
-            "Time [s]": pybamm_t,
-            "Current [A]": I,
-            "Current variable [A]": I,  # for compatibility with pybamm.Experiment
+            "Time [s]": t,
+            "Current [A]": self.param.current_with_time,
         }
 
         # Set the built property on creation to prevent unnecessary model rebuilds

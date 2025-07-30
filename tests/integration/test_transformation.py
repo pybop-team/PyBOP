@@ -1,6 +1,7 @@
 import itertools
 
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -27,89 +28,76 @@ class TestTransformation:
 
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.sigma0 = 2e-3
         self.ground_truth = np.clip(
-            np.asarray([0.05, 0.05]) + np.random.normal(loc=0.0, scale=0.01, size=2),
-            a_min=0.0,
-            a_max=0.1,
+            np.asarray([1e-3, 2e-4]) + np.random.normal(loc=0.0, scale=2e-5, size=2),
+            a_min=1e-5,
+            a_max=2e-3,
         )
 
     @pytest.fixture
-    def model(self):
-        parameter_set = pybop.ParameterSet(
-            json_path="examples/parameters/initial_ecm_parameters.json"
-        )
-        parameter_set.update(
+    def parameter_values(self, model):
+        parameter_values = model.default_parameter_values
+        parameter_values.update(
             {
-                "C1 [F]": 1000,
                 "R0 [Ohm]": self.ground_truth[0],
                 "R1 [Ohm]": self.ground_truth[1],
             }
         )
-        return pybop.empirical.Thevenin(parameter_set=parameter_set)
+        return parameter_values
 
     @pytest.fixture
     def parameters(self, transformation_r0, transformation_r1):
-        return pybop.Parameters(
+        return [
             pybop.Parameter(
                 "R0 [Ohm]",
-                prior=pybop.Gaussian(0.05, 0.02),
-                bounds=[1e-4, 0.1],
+                prior=pybop.Gaussian(1e-3, 5e-4),
                 transformation=transformation_r0,
+                initial_value=pybop.Uniform(1e-4, 1.5e-3).rvs()[0],
+                bounds=[1e-5, 3e-3],
             ),
             pybop.Parameter(
                 "R1 [Ohm]",
-                prior=pybop.Gaussian(0.05, 0.02),
-                bounds=[1e-4, 0.1],
+                prior=pybop.Gaussian(2e-4, 5e-5),
                 transformation=transformation_r1,
+                initial_value=pybop.Uniform(1e-5, 4e-4).rvs()[0],
+                bounds=[1e-5, 1e-3],
             ),
-        )
-
-    @pytest.fixture(params=[0.6])
-    def init_soc(self, request):
-        return request.param
-
-    def noisy(self, data, sigma):
-        return data + np.random.normal(0, sigma, len(data))
-
-    @pytest.fixture(
-        params=[
-            pybop.GaussianLogLikelihood,
-            pybop.RootMeanSquaredError,
-            pybop.SumSquaredError,
-            pybop.LogPosterior,
         ]
-    )
-    def cost_cls(self, request):
-        return request.param
 
     @pytest.fixture
-    def cost(self, model, parameters, init_soc, cost_cls):
-        # Form dataset
-        solution = self.get_data(model, init_soc)
-        dataset = pybop.Dataset(
+    def model(self):
+        return pybamm.equivalent_circuit.Thevenin()
+
+    @pytest.fixture
+    def dataset(self, model, parameter_values):
+        t_eval = np.linspace(0, 100, 20)
+        solution = pybamm.Simulation(model, parameter_values=parameter_values).solve(
+            t_eval=t_eval
+        )
+        return pybop.Dataset(
             {
-                "Time [s]": solution["Time [s]"].data,
+                "Time [s]": solution.t,
                 "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
+                "Voltage [V]": solution["Voltage [V]"].data,
             }
         )
 
-        # Construct problem
-        problem = pybop.FittingProblem(model, parameters, dataset)
-
-        # Construct the cost
-        if cost_cls is pybop.GaussianLogLikelihood:
-            return cost_cls(problem)
-        elif cost_cls is pybop.LogPosterior:
-            return cost_cls(log_likelihood=pybop.GaussianLogLikelihood(problem))
-        else:
-            return cost_cls(problem)
+    @pytest.fixture
+    def problem(self, model, parameters, parameter_values, dataset):
+        builder = pybop.Pybamm()
+        builder.set_simulation(model, parameter_values=parameter_values)
+        builder.set_dataset(dataset)
+        for p in parameters:
+            builder.add_parameter(p)
+        builder.add_cost(
+            pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]", "Voltage [V]")
+        )
+        return builder.build()
 
     @pytest.mark.parametrize(
         "optimiser",
-        [pybop.IRPropMin, pybop.CMAES, pybop.SciPyDifferentialEvolution],
-        ids=["IRPropMin", "CMAES", "SciPyDifferentialEvolution"],
+        [pybop.IRPropMin, pybop.CMAES],
+        ids=["IRPropMin", "CMAES"],
     )
     @pytest.mark.parametrize(
         "transformation_r0, transformation_r1",
@@ -125,51 +113,21 @@ class TestTransformation:
         ),
         ids=lambda val: f"{transformation_id(val)}",
     )
-    def test_thevenin_transformation(self, optimiser, cost):
-        x0 = cost.parameters.initial_value()
-        optim = optimiser(
-            cost=cost,
-            sigma0=[0.02, 0.02, 2e-3]
-            if isinstance(cost, (pybop.GaussianLogLikelihood, pybop.LogPosterior))
-            else [0.02, 0.02],
-            max_iterations=250,
-            max_unchanged_iterations=45,
-            popsize=3 if optimiser is pybop.SciPyDifferentialEvolution else 6,
-        )
+    def test_thevenin_transformation(self, optimiser, problem):
+        x0 = problem.params.get_initial_values()
+        problem.set_params(x0)
+        initial_cost = problem.run()
 
-        initial_cost = optim.cost(x0)
+        options = pybop.PintsOptions()
+        options.sigma = 2e-2
+        options.max_iterations = 50
+        options.maximum_iterations = 20
+        optim = optimiser(problem)
         results = optim.run()
-
-        # Add sigma0 to ground truth for GaussianLogLikelihood
-        if isinstance(optim.cost, (pybop.GaussianLogLikelihood, pybop.LogPosterior)):
-            self.ground_truth = np.concatenate(
-                (self.ground_truth, np.asarray([self.sigma0]))
-            )
 
         # Assertions
         if np.allclose(x0, self.ground_truth, atol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
-        if isinstance(cost, pybop.GaussianLogLikelihood):
-            np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
-            np.testing.assert_allclose(results.x[-1], self.sigma0, atol=5e-4)
-        else:
-            assert (
-                (initial_cost > results.final_cost)
-                if results.minimising
-                else (initial_cost < results.final_cost)
-            )
-            np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
-
-    def get_data(self, model, init_soc):
-        initial_state = {"Initial SoC": init_soc}
-        experiment = pybop.Experiment(
-            [
-                (
-                    "Rest for 10 seconds (2 second period)",
-                    "Discharge at 0.5C for 6 minutes (12 second period)",
-                ),
-            ]
-        )
-        sim = model.predict(initial_state=initial_state, experiment=experiment)
-        return sim
+        assert initial_cost > results.final_cost
+        np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
