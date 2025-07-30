@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from collections.abc import Callable
 
 import numpy as np
 
@@ -112,8 +112,8 @@ class OCPAverage(BaseApplication):
         ocp_charge: pybop.Dataset,
         n_sto_points: int = 101,
         allow_stretching: bool = True,
-        cost: Optional[pybop.BaseCost] = pybop.MeanAbsoluteError,
-        optimiser: Optional[pybop.BaseOptimiser] = pybop.SciPyMinimize,
+        cost: pybop.BaseCost | None = pybop.MeanAbsoluteError,
+        optimiser: pybop.BaseOptimiser | None = pybop.SciPyMinimize,
         verbose: bool = True,
     ):
         self.ocp_discharge = ocp_discharge
@@ -282,8 +282,8 @@ class OCPCapacityToStoichiometry(BaseApplication):
         self,
         ocv_dataset: pybop.Dataset,
         ocv_function: Callable,
-        cost: Optional[pybop.BaseCost] = pybop.RootMeanSquaredError,
-        optimiser: Optional[pybop.BaseOptimiser] = pybop.SciPyMinimize,
+        cost: pybop.BaseCost | None = pybop.RootMeanSquaredError,
+        optimiser: pybop.BaseOptimiser | None = pybop.SciPyMinimize,
         verbose: bool = True,
     ):
         self.ocv_dataset = ocv_dataset

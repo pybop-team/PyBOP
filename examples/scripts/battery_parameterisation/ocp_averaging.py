@@ -77,6 +77,7 @@ for discharge_dataset, charge_dataset in zip(
         discharge_dataset_positive,
     ],
     [charge_dataset_fullcell, charge_dataset_negative, charge_dataset_positive],
+    strict=False,
 ):
     # Estimate the shift and generate the average open-circuit potential
     ocp_average = pybop.OCPAverage(

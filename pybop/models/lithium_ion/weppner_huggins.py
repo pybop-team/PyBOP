@@ -1,5 +1,4 @@
 import numpy as np
-import pybamm
 from pybamm import DummySolver, Parameter, ParameterValues, citations, lithium_ion
 
 

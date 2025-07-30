@@ -1,5 +1,5 @@
 import warnings
-from typing import Callable, Optional
+from collections.abc import Callable
 
 import numpy as np
 from pybamm import Interpolant as PybammInterpolant
@@ -15,8 +15,8 @@ class BaseApplication:
 
     def check_monotonicity(self, voltage):
         if not (
-            all(x < y for x, y in zip(voltage, voltage[1:]))
-            or all(x > y for x, y in zip(voltage, voltage[1:]))
+            all(x < y for x, y in zip(voltage, voltage[1:], strict=False))
+            or all(x > y for x, y in zip(voltage, voltage[1:], strict=False))
         ):
             warnings.warn("OCV is not strictly monotonic.", stacklevel=1)
 
@@ -69,7 +69,7 @@ class InverseOCV:
     def __init__(
         self,
         ocv_function: Callable,
-        optimiser: Optional[pybop.BaseOptimiser] = pybop.SciPyMinimize,
+        optimiser: pybop.BaseOptimiser | None = pybop.SciPyMinimize,
         verbose: bool = False,
     ):
         self.ocv_function = ocv_function
