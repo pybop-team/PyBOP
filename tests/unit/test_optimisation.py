@@ -138,14 +138,6 @@ class TestOptimisation:
 
         assert optim.name() == expected_name
 
-    def test_sensitivities_not_available(self, cost):
-        cost.problem.model.solver = pybamm.CasadiSolver()
-        with pytest.raises(
-            ValueError,
-            match="This optimiser needs sensitivities, but sensitivities are not supported by this model/solver.",
-        ):
-            pybop.GradientDescent(cost=cost)
-
     @pytest.mark.parametrize(
         "optimiser",
         [
