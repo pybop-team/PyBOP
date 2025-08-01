@@ -194,14 +194,14 @@ class Test_Arbitrary_Models:
             pybop.Parameter(
                 "a",
                 initial_value=-4,
-                bounds=(-10, 0),
+                bounds=[-10, 0],
             )
         )
         builder.add_parameter(
             pybop.Parameter(
                 "d",
                 initial_value=-4,
-                bounds=(-10, 0),
+                bounds=[-10, 0],
             )
         )
 
@@ -215,9 +215,8 @@ class Test_Arbitrary_Models:
         problem.set_params(np.array([-4, -4]))
 
         # Optimise
-        optim = pybop.IRPropPlus(
-            problem,
-        )
+        options = pybop.PintsOptions(sigma=0.02)
+        optim = pybop.IRPropPlus(problem, options=options)
 
         results = optim.run()
 
@@ -256,14 +255,14 @@ class Test_Arbitrary_Models:
             pybop.Parameter(
                 "b",
                 initial_value=-1,
-                bounds=(-4, 4),
+                bounds=[-4, 4],
             )
         )
         builder.add_parameter(
             pybop.Parameter(
                 "c",
                 initial_value=-1,
-                bounds=(-4, 4),
+                bounds=[-4, 4],
             )
         )
 
