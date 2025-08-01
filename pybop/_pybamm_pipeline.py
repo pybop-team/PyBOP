@@ -8,6 +8,13 @@ import pybamm
 from pybop import FailedSolution, Inputs, Parameters
 
 
+class OperatingMode:
+    """Enum-like class for operating modes."""
+
+    WITHOUT_EXPERIMENT = "without experiment"
+    WITH_EXPERIMENT = "with experiment"
+
+
 class PybammPipeline:
     """
     A class to build a PyBaMM pipeline for a given model and data, and run the resultant simulation.
@@ -29,8 +36,8 @@ class PybammPipeline:
         parameter_values: pybamm.ParameterValues | None = None,
         pybop_parameters: Parameters | None = None,
         solver: pybamm.BaseSolver | None = None,
-        t_start: np.number = 0.0,
-        t_end: np.number = 1.0,
+        experiment: pybamm.Experiment = None,
+        t_eval: np.ndarray = None,
         t_interp: np.ndarray | None = None,
         var_pts: dict | None = None,
         initial_state: float | str | None = None,
@@ -47,10 +54,9 @@ class PybammPipeline:
             The parameters to be used in the model.
         solver : pybamm.BaseSolver
             The solver to be used. If None, the idaklu solver will be used with multithreading.
-        t_start : number
-            The start time of the simulation.
-        t_end : number
-            The end time of the simulation.
+        t_eval : np.ndarray
+            The time points to stop the solver at. These points should be used to inform the
+            solver of discontinuities in the solution.
         t_interp : np.ndarray
             The time points at which to interpolate the solution. If None, no interpolation will be done.
         initial_state: float | str
@@ -68,17 +74,17 @@ class PybammPipeline:
         self._pybop_parameters = pybop_parameters or Parameters([])
         self._parameter_names = self.pybop_parameters.keys()
         self._geometry = model.default_geometry
-        self._methods = model.default_spatial_methods
+        self._var_pts = var_pts or model.default_var_pts
+        self._spatial_methods = model.default_spatial_methods  # allow user input
         self._n_threads = n_threads or self.get_avaliable_thread_count()
-        self._t_start = np.float64(t_start)
-        self._t_end = np.float64(t_end)
+        self._t_eval = t_eval
         self._t_interp = t_interp
         self._initial_state = initial_state
         self._built_initial_soc = None
-        self._var_pts = var_pts or model.default_var_pts
-        self._submesh_types = model.default_submesh_types
+        self._submesh_types = model.default_submesh_types  # allow user input
         self._built_model = self._model
         self._cost_names = cost_names
+        self._setup_operating_mode(experiment)
         self.requires_rebuild = (
             build_on_eval
             if build_on_eval is not None
@@ -93,15 +99,26 @@ class PybammPipeline:
 
         self._solver = (
             pybamm.IDAKLUSolver(
-                output_variables=self._cost_names,
                 on_failure="ignore",
                 atol=1e-6,
                 rtol=1e-6,
                 options=solver_options,
+                output_variables=self._cost_names
+                if self.operating_mode is OperatingMode.WITHOUT_EXPERIMENT
+                else None,
             )
             if solver is None
             else solver
         )
+
+    def _setup_operating_mode(self, experiment) -> None:
+        if experiment is not None:
+            self.operating_mode = OperatingMode.WITH_EXPERIMENT
+            self.experiment = experiment
+        else:
+            self.operating_mode = OperatingMode.WITHOUT_EXPERIMENT
+            self._model.events = []  # Turn off events for non-experiment optimisation
+            self.experiment = None
 
     @staticmethod
     def get_avaliable_thread_count():
@@ -200,7 +217,7 @@ class PybammPipeline:
         self._parameter_values.process_model(model)
 
         mesh = pybamm.Mesh(geometry, self._submesh_types, self._var_pts)
-        disc = pybamm.Discretisation(mesh, self._methods, check_model=True)
+        disc = pybamm.Discretisation(mesh, self._spatial_methods, check_model=True)
         disc.process_model(model)
         self._built_model = model
 
@@ -236,30 +253,54 @@ class PybammPipeline:
         """
         inputs = self._pybop_parameters.to_pybamm_multiprocessing()
 
-        if self.requires_rebuild:
-            sol = []
-            for param in inputs:
-                self.rebuild(param)
-                sol.append(
-                    self._pybamm_solve(
-                        param, calculate_sensitivities=calculate_sensitivities
-                    )
-                )
+        if self.operating_mode is OperatingMode.WITHOUT_EXPERIMENT:
+            solutions = self._solve_without_experiment(inputs, calculate_sensitivities)
         else:
-            sol = self._pybamm_solve(
-                inputs, calculate_sensitivities=calculate_sensitivities
+            solutions = self._solve_with_experiment(inputs)
+
+        return self._process_solutions(solutions)
+
+    def _solve_without_experiment(
+        self, inputs: list, calculate_sensitivities: bool
+    ) -> list[pybamm.Solution]:
+        """Solve without experiment mode."""
+        if self.requires_rebuild:
+            return self._solve_with_rebuild(inputs, calculate_sensitivities)
+        else:
+            solutions = self._pybamm_solve(inputs, calculate_sensitivities)
+            return solutions if isinstance(solutions, list) else [solutions]
+
+    def _solve_with_rebuild(
+        self, inputs: list, calculate_sensitivities: bool
+    ) -> list[pybamm.Solution]:
+        """Solve with model rebuilding for each parameter set."""
+        solutions = []
+        for param in inputs:
+            self.rebuild(param)
+            solution = self._pybamm_solve(param, calculate_sensitivities)
+            solutions.append(solution)
+        return solutions
+
+    def _solve_with_experiment(self, inputs: list) -> list[pybamm.Solution]:
+        """Solve with an experiment"""
+        solutions = []
+
+        for param in inputs:  # Todo: update for multiprocessing
+            sim = pybamm.Simulation(
+                self.model,
+                parameter_values=self._parameter_values,
+                experiment=self.experiment,
+                submesh_types=self._submesh_types,
+                var_pts=self._var_pts,
+                geometry=self._geometry,
+                spatial_methods=self._spatial_methods,
+                solver=self._solver,
+                output_variables=self._cost_names,
             )
-            if not isinstance(sol, list):
-                sol = [sol]
+            solution = sim.solve(inputs=param)
+            solutions.append(solution)
 
-        sol[:] = [
-            FailedSolution(self._cost_names, list(self._parameter_names))
-            if s.termination == "failure"
-            else s
-            for s in sol
-        ]
-
-        return sol
+        return solutions if isinstance(solutions, list) else [solutions]
 
     def _pybamm_solve(
         self, inputs: Inputs | list, calculate_sensitivities: bool
@@ -269,11 +310,27 @@ class PybammPipeline:
         sol = self._solver.solve(
             model=self._built_model,
             inputs=inputs,
-            t_eval=[self._t_start, self._t_end],
+            t_eval=[self._t_eval[0], self._t_eval[-1]],
             t_interp=self._t_interp,
             calculate_sensitivities=calculate_sensitivities,
         )
         return sol
+
+    def _process_solutions(
+        self, solutions: list[pybamm.Solution]
+    ) -> list[pybamm.Solution | FailedSolution]:
+        """Convert failed solutions to FailedSolution objects."""
+        processed_solutions = []
+        for solution in solutions:
+            if hasattr(solution, "termination") and solution.termination == "failure":
+                failed_solution = FailedSolution(
+                    self._cost_names, list(self._parameter_names)
+                )
+                processed_solutions.append(failed_solution)
+            else:
+                processed_solutions.append(solution)
+
+        return processed_solutions
 
     def _set_initial_state(self, model, initial_state) -> None:
         """
@@ -312,7 +369,7 @@ class PybammPipeline:
         # Save solved initial SOC in case we need to re-build the model
         self._built_initial_state = initial_state
 
-    def set_parameter_value(self, key, value):
+    def set_parameter_value(self, key, value) -> None:
         self._parameter_values[key] = value
 
     @property

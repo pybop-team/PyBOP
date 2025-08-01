@@ -54,7 +54,7 @@ problem = builder.build()
 
 # Solve
 problem.set_params(np.array([0.6, 0.6, 1e-3]))
-sol = problem.pipeline.solve()
+sol = problem.pipeline.solve()[0]
 
 # Plot
 fig, ax = plt.subplots()
