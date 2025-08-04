@@ -41,4 +41,38 @@ def custom(
     expression: pybamm.Symbol,
     parameters: dict[str, pybamm.Parameter],
 ) -> PybammCost:
+    """
+    Creates a custom user-defined cost function for PyBaMM models.
+
+    Parameters
+    ----------
+    variable_name : str
+        The name of the variable for the cost function, this must be unique within the variables of the model.
+    expression : pybamm.Symbol
+        The PyBaMM expression that defines the cost function.
+    parameters : dict[str, pybamm.Parameter]
+        A dictionary of parameters used in the cost function, where keys are parameter names and values are
+        `pybop.Parameter` instances.
+
+    Example
+    -------
+    >>> import pybop
+    >>> import pybamm
+    >>> builder = pybop.Pybamm()
+    >>> builder.set_simulation(model)
+    >>> builder.set_dataset(dataset)
+    >>> builder.add_parameter(one_parameter)
+
+    >>> # Create a custom cost
+    >>> data = pybamm.DiscreteTimeData(
+    >>>     dataset["Time [s]"], dataset["Voltage [V]"], "my_data"
+    >>> )
+    >>> custom_cost = pybop.costs.pybamm.custom(
+    >>>     "MySumSquaredError",
+    >>>     pybamm.DiscreteTimeSum((model.variables["Voltage [V]"] - data) ** 2),
+    >>>     {},
+    >>> )
+    >>> builder.add_cost(custom_cost)
+    >>> problem_custom = builder.build()
+    """
     return UserCost(variable_name, expression, parameters)
