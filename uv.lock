@@ -1498,8 +1498,8 @@ wheels = [
 
 [[package]]
 name = "pybamm"
-version = "25.6.1.dev103+gd421e3a55"
-source = { git = "https://github.com/pybamm-team/PyBaMM?rev=d421e3a55d8946215db37c1afd8308b339e9da0f#d421e3a55d8946215db37c1afd8308b339e9da0f" }
+version = "25.6.1.dev104+g0b9228755"
+source = { git = "https://github.com/pybamm-team/PyBaMM?rev=develop#0b922875589749c0ee1ed85e180e21685a77efcc" }
 dependencies = [
     { name = "anytree" },
     { name = "casadi" },
@@ -1602,7 +1602,7 @@ requires-dist = [
     { name = "pints", specifier = ">=0.5" },
     { name = "plotly", marker = "extra == 'plot'", specifier = ">=5.0" },
     { name = "pre-commit", marker = "extra == 'dev'" },
-    { name = "pybamm", git = "https://github.com/pybamm-team/PyBaMM?rev=d421e3a55d8946215db37c1afd8308b339e9da0f" },
+    { name = "pybamm", git = "https://github.com/pybamm-team/PyBaMM?rev=develop" },
     { name = "pybop", extras = ["plot", "scifem", "bpx"], marker = "extra == 'all'" },
     { name = "pydata-sphinx-theme", marker = "extra == 'docs'" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=6" },

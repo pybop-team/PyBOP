@@ -90,6 +90,9 @@ class Pybamm(BaseBuilder):
         return self
 
     def remove_costs(self) -> "Pybamm":
+        """
+        Removes all costs and corresponding weights from the problem.
+        """
         self._costs = []
         self._cost_weights = []
 
