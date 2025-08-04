@@ -4,7 +4,7 @@ import pybop
 from pybop import Parameter as PybopParameter
 from pybop._pybamm_pipeline import PybammPipeline
 from pybop.builders.base import BaseBuilder
-from pybop.builders.utils import cell_mass
+from pybop.builders.utils import cell_mass, set_formation_concentrations
 from pybop.costs.pybamm import BaseLikelihood, DesignCost, PybammCost
 
 
@@ -155,7 +155,8 @@ class Pybamm(BaseBuilder):
             # Design Costs
             if isinstance(cost, DesignCost):
                 cell_mass(pybamm_parameter_values)
-                # set_formation_concentrations(pybamm_parameter_values)
+                if cost.set_formation_concentrations:
+                    set_formation_concentrations(pybamm_parameter_values)
 
         # Construct the pipeline
         pipeline = PybammPipeline(

@@ -149,9 +149,13 @@ class TestCosts:
             },
             check_already_exists=False,
         )
+        experiment = pybamm.Experiment(
+            ["Discharge at 1C for 2 minutes (10 second period)"]
+        )
         builder = pybop.Pybamm()
-        builder.set_simulation(model, parameter_values=parameter_values)
-        builder.set_dataset(dataset)
+        builder.set_simulation(
+            model, parameter_values=parameter_values, experiment=experiment
+        )
         builder.add_parameter(one_parameter)
         builder.add_cost(pybamm_costs())
         problem = builder.build()
@@ -161,7 +165,7 @@ class TestCosts:
         problem.set_params(np.array([0.52]))
         lower_cost = problem.run()
 
-        assert higher_cost > lower_cost
+        assert higher_cost < lower_cost  # Optimising negative cost
 
     @pytest.mark.parametrize(
         "pybamm_costs",

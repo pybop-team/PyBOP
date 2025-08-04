@@ -26,7 +26,7 @@ classifiers = [
 requires-python = ">=3.10, <3.13"
 dependencies = [
 #    "pybamm >=25.1.0",
-    "pybamm @ git+https://github.com/pybamm-team/PyBaMM@develop",
+    "pybamm @ git+https://github.com/pybamm-team/PyBaMM@d421e3a55d8946215db37c1afd8308b339e9da0f",
     "numpy>=1.16, <2.0",
     "scipy>=1.3",
     "pints>=0.5",
