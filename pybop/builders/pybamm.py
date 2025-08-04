@@ -89,9 +89,11 @@ class Pybamm(BaseBuilder):
 
         return self
 
-    def remove_costs(self) -> None:
+    def remove_costs(self) -> "Pybamm":
         self._costs = []
         self._cost_weights = []
+
+        return self
 
     def build(self) -> pybop.PybammProblem:
         """
