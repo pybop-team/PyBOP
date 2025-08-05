@@ -75,8 +75,8 @@ package "Problems" {
 
 ' Optimisers Package
 package "Optimisers" {
-    
-    
+
+
     abstract class BaseOptimiser {
         -problem: Problem
         -logger: OptimisationLogger
@@ -108,7 +108,7 @@ package "Optimisers" {
         -message: str
         +check_physical_viability()
     }
-    
+
 }
 
 ' Transformations Package
