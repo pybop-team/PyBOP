@@ -104,6 +104,7 @@ class OptimisationResult:
         ret._best_run = None  # noqa: SLF001
         ret.n_runs = len(results)
         ret._validate()  #  noqa: SLF001
+
         return ret
 
     def _set_optimal_parameter_values(self) -> ParameterValues | dict:
@@ -165,73 +166,99 @@ class OptimisationResult:
         return value[0] if len(value) == 1 else value
 
     @property
-    def x(self):
+    def x(self) -> np.ndarray | list[np.ndarray]:
+        """The solution of the optimisation (in model space)."""
         return self._get_single_or_all("_x")
 
     @property
-    def parameter_values(self):
+    def parameter_values(self) -> ParameterValues | dict | list:
+        """The parameter values from the optimisation."""
         return self._get_single_or_all("_parameter_values")
 
     @property
-    def x_best(self):
+    def parameter_values_best(self) -> np.ndarray | None:
+        """The best solution from all runs."""
+        return (
+            self._parameter_values[self._best_run]
+            if self._best_run is not None
+            else None
+        )
+
+    @property
+    def x_best(self) -> np.ndarray | None:
+        """The best solution from all runs."""
         return self._x[self._best_run] if self._best_run is not None else None
 
     @property
-    def x0(self):
+    def x0(self) -> np.ndarray | list[np.ndarray]:
+        """The initial parameter values."""
         return self._get_single_or_all("_x0")
 
     @property
-    def x0_best(self):
+    def x0_best(self) -> np.ndarray | list[np.ndarray]:
+        """The initial parameter values for the best run."""
         return self._x0[self._best_run] if self._best_run is not None else None
 
     @property
-    def final_cost(self):
+    def final_cost(self) -> float | list[float]:
+        """The final cost value(s)."""
         return self._get_single_or_all("_final_cost")
 
     @property
-    def final_cost_best(self):
+    def final_cost_best(self) -> float | None:
+        """The final cost value for the best run."""
         return self._final_cost[self._best_run] if self._best_run is not None else None
 
     @property
-    def fisher(self):
+    def fisher(self) -> np.ndarray | list[np.ndarray] | None:
+        """The Fisher information matrix diagonal."""
         return self._get_single_or_all("_fisher")
 
     @property
-    def fisher_best(self):
+    def fisher_best(self) -> np.ndarray | None:
+        """The Fisher information matrix diagonal for the best run."""
         return self._fisher[self._best_run] if self._best_run is not None else None
 
     @property
-    def n_iterations(self):
+    def n_iterations(self) -> int | list[int]:
+        """The number of iterations."""
         return self._get_single_or_all("_n_iterations")
 
     @property
-    def n_iterations_best(self):
+    def n_iterations_best(self) -> int | None:
+        """The number of iterations for the best run."""
         return (
             self._n_iterations[self._best_run] if self._best_run is not None else None
         )
 
     @property
-    def n_evaluations(self):
+    def n_evaluations(self) -> int | list[int]:
+        """The number of evaluations."""
         return self._get_single_or_all("_n_evaluations")
 
     @property
-    def n_evaluations_best(self):
+    def n_evaluations_best(self) -> int | None:
+        """The number of evaluations for the best run."""
         return (
             self._n_evaluations[self._best_run] if self._best_run is not None else None
         )
 
     @property
-    def message(self):
+    def message(self) -> str | list[str] | None:
+        """The optimization termination message(s)."""
         return self._get_single_or_all("_message")
 
     @property
-    def message_best(self):
+    def message_best(self) -> str | None:
+        """The optimization termination message for the best run."""
         return self._message[self._best_run] if self._best_run is not None else None
 
     @property
-    def time(self):
+    def time(self) -> float | list[float]:
+        """The optimization time(s)."""
         return self._get_single_or_all("_time")
 
     @property
-    def time_best(self):
+    def time_best(self) -> float | None:
+        """The optimization time for the best run."""
         return self._time[self._best_run] if self._best_run is not None else None

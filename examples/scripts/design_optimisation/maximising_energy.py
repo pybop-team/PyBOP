@@ -88,7 +88,7 @@ results = optim.run()
 
 # Obtain the fully identified pybamm.ParameterValues object
 # These can then be used with normal Pybamm classes
-# identified_parameter_values = results.parameter_values
+identified_parameter_values = results.parameter_values
 
 # Plot convergence
 pybop.plot.convergence(optim)
@@ -99,8 +99,4 @@ pybop.plot.parameters(optim)
 # Plot the cost landscape with optimisation path
 pybop.plot.surface(optim)
 
-# results = optim.run()
-# print(f"Initial gravimetric energy density: {cost1(optim.x0):.2f} Wh.kg-1")
-# print(f"Optimised gravimetric energy density: {cost1(results.x):.2f} Wh.kg-1")
-# print(f"Initial volumetric energy density: {cost2(optim.x0):.2f} Wh.m-3")
-# print(f"Optimised volumetric energy density: {cost2(results.x):.2f} Wh.m-3")
+print(f"Optimised energy density: {-results.final_cost:.2f} Wh.kg-1")

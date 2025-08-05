@@ -218,7 +218,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         """Returns the name of the PINTS optimisation strategy."""
         return self._optimiser.name()
 
-    def _run(self):
+    def _run(self) -> OptimisationResult:
         """
         Internal method to run the optimization using a PINTS optimiser.
 
