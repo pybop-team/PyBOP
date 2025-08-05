@@ -129,5 +129,5 @@ class TestTransformation:
         if np.allclose(x0, self.ground_truth, atol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
-        assert initial_cost > results.final_cost
+        assert initial_cost > results.best_cost
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)

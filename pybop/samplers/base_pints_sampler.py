@@ -21,6 +21,9 @@ class PintsSamplerOptions(SamplerOptions):
     Pints sampler options.
 
     Attributes:
+        n_chains (int): The number of chains to concurrently sample from.
+        x0 (float | np.ndarray): Initial guess for the parameter values.
+        cov (float | np.ndarray): Covariance matrix.
         max_iterations (int): Maximum number of iterations to run. (Default: 500)
         verbose (bool): If `True`, additional information will be printed. (Default: False)
         warm_up_iterations (int): Number of iterations to warm up the sampler. (Default: 250)

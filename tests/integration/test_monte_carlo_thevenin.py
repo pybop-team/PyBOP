@@ -88,9 +88,9 @@ class TestSamplingThevenin:
     def dataset(self, model, parameter_values):
         experiment = pybamm.Experiment(
             [
-                "Rest for 1 second",
-                "Discharge at 0.5C for 8 minutes (8 second period)",
-                "Charge at 0.5C for 8 minutes (8 second period)",
+                "Rest for 1 second (0.5 second period)",
+                "Discharge at 0.5C for 8 minutes (30 second period)",
+                "Charge at 0.5C for 8 minutes (30 second period)",
             ]
         )
         sim = pybamm.Simulation(
@@ -98,12 +98,13 @@ class TestSamplingThevenin:
             parameter_values=parameter_values,
             experiment=experiment,
         )
-        solution = sim.solve()
+        sol = sim.solve()
+        _, mask = np.unique(sol.t, return_index=True)
         dataset = pybop.Dataset(
             {
-                "Time [s]": solution.t,
-                "Current function [A]": solution["Current [A]"].data,
-                "Voltage [V]": self.noisy(solution["Voltage [V]"].data, self.sigma0),
+                "Time [s]": sol.t[mask],
+                "Current function [A]": sol["Current [A]"].data[mask],
+                "Voltage [V]": self.noisy(sol["Voltage [V]"].data[mask], self.sigma0),
             }
         )
         return dataset
@@ -116,7 +117,7 @@ class TestSamplingThevenin:
         for p in parameters:
             builder.add_parameter(p)
         signal = "Voltage [V]"
-        cost = pybop.costs.pybamm.NegativeGaussianLogLikelihood(signal, signal, 1e-3)
+        cost = pybop.costs.pybamm.NegativeGaussianLogLikelihood(signal, signal, 1e-2)
         builder.add_cost(cost)
         return builder.build()
 
@@ -138,7 +139,7 @@ class TestSamplingThevenin:
         # Note: we don't test the NUTS or SliceRankShrinking samplers,
         # as convergence for this problem is challenging.
         options = pybop.PintsSamplerOptions(
-            n_chains=2, warm_up_iterations=50, max_iterations=350
+            n_chains=2, cov=0.02, warm_up_iterations=50, max_iterations=250
         )
         sampler = sampler(problem, options=options)
 
@@ -153,4 +154,4 @@ class TestSamplingThevenin:
         # Assert both final sample and posterior mean
         x = np.mean(chains, axis=1)
         for i in range(len(x)):
-            np.testing.assert_allclose(x[i], self.ground_truth, atol=3e-2)
+            np.testing.assert_allclose(x[i], self.ground_truth, atol=2.5e-2)
