@@ -26,7 +26,7 @@ def classify_using_hessian(
     """
     x = result.x
     dx = np.asarray(dx) if dx is not None else np.maximum(x, 1e-40) * 1e-2
-    final_cost = result.final_cost
+    final_cost = result.best_cost
 
     def cost(x):
         problem.set_params(x)

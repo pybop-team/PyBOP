@@ -237,8 +237,7 @@ class TestOptimisation:
         assert (
             len(optim.log.x_model_best) == options.max_iterations * options.multistart
         )
-        assert results.average_iterations() == options.max_iterations
-        assert results.total_runtime() >= results.time[0]
+        assert results.total_iterations() == options.max_iterations * options.multistart
 
     @pytest.mark.parametrize(
         "optimiser",
@@ -468,7 +467,7 @@ class TestOptimisation:
             f"  Initial parameters: {results.x0}\n"
             f"  Optimised parameters: {results.x}\n"
             f"  Diagonal Fisher Information entries: {None}\n"
-            f"  Final cost: {results.final_cost}\n"
+            f"  Best cost: {results.best_cost}\n"
             f"  Optimisation time: {results.time} seconds\n"
             f"  Number of iterations: {results.n_iterations}\n"
             f"  Number of evaluations: {results.n_evaluations}\n"
@@ -519,7 +518,7 @@ class TestOptimisation:
             problem=problem,
             x=np.asarray([1e-3]),
             n_iterations=1,
-            final_cost=0.1,
+            best_cost=0.1,
             n_evaluations=1,
             time=0.1,
         )
@@ -540,8 +539,8 @@ class TestOptimisation:
         )
         results = optim.run()
 
-        assert results.x_best in results.x
-        assert results.time_best in results.time
-        assert results.n_iterations_best in results.n_iterations
-        assert results.n_evaluations_best in results.n_evaluations
-        assert results.x0_best in results.x0
+        assert results.x in results._x
+        assert results.time == np.sum(results._time)
+        assert results.n_iterations in results._n_iterations
+        assert results.n_evaluations in results._n_evaluations
+        assert results.x0 in results._x0

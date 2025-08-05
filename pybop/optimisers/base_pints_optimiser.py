@@ -423,7 +423,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         return OptimisationResult(
             problem=self._problem,
             x=self._problem.params.transformation.to_model(x),
-            final_cost=f,
+            best_cost=f,
             n_iterations=self._iterations,
             n_evaluations=self._evaluations,
             time=total_time,

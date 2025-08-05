@@ -284,7 +284,7 @@ class BaseOptimiser:
 
         result = pybop.OptimisationResult.combine(results)
 
-        self.problem.params.update(values=result.x_best)
+        self.problem.params.update(values=result.x)
 
         if self._logger.verbose:
             print(result)
