@@ -11,7 +11,7 @@ skinparam classFontSize 10
 
 
 ' Parameters Package
-package "Parameters" {
+package "parameters" {
     class Parameter {
         -name: str
         -initial_value: float
@@ -40,34 +40,17 @@ package "Parameters" {
 ' Problems Package
 package "Problems" {
     abstract class Problem {
-        -parameters: Parameters
-        -model: BaseModel
-        -signal: list[str]
-        -domain: str
-        -n_outputs: int
-        -n_data: int
-        +set_params()
-        +evaluate()
+        -_params: Parameters
+        +run(): np.ndarray
+        +run_with_sensitivities(): tuple[np.ndarray, np.ndarray]
+        +set_params(p: np.ndarray)
     }
 
-    class PybammProblem extends Problem {
-        -dataset: Dataset
-        -experiment: Experiment
-        +run()
-    }
+    class PybammProblem extends Problem
 
-    class PybammEISProblem extends Problem {
-        -frequencies: array
-        +run()
-    }
+    class PybammEISProblem extends Problem
 
-    class PythonProblem extends Problem {
-        -_funs: tuple
-        -_funs_with_sens: tuple
-        -_weights: array
-        +run()
-        +run_with_sensitivities()
-    }
+    class PythonProblem extends Problem
 
 }
 
@@ -126,30 +109,34 @@ package "Transformations" {
 ' Builders Package
 package "Builders" {
     abstract class BaseBuilder <<ABC>> {
-        +add_model()
-        +add_parameters()
-        +add_dataset()
-        +build()
+        +set_dataset(dataset: Dataset)
+        +add_parameter(parameter: Parameter)
+        +build(): Problem
     }
 
     class Pybamm extends BaseBuilder {
-        +add_experiment()
-        +add_initial_state()
+        +set_simulation(model: pybamm.BaseModel, ...)
         +add_cost(cost: PybammCost, weight: float)
         +remove_costs()
+        +build(): PybammProblem
     }
 
     class PybammEIS extends BaseBuilder {
-        +add_frequencies()
+        +set_simulation(model: pybamm.BaseModel, ...)
+        +add_cost(cost: Callable, weight: float)
+        +build(): PybammEISProblem
     }
 
     class Python extends BaseBuilder {
         +add_fun(model: Callable, weight: float)
         +add_fun_with_sens(model_with_sens: Callable, weight: float)
+        +build(): PythonProblem
     }
 
     class MultiFitting extends BaseBuilder {
-        +add_problems()
+        +add_problem(problem: Problem, weight: float)
+        +remove_problems()
+        +build(): PythonProblem
     }
 }
 
@@ -197,8 +184,11 @@ BaseBuilder ..> Problem : "creates"
 Pybamm ..> PybammProblem : "builds"
 Pybamm ..> PybammCost : "uses"
 Python ..> CallableCost: "uses"
+PybammEIS ..> CallableCost: "uses"
 PybammEIS ..> PybammEISProblem : "builds"
+MultiFitting ..> PythonProblem : "builds"
 Python ..> PythonProblem : "builds"
+Problem ..> Parameters : "contains"
 
 ' Additional key relationships
 OptimisationResult ||--o| BaseOptimiser : "produced by"
