@@ -363,14 +363,10 @@ class TestBuilder:
             experiment=experiment,
         )
         builder.add_parameter(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction", initial_value=0.6
-            )
+            pybop.Parameter("Negative particle radius [m]", initial_value=5e-6)
         )
         builder.add_parameter(
-            pybop.Parameter(
-                "Positive electrode active material volume fraction", initial_value=0.6
-            )
+            pybop.Parameter("Positive particle radius [m]", initial_value=5e-6)
         )
         builder.add_cost(pybop.costs.pybamm.GravimetricEnergyDensity())
         problem = builder.build()

@@ -34,7 +34,7 @@ parameter_values.update(
 )
 
 # Define model
-model = pybamm.lithium_ion.DFN()
+model = pybamm.lithium_ion.SPM()
 
 # Fitting parameters
 parameters = [
@@ -51,6 +51,7 @@ parameters = [
         bounds=[5e-05, 12e-05],
     ),
 ]
+
 
 # Define test protocol
 experiment = pybamm.Experiment(
@@ -73,11 +74,14 @@ builder = (
 )
 for param in parameters:
     builder.add_parameter(param)
+
 problem = builder.build()
 
 # Set optimiser and options
 options = pybop.PintsOptions(
-    verbose=True, max_iterations=15, max_unchanged_iterations=10
+    sigma=0.1,
+    verbose=True,
+    max_iterations=5,
 )
 optim = pybop.CMAES(problem, options=options)
 results = optim.run()
