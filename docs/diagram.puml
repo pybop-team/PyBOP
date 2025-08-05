@@ -75,36 +75,28 @@ package "Problems" {
 
 ' Optimisers Package
 package "Optimisers" {
-    class CostInterface {
-        -transformation: Transformation
-        -invert_cost: bool
-        +transform_values()
-        +call_cost()
-    }
     
-    abstract class BaseOptimiser extends CostInterface {
-        -cost: BaseCost
-        -parameters: Parameters
-        -bounds: dict
-        -x0: array
-        -verbose: bool
-        -log: OptimisationLog
-        +run()
-        +_run()
-        +set_base_options()
-        +log_update()
+    
+    abstract class BaseOptimiser {
+        -problem: BaseProblem
+        -logger: OptimisationLogger
+        -options: OptimisationOptions
+        +run(): OptimisationResult
+        +{static} default_options(): OptimiserOptions
     }
     
     class BasePintsOptimiser extends BaseOptimiser {
-        -_pints_optimiser
-        -_boundaries
-        -_parallel: bool
-        +_sanitise_inputs()
+        -problem: BaseProblem
+        -pints_optimiser
+        -options: PintsOptions
+        +run(): OptimisationResult
+        +{static} default_options(): PintsOptions
     }
     
     class BaseSciPyOptimiser extends BaseOptimiser {
-        -key_mapping: dict
-        +_scipy_minimise()
+        -problem: BaseProblem
+        -options: OptimiserOptions
+        +run(): OptimisationResult
     }
     
     class OptimisationResult {
@@ -117,12 +109,6 @@ package "Optimisers" {
         +check_physical_viability()
     }
     
-    class Optimisation {
-        -optim: BaseOptimiser
-        +run()
-    }
-    
-
 }
 
 ' Transformations Package
