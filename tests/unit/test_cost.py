@@ -161,11 +161,11 @@ class TestCosts:
         problem = builder.build()
 
         problem.set_params(np.array([0.55]))
-        higher_cost = problem.run()
-        problem.set_params(np.array([0.52]))
         lower_cost = problem.run()
+        problem.set_params(np.array([0.52]))
+        higher_cost = problem.run()
 
-        assert higher_cost < lower_cost  # Optimising negative cost
+        assert higher_cost > lower_cost  # Optimising negative cost
 
     @pytest.mark.parametrize(
         "pybamm_costs",
