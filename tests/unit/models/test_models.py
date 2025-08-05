@@ -128,4 +128,4 @@ class TestModels:
         design_problem.set_params(np.asarray([self.ground_truth]))
         ground_truth_cost = design_problem.run()
 
-        assert initial_cost > ground_truth_cost
+        assert initial_cost < ground_truth_cost  # Negative cost

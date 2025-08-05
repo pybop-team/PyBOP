@@ -35,9 +35,11 @@ builder.add_parameter(
 )
 builder.add_parameter(
     pybop.Parameter(
-        "Positive particle radius [m]",
-        prior=pybop.Gaussian(4.8e-06, 0.05e-06),
-        bounds=[4e-06, 6e-06],
+        "Positive electrode active material volume fraction",
+        initial_value=0.6,
+        prior=pybop.Gaussian(0.6, 0.2),
+        transformation=pybop.LogTransformation(),
+        bounds=[0.5, 0.8],
     )
 )
 

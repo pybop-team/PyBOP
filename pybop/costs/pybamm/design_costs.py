@@ -12,17 +12,21 @@ class DesignCost(PybammCost):
     Base Class for Design Costs.
     """
 
+    def __init__(self, set_formation_concentrations: bool = False):
+        super().__init__()
+        self.set_formation_concentrations = set_formation_concentrations
+
 
 class GravimetricEnergyDensity(DesignCost):
     """
-    Calculates the gravimetric energy density (specific energy) of a battery cell,
+    Calculates the negative gravimetric energy density (specific energy) of a battery cell,
     when applied to a normalised discharge from upper to lower voltage limits. The
     goal of maximising the energy density is achieved with self.minimising=False.
 
-    The gravimetric energy density [Wh.kg-1] is calculated as
+    The negative gravimetric energy density [Wh.kg-1] is calculated as
 
     .. math::
-        \\frac{1}{3600 m} \\int_{t=0}^{t=T} I(t) V(t) \\mathrm{d}t
+        \\frac{-1}{3600 m} \\int_{t=0}^{t=T} I(t) V(t) \\mathrm{d}t
 
     where m is the cell mass, t is the time, T is the total time, I is the current
     and V is the voltage. The factor of 1/3600 is included to convert from seconds
@@ -38,7 +42,7 @@ class GravimetricEnergyDensity(DesignCost):
         # Check args
         name = GravimetricEnergyDensity.make_unique_cost_name()
         expression = (
-            1
+            -1
             / 3600
             * model.variables["Voltage [V]"]
             * model.variables["Current [A]"]
@@ -54,19 +58,20 @@ class GravimetricEnergyDensity(DesignCost):
 
 class VolumetricEnergyDensity(DesignCost):
     """
-    Calculates the gravimetric energy density (specific energy) of a battery cell,
-    when applied to a normalised discharge from upper to lower voltage limits. The
-    goal of maximising the energy density is achieved with self.minimising=False.
+    Calculates the negative volumetric energy density of a battery cell, when applied to a
+    normalised discharge from upper to lower voltage limits. The goal of maximising
+    the energy density is achieved with self.minimising = False.
 
-    The gravimetric energy density [Wh.kg-1] is calculated as
+    The negative volumetric energy density [Wh.m-3] is calculated as
 
     .. math::
-        \\frac{1}{3600 m} \\int_{t=0}^{t=T} I(t) V(t) \\mathrm{d}t
+        \\frac{-1}{3600 v} \\int_{t=0}^{t=T} I(t) V(t) \\mathrm{d}t
 
-    where m is the cell mass, t is the time, T is the total time, I is the current
+    where v is the cell volume, t is the time, T is the total time, I is the current
     and V is the voltage. The factor of 1/3600 is included to convert from seconds
     to hours.
 
+    Inherits all parameters and attributes from ``DesignCost``.
     """
 
     def variable_expression(
@@ -77,7 +82,7 @@ class VolumetricEnergyDensity(DesignCost):
         # Check args
         name = VolumetricEnergyDensity.make_unique_cost_name()
         expression = (
-            model.variables["Voltage [V]"]
+            -model.variables["Voltage [V]"]
             * model.variables["Current [A]"]
             / (model.param.V_cell * 3600)
         )
@@ -93,14 +98,14 @@ class VolumetricEnergyDensity(DesignCost):
 
 class GravimetricPowerDensity(DesignCost):
     """
-    Calculates the gravimetric power density (specific power) of a battery cell,
+    Calculates the negative gravimetric power density (specific power) of a battery cell,
     when applied to a discharge from upper to lower voltage limits. The goal of
     maximising the power density is achieved with self.minimising=False.
 
-    The time-averaged gravimetric power density [W.kg-1] is calculated as
+    The negative time-averaged gravimetric power density [W.kg-1] is calculated as
 
     .. math::
-        \\frac{1}{3600 m T} \\int_{t=0}^{t=T} I(t) V(t) \\mathrm{d}t
+        \\frac{-1}{3600 m T} \\int_{t=0}^{t=T} I(t) V(t) \\mathrm{d}t
 
     where m is the cell mass, t is the time, T is the total time, I is the current
     and V is the voltage. The factor of 1/3600 is included to convert from seconds
@@ -116,7 +121,7 @@ class GravimetricPowerDensity(DesignCost):
         # Check args
         name = GravimetricPowerDensity.make_unique_cost_name()
         expression = (
-            model.variables["Voltage [V]"]
+            -model.variables["Voltage [V]"]
             * model.variables["Current [A]"]
             / pybamm.Parameter("Cell mass [kg]")
         )
@@ -133,14 +138,14 @@ class GravimetricPowerDensity(DesignCost):
 
 class VolumetricPowerDensity(DesignCost):
     """
-    Calculates the (volumetric) power density of a battery cell, when applied to a
+    Calculates the negative volumetric power density of a battery cell, when applied to a
     discharge from upper to lower voltage limits. The goal of maximising the power
     density is achieved with self.minimising=False.
 
-    The time-averaged volumetric power density [W.m-3] is calculated as
+    The negative time-averaged volumetric power density [W.m-3] is calculated as
 
     .. math::
-        \\frac{1}{3600 v T} \\int_{t=0}^{t=T} I(t) V(t) \\mathrm{d}t
+        \\frac{-1}{3600 v T} \\int_{t=0}^{t=T} I(t) V(t) \\mathrm{d}t
 
     where v is the cell volume, t is the time, T is the total time, I is the current
     and V is the voltage. The factor of 1/3600 is included to convert from seconds
@@ -156,7 +161,7 @@ class VolumetricPowerDensity(DesignCost):
         # Check args
         name = VolumetricPowerDensity.make_unique_cost_name()
         expression = (
-            model.variables["Voltage [V]"]
+            -model.variables["Voltage [V]"]
             * model.variables["Current [A]"]
             / (model.param.V_cell)
         )
