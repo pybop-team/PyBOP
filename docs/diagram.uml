@@ -1,0 +1,220 @@
+
+@startuml PyBOP Architecture
+
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam monochrome true
+skinparam packageStyle rectangle
+skinparam defaultFontName Arial
+skinparam classFontSize 10
+
+
+
+' Parameters Package
+package "Parameters" {
+    class Parameter {
+        -name: str
+        -initial_value: float
+        -true_value: float
+        -prior: BasePrior
+        -bounds: list
+        -transformation: Transformation
+        +update()
+        +rvs()
+    }
+    
+    class Parameters {
+        -param_list: list[Parameter]
+        +join()
+        +get_bounds()
+        +update()
+        +rvs()
+        +construct_transformation()
+    }
+    Parameters ..> Parameter : "contains"
+
+}
+
+
+
+' Problems Package
+package "Problems" {
+    abstract class BaseProblem {
+        -parameters: Parameters
+        -model: BaseModel
+        -signal: list[str]
+        -domain: str
+        -n_outputs: int
+        -n_data: int
+        +set_params()
+        +evaluate()
+    }
+    
+    class PybammProblem extends BaseProblem {
+        -dataset: Dataset
+        -experiment: Experiment
+        +run()
+    }
+    
+    class PybammEISProblem extends BaseProblem {
+        -frequencies: array
+        +run()
+    }
+    
+    class PythonProblem extends BaseProblem {
+        -_funs: tuple
+        -_funs_with_sens: tuple
+        -_weights: array
+        +run()
+        +run_with_sensitivities()
+    }
+    
+}
+
+
+
+' Optimisers Package
+package "Optimisers" {
+    class CostInterface {
+        -transformation: Transformation
+        -invert_cost: bool
+        +transform_values()
+        +call_cost()
+    }
+    
+    abstract class BaseOptimiser extends CostInterface {
+        -cost: BaseCost
+        -parameters: Parameters
+        -bounds: dict
+        -x0: array
+        -verbose: bool
+        -log: OptimisationLog
+        +run()
+        +_run()
+        +set_base_options()
+        +log_update()
+    }
+    
+    class BasePintsOptimiser extends BaseOptimiser {
+        -_pints_optimiser
+        -_boundaries
+        -_parallel: bool
+        +_sanitise_inputs()
+    }
+    
+    class BaseSciPyOptimiser extends BaseOptimiser {
+        -key_mapping: dict
+        +_scipy_minimise()
+    }
+    
+    class OptimisationResult {
+        -x_best: array
+        -final_cost: float
+        -n_iterations: int
+        -n_evaluations: int
+        -time: float
+        -message: str
+        +check_physical_viability()
+    }
+    
+    class Optimisation {
+        -optim: BaseOptimiser
+        +run()
+    }
+    
+
+}
+
+' Transformations Package
+package "Transformations" {
+    abstract class Transformation <<ABC>> {
+        +jacobian()
+        +_transform()
+        +to_model()
+        +to_search()
+        +convert_covariance_matrix()
+        +log_jacobian_det()
+    }
+}
+
+' Builders Package
+package "Builders" {
+    abstract class BaseBuilder <<ABC>> {
+        +add_model()
+        +add_parameters()
+        +add_dataset()
+        +build()
+    }
+    
+    class Pybamm extends BaseBuilder {
+        +add_experiment()
+        +add_initial_state()
+        +add_cost(cost: PybammCost, weight: float)
+        +remove_costs()
+    }
+    
+    class PybammEIS extends BaseBuilder {
+        +add_frequencies()
+    }
+    
+    class Python extends BaseBuilder {
+        +add_fun(model: Callable, weight: float)
+        +add_fun_with_sens(model_with_sens: Callable, weight: float)
+    }
+    
+    class MultiFitting extends BaseBuilder {
+        +add_problems()
+    }
+}
+
+' Base Cost Classes
+package "costs" {
+    
+    ' Core Base Classes
+    class CallableCost {
+        -weighting: str | np.ndarray
+        +__init__(weighting)
+        +__call__(r, dy): float | tuple
+    }
+    
+    ' PyBaMM Costs Package
+
+    class PybammCost {
+        +variable_expression(model, dataset): PybammExpressionMetadata
+        +{static} make_unique_cost_name(): str
+    }
+
+}
+
+' Plotting Package
+package "Plotting" {
+    class PlotFunctions <<static>> {
+        +problem()
+        +convergence()
+        +parameters()
+        +surface()
+        +quick_plot()
+    }
+    
+    class PosteriorSummary {
+        +plot()
+        +summary()
+    }
+}
+
+' Key Relationships
+BaseOptimiser ||--o| BaseProblem : "minimizes"
+Parameter ||--o| Transformation : "applies"
+
+' Builder relationships
+BaseBuilder ..> BaseProblem : "creates"
+Pybamm ..> PybammProblem : "builds"
+Pybamm ..> PybammCost : "uses"
+Python ..> CallableCost: "uses"
+PybammEIS ..> PybammEISProblem : "builds"
+Python ..> PythonProblem : "builds"
+
+' Additional key relationships
+OptimisationResult ||--o| BaseOptimiser : "produced by"
+
+@enduml
