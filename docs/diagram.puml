@@ -39,7 +39,7 @@ package "Parameters" {
 
 ' Problems Package
 package "Problems" {
-    abstract class BaseProblem {
+    abstract class Problem {
         -parameters: Parameters
         -model: BaseModel
         -signal: list[str]
@@ -50,18 +50,18 @@ package "Problems" {
         +evaluate()
     }
 
-    class PybammProblem extends BaseProblem {
+    class PybammProblem extends Problem {
         -dataset: Dataset
         -experiment: Experiment
         +run()
     }
 
-    class PybammEISProblem extends BaseProblem {
+    class PybammEISProblem extends Problem {
         -frequencies: array
         +run()
     }
 
-    class PythonProblem extends BaseProblem {
+    class PythonProblem extends Problem {
         -_funs: tuple
         -_funs_with_sens: tuple
         -_weights: array
@@ -78,7 +78,7 @@ package "Optimisers" {
     
     
     abstract class BaseOptimiser {
-        -problem: BaseProblem
+        -problem: Problem
         -logger: OptimisationLogger
         -options: OptimisationOptions
         +run(): OptimisationResult
@@ -86,7 +86,7 @@ package "Optimisers" {
     }
 
     class BasePintsOptimiser extends BaseOptimiser {
-        -problem: BaseProblem
+        -problem: Problem
         -pints_optimiser
         -options: PintsOptions
         +run(): OptimisationResult
@@ -94,7 +94,7 @@ package "Optimisers" {
     }
 
     class BaseSciPyOptimiser extends BaseOptimiser {
-        -problem: BaseProblem
+        -problem: Problem
         -options: OptimiserOptions
         +run(): OptimisationResult
     }
@@ -189,11 +189,11 @@ package "Plotting" {
 }
 
 ' Key Relationships
-BaseOptimiser ||--o| BaseProblem : "minimizes"
+BaseOptimiser ||--o| Problem : "minimizes"
 Parameter ||--o| Transformation : "applies"
 
 ' Builder relationships
-BaseBuilder ..> BaseProblem : "creates"
+BaseBuilder ..> Problem : "creates"
 Pybamm ..> PybammProblem : "builds"
 Pybamm ..> PybammCost : "uses"
 Python ..> CallableCost: "uses"
