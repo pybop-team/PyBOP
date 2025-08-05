@@ -99,4 +99,4 @@ pybop.plot.parameters(optim)
 # Plot the cost landscape with optimisation path
 pybop.plot.surface(optim)
 
-print(f"Optimised energy density: {-results.final_cost:.2f} Wh.kg-1")
+print(f"Optimised energy density: {-results.best_cost:.2f} Wh.kg-1")
