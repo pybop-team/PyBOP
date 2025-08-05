@@ -22,7 +22,7 @@ package "Parameters" {
         +update()
         +rvs()
     }
-    
+
     class Parameters {
         -param_list: list[Parameter]
         +join()
@@ -49,18 +49,18 @@ package "Problems" {
         +set_params()
         +evaluate()
     }
-    
+
     class PybammProblem extends BaseProblem {
         -dataset: Dataset
         -experiment: Experiment
         +run()
     }
-    
+
     class PybammEISProblem extends BaseProblem {
         -frequencies: array
         +run()
     }
-    
+
     class PythonProblem extends BaseProblem {
         -_funs: tuple
         -_funs_with_sens: tuple
@@ -68,7 +68,7 @@ package "Problems" {
         +run()
         +run_with_sensitivities()
     }
-    
+
 }
 
 
@@ -84,7 +84,7 @@ package "Optimisers" {
         +run(): OptimisationResult
         +{static} default_options(): OptimiserOptions
     }
-    
+
     class BasePintsOptimiser extends BaseOptimiser {
         -problem: BaseProblem
         -pints_optimiser
@@ -92,13 +92,13 @@ package "Optimisers" {
         +run(): OptimisationResult
         +{static} default_options(): PintsOptions
     }
-    
+
     class BaseSciPyOptimiser extends BaseOptimiser {
         -problem: BaseProblem
         -options: OptimiserOptions
         +run(): OptimisationResult
     }
-    
+
     class OptimisationResult {
         -x_best: array
         -final_cost: float
@@ -131,23 +131,23 @@ package "Builders" {
         +add_dataset()
         +build()
     }
-    
+
     class Pybamm extends BaseBuilder {
         +add_experiment()
         +add_initial_state()
         +add_cost(cost: PybammCost, weight: float)
         +remove_costs()
     }
-    
+
     class PybammEIS extends BaseBuilder {
         +add_frequencies()
     }
-    
+
     class Python extends BaseBuilder {
         +add_fun(model: Callable, weight: float)
         +add_fun_with_sens(model_with_sens: Callable, weight: float)
     }
-    
+
     class MultiFitting extends BaseBuilder {
         +add_problems()
     }
@@ -155,14 +155,14 @@ package "Builders" {
 
 ' Base Cost Classes
 package "costs" {
-    
+
     ' Core Base Classes
     class CallableCost {
         -weighting: str | np.ndarray
         +__init__(weighting)
         +__call__(r, dy): float | tuple
     }
-    
+
     ' PyBaMM Costs Package
 
     class PybammCost {
@@ -181,7 +181,7 @@ package "Plotting" {
         +surface()
         +quick_plot()
     }
-    
+
     class PosteriorSummary {
         +plot()
         +summary()
