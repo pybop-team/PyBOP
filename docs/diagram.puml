@@ -83,13 +83,12 @@ package "Optimisers" {
     }
 
     class OptimisationResult {
-        -x_best: array
+        -problem: Problem
+        -x: np.ndarray
         -final_cost: float
         -n_iterations: int
-        -n_evaluations: int
-        -time: float
         -message: str
-        +check_physical_viability()
+        -scipy_result: scipy.optimize.OptimizeResult
     }
 
 }
@@ -153,8 +152,7 @@ package "costs" {
     ' PyBaMM Costs Package
 
     class PybammCost {
-        +variable_expression(model, dataset): PybammExpressionMetadata
-        +{static} make_unique_cost_name(): str
+        +variable_expression(model: pybamm.BaseModel, dataset: Dataset): PybammExpressionMetadata
     }
 
 }
