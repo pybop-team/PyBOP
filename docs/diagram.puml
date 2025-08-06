@@ -152,7 +152,7 @@ package "costs" {
     ' PyBaMM Costs Package
 
     class PybammCost {
-        +variable_expression(model: pybamm.BaseModel, dataset: Dataset): PybammExpressionMetadata
+        +variable_expression(model, dataset)
     }
 
 }
@@ -174,8 +174,8 @@ package "Plotting" {
 }
 
 ' Key Relationships
-BaseOptimiser ||--o| Problem : "minimizes"
-Parameter ||--o| Transformation : "applies"
+BaseOptimiser ..> Problem : "minimizes"
+Parameter ..> Transformation : "applies"
 
 ' Builder relationships
 BaseBuilder ..> Problem : "creates"
@@ -189,6 +189,6 @@ Python ..> PythonProblem : "builds"
 Problem ..> Parameters : "contains"
 
 ' Additional key relationships
-OptimisationResult ||--o| BaseOptimiser : "produced by"
+OptimisationResult ..> BaseOptimiser : "produced by"
 
 @enduml
