@@ -63,8 +63,11 @@ class PintsOptions(pybop.OptimiserOptions):
             raise ValueError(
                 "Maximum number of unchanged iterations cannot be negative."
             )
-        if self.sigma is not None and self.sigma <= 0:
+        if isinstance(self.sigma, np.ndarray) and any(self.sigma) <= 0:
             raise ValueError("Sigma must be positive.")
+        elif np.isscalar(self.sigma):
+            if self.sigma <= 0:
+                raise ValueError("Sigma must be positive.")
         if self.absolute_tolerance < 0:
             raise ValueError("Absolute tolerance cannot be negative.")
         if self.relative_tolerance < 0:
@@ -215,7 +218,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         """Returns the name of the PINTS optimisation strategy."""
         return self._optimiser.name()
 
-    def _run(self):
+    def _run(self) -> OptimisationResult:
         """
         Internal method to run the optimization using a PINTS optimiser.
 
@@ -420,7 +423,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         return OptimisationResult(
             problem=self._problem,
             x=self._problem.params.transformation.to_model(x),
-            final_cost=f,
+            best_cost=f,
             n_iterations=self._iterations,
             n_evaluations=self._evaluations,
             time=total_time,

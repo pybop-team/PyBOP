@@ -3,14 +3,18 @@ import pybamm
 
 import pybop
 
-# In this example, we introduce a simple Doyle-Fuller-Newman
-# model identification process. This is specifically implemented
-# as the DFN is a more challenging identification process compared
-# to the reduced-order single particle models.
+# In this example, we introduce the random
+# search method. Random search is a helpful benchmark
+# to compare new optimiser implementations. Random
+# search samples from the parameter space uniformly
+# and stores the current best proposal assessed from
+# the cost landscape. The uniform distribution is
+# constructed from the bounds applied to each parameter.
+
 
 # Define model and parameter values
 parameter_values = pybamm.ParameterValues("Chen2020")
-model = pybamm.lithium_ion.DFN()
+model = pybamm.lithium_ion.SPM()
 
 # Fitting parameters
 parameters = [
@@ -29,7 +33,7 @@ parameters = [
 ]
 
 # Generate the synthetic dataset
-sigma = 5e-3
+sigma = 2e-3
 t_eval = np.linspace(0, 500, 240)
 sim = pybamm.Simulation(
     model=model,
@@ -43,7 +47,6 @@ dataset = pybop.Dataset(
         "Voltage [V]": sol["Voltage [V]"].data
         + np.random.normal(0, sigma, len(t_eval)),
         "Current function [A]": sol["Current [A]"].data,
-        "Bulk open-circuit voltage [V]": sol["Bulk open-circuit voltage [V]"].data,
     }
 )
 
@@ -52,26 +55,17 @@ builder = (
     pybop.builders.Pybamm()
     .set_dataset(dataset)
     .set_simulation(model, parameter_values=parameter_values)
-    .add_cost(pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]", "Voltage [V]"))
-    .add_cost(
-        pybop.costs.pybamm.RootMeanSquaredError(
-            "Bulk open-circuit voltage [V]", "Bulk open-circuit voltage [V]"
-        )
-    )
+    .add_cost(pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]"))
 )
 for param in parameters:
     builder.add_parameter(param)
 problem = builder.build()
 
 # Set optimiser and options
-# We use the Nelder-Mead simplex based
-# optimiser for this example. Additionally,
-# the step-size value (sigma) is increased to 0.1
-# to search across the landscape further per iteration
 options = pybop.PintsOptions(
-    sigma=0.1, verbose=True, max_iterations=60, max_unchanged_iterations=15
+    sigma=5e-2, verbose=True, max_iterations=80, max_unchanged_iterations=30
 )
-optim = pybop.NelderMead(problem, options=options)
+optim = pybop.RandomSearch(problem, options=options)
 results = optim.run()
 
 # Obtain the fully identified pybamm.ParameterValues object
@@ -79,7 +73,7 @@ results = optim.run()
 identified_parameter_values = results.parameter_values
 
 # Plot convergence
-pybop.plot.convergence(optim)
+# pybop.plot.convergence(optim)
 
 # Plot the parameter traces
 pybop.plot.parameters(optim)

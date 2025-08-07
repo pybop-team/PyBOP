@@ -3,14 +3,14 @@ import pybamm
 
 import pybop
 
-# In this example, we introduce a simple Doyle-Fuller-Newman
-# model identification process. This is specifically implemented
-# as the DFN is a more challenging identification process compared
-# to the reduced-order single particle models.
+# In this example, we introduce the
+# Adaptive Moment Estimation with Weight Decay (AdamW)
+# optimisation algorithm. This optimiser uses gradient
+# information for trajectory and step-size determination.
 
 # Define model and parameter values
 parameter_values = pybamm.ParameterValues("Chen2020")
-model = pybamm.lithium_ion.DFN()
+model = pybamm.lithium_ion.SPM()
 
 # Fitting parameters
 parameters = [
@@ -43,7 +43,6 @@ dataset = pybop.Dataset(
         "Voltage [V]": sol["Voltage [V]"].data
         + np.random.normal(0, sigma, len(t_eval)),
         "Current function [A]": sol["Current [A]"].data,
-        "Bulk open-circuit voltage [V]": sol["Bulk open-circuit voltage [V]"].data,
     }
 )
 
@@ -52,26 +51,22 @@ builder = (
     pybop.builders.Pybamm()
     .set_dataset(dataset)
     .set_simulation(model, parameter_values=parameter_values)
-    .add_cost(pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]", "Voltage [V]"))
-    .add_cost(
-        pybop.costs.pybamm.RootMeanSquaredError(
-            "Bulk open-circuit voltage [V]", "Bulk open-circuit voltage [V]"
-        )
-    )
+    .add_cost(pybop.costs.pybamm.MeanSquaredError("Voltage [V]", "Voltage [V]"))
 )
 for param in parameters:
     builder.add_parameter(param)
 problem = builder.build()
 
 # Set optimiser and options
-# We use the Nelder-Mead simplex based
-# optimiser for this example. Additionally,
-# the step-size value (sigma) is increased to 0.1
-# to search across the landscape further per iteration
 options = pybop.PintsOptions(
-    sigma=0.1, verbose=True, max_iterations=60, max_unchanged_iterations=15
+    sigma=0.01, verbose=True, max_iterations=200, max_unchanged_iterations=100
 )
-optim = pybop.NelderMead(problem, options=options)
+optim = pybop.AdamW(problem, options=options)
+# Reduce the momentum influence
+# for the reduced number of optimiser iterations
+optim.optimiser.b1 = 0.925
+optim.optimiser.b2 = 0.925
+
 results = optim.run()
 
 # Obtain the fully identified pybamm.ParameterValues object
@@ -79,7 +74,7 @@ results = optim.run()
 identified_parameter_values = results.parameter_values
 
 # Plot convergence
-pybop.plot.convergence(optim)
+# pybop.plot.convergence(optim)
 
 # Plot the parameter traces
 pybop.plot.parameters(optim)

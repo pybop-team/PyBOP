@@ -3,14 +3,16 @@ import pybamm
 
 import pybop
 
-# In this example, we introduce a simple Doyle-Fuller-Newman
-# model identification process. This is specifically implemented
-# as the DFN is a more challenging identification process compared
-# to the reduced-order single particle models.
+# In this example, we introduce the Exponential
+# Natural Evolution Strategy (XNES). XNES is a
+# population-based heuristic algorithm which
+# samples from a normal distribution for candidate
+# proposals while updating this distribution from
+# the cost landscape.
 
 # Define model and parameter values
 parameter_values = pybamm.ParameterValues("Chen2020")
-model = pybamm.lithium_ion.DFN()
+model = pybamm.lithium_ion.SPM()
 
 # Fitting parameters
 parameters = [
@@ -43,35 +45,25 @@ dataset = pybop.Dataset(
         "Voltage [V]": sol["Voltage [V]"].data
         + np.random.normal(0, sigma, len(t_eval)),
         "Current function [A]": sol["Current [A]"].data,
-        "Bulk open-circuit voltage [V]": sol["Bulk open-circuit voltage [V]"].data,
     }
 )
 
-# Construct the problem builder
+# Construct the problem builder with a Minkowski cost function with order 1.25
 builder = (
     pybop.builders.Pybamm()
     .set_dataset(dataset)
     .set_simulation(model, parameter_values=parameter_values)
-    .add_cost(pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]", "Voltage [V]"))
-    .add_cost(
-        pybop.costs.pybamm.RootMeanSquaredError(
-            "Bulk open-circuit voltage [V]", "Bulk open-circuit voltage [V]"
-        )
-    )
+    .add_cost(pybop.costs.pybamm.Minkowski("Voltage [V]", "Voltage [V]", p=1.25))
 )
 for param in parameters:
     builder.add_parameter(param)
 problem = builder.build()
 
 # Set optimiser and options
-# We use the Nelder-Mead simplex based
-# optimiser for this example. Additionally,
-# the step-size value (sigma) is increased to 0.1
-# to search across the landscape further per iteration
 options = pybop.PintsOptions(
-    sigma=0.1, verbose=True, max_iterations=60, max_unchanged_iterations=15
+    sigma=2e-2, verbose=True, max_iterations=100, max_unchanged_iterations=30
 )
-optim = pybop.NelderMead(problem, options=options)
+optim = pybop.XNES(problem, options=options)
 results = optim.run()
 
 # Obtain the fully identified pybamm.ParameterValues object
@@ -79,7 +71,7 @@ results = optim.run()
 identified_parameter_values = results.parameter_values
 
 # Plot convergence
-pybop.plot.convergence(optim)
+# pybop.plot.convergence(optim)
 
 # Plot the parameter traces
 pybop.plot.parameters(optim)

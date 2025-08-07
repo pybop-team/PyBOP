@@ -18,9 +18,6 @@ class TestModels:
 
     def test_grouped_spme_create_grouped_parameters(self):
         parameter_values = pybamm.ParameterValues("Chen2020")
-        parameter_values["Electrolyte diffusivity [m2.s-1]"] = 1.769e-10
-        parameter_values["Electrolyte conductivity [S.m-1]"] = 0.9487
-
         grouped_values = pybop.lithium_ion.GroupedSPMe.create_grouped_parameters(
             parameter_values
         )

@@ -263,7 +263,7 @@ class BaseOptimiser:
         """
         raise NotImplementedError  # pragma: no cover
 
-    def run(self):
+    def run(self) -> pybop.OptimisationResult:
         """
         Run the optimisation and return the optimised parameters and final cost.
 
@@ -284,7 +284,7 @@ class BaseOptimiser:
 
         result = pybop.OptimisationResult.combine(results)
 
-        self.problem.params.update(values=result.x_best)
+        self.problem.params.update(values=result.x)
 
         if self._logger.verbose:
             print(result)
