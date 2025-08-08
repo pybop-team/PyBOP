@@ -545,6 +545,7 @@ class TestOptimisation:
             x=np.asarray([1e-3]),
             n_iterations=1,
             best_cost=0.1,
+            initial_cost=0.2,
             n_evaluations=1,
             time=0.1,
         )

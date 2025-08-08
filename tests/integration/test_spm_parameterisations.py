@@ -166,15 +166,13 @@ class Test_SPM_Parameterisation:
                 (self.ground_truth, np.asarray([self.sigma0]))
             )
 
-        optim.problem.set_params(x0)
-        initial_cost = optim.problem.run()
         results = optim.run()
 
         # Assertions
         if np.allclose(x0, self.ground_truth, atol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
-        assert initial_cost > results.best_cost
+        assert results.initial_cost > results.best_cost
 
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
@@ -221,12 +219,10 @@ class Test_SPM_Parameterisation:
         optim = pybop.NelderMead(problem, options)
 
         x0 = optim.problem.params.get_initial_values()
-        optim.problem.set_params(x0)
-        initial_cost = optim.problem.run()
         results = optim.run()
         # Assertions
         if np.allclose(x0, self.ground_truth, atol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
-        assert initial_cost > results.best_cost
+        assert results.initial_cost > results.best_cost
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)

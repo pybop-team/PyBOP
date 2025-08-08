@@ -29,6 +29,7 @@ class OptimisationResult:
         problem: Problem,
         x: np.ndarray,
         best_cost: float,
+        initial_cost: float,
         n_iterations: int,
         n_evaluations: int,
         time: float,
@@ -39,6 +40,7 @@ class OptimisationResult:
         self._best_run = None
         self._x = [x]
         self._best_cost = [best_cost]
+        self._initial_cost = [initial_cost]
         self._n_iterations = [n_iterations]
         self._n_evaluations = [n_evaluations]
         self._message = [message]
@@ -82,6 +84,11 @@ class OptimisationResult:
             x
             for result in results
             for x in result._best_cost  # noqa: SLF001
+        ]
+        ret._initial_cost = [  # noqa: SLF001
+            x
+            for result in results
+            for x in result._initial_cost  # noqa: SLF001
         ]
         ret._fisher = [x for result in results for x in result._fisher]  # noqa: SLF001
         ret._n_iterations = [  # noqa: SLF001
@@ -188,8 +195,13 @@ class OptimisationResult:
 
     @property
     def best_cost(self) -> float:
-        """The final cost value(s)."""
+        """The best cost value(s)."""
         return self._get_single_or_all("_best_cost")
+
+    @property
+    def initial_cost(self) -> float:
+        """The initial cost value(s)."""
+        return self._get_single_or_all("_initial_cost")
 
     @property
     def fisher(self) -> np.ndarray | None:

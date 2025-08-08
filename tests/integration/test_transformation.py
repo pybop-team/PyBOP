@@ -115,8 +115,6 @@ class TestTransformation:
     )
     def test_thevenin_transformation(self, optimiser, problem):
         x0 = problem.params.get_initial_values()
-        problem.set_params(x0)
-        initial_cost = problem.run()
 
         options = pybop.PintsOptions()
         options.sigma = 2e-2
@@ -129,5 +127,5 @@ class TestTransformation:
         if np.allclose(x0, self.ground_truth, atol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
-        assert initial_cost > results.best_cost
+        assert results.initial_cost > results.best_cost
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)

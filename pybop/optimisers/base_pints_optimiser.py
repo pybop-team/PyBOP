@@ -411,6 +411,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
             problem=self._problem,
             x=self._problem.params.transformation.to_model(x),
             best_cost=f[0] if isinstance(f, np.ndarray) else f,
+            initial_cost=self.logger.cost[0],
             n_iterations=self._iterations,
             n_evaluations=self._evaluations,
             time=total_time,
