@@ -2,6 +2,8 @@
 
 ## Features
 
+- [#786](https://github.com/pybop-team/PyBOP/pull/786) - Adds Bayesian optimisation framework and, as an example, the EP-BOLFI optimiser
+
 ## Optimisations
 
 ## Bug Fixes
