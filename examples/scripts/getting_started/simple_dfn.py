@@ -1,21 +1,19 @@
-import os
-
 import numpy as np
+import pybamm
 
 import pybop
 
-# Get the current directory location and convert to absolute path
-current_dir = os.path.dirname(os.path.abspath(__file__))
-dataset_path = os.path.join(
-    current_dir, "../../data/synthetic/dfn_charge_discharge_75.csv"
-)
+# In this example, we introduce a simple Doyle-Fuller-Newman
+# model identification process. This is specifically implemented
+# as the DFN is a more challenging identification process compared
+# to the reduced-order single particle models.
 
-# Define model
-parameter_set = pybop.ParameterSet("Chen2020")
-model = pybop.lithium_ion.DFN(parameter_set=parameter_set)
+# Define model and parameter values
+parameter_values = pybamm.ParameterValues("Chen2020")
+model = pybamm.lithium_ion.DFN()
 
 # Fitting parameters
-parameters = pybop.Parameters(
+parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         prior=pybop.Gaussian(0.68, 0.05),
@@ -28,47 +26,57 @@ parameters = pybop.Parameters(
         initial_value=0.65,
         bounds=[0.4, 0.9],
     ),
+]
+
+# Generate the synthetic dataset
+sigma = 5e-3
+t_eval = np.linspace(0, 500, 240)
+sim = pybamm.Simulation(
+    model=model,
+    parameter_values=parameter_values,
 )
+sol = sim.solve(t_eval=[t_eval[0], t_eval[-1]], t_interp=t_eval)
 
-# Import the synthetic dataset, set model initial state
-csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
-initial_state = {"Initial open-circuit voltage [V]": csv_data[0, 2]}
-model.set_initial_state(initial_state=initial_state)
-
-# Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": csv_data[:, 0],
-        "Current function [A]": csv_data[:, 1],
-        "Voltage [V]": csv_data[:, 2],
-        "Bulk open-circuit voltage [V]": csv_data[:, 3],
+        "Time [s]": sol.t,
+        "Voltage [V]": sol["Voltage [V]"].data
+        + np.random.normal(0, sigma, len(t_eval)),
+        "Current function [A]": sol["Current [A]"].data,
+        "Bulk open-circuit voltage [V]": sol["Bulk open-circuit voltage [V]"].data,
     }
 )
 
-signal = ["Voltage [V]", "Bulk open-circuit voltage [V]"]
-# Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(
-    model,
-    parameters,
-    dataset,
-    signal=signal,
+# Construct the problem builder
+builder = (
+    pybop.builders.Pybamm()
+    .set_dataset(dataset)
+    .set_simulation(model, parameter_values=parameter_values)
+    .add_cost(pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]", "Voltage [V]"))
+    .add_cost(
+        pybop.costs.pybamm.RootMeanSquaredError(
+            "Bulk open-circuit voltage [V]", "Bulk open-circuit voltage [V]"
+        )
+    )
 )
-cost = pybop.RootMeanSquaredError(problem)
+for param in parameters:
+    builder.add_parameter(param)
+problem = builder.build()
 
-optim = pybop.IRPropPlus(
-    cost,
-    verbose=True,
-    max_iterations=60,
-    max_unchanged_iterations=15,
-    compute_sensitivities=True,
-    n_sensitivity_samples=64,  # Decrease samples for CI (increase for higher accuracy)
+# Set optimiser and options
+# We use the Nelder-Mead simplex based
+# optimiser for this example. Additionally,
+# the step-size value (sigma) is increased to 0.1
+# to search across the landscape further per iteration
+options = pybop.PintsOptions(
+    sigma=0.1, verbose=True, max_iterations=60, max_unchanged_iterations=15
 )
-
-# Run optimisation
+optim = pybop.NelderMead(problem, options=options)
 results = optim.run()
 
-# Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
+# Obtain the fully identified pybamm.ParameterValues object
+# These can then be used with normal Pybamm classes
+identified_parameter_values = results.parameter_values
 
 # Plot convergence
 pybop.plot.convergence(optim)

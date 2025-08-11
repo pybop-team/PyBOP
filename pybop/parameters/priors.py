@@ -441,9 +441,12 @@ class JointLogPrior(BasePrior):
             derivatives.append(dp)
 
         output = sum(log_probs)
-        doutput = np.array(derivatives)
+        doutput = np.asarray(derivatives)
 
-        return output, doutput
+        if doutput.ndim == 1:
+            return output, doutput
+
+        return output, doutput.T
 
     def __repr__(self) -> str:
         priors_repr = ", ".join([repr(prior) for prior in self._priors])

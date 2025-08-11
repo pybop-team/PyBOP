@@ -108,6 +108,15 @@ class OptimisationLogger:
 
 @dataclass
 class OptimiserOptions:
+    """
+    A base class for optimiser options.
+
+    Attributes:
+        multistart (int): Number of times to multistart the optimiser
+        verbose (bool): The verbosity level
+        verbose_print_rate (int): The distance between iterations to print verbose output
+    """
+
     multistart: int = 1
     verbose: bool = False
     verbose_print_rate: int = 50
@@ -254,7 +263,7 @@ class BaseOptimiser:
         """
         raise NotImplementedError  # pragma: no cover
 
-    def run(self):
+    def run(self) -> pybop.OptimisationResult:
         """
         Run the optimisation and return the optimised parameters and final cost.
 
@@ -266,6 +275,8 @@ class BaseOptimiser:
         results = []
         for i in range(self._multistart):
             if i >= 1:
+                if self.problem.params.priors() is None:
+                    raise RuntimeError("Priors must be provided for multistart")
                 initial_values = self.problem.params.sample_from_priors(1)[0]
                 self.problem.params.update(initial_values=initial_values)
                 self._set_up_optimiser()
@@ -273,7 +284,7 @@ class BaseOptimiser:
 
         result = pybop.OptimisationResult.combine(results)
 
-        self.problem.params.update(values=result.x_best)
+        self.problem.params.update(values=result.x)
 
         if self._logger.verbose:
             print(result)

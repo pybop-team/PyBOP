@@ -17,8 +17,7 @@ class PybammProblem(Problem):
         pybop_params: Parameters = None,
         cost_names: list[str] = None,
         cost_weights: list | np.ndarray = None,
-        use_posterior: bool = False,
-        use_last_cost_index: list[bool] = None,
+        is_posterior: bool = False,
     ):
         super().__init__(pybop_params=pybop_params)
         self._pipeline = pybamm_pipeline
@@ -29,15 +28,13 @@ class PybammProblem(Problem):
             else np.ones(len(self._cost_names))
         )
         self._domain = "Time [s]"
-        self._use_posterior = use_posterior
-        self._use_last_cost_index = use_last_cost_index
+        self.is_posterior = is_posterior
 
         # Set up priors if we're using the posterior
-        if self._use_posterior and pybop_params is not None:
+        if self.is_posterior and pybop_params is not None:
             self._priors = JointLogPrior(*pybop_params.priors())
         else:
             self._priors = None
-        self._compute_initial_cost_and_resample()
 
     def set_params(self, p: np.ndarray) -> None:
         """
@@ -45,46 +42,52 @@ class PybammProblem(Problem):
         """
         self.check_and_store_params(p)
 
-        # rebuild the pipeline (if needed)
-        self._pipeline.rebuild(self._params.to_dict())
-
-    def _compute_cost(self, solution: Solution) -> float:
+    def _compute_cost(self, solution: list[Solution]) -> np.ndarray:
         """
         Compute the cost function value from a solution.
         """
+        n_solutions = len(solution)
+        n_costs = len(self._cost_names)
+        cost_matrix = np.empty((n_costs, n_solutions))
 
-        costs = [
-            solution[name].data[-1] if use_last else solution[name].data[0]
-            for use_last, name in zip(
-                self._use_last_cost_index, self._cost_names, strict=False
-            )
-        ]
-        return np.dot(self._cost_weights, costs)
+        # Extract each cost
+        for cost_idx, name in enumerate(self._cost_names):
+            cost_matrix[cost_idx, :] = [sol[name].data[0] for sol in solution]
 
-    def _add_prior_contribution(self, cost: float) -> float:
+        # return weighted costs
+        return self._cost_weights @ cost_matrix
+
+    def _add_prior_contribution(self, cost: np.number | np.ndarray) -> np.ndarray:
         """
         Add the prior contribution to the cost if using posterior.
         """
-        if not self._use_posterior:
+        if not self.is_posterior:
             return cost
 
         # Likelihoods and priors are negative by convention
         return cost - self._priors.logpdf(self._params.get_values())
 
-    def _compute_cost_with_prior(self, solution: Solution) -> float:
+    def _compute_cost_with_prior(self, solution: list[Solution]) -> np.ndarray:
         """
         Compute the cost function with optional prior contribution.
         """
         cost = self._compute_cost(solution)
         return self._add_prior_contribution(cost)
 
-    def run(self) -> float:
+    def run(self) -> np.ndarray:
         """
         Evaluates the underlying simulation and cost function using the
         parameters set in the previous call to `set_params`.
 
-        Returns:
-            The computed cost value
+        The parameters can be set as singular proposals: np.array(N,)
+        Or as an array of multiple proposals: np.array(M, N), where
+        M is the number of proposals to solve.
+
+        Returns
+        -------
+        np.ndarray
+            cost (np.ndarray): Weighted sum of cost variables for each proposal.
+            The dimensionality is np.ndarray(M,) to match the number of proposals.
         """
         self.check_set_params_called()
 
@@ -94,19 +97,28 @@ class PybammProblem(Problem):
         # Compute cost with optional prior contribution
         return self._compute_cost_with_prior(sol)
 
-    def run_with_sensitivities(self) -> tuple[float, np.ndarray]:
+    def run_with_sensitivities(self) -> tuple[np.ndarray, np.ndarray]:
         """
         Evaluates the simulation and cost function with parameter sensitivities
         using the parameters set in the previous call to `set_params`.
 
-        Returns:
-            Tuple of (cost_value, sensitivities)
+        The parameters can be set as singular proposals: np.array(N,)
+        Or as an array of multiple proposals: np.array(M,N), where
+        M is the number of proposals to solve.
+
+        Returns
+        -------
+        tuple[np.ndarray, np.ndarray]
+            A tuple containing the cost and parameter sensitivities:
+
+            - cost ( np.ndarray(M,) ): Weighted sum of cost values for each proposal.
+            - sensitivities ( np.ndarray(M, n_params) ): Weighted sum of parameter gradients for each proposal.
         """
         self.check_set_params_called()
         prior_derivatives = np.zeros(len(self._params))
 
         # Compute prior contribution and derivatives if using posterior
-        if self._use_posterior:
+        if self.is_posterior:
             log_prior, prior_derivatives = self._priors.logpdfS1(
                 self._params.get_values()
             )
@@ -115,24 +127,25 @@ class PybammProblem(Problem):
         sol = self._pipeline.solve(calculate_sensitivities=True)
         cost = self._compute_cost_with_prior(sol)
 
-        try:
-            aggregated_sens = np.asarray(
-                [sol[n].sensitivities["all"] for n in self._cost_names]
-            ).squeeze(axis=1)
-        except KeyError as e:
-            raise KeyError(
-                "Sensitivities not available, ensure problem is formulated to enable sensitivities"
-            ) from e
-        weighted_sensitivity = np.sum(
-            aggregated_sens * self._cost_weights[:, None], axis=0
-        )
+        # Shape: (n_solutions, n_params)
+        total_weighted_sens = np.empty((len(sol), len(self._params)))
+        for i, s in enumerate(sol):
+            weighted_sens = np.zeros(len(self._params))
+            for n in self._cost_names:
+                sens = np.asarray(s[n].sensitivities["all"])  # Shape: (1, n_params)
+                weighted_sens += np.sum(
+                    sens * self._cost_weights, axis=0
+                )  # Shape: (n_params,)
+            total_weighted_sens[i, :] = weighted_sens
 
         # Add prior derivative contribution if using posterior
-        if self._use_posterior:
-            for param_idx, _param_name in enumerate(self._params.keys()):
-                weighted_sensitivity[param_idx] -= prior_derivatives[param_idx]
+        if self.is_posterior:
+            total_weighted_sens -= prior_derivatives
 
-        return cost, weighted_sensitivity
+        if total_weighted_sens.ndim == 2 and total_weighted_sens.shape[0] == 1:
+            return cost, total_weighted_sens.reshape(-1)
+
+        return cost, total_weighted_sens
 
     @property
     def pipeline(self):

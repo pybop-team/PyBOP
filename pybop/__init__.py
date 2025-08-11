@@ -9,25 +9,6 @@ import sys
 from os import path
 
 #
-# Multiprocessing
-#
-try:
-    import multiprocessing as mp
-
-    if sys.platform == "win32":
-        mp.set_start_method("spawn")
-    else:
-        mp.set_start_method("fork")
-except Exception as e:  # pragma: no cover
-    error_message = (
-        "Multiprocessing context could not be set. "
-        "Continuing import without setting context.\n"
-        f"Error: {e}"
-    )  # pragma: no cover
-    print(error_message)  # pragma: no cover
-    pass  # pragma: no cover
-
-#
 # Version info
 #
 from pybop._version import __version__
@@ -44,7 +25,7 @@ script_path = path.dirname(__file__)
 #
 # Utilities
 #
-from ._utils import is_numeric, SymbolReplacer
+from ._utils import add_spaces, FailedVariable, FailedSolution, SymbolReplacer
 
 
 #
@@ -115,7 +96,7 @@ from .builders.multi_fitting import MultiFitting
 #
 # Evaluation
 #
-from ._evaluation import SciPyEvaluator
+from ._evaluation import SciPyEvaluator, PopulationEvaluator
 
 #
 # Optimiser classes
@@ -191,6 +172,13 @@ from .samplers.pints_samplers import (
 # Classification classes
 #
 from ._classification import classify_using_hessian
+
+#
+# Applications
+#
+from .applications.base_method import BaseApplication, Interpolant, InverseOCV
+from .applications.ocp_methods import OCPMerge, OCPAverage, OCPCapacityToStoichiometry
+from .applications.gitt_methods import GITTPulseFit, GITTFit
 
 #
 # Plotting classes

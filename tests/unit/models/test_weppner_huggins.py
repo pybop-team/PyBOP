@@ -16,8 +16,8 @@ ABSOLUTE_TOLERANCE = 1e-5
 
 # Parameter configurations
 WEPPNER_HUGGINS_PARAMS = [
-    ("Positive electrode active material volume fraction", 0.518),
-    ("Positive particle diffusivity [m2.s-1]", 1e-14),
+    ("Theoretical electrode capacity [A.s]", 10),
+    ("Particle diffusion time scale [s]", 2000),
 ]
 
 
@@ -75,7 +75,9 @@ class TestWeppnerHuggins:
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(
-            model_config["model"], parameter_values=model_config["parameter_values"]
+            model_config["model"],
+            parameter_values=model_config["parameter_values"],
+            solver=model_config["solver"],
         )
 
         for parameter in parameters:

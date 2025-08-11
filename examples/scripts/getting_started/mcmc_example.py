@@ -1,88 +1,91 @@
-import sys
-
 import numpy as np
+import pybamm
 
 import pybop
 
-# Set parallelization if on macOS / Unix
-parallel = True if sys.platform != "win32" else False
+# In this example, we present a Pybop's Monte Carlo
+# Sampler framework. Monte Carlo sampling provides
+# a method to resolve intractable integration problems.
+# In Pybop, we use this to integrate Bayes formula
+# providing uncertainty insights via the sampled
+# posterior.
 
-# Parameter set and model definition
-parameter_set = pybop.ParameterSet("Chen2020")
-parameter_set.update(
+# Set the model and parameter values
+model = pybamm.lithium_ion.SPM()
+parameter_values = pybamm.ParameterValues("Chen2020")
+
+# Generate the synthetic dataset
+sigma = 5e-3
+t_eval = np.linspace(0, 1000, 240)
+sim = pybamm.Simulation(
+    model=model,
+    parameter_values=parameter_values,
+)
+sol = sim.solve(t_eval=t_eval, t_interp=t_eval)
+
+dataset = pybop.Dataset(
     {
-        "Negative electrode active material volume fraction": 0.63,
-        "Positive electrode active material volume fraction": 0.71,
+        "Time [s]": sol.t,
+        "Voltage [V]": sol["Voltage [V]"].data,
+        "Current function [A]": sol["Current [A]"].data
+        + np.random.normal(0, sigma, len(t_eval)),
     }
 )
-synth_model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
 
-# Fitting parameters
-parameters = pybop.Parameters(
+# Construct the parameters to be sampled
+parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.68, 0.02),
+        initial_value=0.6,
+        prior=pybop.Gaussian(0.6, 0.2),
         transformation=pybop.LogTransformation(),
+        bounds=[0.5, 0.8],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.65, 0.02),
+        initial_value=0.6,
+        prior=pybop.Gaussian(0.6, 0.2),
         transformation=pybop.LogTransformation(),
+        bounds=[0.5, 0.8],
     ),
+]
+
+# Create the builder
+builder = (
+    pybop.builders.Pybamm()
+    .set_dataset(dataset)
+    .set_simulation(
+        model,
+        parameter_values=parameter_values,
+    )
+    # We leave sigma non-defined in the below cost as we want to estimate it alongside the parameters
+    .add_cost(
+        pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", "Voltage [V]")
+    )
 )
+for param in parameters:
+    builder.add_parameter(param)
 
-# Generate data
-init_soc = 0.5
-sigma = 0.005
-experiment = pybop.Experiment(
-    [
-        ("Discharge at 0.5C for 3 minutes (5 second period)",),
-    ]
-)
-values = synth_model.predict(
-    initial_state={"Initial SoC": init_soc}, experiment=experiment
-)
+# Build the problem
+problem = builder.build()
 
-
-def noisy(data, sigma):
-    return data + np.random.normal(0, sigma, len(data))
-
-
-# Form dataset
-dataset = pybop.Dataset(
-    {
-        "Time [s]": values["Time [s]"].data,
-        "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": noisy(values["Voltage [V]"].data, sigma),
-    }
-)
-
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
-signal = ["Voltage [V]"]
-
-# Generate problem, likelihood, and sampler
-problem = pybop.FittingProblem(
-    model, parameters, dataset, signal=signal, initial_state={"Initial SoC": init_soc}
-)
-likelihood = pybop.GaussianLogLikelihood(problem)
-posterior = pybop.LogPosterior(likelihood)
-
-sampler = pybop.DifferentialEvolutionMCMC(
-    posterior,
-    chains=3,
-    max_iterations=250,  # Reduced for CI, increase for improved posteriors
-    warm_up=100,
+# Set the sampler options and construct the sampler
+options = pybop.PintsSamplerOptions(
+    n_chains=3,
+    warm_up_iterations=50,  # Extend this for accurate posteriors
+    max_iterations=300,  # Extend this for accurate posteriors
     verbose=True,
-    parallel=parallel,  # (macOS/WSL/Linux only)
+    cov=1e-2,
 )
+sampler = pybop.DifferentialEvolutionMCMC(problem, options=options)
 chains = sampler.run()
 
-# Summary statistics
+# Summary statistics and plotting
 posterior_summary = pybop.PosteriorSummary(chains)
 print(posterior_summary.get_summary_statistics())
 posterior_summary.plot_trace()
 posterior_summary.summary_table()
-posterior_summary.plot_posterior()
 posterior_summary.plot_chains()
+posterior_summary.plot_posterior()
 posterior_summary.effective_sample_size()
 print(f"rhat: {posterior_summary.rhat()}")

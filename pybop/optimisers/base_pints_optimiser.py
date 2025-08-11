@@ -6,9 +6,7 @@ import pints
 from pints import PSO as PintsPSO
 from pints import NelderMead as PintsNelderMead
 from pints import Optimiser as PintsOptimiser
-from pints import ParallelEvaluator as PintsParallelEvaluator
 from pints import PopulationBasedOptimiser
-from pints import PopulationBasedOptimiser as PintsPopulationBasedOptimiser
 from pints import RectangularBoundaries as PintsRectangularBoundaries
 from pints import SequentialEvaluator as PintsSequentialEvaluator
 from pints import strfloat as PintsStrFloat
@@ -18,6 +16,7 @@ from pybop import (
     AdamWImpl,
     GradientDescentImpl,
     OptimisationResult,
+    PopulationEvaluator,
 )
 from pybop.problems.base_problem import Problem
 
@@ -26,6 +25,18 @@ from pybop.problems.base_problem import Problem
 class PintsOptions(pybop.OptimiserOptions):
     """
     A class to hold PINTS options for the optimisation process.
+
+    Attributes:
+            default_max_iterations (int): Default maximum number of iterations (1000).
+            max_iterations (int): Maximum number of iterations for the optimisation.
+            min_iterations (int): Minimum number of iterations required.
+            sigma (float | np.ndarray): Standard deviation or step-size parameter for the optimiser.
+            max_unchanged_iterations (int): Maximum iterations without improvement before stopping.
+            use_f_guessed (bool): Whether to use guessed function values.
+            absolute_tolerance (float): Absolute tolerance for convergence.
+            relative_tolerance (float): Relative tolerance for convergence.
+            max_evaluations (int | None): Maximum number of function evaluations.
+            threshold (float | None): Threshold value for optimisation stopping criteria.
     """
 
     default_max_iterations = 1000
@@ -33,7 +44,6 @@ class PintsOptions(pybop.OptimiserOptions):
     min_iterations: int = 2
     sigma: float | np.ndarray = 5e-2
     max_unchanged_iterations: int = 15
-    parallel: bool = False
     use_f_guessed: bool = False
     absolute_tolerance: float = 1e-5
     relative_tolerance: float = 1e-2
@@ -53,8 +63,11 @@ class PintsOptions(pybop.OptimiserOptions):
             raise ValueError(
                 "Maximum number of unchanged iterations cannot be negative."
             )
-        if self.sigma is not None and self.sigma <= 0:
+        if isinstance(self.sigma, np.ndarray) and any(self.sigma) <= 0:
             raise ValueError("Sigma must be positive.")
+        elif np.isscalar(self.sigma):
+            if self.sigma <= 0:
+                raise ValueError("Sigma must be positive.")
         if self.absolute_tolerance < 0:
             raise ValueError("Absolute tolerance cannot be negative.")
         if self.relative_tolerance < 0:
@@ -94,10 +107,9 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         self._boundaries = None
         self._needs_sensitivities = None
         self._use_f_guessed = None
-        self._n_workers = 1
         self._callback = None
         options = options or PintsOptions()
-        self.set_parallel(options.parallel)
+        self._parallel = issubclass(pints_optimiser, PopulationBasedOptimiser)
         self.set_min_iterations(options.min_iterations)
         self.set_max_iterations(options.max_iterations)
         self._unchanged_max_iterations = options.max_unchanged_iterations
@@ -187,9 +199,10 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         # Create an instance of the PINTS optimiser class
         if issubclass(self._pints_optimiser, PintsOptimiser):
             x0 = self.problem.params.get_initial_values(transformed=True)
-            param_dims = len(x0)
             if np.isscalar(self._sigma0):
+                param_dims = len(self.problem.params)
                 self._sigma0 = np.ones(param_dims) * self._sigma0
+
             self._optimiser = self._pints_optimiser(
                 x0,
                 sigma0=self._sigma0,
@@ -205,7 +218,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         """Returns the name of the PINTS optimisation strategy."""
         return self._optimiser.name()
 
-    def _run(self):
+    def _run(self) -> OptimisationResult:
         """
         Internal method to run the optimization using a PINTS optimiser.
 
@@ -242,7 +255,10 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
 
             def fun(x):
                 self.problem.set_params(x)
-                return self.problem.run_with_sensitivities()
+                cost, grad = self.problem.run_with_sensitivities()
+                jac = self.problem.params.transformation.jacobian(x)
+                grad = np.matmul(grad, jac)
+                return cost, grad
 
         else:
 
@@ -252,15 +268,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
 
         # Create evaluator object
         if self._parallel:
-            # Get number of workers
-            n_workers = self._n_workers
-            if isinstance(self._optimiser, PintsPopulationBasedOptimiser):
-                population_size = self._optimiser.population_size()
-                if population_size is None:
-                    n_workers = self._n_workers
-                else:
-                    n_workers = min(self._n_workers, population_size)
-            evaluator = PintsParallelEvaluator(fun, n_workers=n_workers)
+            evaluator = PopulationEvaluator(fun)
         else:
             evaluator = PintsSequentialEvaluator(fun)
 
@@ -279,12 +287,21 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
                 xs_raw = self._optimiser.ask()
                 xs: list[np.ndarray] = [x for x in xs_raw]
 
-                model_xs = [
-                    self.problem.params.transformation().to_model(x) for x in xs
-                ]
+                model_xs = [self.problem.params.transformation.to_model(x) for x in xs]
 
                 # Evaluate points
                 fs = evaluator.evaluate(model_xs)
+
+                # For XNES/SNES where initial conditions
+                # are computed separate from
+                # later population candidates
+                if np.isscalar(fs):
+                    fs = [fs]
+
+                # Nelder-Mead requires a list
+                # of np.scalar values
+                if isinstance(self._optimiser, pints.NelderMead):
+                    fs = [v[0] for v in fs]
 
                 # Tell optimiser about function values
                 self._optimiser.tell(fs)
@@ -313,7 +330,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
                     x_search=xs,
                     x_model=model_xs,
                     x_search_best=self._optimiser.x_best(),
-                    x_model_best=self.problem.params.transformation().to_model(
+                    x_model_best=self.problem.params.transformation.to_model(
                         self._optimiser.x_best()
                     ),
                     cost=_fs,
@@ -405,8 +422,8 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
 
         return OptimisationResult(
             problem=self._problem,
-            x=self._problem.params.transformation().to_model(x),
-            final_cost=f,
+            x=self._problem.params.transformation.to_model(x),
+            best_cost=f,
             n_iterations=self._iterations,
             n_evaluations=self._evaluations,
             time=total_time,
@@ -436,26 +453,6 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
             If True, track f_guessed; otherwise, track f_best (default: False).
         """
         self._use_f_guessed = bool(use_f_guessed)
-
-    def set_parallel(self, parallel=False):
-        """
-        Enable or disable parallel evaluation.
-        Credit: PINTS
-
-        Parameters
-        ----------
-        parallel : bool or int, optional
-            If True, use as many worker processes as there are CPU cores. If an integer, use that many workers.
-            If False or 0, disable parallelism (default: False).
-        """
-        self._parallel = bool(parallel is True or parallel >= 1)
-
-        if parallel is True:
-            self._n_workers = PintsParallelEvaluator.cpu_count()
-        elif parallel >= 1:
-            self._n_workers = int(parallel)
-        else:
-            self._n_workers = 1
 
     def set_min_iterations(self, iterations=2):
         """

@@ -8,6 +8,7 @@ import pints
 from pybop import (
     BaseSampler,
     MultiChainProcessor,
+    PopulationEvaluator,
     SingleChainProcessor,
 )
 from pybop.problems.base_problem import Problem
@@ -16,13 +17,25 @@ from pybop.samplers.base_sampler import SamplerOptions
 
 @dataclass
 class PintsSamplerOptions(SamplerOptions):
+    """
+    Pints sampler options.
+
+    Attributes:
+        max_iterations (int): Maximum number of iterations to run. (Default: 500)
+        verbose (bool): If `True`, additional information will be printed. (Default: False)
+        warm_up_iterations (int): Number of iterations to warm up the sampler. (Default: 250)
+        chains_in_memory (bool): Whether to store the chains in memory. (Default: True)
+        log_to_screen (bool): If `True` (default), the sampler will print information during the sampling
+        log_filename (str): The name of the file to save the sampler log to. (Default: None)
+        chain_files (list): The name of the file to save the chains in. (Default: None)
+        evaluation_files (list): The name of the file to save the evaluations in. (Default: None)
+    """
+
     max_iterations: int = 500
-    n_workers: int = 1
     chains_in_memory: bool = True
     log_to_screen: bool = True
     log_filename: str | None = None
     initial_phase_iterations: int = 250
-    parallel: bool = False
     verbose: bool = False
     warm_up_iterations: int = 0
     chain_files: list[str] | None = None
@@ -44,8 +57,6 @@ class PintsSamplerOptions(SamplerOptions):
             raise ValueError("Number of warm-up steps must be non-negative.")
         if self.max_iterations < 1:
             raise ValueError("Maximum number of iterations must be greater than 0.")
-        if self.n_workers < 1:
-            raise ValueError("Number of workers must be greater than 0.")
         if self.initial_phase_iterations < 1:
             raise ValueError(
                 "Number of initial phase iterations must be greater than 0."
@@ -89,6 +100,7 @@ class BasePintsSampler(BaseSampler):
         self._n_parameters = len(self.problem.params)
         self._chain_files = options.chain_files
         self._evaluation_files = options.evaluation_files
+        self._n_evaluations = 0
         self._loop_iters = 0
         self._iteration = 0
         self.iter_time = 0.0
@@ -160,7 +172,7 @@ class BasePintsSampler(BaseSampler):
             - Finalises and returns the collected samples, or None if
             chains are not stored in memory.
         """
-
+        self._start_time = time.time()
         self._initialise_logging()
         self._check_stopping_criteria()
         self._initialise_chain_processor()
@@ -181,7 +193,9 @@ class BasePintsSampler(BaseSampler):
                 self._end_initial_phase()
 
             xs = self._ask_for_samples()
-            self.fxs = evaluator.evaluate(xs)
+            model_xs = [self.problem.params.transformation.to_model(x) for x in xs]
+
+            self.fxs = evaluator.evaluate(model_xs)
             self._process_chains()
 
             if self._single_chain:
@@ -192,6 +206,7 @@ class BasePintsSampler(BaseSampler):
                 continue
 
             self._iteration += 1
+            self._n_evaluations += len(xs)
             if self._log_to_screen and self._verbose:
                 if self._iteration <= 10 or self._iteration % 50 == 0:
                     timing_iterations = self._iteration - self._loop_iters
@@ -259,7 +274,19 @@ class BasePintsSampler(BaseSampler):
 
             def fun(x):
                 self.problem.set_params(x)
-                return self.problem.run_with_sensitivities()
+                loss, grad = self.problem.run_with_sensitivities()
+
+                # Transform the gradient, for multiple parameters
+                # iterate across each and apply the transformation.
+                if grad.ndim == 1:
+                    jac = self.problem.params.transformation.jacobian(x)
+                    grad = np.dot(grad, jac)
+                else:
+                    for i in range(grad.shape[0]):
+                        jac = self.problem.params.transformation.jacobian(x[i])
+                        grad[i] = np.dot(grad[i], jac)
+
+                return (-loss, -grad)
 
         else:
 
@@ -267,11 +294,7 @@ class BasePintsSampler(BaseSampler):
                 self.problem.set_params(x)
                 return -self.problem.run()
 
-        # Handle parallel case
-        if self.options.parallel:
-            return pints.ParallelEvaluator(fun, n_workers=self.options.n_workers)
-
-        return pints.SequentialEvaluator(fun)
+        return PopulationEvaluator(fun)
 
     def _initialise_storage(self):
         # Storage of the received samples
@@ -286,7 +309,6 @@ class BasePintsSampler(BaseSampler):
             else (n_chains, self._n_parameters)
         )
         self._samples = np.zeros(storage_shape)
-
         self._evaluations = np.zeros((n_chains, self._max_iterations))
 
         # From PINTS:
@@ -305,12 +327,6 @@ class BasePintsSampler(BaseSampler):
         if self._log_to_screen:
             logging.info("Using " + str(self._samplers[0].name()))
             logging.info("Generating " + str(self.options.n_chains) + " chains.")
-            if self.options.parallel:
-                logging.info(
-                    f"Running in parallel with {self.options.n_workers} worker processes."
-                )
-            else:
-                logging.info("Running in sequential mode.")
             if self._chain_files:
                 logging.info("Writing chains to " + self._chain_files[0] + " etc.")
             if self._evaluation_files:
@@ -323,6 +339,8 @@ class BasePintsSampler(BaseSampler):
             logging.info(
                 f"Halting: Maximum number of iterations ({self._iteration}) reached."
             )
+            logging.info(f"Total time: {time.time() - self._start_time} seconds.")
+            logging.info(f"Total number of evaluations: ({self._n_evaluations}).")
 
     @property
     def samplers(self):

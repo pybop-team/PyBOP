@@ -12,7 +12,7 @@ def set_formation_concentrations(parameter_values: ParameterValues) -> None:
     Parameters
     ----------
     parameters : pybamm.ParameterValues
-        A PyBaMM parameter set containing standard lithium ion parameters.
+        A PyBaMM parameter set containing standard lithium-ion parameters.
     """
     params = parameter_values
 
@@ -21,11 +21,8 @@ def set_formation_concentrations(parameter_values: ParameterValues) -> None:
         "Initial concentration in positive electrode [mol.m-3]",
     }
 
-    if (
-        not required_keys.issubset(params.keys())
-        or params["Initial concentration in negative electrode [mol.m-3]"] <= 0
-    ):
-        return params
+    if not required_keys.issubset(params.keys()):
+        raise ValueError("Required keys not in ParameterValues object")
 
     # Obtain the total amount of lithium in the active material
     Q_Li_particles_init = params.evaluate(LithiumIonParameters().Q_Li_particles_init)

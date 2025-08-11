@@ -53,7 +53,7 @@ class PybammCost:
         Make a unique name for the cost function variable using the name of the class
         and a UUID. This is used to avoid name collisions in the pybamm model.
         """
-        return f"{cls.__class__.__name__}_{uuid4()}"
+        return f"{cls.__name__}_{uuid4()}"
 
     def variable_expression(
         self,
@@ -116,7 +116,9 @@ class PybammCost:
             sigma = pybamm.Parameter(sigma_name)
             parameters[sigma_name] = PybammParameterMetadata(
                 parameter=sigma,
-                default_value=self._sigma.current_value if self._sigma else 1.0,
+                default_value=self._sigma.current_value
+                if self._sigma
+                else 1e-2,  # Initial guess w/ ~ low noise
             )
         elif isinstance(self._sigma, float | int):
             sigma = pybamm.Scalar(self._sigma)

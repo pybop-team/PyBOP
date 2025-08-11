@@ -1,10 +1,12 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
+import pybamm
 import scipy
 from scipy.io import savemat
 
 import pybop
-from pybop.models.lithium_ion.grouped_spme import convert_physical_to_grouped_parameters
 
 # To duplicate paper results, modify the below:
 n_runs = 1  # 10
@@ -19,14 +21,20 @@ parameter_set["Electrolyte conductivity [S.m-1]"] = 1e16
 parameter_set["Negative electrode conductivity [S.m-1]"] = 1e16
 parameter_set["Positive electrode conductivity [S.m-1]"] = 1e16
 
-grouped_parameters = convert_physical_to_grouped_parameters(parameter_set)
+grouped_parameters = pybop.lithium_ion.GroupedSPMe.apply_parameter_grouping(
+    parameter_set
+)
 grouped_parameters["Series resistance [Ohm]"] = R0
 model_options = {"surface form": "differential", "contact resistance": "true"}
 var_pts = {"x_n": 100, "x_s": 20, "x_p": 100, "r_n": 100, "r_p": 100}
 
 ## Construct model
 model = pybop.lithium_ion.GroupedSPMe(
-    parameter_set=grouped_parameters, eis=True, var_pts=var_pts, options=model_options
+    parameter_set=grouped_parameters,
+    eis=True,
+    var_pts=var_pts,
+    options=model_options,
+    solver=pybamm.CasadiSolver(),
 )
 
 ## Parameter bounds for optimisation
@@ -202,7 +210,9 @@ parameters = pybop.Parameters(
 
 
 ## Read simulated impedance data
-EIS_data = scipy.io.loadmat("Data/Z_SPMegrouped_SOC_chen2020.mat")
+current_dir = Path(__file__).parent
+EIS_data_path = current_dir / "Data" / "Z_SPMegrouped_SOC_chen2020.mat"
+EIS_data = scipy.io.loadmat(EIS_data_path)
 
 impedances = EIS_data.get("Z")
 frequencies = EIS_data.get("f")
@@ -249,7 +259,7 @@ results = optim.run()
 
 # Print optimised parameters
 print("True grouped parameters", parameters.true_value())
-grouped_parameters.update(parameters.as_dict(results.best_x))
+grouped_parameters.update(parameters.as_dict(results.x))
 
 # Plot convergence
 pybop.plot.convergence(optim)
@@ -263,6 +273,7 @@ model_hat = pybop.lithium_ion.GroupedSPMe(
     eis=True,
     var_pts=var_pts,
     options=model_options,
+    solver=pybamm.CasadiSolver(),
 )
 
 Nfreq = len(frequencies)
@@ -297,7 +308,8 @@ mdic = {
     "final_cost": results.final_cost,
     "theta": parameters.true_value(),
     "thetahat": results.x,
-    "thetahatbest": results.best_x,
+    "thetahatbest": results.x,
     "computationTime": results.time,
 }
-savemat("Data/Zhat_SOC_SPMe_Simulation.mat", mdic)
+save_path = current_dir / "Data" / "Zhat_SOC_SPMe_Simulation.mat"
+savemat(save_path, mdic)

@@ -1,3 +1,4 @@
+import pybamm
 from pybamm import Parameter
 
 import pybop
@@ -12,8 +13,8 @@ import pybop
 # separator width.
 
 # Define parameter set and additional parameters needed for the cost function
-parameter_set = pybop.ParameterSet("Chen2020", formation_concentrations=True)
-parameter_set.update(
+parameter_values = pybamm.ParameterValues("Chen2020")
+parameter_values.update(
     {
         "Electrolyte density [kg.m-3]": Parameter("Separator density [kg.m-3]"),
         "Negative electrode active material density [kg.m-3]": Parameter(
@@ -33,58 +34,69 @@ parameter_set.update(
 )
 
 # Define model
-model = pybop.lithium_ion.SPMe(parameter_set=parameter_set)
+model = pybamm.lithium_ion.SPM()
 
 # Fitting parameters
-parameters = pybop.Parameters(
+parameters = [
     pybop.Parameter(
         "Positive electrode thickness [m]",
-        prior=pybop.Gaussian(7.56e-05, 0.1e-05),
-        bounds=[65e-06, 10e-05],
+        prior=pybop.Gaussian(9e-05, 0.1e-05),
+        transformation=pybop.LogTransformation(),
+        bounds=[6.5e-05, 12e-05],
     ),
     pybop.Parameter(
-        "Positive particle radius [m]",
-        prior=pybop.Gaussian(5.22e-06, 0.1e-06),
-        bounds=[2e-06, 9e-06],
+        "Negative electrode thickness [m]",
+        prior=pybop.Gaussian(9e-05, 0.1e-05),
+        transformation=pybop.LogTransformation(),
+        bounds=[5e-05, 12e-05],
     ),
-)
+]
+
 
 # Define test protocol
-experiment = pybop.Experiment(
+experiment = pybamm.Experiment(
     [
-        "Discharge at 1C until 2.5 V (10 seconds period)",
-        "Hold at 2.5 V for 30 minutes or until 10 mA (10 seconds period)",
+        "Discharge at 3C until 2.5 V (2 minute period)",
     ],
 )
-signal = ["Voltage [V]", "Current [A]"]
 
-# Generate problem
-problem = pybop.DesignProblem(
-    model,
-    parameters,
-    experiment,
-    signal=signal,
-    initial_state={"Initial SoC": 1.0},
-    update_capacity=True,
+# Construct the problem builder
+builder = (
+    pybop.builders.Pybamm()
+    .set_simulation(
+        model,
+        parameter_values=parameter_values,
+        experiment=experiment,
+        initial_state=1.0,
+    )
+    .add_cost(pybop.costs.pybamm.GravimetricEnergyDensity())
+    .add_cost(pybop.costs.pybamm.VolumetricEnergyDensity(), weight=1e-4)
 )
+for param in parameters:
+    builder.add_parameter(param)
 
-# Generate multiple cost functions and combine them
-cost1 = pybop.GravimetricEnergyDensity(problem)
-cost2 = pybop.VolumetricEnergyDensity(problem)
-cost = pybop.WeightedCost(cost1, cost2, weights=[1, 1e-3])
+problem = builder.build()
 
-# Run optimisation
-optim = pybop.PSO(
-    cost, verbose=True, allow_infeasible_solutions=False, max_iterations=10
+# Set optimiser and options
+options = pybop.PintsOptions(
+    sigma=0.1,
+    verbose=True,
+    max_iterations=5,
 )
+optim = pybop.CMAES(problem, options=options)
 results = optim.run()
-print(f"Initial gravimetric energy density: {cost1(optim.x0):.2f} Wh.kg-1")
-print(f"Optimised gravimetric energy density: {cost1(results.x):.2f} Wh.kg-1")
-print(f"Initial volumetric energy density: {cost2(optim.x0):.2f} Wh.m-3")
-print(f"Optimised volumetric energy density: {cost2(results.x):.2f} Wh.m-3")
 
-# Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
+# Obtain the fully identified pybamm.ParameterValues object
+# These can then be used with normal Pybamm classes
+identified_parameter_values = results.parameter_values
+
+# Plot convergence
+pybop.plot.convergence(optim)
+
+# Plot the parameter traces
+pybop.plot.parameters(optim)
 
 # Plot the cost landscape with optimisation path
 pybop.plot.surface(optim)
+
+print(f"Optimised energy density: {-results.best_cost:.2f} Wh.kg-1")

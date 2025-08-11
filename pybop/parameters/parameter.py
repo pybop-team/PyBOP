@@ -9,6 +9,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from pybop import (
+    BasePrior,
     ComposedTransformation,
     IdentityTransformation,
     LogTransformation,
@@ -176,7 +177,7 @@ class Parameter:
         current_value: ParameterValue = None,
         true_value: ParameterValue = None,
         bounds: BoundsPair | None = None,
-        prior: Any | None = None,
+        prior: BasePrior | None = None,
         transformation: Transformation | None = None,
         margin: float = 1e-4,
     ) -> None:
@@ -519,7 +520,7 @@ class Parameters:
             values_array = np.atleast_1d(values)
             param_list = list(self._parameters.values())
 
-            for param, value in zip(param_list, values_array, strict=False):
+            for param, value in zip(param_list, values_array.T, strict=False):
                 param.update_value(value)
 
     def _bulk_update_initial_values(self, values: ArrayLike | ParameterDict) -> None:
@@ -747,6 +748,23 @@ class Parameters:
                 )
             return dict(zip(self._parameters.keys(), values_array, strict=False))
 
+    def to_pybamm_multiprocessing(self) -> list:
+        """
+        Return parameter values as a list of dictionaries in the format
+        required for pybamm multiprocessing.
+        """
+        param_dict = self.to_dict()
+
+        if self.get_values().ndim == 1:
+            return [param_dict]
+
+        # Construct a list of single value dicts
+        array_length = len(next(iter(param_dict.values())))
+        return [
+            {key: float(values[i]) for key, values in param_dict.items()}
+            for i in range(array_length)
+        ]
+
     def reset_to_initial(self, names: Sequence[str] | None = None) -> None:
         """Reset parameters to initial values."""
         target_params = (
@@ -766,6 +784,7 @@ class Parameters:
             if param.prior is not None
         ]
 
+    @property
     def transformation(self) -> Transformation:
         """
         Get the transformation for the parameters.
