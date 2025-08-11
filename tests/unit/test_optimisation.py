@@ -158,7 +158,7 @@ class TestOptimisation:
     )
     def test_optimiser_common(self, problem, optimiser):
         options = optimiser.default_options()
-        if issubclass(optimiser, pybop.SciPyMinimize):
+        if issubclass(optimiser, pybop.BaseSciPyOptimiser):
             options.maxiter = 3
         options.max_iterations = 3
         options.tol = 1e-6
