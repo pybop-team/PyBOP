@@ -1,7 +1,7 @@
 from copy import copy
 
 import numpy as np
-from pybamm import ParameterValues
+import pybamm
 
 import pybop
 from pybop import BaseApplication
@@ -35,21 +35,27 @@ class GITTPulseFit(BaseApplication):
 
     def __init__(
         self,
-        parameter_set: ParameterValues,
+        parameter_set: pybamm.ParameterValues,
         electrode: str | None = "negative",
-        cost: pybop.CallableCost | None = pybop.RootMeanSquaredError,
+        cost: pybop.CallableCost | None = pybop.costs.pybamm.RootMeanSquaredError,
         optimiser: pybop.BaseOptimiser | None = pybop.SciPyMinimize,
         verbose: bool = True,
     ):
         self.electrode = electrode
         self.parameter_set = parameter_set
-        self.parameters = pybop.Parameters(
-            pybop.Parameter("Particle diffusion time scale [s]", bounds=[0, np.inf]),
-            pybop.Parameter("Series resistance [Ohm]", bounds=[0, np.inf]),
-        )
-        self.model = pybop.lithium_ion.SPDiffusion(
-            parameter_set=self.parameter_set, electrode=self.electrode, build=True
-        )
+        self.parameters = [
+            pybop.Parameter(
+                "Particle diffusion time scale [s]",
+                initial_value=self.parameter_set["Particle diffusion time scale [s]"],
+                bounds=[0, np.inf],
+            ),
+            pybop.Parameter(
+                "Series resistance [Ohm]",
+                initial_value=self.parameter_set["Series resistance [Ohm]"],
+                bounds=[0, np.inf],
+            ),
+        ]
+        self.model = pybop.lithium_ion.SPDiffusion(electrode=self.electrode, build=True)
         self.problem = None
         self.cost = cost
         self.verbose = verbose
@@ -58,34 +64,41 @@ class GITTPulseFit(BaseApplication):
         self.results = None
 
     def __call__(self, gitt_pulse: pybop.Dataset) -> pybop.OptimisationResult:
-        # Update starting point
-        self.parameters.update(
-            initial_values=[
-                self.parameter_set["Particle diffusion time scale [s]"],
-                self.parameter_set["Series resistance [Ohm]"],
-            ]
-        )
-        self.model.set_initial_state(
-            initial_state={
-                "Initial stoichiometry": self.parameter_set["Initial stoichiometry"]
-            },
-            inputs=self.parameters.as_dict(),
-        )
-
-        # Define the cost
-        self.problem = pybop.FittingProblem(
-            model=self.model, parameters=self.parameters, dataset=gitt_pulse
-        )
-        cost = self.cost(self.problem, weighting="domain")
+        # Build problem
+        self.problem = self._build_problem(gitt_pulse)
 
         # Build and run the optimisation problem
-        self.optim = self.optimiser(cost=cost, verbose=self.verbose, tol=1e-8)
+        self.optim = self.optimiser(self.problem)
         self.results = self.optim.run()
-        self.parameter_set.update(self.parameters.as_dict(self.results.x))
-
-        # pybop.plot.problem(problem=problem, problem_inputs=self.results.x)
+        # self.parameter_set.update(self.parameters.as_dict(self.results.x))
 
         return self.results
+
+    def _build_problem(self, dataset: pybop.Dataset):
+        builder = pybop.builders.Pybamm()
+        builder.set_dataset(dataset)
+
+        def current_function(t):
+            return pybamm.Interpolant(
+                dataset["Time [s]"] - dataset["Time [s]"][0],
+                dataset["Current function [A]"],
+                t,
+                "current",
+            )
+
+        self.parameter_set["Current function [A]"] = current_function
+
+        builder.set_simulation(
+            self.model,
+            parameter_values=self.parameter_set,
+        )
+        for parameter in self.parameters:
+            builder.add_parameter(parameter)
+
+        builder.add_cost(self.cost("Voltage [V]", "Voltage [V]"))
+
+        # Return the built the problem
+        return builder.build()
 
 
 class GITTFit(BaseApplication):
@@ -116,7 +129,7 @@ class GITTFit(BaseApplication):
         self,
         gitt_dataset: pybop.Dataset,
         pulse_index: list[np.ndarray],
-        parameter_set: ParameterValues,
+        parameter_set: pybamm.ParameterValues,
         electrode: str | None = "negative",
         cost: pybop.CallableCost | None = pybop.RootMeanSquaredError,
         optimiser: pybop.BaseOptimiser | None = pybop.SciPyMinimize,

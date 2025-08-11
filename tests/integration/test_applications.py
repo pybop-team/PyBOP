@@ -1,6 +1,7 @@
 import warnings
 
 import numpy as np
+import pybamm
 import pytest
 
 import pybop
@@ -22,7 +23,7 @@ class TestApplications:
 
     @pytest.fixture
     def parameter_set(self):
-        return pybop.ParameterSet("Chen2020")
+        return pybamm.ParameterValues("Chen2020")
 
     def noise(self, sigma, values):
         return np.random.normal(0, sigma, values)
@@ -51,16 +52,15 @@ class TestApplications:
 
     def test_interpolant(self, parameter_set, discharge_dataset):
         electrode = "positive"
-        parameter_set = pybop.lithium_ion.SPDiffusion.apply_parameter_grouping(
+        parameter_set = pybop.lithium_ion.SPDiffusion.create_grouped_parameters(
             parameter_set, electrode=electrode
         )
         parameter_set["Electrode OCP [V]"] = pybop.Interpolant(
             discharge_dataset["Stoichiometry"], discharge_dataset["Voltage [V]"]
         )
-        model = pybop.lithium_ion.SPDiffusion(
-            parameter_set=parameter_set, electrode=electrode, build=True
-        )
-        solution = model.predict(t_eval=np.linspace(0, 10, 100))
+        model = pybop.lithium_ion.SPDiffusion(electrode=electrode, build=True)
+        simulation = pybamm.Simulation(model, parameter_values=parameter_set)
+        solution = simulation.solve(t_eval=[0, 10], t_interp=np.linspace(0, 10, 100))
         assert len(solution["Voltage [V]"].data) == 100
 
     def test_ocp_merge(self, discharge_dataset, charge_dataset):
@@ -148,25 +148,24 @@ class TestApplications:
 
     @pytest.fixture
     def half_cell_model(self):
-        parameter_set = pybop.ParameterSet("Xu2019")
-        return pybop.lithium_ion.SPMe(
-            parameter_set=parameter_set, options={"working electrode": "positive"}
-        )
+        return pybamm.lithium_ion.SPMe(options={"working electrode": "positive"})
 
     @pytest.fixture
     def pulse_data(self, half_cell_model):
         sigma = 5e-4
-        initial_state = {"Initial SoC": 0.9}
-        experiment = pybop.Experiment(
+        experiment = pybamm.Experiment(
             [
                 "Rest for 1 second",
                 "Discharge at 2C for 5 minutes (10 second period)",
                 "Rest for 15 minutes (10 second period)",
             ]
         )
-        values = half_cell_model.predict(
-            initial_state=initial_state, experiment=experiment
+        simulation = pybamm.Simulation(
+            half_cell_model,
+            parameter_values=pybamm.ParameterValues("Xu2019"),
+            experiment=experiment,
         )
+        values = simulation.solve(initial_soc=0.9)
         corrupt_values = values["Voltage [V]"].data + np.random.normal(
             0, sigma, len(values["Voltage [V]"].data)
         )
@@ -182,9 +181,9 @@ class TestApplications:
             }
         )
 
-    def test_gitt_pulse_fit(self, half_cell_model, pulse_data):
-        parameter_set = pybop.lithium_ion.SPDiffusion.apply_parameter_grouping(
-            half_cell_model.parameter_set, electrode="positive"
+    def test_gitt_pulse_fit(self, pulse_data):
+        parameter_set = pybop.lithium_ion.SPDiffusion.create_grouped_parameters(
+            pybamm.ParameterValues("Xu2019"), electrode="positive"
         )
         diffusion_time = parameter_set["Particle diffusion time scale [s]"]
 
@@ -194,8 +193,8 @@ class TestApplications:
         np.testing.assert_allclose(gitt_results.x[0], diffusion_time, rtol=5e-2)
 
     def test_gitt_fit(self, half_cell_model, pulse_data):
-        parameter_set = pybop.lithium_ion.SPDiffusion.apply_parameter_grouping(
-            half_cell_model.parameter_set, electrode="positive"
+        parameter_set = pybop.lithium_ion.SPDiffusion.create_grouped_parameters(
+            pybamm.ParameterValues("Xu2019"), electrode="positive"
         )
         diffusion_time = parameter_set["Particle diffusion time scale [s]"]
 
