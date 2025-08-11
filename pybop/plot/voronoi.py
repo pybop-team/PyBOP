@@ -360,7 +360,7 @@ def surface(
                 size=8,
                 showscale=False,
             ),
-            text=[f"f={val:.2f}" for val in f],
+            text=["f=" + np.array2string(val, precision=4) for val in f],
             hoverinfo="text",
             showlegend=False,
         )
