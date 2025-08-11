@@ -27,7 +27,7 @@ class PybammEISProblem(Problem):
         self._cost_weights = (
             np.asarray(cost_weights) if cost_weights is not None else None
         )
-        # self._compute_initial_cost_and_resample()
+        self._compute_initial_cost_and_resample()
 
     def set_params(self, p: np.ndarray) -> None:
         """

@@ -27,7 +27,7 @@ class TestSamplingThevenin:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.sigma0 = 1e-3
-        self.cov = 0.02
+        self.cov = 0.03
         self.ground_truth = np.clip(
             np.asarray([0.05, 0.05]) + np.random.normal(loc=0.0, scale=0.01, size=2),
             a_min=1e-4,
