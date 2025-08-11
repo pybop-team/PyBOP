@@ -8,7 +8,6 @@ from pints import NelderMead as PintsNelderMead
 from pints import Optimiser as PintsOptimiser
 from pints import PopulationBasedOptimiser
 from pints import RectangularBoundaries as PintsRectangularBoundaries
-from pints import SequentialEvaluator as PintsSequentialEvaluator
 from pints import strfloat as PintsStrFloat
 
 import pybop
