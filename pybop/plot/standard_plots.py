@@ -140,9 +140,6 @@ class StandardPlot:
 
         # Parse the data
         x, y = self.parse_data(x, y)
-        # print("x:", x)
-        # print("y:", y, len(y))
-        # print("trace_names:", trace_names)
 
         # Create a trace for each trajectory
         xi = x[0]

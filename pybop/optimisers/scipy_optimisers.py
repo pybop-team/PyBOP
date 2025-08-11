@@ -294,7 +294,6 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 x_best = intermediate_result
                 result = self._evaluator.evaluate(x_best)[0]
                 cost_best = result[0] if self._needs_sensitivities else result
-            print("cost_best:", cost_best)
 
             x_model_best = self.problem.params.transformation.to_model(x_best)
 
