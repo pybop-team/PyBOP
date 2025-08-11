@@ -46,7 +46,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
         self._intermediate_x_model.append(x_model)
         self._intermediate_cost.extend(cost.tolist())
 
-    def get_and_reset_itermediate_results(self):
+    def get_and_reset_intermediate_results(self):
         ret = (
             self._intermediate_x_search,
             self._intermediate_x_model,
@@ -58,7 +58,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
         return ret
 
     def scipy_bounds(self) -> Bounds:
-        bounds = self.problem.params.get_bounds()
+        bounds = self.problem.params.get_bounds(transformed=True)
         # Convert bounds to SciPy format
         if isinstance(bounds, dict):
             return Bounds(bounds["lower"], bounds["upper"], True)
@@ -297,7 +297,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
             x_model_best = self.problem.params.transformation.to_model(x_best)
 
-            (x_search, x_model, cost) = self.get_and_reset_itermediate_results()
+            (x_search, x_model, cost) = self.get_and_reset_intermediate_results()
             evaluations = len(x_search)
             self._iteration += 1
 
@@ -327,7 +327,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         start_time = time()
         result: OptimizeResult = minimize(
             self.cost_wrapper,
-            x0,
+            self.problem.params.transformation.to_model(x0),
             bounds=self._scipy_bounds,
             callback=callback,
             **self._options_dict,
@@ -346,12 +346,12 @@ class SciPyMinimize(BaseSciPyOptimiser):
             nfev = -1
 
         return OptimisationResult(
-            best_cost=result.fun * self._cost0,
-            initial_cost=self.logger.cost[0] * self._cost0,
+            best_cost=self._extract_scalar_cost(result.fun * self._cost0),
+            initial_cost=self._extract_scalar_cost(self.logger.cost[0] * self._cost0),
             n_iterations=nit,
             n_evaluations=nfev,
             problem=self.problem,
-            x=result.x,
+            x=self.problem.params.transformation.to_model(result.x),
             time=total_time,
             message=result.message,
         )
@@ -418,7 +418,7 @@ class SciPyDifferentialEvolutionOptions(pybop.OptimiserOptions):
     """
 
     strategy: str = "best1bin"
-    max_iterations: int = 1000
+    maxiter: int = 1000
     tol: float = 0.01
     popsize: int | None = None
     mutation: float | tuple | None = None
@@ -443,7 +443,7 @@ class SciPyDifferentialEvolutionOptions(pybop.OptimiserOptions):
         """
         ret = {
             "strategy": self.strategy,
-            "maxiter": self.max_iterations,
+            "maxiter": self.maxiter,
             "tol": self.tol,
         }
         optional_keys = [
@@ -546,7 +546,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
         # Add callback storing history of parameter values
         def callback(intermediate_result: OptimizeResult):
-            (x_search, x_model, cost) = self.get_and_reset_itermediate_results()
+            (x_search, x_model, cost) = self.get_and_reset_intermediate_results()
             self._iterations += 1
             self.logger.log_update(
                 iterations=self._iterations,
@@ -586,8 +586,8 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             nfev = -1
 
         return OptimisationResult(
-            best_cost=result.fun,
-            initial_cost=self.logger.cost[0],
+            best_cost=self._extract_scalar_cost(result.fun),
+            initial_cost=self._extract_scalar_cost(self.logger.cost[0]),
             n_evaluations=nfev,
             problem=self.problem,
             x=result.x,

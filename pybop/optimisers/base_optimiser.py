@@ -290,3 +290,9 @@ class BaseOptimiser:
             print(result)
 
         return result
+
+    def _extract_scalar_cost(self, cost_value):
+        """Extract scalar cost from a nested cost structure."""
+        if np.isscalar(cost_value):
+            return cost_value
+        return cost_value[0]
