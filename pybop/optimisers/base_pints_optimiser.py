@@ -267,10 +267,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
                 return self.problem.run()
 
         # Create evaluator object
-        if self._parallel:
-            evaluator = PopulationEvaluator(fun)
-        else:
-            evaluator = PintsSequentialEvaluator(fun)
+        evaluator = PopulationEvaluator(fun)
 
         # Keep track of current best and best-guess scores.
         fb = fg = np.inf
@@ -300,8 +297,8 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
 
                 # Nelder-Mead requires a list
                 # of np.scalar values
-                if isinstance(self._optimiser, pints.NelderMead):
-                    fs = [v[0] for v in fs]
+                # if isinstance(self._optimiser, pints.NelderMead):
+                #    fs = [v[0] for v in fs]
 
                 # Tell optimiser about function values
                 self._optimiser.tell(fs)
@@ -321,9 +318,9 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
                     unchanged_iterations += 1
 
                 # Update counts
-                evaluations += len(fs)
                 iteration += 1
-                _fs = [x[0] for x in fs] if self._needs_sensitivities else fs
+                _fs = fs[0] if self._needs_sensitivities else fs
+                evaluations += len(_fs)
                 self.logger.log_update(
                     iterations=iteration,
                     evaluations=evaluations,

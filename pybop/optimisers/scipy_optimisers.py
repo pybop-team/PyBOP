@@ -40,11 +40,11 @@ class BaseSciPyOptimiser(BaseOptimiser):
         self,
         x_search: np.ndarray,
         x_model: np.ndarray,
-        cost: float,
+        cost: np.ndarray,
     ):
         self._intermediate_x_search.append(x_search)
         self._intermediate_x_model.append(x_model)
-        self._intermediate_cost.append(cost)
+        self._intermediate_cost.extend(cost.tolist())
 
     def get_and_reset_itermediate_results(self):
         ret = (
@@ -265,7 +265,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
         L, dl = self._evaluator.evaluate(x_model)
         self.store_intermediate_results(x_search=x, x_model=x_model, cost=L)
-        return (L / self._cost0, dl / self._cost0)
+        return (L[0] / self._cost0, dl / self._cost0)
 
     def _run(self):
         """
@@ -292,8 +292,9 @@ class SciPyMinimize(BaseSciPyOptimiser):
                 cost_best = intermediate_result.fun * self._cost0
             else:
                 x_best = intermediate_result
-                result = self._evaluator.evaluate(x_best)
+                result = self._evaluator.evaluate(x_best)[0]
                 cost_best = result[0] if self._needs_sensitivities else result
+            print("cost_best:", cost_best)
 
             x_model_best = self.problem.params.transformation.to_model(x_best)
 
@@ -320,9 +321,9 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
         x0 = self.problem.params.get_initial_values(transformed=True)
         if self.needs_sensitivities():
-            self._cost0 = self._evaluator.evaluate(x0)[0]
+            self._cost0 = self._evaluator.evaluate(x0)[0][0]
         else:
-            self._cost0 = self._evaluator.evaluate(x0)
+            self._cost0 = self._evaluator.evaluate(x0)[0]
 
         start_time = time()
         result: OptimizeResult = minimize(
@@ -332,6 +333,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
             callback=callback,
             **self._options_dict,
         )
+        base_callback(result)  # Log final result
         total_time = time() - start_time
 
         try:

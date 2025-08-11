@@ -54,9 +54,9 @@ class OptimisationLogger:
 
         Parameters
         ----------
-        x_model : list[float]
+        x_model : list[np.ndarray]
             The model parameters.
-        x_search : list[float]
+        x_search : list[np.ndarray]
             The search parameters.
         cost : list[float]
             The cost associated with the parameters.

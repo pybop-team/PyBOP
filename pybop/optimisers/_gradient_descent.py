@@ -86,7 +86,8 @@ class GradientDescentImpl(PintsOptimiser):
             raise RuntimeError("ask() must be called before tell().")
         self._ready_for_tell = False
 
-        fx, dfx = reply[0]
+        fx, dfx = reply
+        fx = fx[0]  # should be only one point
 
         # Update state
         self._current_f, self._current_df = fx, dfx

@@ -172,7 +172,9 @@ class AdamWImpl(PintsOptimiser):
         self._ready_for_tell = False
 
         # Unpack reply
-        fx, dfx = reply[0]
+        fx, dfx = reply
+        # Should be only one point
+        fx = fx[0]
 
         # Update current point
         self._current = self._proposed
