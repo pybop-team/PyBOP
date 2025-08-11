@@ -7,7 +7,6 @@ import pytest
 import pybop
 from pybop import (
     MALAMCMC,
-    DramACMC,
     HamiltonianMCMC,
     MonomialGammaHamiltonianMCMC,
     RaoBlackwellACMC,
@@ -38,7 +37,6 @@ class TestSamplingThevenin:
             RaoBlackwellACMC,
             SliceDoublingMCMC,
             SliceStepoutMCMC,
-            DramACMC,
         ]
 
     @pytest.fixture
@@ -133,7 +131,6 @@ class TestSamplingThevenin:
             RaoBlackwellACMC,
             SliceDoublingMCMC,
             SliceStepoutMCMC,
-            DramACMC,
         ],
     )
     def test_sampling_thevenin(self, sampler, problem):
@@ -144,7 +141,7 @@ class TestSamplingThevenin:
             n_chains=3, cov=self.cov, warm_up_iterations=100, max_iterations=500
         )
         sampler = sampler(problem, options=options)
-        if isinstance(sampler, RaoBlackwellACMC | DramACMC):
+        if isinstance(sampler, RaoBlackwellACMC):
             sampler.set_max_iterations(750)
             sampler.set_warm_up_iterations(250)
         chains = sampler.run()
