@@ -168,6 +168,32 @@ class TestOptimisation:
         results = optim.run()
         assert results.n_iterations == 3
 
+        # check logger
+        log = optim.log
+        assert isinstance(log, pybop.OptimisationLogger)
+        assert isinstance(log.x_model, list)
+        assert isinstance(log.x_model[0], np.ndarray)
+        assert isinstance(log.x_search, list)
+        assert isinstance(log.x_search[0], np.ndarray)
+        assert isinstance(log.cost, list)
+        assert isinstance(log.cost[0], float)
+        assert len(log.iterations) == 3
+        assert isinstance(log.x_model_best, list)
+        assert isinstance(log.x_model_best[0], np.ndarray)
+        assert len(log.x_model_best) == 3
+        assert isinstance(log.x_search_best, list)
+        assert isinstance(log.x_search_best[0], np.ndarray)
+        assert len(log.x_search_best) == 3
+        assert isinstance(log.cost_best, list)
+        assert isinstance(log.cost_best[0], float)
+        assert len(log.cost_best) == 3
+
+        # check results object
+        assert isinstance(results, pybop.OptimisationResult)
+        assert isinstance(results.best_cost, float)
+        assert isinstance(results.x, np.ndarray)
+        assert isinstance(results.x0, np.ndarray)
+
         # Test without valid cost
         with pytest.raises(
             Exception,
