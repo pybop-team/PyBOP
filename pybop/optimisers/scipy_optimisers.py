@@ -222,6 +222,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         options = options or ScipyMinimizeOptions()
         self._options_dict = options.to_dict()
         self._iteration = 0
+        self._evaluations = 0
         super().__init__(
             problem=problem, options=options, needs_sensitivities=options.jac
         )
@@ -278,6 +279,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         """
         self.inf_count = 0
         self._iteration = 0
+        self._evaluations = 0
 
         # Add callback storing history of parameter values
         def base_callback(intermediate_result: OptimizeResult | np.ndarray):
@@ -298,12 +300,12 @@ class SciPyMinimize(BaseSciPyOptimiser):
             x_model_best = self.problem.params.transformation.to_model(x_best)
 
             (x_search, x_model, cost) = self.get_and_reset_intermediate_results()
-            evaluations = len(x_search)
+            self._evaluations += len(x_search)
             self._iteration += 1
 
             self.logger.log_update(
                 iterations=self._iteration,
-                evaluations=evaluations,
+                evaluations=self._evaluations,
                 x_search_best=x_best,
                 x_model_best=x_model_best,
                 cost_best=cost_best,
@@ -504,7 +506,8 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         self._options_dict = options.to_dict()
         super().__init__(problem=problem, options=options, needs_sensitivities=False)
         self._evaluator = self.evaluator()
-        self._iterations = 0
+        self._iteration = 0
+        self._evaluations = 0
 
     @staticmethod
     def default_options() -> SciPyDifferentialEvolutionOptions:
@@ -542,15 +545,17 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         result : scipy.optimize.OptimizeResult
             The result of the optimisation including the optimised parameter values and cost.
         """
-        self._iterations = 0
+        self._iteration = 0
+        self._evaluations = 0
 
         # Add callback storing history of parameter values
         def callback(intermediate_result: OptimizeResult):
             (x_search, x_model, cost) = self.get_and_reset_intermediate_results()
-            self._iterations += 1
+            self._iteration += 1
+            self._evaluations += len(x_search)
             self.logger.log_update(
-                iterations=self._iterations,
-                evaluations=len(x_search),
+                iterations=self._iteration,
+                evaluations=self._evaluations,
                 x_search_best=intermediate_result.x,
                 x_model_best=self.problem.params.transformation.to_model(
                     intermediate_result.x
