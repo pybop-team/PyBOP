@@ -309,9 +309,8 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
 
                 # Update counts
                 iteration += 1
-                _fs = self._convert_cost_for_logging(fs)
-                cost_for_logging = [_fs] if np.isscalar(_fs) else _fs
-                evaluations += len(cost_for_logging)
+                _fs = fs[0][0] if self._needs_sensitivities else fs
+                evaluations += len(_fs)
                 self.logger.log_update(
                     iterations=iteration,
                     evaluations=evaluations,
@@ -321,7 +320,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
                     x_model_best=self.problem.params.transformation.to_model(
                         self._optimiser.x_best()
                     ),
-                    cost=cost_for_logging,
+                    cost=_fs,
                     cost_best=fb[0] if isinstance(fb, np.ndarray) else fb,
                 )
 
