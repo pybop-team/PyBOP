@@ -6,20 +6,25 @@ from benchmarks.benchmark_utils import set_random_seed
 
 
 class BenchmarkOptimisationConstruction:
-    param_names = ["model", "parameter_set", "optimiser"]
+    """
+    Note: the names of the below variables are
+     required for the benchmarking to work.
+    """
+
+    param_names = ["model", "parameter_values", "optimiser"]
     params = [
         [pybamm.lithium_ion.SPM, pybamm.lithium_ion.SPMe],
         ["Chen2020"],
         [pybop.CMAES],
     ]
 
-    def setup(self, model, parameter_set, optimiser):
+    def setup(self, model, parameter_values, optimiser):
         """
         Set up the model, problem, and cost for optimisation benchmarking.
 
         Args:
             model (pybamm.BaseModel): The model class.
-            parameter_set (str): The name of the parameter set.
+            parameter_values (str): The name of the parameter set.
             optimiser (pybop.Optimiser): The optimiser class.
         """
         # Set random seed
@@ -27,13 +32,13 @@ class BenchmarkOptimisationConstruction:
 
         # Create model instance
         model_instance = model()
-        param = pybamm.ParameterValues(parameter_set)
+        param = pybamm.ParameterValues(parameter_values)
 
         # Generate synthetic data
         sigma = 0.001
         t_eval = np.arange(0, 900, 2)
         sim = pybamm.Simulation(model=model_instance, parameter_values=param)
-        values = sim.solve(t_eval=t_eval)
+        values = sim.solve(t_eval=[t_eval[0], t_eval[-1]], t_interp=t_eval)
         corrupt_values = values["Voltage [V]"].data + np.random.normal(
             0, sigma, len(t_eval)
         )
@@ -74,26 +79,26 @@ class BenchmarkOptimisationConstruction:
         # Build the problem
         self.problem = builder.build()
 
-    def time_optimisation_construction(self, model, parameter_set, optimiser):
+    def time_optimisation_construction(self, model, parameter_values, optimiser):
         """
         Benchmark the construction of the optimisation class.
 
         Args:
             model (pybamm.BaseModel): The model class (unused).
-            parameter_set (str): The name of the parameter (unused).
+            parameter_values (str): The name of the parameter (unused).
             optimiser (pybop.Optimiser): The optimiser class (unused).
         """
         options = pybop.PintsOptions(max_iterations=5)
         self.optim = optimiser(self.problem, options=options)
         self.optim.set_population_size(20)
 
-    def time_cost_evaluate(self, model, parameter_set, optimiser):
+    def time_cost_evaluate(self, model, parameter_values, optimiser):
         """
         Benchmark the cost function evaluation.
 
         Args:
             model (pybamm.BaseModel): The model class (unused).
-            parameter_set (str): The name of the parameter (unused).
+            parameter_values (str): The name of the parameter (unused).
             optimiser (pybop.Optimiser): The optimiser class (unused).
         """
         self.problem.set_params(np.array([0.63, 0.51]))
