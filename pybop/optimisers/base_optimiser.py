@@ -291,8 +291,52 @@ class BaseOptimiser:
 
         return result
 
-    def _extract_scalar_cost(self, cost_value):
-        """Extract scalar cost from a nested cost structure."""
-        if np.isscalar(cost_value):
-            return cost_value
-        return cost_value[0]
+    def _convert_cost_for_logging(self, cost):
+        """
+        Align cost values to a consistent format for logging and evaluation counting.
+
+        Parameters
+        ----------
+        cost : scalar, list, np.ndarray, or tuple
+            Cost value(s) in various formats from different optimizers
+
+        Returns
+        -------
+        list or scalar
+            Aligned cost value(s). Returns list for multiple costs, scalar for single cost.
+        """
+        # Handle scalar values
+        if np.isscalar(cost):
+            return cost
+
+        # Handle numpy arrays
+        if isinstance(cost, np.ndarray):
+            if cost.size == 1:
+                return cost.item()  # Convert single-element array to scalar
+            else:
+                return cost.tolist()
+
+        # Handle lists
+        if isinstance(cost, list):
+            if len(cost) == 0:
+                raise ValueError("Empty cost list provided")
+
+            # Handle list of single tuple (sensitivity structure)
+            if len(cost) == 1 and isinstance(cost[0], tuple):
+                if len(cost[0]) > 0 and hasattr(cost[0][0], "item"):
+                    return cost[0][0].item()
+                else:
+                    return cost[0][0]
+
+            # Handle list of numpy arrays (sequential evaluation)
+            if all(isinstance(c, np.ndarray) for c in cost):
+                if len(cost) == 1 and cost[0].size == 1:
+                    return cost[0].item()
+                else:
+                    return [c.item() if c.size == 1 else c.tolist() for c in cost]
+
+            # Handle list of scalars
+            if all(np.isscalar(c) for c in cost):
+                return cost if len(cost) > 1 else cost[0]
+
+        raise ValueError(f"Unrecognized cost format: {type(cost)} with value {cost}")

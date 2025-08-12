@@ -173,7 +173,6 @@ class AdamWImpl(PintsOptimiser):
 
         # Unpack reply
         fx, dfx = reply[0]
-        fx = fx[0]
 
         # Update current point
         self._current = self._proposed
