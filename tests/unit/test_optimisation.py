@@ -194,8 +194,6 @@ class TestOptimisation:
         assert isinstance(results.x, np.ndarray)
         assert isinstance(results.x0, np.ndarray)
 
-        # pybop.plot.convergence(optim)
-
         # Test without valid cost
         with pytest.raises(
             Exception,

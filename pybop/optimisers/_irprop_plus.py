@@ -124,9 +124,7 @@ class IRPropPlusImpl(PintsOptimiser):
             raise RuntimeError("ask() must be called before tell().")
 
         self._ready_for_tell = False
-        f_new, gradient_new = reply
-        # should be only one point
-        f_new = f_new[0]
+        f_new, gradient_new = reply[0]
         gradient_new = gradient_new.reshape(-1)
 
         # Setup for first iteration

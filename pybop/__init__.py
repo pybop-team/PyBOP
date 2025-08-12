@@ -96,7 +96,7 @@ from .builders.multi_fitting import MultiFitting
 #
 # Evaluation
 #
-from ._evaluation import SciPyEvaluator, PopulationEvaluator
+from ._evaluation import SciPyEvaluator, PopulationEvaluator, SequentialEvaluator
 
 #
 # Optimiser classes
