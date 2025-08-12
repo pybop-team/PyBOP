@@ -31,13 +31,13 @@ model = pybamm.lithium_ion.SPM()
 parameters = [
     pybop.Parameter(
         "Positive electrode thickness [m]",
-        prior=pybop.Gaussian(9e-05, 0.1e-05),
+        initial_value=9e-05,
         transformation=pybop.LogTransformation(),
         bounds=[6.5e-05, 12e-05],
     ),
     pybop.Parameter(
         "Negative electrode thickness [m]",
-        prior=pybop.Gaussian(9e-05, 0.1e-05),
+        initial_value=9e-05,
         transformation=pybop.LogTransformation(),
         bounds=[5e-05, 12e-05],
     ),
@@ -47,7 +47,7 @@ parameters = [
 # Define test protocol
 experiment = pybamm.Experiment(
     [
-        "Discharge at 3C until 2.5 V (2 minute period)",
+        "Discharge at 3C until 3.0 V (2 minute period)",
     ],
 )
 
@@ -69,11 +69,12 @@ for param in parameters:
 problem = builder.build()
 
 # Set optimiser and options
-options = pybop.ScipyMinimizeOptions(
+options = pybop.SciPyDifferentialEvolutionOptions(
     verbose=True,
     maxiter=5,
+    polish=False,
 )
-optim = pybop.SciPyMinimize(problem, options=options)
+optim = pybop.SciPyDifferentialEvolution(problem, options=options)
 results = optim.run()
 
 # Obtain the fully identified pybamm.ParameterValues object
@@ -89,4 +90,5 @@ pybop.plot.parameters(optim)
 # Plot the cost landscape with optimisation path
 pybop.plot.surface(optim)
 
+print(f"Initial power density: {-results.initial_cost:.2f} Wh.kg-1")
 print(f"Optimised power density: {-results.best_cost:.2f} Wh.kg-1")

@@ -1489,11 +1489,11 @@ wheels = [
 
 [[package]]
 name = "narwhals"
-version = "2.0.1"
+version = "2.1.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e2/8f/51d14e402c4f9d281a2e153a6a805cad5460088027a999faf264b54e7641/narwhals-2.0.1.tar.gz", hash = "sha256:235e61ca807bc21110ca36a4d53888ecc22c42dcdf50a7c886e10dde3fd7f38c", size = 525541, upload-time = "2025-07-29T08:39:04.81Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/14/46/e4622506b088332efac70d7da2926b1703f107a3f846170a435b117d1677/narwhals-2.1.0.tar.gz", hash = "sha256:4d0d1ccc9f74fe44a93a7632b32268ab6658e7dfb026aa6f10b0c1bfa4c468b7", size = 529626, upload-time = "2025-08-11T12:57:57.956Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7f/26/43caf834e47c63883a5eddc02893b7fdbe6a0a4508ff6dc401907f3cc085/narwhals-2.0.1-py3-none-any.whl", hash = "sha256:837457e36a2ba1710c881fb69e1f79ce44fb81728c92ac378f70892a53af8ddb", size = 385436, upload-time = "2025-07-29T08:39:03.163Z" },
+    { url = "https://files.pythonhosted.org/packages/9f/48/56eb8e6ea51bdd572c4f92551c74e8f1217b14c1ab2e96661a4b70e3ebdd/narwhals-2.1.0-py3-none-any.whl", hash = "sha256:dfeb3b24c1b06501d1c1e979bd25e424f8bbd2eb7a9d0f7bbf0a7d47e36b498f", size = 389391, upload-time = "2025-08-11T12:57:56.332Z" },
 ]
 
 [[package]]
@@ -1958,8 +1958,8 @@ wheels = [
 
 [[package]]
 name = "pybamm"
-version = "25.8.1.dev5+gc06726d2b"
-source = { git = "https://github.com/pybamm-team/PyBaMM?rev=develop#c06726d2bf7e32ccf7a896dea7077332786b99db" }
+version = "25.8.1.dev7+g123aff799"
+source = { git = "https://github.com/pybamm-team/PyBaMM?rev=develop#123aff7998b3687c5fa9839ab8331d948d5b2f88" }
 dependencies = [
     { name = "anytree" },
     { name = "casadi" },

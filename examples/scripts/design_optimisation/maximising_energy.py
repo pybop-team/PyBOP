@@ -40,13 +40,13 @@ model = pybamm.lithium_ion.SPM()
 parameters = [
     pybop.Parameter(
         "Positive electrode thickness [m]",
-        prior=pybop.Gaussian(9e-05, 0.1e-05),
+        initial_value=9e-05,
         transformation=pybop.LogTransformation(),
         bounds=[6.5e-05, 12e-05],
     ),
     pybop.Parameter(
         "Negative electrode thickness [m]",
-        prior=pybop.Gaussian(9e-05, 0.1e-05),
+        initial_value=9e-05,
         transformation=pybop.LogTransformation(),
         bounds=[5e-05, 12e-05],
     ),
@@ -99,4 +99,5 @@ pybop.plot.parameters(optim)
 # Plot the cost landscape with optimisation path
 pybop.plot.surface(optim)
 
+print(f"Initial energy density: {-results.initial_cost:.2f} Wh.kg-1")
 print(f"Optimised energy density: {-results.best_cost:.2f} Wh.kg-1")

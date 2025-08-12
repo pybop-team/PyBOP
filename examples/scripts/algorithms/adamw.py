@@ -74,7 +74,7 @@ results = optim.run()
 identified_parameter_values = results.parameter_values
 
 # Plot convergence
-# pybop.plot.convergence(optim)
+pybop.plot.convergence(optim)
 
 # Plot the parameter traces
 pybop.plot.parameters(optim)

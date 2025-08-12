@@ -29,12 +29,12 @@ experiment = [
 parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.68, 0.05),
+        initial_value=0.65,
         bounds=[0.5, 0.8],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.58, 0.05),
+        initial_value=0.58,
         bounds=[0.5, 0.8],
     ),
 ]

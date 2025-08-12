@@ -346,8 +346,8 @@ class SciPyMinimize(BaseSciPyOptimiser):
             nfev = -1
 
         return OptimisationResult(
-            best_cost=self._extract_scalar_cost(result.fun * self._cost0),
-            initial_cost=self._extract_scalar_cost(self.logger.cost[0] * self._cost0),
+            best_cost=result.fun * self._cost0,
+            initial_cost=self.logger.cost[0] * self._cost0,
             n_iterations=nit,
             n_evaluations=nfev,
             problem=self.problem,
@@ -586,8 +586,8 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
             nfev = -1
 
         return OptimisationResult(
-            best_cost=self._extract_scalar_cost(result.fun),
-            initial_cost=self._extract_scalar_cost(self.logger.cost[0]),
+            best_cost=result.fun,
+            initial_cost=self.logger.cost[0],
             n_evaluations=nfev,
             problem=self.problem,
             x=result.x,

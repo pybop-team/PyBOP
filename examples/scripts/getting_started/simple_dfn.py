@@ -16,13 +16,11 @@ model = pybamm.lithium_ion.DFN()
 parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.68, 0.05),
         initial_value=0.65,
         bounds=[0.4, 0.9],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        prior=pybop.Gaussian(0.58, 0.05),
         initial_value=0.65,
         bounds=[0.4, 0.9],
     ),
