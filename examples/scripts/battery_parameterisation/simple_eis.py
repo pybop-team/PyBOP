@@ -38,10 +38,10 @@ parameters = [
 ]
 
 # Build an SPMe
-spme_model = pybamm.lithium_ion.SPM(options=options)
+spme_model = pybamm.lithium_ion.SPMe(options=options)
 builder = pybop.builders.PybammEIS()
 builder.set_dataset(dataset)
-builder.set_simulation(spme_model, parameter_values=parameter_values, initial_state=0.2)
+builder.set_simulation(spme_model, parameter_values=parameter_values)
 builder.add_cost(pybop.costs.MeanAbsoluteError())
 for param in parameters:
     builder.add_parameter(param)
