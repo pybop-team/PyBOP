@@ -21,13 +21,12 @@ model = pybamm.lithium_ion.SPMe(
 parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        prior=pybop.Gaussian(0.68, 0.05),
         initial_value=0.65,
         bounds=[0.4, 0.9],
     ),
     pybop.Parameter(
         "Contact resistance [Ohm]",
-        prior=pybop.Gaussian(1e-2, 2e-3),
+        initial_value=1e-2,
         bounds=[1e-4, 5e-2],
     ),
 ]

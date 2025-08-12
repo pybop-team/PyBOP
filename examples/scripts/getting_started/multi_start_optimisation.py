@@ -19,12 +19,10 @@ parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         prior=pybop.Gaussian(0.6, 0.1),
-        # bounds=[0.5, 0.8]
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
         prior=pybop.Gaussian(0.6, 0.1),
-        # bounds=[0.5, 0.8]
     ),
 ]
 
@@ -71,14 +69,14 @@ results = optim.run()
 identified_parameter_values = results.parameter_values
 
 # Plot convergence
-# pybop.plot.convergence(optim)
+pybop.plot.convergence(optim)
 
 # Plot the parameter traces
 pybop.plot.parameters(optim)
 
 # Plot the cost landscape with optimisation path
-# bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
-# pybop.plot.surface(optim, bounds=bounds)
+bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
+pybop.plot.surface(optim, bounds=bounds)
 
 # We can display more metrics, most of which are
 # also included in the `verbose` option within

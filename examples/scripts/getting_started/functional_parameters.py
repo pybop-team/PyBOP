@@ -51,12 +51,12 @@ model = pybamm.lithium_ion.SPM(options={"contact resistance": "true"})
 parameters = [
     pybop.Parameter(
         "Positive electrode reference exchange-current density [A.m-2]",
-        prior=pybop.Gaussian(1, 0.1),
+        initial_value=1,
         bounds=[0.75, 1.25],
     ),
     pybop.Parameter(
         "Positive electrode charge transfer coefficient",
-        prior=pybop.Gaussian(0.5, 0.1),
+        initial_value=0.5,
         bounds=[0.25, 0.75],
     ),
 ]

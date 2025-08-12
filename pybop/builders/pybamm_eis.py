@@ -122,7 +122,7 @@ class PybammEIS(builders.BaseBuilder):
         if self._model is None:
             raise ValueError("A Pybamm model needs to be provided before building.")
 
-        if self._costs is None:
+        if not self._costs:
             raise ValueError("A cost must be provided before building.")
 
         if self._dataset is None:
@@ -149,7 +149,7 @@ class PybammEIS(builders.BaseBuilder):
         )
 
         # Build and initialise the pipeline
-        pipeline.pybamm_pipeline.build()
+        pipeline.build()
 
         return PybammEISProblem(
             eis_pipeline=pipeline,

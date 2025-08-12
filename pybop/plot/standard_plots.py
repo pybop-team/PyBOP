@@ -166,31 +166,30 @@ class StandardPlot:
         y : list or np.ndarray, optional
             Primary Y-axis data points for simulated model output.
         """
-        if isinstance(x, list):
-            # If it's a list of numpy arrays, it's fine
-            # If it's a list of lists, it's fine
-            # If it's neither, it's a list of numbers that we need to wrap
-            if not isinstance(x[0], np.ndarray) and not isinstance(x[0], list):
-                x = [x]
-        elif isinstance(x, np.ndarray):
-            x = np.squeeze(x)
-            if x.ndim == 1:
-                x = [x]
-            else:
-                x = x.tolist()
-        if isinstance(y, list):
-            if not isinstance(y[0], np.ndarray) and not isinstance(y[0], list):
-                y = [y]
-        if isinstance(y, np.ndarray):
-            y = np.squeeze(y)
-            if y.ndim == 1:
-                y = [y]
-            else:
-                y = y.tolist()
+
+        def normalize_data(data, is_y=False):
+            if isinstance(data, np.ndarray):
+                data = np.squeeze(data)
+                return [data] if data.ndim == 1 else data.tolist()
+
+            if isinstance(data, list):
+                if not data:
+                    return data
+                if isinstance(data[0], np.ndarray):
+                    return [np.array(data).squeeze()] if is_y else data
+                if isinstance(data[0], list):
+                    return data
+                return [data]
+
+            return data
+
+        x, y = normalize_data(x, is_y=False), normalize_data(y, is_y=True)
+
         if len(x) > 1 and len(x) != len(y):
             raise ValueError(
                 "Input x should have either one data series or the same number as y."
             )
+
         return x, y
 
     def create_trace(self, x, y, **trace_options):

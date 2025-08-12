@@ -46,7 +46,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
         self._intermediate_x_model.append(x_model)
         self._intermediate_cost.extend(cost.tolist())
 
-    def get_and_reset_itermediate_results(self):
+    def get_and_reset_intermediate_results(self):
         ret = (
             self._intermediate_x_search,
             self._intermediate_x_model,
@@ -58,7 +58,7 @@ class BaseSciPyOptimiser(BaseOptimiser):
         return ret
 
     def scipy_bounds(self) -> Bounds:
-        bounds = self.problem.params.get_bounds()
+        bounds = self.problem.params.get_bounds(transformed=True)
         # Convert bounds to SciPy format
         if isinstance(bounds, dict):
             return Bounds(bounds["lower"], bounds["upper"], True)
@@ -222,6 +222,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         options = options or ScipyMinimizeOptions()
         self._options_dict = options.to_dict()
         self._iteration = 0
+        self._evaluations = 0
         super().__init__(
             problem=problem, options=options, needs_sensitivities=options.jac
         )
@@ -278,6 +279,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         """
         self.inf_count = 0
         self._iteration = 0
+        self._evaluations = 0
 
         # Add callback storing history of parameter values
         def base_callback(intermediate_result: OptimizeResult | np.ndarray):
@@ -297,13 +299,13 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
             x_model_best = self.problem.params.transformation.to_model(x_best)
 
-            (x_search, x_model, cost) = self.get_and_reset_itermediate_results()
-            evaluations = len(x_search)
+            (x_search, x_model, cost) = self.get_and_reset_intermediate_results()
+            self._evaluations += len(x_search)
             self._iteration += 1
 
             self.logger.log_update(
                 iterations=self._iteration,
-                evaluations=evaluations,
+                evaluations=self._evaluations,
                 x_search_best=x_best,
                 x_model_best=x_model_best,
                 cost_best=cost_best,
@@ -327,7 +329,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         start_time = time()
         result: OptimizeResult = minimize(
             self.cost_wrapper,
-            x0,
+            self.problem.params.transformation.to_model(x0),
             bounds=self._scipy_bounds,
             callback=callback,
             **self._options_dict,
@@ -347,10 +349,11 @@ class SciPyMinimize(BaseSciPyOptimiser):
 
         return OptimisationResult(
             best_cost=result.fun * self._cost0,
+            initial_cost=self.logger.cost[0] * self._cost0,
             n_iterations=nit,
             n_evaluations=nfev,
             problem=self.problem,
-            x=result.x,
+            x=self.problem.params.transformation.to_model(result.x),
             time=total_time,
             message=result.message,
         )
@@ -417,7 +420,7 @@ class SciPyDifferentialEvolutionOptions(pybop.OptimiserOptions):
     """
 
     strategy: str = "best1bin"
-    max_iterations: int = 1000
+    maxiter: int = 1000
     tol: float = 0.01
     popsize: int | None = None
     mutation: float | tuple | None = None
@@ -442,7 +445,7 @@ class SciPyDifferentialEvolutionOptions(pybop.OptimiserOptions):
         """
         ret = {
             "strategy": self.strategy,
-            "maxiter": self.max_iterations,
+            "maxiter": self.maxiter,
             "tol": self.tol,
         }
         optional_keys = [
@@ -503,7 +506,8 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         self._options_dict = options.to_dict()
         super().__init__(problem=problem, options=options, needs_sensitivities=False)
         self._evaluator = self.evaluator()
-        self._iterations = 0
+        self._iteration = 0
+        self._evaluations = 0
 
     @staticmethod
     def default_options() -> SciPyDifferentialEvolutionOptions:
@@ -541,15 +545,17 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         result : scipy.optimize.OptimizeResult
             The result of the optimisation including the optimised parameter values and cost.
         """
-        self._iterations = 0
+        self._iteration = 0
+        self._evaluations = 0
 
         # Add callback storing history of parameter values
         def callback(intermediate_result: OptimizeResult):
-            (x_search, x_model, cost) = self.get_and_reset_itermediate_results()
-            self._iterations += 1
+            (x_search, x_model, cost) = self.get_and_reset_intermediate_results()
+            self._iteration += 1
+            self._evaluations += len(x_search)
             self.logger.log_update(
-                iterations=self._iterations,
-                evaluations=len(x_search),
+                iterations=self._iteration,
+                evaluations=self._evaluations,
                 x_search_best=intermediate_result.x,
                 x_model_best=self.problem.params.transformation.to_model(
                     intermediate_result.x
@@ -586,6 +592,7 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
 
         return OptimisationResult(
             best_cost=result.fun,
+            initial_cost=self.logger.cost[0],
             n_evaluations=nfev,
             problem=self.problem,
             x=result.x,

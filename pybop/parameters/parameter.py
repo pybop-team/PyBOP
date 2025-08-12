@@ -60,14 +60,6 @@ class Bounds:
     upper: float
 
     def __post_init__(self) -> None:
-        if not isinstance(self.lower, int | float | np.number):
-            raise ParameterValidationError(
-                f"Lower bound must be numeric, got {type(self.lower)}"
-            )
-        if not isinstance(self.upper, int | float | np.number):
-            raise ParameterValidationError(
-                f"Upper bound must be numeric, got {type(self.upper)}"
-            )
         if self.lower >= self.upper:
             raise ParameterValidationError(
                 f"Lower bound ({self.lower}) must be less than upper bound ({self.upper})"

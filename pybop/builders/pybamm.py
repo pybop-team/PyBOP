@@ -155,7 +155,10 @@ class Pybamm(BaseBuilder):
                     )
                     pybop_parameters.add(
                         PybopParameter(
-                            name, initial_value=obj.default_value, prior=prior
+                            name,
+                            initial_value=obj.default_value,
+                            prior=prior,
+                            bounds=[0, obj.default_value * 20],
                         )
                     )
 

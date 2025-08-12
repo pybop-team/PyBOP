@@ -158,7 +158,7 @@ class TestOptimisation:
     )
     def test_optimiser_common(self, problem, optimiser):
         options = optimiser.default_options()
-        if issubclass(optimiser, pybop.SciPyMinimize):
+        if issubclass(optimiser, pybop.BaseSciPyOptimiser):
             options.maxiter = 3
         options.max_iterations = 3
         options.tol = 1e-6
@@ -545,6 +545,7 @@ class TestOptimisation:
             x=np.asarray([1e-3]),
             n_iterations=1,
             best_cost=0.1,
+            initial_cost=0.2,
             n_evaluations=1,
             time=0.1,
         )

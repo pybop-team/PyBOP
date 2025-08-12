@@ -1,95 +1,101 @@
 import numpy as np
+import pybamm
 
 import pybop
 
+# In this example, we present a method for full-cell
+# stoichiometry balancing. This is completed by identifying
+# the corresponding electrode initial and maximum concentrations
+# for low-rate discharge observations.
+
 # Parameter set definition
-parameter_set = pybop.ParameterSet("Chen2020")
-parameter_set["Lower voltage cut-off [V]"] = 2.3
-parameter_set["Upper voltage cut-off [V]"] = 4.4
+parameter_values = pybamm.ParameterValues("Chen2020")
 
 # Set initial state and unpack true values
-parameter_set.parameter_values.set_initial_stoichiometries(initial_value=1.0)
-cs_n_max = parameter_set["Maximum concentration in negative electrode [mol.m-3]"]
-cs_p_max = parameter_set["Maximum concentration in positive electrode [mol.m-3]"]
-cs_n_init = parameter_set["Initial concentration in negative electrode [mol.m-3]"]
-cs_p_init = parameter_set["Initial concentration in positive electrode [mol.m-3]"]
+parameter_values.set_initial_stoichiometries(initial_value=1.0)
+cs_n_max = parameter_values["Maximum concentration in negative electrode [mol.m-3]"]
+cs_p_max = parameter_values["Maximum concentration in positive electrode [mol.m-3]"]
+cs_n_init = parameter_values["Initial concentration in negative electrode [mol.m-3]"]
+cs_p_init = parameter_values["Initial concentration in positive electrode [mol.m-3]"]
 
 # Model definition
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+model = pybamm.lithium_ion.SPM()
 
 # Define fitting parameters for OCP balancing
-parameters = pybop.Parameters(
+parameters = [
     pybop.Parameter(
         "Maximum concentration in negative electrode [mol.m-3]",
-        prior=pybop.Gaussian(cs_n_max, 6e3),
-        bounds=[cs_n_max * 0.75, cs_n_max * 1.25],
-        true_value=cs_n_max,
         initial_value=cs_n_max * 0.8,
+        transformation=pybop.LogTransformation(),
+        bounds=[cs_n_max * 0.75, cs_n_max * 1.25],
     ),
     pybop.Parameter(
         "Maximum concentration in positive electrode [mol.m-3]",
-        prior=pybop.Gaussian(cs_p_max, 6e3),
-        bounds=[cs_p_max * 0.75, cs_p_max * 1.25],
-        true_value=cs_p_max,
         initial_value=cs_p_max * 0.8,
+        transformation=pybop.LogTransformation(),
+        bounds=[cs_p_max * 0.75, cs_p_max * 1.25],
     ),
     pybop.Parameter(
         "Initial concentration in negative electrode [mol.m-3]",
-        prior=pybop.Gaussian(cs_n_init, 6e3),
-        bounds=[cs_n_max * 0.75, cs_n_max * 1.25],
-        true_value=cs_n_init,
         initial_value=cs_n_max * 0.8,
+        transformation=pybop.LogTransformation(),
+        bounds=[cs_n_max * 0.75, cs_n_max * 1.25],
     ),
     pybop.Parameter(
         "Initial concentration in positive electrode [mol.m-3]",
-        prior=pybop.Gaussian(cs_p_init, 6e3),
-        bounds=[0, cs_p_max * 0.5],
-        true_value=cs_p_init,
         initial_value=cs_p_max * 0.2,
+        transformation=pybop.LogTransformation(),
+        bounds=[0, cs_p_max * 0.5],
     ),
+]
+
+
+# Generate the synthetic dataset
+sigma = 1e-3
+experiment = pybamm.Experiment(["Discharge at C/5 until 3.0V (1 minute period)"])
+sim = pybamm.Simulation(
+    model=model, parameter_values=parameter_values, experiment=experiment
 )
+sol = sim.solve()
 
-# Generate synthetic data
-sigma = 5e-4  # Volts
-experiment = pybop.Experiment(
-    [
-        "Discharge at 0.1C until 2.5V (3 min period)",
-        "Charge at 0.1C until 4.2V (3 min period)",
-    ]
-)
-values = model.predict(experiment=experiment)
-
-
-def noisy(data, sigma):
-    return data + np.random.normal(0, sigma, len(data))
-
-
-# Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": values["Time [s]"].data,
-        "Current function [A]": values["Current [A]"].data,
-        "Voltage [V]": noisy(values["Voltage [V]"].data, sigma),
+        "Time [s]": sol.t,
+        "Voltage [V]": sol["Voltage [V]"].data + np.random.normal(0, sigma, len(sol.t)),
+        "Current function [A]": sol["Current [A]"].data,
     }
 )
 
-# Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.GaussianLogLikelihoodKnownSigma(problem, sigma0=sigma)
-optim = pybop.SciPyMinimize(cost, max_iterations=125)
 
-# Run optimisation for Maximum Likelihood Estimate (MLE)
+# Construct the problem builder
+builder = (
+    pybop.builders.Pybamm()
+    .set_dataset(dataset)
+    .set_simulation(model, parameter_values=parameter_values)
+    .add_cost(pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]", "Voltage [V]"))
+)
+for param in parameters:
+    builder.add_parameter(param)
+problem = builder.build()
+
+# Set optimiser with corresponding options
+# As the scale of the parameters is large,
+# a large sigma value is used to efficiently
+# explore the parameter space.
+options = pybop.PintsOptions(
+    sigma=0.2,
+    verbose=True,
+    max_iterations=100,
+)
+optim = pybop.NelderMead(problem, options=options)
 results = optim.run()
-print("True parameters:", parameters.true_value())
-
-# Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
-
+#
 # Plot convergence
 pybop.plot.convergence(optim)
 
 # Plot the parameter traces
 pybop.plot.parameters(optim)
 
-# Plot the cost landscape with optimisation path
-pybop.plot.contour(optim, steps=5)
+# Compare to known values
+print(f"True Parameters: {cs_n_max}, {cs_p_max}, {cs_n_init}, {cs_p_init}")
+print(f"Idenitified Parameters: {results.x}")
