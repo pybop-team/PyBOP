@@ -3,12 +3,9 @@ from time import time
 
 import numpy as np
 import pints
-from pints import PSO as PintsPSO
-from pints import NelderMead as PintsNelderMead
+from pints import PSO, NelderMead, PopulationBasedOptimiser
 from pints import Optimiser as PintsOptimiser
-from pints import PopulationBasedOptimiser
 from pints import RectangularBoundaries as PintsRectangularBoundaries
-from pints import SequentialEvaluator as PintsSequentialEvaluator
 from pints import strfloat as PintsStrFloat
 
 import pybop
@@ -17,6 +14,7 @@ from pybop import (
     GradientDescentImpl,
     OptimisationResult,
     PopulationEvaluator,
+    SequentialEvaluator,
 )
 from pybop.problems.base_problem import Problem
 
@@ -30,7 +28,7 @@ class PintsOptions(pybop.OptimiserOptions):
             default_max_iterations (int): Default maximum number of iterations (1000).
             max_iterations (int): Maximum number of iterations for the optimisation.
             min_iterations (int): Minimum number of iterations required.
-            sigma (float | np.ndarray): Standard deviation or step-size parameter for the optimiser.
+            sigma (float | np.ndarray | list): Standard deviation or step-size parameter for the optimiser.
             max_unchanged_iterations (int): Maximum iterations without improvement before stopping.
             use_f_guessed (bool): Whether to use guessed function values.
             absolute_tolerance (float): Absolute tolerance for convergence.
@@ -42,7 +40,7 @@ class PintsOptions(pybop.OptimiserOptions):
     default_max_iterations = 1000
     max_iterations: int = default_max_iterations
     min_iterations: int = 2
-    sigma: float | np.ndarray = 5e-2
+    sigma: float | np.ndarray | list = 5e-2
     max_unchanged_iterations: int = 15
     use_f_guessed: bool = False
     absolute_tolerance: float = 1e-5
@@ -63,8 +61,11 @@ class PintsOptions(pybop.OptimiserOptions):
             raise ValueError(
                 "Maximum number of unchanged iterations cannot be negative."
             )
-        if self.sigma is not None and self.sigma <= 0:
+        if isinstance(self.sigma, np.ndarray) and any(self.sigma) <= 0:
             raise ValueError("Sigma must be positive.")
+        elif np.isscalar(self.sigma):
+            if self.sigma <= 0:
+                raise ValueError("Sigma must be positive.")
         if self.absolute_tolerance < 0:
             raise ValueError("Absolute tolerance cannot be negative.")
         if self.relative_tolerance < 0:
@@ -174,13 +175,13 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         Parse optimiser options and create an instance of the PINTS optimiser.
         """
         # Convert bounds to PINTS boundaries
-        ignored_optimisers = (GradientDescentImpl, AdamWImpl, PintsNelderMead)
+        ignored_optimisers = (GradientDescentImpl, AdamWImpl, NelderMead)
         if issubclass(self._pints_optimiser, ignored_optimisers):
             print(f"NOTE: Boundaries ignored by {self._pints_optimiser}")
             self._boundaries = None
         else:
             bounds = self.problem.params.get_bounds(transformed=True)
-            if issubclass(self._pints_optimiser, PintsPSO):
+            if issubclass(self._pints_optimiser, PSO):
                 if not all(
                     np.isfinite(value)
                     for sublist in bounds.values()
@@ -215,7 +216,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         """Returns the name of the PINTS optimisation strategy."""
         return self._optimiser.name()
 
-    def _run(self):
+    def _run(self) -> OptimisationResult:
         """
         Internal method to run the optimization using a PINTS optimiser.
 
@@ -267,7 +268,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         if self._parallel:
             evaluator = PopulationEvaluator(fun)
         else:
-            evaluator = PintsSequentialEvaluator(fun)
+            evaluator = SequentialEvaluator(fun)
 
         # Keep track of current best and best-guess scores.
         fb = fg = np.inf
@@ -289,17 +290,6 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
                 # Evaluate points
                 fs = evaluator.evaluate(model_xs)
 
-                # For XNES/SNES where initial conditions
-                # are computed separate from
-                # later population candidates
-                if np.isscalar(fs):
-                    fs = [fs]
-
-                # Nelder-Mead requires a list
-                # of np.scalar values
-                if isinstance(self._optimiser, pints.NelderMead):
-                    fs = [v[0] for v in fs]
-
                 # Tell optimiser about function values
                 self._optimiser.tell(fs)
 
@@ -318,9 +308,9 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
                     unchanged_iterations += 1
 
                 # Update counts
-                evaluations += len(fs)
                 iteration += 1
-                _fs = [x[0] for x in fs] if self._needs_sensitivities else fs
+                _fs = fs[0][0] if self._needs_sensitivities else fs
+                evaluations += len(_fs)
                 self.logger.log_update(
                     iterations=iteration,
                     evaluations=evaluations,
@@ -331,7 +321,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
                         self._optimiser.x_best()
                     ),
                     cost=_fs,
-                    cost_best=fb,
+                    cost_best=fb[0] if isinstance(fb, np.ndarray) else fb,
                 )
 
                 # Check stopping criteria:
@@ -420,7 +410,8 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         return OptimisationResult(
             problem=self._problem,
             x=self._problem.params.transformation.to_model(x),
-            final_cost=f,
+            best_cost=f[0] if isinstance(f, np.ndarray) else f,
+            initial_cost=self.logger.cost[0],
             n_iterations=self._iterations,
             n_evaluations=self._evaluations,
             time=total_time,

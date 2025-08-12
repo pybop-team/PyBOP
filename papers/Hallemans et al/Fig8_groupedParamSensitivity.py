@@ -1,9 +1,11 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
+import pybamm
 from scipy.io import savemat
 
 import pybop
-from pybop.models.lithium_ion.grouped_spme import convert_physical_to_grouped_parameters
 
 #
 factor = 2
@@ -22,7 +24,9 @@ parameter_set["Electrolyte conductivity [S.m-1]"] = 1e16
 parameter_set["Negative electrode conductivity [S.m-1]"] = 1e16
 parameter_set["Positive electrode conductivity [S.m-1]"] = 1e16
 
-grouped_parameters = convert_physical_to_grouped_parameters(parameter_set)
+grouped_parameters = pybop.lithium_ion.GroupedSPMe.apply_parameter_grouping(
+    parameter_set
+)
 grouped_parameters["Series resistance [Ohm]"] = R0
 model_options = {"surface form": "differential", "contact resistance": "true"}
 
@@ -59,6 +63,7 @@ for ii, param in enumerate(params):
         eis=True,
         options=model_options,
         var_pts=var_pts,
+        solver=pybamm.CasadiSolver(),
     )
     model.build(
         initial_state={"Initial SoC": SOC},
@@ -78,4 +83,6 @@ ax.set_aspect("equal", "box")
 plt.show()
 
 mdic = {"Z": impedances, "f": frequencies, "name": parameter_name}
-savemat("Data/Sensitivity/Z_SPMegrouped_zetan.mat", mdic)
+current_dir = Path(__file__).parent
+save_path = current_dir / "Data" / "Z_SPMegrouped_zetan.mat"
+savemat(save_path, mdic)

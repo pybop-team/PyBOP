@@ -53,14 +53,15 @@ class GradientDescent(BasePintsOptimiser):
 
 class AdamW(BasePintsOptimiser):
     """
-    Implements the AdamW optimisation algorithm in PyBOP.
+    Implements the Adaptive Moment Estimation with Weight Decay (AdamW)
+    optimisation algorithm in PyBOP.
 
     This class extends the AdamW optimiser, which is a variant of the Adam
     optimiser that incorporates weight decay. AdamW is designed to be more
     robust and stable for training deep neural networks, particularly when
     using larger learning rates.
 
-    Note that this optimiser does not support boundary constraints.
+    Note: This optimiser does not support boundary constraints.
 
     Parameters
     ----------

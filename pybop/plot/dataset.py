@@ -53,11 +53,11 @@ def dataset(
 
     # Create the figure
     fig = trajectories(
-        x=dataset["Time [s]"],
+        x=dataset[dataset.domain],
         y=y,
         trace_names=trace_names,
         show=False,
-        xaxis_title="Time / s",
+        xaxis_title=StandardPlot.remove_brackets(dataset.domain),
         yaxis_title=yaxis_title,
     )
     fig.update_layout(**layout_kwargs)

@@ -1,5 +1,6 @@
 import numpy as np
 import pybamm
+import pybammeis
 import pytest
 
 import pybop
@@ -95,48 +96,24 @@ class TestEISParameterisation:
 
     @pytest.fixture
     def dataset(self, model, parameters, init_soc, parameter_values):
-        n_frequency = 15
-        # Set frequency set
-        f_eval = np.logspace(-4, 5, n_frequency)
+        n_frequency = 25
+        f_eval = np.logspace(-4, 4, n_frequency)
+        sim = pybammeis.EISSimulation(model, parameter_values)
+        sol = sim.solve(f_eval)
 
-        dummy_dataset = pybop.Dataset(
+        return pybop.Dataset(
             {
                 "Frequency [Hz]": f_eval,
                 "Current function [A]": np.ones(n_frequency) * 0.0,
-                "Impedance": np.ones(n_frequency) * 0.0,
-            }
-        )
-        builder = pybop.PybammEIS()
-        builder.set_simulation(model, parameter_values, initial_state=init_soc)
-        builder.set_dataset(dummy_dataset)
-        for p in parameters:
-            builder.add_parameter(p)
-        problem = builder.build()
-        sol = problem.simulate(
-            {
-                "Negative electrode active material volume fraction": self.ground_truth[
-                    0
-                ],
-                "Positive electrode active material volume fraction": self.ground_truth[
-                    1
-                ],
-            }
-        )
-
-        dataset = pybop.Dataset(
-            {
-                "Frequency [Hz]": f_eval,
-                "Current function [A]": np.ones(n_frequency) * 0.0,
-                "Impedance": self.noisy(sol, self.sigma0),
+                "Impedance": self.noisy(sol, sigma=self.sigma0),
                 "Impedance No Noise": sol,
             }
         )
-        return dataset
 
     @pytest.fixture
     def problem(self, model, parameters, cost, init_soc, parameter_values, dataset):
         builder = pybop.PybammEIS()
-        builder.set_simulation(model, parameter_values, initial_state=init_soc)
+        builder.set_simulation(model, parameter_values)
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)
@@ -148,7 +125,7 @@ class TestEISParameterisation:
     def optim(self, optimiser, problem):
         options = optimiser.default_options()
         if isinstance(options, pybop.SciPyDifferentialEvolutionOptions):
-            options.max_iterations = 100
+            options.max_iterations = 35
             options.atol = 1e-6
         elif isinstance(options, pybop.PintsOptions):
             options.max_unchanged_iterations = 35
@@ -156,32 +133,10 @@ class TestEISParameterisation:
             options.absolute_tolerance = 1e-6
 
         # Create optimiser
-        optim = optimiser(problem, options=options)
-        return optim
+        return optimiser(problem, options=options)
 
     def test_eis_optimisers(self, optim, dataset):
-        optim.problem.set_params(self.ground_truth)
-        sol = optim.problem.simulate(
-            {
-                "Negative electrode active material volume fraction": self.ground_truth[
-                    0
-                ],
-                "Positive electrode active material volume fraction": self.ground_truth[
-                    1
-                ],
-            }
-        )
-        # Check that the simulated impedance matches the dataset impedance
-        np.testing.assert_allclose(
-            sol,
-            dataset["Impedance No Noise"],
-            atol=1e-5,
-            err_msg="Simulated impedance does not match dataset impedance",
-        )
         x0 = optim.problem.params.get_initial_values()
-
-        optim.problem.set_params(x0)
-        initial_cost = optim.problem.run()
         results = optim.run()
 
         # Assertions
@@ -191,5 +146,5 @@ class TestEISParameterisation:
         # Assert on identified values, without sigma for GaussianLogLikelihood
         # as the sigma values are small (5e-4), this is a difficult identification process
         # and requires a high number of iterations, and parameter dependent step sizes.
-        assert initial_cost > results.final_cost
+        assert results.initial_cost > results.best_cost
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)

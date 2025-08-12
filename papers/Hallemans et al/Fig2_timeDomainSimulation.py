@@ -1,9 +1,11 @@
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
+import pybamm
 from scipy.io import savemat
 
 import pybop
-from pybop.models.lithium_ion.grouped_spme import convert_physical_to_grouped_parameters
 
 ## Grouped parameter set
 R0 = 0.01
@@ -14,14 +16,20 @@ parameter_set["Electrolyte conductivity [S.m-1]"] = 1e16
 parameter_set["Negative electrode conductivity [S.m-1]"] = 1e16
 parameter_set["Positive electrode conductivity [S.m-1]"] = 1e16
 
-grouped_parameters = convert_physical_to_grouped_parameters(parameter_set)
+grouped_parameters = pybop.lithium_ion.GroupedSPMe.apply_parameter_grouping(
+    parameter_set
+)
 grouped_parameters["Series resistance [Ohm]"] = R0
 model_options = {"surface form": "differential", "contact resistance": "true"}
 var_pts = {"x_n": 100, "x_s": 20, "x_p": 100, "r_n": 100, "r_p": 100}
 
 ## Create model
 model = pybop.lithium_ion.GroupedSPMe(
-    parameter_set=grouped_parameters, eis=True, var_pts=var_pts, options=model_options
+    parameter_set=grouped_parameters,
+    eis=True,
+    var_pts=var_pts,
+    options=model_options,
+    solver=pybamm.CasadiSolver(),
 )
 
 ## Test model in the time domain
@@ -67,4 +75,6 @@ i = simulation["Current [A]"].data
 v = simulation["Voltage [V]"].data
 
 mdic = {"t": t, "i": i, "v": v, "SOC0": SOC0}
-savemat("Data/timeDomainSimulation_SPMegrouped.mat", mdic)
+current_dir = Path(__file__).parent
+save_path = current_dir / "Data" / "timeDomainSimulation_SPMegrouped.mat"
+savemat(save_path, mdic)

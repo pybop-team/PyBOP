@@ -1,4 +1,5 @@
 import numpy as np
+import plotly.graph_objects as go
 import pybamm
 
 import pybop
@@ -10,8 +11,8 @@ import pybop
 # that already exists in the model, for example an exchange current density.
 
 
-# Load parameter set
-parameter_set = pybop.ParameterSet("Chen2020")
+# Set parameter values
+parameter_values = pybamm.ParameterValues("Chen2020")
 
 
 # Define a new function using pybamm parameters
@@ -32,59 +33,89 @@ def positive_electrode_exchange_current_density(c_e, c_s_surf, c_s_max, T):
 
 
 # Give default values to the new scalar parameters and pass the new function
-parameter_set.update(
+parameter_values.update(
     {
         "Positive electrode reference exchange-current density [A.m-2]": 1,
         "Positive electrode charge transfer coefficient": 0.5,
     },
     check_already_exists=False,
 )
-parameter_set["Positive electrode exchange-current density [A.m-2]"] = (
+parameter_values["Positive electrode exchange-current density [A.m-2]"] = (
     positive_electrode_exchange_current_density
 )
 
 # Model definition
-model = pybop.lithium_ion.SPM(
-    parameter_set=parameter_set, options={"contact resistance": "true"}
-)
+model = pybamm.lithium_ion.SPM(options={"contact resistance": "true"})
 
 # Fitting parameters
-parameters = pybop.Parameters(
+parameters = [
     pybop.Parameter(
         "Positive electrode reference exchange-current density [A.m-2]",
-        prior=pybop.Gaussian(1, 0.1),
+        initial_value=1,
+        bounds=[0.75, 1.25],
     ),
     pybop.Parameter(
         "Positive electrode charge transfer coefficient",
-        prior=pybop.Gaussian(0.5, 0.1),
+        initial_value=0.5,
+        bounds=[0.25, 0.75],
     ),
-)
+]
 
 # Generate data
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
-values = model.predict(t_eval=t_eval)
-corrupt_values = values["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
+sim = pybamm.Simulation(model, parameter_values=parameter_values)
+sol = sim.solve(t_eval=[t_eval[0], t_eval[-1]], t_interp=t_eval)
+corrupt_values = sol["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
 
 # Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": t_eval,
-        "Current function [A]": values["Current [A]"].data,
+        "Time [s]": sol.t,
+        "Current function [A]": sol["Current [A]"].data,
         "Voltage [V]": corrupt_values,
     }
 )
 
-# Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(model, parameters, dataset)
-cost = pybop.RootMeanSquaredError(problem)
-optim = pybop.SciPyMinimize(cost, sigma0=0.1, max_iterations=125, verbose=True)
+# Construct the problem builder
+builder = (
+    pybop.builders.Pybamm()
+    .set_dataset(dataset)
+    .set_simulation(model, parameter_values=parameter_values)
+    .add_cost(pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]", "Voltage [V]"))
+)
+for param in parameters:
+    builder.add_parameter(param)
+problem = builder.build()
+
+options = pybop.PintsOptions(sigma=0.1, max_iterations=125, verbose=True)
+optim = pybop.NelderMead(problem, options=options)
 
 # Run optimisation
 results = optim.run()
 
 # Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
+fig = go.Figure(layout=go.Layout(title="Time-domain comparison", width=800, height=600))
+
+fig.add_trace(
+    go.Scatter(
+        x=dataset["Time [s]"],
+        y=dataset["Voltage [V]"],
+        mode="markers",
+        name="Reference",
+    )
+)
+fig.add_trace(
+    go.Scatter(x=sol.t, y=sol["Voltage [V]"].data, mode="lines", name="Fitted")
+)
+
+fig.update_layout(
+    xaxis_title="Time / s",
+    yaxis_title="Voltage / V",
+    plot_bgcolor="white",
+    paper_bgcolor="white",
+)
+fig.show()
 
 # Plot convergence
 pybop.plot.convergence(optim)

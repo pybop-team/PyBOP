@@ -153,7 +153,8 @@ class Test_SPM_Parameterisation:
         # Set sigma0 and create optimiser
         optim = optimiser(problem, options)
         if isinstance(optim, pybop.SimulatedAnnealing):
-            optim.optimiser.cooling_rate = 0.825  # Cool quickly
+            optim.optimiser.cooling_rate = 0.8  # Cool quickly
+            optim.set_max_unchanged_iterations(50)
         return optim
 
     def test_optimisers(self, optim, cost_cls):
@@ -165,15 +166,13 @@ class Test_SPM_Parameterisation:
                 (self.ground_truth, np.asarray([self.sigma0]))
             )
 
-        optim.problem.set_params(x0)
-        initial_cost = optim.problem.run()
         results = optim.run()
 
         # Assertions
         if np.allclose(x0, self.ground_truth, atol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
-        assert initial_cost > results.final_cost
+        assert results.initial_cost > results.best_cost
 
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
@@ -220,12 +219,10 @@ class Test_SPM_Parameterisation:
         optim = pybop.NelderMead(problem, options)
 
         x0 = optim.problem.params.get_initial_values()
-        optim.problem.set_params(x0)
-        initial_cost = optim.problem.run()
         results = optim.run()
         # Assertions
         if np.allclose(x0, self.ground_truth, atol=1e-5):
             raise AssertionError("Initial guess is too close to ground truth")
 
-        assert initial_cost > results.final_cost
+        assert results.initial_cost > results.best_cost
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)

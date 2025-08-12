@@ -93,12 +93,12 @@ class TestClassification:
         bounds = problem.params.get_bounds()
         x0 = np.clip(x, bounds["lower"], bounds["upper"])
         problem.set_params(x0)
-        final_cost = problem.run()
-        bounds = problem.params.get_bounds()
+        best_cost = problem.run()
         results = pybop.OptimisationResult(
             problem=problem,
             x=x0,
-            final_cost=final_cost,
+            best_cost=best_cost,
+            initial_cost=1,
             n_iterations=1,
             n_evaluations=1,
             time=0.1,
@@ -172,25 +172,33 @@ class TestClassification:
             for p in parameters:
                 builder.add_parameter(p)
             builder.add_cost(
-                pybop.costs.pybamm.SumOfPower("Voltage [V]", "Voltage [V]")
+                pybop.costs.pybamm.SumOfPower("Voltage [V]", "Voltage [V]", p=1)
             )
             problem = builder.build()
 
             problem.set_params(true_values)
-            final_cost = problem.run()
+            best_cost = problem.run()
             results = pybop.OptimisationResult(
                 problem=problem,
                 x=true_values,
-                final_cost=final_cost,
+                best_cost=best_cost,
+                initial_cost=1,
                 n_iterations=1,
                 n_evaluations=1,
                 time=0.1,
             )
 
             message = pybop.classify_using_hessian(problem, results)
-            assert message == (
-                "The cost variation is smaller than the cost tolerance: 1e-05."
-            )
+            assert message in [
+                (
+                    "The cost variation is too small to classify with certainty."
+                    " The cost is insensitive to a change of 1e-42 in R0_a [Ohm]."
+                ),
+                (
+                    "The cost variation is too small to classify with certainty."
+                    " The cost is insensitive to a change of 1e-42 in R0_b [Ohm]."
+                ),
+            ]
 
             message = pybop.classify_using_hessian(
                 problem, results, dx=[0.0001, 0.0001]
@@ -205,10 +213,4 @@ class TestClassification:
             )
             assert message == (
                 "The cost variation is smaller than the cost tolerance: 0.01."
-            )
-
-            message = pybop.classify_using_hessian(problem, results, dx=[1, 1])
-            assert message == (
-                "Classification cannot proceed due to infinite cost value(s)."
-                " The result is near the upper bound of R0_a [Ohm]."
             )

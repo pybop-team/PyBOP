@@ -93,8 +93,8 @@ The table below lists the currently supported [models](https://github.com/pybop-
 | Multi-Species Multi-Reaction (MSMR)           | Minkowski                          | Weight Decayed Adaptive Moment Estimation (AdamW) <tr></tr>        |
 | Weppner-Huggins                               | Sum of Power                       | Improved Resilient Backpropagation (iRProp-) <tr></tr>             |
 | Equivalent Circuit Models (ECM)               | Gaussian Log Likelihood            | SciPy Minimize & Differential Evolution  <tr></tr>                 |
-| Grouped-parameter SPMe (GroupedSPMe)          | Log Posterior                      | Cuckoo Search  <tr></tr>                                           |
-|                                               | Gravimetric Energy / Power Density | Simulated Annealing  <tr></tr>                                     |
+| Grouped-parameter SPM (GroupedSPM)            | Log Posterior                      | Cuckoo Search  <tr></tr>                                           |
+| Grouped-parameter SPMe (GroupedSPMe)          | Gravimetric Energy / Power Density | Simulated Annealing  <tr></tr>                                     |
 |                                               | Volumetric Energy / Power Density  | Random Search <tr></tr>                                            |
 |                                               |                                    | Gradient Descent <tr></tr>                                         |
 |                                               |                                    | Nelder Mead <tr></tr>                                              |
@@ -118,7 +118,7 @@ PyBOP is released under the [BSD 3-Clause License](https://github.com/pybop-team
 
 ## Contributors ✨
 
-Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+Thanks goes to these wonderful people:
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
@@ -145,6 +145,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/pipliggins"><img src="https://avatars.githubusercontent.com/u/55396775?v=4?s=100" width="100px;" alt="Pip Liggins"/><br /><sub><b>Pip Liggins</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=pipliggins" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/vpratz"><img src="https://avatars.githubusercontent.com/u/112951103?v=4?s=100" width="100px;" alt="Valentin Pratz"/><br /><sub><b>Valentin Pratz</b></sub></a><br /><a href="https://github.com/pybop-team/PyBOP/commits?author=vpratz" title="Examples">💡</a></td>
     </tr>
   </tbody>
 </table>
@@ -154,4 +155,4 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
-This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specifications. Contributions of any kind are welcome! See `CONTRIBUTING.md` for ways to get started.
+Contributions of any kind are welcome! See `CONTRIBUTING.md` for ways to get started.

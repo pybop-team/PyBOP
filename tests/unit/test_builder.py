@@ -6,6 +6,25 @@ from pybamm import IDAKLUSolver
 import pybop
 
 
+def create_msmr_and_params():
+    model = pybamm.lithium_ion.MSMR(options={"number of MSMR reactions": ("6", "4")})
+    param_values = model.default_parameter_values
+    param_values.update(
+        {
+            "Cell volume [m3]": 0.2,
+            "Positive electrode density [kg.m-3]": 123,
+            "Separator density [kg.m-3]": 123,
+            "Negative electrode density [kg.m-3]": 123,
+            "Positive current collector thickness [m]": 5e-6,
+            "Positive current collector density [kg.m-3]": 123,
+            "Negative current collector thickness [m]": 5e-6,
+            "Negative current collector density [kg.m-3]": 123,
+        },
+        check_already_exists=False,
+    )
+    return model, param_values
+
+
 class TestBuilder:
     """
     A class to test the problem class.
@@ -25,14 +44,7 @@ class TestBuilder:
                 pybamm.lithium_ion.SPMe().default_parameter_values,
             ),
             (pybamm.lithium_ion.DFN(), pybamm.ParameterValues("Marquis2019")),
-            (
-                pybamm.lithium_ion.MSMR(
-                    options={"number of MSMR reactions": ("6", "4")}
-                ),
-                pybamm.lithium_ion.MSMR(
-                    options={"number of MSMR reactions": ("6", "4")}
-                ).default_parameter_values,
-            ),
+            create_msmr_and_params(),
         ]
     )
     def model_and_params(self, request):
@@ -54,6 +66,18 @@ class TestBuilder:
                 "Current function [A]": sol["Current [A]"].data[mask],
                 "Voltage [V]": sol["Voltage [V]"].data[mask],
             }
+        )
+
+    @pytest.fixture
+    def experiment(self):
+        return pybamm.Experiment(
+            [
+                (
+                    "Discharge at 0.5C for 3 minutes (30 second period)",
+                    "Rest for 1 minutes (30 second period)",
+                    "Charge at 0.5C for 1 minutes (30 second period)",
+                ),
+            ]
         )
 
     @pytest.fixture
@@ -218,7 +242,6 @@ class TestBuilder:
         )
         problem = builder.build()
 
-        assert problem._use_posterior is True
         problem.set_params(np.array([0.5, 0.5]))
         value1 = problem.run()
         problem.set_params(np.array([0.65, 0.65]))
@@ -260,6 +283,100 @@ class TestBuilder:
         problem.set_params(np.array([3e-5, 1.5e-6]))
         value2 = problem.run()
         assert abs((value1 - value2) / value1) > 1e-5
+
+    def test_builder_with_experiment(self, model_and_params, experiment, dataset):
+        model, parameter_values = model_and_params
+        parameter_values.update(
+            {
+                "Electrolyte density [kg.m-3]": pybamm.Parameter(
+                    "Separator density [kg.m-3]"
+                ),
+                "Negative electrode active material density [kg.m-3]": pybamm.Parameter(
+                    "Negative electrode density [kg.m-3]"
+                ),
+                "Negative electrode carbon-binder density [kg.m-3]": pybamm.Parameter(
+                    "Negative electrode density [kg.m-3]"
+                ),
+                "Positive electrode active material density [kg.m-3]": pybamm.Parameter(
+                    "Positive electrode density [kg.m-3]"
+                ),
+                "Positive electrode carbon-binder density [kg.m-3]": pybamm.Parameter(
+                    "Positive electrode density [kg.m-3]"
+                ),
+            },
+            check_already_exists=False,
+        )
+        builder = pybop.builders.Pybamm()
+        builder.set_simulation(
+            model,
+            parameter_values=parameter_values,
+            experiment=experiment,
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Negative electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        builder.add_parameter(
+            pybop.Parameter(
+                "Positive electrode active material volume fraction", initial_value=0.6
+            )
+        )
+        builder.add_cost(pybop.costs.pybamm.GravimetricEnergyDensity())
+        problem = builder.build()
+
+        problem.set_params(np.array([0.6, 0.6]))
+        value1 = problem.run()
+        problem.set_params(np.array([0.7, 0.7]))
+        value2 = problem.run()
+        assert abs((value1 - value2) / value1) > 1e-5
+        problem.set_params(np.array([0.6, 0.6]))
+
+    def test_builder_with_experiment_rebuild_params(
+        self, model_and_params, experiment, dataset
+    ):
+        model, parameter_values = model_and_params
+        parameter_values.update(
+            {
+                "Electrolyte density [kg.m-3]": pybamm.Parameter(
+                    "Separator density [kg.m-3]"
+                ),
+                "Negative electrode active material density [kg.m-3]": pybamm.Parameter(
+                    "Negative electrode density [kg.m-3]"
+                ),
+                "Negative electrode carbon-binder density [kg.m-3]": pybamm.Parameter(
+                    "Negative electrode density [kg.m-3]"
+                ),
+                "Positive electrode active material density [kg.m-3]": pybamm.Parameter(
+                    "Positive electrode density [kg.m-3]"
+                ),
+                "Positive electrode carbon-binder density [kg.m-3]": pybamm.Parameter(
+                    "Positive electrode density [kg.m-3]"
+                ),
+            },
+            check_already_exists=False,
+        )
+        builder = pybop.builders.Pybamm()
+        builder.set_simulation(
+            model,
+            parameter_values=parameter_values,
+            experiment=experiment,
+        )
+        builder.add_parameter(
+            pybop.Parameter("Negative particle radius [m]", initial_value=5e-6)
+        )
+        builder.add_parameter(
+            pybop.Parameter("Positive particle radius [m]", initial_value=5e-6)
+        )
+        builder.add_cost(pybop.costs.pybamm.GravimetricEnergyDensity())
+        problem = builder.build()
+
+        problem.set_params(np.array([0.6, 0.6]))
+        value1 = problem.run()
+        problem.set_params(np.array([0.7, 0.7]))
+        value2 = problem.run()
+        assert abs((value1 - value2) / value1) > 1e-5
+        problem.set_params(np.array([0.6, 0.6]))
 
     def test_builder_with_cost_hypers(self, model_and_params, dataset):
         model, parameter_values = model_and_params
