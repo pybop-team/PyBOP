@@ -64,7 +64,6 @@ class PybammEISProblem(Problem):
         return weighted_costs
 
     def simulate(self, inputs: Inputs) -> np.ndarray:
-        # self.set_params(p=np.asarray([v for v in inputs.values()]))
         for key, value in inputs.items():
             self._pipeline.pybamm_pipeline.parameter_values[key] = value
         self._pipeline.pybamm_pipeline.build()
