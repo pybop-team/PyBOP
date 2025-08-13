@@ -61,7 +61,7 @@ class PintsOptions(pybop.OptimiserOptions):
             raise ValueError(
                 "Maximum number of unchanged iterations cannot be negative."
             )
-        if isinstance(self.sigma, np.ndarray) and any(self.sigma) <= 0:
+        if isinstance(self.sigma, np.ndarray) and any(self.sigma <= 0):
             raise ValueError("Sigma must be positive.")
         elif np.isscalar(self.sigma):
             if self.sigma <= 0:
