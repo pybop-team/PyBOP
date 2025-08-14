@@ -168,58 +168,76 @@ class OCPAverage(BaseApplication):
             }
         )
 
+        # Set cost weighting
+        weighting = pybop.builders.create_weighting(
+            "equal", interpolated_dataset, "Stoichiometry"
+        )
+        cost = self.cost(weighting=weighting)
+
         # Define the optimisation parameters
-        self.parameters = pybop.Parameters(
+        self.parameters = [
             pybop.Parameter(
                 "shift",
                 initial_value=0.05,
             ),
-        )
+        ]
+
         if self.allow_stretching:
-            self.parameters.add(
+            self.parameters.append(
                 pybop.Parameter(
                     "stretch",
                     initial_value=1.0,
                 ),
             )
 
-        # Create the fitting problem
-        class FunctionFitting(pybop.FittingProblem):
+        def voltage_fun(inputs):
             if self.allow_stretching:
-
-                def evaluate(self, inputs):
-                    return {
-                        "Voltage [mV]": 1e3
-                        * voltage_charge(
-                            inputs["stretch"] * self.domain_data + inputs["shift"]
-                        ),
-                        "Differential capacity [V-1]": differential_capacity_charge(
-                            inputs["stretch"] * self.domain_data + inputs["shift"]
-                        ),
-                    }
+                res = (
+                    1e3
+                    * voltage_charge(
+                        inputs[1] * interpolated_dataset["Stoichiometry"] + inputs[0]
+                    )
+                    - interpolated_dataset["Voltage [mV]"]
+                )
+                return cost(res)
             else:
+                res = (
+                    1e3
+                    * voltage_charge(interpolated_dataset["Stoichiometry"] + inputs[0])
+                    - interpolated_dataset["Voltage [mV]"]
+                )
+                return cost(res)
 
-                def evaluate(self, inputs):
-                    return {
-                        "Voltage [mV]": 1e3
-                        * voltage_charge(self.domain_data + inputs["shift"]),
-                        "Differential capacity [V-1]": differential_capacity_charge(
-                            self.domain_data + inputs["shift"]
-                        ),
-                    }
+        def diff_capacity_fun(inputs):
+            if self.allow_stretching:
+                res = (
+                    differential_capacity_charge(
+                        inputs[1] * interpolated_dataset["Stoichiometry"] + inputs[0]
+                    )
+                    - interpolated_dataset["Differential capacity [V-1]"]
+                )
+                return cost(res)
+            else:
+                res = (
+                    differential_capacity_charge(
+                        interpolated_dataset["Stoichiometry"] + inputs[0]
+                    )
+                    - interpolated_dataset["Differential capacity [V-1]"]
+                )
+                return cost(res)
 
-        self.model = None
-        self.problem = FunctionFitting(
-            model=self.model,
-            parameters=self.parameters,
-            dataset=interpolated_dataset,
-            signal=["Voltage [mV]", "Differential capacity [V-1]"],
-            domain="Stoichiometry",
-        )
+        # Create the problem
+        builder = pybop.builders.Python()
+        builder.add_fun(voltage_fun)
+        builder.add_fun(diff_capacity_fun)
+
+        for parameter in self.parameters:
+            builder.add_parameter(parameter)
+        problem = builder.build()
 
         # Optimise the fit between the charge and discharge branches
-        self.cost = self.cost(self.problem, weighting="equal")
-        self.optim = self.optimiser(cost=self.cost, verbose=self.verbose)
+        options = pybop.ScipyMinimizeOptions(verbose=self.verbose)
+        self.optim = self.optimiser(problem, options=options)
         self.results = self.optim.run()
         self.stretch = np.sqrt(self.results.x[1]) if self.allow_stretching else 1.0
         self.shift = self.results.x[0] / (self.stretch + 1.0)
@@ -283,20 +301,28 @@ class OCPCapacityToStoichiometry(BaseApplication):
         ocv_dataset: pybop.Dataset,
         ocv_function: Callable,
         cost: pybop.CallableCost | None = pybop.RootMeanSquaredError,
-        optimiser: pybop.BaseOptimiser | None = pybop.SciPyMinimize,
+        optimiser: pybop.BaseOptimiser | None = pybop.NelderMead,
+        optimiser_options: pybop.OptimiserOptions | None = None,
         verbose: bool = True,
     ):
         self.ocv_dataset = ocv_dataset
         self.ocv_function = ocv_function
         self.cost = cost
         self.optimiser = optimiser
+        self.optimiser_options = optimiser_options
         self.verbose = verbose
 
     def __call__(self) -> pybop.Dataset:
         # Use the OCV dataset as the target to fit and the OCV function as the model
 
+        # Set cost weighting
+        weighting = pybop.builders.create_weighting(
+            "domain", self.ocv_dataset, "Charge capacity [A.h]"
+        )
+        cost = self.cost(weighting=weighting)
+
         # Define the optimisation parameters
-        self.parameters = pybop.Parameters(
+        self.parameters = [
             pybop.Parameter(
                 "shift",
                 initial_value=0,
@@ -306,31 +332,28 @@ class OCPCapacityToStoichiometry(BaseApplication):
                 initial_value=np.max(self.ocv_dataset["Charge capacity [A.h]"])
                 - np.min(self.ocv_dataset["Charge capacity [A.h]"]),
             ),
-        )
+        ]
 
-        # Create the fitting problem
-        ocv_function = self.ocv_function
+        def fit_fun(inputs):
+            res = self.ocv_dataset["Voltage [V]"] - self.ocv_function(
+                (self.ocv_dataset["Charge capacity [A.h]"] - inputs[0]) / inputs[1]
+            )
+            return cost(res)
 
-        class FunctionFitting(pybop.FittingProblem):
-            def evaluate(self, inputs):
-                return {
-                    "Voltage [V]": ocv_function(
-                        (self.domain_data - inputs["shift"]) / inputs["stretch"]
-                    ),
-                }
+        # Create the problem
+        builder = pybop.builders.Python()
+        builder.add_fun(fit_fun)
 
-        self.model = None
-        self.problem = FunctionFitting(
-            model=self.model,
-            parameters=self.parameters,
-            dataset=self.ocv_dataset,
-            signal=["Voltage [V]"],
-            domain="Charge capacity [A.h]",
-        )
+        for parameter in self.parameters:
+            builder.add_parameter(parameter)
+        problem = builder.build()
 
         # Optimise the fit between the OCV function and the dataset
-        self.cost = self.cost(self.problem, weighting="domain")
-        self.optim = self.optimiser(cost=self.cost, verbose=self.verbose)
+        if self.optimiser_options is None:
+            self.optimiser_options = pybop.PintsOptions(
+                max_iterations=100, max_unchanged_iterations=60, verbose=self.verbose
+            )
+        self.optim = self.optimiser(problem, options=self.optimiser_options)
         self.results = self.optim.run()
         self.stretch = self.results.x[1]
         self.shift = self.results.x[0]

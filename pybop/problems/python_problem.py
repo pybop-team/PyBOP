@@ -93,7 +93,9 @@ class PythonProblem(Problem):
             )
 
         try:
-            results = [func(self.params.get_values().T) for func in self._funs]
+            results = np.asarray(
+                [func(self.params.get_values().T) for func in self._funs]
+            )
         except (TypeError, ValueError) as e:
             raise RuntimeError(f"function evaluation failed: {e}") from e
 

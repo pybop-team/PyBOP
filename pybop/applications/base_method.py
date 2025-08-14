@@ -70,11 +70,13 @@ class InverseOCV:
         self,
         ocv_function: Callable,
         optimiser: pybop.BaseOptimiser | None = pybop.SciPyMinimize,
+        optimiser_options: pybop.OptimiserOptions | None = None,
         verbose: bool = False,
     ):
         self.ocv_function = ocv_function
         self.optimiser = optimiser
         self.verbose = verbose
+        self.optimiser_options = optimiser_options
 
     def __call__(self, ocv_value: float):
         """
@@ -95,9 +97,15 @@ class InverseOCV:
         def ocv_root(x, **kwargs):
             return np.abs(self.ocv_function(x[0]) - ocv_value)
 
+        # Set builder
+        builder = pybop.builders.Python()
+        builder.add_parameter(pybop.Parameter("OCV root", initial_value=0.5))
+        builder.add_fun(ocv_root)
+        problem = builder.build()
+
         # Minimise to find the stoichiometry
-        optim = self.optimiser(
-            cost=ocv_root, x0=np.asarray([0.5]), verbose=self.verbose
-        )
+        if self.optimiser_options is None:
+            self.optimiser_options = pybop.ScipyMinimizeOptions(verbose=self.verbose)
+        optim = self.optimiser(problem, options=self.optimiser_options)
         results = optim.run()
         return results.x[0]
