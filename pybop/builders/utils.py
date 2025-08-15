@@ -1,4 +1,35 @@
+import numpy as np
 from pybamm import LithiumIonParameters, Parameter, ParameterValues
+
+import pybop
+
+
+def create_weighting(weighting: str, dataset: pybop.Dataset, domain: str) -> np.ndarray:
+    if weighting is None or weighting == "equal":
+        return np.asarray(1.0)
+    elif weighting == "domain":
+        return _set_cost_domain_weighting(dataset, domain)
+    else:
+        raise ValueError(
+            "cost.weighting must be 'equal', 'domain', or a custom numpy array"
+            f", got {weighting}"
+        )
+
+
+def _set_cost_domain_weighting(dataset, domain) -> np.ndarray:
+    """Calculate domain-based weighting."""
+    domain_data = dataset[domain]
+    domain_spacing = domain_data[1:] - domain_data[:-1]
+    mean_spacing = np.mean(domain_spacing)
+
+    # Create a domain weighting array in one operation
+    return np.concatenate(
+        (
+            [(mean_spacing + domain_spacing[0]) / 2],
+            (domain_spacing[1:] + domain_spacing[:-1]) / 2,
+            [(domain_spacing[-1] + mean_spacing) / 2],
+        )
+    ) * ((len(domain_data) - 1) / (domain_data[-1] - domain_data[0]))
 
 
 def set_formation_concentrations(parameter_values: ParameterValues) -> None:

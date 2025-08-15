@@ -66,6 +66,6 @@ class SciPyEvaluator(PintsEvaluator):
         scores = [self._function(x, *self._args) for x in [positions]]
 
         if not isinstance(scores[0], tuple):
-            return np.asarray(scores)[0]
+            return np.asarray(scores).reshape(-1)
 
         return [(score[0], score[1]) for score in scores][0]
