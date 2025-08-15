@@ -111,7 +111,7 @@ class TestParameter:
         assert param.bounds is None
 
     def test_validate_array_values_outside_bounds(self):
-        """Test validation of array values outside bounds (lines 283-284)."""
+        """Test validation of array values outside bounds."""
         with pytest.raises(
             pybop.ParameterValidationError,
             match="Some initial values are outside bounds",
