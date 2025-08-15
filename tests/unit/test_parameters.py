@@ -152,7 +152,7 @@ class TestParameter:
             param.reset_to_initial()
 
     def test_sample_from_prior_no_prior(self):
-        """Test sampling from prior when no prior exists (lines 378-382)."""
+        """Test sampling from prior when no prior exists."""
         param = pybop.Parameter("test", initial_value=1.0)
 
         result = param.sample_from_prior()
