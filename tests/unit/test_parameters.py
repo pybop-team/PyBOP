@@ -134,7 +134,7 @@ class TestParameter:
                 param._set_margin(margin)
 
     def test_update_initial_value_with_none_current(self):
-        """Test updating initial value when current is None (lines 328-332)."""
+        """Test updating initial value when current is None."""
         param = pybop.Parameter("test")  # No initial value
         assert param.current_value is None
 
