@@ -143,7 +143,7 @@ class TestParameter:
         assert param.current_value == 5.0  # Should also update current
 
     def test_reset_to_initial_no_initial_value(self):
-        """Test reset to initial when no initial value exists (line 359)."""
+        """Test reset to initial when no initial value exists."""
         param = pybop.Parameter("test")  # No initial value
 
         with pytest.raises(
