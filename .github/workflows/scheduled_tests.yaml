@@ -94,7 +94,7 @@ jobs:
 
       - name: Unit tests with nox
         run: python -m nox -s unit
-        
+
       - name: Integration tests with nox
         run: python -m nox -s integration
 
