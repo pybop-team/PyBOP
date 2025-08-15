@@ -326,7 +326,7 @@ class TestParameters:
         )
 
     def test_add_duplicate_parameter(self):
-        """Test adding duplicate parameter (line 439)."""
+        """Test adding duplicate parameter."""
         param1 = pybop.Parameter("test", initial_value=1.0)
         param2 = pybop.Parameter("test", initial_value=2.0)  # Same name
 
@@ -338,7 +338,7 @@ class TestParameters:
             params.add(param2)
 
     def test_bulk_update_values_validation_error(self):
-        """Test bulk update values validation error (lines 486-496)."""
+        """Test bulk update values validation error."""
         param1 = pybop.Parameter("param1", initial_value=1.0)
         param2 = pybop.Parameter("param2", initial_value=2.0)
         params = pybop.Parameters([param1, param2])
@@ -350,7 +350,7 @@ class TestParameters:
             params._bulk_update_initial_values([1.0])  # Only one for two
 
     def test_bulk_update_bounds_validation_error(self):
-        """Test bulk update bounds validation error (lines 521-522)."""
+        """Test bulk update bounds validation error."""
         param1 = pybop.Parameter("param1", initial_value=1.0)
         param2 = pybop.Parameter("param2", initial_value=2.0)
         params = pybop.Parameters([param1, param2])
@@ -443,7 +443,7 @@ class TestParameters:
         assert params["param2"].current_value == 20.0  # Not reset
 
     def test_priors_property(self):
-        """Test priors property (line 812)."""
+        """Test priors property."""
         param1 = pybop.Parameter(
             "param1", initial_value=1.0, prior=pybop.Gaussian(1.0, 0.1)
         )
@@ -463,7 +463,7 @@ class TestBounds:
     pytestmark = pytest.mark.unit
 
     def test_bounds_validation_error(self):
-        """Test bounds validation error (lines 74-75)."""
+        """Test bounds validation error."""
         with pytest.raises(
             pybop.ParameterValidationError,
             match="Lower bound .* must be less than upper bound",
@@ -477,13 +477,13 @@ class TestBounds:
             Bounds(5.0, 5.0)  # Equal bounds
 
     def test_bounds_contains_false(self):
-        """Test bounds contains method returning False (line 79)."""
+        """Test bounds contains method returning False."""
         bounds = Bounds(1.0, 5.0)
         assert not bounds.contains(0.5)  # Below lower bound
         assert not bounds.contains(6.0)  # Above upper bound
 
     def test_bounds_contains_array_false(self):
-        """Test bounds contains_array method returning False (line 83)."""
+        """Test bounds contains_array method returning False."""
         bounds = Bounds(1.0, 5.0)
         assert not bounds.contains_array([0.5, 2.0, 3.0])  # Some outside
         assert not bounds.contains_array([2.0, 3.0, 6.0])  # Some outside
@@ -493,7 +493,7 @@ class TestParameterValueValidator:
     pytestmark = pytest.mark.unit
 
     def test_validate_empty_sequence(self):
-        """Test validation of empty sequences (lines 122-125)."""
+        """Test validation of empty sequences."""
         validator = ParameterValueValidator()
 
         with pytest.raises(
@@ -507,7 +507,7 @@ class TestParameterValueValidator:
             validator.validate_and_convert((), "test_param")
 
     def test_validate_non_numeric_sequence(self):
-        """Test validation of non-numeric sequences (lines 126-130)."""
+        """Test validation of non-numeric sequences."""
         validator = ParameterValueValidator()
 
         with pytest.raises(
@@ -521,7 +521,7 @@ class TestParameterValueValidator:
             validator.validate_and_convert([1, 2, None], "test_param")
 
     def test_validate_empty_array(self):
-        """Test validation of empty arrays (lines 134-138)."""
+        """Test validation of empty arrays."""
         validator = ParameterValueValidator()
 
         with pytest.raises(
@@ -530,7 +530,7 @@ class TestParameterValueValidator:
             validator.validate_and_convert(np.array([]), "test_param")
 
     def test_validate_non_numeric_array(self):
-        """Test validation of non-numeric arrays (lines 138-143)."""
+        """Test validation of non-numeric arrays."""
         validator = ParameterValueValidator()
 
         str_array = np.array(["a", "b", "c"])  # Create a string array
@@ -540,7 +540,7 @@ class TestParameterValueValidator:
             validator.validate_and_convert(str_array, "test_param")
 
     def test_validate_invalid_type(self):
-        """Test validation of invalid types (line 143)."""
+        """Test validation of invalid types."""
         validator = ParameterValueValidator()
 
         with pytest.raises(
