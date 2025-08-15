@@ -169,7 +169,7 @@ class TestParameter:
             param.get_initial_value_transformed()
 
     def test_get_initial_value_transformed_none(self):
-        """Test getting transformed initial value when None (line 396)."""
+        """Test getting transformed initial value when None."""
         param = pybop.Parameter("test")  # No initial value
 
         result = param.get_initial_value_transformed()
