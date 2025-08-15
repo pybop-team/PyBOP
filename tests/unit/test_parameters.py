@@ -106,7 +106,7 @@ class TestParameter:
         assert isinstance(param.initial_value, float)
 
     def test_parameter_bounds_property_none(self):
-        """Test bounds property when None (line 260)."""
+        """Test bounds property when None."""
         param = pybop.Parameter("test", initial_value=1.0)
         assert param.bounds is None
 
