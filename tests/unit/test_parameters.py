@@ -123,7 +123,7 @@ class TestParameter:
             )
 
     def test_set_margin_invalid(self):
-        """Test setting invalid margin values (line 313)."""
+        """Test setting invalid margin values."""
         param = pybop.Parameter("test", initial_value=1.0)
 
         invalid_margins = [0.0, 1.0, -0.1]
