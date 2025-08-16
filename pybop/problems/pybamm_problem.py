@@ -150,3 +150,7 @@ class PybammProblem(Problem):
     @property
     def pipeline(self):
         return self._pipeline
+
+    @property
+    def cost_names(self):
+        return self._cost_names

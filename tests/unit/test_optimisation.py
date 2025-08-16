@@ -571,3 +571,82 @@ class TestOptimisation:
         assert results.n_iterations in results._n_iterations
         assert results.n_evaluations in results._n_evaluations
         assert results.x0 in results._x0
+
+    def test_optimisation_options(self):
+        options = pybop.PintsOptions()
+        with pytest.raises(
+            ValueError, match="Maximum number of iterations cannot be negative."
+        ):
+            options.max_iterations = -1
+            options.validate()
+
+        options = pybop.PintsOptions()
+        with pytest.raises(
+            ValueError, match="Minimum number of iterations cannot be negative."
+        ):
+            options.min_iterations = -1
+            options.validate()
+        options = pybop.PintsOptions()
+        with pytest.raises(
+            ValueError,
+            match="Maximum number of unchanged iterations cannot be negative.",
+        ):
+            options.max_unchanged_iterations = -1
+            options.validate()
+        options = pybop.PintsOptions()
+        with pytest.raises(ValueError, match="Sigma must be positive."):
+            options.sigma = -1.0
+            options.validate()
+        options = pybop.PintsOptions()
+        with pytest.raises(ValueError, match="Sigma must be positive."):
+            options.sigma = np.array([-1.0])
+            options.validate()
+        options = pybop.PintsOptions()
+        with pytest.raises(ValueError, match="Absolute tolerance cannot be negative."):
+            options.absolute_tolerance = -1.0
+            options.validate()
+        options = pybop.PintsOptions()
+        with pytest.raises(ValueError, match="Relative tolerance cannot be negative."):
+            options.relative_tolerance = -1.0
+            options.validate()
+        options = pybop.PintsOptions()
+        with pytest.raises(
+            ValueError,
+            match="At least one stopping criterion must be set: max_iterations, max_evaluations, threshold, or max_unchanged_iterations.",
+        ):
+            options.max_iterations = None
+            options.max_evaluations = None
+            options.threshold = None
+            options.max_unchanged_iterations = None
+            options.validate()
+
+        options = pybop.OptimiserOptions()
+        with pytest.raises(
+            ValueError, match="Multistart must be greater than or equal to 1."
+        ):
+            options.multistart = 0
+            options.validate()
+        options = pybop.OptimiserOptions()
+        with pytest.raises(
+            ValueError, match="Verbose print rate must be greater than or equal to 1."
+        ):
+            options.verbose_print_rate = 0
+            options.validate()
+
+        options = pybop.ScipyMinimizeOptions()
+        with pytest.raises(ValueError, match="maxiter must be a positive integer"):
+            options.maxiter = -1
+            options.validate()
+
+        options = pybop.ScipyMinimizeOptions()
+        with pytest.raises(ValueError, match="tol must be a positive float."):
+            options.tol = -1.0
+            options.validate()
+        options = pybop.ScipyMinimizeOptions()
+        with pytest.raises(ValueError, match="eps must be a positive float."):
+            options.eps = -1.0
+            options.validate()
+        options = pybop.ScipyMinimizeOptions()
+        with pytest.raises(ValueError, match="jac must be a boolean value."):
+            options.jac = "Invalid string"
+            options.validate()

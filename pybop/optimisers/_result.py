@@ -165,8 +165,8 @@ class OptimisationResult:
         return np.sum(self._n_iterations) if len(self._n_iterations) > 0 else None
 
     def total_evaluations(self) -> np.floating | None:
-        """Calculates the average number of iterations across all runs."""
-        return np.sum(self._n_iterations) if len(self._n_iterations) > 0 else None
+        """Calculates the average number of evaluations across all runs."""
+        return np.sum(self._n_evaluations) if len(self._n_evaluations) > 0 else None
 
     def total_runtime(self) -> np.floating | None:
         """Calculates the total runtime across all runs."""

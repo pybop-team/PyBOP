@@ -93,7 +93,10 @@ jobs:
           python -m pip install --upgrade pip nox[uv]
 
       - name: Unit tests with nox
-        run: python -m nox -s coverage
+        run: python -m nox -s unit
+
+      - name: Integration tests with nox
+        run: python -m nox -s integration
 
       - name: Run examples with nox
         run: python -m nox -s examples
@@ -133,7 +136,8 @@ jobs:
           eval "$(pyenv init -)"
           pyenv activate pybop-${{ matrix.python_version }}-${{ matrix.pybamm_version }}
           python -m pip install --upgrade pip nox[uv]
-          python -m nox -s coverage
+          python -m nox -s unit
+          python -m nox -s integration
           python -m nox -s examples
 
       - name: Uninstall pyenv-virtualenv & python

@@ -26,15 +26,15 @@ class PintsOptions(pybop.OptimiserOptions):
 
     Attributes:
             default_max_iterations (int): Default maximum number of iterations (1000).
-            max_iterations (int): Maximum number of iterations for the optimisation.
-            min_iterations (int): Minimum number of iterations required.
-            sigma (float | np.ndarray | list): Standard deviation or step-size parameter for the optimiser.
-            max_unchanged_iterations (int): Maximum iterations without improvement before stopping.
-            use_f_guessed (bool): Whether to use guessed function values.
-            absolute_tolerance (float): Absolute tolerance for convergence.
-            relative_tolerance (float): Relative tolerance for convergence.
-            max_evaluations (int | None): Maximum number of function evaluations.
-            threshold (float | None): Threshold value for optimisation stopping criteria.
+            max_iterations (int): Maximum number of iterations for the optimisation. (Default: None)
+            min_iterations (int): Minimum number of iterations required. (Default: 2)
+            sigma (float | np.ndarray | list): Standard deviation or step-size parameter for the optimiser. (Default: 5e-2)
+            max_unchanged_iterations (int): Maximum iterations without improvement before stopping. (Default: 15)
+            use_f_guessed (bool): Whether to use guessed function values. (Default: False)
+            absolute_tolerance (float): Absolute tolerance for convergence. (Default: 1e-5)
+            relative_tolerance (float): Relative tolerance for convergence. (Default: 1e-2)
+            max_evaluations (int | None): Maximum number of function evaluations. (Default: None)
+            threshold (float | None): Threshold value for optimisation stopping criteria. (Default: None)
     """
 
     default_max_iterations = 1000
@@ -61,7 +61,7 @@ class PintsOptions(pybop.OptimiserOptions):
             raise ValueError(
                 "Maximum number of unchanged iterations cannot be negative."
             )
-        if isinstance(self.sigma, np.ndarray) and any(self.sigma) <= 0:
+        if isinstance(self.sigma, np.ndarray) and any(self.sigma <= 0):
             raise ValueError("Sigma must be positive.")
         elif np.isscalar(self.sigma):
             if self.sigma <= 0:

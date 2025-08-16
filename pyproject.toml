@@ -104,3 +104,20 @@ ignore = ["E501","E741"]
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
+
+[tool.coverage.run]
+source = ["pybop"]
+omit = [
+    "*/tests/*",
+    "tests/*",
+    "*/test_*",
+    "test_*"
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError"
+]

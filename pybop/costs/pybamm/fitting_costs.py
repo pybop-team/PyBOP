@@ -42,6 +42,9 @@ class SumSquaredError(PybammCost):
             parameters=parameters,
         )
 
+    def __name__(self):
+        return "Sum Squared Error"
+
 
 class MeanAbsoluteError(PybammCost):
     """
@@ -82,6 +85,9 @@ class MeanAbsoluteError(PybammCost):
             parameters={},
         )
 
+    def __name__(self):
+        return "Mean Absolute Error"
+
 
 class MeanSquaredError(PybammCost):
     """
@@ -116,6 +122,9 @@ class MeanSquaredError(PybammCost):
             expression=pybamm.DiscreteTimeSum(sum_expr),
             parameters={},
         )
+
+    def __name__(self):
+        return "Mean Squared Error"
 
 
 class RootMeanSquaredError(PybammCost):
@@ -152,6 +161,9 @@ class RootMeanSquaredError(PybammCost):
             expression=pybamm.DiscreteTimeSum(sum_expr),
             parameters={},
         )
+
+    def __name__(self):
+        return "Root Mean Squared Error"
 
 
 class Minkowski(PybammCost):
@@ -203,6 +215,9 @@ class Minkowski(PybammCost):
             expression=expression,
             parameters={},
         )
+
+    def __name__(self):
+        return f"Minkowski distance (p = {self.p})"
 
 
 class SumOfPower(PybammCost):
@@ -261,6 +276,9 @@ class SumOfPower(PybammCost):
             expression=pybamm.DiscreteTimeSum(sum_expr),
             parameters={},
         )
+
+    def __name__(self):
+        return f"Sum of Power (p = {self._p})"
 
 
 class NegativeGaussianLogLikelihood(BaseLikelihood):
@@ -363,3 +381,6 @@ class ScaledCost(PybammCost):
             / len(dataset[self._cost.data_name]),
             parameters=cost_metadata.parameters,
         )
+
+    def __name__(self):
+        return f"Scaled {self._cost.__name__()}"

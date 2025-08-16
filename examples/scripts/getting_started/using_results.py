@@ -66,7 +66,6 @@ options = pybop.PintsOptions(
 optim = pybop.AdamW(problem, options=options)
 results = optim.run()
 
-
 # Now we have a results object. The first thing we can
 # do is obtain the fully identified pybamm.ParameterValues object
 # These can then be used with normal Pybamm classes.

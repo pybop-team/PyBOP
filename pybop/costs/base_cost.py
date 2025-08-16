@@ -39,3 +39,7 @@ class CallableCost:
             gradient with dimension (len(parameters)), otherwise returns only the cost.
         """
         raise NotImplementedError
+
+    @property
+    def name(self):
+        return self.__class__.__name__

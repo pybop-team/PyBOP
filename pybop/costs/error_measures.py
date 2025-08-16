@@ -64,6 +64,9 @@ class MeanSquaredError(CallableCost):
 
         return e
 
+    def __name__(self):
+        return "Mean Square Error"
+
 
 class RootMeanSquaredError(CallableCost):
     """
@@ -86,6 +89,9 @@ class RootMeanSquaredError(CallableCost):
             return e, de
 
         return e
+
+    def __name__(self):
+        return "Root Mean Square Error"
 
 
 class MeanAbsoluteError(CallableCost):
@@ -116,6 +122,9 @@ class MeanAbsoluteError(CallableCost):
 
         return e
 
+    def __name__(self):
+        return "Mean Absolute Error"
+
 
 class SumSquaredError(CallableCost):
     """
@@ -138,6 +147,9 @@ class SumSquaredError(CallableCost):
             return e, de
 
         return e
+
+    def __name__(self):
+        return "Sum of Squared Error"
 
 
 class Minkowski(CallableCost):
@@ -196,6 +208,9 @@ class Minkowski(CallableCost):
 
         return e
 
+    def __name__(self):
+        return f"Minkowski distance (p = {self.p})"
+
 
 class SumOfPower(CallableCost):
     """
@@ -250,3 +265,6 @@ class SumOfPower(CallableCost):
             return e, de
 
         return e
+
+    def __name__(self):
+        return f"Sum of Power (p = {self.p})"
