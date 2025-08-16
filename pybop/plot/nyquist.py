@@ -1,5 +1,3 @@
-from plotly.graph_objs import Figure
-
 from pybop import PybammEISProblem
 from pybop.parameters.parameter import Inputs
 from pybop.plot.standard_plots import StandardPlot
@@ -10,7 +8,7 @@ def nyquist(
     problem_inputs: Inputs | None = None,
     show: bool = True,
     **layout_kwargs,
-) -> Figure:
+):
     """
     Generates Nyquist plots for the given problem by evaluating the model's output and target values.
 
