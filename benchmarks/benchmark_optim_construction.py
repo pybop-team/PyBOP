@@ -88,9 +88,7 @@ class BenchmarkOptimisationConstruction:
             parameter_values (str): The name of the parameter (unused).
             optimiser (pybop.Optimiser): The optimiser class (unused).
         """
-        options = pybop.PintsOptions(max_iterations=5)
-        self.optim = optimiser(self.problem, options=options)
-        self.optim.set_population_size(20)
+        self.optim = optimiser(self.problem)
 
     def time_cost_evaluate(self, model, parameter_values, optimiser):
         """
