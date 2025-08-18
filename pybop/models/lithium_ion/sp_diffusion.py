@@ -11,9 +11,6 @@ from pybamm import (
 )
 from pybamm import lithium_ion as pybamm_lithium_ion
 from pybamm import t as pybamm_t
-from pybamm.input.parameters.lithium_ion.Xu2019 import (
-    nmc_ocp_Xu2019,
-)
 
 
 class SPDiffusion(pybamm_lithium_ion.BaseModel):
@@ -182,16 +179,8 @@ class SPDiffusion(pybamm_lithium_ion.BaseModel):
 
     @property
     def default_parameter_values(self):
-        parameter_dictionary = {
-            "Nominal cell capacity [A.h]": 0.0024,
-            "Current function [A]": 0.0024,
-            "Initial stoichiometry": 0.9,
-            "Electrode OCP [V]": nmc_ocp_Xu2019,
-            "Theoretical electrode capacity [A.s]": 15,
-            "Particle diffusion time scale [s]": 3000,
-            "Series resistance [Ohm]": 1,
-        }
-        return ParameterValues(values=parameter_dictionary)
+        param = pybamm.ParameterValues("Xu2019")
+        return self.create_grouped_parameters(param, "positive")
 
     @property
     def default_quick_plot_variables(self):
