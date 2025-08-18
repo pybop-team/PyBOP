@@ -1,5 +1,3 @@
-from typing import Any
-
 import numpy as np
 import pybamm
 import pytest
@@ -21,31 +19,40 @@ CHARGE_TRANSFER_PARAMS = [
 ]
 
 
-class TestGroupedSPMe:
+class TestGroupedModels:
     """
-    A class to test the GroupedSPMe class.
+    A class to test the pybop grouped-parameter battery models.
     """
 
-    pytestmark = pytest.mark.unit
+    pytestmark = pytest.mark.integration
 
-    @pytest.fixture(scope="session")
-    def base_model_config(self):
+    @pytest.fixture(
+        params=[
+            pybop.lithium_ion.GroupedSPM(),
+            pybop.lithium_ion.GroupedSPM(options={"surface form": "differential"}),
+            pybop.lithium_ion.GroupedSPMe(),
+            pybop.lithium_ion.GroupedSPMe(options={"surface form": "differential"}),
+        ],
+        scope="session",
+    )
+    def model_config(self, request):
         """Shared model configuration to avoid repeated initialisation."""
-        model = pybop.lithium_ion.GroupedSPMe()
+        model = request.param
+        parameter_values = model.default_parameter_values
+
         return {
             "model": model,
-            "parameter_values": model.default_parameter_values,
+            "parameter_values": parameter_values,
             "solver": model.default_solver,
         }
 
     @pytest.fixture
-    def grouped_spme_dataset(self, base_model_config):
+    def dataset(self, model_config):
         """Generate dataset with optimised simulation."""
-        config = base_model_config
         sim = pybamm.Simulation(
-            config["model"],
-            parameter_values=config["parameter_values"],
-            solver=config["solver"],
+            model_config["model"],
+            parameter_values=model_config["parameter_values"],
+            solver=model_config["solver"],
         )
 
         t_eval = np.linspace(0, TIME_MAX, TIME_POINTS)
@@ -77,14 +84,14 @@ class TestGroupedSPMe:
         )
 
     @pytest.fixture
-    def test_parameters(self):
+    def parameters(self):
         """Create parameter objects for reuse."""
         return [
             pybop.Parameter(param_name, initial_value=val)
             for param_name, val in CHARGE_TRANSFER_PARAMS
         ]
 
-    def create_pybamm_builder(self, dataset, model_config: dict[str, Any], parameters):
+    def create_pybamm_builder(self, dataset, model_config, parameters):
         """Factory function for creating Pybamm builders."""
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
@@ -97,11 +104,11 @@ class TestGroupedSPMe:
 
         return builder
 
-    def create_eis_builder(self, dataset, model_config: dict[str, Any], parameters):
+    def create_eis_builder(self, eis_dataset, model_config, parameters):
         """Factory function for creating EIS builders."""
-        model = pybop.lithium_ion.GroupedSPMe(options={"surface form": "differential"})
+        model = model_config["model"]
         builder = pybop.builders.PybammEIS()
-        builder.set_dataset(dataset)
+        builder.set_dataset(eis_dataset)
         builder.set_simulation(model, parameter_values=model_config["parameter_values"])
 
         for parameter in parameters:
@@ -126,14 +133,10 @@ class TestGroupedSPMe:
 
         return value1, value2
 
-    def test_grouped_spme_voltage_optimisation(
-        self, grouped_spme_dataset, base_model_config, test_parameters
-    ):
+    def test_voltage_fitting(self, dataset, model_config, parameters):
         """Test grouped SPMe model with voltage-based cost functions."""
         # Build problem with multiple cost functions
-        builder = self.create_pybamm_builder(
-            grouped_spme_dataset, base_model_config, test_parameters
-        )
+        builder = self.create_pybamm_builder(dataset, model_config, parameters)
         builder.add_cost(
             pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
         )
@@ -141,27 +144,27 @@ class TestGroupedSPMe:
             pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]", "Voltage [V]")
         )
 
-        problem = builder.build()
+        fitting_problem = builder.build()
 
         # Test parameter sensitivity
-        initial_params = problem.params.get_initial_values()
+        initial_params = fitting_problem.params.get_initial_values()
 
         value1, value2 = self.assert_parameter_sensitivity(
-            problem, initial_params, TEST_PARAM_VALUES
+            fitting_problem, initial_params, TEST_PARAM_VALUES
         )
 
         # Test sensitivity computation consistency
-        problem.set_params(initial_params)
-        value1_sens, grad1 = problem.run_with_sensitivities()
+        fitting_problem.set_params(initial_params)
+        value1_sens, grad1 = fitting_problem.run_with_sensitivities()
 
-        problem.set_params(TEST_PARAM_VALUES)
-        value2_sens, grad2 = problem.run_with_sensitivities()
+        fitting_problem.set_params(TEST_PARAM_VALUES)
+        value2_sens, grad2 = fitting_problem.run_with_sensitivities()
 
         # Validate gradient shape and value consistency
-        assert grad1.shape == (len(test_parameters),), (
+        assert grad1.shape == (len(parameters),), (
             f"Gradient shape mismatch: {grad1.shape}"
         )
-        assert grad2.shape == (len(test_parameters),), (
+        assert grad2.shape == (len(parameters),), (
             f"Gradient shape mismatch: {grad2.shape}"
         )
 
@@ -172,16 +175,44 @@ class TestGroupedSPMe:
             value2_sens, value2, atol=ABSOLUTE_TOLERANCE, rtol=RELATIVE_TOLERANCE
         )
 
-    def test_eis_impedance(self, eis_dataset, base_model_config, test_parameters):
-        builder = self.create_eis_builder(
-            eis_dataset, base_model_config, test_parameters
-        )
+    def test_eis_fitting(self, eis_dataset, model_config, parameters):
+        builder = self.create_eis_builder(eis_dataset, model_config, parameters)
+
         builder.add_cost(pybop.MeanSquaredError(weighting="equal"))
 
-        problem = builder.build()
-        assert problem is not None, "EIS problem build failed"
+        eis_problem = builder.build()
+        assert eis_problem is not None, "EIS problem build failed"
 
         # Test parameter sensitivity with different values
-        initial_params = problem.params.get_initial_values()
+        initial_params = eis_problem.params.get_initial_values()
 
-        self.assert_parameter_sensitivity(problem, TEST_PARAM_VALUES, initial_params)
+        self.assert_parameter_sensitivity(
+            eis_problem, TEST_PARAM_VALUES, initial_params
+        )
+
+    # def test_design(self, model_config, parameters):
+    #     model = model_config["model"]
+    #     parameter_values = model_config["parameter_values"]
+    #     pybop.builders.cell_mass(parameter_values)
+
+    #     experiment = pybamm.Experiment(
+    #         [
+    #             "Discharge at 1C until 2.5 V (10 seconds period)",
+    #             "Rest for 10 minutes (10 seconds period)",
+    #         ],
+    #     )
+
+    #     builder = pybop.builders.Pybamm()
+    #     for parameter in parameters:
+    #         builder.add_parameter(parameter)
+    #     builder.set_simulation(
+    #         model, parameter_values=parameter_values, experiment=experiment
+    #     )
+    #     builder.add_cost(pybop.costs.pybamm.GravimetricEnergyDensity())
+    #     design_problem = builder.build()
+
+    #     value1, value2 = self.assert_parameter_sensitivity(
+    #     design_problem, initial_params, TEST_PARAM_VALUES
+    # )
+
+    #     assert value1 < value2  # Negative cost
