@@ -25,7 +25,7 @@ class TestDecay:
 
     pytestmark = pytest.mark.integration
 
-    @pytest.fixture(scope="session")
+    @pytest.fixture(scope="module")
     def model_config(self):
         """Shared model configuration to avoid repeated initialisation."""
         model = pybop.ExponentialDecayModel()
@@ -35,7 +35,7 @@ class TestDecay:
             "solver": pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6),
         }
 
-    @pytest.fixture
+    @pytest.fixture(scope="module")
     def dataset(self, model_config):
         """Generate dataset"""
         sim = pybamm.Simulation(
@@ -49,8 +49,8 @@ class TestDecay:
 
         return pybop.Dataset({"Time [s]": sol.t, "y_0": sol["y_0"].data})
 
-    @pytest.fixture
-    def test_parameters(self):
+    @pytest.fixture(scope="module")
+    def parameters(self):
         """Create parameter objects for reuse."""
         return [
             pybop.Parameter(param_name, initial_value=val)
@@ -89,9 +89,9 @@ class TestDecay:
 
         return value1, value2
 
-    def test_decay_builder(self, dataset, model_config, test_parameters):
+    def test_decay_builder(self, dataset, model_config, parameters):
         """Test decay model with voltage-based cost functions."""
-        builder = self.create_pybamm_builder(dataset, model_config, test_parameters)
+        builder = self.create_pybamm_builder(dataset, model_config, parameters)
         builder.add_cost(pybop.costs.pybamm.SumSquaredError("y_0", "y_0"))
         builder.add_cost(pybop.costs.pybamm.MeanAbsoluteError("y_0", "y_0"))
 
@@ -112,10 +112,10 @@ class TestDecay:
         value2_sens, grad2 = problem.run_with_sensitivities()
 
         # Validate gradient shape and value consistency
-        assert grad1.shape == (len(test_parameters),), (
+        assert grad1.shape == (len(parameters),), (
             f"Gradient shape mismatch: {grad1.shape}"
         )
-        assert grad2.shape == (len(test_parameters),), (
+        assert grad2.shape == (len(parameters),), (
             f"Gradient shape mismatch: {grad2.shape}"
         )
 

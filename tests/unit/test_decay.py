@@ -12,7 +12,7 @@ class TestDecay:
 
     pytestmark = pytest.mark.unit
 
-    @pytest.fixture(scope="session")
+    @pytest.fixture(scope="module")
     def model_config(self):
         """Shared model configuration to avoid repeated initialisation."""
         model = pybop.ExponentialDecayModel()

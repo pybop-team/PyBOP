@@ -33,7 +33,7 @@ class TestGITTModels:
             pybop.lithium_ion.WeppnerHuggins(),
             pybop.lithium_ion.SPDiffusion(),
         ],
-        scope="session",
+        scope="module",
     )
     def model_config(self, request):
         """Shared model configuration to avoid repeated initialisation."""
@@ -44,7 +44,7 @@ class TestGITTModels:
             "solver": model.default_solver,
         }
 
-    @pytest.fixture
+    @pytest.fixture(scope="module")
     def dataset(self, model_config):
         """Generate dataset"""
         config = model_config
@@ -68,7 +68,7 @@ class TestGITTModels:
             }
         )
 
-    @pytest.fixture
+    @pytest.fixture(scope="module")
     def parameters(self):
         """Create parameter objects for reuse."""
         return [

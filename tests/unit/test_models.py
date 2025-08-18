@@ -21,6 +21,7 @@ class TestModels:
             (pybop.lithium_ion.GroupedSPMe, {}),
             (pybop.lithium_ion.GroupedSPMe, {"surface form": "differential"}),
         ],
+        scope="module",
     )
     def model_and_options(self, request):
         return request.param

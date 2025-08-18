@@ -33,7 +33,7 @@ class TestGroupedModels:
             pybop.lithium_ion.GroupedSPMe(),
             pybop.lithium_ion.GroupedSPMe(options={"surface form": "differential"}),
         ],
-        scope="session",
+        scope="module",
     )
     def model_config(self, request):
         """Shared model configuration to avoid repeated initialisation."""
@@ -46,7 +46,7 @@ class TestGroupedModels:
             "solver": model.default_solver,
         }
 
-    @pytest.fixture
+    @pytest.fixture(scope="module")
     def dataset(self, model_config):
         """Generate dataset with optimised simulation."""
         sim = pybamm.Simulation(
@@ -69,7 +69,7 @@ class TestGroupedModels:
             }
         )
 
-    @pytest.fixture
+    @pytest.fixture(scope="module")
     def eis_dataset(self):
         """EIS dataset with pre-allocated arrays."""
         frequencies = np.logspace(-4.5, 5, FREQ_POINTS)
@@ -83,7 +83,7 @@ class TestGroupedModels:
             }
         )
 
-    @pytest.fixture
+    @pytest.fixture(scope="module")
     def parameters(self):
         """Create parameter objects for reuse."""
         return [
