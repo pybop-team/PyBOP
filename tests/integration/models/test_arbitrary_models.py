@@ -122,7 +122,7 @@ class SystemODEs(pybamm.BaseModel):
         )
 
 
-class Test_Arbitrary_Models:
+class TestArbitraryModels:
     """
     A class to test the arbitrary (i.e. non-battery) models.
     """
