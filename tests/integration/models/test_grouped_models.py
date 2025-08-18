@@ -189,30 +189,3 @@ class TestGroupedModels:
         self.assert_parameter_sensitivity(
             eis_problem, TEST_PARAM_VALUES, initial_params
         )
-
-    # def test_design(self, model_config, parameters):
-    #     model = model_config["model"]
-    #     parameter_values = model_config["parameter_values"]
-    #     pybop.builders.cell_mass(parameter_values)
-
-    #     experiment = pybamm.Experiment(
-    #         [
-    #             "Discharge at 1C until 2.5 V (10 seconds period)",
-    #             "Rest for 10 minutes (10 seconds period)",
-    #         ],
-    #     )
-
-    #     builder = pybop.builders.Pybamm()
-    #     for parameter in parameters:
-    #         builder.add_parameter(parameter)
-    #     builder.set_simulation(
-    #         model, parameter_values=parameter_values, experiment=experiment
-    #     )
-    #     builder.add_cost(pybop.costs.pybamm.GravimetricEnergyDensity())
-    #     design_problem = builder.build()
-
-    #     value1, value2 = self.assert_parameter_sensitivity(
-    #     design_problem, initial_params, TEST_PARAM_VALUES
-    # )
-
-    #     assert value1 < value2  # Negative cost
