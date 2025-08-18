@@ -49,3 +49,7 @@ class ExponentialDecayModel(BaseModel):
     @property
     def default_parameter_values(self):
         return pybamm.ParameterValues({"k": 0.1, "y0": 1})
+
+    @property
+    def default_quick_plot_variables(self):
+        return [f"y_{i}" for i in range(self.n_states)]

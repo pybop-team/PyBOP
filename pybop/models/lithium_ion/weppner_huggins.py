@@ -92,6 +92,13 @@ class WeppnerHuggins(lithium_ion.BaseModel):
         return ParameterValues(values=parameter_dictionary)
 
     @property
+    def default_quick_plot_variables(self):
+        return [
+            "Current [A]",
+            "Voltage [V]",
+        ]
+
+    @property
     def default_submesh_types(self):
         return {}
 
