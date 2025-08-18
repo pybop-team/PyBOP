@@ -163,8 +163,8 @@ class GroupedSPM(pybamm_lithium_ion.BaseModel):
         j0_p = sto_p_surf**alpha * (1 - sto_p_surf) ** (1 - alpha) / tau_ct_p
         if not include_double_layer:
             # Assuming alpha = 0.5
-            j_n = PrimaryBroadcast(I / (3 * Q_th_n), "negative electrode")
-            j_p = PrimaryBroadcast(-I / (3 * Q_th_p), "positive electrode")
+            j_n = I / (3 * Q_th_n)
+            j_p = -I / (3 * Q_th_p)
             eta_n = 2 * RT_F * pybamm.arcsinh(j_n / (2 * j0_n))
             eta_p = 2 * RT_F * pybamm.arcsinh(j_p / (2 * j0_p))
             v_s_n = pybamm.x_average(eta_n + U_n)
@@ -251,7 +251,9 @@ class GroupedSPM(pybamm_lithium_ion.BaseModel):
             "Negative particle surface voltage [V]": PrimaryBroadcast(
                 v_s_n, "negative electrode"
             ),
-            "Negative electrode potential [V]": eta_n
+            "Negative electrode potential [V]": PrimaryBroadcast(
+                eta_n, "negative electrode"
+            )
             - pybamm.boundary_value(eta_n, "left"),
             "Positive particle stoichiometry": sto_p,
             "Positive particle surface stoichiometry": PrimaryBroadcast(
@@ -262,7 +264,7 @@ class GroupedSPM(pybamm_lithium_ion.BaseModel):
                 v_s_p, "positive electrode"
             ),
             "Positive electrode potential [V]": V
-            + eta_p
+            + PrimaryBroadcast(eta_p, "positive electrode")
             - pybamm.boundary_value(eta_p, "right"),
             "Time [s]": pybamm_t,
             "Current [A]": I,
