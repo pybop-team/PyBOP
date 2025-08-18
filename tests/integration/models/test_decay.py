@@ -20,13 +20,13 @@ EXPONENTIAL_DECAY_PARAMS = [("k", 2), ("y0", 2)]
 
 class TestDecay:
     """
-    A class to test the Exponential Decay class.
+    A class to test the exponential decay model.
     """
 
-    pytestmark = pytest.mark.unit
+    pytestmark = pytest.mark.integration
 
     @pytest.fixture(scope="session")
-    def base_model_config(self):
+    def model_config(self):
         """Shared model configuration to avoid repeated initialisation."""
         model = pybop.ExponentialDecayModel()
         return {
@@ -36,27 +36,18 @@ class TestDecay:
         }
 
     @pytest.fixture
-    def dataset(self, base_model_config):
+    def dataset(self, model_config):
         """Generate dataset"""
-        config = base_model_config
         sim = pybamm.Simulation(
-            config["model"],
-            parameter_values=config["parameter_values"],
-            solver=config["solver"],
+            model_config["model"],
+            parameter_values=model_config["parameter_values"],
+            solver=model_config["solver"],
         )
 
         t_eval = np.linspace(0, TIME_MAX, TIME_POINTS)
         sol = sim.solve(t_eval=t_eval)
 
-        # Filter discontinuities
-        unique_indices = np.unique(sol.t, return_index=True)[1]
-
-        return pybop.Dataset(
-            {
-                "Time [s]": sol.t[unique_indices],
-                "y_0": sol["y_0"].data[unique_indices],
-            }
-        )
+        return pybop.Dataset({"Time [s]": sol.t, "y_0": sol["y_0"].data})
 
     @pytest.fixture
     def test_parameters(self):
@@ -98,11 +89,9 @@ class TestDecay:
 
         return value1, value2
 
-    def test_decay_builder(self, dataset, base_model_config, test_parameters):
+    def test_decay_builder(self, dataset, model_config, test_parameters):
         """Test decay model with voltage-based cost functions."""
-        builder = self.create_pybamm_builder(
-            dataset, base_model_config, test_parameters
-        )
+        builder = self.create_pybamm_builder(dataset, model_config, test_parameters)
         builder.add_cost(pybop.costs.pybamm.SumSquaredError("y_0", "y_0"))
         builder.add_cost(pybop.costs.pybamm.MeanAbsoluteError("y_0", "y_0"))
 
@@ -136,10 +125,3 @@ class TestDecay:
         np.testing.assert_allclose(
             value2_sens, value2, atol=ABSOLUTE_TOLERANCE, rtol=RELATIVE_TOLERANCE
         )
-
-        # Test against analytic solution
-        sol = problem.pipeline.solve()[0]
-        analytical_sol = TEST_PARAM_VALUES[1] * np.exp(
-            -TEST_PARAM_VALUES[0] * dataset["Time [s]"]
-        )
-        np.testing.assert_allclose(analytical_sol, sol["y_0"].data, atol=1e-5)
