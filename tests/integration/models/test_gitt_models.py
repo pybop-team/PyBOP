@@ -15,23 +15,29 @@ RELATIVE_TOLERANCE = 1e-5
 ABSOLUTE_TOLERANCE = 1e-5
 
 # Parameter configurations
-WEPPNER_HUGGINS_PARAMS = [
+DIFFUSION_PARAMS = [
     ("Theoretical electrode capacity [A.s]", 10),
     ("Particle diffusion time scale [s]", 2000),
 ]
 
 
-class TestWeppnerHuggins:
+class TestGITTModels:
     """
-    A class to test the WeppnerHuggins class.
+    A class to test the pybop GITT models.
     """
 
-    pytestmark = pytest.mark.unit
+    pytestmark = pytest.mark.integration
 
-    @pytest.fixture(scope="session")
-    def base_model_config(self):
+    @pytest.fixture(
+        params=[
+            pybop.lithium_ion.WeppnerHuggins(),
+            pybop.lithium_ion.SPDiffusion(),
+        ],
+        scope="session",
+    )
+    def model_config(self, request):
         """Shared model configuration to avoid repeated initialisation."""
-        model = pybop.lithium_ion.WeppnerHuggins()
+        model = request.param
         return {
             "model": model,
             "parameter_values": model.default_parameter_values,
@@ -39,9 +45,9 @@ class TestWeppnerHuggins:
         }
 
     @pytest.fixture
-    def dataset(self, base_model_config):
+    def dataset(self, model_config):
         """Generate dataset"""
-        config = base_model_config
+        config = model_config
         sim = pybamm.Simulation(
             config["model"],
             parameter_values=config["parameter_values"],
@@ -63,11 +69,11 @@ class TestWeppnerHuggins:
         )
 
     @pytest.fixture
-    def test_parameters(self):
+    def parameters(self):
         """Create parameter objects for reuse."""
         return [
             pybop.Parameter(param_name, initial_value=val)
-            for param_name, val in WEPPNER_HUGGINS_PARAMS
+            for param_name, val in DIFFUSION_PARAMS
         ]
 
     def create_pybamm_builder(self, dataset, model_config: dict[str, Any], parameters):
@@ -100,11 +106,9 @@ class TestWeppnerHuggins:
             f"Parameter change insufficient: {relative_change}"
         )
 
-    def test_weppner_huggin_build(self, dataset, base_model_config, test_parameters):
+    def test_build(self, dataset, model_config, parameters):
         """Test model with voltage-based cost functions."""
-        builder = self.create_pybamm_builder(
-            dataset, base_model_config, test_parameters
-        )
+        builder = self.create_pybamm_builder(dataset, model_config, parameters)
         builder.add_cost(
             pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
         )
