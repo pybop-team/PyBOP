@@ -121,3 +121,11 @@ class BaseSampler:
             raise ValueError("Number of iterations must be greater than 0")
 
         self._max_iterations = iterations
+
+    def set_warm_up_iterations(self, iterations=250):
+        """Set the number of warm up iterations for the sampler."""
+        iterations = int(iterations)
+        if iterations < 1:
+            raise ValueError("Number of iterations must be greater than 0")
+
+        self._warm_up = iterations

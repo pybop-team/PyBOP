@@ -1,9 +1,11 @@
+from pathlib import Path
+
 import numpy as np
+import pybamm
 import scipy
 from scipy.io import savemat
 
 import pybop
-from pybop.models.lithium_ion.grouped_spme import convert_physical_to_grouped_parameters
 
 # To duplicate paper results, modify the below:
 n_runs = 1  # 10
@@ -18,14 +20,19 @@ parameter_set["Electrolyte conductivity [S.m-1]"] = 1e16
 parameter_set["Negative electrode conductivity [S.m-1]"] = 1e16
 parameter_set["Positive electrode conductivity [S.m-1]"] = 1e16
 
-grouped_parameters = convert_physical_to_grouped_parameters(parameter_set)
+grouped_parameters = pybop.lithium_ion.GroupedSPMe.apply_parameter_grouping(
+    parameter_set
+)
 grouped_parameters["Series resistance [Ohm]"] = R0
 model_options = {"surface form": "differential", "contact resistance": "true"}
 var_pts = {"x_n": 100, "x_s": 20, "x_p": 100, "r_n": 100, "r_p": 100}
 
 ## Construct model
 model = pybop.lithium_ion.GroupedSPMe(
-    parameter_set=grouped_parameters, var_pts=var_pts, options=model_options
+    parameter_set=grouped_parameters,
+    var_pts=var_pts,
+    options=model_options,
+    solver=pybamm.CasadiSolver(),
 )
 
 ## Parameter bounds for optimisation
@@ -200,7 +207,9 @@ parameters = pybop.Parameters(
 )
 
 ## Read simulated time domain data
-timeDomainData = scipy.io.loadmat("Data/timeDomainSimulation_SPMegrouped.mat")
+current_dir = Path(__file__).parent
+data_file = current_dir / "Data" / "timeDomainSimulation_SPMegrouped.mat"
+timeDomainData = scipy.io.loadmat(data_file)
 SOC0 = timeDomainData.get("SOC0")
 t = timeDomainData.get("t").flatten()
 i = timeDomainData.get("i").flatten()
@@ -233,10 +242,10 @@ results = optim.run()
 
 # Print optimised parameters
 print("True grouped parameters", parameters.true_value())
-grouped_parameters.update(parameters.as_dict(results.best_x))
+grouped_parameters.update(parameters.as_dict(results.x))
 
 # Plot traces
-pybop.plot.quick(problem, results.best_x)
+pybop.plot.problem(problem, results.x)
 
 # Plot convergence
 pybop.plot.convergence(optim)
@@ -246,7 +255,10 @@ pybop.plot.parameters(optim)
 
 ## Save estimated voltage
 model_hat = pybop.lithium_ion.GroupedSPMe(
-    parameter_set=grouped_parameters, var_pts=var_pts, options=model_options
+    parameter_set=grouped_parameters,
+    var_pts=var_pts,
+    options=model_options,
+    solver=pybamm.CasadiSolver(),
 )
 
 # Grouped SPMe
@@ -264,7 +276,8 @@ mdic = {
     "final_cost": results.final_cost,
     "theta": parameters.true_value(),
     "thetahat": results.x,
-    "thetahatbest": results.best_x,
+    "thetahatbest": results.x,
     "computationTime": results.time,
 }
-savemat("Data/Estimate_timeDomainSimulation.mat", mdic)
+save_path = current_dir / "Data" / "Estimate_timeDomainSimulation.mat"
+savemat(save_path, mdic)

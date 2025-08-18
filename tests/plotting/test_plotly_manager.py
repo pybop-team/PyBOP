@@ -161,10 +161,6 @@ def test_standard_plot(dataset, plotly_installed):
         [dataset["Time [s]"]],
         [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
     )
-    pybop.plot.trajectories(
-        [dataset["Time [s]"], dataset["Time [s]"]],
-        [dataset["Terminal voltage [V]"], dataset["Current [A]"]],
-    )
 
     # Test incorrect dimensions
     with pytest.raises(ValueError):

@@ -1,6 +1,5 @@
 from collections.abc import Callable
 
-import numpy as np
 import pybamm
 
 import pybop
@@ -67,35 +66,16 @@ class PybammEIS(builders.BaseBuilder):
                     "cost must be a callable or an instance of CallableCost"
                 )
             cost = pybop.costs.CallableError(cost)
-        if cost.weighting is None or cost.weighting == "equal":
-            cost.weighting = np.array(1.0)
-        elif cost.weighting == "domain":
-            self._set_cost_domain_weighting(cost)
-        else:
-            raise ValueError(
-                "cost.weighting must be 'equal', 'domain', or a custom numpy array"
-                f", got {cost.weighting}"
-            )
+
+        # Set the time-series weighting
+        cost.weighting = builders.create_weighting(
+            cost.weighting, self._dataset, self.domain
+        )
 
         self._costs.append(cost)
         self._cost_weights.append(weight)
 
         return self
-
-    def _set_cost_domain_weighting(self, cost):
-        """Calculate domain-based weighting."""
-        domain_data = self._dataset[self.domain]
-        domain_spacing = domain_data[1:] - domain_data[:-1]
-        mean_spacing = np.mean(domain_spacing)
-
-        # Create a domain weighting array in one operation
-        cost.weighting = np.concatenate(
-            (
-                [(mean_spacing + domain_spacing[0]) / 2],
-                (domain_spacing[1:] + domain_spacing[:-1]) / 2,
-                [(domain_spacing[-1] + mean_spacing) / 2],
-            )
-        ) * ((len(domain_data) - 1) / (domain_data[-1] - domain_data[0]))
 
     def build(self) -> PybammEISProblem:
         """
@@ -122,7 +102,7 @@ class PybammEIS(builders.BaseBuilder):
         if self._model is None:
             raise ValueError("A Pybamm model needs to be provided before building.")
 
-        if self._costs is None:
+        if not self._costs:
             raise ValueError("A cost must be provided before building.")
 
         if self._dataset is None:
@@ -149,7 +129,7 @@ class PybammEIS(builders.BaseBuilder):
         )
 
         # Build and initialise the pipeline
-        pipeline.pybamm_pipeline.build()
+        pipeline.build()
 
         return PybammEISProblem(
             eis_pipeline=pipeline,

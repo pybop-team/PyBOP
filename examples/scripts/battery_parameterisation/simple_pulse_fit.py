@@ -1,26 +1,24 @@
-import os
-
+import matplotlib.pyplot as plt
 import numpy as np
+import pybamm
 
 import pybop
 
-# This example introduces pulse fitting
-# within PyBOP. 5% SOC pulse data is loaded from a local `csv` file
-# and particle diffusivity identification for a SPMe model is performed.
-# Additionally, uncertainty metrics are computed.
+# This example introduces identification from pulse discharge data to extract:
+# - Diffusion coefficients governing solid-state lithium transport
+# - Contact resistance affecting interfacial charge transfer kinetics
+# The pulse-rest protocol separates kinetic limitations from thermodynamic
+# equilibrium, enabling extraction of both fast interfacial dynamics and
+# slower solid-state diffusion processes.
 
-# Get the current directory location and convert to absolute path
-current_dir = os.path.dirname(os.path.abspath(__file__))
-dataset_path = os.path.join(current_dir, "../../data/synthetic/spme_pulse_15.csv")
+# Define model and parameter values
+parameter_values = pybamm.ParameterValues("Chen2020")
+parameter_values.update({"Contact resistance [Ohm]": 0.0045})
+dfn_model = pybamm.lithium_ion.DFN(options={"contact resistance": "true"})
 
-# Define model and use high-performant solver for sensitivities
-parameter_set = pybop.ParameterSet("Chen2020")
-model = pybop.lithium_ion.SPMe(
-    parameter_set=parameter_set,
-)
-
-# Fitting parameters
-parameters = pybop.Parameters(
+# Define the fitting parameters, with corresponding Log transformations
+# due to the large range of parameter values.
+parameters = [
     pybop.Parameter(
         "Negative particle diffusivity [m2.s-1]",
         prior=pybop.Gaussian(4e-14, 1e-14),
@@ -33,58 +31,79 @@ parameters = pybop.Parameters(
         transformation=pybop.LogTransformation(),
         bounds=[1e-15, 1e-14],
     ),
+    pybop.Parameter(
+        "Contact resistance [Ohm]",
+        transformation=pybop.LogTransformation(),
+        initial_value=1e-2,
+        bounds=[1e-4, 1e-1],
+    ),
+]
+
+
+# Generate synthetic dataset
+sigma = 1e-3
+experiment = pybamm.Experiment(
+    [
+        "Rest for 2 seconds (1 second period)",
+        "Discharge at 1C for 1 minute (1 second period)",
+        "Rest for 10 minutes (1 second period)",
+    ]
 )
+sim = pybamm.Simulation(
+    model=dfn_model,
+    parameter_values=parameter_values,
+    experiment=experiment,
+)
+sol = sim.solve()
 
-# Import the synthetic dataset
-csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
-
-
-# Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": csv_data[:, 0],
-        "Current function [A]": csv_data[:, 1],
-        "Voltage [V]": csv_data[:, 2],
+        "Time [s]": sol.t,
+        "Voltage [V]": sol["Voltage [V]"].data + np.random.normal(0, sigma, len(sol.t)),
+        "Current function [A]": sol["Current [A]"].data,
     }
 )
 
-# Generate problem, cost function, and optimisation class
-# In this example, we initialise the SPMe at the first voltage
-# point in `csv_data`, an optimise without rebuilding the
-# model on every evaluation.
-initial_state = {"Initial open-circuit voltage [V]": csv_data[0, 2]}
-model.set_initial_state(initial_state=initial_state)
-problem = pybop.FittingProblem(
-    model,
-    parameters,
-    dataset,
+# Construct the problem builder
+spme_model = pybamm.lithium_ion.SPMe(options={"contact resistance": "true"})
+builder = (
+    pybop.builders.Pybamm()
+    .set_dataset(dataset)
+    .set_simulation(spme_model, parameter_values=parameter_values)
+    .add_cost(pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]", "Voltage [V]"))
 )
+for param in parameters:
+    builder.add_parameter(param)
+problem = builder.build()
 
-likelihood = pybop.SumSquaredError(problem)
-optim = pybop.CMAES(
-    likelihood,
-    verbose=True,
-    sigma0=0.02,
-    max_iterations=100,
-    max_unchanged_iterations=30,
-    # compute_sensitivities=True,
-    # n_sensitivity_samples=64,  # Decrease samples for CI (increase for higher accuracy)
+# Set optimiser and options
+options = pybop.PintsOptions(
+    verbose=True, max_iterations=85, max_unchanged_iterations=25
 )
-
-# Slow the step-size shrinking (default is 0.5)
-optim.optimiser.eta_min = 0.7
-
-# Run optimisation
+optim = pybop.SimulatedAnnealing(problem, options=options)
+optim.optimiser.cooling_rate = 0.825  # Cool quickly due to the low number of iterations
 results = optim.run()
 
-# Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
+# Now we have a results object. The first thing we can
+# do is obtain the fully identified pybamm.ParameterValues object
+# These can then be used with normal Pybamm classes.
+identified_values = results.parameter_values
+sim = pybamm.Simulation(
+    spme_model, parameter_values=identified_values, experiment=experiment
+)
+identified_sol = sim.solve()
+
+# Plot identified model vs dataset values
+fig, ax = plt.subplots()
+ax.plot(dataset["Time [s]"], dataset["Voltage [V]"], label="Target")
+ax.plot(identified_sol.t, identified_sol["Voltage [V]"].data, label="Fit")
+ax.set_xlabel("Time [s]")
+ax.set_ylabel("Voltage [V]")
+ax.legend()
+plt.show()
 
 # Plot convergence
 pybop.plot.convergence(optim)
 
 # Plot the parameter traces
 pybop.plot.parameters(optim)
-
-# Plot the cost landscape with optimisation path
-pybop.plot.contour(optim)

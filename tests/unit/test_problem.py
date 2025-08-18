@@ -1,5 +1,6 @@
 import numpy as np
 import pybamm
+import pybammeis
 import pytest
 from pybamm import IDAKLUSolver
 
@@ -22,6 +23,10 @@ class TestProblem:
         return pybamm.ParameterValues("Chen2020")
 
     @pytest.fixture
+    def frequencies(self):
+        return np.logspace(-4, 4, 20)
+
+    @pytest.fixture
     def dataset(self, model, parameter_values):
         sim = pybamm.Simulation(model, parameter_values=parameter_values)
         sol = sim.solve(t_eval=np.linspace(0, 10, 20))
@@ -34,12 +39,15 @@ class TestProblem:
         )
 
     @pytest.fixture
-    def eis_dataset(self):
+    def eis_dataset(self, model, parameter_values, frequencies):
+        sim = pybammeis.EISSimulation(model, parameter_values=parameter_values)
+        sol = sim.solve(frequencies=frequencies)
+
         return pybop.Dataset(
             {
-                "Frequency [Hz]": np.logspace(-4, 5, 30),
-                "Current function [A]": np.ones(30) * 0.0,
-                "Impedance": np.ones(30) * 0.0,
+                "Frequency [Hz]": frequencies,
+                "Current function [A]": np.ones(sol.size) * 0.0,
+                "Impedance": sol,
             }
         )
 
@@ -133,12 +141,12 @@ class TestProblem:
         """Helper method to test the EIS problem pipeline with different parameter sets."""
         # Test first parameter set
         problem.set_params(np.array([0.75, 0.665]))
-        sol1 = problem.pipeline.solve()
+        sol1 = problem.run()
         assert isinstance(sol1, np.ndarray)
 
         # Test second parameter set
         problem.set_params(np.array([0.7, 0.7]))
-        sol2 = problem.pipeline.solve()
+        sol2 = problem.run()
 
         # Assert difference in solution
         assert not np.allclose(sol1, sol2)
@@ -166,7 +174,7 @@ class TestProblem:
             model, parameter_values, eis_dataset, parameters, "equal", initial_state=0.5
         )
         problem_with_initial_state.set_params(np.array([0.75, 0.665]))
-        sol3 = problem_with_initial_state.pipeline.solve()
+        sol3 = problem_with_initial_state.run()
 
         # Test solutions
         assert not np.allclose(sol1, sol3)
@@ -197,7 +205,7 @@ class TestProblem:
             initial_state=0.5,
         )
         problem_with_initial_state.set_params(np.array([0.75, 0.665]))
-        sol3 = problem_with_initial_state.pipeline.solve()
+        sol3 = problem_with_initial_state.run()
 
         # Assertion for differing SoC's
         assert not np.allclose(sol1, sol3)

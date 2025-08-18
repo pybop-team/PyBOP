@@ -4,7 +4,7 @@ import pybamm
 import pybop
 
 # In this example, we introduce the Scipy Minimize
-# optimiser. This optimiser is an wrapper on
+# optimiser. This optimiser is a wrapper of
 # the ScipyMinimize class, with options exposed
 # where possible. Minimize offers both gradient
 # and non-gradient methods, where applicable
@@ -71,7 +71,7 @@ results = optim.run()
 identified_parameter_values = results.parameter_values
 
 # Plot convergence
-# pybop.plot.convergence(optim)
+pybop.plot.convergence(optim)
 
 # Plot the parameter traces
 pybop.plot.parameters(optim)

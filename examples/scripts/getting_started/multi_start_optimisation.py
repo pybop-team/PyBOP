@@ -66,6 +66,10 @@ optim = pybop.GradientDescent(problem, options=options)
 # Run optimisation
 results = optim.run()
 
+# We can acquire a pybamm.ParameterValues
+# object for the best multi-start
+identified_parameter_values = results.parameter_values
+
 # Plot convergence
 # pybop.plot.convergence(optim)
 
@@ -75,3 +79,11 @@ pybop.plot.parameters(optim)
 # Plot the cost landscape with optimisation path
 bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
 pybop.plot.surface(optim, bounds=bounds)
+
+# We can display more metrics, most of which are
+# also included in the `verbose` option within
+# the Pints' optimisers
+print(f"The best starting position: {results.x0}")
+print(f"The best cost: {results.best_cost}")
+print(f"The best identified parameter values: {results.x}")
+print(f"The total optimisation time:{results.time} seconds")

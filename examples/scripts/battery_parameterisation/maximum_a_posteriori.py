@@ -1,83 +1,83 @@
-import os
-
 import numpy as np
+import pybamm
 
 import pybop
 
-# Get the current directory location and convert to absolute path
-current_dir = os.path.dirname(os.path.abspath(__file__))
-dataset_path = os.path.join(
-    current_dir, "../../data/synthetic/spm_charge_discharge_75.csv"
-)
+# In this example, we perform Maximum A Posteriori (MAP)
+# identification. MAP allows for prior knowledge of the
+# parameter values to be incorporated into the optimisation
+# process. This is mathematically similar to performing
+# regularized maximum likelihood estimation depending on
+# the prior distribution selected.
 
-# Construct and update initial parameter values
-parameter_set = pybop.ParameterSet("Chen2020")
-parameter_set.update(
-    {
-        "Negative electrode active material volume fraction": 0.43,
-        "Positive electrode active material volume fraction": 0.56,
-    }
-)
 
-# Define model
-model = pybop.lithium_ion.SPM(parameter_set=parameter_set)
+# Define model and parameter values
+parameter_values = pybamm.ParameterValues("Chen2020")
+model = pybamm.lithium_ion.SPMe()
 
-# Fitting parameters
-parameters = pybop.Parameters(
+# We construct the fitting parameters with corresponding
+# prior distributions that encapsulate our knowledge of the
+# parameter values. PyBOP will then use these in the computation
+# of the posterior distribution. When prior distributions are
+# used, initial guesses are not required, as these are randomly
+# generated from the distribution. Initial guesses can be used
+# if you wish to override the random generation.
+parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        prior=pybop.Uniform(0.3, 0.8),
-        bounds=[0.3, 0.8],
-        initial_value=0.653,
-        true_value=parameter_set["Negative electrode active material volume fraction"],
-        transformation=pybop.LogTransformation(),
+        prior=pybop.Gaussian(0.68, 0.05),
+        bounds=[0.4, 0.9],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        prior=pybop.Uniform(0.3, 0.8),
-        bounds=[0.4, 0.7],
-        initial_value=0.657,
-        true_value=parameter_set["Positive electrode active material volume fraction"],
-        transformation=pybop.LogTransformation(),
+        prior=pybop.Gaussian(0.58, 0.05),
+        bounds=[0.4, 0.9],
     ),
+]
+
+# Generate the synthetic dataset
+sigma = 5e-3
+t_eval = np.linspace(0, 500, 240)
+sim = pybamm.Simulation(
+    model=model,
+    parameter_values=parameter_values,
 )
+sol = sim.solve(t_eval=[t_eval[0], t_eval[-1]], t_interp=t_eval)
 
-# Import the synthetic dataset, set model initial state
-csv_data = np.loadtxt(dataset_path, delimiter=",", skiprows=1)
-initial_state = {"Initial open-circuit voltage [V]": csv_data[0, 2]}
-model.set_initial_state(initial_state=initial_state)
-
-# Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": csv_data[:, 0],
-        "Current function [A]": csv_data[:, 1],
-        "Voltage [V]": csv_data[:, 2],
-        "Bulk open-circuit voltage [V]": csv_data[:, 3],
+        "Time [s]": sol.t,
+        "Voltage [V]": sol["Voltage [V]"].data
+        + np.random.normal(0, sigma, len(t_eval)),
+        "Current function [A]": sol["Current [A]"].data,
     }
 )
 
-# Generate problem, cost function, and optimisation class
-problem = pybop.FittingProblem(
-    model,
-    parameters,
-    dataset,
+# Construct the problem builder with a negative
+# Gaussian log-likelihood (NLL) function. Since we have
+# not provided a `sigma` value to the NLL, this will be
+# estimated from the data. `sigma` is the standard deviation
+# of the measurement noise in the dataset.
+builder = (
+    pybop.builders.Pybamm()
+    .set_dataset(dataset)
+    .set_simulation(model, parameter_values=parameter_values)
+    .add_cost(
+        pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", "Voltage [V]")
+    )
 )
-cost = pybop.LogPosterior(pybop.GaussianLogLikelihood(problem))
-optim = pybop.IRPropMin(
-    cost,
-    sigma0=0.05,
-    max_unchanged_iterations=20,
-    min_iterations=20,
-    max_iterations=100,
-)
+for param in parameters:
+    builder.add_parameter(param)
+problem = builder.build()
 
-# Run the optimisation
+# Set optimiser and options
+options = pybop.SciPyDifferentialEvolutionOptions(verbose=True, maxiter=40)
+optim = pybop.SciPyDifferentialEvolution(problem, options=options)
 results = optim.run()
-print("True parameters:", parameters.true_value())
 
-# Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
+# Obtain the fully identified pybamm.ParameterValues object
+# These can then be used with normal Pybamm classes
+identified_parameter_values = results.parameter_values
 
 # Plot convergence
 pybop.plot.convergence(optim)
@@ -85,9 +85,5 @@ pybop.plot.convergence(optim)
 # Plot the parameter traces
 pybop.plot.parameters(optim)
 
-# Plot the cost landscape
-pybop.plot.contour(cost, steps=15)
-
 # Plot the cost landscape with optimisation path
-bounds = np.asarray([[0.35, 0.7], [0.45, 0.625]])
-pybop.plot.contour(optim, bounds=bounds, steps=15)
+pybop.plot.contour(optim)

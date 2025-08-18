@@ -38,7 +38,6 @@ builder = (
         pybop.Parameter(
             "Negative electrode active material volume fraction",
             initial_value=0.6,
-            prior=pybop.Gaussian(0.6, 0.2),
             transformation=pybop.LogTransformation(),
             bounds=[0.5, 0.8],
         )
@@ -47,7 +46,6 @@ builder = (
         pybop.Parameter(
             "Positive electrode active material volume fraction",
             initial_value=0.6,
-            prior=pybop.Gaussian(0.6, 0.2),
             transformation=pybop.LogTransformation(),
             bounds=[0.5, 0.8],
         )
@@ -81,3 +79,8 @@ print(results)  # 0.640 seconds
 # Run the second
 results = optim2.run()
 print(results)  # 0.896 seconds
+
+# Surface plot of first optim
+pybop.plot.surface(optim1)
+pybop.plot.convergence(optim1)
+pybop.plot.contour(problem)

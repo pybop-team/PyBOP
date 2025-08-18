@@ -1,4 +1,35 @@
+import numpy as np
 from pybamm import LithiumIonParameters, Parameter, ParameterValues
+
+import pybop
+
+
+def create_weighting(weighting: str, dataset: pybop.Dataset, domain: str) -> np.ndarray:
+    if weighting is None or weighting == "equal":
+        return np.asarray(1.0)
+    elif weighting == "domain":
+        return _set_cost_domain_weighting(dataset, domain)
+    else:
+        raise ValueError(
+            "cost.weighting must be 'equal', 'domain', or a custom numpy array"
+            f", got {weighting}"
+        )
+
+
+def _set_cost_domain_weighting(dataset, domain) -> np.ndarray:
+    """Calculate domain-based weighting."""
+    domain_data = dataset[domain]
+    domain_spacing = domain_data[1:] - domain_data[:-1]
+    mean_spacing = np.mean(domain_spacing)
+
+    # Create a domain weighting array in one operation
+    return np.concatenate(
+        (
+            [(mean_spacing + domain_spacing[0]) / 2],
+            (domain_spacing[1:] + domain_spacing[:-1]) / 2,
+            [(domain_spacing[-1] + mean_spacing) / 2],
+        )
+    ) * ((len(domain_data) - 1) / (domain_data[-1] - domain_data[0]))
 
 
 def set_formation_concentrations(parameter_values: ParameterValues) -> None:
@@ -12,7 +43,7 @@ def set_formation_concentrations(parameter_values: ParameterValues) -> None:
     Parameters
     ----------
     parameters : pybamm.ParameterValues
-        A PyBaMM parameter set containing standard lithium ion parameters.
+        A PyBaMM parameter set containing standard lithium-ion parameters.
     """
     params = parameter_values
 
@@ -21,11 +52,8 @@ def set_formation_concentrations(parameter_values: ParameterValues) -> None:
         "Initial concentration in positive electrode [mol.m-3]",
     }
 
-    if (
-        not required_keys.issubset(params.keys())
-        or params["Initial concentration in negative electrode [mol.m-3]"] <= 0
-    ):
-        return params
+    if not required_keys.issubset(params.keys()):
+        raise ValueError("Required keys not in ParameterValues object")
 
     # Obtain the total amount of lithium in the active material
     Q_Li_particles_init = params.evaluate(LithiumIonParameters().Q_Li_particles_init)

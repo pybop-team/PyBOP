@@ -1,26 +1,30 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import pybamm
+import pybammeis
 
 import pybop
 
 options = {"surface form": "differential", "contact resistance": "true"}
-dfn_model = pybamm.lithium_ion.DFN(options=options)
+model = pybamm.lithium_ion.DFN(options=options)
 parameter_values = pybamm.ParameterValues("Chen2020")
-parameter_values["Contact resistance [Ohm]"] = 0.001
+
+# Using Pybamm-EIS to generate synthetic data
+eis_sim = pybammeis.EISSimulation(model, parameter_values=parameter_values)
+frequencies = np.logspace(-4, 4, 30)
+sol = eis_sim.solve(frequencies)
 
 dataset = pybop.Dataset(
     {
-        "Frequency [Hz]": np.logspace(-4, 5, 100),
-        "Current function [A]": np.ones(100) * 0.0,
-        "Impedance": np.ones(100) * 0.0,
+        "Frequency [Hz]": frequencies,
+        "Current function [A]": np.ones(frequencies.size) * 0.0,
+        "Impedance": sol,
     }
 )
 
 # Create the builder
 builder = pybop.builders.PybammEIS()
 builder.set_dataset(dataset)
-builder.set_simulation(dfn_model, parameter_values=parameter_values, initial_state=0.5)
+builder.set_simulation(model, parameter_values=parameter_values)
 builder.add_parameter(
     pybop.Parameter("Negative electrode thickness [m]", initial_value=70e-6)
 )
@@ -32,22 +36,7 @@ builder.add_cost(pybop.SumSquaredError())
 # Build the DFN problem
 problem = builder.build()
 
+# Test the cost for a given parameter proposal
 inputs = np.asarray([80e-6, 4.5e-6])
 problem.set_params(inputs)
-sol1 = problem.pipeline.solve()
-val1 = problem.run()
-
-# Build an SPMe
-spme_model = pybamm.lithium_ion.SPMe(options=options)
-builder.set_simulation(spme_model, parameter_values=parameter_values, initial_state=0.5)
-problem = builder.build()
-
-# Solve
-problem.set_params(inputs)
-sol2 = problem.pipeline.solve()
-
-# Plot
-fig, ax = plt.subplots()
-ax.plot(sol1.real, -sol1.imag)  # DFN
-ax.plot(sol2.real, -sol2.imag)  # SPMe
-plt.show()
+print(problem.run())

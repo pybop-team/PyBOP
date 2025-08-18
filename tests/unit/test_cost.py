@@ -62,6 +62,37 @@ class TestCosts:
             ),
         ]
 
+    def test_pybamm_custom_cost(self, model, dataset, one_parameter):
+        builder = pybop.Pybamm()
+        builder.set_simulation(model)
+        builder.set_dataset(dataset)
+        builder.add_parameter(one_parameter)
+
+        # Create a custom cost
+        data = pybamm.DiscreteTimeData(
+            dataset["Time [s]"], dataset["Voltage [V]"], "my_data"
+        )
+        custom_cost = pybop.costs.pybamm.custom(
+            "MySumSquaredError",
+            pybamm.DiscreteTimeSum((model.variables["Voltage [V]"] - data) ** 2),
+            {},
+        )
+        builder.add_cost(custom_cost)
+        problem_custom = builder.build()
+        problem_custom.set_params(np.array([0.55]))
+
+        builder = pybop.Pybamm()
+        builder.set_simulation(model)
+        builder.set_dataset(dataset)
+        builder.add_parameter(one_parameter)
+        builder.add_cost(
+            pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
+        )
+        problem = builder.build()
+        problem.set_params(np.array([0.55]))
+
+        assert problem_custom.run() == problem.run()
+
     @pytest.mark.parametrize(
         "pybamm_costs",
         [
@@ -118,19 +149,23 @@ class TestCosts:
             },
             check_already_exists=False,
         )
+        experiment = pybamm.Experiment(
+            ["Discharge at 1C for 2 minutes (10 second period)"]
+        )
         builder = pybop.Pybamm()
-        builder.set_simulation(model, parameter_values=parameter_values)
-        builder.set_dataset(dataset)
+        builder.set_simulation(
+            model, parameter_values=parameter_values, experiment=experiment
+        )
         builder.add_parameter(one_parameter)
         builder.add_cost(pybamm_costs())
         problem = builder.build()
 
         problem.set_params(np.array([0.55]))
-        higher_cost = problem.run()
-        problem.set_params(np.array([0.52]))
         lower_cost = problem.run()
+        problem.set_params(np.array([0.52]))
+        higher_cost = problem.run()
 
-        assert higher_cost > lower_cost
+        assert higher_cost > lower_cost  # Optimising negative cost
 
     @pytest.mark.parametrize(
         "pybamm_costs",

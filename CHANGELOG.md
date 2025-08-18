@@ -6,6 +6,23 @@
 
 ## Bug Fixes
 
+## Breaking Changes
+
+# [v25.6](https://github.com/pybop-team/PyBOP/tree/v25.6) - 2025-07-16
+
+## Features
+
+- [#767](https://github.com/pybop-team/PyBOP/pull/767) - Adds the `GroupedSPM` model for parameter identification.
+- [#644](https://github.com/pybop-team/PyBOP/pull/644) - Adds example applications for common battery experiments.
+
+## Optimisations
+
+- [#763](https://github.com/pybop-team/PyBOP/pull/763) - Updates the GITT pulse fitting method to allow iteration over many pulses.
+
+## Bug Fixes
+
+- [#771](https://github.com/pybop-team/PyBOP/pull/771) - Match naming of `n_sensitivity_samples` and fix intermittent `test_optimisation_f_guessed` test.
+- [#737](https://github.com/pybop-team/PyBOP/pull/737) - Sensitivities no longer available for CasadiSolver in Pybamm v25.6 onwards. Updates Hallemans example scripts.
 - [#705](https://github.com/pybop-team/PyBOP/pull/705) - Bug fix `fitting_problem.evaulate()` failure return type alongside fixes for Pybamm `v25.4`.
 - [#546](https://github.com/pybop-team/PyBOP/pull/546) - Default Pybamm solver to `IDAKLU`, changes required for Pybamm v25.4.1
 

@@ -35,12 +35,6 @@ class PybammEISProblem(Problem):
         """
         self.check_and_store_params(p)
 
-        # rebuild the pipeline (if needed)
-        self._pipeline.pybamm_pipeline.rebuild(self._params.to_dict())
-
-        # Initialise the pipeline
-        self._pipeline.initialise_eis_pipeline()
-
     def run(self) -> np.ndarray:
         """
         Evaluates the underlying simulation and cost function using the
@@ -51,23 +45,29 @@ class PybammEISProblem(Problem):
         np.ndarray
             cost (np.ndarray): 1D weighted sum of cost variables.
         """
-        self.check_set_params_called()
+        inputs = self._params.to_pybamm_multiprocessing()
+        cost_matrix = np.empty((len(self._costs), len(inputs)))
 
-        # run simulation
-        res = self._pipeline.solve() - self._fitting_data
+        for idx, param in enumerate(inputs):
+            # Rebuild if required
+            self._pipeline.rebuild(param)
+            self._pipeline.initialise_eis_pipeline(param)
 
-        # Weighted cost w/ new axis to ensure the returned object is np.ndarray
-        weighted_cost = np.dot(
-            self._cost_weights[np.newaxis, :], [cost(res) for cost in self._costs]
-        )
+            # run simulation
+            res = self._pipeline.solve() - self._fitting_data
 
-        return weighted_cost
+            # Weighted cost w/ new axis to ensure the returned object is np.ndarray
+            cost_matrix[:, idx] = [cost(res) for cost in self._costs]
+
+        weighted_costs = self._cost_weights @ cost_matrix
+
+        return weighted_costs
 
     def simulate(self, inputs: Inputs) -> np.ndarray:
         for key, value in inputs.items():
             self._pipeline.pybamm_pipeline.parameter_values[key] = value
         self._pipeline.pybamm_pipeline.build()
-        self._pipeline.initialise_eis_pipeline()
+        self._pipeline.initialise_eis_pipeline(inputs)
         return self._pipeline.solve()
 
     @property
