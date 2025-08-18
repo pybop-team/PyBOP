@@ -18,7 +18,7 @@ ABSOLUTE_TOLERANCE = 5e-5
 EXPONENTIAL_DECAY_PARAMS = [("k", 2), ("y0", 2)]
 
 
-class TestDecay:
+class TestDecayModel:
     """
     A class to test the exponential decay model.
     """
