@@ -26,7 +26,7 @@ class TestHalfCell:
 
     pytestmark = pytest.mark.unit
 
-    @pytest.fixture(scope="module")
+    @pytest.fixture
     def model_config(self, request):
         """Shared model configuration to avoid repeated initialisation."""
         options = {"working electrode": "positive"}
@@ -56,11 +56,14 @@ class TestHalfCell:
             },
             check_already_exists=False,
         )
+        self.ground_truth = [
+            parameter_values["Positive electrode active material volume fraction"]
+        ]
 
         return {"model": model, "parameter_values": parameter_values}
 
     @pytest.fixture(scope="module")
-    def parameter(self):
+    def parameters(self):
         """Create parameter objects for reuse."""
         return [
             pybop.Parameter(
@@ -85,7 +88,9 @@ class TestHalfCell:
         for parameter in parameters:
             builder.add_parameter(parameter)
         builder.set_dataset(dataset)
-        builder.set_simulation(half_cell_model, parameter_values=parameter_values)
+        builder.set_simulation(
+            model_config["model"], parameter_values=model_config["parameter_values"]
+        )
         builder.add_cost(
             pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]", "Voltage [V]")
         )
@@ -95,7 +100,7 @@ class TestHalfCell:
         initial_cost = fitting_problem.run()
 
         # Get ground truth cost
-        fitting_problem.set_params(np.asarray([self.ground_truth]))
+        fitting_problem.set_params(np.asarray(self.ground_truth))
         ground_truth_cost = fitting_problem.run()
 
         assert initial_cost > ground_truth_cost
@@ -125,10 +130,7 @@ class TestHalfCell:
         initial_cost = design_problem.run()
 
         # Get ground truth cost
-        ground_truth = [
-            parameter_values["Positive electrode active material volume fraction"]
-        ]
-        design_problem.set_params(np.asarray(ground_truth))
+        design_problem.set_params(np.asarray(self.ground_truth))
         ground_truth_cost = design_problem.run()
 
         assert initial_cost < ground_truth_cost  # negative cost
