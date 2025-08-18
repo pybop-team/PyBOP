@@ -62,7 +62,7 @@ class TestHalfCell:
 
         return {"model": model, "parameter_values": parameter_values}
 
-    @pytest.fixture(scope="module")
+    @pytest.fixture
     def parameters(self):
         """Create parameter objects for reuse."""
         return [
