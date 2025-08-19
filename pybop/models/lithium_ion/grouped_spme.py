@@ -411,7 +411,7 @@ class GroupedSPMe(pybamm_lithium_ion.BaseModel):
         pybamm.logger.info(f"Finish building {self.name}")
 
     @property
-    def default_parameter_values(self) -> pybamm.ParameterValues:
+    def default_parameter_values(self) -> ParameterValues:
         param = ParameterValues("Chen2020")
         ce0 = param["Initial concentration in electrolyte [mol.m-3]"]
         T = param["Ambient temperature [K]"]

@@ -51,14 +51,13 @@ class TestApplications:
         )
 
     def test_interpolant(self, parameter_values, discharge_dataset):
-        electrode = "positive"
         parameter_values = pybop.lithium_ion.SPDiffusion.create_grouped_parameters(
-            parameter_values, electrode=electrode
+            parameter_values
         )
         parameter_values["Electrode OCP [V]"] = pybop.Interpolant(
             discharge_dataset["Stoichiometry"], discharge_dataset["Voltage [V]"]
         )
-        model = pybop.lithium_ion.SPDiffusion(electrode=electrode, build=True)
+        model = pybop.lithium_ion.SPDiffusion(build=True)
         simulation = pybamm.Simulation(model, parameter_values=parameter_values)
         solution = simulation.solve(t_eval=[0, 10], t_interp=np.linspace(0, 10, 100))
         assert len(solution["Voltage [V]"].data) == 100
@@ -181,20 +180,18 @@ class TestApplications:
 
     def test_gitt_pulse_fit(self, pulse_data):
         parameter_values = pybop.lithium_ion.SPDiffusion.create_grouped_parameters(
-            pybamm.ParameterValues("Xu2019"), electrode="positive"
+            pybamm.ParameterValues("Xu2019")
         )
         diffusion_time = parameter_values["Particle diffusion time scale [s]"]
 
-        gitt_fit = pybop.GITTPulseFit(
-            parameter_values=parameter_values, electrode="positive"
-        )
+        gitt_fit = pybop.GITTPulseFit(parameter_values=parameter_values)
         gitt_results = gitt_fit(gitt_pulse=pulse_data)
 
         np.testing.assert_allclose(gitt_results.x[0], diffusion_time, rtol=5e-2)
 
     def test_gitt_fit(self, half_cell_model, pulse_data):
         parameter_values = pybop.lithium_ion.SPDiffusion.create_grouped_parameters(
-            pybamm.ParameterValues("Xu2019"), electrode="positive"
+            pybamm.ParameterValues("Xu2019")
         )
         diffusion_time = parameter_values["Particle diffusion time scale [s]"]
 
@@ -212,7 +209,6 @@ class TestApplications:
             gitt_dataset=pulse_data,
             pulse_index=[np.arange(len(pulse_data["Current function [A]"]))],
             parameter_values=parameter_values,
-            electrode="positive",
         )
         gitt_parameter_data = gitt_fit()
 

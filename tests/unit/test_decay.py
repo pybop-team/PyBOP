@@ -23,15 +23,12 @@ class TestDecay:
             "solver": pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6),
         }
 
-    def test_model_creation(self, model_config):
-        model_instance = model_config["model"]
-        assert model_instance is not None
-
-        parameter_values = model_instance.default_parameter_values
-        assert isinstance(parameter_values, pybamm.ParameterValues)
-
-        variable_list = model_instance.default_quick_plot_variables
-        assert isinstance(variable_list, list)
+    def test_initialisation(self):
+        with pytest.raises(
+            ValueError,
+            match=r"The number of states \(n_states\) must be at least 1.",
+        ):
+            pybop.ExponentialDecayModel(n_states=0)
 
     def test_solution_and_sensitivities(self, model_config):
         # Define inputs (necessary in order to calculate sensitivities)
