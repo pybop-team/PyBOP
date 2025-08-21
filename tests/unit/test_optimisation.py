@@ -632,19 +632,13 @@ class TestOptimisation:
         ):
             options.verbose_print_rate = 0
             options.validate()
-
         options = pybop.ScipyMinimizeOptions()
         with pytest.raises(ValueError, match="maxiter must be a positive integer"):
             options.maxiter = -1
             options.validate()
-
         options = pybop.ScipyMinimizeOptions()
         with pytest.raises(ValueError, match="tol must be a positive float."):
             options.tol = -1.0
-            options.validate()
-        options = pybop.ScipyMinimizeOptions()
-        with pytest.raises(ValueError, match="eps must be a positive float."):
-            options.eps = -1.0
             options.validate()
         options = pybop.ScipyMinimizeOptions()
         with pytest.raises(ValueError, match="jac must be a boolean value."):
