@@ -725,12 +725,15 @@ class Parameters:
             Dictionary mapping parameter names to values
         """
         params = self._parameters.items()
-        if values is None or values == "current":
-            return {name: param.current_value for name, param in params}
-        elif values == "initial":
-            return {name: param.initial_value for name, param in params}
-        elif values == "true":
-            return {name: param.true_value for name, param in params}
+        if values is None:
+            values = "current"
+        if isinstance(values, str):
+            if values == "current":
+                return {name: param.current_value for name, param in params}
+            elif values == "initial":
+                return {name: param.initial_value for name, param in params}
+            elif values == "true":
+                return {name: param.true_value for name, param in params}
         else:
             # Custom values array
             values_array = np.atleast_1d(values)
