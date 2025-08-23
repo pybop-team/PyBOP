@@ -5,9 +5,8 @@ import pybop
 
 """
 In this example, we compute the global sensitivities of the cost/likelihood function
-wrt. the parameters (\frac{\\partial L}{\\del \theta}). This is specifically helpful for
-understanding the identifiability of the corresponding parameter given the model and
-the observations.
+wrt. the parameters (\frac{\\partial L}{\\del \theta}). This is helpful for understanding
+the identifiability of the corresponding parameter given the model and the observations.
 """
 
 # Define model and parameter values
@@ -27,20 +26,17 @@ parameters = [
 ]
 
 # Generate a synthetic dataset
-sigma = 2e-3
+sim = pybamm.Simulation(model, parameter_values=parameter_values)
 t_eval = np.linspace(0, 300, 240)
-sim = pybamm.Simulation(
-    model=model,
-    parameter_values=parameter_values,
-)
-sol = sim.solve(t_eval=[t_eval[0], t_eval[-1]], t_interp=t_eval)
+sol = sim.solve(t_eval=t_eval)
 
+sigma = 2e-3
 dataset = pybop.Dataset(
     {
-        "Time [s]": sol.t,
-        "Voltage [V]": sol["Voltage [V]"].data
+        "Time [s]": t_eval,
+        "Voltage [V]": sol["Voltage [V]"](t_eval)
         + np.random.normal(0, sigma, len(t_eval)),
-        "Current function [A]": sol["Current [A]"].data,
+        "Current function [A]": sol["Current [A]"](t_eval),
     }
 )
 
@@ -55,20 +51,21 @@ for param in parameters:
     builder.add_parameter(param)
 problem = builder.build()
 
-# Run the sensitivity analyses w/ 256 samples which is computed based on the bounds
+# Run the sensitivity analysis with 256 samples which is computed based on the bounds
 # provided in the parameter objects. A SOBOL scheme is used to generate samples
-# across the parameter space.
+# across the parameter space
 sense = problem.sensitivity_analysis(n_samples=256)
 
-# The first order sensitivities are available as,
-print(sense["S1"])  # array([-0.05755869,  0.68078342]
+print("First order sensitivities:", sense["S1"])  # array([-0.05755869,  0.68078342]
 # The total order sensitivities are also available. This provides insight to
 # higher-order interactions between the parameters.
-print(sense["ST"])  # array([0.24571395, 1.15138237])
+print("Total order sensitivities:", sense["ST"])  # array([0.24571395, 1.15138237])
 
-# The 95% confidence intervals for each sensitivity order are,
-print(sense["S1_conf"])
-print(sense["ST_conf"])
+# The 95% confidence intervals for each sensitivity order are:
+print("First order 95%% confidence intervals:", sense["S1_conf"])
+print("Total order 95%% confidence intervals:", sense["ST_conf"])
 
-# In this example, we can see that cost function is much more sensitive to the positive
-# particle diffusivity versus the negative electrode active material volume fraction.
+print(
+    "Note how the cost function is much more sensitive to the positive particle diffusivity"
+    " compared to the negative electrode active material volume fraction."
+)
