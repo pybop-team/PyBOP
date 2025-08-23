@@ -644,3 +644,7 @@ class TestOptimisation:
         with pytest.raises(ValueError, match="jac must be a boolean value."):
             options.jac = "Invalid string"
             options.validate()
+
+        options = pybop.ScipyMinimizeOptions(solver_options={"eps": 0.01})
+        options_dict = options.to_dict()
+        assert options_dict["options"]["eps"] == 0.01
