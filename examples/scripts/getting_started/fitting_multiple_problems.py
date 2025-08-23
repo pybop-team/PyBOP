@@ -42,37 +42,26 @@ parameters = [
 
 # Generate the first dataset
 sigma = 0.002
-sim = pybamm.Simulation(
-    model, experiment=experiment[0], parameter_values=parameter_values
-)
-sol1 = sim.solve(initial_soc=init_soc[0])
-dataset_1 = pybop.Dataset(
-    {
-        "Time [s]": sol1["Time [s]"].data,
-        "Current function [A]": sol1["Current [A]"].data,
-        "Voltage [V]": sol1["Voltage [V]"].data
-        + np.random.normal(0, sigma, len(sol1["Voltage [V]"].data)),
-    }
-)
-
-# Generate the second dataset
-sim = pybamm.Simulation(
-    model, experiment=experiment[1], parameter_values=parameter_values
-)
-sol2 = sim.solve(initial_soc=init_soc[1])
-dataset_2 = pybop.Dataset(
-    {
-        "Time [s]": sol2["Time [s]"].data,
-        "Current function [A]": sol2["Current [A]"].data,
-        "Voltage [V]": sol2["Voltage [V]"].data
-        + np.random.normal(0, sigma, len(sol2["Voltage [V]"].data)),
-    }
-)
+datasets = []
+for i in [0, 1]:
+    sim = pybamm.Simulation(
+        model, experiment=experiment[i], parameter_values=parameter_values
+    )
+    sol = sim.solve(initial_soc=init_soc[i])
+    dataset_i = pybop.Dataset(
+        {
+            "Time [s]": sol.t,
+            "Current function [A]": sol["Current [A]"].data,
+            "Voltage [V]": sol["Voltage [V]"].data
+            + np.random.normal(0, sigma, len(sol.t)),
+        }
+    )
+    datasets.append(dataset_i)
 
 # Construct the problem class
 builder = (
     pybop.builders.Pybamm()
-    .set_dataset(dataset_1)
+    .set_dataset(datasets[0])
     .set_simulation(model, parameter_values=parameter_values)
     .add_cost(pybop.costs.pybamm.MeanSquaredError("Voltage [V]", "Voltage [V]"))
 )
@@ -81,7 +70,7 @@ for param in parameters:
 problem1 = builder.build()
 
 # Update builder and build the second problem
-builder.set_dataset(dataset_2)
+builder.set_dataset(datasets[1])
 problem2 = builder.build()
 
 # Create a multifitting builder, with weighting applied to the first model
