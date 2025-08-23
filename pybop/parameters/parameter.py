@@ -167,7 +167,6 @@ class Parameter:
         *,
         initial_value: ParameterValue = None,
         current_value: ParameterValue = None,
-        true_value: ParameterValue = None,
         bounds: BoundsPair | None = None,
         prior: BasePrior | None = None,
         transformation: Transformation | None = None,
@@ -184,8 +183,6 @@ class Parameter:
             Initial parameter value
         current_value : ParameterValue, optional
             Current parameter value (defaults to initial_value)
-        true_value : ParameterValue, optional
-            True parameter value (for testing/validation)
         bounds : tuple[float, float], optional
             Parameter bounds as (lower, upper)
         prior : Any, optional
@@ -213,7 +210,6 @@ class Parameter:
         self._current_value = self._validator.validate_and_convert(
             current_value or initial_value, name
         )
-        self._true_value = self._validator.validate_and_convert(true_value, name)
 
         # Validate initial values are within bounds
         self._validate_values_within_bounds()
@@ -229,10 +225,6 @@ class Parameter:
     @property
     def current_value(self) -> ParameterValue:
         return self._copy_value(self._current_value)
-
-    @property
-    def true_value(self) -> ParameterValue:
-        return self._copy_value(self._true_value)
 
     @property
     def bounds(self) -> BoundsPair | None:
@@ -717,23 +709,21 @@ class Parameters:
         Parameters
         ----------
         values : str or array-like, optional
-            Which values to use ('current', 'initial', 'true') or custom array
+            Which values to use ('current', 'initial') or custom array
 
         Returns
         -------
         ParameterDict
             Dictionary mapping parameter names to values
         """
+        values = values or "current"
         params = self._parameters.items()
-        if values is None:
-            values = "current"
+
         if isinstance(values, str):
             if values == "current":
                 return {name: param.current_value for name, param in params}
             elif values == "initial":
                 return {name: param.initial_value for name, param in params}
-            elif values == "true":
-                return {name: param.true_value for name, param in params}
         else:
             # Custom values array
             values_array = np.atleast_1d(values)
