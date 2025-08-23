@@ -89,8 +89,8 @@ sol = sim.solve(t_eval=[dataset["Time [s]"][0], dataset["Time [s]"][-1]])
 
 # Plot the timeseries output
 fig, ax = plt.subplots()
-ax.plot(dataset["Time [s]"], dataset["Voltage [V]"], label="Experimental")
-ax.plot(sol.t, sol["Voltage [V]"].data, label="Predicted")
+ax.plot(dataset["Time [s]"], dataset["Voltage [V]"], label="Targe")
+ax.plot(sol.t, sol["Voltage [V]"].data, label="Fit")
 ax.set(xlabel="Time (s)", ylabel="Voltage [V]")
 ax.legend()
 ax.grid()
