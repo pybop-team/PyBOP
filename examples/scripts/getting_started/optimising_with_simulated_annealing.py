@@ -64,10 +64,8 @@ optim = pybop.SimulatedAnnealing(problem, options=options)
 # Update the cooling rate to bias towards better solutions (lower exploration)
 optim.optimiser.cooling_rate = 0.85
 
+# Run optimisation
 results = optim.run()
-
-# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
-identified_parameter_values = results.parameter_values
 
 # Plot convergence
 pybop.plot.convergence(optim)

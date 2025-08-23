@@ -58,10 +58,8 @@ problem = builder.build()
 options = pybop.ScipyMinimizeOptions(method="Nelder-Mead", verbose=True, maxiter=80)
 optim = pybop.SciPyMinimize(problem, options=options)
 
+# Run optimisation
 results = optim.run()
-
-# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
-identified_parameter_values = results.parameter_values
 
 # Plot convergence
 pybop.plot.convergence(optim)

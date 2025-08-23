@@ -61,10 +61,8 @@ optim = pybop.AdamW(problem, options=options)
 optim.optimiser.b1 = 0.925
 optim.optimiser.b2 = 0.925
 
+# Run optimisation
 results = optim.run()
-
-# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
-identified_parameter_values = results.parameter_values
 
 # Plot convergence
 pybop.plot.convergence(optim)
