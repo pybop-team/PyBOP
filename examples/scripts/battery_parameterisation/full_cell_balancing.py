@@ -5,16 +5,18 @@ import pybop
 
 """
 In this example, we present a method for full-cell stoichiometry balancing. This is
-completed by identifying the corresponding electrode initial and maximum concentrations
-for low-rate discharge observations.
+completed by identifying the initial and maximum concentrations in each electrode
+using low-rate discharge observations.
 """
 
 # Define model and parameter values
 model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
+parameter_values["Upper voltage cut-off [V]"] = 4.4
+parameter_values["Lower voltage cut-off [V]"] = 2.3
 
 # Set initial state and unpack true values
-parameter_values.set_initial_stoichiometries(initial_value=1.0)
+parameter_values.set_initial_state(1.0)
 cs_n_max = parameter_values["Maximum concentration in negative electrode [mol.m-3]"]
 cs_p_max = parameter_values["Maximum concentration in positive electrode [mol.m-3]"]
 cs_n_init = parameter_values["Initial concentration in negative electrode [mol.m-3]"]
@@ -46,7 +48,7 @@ parameters = [
 
 # Generate a synthetic dataset
 sigma = 1e-3
-experiment = pybamm.Experiment(["Discharge at C/5 until 3.0V (1 minute period)"])
+experiment = pybamm.Experiment(["Discharge at C/20 until 2.5V (5 minute period)"])
 sim = pybamm.Simulation(
     model=model, parameter_values=parameter_values, experiment=experiment
 )
@@ -71,14 +73,14 @@ for param in parameters:
     builder.add_parameter(param)
 problem = builder.build()
 
-# Set optimiser with corresponding options. As the scale of the parameters is large,
-# a large sigma value is used to efficiently explore the parameter space
-options = pybop.PintsOptions(sigma=0.2, verbose=True, max_iterations=100)
+# Set optimiser and options. As the scale of the parameters is large, a large sigma value
+# is used to efficiently explore the parameter space
+options = pybop.PintsOptions(sigma=20, max_iterations=250, max_unchanged_iterations=25)
 optim = pybop.NelderMead(problem, options=options)
+
+# Run optimisation
 results = optim.run()
-#
-# Plot convergence
-pybop.plot.convergence(optim)
+print(results)
 
 # Plot the parameter traces
 pybop.plot.parameters(optim)
@@ -86,3 +88,19 @@ pybop.plot.parameters(optim)
 # Compare to known values
 print("True parameters:", [parameter_values[p.name] for p in parameters])
 print(f"Idenitified Parameters: {results.x}")
+
+# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
+identified_values = results.parameter_values
+
+# Plot comparison
+sim = pybamm.Simulation(
+    model, parameter_values=identified_values, experiment=experiment
+)
+prediction = sim.solve()
+pybop.plot.trajectories(
+    x=[dataset["Time [s]"] / 3600, prediction.t / 3600],
+    y=[dataset["Voltage [V]"], prediction["Voltage [V]"].data],
+    trace_names=["Ground truth", "Identified model"],
+    xaxis_title="Time / h",
+    yaxis_title="Voltage / V",
+)
