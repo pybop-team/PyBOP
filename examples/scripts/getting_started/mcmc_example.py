@@ -4,7 +4,7 @@ import pybamm
 import pybop
 
 """
-In this example, we present a Pybop's Monte Carlo Sampler framework. Monte Carlo
+In this example, we present a PyBOP's Monte Carlo Sampler framework. Monte Carlo
 sampling provides a method to resolve intractable integration problems. In PyBOP,
 we use this to integrate Bayes formula providing uncertainty insights via the
 sampled posterior.
@@ -33,19 +33,17 @@ dataset = pybop.Dataset(
 parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
-        initial_value=0.6,
         prior=pybop.Gaussian(0.6, 0.2),
         bounds=[0.5, 0.8],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
-        initial_value=0.6,
         prior=pybop.Gaussian(0.6, 0.2),
         bounds=[0.5, 0.8],
     ),
 ]
 
-# Create the builder
+# Create the problem builder
 builder = (
     pybop.builders.Pybamm()
     .set_dataset(dataset)
@@ -57,8 +55,6 @@ builder = (
 )
 for param in parameters:
     builder.add_parameter(param)
-
-# Build the problem
 problem = builder.build()
 
 # Set the sampler options and construct the sampler
