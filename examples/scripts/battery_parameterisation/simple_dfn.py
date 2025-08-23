@@ -4,9 +4,10 @@ import pybamm
 import pybop
 
 """
-In this example, we introduce a simple Doyle-Fuller-Newman model identification
-process. This is specifically implemented as the DFN is a more challenging identification
-process compared to the reduced-order single particle models.
+In this example, we demonstrate identification using a Doyle-Fuller-Newman (DFN) model.
+The DFN is more challenging to parameterise than equivalent circuit and reduced-order,
+single particle models as it is more computationally expensive and has a high number of
+parameters which are not individually identifiable.
 """
 
 # Define model and parameter values
@@ -60,21 +61,34 @@ for param in parameters:
 problem = builder.build()
 
 # Set optimiser and options. We'll use the Nelder-Mead simplex based optimiser and increase the
-# step-size value (sigma) is increased to 0.1 to search across the landscape further per iteration
+# step-size value (sigma) to 0.1 to search further across the landscape per iteration
 options = pybop.PintsOptions(
-    sigma=0.1, verbose=True, max_iterations=60, max_unchanged_iterations=15
+    sigma=0.02, max_iterations=250, max_unchanged_iterations=15
 )
 optim = pybop.NelderMead(problem, options=options)
 results = optim.run()
+print(results)
+
+# Compare to known values
+print("True parameters:", [parameter_values[p.name] for p in parameters])
+print(f"Idenitified Parameters: {results.x}")
 
 # Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
 identified_parameter_values = results.parameter_values
 
-# Plot convergence
-pybop.plot.convergence(optim)
-
-# Plot the parameter traces
-pybop.plot.parameters(optim)
-
 # Plot the cost landscape with optimisation path
 pybop.plot.surface(optim)
+
+# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
+identified_values = results.parameter_values
+
+# Plot comparison
+sim = pybamm.Simulation(model, parameter_values=identified_values)
+prediction = sim.solve(t_eval=t_eval)
+pybop.plot.trajectories(
+    x=[dataset["Time [s]"], prediction.t],
+    y=[dataset["Voltage [V]"], prediction["Voltage [V]"].data],
+    trace_names=["Ground truth", "Identified model"],
+    xaxis_title="Time / s",
+    yaxis_title="Voltage / V",
+)
