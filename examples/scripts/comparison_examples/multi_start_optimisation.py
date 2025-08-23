@@ -57,25 +57,13 @@ problem = builder.build()
 # Construct the optimiser with 10 multistart runs. Each of these runs has a random
 # starting position sampled from the parameter priors
 options = pybop.PintsOptions(
-    sigma=np.asarray([0.6, 0.02]), max_iterations=50, multistart=10, verbose=True
+    sigma=np.asarray([0.6, 0.02]), max_iterations=50, multistart=10
 )
 optim = pybop.GradientDescent(problem, options=options)
 
 # Run optimisation
 results = optim.run()
-
-# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
-identified_parameter_values = results.parameter_values
-
-# Plot convergence
-# pybop.plot.convergence(optim)
-
-# Plot the parameter traces
-pybop.plot.parameters(optim)
-
-# Plot the cost landscape with optimisation path
-bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
-pybop.plot.surface(optim, bounds=bounds)
+print(results)
 
 # We can display more metrics, most of which are also included in the `verbose` option
 # within the PINTS optimisers
@@ -83,3 +71,13 @@ print(f"The best starting position: {results.x0}")
 print(f"The best cost: {results.best_cost}")
 print(f"The best identified parameter values: {results.x}")
 print(f"The total optimisation time:{results.time} seconds")
+
+# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
+identified_parameter_values = results.parameter_values
+
+# Plot the parameter traces
+pybop.plot.parameters(optim)
+
+# Plot the cost landscape with optimisation path
+bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
+pybop.plot.surface(optim, bounds=bounds)
