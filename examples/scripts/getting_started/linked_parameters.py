@@ -8,7 +8,7 @@ import pybop
 In this example, we introduce the functionality to link optimisation parameters for the
 underlying PyBaMM model. Linking parameters can ensure correlated parameters are correctly
 updated, which ensures physical definitions are maintained. For this example, we link the
-electrode porosity, active material volume fraction and binder percentage.
+electrode porosity, active material volume fraction and binder fraction.
 """
 
 # Define model and parameter values
@@ -85,10 +85,9 @@ options = pybop.PintsOptions(
     sigma=0.1, verbose=True, max_iterations=60, max_unchanged_iterations=15
 )
 optim = pybop.CMAES(problem, options=options)
-results = optim.run()
 
-# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
-identified_parameter_values = results.parameter_values
+# Run optimisation
+results = optim.run()
 
 # Plot convergence
 pybop.plot.convergence(optim)
@@ -97,4 +96,26 @@ pybop.plot.convergence(optim)
 pybop.plot.parameters(optim)
 
 # Plot the cost landscape with optimisation path
-pybop.plot.contour(problem, steps=15)
+pybop.plot.contour(optim)
+
+# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
+identified_parameter_values = results.parameter_values
+
+# Plot the timeseries output
+sim = pybamm.Simulation(model, parameter_values=identified_parameter_values)
+sol = sim.solve(t_eval=t_eval)
+
+go = pybop.plot.PlotlyManager().go
+fig = go.Figure(layout=go.Layout(xaxis_title="Time / s", yaxis_title="Voltage / V"))
+fig.add_trace(
+    go.Scatter(
+        x=dataset["Time [s]"],
+        y=dataset["Voltage [V]"],
+        mode="markers",
+        name="Target",
+    )
+)
+fig.add_trace(
+    go.Scatter(x=t_eval, y=sol["Voltage [V]"](t_eval), mode="lines", name="Fit")
+)
+fig.show()
