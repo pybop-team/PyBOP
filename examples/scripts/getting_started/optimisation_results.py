@@ -6,10 +6,10 @@ import pybop
 
 """
 In this example, we describe the `pybop.OptimisationResult` object, which provides an interface
-to investigate the identification or optimisation performance in additional to providing the
+to investigate the identification or optimisation performance, in addition to providing the
 final parameter values in a usable python object.
 
-First, we will set up a simple optimisation workflow.
+First, we will set up a simple optimisation workflow to obtain an optimisation result.
 """
 
 # Define model and parameter values
@@ -58,30 +58,28 @@ problem = builder.build()
 
 # Set optimiser and options
 options = pybop.PintsOptions(
-    verbose=True,
-    max_iterations=60,
-    max_unchanged_iterations=15,
+    verbose=True, max_iterations=60, max_unchanged_iterations=15
 )
 optim = pybop.AdamW(problem, options=options)
+
+# Run optimisation
 results = optim.run()
 
 # Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
 identified_parameter_values = results.parameter_values
 
-sim = pybamm.Simulation(model, parameter_values=identified_parameter_values)
-identified_sol = sim.solve(t_eval=[t_eval[0], t_eval[-1]], t_interp=t_eval)
-
 # Plot identified model vs dataset values
+sim = pybamm.Simulation(model, parameter_values=identified_parameter_values)
+identified_sol = sim.solve(t_eval=t_eval)
 fig, ax = plt.subplots()
 ax.plot(dataset["Time [s]"], dataset["Voltage [V]"])
-ax.plot(identified_sol.t, identified_sol["Voltage [V]"].data)
+ax.plot(t_eval, identified_sol["Voltage [V]"](t_eval))
 ax.set_xlabel("Time [s]")
 ax.set_ylabel("Voltage [V]")
 plt.show()
 
-# We can display more metrics, most of which are
-# also included in the `verbose` option within
-# the Pints' optimisers
+# We can display more metrics, most of which are also included in the `verbose` option
+# within the Pints' optimisers
 print(f"The starting position: {results.x0}")
 print(f"The best cost: {results.best_cost}")
 print(f"The identified parameter values: {results.x}")
