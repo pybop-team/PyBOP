@@ -5,10 +5,10 @@ from matplotlib import pyplot as plt
 import pybop
 
 """
-In this example, an ECM is identified with parameters R0, and Tau1. The model parameters are
-formulated so that the first branch capacitance C1 is linked to the branch resistance R1, and
-the time constant Tau1. This allows for a singular parameter to be fitted for each additional
-ECM branch, Tau`N`.
+In this example, two parameters of an ECM model are identified. The model parameters are
+reformulated so that the first branch capacitance C1 is defined in terms of the branch
+resistance R1 and time constant Tau1. This allows us to identify R1 and Tau1 instead of
+R1 and C1.
 """
 
 # Define model and parameter values
@@ -46,7 +46,7 @@ parameter_values.update(
 parameters = [
     pybop.Parameter(
         "R0 [Ohm]",
-        prior=pybop.Gaussian(0.002, 0.0001),
+        prior=pybop.Gaussian(0.002, 0.001),
         bounds=[1e-4, 1e-2],
     ),
     pybop.Parameter(
@@ -90,18 +90,21 @@ problem = builder.build()
 # Set optimiser and options. We'll use the Nelder-Mead simplex based optimiser
 options = pybop.PintsOptions(
     sigma=np.asarray([0.05, 0.5]),
-    verbose=True,
     max_iterations=60,
     max_unchanged_iterations=15,
 )
 optim = pybop.NelderMead(problem, options=options)
-results = optim.run()
 
-# Plot convergence
-pybop.plot.convergence(optim)
+# Run optimisation
+results = optim.run()
+print(results)
 
 # Plot the parameter traces
 pybop.plot.parameters(optim)
+
+# Compare identified parameters with true parameters
+print("True parameters:", [parameter_values[p.name] for p in parameters])
+print("Estimated parameters:", results.x)
 
 # Obtain the identified pybamm.ParameterValues and generate the time-series prediction
 # using these parameters
@@ -115,9 +118,7 @@ sol2 = sim.solve()
 fig, ax = plt.subplots()
 ax.plot(sol2.t, sol2["Voltage [V]"].data, label="Fit")
 ax.plot(dataset["Time [s]"], dataset["Voltage [V]"], label="Target")
+ax.set_xlabel("Time / s")
+ax.set_ylabel("Voltage / V")
 ax.legend()
 plt.show()
-
-# Compare identified parameters with true parameters
-print("True parameters:", [parameter_values[p.name] for p in parameters])
-print("Estimated parameters:", results.x)
