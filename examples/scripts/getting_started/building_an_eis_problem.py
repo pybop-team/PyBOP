@@ -4,11 +4,15 @@ import pybammeis
 
 import pybop
 
+"""
+Example demonstrating how to build an EIS optimisation problem.
+"""
+
 options = {"surface form": "differential", "contact resistance": "true"}
 model = pybamm.lithium_ion.DFN(options=options)
 parameter_values = pybamm.ParameterValues("Chen2020")
 
-# Using Pybamm-EIS to generate synthetic data
+# Using PyBaMM-EIS to generate synthetic data
 eis_sim = pybammeis.EISSimulation(model, parameter_values=parameter_values)
 frequencies = np.logspace(-4, 4, 30)
 sol = eis_sim.solve(frequencies)
@@ -39,4 +43,5 @@ problem = builder.build()
 # Test the cost for a given parameter proposal
 inputs = np.asarray([80e-6, 4.5e-6])
 problem.set_params(inputs)
-print(problem.run())
+cost = problem.run()
+print("The cost value is:", cost)

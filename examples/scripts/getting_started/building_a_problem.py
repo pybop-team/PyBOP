@@ -5,7 +5,7 @@ import pybop
 
 """
 In this example we will introduce PyBOP's problem builder class. This builder allows
-for flexible building of Pybop's key class, the `Problem`. Builders can be reused and
+for flexible building of PyBOP's key class, the `Problem`. Builders can be reused and
 modified to generate multiple problem objects.
 """
 
@@ -58,9 +58,9 @@ problem = builder.build()
 # Run
 problem.set_params(np.array([0.6, 0.6, 1e-3]))
 cost = problem.run()
-print(f"The likelihood value for is: {cost[0]}")
+print(f"The likelihood value is: {cost[0]}")
 
-# Run w/ sensitivities
+# Run with sensitivities
 problem.set_params(np.array([0.6, 0.6, 1e-3]))
-cost = problem.run_with_sensitivities()
-print(f"The gradient is: {cost[1]}")
+cost, grad = problem.run_with_sensitivities()
+print(f"The gradient is: {grad}")
