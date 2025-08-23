@@ -1,10 +1,10 @@
 import numpy as np
-import plotly.graph_objects as go
 import pybamm
 
 import pybop
 
 """
+Example of parameter estimation using an equivalent circuit model.
 """
 
 # Define the model
@@ -38,11 +38,11 @@ parameter_values = pybamm.ParameterValues(
         "Entropic change [V/K]": 0.0004,
         "R0 [Ohm]": 0.001,
         "Element-1 initial overpotential [V]": 0,
-        "R1 [Ohm]": 0.0002,
-        "R2 [Ohm]": 0.0003,
+        "R1 [Ohm]": 0.002,
+        "R2 [Ohm]": 0.003,
         "Element-2 initial overpotential [V]": 0,
-        "C1 [F]": 10000,
-        "C2 [F]": 5000,
+        "C1 [F]": 1000,
+        "C2 [F]": 500,
     }
 )
 
@@ -50,12 +50,12 @@ parameter_values = pybamm.ParameterValues(
 parameters = [
     pybop.Parameter(
         "R0 [Ohm]",
-        prior=pybop.Gaussian(0.0002, 0.0001),
+        prior=pybop.Gaussian(0.002, 0.001),
         bounds=[1e-4, 1e-2],
     ),
     pybop.Parameter(
         "R1 [Ohm]",
-        prior=pybop.Gaussian(0.0001, 0.0001),
+        prior=pybop.Gaussian(0.001, 0.001),
         bounds=[1e-5, 1e-2],
     ),
 ]
@@ -87,39 +87,43 @@ for param in parameters:
 problem = builder.build()
 
 # Construct optimiser with additional options
-options = pybop.PintsOptions(max_iterations=50)
+options = pybop.PintsOptions(max_iterations=250)
 optim = pybop.PSO(problem, options=options)
 
 # Run optimisation
 results = optim.run()
+print(results)
+
+# Plot the cost landscape with optimisation path
+pybop.plot.surface(optim)
+
+# Compare to known values
+print("True parameters:", [parameter_values[p.name] for p in parameters])
+print(f"Idenitified Parameters: {results.x}")
 
 # Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
 identified_parameter_values = results.parameter_values
+
+# Plot the timeseries output
 sim = pybamm.Simulation(model, parameter_values=identified_parameter_values)
 sol = sim.solve(t_eval=t_eval)
 
-# Plot the timeseries output
+go = pybop.plot.PlotlyManager().go
 fig = go.Figure(layout=go.Layout(title="Time-domain comparison", width=800, height=600))
-
 fig.add_trace(
     go.Scatter(
         x=dataset["Time [s]"],
         y=dataset["Voltage [V]"],
         mode="markers",
-        name="Reference",
+        name="Target",
     )
 )
-
 fig.add_trace(
     go.Scatter(x=t_eval, y=sol["Voltage [V]"](t_eval), mode="lines", name="Fit")
 )
-
 fig.update_layout(
     xaxis_title="Time / s",
     plot_bgcolor="white",
     paper_bgcolor="white",
 )
 fig.show()
-
-# Plot the timeseries output
-pybop.plot.surface(optim)
