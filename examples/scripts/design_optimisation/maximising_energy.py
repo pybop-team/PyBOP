@@ -64,28 +64,40 @@ builder = (
         initial_state=1.0,
     )
     .add_cost(pybop.costs.pybamm.GravimetricEnergyDensity())
-    .add_cost(pybop.costs.pybamm.VolumetricEnergyDensity(), weight=1e-4)
 )
 for param in parameters:
     builder.add_parameter(param)
 problem = builder.build()
 
-# Set optimiser and options
-options = pybop.PintsOptions(sigma=0.1, verbose=True, max_iterations=5)
+# Set optimiser and options. Restrict the maximum number of iterations for speed
+options = pybop.PintsOptions(sigma=0.1, max_iterations=30)
 optim = pybop.CMAES(problem, options=options)
+
+# Run optimisation
 results = optim.run()
-
-# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
-identified_parameter_values = results.parameter_values
-
-# Plot convergence
-pybop.plot.convergence(optim)
-
-# Plot the parameter traces
-pybop.plot.parameters(optim)
+print(results)
+print(f"Initial gravimetric energy density: {-results.initial_cost:.2f} Wh.kg-1")
+print(f"Optimised gravimetric energy density: {-results.best_cost:.2f} Wh.kg-1")
 
 # Plot the cost landscape with optimisation path
 pybop.plot.surface(optim)
 
-print(f"Initial energy density: {-results.initial_cost:.2f} Wh.kg-1")
-print(f"Optimised energy density: {-results.best_cost:.2f} Wh.kg-1")
+# Obtain the optimised pybamm.ParameterValues object for use with PyBaMM classes
+optimised_values = results.parameter_values
+
+# Plot comparison
+sim_original = pybamm.Simulation(
+    model, parameter_values=parameter_values, experiment=experiment
+)
+sol_original = sim_original.solve(initial_soc=1.0)
+sim_optimised = pybamm.Simulation(
+    model, parameter_values=optimised_values, experiment=experiment
+)
+sol_optimised = sim_optimised.solve(initial_soc=1.0)
+pybop.plot.trajectories(
+    x=[sol_original.t, sol_optimised.t],
+    y=[sol_original["Voltage [V]"].data, sol_optimised["Voltage [V]"].data],
+    trace_names=["Original", "Optimised"],
+    xaxis_title="Time / s",
+    yaxis_title="Voltage / V",
+)
