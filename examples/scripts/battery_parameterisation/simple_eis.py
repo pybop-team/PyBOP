@@ -5,9 +5,13 @@ import pybammeis
 
 import pybop
 
-parameter_values = pybamm.ParameterValues("Chen2020")
+"""
+"""
+
+# Define model and parameter values
 options = {"surface form": "differential", "contact resistance": "true"}
 model = pybamm.lithium_ion.DFN(options=options)
+parameter_values = pybamm.ParameterValues("Chen2020")
 
 # Using Pybamm-EIS to generate synthetic data
 eis_sim = pybammeis.EISSimulation(model, parameter_values=parameter_values)
@@ -51,8 +55,7 @@ options = pybop.PintsOptions(verbose=True)
 optim = pybop.XNES(problem, options=options)
 results = optim.run()
 
-# Using the fully identified pybamm.ParameterValues object
-# we can plot the impedance fit
+# Using the identified pybamm.ParameterValues object, we can plot the impedance fit
 identified_sim = pybammeis.EISSimulation(
     model, parameter_values=results.parameter_values
 )

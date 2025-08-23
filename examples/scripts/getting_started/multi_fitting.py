@@ -3,22 +3,23 @@ import pybamm
 
 import pybop
 
-# This example presents the process of creating a multi-fitting problem
-# The multi-fitting problem allows for multiple problems to be optimised
-# at the same time, common use cases include:
-# - Fitting multiple datasets for a single model (varying SOC identification)
-# - Fitting different models for the same dataset (comparing reduced-order implementations)
+"""
+This example presents the process of creating a multi-fitting problem.
+The multi-fitting problem allows for multiple problems to be optimised
+at the same time, common use cases include:
+- Fitting multiple datasets for a single model (varying SOC identification)
+- Fitting different models for the same dataset (comparing reduced-order implementations)
 
-# Note: the optimisation parameters have to be the same for each problem
+Note: the optimisation parameters have to be the same for each problem.
 
-# In this example, we will identify parameters on the same model
-# for two different datasets.
+In this example, we will identify parameters on the same model for two different datasets.
+"""
 
-# Parameter values and model definition
-parameter_values = pybamm.ParameterValues("Chen2020")
+# Define model and parameter values
 model = pybamm.lithium_ion.SPM()
+parameter_values = pybamm.ParameterValues("Chen2020")
 
-# Create initial SOC, experiment objects
+# Create list of initial SOC and experiment
 init_soc = [0.8, 0.6]
 experiment = [
     pybamm.Experiment([("Discharge at 0.5C for 2 minutes (6 second period)")]),

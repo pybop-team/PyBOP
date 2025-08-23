@@ -4,20 +4,21 @@ import pybamm
 
 import pybop
 
-# This example introduces identification from pulse discharge data to extract:
-# - Diffusion coefficients governing solid-state lithium transport
-# - Contact resistance affecting interfacial charge transfer kinetics
-# The pulse-rest protocol separates kinetic limitations from thermodynamic
-# equilibrium, enabling extraction of both fast interfacial dynamics and
-# slower solid-state diffusion processes.
+"""
+This example introduces identification from pulse discharge data to extract:
+- Diffusion coefficients governing solid-state lithium transport
+- Contact resistance affecting interfacial charge transfer kinetics
+The pulse-rest protocol separates kinetic limitations from thermodynamic
+equilibrium, enabling extraction of both fast interfacial dynamics and
+slower solid-state diffusion processes.
+"""
 
 # Define model and parameter values
+dfn_model = pybamm.lithium_ion.DFN(options={"contact resistance": "true"})
 parameter_values = pybamm.ParameterValues("Chen2020")
 parameter_values.update({"Contact resistance [Ohm]": 0.0045})
-dfn_model = pybamm.lithium_ion.DFN(options={"contact resistance": "true"})
 
-# Define the fitting parameters, with corresponding Log transformations
-# due to the large range of parameter values.
+# Define the fitting parameters with log transformations for the diffusivities
 parameters = [
     pybop.Parameter(
         "Negative particle diffusivity [m2.s-1]",
@@ -33,14 +34,12 @@ parameters = [
     ),
     pybop.Parameter(
         "Contact resistance [Ohm]",
-        transformation=pybop.LogTransformation(),
         initial_value=1e-2,
         bounds=[1e-4, 1e-1],
     ),
 ]
 
-
-# Generate synthetic dataset
+# Generate a synthetic dataset
 sigma = 1e-3
 experiment = pybamm.Experiment(
     [
@@ -50,9 +49,7 @@ experiment = pybamm.Experiment(
     ]
 )
 sim = pybamm.Simulation(
-    model=dfn_model,
-    parameter_values=parameter_values,
-    experiment=experiment,
+    dfn_model, parameter_values=parameter_values, experiment=experiment
 )
 sol = sim.solve()
 
@@ -84,9 +81,7 @@ optim = pybop.SimulatedAnnealing(problem, options=options)
 optim.optimiser.cooling_rate = 0.825  # Cool quickly due to the low number of iterations
 results = optim.run()
 
-# Now we have a results object. The first thing we can
-# do is obtain the fully identified pybamm.ParameterValues object
-# These can then be used with normal Pybamm classes.
+# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
 identified_values = results.parameter_values
 sim = pybamm.Simulation(
     spme_model, parameter_values=identified_values, experiment=experiment

@@ -3,19 +3,18 @@ import pybamm
 
 import pybop
 
-# In this example, we introduce Pybop's functionality
-# for combining multiple cost into a single Pybop
-# problem. This is commonly used for model identification
-# with multiple "signals". In this case, we identify
-# two parameters based on cell terminal voltage, and
-# average cell temperature.
+"""
+In this example, we introduce PyBOP's functionality for combining multiple cost into a
+single PyBOP problem. This is commonly used for model identification with multiple "signals".
+In this case, we identify two parameters based on cell terminal voltage, and average cell
+temperature.
+"""
 
 # Define model and parameter values
+options = {"thermal": "lumped", "contact resistance": "true"}
+model = pybamm.lithium_ion.SPMe(options=options)
 parameter_values = pybamm.ParameterValues("Chen2020")
 parameter_values["Contact resistance [Ohm]"] = 2e-2
-model = pybamm.lithium_ion.SPMe(
-    options={"thermal": "lumped", "contact resistance": "true"}
-)
 
 # Fitting parameters
 parameters = [
@@ -31,22 +30,21 @@ parameters = [
     ),
 ]
 
-# Generate the synthetic dataset
-sigma = 5e-3
+# Generate a synthetic dataset
+sim = pybamm.Simulation(model, parameter_values=parameter_values)
 t_eval = np.linspace(0, 300, 240)
-sim = pybamm.Simulation(
-    model=model,
-    parameter_values=parameter_values,
-)
-sol = sim.solve(t_eval=[t_eval[0], t_eval[-1]], t_interp=t_eval)
+sol = sim.solve(t_eval=t_eval)
 
+sigma = 5e-3
 dataset = pybop.Dataset(
     {
-        "Time [s]": sol.t,
-        "Voltage [V]": sol["Voltage [V]"].data
+        "Time [s]": t_eval,
+        "Voltage [V]": sol["Voltage [V]"](t_eval)
         + np.random.normal(0, sigma, len(t_eval)),
-        "Current function [A]": sol["Current [A]"].data,
-        "X-averaged cell temperature [K]": sol["X-averaged cell temperature [K]"].data,
+        "Current function [A]": sol["Current [A]"](t_eval),
+        "X-averaged cell temperature [K]": sol["X-averaged cell temperature [K]"](
+            t_eval
+        ),
     }
 )
 
@@ -71,9 +69,6 @@ for param in parameters:
 problem = builder.build()
 
 # Set optimiser and options
-# We use the Improved Backpropagation Plus implementation
-# This is a gradient-based optimiser, with a step-size
-# which is decoupled from the gradient magnitude
 options = pybop.PintsOptions(
     sigma=np.asarray([0.01, 1e-4]),
     verbose=True,
@@ -83,8 +78,7 @@ options = pybop.PintsOptions(
 optim = pybop.XNES(problem, options=options)
 results = optim.run()
 
-# Obtain the fully identified pybamm.ParameterValues object
-# These can then be used with normal Pybamm classes
+# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
 identified_parameter_values = results.parameter_values
 
 # Plot convergence

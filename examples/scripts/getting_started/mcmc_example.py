@@ -3,31 +3,28 @@ import pybamm
 
 import pybop
 
-# In this example, we present a Pybop's Monte Carlo
-# Sampler framework. Monte Carlo sampling provides
-# a method to resolve intractable integration problems.
-# In Pybop, we use this to integrate Bayes formula
-# providing uncertainty insights via the sampled
-# posterior.
+"""
+In this example, we present a Pybop's Monte Carlo Sampler framework. Monte Carlo
+sampling provides a method to resolve intractable integration problems. In PyBOP,
+we use this to integrate Bayes formula providing uncertainty insights via the
+sampled posterior.
+"""
 
 # Set the model and parameter values
 model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Chen2020")
 
-# Generate the synthetic dataset
-sigma = 5e-3
+# Generate a synthetic dataset
+sim = pybamm.Simulation(model, parameter_values=parameter_values)
 t_eval = np.linspace(0, 1000, 240)
-sim = pybamm.Simulation(
-    model=model,
-    parameter_values=parameter_values,
-)
-sol = sim.solve(t_eval=t_eval, t_interp=t_eval)
+sol = sim.solve(t_eval=t_eval)
 
+sigma = 5e-3
 dataset = pybop.Dataset(
     {
-        "Time [s]": sol.t,
-        "Voltage [V]": sol["Voltage [V]"].data,
-        "Current function [A]": sol["Current [A]"].data
+        "Time [s]": t_eval,
+        "Voltage [V]": sol["Voltage [V]"](t_eval),
+        "Current function [A]": sol["Current [A]"](t_eval)
         + np.random.normal(0, sigma, len(t_eval)),
     }
 )
@@ -38,14 +35,12 @@ parameters = [
         "Negative electrode active material volume fraction",
         initial_value=0.6,
         prior=pybop.Gaussian(0.6, 0.2),
-        transformation=pybop.LogTransformation(),
         bounds=[0.5, 0.8],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
         initial_value=0.6,
         prior=pybop.Gaussian(0.6, 0.2),
-        transformation=pybop.LogTransformation(),
         bounds=[0.5, 0.8],
     ),
 ]
@@ -54,10 +49,7 @@ parameters = [
 builder = (
     pybop.builders.Pybamm()
     .set_dataset(dataset)
-    .set_simulation(
-        model,
-        parameter_values=parameter_values,
-    )
+    .set_simulation(model, parameter_values=parameter_values)
     # We leave sigma non-defined in the below cost as we want to estimate it alongside the parameters
     .add_cost(
         pybop.costs.pybamm.NegativeGaussianLogLikelihood("Voltage [V]", "Voltage [V]")

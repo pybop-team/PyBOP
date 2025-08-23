@@ -3,14 +3,15 @@ import pybamm
 
 import pybop
 
-# In this example, we introduce a simple Doyle-Fuller-Newman
-# model identification process. This is specifically implemented
-# as the DFN is a more challenging identification process compared
-# to the reduced-order single particle models.
+"""
+In this example, we introduce a simple Doyle-Fuller-Newman model identification
+process. This is specifically implemented as the DFN is a more challenging identification
+process compared to the reduced-order single particle models.
+"""
 
 # Define model and parameter values
-parameter_values = pybamm.ParameterValues("Chen2020")
 model = pybamm.lithium_ion.DFN()
+parameter_values = pybamm.ParameterValues("Chen2020")
 
 # Fitting parameters
 parameters = [
@@ -26,22 +27,19 @@ parameters = [
     ),
 ]
 
-# Generate the synthetic dataset
-sigma = 5e-3
+# Generate a synthetic dataset
+sim = pybamm.Simulation(model, parameter_values=parameter_values)
 t_eval = np.linspace(0, 500, 240)
-sim = pybamm.Simulation(
-    model=model,
-    parameter_values=parameter_values,
-)
-sol = sim.solve(t_eval=[t_eval[0], t_eval[-1]], t_interp=t_eval)
+sol = sim.solve(t_eval=t_eval)
 
+sigma = 5e-3
 dataset = pybop.Dataset(
     {
-        "Time [s]": sol.t,
-        "Voltage [V]": sol["Voltage [V]"].data
+        "Time [s]": t_eval,
+        "Voltage [V]": sol["Voltage [V]"](t_eval)
         + np.random.normal(0, sigma, len(t_eval)),
-        "Current function [A]": sol["Current [A]"].data,
-        "Bulk open-circuit voltage [V]": sol["Bulk open-circuit voltage [V]"].data,
+        "Current function [A]": sol["Current [A]"](t_eval),
+        "Bulk open-circuit voltage [V]": sol["Bulk open-circuit voltage [V]"](t_eval),
     }
 )
 
@@ -61,19 +59,15 @@ for param in parameters:
     builder.add_parameter(param)
 problem = builder.build()
 
-# Set optimiser and options
-# We use the Nelder-Mead simplex based
-# optimiser for this example. Additionally,
-# the step-size value (sigma) is increased to 0.1
-# to search across the landscape further per iteration
+# Set optimiser and options. We'll use the Nelder-Mead simplex based optimiser and increase the
+# step-size value (sigma) is increased to 0.1 to search across the landscape further per iteration
 options = pybop.PintsOptions(
     sigma=0.1, verbose=True, max_iterations=60, max_unchanged_iterations=15
 )
 optim = pybop.NelderMead(problem, options=options)
 results = optim.run()
 
-# Obtain the fully identified pybamm.ParameterValues object
-# These can then be used with normal Pybamm classes
+# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
 identified_parameter_values = results.parameter_values
 
 # Plot convergence

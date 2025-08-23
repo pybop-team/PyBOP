@@ -3,7 +3,8 @@ from pybamm import Parameter
 
 import pybop
 
-# Define parameter set and additional parameters needed for the cost function
+# Define model, parameter values and additional parameters needed for the cost function
+model = pybamm.lithium_ion.SPM()
 parameter_values = pybamm.ParameterValues("Marquis2019")
 parameter_values.update(
     {
@@ -24,21 +25,16 @@ parameter_values.update(
     check_already_exists=False,
 )
 
-# Define model
-model = pybamm.lithium_ion.SPM()
-
-# Fitting parameters
+# Target parameters
 parameters = [
     pybop.Parameter(
         "Positive electrode thickness [m]",
         initial_value=9e-05,
-        transformation=pybop.LogTransformation(),
         bounds=[6.5e-05, 12e-05],
     ),
     pybop.Parameter(
         "Negative electrode thickness [m]",
         initial_value=9e-05,
-        transformation=pybop.LogTransformation(),
         bounds=[5e-05, 12e-05],
     ),
 ]
@@ -77,8 +73,7 @@ options = pybop.SciPyDifferentialEvolutionOptions(
 optim = pybop.SciPyDifferentialEvolution(problem, options=options)
 results = optim.run()
 
-# Obtain the fully identified pybamm.ParameterValues object
-# These can then be used with normal Pybamm classes
+# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
 identified_parameter_values = results.parameter_values
 
 # Plot convergence

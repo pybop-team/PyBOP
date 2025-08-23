@@ -4,9 +4,9 @@ import pybamm
 
 import pybop
 
-# Define model
-parameter_values = pybamm.ParameterValues({"k": 0.3, "y0": 1.5})
+# Define model and parameter values
 model = pybop.ExponentialDecayModel()
+parameter_values = pybamm.ParameterValues({"k": 0.3, "y0": 1.5})
 
 # Fitting parameters
 parameters = [
@@ -14,19 +14,15 @@ parameters = [
     pybop.Parameter("y0", prior=pybop.Gaussian(1.0, 0.05), bounds=[0, 2]),
 ]
 
-# Generate the synthetic dataset
+# Generate a synthetic dataset
+sim = pybamm.Simulation(model, parameter_values=parameter_values)
 t_eval = np.linspace(0, 10, 50)
-sim = pybamm.Simulation(
-    model=model,
-    parameter_values=parameter_values,
-)
-sol = sim.solve(t_eval=[t_eval[0], t_eval[-1]], t_interp=t_eval)
+sol = sim.solve(t_eval=t_eval)
 
-# Form dataset
 dataset = pybop.Dataset(
     {
-        "Time [s]": sol.t,
-        "y_0": sol["y_0"].data,
+        "Time [s]": t_eval,
+        "y_0": sol["y_0"](t_eval),
     }
 )
 
@@ -41,7 +37,6 @@ for param in parameters:
     builder.add_parameter(param)
 problem = builder.build()
 
-
 # Set optimiser and options
 options = pybop.PintsOptions(sigma=0.2, verbose=True, max_iterations=100)
 optim = pybop.CMAES(problem, options=options)
@@ -50,8 +45,7 @@ optim = pybop.CMAES(problem, options=options)
 # optim = pybop.IRPropPlus(problem)
 results = optim.run()
 
-# Obtain the fully identified pybamm.ParameterValues object
-# These can then be used with normal Pybamm classes
+# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
 identified_parameter_values = results.parameter_values
 sim = pybamm.Simulation(model, parameter_values=identified_parameter_values)
 sol = sim.solve(t_eval=[t_eval[0], t_eval[-1]], t_interp=t_eval)
@@ -76,6 +70,7 @@ fig.update_layout(
     paper_bgcolor="white",
 )
 fig.show()
+
 # Plot convergence
 # pybop.plot.convergence(optim)
 

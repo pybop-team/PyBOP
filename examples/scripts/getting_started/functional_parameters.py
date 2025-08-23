@@ -4,14 +4,16 @@ import pybamm
 
 import pybop
 
-# This example demonstrates how to use a pybamm.FunctionalParameter to
-# optimise functional parameters using PyBOP.
+"""
+This example demonstrates how to use a pybamm.FunctionalParameter to
+optimise functional parameters using PyBOP.
 
-# Method: Define a new scalar parameter for use in a functional parameter
-# that already exists in the model, for example an exchange current density.
+Method: Define a new scalar parameter for use in a functional parameter
+that already exists in the model, for example an exchange current density.
+"""
 
-
-# Set parameter values
+# Define model and parameter values
+model = pybamm.lithium_ion.SPM(options={"contact resistance": "true"})
 parameter_values = pybamm.ParameterValues("Chen2020")
 
 
@@ -44,9 +46,6 @@ parameter_values["Positive electrode exchange-current density [A.m-2]"] = (
     positive_electrode_exchange_current_density
 )
 
-# Model definition
-model = pybamm.lithium_ion.SPM(options={"contact resistance": "true"})
-
 # Fitting parameters
 parameters = [
     pybop.Parameter(
@@ -61,14 +60,13 @@ parameters = [
     ),
 ]
 
-# Generate data
+# Generate a synthetic dataset
 sigma = 0.001
 t_eval = np.arange(0, 900, 3)
 sim = pybamm.Simulation(model, parameter_values=parameter_values)
 sol = sim.solve(t_eval=[t_eval[0], t_eval[-1]], t_interp=t_eval)
 corrupt_values = sol["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
 
-# Form dataset
 dataset = pybop.Dataset(
     {
         "Time [s]": sol.t,

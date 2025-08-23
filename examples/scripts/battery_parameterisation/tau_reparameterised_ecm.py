@@ -4,14 +4,15 @@ from matplotlib import pyplot as plt
 
 import pybop
 
-# In this example, an ECM is identified with parameters R0, and Tau1.
-# The model parameters are formulated so that the first branch capacitance
-# is linked to the branch resistance R1, and the time constant Tau1.
-# This allows for a singular parameter to be fitted for each additional
-# ECM branch, Tau`N`.
+"""
+In this example, an ECM is identified with parameters R0, and Tau1. The model parameters are
+formulated so that the first branch capacitance C1 is linked to the branch resistance R1, and
+the time constant Tau1. This allows for a singular parameter to be fitted for each additional
+ECM branch, Tau`N`.
+"""
 
-
-# Define the initial parameter set
+# Define model and parameter values
+model = pybamm.equivalent_circuit.Thevenin()
 parameter_values = pybamm.ParameterValues("ECM_Example")
 parameter_values.update(
     {
@@ -21,19 +22,18 @@ parameter_values.update(
         "Current function [A]": 5,
         "Upper voltage cut-off [V]": 4.2,
         "Lower voltage cut-off [V]": 3.0,
-        "Open-circuit voltage [V]": pybamm.equivalent_circuit.Thevenin().default_parameter_values[
+        "Open-circuit voltage [V]": model.default_parameter_values[
             "Open-circuit voltage [V]"
         ],
         "R0 [Ohm]": 0.002,
+        "Element-1 initial overpotential [V]": 0,
         "R1 [Ohm]": 0.003,
         "C1 [F]": 2000,
-        "Element-1 initial overpotential [V]": 0,
     }
 )
 
-
-# PyBaMM wants to see capacitances, but it's better to fit
-# time-constants, so let's introduce Tau1 to enable that
+# PyBaMM wants to see capacitances, but it's better to fit time-constants, so let's introduce
+# Tau1 to enable that
 parameter_values.update(
     {
         "Tau1 [s]": parameter_values["R1 [Ohm]"] * parameter_values["C1 [F]"],
@@ -42,13 +42,11 @@ parameter_values.update(
     check_already_exists=False,
 )
 
-# Define the model and parameters to fit
-model = pybamm.equivalent_circuit.Thevenin()
+# Define the parameters to fit
 parameters = [
     pybop.Parameter(
         "R0 [Ohm]",
         prior=pybop.Gaussian(0.002, 0.0001),
-        transformation=pybop.LogTransformation(),
         bounds=[1e-4, 1e-2],
     ),
     pybop.Parameter(
@@ -58,24 +56,18 @@ parameters = [
     ),
 ]
 
-# Generate a synthetic dataset for fitting. When working with
-# experimental observations, we wouldn't need to generate synthetic data,
-# but here it gives us a known ground-truth to work to.
+# Generate a synthetic dataset. When working with experimental observations, we wouldn't need
+# to generate synthetic data, but here it gives us a known ground-truth to work with
 experiment = pybamm.Experiment(
     [
         "Discharge at 1C for 2 minutes (2 second period)",
         "Rest for 1 minutes (2 second period)",
     ],
 )
-# Generate the synthetic dataset
-sigma = 1e-4
-sim = pybamm.Simulation(
-    model=model,
-    parameter_values=parameter_values,
-    experiment=experiment,
-)
+sim = pybamm.Simulation(model, parameter_values=parameter_values, experiment=experiment)
 sol = sim.solve()
 
+sigma = 1e-4
 dataset = pybop.Dataset(
     {
         "Time [s]": sol.t,
@@ -91,14 +83,11 @@ builder = (
     .set_simulation(model, parameter_values=parameter_values)
     .add_cost(pybop.costs.pybamm.RootMeanSquaredError("Voltage [V]", "Voltage [V]"))
 )
-
 for param in parameters:
     builder.add_parameter(param)
 problem = builder.build()
 
-# Set optimiser and options
-# We use the Nelder-Mead simplex based
-# optimiser for this example.
+# Set optimiser and options. We'll use the Nelder-Mead simplex based optimiser
 options = pybop.PintsOptions(
     sigma=np.asarray([0.05, 0.5]),
     verbose=True,
@@ -114,8 +103,8 @@ pybop.plot.convergence(optim)
 # Plot the parameter traces
 pybop.plot.parameters(optim)
 
-# Obtain the fully identified pybamm.ParameterValues and
-# generate the time-series prediction using these parameters
+# Obtain the identified pybamm.ParameterValues and generate the time-series prediction
+# using these parameters
 identified_parameter_values = results.parameter_values
 sim = pybamm.Simulation(
     model, parameter_values=identified_parameter_values, experiment=experiment
@@ -129,13 +118,6 @@ ax.plot(dataset["Time [s]"], dataset["Voltage [V]"], label="Target")
 ax.legend()
 plt.show()
 
-
 # Compare identified parameters with true parameters
-print(
-    "True parameters:",
-    [
-        parameter_values["R0 [Ohm]"],
-        parameter_values["Tau1 [s]"],
-    ],
-)
+print("True parameters:", [parameter_values[p.name] for p in parameters])
 print("Estimated parameters:", results.x)

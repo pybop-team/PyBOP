@@ -4,12 +4,18 @@ import pybamm
 
 import pybop
 
-# Import the ECM parameter set from JSON
+"""
+"""
+
+# Define the model
+model = pybamm.equivalent_circuit.Thevenin(options={"number of rc elements": 2})
+
+# Import the ECM parameter values from a JSON file
 # parameter_values = pybamm.ParameterValues.create_from_bpx(
 #     "examples/parameters/initial_ecm_parameters.json"
 # )
 
-# Alternatively, define the initial parameter set with a dictionary
+# Alternatively, define the initial parameter values via a dictionary
 # Add definitions for R's, C's, and initial overpotentials for any additional RC elements
 parameter_values = pybamm.ParameterValues(
     {
@@ -26,22 +32,19 @@ parameter_values = pybamm.ParameterValues(
         "Cell-jig heat transfer coefficient [W/K]": 10,
         "Jig thermal mass [J/K]": 500,
         "Jig-air heat transfer coefficient [W/K]": 10,
-        "Open-circuit voltage [V]": pybamm.equivalent_circuit.Thevenin().default_parameter_values[
+        "Open-circuit voltage [V]": model.default_parameter_values[
             "Open-circuit voltage [V]"
         ],
+        "Entropic change [V/K]": 0.0004,
         "R0 [Ohm]": 0.001,
         "Element-1 initial overpotential [V]": 0,
-        "Element-2 initial overpotential [V]": 0,
         "R1 [Ohm]": 0.0002,
         "R2 [Ohm]": 0.0003,
+        "Element-2 initial overpotential [V]": 0,
         "C1 [F]": 10000,
         "C2 [F]": 5000,
-        "Entropic change [V/K]": 0.0004,
     }
 )
-
-# Define the model
-model = pybamm.equivalent_circuit.Thevenin(options={"number of rc elements": 2})
 
 # Fitting parameters
 parameters = [
@@ -57,19 +60,17 @@ parameters = [
     ),
 ]
 
-
-# Generate data
-sigma = 0.001
-t_eval = np.arange(0, 500, 3)
+# Generate a synthetic dataset
 sim = pybamm.Simulation(model, parameter_values=parameter_values)
-sol = sim.solve(t_eval=[t_eval[0], t_eval[-1]], t_interp=t_eval)
-corrupt_values = sol["Voltage [V]"].data + np.random.normal(0, sigma, len(t_eval))
+t_eval = np.arange(0, 500, 3)
+sol = sim.solve(t_eval=t_eval)
 
-# Form dataset
+sigma = 0.001
+corrupt_values = sol["Voltage [V]"](t_eval) + np.random.normal(0, sigma, len(t_eval))
 dataset = pybop.Dataset(
     {
-        "Time [s]": sol.t,
-        "Current function [A]": sol["Current [A]"].data,
+        "Time [s]": t_eval,
+        "Current function [A]": sol["Current [A]"](t_eval),
         "Voltage [V]": corrupt_values,
     }
 )
@@ -92,11 +93,10 @@ optim = pybop.PSO(problem, options=options)
 # Run optimisation
 results = optim.run()
 
-# Obtain the fully identified pybamm.ParameterValues object
-# These can then be used with normal Pybamm classes
+# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
 identified_parameter_values = results.parameter_values
 sim = pybamm.Simulation(model, parameter_values=identified_parameter_values)
-sol = sim.solve(t_eval=[t_eval[0], t_eval[-1]], t_interp=t_eval)
+sol = sim.solve(t_eval=t_eval)
 
 # Plot the timeseries output
 fig = go.Figure(layout=go.Layout(title="Time-domain comparison", width=800, height=600))
@@ -110,7 +110,9 @@ fig.add_trace(
     )
 )
 
-fig.add_trace(go.Scatter(x=sol.t, y=sol["Voltage [V]"].data, mode="lines", name="Fit"))
+fig.add_trace(
+    go.Scatter(x=t_eval, y=sol["Voltage [V]"](t_eval), mode="lines", name="Fit")
+)
 
 fig.update_layout(
     xaxis_title="Time / s",

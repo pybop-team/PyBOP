@@ -3,50 +3,44 @@ import pybamm
 
 import pybop
 
-# In this example, we introduce Simulated Annealing,
-# a probabilistic optimisation method inspired by the
-# annealing process in metallurgy. It works by
-# iteratively proposing new solutions and accepting them based on both
-# their fitness and a temperature parameter that decreases over time.
-# This allows the algorithm to initially explore broadly and gradually
-# focus on local optimisation as the temperature decreases.
-
+"""
+In this example, we introduce Simulated Annealing, a probabilistic optimisation method
+inspired by the annealing process in metallurgy. It works by iteratively proposing new
+solutions and accepting them based on both their fitness and a temperature parameter that
+decreases over time. This allows the algorithm to initially explore broadly and gradually
+focus on local optimisation as the temperature decreases.
+"""
 
 # Define model and parameter values
-parameter_values = pybamm.ParameterValues("Chen2020")
 model = pybamm.lithium_ion.SPM()
+parameter_values = pybamm.ParameterValues("Chen2020")
 
 # Fitting parameters
 parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
         prior=pybop.Gaussian(0.68, 0.05),
-        initial_value=0.65,
         bounds=[0.4, 0.9],
     ),
     pybop.Parameter(
         "Positive electrode active material volume fraction",
         prior=pybop.Gaussian(0.58, 0.05),
-        initial_value=0.65,
         bounds=[0.4, 0.9],
     ),
 ]
 
-# Generate the synthetic dataset
-sigma = 2e-3
+# Generate a synthetic dataset
+sim = pybamm.Simulation(model, parameter_values=parameter_values)
 t_eval = np.linspace(0, 500, 240)
-sim = pybamm.Simulation(
-    model=model,
-    parameter_values=parameter_values,
-)
-sol = sim.solve(t_eval=[t_eval[0], t_eval[-1]], t_interp=t_eval)
+sol = sim.solve(t_eval=t_eval)
 
+sigma = 2e-3
 dataset = pybop.Dataset(
     {
-        "Time [s]": sol.t,
-        "Voltage [V]": sol["Voltage [V]"].data
+        "Time [s]": t_eval,
+        "Voltage [V]": sol["Voltage [V]"](t_eval)
         + np.random.normal(0, sigma, len(t_eval)),
-        "Current function [A]": sol["Current [A]"].data,
+        "Current function [A]": sol["Current [A]"](t_eval),
     }
 )
 
@@ -66,13 +60,13 @@ options = pybop.PintsOptions(
     sigma=5e-2, verbose=True, max_iterations=120, max_unchanged_iterations=60
 )
 optim = pybop.SimulatedAnnealing(problem, options=options)
-optim.optimiser.cooling_rate = (
-    0.85  # Update the cooling rate to bias towards better solutions (lower exploration)
-)
+
+# Update the cooling rate to bias towards better solutions (lower exploration)
+optim.optimiser.cooling_rate = 0.85
+
 results = optim.run()
 
-# Obtain the fully identified pybamm.ParameterValues object
-# These can then be used with normal Pybamm classes
+# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
 identified_parameter_values = results.parameter_values
 
 # Plot convergence

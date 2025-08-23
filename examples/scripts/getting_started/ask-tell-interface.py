@@ -4,17 +4,26 @@ import pybamm
 
 import pybop
 
-# In this example, we will introduce the ask-tell optimiser interface
-# for the Pints' based optimisers. This interface provides a simple
-# method for flexible optimisation workflows.
+"""
+In this example, we will introduce the ask-tell optimiser interface for the PINTS-based
+optimisers. This interface provides a simple method for flexible optimisation workflows.
+"""
 
 # Define model and parameter values
-parameter_values = pybamm.ParameterValues("Chen2020")
 model = pybamm.lithium_ion.SPM()
+parameter_values = pybamm.ParameterValues("Chen2020")
 
-# Generate data
-sim = pybamm.Simulation(model=model, parameter_values=parameter_values)
+# Generate a synthetic dataset
+sim = pybamm.Simulation(model, parameter_values=parameter_values)
 sol = sim.solve(t_eval=np.linspace(0, 100, 100))
+dataset = pybop.Dataset(
+    {
+        "Time [s]": sol.t,
+        "Current function [A]": sol["Current [A]"].data,
+        "Voltage [V]": sol["Voltage [V]"].data,
+        "Bulk open-circuit voltage [V]": sol["Bulk open-circuit voltage [V]"].data,
+    }
+)
 
 # Fitting parameters
 parameters = [
@@ -27,17 +36,6 @@ parameters = [
         prior=pybop.Gaussian(0.55, 0.05),
     ),
 ]
-
-# Form dataset
-dataset = pybop.Dataset(
-    {
-        "Time [s]": sol.t,
-        "Current function [A]": sol["Current [A]"].data,
-        "Voltage [V]": sol["Voltage [V]"].data,
-        "Bulk open-circuit voltage [V]": sol["Bulk open-circuit voltage [V]"].data,
-    }
-)
-
 
 # Construct the problem class
 builder = (
@@ -56,15 +54,11 @@ for param in parameters:
     builder.add_parameter(param)
 problem = builder.build()
 
-# We construct the optimiser class the same as normal
-# but will be using the `optimiser` attribute directly
-# for this example. This interface works for all
-# non SciPy-based optimisers.
-# Warning: not all arguments are supported via this
-# interface.
+# We construct the optimiser class the same as normal but will be using the `optimiser`
+# attribute directly for this example. This interface works for all PINTS-based
+# optimisers. Warning: not all arguments are supported via this interface.
 options = pybop.PintsOptions(sigma=1e-2)
 optim = pybop.AdamW(problem, options=options)
-
 
 # Create storage vars
 x_best = []
@@ -90,9 +84,8 @@ for i in range(70):
 # Next, we solve the forward model with the PyBaMM Simulation class
 for i, param in enumerate(problem.params):
     parameter_values.update({param.name: x_best[-1][i]})
-sim = pybamm.Simulation(model=model, parameter_values=parameter_values)
+sim = pybamm.Simulation(model, parameter_values=parameter_values)
 sol = sim.solve(t_eval=[dataset["Time [s]"][0], dataset["Time [s]"][-1]])
-
 
 # Plot the timeseries output
 fig, ax = plt.subplots()
