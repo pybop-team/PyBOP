@@ -5,21 +5,23 @@ import pybop
 
 """
 In this example, we perform Maximum A Posteriori (MAP) identification. MAP allows for
-prior knowledge of the parameter values to be incorporated into the optimisation
-process. This is mathematically similar to performing regularized maximum likelihood
-estimation depending on the prior distribution selected.
+prior knowledge of the parameter values to be incorporated into the optimisation process.
+This is mathematically similar to performing regularized maximum likelihood estimation
+depending on the prior distribution selected.
+
+We construct the fitting parameters with corresponding prior distributions that
+encapsulate our knowledge of the parameter values. PyBOP will use these in the
+computation of the posterior distribution when the cost is an instance of
+`pybop.BaseLikelihood` and priors are provided. When prior distributions are used,
+initial guesses are not required, as these are randomly generated from the distribution.
+Initial guesses can be used if you wish to override the random generation.
 """
 
 # Define model and parameter values
 model = pybamm.lithium_ion.SPMe()
 parameter_values = pybamm.ParameterValues("Chen2020")
 
-# We construct the fitting parameters with corresponding prior distributions that
-# encapsulate our knowledge of the parameter values. PyBOP will use these in the
-# computation of the posterior distribution. When prior distributions are used,
-# initial guesses are not required, as these are randomly generated from the
-# distribution. Initial guesses can be used if you wish to override the random
-# generation.
+# Fitting parameters
 parameters = [
     pybop.Parameter(
         "Negative electrode active material volume fraction",
@@ -66,10 +68,9 @@ problem = builder.build()
 # Set optimiser and options
 options = pybop.SciPyDifferentialEvolutionOptions(verbose=True, maxiter=40)
 optim = pybop.SciPyDifferentialEvolution(problem, options=options)
-results = optim.run()
 
-# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
-identified_parameter_values = results.parameter_values
+# Run optimisation
+results = optim.run()
 
 # Plot convergence
 pybop.plot.convergence(optim)
@@ -79,3 +80,25 @@ pybop.plot.parameters(optim)
 
 # Plot the cost landscape with optimisation path
 pybop.plot.contour(optim)
+
+# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
+identified_parameter_values = results.parameter_values
+
+# Plot the timeseries output
+sim = pybamm.Simulation(model, parameter_values=identified_parameter_values)
+sol = sim.solve(t_eval=t_eval)
+
+go = pybop.plot.PlotlyManager().go
+fig = go.Figure(layout=go.Layout(xaxis_title="Time / s", yaxis_title="Voltage / V"))
+fig.add_trace(
+    go.Scatter(
+        x=dataset["Time [s]"],
+        y=dataset["Voltage [V]"],
+        mode="markers",
+        name="Target",
+    )
+)
+fig.add_trace(
+    go.Scatter(x=t_eval, y=sol["Voltage [V]"](t_eval), mode="lines", name="Fit")
+)
+fig.show()
