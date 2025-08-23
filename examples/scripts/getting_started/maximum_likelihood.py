@@ -8,7 +8,7 @@ In this example, we introduce the Maximum Likelihood Estimation (MLE) method. Fo
 time-series model identification MLE is computed for each observation and multiplied
 together. As the likelihood can be numerically small, PyBOP uses the log-likelihood.
 Likelihoods allow for incorporation of a noise model into the identification process
-as well as providing one of the core components in bayesian identification methods.
+as well as providing one of the core components in Bayesian identification methods.
 MLE provides a point-based estimate of the parameter values, with a corresponding
 noise estimate if requested, as shown below.
 """
@@ -63,16 +63,15 @@ problem = builder.build()
 
 # Set optimiser and options
 options = pybop.PintsOptions(
-    sigma=[0.01, 0.01, 0.01],
+    sigma=[0.02, 0.02, 1e-4],
     verbose=True,
     max_iterations=100,
-    max_unchanged_iterations=100,
+    max_unchanged_iterations=30,
 )
 optim = pybop.AdamW(problem, options=options)
-results = optim.run()
 
-# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
-identified_parameter_values = results.parameter_values
+# Run optimisation
+results = optim.run()
 
 # Plot convergence
 pybop.plot.convergence(optim)
@@ -82,3 +81,25 @@ pybop.plot.parameters(optim)
 
 # Plot the cost landscape with optimisation path
 pybop.plot.contour(optim)
+
+# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
+identified_parameter_values = results.parameter_values
+
+# Plot the timeseries output
+sim = pybamm.Simulation(model, parameter_values=identified_parameter_values)
+sol = sim.solve(t_eval=t_eval)
+
+go = pybop.plot.PlotlyManager().go
+fig = go.Figure(layout=go.Layout(xaxis_title="Time / s", yaxis_title="Voltage / V"))
+fig.add_trace(
+    go.Scatter(
+        x=dataset["Time [s]"],
+        y=dataset["Voltage [V]"],
+        mode="markers",
+        name="Target",
+    )
+)
+fig.add_trace(
+    go.Scatter(x=t_eval, y=sol["Voltage [V]"](t_eval), mode="lines", name="Fit")
+)
+fig.show()
