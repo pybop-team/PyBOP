@@ -19,13 +19,11 @@ def noise(sigma):
 
 sto = np.linspace(0, 0.9, 91)
 voltage = ocv_function(sto) + noise(2e-3)
-
-# Create the OCV dataset
 ocv_dataset = pybop.Dataset(
     {"Charge capacity [A.h]": (sto + 0.1) * nom_capacity, "Voltage [V]": voltage}
 )
 
-# Estimate the stoichiometry corresponding to the GITT-OCV
+# Estimate the stoichiometry corresponding to the OCV
 ocv_fit = pybop.OCPCapacityToStoichiometry(ocv_dataset, ocv_function)
 fitted_dataset = ocv_fit()
 
@@ -38,4 +36,6 @@ fig = pybop.plot.trajectories(
         fitted_dataset["Voltage [V]"],
     ],
     trace_names=["Ground truth", "Data vs. stoichiometry"],
+    xaxis_title="Stoichiometry",
+    yaxis_title="Voltage / V",
 )
