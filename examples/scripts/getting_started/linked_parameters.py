@@ -98,24 +98,5 @@ optim.plot_parameters()
 # Plot the cost landscape with optimisation path
 optim.plot_surface()
 
-# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
-identified_parameter_values = results.parameter_values
-
-# Plot the timeseries output
-sim = pybamm.Simulation(model, parameter_values=identified_parameter_values)
-sol = sim.solve(t_eval=t_eval)
-
-go = pybop.plot.PlotlyManager().go
-fig = go.Figure(layout=go.Layout(xaxis_title="Time / s", yaxis_title="Voltage / V"))
-fig.add_trace(
-    go.Scatter(
-        x=dataset["Time [s]"],
-        y=dataset["Voltage [V]"],
-        mode="markers",
-        name="Target",
-    )
-)
-fig.add_trace(
-    go.Scatter(x=t_eval, y=sol["Voltage [V]"](t_eval), mode="lines", name="Fit")
-)
-fig.show()
+# Compare the fit to the data
+pybop.plot.validation(results.x, problem=problem, dataset=dataset)

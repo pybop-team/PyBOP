@@ -169,11 +169,11 @@ optim = pybop.XNES(
 
 results = optim.run()
 
-# Plot the timeseries output
-pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
-
 # Plot convergence
 optim.plot_convergence()
 
 # Plot the parameter traces
 optim.plot_parameters()
+
+# Compare the fit to the data
+pybop.plot.validation(results.x, problem=problem, dataset=dataset)

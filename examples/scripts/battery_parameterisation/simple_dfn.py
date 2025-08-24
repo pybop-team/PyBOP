@@ -79,16 +79,5 @@ identified_parameter_values = results.parameter_values
 # Plot the cost landscape with optimisation path
 optim.plot_surface()
 
-# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
-identified_values = results.parameter_values
-
-# Plot comparison
-sim = pybamm.Simulation(model, parameter_values=identified_values)
-prediction = sim.solve(t_eval=t_eval)
-pybop.plot.trajectories(
-    x=[dataset["Time [s]"], prediction.t],
-    y=[dataset["Voltage [V]"], prediction["Voltage [V]"].data],
-    trace_names=["Ground truth", "Identified model"],
-    xaxis_title="Time / s",
-    yaxis_title="Voltage / V",
-)
+# Compare the fit to the data
+pybop.plot.validation(results.x, problem=problem, dataset=dataset)

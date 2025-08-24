@@ -101,29 +101,5 @@ optim.plot_surface()
 print("True parameters:", [parameter_values[p.name] for p in parameters])
 print(f"Idenitified Parameters: {results.x}")
 
-# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
-identified_parameter_values = results.parameter_values
-
-# Plot the timeseries output
-sim = pybamm.Simulation(model, parameter_values=identified_parameter_values)
-sol = sim.solve(t_eval=t_eval)
-
-go = pybop.plot.PlotlyManager().go
-fig = go.Figure(layout=go.Layout(title="Time-domain comparison", width=800, height=600))
-fig.add_trace(
-    go.Scatter(
-        x=dataset["Time [s]"],
-        y=dataset["Voltage [V]"],
-        mode="markers",
-        name="Target",
-    )
-)
-fig.add_trace(
-    go.Scatter(x=t_eval, y=sol["Voltage [V]"](t_eval), mode="lines", name="Fit")
-)
-fig.update_layout(
-    xaxis_title="Time / s",
-    plot_bgcolor="white",
-    paper_bgcolor="white",
-)
-fig.show()
+# Compare the fit to the data
+pybop.plot.validation(results.x, problem=problem, dataset=dataset)

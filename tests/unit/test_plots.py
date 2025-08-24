@@ -267,3 +267,8 @@ class TestPlots:
 
         # Without inputs
         pybop.plot.nyquist(problem, title="Optimised Comparison")
+
+    def test_validation_plot(self, problem, dataset):
+        pybop.plot.validation(
+            problem.params.get_values(), problem=problem, dataset=dataset
+        )

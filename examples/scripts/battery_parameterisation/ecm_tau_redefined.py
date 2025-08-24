@@ -1,6 +1,5 @@
 import numpy as np
 import pybamm
-from matplotlib import pyplot as plt
 
 import pybop
 
@@ -106,19 +105,5 @@ optim.plot_parameters()
 print("True parameters:", [parameter_values[p.name] for p in parameters])
 print("Estimated parameters:", results.x)
 
-# Obtain the identified pybamm.ParameterValues and generate the time-series prediction
-# using these parameters
-identified_parameter_values = results.parameter_values
-sim = pybamm.Simulation(
-    model, parameter_values=identified_parameter_values, experiment=experiment
-)
-sol2 = sim.solve()
-
-# Plot the time-series prediction and observations
-fig, ax = plt.subplots()
-ax.plot(sol2.t, sol2["Voltage [V]"].data, label="Fit")
-ax.plot(dataset["Time [s]"], dataset["Voltage [V]"], label="Target")
-ax.set_xlabel("Time / s")
-ax.set_ylabel("Voltage / V")
-ax.legend()
-plt.show()
+# Compare the fit to the data
+pybop.plot.validation(results.x, problem=problem, dataset=dataset)

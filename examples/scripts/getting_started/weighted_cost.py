@@ -76,16 +76,15 @@ options = pybop.PintsOptions(
     max_unchanged_iterations=15,
 )
 optim = pybop.XNES(problem, options=options)
+
+# Run optimisation
 results = optim.run()
 
-# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
-identified_parameter_values = results.parameter_values
-
 # Plot convergence
-pybop.plot.convergence(optim)
+optim.plot_convergence()
 
 # Plot the parameter traces
-pybop.plot.parameters(optim)
+optim.plot_parameters()
 
 # Plot the cost landscape with optimisation path
-pybop.plot.surface(optim)
+optim.plot_surface()

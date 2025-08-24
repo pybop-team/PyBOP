@@ -1,5 +1,4 @@
 import numpy as np
-import plotly.graph_objects as go
 import pybamm
 
 import pybop
@@ -43,40 +42,18 @@ optim = pybop.CMAES(problem, options=options)
 # optim.set_population_size(200)
 # optim = pybop.SciPyMinimize(problem)
 # optim = pybop.IRPropPlus(problem)
+
+# Run optimisation
 results = optim.run()
 
-# Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
-identified_parameter_values = results.parameter_values
-sim = pybamm.Simulation(model, parameter_values=identified_parameter_values)
-sol = sim.solve(t_eval=[t_eval[0], t_eval[-1]], t_interp=t_eval)
-
-# Plot the timeseries output
-fig = go.Figure(layout=go.Layout(title="Time-domain comparison", width=800, height=600))
-
-fig.add_trace(
-    go.Scatter(
-        x=dataset["Time [s]"],
-        y=dataset["y_0"],
-        mode="markers",
-        name="Reference_0",
-    )
-)
-
-fig.add_trace(go.Scatter(x=sol.t, y=sol["y_0"].data, mode="lines", name="y_0"))
-
-fig.update_layout(
-    xaxis_title="Time / s",
-    plot_bgcolor="white",
-    paper_bgcolor="white",
-)
-fig.show()
-
 # Plot convergence
-# pybop.plot.convergence(optim)
+optim.plot_convergence()
 
 # Plot the parameter traces
-# pybop.plot.parameters(optim)
+optim.plot_parameters()
 
 # Plot the cost landscape with optimisation path
-pybop.plot.surface(optim)
-# pybop.plot.contour(problem, steps=20)
+optim.plot_surface()
+
+# Compare the fit to the data
+pybop.plot.validation(results.x, problem=problem, signal="y_0", dataset=dataset)

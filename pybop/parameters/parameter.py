@@ -716,7 +716,8 @@ class Parameters:
         ParameterDict
             Dictionary mapping parameter names to values
         """
-        values = values or "current"
+        if values is None:
+            values = "current"
         params = self._parameters.items()
 
         if isinstance(values, str):
