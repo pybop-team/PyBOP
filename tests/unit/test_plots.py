@@ -123,35 +123,35 @@ class TestPlots:
         bounds = np.asarray([[0.5, 0.8], [0.4, 0.7]])
 
         # Plot convergence
-        pybop.plot.convergence(optim)
+        optim.plot_convergence()
         optim.invert_cost = True
-        pybop.plot.convergence(optim)
+        optim.plot_convergence()
 
         # Plot the parameter traces
-        pybop.plot.parameters(optim)
+        optim.plot_parameters()
 
         # Plot the cost landscape with optimisation path
-        pybop.plot.contour(optim, steps=3)
+        optim.plot_contour(steps=3)
 
         # Plot the cost landscape w/ optim & bounds
-        pybop.plot.contour(optim, steps=3, bounds=bounds)
+        optim.plot_contour(steps=3, bounds=bounds)
 
         # Plot the cost landscape using optimisation path
-        pybop.plot.contour(optim, steps=3, use_optim_log=True)
+        optim.plot_contour(steps=3, use_optim_log=True)
 
         # Plot gradient cost landscape
-        pybop.plot.contour(optim, gradient=True, steps=5)
+        optim.plot_contour(gradient=True, steps=5)
 
         # Plot voronoi
-        pybop.plot.surface(optim, normalise=False)
+        optim.plot_surface(normalise=False)
 
         # Plot voronoi w/ bounds
-        pybop.plot.surface(optim, bounds=bounds)
+        optim.plot_surface(bounds=bounds)
 
         with pytest.raises(
             ValueError, match="Lower bounds must be strictly less than upper bounds."
         ):
-            pybop.plot.surface(optim, bounds=[[0.5, 0.8], [0.7, 0.4]])
+            optim.plot_surface(bounds=[[0.5, 0.8], [0.7, 0.4]])
 
     @pytest.fixture
     def posterior_summary(self, likelihood_problem):

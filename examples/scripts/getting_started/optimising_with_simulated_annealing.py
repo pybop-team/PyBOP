@@ -68,10 +68,10 @@ optim.optimiser.cooling_rate = 0.85
 results = optim.run()
 
 # Plot convergence
-pybop.plot.convergence(optim)
+optim.plot_convergence()
 
 # Plot the parameter traces
-pybop.plot.parameters(optim)
+optim.plot_parameters()
 
 # Plot the cost landscape with optimisation path
-pybop.plot.surface(optim)
+optim.plot_surface()

@@ -77,7 +77,7 @@ print(f"Idenitified Parameters: {results.x}")
 identified_parameter_values = results.parameter_values
 
 # Plot the cost landscape with optimisation path
-pybop.plot.surface(optim)
+optim.plot_surface()
 
 # Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
 identified_values = results.parameter_values

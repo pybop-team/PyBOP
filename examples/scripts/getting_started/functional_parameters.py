@@ -94,13 +94,13 @@ optim = pybop.NelderMead(problem, options=options)
 results = optim.run()
 
 # Plot convergence
-pybop.plot.convergence(optim)
+optim.plot_convergence()
 
 # Plot the parameter traces
-pybop.plot.parameters(optim)
+optim.plot_parameters()
 
 # Plot the cost landscape with optimisation path
-pybop.plot.surface(optim)
+optim.plot_surface()
 
 # Obtain the identified pybamm.ParameterValues object for use with PyBaMM classes
 identified_parameter_values = results.parameter_values

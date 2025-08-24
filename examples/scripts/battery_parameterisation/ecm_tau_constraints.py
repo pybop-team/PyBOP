@@ -173,7 +173,7 @@ results = optim.run()
 pybop.plot.problem(problem, problem_inputs=results.x, title="Optimised Comparison")
 
 # Plot convergence
-pybop.plot.convergence(optim)
+optim.plot_convergence()
 
 # Plot the parameter traces
-pybop.plot.parameters(optim)
+optim.plot_parameters()

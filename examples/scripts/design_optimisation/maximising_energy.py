@@ -80,7 +80,7 @@ print(f"Initial gravimetric energy density: {-results.initial_cost:.2f} Wh.kg-1"
 print(f"Optimised gravimetric energy density: {-results.best_cost:.2f} Wh.kg-1")
 
 # Plot the cost landscape with optimisation path
-pybop.plot.surface(optim)
+optim.plot_surface()
 
 # Obtain the optimised pybamm.ParameterValues object for use with PyBaMM classes
 optimised_values = results.parameter_values

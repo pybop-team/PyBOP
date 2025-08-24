@@ -100,7 +100,7 @@ results = optim.run()
 print(results)
 
 # Plot the parameter traces
-pybop.plot.parameters(optim)
+optim.plot_parameters()
 
 # Compare identified parameters with true parameters
 print("True parameters:", [parameter_values[p.name] for p in parameters])

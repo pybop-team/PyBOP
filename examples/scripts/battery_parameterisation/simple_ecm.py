@@ -95,7 +95,7 @@ results = optim.run()
 print(results)
 
 # Plot the cost landscape with optimisation path
-pybop.plot.surface(optim)
+optim.plot_surface()
 
 # Compare to known values
 print("True parameters:", [parameter_values[p.name] for p in parameters])
