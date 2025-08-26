@@ -6,15 +6,13 @@ from pints import IRPropMin as PintsIRPropMin
 from pints import NelderMead as PintsNelderMead
 
 import pybop
-from pybop import (
-    AdamWImpl,
-    BasePintsOptimiser,
-    CuckooSearchImpl,
-    GradientDescentImpl,
-    IRPropPlusImpl,
-    RandomSearchImpl,
-    SimulatedAnnealingImpl,
-)
+from pybop.optimisers._adamw import AdamWImpl
+from pybop.optimisers._cuckoo import CuckooSearchImpl
+from pybop.optimisers._gradient_descent import GradientDescentImpl
+from pybop.optimisers._irprop_plus import IRPropPlusImpl
+from pybop.optimisers._random_search import RandomSearchImpl
+from pybop.optimisers._simulated_annealing import SimulatedAnnealingImpl
+from pybop.optimisers.base_pints_optimiser import BasePintsOptimiser
 from pybop.problems.base_problem import Problem
 
 __all__: list[str] = [
