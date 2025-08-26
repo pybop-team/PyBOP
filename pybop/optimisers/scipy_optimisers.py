@@ -9,6 +9,11 @@ import pybop
 from pybop import BaseOptimiser, OptimisationResult, SciPyEvaluator
 from pybop.problems.base_problem import Problem
 
+__all__: list[str] = [
+    "SciPyMinimize",
+    "SciPyDifferentialEvolution",
+]
+
 
 class BaseSciPyOptimiser(BaseOptimiser):
     """

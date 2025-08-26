@@ -17,6 +17,21 @@ from pybop import (
 )
 from pybop.problems.base_problem import Problem
 
+__all__: list[str] = [
+    "GradientDescent",
+    "AdamW",
+    "IRPropMin",
+    "NelderMead",
+    "SNES",
+    "XNES",
+    "IRPropPlus",
+    "PSO",
+    "CMAES",
+    "CuckooSearch",
+    "RandomSearch",
+    "SimulatedAnnealing",
+]
+
 
 class GradientDescent(BasePintsOptimiser):
     """
