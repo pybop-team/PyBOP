@@ -18,17 +18,17 @@ class BaseSciPyOptimiser(BaseOptimiser):
     ----------
     x0 : array_like
         Initial position from which optimisation will start.
-    bounds : dict, sequence or scipy.optimize.Bounds, optional
-        Bounds for variables as supported by the selected method.
-    **optimiser_kwargs : optional
+    options : pybop.OptimiserOptions
         Valid SciPy option keys and their values.
+    needs_sensitivities : bool
+        Indicates whether the optimiser needs sensitivities.
     """
 
     def __init__(
         self,
         problem: Problem,
+        options: pybop.OptimiserOptions | None,
         needs_sensitivities: bool,
-        options: pybop.OptimiserOptions,
     ):
         self._needs_sensitivities = needs_sensitivities
         self._intermediate_x_search = []
@@ -68,43 +68,6 @@ class BaseSciPyOptimiser(BaseOptimiser):
             raise TypeError(
                 "Bounds provided must be either type dict or SciPy.optimize.bounds object."
             )
-
-    def needs_sensitivities(self) -> bool:
-        """
-        Returns whether the optimiser needs sensitivities.
-
-        Returns
-        -------
-        bool
-            True if the optimiser needs sensitivities, False otherwise.
-        """
-        return self._needs_sensitivities
-
-    def evaluator(self) -> SciPyEvaluator:
-        """
-        Internal method to run the optimisation using a PyBOP optimiser.
-
-        Returns
-        -------
-        result : pybop.Result
-            The result of the optimisation including the optimised parameter values and cost.
-        """
-
-        # Choose method to evaluate
-        if self._needs_sensitivities:
-
-            def fun(x):
-                self.problem.set_params(x)
-                return self.problem.run_with_sensitivities()
-
-        else:
-
-            def fun(x):
-                self.problem.set_params(x)
-                return self.problem.run()
-
-        # Create evaluator object
-        return SciPyEvaluator(fun)
 
 
 @dataclass
@@ -226,7 +189,6 @@ class SciPyMinimize(BaseSciPyOptimiser):
         super().__init__(
             problem=problem, options=options, needs_sensitivities=options.jac
         )
-        self._evaluator = self.evaluator()
         self._cost0 = 1.0
 
     @staticmethod
@@ -246,7 +208,11 @@ class SciPyMinimize(BaseSciPyOptimiser):
         Parse optimiser options.
         """
         self._scipy_bounds = self.scipy_bounds()
-        self._evaluator = self.evaluator()
+        self._evaluator = SciPyEvaluator(
+            problem=self.problem,
+            minimise=True,
+            with_sensitivities=self._needs_sensitivities,
+        )
 
     def cost_wrapper(self, x):
         """
@@ -321,7 +287,7 @@ class SciPyMinimize(BaseSciPyOptimiser):
         )
 
         x0 = self.problem.params.get_initial_values(transformed=True)
-        if self.needs_sensitivities():
+        if self._needs_sensitivities:
             self._cost0 = self._evaluator.evaluate(x0)[0][0]
         else:
             self._cost0 = self._evaluator.evaluate(x0)[0]
@@ -505,7 +471,6 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         options = options or SciPyDifferentialEvolutionOptions()
         self._options_dict = options.to_dict()
         super().__init__(problem=problem, options=options, needs_sensitivities=False)
-        self._evaluator = self.evaluator()
         self._iteration = 0
         self._evaluations = 0
 
@@ -526,7 +491,11 @@ class SciPyDifferentialEvolution(BaseSciPyOptimiser):
         Parse optimiser options.
         """
         self._scipy_bounds = self.scipy_bounds()
-        self._evaluator = self.evaluator()
+        self._evaluator = SciPyEvaluator(
+            problem=self.problem,
+            minimise=True,
+            with_sensitivities=self._needs_sensitivities,
+        )
 
         # Check bounds
         if self._scipy_bounds is None:

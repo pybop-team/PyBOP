@@ -183,7 +183,11 @@ class BasePintsSampler(BaseSampler):
         # Initialise iterations and evaluations
         self._iteration = 0
 
-        evaluator = self._create_evaluator()
+        evaluator = PopulationEvaluator(
+            problem=self.problem,
+            minimise=False,
+            with_sensitivities=self._needs_sensitivities,
+        )
         self._check_initial_phase()
         self._initialise_storage()
 
@@ -267,37 +271,6 @@ class BasePintsSampler(BaseSampler):
         """
         if self._max_iterations is None:
             raise ValueError("At least one stopping criterion must be set.")
-
-    def _create_evaluator(self):
-        """
-        Create appropriate evaluator based on configuration settings.
-        """
-        # Construct function for evaluation
-        if self._needs_sensitivities:
-
-            def fun(x):
-                self.problem.set_params(x)
-                loss, grad = self.problem.run_with_sensitivities()
-
-                # Transform the gradient, for multiple parameters
-                # iterate across each and apply the transformation.
-                if grad.ndim == 1:
-                    jac = self.problem.params.transformation.jacobian(x)
-                    grad = np.dot(grad, jac)
-                else:
-                    for i in range(grad.shape[0]):
-                        jac = self.problem.params.transformation.jacobian(x[i])
-                        grad[i] = np.dot(grad[i], jac)
-
-                return (-loss, -grad)
-
-        else:
-
-            def fun(x):
-                self.problem.set_params(x)
-                return -self.problem.run()
-
-        return PopulationEvaluator(fun)
 
     def _initialise_storage(self):
         # Storage of the received samples

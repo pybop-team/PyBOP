@@ -123,10 +123,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         self._threshold = options.threshold
         self._pints_optimiser = pints_optimiser
         self._optimiser = None
-        super().__init__(
-            problem,
-            options=options,
-        )
+        super().__init__(problem, options=options)
 
     @staticmethod
     def default_options() -> PintsOptions:
@@ -248,27 +245,19 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         # Unchanged iterations counter
         unchanged_iterations = 0
 
-        # Choose method to evaluate
-        if self._needs_sensitivities:
-
-            def fun(x):
-                self.problem.set_params(x)
-                cost, grad = self.problem.run_with_sensitivities()
-                jac = self.problem.params.transformation.jacobian(x)
-                grad = np.matmul(grad, jac)
-                return cost, grad
-
-        else:
-
-            def fun(x):
-                self.problem.set_params(x)
-                return self.problem.run()
-
         # Create evaluator object
         if self._parallel:
-            evaluator = PopulationEvaluator(fun)
+            evaluator = PopulationEvaluator(
+                problem=self.problem,
+                minimise=True,
+                with_sensitivities=self._needs_sensitivities,
+            )
         else:
-            evaluator = SequentialEvaluator(fun)
+            evaluator = SequentialEvaluator(
+                problem=self.problem,
+                minimise=True,
+                with_sensitivities=self._needs_sensitivities,
+            )
 
         # Keep track of current best and best-guess scores.
         fb = fg = np.inf
