@@ -20,13 +20,10 @@ from pybop.problems.base_problem import Problem
 
 class GradientDescent(BasePintsOptimiser):
     """
-    Implements a simple gradient descent optimisation algorithm. Gradient descent is a canonical
-    method selecting a proposal from the previous proposal alongside the corresponding cost
-    gradient wrt. the parameters. Due to the fixed step-size convergence rate commonly decreases
-    as the gradient shrinks when approaching a local minima.
+    Implements a simple gradient descent optimisation algorithm.
 
-    This class extends the gradient descent optimiser from the PINTS library, designed to minimise
-    a scalar function of one or more variables.
+    This class extends the gradient descent optimiser from the PINTS library, designed
+    to minimise a scalar function of one or more variables.
 
     Note that this optimiser does not support boundary constraints.
 
@@ -56,11 +53,13 @@ class GradientDescent(BasePintsOptimiser):
 
 class AdamW(BasePintsOptimiser):
     """
-    Implements the Adaptive Moment Estimation with Weight Decay (AdamW) optimisation algorithm.
+    Implements the Adaptive Moment Estimation with Weight Decay (AdamW)
+    optimisation algorithm in PyBOP.
 
-    This class extends the AdamW optimiser, which is a variant of the Adam optimiser that
-    incorporates weight decay. AdamW is designed to be more robust and stable for training deep
-    neural networks, particularly when using larger learning rates.
+    This class extends the AdamW optimiser, which is a variant of the Adam
+    optimiser that incorporates weight decay. AdamW is designed to be more
+    robust and stable for training deep neural networks, particularly when
+    using larger learning rates.
 
     Note: This optimiser does not support boundary constraints.
 
@@ -90,12 +89,11 @@ class AdamW(BasePintsOptimiser):
 
 class IRPropMin(BasePintsOptimiser):
     """
-    Implements the iRpropMin optimisation algorithm. This method uses gradient information for the
-    proposal direction with a separated step-size.
+    Implements the iRpropMin optimisation algorithm.
 
-    This class inherits from the PINTS IRPropMin class, which is an optimiser that uses resilient
-    backpropagation without weight-backtracking. It is designed to handle problems with large
-    plateaus, noisy gradients, and local minima.
+    This class inherits from the PINTS IRPropMin class, which is an optimiser that
+    uses resilient backpropagation without weight-backtracking. It is designed to handle
+    problems with large plateaus, noisy gradients, and local minima.
 
     Parameters
     ----------
@@ -154,14 +152,11 @@ class IRPropPlus(BasePintsOptimiser):
 
 class PSO(BasePintsOptimiser):
     """
-    Implements a particle swarm optimisation (PSO) algorithm. This method is a heuristic
-    population based method which aims to emulate the dynamics of natural phenomena. This is
-    implemented as "particles" moving around the search space. Global optima convergence is
-    guaranteed in the infinite limit for the number of optimiser iterations.
+    Implements a particle swarm optimisation (PSO) algorithm.
 
-    This class extends the PSO optimiser from the PINTS library. PSO is a metaheuristic
-    optimisation method inspired by the social behavior of birds flocking or fish schooling,
-    suitable for global optimisation problems.
+    This class extends the PSO optimiser from the PINTS library. PSO is a
+    metaheuristic optimisation method inspired by the social behavior of birds
+    flocking or fish schooling, suitable for global optimisation problems.
 
     Parameters
     ----------
@@ -189,13 +184,11 @@ class PSO(BasePintsOptimiser):
 
 class SNES(BasePintsOptimiser):
     """
-    Implements the stochastic natural evolution strategy (SNES) optimisation algorithm. SNES is a
-    population-based heuristic algorithm which constructs proposals based on replicating the
-    natural gradient through evolution based on previous evaluations.
+    Implements the stochastic natural evolution strategy (SNES) optimisation algorithm.
 
-    Inheriting from the PINTS SNES class, this optimiser is an evolutionary algorithm that evolves
-    a probability distribution on the parameter space, guiding the search for the optimum based on
-    the natural gradient of expected fitness.
+    Inheriting from the PINTS SNES class, this optimiser is an evolutionary algorithm
+    that evolves a probability distribution on the parameter space, guiding the search
+    for the optimum based on the natural gradient of expected fitness.
 
     Parameters
     ----------
@@ -224,11 +217,10 @@ class SNES(BasePintsOptimiser):
 class XNES(BasePintsOptimiser):
     """
     Implements the Exponential Natural Evolution Strategy (XNES) optimiser from PINTS.
-    XNES is a population-based heuristic algorithm which samples from a normal distribution for
-    candidate proposals while updating this distribution from the cost landscape.
 
-    XNES is an evolutionary algorithm that samples from a multivariate normal distribution, which
-    is updated iteratively to fit the distribution of successful solutions.
+    XNES is an evolutionary algorithm that samples from a multivariate normal
+    distribution, which is updated iteratively to fit the distribution of successful
+    solutions.
 
     Parameters
     ----------
@@ -256,14 +248,11 @@ class XNES(BasePintsOptimiser):
 
 class NelderMead(BasePintsOptimiser):
     """
-    Implements the Nelder-Mead downhill simplex method from PINTS. Alternatively, known as the
-    downhill simplex method, it's a heuristic method that does not use gradient information.
-    Nelder-Mead is a conventionally robust implementation for optimisation in electrochemical
-    problems.
+    Implements the Nelder-Mead downhill simplex method from PINTS.
 
-    This is a deterministic local optimiser. In most update steps it performs either one
-    evaluation, or two sequential evaluations, so that it will not typically benefit from
-    parallelisation.
+    This is a deterministic local optimiser. In most update steps it performs
+    either one evaluation, or two sequential evaluations, so that it will not
+    typically benefit from parallelisation.
 
     Note that this optimiser does not support boundary constraints.
 
@@ -294,8 +283,6 @@ class NelderMead(BasePintsOptimiser):
 class CMAES(BasePintsOptimiser):
     """
     Adapter for the Covariance Matrix Adaptation Evolution Strategy (CMA-ES) optimiser in PINTS.
-    This is a population-based heuristic method that doesn't use gradient information. CMA-ES is
-    quite robust for general identification / optimisation tasks.
 
     CMA-ES is an evolutionary algorithm for difficult non-linear non-convex optimisation problems.
     It adapts the covariance matrix of a multivariate normal distribution to capture the shape of
@@ -332,13 +319,10 @@ class CMAES(BasePintsOptimiser):
 
 class CuckooSearch(BasePintsOptimiser):
     """
-    Adapter for the Cuckoo Search optimiser in PyBOP. Cuckoo is a population-based algorithm which
-    explores the search space by randomly suggesting candidates "nests" and  abandoning poorly
-    performing "nests" throughout the process.
+    Adapter for the Cuckoo Search optimiser in PyBOP.
 
-    Cuckoo Search is a population-based optimisation algorithm inspired by the brood parasitism of
-    some cuckoo species. It is designed to be simple, efficient, and robust, and is suitable for
-    global optimisation problems.
+    Cuckoo Search is a population-based optimisation algorithm inspired by the brood parasitism of some cuckoo species.
+    It is designed to be simple, efficient, and robust, and is suitable for global optimisation problems.
 
     Parameters
     ----------
@@ -366,12 +350,10 @@ class CuckooSearch(BasePintsOptimiser):
 
 class RandomSearch(BasePintsOptimiser):
     """
-    Adapter for the Random Search optimiser in PyBOP. Random search is a helpful benchmark to
-    compare new optimiser implementations. Random search samples from the parameter space
-    uniformly and stores the current best proposal assessed from the cost landscape.
+    Adapter for the Random Search optimiser in PyBOP.
 
-    Random Search is a simple optimisation algorithm that samples parameter sets randomly within
-    the given boundaries and identifies the best solution based on fitness.
+    Random Search is a simple optimisation algorithm that samples parameter sets randomly
+    within the given boundaries and identifies the best solution based on fitness.
 
     This optimiser has been implemented for benchmarking and comparisons, convergence will be
     better with one of other optimisers in the majority of cases.
@@ -402,20 +384,16 @@ class RandomSearch(BasePintsOptimiser):
 
 class SimulatedAnnealing(BasePintsOptimiser):
     """
-    Adapter for Simulated Annealing optimiser in PyBOP. Simulated Annealing is a probabilistic
-    optimisation method inspired by the annealing process in metallurgy. It works by iteratively
-    proposing new solutions and accepting them based on both their fitness and a temperature
-    parameter that decreases over time.  This allows the algorithm to initially explore broadly
-    and gradually focus on local optimisation as the temperature decreases.
+    Adapter for Simulated Annealing optimiser in PyBOP.
 
     Simulated Annealing is a probabilistic optimisation algorithm inspired by the annealing
-    process in metallurgy. It works by iteratively proposing new solutions and accepting them
-    based on both their fitness and a temperature parameter that decreases over time. This allows
-    the algorithm to initially explore broadly and gradually focus on local optimisation as the
-    temperature decreases.
+    process in metallurgy. It works by iteratively proposing new solutions and accepting
+    them based on both their fitness and a temperature parameter that decreases over time.
+    This allows the algorithm to initially explore broadly and gradually focus on local
+    optimisation as the temperature decreases.
 
-    The algorithm is particularly effective at avoiding local minima and returning a global
-    solution.
+    The algorithm is particularly effective at avoiding local minima and returning a
+    global solution.
 
     Parameters
     ----------
