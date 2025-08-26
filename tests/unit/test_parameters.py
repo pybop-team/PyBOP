@@ -402,12 +402,22 @@ class TestParameters:
         result = params.sample_from_priors()
         assert result is None  # Should return None if any prior is missing
 
-    def test_to_dict_values_length_mismatch(self):
-        """Test to_dict with values array length mismatch."""
+    def test_parameters_to_dict(self):
+        """Test to_dict with different arguments."""
         param1 = pybop.Parameter("param1", initial_value=1.0)
         param2 = pybop.Parameter("param2", initial_value=2.0)
         params = pybop.Parameters([param1, param2])
+        params.update(values=[1.5, 2.5])
 
+        # Check parameter value retrieval in the following order
+        custom = params.to_dict([0.5, 1.5])
+        assert list(custom.values()) == [0.5, 1.5]
+        initial = params.to_dict("initial")
+        assert list(initial.values()) == [1.0, 2.0]
+        current = params.to_dict()
+        assert list(current.values()) == [1.5, 2.5]
+
+        # Test to_dict with values array length mismatch.
         with pytest.raises(
             pybop.ParameterValidationError, match="doesn't match parameter count"
         ):
