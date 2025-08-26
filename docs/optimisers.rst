@@ -3,7 +3,7 @@
 Optimisers
 ****************************
 
-PyBOP has a range of optimisers available for solving the optimisation problems.
+PyBOP has a range of optimisers and samplers available for solving optimisation problems.
 Different optimisers have different strengths and weaknesses.
 See the tables below for summaries, and follow the links for full documentation on each.
 
@@ -17,4 +17,10 @@ SciPy Optimisers
 --------------------------
 
 .. automodsumm:: pybop.optimisers.scipy_optimisers
+   :classes-only:
+
+Pints Samplers
+--------------------------
+
+.. automodsumm:: pybop.samplers.pints_samplers
    :classes-only:

@@ -17,7 +17,7 @@ Welcome to PyBOP, a Python package dedicated to the optimisation and parameteris
   content: "Follow our step-by-step guide to install PyBOP on your system. Discover examples that demonstrate basic tasks through to advanced features."
   link: "quick_start.html"
 - header: "{fas}`magnifying-glass;pst-color-primary` Optimisers"
-  content: "View the selection of optimisers available in PyBOP."
+  content: "View the selection of optimisers and samplers available in PyBOP."
   link: "optimisers.html"
 - header: "{fab}`python;pst-color-primary` Contributing"
   content: "Contribute to the PyBOP project and become a part of our growing community."
