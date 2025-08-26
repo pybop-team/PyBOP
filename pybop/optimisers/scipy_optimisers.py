@@ -197,10 +197,8 @@ class ScipyMinimizeOptions(pybop.OptimiserOptions):
 
 class SciPyMinimize(BaseSciPyOptimiser):
     """
-    Adapts SciPy's minimize function for use as an optimisation strategy.
-
-    This class provides an interface to various scalar minimisation algorithms implemented in SciPy,
-    allowing fine-tuning of the optimisation process through method selection and option configuration.
+    Adapter for various scalar minimisation algorithms implemented in SciPy, allowing fine-tuning
+    of the optimisation process through method selection and option configuration.
 
     Parameters
     ----------
@@ -474,10 +472,8 @@ class SciPyDifferentialEvolutionOptions(pybop.OptimiserOptions):
 
 class SciPyDifferentialEvolution(BaseSciPyOptimiser):
     """
-    Adapts SciPy's differential_evolution function for global optimisation.
-
-    This class provides a global optimisation strategy based on differential evolution, useful for
-    problems involving continuous parameters and potentially multiple local minima.
+    Adapts SciPy's differential_evolution function for global optimisation, useful for problems
+    involving continuous parameters and potentially multiple local minima.
 
     Parameters
     ----------
