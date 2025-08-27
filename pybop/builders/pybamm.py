@@ -214,7 +214,9 @@ class Pybamm(BaseBuilder):
             raise ValueError("A cost must be provided before building")
 
         if self._experiment is None and self._dataset is None:
-            raise ValueError("A dataset must be provided before building")
+            raise ValueError(
+                "A dataset or an experiment must be provided before building"
+            )
 
     def _set_control_variable(self, pybop_parameters: pybop.Parameters) -> None:
         """
