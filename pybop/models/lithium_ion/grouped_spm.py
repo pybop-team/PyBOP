@@ -11,10 +11,6 @@ from pybamm import (
 )
 from pybamm import lithium_ion as pybamm_lithium_ion
 from pybamm import t as pybamm_t
-from pybamm.input.parameters.lithium_ion.Chen2020 import (
-    graphite_LGM50_ocp_Chen2020,
-    nmc_LGM50_ocp_Chen2020,
-)
 from pybamm.models.full_battery_models.lithium_ion.electrode_soh import (
     get_min_max_stoichiometries,
 )
@@ -42,7 +38,6 @@ class GroupedSPM(pybamm_lithium_ion.BaseModel):
         # Unpack model options
         include_double_layer = self.options["surface form"] == "differential"
 
-        pybamm.citations.register("Chen2020")  # for the OCPs
         pybamm.citations.register(
             """
             @article{Hallemans2025,
@@ -188,8 +183,8 @@ class GroupedSPM(pybamm_lithium_ion.BaseModel):
             C_n = Parameter("Negative electrode capacitance [F]")
 
             # Overpotentials
-            eta_n = v_s_n - U_n
-            eta_p = v_s_p - U_p
+            eta_n = PrimaryBroadcast(v_s_n - U_n, "negative electrode")
+            eta_p = PrimaryBroadcast(v_s_p - U_p, "positive electrode")
 
             # Exchange current
             j_n = j0_n * (
@@ -314,33 +309,14 @@ class GroupedSPM(pybamm_lithium_ion.BaseModel):
         pybamm.logger.info(f"Finish building {self.name}")
 
     @property
-    def default_parameter_values(self):
-        parameter_dictionary = {
-            "Nominal cell capacity [A.h]": 3,
-            "Current function [A]": 3,
-            "Initial temperature [K]": 298.15,
-            "Initial SoC": 0.5,
-            "Minimum negative stoichiometry": 0.026,
-            "Maximum negative stoichiometry": 0.911,
-            "Minimum positive stoichiometry": 0.264,
-            "Maximum positive stoichiometry": 0.854,
-            "Lower voltage cut-off [V]": 2.5,
-            "Upper voltage cut-off [V]": 4.2,
-            "Positive electrode OCP [V]": nmc_LGM50_ocp_Chen2020,
-            "Negative electrode OCP [V]": graphite_LGM50_ocp_Chen2020,
-            "Measured cell capacity [A.s]": 3000,
-            "Reference electrolyte capacity [A.s]": 1000,
-            "Positive particle diffusion time scale [s]": 2000,
-            "Negative particle diffusion time scale [s]": 2000,
-            "Positive electrode charge transfer time scale [s]": 500,
-            "Negative electrode charge transfer time scale [s]": 500,
-            "Positive electrode capacitance [F]": 1,
-            "Negative electrode capacitance [F]": 1,
-            "Positive electrode relative thickness": 0.47,
-            "Negative electrode relative thickness": 0.47,
-            "Series resistance [Ohm]": 0.01,
-        }
-        return ParameterValues(values=parameter_dictionary)
+    def default_parameter_values(self) -> ParameterValues:
+        param = ParameterValues("Chen2020")
+        ce0 = param["Initial concentration in electrolyte [mol.m-3]"]
+        T = param["Ambient temperature [K]"]
+        param["Electrolyte conductivity [S.m-1]"] = param[
+            "Electrolyte conductivity [S.m-1]"
+        ](ce0, T)
+        return self.create_grouped_parameters(param)
 
     @property
     def default_quick_plot_variables(self):
