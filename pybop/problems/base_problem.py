@@ -19,25 +19,28 @@ class Problem:
         self._params = pybop_params
         self._param_names = pybop_params.keys()
 
-    def _compute_initial_cost_and_resample(self):
-        # Compute the absolute initial cost and resample if required
+    def get_finite_initial_cost(self):
+        """
+        Compute the absolute initial cost, resampling the initial parameters if needed.
+        """
         x0 = self._params.get_initial_values()
         self.set_params(x0)
-        cost0 = self.run()
+        cost0 = np.abs(self.run())
         nsamples = 0
-        while np.isinf(abs(cost0)) and nsamples < 10:
+        while np.isinf(cost0) and nsamples < 10:
             x0 = self._params.sample_from_priors()
             if x0 is None:
                 break
 
             self.set_params(x0)
-            cost0 = self.run()
+            cost0 = np.abs(self.run())
             nsamples += 1
         if nsamples > 0:
             self._params.update(initial_values=x0)
 
-        if np.isinf(np.abs(cost0)):
+        if np.isinf(cost0):
             raise ValueError("The initial parameter values return an infinite cost.")
+        return cost0
 
     def check_and_store_params(self, p: np.ndarray) -> None:
         """

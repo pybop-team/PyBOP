@@ -34,8 +34,8 @@ class TestClassifier:
         builder.add_parameter(
             pybop.Parameter(
                 "R0 [Ohm]",
-                prior=pybop.Uniform(1e-3, 1e-2),
-                bounds=[1e-4, 1e-2],
+                prior=pybop.Uniform(1e-4, 1e-3),
+                bounds=[1e-4, 1e-3],
             )
         )
         builder.add_cost(
@@ -47,11 +47,11 @@ class TestClassifier:
         options = pybop.GradientDescent.default_options()
         options.max_iterations = 1
         options.sigma = 1e-2
-        results = pybop.GradientDescent(problem, options).run()
+        results = pybop.GradientDescent(problem, options=options).run()
 
         with pytest.raises(
             ValueError,
             match="The function classify_using_hessian currently only works"
             " in the case of 2 parameters, and dx must have the same length as x.",
         ):
-            pybop.classify_using_hessian(problem, results, dx=[0.01])
+            pybop.classify_using_hessian(results, dx=[0.01])

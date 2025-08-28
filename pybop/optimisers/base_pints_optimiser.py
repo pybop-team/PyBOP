@@ -16,6 +16,7 @@ from pybop import (
     PopulationEvaluator,
     SequentialEvaluator,
 )
+from pybop._logging import Logger
 from pybop.problems.base_problem import Problem
 
 
@@ -25,22 +26,22 @@ class PintsOptions(pybop.OptimiserOptions):
     A class to hold PINTS options for the optimisation process.
 
     Attributes:
-            default_max_iterations (int): Default maximum number of iterations (1000).
-            max_iterations (int): Maximum number of iterations for the optimisation. (Default: None)
-            min_iterations (int): Minimum number of iterations required. (Default: 2)
-            sigma (float | np.ndarray | list): Standard deviation or step-size parameter for the optimiser. (Default: 5e-2)
-            max_unchanged_iterations (int): Maximum iterations without improvement before stopping. (Default: 15)
-            use_f_guessed (bool): Whether to use guessed function values. (Default: False)
-            absolute_tolerance (float): Absolute tolerance for convergence. (Default: 1e-5)
-            relative_tolerance (float): Relative tolerance for convergence. (Default: 1e-2)
-            max_evaluations (int | None): Maximum number of function evaluations. (Default: None)
-            threshold (float | None): Threshold value for optimisation stopping criteria. (Default: None)
+        default_max_iterations (int): Default maximum number of iterations (1000).
+        max_iterations (int): Maximum number of iterations for the optimisation. (Default: None)
+        min_iterations (int): Minimum number of iterations required. (Default: 2)
+        sigma (float | np.ndarray | list): Standard deviation or step-size parameter for the optimiser. (Default: 5e-2)
+        max_unchanged_iterations (int): Maximum iterations without improvement before stopping. (Default: 15)
+        use_f_guessed (bool): Whether to use guessed function values. (Default: False)
+        absolute_tolerance (float): Absolute tolerance for convergence. (Default: 1e-5)
+        relative_tolerance (float): Relative tolerance for convergence. (Default: 1e-2)
+        max_evaluations (int | None): Maximum number of function evaluations. (Default: None)
+        threshold (float | None): Threshold value for optimisation stopping criteria. (Default: None)
     """
 
     default_max_iterations = 1000
     max_iterations: int = default_max_iterations
     min_iterations: int = 2
-    sigma: float | np.ndarray | list = 5e-2
+    sigma: float | np.ndarray | list | None = None
     max_unchanged_iterations: int = 15
     use_f_guessed: bool = False
     absolute_tolerance: float = 1e-5
@@ -88,8 +89,8 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
     Parameters
     ----------
     problem: pybop.Problem
-        The problem to be minimized.
-    pints_optimiser : class
+        The problem to be minimised.
+    pints_optimiser : pints.Optimiser
         The PINTS optimiser class to be used.
     options: PintsOptions (optional)
         Options for the PINTS optimiser. If None, default options are used.
@@ -98,50 +99,21 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
     def __init__(
         self,
         problem: Problem,
-        pints_optimiser,
+        pints_optimiser: pints.Optimiser,
         options: PintsOptions | None = None,
     ):
-        # First set attributes to default values
-        self._boundaries = None
-        self._needs_sensitivities = None
-        self._use_f_guessed = None
-        self._callback = None
-        options = options or PintsOptions()
-        self._parallel = issubclass(pints_optimiser, PopulationBasedOptimiser)
-        self.set_min_iterations(options.min_iterations)
-        self.set_max_iterations(options.max_iterations)
-        self._unchanged_max_iterations = options.max_unchanged_iterations
-        self._absolute_tolerance = options.absolute_tolerance
-        self._relative_tolerance = options.relative_tolerance
-        self._sigma0 = options.sigma
-        self._max_evaluations = None
-        self._threshold = None
-        self._evaluations = None
-        self._iterations = None
-        self._use_f_guessed = options.use_f_guessed
-        self._max_evaluations = options.max_evaluations
-        self._threshold = options.threshold
         self._pints_optimiser = pints_optimiser
-        self._optimiser = None
+        options = options or self.default_options()
         super().__init__(problem, options=options)
 
     @staticmethod
     def default_options() -> PintsOptions:
-        """
-        Returns the default options for the PINTS optimiser.
-
-        Returns
-        -------
-        PintsOptions
-            The default options for the PINTS optimiser.
-        """
+        """Returns the default options for the PINTS optimiser."""
         return PintsOptions()
 
     @property
     def max_iterations(self):
-        """
-        Returns the maximum number of iterations for the optimisation.
-        """
+        """Returns the maximum number of iterations for the optimisation."""
         return self._max_iterations
 
     def set_max_iterations(self, iterations: str | int | None = "default"):
@@ -171,6 +143,20 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         """
         Parse optimiser options and create an instance of the PINTS optimiser.
         """
+        # First set attributes to default values
+        options = self._options
+        self._use_f_guessed = None
+        self._callback = None
+        self._parallel = issubclass(self._pints_optimiser, PopulationBasedOptimiser)
+        self.set_min_iterations(options.min_iterations)
+        self.set_max_iterations(options.max_iterations)
+        self._unchanged_max_iterations = options.max_unchanged_iterations
+        self._absolute_tolerance = options.absolute_tolerance
+        self._relative_tolerance = options.relative_tolerance
+        self._use_f_guessed = options.use_f_guessed
+        self._max_evaluations = options.max_evaluations
+        self._threshold = options.threshold
+
         # Convert bounds to PINTS boundaries
         ignored_optimisers = (GradientDescentImpl, AdamWImpl, NelderMead)
         if issubclass(self._pints_optimiser, ignored_optimisers):
@@ -191,6 +177,9 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
                 bounds["lower"], bounds["upper"]
             )
 
+        # Set the covariance / step size parameter
+        self._sigma0 = options.sigma or self.problem.params.get_sigma0(transformed=True)
+
         # Create an instance of the PINTS optimiser class
         if issubclass(self._pints_optimiser, PintsOptimiser):
             x0 = self.problem.params.get_initial_values(transformed=True)
@@ -209,17 +198,37 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         # Check if sensitivities are required
         self._needs_sensitivities = self._optimiser.needs_sensitivities()
 
+        # Create logger and evaluator objects
+        self._logger = Logger(
+            verbose=self.verbose, verbose_print_rate=self.verbose_print_rate
+        )
+        if self._parallel:
+            self._evaluator = PopulationEvaluator(
+                problem=self.problem,
+                minimise=True,
+                with_sensitivities=self._needs_sensitivities,
+                logger=self._logger,
+            )
+        else:
+            self._evaluator = SequentialEvaluator(
+                problem=self.problem,
+                minimise=True,
+                with_sensitivities=self._needs_sensitivities,
+                logger=self._logger,
+            )
+
+    @property
     def name(self):
         """Returns the name of the PINTS optimisation strategy."""
         return self._optimiser.name()
 
     def _run(self) -> OptimisationResult:
         """
-        Internal method to run the optimization using a PINTS optimiser.
+        Internal method to run the optimisation using a PINTS optimiser.
 
         Returns
         -------
-        result : pybop.Result
+        result : pybop.OptimisationResult
             The result of the optimisation including the optimised parameter values and cost.
 
         See Also
@@ -238,26 +247,9 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         if not has_stopping_criterion:
             raise ValueError("At least one stopping criterion must be set.")
 
-        # Iterations and function evaluations
-        iteration = 0
-        evaluations = 0
-
-        # Unchanged iterations counter
+        # Set counters
+        self.iteration = 0
         unchanged_iterations = 0
-
-        # Create evaluator object
-        if self._parallel:
-            evaluator = PopulationEvaluator(
-                problem=self.problem,
-                minimise=True,
-                with_sensitivities=self._needs_sensitivities,
-            )
-        else:
-            evaluator = SequentialEvaluator(
-                problem=self.problem,
-                minimise=True,
-                with_sensitivities=self._needs_sensitivities,
-            )
 
         # Keep track of current best and best-guess scores.
         fb = fg = np.inf
@@ -270,14 +262,14 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         halt_message = None
         try:
             while running:
-                # Ask optimiser for new points
-                xs_raw = self._optimiser.ask()
-                xs: list[np.ndarray] = [x for x in xs_raw]
+                # Update counter
+                self.iteration += 1
 
-                model_xs = [self.problem.params.transformation.to_model(x) for x in xs]
+                # Ask optimiser for new points
+                xs = self._optimiser.ask()
 
                 # Evaluate points
-                fs = evaluator.evaluate(model_xs)
+                fs = self._evaluator.evaluate(xs)
 
                 # Tell optimiser about function values
                 self._optimiser.tell(fs)
@@ -296,39 +288,24 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
                 else:
                     unchanged_iterations += 1
 
-                # Update counts
-                iteration += 1
-                _fs = fs[0][0] if self._needs_sensitivities else fs
-                evaluations += len(_fs)
-                self.logger.log_update(
-                    iterations=iteration,
-                    evaluations=evaluations,
-                    x_search=xs,
-                    x_model=model_xs,
-                    x_search_best=self._optimiser.x_best(),
-                    x_model_best=self.problem.params.transformation.to_model(
-                        self._optimiser.x_best()
-                    ),
-                    cost=_fs,
-                    cost_best=fb[0] if isinstance(fb, np.ndarray) else fb,
-                )
-
                 # Check stopping criteria:
                 # Maximum number of iterations
                 if (
                     self._max_iterations is not None
-                    and iteration >= self._max_iterations
+                    and self.iteration >= self._max_iterations
                 ):
                     running = False
                     halt_message = (
-                        "Maximum number of iterations (" + str(iteration) + ") reached."
+                        "Maximum number of iterations ("
+                        + str(self._max_iterations)
+                        + ") reached."
                     )
 
                 # Maximum number of iterations without significant change
                 halt = (
                     self._unchanged_max_iterations is not None
                     and unchanged_iterations >= self._unchanged_max_iterations
-                    and iteration >= self._min_iterations
+                    and self.iteration >= self._min_iterations
                 )
                 if running and halt:
                     running = False
@@ -341,7 +318,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
                 # Maximum number of evaluations
                 if (
                     self._max_evaluations is not None
-                    and evaluations >= self._max_evaluations
+                    and self._logger.evaluations >= self._max_evaluations
                 ):
                     running = False
                     halt_message = (
@@ -367,7 +344,7 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
                     halt_message = str(error)
 
                 elif self._callback is not None:
-                    self._callback(iteration - 1, self)
+                    self._callback(self.iteration, self)
 
         except (Exception, SystemExit, KeyboardInterrupt):
             # Show last result and exit
@@ -377,33 +354,27 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
             print("Current position:")
 
             # Show current parameters (with any transformation applied)
-            for p in self._optimiser.x_guessed():
+            for p in self._logger.x_model_best:
                 print(PintsStrFloat(p))
             print("-" * 40)
             raise
 
         total_time = time() - start_time
 
-        # Save post-run statistics
-        self._evaluations = evaluations
-        self._iterations = iteration
-
         # Get best parameters
         if self._use_f_guessed:
             x = self._optimiser.x_guessed()
-            f = self._optimiser.f_guessed()
         else:
             x = self._optimiser.x_best()
-            f = self._optimiser.f_best()
+
+        # Log the optimised result as the final evaluation
+        self._evaluator.evaluate([x])
 
         return OptimisationResult(
             problem=self._problem,
-            x=self._problem.params.transformation.to_model(x),
-            best_cost=f[0] if isinstance(f, np.ndarray) else f,
-            initial_cost=self.logger.cost[0],
-            n_iterations=self._iterations,
-            n_evaluations=self._evaluations,
+            logger=self._logger,
             time=total_time,
+            optim_name=self.name,
             message=halt_message,
         )
 
@@ -527,3 +498,11 @@ class BasePintsOptimiser(pybop.BaseOptimiser):
         """
         if isinstance(self._optimiser, PopulationBasedOptimiser):
             self._optimiser.set_population_size(population_size)
+
+    @property
+    def iteration(self):
+        return self._logger.iteration
+
+    @iteration.setter
+    def iteration(self, value):
+        self._logger.iteration = value
