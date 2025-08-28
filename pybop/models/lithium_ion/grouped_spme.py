@@ -411,36 +411,17 @@ class GroupedSPMe(pybamm_lithium_ion.BaseModel):
         pybamm.logger.info(f"Finish building {self.name}")
 
     @property
-    def default_parameter_values(self) -> pybamm.ParameterValues:
-        default_parameter_values = ParameterValues("Chen2020")
-        default_parameter_values.update(
-            {
-                "Initial SoC": 0.9895792289164463,
-                "Minimum negative stoichiometry": 0.026347301451411956,
-                "Maximum negative stoichiometry": 0.9106121196114547,
-                "Minimum positive stoichiometry": 0.2638491800715496,
-                "Maximum positive stoichiometry": 0.8539736661258583,
-                "Measured cell capacity [A.s]": 18551.357924540236,
-                "Reference electrolyte capacity [A.s]": 804.7728857537369,
-                "Positive electrode relative porosity": 0.7127659574468086,
-                "Negative electrode relative porosity": 0.5319148936170213,
-                "Positive particle diffusion time scale [s]": 6812.099999999999,
-                "Negative particle diffusion time scale [s]": 1040.5939393939393,
-                "Positive electrode electrolyte diffusion time scale [s]": 409.0647911810333,
-                "Negative electrode electrolyte diffusion time scale [s]": 634.525818921668,
-                "Separator electrolyte diffusion time scale [s]": 246.15718931437152,
-                "Positive electrode charge transfer time scale [s]": 4656.99415732454,
-                "Negative electrode charge transfer time scale [s]": 27592.046055582912,
-                "Positive electrode capacitance [F]": 0.5934643448275863,
-                "Negative electrode capacitance [F]": 0.6719313993174063,
-                "Cation transference number": 0.2594,
-                "Positive electrode relative thickness": 0.43749999999999994,
-                "Negative electrode relative thickness": 0.4930555555555555,
-                "Series resistance [Ohm]": 0.005412546936672258,
-            },
-            check_already_exists=False,
-        )
-        return default_parameter_values
+    def default_parameter_values(self) -> ParameterValues:
+        param = ParameterValues("Chen2020")
+        ce0 = param["Initial concentration in electrolyte [mol.m-3]"]
+        T = param["Ambient temperature [K]"]
+        param["Electrolyte conductivity [S.m-1]"] = param[
+            "Electrolyte conductivity [S.m-1]"
+        ](ce0, T)
+        param["Electrolyte diffusivity [m2.s-1]"] = param[
+            "Electrolyte diffusivity [m2.s-1]"
+        ](ce0, T)
+        return self.create_grouped_parameters(param)
 
     @property
     def default_quick_plot_variables(self):
@@ -548,7 +529,6 @@ class GroupedSPMe(pybamm_lithium_ion.BaseModel):
 
         # Unpack physical parameters
         F = param["Faraday constant [C.mol-1]"]
-        T = param["Initial temperature [K]"]
         alpha_p = param["Positive electrode active material volume fraction"]
         alpha_n = param["Negative electrode active material volume fraction"]
         c_max_p = param["Maximum concentration in positive electrode [mol.m-3]"]
@@ -594,7 +574,7 @@ class GroupedSPMe(pybamm_lithium_ion.BaseModel):
             L_p / (3 * epsilon_p**b_p)
             + L_s / (epsilon_sep**b_sep)
             + L_n / (3 * epsilon_n**b_n)
-        ) / (sigma_e(ce0, T) * A)
+        ) / (sigma_e * A)
         Rs = (L_p / sigma_p + L_n / sigma_n) / (3 * A)
         R0 = Re + Rs + param["Contact resistance [Ohm]"]
 
@@ -625,9 +605,9 @@ class GroupedSPMe(pybamm_lithium_ion.BaseModel):
         tau_d_p = R_p**2 / D_p
         tau_d_n = R_n**2 / D_n
 
-        tau_e_p = epsilon_sep * L**2 / (epsilon_p**b_p * De(ce0, T))
-        tau_e_n = epsilon_sep * L**2 / (epsilon_n**b_n * De(ce0, T))
-        tau_e_sep = epsilon_sep * L**2 / (epsilon_sep**b_sep * De(ce0, T))
+        tau_e_p = epsilon_sep * L**2 / (epsilon_p**b_p * De)
+        tau_e_n = epsilon_sep * L**2 / (epsilon_n**b_n * De)
+        tau_e_sep = epsilon_sep * L**2 / (epsilon_sep**b_sep * De)
 
         tau_ct_p = F * R_p / (m_p * np.sqrt(ce0))
         tau_ct_n = F * R_n / (m_n * np.sqrt(ce0))

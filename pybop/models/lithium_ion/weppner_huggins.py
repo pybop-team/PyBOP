@@ -7,6 +7,8 @@ class WeppnerHuggins(lithium_ion.BaseModel):
     """
     Represents the Weppner & Huggins model to fit diffusion coefficients to GITT data.
 
+    Note: the working electrode is the positive electrode.
+
     Parameters
     ----------
     name : str, optional
@@ -81,15 +83,16 @@ class WeppnerHuggins(lithium_ion.BaseModel):
         return {}
 
     @property
-    def default_parameter_values(self):
-        parameter_dictionary = {
-            "Current function [A]": 0.0024,
-            "Reference voltage [V]": 0.0024,
-            "Derivative of the OCP wrt stoichiometry [V]": -1,
-            "Theoretical electrode capacity [A.s]": 15,
-            "Particle diffusion time scale [s]": 3000,
-        }
-        return ParameterValues(values=parameter_dictionary)
+    def default_parameter_values(self) -> ParameterValues:
+        param = ParameterValues("Xu2019")
+        return self.create_grouped_parameters(param)
+
+    @property
+    def default_quick_plot_variables(self):
+        return [
+            "Current [A]",
+            "Voltage [V]",
+        ]
 
     @property
     def default_submesh_types(self):
@@ -108,12 +111,12 @@ class WeppnerHuggins(lithium_ion.BaseModel):
         return DummySolver()
 
     @staticmethod
-    def create_grouped_parameters(
-        parameter_values: ParameterValues, electrode: str
-    ) -> ParameterValues:
+    def create_grouped_parameters(parameter_values: ParameterValues) -> ParameterValues:
         """
         Create a parameter set for the Weppner & Huggins model from a
         PyBaMM lithium-ion ParameterValues object.
+
+        Note: the working electrode is the positive electrode.
 
         Parameters
         ----------
@@ -129,23 +132,11 @@ class WeppnerHuggins(lithium_ion.BaseModel):
 
         # Unpack physical parameters
         F = param["Faraday constant [C.mol-1]"]
-        if electrode == "positive":
-            alpha = param["Positive electrode active material volume fraction"]
-            c_max = param["Maximum concentration in positive electrode [mol.m-3]"]
-            L = param["Positive electrode thickness [m]"]
-            R = param["Positive particle radius [m]"]
-            D = param["Positive particle diffusivity [m2.s-1]"]
-        elif electrode == "negative":
-            alpha = param["Negative electrode active material volume fraction"]
-            c_max = param["Maximum concentration in negative electrode [mol.m-3]"]
-            L = param["Negative electrode thickness [m]"]
-            R = param["Negative particle radius [m]"]
-            D = param["Negative particle diffusivity [m2.s-1]"]
-        else:
-            raise ValueError(
-                f"Unrecognised electrode type: {electrode}, "
-                'expecting either "positive" or "negative".'
-            )
+        alpha = param["Positive electrode active material volume fraction"]
+        c_max = param["Maximum concentration in positive electrode [mol.m-3]"]
+        L = param["Positive electrode thickness [m]"]
+        R = param["Positive particle radius [m]"]
+        D = param["Positive particle diffusivity [m2.s-1]"]
 
         # Compute the cell area
         A = param["Electrode height [m]"] * param["Electrode width [m]"]

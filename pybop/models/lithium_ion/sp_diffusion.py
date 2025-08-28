@@ -11,21 +11,18 @@ from pybamm import (
 )
 from pybamm import lithium_ion as pybamm_lithium_ion
 from pybamm import t as pybamm_t
-from pybamm.input.parameters.lithium_ion.Xu2019 import (
-    nmc_ocp_Xu2019,
-)
 
 
 class SPDiffusion(pybamm_lithium_ion.BaseModel):
     """
     Diffusion model for a single, spherical particle representing a half-cell for GITT.
 
+    Note: the working electrode is the positive electrode.
+
     Parameters
     ----------
     name : str, optional
         The name of the model.
-    electrode : str, optional
-        Either "positive" or "negative" depending on the type of electrode (default: "negative").
     **model_kwargs : optional
         Valid PyBaMM model option keys and their values, for example:
         options : dict, optional
@@ -34,15 +31,8 @@ class SPDiffusion(pybamm_lithium_ion.BaseModel):
             If True, the model is built upon creation (default: False).
     """
 
-    def __init__(
-        self,
-        name="Single Particle Diffusion Model",
-        electrode="negative",
-        **model_kwargs,
-    ):
+    def __init__(self, name="Single Particle Diffusion Model", **model_kwargs):
         super().__init__(name=name, **model_kwargs)
-
-        pybamm.citations.register("Xu2019")  # for the OCP
 
         ######################
         # Variables
@@ -101,10 +91,7 @@ class SPDiffusion(pybamm_lithium_ion.BaseModel):
         self.rhs[sto] = pybamm.div(pybamm.grad(sto) / self.tau_d(sto))
 
         # Boundary conditions must be provided for equations with spatial derivatives
-        if electrode == "positive":
-            j = -I / (3 * Q_th)
-        else:
-            j = I / (3 * Q_th)
+        j = -I / (3 * Q_th)
         self.boundary_conditions[sto] = {
             "left": (Scalar(0), "Neumann"),
             "right": (-self.tau_d(sto_surf) * j, "Neumann"),
@@ -181,17 +168,9 @@ class SPDiffusion(pybamm_lithium_ion.BaseModel):
         pybamm.logger.info(f"Finish building {self.name}")
 
     @property
-    def default_parameter_values(self):
-        parameter_dictionary = {
-            "Nominal cell capacity [A.h]": 0.0024,
-            "Current function [A]": 0.0024,
-            "Initial stoichiometry": 0.9,
-            "Electrode OCP [V]": nmc_ocp_Xu2019,
-            "Theoretical electrode capacity [A.s]": 15,
-            "Particle diffusion time scale [s]": 3000,
-            "Series resistance [Ohm]": 1,
-        }
-        return ParameterValues(values=parameter_dictionary)
+    def default_parameter_values(self) -> ParameterValues:
+        param = ParameterValues("Xu2019")
+        return self.create_grouped_parameters(param)
 
     @property
     def default_quick_plot_variables(self):
@@ -221,12 +200,12 @@ class SPDiffusion(pybamm_lithium_ion.BaseModel):
         return {"particle": pybamm.FiniteVolume()}
 
     @staticmethod
-    def create_grouped_parameters(
-        parameter_values: ParameterValues, electrode: str
-    ) -> ParameterValues:
+    def create_grouped_parameters(parameter_values: ParameterValues) -> ParameterValues:
         """
         Create a parameter set for the Single Particle Diffusion Model from a
         PyBaMM lithium-ion ParameterValues object.
+
+        Note: the working electrode is the positive electrode.
 
         Parameters
         ----------
@@ -242,31 +221,15 @@ class SPDiffusion(pybamm_lithium_ion.BaseModel):
 
         # Unpack physical parameters
         F = param["Faraday constant [C.mol-1]"]
-        if electrode == "positive":
-            alpha = param["Positive electrode active material volume fraction"]
-            c_max = param["Maximum concentration in positive electrode [mol.m-3]"]
-            L = param["Positive electrode thickness [m]"]
-            R = param["Positive particle radius [m]"]
-            D = param["Positive particle diffusivity [m2.s-1]"]
-            sto_init = (
-                param["Initial concentration in positive electrode [mol.m-3]"] / c_max
-            )
-            ocp = param["Positive electrode OCP [V]"]
-        elif electrode == "negative":
-            alpha = param["Negative electrode active material volume fraction"]
-            c_max = param["Maximum concentration in negative electrode [mol.m-3]"]
-            L = param["Negative electrode thickness [m]"]
-            R = param["Negative particle radius [m]"]
-            D = param["Negative particle diffusivity [m2.s-1]"]
-            sto_init = (
-                param["Initial concentration in negative electrode [mol.m-3]"] / c_max
-            )
-            ocp = param["Negative electrode OCP [V]"]
-        else:
-            raise ValueError(
-                f"Unrecognised electrode type: {electrode}, "
-                'expecting either "positive" or "negative".'
-            )
+        alpha = param["Positive electrode active material volume fraction"]
+        c_max = param["Maximum concentration in positive electrode [mol.m-3]"]
+        L = param["Positive electrode thickness [m]"]
+        R = param["Positive particle radius [m]"]
+        D = param["Positive particle diffusivity [m2.s-1]"]
+        sto_init = (
+            param["Initial concentration in positive electrode [mol.m-3]"] / c_max
+        )
+        ocp = param["Positive electrode OCP [V]"]
 
         # Compute the cell area
         A = param["Electrode height [m]"] * param["Electrode width [m]"]

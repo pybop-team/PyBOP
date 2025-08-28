@@ -21,8 +21,6 @@ class GITTPulseFit(BaseApplication):
     ----------
     parameter_values : pybamm.ParameterValues
         A parameter set containing values for the parameters of the SPDiffusion model.
-    electrode : str, optional
-        Either "positive" or "negative" depending on the type of electrode.
     cost : pybop.CallableCost, optional
         The cost function to quantify the error (default: pybop.RootMeanSquaredError).
     optimiser : pybop.BaseOptimiser, optional
@@ -36,13 +34,11 @@ class GITTPulseFit(BaseApplication):
     def __init__(
         self,
         parameter_values: pybamm.ParameterValues,
-        electrode: str = "negative",
         cost: pybop.CallableCost | None = None,
         optimiser: pybop.BaseOptimiser | None = None,
         optimiser_options: pybop.OptimiserOptions | None = None,
         verbose: bool = True,
     ):
-        self.electrode = electrode
         self.parameter_values = parameter_values
         self.cost = cost or pybop.costs.pybamm.RootMeanSquaredError
         self.optimiser = optimiser or pybop.CMAES
@@ -50,7 +46,7 @@ class GITTPulseFit(BaseApplication):
         self.verbose = verbose
 
         # Create model
-        self.model = pybop.lithium_ion.SPDiffusion(electrode=self.electrode, build=True)
+        self.model = pybop.lithium_ion.SPDiffusion(build=True)
         self.parameters = self._create_parameters()
         self.inverse_ocp = pybop.InverseOCV(
             self.parameter_values["Electrode OCP [V]"],
@@ -131,8 +127,6 @@ class GITTFit(BaseApplication):
         A nested list of integers representing the indices of each pulse in the dataset.
     parameter_values : pybamm.ParameterValues
         A parameter set containing values for the parameters of the SPDiffusion model.
-    electrode : str, optional
-        Either "positive" or "negative" depending on the type of electrode.
     cost : pybop.CallableCost, optional
         The cost function to quantify the error (default: pybop.RootMeanSquaredError).
     optimiser : pybop.BaseOptimiser, optional
@@ -148,7 +142,6 @@ class GITTFit(BaseApplication):
         gitt_dataset: pybop.Dataset,
         pulse_index: list[np.ndarray],
         parameter_values: pybamm.ParameterValues,
-        electrode: str = "negative",
         cost: pybop.CallableCost | None = None,
         optimiser: pybop.BaseOptimiser | None = None,
         optimiser_options: pybop.OptimiserOptions | None = None,
@@ -157,14 +150,12 @@ class GITTFit(BaseApplication):
         self.gitt_dataset = gitt_dataset
         self.pulse_index = pulse_index
         self.parameter_values = parameter_values.copy()
-        self.electrode = electrode
         self.cost = cost or pybop.costs.pybamm.RootMeanSquaredError
         self.verbose = verbose
 
         # Initialise single pulse fitter
         self.gitt_pulse = GITTPulseFit(
             parameter_values=self.parameter_values,
-            electrode=self.electrode,
             cost=self.cost,
             optimiser=optimiser or pybop.CMAES,
             optimiser_options=optimiser_options,
