@@ -96,7 +96,7 @@ class TestProblem:
         assert costs.shape == (5,)
         assert costs_sens[0].shape == (5,)
         assert costs_sens[1].shape == (5, 2)
-        np.testing.assert_allclose(costs, costs_sens[0], atol=1e-2)
+        np.testing.assert_allclose(costs, costs_sens[0], rtol=1e-5)
 
         # Test sensitivity values against finite difference approximation of the gradient
         x_model = p[0]
@@ -113,7 +113,7 @@ class TestProblem:
             assert np.abs(cost_right - cost_left) > 0
             numerical_grad.append((cost_right - cost_left) / delta)
         numerical_grad = np.asarray(numerical_grad).reshape(-1)
-        np.testing.assert_allclose(costs_sens[1][0], numerical_grad, rtol=6e-4)
+        np.testing.assert_allclose(costs_sens[1][0], numerical_grad, rtol=5e-5)
 
         # Add rebuild parameter
         builder.add_parameter(
