@@ -88,11 +88,9 @@ class TestOptimisation:
         ]
 
     @pytest.fixture
-    def one_param_problem(self, model, one_parameter, dataset, r_solver):
+    def one_param_problem(self, model, one_parameter, dataset):
         builder = pybop.builders.Pybamm()
-        builder.set_simulation(
-            model, parameter_values=model.default_parameter_values, solver=r_solver
-        )
+        builder.set_simulation(model, parameter_values=model.default_parameter_values)
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
         builder.add_cost(
@@ -101,11 +99,9 @@ class TestOptimisation:
         return builder.build()
 
     @pytest.fixture
-    def two_param_problem(self, model, two_parameters, dataset, r_solver):
+    def two_param_problem(self, model, two_parameters, dataset):
         builder = pybop.Pybamm()
-        builder.set_simulation(
-            model, parameter_values=model.default_parameter_values, solver=r_solver
-        )
+        builder.set_simulation(model, parameter_values=model.default_parameter_values)
         builder.set_dataset(dataset)
         for p in two_parameters:
             builder.add_parameter(p)
@@ -115,13 +111,9 @@ class TestOptimisation:
         return builder.build()
 
     @pytest.fixture
-    def two_param_problem_no_bounds(
-        self, model, two_parameters_no_bounds, dataset, r_solver
-    ):
+    def two_param_problem_no_bounds(self, model, two_parameters_no_bounds, dataset):
         builder = pybop.Pybamm()
-        builder.set_simulation(
-            model, parameter_values=model.default_parameter_values, solver=r_solver
-        )
+        builder.set_simulation(model, parameter_values=model.default_parameter_values)
         builder.set_dataset(dataset)
         for p in two_parameters_no_bounds:
             builder.add_parameter(p)

@@ -50,11 +50,9 @@ class TestBuilder:
         return request.param
 
     @pytest.fixture
-    def dataset(self, model_and_params, r_solver):
+    def dataset(self, model_and_params):
         model, parameter_values = model_and_params
-        sim = pybamm.Simulation(
-            model, parameter_values=parameter_values, solver=r_solver
-        )
+        sim = pybamm.Simulation(model, parameter_values=parameter_values)
         sol = sim.solve(t_eval=np.linspace(0, 10, 20))
         _, mask = np.unique(sol.t, return_index=True)
         return pybop.Dataset(
@@ -87,13 +85,11 @@ class TestBuilder:
             }
         )
 
-    def test_builder(self, model_and_params, dataset, r_solver):
+    def test_builder(self, model_and_params, dataset):
         model, parameter_values = model_and_params
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            model, parameter_values=parameter_values, solver=r_solver
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter(
                 "Negative electrode active material volume fraction", initial_value=0.5
@@ -134,7 +130,7 @@ class TestBuilder:
         builder = (
             pybop.builders.Pybamm()
             .set_dataset(dataset)
-            .set_simulation(model, parameter_values=parameter_values, solver=r_solver)
+            .set_simulation(model, parameter_values=parameter_values)
             .add_parameter(
                 pybop.Parameter("Positive particle radius [m]", initial_value=5e-6)
             )
@@ -146,13 +142,11 @@ class TestBuilder:
 
         builder.build()
 
-    def test_builder_likelihoods(self, model_and_params, dataset, r_solver):
+    def test_builder_likelihoods(self, model_and_params, dataset):
         model, parameter_values = model_and_params
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            model, parameter_values=parameter_values, solver=r_solver
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter(
                 "Negative electrode active material volume fraction", initial_value=0.5
@@ -203,13 +197,11 @@ class TestBuilder:
         value4 = problem2.run()
         assert np.not_equal(2 * value1, value4)
 
-    def test_builder_posterior(self, model_and_params, dataset, r_solver):
+    def test_builder_posterior(self, model_and_params, dataset):
         model, parameter_values = model_and_params
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            model, parameter_values=parameter_values, solver=r_solver
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
@@ -245,13 +237,11 @@ class TestBuilder:
         np.testing.assert_allclose(value1s, value1, rtol=5e-4)
         np.testing.assert_allclose(value2s, value2, rtol=5e-4)
 
-    def test_builder_with_rebuild_params(self, model_and_params, dataset, r_solver):
+    def test_builder_with_rebuild_params(self, model_and_params, dataset):
         model, parameter_values = model_and_params
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            model, parameter_values=parameter_values, solver=r_solver
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter("Negative electrode thickness [m]", initial_value=5e-5)
         )
@@ -272,9 +262,7 @@ class TestBuilder:
         value2 = problem.run()
         assert abs((value1 - value2) / value1) > 1e-5
 
-    def test_builder_with_experiment(
-        self, model_and_params, experiment, dataset, r_solver
-    ):
+    def test_builder_with_experiment(self, model_and_params, experiment, dataset):
         model, parameter_values = model_and_params
         parameter_values.update(
             {
@@ -301,7 +289,6 @@ class TestBuilder:
             model,
             parameter_values=parameter_values,
             experiment=experiment,
-            solver=r_solver,
         )
         builder.add_parameter(
             pybop.Parameter(
@@ -324,7 +311,7 @@ class TestBuilder:
         problem.set_params(np.array([0.6, 0.6]))
 
     def test_builder_with_experiment_rebuild_params(
-        self, model_and_params, experiment, dataset, r_solver
+        self, model_and_params, experiment, dataset
     ):
         model, parameter_values = model_and_params
         parameter_values.update(
@@ -352,7 +339,6 @@ class TestBuilder:
             model,
             parameter_values=parameter_values,
             experiment=experiment,
-            solver=r_solver,
         )
         builder.add_parameter(
             pybop.Parameter("Negative particle radius [m]", initial_value=5e-6)
@@ -370,13 +356,11 @@ class TestBuilder:
         assert abs((value1 - value2) / value1) > 1e-5
         problem.set_params(np.array([0.6, 0.6]))
 
-    def test_builder_with_cost_hypers(self, model_and_params, dataset, r_solver):
+    def test_builder_with_cost_hypers(self, model_and_params, dataset):
         model, parameter_values = model_and_params
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            model, parameter_values=parameter_values, solver=r_solver
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter(
                 "Negative electrode active material volume fraction", initial_value=0.5
@@ -453,14 +437,12 @@ class TestBuilder:
         value2 = problem.run()
         assert abs((value1 - value2) / value1) > 1e-5
 
-    def test_thevin_builder(self, dataset, r_solver):
+    def test_thevin_builder(self, dataset):
         model = pybamm.equivalent_circuit.thevenin.Thevenin()
         parameter_values = model.default_parameter_values
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            model, parameter_values=parameter_values, solver=r_solver
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(pybop.Parameter("R0 [Ohm]", initial_value=1e-3))
         builder.add_parameter(pybop.Parameter("R1 [Ohm]", initial_value=3e-3))
         builder.add_cost(
@@ -524,7 +506,7 @@ class TestBuilder:
         with pytest.raises(TypeError, match="Model must be callable"):
             builder.add_fun([2.0])
 
-    def test_build_with_initial_state(self, model_and_params, dataset, r_solver):
+    def test_build_with_initial_state(self, model_and_params, dataset):
         model, parameter_values = model_and_params
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
@@ -532,7 +514,6 @@ class TestBuilder:
             model,
             parameter_values=parameter_values,
             initial_state="4.0 V",
-            solver=r_solver,
         )
         builder.add_parameter(
             pybop.Parameter(
@@ -559,7 +540,6 @@ class TestBuilder:
             model,
             parameter_values=parameter_values,
             initial_state=0.5,
-            solver=r_solver,
         )
         problem2 = builder.build()
         problem2.set_params(np.array([0.5, 0.5]))
@@ -570,7 +550,7 @@ class TestBuilder:
         assert abs((value1 - value2) / value1) > 1e-5
         assert built_model_1 != built_model_2
 
-    def test_build_on_eval(self, model_and_params, dataset, r_solver):
+    def test_build_on_eval(self, model_and_params, dataset):
         model, parameter_values = model_and_params
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
@@ -579,7 +559,6 @@ class TestBuilder:
             parameter_values=parameter_values,
             initial_state=0.5,
             build_on_eval=False,
-            solver=r_solver,
         )
         builder.add_parameter(
             pybop.Parameter(
@@ -608,7 +587,6 @@ class TestBuilder:
             parameter_values=parameter_values,
             initial_state=0.5,
             build_on_eval=True,
-            solver=r_solver,
         )
         problem2 = builder.build()
         problem2.set_params(np.array([0.5, 0.5]))
@@ -640,13 +618,11 @@ class TestBuilder:
             > 0
         )
 
-    def test_multi_fitting_builder(self, model_and_params, dataset, r_solver):
+    def test_multi_fitting_builder(self, model_and_params, dataset):
         model, parameter_values = model_and_params
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            model, parameter_values=parameter_values, solver=r_solver
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter(
                 "Negative electrode active material volume fraction", initial_value=0.6

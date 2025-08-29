@@ -50,15 +50,11 @@ class TestProblem:
             }
         )
 
-    def test_multi_proposal_pybamm_problem(
-        self, model, parameter_values, dataset, r_solver
-    ):
+    def test_multi_proposal_pybamm_problem(self, model, parameter_values, dataset):
         # Create the builder
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            model, parameter_values=parameter_values, solver=r_solver
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
@@ -229,12 +225,10 @@ class TestProblem:
         # Assertion for differing SoC's
         assert not np.allclose(sol1, sol3)
 
-    def test_parameter_sensitivities(self, model, parameter_values, dataset, r_solver):
+    def test_parameter_sensitivities(self, model, parameter_values, dataset):
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            model, parameter_values=parameter_values, solver=r_solver
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",

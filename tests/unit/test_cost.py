@@ -62,9 +62,9 @@ class TestCosts:
             ),
         ]
 
-    def test_pybamm_custom_cost(self, model, dataset, one_parameter, r_solver):
+    def test_pybamm_custom_cost(self, model, dataset, one_parameter):
         builder = pybop.Pybamm()
-        builder.set_simulation(model, solver=r_solver)
+        builder.set_simulation(model)
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
 
@@ -82,7 +82,7 @@ class TestCosts:
         problem_custom.set_params(np.array([0.55]))
 
         builder = pybop.Pybamm()
-        builder.set_simulation(model, solver=r_solver)
+        builder.set_simulation(model)
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
         builder.add_cost(
@@ -103,9 +103,9 @@ class TestCosts:
             pybop.costs.pybamm.SumOfPower,
         ],
     )
-    def test_pybamm_costs(self, pybamm_costs, model, dataset, one_parameter, r_solver):
+    def test_pybamm_costs(self, pybamm_costs, model, dataset, one_parameter):
         builder = pybop.Pybamm()
-        builder.set_simulation(model, solver=r_solver)
+        builder.set_simulation(model)
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
         builder.add_cost(pybamm_costs("Voltage [V]", "Voltage [V]"))
@@ -127,9 +127,7 @@ class TestCosts:
             pybop.costs.pybamm.VolumetricPowerDensity,
         ],
     )
-    def test_pybamm_design_costs(
-        self, pybamm_costs, model, dataset, one_parameter, r_solver
-    ):
+    def test_pybamm_design_costs(self, pybamm_costs, model, dataset, one_parameter):
         parameter_values = pybamm.ParameterValues("Chen2020")
         parameter_values.update(
             {
@@ -159,7 +157,6 @@ class TestCosts:
             model,
             parameter_values=parameter_values,
             experiment=experiment,
-            solver=r_solver,
         )
         builder.add_parameter(one_parameter)
         builder.add_cost(pybamm_costs())
@@ -178,11 +175,9 @@ class TestCosts:
             pybop.costs.pybamm.NegativeGaussianLogLikelihood,
         ],
     )
-    def test_pybamm_costs_with_sigma(
-        self, pybamm_costs, model, dataset, one_parameter, r_solver
-    ):
+    def test_pybamm_costs_with_sigma(self, pybamm_costs, model, dataset, one_parameter):
         builder = pybop.Pybamm()
-        builder.set_simulation(model, solver=r_solver)
+        builder.set_simulation(model)
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
         builder.add_cost(pybamm_costs("Voltage [V]", "Voltage [V]"))
@@ -195,9 +190,9 @@ class TestCosts:
 
         assert higher_cost > lower_cost
 
-    def test_pybamm_scaled_cost(self, model, dataset, one_parameter, r_solver):
+    def test_pybamm_scaled_cost(self, model, dataset, one_parameter):
         builder = pybop.Pybamm()
-        builder.set_simulation(model, solver=r_solver)
+        builder.set_simulation(model)
         builder.set_dataset(dataset)
         builder.add_parameter(one_parameter)
         cost = pybop.costs.pybamm.SumOfPower("Voltage [V]", "Voltage [V]")
@@ -211,10 +206,10 @@ class TestCosts:
 
         assert higher_cost > lower_cost
 
-    def test_multi_cost_weighting(self, model, dataset, one_parameter, r_solver):
+    def test_multi_cost_weighting(self, model, dataset, one_parameter):
         def problem(weights):
             builder = pybop.builders.Pybamm()
-            builder.set_simulation(model, solver=r_solver)
+            builder.set_simulation(model)
             builder.set_dataset(dataset)
             builder.add_parameter(one_parameter)
             builder.add_cost(

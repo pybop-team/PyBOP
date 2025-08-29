@@ -56,12 +56,8 @@ class TestEvaluation:
         )
 
     @pytest.fixture
-    def builder(self, model, parameters, dataset, r_solver):
-        builder = (
-            pybop.builders.Pybamm()
-            .set_simulation(model, solver=r_solver)
-            .set_dataset(dataset)
-        )
+    def builder(self, model, parameters, dataset):
+        builder = pybop.builders.Pybamm().set_simulation(model).set_dataset(dataset)
         for parameter in parameters:
             builder.add_parameter(parameter)
         return builder

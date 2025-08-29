@@ -65,9 +65,9 @@ class TestPintsSamplers:
         return pybamm.lithium_ion.SPM()
 
     @pytest.fixture
-    def log_posterior(self, model, parameters, dataset, r_solver):
+    def log_posterior(self, model, parameters, dataset):
         builder = pybop.Pybamm()
-        builder.set_simulation(model, solver=r_solver)
+        builder.set_simulation(model)
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)
@@ -157,14 +157,14 @@ class TestPintsSamplers:
         assert len(ess) == len(log_posterior.params)
         assert all(e > 0 for e in ess)
 
-    def test_single_parameter_sampling(self, model, dataset, MCMC, chains, r_solver):
+    def test_single_parameter_sampling(self, model, dataset, MCMC, chains):
         p = pybop.Parameter(
             "Negative electrode active material volume fraction",
             prior=pybop.Gaussian(0.6, 0.2),
             bounds=[0.58, 0.62],
         )
         builder = pybop.Pybamm()
-        builder.set_simulation(model, solver=r_solver)
+        builder.set_simulation(model)
         builder.set_dataset(dataset)
         builder.add_parameter(p)
         builder.add_cost(

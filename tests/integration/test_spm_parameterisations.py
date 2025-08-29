@@ -112,11 +112,9 @@ class Test_SPM_Parameterisation:
         )
 
     @pytest.fixture
-    def problem(self, model, parameters, cost_cls, parameter_values, dataset, r_solver):
+    def problem(self, model, parameters, cost_cls, parameter_values, dataset):
         builder = pybop.Pybamm()
-        builder.set_simulation(
-            model, parameter_values=parameter_values, solver=r_solver
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)
@@ -178,7 +176,7 @@ class Test_SPM_Parameterisation:
 
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
-    def test_with_init_soc(self, model, parameters, parameter_values, r_solver):
+    def test_with_init_soc(self, model, parameters, parameter_values):
         experiment = pybamm.Experiment(
             [
                 "Rest for 2 seconds",
@@ -206,7 +204,6 @@ class Test_SPM_Parameterisation:
             model,
             parameter_values=parameter_values,
             initial_state=f"{sol['Voltage [V]'].data[0]} V",
-            solver=r_solver,
         )
         builder.set_dataset(dataset)
         for p in parameters:

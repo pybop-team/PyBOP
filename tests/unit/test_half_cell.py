@@ -71,7 +71,7 @@ class TestHalfCell:
             )
         ]
 
-    def test_fitting(self, model_config, parameters, r_solver):
+    def test_fitting(self, model_config, parameters):
         sim = pybamm.Simulation(
             model_config["model"], parameter_values=model_config["parameter_values"]
         )
@@ -91,7 +91,6 @@ class TestHalfCell:
         builder.set_simulation(
             model_config["model"],
             parameter_values=model_config["parameter_values"],
-            solver=r_solver,
         )
         builder.add_cost(
             pybop.costs.pybamm.MeanAbsoluteError("Voltage [V]", "Voltage [V]")
@@ -107,7 +106,7 @@ class TestHalfCell:
 
         assert initial_cost > ground_truth_cost
 
-    def test_design(self, model_config, parameters, r_solver):
+    def test_design(self, model_config, parameters):
         model = model_config["model"]
         parameter_values = model_config["parameter_values"]
         pybop.builders.cell_mass(parameter_values)
@@ -126,7 +125,6 @@ class TestHalfCell:
             model,
             parameter_values=parameter_values,
             experiment=experiment,
-            solver=r_solver,
         )
         builder.add_cost(pybop.costs.pybamm.GravimetricEnergyDensity())
         design_problem = builder.build()

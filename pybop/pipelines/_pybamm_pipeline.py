@@ -74,7 +74,6 @@ class PybammPipeline:
         self._parameter_names = self.pybop_parameters.keys()
 
         # Configuration
-        self._solver = solver.copy() if solver is not None else model.default_solver
         self._geometry = model.default_geometry
         self._var_pts = var_pts or model.default_var_pts
         self._spatial_methods = model.default_spatial_methods  # allow user input
@@ -85,6 +84,7 @@ class PybammPipeline:
         self._t_interp = t_interp
         self._initial_state = initial_state
         self._cost_names = cost_names
+        self._solver = solver.copy() if solver is not None else RecommendedSolver()
 
         # State
         self._built_model = self._model
