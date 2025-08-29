@@ -45,11 +45,11 @@ class BaseEvaluator(PintsEvaluator):
 
                 # Apply the inverse parameter transformation to the gradient
                 if len(x_model) == 1:
-                    jac = self.transformation.jacobian(x_model[0])
+                    jac = self.transformation.jacobian(x_search[0])
                     grad = np.matmul(grad, jac)
                 else:
                     for i in range(grad.shape[0]):
-                        jac = self.transformation.jacobian(x_model[i])
+                        jac = self.transformation.jacobian(x_search[i])
                         grad[i] = np.matmul(grad[i], jac)
 
                 logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
@@ -75,11 +75,11 @@ class BaseEvaluator(PintsEvaluator):
 
                 # Apply the inverse parameter transformation to the gradient
                 if len(x_model) == 1:
-                    jac = self.transformation.jacobian(x_model[0])
+                    jac = self.transformation.jacobian(x_search[0])
                     grad = np.matmul(grad, jac)
                 else:
                     for i in range(grad.shape[0]):
-                        jac = self.transformation.jacobian(x_model[i])
+                        jac = self.transformation.jacobian(x_search[i])
                         grad[i] = np.matmul(grad[i], jac)
 
                 logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
