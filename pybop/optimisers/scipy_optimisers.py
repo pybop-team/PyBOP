@@ -117,27 +117,22 @@ class ScipyMinimizeOptions(pybop.OptimiserOptions):
     """
     Options for the SciPy minimization method.
 
-    Attributes:
-        method : str
-            The optimisation method to use. Default is 'Nelder-Mead'.
-        jac : bool
-            Method for computing the gradient vector. Default is False.
-        tol : float, optional
-            Tolerance for termination. Default is None.
-        maxiter : int
-            Maximum number of iterations. Default is 1000.
-        disp : bool, optional
-            Set to True to print convergence messages. Default is False.
-        ftol : float, optional
-            Function tolerance for termination. Default is None.
-        gtol : float, optional
-            Gradient tolerance for termination. Default is None.
-        eps : float, optional
-            Step size for finite difference approximation. Default is None.
-        maxcor : int, optional
-            Maximum number of variable metric corrections. Default is None.
-        maxfev : int, optional
-            Maximum number of function evaluations. Default is None.
+    Attributes
+    ----------
+    method : str, optional
+        The optimisation method to use. Default is 'Nelder-Mead'.
+    jac : bool, optional
+        Method for computing the gradient vector. Default is False.
+    tol : float, optional
+        Tolerance for termination. Default is None.
+    maxiter : int, optional
+        Maximum number of iterations. Default is 1000.
+    disp : bool, optional
+        Set to True to print convergence messages. Default is False.
+    constraints : scipy constraint or list of scipy constraints, optional
+        Constraints definition. Only for COBYLA, COBYQA, SLSQP and trust-constr.
+    solver_options : dict, optional
+        A dictionary of additional solver options, not including maxiter or disp.
 
     """
 
@@ -145,12 +140,9 @@ class ScipyMinimizeOptions(pybop.OptimiserOptions):
     jac: bool = False
     tol: float | None = None
     maxiter: int = 1000
-    disp: bool | None = False
-    ftol: float | None = None
-    gtol: float | None = None
-    eps: float | None = None
-    maxcor: int | None = None
-    maxfev: int | None = None
+    disp: bool = False
+    constraints: list | None = None
+    solver_options: dict | None = None
 
     def validate(self):
         super().validate()
@@ -158,8 +150,6 @@ class ScipyMinimizeOptions(pybop.OptimiserOptions):
             raise ValueError("maxiter must be a positive integer.")
         if self.tol is not None and self.tol <= 0:
             raise ValueError("tol must be a positive float.")
-        if self.eps is not None and self.eps <= 0:
-            raise ValueError("eps must be a positive float.")
         if not isinstance(self.jac, bool):
             raise ValueError("jac must be a boolean value.")
 
@@ -172,26 +162,22 @@ class ScipyMinimizeOptions(pybop.OptimiserOptions):
         dict
             Dictionary representation of the options.
         """
+        if self.solver_options is not None:
+            solver_options = self.solver_options.copy()
+        else:
+            solver_options = {}
+        for key in ["maxiter", "disp"]:
+            if getattr(self, key) is not None:
+                solver_options[key] = getattr(self, key)
+
         ret = {
             "method": self.method,
             "jac": self.jac,
-            "options": {
-                "maxiter": self.maxiter,
-            },
+            "options": solver_options,
         }
-        if self.tol is not None:
-            ret["tol"] = self.tol
-        optional_keys = [
-            "disp",
-            "ftol",
-            "gtol",
-            "eps",
-            "maxcor",
-            "maxfev",
-        ]
-        for key in optional_keys:
+        for key in ["tol", "constraints"]:
             if getattr(self, key) is not None:
-                ret["options"][key] = getattr(self, key)
+                ret[key] = getattr(self, key)
         return ret
 
 

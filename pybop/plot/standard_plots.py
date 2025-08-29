@@ -44,7 +44,7 @@ class StandardPlot:
     x : list or np.ndarray, optional
         X-axis data points.
     y : list or np.ndarray, optional
-        Primary Y-axis data points for simulated model output.
+        Primary Y-axis data points.
     layout : Plotly layout, optional
         A layout for the figure, overrides the layout options (default: None).
     layout_options : dict, optional
@@ -124,9 +124,9 @@ class StandardPlot:
         x : list or np.ndarray
             X-axis data points.
         y : list or np.ndarray
-            Primary Y-axis data points for simulated model output.
+            Y-axis data points.
         trace_names : str or list[str], optional
-            Name(s) for the primary trace(s) (default: None).
+            Name(s) for the trace(s) (default: None).
         """
         options = self.trace_options.copy()
         options.update(trace_options)
@@ -164,26 +164,22 @@ class StandardPlot:
         x : list or np.ndarray, optional
             X-axis data points.
         y : list or np.ndarray, optional
-            Primary Y-axis data points for simulated model output.
+            Y-axis data points.
         """
 
-        def normalize_data(data, is_y=False):
+        def normalize_data(data):
             if isinstance(data, np.ndarray):
                 data = np.squeeze(data)
                 return [data] if data.ndim == 1 else data.tolist()
 
             if isinstance(data, list):
-                if not data:
-                    return data
-                if isinstance(data[0], np.ndarray):
-                    return [np.array(data).squeeze()] if is_y else data
-                if isinstance(data[0], list):
+                if not data or isinstance(data[0], np.ndarray | list):
                     return data
                 return [data]
 
             return data
 
-        x, y = normalize_data(x, is_y=False), normalize_data(y, is_y=True)
+        x, y = normalize_data(x), normalize_data(y)
 
         if len(x) > 1 and len(x) != len(y):
             raise ValueError(
@@ -255,7 +251,7 @@ class StandardSubplot(StandardPlot):
     x : list or np.ndarray
         X-axis data points.
     y : list or np.ndarray
-        Primary Y-axis data points for simulated model output.
+        Primary Y-axis data points.
     num_rows : int, optional
         Number of rows of subplots, can be set automatically (default: None).
     num_cols : int, optional

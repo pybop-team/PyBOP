@@ -63,7 +63,6 @@ gitt_fit = pybop.GITTFit(
     gitt_dataset=dataset,
     pulse_index=pulse_index,
     parameter_set=parameter_set,
-    electrode="positive",
 )
 gitt_parameter_data = gitt_fit()
 
@@ -72,11 +71,7 @@ pybop.plot.dataset(gitt_parameter_data, signal=["Particle diffusion time scale [
 pybop.plot.dataset(gitt_parameter_data, signal=["Series resistance [Ohm]"])
 
 # Run the identified model
-model = pybop.lithium_ion.SPDiffusion(
-    parameter_set=parameter_set,
-    electrode="positive",
-    build=True,
-)
+model = pybop.lithium_ion.SPDiffusion(parameter_set=parameter_set, build=True)
 model.set_current_function(dataset)
 fitted_values = model.predict(t_eval=dataset["Time [s]"])
 

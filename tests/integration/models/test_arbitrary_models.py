@@ -49,9 +49,7 @@ class DiffusionModel(pybamm.BaseModel):
 
     @property
     def default_submesh_types(self):
-        return {
-            "my domain": pybamm.MeshGenerator(pybamm.Uniform1DSubMesh),
-        }
+        return {"my domain": pybamm.MeshGenerator(pybamm.Uniform1DSubMesh)}
 
     @property
     def default_var_pts(self):
@@ -59,9 +57,7 @@ class DiffusionModel(pybamm.BaseModel):
 
     @property
     def default_spatial_methods(self):
-        return {
-            "my domain": pybamm.FiniteVolume(),
-        }
+        return {"my domain": pybamm.FiniteVolume()}
 
     @property
     def default_solver(self):
@@ -126,9 +122,9 @@ class SystemODEs(pybamm.BaseModel):
         )
 
 
-class Test_Arbitrary_Models:
+class TestArbitraryModels:
     """
-    A class to test the model arbitrary (i.e. non-battery) models.
+    A class to test the arbitrary (i.e. non-battery) models.
     """
 
     pytestmark = pytest.mark.integration
@@ -148,16 +144,8 @@ class Test_Arbitrary_Models:
         # Create the builder
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            model,
-            parameter_values=model.default_parameter_values,
-        )
-        builder.add_parameter(
-            pybop.Parameter(
-                "a",
-                initial_value=0.1,
-            )
-        )
+        builder.set_simulation(model, parameter_values=model.default_parameter_values)
+        builder.add_parameter(pybop.Parameter("a", initial_value=0.1))
 
         builder.add_cost(pybop.costs.pybamm.SumSquaredError("u at x=0.5", "u at x=0.5"))
 
@@ -165,10 +153,7 @@ class Test_Arbitrary_Models:
         problem = builder.build()
 
         # Optimise
-        optim = pybop.SciPyMinimize(
-            problem,
-        )
-
+        optim = pybop.SciPyMinimize(problem)
         results = optim.run()
 
         np.testing.assert_allclose(results.x, [0.05], atol=1.5e-2)
@@ -211,13 +196,9 @@ class Test_Arbitrary_Models:
         # Build the problem
         problem = builder.build()
 
-        # Solve
-        problem.set_params(np.array([-4, -4]))
-
         # Optimise
         options = pybop.PintsOptions(sigma=0.02)
         optim = pybop.IRPropPlus(problem, options=options)
-
         results = optim.run()
 
         np.testing.assert_allclose(results.x, [-1, -2], atol=1e-2)
@@ -272,14 +253,8 @@ class Test_Arbitrary_Models:
         # Build the problem
         problem = builder.build()
 
-        # Solve
-        problem.set_params(np.array([-1, -1]))
-
         # Optimise
-        optim = pybop.NelderMead(
-            problem,
-        )
-
+        optim = pybop.NelderMead(problem)
         results = optim.run()
 
         np.testing.assert_allclose(results.x, [2, -2], atol=1e-2)
