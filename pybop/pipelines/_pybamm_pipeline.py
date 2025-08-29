@@ -1,5 +1,4 @@
 import multiprocessing as mp
-import platform
 from copy import copy, deepcopy
 from enum import Enum
 
@@ -44,7 +43,6 @@ class PybammPipeline:
         initial_state: float | str | None = None,
         build_on_eval: bool | None = None,
         cost_names: list = None,
-        n_threads: int = None,
     ):
         """
         Parameters
@@ -76,11 +74,11 @@ class PybammPipeline:
         self._parameter_names = self.pybop_parameters.keys()
 
         # Configuration
+        self._solver = solver.copy() or model.default_solver
         self._geometry = model.default_geometry
         self._var_pts = var_pts or model.default_var_pts
         self._spatial_methods = model.default_spatial_methods  # allow user input
         self._submesh_types = model.default_submesh_types  # allow user input
-        self._n_threads = n_threads or self.get_avaliable_thread_count()
 
         # Simulation Params
         self._t_eval = t_eval
@@ -95,23 +93,26 @@ class PybammPipeline:
 
         # Setup
         self.requires_rebuild = self._determine_rebuild_requirement(build_on_eval)
-        self._setup_operating_mode_and_solver(experiment, solver)
+        self._setup_operating_mode_and_solver(experiment)
 
-    def _setup_operating_mode_and_solver(self, experiment, solver) -> None:
-        """Setup operating mode, solver, and related configurations."""
+    def _setup_operating_mode_and_solver(self, experiment) -> None:
+        """Setup operating mode and related configurations."""
         if experiment is not None:
             self._setup_experiment_mode(experiment)
         else:
             self._setup_non_experiment_mode()
 
-        # Create solver (dependent on operating mode)
-        self._solver = self._create_solver(solver)
-
-        # Create the experiment simulation (dependent on solver)
         if self._operating_mode == OperatingMode.WITH_EXPERIMENT:
+            # Create the experiment simulation
             self._sim_experiment = self._create_experiment_simulation(
                 self._parameter_values
             )
+
+        elif self._solver.output_variables == []:
+            # We can speed up the simulations using output_variables
+            """DISABLE until PyBaMM PR 5118 is resolved"""
+            # self._solver.output_variables = self._cost_names or []
+            pass
 
     def _setup_experiment_mode(self, experiment) -> None:
         """Configure for experiment-based operation."""
@@ -131,29 +132,6 @@ class PybammPipeline:
         if self._initial_state is not None:
             return True
         return self._check_geometric_parameters()
-
-    def _create_solver(self, solver: pybamm.BaseSolver | None) -> pybamm.BaseSolver:
-        """Create and configure the solver."""
-        if solver is not None:
-            return solver
-
-        solver_options = {}
-        if platform.system() != "Windows":
-            solver_options["num_threads"] = self._n_threads
-
-        output_vars = (
-            self._cost_names
-            if self._operating_mode == OperatingMode.WITHOUT_EXPERIMENT
-            else None
-        )
-
-        return pybamm.IDAKLUSolver(
-            on_failure="ignore",
-            atol=1e-6,
-            rtol=1e-6,
-            options=solver_options,
-            output_variables=output_vars,
-        )
 
     def _create_experiment_simulation(
         self, parameter_values: pybamm.ParameterValues
@@ -418,7 +396,3 @@ class PybammPipeline:
     @property
     def solver(self):
         return self._solver
-
-    @property
-    def n_threads(self):
-        return self._n_threads

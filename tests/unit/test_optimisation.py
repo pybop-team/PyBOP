@@ -1,5 +1,4 @@
 import io
-import multiprocessing
 import re
 import sys
 
@@ -345,7 +344,6 @@ class TestOptimisation:
 
         # Test parallelism
         assert optim._parallel is True
-        assert optim._problem.pipeline._n_threads == multiprocessing.cpu_count()
 
         #  Optimiser without parallelism
         optim = pybop.GradientDescent(one_param_problem)

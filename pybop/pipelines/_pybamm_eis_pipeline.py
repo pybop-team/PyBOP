@@ -7,7 +7,7 @@ from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
 
 from pybop import Inputs, Parameters, SymbolReplacer
-from pybop._pybamm_pipeline import PybammPipeline
+from pybop.pipelines._pybamm_pipeline import PybammPipeline
 
 
 class PybammEISPipeline:

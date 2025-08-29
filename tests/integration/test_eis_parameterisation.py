@@ -4,7 +4,7 @@ import pybammeis
 import pytest
 
 import pybop
-import pybop._pybamm_eis_pipeline
+import pybop.pipelines._pybamm_eis_pipeline
 
 
 class TestEISParameterisation:

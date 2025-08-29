@@ -2,10 +2,10 @@ import pybamm
 
 import pybop
 from pybop import Parameter as PybopParameter
-from pybop._pybamm_pipeline import PybammPipeline
 from pybop.builders.base import BaseBuilder
 from pybop.builders.utils import cell_mass, set_formation_concentrations
 from pybop.costs.pybamm import BaseLikelihood, DesignCost, PybammCost
+from pybop.pipelines._pybamm_pipeline import PybammPipeline
 
 
 class TIME_PARAMS:
@@ -19,7 +19,6 @@ class Pybamm(BaseBuilder):
         self._model: pybamm.BaseModel | None = None
         self._solver: pybamm.BaseSolver | None = None
         self._parameter_values: pybamm.ParameterValues | None = None
-        self._n_threads = None
         self._initial_state: float | str | None = None
         self._experiment: pybamm.Experiment | None = None
         self._costs: list[PybammCost] = []
@@ -27,16 +26,6 @@ class Pybamm(BaseBuilder):
         self.domain = "Time [s]"
         self.is_posterior = False
         super().__init__()
-
-    def set_n_threads(self, threads: int) -> "Pybamm":
-        """
-        Directly sets the number of threads to use for parallel computing.
-        If the number of threads is not set, the total number of CPU cores is
-        used.
-        """
-        self._n_threads = threads
-
-        return self
 
     def set_simulation(
         self,
@@ -180,7 +169,6 @@ class Pybamm(BaseBuilder):
             initial_state=self._initial_state,
             build_on_eval=self._build_on_eval,
             cost_names=cost_names,
-            n_threads=self._n_threads,
         )
 
         # Build the pipeline
