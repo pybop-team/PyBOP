@@ -77,9 +77,11 @@ class TestClassification:
         )
 
     @pytest.fixture
-    def problem(self, model, parameters, parameter_values, dataset):
+    def problem(self, model, parameters, parameter_values, dataset, r_solver):
         builder = pybop.Pybamm()
-        builder.set_simulation(model, parameter_values=parameter_values)
+        builder.set_simulation(
+            model, parameter_values=parameter_values, solver=r_solver
+        )
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)
@@ -121,7 +123,7 @@ class TestClassification:
         else:
             raise Exception(f"Please add a check for these values: {x}")
 
-    def test_insensitive_classify_using_hessian(self, parameter_values):
+    def test_insensitive_classify_using_hessian(self, parameter_values, r_solver):
         true_values = np.asarray([0.001, 0.0])
         param_R0_a = pybop.Parameter(
             "R0_a [Ohm]",
@@ -166,7 +168,9 @@ class TestClassification:
             [param_R0_a, param_R0_b],
         ]:
             builder = pybop.Pybamm()
-            builder.set_simulation(model, parameter_values=parameter_values)
+            builder.set_simulation(
+                model, parameter_values=parameter_values, solver=r_solver
+            )
             builder.set_dataset(dataset)
             for p in parameters:
                 builder.add_parameter(p)

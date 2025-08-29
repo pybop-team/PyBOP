@@ -83,9 +83,11 @@ class TestTransformation:
         )
 
     @pytest.fixture
-    def problem(self, model, parameters, parameter_values, dataset):
+    def problem(self, model, parameters, parameter_values, dataset, r_solver):
         builder = pybop.Pybamm()
-        builder.set_simulation(model, parameter_values=parameter_values)
+        builder.set_simulation(
+            model, parameter_values=parameter_values, solver=r_solver
+        )
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)

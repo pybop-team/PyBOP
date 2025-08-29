@@ -3,6 +3,8 @@ import numpy as np
 import plotly
 import pytest
 
+import pybop
+
 plotly.io.renderers.default = None
 matplotlib.use("Template")
 
@@ -82,3 +84,8 @@ def pytest_collection_modifyitems(config, items):
 @pytest.fixture(autouse=True)
 def set_random_seed():
     np.random.seed(40)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def r_solver(request):
+    return pybop.RecommendedSolver()

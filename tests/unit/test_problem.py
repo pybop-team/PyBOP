@@ -2,7 +2,6 @@ import numpy as np
 import pybamm
 import pybammeis
 import pytest
-from pybamm import IDAKLUSolver
 
 import pybop
 
@@ -51,14 +50,14 @@ class TestProblem:
             }
         )
 
-    def test_multi_proposal_pybamm_problem(self, model, parameter_values, dataset):
+    def test_multi_proposal_pybamm_problem(
+        self, model, parameter_values, dataset, r_solver
+    ):
         # Create the builder
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(
-            model,
-            parameter_values=parameter_values,
-            solver=pybamm.IDAKLUSolver(atol=1e-6, rtol=1e-6),
+            model, parameter_values=parameter_values, solver=r_solver
         )
         builder.add_parameter(
             pybop.Parameter(
@@ -146,7 +145,9 @@ class TestProblem:
         builder = pybop.builders.PybammEIS()
         builder.set_dataset(eis_dataset)
         builder.set_simulation(
-            model, parameter_values=parameter_values, initial_state=initial_state
+            model,
+            parameter_values=parameter_values,
+            initial_state=initial_state,
         )
 
         for param in parameters:
@@ -228,13 +229,11 @@ class TestProblem:
         # Assertion for differing SoC's
         assert not np.allclose(sol1, sol3)
 
-    def test_parameter_sensitivities(self, model, parameter_values, dataset):
+    def test_parameter_sensitivities(self, model, parameter_values, dataset, r_solver):
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(
-            model,
-            parameter_values=parameter_values,
-            solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
+            model, parameter_values=parameter_values, solver=r_solver
         )
         builder.add_parameter(
             pybop.Parameter(

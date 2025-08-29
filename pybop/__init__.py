@@ -25,8 +25,7 @@ script_path = path.dirname(__file__)
 #
 # Utilities
 #
-from ._utils import add_spaces, FailedVariable, FailedSolution, SymbolReplacer
-
+from ._utils import add_spaces, FailedVariable, FailedSolution, SymbolReplacer, RecommendedSolver
 
 #
 # Dataset class

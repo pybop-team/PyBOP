@@ -1,7 +1,6 @@
 import numpy as np
 import pybamm
 import pytest
-from pybamm import IDAKLUSolver
 
 import pybop
 
@@ -51,12 +50,10 @@ class TestBuilder:
         return request.param
 
     @pytest.fixture
-    def dataset(self, model_and_params):
+    def dataset(self, model_and_params, r_solver):
         model, parameter_values = model_and_params
         sim = pybamm.Simulation(
-            model,
-            parameter_values=parameter_values,
-            solver=IDAKLUSolver(atol=1e-6, rtol=1e-6),
+            model, parameter_values=parameter_values, solver=r_solver
         )
         sol = sim.solve(t_eval=np.linspace(0, 10, 20))
         _, mask = np.unique(sol.t, return_index=True)
@@ -94,10 +91,7 @@ class TestBuilder:
         model, parameter_values = model_and_params
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            model,
-            parameter_values=parameter_values,
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter(
                 "Negative electrode active material volume fraction", initial_value=0.5
@@ -159,10 +153,7 @@ class TestBuilder:
         model, parameter_values = model_and_params
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            model,
-            parameter_values=parameter_values,
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter(
                 "Negative electrode active material volume fraction", initial_value=0.5
@@ -217,10 +208,7 @@ class TestBuilder:
         model, parameter_values = model_and_params
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            model,
-            parameter_values=parameter_values,
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
@@ -260,10 +248,7 @@ class TestBuilder:
         model, parameter_values = model_and_params
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            model,
-            parameter_values=parameter_values,
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter("Negative electrode thickness [m]", initial_value=5e-5)
         )
@@ -382,10 +367,7 @@ class TestBuilder:
         model, parameter_values = model_and_params
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            model,
-            parameter_values=parameter_values,
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter(
                 "Negative electrode active material volume fraction", initial_value=0.5
@@ -421,10 +403,7 @@ class TestBuilder:
         model.options["surface form"] = "differential"
         builder = pybop.builders.PybammEIS()
         builder.set_dataset(eis_dataset)
-        builder.set_simulation(
-            model,
-            parameter_values=parameter_values,
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter(
                 "Negative electrode active material volume fraction", initial_value=0.5
@@ -449,10 +428,7 @@ class TestBuilder:
         model.options["surface form"] = "differential"
         builder = pybop.builders.PybammEIS()
         builder.set_dataset(eis_dataset)
-        builder.set_simulation(
-            model,
-            parameter_values=parameter_values,
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter("Negative electrode thickness [m]", initial_value=5e-5)
         )
@@ -473,10 +449,7 @@ class TestBuilder:
         parameter_values = model.default_parameter_values
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            model,
-            parameter_values=parameter_values,
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(pybop.Parameter("R0 [Ohm]", initial_value=1e-3))
         builder.add_parameter(pybop.Parameter("R1 [Ohm]", initial_value=3e-3))
         builder.add_cost(
@@ -656,10 +629,7 @@ class TestBuilder:
         model, parameter_values = model_and_params
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
-        builder.set_simulation(
-            model,
-            parameter_values=parameter_values,
-        )
+        builder.set_simulation(model, parameter_values=parameter_values)
         builder.add_parameter(
             pybop.Parameter(
                 "Negative electrode active material volume fraction", initial_value=0.6

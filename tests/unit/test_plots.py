@@ -77,9 +77,9 @@ class TestPlots:
         pybop.plot.dataset(dataset)
 
     @pytest.fixture
-    def problem(self, model, parameters, dataset):
+    def problem(self, model, parameters, dataset, r_solver):
         builder = pybop.Pybamm()
-        builder.set_simulation(model)
+        builder.set_simulation(model, solver=r_solver)
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)
@@ -89,9 +89,9 @@ class TestPlots:
         return builder.build()
 
     @pytest.fixture
-    def likelihood_problem(self, model, parameters, dataset):
+    def likelihood_problem(self, model, parameters, dataset, r_solver):
         builder = pybop.Pybamm()
-        builder.set_simulation(model)
+        builder.set_simulation(model, solver=r_solver)
         builder.set_dataset(dataset)
         for p in parameters:
             builder.add_parameter(p)
@@ -191,9 +191,9 @@ class TestPlots:
         # Plot parameters
         pybop.plot.parameters(result)
 
-    def test_contour_incorrect_number_of_parameters(self, model, dataset):
+    def test_contour_incorrect_number_of_parameters(self, model, dataset, r_solver):
         builder = pybop.Pybamm()
-        builder.set_simulation(model)
+        builder.set_simulation(model, solver=r_solver)
         builder.set_dataset(dataset)
         builder.add_parameter(
             pybop.Parameter(

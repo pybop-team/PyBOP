@@ -12,7 +12,7 @@ class TestClassifier:
     pytestmark = pytest.mark.unit
 
     @pytest.fixture
-    def problem(self):
+    def problem(self, r_solver):
         model = pybamm.equivalent_circuit.Thevenin()
         experiment = pybamm.Experiment(
             [
@@ -29,7 +29,7 @@ class TestClassifier:
             }
         )
         builder = pybop.Pybamm()
-        builder.set_simulation(model)
+        builder.set_simulation(model, solver=r_solver)
         builder.set_dataset(dataset)
         builder.add_parameter(
             pybop.Parameter(
