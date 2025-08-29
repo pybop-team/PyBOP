@@ -169,9 +169,9 @@ from .samplers.pints_samplers import (
 )
 
 #
-# Classification classes
+# Analysis
 #
-from ._classification import classify_using_hessian
+from .analysis.classification import classify_using_hessian
 
 #
 # Applications

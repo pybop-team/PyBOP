@@ -1,8 +1,7 @@
 import numpy as np
-from SALib.analyze import sobol
-from SALib.sample.sobol import sample
 
 from pybop import Parameters
+from pybop.analysis.sensitivity_analysis import sensitivity_analysis
 
 
 class Problem:
@@ -81,40 +80,18 @@ class Problem:
         """
         return self._param_names
 
-    def sensitivity_analysis(self, n_samples: int = 256):
+    def sensitivity_analysis(self, n_samples: int = 256) -> dict:
         """
         Computes the parameter sensitivities on the combined cost function using
-        SOBOL analyse from the SALib module [1].
+        SOBOL analysis. See pybop.analysis.sensitivity_analysis for more details.
 
         Parameters
         ----------
         n_samples : int, optional
-            Number of samples for SOBOL sensitivity analysis,
-            performs best as order of 2, i.e. 128, 256, etc.
-
-        References
-        ----------
-        .. [1] Iwanaga, T., Usher, W., & Herman, J. (2022). Toward SALib 2.0:
-               Advancing the accessibility and interpretability of global sensitivity
-               analyses. Socio-Environmental Systems Modelling, 4, 18155. doi:10.18174/sesmo.18155
-
-        Returns
-        -------
-        Sensitivities : dict
+            Number of samples for SOBOL sensitivity analysis, performs best as a
+            power of 2, i.e. 128, 256, etc.
         """
-
-        salib_dict = {
-            "names": list(self._params.keys()),
-            "bounds": self._params.get_bounds_array(),
-            "num_vars": len(self._params),
-        }
-
-        # Create samples, compute cost
-        param_values = sample(salib_dict, n_samples)
-        self.set_params(param_values)
-        costs = self.run()
-
-        return sobol.analyze(salib_dict, costs, calc_second_order=False)
+        return sensitivity_analysis(problem=self, n_samples=n_samples)
 
     def run(self) -> np.ndarray:
         """
