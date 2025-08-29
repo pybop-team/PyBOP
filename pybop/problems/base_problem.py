@@ -116,12 +116,6 @@ class Problem:
 
         return sobol.analyze(salib_dict, costs, calc_second_order=False)
 
-    def observed_fisher(self, x: np.ndarray) -> np.ndarray:
-        """
-        Returns the observed Fisher information matrix.
-        """
-        raise NotImplementedError
-
     def run(self) -> np.ndarray:
         """
         Evaluates the underlying simulation and cost function using the

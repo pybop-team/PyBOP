@@ -461,7 +461,6 @@ class TestOptimisation:
             f"  Best result from {results.n_runs} run(s).\n"
             f"  Initial parameters: {results.x0}\n"
             f"  Optimised parameters: {results.x}\n"
-            f"  Diagonal Fisher Information entries: {None}\n"
             f"  Best cost: {results.best_cost}\n"
             f"  Optimisation time: {results.time} seconds\n"
             f"  Number of iterations: {results.n_iterations}\n"
@@ -527,7 +526,6 @@ class TestOptimisation:
         assert results.optim_name == "Test name"
         assert results.x[0] == 1e-3
         assert results.n_iterations == 1
-        assert results.fisher is None
         assert results.message == "Test message"
 
         # Test list-like functionality with "best" properties
