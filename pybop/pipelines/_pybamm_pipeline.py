@@ -370,7 +370,7 @@ class PybammPipeline:
     @property
     def parameter_values(self):
         return self._parameter_values
-    
+
     @property
     def initial_state(self):
         return self._initial_state
