@@ -96,7 +96,7 @@ class PybammPipeline:
         self._parameter_values = parameter_values or model.default_parameter_values
 
         # Simulation Params
-        self.initial_state = initial_state
+        self._initial_state = initial_state
         self._t_eval = [t_eval[0], t_eval[-1]] if t_eval is not None else None
         self._t_interp = t_interp
 
@@ -118,11 +118,9 @@ class PybammPipeline:
 
     def _determine_rebuild_requirement(self, build_on_eval: bool | None) -> bool:
         """Determine if model needs rebuilding on each evaluation."""
-        if build_on_eval is not None:
-            return build_on_eval
-        if self.initial_state is not None:
+        if self._initial_state is not None or self._check_geometric_parameters():
             return True
-        return self._check_geometric_parameters()
+        return build_on_eval
 
     def _setup_operating_mode_and_solver(self, experiment) -> None:
         """Setup operating mode and related configurations."""
@@ -231,9 +229,9 @@ class PybammPipeline:
         model = self._model.new_copy()
         geometry = copy(self._geometry)
 
-        if self.initial_state is not None:
+        if self._initial_state is not None:
             self._parameter_values.set_initial_state(
-                self.initial_state, param=model.param, options=model.options
+                self._initial_state, param=model.param, options=model.options
             )
 
         self._parameter_values.process_geometry(geometry)
@@ -308,7 +306,7 @@ class PybammPipeline:
             self._parameter_values.update(params)
 
             sim = self._create_experiment_simulation()
-            solutions.append(sim.solve())
+            solutions.append(sim.solve(initial_soc=self._initial_state))
 
         return solutions
 
@@ -318,7 +316,7 @@ class PybammPipeline:
 
         for params in inputs:
             solution = self._sim_experiment.solve(
-                inputs=params, initial_soc=self.initial_state
+                inputs=params, initial_soc=self._initial_state
             )
             solutions.append(solution)
 
@@ -372,6 +370,10 @@ class PybammPipeline:
     @property
     def parameter_values(self):
         return self._parameter_values
+    
+    @property
+    def initial_state(self):
+        return self._initial_state
 
     @property
     def solver(self):
