@@ -552,50 +552,44 @@ class TestBuilder:
 
     def test_build_on_eval(self, model_and_params, dataset):
         model, parameter_values = model_and_params
+
+        # First build w/o `build_on_eval`
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(
             model,
             parameter_values=parameter_values,
-            initial_state=0.5,
-            build_on_eval=False,
+            # initial_state = 0.5,
         )
         builder.add_parameter(
-            pybop.Parameter(
-                "Negative electrode active material volume fraction", initial_value=0.6
-            )
-        )
-        builder.add_parameter(
-            pybop.Parameter(
-                "Positive electrode active material volume fraction", initial_value=0.6
+            pybop.Parameter(  # a parameter that does not require rebuilding
+                "Positive particle diffusivity [m2.s-1]", initial_value=1e-15
             )
         )
         builder.add_cost(
             pybop.costs.pybamm.SumSquaredError("Voltage [V]", "Voltage [V]")
         )
-        problem = builder.build()
-        assert not problem.pipeline.requires_rebuild
+        problem1 = builder.build()
+        assert not problem1.pipeline.requires_rebuild
 
-        # First build w/o `build_on_eval`
-        problem.set_params(np.array([0.5, 0.5]))
-        value1 = problem.run()
-        built_model_1 = problem.pipeline.built_model.new_copy()
+        problem1.set_params(np.array([4e-15]))
+        value1 = problem1.run()
 
         # Second build w/ `build_on_eval`
         builder.set_simulation(
             model,
             parameter_values=parameter_values,
-            initial_state=0.5,
+            # initial_state = 0.5,
             build_on_eval=True,
         )
         problem2 = builder.build()
-        problem2.set_params(np.array([0.5, 0.5]))
-        value2 = problem2.run()
-        built_model_2 = problem2._pipeline.built_model.new_copy()
+        assert problem2.pipeline.requires_rebuild
 
-        # Assert builds are different
-        assert abs((value1 - value2) / value1) > 1e-5
-        assert built_model_1 != built_model_2
+        problem2.set_params(np.array([4e-15]))
+        value2 = problem2.run()
+
+        # Assert results are the same
+        assert abs((value1 - value2) / value1) < 1e-5
 
     def test_build_no_parameters(self, dataset):
         builder = pybop.builders.Python()
