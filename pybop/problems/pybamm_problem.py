@@ -29,6 +29,9 @@ class PybammProblem(Problem):
         )
         self._domain = "Time [s]"
         self.is_posterior = is_posterior
+        self._has_sensitivities = (
+            False if pybamm_pipeline.initial_state is not None else True
+        )
 
         # Set up priors if we're using the posterior
         if self.is_posterior and pybop_params is not None:

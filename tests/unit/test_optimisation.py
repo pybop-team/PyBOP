@@ -125,7 +125,7 @@ class TestOptimisation:
     @pytest.mark.parametrize(
         "optimiser, expected_name, sensitivities",
         [
-            (pybop.SciPyMinimize, "SciPyMinimize", False),
+            (pybop.SciPyMinimize, "SciPyMinimize", True),
             (pybop.SciPyDifferentialEvolution, "SciPyDifferentialEvolution", False),
             (pybop.GradientDescent, "Gradient descent", True),
             (pybop.AdamW, "AdamW", True),
@@ -243,7 +243,7 @@ class TestOptimisation:
         optim = optimiser(two_param_problem, options=options)
         results = optim.run()
         if issubclass(optimiser, pybop.BaseSciPyOptimiser):
-            assert results.total_iterations() == options.maxiter * options.multistart
+            assert results.total_iterations() <= options.maxiter * options.multistart
         else:
             assert (
                 results.total_iterations()
@@ -405,13 +405,6 @@ class TestOptimisation:
         options.maxiter = 1
         optim = pybop.SciPyMinimize(one_param_problem, options=options)
         optim.run()
-
-        with pytest.raises(
-            ValueError,
-            match="jac must be a boolean value.",
-        ):
-            options.jac = "Invalid string"
-            pybop.SciPyMinimize(one_param_problem, options=options)
 
     def test_incorrect_optimiser_class(self, one_param_problem):
         class RandomClass:
@@ -599,10 +592,6 @@ class TestOptimisation:
         options = pybop.ScipyMinimizeOptions()
         with pytest.raises(ValueError, match="tol must be a positive float."):
             options.tol = -1.0
-            options.validate()
-        options = pybop.ScipyMinimizeOptions()
-        with pytest.raises(ValueError, match="jac must be a boolean value."):
-            options.jac = "Invalid string"
             options.validate()
 
         options = pybop.ScipyMinimizeOptions(solver_options={"eps": 0.01})

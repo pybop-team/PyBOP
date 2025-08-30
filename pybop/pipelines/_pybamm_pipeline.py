@@ -23,10 +23,9 @@ class PybammPipeline:
     2. A pybamm model needs to be built multiple times with different parameter values,
         for the case where some of the parameters are geometric parameters which change the mesh
 
-    To enable 2., you can pass a list of parameter names to the constructor, these parameters will be set
-    before the model is built each time (using the `build` method).
-    To enable 1, you can just pass an empty list. The model will be built once and subsequent calls
-    to the `build` method will not change the model.
+    The logic for (1) and (2) occurs within the composed PybammPipeline and happens automatically.
+    To override this logic, the argument `build_on_eval` can be set to `True` which will force (2) to
+    occur.
     """
 
     def __init__(
@@ -97,7 +96,7 @@ class PybammPipeline:
         self._parameter_values = parameter_values or model.default_parameter_values
 
         # Simulation Params
-        self._initial_state = initial_state
+        self.initial_state = initial_state
         self._t_eval = [t_eval[0], t_eval[-1]] if t_eval is not None else None
         self._t_interp = t_interp
 
@@ -121,7 +120,7 @@ class PybammPipeline:
         """Determine if model needs rebuilding on each evaluation."""
         if build_on_eval is not None:
             return build_on_eval
-        if self._initial_state is not None:
+        if self.initial_state is not None:
             return True
         return self._check_geometric_parameters()
 
@@ -232,9 +231,9 @@ class PybammPipeline:
         model = self._model.new_copy()
         geometry = copy(self._geometry)
 
-        if self._initial_state is not None:
+        if self.initial_state is not None:
             self._parameter_values.set_initial_state(
-                self._initial_state, param=model.param, options=model.options
+                self.initial_state, param=model.param, options=model.options
             )
 
         self._parameter_values.process_geometry(geometry)
@@ -319,7 +318,7 @@ class PybammPipeline:
 
         for params in inputs:
             solution = self._sim_experiment.solve(
-                inputs=params, initial_soc=self._initial_state
+                inputs=params, initial_soc=self.initial_state
             )
             solutions.append(solution)
 
@@ -353,9 +352,6 @@ class PybammPipeline:
                 processed_solutions.append(solution)
 
         return processed_solutions
-
-    def set_parameter_value(self, key, value) -> None:
-        self._parameter_values[key] = value
 
     @property
     def built_model(self):

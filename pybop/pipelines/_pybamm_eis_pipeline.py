@@ -19,10 +19,9 @@ class PybammEISPipeline:
     2. A pybamm model needs to be built multiple times with different parameter values,
         for the case where some of the parameters are geometric parameters which change the mesh
 
-    To enable 2., you can pass a list of parameter names to the constructor, these parameters will be set
-    before the model is built each time (using the `build` method).
-    To enable 1, you can just pass an empty list. The model will be built once and subsequent calls
-    to the `build` method will not change the model.
+    The logic for (1) and (2) occurs within the composed PybammPipeline and happens automatically.
+    To override this logic, the argument `build_on_eval` can be set to `True` which will force (2) to
+    occur.
     """
 
     def __init__(
@@ -91,7 +90,7 @@ class PybammEISPipeline:
         # Set-up model for EIS
         self._f_eval = f_eval
         self.set_up_for_eis(self._pybamm_pipeline.model)
-        self._pybamm_pipeline.set_parameter_value("Current function [A]", 0)
+        self._pybamm_pipeline.parameter_values["Current function [A]"] = 0
 
         # Initialise
         self.M = None
@@ -144,8 +143,8 @@ class PybammEISPipeline:
         # Create the FunctionControl submodel and extract variables
         external_circuit_variables = pybamm.external_circuit.FunctionControl(
             model.param,
-            None,
-            model.options,
+            external_circuit_function=None,
+            options=model.options,
             control="algebraic",
         ).get_fundamental_variables()
 
@@ -174,7 +173,7 @@ class PybammEISPipeline:
 
     def initialise_eis_pipeline(self, inputs: Inputs) -> None:
         """
-        Initialise the Electrochemical Impedance Spectroscopy (EIS) simulation.
+        Initialise the electrochemical impedance spectroscopy (EIS) simulation.
         This method sets up the mass matrix and solver, converts inputs to the appropriate format,
         extracts the necessary attributes from the model, and prepares matrices for the simulation.
 

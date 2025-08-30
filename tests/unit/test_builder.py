@@ -437,7 +437,7 @@ class TestBuilder:
         value2 = problem.run()
         assert abs((value1 - value2) / value1) > 1e-5
 
-    def test_thevin_builder(self, dataset):
+    def test_thevenin_builder(self, dataset):
         model = pybamm.equivalent_circuit.thevenin.Thevenin()
         parameter_values = model.default_parameter_values
         builder = pybop.builders.Pybamm()
