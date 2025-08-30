@@ -25,33 +25,33 @@ class PybammEIS(builders.BaseBuilder):
         var_pts: dict | None = None,
         spatial_methods: dict | None = None,
         discretisation_kwargs: dict | None = None,
-        build_on_eval: bool | None = None,
+        build_on_eval: bool = False,
     ) -> None:
         """
         Adds a simulation for the optimisation problem.
 
         Parameters
         ----------
-        model : pybamm.BaseModel
+        model: pybamm.BaseModel
             The PyBaMM model to be used.
-        parameter_values : pybamm.ParameterValues
+        parameter_values: pybamm.ParameterValues
             The parameters to be used in the model.
         initial_state: float | str
             The initial state of charge or voltage for the battery model. If float, it will be represented
             as SoC and must be in range 0 to 1. If str, it will be represented as voltage and needs to be in
             the format: "3.4 V".
-        geometry : pybamm.Geometry, optional
+        geometry: pybamm.Geometry, optional
             The geometry upon which to solve the model.
-        submesh_types : dict, optional
+        submesh_types: dict, optional
             A dictionary of the types of submesh to use on each subdomain.
-        var_pts : dict, optional
+        var_pts: dict, optional
             A dictionary of the number of points used by each spatial variable.
-        spatial_methods : dict, optional
+        spatial_methods: dict, optional
             A dictionary of the types of spatial method to use on each domain (e.g. pybamm.FiniteVolume).
-        discretisation_kwargs : dict (optional)
+        discretisation_kwargs: dict, optional
             Any keyword arguments to pass to the Discretisation class.
             See :class:`pybamm.Discretisation` for details.
-        build_on_eval : bool
+        build_on_eval: bool
             Boolean to determine if the model will be rebuilt every evaluation. If `initial_state` is provided,
             the model will be rebuilt every evaluation unless `build_on_eval` is `False`, in which case the model
             is built with the parameter values from construction only.

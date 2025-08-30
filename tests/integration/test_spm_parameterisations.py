@@ -151,7 +151,7 @@ class Test_SPM_Parameterisation:
             options.sigma = 2e-2
 
         # Set sigma0 and create optimiser
-        optim = optimiser(problem, options)
+        optim = optimiser(problem, options=options)
         if isinstance(optim, pybop.SimulatedAnnealing):
             optim.optimiser.cooling_rate = 0.8  # Cool quickly
             optim.set_max_unchanged_iterations(50)

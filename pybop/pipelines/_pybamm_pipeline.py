@@ -44,46 +44,46 @@ class PybammPipeline:
         var_pts: dict | None = None,
         spatial_methods: dict | None = None,
         discretisation_kwargs: dict | None = None,
-        build_on_eval: bool | None = None,
+        build_on_eval: bool = False,
     ):
         """
         Parameters
         ---------
-        model : pybamm.BaseModel
+        model: pybamm.BaseModel
             The PyBaMM model to be used.
-        cost_names : list[str]
+        cost_names: list[str]
             A list of the cost variable names.
-        pybop_parameters : pybop.Parameters
+        pybop_parameters: pybop.Parameters
             The parameters to optimise.
-        parameter_values : pybamm.ParameterValues, optional
+        parameter_values: pybamm.ParameterValues, optional
             The parameters to be used in the model.
         initial_state: float | str, optional
             The initial state of charge or voltage for the battery model. If float, it will be
             represented as SoC and must be in range 0 to 1. If str, it will be represented as voltage and
             needs to be in the format: "3.4 V".
-        t_eval : np.ndarray, optional
+        t_eval: np.ndarray, optional
             The time points to stop the solver at. These points should be used to inform the solver of
             discontinuities in the solution.
-        t_interp : np.ndarray, optional
+        t_interp: np.ndarray, optional
             The time points at which to interpolate the solution. If None, no interpolation will be done.
-        experiment : pybamm.Experiment | string | list, optional
+        experiment: pybamm.Experiment | string | list, optional
             The experimental conditions under which to solve the model. If a string is passed, the
             experiment is constructed as `pybamm.Experiment([experiment])`. If a list is passed, the
             experiment is constructed as `pybamm.Experiment(experiment)`.
-        solver : pybamm.BaseSolver, optional
+        solver: pybamm.BaseSolver, optional
             The solver to use to solve the model. If None, uses `pybop.RecommendedSolver`.
-        geometry : pybamm.Geometry, optional
+        geometry: pybamm.Geometry, optional
             The geometry upon which to solve the model.
-        submesh_types : dict, optional
+        submesh_types: dict, optional
             A dictionary of the types of submesh to use on each subdomain.
-        var_pts : dict, optional
+        var_pts: dict, optional
             A dictionary of the number of points used by each spatial variable.
-        spatial_methods : dict, optional
+        spatial_methods: dict, optional
             A dictionary of the types of spatial method to use on each domain (e.g. pybamm.FiniteVolume).
-        discretisation_kwargs : dict (optional)
+        discretisation_kwargs: dict, optional
             Any keyword arguments to pass to the Discretisation class.
             See :class:`pybamm.Discretisation` for details.
-        build_on_eval : bool
+        build_on_eval: bool
             Boolean to determine if the model will be rebuilt every evaluation. If `initial_state` is
             provided, the model will be rebuilt every evaluation unless `build_on_eval` is `False`, in
             which case the model is built with the parameter values from construction only.
