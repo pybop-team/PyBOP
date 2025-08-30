@@ -20,6 +20,11 @@ class PybammEIS(builders.BaseBuilder):
         model: pybamm.BaseModel,
         parameter_values: pybamm.ParameterValues | None = None,
         initial_state: float | str | None = None,
+        geometry: pybamm.Geometry | None = None,
+        submesh_types: dict | None = None,
+        var_pts: dict | None = None,
+        spatial_methods: dict | None = None,
+        discretisation_kwargs: dict | None = None,
         build_on_eval: bool | None = None,
     ) -> None:
         """
@@ -31,30 +36,40 @@ class PybammEIS(builders.BaseBuilder):
             The PyBaMM model to be used.
         parameter_values : pybamm.ParameterValues
             The parameters to be used in the model.
-        solver : pybamm.BaseSolver
-            The solver to be used. If None, the idaklu solver will be used.
         initial_state: float | str
             The initial state of charge or voltage for the battery model. If float, it will be represented
             as SoC and must be in range 0 to 1. If str, it will be represented as voltage and needs to be in
             the format: "3.4 V".
+        geometry : pybamm.Geometry, optional
+            The geometry upon which to solve the model.
+        submesh_types : dict, optional
+            A dictionary of the types of submesh to use on each subdomain.
+        var_pts : dict, optional
+            A dictionary of the number of points used by each spatial variable.
+        spatial_methods : dict, optional
+            A dictionary of the types of spatial method to use on each domain (e.g. pybamm.FiniteVolume).
+        discretisation_kwargs : dict (optional)
+            Any keyword arguments to pass to the Discretisation class.
+            See :class:`pybamm.Discretisation` for details.
         build_on_eval : bool
             Boolean to determine if the model will be rebuilt every evaluation. If `initial_state` is provided,
             the model will be rebuilt every evaluation unless `build_on_eval` is `False`, in which case the model
             is built with the parameter values from construction only.
         """
         self._model = model.new_copy()
+        self._parameter_values = (
+            parameter_values.copy()
+            if parameter_values
+            else model.default_parameter_values
+        )
         self._initial_state = initial_state
-        self._build_on_eval = build_on_eval
-        if parameter_values is None:
-            parameter_values = model.default_parameter_values
-        elif isinstance(parameter_values, pybamm.ParameterValues):
-            parameter_values = parameter_values.copy()
-        else:
-            raise TypeError(
-                "parameter_values must be a pybamm.ParameterValues instance or None"
-            )
-        self._parameter_values = parameter_values
         self._solver = pybamm.CasadiSolver()
+        self._geometry = geometry
+        self._submesh_types = submesh_types
+        self._var_pts = var_pts
+        self._spatial_methods = spatial_methods
+        self._discretisation_kwargs = discretisation_kwargs
+        self._build_on_eval = build_on_eval
 
     def add_cost(
         self, cost: Callable | CallableCost, weight: float = 1.0
@@ -120,11 +135,16 @@ class PybammEIS(builders.BaseBuilder):
         # Construct the pipeline
         pipeline = PybammEISPipeline(
             model,
-            self._dataset[self.domain],
-            param,
-            pybop_parameters,
-            self._solver,
+            f_eval=self._dataset[self.domain],
+            pybop_parameters=pybop_parameters,
+            parameter_values=param,
             initial_state=self._initial_state,
+            solver=self._solver,
+            geometry=self._geometry,
+            submesh_types=self._submesh_types,
+            var_pts=self._var_pts,
+            spatial_methods=self._spatial_methods,
+            discretisation_kwargs=self._discretisation_kwargs,
             build_on_eval=self._build_on_eval,
         )
 

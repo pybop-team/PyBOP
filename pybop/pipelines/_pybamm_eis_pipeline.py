@@ -29,11 +29,15 @@ class PybammEISPipeline:
         self,
         model: pybamm.BaseModel,
         f_eval: np.ndarray | list[float],
-        parameter_values: pybamm.ParameterValues | None = None,
         pybop_parameters: Parameters | None = None,
-        solver: pybamm.BaseSolver | None = None,
-        var_pts: dict | None = None,
+        parameter_values: pybamm.ParameterValues | None = None,
         initial_state: float | str | None = None,
+        solver: pybamm.BaseSolver | None = None,
+        geometry: pybamm.Geometry | None = None,
+        submesh_types: dict | None = None,
+        var_pts: dict | None = None,
+        spatial_methods: dict | None = None,
+        discretisation_kwargs: dict | None = None,
         build_on_eval: bool | None = None,
     ):
         """
@@ -41,23 +45,46 @@ class PybammEISPipeline:
         ---------
         model : pybamm.BaseModel
             The PyBaMM model to be used.
-        parameter_values : pybamm.ParameterValues
-            The parameters to be used in the model.
-        solver : pybamm.BaseSolver
-            The solver to be used. If None, the idaklu solver will be used.
         f_eval : list
             The frequencies at which to evaluate the impedance.
-        var_pts : dict
-            The number of points at which to discretise the model.
+        pybop_parameters : pybop.Parameters
+            The parameters to optimise.
+        parameter_values : pybamm.ParameterValues
+            The parameters to be used in the model.
+        initial_state: float | str
+            The initial state of charge or voltage for the battery model. If float, it will be represented
+            as SoC and must be in range 0 to 1. If str, it will be represented as voltage and needs to be in
+            the format: "3.4 V".
+        solver : pybamm.BaseSolver
+            The solver to be used. If None, the idaklu solver will be used.
+        geometry : pybamm.Geometry, optional
+            The geometry upon which to solve the model.
+        submesh_types : dict, optional
+            A dictionary of the types of submesh to use on each subdomain.
+        var_pts : dict, optional
+            A dictionary of the number of points used by each spatial variable.
+        spatial_methods : dict, optional
+            A dictionary of the types of spatial method to use on each domain (e.g. pybamm.FiniteVolume).
+        discretisation_kwargs : dict (optional)
+            Any keyword arguments to pass to the Discretisation class.
+            See :class:`pybamm.Discretisation` for details.
+        build_on_eval : bool
+            Boolean to determine if the model will be rebuilt every evaluation. If `initial_state` is provided,
+            the model will be rebuilt every evaluation unless `build_on_eval` is `False`, in which case the model
+            is built with the parameter values from construction only.
         """
 
         self._pybamm_pipeline = PybammPipeline(
             model,
-            parameter_values=parameter_values,
             pybop_parameters=pybop_parameters,
-            solver=solver,
-            var_pts=var_pts,
+            parameter_values=parameter_values,
             initial_state=initial_state,
+            solver=solver,
+            geometry=geometry,
+            submesh_types=submesh_types,
+            var_pts=var_pts,
+            spatial_methods=spatial_methods,
+            discretisation_kwargs=discretisation_kwargs,
             build_on_eval=build_on_eval,
         )
 
