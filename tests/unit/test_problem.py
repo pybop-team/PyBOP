@@ -219,7 +219,7 @@ class TestProblem:
             "domain",
             initial_state=0.5,
         )
-        problem_with_initial_state.set_params(np.array([0.75, 0.665]))
+        problem_with_initial_state.set_params(np.array([7e-5, 6e-5]))
         sol3 = problem_with_initial_state.run()
 
         # Assertion for differing SoC's

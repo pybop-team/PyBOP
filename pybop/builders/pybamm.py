@@ -198,7 +198,8 @@ class Pybamm(BaseBuilder):
         )
 
         # Build the pipeline
-        pipeline.build()
+        if not pipeline.requires_rebuild:
+            pipeline.build()
 
         return pybop.PybammProblem(
             pybamm_pipeline=pipeline,

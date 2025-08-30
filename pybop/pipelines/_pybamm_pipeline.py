@@ -99,6 +99,7 @@ class PybammPipeline:
         self._initial_state = initial_state
         self._t_eval = [t_eval[0], t_eval[-1]] if t_eval is not None else None
         self._t_interp = t_interp
+        self._experiment = experiment
 
         # Configuration
         self._solver = solver.copy() if solver is not None else RecommendedSolver()
@@ -114,21 +115,23 @@ class PybammPipeline:
 
         # Setup
         self.requires_rebuild = self._determine_rebuild_requirement(build_on_eval)
-        self._setup_operating_mode_and_solver(experiment)
+        self._setup_operating_mode_and_solver()
 
     def _determine_rebuild_requirement(self, build_on_eval: bool | None) -> bool:
         """Determine if model needs rebuilding on each evaluation."""
-        if self._initial_state is not None or self._check_geometric_parameters():
+        has_geometric_parameters = self._check_geometric_parameters()
+
+        if self._experiment is None and self._initial_state is not None:
+            return True
+        if has_geometric_parameters:
             return True
         return build_on_eval
 
-    def _setup_operating_mode_and_solver(self, experiment) -> None:
+    def _setup_operating_mode_and_solver(self) -> None:
         """Setup operating mode and related configurations."""
-        if experiment is not None:
-            self._experiment = experiment
+        if self._experiment is not None:
             self._operating_mode = OperatingMode.WITH_EXPERIMENT
         else:
-            self._experiment = None
             self._operating_mode = OperatingMode.WITHOUT_EXPERIMENT
             self._model.events = []  # Turn off events
 
@@ -229,7 +232,7 @@ class PybammPipeline:
         model = self._model.new_copy()
         geometry = copy(self._geometry)
 
-        if self._initial_state is not None:
+        if self._experiment is None and self._initial_state is not None:
             self._parameter_values.set_initial_state(
                 self._initial_state, param=model.param, options=model.options
             )
@@ -315,6 +318,11 @@ class PybammPipeline:
         solutions = []
 
         for params in inputs:
+            print(
+                self._parameter_values[
+                    "Negative electrode active material volume fraction"
+                ]
+            )
             solution = self._sim_experiment.solve(
                 inputs=params, initial_soc=self._initial_state
             )

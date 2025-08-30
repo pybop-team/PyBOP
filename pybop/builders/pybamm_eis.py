@@ -149,7 +149,8 @@ class PybammEIS(builders.BaseBuilder):
         )
 
         # Build and initialise the pipeline
-        pipeline.build()
+        if not pipeline.requires_rebuild:
+            pipeline.build()
 
         return PybammEISProblem(
             eis_pipeline=pipeline,
