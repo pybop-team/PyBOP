@@ -93,7 +93,11 @@ class PybammPipeline:
         self._cost_names = cost_names
         self._pybop_parameters = pybop_parameters or Parameters([])
         self._parameter_names = self._pybop_parameters.keys()
-        self._parameter_values = parameter_values or model.default_parameter_values
+        self._parameter_values = (
+            parameter_values.copy()
+            if parameter_values is not None
+            else model.default_parameter_values
+        )
 
         # Simulation Params
         self._initial_state = initial_state
@@ -116,6 +120,10 @@ class PybammPipeline:
         # Setup
         self.requires_rebuild = self._determine_rebuild_requirement(build_on_eval)
         self._setup_operating_mode_and_solver()
+
+        # Build if only building once, otherwise build on evalution
+        if not self.requires_rebuild:
+            self.build()
 
     def _determine_rebuild_requirement(self, build_on_eval: bool | None) -> bool:
         """Determine if model needs rebuilding on each evaluation."""
@@ -318,11 +326,6 @@ class PybammPipeline:
         solutions = []
 
         for params in inputs:
-            print(
-                self._parameter_values[
-                    "Negative electrode active material volume fraction"
-                ]
-            )
             solution = self._sim_experiment.solve(
                 inputs=params, initial_soc=self._initial_state
             )

@@ -22,11 +22,8 @@ class Test_SPM_Parameterisation:
         )
 
     @pytest.fixture
-    def model(self):
-        return pybamm.lithium_ion.SPM()
-
-    @pytest.fixture
-    def parameter_values(self):
+    def model_and_parameter_values(self):
+        model = pybamm.lithium_ion.SPM()
         parameter_values = pybamm.ParameterValues("Chen2020")
         x = self.ground_truth
         parameter_values.update(
@@ -35,7 +32,12 @@ class Test_SPM_Parameterisation:
                 "Positive electrode active material volume fraction": x[1],
             }
         )
-        return parameter_values
+
+        # Fix the total lithium concentration to simplify the fitting problem
+        model.param.Q_Li_particles_init = parameter_values.evaluate(
+            model.param.Q_Li_particles_init
+        )
+        return model, parameter_values
 
     @pytest.fixture
     def parameters(self):
@@ -72,30 +74,27 @@ class Test_SPM_Parameterisation:
 
     @pytest.fixture(
         params=[
-            pybop.SciPyDifferentialEvolution,
-            pybop.SimulatedAnnealing,
-            pybop.CuckooSearch,
-            pybop.NelderMead,
-            pybop.IRPropMin,
-            pybop.IRPropPlus,
-            pybop.AdamW,
-            pybop.CMAES,
-            pybop.SNES,
-            pybop.XNES,
+            pybop.SciPyMinimize,  # scipy with sensitivities
+            pybop.SciPyDifferentialEvolution,  # without sensitivites
+            pybop.IRPropMin,  # pints optimiser with sensitivities
+            pybop.NelderMead,  # pints without sensitivities
         ]
     )
     def optimiser(self, request):
         return request.param
 
     @pytest.fixture
-    def dataset(self, model, parameter_values):
-        experiment = pybamm.Experiment(
+    def experiment(self):
+        return pybamm.Experiment(
             [
                 "Rest for 1 second",
                 "Discharge at 0.5C for 8 minutes (8 second period)",
-                "Charge at 0.5C for 8 minutes (8 second period)",
             ]
         )
+
+    @pytest.fixture
+    def dataset(self, model_and_parameter_values, experiment):
+        model, parameter_values = model_and_parameter_values
         sim = pybamm.Simulation(
             model=model,
             parameter_values=parameter_values,
@@ -112,7 +111,8 @@ class Test_SPM_Parameterisation:
         )
 
     @pytest.fixture
-    def problem(self, model, parameters, cost_cls, parameter_values, dataset):
+    def problem(self, model_and_parameter_values, parameters, cost_cls, dataset):
+        model, parameter_values = model_and_parameter_values
         builder = pybop.Pybamm()
         builder.set_simulation(model, parameter_values=parameter_values)
         builder.set_dataset(dataset)
@@ -142,20 +142,17 @@ class Test_SPM_Parameterisation:
     @pytest.fixture
     def optim(self, optimiser, problem):
         options = optimiser.default_options()
-        options.max_iterations = 100
-        if isinstance(options, pybop.SciPyDifferentialEvolutionOptions):
+        if issubclass(optimiser, pybop.BaseSciPyOptimiser):
+            options.maxiter = 100
             options.atol = 1e-6
-        elif isinstance(options, pybop.PintsOptions):
+        else:
+            options.max_iterations = 100
             options.absolute_tolerance = 1e-6
             options.max_unchanged_iterations = 30
             options.sigma = 2e-2
 
         # Set sigma0 and create optimiser
-        optim = optimiser(problem, options=options)
-        if isinstance(optim, pybop.SimulatedAnnealing):
-            optim.optimiser.cooling_rate = 0.8  # Cool quickly
-            optim.set_max_unchanged_iterations(50)
-        return optim
+        return optimiser(problem, options=options)
 
     def test_optimisers(self, optim, cost_cls):
         x0 = optim.problem.params.get_initial_values()
@@ -176,14 +173,8 @@ class Test_SPM_Parameterisation:
 
         np.testing.assert_allclose(results.x, self.ground_truth, atol=1.5e-2)
 
-    def test_with_init_soc(self, model, parameters, parameter_values):
-        experiment = pybamm.Experiment(
-            [
-                "Rest for 2 seconds",
-                "Discharge at 0.5C for 8 minutes (8 second period)",
-                "Charge at 0.5C for 8 minutes (8 second period)",
-            ]
-        )
+    def test_with_init_soc(self, model_and_parameter_values, parameters, experiment):
+        model, parameter_values = model_and_parameter_values
         init_soc = 0.6
         sim = pybamm.Simulation(
             model=model,

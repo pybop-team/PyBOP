@@ -197,10 +197,6 @@ class Pybamm(BaseBuilder):
             build_on_eval=self._build_on_eval,
         )
 
-        # Build the pipeline
-        if not pipeline.requires_rebuild:
-            pipeline.build()
-
         return pybop.PybammProblem(
             pybamm_pipeline=pipeline,
             pybop_params=pybop_parameters,

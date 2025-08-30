@@ -73,6 +73,13 @@ class PybammEISPipeline:
             is built with the parameter values from construction only.
         """
 
+        # Set-up model for EIS
+        self._f_eval = f_eval
+        model = self.set_up_for_eis(model)
+        parameter_values = parameter_values or model.default_parameter_values
+        parameter_values["Current function [A]"] = 0
+
+        # Create PyBaMM pipeline
         self._pybamm_pipeline = PybammPipeline(
             model,
             pybop_parameters=pybop_parameters,
@@ -87,11 +94,6 @@ class PybammEISPipeline:
             build_on_eval=build_on_eval,
         )
 
-        # Set-up model for EIS
-        self._f_eval = f_eval
-        self.set_up_for_eis(self._pybamm_pipeline.model)
-        self._pybamm_pipeline.parameter_values["Current function [A]"] = 0
-
         # Initialise
         self.M = None
         self._jac = None
@@ -103,7 +105,7 @@ class PybammEISPipeline:
             v_scale / i_scale
         )
 
-    def set_up_for_eis(self, model: pybamm.BaseModel) -> None:
+    def set_up_for_eis(self, model: pybamm.BaseModel) -> pybamm.BaseModel:
         """
         Set up the model for electrochemical impedance spectroscopy (EIS) simulations.
         This method adds the necessary algebraic equations and variables to the model.
@@ -170,6 +172,8 @@ class PybammEISPipeline:
         )
         model.algebraic[I_cell] = I - I_applied
         model.initial_conditions[I_cell] = 0
+
+        return model
 
     def initialise_eis_pipeline(self, inputs: Inputs) -> None:
         """
