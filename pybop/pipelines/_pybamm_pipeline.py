@@ -141,7 +141,8 @@ class PybammPipeline:
             self._operating_mode = OperatingMode.WITH_EXPERIMENT
         else:
             self._operating_mode = OperatingMode.WITHOUT_EXPERIMENT
-            self._model.events = []  # Turn off events
+            # Remove all voltage-based events when not using an experiment
+            self._model.events = [e for e in self._model.events if "[V]" not in e.name]
 
         if self._operating_mode == OperatingMode.WITH_EXPERIMENT:
             # Create the experiment simulation
