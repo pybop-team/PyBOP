@@ -44,15 +44,15 @@ class Test_SPM_Parameterisation:
         return [
             pybop.Parameter(
                 "Negative electrode active material volume fraction",
-                prior=pybop.Uniform(0.3, 0.9),
-                initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
-                bounds=[0.3, 0.8],
+                prior=pybop.Uniform(0.4, 0.9),
+                initial_value=pybop.Uniform(0.5, 0.75).rvs()[0],
+                bounds=[0.4, 0.8],
             ),
             pybop.Parameter(
                 "Positive electrode active material volume fraction",
-                prior=pybop.Uniform(0.3, 0.9),
-                initial_value=pybop.Uniform(0.4, 0.75).rvs()[0],
-                bounds=[0.3, 0.8],
+                prior=pybop.Uniform(0.4, 0.9),
+                initial_value=pybop.Uniform(0.5, 0.75).rvs()[0],
+                bounds=[0.4, 0.8],
             ),
         ]
 
