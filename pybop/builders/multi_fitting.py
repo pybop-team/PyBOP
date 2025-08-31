@@ -89,12 +89,9 @@ class MultiFitting(BaseBuilder):
         funs_with_sense = []
         # Construct the list of callables
         for problem in self._problems:
-            funs.append(lambda params, p=problem: (p.set_params(params), p.run())[1])
+            funs.append(lambda params, p=problem: p.run(params))
             funs_with_sense.append(
-                lambda params, p=problem: (
-                    p.set_params(params),
-                    p.run_with_sensitivities(),
-                )[1]
+                lambda params, p=problem: p.run_with_sensitivities(params)
             )
 
         return PythonProblem(

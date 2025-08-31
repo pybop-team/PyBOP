@@ -40,8 +40,7 @@ class BaseEvaluator(PintsEvaluator):
 
             def fun(x_search):
                 x_model = [self.transformation.to_model(x) for x in x_search]
-                problem.set_params(x_model)
-                cost, grad = problem.run_with_sensitivities()
+                cost, grad = problem.run_with_sensitivities(x_model)
 
                 # Apply the inverse parameter transformation to the gradient
                 if len(x_search) == 1:
@@ -59,8 +58,7 @@ class BaseEvaluator(PintsEvaluator):
 
             def fun(x_search):
                 x_model = [self.transformation.to_model(x) for x in x_search]
-                problem.set_params(x_model)
-                cost = problem.run()
+                cost = problem.run(x_model)
                 logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
                 return cost
 
@@ -69,8 +67,7 @@ class BaseEvaluator(PintsEvaluator):
 
             def fun(x_search):
                 x_model = [self.transformation.to_model(x) for x in x_search]
-                problem.set_params(x_model)
-                neg_cost, neg_grad = problem.run_with_sensitivities()
+                neg_cost, neg_grad = problem.run_with_sensitivities(x_model)
                 cost, grad = -neg_cost, -neg_grad
 
                 # Apply the inverse parameter transformation to the gradient
@@ -89,8 +86,7 @@ class BaseEvaluator(PintsEvaluator):
 
             def fun(x_search):
                 x_model = [self.transformation.to_model(x) for x in x_search]
-                problem.set_params(x_model)
-                cost = -problem.run()
+                cost = -problem.run(x_model)
                 logger.extend_log(x_search=x_search, x_model=x_model, cost=cost)
                 return cost
 

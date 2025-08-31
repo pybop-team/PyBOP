@@ -76,11 +76,8 @@ class TestDecayModel:
         self, problem, initial_params, test_params, tolerance=RELATIVE_TOLERANCE
     ):
         """Reusable assertion for parameter sensitivity."""
-        problem.set_params(initial_params)
-        value1 = problem.run()
-
-        problem.set_params(test_params)
-        value2 = problem.run()
+        value1 = problem.run(initial_params)
+        value2 = problem.run(test_params)
 
         relative_change = abs((value1 - value2) / value1)
         assert relative_change > tolerance, (
@@ -105,11 +102,8 @@ class TestDecayModel:
         )
 
         # Test sensitivity computation consistency
-        problem.set_params(initial_params)
-        value1_sens, grad1 = problem.run_with_sensitivities()
-
-        problem.set_params(TEST_PARAM_VALUES)
-        value2_sens, grad2 = problem.run_with_sensitivities()
+        value1_sens, grad1 = problem.run_with_sensitivities(initial_params)
+        value2_sens, grad2 = problem.run_with_sensitivities(TEST_PARAM_VALUES)
 
         # Validate gradient shape and value consistency
         assert grad1.shape == (len(parameters),), (

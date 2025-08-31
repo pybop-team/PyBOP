@@ -28,22 +28,16 @@ class PybammEISProblem(Problem):
             np.asarray(cost_weights) if cost_weights is not None else None
         )
 
-    def set_params(self, p: np.ndarray) -> None:
+    def run(self, p) -> np.ndarray:
         """
-        Sets the parameters for the simulation and cost function.
-        """
-        self.check_and_store_params(p)
-
-    def run(self) -> np.ndarray:
-        """
-        Evaluates the underlying simulation and cost function using the
-        parameters set in the previous call to `set_params`.
+        Evaluates the underlying simulation and cost function.
 
         Returns
         -------
         np.ndarray
             cost (np.ndarray): 1D weighted sum of cost variables.
         """
+        self._params.update(values=np.asarray(p))
         inputs = self._params.to_pybamm_multiprocessing()
         cost_matrix = np.empty((len(self._costs), len(inputs)))
 

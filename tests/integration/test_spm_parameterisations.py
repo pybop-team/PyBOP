@@ -130,13 +130,11 @@ class Test_SPM_Parameterisation:
         return problem
 
     def test_problem(self, problem):
-        problem.set_params(self.ground_truth)
-        cost_at_ground = problem.run()
+        cost_at_ground = problem.run(self.ground_truth)
         ground_plus_delta = self.ground_truth + np.random.normal(
             0, 0.1, len(self.ground_truth)
         )
-        problem.set_params(ground_plus_delta)
-        cost_at_ground_plus_delta = problem.run()
+        cost_at_ground_plus_delta = problem.run(ground_plus_delta)
         assert cost_at_ground < cost_at_ground_plus_delta
 
     @pytest.fixture

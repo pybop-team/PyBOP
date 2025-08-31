@@ -39,12 +39,6 @@ class PybammProblem(Problem):
         else:
             self._priors = None
 
-    def set_params(self, p: np.ndarray) -> None:
-        """
-        Sets the parameters for the simulation and cost function.
-        """
-        self.check_and_store_params(p)
-
     def _compute_cost(self, solution: list[Solution]) -> np.ndarray:
         """
         Compute the cost function value from a solution.
@@ -77,10 +71,9 @@ class PybammProblem(Problem):
         cost = self._compute_cost(solution)
         return self._add_prior_contribution(cost)
 
-    def run(self) -> np.ndarray:
+    def run(self, p) -> np.ndarray:
         """
-        Evaluates the underlying simulation and cost function using the
-        parameters set in the previous call to `set_params`.
+        Evaluates the underlying simulation and cost function.
 
         The parameters can be set as singular proposals: np.array(N,)
         Or as an array of multiple proposals: np.array(M, N), where
@@ -92,7 +85,7 @@ class PybammProblem(Problem):
             cost (np.ndarray): Weighted sum of cost variables for each proposal.
             The dimensionality is np.ndarray(M,) to match the number of proposals.
         """
-        self.check_set_params_called()
+        self._params.update(values=np.asarray(p))
 
         # Run simulation
         sol = self._pipeline.solve()
@@ -100,10 +93,9 @@ class PybammProblem(Problem):
         # Compute cost with optional prior contribution
         return self._compute_cost_with_prior(sol)
 
-    def run_with_sensitivities(self) -> tuple[np.ndarray, np.ndarray]:
+    def run_with_sensitivities(self, p) -> tuple[np.ndarray, np.ndarray]:
         """
-        Evaluates the simulation and cost function with parameter sensitivities
-        using the parameters set in the previous call to `set_params`.
+        Evaluates the simulation and cost function with parameter sensitivities.
 
         The parameters can be set as singular proposals: np.array(N,)
         Or as an array of multiple proposals: np.array(M,N), where
@@ -117,7 +109,7 @@ class PybammProblem(Problem):
             - cost ( np.ndarray(M,) ): Weighted sum of cost values for each proposal.
             - sensitivities ( np.ndarray(M, n_params) ): Weighted sum of parameter gradients for each proposal.
         """
-        self.check_set_params_called()
+        self._params.update(values=np.asarray(p))
         prior_derivatives = np.zeros(len(self._params))
 
         # Compute prior contribution and derivatives if using posterior

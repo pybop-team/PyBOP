@@ -46,7 +46,7 @@ class PythonProblem(Problem):
     ...     pybop_params=my_params,
     ...     weights=[1.0]
     ... )
-    >>> result = problem.run()
+    >>> result = problem.run(params)
 
     Notes
     -----
@@ -69,7 +69,7 @@ class PythonProblem(Problem):
         self._has_sensitivities = True if funs_with_sens is not None else False
         self._weights = np.asarray(weights) if weights is not None else None
 
-    def run(self) -> np.ndarray:
+    def run(self, p) -> np.ndarray:
         """
         Execute all standard functions with current parameters and return weighted sum.
 
@@ -86,6 +86,7 @@ class PythonProblem(Problem):
         RuntimeError
             If no standard functions are available (i.e., only sensitivity functions exist)
         """
+        self._params.update(values=np.asarray(p))
 
         if self._funs is None:
             raise RuntimeError(
@@ -108,7 +109,7 @@ class PythonProblem(Problem):
 
         return cost
 
-    def run_with_sensitivities(self) -> tuple[np.ndarray, np.ndarray]:
+    def run_with_sensitivities(self, p) -> tuple[np.ndarray, np.ndarray]:
         """
         Execute all sensitivity functions and return weighted results with gradients.
 
@@ -129,6 +130,8 @@ class PythonProblem(Problem):
         RuntimeError
             If no sensitivity functions are available or if function evaluation fails
         """
+        self._params.update(values=np.asarray(p))
+
         if self._funs_with_sens is None:
             raise RuntimeError(
                 "No sensitivity functions configured. This problem uses standard functions. "
@@ -160,14 +163,3 @@ class PythonProblem(Problem):
             weighted_gradient = np.array([])
 
         return weighted_value, weighted_gradient
-
-    def set_params(self, p: np.ndarray) -> None:
-        """
-        Sets the parameter values for simulation.
-
-        Parameters
-        ----------
-        p : np.ndarray
-            Array of parameter values
-        """
-        self.check_and_store_params(p)

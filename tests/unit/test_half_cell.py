@@ -97,13 +97,8 @@ class TestHalfCell:
         )
         fitting_problem = builder.build()
 
-        # Get initial cost
-        initial_cost = fitting_problem.run()
-
-        # Get ground truth cost
-        fitting_problem.set_params(np.asarray(self.ground_truth))
-        ground_truth_cost = fitting_problem.run()
-
+        initial_cost = fitting_problem.run(fitting_problem.params.get_initial_values())
+        ground_truth_cost = fitting_problem.run(np.asarray(self.ground_truth))
         assert initial_cost > ground_truth_cost
 
     def test_design(self, model_config, parameters):
@@ -129,11 +124,6 @@ class TestHalfCell:
         builder.add_cost(pybop.costs.pybamm.GravimetricEnergyDensity())
         design_problem = builder.build()
 
-        # Get initial cost
-        initial_cost = design_problem.run()
-
-        # Get ground truth cost
-        design_problem.set_params(np.asarray(self.ground_truth))
-        ground_truth_cost = design_problem.run()
-
+        initial_cost = design_problem.run(design_problem.params.get_initial_values())
+        ground_truth_cost = design_problem.run(self.ground_truth)
         assert initial_cost < ground_truth_cost  # negative cost

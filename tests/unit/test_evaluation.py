@@ -110,19 +110,18 @@ class TestEvaluation:
 
     def test_evaluator_transformations(self, problem):
         # First compute the cost and sensitivities in the model space
-        problem.set_params(self.x_model)
-        cost1 = problem.run()
-        cost1_ws, grad1_wrt_model_parameters = problem.run_with_sensitivities()
+        cost1 = problem.run(self.x_model)
+        cost1_ws, grad1_wrt_model_parameters = problem.run_with_sensitivities(
+            self.x_model
+        )
 
         numerical_grad1 = []
         for i in range(len(self.x_model)):
             delta = 1e-8 * self.x_model[i]
             self.x_model[i] += delta / 2
-            problem.set_params(self.x_model)
-            cost_right = problem.run()
+            cost_right = problem.run(self.x_model)
             self.x_model[i] -= delta
-            problem.set_params(self.x_model)
-            cost_left = problem.run()
+            cost_left = problem.run(self.x_model)
             self.x_model[i] += delta / 2
             assert np.abs(cost_right - cost_left) > 0
             numerical_grad1.append((cost_right - cost_left) / delta)

@@ -6,10 +6,8 @@ from pybop.analysis.sensitivity_analysis import sensitivity_analysis
 
 class Problem:
     """
-    Defines a callable function `f(x)` that returns the evaluation
-    of a cost function. The input `x` is a set of parameters that are
-    passed via the `set_params` method. The cost function is evaluated
-    using the `run` method.
+    Defines a `run` method that takes candidate parameter sets returns the corresponding
+    values of the cost and sensitivities if needed.
     """
 
     def __init__(self, pybop_params: Parameters | None = None):
@@ -24,16 +22,14 @@ class Problem:
         Compute the absolute initial cost, resampling the initial parameters if needed.
         """
         x0 = self._params.get_initial_values()
-        self.set_params(x0)
-        cost0 = np.abs(self.run())
+        cost0 = np.abs(self.run(x0))
         nsamples = 0
         while np.isinf(cost0) and nsamples < 10:
             x0 = self._params.sample_from_priors()
             if x0 is None:
                 break
 
-            self.set_params(x0)
-            cost0 = np.abs(self.run())
+            cost0 = np.abs(self.run(x0))
             nsamples += 1
         if nsamples > 0:
             self._params.update(initial_values=x0)
@@ -41,31 +37,6 @@ class Problem:
         if np.isinf(cost0):
             raise ValueError("The initial parameter values return an infinite cost.")
         return cost0
-
-    def check_and_store_params(self, p: np.ndarray) -> None:
-        """
-        Checks if the parameters are valid. p should be a numpy array of one dimensions,
-        with length equal to the number of parameters in the model.
-        """
-        if not isinstance(p, np.ndarray | list):
-            raise TypeError("Parameters must be a numpy array or list")
-        if isinstance(p, list):
-            try:
-                p = np.asarray(p)
-            except TypeError as e:
-                raise TypeError(
-                    "Parameters cannot be converted to a numpy array."
-                ) from e
-        self._params.update(values=p)
-
-    def check_set_params_called(self) -> None:
-        """
-        Checks if the parameters have been set.
-        """
-        if self._params is None:
-            raise ValueError(
-                "Parameters have not been set. Call `set_params` before running the simulation."
-            )
 
     @property
     def params(self) -> Parameters:
@@ -98,28 +69,15 @@ class Problem:
         """
         return sensitivity_analysis(problem=self, n_samples=n_samples)
 
-    def run(self) -> np.ndarray:
+    def run(self, p) -> np.ndarray:
         """
-        Evaluates the underlying simulation and cost function using the
-        parameters set in the previous call to `set_params`.
+        Evaluates the underlying simulation and cost function.
         """
         raise NotImplementedError
 
-    def run_with_sensitivities(
-        self,
-    ) -> tuple[np.ndarray, np.ndarray]:
+    def run_with_sensitivities(self, p) -> tuple[np.ndarray, np.ndarray]:
         """
-        Evaluates the underlying simulation and cost function using the
-        parameters set in the previous call to `set_params`, returns
+        Evaluates the underlying simulation and cost function, returns
         the cost and sensitivities.
-        """
-        raise NotImplementedError
-
-    def set_params(self, p: np.ndarray) -> None:
-        """
-        Sets the parameters for the simulation and cost function.
-        The arg `p` is a numpy array of parameters in the model space.
-        Hint: use `to_search` and `from_search` to convert between model and
-        search space.
         """
         raise NotImplementedError
