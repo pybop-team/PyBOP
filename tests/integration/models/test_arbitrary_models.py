@@ -153,7 +153,8 @@ class TestArbitraryModels:
         problem = builder.build()
 
         # Optimise
-        optim = pybop.SciPyMinimize(problem)
+        options = pybop.ScipyMinimizeOptions(method="Nelder-Mead")
+        optim = pybop.SciPyMinimize(problem, options=options)
         results = optim.run()
 
         np.testing.assert_allclose(results.x, [0.05], atol=1.5e-2)
