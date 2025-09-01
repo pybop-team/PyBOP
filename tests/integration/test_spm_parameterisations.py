@@ -24,28 +24,6 @@ class Test_SPM_Parameterisation:
     @pytest.fixture
     def model_and_parameter_values(self):
         model = pybamm.lithium_ion.SPM()
-
-        # Use stoichiometry rather than voltage-based events
-        var = model.variables
-        model.events = [
-            pybamm.Event(
-                "Minimum negative particle surface stoichiometry",
-                pybamm.min(var["Negative particle surface stoichiometry"]) - 0.01,
-            ),
-            pybamm.Event(
-                "Maximum negative particle surface stoichiometry",
-                (1 - 0.01) - pybamm.max(var["Negative particle surface stoichiometry"]),
-            ),
-            pybamm.Event(
-                "Minimum positive particle surface stoichiometry",
-                pybamm.min(var["Positive particle surface stoichiometry"]) - 0.01,
-            ),
-            pybamm.Event(
-                "Maximum positive particle surface stoichiometry",
-                (1 - 0.01) - pybamm.max(var["Positive particle surface stoichiometry"]),
-            ),
-        ]
-
         parameter_values = pybamm.ParameterValues("Chen2020")
         x = self.ground_truth
         parameter_values.update(
