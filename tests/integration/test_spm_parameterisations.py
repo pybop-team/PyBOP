@@ -89,6 +89,7 @@ class Test_SPM_Parameterisation:
             [
                 "Rest for 1 second",
                 "Discharge at 0.5C for 8 minutes (8 second period)",
+                "Charge at 0.5C for 8 minutes (8 second period)",
             ]
         )
 

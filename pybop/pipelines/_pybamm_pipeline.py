@@ -23,9 +23,8 @@ class PybammPipeline:
     2. A pybamm model needs to be built multiple times with different parameter values,
         for the case where some of the parameters are geometric parameters which change the mesh
 
-    The logic for (1) and (2) occurs within the composed PybammPipeline and happens automatically.
-    To override this logic, the argument `build_on_eval` can be set to `True` which will force (2) to
-    occur.
+    The logic for (1) and (2) happens automatically. To override this logic, the argument `build_on_eval`
+    can be set to `True` which will force (2) to occur.
     """
 
     def __init__(
@@ -84,9 +83,8 @@ class PybammPipeline:
             Any keyword arguments to pass to the Discretisation class.
             See :class:`pybamm.Discretisation` for details.
         build_on_eval: bool
-            Boolean to determine if the model will be rebuilt every evaluation. If `initial_state` is
-            provided, the model will be rebuilt every evaluation unless `build_on_eval` is `False`, in
-            which case the model is built with the parameter values from construction only.
+            If True, the model will be rebuilt every evaluation. Otherwise, the need to rebuild will be
+            determined automatically.
         """
         # Core
         self._model = model
@@ -141,7 +139,8 @@ class PybammPipeline:
             self._operating_mode = OperatingMode.WITH_EXPERIMENT
         else:
             self._operating_mode = OperatingMode.WITHOUT_EXPERIMENT
-            self._model.events = []  # Turn off events
+            # Remove all voltage-based events when not using an experiment
+            self._model.events = [e for e in self._model.events if "[V]" not in e.name]
 
         if self._operating_mode == OperatingMode.WITH_EXPERIMENT:
             # Create the experiment simulation

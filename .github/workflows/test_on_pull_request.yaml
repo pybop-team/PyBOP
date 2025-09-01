@@ -34,6 +34,7 @@ jobs:
   integration_tests:
     needs: style
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -59,6 +60,7 @@ jobs:
   unit_tests:
     needs: style
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -87,6 +89,7 @@ jobs:
   example_tests:
     needs: style
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -113,6 +116,7 @@ jobs:
   example_notebooks:
     needs: style
     runs-on: macos-14
+    timeout-minutes: 60
     strategy:
       fail-fast: false
     name: Test notebooks (macos-14 / Python 3.12)
@@ -135,6 +139,7 @@ jobs:
   benchmarks:
     needs: style
     runs-on: macos-14
+    timeout-minutes: 20
     strategy:
       fail-fast: false
     name: Benchmarks
@@ -166,6 +171,7 @@ jobs:
   check_coverage:
     needs: style
     runs-on: macos-14
+    timeout-minutes: 20
     strategy:
       fail-fast: false
     name: Coverage tests (macos-14 / Python 3.12)

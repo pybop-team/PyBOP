@@ -68,9 +68,8 @@ class PybammEISPipeline:
             Any keyword arguments to pass to the Discretisation class.
             See :class:`pybamm.Discretisation` for details.
         build_on_eval: bool
-            Boolean to determine if the model will be rebuilt every evaluation. If `initial_state` is provided,
-            the model will be rebuilt every evaluation unless `build_on_eval` is `False`, in which case the model
-            is built with the parameter values from construction only.
+            If True, the model will be rebuilt every evaluation. Otherwise, the need to rebuild will be
+            determined automatically.
         """
 
         # Set-up model for EIS
