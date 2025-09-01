@@ -145,7 +145,9 @@ class TestArbitraryModels:
         builder = pybop.builders.Pybamm()
         builder.set_dataset(dataset)
         builder.set_simulation(model)
-        builder.add_parameter(pybop.Parameter("a", initial_value=0.1))
+        builder.add_parameter(
+            pybop.Parameter("a", initial_value=0.1, bounds=[0, np.inf])
+        )
 
         builder.add_cost(pybop.costs.pybamm.SumSquaredError("u at x=0.5", "u at x=0.5"))
 
@@ -153,8 +155,7 @@ class TestArbitraryModels:
         problem = builder.build()
 
         # Optimise
-        options = pybop.ScipyMinimizeOptions(method="Nelder-Mead")
-        optim = pybop.SciPyMinimize(problem, options=options)
+        optim = pybop.SciPyMinimize(problem)
         results = optim.run()
 
         np.testing.assert_allclose(results.x, [0.05], rtol=5e-3)
